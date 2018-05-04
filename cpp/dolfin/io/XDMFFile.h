@@ -157,9 +157,9 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write_checkpoint(const function::Function& u, std::string function_name,
-                        double time_step = 0.0,
-                        Encoding encoding = default_encoding);
+  void write(const function::Function& u, std::string function_name,
+             double time_step = 0.0,
+             Encoding encoding = default_encoding);
 
   /// Save a function::Function to XDMF file for visualisation, using an
   /// associated HDF5 file, or storing the data inline as XML.
@@ -169,7 +169,8 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const function::Function& u, Encoding encoding = default_encoding);
+  void write_vertex_values(const function::Function& u,
+                           Encoding encoding = default_encoding);
 
   /// Save a function::Function with timestamp to XDMF file for visualisation,
   /// using an associated HDF5 file, or storing the data inline as
@@ -195,8 +196,8 @@ public:
   /// @param   encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const function::Function& u, double t,
-             Encoding encoding = default_encoding);
+  void write_vertex_values(const function::Function& u, double t,
+                           Encoding encoding = default_encoding);
 
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
@@ -340,9 +341,9 @@ public:
   ///         function before the last one.
   /// @returns function::Function
   ///         Function
-  function::Function
-  read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
-                  std::string func_name, std::int64_t counter = -1) const;
+  function::Function read(std::shared_ptr<const function::FunctionSpace> V,
+                          std::string func_name,
+                          std::int64_t counter = -1) const;
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<bool>_)

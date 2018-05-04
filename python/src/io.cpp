@@ -229,17 +229,17 @@ void io(py::module& m)
   // dolfin::io::XDMFFile::write
   xdmf_file
       // Function
-      .def("write",
+      .def("write_vertex_values",
            (void (dolfin::io::XDMFFile::*)(const dolfin::function::Function&,
                                            dolfin::io::XDMFFile::Encoding))
-               & dolfin::io::XDMFFile::write,
+               & dolfin::io::XDMFFile::write_vertex_values,
            py::arg("u"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      .def("write",
+      .def("write_vertex_values",
            (void (dolfin::io::XDMFFile::*)(const dolfin::function::Function&,
                                            double,
                                            dolfin::io::XDMFFile::Encoding))
-               & dolfin::io::XDMFFile::write,
+               & dolfin::io::XDMFFile::write_vertex_values,
            py::arg("u"), py::arg("t"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
       // Mesh
@@ -327,40 +327,40 @@ void io(py::module& m)
            py::arg("points"), py::arg("values"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
       // py:object / dolfin.function.function.Function
-      .def("write",
+      .def("write_vertex_values",
            [](dolfin::io::XDMFFile& instance, const py::object u,
               dolfin::io::XDMFFile::Encoding encoding) {
              auto _u
                  = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-             instance.write(*_u, encoding);
+             instance.write_vertex_values(*_u, encoding);
            },
            py::arg("u"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      .def("write",
+      .def("write_vertex_values",
            [](dolfin::io::XDMFFile& instance, const py::object u, double t,
               dolfin::io::XDMFFile::Encoding encoding) {
              auto _u
                  = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-             instance.write(*_u, t, encoding);
+             instance.write_vertex_values(*_u, t, encoding);
            },
            py::arg("u"), py::arg("t"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      // Check points
-      .def("write_checkpoint",
+      // Write for checkpointing
+      .def("write",
            [](dolfin::io::XDMFFile& instance,
               const dolfin::function::Function& u, std::string function_name,
               double time_step, dolfin::io::XDMFFile::Encoding encoding) {
-             instance.write_checkpoint(u, function_name, time_step, encoding);
+             instance.write(u, function_name, time_step, encoding);
            },
            py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0,
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      .def("write_checkpoint",
+      .def("write",
            [](dolfin::io::XDMFFile& instance, const py::object u,
               std::string function_name, double time_step,
               dolfin::io::XDMFFile::Encoding encoding) {
              auto _u
                  = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-             instance.write_checkpoint(*_u, function_name, time_step, encoding);
+             instance.write(*_u, function_name, time_step, encoding);
            },
            py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0,
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5);
@@ -391,7 +391,7 @@ void io(py::module& m)
       .def("read_mvc_double", &dolfin::io::XDMFFile::read_mvc_double,
            py::arg("mesh"), py::arg("name") = "")
       // Checkpointing
-      .def("_read_checkpoint", &dolfin::io::XDMFFile::read_checkpoint,
+      .def("read", &dolfin::io::XDMFFile::read,
            py::arg("V"), py::arg("name"), py::arg("counter") = -1);
 }
 } // namespace dolfin_wrappers

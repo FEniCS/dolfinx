@@ -122,9 +122,9 @@ void XDMFFile::write(const mesh::Mesh& mesh, const Encoding encoding)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write_checkpoint(const function::Function& u,
-                                std::string function_name, double time_step,
-                                const Encoding encoding)
+void XDMFFile::write(const function::Function& u,
+                     std::string function_name, double time_step,
+                     const Encoding encoding)
 {
   // Check that encoding
   if (encoding == Encoding::HDF5 and !has_hdf5())
@@ -303,7 +303,8 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 #endif
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const function::Function& u, const Encoding encoding)
+void XDMFFile::write_vertex_values(const function::Function& u,
+                                   const Encoding encoding)
 {
   // Check that encoding
   if (encoding == Encoding::HDF5 and !has_hdf5())
@@ -395,8 +396,10 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const function::Function& u, double time_step,
-                     const Encoding encoding)
+void XDMFFile::write_vertex_values(
+    const function::Function& u,
+    double time_step,
+    const Encoding encoding)
 {
   // Check that encoding
   if (encoding == Encoding::HDF5 and !has_hdf5())
@@ -1482,8 +1485,8 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
 }
 //----------------------------------------------------------------------------
 function::Function
-XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
-                          std::string func_name, std::int64_t counter) const
+XDMFFile::read(std::shared_ptr<const function::FunctionSpace> V,
+               std::string func_name, std::int64_t counter) const
 {
   if (!name_same_on_all_procs(func_name))
   {
