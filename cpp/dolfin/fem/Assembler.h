@@ -8,6 +8,7 @@
 
 #include <array>
 #include <boost/multi_array.hpp>
+#include <dolfin/common/types.h>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -46,7 +47,8 @@ public:
   /// diagonal
   void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
 
-  /// Assemble vector. Boundary conditions have no effect on the assembled vector.
+  /// Assemble vector. Boundary conditions have no effect on the assembled
+  /// vector.
   void assemble(la::PETScVector& b, BlockType type = BlockType::nested);
 
   /// Assemble matrix and vector
@@ -59,7 +61,7 @@ private:
                        std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Assemble vector
-  static void assemble(la::PETScVector& b, const Form& L);
+  static void assemble(Eigen::Ref<EigenVectorXd> b, const Form& L);
 
   // Modify RHS vector to account for boundary condition (b <- b - Ax,
   // where x holds prescribed boundary values)
