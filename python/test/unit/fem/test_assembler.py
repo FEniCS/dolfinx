@@ -94,7 +94,7 @@ def xtest_matrix_assembly_bc():
 
 
 def test_matrix_assembly_block():
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 5, 6)
 
     p0 = 2
     p1 = 1
@@ -137,13 +137,13 @@ def test_matrix_assembly_block():
 
     A, b = assembler.assemble(
        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    A.mat().view()
+    #A.mat().view()
     # b.vec().view()
     Anorm0 = A.mat().norm()
-    # bnorm0 = b.vec().norm()
+    bnorm0 = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
         print("Matrix Norm (block, non-nest)", Anorm0)
-        #print("Vector Norm (block, non-nest)", bnorm0)
+        print("Vector Norm (block, non-nest)", bnorm0)
 
     # dolfin.MPI.barrier(mesh.mpi_comm())
     # print("B--------------------")
@@ -206,13 +206,13 @@ def test_matrix_assembly_block():
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     dolfin.MPI.barrier(mesh.mpi_comm())
 
-    A.mat().view()
+    # A.mat().view()
     # b.vec().view()
     Anorm2 = A.mat().norm()
     bnorm2 = b.vec().norm()
     if dolfin.MPI.rank(mesh.mpi_comm()) == 0:
         print("Matrix norm (monolithic)", Anorm2)
-        #print("Vector Norm (monolithic)", bnorm2)
+        print("Vector Norm (monolithic)", bnorm2)
 
     return
     assert Anorm0 == pytest.approx(Anorm2, 1.0e-9)

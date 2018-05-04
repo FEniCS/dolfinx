@@ -138,33 +138,12 @@ SparsityPattern::SparsityPattern(
                                  "(apply needs to be called)");
       }
 
-      // Iterate over nodes in sparsity pattern
-      // if (MPI::rank(MPI_COMM_WORLD) == 0)
-      // {
-      //   std::cout << "Col offset: " << col_global_offset << std::endl;
-      // }
-
       MPI::barrier(MPI_COMM_WORLD);
       MPI::barrier(MPI_COMM_WORLD);
       if (MPI::rank(MPI_COMM_WORLD) == 1)
       {
         std::cout << "Block row, col:         " << row << ", " << col
                   << std::endl;
-      }
-
-      // Get number of nonzeros for each row from sparsity pattern
-      std::vector<std::size_t> num_nonzeros_diagonal, num_nonzeros_off_diagonal;
-      p->num_nonzeros_diagonal(num_nonzeros_diagonal);
-      p->num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
-      if (MPI::rank(MPI_COMM_WORLD) == 1)
-      {
-        std::cout << "Test block: " << std::endl;
-        for (std::size_t i = 0; i < num_nonzeros_diagonal.size(); ++i)
-        {
-          std::size_t I = num_nonzeros_diagonal[i];
-          std::size_t J = num_nonzeros_off_diagonal[i];
-          std::cout << I << ", " << J << ", " << std::endl;
-        }
       }
 
       for (std::size_t k = 0; k < p->_diagonal.size(); ++k)
@@ -188,20 +167,6 @@ SparsityPattern::SparsityPattern(
         if (distributed)
         {
           std::vector<std::size_t> edges1 = p->_off_diagonal[k].set();
-          if (MPI::rank(MPI_COMM_WORLD) == 1)
-          {
-            // std::cout << "Row, col:         " << row << ", " << col
-            //           << std::endl;
-            // std::cout << "   local row:       " << k << std::endl;
-            // std::cout << "     Off diag size: " << edges1.size() <<
-            // std::endl;
-            // std::cout << "     cmap size:     "
-            //           << cmaps[0]->size(common::IndexMap::MapSize::OWNED)
-            //           << std::endl;
-            // std::cout << "     cmap size:     "
-            //           << cmaps[1]->size(common::IndexMap::MapSize::OWNED)
-            //           << std::endl;
-          }
           for (std::size_t c : edges1)
           {
             // Get new index
@@ -226,11 +191,6 @@ SparsityPattern::SparsityPattern(
     row_local_offset += row_size;
   }
 
-  // if (MPI::rank(MPI_COMM_WORLD) == 0)
-  // {
-  //   for (auto c : _off_diagonal[0])
-  //     std::cout << "Col: " << c << std::endl;
-  // }
 
   // FIXME: Need to add unowned entries?
 
