@@ -544,7 +544,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
-  const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim);
 
@@ -598,7 +597,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     assert(!cell.is_ghost());
 
     // Get cell vertex coordinates
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get dof maps for cell
@@ -695,7 +693,6 @@ void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
   assert(L.mesh());
   const mesh::Mesh& mesh = *L.mesh();
 
-  const std::size_t gdim = mesh.geometry().dim();
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim);
 
@@ -713,7 +710,6 @@ void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
     assert(!cell.is_ghost());
 
     // Get cell vertex coordinates
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get dof maps for cell
@@ -739,8 +735,6 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
   // Get mesh from form
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
-
-  const std::size_t gdim = mesh.geometry().dim();
 
   // Get bcs
   DirichletBC::Map boundary_values;
@@ -797,7 +791,6 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
     // std::cout << "  has bc" << std::endl;
 
     // Get cell vertex coordinates
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Size data structure for assembly
