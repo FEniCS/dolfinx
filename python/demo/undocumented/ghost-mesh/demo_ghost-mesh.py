@@ -143,10 +143,10 @@ for note in facet_note:
 # # Save solution in XDMF format if available
 # xdmf = XDMFFile(mesh.mpi_comm(), "Q.xdmf")
 # if has_hdf5():
-#     xdmf.write(Q)
+#     xdmf.write_vertex_values(Q)
 # elif MPI.size(mesh.mpi_comm()) == 1:
 #     encoding = XDMFFile.Encoding.ASCII
-#     xdmf.write(Q, encoding)
+#     xdmf.write_vertex_values(Q, encoding)
 # else:
 #     # Save solution in vtk format
 #     xdmf = File("Q.pvd")

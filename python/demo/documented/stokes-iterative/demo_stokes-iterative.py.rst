@@ -204,6 +204,6 @@ Finally, we can play with the result in different ways: ::
 
     # Save solution in VTK format
     with XDMFFile(mesh.mpi_comm(), "velocity.xdmf") as ufile_xdmf:
-        ufile_xdmf.write(u)
+        ufile_xdmf.write_vertex_values(u)
     with XDMFFile(mesh.mpi_comm(), "pressure.xdmf") as pfile_xdmf:
-        pfile_xdmf.write(p)
+        pfile_xdmf.write_vertex_values(p)

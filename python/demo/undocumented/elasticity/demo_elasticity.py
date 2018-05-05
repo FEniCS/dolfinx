@@ -148,7 +148,7 @@ solver.solve(u.vector(), b)
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
-file.write(u, XDMFFile.Encoding.ASCII)
+file.write_vertex_values(u, XDMFFile.Encoding.ASCII)
 
 unorm = u.vector().norm("l2")
 if MPI.rank(mesh.mpi_comm()) == 0:

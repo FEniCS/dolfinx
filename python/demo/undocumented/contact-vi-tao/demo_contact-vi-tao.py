@@ -114,10 +114,10 @@ solver.solve(ContactProblem(), u.vector(), u_min.vector(), u_max.vector())
 # Save solution in XDMF format if available
 out = XDMFFile(mesh.mpi_comm(), "u.xdmf")
 if has_hdf5():
-    out.write(u)
+    out.write_vertex_values(u)
 elif MPI.size(mesh.mpi_comm()) == 1:
     encoding = XDMFFile.Encoding.ASCII
-    out.write(u, encoding)
+    out.write_vertex_values(u, encoding)
 else:
     # Save solution in vtk format
     out = File("u.pvd")

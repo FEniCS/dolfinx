@@ -179,10 +179,10 @@ Finally, we can save and plot the solutions::
 
     # Save solution in XDMF format
     with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
-        ufile_xdmf.write(u)
+        ufile_xdmf.write_vertex_values(u)
 
     with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
-        pfile_xdmf.write(p)
+        pfile_xdmf.write_vertex_values(p)
 
     # Plot solution
     import matplotlib.pyplot as plt
