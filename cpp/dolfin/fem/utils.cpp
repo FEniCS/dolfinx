@@ -72,7 +72,6 @@ void fem::init_nest(la::PETScMatrix& A,
       {
         mats[i][j] = std::make_shared<la::PETScMatrix>(A.mpi_comm());
         init(*mats[i][j], *a[i][j]);
-
         petsc_mats[i][j] = mats[i][j]->mat();
       }
       else

@@ -58,7 +58,10 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
     // Initialise matrix
     if (block_type == BlockType::nested)
+    {
+      std::cout << "Init MatNest" << std::endl;
       fem::init_nest(A, forms);
+    }
     else if (block_matrix and block_type == BlockType::monolithic)
       fem::init_monolithic(A, forms);
     else
@@ -73,17 +76,20 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   // Assemble matrix
   if (is_matnest)
   {
+    std::cout << "Extract MatNest" << std::endl;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         // Get submatrix
         Mat subA;
+        std::cout << "Get block: " << i << ", " << j << std::endl;
         MatNestGetSubMat(A.mat(), i, j, &subA);
         if (_a[i][j])
         {
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], _bcs);
+          mat.apply(la::PETScMatrix::AssemblyType::FINAL);
         }
         else
         {
@@ -203,7 +209,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           //   std::cout << "------------------ " << std::endl;
           //   MPI_Comm mpi_comm = MPI_COMM_NULL;
           //   PetscObjectGetComm((PetscObject)rmap, &mpi_comm);
-          //   std::cout << "map Comm size: " << MPI::size(mpi_comm) << std::endl;
+          //   std::cout << "map Comm size: " << MPI::size(mpi_comm) <<
+          //   std::endl;
           // }
           // MPI::barrier(MPI_COMM_WORLD);
 
@@ -242,7 +249,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           // MPI::barrier(MPI_COMM_WORLD);
           // std::cout << "Assemble: " << i << ", " << j << std::endl;
           // MPI::barrier(MPI_COMM_WORLD);
-          //MatSetOption(A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
+          // MatSetOption(A.mat(), MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
           //
 
           // Add bcs to list for diagonal block
@@ -316,6 +323,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     //   double one = 1.0;
     //   A.set_local(&one, 1, &row, 1, &row);
     // }
+    A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
   else
   {
@@ -353,9 +361,13 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         A.set_local(&one, 1, &row, 1, &row);
       }
     }
+
+    A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
 
-  A.apply(la::PETScMatrix::AssemblyType::FINAL);
+  std::cout << "Begin assembly" << std::endl;
+  // A.apply(la::PETScMatrix::AssemblyType::FINAL);
+  std::cout << "End  assembly" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScVector& b, BlockType block_type)
@@ -382,12 +394,12 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       init(b, *_l[0]);
   }
 
-  auto range = b.local_range();
-  if (MPI::rank(MPI_COMM_WORLD) == 0)
-  {
-    std::cout << " Local range: " << range[0] << ", " << range[1] << std::endl;
-    std::cout << " size: " << b.size() << std::endl;
-  }
+  // auto range = b.local_range();
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  // {
+  //   std::cout << " Local range: " << range[0] << ", " << range[1] <<
+  //   std::endl; std::cout << " size: " << b.size() << std::endl;
+  // }
 
   // Get vector type
   VecType vec_type;
@@ -405,17 +417,27 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       {
         auto map = _l[i]->function_space(0)->dofmap()->index_map();
         auto map_size = map->size(common::IndexMap::MapSize::ALL);
+        auto bs = map->block_size();
 
-        double* b_array;
-        VecGetArray(sub_b, &b_array);
-        Eigen::Map<EigenVectorXd> _b_array(b_array, map_size);
+        // double* b_array;
+        // VecGetArray(sub_b, &b_array);
+        // Eigen::Map<EigenVectorXd> _b_array(b_array, map_size);
+        // this->assemble(_b_array, *_l[i]);
+        // VecRestoreArray(sub_b, &b_array);
+
+        EigenVectorXd _b_array(map_size * bs);
+        _b_array.setZero();
         this->assemble(_b_array, *_l[i]);
-        VecRestoreArray(sub_b, &b_array);
+        std::vector<PetscInt> index(map_size * bs);
+        std::iota(index.begin(), index.end(), 0);
+        b.add_local(_b_array.data(), map_size * bs, index.data());
 
         la::PETScVector vec(sub_b);
         for (std::size_t j = 0; j < _a[i].size(); ++j)
           apply_bc(vec, *_a[i][j], _bcs);
         set_bc(vec, *_l[i], _bcs);
+
+        vec.apply();
       }
       else
       {
@@ -469,6 +491,8 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         offset += map_size;
       }
     }
+
+    b.apply();
   }
   else
   {
@@ -497,9 +521,8 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     // apply_bc(b, *_a[0][0], _bcs);
     // set_bc(b, *_l[0], _bcs);
     // b.apply();
+    b.apply();
   }
-
-  b.apply();
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
