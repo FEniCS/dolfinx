@@ -26,11 +26,13 @@ using namespace dolfin::fem;
 Form::Form(std::shared_ptr<const ufc_form> ufc_form,
            const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
-    : _integrals(*ufc_form), _coefficents(*ufc_form),
-      _function_spaces(function_spaces), _ufc(*this)
+    : _integrals(*ufc_form), _coefficients(*ufc_form),
+      _function_spaces(function_spaces)
 {
   assert(ufc_form);
   assert(ufc_form->rank == (int)function_spaces.size());
+
+  initialise_w();
 
   // Check argument function spaces
   for (std::size_t i = 0; i < function_spaces.size(); ++i)
@@ -121,7 +123,7 @@ void Form::set_coefficients(
 
 {
   for (auto c : coefficients)
-    _coefficents.set(c.first, c.second);
+    _coefficients.set(c.first, c.second);
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(
@@ -138,13 +140,13 @@ void Form::set_coefficients(
                                + "\"");
     }
 
-    _coefficents.set(index, c.second);
+    _coefficients.set(index, c.second);
   }
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::original_coefficient_position(std::size_t i) const
 {
-  return _coefficents.original_position(i);
+  return _coefficients.original_position(i);
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::max_element_tensor_size() const
@@ -250,11 +252,33 @@ void Form::tabulate_tensor(
     integral = _integrals.cell_integral(i);
   }
 
-  auto tab_fn = _integrals.cell_tabulate_tensor(i);
-
-  // Update UFC data to current cell
-  _ufc.update(cell, coordinate_dofs, integral->enabled_coefficients);
+  // Restrict coefficients to cell
+  for (std::size_t i = 0; i < _coefficients.size(); ++i)
+  {
+    if (!integral->enabled_coefficients[i])
+      continue;
+    const auto coefficient = _coefficients.get(i);
+    const auto& element = _coefficients.element(i);
+    coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
+  }
 
   // Compute cell matrix
-  tab_fn(A, _ufc.w(), coordinate_dofs.data(), 1);
+  auto tab_fn = _integrals.cell_tabulate_tensor(i);
+  tab_fn(A, _wpointer.data(), coordinate_dofs.data(), 1);
 }
+//-----------------------------------------------------------------------------
+void Form::initialise_w()
+{
+  const std::size_t num_coeffs = _coefficients.size();
+  std::vector<std::size_t> n = {0};
+  for (std::size_t i = 0; i < num_coeffs; ++i)
+  {
+    const auto& element = _coefficients.element(i);
+    n.push_back(n.back() + element.space_dimension());
+  }
+  _w.resize(n.back());
+  _wpointer.resize(num_coeffs);
+  for (std::size_t i = 0; i < num_coeffs; ++i)
+    _wpointer[i] = _w.data() + n[i];
+}
+//-----------------------------------------------------------------------------

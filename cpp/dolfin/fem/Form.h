@@ -238,10 +238,10 @@ public:
       std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains);
 
   /// Access coefficients (non-const)
-  FormCoefficients& coeffs() { return _coefficents; }
+  FormCoefficients& coeffs() { return _coefficients; }
 
   /// Access coefficients (const)
-  const FormCoefficients& coeffs() const { return _coefficents; }
+  const FormCoefficients& coeffs() const { return _coefficients; }
 
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
@@ -257,7 +257,7 @@ private:
   FormIntegrals _integrals;
 
   // Coefficients associated with the Form
-  FormCoefficients _coefficents;
+  FormCoefficients _coefficients;
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const function::FunctionSpace>> _function_spaces;
@@ -283,7 +283,10 @@ private:
   std::function<int(const char*)> _coefficient_index_map;
   std::function<const char*(int)> _coefficient_name_map;
 
-  mutable UFC _ufc;
+  void initialise_w();
+  std::vector<double> _w;
+  std::vector<double*> _wpointer;
+  //  mutable UFC _ufc;
 };
 } // namespace fem
 } // namespace dolfin
