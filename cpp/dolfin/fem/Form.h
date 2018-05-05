@@ -91,10 +91,6 @@ public:
   ///         The rank of the form.
   std::size_t rank() const;
 
-  void
-  tabulate_tensor(double* A, mesh::Cell cell,
-                  Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
-
   /// Get the coefficient index for a named coefficient
   int get_coefficient_index(std::string name) const;
 
@@ -251,6 +247,10 @@ public:
   {
     return _coord_mapping;
   }
+
+  void
+  tabulate_tensor(double* A, mesh::Cell cell,
+                  Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
 
 private:
   // Integrals associated with the Form

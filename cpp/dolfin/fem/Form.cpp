@@ -242,14 +242,14 @@ void Form::tabulate_tensor(
   // Switch integral based on domain from dx MeshFunction
   std::shared_ptr<const ufc_cell_integral> integral;
 
-  std::uint32_t i = 0;
+  std::uint32_t idx = 0;
   if (!dx)
     integral = _integrals.cell_integral();
   else
   {
-    // FIXME: range checks on cell and i
-    i = (*dx)[cell];
-    integral = _integrals.cell_integral(i);
+    // FIXME: range checks on cell and idx
+    idx = (*dx)[cell];
+    integral = _integrals.cell_integral(idx);
   }
 
   // Restrict coefficients to cell
@@ -263,22 +263,22 @@ void Form::tabulate_tensor(
   }
 
   // Compute cell matrix
-  auto tab_fn = _integrals.cell_tabulate_tensor(i);
+  auto tab_fn = _integrals.cell_tabulate_tensor(idx);
   tab_fn(A, _wpointer.data(), coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
 void Form::initialise_w()
 {
   const std::size_t num_coeffs = _coefficients.size();
-  std::vector<std::size_t> n = {0};
-  for (std::size_t i = 0; i < num_coeffs; ++i)
+  std::vector<std::uint32_t> n = {0};
+  for (std::uint32_t i = 0; i < num_coeffs; ++i)
   {
     const auto& element = _coefficients.element(i);
     n.push_back(n.back() + element.space_dimension());
   }
   _w.resize(n.back());
   _wpointer.resize(num_coeffs);
-  for (std::size_t i = 0; i < num_coeffs; ++i)
+  for (std::uint32_t i = 0; i < num_coeffs; ++i)
     _wpointer[i] = _w.data() + n[i];
 }
 //-----------------------------------------------------------------------------
