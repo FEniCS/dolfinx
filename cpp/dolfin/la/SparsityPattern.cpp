@@ -485,9 +485,13 @@ EigenArrayXi32 SparsityPattern::num_nonzeros_off_diagonal() const
                                     * _index_maps[primary_codim]->size(
                                           common::IndexMap::MapSize::OWNED);
     for (const auto row : _full_rows)
+    {
       if (row < local_size0)
         num_nonzeros[row] = ncols;
+    }
   }
+
+  return num_nonzeros;
 }
 //-----------------------------------------------------------------------------
 EigenArrayXi32 SparsityPattern::num_local_nonzeros() const
