@@ -74,8 +74,8 @@ public:
       const std::array<common::ArrayView<const la_index_t>, 2>& entries);
 
   /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(
-      const std::array<common::ArrayView<const la_index_t>, 2>& entries);
+  void insert_local(const Eigen::Ref<const EigenArrayXlaindex> rows,
+                    const Eigen::Ref<const EigenArrayXlaindex> cols);
 
   /// Insert non-zero entries using local (process-wise) indices for the
   /// primary dimension and global indices for the co-dimension
@@ -101,20 +101,18 @@ public:
   /// Return number of local nonzeros
   std::size_t num_nonzeros() const;
 
-  /// Fill array with number of nonzeros for diagonal block in
-  /// local_range for dimension 0. For matrices, fill array with number
-  /// of nonzeros per local row for diagonal block
-  void num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzeros) const;
+  /// Fill array with number of nonzeros per row for diagonal block in
+  /// local_range for dimension 0
+  EigenArrayXi32 num_nonzeros_diagonal() const;
 
   /// Fill array with number of nonzeros for off-diagonal block in
-  /// local_range for dimension 0. For matrices, fill array with number
-  /// of nonzeros per local row for off-diagonal block. If there is no
-  /// off-diagonal pattern, the vector is resized to zero-length
-  void num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
+  /// local_range for dimension 0. If there is no off-diagonal pattern,
+  /// the returned vector will have zero-length.
+  EigenArrayXi32 num_nonzeros_off_diagonal() const;
 
   /// Fill vector with number of nonzeros in local_range for
   /// dimension 0
-  void num_local_nonzeros(std::vector<std::size_t>& num_nonzeros) const;
+  EigenArrayXi32 num_local_nonzeros() const;
 
   /// Finalize sparsity pattern
   void apply();
@@ -154,6 +152,14 @@ private:
       const std::function<la_index_t(
           const la_index_t, const common::IndexMap&)>& primary_codim_map);
 
+  void insert_entries(
+      const Eigen::Ref<const EigenArrayXi32> rows,
+      const Eigen::Ref<const EigenArrayXi32> cols,
+      const std::function<la_index_t(const la_index_t,
+                                     const common::IndexMap&)>& primary_dim_map,
+      const std::function<la_index_t(
+          const la_index_t, const common::IndexMap&)>& primary_codim_map);
+
   // Print some useful information
   void info_statistics() const;
 
@@ -181,5 +187,5 @@ private:
   // Cleared after communication via apply()
   std::vector<std::size_t> _non_local;
 };
-}
-}
+} // namespace la
+} // namespace dolfin

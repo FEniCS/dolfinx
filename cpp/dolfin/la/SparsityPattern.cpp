@@ -191,7 +191,6 @@ SparsityPattern::SparsityPattern(
     row_local_offset += row_size;
   }
 
-
   // FIXME: Need to add unowned entries?
 
   // Intialise common::IndexMaps for merged pattern
@@ -224,8 +223,8 @@ void SparsityPattern::insert_global(
   insert_entries(entries, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_local(
-    const std::array<common::ArrayView<const la_index_t>, 2>& entries)
+void SparsityPattern::insert_local(const Eigen::Ref<const EigenArrayXlaindex> rows,
+                                   const Eigen::Ref<const EigenArrayXlaindex> cols)
 {
   // The primary_dim is local and stays the same
   const auto primary_dim_map =
@@ -239,7 +238,7 @@ void SparsityPattern::insert_local(
     return index_map1.local_to_global_index((std::size_t)j_index);
   };
 
-  insert_entries(entries, primary_dim_map, primary_codim_map);
+  insert_entries(rows, cols, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local_global(
@@ -356,6 +355,111 @@ void SparsityPattern::insert_entries(
   }
 }
 //-----------------------------------------------------------------------------
+void SparsityPattern::insert_entries(
+    const Eigen::Ref<const EigenArrayXlaindex> rows,
+    const Eigen::Ref<const EigenArrayXlaindex> cols,
+    const std::function<la_index_t(const la_index_t, const common::IndexMap&)>&
+        primary_dim_map,
+    const std::function<la_index_t(const la_index_t, const common::IndexMap&)>&
+        primary_codim_map)
+{
+  assert(_primary_dim == 0);
+
+  const std::size_t _primary_dim = primary_dim();
+  assert(_primary_dim < 2);
+  const std::size_t primary_codim = (_primary_dim + 1) % 2;
+  assert(primary_codim < 2);
+
+  const Eigen::Ref<const EigenArrayXlaindex> map_i = rows;
+  const Eigen::Ref<const EigenArrayXlaindex> map_j = cols;
+  const common::IndexMap& index_map0 = *_index_maps[_primary_dim];
+  const common::IndexMap& index_map1 = *_index_maps[primary_codim];
+
+  std::size_t bs0 = index_map0.block_size();
+  const std::size_t local_size0
+      = bs0 * index_map0.size(common::IndexMap::MapSize::OWNED);
+
+  std::size_t bs1 = index_map1.block_size();
+  const auto local_range1 = index_map1.local_range();
+
+  const bool has_full_rows = _full_rows.size() > 0;
+  const auto full_rows_end = _full_rows.end();
+
+  // Programmers' note:
+  // We use the lower case index i/j to denote the indices before calls to
+  // primary_dim_map/primary_codim_map.
+  // We use the  upper case index I/J to denote the indices after mapping
+  // (using primary_dim_map/primary_codim_map) to be inserted into
+  // the SparsityPattern data structure.
+  //
+  // In serial (_mpi_comm.size() == 1) we have the special case
+  // where i == I and j == J.
+
+  // Check local range
+  if (_mpi_comm.size() == 1)
+  {
+    // Sequential mode, do simple insertion if not full row
+    for (Eigen::Index i = 0; i < map_i.size(); ++i)
+    {
+      auto i_index = map_i[i];
+      assert(i_index < (la_index_t)_diagonal.size());
+      if (!has_full_rows || _full_rows.find(i) == full_rows_end)
+      {
+        _diagonal[i_index].insert(map_j.data(), map_j.data() + map_j.size());
+      }
+    }
+  }
+  else
+  {
+    // Parallel mode, use either diagonal, off_diagonal, non_local or
+    // full_rows
+    for (Eigen::Index i = 0; i < map_i.size(); ++i)
+    {
+      auto i_index = map_i[i];
+      const auto I = primary_dim_map(i_index, index_map0);
+      // Full rows are stored separately
+      if (has_full_rows && _full_rows.find(I) != full_rows_end)
+      {
+        // Do nothing
+        continue;
+      }
+
+      if (I < (la_index_t)local_size0)
+      {
+        // Store local entry in diagonal or off-diagonal block
+        for (Eigen::Index j = 0; j < map_j.size(); ++j)
+        {
+          auto j_index = map_j[j];
+          const auto J = primary_codim_map(j_index, index_map1);
+          if ((la_index_t)(bs1 * local_range1[0]) <= J
+              and J < (la_index_t)(bs1 * local_range1[1]))
+          {
+            assert(I < (la_index_t)_diagonal.size());
+            _diagonal[I].insert(J);
+          }
+          else
+          {
+            assert(I < (la_index_t)_off_diagonal.size());
+            _off_diagonal[I].insert(J);
+          }
+        }
+      }
+      else
+      {
+        // Store non-local entry (communicated later during apply())
+        for (Eigen::Index j = 0; j < map_j.size(); ++j)
+        {
+          auto j_index = map_j[j];
+          const auto J = primary_codim_map(j_index, index_map1);
+          // Store indices
+          _non_local.push_back(I);
+          _non_local.push_back(J);
+        }
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void SparsityPattern::insert_full_rows_local(
     const std::vector<std::size_t>& rows)
 {
@@ -412,11 +516,9 @@ std::size_t SparsityPattern::num_nonzeros() const
   return nz;
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::num_nonzeros_diagonal(
-    std::vector<std::size_t>& num_nonzeros) const
+EigenArrayXi32 SparsityPattern::num_nonzeros_diagonal() const
 {
-  // Resize vector
-  num_nonzeros.resize(_diagonal.size());
+  EigenArrayXi32 num_nonzeros(_diagonal.size());
 
   // Get number of nonzeros per generalised row
   for (auto slice = _diagonal.begin(); slice != _diagonal.end(); ++slice)
@@ -439,17 +541,20 @@ void SparsityPattern::num_nonzeros_diagonal(
       if (row < local_size0)
         num_nonzeros[row] = ncols;
   }
+
+  return num_nonzeros;
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::num_nonzeros_off_diagonal(
-    std::vector<std::size_t>& num_nonzeros) const
+EigenArrayXi32 SparsityPattern::num_nonzeros_off_diagonal() const
 {
-  // Resize vector
-  num_nonzeros.resize(_off_diagonal.size());
+  EigenArrayXi32 num_nonzeros(_off_diagonal.size());
 
   // Return if there is no off-diagonal
   if (_off_diagonal.empty())
-    return;
+  {
+    num_nonzeros.setZero();
+    return num_nonzeros;
+  }
 
   // Compute number of nonzeros per generalised row
   for (auto slice = _off_diagonal.begin(); slice != _off_diagonal.end();
@@ -478,18 +583,16 @@ void SparsityPattern::num_nonzeros_off_diagonal(
   }
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::num_local_nonzeros(
-    std::vector<std::size_t>& num_nonzeros) const
+EigenArrayXi32 SparsityPattern::num_local_nonzeros() const
 {
-  num_nonzeros_diagonal(num_nonzeros);
+  EigenArrayXi32 num_nonzeros = num_nonzeros_diagonal();
   if (!_off_diagonal.empty())
   {
-    std::vector<std::size_t> tmp;
-    num_nonzeros_off_diagonal(tmp);
-    assert(num_nonzeros.size() == tmp.size());
-    std::transform(num_nonzeros.begin(), num_nonzeros.end(), tmp.begin(),
-                   num_nonzeros.begin(), std::plus<std::size_t>());
+    EigenArrayXi32 num_nonzeros_off_diag = num_nonzeros_off_diagonal();
+    num_nonzeros += num_nonzeros_off_diag;
   }
+
+  return num_nonzeros;
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::apply()

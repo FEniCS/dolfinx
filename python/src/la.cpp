@@ -113,39 +113,13 @@ void la(py::module& m)
       .def("str", &dolfin::la::SparsityPattern::str)
       .def("num_nonzeros", &dolfin::la::SparsityPattern::num_nonzeros)
       .def("num_nonzeros_diagonal",
-           [](const dolfin::la::SparsityPattern& instance) {
-             std::vector<std::size_t> num_nonzeros;
-             instance.num_nonzeros_diagonal(num_nonzeros);
-             return py::array_t<std::size_t>(num_nonzeros.size(),
-                                             num_nonzeros.data());
-           })
+           &dolfin::la::SparsityPattern::num_nonzeros_diagonal)
       .def("num_nonzeros_off_diagonal",
-           [](const dolfin::la::SparsityPattern& instance) {
-             std::vector<std::size_t> num_nonzeros;
-             instance.num_nonzeros_off_diagonal(num_nonzeros);
-             return py::array_t<std::size_t>(num_nonzeros.size(),
-                                             num_nonzeros.data());
-           })
+           &dolfin::la::SparsityPattern::num_nonzeros_off_diagonal)
       .def("num_local_nonzeros",
-           [](const dolfin::la::SparsityPattern& instance) {
-             std::vector<std::size_t> num_nonzeros;
-             instance.num_local_nonzeros(num_nonzeros);
-             return py::array_t<std::size_t>(num_nonzeros.size(),
-                                             num_nonzeros.data());
-           })
+           &dolfin::la::SparsityPattern::num_local_nonzeros)
+      .def("insert_local", &dolfin::la::SparsityPattern::insert_local)
       // FIXME: Switch EigenMap in DOLFIN interface when SWIG is dropped
-      .def(
-          "insert_local",
-          [](dolfin::la::SparsityPattern& self,
-             std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2>
-                 entries) {
-            std::array<dolfin::common::ArrayView<const dolfin::la_index_t>, 2> e
-                = {dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[0].size(), &entries[0][0]),
-                   dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[1].size(), &entries[1][0])};
-            self.insert_local(e);
-          })
       .def(
           "insert_global",
           [](dolfin::la::SparsityPattern& self,
