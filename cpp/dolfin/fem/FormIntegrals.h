@@ -9,6 +9,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <Eigen/Dense>
 
 struct ufc_cell_integral;
 struct ufc_exterior_facet_integral;
@@ -99,6 +100,10 @@ private:
   std::vector<
       std::function<void(double*, const double* const*, const double*, int)>>
       _cell_tabulate_tensor;
+
+  // Storage for enabled coefficients, to match the functions
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    _enabled_coefficients;
 
   // Exterior facet integrals
   std::vector<std::shared_ptr<ufc_exterior_facet_integral>>

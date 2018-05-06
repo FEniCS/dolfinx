@@ -34,9 +34,18 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
     }
   }
 
+  _enabled_coefficients.resize(_cell_integrals.size(),
+                               ufc_form.num_coefficients);
+
   // Experimental function pointers for tabulate_tensor cell integral
-  for (auto& ci : _cell_integrals)
+  for (unsigned int i = 0; i != _cell_integrals.size(); ++i)
+  {
+    const auto ci = _cell_integrals[i];
     _cell_tabulate_tensor.push_back(ci->tabulate_tensor);
+    std::copy(ci->enabled_coefficients,
+              ci->enabled_coefficients + ufc_form.num_coefficients,
+              _enabled_coefficients.row(i).data());
+  }
 
   // Exterior facet integrals
   ufc_exterior_facet_integral* _default_exterior_facet_integral
