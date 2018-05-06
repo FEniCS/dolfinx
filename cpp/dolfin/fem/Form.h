@@ -81,6 +81,15 @@ public:
        const std::vector<std::shared_ptr<const function::FunctionSpace>>
            function_spaces);
 
+  /// Create form (no UFC integrals)
+  ///
+  /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
+  ///         Vector of function spaces.
+  /// @param[in] coordinate_map
+  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
+           function_spaces,
+       std::shared_ptr<const fem::CoordinateMapping> coordinate_map);
+
   /// Destructor
   virtual ~Form();
 
@@ -239,6 +248,9 @@ public:
   /// Access coefficients (const)
   const FormCoefficients& coeffs() const { return _coefficients; }
 
+  /// Access form integrals (non-const)
+  FormIntegrals& integrals() { return _integrals; }
+
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
 
@@ -278,15 +290,18 @@ private:
   std::shared_ptr<const mesh::MeshFunction<std::size_t>> dP;
 
   // Coordinate_mapping
-  std::shared_ptr<fem::CoordinateMapping> _coord_mapping;
+  std::shared_ptr<const fem::CoordinateMapping> _coord_mapping;
 
   std::function<int(const char*)> _coefficient_index_map;
   std::function<const char*(int)> _coefficient_name_map;
 
+  // Initialise temporary storage for coefficient values
   void initialise_w();
+
+  // Temporary storage for coefficient values
   std::vector<double> _w;
   std::vector<double*> _wpointer;
-  //  mutable UFC _ufc;
+  std::vector<double*> _macro_wpointer;
 };
 } // namespace fem
 } // namespace dolfin

@@ -40,6 +40,9 @@ public:
   /// the required integrals
   FormIntegrals(const ufc_form& ufc_form);
 
+  /// Initialise the FormIntegrals as empty
+  FormIntegrals() {}
+
   /// Default cell integral
   std::shared_ptr<const ufc_cell_integral> cell_integral() const;
 

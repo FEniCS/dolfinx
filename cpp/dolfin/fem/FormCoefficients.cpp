@@ -30,6 +30,13 @@ FormCoefficients::FormCoefficients(const ufc_form& ufc_form)
   }
 }
 //-----------------------------------------------------------------------------
+FormCoefficients::FormCoefficients(
+    std::vector<fem::FiniteElement>& coefficient_elements)
+    : _elements(coefficient_elements),
+      _coefficients(coefficient_elements.size())
+{
+}
+//-----------------------------------------------------------------------------
 std::size_t FormCoefficients::size() const { return _coefficients.size(); }
 //-----------------------------------------------------------------------------
 void FormCoefficients::set(

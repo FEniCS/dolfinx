@@ -64,6 +64,19 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
           ufc_form->create_coordinate_mapping()));
 }
 //-----------------------------------------------------------------------------
+Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
+               function_spaces,
+           std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping)
+    : _coefficients({}), _function_spaces(function_spaces),
+      _coord_mapping(coordinate_mapping)
+{
+  // Set _mesh from function::FunctionSpace and check they are the same
+  if (!function_spaces.empty())
+    _mesh = function_spaces[0]->mesh();
+  for (auto& f : function_spaces)
+    assert(_mesh == f->mesh());
+}
+//-----------------------------------------------------------------------------
 Form::~Form()
 {
   // Do nothing
@@ -239,8 +252,8 @@ void Form::tabulate_tensor(
     double* A, mesh::Cell cell,
     Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
 {
-  // Switch integral based on domain from dx MeshFunction
 
+  // Switch integral based on domain from dx MeshFunction
   std::uint32_t idx = 0;
   if (dx)
   {
@@ -273,9 +286,13 @@ void Form::initialise_w()
     const auto& element = _coefficients.element(i);
     n.push_back(n.back() + element.space_dimension());
   }
-  _w.resize(n.back());
+  _w.resize(n.back() * 2);
   _wpointer.resize(num_coeffs);
+  _macro_wpointer.resize(num_coeffs);
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
+  {
     _wpointer[i] = _w.data() + n[i];
+    _macro_wpointer[i] = _w.data() + 2 * n[i];
+  }
 }
 //-----------------------------------------------------------------------------
