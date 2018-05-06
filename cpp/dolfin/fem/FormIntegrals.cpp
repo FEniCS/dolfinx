@@ -141,6 +141,11 @@ FormIntegrals::cell_tabulate_tensor(int i) const
   return _cell_tabulate_tensor[i];
 }
 //-----------------------------------------------------------------------------
+const bool* FormIntegrals::cell_enabled_coefficients(int i) const
+{
+  return _enabled_coefficients.row(i).data();
+}
+//-----------------------------------------------------------------------------
 void FormIntegrals::set_cell_tabulate_tensor(
     int i, void (*fn)(double*, const double* const*, const double*, int))
 {

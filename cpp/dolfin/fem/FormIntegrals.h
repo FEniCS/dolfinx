@@ -6,10 +6,10 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <functional>
 #include <memory>
 #include <vector>
-#include <Eigen/Dense>
 
 struct ufc_cell_integral;
 struct ufc_exterior_facet_integral;
@@ -49,6 +49,8 @@ public:
   /// Get the function for 'tabulate_tensor' for cell integral i
   const std::function<void(double*, const double* const*, const double*, int)>&
   cell_tabulate_tensor(int i) const;
+
+  const bool* cell_enabled_coefficients(int i) const;
 
   /// Set the function for 'tabulate_tensor' for cell integral i
   void set_cell_tabulate_tensor(int i, void (*fn)(double*, const double* const*,
@@ -103,7 +105,7 @@ private:
 
   // Storage for enabled coefficients, to match the functions
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-    _enabled_coefficients;
+      _enabled_coefficients;
 
   // Exterior facet integrals
   std::vector<std::shared_ptr<ufc_exterior_facet_integral>>

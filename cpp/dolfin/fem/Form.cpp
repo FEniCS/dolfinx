@@ -240,22 +240,19 @@ void Form::tabulate_tensor(
     Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
 {
   // Switch integral based on domain from dx MeshFunction
-  std::shared_ptr<const ufc_cell_integral> integral;
 
   std::uint32_t idx = 0;
-  if (!dx)
-    integral = _integrals.cell_integral();
-  else
+  if (dx)
   {
     // FIXME: range checks on cell and idx
     idx = (*dx)[cell];
-    integral = _integrals.cell_integral(idx);
   }
 
+  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
   // Restrict coefficients to cell
   for (std::size_t i = 0; i < _coefficients.size(); ++i)
   {
-    if (!integral->enabled_coefficients[i])
+    if (!enabled_coefficients[i])
       continue;
     const auto coefficient = _coefficients.get(i);
     const auto& element = _coefficients.element(i);
