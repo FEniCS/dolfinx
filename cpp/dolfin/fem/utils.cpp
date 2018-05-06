@@ -83,6 +83,7 @@ void fem::init_nest(la::PETScMatrix& A,
   MatSetType(A.mat(), MATNEST);
   MatNestSetSubMats(A.mat(), petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
                     NULL, petsc_mats.data());
+  MatSetUp(A.mat());
 }
 //-----------------------------------------------------------------------------
 void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)

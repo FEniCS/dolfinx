@@ -76,20 +76,18 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   // Assemble matrix
   if (is_matnest)
   {
-    std::cout << "Extract MatNest" << std::endl;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         // Get submatrix
         Mat subA;
-        std::cout << "Get block: " << i << ", " << j << std::endl;
         MatNestGetSubMat(A.mat(), i, j, &subA);
         if (_a[i][j])
         {
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], _bcs);
-          mat.apply(la::PETScMatrix::AssemblyType::FINAL);
+          //mat.apply(la::PETScMatrix::AssemblyType::FINAL);
         }
         else
         {
@@ -366,7 +364,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
 
   std::cout << "Begin assembly" << std::endl;
-  // A.apply(la::PETScMatrix::AssemblyType::FINAL);
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
   std::cout << "End  assembly" << std::endl;
 }
 //-----------------------------------------------------------------------------
@@ -428,11 +426,13 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         EigenVectorXd _b_array(map_size * bs);
         _b_array.setZero();
         this->assemble(_b_array, *_l[i]);
-        std::vector<PetscInt> index(map_size * bs);
-        std::iota(index.begin(), index.end(), 0);
-        b.add_local(_b_array.data(), map_size * bs, index.data());
 
         la::PETScVector vec(sub_b);
+        std::vector<PetscInt> index(map_size * bs);
+        std::iota(index.begin(), index.end(), 0);
+
+        vec.add_local(_b_array.data(), map_size * bs, index.data());
+
         for (std::size_t j = 0; j < _a[i].size(); ++j)
           apply_bc(vec, *_a[i][j], _bcs);
         set_bc(vec, *_l[i], _bcs);
