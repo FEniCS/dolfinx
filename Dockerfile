@@ -103,7 +103,7 @@ ENV SLEPC_DIR=/usr/local/slepc-32 \
 # Install Python packages (via pip)
 ARG PETSC4PY_VERSION=3.9.1
 ARG SLEPC4PY_VERSION=3.9.0
-RUN pip3 install --no-cache-dir mpi4py numpy pkgconfig scipy && \
+RUN pip3 install --no-cache-dir mpi4py numpy scipy && \
     pip3 install --no-cache-dir https://bitbucket.org/petsc/petsc4py/downloads/petsc4py-${PETSC4PY_VERSION}.tar.gz && \
     pip3 install --no-cache-dir https://bitbucket.org/slepc/slepc4py/downloads/slepc4py-${SLEPC4PY_VERSION}.tar.gz
 
