@@ -63,9 +63,9 @@ RUN apt-get -qq update && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
     ./configure \
-    #--COPTFLAGS="-O2" \
-    #--CXXOPTFLAGS="-O2" \
-    #--FOPTFLAGS="-O2" \
+    --COPTFLAGS="-O2 -g" \
+    --CXXOPTFLAGS="-O2 -g" \
+    --FOPTFLAGS="-O2 -g" \
     #--with-debugging=no \
     --with-debugging=yes \
     --download-blacs \
