@@ -1,10 +1,9 @@
-"""Unit tests for assembly"""
-
 # Copyright (C) 2018 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for assembly"""
 
 import math
 import os
@@ -72,6 +71,9 @@ def test_matrix_assembly_block():
         mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
     assert A1.mat().getType() == "nest"
 
+    bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
+    assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
+
     try:
         Anorm1 = 0.0
         nrows, ncols = A1.mat().getNestSize()
@@ -88,10 +90,7 @@ def test_matrix_assembly_block():
         #         Anorm1 += norm * norm
 
         Anorm1 = math.sqrt(Anorm1)
-        bnorm1 = math.sqrt(
-            sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
         assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
-        assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
 
     except AttributeError:
         print("Recent petsc4py(-dev) required to get MatNest sub-matrix.")
