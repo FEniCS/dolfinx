@@ -36,4 +36,4 @@ def test_read_write_p2_function(tempdir):
 
     filename = os.path.join(tempdir, "tri6_function.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.write(F, XDMFFile.Encoding.HDF5)
+        xdmf.write_vertex_values(F, XDMFFile.Encoding.HDF5)

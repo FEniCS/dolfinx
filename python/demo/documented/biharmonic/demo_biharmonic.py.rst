@@ -188,7 +188,7 @@ the screen. ::
 
     # Save solution to file
     with XDMFFile(mesh.mpi_comm(), "biharmonic.xdmf") as file:
-        file.write(u)
+        file.write_vertex_values(u)
 
     # Plot solution
     plot(u)

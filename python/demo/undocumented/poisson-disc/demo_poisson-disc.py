@@ -91,6 +91,6 @@ def compute_rates():
                 if MPI.size(MPI.comm_world) > 1 and encoding == XDMFFile.Encoding.ASCII:
                     print("XDMF file output not supported in parallel without HDF5")
                 else:
-                    ufile.write(u, encoding)
+                    ufile.write_vertex_values(u, encoding)
 
 compute_rates()

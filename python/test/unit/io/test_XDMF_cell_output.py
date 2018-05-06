@@ -26,7 +26,7 @@ def test_xdmf_cell_scalar_ghost(cd_tempdir):
     # F.interpolate(E)
 
     # with XDMFFile(mesh.mpi_comm(), "dg0.xdmf") as xdmf:
-    #    xdmf.write(F)
+    #    xdmf.write_vertex_values(F)
 
     # with HDF5File(mesh.mpi_comm(), "dg0.h5", "r") as hdf:
     #     vec = PETScVector(mesh.mpi_comm())

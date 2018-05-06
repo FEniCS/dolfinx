@@ -165,7 +165,7 @@ def test_save_1d_scalar(tempdir, encoding):
     u.vector()[:] = 1.0
 
     with XDMFFile(mesh.mpi_comm(), filename2) as file:
-        file.write(u, encoding)
+        file.write_vertex_values(u, encoding)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -191,10 +191,10 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
     u_out.interpolate(Expression("x[0]", degree=1))
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write_checkpoint(u_out, "u_out", 0, encoding)
+        file.write(u_out, "u_out", 0, encoding)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        u_in = file.read_checkpoint(V, "u_out", 0)
+        u_in = file.read_function(V, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
     assert all([np.isclose(x, 0.0) for x in result.get_local()])
@@ -228,10 +228,10 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
         u_out.interpolate(Expression(("x[0]*x[1]", "x[0]", "x[2]"), degree=2))
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write_checkpoint(u_out, "u_out", 0, encoding)
+        file.write(u_out, "u_out", 0, encoding)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        u_in = file.read_checkpoint(V, "u_out", 0)
+        u_in = file.read_function(V, "u_out", 0)
 
     result = u_in.vector() - u_out.vector()
     assert all([np.isclose(x, 0.0) for x in result.get_local()])
@@ -254,11 +254,11 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         for i, p in enumerate(times):
             u_out[i] = interpolate(Expression("x[0]*p", p=p, degree=1), V)
-            file.write_checkpoint(u_out[i], "u_out", p, encoding)
+            file.write(u_out[i], "u_out", p, encoding)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         for i, p in enumerate(times):
-            u_in[i] = file.read_checkpoint(V, "u_out", i)
+            u_in[i] = file.read_function(V, "u_out", i)
 
     for i, p in enumerate(times):
         result = u_in[i].vector() - u_out[i].vector()
@@ -266,7 +266,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     # test reading last
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        u_in_last = file.read_checkpoint(V, "u_out", -1)
+        u_in_last = file.read_function(V, "u_out", -1)
 
     result = u_out[-1].vector() - u_in_last.vector()
     assert all([np.isclose(x, 0.0) for x in result.get_local()])
@@ -284,7 +284,7 @@ def test_save_2d_scalar(tempdir, encoding):
     u.vector()[:] = 1.0
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write(u, encoding)
+        file.write_vertex_values(u, encoding)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -298,7 +298,7 @@ def test_save_3d_scalar(tempdir, encoding):
     u.vector()[:] = 1.0
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write(u, encoding)
+        file.write_vertex_values(u, encoding)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -313,7 +313,7 @@ def test_save_2d_vector(tempdir, encoding):
     u.interpolate(c)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write(u, encoding)
+        file.write_vertex_values(u, encoding)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -327,7 +327,7 @@ def test_save_3d_vector(tempdir, encoding):
     u.interpolate(c)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write(u, encoding)
+        file.write_vertex_values(u, encoding)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -340,13 +340,13 @@ def test_save_3d_vector_series(tempdir, encoding):
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         u.vector()[:] = 1.0
-        file.write(u, 0.1, encoding)
+        file.write_vertex_values(u, 0.1, encoding)
 
         u.vector()[:] = 2.0
-        file.write(u, 0.2, encoding)
+        file.write_vertex_values(u, 0.2, encoding)
 
         u.vector()[:] = 3.0
-        file.write(u, 0.3, encoding)
+        file.write_vertex_values(u, 0.3, encoding)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -359,7 +359,7 @@ def test_save_2d_tensor(tempdir, encoding):
     u.vector()[:] = 1.0
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write(u, encoding)
+        file.write_vertex_values(u, encoding)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -372,7 +372,7 @@ def test_save_3d_tensor(tempdir, encoding):
     u.vector()[:] = 1.0
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
-        file.write(u, encoding)
+        file.write_vertex_values(u, encoding)
 
 
 @pytest.mark.parametrize("encoding", encodings)
