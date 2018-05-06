@@ -102,10 +102,9 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
     }
   }
 
-  const std::array<common::ArrayView<const dolfin::la_index_t>, 2> entries = {
-      {common::ArrayView<const dolfin::la_index_t>(rows.size(), rows.data()),
-       common::ArrayView<const dolfin::la_index_t>(cols.size(), cols.data())}};
-  pattern.insert_global(entries);
+  Eigen::Map<const EigenArrayXlaindex> _rows(rows.data(), rows.size());
+  Eigen::Map<const EigenArrayXlaindex> _cols(cols.data(), cols.size());
+  pattern.insert_global(_rows, _cols);
   pattern.apply();
 
   // Initialise matrix

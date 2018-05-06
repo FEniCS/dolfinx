@@ -119,31 +119,9 @@ void la(py::module& m)
       .def("num_local_nonzeros",
            &dolfin::la::SparsityPattern::num_local_nonzeros)
       .def("insert_local", &dolfin::la::SparsityPattern::insert_local)
-      // FIXME: Switch EigenMap in DOLFIN interface when SWIG is dropped
-      .def(
-          "insert_global",
-          [](dolfin::la::SparsityPattern& self,
-             std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2>
-                 entries) {
-            std::array<dolfin::common::ArrayView<const dolfin::la_index_t>, 2> e
-                = {dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[0].size(), &entries[0][0]),
-                   dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[1].size(), &entries[1][0])};
-            self.insert_global(e);
-          })
-      .def(
-          "insert_local_global",
-          [](dolfin::la::SparsityPattern& self,
-             std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2>
-                 entries) {
-            std::array<dolfin::common::ArrayView<const dolfin::la_index_t>, 2> e
-                = {dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[0].size(), &entries[0][0]),
-                   dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[1].size(), &entries[1][0])};
-            self.insert_local_global(e);
-          });
+      .def("insert_global", &dolfin::la::SparsityPattern::insert_global)
+      .def("insert_local_global",
+           &dolfin::la::SparsityPattern::insert_local_global);
 
   // dolfin::GenericTensor
   /*

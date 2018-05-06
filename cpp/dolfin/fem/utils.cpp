@@ -184,8 +184,7 @@ void fem::init_monolithic(la::PETScMatrix& A,
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     auto map = a[i][0]->function_space(0)->dofmap()->index_map();
-    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
-         ++k)
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
     {
       auto index_k = map->local_to_global(k);
       std::size_t index = get_global_index(index_maps[0], i, index_k);
@@ -195,8 +194,7 @@ void fem::init_monolithic(la::PETScMatrix& A,
   for (std::size_t i = 0; i < a[0].size(); ++i)
   {
     auto map = a[0][i]->function_space(1)->dofmap()->index_map();
-    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
-         ++k)
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
     {
       auto index_k = map->local_to_global(k);
       std::size_t index = get_global_index(index_maps[1], i, index_k);
@@ -320,7 +318,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 
   // Tabulate indices of dense rows
   const std::size_t primary_dim = pattern.primary_dim();
-  std::vector<std::size_t> global_dofs
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> global_dofs
       = dofmaps[primary_dim]->tabulate_global_dofs();
   if (global_dofs.size() > 0)
   {
@@ -332,9 +330,9 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
     // Set zeros in dense rows in order of increasing column index
     const double block = 0.0;
     dolfin::la_index_t IJ[2];
-    for (std::size_t i : global_dofs)
+    for (Eigen::Index i = 0; i < global_dofs.size(); ++i)
     {
-      const std::int64_t I = index_map_0.local_to_global_index(i);
+      const std::int64_t I = index_map_0.local_to_global_index(global_dofs[i]);
       if (I >= row_range[0] && I < row_range[1])
       {
         IJ[primary_dim] = I;
@@ -480,7 +478,8 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
       // if (MPI::rank(MPI_COMM_WORLD) == 1)
-      //   std::cout << "   p off: " << maps[j]->_all_ranges[owner] << std::endl;
+      //   std::cout << "   p off: " << maps[j]->_all_ranges[owner] <<
+      //   std::endl;
       if (j != field)
       {
         offset += maps[j]->_all_ranges[owner];

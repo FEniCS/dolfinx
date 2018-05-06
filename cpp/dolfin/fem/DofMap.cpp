@@ -179,12 +179,18 @@ void DofMap::tabulate_entity_dofs(std::vector<int>& element_dofs,
                                     cell_entity_index);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> DofMap::tabulate_global_dofs() const
+Eigen::Array<std::size_t, Eigen::Dynamic, 1>
+DofMap::tabulate_global_dofs() const
 {
   assert(_global_nodes.empty() or block_size() == 1);
-  return std::vector<std::size_t>(_global_nodes.cbegin(), _global_nodes.cend());
-}
 
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> dofs(_global_nodes.size());
+  std::size_t i = 0;
+  for (auto d : _global_nodes)
+    dofs[i++] = d;
+
+  return dofs;
+}
 //-----------------------------------------------------------------------------
 std::unique_ptr<GenericDofMap>
 DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,

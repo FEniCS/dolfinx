@@ -52,7 +52,7 @@ la::SparsityPattern SparsityPatternBuilder::build(
   //       memory suboptimal (for restricted Lagrange multipliers) but very
   //       fast and certainly much better than quadratic scaling of usual
   //       insertion below
-  std::vector<std::size_t> global_dofs0
+  const Eigen::Array<std::size_t, Eigen::Dynamic, 1> global_dofs0
       = dofmaps[pattern.primary_dim()]->tabulate_global_dofs();
   pattern.insert_full_rows_local(global_dofs0);
 
@@ -75,49 +75,48 @@ la::SparsityPattern SparsityPatternBuilder::build(
   const std::size_t D = mesh.topology().dim();
   if (vertices)
   {
-    mesh.init(0);
-    mesh.init(0, D);
+    std::runtime_error("Sparsity pattern building over vertices not working.");
+    // mesh.init(0);
+    // mesh.init(0, D);
 
-    std::array<std::vector<dolfin::la_index_t>, 2> global_dofs;
-    std::array<std::vector<int>, 2> local_to_local_dofs;
+    // std::array<std::vector<dolfin::la_index_t>, 2> global_dofs;
+    // std::array<std::vector<int>, 2> local_to_local_dofs;
 
-    // Resize local dof map vector
-    for (std::size_t i = 0; i < 2; ++i)
-    {
-      global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
-      local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
-    }
+    // // Resize local dof map vector
+    // for (std::size_t i = 0; i < 2; ++i)
+    // {
+    //   global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
+    //   local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
+    // }
 
-    for (auto& vert : mesh::MeshRange<mesh::Vertex>(mesh))
-    {
-      std::runtime_error(
-          "Sparsity pattern building over vertices not working.");
-      //   // Get mesh cell to which mesh vertex belongs (pick first)
-      //   mesh::Cell mesh_cell(mesh, vert.entities(D)[0]);
+    // for (auto& vert : mesh::MeshRange<mesh::Vertex>(mesh))
+    // {
+    //   // Get mesh cell to which mesh vertex belongs (pick first)
+    //   mesh::Cell mesh_cell(mesh, vert.entities(D)[0]);
 
-      //   // Check that cell is not a ghost
-      //   assert(!mesh_cell.is_ghost());
+    //   // Check that cell is not a ghost
+    //   assert(!mesh_cell.is_ghost());
 
-      //   // Get local index of vertex with respect to the cell
-      //   const std::size_t local_vertex = mesh_cell.index(vert);
-      //   for (std::size_t i = 0; i < 2; ++i)
-      //   {
-      //     auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
-      //     dofs[i].set(dmap.size(), dmap.data());
-      //     dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0,
-      //                                      local_vertex);
+    //   // Get local index of vertex with respect to the cell
+    //   const std::size_t local_vertex = mesh_cell.index(vert);
+    //   for (std::size_t i = 0; i < 2; ++i)
+    //   {
+    //     auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
+    //     dofs[i].set(dmap.size(), dmap.data());
+    //     dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0,
+    //                                      local_vertex);
 
-      //     // Copy cell dofs to local dofs and tabulated values to
-      //     for (std::size_t j = 0; j < local_to_local_dofs[i].size(); ++j)
-      //       global_dofs[i][j] = dofs[i][local_to_local_dofs[i][j]];
-      //   }
+    //     // Copy cell dofs to local dofs and tabulated values to
+    //     for (std::size_t j = 0; j < local_to_local_dofs[i].size(); ++j)
+    //       global_dofs[i][j] = dofs[i][local_to_local_dofs[i][j]];
+    //   }
 
-      //   // Insert non-zeroes in sparsity pattern
-      //   std::array<common::ArrayView<const dolfin::la_index_t>, 2>
-      //   global_dofs_p; for (std::size_t i = 0; i < 2; ++i)
-      //     global_dofs_p[i].set(global_dofs[i]);
-      //   pattern.insert_local(global_dofs_p);
-    }
+    //   // Insert non-zeroes in sparsity pattern
+    //   std::array<common::ArrayView<const dolfin::la_index_t>, 2> global_dofs_p;
+    //   for (std::size_t i = 0; i < 2; ++i)
+    //     global_dofs_p[i].set(global_dofs[i]);
+    //   pattern.insert_local(global_dofs_p);
+    // }
   }
 
   // Note: no need to iterate over exterior facets since those dofs
@@ -203,13 +202,14 @@ la::SparsityPattern SparsityPatternBuilder::build(
     std::vector<dolfin::la_index_t> indices(
         bs * (diagonal_range - primary_range[0]));
     std::iota(indices.begin(), indices.end(), bs * primary_range[0]);
-    const std::array<common::ArrayView<const dolfin::la_index_t>, 2> diags
-        = {{common::ArrayView<const dolfin::la_index_t>(indices.size(),
-                                                        indices.data()),
-            common::ArrayView<const dolfin::la_index_t>(indices.size(),
-                                                        indices.data())}};
 
-    pattern.insert_global(diags);
+    // const std::array<common::ArrayView<const dolfin::la_index_t>, 2> diags
+    //     = {{common::ArrayView<const dolfin::la_index_t>(indices.size(),
+    //                                                     indices.data()),
+    //         common::ArrayView<const dolfin::la_index_t>(indices.size(),
+    //                                                     indices.data())}};
+    Eigen::Map<const EigenArrayXlaindex> rows(indices.data(), indices.size());
+    pattern.insert_global(rows, rows);
   }
 
   // Finalize sparsity pattern (communicate off-process terms)

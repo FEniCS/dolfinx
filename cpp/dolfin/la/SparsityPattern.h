@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
@@ -70,23 +69,26 @@ public:
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
   /// Insert non-zero entries using global indices
-  void insert_global(
-      const std::array<common::ArrayView<const la_index_t>, 2>& entries);
+  void insert_global(const Eigen::Ref<const EigenArrayXlaindex> rows,
+                     const Eigen::Ref<const EigenArrayXlaindex> cols);
 
   /// Insert non-zero entries using local (process-wise) indices
   void insert_local(const Eigen::Ref<const EigenArrayXlaindex> rows,
                     const Eigen::Ref<const EigenArrayXlaindex> cols);
 
+  // FIXME: Remove?
   /// Insert non-zero entries using local (process-wise) indices for the
   /// primary dimension and global indices for the co-dimension
-  void insert_local_global(
-      const std::array<common::ArrayView<const la_index_t>, 2>& entries);
+  void insert_local_global(const Eigen::Ref<const EigenArrayXlaindex> rows,
+                           const Eigen::Ref<const EigenArrayXlaindex> cols);
 
   /// Insert full rows (or columns, according to primary dimension)
   /// using local (process-wise) indices. This must be called before any
   /// other sparse insertion occurs to avoid quadratic complexity of
   /// dense rows insertion
-  void insert_full_rows_local(const std::vector<std::size_t>& rows);
+  void insert_full_rows_local(
+      const Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>>
+          rows);
 
   /// Return primary dimension (e.g., 0=row partition, 1=column
   /// partition)
@@ -145,13 +147,6 @@ private:
   //
   // The primary dim entries must be local
   // The primary_codim entries must be global
-  void insert_entries(
-      const std::array<common::ArrayView<const la_index_t>, 2>& entries,
-      const std::function<la_index_t(const la_index_t,
-                                     const common::IndexMap&)>& primary_dim_map,
-      const std::function<la_index_t(
-          const la_index_t, const common::IndexMap&)>& primary_codim_map);
-
   void insert_entries(
       const Eigen::Ref<const EigenArrayXi32> rows,
       const Eigen::Ref<const EigenArrayXi32> cols,

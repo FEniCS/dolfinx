@@ -203,7 +203,8 @@ SparsityPattern::SparsityPattern(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
-    const std::array<common::ArrayView<const la_index_t>, 2>& entries)
+    const Eigen::Ref<const EigenArrayXlaindex> rows,
+    const Eigen::Ref<const EigenArrayXlaindex> cols)
 {
   // The primary_dim is global and must be mapped to local
   const auto primary_dim_map
@@ -220,11 +221,12 @@ void SparsityPattern::insert_global(
       [](const la_index_t j_index,
          const common::IndexMap& index_map1) -> la_index_t { return j_index; };
 
-  insert_entries(entries, primary_dim_map, primary_codim_map);
+  insert_entries(rows, cols, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
-void SparsityPattern::insert_local(const Eigen::Ref<const EigenArrayXlaindex> rows,
-                                   const Eigen::Ref<const EigenArrayXlaindex> cols)
+void SparsityPattern::insert_local(
+    const Eigen::Ref<const EigenArrayXlaindex> rows,
+    const Eigen::Ref<const EigenArrayXlaindex> cols)
 {
   // The primary_dim is local and stays the same
   const auto primary_dim_map =
@@ -242,10 +244,9 @@ void SparsityPattern::insert_local(const Eigen::Ref<const EigenArrayXlaindex> ro
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local_global(
-    const std::array<common::ArrayView<const la_index_t>, 2>& entries)
+    const Eigen::Ref<const EigenArrayXlaindex> rows,
+    const Eigen::Ref<const EigenArrayXlaindex> cols)
 {
-  assert(entries.size() == 2);
-
   // The primary_dim is local and stays the same
   const auto primary_dim_map =
       [](const la_index_t i_index,
@@ -256,103 +257,7 @@ void SparsityPattern::insert_local_global(
       [](const la_index_t j_index,
          const common::IndexMap& index_map1) -> la_index_t { return j_index; };
 
-  insert_entries(entries, primary_dim_map, primary_codim_map);
-}
-//-----------------------------------------------------------------------------
-void SparsityPattern::insert_entries(
-    const std::array<common::ArrayView<const la_index_t>, 2>& entries,
-    const std::function<la_index_t(const la_index_t, const common::IndexMap&)>&
-        primary_dim_map,
-    const std::function<la_index_t(const la_index_t, const common::IndexMap&)>&
-        primary_codim_map)
-{
-  const std::size_t _primary_dim = primary_dim();
-  assert(_primary_dim < 2);
-  const std::size_t primary_codim = (_primary_dim + 1) % 2;
-  assert(primary_codim < 2);
-
-  common::ArrayView<const la_index_t> map_i = entries[_primary_dim];
-  common::ArrayView<const la_index_t> map_j = entries[primary_codim];
-  const common::IndexMap& index_map0 = *_index_maps[_primary_dim];
-  const common::IndexMap& index_map1 = *_index_maps[primary_codim];
-
-  std::size_t bs0 = index_map0.block_size();
-  const std::size_t local_size0
-      = bs0 * index_map0.size(common::IndexMap::MapSize::OWNED);
-
-  std::size_t bs1 = index_map1.block_size();
-  const auto local_range1 = index_map1.local_range();
-
-  const bool has_full_rows = _full_rows.size() > 0;
-  const auto full_rows_end = _full_rows.end();
-
-  // Programmers' note:
-  // We use the lower case index i/j to denote the indices before calls to
-  // primary_dim_map/primary_codim_map.
-  // We use the  upper case index I/J to denote the indices after mapping
-  // (using primary_dim_map/primary_codim_map) to be inserted into
-  // the SparsityPattern data structure.
-  //
-  // In serial (_mpi_comm.size() == 1) we have the special case
-  // where i == I and j == J.
-
-  // Check local range
-  if (_mpi_comm.size() == 1)
-  {
-    // Sequential mode, do simple insertion if not full row
-    for (const auto& i_index : map_i)
-    {
-      assert(i_index < (la_index_t)_diagonal.size());
-      if (!has_full_rows || _full_rows.find(i_index) == full_rows_end)
-        _diagonal[i_index].insert(map_j.begin(), map_j.end());
-    }
-  }
-  else
-  {
-    // Parallel mode, use either diagonal, off_diagonal, non_local or
-    // full_rows
-    for (const auto& i_index : map_i)
-    {
-      const auto I = primary_dim_map(i_index, index_map0);
-      // Full rows are stored separately
-      if (has_full_rows && _full_rows.find(I) != full_rows_end)
-      {
-        // Do nothing
-        continue;
-      }
-
-      if (I < (la_index_t)local_size0)
-      {
-        // Store local entry in diagonal or off-diagonal block
-        for (const auto& j_index : map_j)
-        {
-          const auto J = primary_codim_map(j_index, index_map1);
-          if ((la_index_t)(bs1 * local_range1[0]) <= J
-              and J < (la_index_t)(bs1 * local_range1[1]))
-          {
-            assert(I < (la_index_t)_diagonal.size());
-            _diagonal[I].insert(J);
-          }
-          else
-          {
-            assert(I < (la_index_t)_off_diagonal.size());
-            _off_diagonal[I].insert(J);
-          }
-        }
-      }
-      else
-      {
-        // Store non-local entry (communicated later during apply())
-        for (const auto& j_index : map_j)
-        {
-          const auto J = primary_codim_map(j_index, index_map1);
-          // Store indices
-          _non_local.push_back(I);
-          _non_local.push_back(J);
-        }
-      }
-    }
-  }
+  insert_entries(rows, cols, primary_dim_map, primary_codim_map);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_entries(
@@ -461,16 +366,18 @@ void SparsityPattern::insert_entries(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_full_rows_local(
-    const std::vector<std::size_t>& rows)
+    const Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>> rows)
 {
   std::size_t bs0 = _index_maps[_primary_dim]->block_size();
   const std::size_t ghosted_size0
       = bs0 * _index_maps[_primary_dim]->size(common::IndexMap::MapSize::ALL);
   _full_rows.set().reserve(rows.size());
-  for (const auto row : rows)
+  // for (const auto row : rows)
+  // {
+  for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
-    assert(row < ghosted_size0);
-    _full_rows.insert(row);
+    assert(rows[i] < ghosted_size0);
+    _full_rows.insert(rows[i]);
   }
 }
 //-----------------------------------------------------------------------------
