@@ -127,3 +127,5 @@ cmake.local
 build/
 
 .vscode
+*.egg-info
+.pytest_cache
