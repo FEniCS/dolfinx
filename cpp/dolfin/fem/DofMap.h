@@ -195,7 +195,7 @@ public:
                             std::size_t cell_entity_index) const;
 
   /// Tabulate globally supported dofs
-  std::vector<std::size_t> tabulate_global_dofs() const;
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> tabulate_global_dofs() const;
 
   /// Extract subdofmap component
   ///
