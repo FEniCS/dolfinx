@@ -137,13 +137,6 @@ public:
   ///         The ownership range.
   std::array<std::int64_t, 2> ownership_range() const;
 
-  /// Return map from nonlocal dofs that appear in local dof map to
-  /// owning process
-  ///
-  /// @return     std::vector<std::uint32_t>
-  ///         The map from non-local dofs.
-  const std::vector<int>& off_process_owner() const;
-
   /// Return map from all shared nodes to the sharing processes (not
   /// including the current process) that share it.
   ///

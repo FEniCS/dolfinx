@@ -94,12 +94,13 @@ void common(py::module& m)
       .def("block_size", &dolfin::common::IndexMap::block_size,
            "Return block size")
       .def("local_range", &dolfin::common::IndexMap::local_range)
-      .def("local_to_global_unowned",
+      .def("ghost_owners", &dolfin::common::IndexMap::ghost_owners)
+      .def("ghosts",
            [](dolfin::common::IndexMap& self) {
              return Eigen::Map<
                  const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
-                 self.local_to_global_unowned().data(),
-                 self.local_to_global_unowned().size());
+                 self.ghosts().data(),
+                 self.ghosts().size());
            },
            py::return_value_policy::reference_internal,
            "Return view into unowned part of local-to-global map");
@@ -108,7 +109,7 @@ void common(py::module& m)
   py::enum_<dolfin::common::IndexMap::MapSize>(index_map, "MapSize")
       .value("ALL", dolfin::common::IndexMap::MapSize::ALL)
       .value("OWNED", dolfin::common::IndexMap::MapSize::OWNED)
-      .value("UNOWNED", dolfin::common::IndexMap::MapSize::UNOWNED)
+      .value("GHOSTS", dolfin::common::IndexMap::MapSize::GHOSTS)
       .value("GLOBAL", dolfin::common::IndexMap::MapSize::GLOBAL);
 
   // dolfin::common::Timer

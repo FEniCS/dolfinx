@@ -138,9 +138,9 @@ void DirichletBC::gather(Map& boundary_values) const
       const std::size_t node = div.quot;
       const int component = div.rem;
 
-      // Get local-to-global for unowned blocks
+      // Get local-to-global for ghost blocks
       const std::vector<std::size_t>& local_to_global
-          = dofmap.index_map()->local_to_global_unowned();
+          = dofmap.index_map()->ghosts();
 
       // Case 1: dof is not owned by this process
       auto it = std::find(local_to_global.begin(), local_to_global.end(), node);

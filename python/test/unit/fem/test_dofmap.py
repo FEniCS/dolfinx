@@ -443,7 +443,7 @@ def test_mpi_dofmap_stats(mesh_factory):
         for process in processes:
             assert process in neighbours
 
-    for owner in V.dofmap().off_process_owner():
+    for owner in V.dofmap().index_map().ghost_owners():
         assert owner in neighbours
 
 @pytest.mark.skip
