@@ -13,7 +13,7 @@ using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
-                   const std::vector<std::size_t>& ghosts,
+                   const Eigen::Map<const EigenArrayXi64> ghosts,
                    std::size_t block_size)
     : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
       _block_size(block_size)
@@ -22,14 +22,14 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
   MPI::all_gather(_mpi_comm.comm(), local_size, _all_ranges);
 
   const std::size_t mpi_size = _mpi_comm.size();
-  for (std::size_t i = 1; i != mpi_size; ++i)
+  for (std::size_t i = 1; i < mpi_size; ++i)
     _all_ranges[i] += _all_ranges[i - 1];
 
   _all_ranges.insert(_all_ranges.begin(), 0);
 
-  for (const auto& node : _ghosts)
+  for (Eigen::Index i = 0; i < _ghosts.size(); ++i)
   {
-    int p = owner(node);
+    int p = owner(_ghosts[i]);
     assert(p != _myrank);
     _ghost_owners.push_back(p);
   }
@@ -59,7 +59,10 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
   }
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& IndexMap::ghosts() const { return _ghosts; }
+const Eigen::Ref<const EigenArrayXi64> IndexMap::ghosts() const
+{
+  return _ghosts;
+}
 //-----------------------------------------------------------------------------
 int IndexMap::owner(std::size_t global_index) const
 {

@@ -93,17 +93,13 @@ void common(py::module& m)
   index_map.def("size", &dolfin::common::IndexMap::size)
       .def("block_size", &dolfin::common::IndexMap::block_size,
            "Return block size")
-      .def("local_range", &dolfin::common::IndexMap::local_range)
-      .def("ghost_owners", &dolfin::common::IndexMap::ghost_owners)
-      .def("ghosts",
-           [](dolfin::common::IndexMap& self) {
-             return Eigen::Map<
-                 const Eigen::Matrix<std::size_t, Eigen::Dynamic, 1>>(
-                 self.ghosts().data(),
-                 self.ghosts().size());
-           },
+      .def("local_range", &dolfin::common::IndexMap::local_range,
+           "Range of indices owned by this map")
+      .def("ghost_owners", &dolfin::common::IndexMap::ghost_owners,
+           "Return owning process for each ghost index")
+      .def("ghosts", &dolfin::common::IndexMap::ghosts,
            py::return_value_policy::reference_internal,
-           "Return view into unowned part of local-to-global map");
+           "Return list of ghost indices");
 
   // dolfin::common::IndexMap enums
   py::enum_<dolfin::common::IndexMap::MapSize>(index_map, "MapSize")

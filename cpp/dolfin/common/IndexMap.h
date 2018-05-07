@@ -9,6 +9,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/types.h>
 #include <vector>
 
 namespace dolfin
@@ -43,7 +44,8 @@ public:
   ///
   /// Collective
   IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
-           const std::vector<std::size_t>& ghosts, std::size_t block_size);
+           const Eigen::Map<const EigenArrayXi64> ghosts,
+           std::size_t block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = default;
@@ -63,7 +65,7 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const std::vector<std::size_t>& ghosts() const;
+  const Eigen::Ref<const EigenArrayXi64> ghosts() const;
 
   /// Get global index for local index i
   std::size_t local_to_global(std::size_t i) const;
@@ -99,7 +101,7 @@ public:
 
 private:
   // Local-to-global map for ghost indices
-  std::vector<std::size_t> _ghosts;
+  EigenArrayXi64 _ghosts;
 
   // Owning process for each ghost index
   std::vector<int> _ghost_owners;
@@ -135,7 +137,7 @@ inline std::size_t IndexMap::local_to_global_index(std::size_t i) const
     const std::div_t div = std::div((i - local_size), _block_size);
     const int component = div.rem;
     const int index = div.quot;
-    assert((std::size_t)index < _ghosts.size());
+    assert(index < _ghosts.size());
     return _block_size * _ghosts[index] + component;
   }
 }

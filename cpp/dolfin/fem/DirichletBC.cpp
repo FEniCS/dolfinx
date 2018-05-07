@@ -139,19 +139,21 @@ void DirichletBC::gather(Map& boundary_values) const
       const int component = div.rem;
 
       // Get local-to-global for ghost blocks
-      const std::vector<std::size_t>& local_to_global
+      const Eigen::Ref<const EigenArrayXi64> local_to_global
           = dofmap.index_map()->ghosts();
 
       // Case 1: dof is not owned by this process
-      auto it = std::find(local_to_global.begin(), local_to_global.end(), node);
-      if (it == local_to_global.end())
+      auto it
+          = std::find(local_to_global.data(),
+                      local_to_global.data() + local_to_global.size(), node);
+      if (it == (local_to_global.data() + local_to_global.size()))
       {
         throw std::runtime_error(
             "Cannot find dof in local_to_global_unowned array");
       }
       else
       {
-        std::size_t pos = std::distance(local_to_global.begin(), it);
+        std::size_t pos = std::distance(local_to_global.data(), it);
         _vec[i].first = owned_size + bs * pos + component;
       }
     }
