@@ -163,9 +163,8 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   // Initialize vector of expansion coefficients
   if (expansion_coefficients.size() != _dofmap->global_dimension())
   {
-    log::dolfin_error("FunctionSpace.cpp",
-                      "interpolate function into function space",
-                      "Wrong size of vector");
+    throw std::runtime_error("Cannot interpolate function into function space. "
+                             "Wrong size of vector");
   }
   expansion_coefficients.zero();
 

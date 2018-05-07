@@ -34,9 +34,9 @@ void Timer::resume()
 {
   if (_task.size() > 0)
   {
-    log::dolfin_error("Timer.cpp", "resume timing",
-                 "Resuming is not well-defined for logging timer. "
-                 "Only non-logging timer can be resumed");
+    throw std::runtime_error(
+        "Resuming is not well-defined for logging timer. Only "
+        "non-logging timer can be resumed");
   }
   _timer.resume();
 }

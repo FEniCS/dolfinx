@@ -37,10 +37,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V) : _function_space(V)
   // Check that we don't have a subspace
   if (!V->component().empty())
   {
-    log::dolfin_error(
-        "Function.cpp", "create function",
-        "Cannot be created from subspace. Consider collapsing the "
-        "function space");
+    throw std::runtime_error("Cannot create Function from subspace. Consider "
+                             "collapsing the function space");
   }
 
   // Initialize vector
@@ -182,10 +180,7 @@ Function Function::sub(std::size_t i) const
 void Function::operator=(const function::FunctionAXPY& axpy)
 {
   if (axpy.pairs().size() == 0)
-  {
-    log::dolfin_error("Function.cpp", "assign function",
-                      "FunctionAXPY is empty.");
-  }
+    throw std::runtime_error("FunctionAXPY is empty.");
 
   // Make an initial assign and scale
   assert(axpy.pairs()[0].second);
@@ -212,8 +207,8 @@ std::shared_ptr<la::PETScVector> Function::vector()
   // Check that this is not a sub function.
   if (_vector->size() != _function_space->dofmap()->global_dimension())
   {
-    log::dolfin_error("Function.cpp", "access vector of degrees of freedom",
-                      "Cannot access a non-const vector from a subfunction");
+    throw std::runtime_error(
+        "Cannot access a non-const vector from a subfunction");
   }
 
   return _vector;
@@ -254,8 +249,8 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
         id = close.first;
       else
       {
-        log::dolfin_error("Function.cpp", "evaluate function at point",
-                          "The point is not inside the domain.");
+        throw std::runtime_error("Cannot evaluate function at point. The point "
+                                 "is not inside the domain.");
       }
     }
 
@@ -433,10 +428,10 @@ EigenRowArrayXXd Function::compute_point_values(const mesh::Mesh& mesh) const
   // Check that the mesh matches. Notice that the hash is only
   // compared if the pointers are not matching.
   if (&mesh != _function_space->mesh().get()
-      && mesh.hash() != _function_space->mesh()->hash())
+      and mesh.hash() != _function_space->mesh()->hash())
   {
-    log::dolfin_error("Function.cpp", "interpolate function values at points",
-                      "Non-matching mesh");
+    throw std::runtime_error(
+        "Cannot interpolate function values at points. Non-matching mesh");
   }
 
   // Local data for interpolation on each cell
@@ -495,10 +490,9 @@ void Function::init_vector()
   // Check that function space is not a subspace (view)
   if (dofmap.is_view())
   {
-    log::dolfin_error(
-        "Function.cpp", "initialize vector of degrees of freedom for function",
-        "Cannot be created from subspace. Consider collapsing the "
-        "function space");
+    std::runtime_error("Cannot initialize vector of degrees of freedom for "
+                       "function. Cannot be created from subspace. Consider "
+                       "collapsing the function space");
   }
 
   // Get index map
@@ -564,10 +558,9 @@ void Function::init_vector()
 
   if (!_vector->empty())
   {
-    log::dolfin_error(
-        "Function.cpp", "initialize vector of degrees of freedom for function",
-        "Cannot re-initialize a non-empty vector. Consider creating a "
-        "new function");
+    std::runtime_error("Cannot initialize vector of degrees of freedom for "
+                       "function. Cannot re-initialize a non-empty vector. "
+                       "Consider creating a new function");
   }
 
   _vector->init(index_map->local_range(), local_to_global, ghosts, bs);

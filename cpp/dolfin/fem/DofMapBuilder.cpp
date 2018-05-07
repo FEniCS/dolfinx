@@ -592,8 +592,8 @@ DofMapBuilder::extract_global_dofs(
           = global_dofs.insert(dof_local + offset_local);
       if (!ret.second)
       {
-        std::runtime_error("Computing global degrees of freedom - global "
-                           "degree of freedom already exists");
+        throw std::runtime_error("Computing global degrees of freedom - global "
+                                 "degree of freedom already exists");
       }
     }
   }

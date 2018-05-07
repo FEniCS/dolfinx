@@ -57,7 +57,7 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
   case IndexMap::MapSize::GHOSTS:
     return _ghosts.size();
   default:
-    std::runtime_error("Unknown size type");
+    throw std::runtime_error("Unknown size type");
     return 0;
   }
 }
