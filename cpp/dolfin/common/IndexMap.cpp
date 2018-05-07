@@ -13,9 +13,9 @@ using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
-                   const Eigen::Map<const EigenArrayXi64> ghosts,
+                   const std::vector<std::size_t>& ghosts,
                    std::size_t block_size)
-    : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts),
+    : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts.size()),
       _block_size(block_size)
 {
   // Calculate offsets
@@ -27,11 +27,12 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
 
   _all_ranges.insert(_all_ranges.begin(), 0);
 
-  for (Eigen::Index i = 0; i < _ghosts.size(); ++i)
+  _ghost_owners.resize(ghosts.size());
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
   {
-    int p = owner(_ghosts[i]);
-    assert(p != _myrank);
-    _ghost_owners.push_back(p);
+    _ghosts[i] = ghosts[i];
+    _ghost_owners[i] = owner(ghosts[i]);
+    assert(_ghost_owners[i] != _myrank);
   }
 }
 //-----------------------------------------------------------------------------
@@ -40,6 +41,8 @@ std::array<std::int64_t, 2> IndexMap::local_range() const
   return {{(std::int64_t)_all_ranges[_myrank],
            (std::int64_t)_all_ranges[_myrank + 1]}};
 }
+//-----------------------------------------------------------------------------
+int IndexMap::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 std::size_t IndexMap::size(const IndexMap::MapSize type) const
 {
@@ -59,10 +62,7 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
   }
 }
 //-----------------------------------------------------------------------------
-const Eigen::Ref<const EigenArrayXi64> IndexMap::ghosts() const
-{
-  return _ghosts;
-}
+const EigenArrayXi64& IndexMap::ghosts() const { return _ghosts; }
 //-----------------------------------------------------------------------------
 int IndexMap::owner(std::size_t global_index) const
 {
@@ -70,9 +70,7 @@ int IndexMap::owner(std::size_t global_index) const
          - _all_ranges.begin() - 1;
 }
 //-----------------------------------------------------------------------------
-const std::vector<int>& IndexMap::ghost_owners() const { return _ghost_owners; }
-//-----------------------------------------------------------------------------
-int IndexMap::block_size() const { return _block_size; }
+const EigenArrayXi32& IndexMap::ghost_owners() const { return _ghost_owners; }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
 //----------------------------------------------------------------------------

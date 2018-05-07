@@ -1,4 +1,4 @@
-// Copyright (C) 2015 Chris Richardson
+// Copyright (C) 2015-2018 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -23,7 +23,7 @@ namespace common
 /// block indices [0, 1, . . ., N] that are distributed across processes M
 /// processes. On a given process, the IndexMap stores a portion of
 /// the index set using local indices [0, 1, . . . , n], and a map
-/// from the local block indices to a unique global block index.
+/// from the local block indices  to a unique global block index.
 
 class IndexMap
 {
@@ -44,8 +44,7 @@ public:
   ///
   /// Collective
   IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
-           const Eigen::Map<const EigenArrayXi64> ghosts,
-           std::size_t block_size);
+           const std::vector<std::size_t>& ghosts, std::size_t block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = default;
@@ -59,13 +58,16 @@ public:
   /// Range of indices owned by this process
   std::array<std::int64_t, 2> local_range() const;
 
-  /// Get number of local blocks of type MapSize::OWNED,
-  /// MapSize::GHOST, MapSize::ALL or MapSize::GLOBAL
+  /// Block size
+  int block_size() const;
+
+  /// Size of set (MapSize::OWNED, MapSize::GHOSTS, MapSize::ALL or
+  /// MapSize::GLOBAL)
   std::size_t size(MapSize type) const;
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const Eigen::Ref<const EigenArrayXi64> ghosts() const;
+  const EigenArrayXi64& ghosts() const;
 
   /// Get global index for local index i
   std::size_t local_to_global(std::size_t i) const;
@@ -75,13 +77,10 @@ public:
   std::size_t local_to_global_index(std::size_t i) const;
 
   /// Owners of ghost entries
-  const std::vector<int>& ghost_owners() const;
+  const EigenArrayXi32& ghost_owners() const;
 
   /// Get process that owns index (global index)
   int owner(std::size_t global_index) const;
-
-  /// Get block size
-  int block_size() const;
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
@@ -104,7 +103,7 @@ private:
   EigenArrayXi64 _ghosts;
 
   // Owning process for each ghost index
-  std::vector<int> _ghost_owners;
+  EigenArrayXi32 _ghost_owners;
 
   // Block size
   int _block_size;

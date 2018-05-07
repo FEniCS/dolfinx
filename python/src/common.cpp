@@ -96,6 +96,7 @@ void common(py::module& m)
       .def("local_range", &dolfin::common::IndexMap::local_range,
            "Range of indices owned by this map")
       .def("ghost_owners", &dolfin::common::IndexMap::ghost_owners,
+           py::return_value_policy::reference_internal,
            "Return owning process for each ghost index")
       .def("ghosts", &dolfin::common::IndexMap::ghosts,
            py::return_value_policy::reference_internal,
