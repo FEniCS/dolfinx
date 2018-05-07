@@ -551,7 +551,7 @@ void Function::init_vector()
 
   // Build list of ghosts (global block indices)
   const std::size_t nowned = index_map->size(common::IndexMap::MapSize::OWNED);
-  assert(nowned + index_map->size(common::IndexMap::MapSize::UNOWNED)
+  assert(nowned + index_map->size(common::IndexMap::MapSize::GHOSTS)
          == local_to_global.size());
   std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
                                          local_to_global.end());

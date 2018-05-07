@@ -133,7 +133,6 @@ void fem(py::module& m)
            "The dimension of the global finite element function space")
       .def("index_map", &dolfin::fem::GenericDofMap::index_map)
       .def("neighbours", &dolfin::fem::GenericDofMap::neighbours)
-      .def("off_process_owner", &dolfin::fem::GenericDofMap::off_process_owner)
       .def("shared_nodes", &dolfin::fem::GenericDofMap::shared_nodes)
       .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
       .def("dofs", (std::vector<dolfin::la_index_t>(

@@ -142,11 +142,6 @@ std::array<std::int64_t, 2> DofMap::ownership_range() const
   return {{bs * block_range[0], bs * block_range[1]}};
 }
 //-----------------------------------------------------------------------------
-const std::vector<int>& DofMap::off_process_owner() const
-{
-  return _index_map->block_off_process_owner();
-}
-//-----------------------------------------------------------------------------
 const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
 {
   return _shared_nodes;

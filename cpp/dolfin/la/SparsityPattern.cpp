@@ -196,10 +196,11 @@ SparsityPattern::SparsityPattern(
   // Intialise common::IndexMaps for merged pattern
   auto p00 = patterns[0][0];
   assert(p00);
-  _index_maps[0]
-      = std::make_shared<common::IndexMap>(p00->mpi_comm(), row_local_size, 1);
-  _index_maps[1]
-      = std::make_shared<common::IndexMap>(p00->mpi_comm(), col_local_size, 1);
+  std::vector<std::size_t> ghosts;
+  _index_maps[0] = std::make_shared<common::IndexMap>(
+      p00->mpi_comm(), row_local_size, ghosts, 1);
+  _index_maps[1] = std::make_shared<common::IndexMap>(
+      p00->mpi_comm(), col_local_size, ghosts, 1);
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
@@ -535,12 +536,12 @@ void SparsityPattern::apply()
     assert(_non_local.size() % 2 == 0);
     std::vector<std::vector<std::size_t>> non_local_send(num_processes);
 
-    const std::vector<int>& off_process_owner
-        = _index_maps[_primary_dim]->block_off_process_owner();
+    const Eigen::Ref<const EigenRowArrayXi32> off_process_owner
+        = _index_maps[_primary_dim]->ghost_owners();
 
     // Get local-to-global for unowned blocks
-    const std::vector<std::size_t>& local_to_global
-        = _index_maps[_primary_dim]->local_to_global_unowned();
+    const Eigen::Ref<const EigenArrayXi64> local_to_global
+        = _index_maps[_primary_dim]->ghosts();
 
     std::size_t dim_block_size = _index_maps[_primary_dim]->block_size();
     for (std::size_t i = 0; i < _non_local.size(); i += 2)
@@ -551,7 +552,7 @@ void SparsityPattern::apply()
 
       // Figure out which process owns the row
       assert(i_index >= local_size0);
-      const std::size_t i_offset = (i_index - local_size0) / dim_block_size;
+      const int i_offset = (i_index - local_size0) / dim_block_size;
       assert(i_offset < off_process_owner.size());
       const std::size_t p = off_process_owner[i_offset];
 

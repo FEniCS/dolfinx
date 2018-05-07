@@ -136,13 +136,6 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
                                node_local_to_global0, mesh,
                                global_dimension / bs);
 
-  auto index_map = std::make_unique<common::IndexMap>(mesh.mpi_comm(),
-                                                      num_owned_nodes, bs);
-  assert(index_map);
-  assert(MPI::sum(mesh.mpi_comm(),
-                  bs * index_map->size(common::IndexMap::MapSize::OWNED))
-         == global_dimension);
-
   // Compute node re-ordering for process index locality, and spatial
   // locality within a process, including
   // (a) Old-to-new node indices (local)
@@ -155,7 +148,13 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
       = compute_node_reordering(
           shared_node_to_processes0, node_local_to_global0, node_graph0,
           node_ownership0, global_nodes0, mesh.mpi_comm());
-  index_map->set_block_local_to_global(local_to_global_unowned);
+
+  auto index_map = std::make_unique<common::IndexMap>(
+      mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, bs);
+  assert(index_map);
+  assert(MPI::sum(mesh.mpi_comm(),
+                  bs * index_map->size(common::IndexMap::MapSize::OWNED))
+         == global_dimension);
 
   // Update shared_nodes for node reordering
   std::unordered_map<int, std::vector<int>> shared_nodes_foo;

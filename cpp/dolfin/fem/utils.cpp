@@ -243,7 +243,7 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
   }
 
   // Create map for combined problem
-  common::IndexMap index_map(x.mpi_comm(), local_size, 1);
+  common::IndexMap index_map(x.mpi_comm(), local_size, {}, 1);
 
   // std::vector<la_index_t> local_to_global(
   //     map.size(common::IndexMap::MapSize::ALL));
@@ -467,7 +467,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
                               const unsigned int field, const unsigned int n)
 {
   // Get process that owns global index
-  int owner = maps[field]->global_block_index_owner(n);
+  int owner = maps[field]->owner(n);
   // if (MPI::rank(MPI_COMM_WORLD) == 1)
   //   std::cout << "    owning process: " << owner << std::endl;
 
