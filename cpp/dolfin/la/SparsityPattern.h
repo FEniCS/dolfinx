@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Garth N. Wells
+// Copyright (C) 2007-2018 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -47,8 +47,7 @@ public:
   /// Create empty sparsity pattern
   SparsityPattern(
       MPI_Comm comm,
-      std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps,
-      std::size_t primary_dim);
+      std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps);
 
   /// Create a new sparsity pattern by adding sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]
@@ -90,10 +89,6 @@ public:
       const Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>>
           rows);
 
-  /// Return primary dimension (e.g., 0=row partition, 1=column
-  /// partition)
-  std::size_t primary_dim() const { return _primary_dim; }
-
   /// Return local range for dimension dim
   std::array<std::size_t, 2> local_range(std::size_t dim) const;
 
@@ -134,13 +129,6 @@ public:
   /// no off-diagonal contribution.
   std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
-  /// Require ghosts
-  // Ghosts is_ghosted() const { return _ghosted; }
-
-  // common::IndexMaps for each dimension
-  std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
-      index_maps_test;
-
 private:
   // Other insertion methods will call this method providing the
   // appropriate mapping of the indices in the entries.
@@ -151,16 +139,12 @@ private:
       const Eigen::Ref<const EigenArrayXi32> rows,
       const Eigen::Ref<const EigenArrayXi32> cols,
       const std::function<la_index_t(const la_index_t,
-                                     const common::IndexMap&)>& primary_dim_map,
-      const std::function<la_index_t(
-          const la_index_t, const common::IndexMap&)>& primary_codim_map);
+                                     const common::IndexMap&)>& row_map,
+      const std::function<la_index_t(const la_index_t,
+                                     const common::IndexMap&)>& col_map);
 
   // Print some useful information
   void info_statistics() const;
-
-  // Primary sparsity pattern storage dimension (e.g., 0=row partition,
-  // 1=column partition)
-  const std::size_t _primary_dim;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;

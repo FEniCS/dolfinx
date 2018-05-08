@@ -36,8 +36,8 @@ FunctionAXPY::FunctionAXPY(std::shared_ptr<const Function> func0,
 
   if (*func0->function_space() != *func1->function_space())
   {
-    log::dolfin_error("FunctionAXPY.cpp", "Construct FunctionAXPY",
-                 "Expected Functions to be in the same FunctionSpace");
+    throw std::runtime_error("Cannot construct FunctionAXPY. Expected "
+                             "Functions to be in the same FunctionSpace");
   }
 
   const double scale0 = static_cast<int>(direction) % 2 == 0 ? 1.0 : -1.0;
@@ -59,8 +59,8 @@ FunctionAXPY::FunctionAXPY(const FunctionAXPY& axpy,
   if (_pairs.size() > 0
       and *_pairs[0].second->function_space() != *func->function_space())
   {
-    log::dolfin_error("FunctionAXPY.cpp", "Construct FunctionAXPY",
-                 "Expected Functions to have the same FunctionSpace");
+    throw std::runtime_error("Cannot construct FunctionAXPY. Expected "
+                             "Functions to have the same FunctionSpace");
   }
 
   const double scale = static_cast<int>(direction) < 2 ? 1.0 : -1.0;
@@ -126,8 +126,8 @@ void FunctionAXPY::_register(const FunctionAXPY& axpy, double scale)
       and *_pairs[0].second->function_space()
               != *axpy._pairs[0].second->function_space())
   {
-    log::dolfin_error("FunctionAXPY.cpp", "Construct FunctionAXPY",
-                 "Expected Functions to have the same FunctionSpace");
+    throw std::runtime_error("Cannot construct FunctionAXPY. Expected "
+                             "Functions to have the same FunctionSpace");
   }
 
   for (auto it = axpy.pairs().begin(); it != axpy.pairs().end(); it++)

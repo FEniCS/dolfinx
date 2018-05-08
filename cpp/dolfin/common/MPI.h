@@ -256,8 +256,7 @@ private:
   static MPI_Datatype mpi_type()
   {
     static_assert(dependent_false<T>::value, "Unknown MPI type");
-    log::dolfin_error("MPI.h", "perform MPI operation",
-                      "MPI data type unknown");
+    throw std::runtime_error("MPI data type unknown");
     return MPI_CHAR;
   }
 #endif
@@ -862,8 +861,7 @@ template <typename T>
 T dolfin::MPI::avg(MPI_Comm comm, const T& value)
 {
 #ifdef HAS_MPI
-  log::dolfin_error("MPI.h", "perform average reduction",
-                    "Not implemented for this type");
+  throw std::runtime_error("MPI::avg not implemented for this type");
 #else
   return value;
 #endif
@@ -888,8 +886,7 @@ void dolfin::MPI::send_recv(MPI_Comm comm, const std::vector<T>& send_value,
                mpi_type<T>(), dest, send_tag, recv_value.data(), recv_size,
                mpi_type<T>(), source, recv_tag, comm, &mpi_status);
 #else
-  log::dolfin_error("MPI.h", "call MPI::send_recv",
-                    "DOLFIN has been configured without MPI support");
+  throw std::runtime_error("DOLFIN has been configured without MPI support");
 #endif
 }
 //---------------------------------------------------------------------------
@@ -915,4 +912,4 @@ template <>
 Table dolfin::MPI::avg(MPI_Comm, const Table&);
 #endif
 //---------------------------------------------------------------------------
-}
+} // namespace dolfin
