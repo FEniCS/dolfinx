@@ -38,13 +38,14 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
     std::unique_ptr<ufc_finite_element> ufc_element(
         ufc_form->create_finite_element(i));
 
-    if (std::string(ufc_element->signature) != function_spaces[i]->element()->signature())
+    if (std::string(ufc_element->signature)
+        != function_spaces[i]->element()->signature())
     {
       log::log(ERROR, "Expected element: %s", ufc_element->signature);
       log::log(ERROR, "Input element:    %s",
                function_spaces[i]->element()->signature().c_str());
-      log::dolfin_error("Form.cpp", "create form",
-                        "Wrong type of function space for argument %d", i);
+      throw std::runtime_error(
+          "Cannot create form. Wrong type of function space for argument");
     }
   }
 

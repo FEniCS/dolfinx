@@ -37,7 +37,7 @@ la::SparsityPattern SparsityPatternBuilder::build(
   // FIXME: Should check that index maps are matching
 
   // Create empty sparsity pattern
-  la::SparsityPattern pattern(comm, index_maps, 0);
+  la::SparsityPattern pattern(comm, index_maps);
 
   // Array to store macro-dofs, if required (for interior facets)
   std::array<EigenArrayXlaindex, 2> macro_dofs;
@@ -53,7 +53,7 @@ la::SparsityPattern SparsityPatternBuilder::build(
   //       fast and certainly much better than quadratic scaling of usual
   //       insertion below
   const Eigen::Array<std::size_t, Eigen::Dynamic, 1> global_dofs0
-      = dofmaps[pattern.primary_dim()]->tabulate_global_dofs();
+      = dofmaps[0]->tabulate_global_dofs();
   pattern.insert_full_rows_local(global_dofs0);
 
   // FIXME: We iterate over the entire mesh even if the function space
@@ -75,7 +75,7 @@ la::SparsityPattern SparsityPatternBuilder::build(
   const std::size_t D = mesh.topology().dim();
   if (vertices)
   {
-    std::runtime_error("Sparsity pattern building over vertices not working.");
+    throw std::runtime_error("Sparsity pattern building over vertices not working.");
     // mesh.init(0);
     // mesh.init(0, D);
 
@@ -112,8 +112,8 @@ la::SparsityPattern SparsityPatternBuilder::build(
     //   }
 
     //   // Insert non-zeroes in sparsity pattern
-    //   std::array<common::ArrayView<const dolfin::la_index_t>, 2> global_dofs_p;
-    //   for (std::size_t i = 0; i < 2; ++i)
+    //   std::array<common::ArrayView<const dolfin::la_index_t>, 2>
+    //   global_dofs_p; for (std::size_t i = 0; i < 2; ++i)
     //     global_dofs_p[i].set(global_dofs[i]);
     //   pattern.insert_local(global_dofs_p);
     // }
@@ -186,11 +186,9 @@ la::SparsityPattern SparsityPatternBuilder::build(
 
   if (diagonal)
   {
-    const std::size_t primary_dim = pattern.primary_dim();
-    const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
-    const auto primary_range = index_maps[primary_dim]->local_range();
+    const auto primary_range = index_maps[0]->local_range();
     const std::size_t secondary_range
-        = index_maps[primary_codim]->size(common::IndexMap::MapSize::GLOBAL);
+        = index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
     const std::size_t diagonal_range
         = std::min((std::size_t)primary_range[1], secondary_range);
 

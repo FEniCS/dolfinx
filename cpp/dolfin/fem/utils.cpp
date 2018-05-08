@@ -243,7 +243,7 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
   }
 
   // Create map for combined problem
-  common::IndexMap index_map(x.mpi_comm(), local_size, 1);
+  common::IndexMap index_map(x.mpi_comm(), local_size, {}, 1);
 
   // std::vector<la_index_t> local_to_global(
   //     map.size(common::IndexMap::MapSize::ALL));
@@ -317,15 +317,13 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
   // inserting to diagonal below
 
   // Tabulate indices of dense rows
-  const std::size_t primary_dim = pattern.primary_dim();
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> global_dofs
-      = dofmaps[primary_dim]->tabulate_global_dofs();
+      = dofmaps[0]->tabulate_global_dofs();
   if (global_dofs.size() > 0)
   {
     // Get local row range
-    const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
-    const common::IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
-    const auto row_range = A.local_range(primary_dim);
+    const common::IndexMap& index_map_0 = *dofmaps[0]->index_map();
+    const auto row_range = A.local_range(0);
 
     // Set zeros in dense rows in order of increasing column index
     const double block = 0.0;
@@ -335,10 +333,10 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
       const std::int64_t I = index_map_0.local_to_global_index(global_dofs[i]);
       if (I >= row_range[0] && I < row_range[1])
       {
-        IJ[primary_dim] = I;
-        for (std::int64_t J = 0; J < A.size(primary_codim); J++)
+        IJ[0] = I;
+        for (std::int64_t J = 0; J < A.size(1); J++)
         {
-          IJ[primary_codim] = J;
+          IJ[1] = J;
           A.set(&block, 1, &IJ[0], 1, &IJ[1]);
         }
       }
@@ -390,10 +388,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   const GenericDofMap& dofmap = *space.dofmap();
 
   if (dofmap.is_view())
-  {
-    log::dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
-                      "Cannot tabulate vertex_to_dof_map for a subspace");
-  }
+    std::runtime_error("Cannot tabulate vertex_to_dof_map for a subspace");
 
   // Initialize vertex to cell connections
   const std::size_t top_dim = mesh.topology().dim();
@@ -404,10 +399,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   const std::size_t vert_per_cell
       = mesh.topology().connectivity(top_dim, 0).size(0);
   if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
-  {
-    log::dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
-                      "Can only tabulate dofs on vertices");
-  }
+    std::runtime_error("Can only tabulate dofs on vertices");
 
   // Allocate data for tabulating local to local map
   std::vector<int> local_to_local_map(dofs_per_vertex);
@@ -467,7 +459,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
                               const unsigned int field, const unsigned int n)
 {
   // Get process that owns global index
-  int owner = maps[field]->global_block_index_owner(n);
+  int owner = maps[field]->owner(n);
   // if (MPI::rank(MPI_COMM_WORLD) == 1)
   //   std::cout << "    owning process: " << owner << std::endl;
 

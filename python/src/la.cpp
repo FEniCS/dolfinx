@@ -95,10 +95,9 @@ void la(py::module& m)
       .def(py::init(
           [](const MPICommWrapper comm,
              std::array<std::shared_ptr<const dolfin::common::IndexMap>, 2>
-                 index_maps,
-             int dim) {
-            return std::make_unique<dolfin::la::SparsityPattern>(
-                comm.get(), index_maps, dim);
+                 index_maps) {
+            return std::make_unique<dolfin::la::SparsityPattern>(comm.get(),
+                                                                 index_maps);
           }))
       .def(py::init(
           [](const MPICommWrapper comm,
