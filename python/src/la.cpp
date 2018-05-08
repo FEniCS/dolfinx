@@ -675,6 +675,10 @@ void la(py::module& m)
       .def("update_ghost_values", &dolfin::la::PETScVector::update_ghost_values)
       .def("size", (std::size_t(dolfin::la::PETScVector::*)() const)
                        & dolfin::la::PETScVector::size)
+      .def("sum", &dolfin::la::PETScVector::sum)
+      .def("min", &dolfin::la::PETScVector::min)
+      .def("max", &dolfin::la::PETScVector::max)
+      .def("abs", &dolfin::la::PETScVector::abs)
       .def("__add__",
            [](const dolfin::la::PETScVector& self,
               const dolfin::la::PETScVector& x) {
