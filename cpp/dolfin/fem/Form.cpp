@@ -250,7 +250,6 @@ void Form::tabulate_tensor(
     double* A, mesh::Cell cell,
     Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
 {
-
   // Switch integral based on domain from dx MeshFunction
   std::uint32_t idx = 0;
   if (dx)

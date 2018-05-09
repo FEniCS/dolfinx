@@ -307,6 +307,7 @@ private:
   // Temporary storage for coefficient values
   std::vector<double> _w;
   std::vector<double*> _wpointer;
+
 };
 } // namespace fem
 } // namespace dolfin
