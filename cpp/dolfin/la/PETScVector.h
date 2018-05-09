@@ -88,34 +88,34 @@ public:
 
   /// Get block of values using global indices (all values must be
   /// owned by local process, ghosts cannot be accessed)
-  void get(double* block, std::size_t m, const dolfin::la_index_t* rows) const;
+  void get(PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows) const;
 
   /// Get block of values using local indices
-  void get_local(double* block, std::size_t m,
+  void get_local(PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows) const;
 
   /// Set block of values using global indices
-  void set(const double* block, std::size_t m, const dolfin::la_index_t* rows);
+  void set(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows);
 
   /// Set block of values using local indices
-  void set_local(const double* block, std::size_t m,
+  void set_local(const PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows);
 
   /// Add block of values using global indices
-  void add(const double* block, std::size_t m, const dolfin::la_index_t* rows);
+  void add(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows);
 
   /// Add block of values using local indices
-  void add_local(const double* block, std::size_t m,
+  void add_local(const PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows);
 
   /// Get all values on local process
-  void get_local(std::vector<double>& values) const;
+  void get_local(std::vector<PetscScalar>& values) const;
 
   /// Set all values on local process
-  void set_local(const std::vector<double>& values);
+  void set_local(const std::vector<PetscScalar>& values);
 
   /// Add values to each entry on local process
-  void add_local(const std::vector<double>& values);
+  void add_local(const std::vector<PetscScalar>& values);
 
   /// Gather entries (given by global indices) into local
   /// (MPI_COMM_SELF) vector x. Provided x must be empty or of
@@ -126,21 +126,23 @@ public:
 
   /// Gather entries (given by global indices) into x.  This
   /// operation is collective
-  void gather(std::vector<double>& x,
+  void gather(std::vector<PetscScalar>& x,
               const std::vector<dolfin::la_index_t>& indices) const;
 
   /// Gather all entries into x on process 0.
   /// This operation is collective
-  void gather_on_zero(std::vector<double>& x) const;
+  void gather_on_zero(std::vector<PetscScalar>& x) const;
 
   /// Add multiple of given vector (AXPY operation)
-  void axpy(double a, const PETScVector& x);
+  void axpy(PetscScalar a, const PETScVector& x);
 
   /// Replace all entries in the vector by their absolute values
   void abs();
 
   /// Return dot product with given vector
-  double dot(const PETScVector& v) const;
+  /// For complex vectors, the argument v gets
+  /// complex conjugate
+  PetscScalar dot(const PETScVector& v) const;
 
   /// Return norm of vector
   double norm(std::string norm_type) const;
@@ -152,34 +154,34 @@ public:
   double max() const;
 
   /// Return sum of values of vector
-  double sum() const;
+  PetscScalar sum() const;
 
   /// Multiply vector by given number
-  const PETScVector& operator*=(double a);
+  const PETScVector& operator*=(PetscScalar a);
 
   /// Multiply vector by another vector pointwise
   const PETScVector& operator*=(const PETScVector& x);
 
   /// Divide vector by given number
-  const PETScVector& operator/=(double a);
+  const PETScVector& operator/=(PetscScalar a);
 
   /// Add given vector
   const PETScVector& operator+=(const PETScVector& x);
 
   /// Add number to all components of a vector
-  const PETScVector& operator+=(double a);
+  const PETScVector& operator+=(PetscScalar a);
 
   /// Subtract given vector
   const PETScVector& operator-=(const PETScVector& x);
 
   /// Subtract number from all components of a vector
-  const PETScVector& operator-=(double a);
+  const PETScVector& operator-=(PetscScalar a);
 
   /// Assignment operator
   const PETScVector& operator=(const PETScVector& x);
 
   /// Assignment operator
-  const PETScVector& operator=(double a);
+  const PETScVector& operator=(PetscScalar a);
 
   /// Update values shared from remote processes
   void update_ghost_values();
