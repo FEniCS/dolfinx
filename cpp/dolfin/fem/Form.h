@@ -81,7 +81,8 @@ public:
        const std::vector<std::shared_ptr<const function::FunctionSpace>>
            function_spaces);
 
-  /// Create form (no UFC integrals)
+  /// Create form (no UFC integrals). Integrals can be attached later
+  /// using FormIntegrals::set_cell_tabulate_tensor. Experimental.
   ///
   /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
   ///         Vector of function spaces.
@@ -302,7 +303,8 @@ private:
   std::function<const char*(int)> _coefficient_name_map;
 
   // Initialise temporary storage for coefficient values
-  void initialise_w();
+  // needed for interface with UFC integrals
+  void init_coeff_scratch_space();
 
   // Temporary storage for coefficient values
   std::vector<double> _w;

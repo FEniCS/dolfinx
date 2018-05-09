@@ -32,7 +32,7 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
   assert(ufc_form);
   assert(ufc_form->rank == (int)function_spaces.size());
 
-  initialise_w();
+  init_coeff_scratch_space();
 
   // Check argument function spaces
   for (std::size_t i = 0; i < function_spaces.size(); ++i)
@@ -56,7 +56,10 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
   for (auto& f : function_spaces)
-    assert(_mesh == f->mesh());
+  {
+    if (_mesh != f->mesh())
+      throw std::runtime_error("Incompatible mesh");
+  }
 
   // Create CoordinateMapping
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(
@@ -72,7 +75,10 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
   for (auto& f : function_spaces)
-    assert(_mesh == f->mesh());
+  {
+    if (_mesh != f->mesh())
+      throw std::runtime_error("Incompatible mesh");
+  }
 }
 //-----------------------------------------------------------------------------
 Form::~Form()
@@ -254,19 +260,21 @@ void Form::tabulate_tensor(
   std::uint32_t idx = 0;
   if (dx)
   {
-    // FIXME: range checks on cell and idx
-    idx = (*dx)[cell];
+    // FIXME: check on idx validity
+    idx = (*dx)[cell] + 1;
   }
 
-  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
   // Restrict coefficients to cell
+  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
   for (std::size_t i = 0; i < _coefficients.size(); ++i)
   {
-    if (!enabled_coefficients[i])
-      continue;
-    const auto coefficient = _coefficients.get(i);
-    const auto& element = _coefficients.element(i);
-    coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
+    if (enabled_coefficients[i])
+    {
+      std::shared_ptr<const function::GenericFunction> coefficient
+          = _coefficients.get(i);
+      const FiniteElement& element = _coefficients.element(i);
+      coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
+    }
   }
 
   // Compute cell matrix
@@ -274,16 +282,25 @@ void Form::tabulate_tensor(
   tab_fn(A, _wpointer.data(), coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
-void Form::initialise_w()
+void Form::init_coeff_scratch_space()
 {
   const std::size_t num_coeffs = _coefficients.size();
+
+  // Calculate space needed for each coefficient's values
+  // and create a vector of offsets from zero.
+  // Allowing double space here, so that the same scratch
+  // space can be also used for "macro" elements (two
+  // neighbouring cells) for interior facet integrals.
   std::vector<std::uint32_t> n = {0};
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
   {
-    const auto& element = _coefficients.element(i);
+    const FiniteElement& element = _coefficients.element(i);
     n.push_back(n.back() + element.space_dimension() * 2);
   }
+  // Allocate memory capable of storing all coefficient values
+  // in a contiguous block
   _w.resize(n.back());
+  // Create pointers into _w for each coefficient
   _wpointer.resize(num_coeffs);
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
     _wpointer[i] = _w.data() + n[i];
