@@ -32,8 +32,9 @@ void generation(py::module& m)
              std::shared_ptr<dolfin::generation::IntervalMesh>>(m,
                                                                 "IntervalMesh")
       .def_static("create", [](const MPICommWrapper comm, std::size_t n,
-                               std::array<double, 2> p) {
-        return dolfin::generation::IntervalMesh::create(comm.get(), n, p);
+                               std::array<double, 2> p,
+                               dolfin::mesh::GhostMode ghost_mode) {
+        return dolfin::generation::IntervalMesh::create(comm.get(), n, p, ghost_mode);
       });
 
   // dolfin::RectangleMesh
@@ -45,12 +46,14 @@ void generation(py::module& m)
                      std::array<dolfin::geometry::Point, 2> p,
                      std::array<std::size_t, 2> n,
                      dolfin::mesh::CellType::Type cell_type,
+                     dolfin::mesh::GhostMode ghost_mode,
                      std::string diagonal) {
                     return dolfin::generation::RectangleMesh::create(
-                        comm.get(), p, n, cell_type, diagonal);
+                        comm.get(), p, n, cell_type, ghost_mode, diagonal);
                   },
                   py::arg("comm"), py::arg("p"), py::arg("n"),
-                  py::arg("cell_type"), py::arg("diagonal") = "right");
+                  py::arg("cell_type"), py::arg("ghost_mode"),
+                  py::arg("diagonal") = "right");
 
   // dolfin::UnitTriangleMesh
   py::class_<dolfin::generation::UnitTriangleMesh>(m, "UnitTriangleMesh")
@@ -58,8 +61,9 @@ void generation(py::module& m)
 
   // dolfin::UnitDiscMesh
   py::class_<dolfin::generation::UnitDiscMesh>(m, "UnitDiscMesh")
-      .def_static("create", [](const MPICommWrapper comm, std::size_t n) {
-        return dolfin::generation::UnitDiscMesh::create(comm.get(), n);
+      .def_static("create", [](const MPICommWrapper comm, std::size_t n,
+                               dolfin::mesh::GhostMode ghost_mode) {
+        return dolfin::generation::UnitDiscMesh::create(comm.get(), n, ghost_mode);
       });
 
   // dolfin::BoxMesh
@@ -69,11 +73,13 @@ void generation(py::module& m)
                   [](const MPICommWrapper comm,
                      std::array<dolfin::geometry::Point, 2> p,
                      std::array<std::size_t, 3> n,
-                     dolfin::mesh::CellType::Type cell_type) {
+                     dolfin::mesh::CellType::Type cell_type,
+                     const dolfin::mesh::GhostMode ghost_mode) {
                     return dolfin::generation::BoxMesh::create(comm.get(), p, n,
-                                                               cell_type);
+                                                               cell_type,
+                                                               ghost_mode);
                   },
                   py::arg("comm"), py::arg("p"), py::arg("n"),
-                  py::arg("cell_type"));
+                  py::arg("cell_type"), py::arg("ghost_mode"));
 }
 }

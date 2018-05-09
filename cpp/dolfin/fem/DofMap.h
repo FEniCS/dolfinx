@@ -137,13 +137,6 @@ public:
   ///         The ownership range.
   std::array<std::int64_t, 2> ownership_range() const;
 
-  /// Return map from nonlocal dofs that appear in local dof map to
-  /// owning process
-  ///
-  /// @return     std::vector<std::uint32_t>
-  ///         The map from non-local dofs.
-  const std::vector<int>& off_process_owner() const;
-
   /// Return map from all shared nodes to the sharing processes (not
   /// including the current process) that share it.
   ///
@@ -195,7 +188,7 @@ public:
                             std::size_t cell_entity_index) const;
 
   /// Tabulate globally supported dofs
-  std::vector<std::size_t> tabulate_global_dofs() const;
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> tabulate_global_dofs() const;
 
   /// Extract subdofmap component
   ///

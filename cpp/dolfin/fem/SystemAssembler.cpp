@@ -26,6 +26,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/SubDomain.h>
 
 using namespace dolfin;
@@ -69,8 +70,8 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   {
     if (a->rank() != 2)
     {
-      log::dolfin_error("SystemAssembler.cpp", "assemble system",
-                        "expected a bilinear form for a");
+      throw std::runtime_error(
+          "Assemble system. Expected a bilinear form for a");
     }
   }
 
@@ -79,8 +80,8 @@ void SystemAssembler::check_arity(std::shared_ptr<const Form> a,
   {
     if (L->rank() != 1)
     {
-      log::dolfin_error("SystemAssembler.cpp", "assemble system",
-                        "expected a linear form for L");
+      throw std::runtime_error(
+          "Assemble system. Expected a bilinear form for L");
     }
   }
 }
@@ -151,9 +152,8 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   // Check that forms share a function space
   if (*_a->function_space(0) != *_l->function_space(0))
   {
-    log::dolfin_error(
-        "SystemAssembler.cpp", "assemble system",
-        "expected forms (a, L) to share a function::FunctionSpace");
+    throw std::runtime_error(
+        "Expected forms (a, L) to share a function::FunctionSpace");
   }
 
   // Create data structures for local assembly data
@@ -163,8 +163,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   if (_a->integrals().num_vertex_integrals() > 0
       or _l->integrals().num_vertex_integrals() > 0)
   {
-    log::dolfin_error("SystemAssembler.cpp", "assemble system",
-                      "Point integrals are not supported (yet)");
+    throw std::runtime_error("Point integrals are not supported (yet)");
   }
 
   // Gather UFC  objects
@@ -487,8 +486,8 @@ void SystemAssembler::facet_wise_assembly(
   const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
   // Sanity check of ghost mode (proper check in AssemblerBase::check)
-  assert(mesh.get_ghost_mode() == "shared_vertex"
-         or mesh.get_ghost_mode() == "shared_facet"
+  assert(mesh.get_ghost_mode() == mesh::GhostMode::shared_vertex
+         or mesh.get_ghost_mode() == mesh::GhostMode::shared_facet
          or MPI::size(mesh.mpi_comm()) == 1);
 
   // Compute facets and facet - cell connectivity if not already

@@ -7,7 +7,6 @@
 #pragma once
 
 #include "DistributedMeshTools.h"
-#include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "PartitionData.h"
 #include <cstdint>
@@ -34,6 +33,14 @@ class MeshFunction;
 template <typename T>
 class MeshValueCollection;
 class CellType;
+
+/// Enum for different partitioning ghost modes
+enum class GhostMode : int
+{
+  none,
+  shared_facet,
+  shared_vertex
+};
 
 /// This class partitions and distributes a mesh based on
 /// partitioned local mesh data.The local mesh data will also be
@@ -66,7 +73,7 @@ public:
                          const Eigen::Ref<const EigenRowArrayXXd>& points,
                          const Eigen::Ref<const EigenRowArrayXXi64>& cells,
                          const std::vector<std::int64_t>& global_cell_indices,
-                         const std::string ghost_mode);
+                         const mesh::GhostMode ghost_mode);
 
   /// Redistribute points to the processes that need them.
   /// @param mpi_comm
@@ -130,7 +137,7 @@ private:
                           const Eigen::Ref<const EigenRowArrayXXi64>& cells,
                           const Eigen::Ref<const EigenRowArrayXXd>& points,
                           const std::vector<std::int64_t>& global_cell_indices,
-                          const std::string ghost_mode,
+                          const mesh::GhostMode ghost_mode,
                           const PartitionData& mp);
 
   // FIXME: The code for this function is really bad. For example, it seems that

@@ -72,7 +72,6 @@ void fem::init_nest(la::PETScMatrix& A,
       {
         mats[i][j] = std::make_shared<la::PETScMatrix>(A.mpi_comm());
         init(*mats[i][j], *a[i][j]);
-
         petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
@@ -84,6 +83,7 @@ void fem::init_nest(la::PETScMatrix& A,
   MatSetType(A.mat(), MATNEST);
   MatNestSetSubMats(A.mat(), petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
                     NULL, petsc_mats.data());
+  MatSetUp(A.mat());
 }
 //-----------------------------------------------------------------------------
 void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
@@ -144,7 +144,6 @@ void fem::init_monolithic(la::PETScMatrix& A,
           = {{map0, map1}};
 
       // Build sparsity pattern
-      std::cout << "  Build sparsity pattern " << std::endl;
       std::array<const GenericDofMap*, 2> dofmaps
           = {{a[row][col]->function_space(0)->dofmap().get(),
               a[row][col]->function_space(1)->dofmap().get()}};
@@ -153,12 +152,8 @@ void fem::init_monolithic(la::PETScMatrix& A,
           SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps, true,
                                         false, false, false, false));
       patterns[row].push_back(std::move(sp));
-      // std::cout << "  End Build sparsity pattern: " << col << ", "
-      //           << patterns[row].size() << std::endl;
-      // assert(patterns[row][col]);
       p[row][col] = patterns[row][col].get();
       assert(p[row][col]);
-      // std::cout << "  End push back sparsity pattern pointer " << std::endl;
     }
   }
 
@@ -207,6 +202,8 @@ void fem::init_monolithic(la::PETScMatrix& A,
     }
   }
 
+  // exit(0);
+
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
   ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, _maps[0].size(),
@@ -236,26 +233,42 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
   // FIXME: handle mixed block sizes
 
   std::size_t local_size = 0;
+  std::vector<const common::IndexMap*> index_maps;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     auto map = L[i]->function_space(0)->dofmap()->index_map();
     local_size += map->size(common::IndexMap::MapSize::OWNED);
+    index_maps.push_back(map.get());
     // int block_size = map->block_size();
   }
 
   // Create map for combined problem
-  common::IndexMap map(x.mpi_comm(), local_size, 1);
+  common::IndexMap index_map(x.mpi_comm(), local_size, {}, 1);
 
-  std::vector<la_index_t> local_to_global(
-      map.size(common::IndexMap::MapSize::ALL));
-  for (std::size_t i = 0; i < local_to_global.size(); ++i)
+  // std::vector<la_index_t> local_to_global(
+  //     map.size(common::IndexMap::MapSize::ALL));
+  // for (std::size_t i = 0; i < local_to_global.size(); ++i)
+  // {
+  //   local_to_global[i] = map.local_to_global(i);
+  //   // std::cout << "l2g: " << i << ", " << local_to_global[i] << std::endl;
+  // }
+
+  std::vector<la_index_t> local_to_global;
+  for (std::size_t i = 0; i < L.size(); ++i)
   {
-    local_to_global[i] = map.local_to_global(i);
-    // std::cout << "l2g: " << i << ", " << local_to_global[i] << std::endl;
+    assert(L[i]);
+    auto map = L[i]->function_space(0)->dofmap()->index_map();
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
+    {
+      auto index_k = map->local_to_global(k);
+      std::size_t index = get_global_index(index_maps, i, index_k);
+      local_to_global.push_back(index);
+    }
   }
 
   // Initialize vector
-  x.init(map.local_range(), local_to_global, {}, 1);
+  // x.init(index_map.local_range(), local_to_global, {}, 1);
+  x.init(index_map.local_range(), {}, {}, 1);
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
@@ -304,28 +317,26 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
   // inserting to diagonal below
 
   // Tabulate indices of dense rows
-  const std::size_t primary_dim = pattern.primary_dim();
-  std::vector<std::size_t> global_dofs
-      = dofmaps[primary_dim]->tabulate_global_dofs();
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> global_dofs
+      = dofmaps[0]->tabulate_global_dofs();
   if (global_dofs.size() > 0)
   {
     // Get local row range
-    const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
-    const common::IndexMap& index_map_0 = *dofmaps[primary_dim]->index_map();
-    const auto row_range = A.local_range(primary_dim);
+    const common::IndexMap& index_map_0 = *dofmaps[0]->index_map();
+    const auto row_range = A.local_range(0);
 
     // Set zeros in dense rows in order of increasing column index
     const double block = 0.0;
     dolfin::la_index_t IJ[2];
-    for (std::size_t i : global_dofs)
+    for (Eigen::Index i = 0; i < global_dofs.size(); ++i)
     {
-      const std::int64_t I = index_map_0.local_to_global_index(i);
+      const std::int64_t I = index_map_0.local_to_global_index(global_dofs[i]);
       if (I >= row_range[0] && I < row_range[1])
       {
-        IJ[primary_dim] = I;
-        for (std::int64_t J = 0; J < A.size(primary_codim); J++)
+        IJ[0] = I;
+        for (std::int64_t J = 0; J < A.size(1); J++)
         {
-          IJ[primary_codim] = J;
+          IJ[1] = J;
           A.set(&block, 1, &IJ[0], 1, &IJ[1]);
         }
       }
@@ -377,10 +388,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   const GenericDofMap& dofmap = *space.dofmap();
 
   if (dofmap.is_view())
-  {
-    log::dolfin_error("fem_utils.cpp", "tabulate vertex to dof map",
-                      "Cannot tabulate vertex_to_dof_map for a subspace");
-  }
+    std::runtime_error("Cannot tabulate vertex_to_dof_map for a subspace");
 
   // Initialize vertex to cell connections
   const std::size_t top_dim = mesh.topology().dim();
@@ -391,10 +399,7 @@ dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
   const std::size_t vert_per_cell
       = mesh.topology().connectivity(top_dim, 0).size(0);
   if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
-  {
-    log::dolfin_error("DofMap.cpp", "tabulate dof to vertex map",
-                      "Can only tabulate dofs on vertices");
-  }
+    std::runtime_error("Can only tabulate dofs on vertices");
 
   // Allocate data for tabulating local to local map
   std::vector<int> local_to_local_map(dofs_per_vertex);
@@ -453,24 +458,33 @@ std::size_t
 dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
                               const unsigned int field, const unsigned int n)
 {
-  // Get process that owns index
-  int owner = maps[field]->global_block_index_owner(n);
+  // Get process that owns global index
+  int owner = maps[field]->owner(n);
+  // if (MPI::rank(MPI_COMM_WORLD) == 1)
+  //   std::cout << "    owning process: " << owner << std::endl;
 
-  // Processes offset
+  // Offset from lower rank processes
   std::size_t offset = 0;
-  for (int p = 0; p < owner; ++p)
+  if (owner > 0)
   {
-    // Sum over each field
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
+      // if (MPI::rank(MPI_COMM_WORLD) == 1)
+      //   std::cout << "   p off: " << maps[j]->_all_ranges[owner] <<
+      //   std::endl;
       if (j != field)
-        offset += maps[j]->_all_ranges[p + 1];
+      {
+        offset += maps[j]->_all_ranges[owner];
+      }
     }
   }
 
   // Local (process) offset
   for (unsigned int i = 0; i < field; ++i)
     offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner]);
+
+  // if (MPI::rank(MPI_COMM_WORLD) == 2)
+  //   std::cout << "    proc offeset (2): " << offset << std::endl;
 
   return n + offset;
 }

@@ -67,10 +67,6 @@ public:
   /// this process)
   virtual std::array<std::int64_t, 2> ownership_range() const = 0;
 
-  /// Return map from nonlocal-dofs (that appear in local dof map)
-  /// to owning process
-  virtual const std::vector<int>& off_process_owner() const = 0;
-
   /// Local-to-global mapping of dofs on a cell
   virtual Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>
   cell_dofs(std::size_t cell_index) const = 0;
@@ -96,7 +92,8 @@ public:
                                     std::size_t cell_entity_index) const = 0;
 
   /// Tabulate globally supported dofs
-  virtual std::vector<std::size_t> tabulate_global_dofs() const = 0;
+  virtual Eigen::Array<std::size_t, Eigen::Dynamic, 1>
+  tabulate_global_dofs() const = 0;
 
   /// Extract sub dofmap component
   virtual std::unique_ptr<GenericDofMap>

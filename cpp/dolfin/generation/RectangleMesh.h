@@ -56,6 +56,7 @@ public:
                            const std::array<geometry::Point, 2>& p,
                            std::array<std::size_t, 2> n,
                            mesh::CellType::Type cell_type,
+                           const mesh::GhostMode ghost_mode,
                            std::string diagonal = "right");
 
 private:
@@ -63,11 +64,13 @@ private:
   static mesh::Mesh build_tri(MPI_Comm comm,
                               const std::array<geometry::Point, 2>& p,
                               std::array<std::size_t, 2> n,
+                              const mesh::GhostMode ghost_mode,
                               std::string diagonal = "right");
 
   static mesh::Mesh build_quad(MPI_Comm comm,
                                const std::array<geometry::Point, 2>& p,
-                               std::array<std::size_t, 2> n);
+                               std::array<std::size_t, 2> n,
+                               const mesh::GhostMode ghost_mode);
 };
 } // namespace generation
 } // namespace dolfin

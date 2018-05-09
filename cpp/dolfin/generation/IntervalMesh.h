@@ -38,15 +38,17 @@ public:
   ///         IntervalMesh mesh(MPI_COMM_WORLD, 25, -1.0, 1.0);
   /// @endcode
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
-                           std::array<double, 2> x)
+                           std::array<double, 2> x,
+                           const mesh::GhostMode ghost_mode)
   {
-    return build(comm, n, x);
+    return build(comm, n, x, ghost_mode);
   }
 
 private:
   // Build mesh
   static mesh::Mesh build(MPI_Comm comm, std::size_t n,
-                          std::array<double, 2> x);
+                          std::array<double, 2> x,
+                          const mesh::GhostMode ghost_mode);
 };
 }
 }

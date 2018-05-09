@@ -95,8 +95,7 @@ void SubSystemsManager::init_petsc()
   // Initialize PETSc
   init_petsc(argc, argv);
 #else
-  log::dolfin_error("SubSystemsManager.cpp", "initialize PETSc subsystem",
-               "DOLFIN has not been configured with PETSc support");
+  throw std::runtime_error("DOLFIN has not been configured with PETSc support");
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -145,8 +144,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
     singleton().control_mpi = false;
 
 #else
-  log::dolfin_error("SubSystemsManager.cpp", "initialize PETSc subsystem",
-               "DOLFIN has not been configured with PETSc support");
+  throw std::runtime_error("DOLFIN has not been configured with PETSc support");
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -222,9 +220,9 @@ void SubSystemsManager::finalize_petsc()
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
 {
-// This function not affected if MPI_Finalize has been called. It
-// returns true if MPI_Init has been called at any point, even if
-// MPI_Finalize has been called.
+  // This function not affected if MPI_Finalize has been called. It
+  // returns true if MPI_Init has been called at any point, even if
+  // MPI_Finalize has been called.
 
 #ifdef HAS_MPI
   int mpi_initialized;
@@ -266,9 +264,10 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorMessage(n, &desc, nullptr);
 
   // Log detailed error info
-  log::log(TRACE, "PetscDolfinErrorHandler: line '%d', function '%s', file '%s',\n"
-             "                       : error code '%d' (%s), message follows:",
-      line, fun, file, n, desc);
+  log::log(TRACE,
+           "PetscDolfinErrorHandler: line '%d', function '%s', file '%s',\n"
+           "                       : error code '%d' (%s), message follows:",
+           line, fun, file, n, desc);
   // NOTE: don't put _mess as variadic argument; it might get trimmed
   log::log(TRACE, std::string(78, '-'));
   log::log(TRACE, _mess);

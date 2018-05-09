@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Garth N. Wells
+// Copyright (C) 2007-2018 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/types.h>
@@ -48,8 +47,7 @@ public:
   /// Create empty sparsity pattern
   SparsityPattern(
       MPI_Comm comm,
-      std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps,
-      std::size_t primary_dim);
+      std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps);
 
   /// Create a new sparsity pattern by adding sub-patterns, e.g.
   /// pattern =[ pattern00 ][ pattern 01]
@@ -70,27 +68,26 @@ public:
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
   /// Insert non-zero entries using global indices
-  void insert_global(
-      const std::array<common::ArrayView<const la_index_t>, 2>& entries);
+  void insert_global(const Eigen::Ref<const EigenArrayXlaindex> rows,
+                     const Eigen::Ref<const EigenArrayXlaindex> cols);
 
   /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(
-      const std::array<common::ArrayView<const la_index_t>, 2>& entries);
+  void insert_local(const Eigen::Ref<const EigenArrayXlaindex> rows,
+                    const Eigen::Ref<const EigenArrayXlaindex> cols);
 
+  // FIXME: Remove?
   /// Insert non-zero entries using local (process-wise) indices for the
   /// primary dimension and global indices for the co-dimension
-  void insert_local_global(
-      const std::array<common::ArrayView<const la_index_t>, 2>& entries);
+  void insert_local_global(const Eigen::Ref<const EigenArrayXlaindex> rows,
+                           const Eigen::Ref<const EigenArrayXlaindex> cols);
 
   /// Insert full rows (or columns, according to primary dimension)
   /// using local (process-wise) indices. This must be called before any
   /// other sparse insertion occurs to avoid quadratic complexity of
   /// dense rows insertion
-  void insert_full_rows_local(const std::vector<std::size_t>& rows);
-
-  /// Return primary dimension (e.g., 0=row partition, 1=column
-  /// partition)
-  std::size_t primary_dim() const { return _primary_dim; }
+  void insert_full_rows_local(
+      const Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>>
+          rows);
 
   /// Return local range for dimension dim
   std::array<std::size_t, 2> local_range(std::size_t dim) const;
@@ -101,20 +98,18 @@ public:
   /// Return number of local nonzeros
   std::size_t num_nonzeros() const;
 
-  /// Fill array with number of nonzeros for diagonal block in
-  /// local_range for dimension 0. For matrices, fill array with number
-  /// of nonzeros per local row for diagonal block
-  void num_nonzeros_diagonal(std::vector<std::size_t>& num_nonzeros) const;
+  /// Fill array with number of nonzeros per row for diagonal block in
+  /// local_range for dimension 0
+  EigenArrayXi32 num_nonzeros_diagonal() const;
 
   /// Fill array with number of nonzeros for off-diagonal block in
-  /// local_range for dimension 0. For matrices, fill array with number
-  /// of nonzeros per local row for off-diagonal block. If there is no
-  /// off-diagonal pattern, the vector is resized to zero-length
-  void num_nonzeros_off_diagonal(std::vector<std::size_t>& num_nonzeros) const;
+  /// local_range for dimension 0. If there is no off-diagonal pattern,
+  /// the returned vector will have zero-length.
+  EigenArrayXi32 num_nonzeros_off_diagonal() const;
 
   /// Fill vector with number of nonzeros in local_range for
   /// dimension 0
-  void num_local_nonzeros(std::vector<std::size_t>& num_nonzeros) const;
+  EigenArrayXi32 num_local_nonzeros() const;
 
   /// Finalize sparsity pattern
   void apply();
@@ -134,13 +129,6 @@ public:
   /// no off-diagonal contribution.
   std::vector<std::vector<std::size_t>> off_diagonal_pattern(Type type) const;
 
-  /// Require ghosts
-  // Ghosts is_ghosted() const { return _ghosted; }
-
-  // common::IndexMaps for each dimension
-  std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
-      index_maps_test;
-
 private:
   // Other insertion methods will call this method providing the
   // appropriate mapping of the indices in the entries.
@@ -148,18 +136,15 @@ private:
   // The primary dim entries must be local
   // The primary_codim entries must be global
   void insert_entries(
-      const std::array<common::ArrayView<const la_index_t>, 2>& entries,
+      const Eigen::Ref<const EigenArrayXi32> rows,
+      const Eigen::Ref<const EigenArrayXi32> cols,
       const std::function<la_index_t(const la_index_t,
-                                     const common::IndexMap&)>& primary_dim_map,
-      const std::function<la_index_t(
-          const la_index_t, const common::IndexMap&)>& primary_codim_map);
+                                     const common::IndexMap&)>& row_map,
+      const std::function<la_index_t(const la_index_t,
+                                     const common::IndexMap&)>& col_map);
 
   // Print some useful information
   void info_statistics() const;
-
-  // Primary sparsity pattern storage dimension (e.g., 0=row partition,
-  // 1=column partition)
-  const std::size_t _primary_dim;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
@@ -181,5 +166,5 @@ private:
   // Cleared after communication via apply()
   std::vector<std::size_t> _non_local;
 };
-}
-}
+} // namespace la
+} // namespace dolfin

@@ -56,26 +56,23 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
   {
-    log::dolfin_error("FiniteElement.cpp",
-                      "extract subsystem of finite element",
-                      "There are no subsystems");
+    throw std::runtime_error(
+        "Cannot extract subsystem of finite element. There are no subsystems.");
   }
 
   // Check that a sub system has been specified
   if (component.empty())
   {
-    log::dolfin_error("FiniteElement.cpp",
-                      "extract subsystem of finite element",
-                      "No system was specified");
+    throw std::runtime_error(
+        "Cannot extract subsystem of finite element. No system was specified");
   }
 
   // Check the number of available sub systems
   if (component[0] >= finite_element.num_sub_elements())
   {
-    log::dolfin_error("FiniteElement.cpp",
-                      "extract subsystem of finite element",
-                      "Requested subsystem (%d) out of range [0, %d)",
-                      component[0], finite_element.num_sub_elements());
+    throw std::runtime_error(
+        "Cannot extract subsystem of finite element. Requested "
+        "subsystem out of range.");
   }
 
   // Create sub system

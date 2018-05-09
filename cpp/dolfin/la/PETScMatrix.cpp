@@ -104,9 +104,10 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   }
 
   // Get number of nonzeros for each row from sparsity pattern
-  std::vector<std::size_t> num_nonzeros_diagonal, num_nonzeros_off_diagonal;
-  sparsity_pattern.num_nonzeros_diagonal(num_nonzeros_diagonal);
-  sparsity_pattern.num_nonzeros_off_diagonal(num_nonzeros_off_diagonal);
+  EigenArrayXi32 num_nonzeros_diagonal
+      = sparsity_pattern.num_nonzeros_diagonal();
+  EigenArrayXi32 num_nonzeros_off_diagonal
+      = sparsity_pattern.num_nonzeros_off_diagonal();
 
   // if (block_size == 1)
   //  std::cout << "*** mat size: " << m << ", " << n << std::endl;
@@ -272,8 +273,7 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
 bool PETScMatrix::empty() const
 {
   auto sizes = la::PETScBaseMatrix::size();
-  assert((sizes[0] < 1 and sizes[1] < 1)
-                or (sizes[0] > 0 and sizes[1] > 0));
+  assert((sizes[0] < 1 and sizes[1] < 1) or (sizes[0] > 0 and sizes[1] > 0));
   return (sizes[0] < 1) and (sizes[1] < 1);
 }
 //-----------------------------------------------------------------------------

@@ -34,15 +34,9 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
     }
   }
 
-  // FIXME: Figure out how to update this for ufc_foo_integral
   // Experimental function pointers for tabulate_tensor cell integral
-  // for (auto& ci : _cell_integrals)
-  // {
-  //   _cell_tabulate_tensor.push_back(std::bind(
-  //       &ufc::cell_integral::tabulate_tensor, ci, std::placeholders::_1,
-  //       std::placeholders::_2, std::placeholders::_3,
-  //       std::placeholders::_4));
-  // }
+  for (auto& ci : _cell_integrals)
+    _cell_tabulate_tensor.push_back(ci->tabulate_tensor);
 
   // Exterior facet integrals
   ufc_exterior_facet_integral* _default_exterior_facet_integral

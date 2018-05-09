@@ -37,23 +37,26 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   assert(V1.mesh());
   if (&mesh != V1.mesh().get())
   {
-    log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
-                 "function spaces do not share the same mesh");
+    throw std::runtime_error(
+        "Ccompute discrete gradient operator. Function spaces "
+        "do not share the same mesh");
   }
 
   // Check that V0 is a (lowest-order) edge basis
   mesh.init(1);
   if (V0.dim() != mesh.num_entities_global(1))
   {
-    log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
-                 "function spaces is not a lowest-order edge space");
+    throw std::runtime_error(
+        "Cannot compute discrete gradient operator. Function "
+        "spaces is not a lowest-order edge space");
   }
 
   // Check that V1 is a linear nodal basis
   if (V1.dim() != mesh.num_entities_global(0))
   {
-    log::dolfin_error("DiscreteGradient.cpp", "compute discrete gradient operator",
-                 "function space is not a linear nodal function space");
+    throw std::runtime_error(
+        "Cannot compute discrete gradient operator. Function "
+        "space is not a linear nodal function space");
   }
 
   // Build maps from entities to local dof indices
@@ -63,8 +66,10 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
       = V1.dofmap()->dofs(mesh, 0);
 
   // Build maps from local dof numbering to global
-  std::vector<std::size_t> local_to_global_map0 = V0.dofmap()->tabulate_local_to_global_dofs();
-  std::vector<std::size_t> local_to_global_map1 = V1.dofmap()->tabulate_local_to_global_dofs();
+  std::vector<std::size_t> local_to_global_map0
+      = V0.dofmap()->tabulate_local_to_global_dofs();
+  std::vector<std::size_t> local_to_global_map1
+      = V1.dofmap()->tabulate_local_to_global_dofs();
 
   // Declare matrix
   auto A = std::make_shared<la::PETScMatrix>(mesh.mpi_comm());
@@ -79,7 +84,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
       = {V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
 
   // Initialise sparsity pattern
-  la::SparsityPattern pattern(mesh.mpi_comm(), index_maps, 0);
+  la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
 
   // Build sparsity pattern
   std::vector<dolfin::la_index_t> rows;
@@ -102,10 +107,9 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
     }
   }
 
-  const std::array<common::ArrayView<const dolfin::la_index_t>, 2> entries = {
-      {common::ArrayView<const dolfin::la_index_t>(rows.size(), rows.data()),
-       common::ArrayView<const dolfin::la_index_t>(cols.size(), cols.data())}};
-  pattern.insert_global(entries);
+  Eigen::Map<const EigenArrayXlaindex> _rows(rows.data(), rows.size());
+  Eigen::Map<const EigenArrayXlaindex> _cols(cols.data(), cols.size());
+  pattern.insert_global(_rows, _cols);
   pattern.apply();
 
   // Initialise matrix

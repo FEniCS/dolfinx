@@ -20,22 +20,24 @@ mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  const std::array<geometry::Point, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  mesh::CellType::Type cell_type,
+                                 const mesh::GhostMode ghost_mode,
                                  std::string diagonal)
 {
   if (cell_type == mesh::CellType::Type::triangle)
-    return build_tri(comm, p, n, diagonal);
+    return build_tri(comm, p, n, ghost_mode, diagonal);
   else if (cell_type == mesh::CellType::Type::quadrilateral)
-    return build_quad(comm, p, n);
+    return build_quad(comm, p, n, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 
   // Will never reach this point
-  return build_quad(comm, p, n);
+  return build_quad(comm, p, n, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
                                     const std::array<geometry::Point, 2>& p,
                                     std::array<std::size_t, 2> n,
+                                    const mesh::GhostMode ghost_mode,
                                     std::string diagonal)
 {
   // Receive mesh if not rank 0
@@ -44,7 +46,8 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 3);
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::triangle, geom, topo, {}, "none");
+        comm, mesh::CellType::Type::triangle, geom, topo, {},
+        ghost_mode);
   }
 
   // Check options
@@ -209,12 +212,14 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   }
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::triangle, geom, topo, {}, "none");
+      comm, mesh::CellType::Type::triangle, geom, topo, {},
+      ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
                                      const std::array<geometry::Point, 2>& p,
-                                     std::array<std::size_t, 2> n)
+                                     std::array<std::size_t, 2> n,
+                                     const mesh::GhostMode ghost_mode)
 {
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
@@ -222,7 +227,8 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 4);
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, "none");
+        comm, mesh::CellType::Type::quadrilateral, geom, topo, {},
+        ghost_mode);
   }
 
   const std::size_t nx = n[0];
@@ -266,6 +272,7 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
     }
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, "none");
+      comm, mesh::CellType::Type::quadrilateral, geom, topo, {},
+      ghost_mode);
 }
 //-----------------------------------------------------------------------------
