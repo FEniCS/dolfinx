@@ -333,9 +333,8 @@ void fem(py::module& m)
       .def(py::init<std::shared_ptr<const ufc_form>,
                     std::vector<std::shared_ptr<
                         const dolfin::function::FunctionSpace>>>())
-      .def(py::init<
-           std::vector<std::shared_ptr<const dolfin::function::FunctionSpace>>,
-           std::shared_ptr<const dolfin::fem::CoordinateMapping>>())
+      .def(py::init<std::vector<
+               std::shared_ptr<const dolfin::function::FunctionSpace>>>())
       .def("num_coefficients",
            [](const dolfin::fem::Form& self) { return self.coeffs().size(); },
            "Return number of coefficients in form")

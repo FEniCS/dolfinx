@@ -54,8 +54,8 @@ def test_numba_assembly():
     u = TrialFunction(Q)
     v = TestFunction(Q)
 
-    a = dolfin.cpp.fem.Form([Q._cpp_object, Q._cpp_object], mesh.geometry.coord_mapping)
-    L = dolfin.cpp.fem.Form([Q._cpp_object], mesh.geometry.coord_mapping)
+    a = dolfin.cpp.fem.Form([Q._cpp_object, Q._cpp_object])
+    L = dolfin.cpp.fem.Form([Q._cpp_object])
 
     sig = types.void(types.CPointer(types.double), types.CPointer(types.CPointer(types.double)),
                      types.CPointer(types.double), types.intc)

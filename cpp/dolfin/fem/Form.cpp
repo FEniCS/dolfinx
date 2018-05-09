@@ -65,10 +65,8 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
 }
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
-               function_spaces,
-           std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping)
-    : _coefficients({}), _function_spaces(function_spaces),
-      _coord_mapping(coordinate_mapping)
+               function_spaces)
+    : _coefficients({}), _function_spaces(function_spaces)
 {
   // Set _mesh from function::FunctionSpace and check they are the same
   if (!function_spaces.empty())
@@ -284,15 +282,11 @@ void Form::initialise_w()
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
   {
     const auto& element = _coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
+    n.push_back(n.back() + element.space_dimension() * 2);
   }
-  _w.resize(n.back() * 2);
+  _w.resize(n.back());
   _wpointer.resize(num_coeffs);
-  _macro_wpointer.resize(num_coeffs);
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
-  {
     _wpointer[i] = _w.data() + n[i];
-    _macro_wpointer[i] = _w.data() + 2 * n[i];
-  }
 }
 //-----------------------------------------------------------------------------

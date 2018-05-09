@@ -85,10 +85,8 @@ public:
   ///
   /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
   ///         Vector of function spaces.
-  /// @param[in] coordinate_map
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
-           function_spaces,
-       std::shared_ptr<const fem::CoordinateMapping> coordinate_map);
+           function_spaces);
 
   /// Destructor
   virtual ~Form();
@@ -260,6 +258,14 @@ public:
     return _coord_mapping;
   }
 
+  /// Call tabulate_tensor on a cell, returning the local element matrix
+  /// @param A
+  ///    Local element tensor (to be calculated)
+  /// @param cell
+  ///    Cell on which to calculate
+  /// @param coordinate_dofs
+  ///    Coordinates of the cell
+  ///
   void
   tabulate_tensor(double* A, mesh::Cell cell,
                   Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
@@ -301,7 +307,6 @@ private:
   // Temporary storage for coefficient values
   std::vector<double> _w;
   std::vector<double*> _wpointer;
-  std::vector<double*> _macro_wpointer;
 };
 } // namespace fem
 } // namespace dolfin
