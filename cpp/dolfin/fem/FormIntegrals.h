@@ -50,9 +50,18 @@ public:
   std::shared_ptr<const ufc_cell_integral> cell_integral(unsigned int i) const;
 
   /// Get the function for 'tabulate_tensor' for cell integral i
+  /// @param i
+  ///    Integral number
+  /// @returns std::function
+  ///    Function to call for tabulate_tensor on a cell
   const std::function<void(double*, const double* const*, const double*, int)>&
   cell_tabulate_tensor(int i) const;
 
+  /// Get the enabled coefficients on cell integral i
+  /// @param i
+  ///    Integral number
+  /// @returns bool*
+  ///    Pointer to list of enabled coefficients for this integral
   const bool* cell_enabled_coefficients(int i) const;
 
   /// Set the function for 'tabulate_tensor' for cell integral i
