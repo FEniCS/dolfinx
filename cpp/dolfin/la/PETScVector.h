@@ -148,9 +148,11 @@ public:
   double norm(std::string norm_type) const;
 
   /// Return minimum value of vector
+  /// For complex vectors - return the minimum real part
   double min() const;
 
   /// Return maximum value of vector
+  /// For complex vectors - return the maximum real part
   double max() const;
 
   /// Return sum of values of vector
