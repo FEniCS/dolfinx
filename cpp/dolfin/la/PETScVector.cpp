@@ -540,7 +540,7 @@ PetscScalar PETScVector::dot(const PETScVector& y) const
   assert(_x);
   assert(y._x);
   PetscScalar a;
-  PetscErrorCode ierr = VecDot(y._x, _x, &a);
+  PetscErrorCode ierr = VecDot(_x,y._x, &a);
   CHECK_ERROR("VecDot");
   return a;
 }
