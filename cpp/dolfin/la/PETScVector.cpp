@@ -230,7 +230,7 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   return {{n0, n1}};
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get_local(std::vector<double>& values) const
+void PETScVector::get_local(std::vector<PetscScalar>& values) const
 {
   assert(_x);
   const auto _local_range = local_range();
@@ -253,7 +253,7 @@ void PETScVector::get_local(std::vector<double>& values) const
   CHECK_ERROR("VecRestoreArrayRead");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set_local(const std::vector<double>& values)
+void PETScVector::set_local(const std::vector<PetscScalar>& values)
 {
   assert(_x);
   const auto _local_range = local_range();
@@ -276,7 +276,7 @@ void PETScVector::set_local(const std::vector<double>& values)
   CHECK_ERROR("VecSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add_local(const std::vector<double>& values)
+void PETScVector::add_local(const std::vector<PetscScalar>& values)
 {
   assert(_x);
   const auto _local_range = local_range();
@@ -299,7 +299,7 @@ void PETScVector::add_local(const std::vector<double>& values)
   CHECK_ERROR("VecSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get_local(double* block, std::size_t m,
+void PETScVector::get_local(PetscScalar* block, std::size_t m,
                             const dolfin::la_index_t* rows) const
 {
   if (m == 0)
@@ -340,7 +340,7 @@ void PETScVector::get_local(double* block, std::size_t m,
   }
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get(double* block, std::size_t m,
+void PETScVector::get(PetscScalar* block, std::size_t m,
                       const dolfin::la_index_t* rows) const
 {
   if (m == 0)
@@ -351,7 +351,7 @@ void PETScVector::get(double* block, std::size_t m,
   CHECK_ERROR("VecGetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set(const double* block, std::size_t m,
+void PETScVector::set(const PetscScalar* block, std::size_t m,
                       const dolfin::la_index_t* rows)
 {
   assert(_x);
@@ -359,7 +359,7 @@ void PETScVector::set(const double* block, std::size_t m,
   CHECK_ERROR("VecSetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set_local(const double* block, std::size_t m,
+void PETScVector::set_local(const PetscScalar* block, std::size_t m,
                             const dolfin::la_index_t* rows)
 {
   assert(_x);
@@ -367,7 +367,7 @@ void PETScVector::set_local(const double* block, std::size_t m,
   CHECK_ERROR("VecSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add(const double* block, std::size_t m,
+void PETScVector::add(const PetscScalar* block, std::size_t m,
                       const dolfin::la_index_t* rows)
 {
   assert(_x);
@@ -375,7 +375,7 @@ void PETScVector::add(const double* block, std::size_t m,
   CHECK_ERROR("VecSetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add_local(const double* block, std::size_t m,
+void PETScVector::add_local(const PetscScalar* block, std::size_t m,
                             const dolfin::la_index_t* rows)
 {
   assert(_x);
@@ -409,7 +409,7 @@ MPI_Comm PETScVector::mpi_comm() const
 void PETScVector::zero()
 {
   assert(_x);
-  double a = 0.0;
+  PetscScalar a = 0.0;
   PetscErrorCode ierr = VecSet(_x, a);
   CHECK_ERROR("VecSet");
   this->apply();
@@ -430,7 +430,7 @@ const PETScVector& PETScVector::operator=(const PETScVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator=(double a)
+const PETScVector& PETScVector::operator=(PetscScalar a)
 {
   assert(_x);
   PetscErrorCode ierr = VecSet(_x, a);
@@ -463,11 +463,12 @@ void PETScVector::update_ghost_values()
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator+=(const PETScVector& x)
 {
-  axpy(1.0, x);
+  PetscScalar a = 1.0;
+  axpy(a, x);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator+=(double a)
+const PETScVector& PETScVector::operator+=(PetscScalar a)
 {
   assert(_x);
   PetscErrorCode ierr = VecShift(_x, a);
@@ -481,18 +482,19 @@ const PETScVector& PETScVector::operator+=(double a)
 //-----------------------------------------------------------------------------
 const PETScVector& PETScVector::operator-=(const PETScVector& x)
 {
-  axpy(-1.0, x);
+  PetscScalar a = -1.0;
+  axpy(a, x);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator-=(double a)
+const PETScVector& PETScVector::operator-=(PetscScalar a)
 {
   assert(_x);
   (*this) += -a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator*=(const double a)
+const PETScVector& PETScVector::operator*=(const PetscScalar a)
 {
   assert(_x);
   PetscErrorCode ierr = VecScale(_x, a);
@@ -524,26 +526,26 @@ const PETScVector& PETScVector::operator*=(const PETScVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator/=(const double a)
+const PETScVector& PETScVector::operator/=(const PetscScalar a)
 {
   assert(_x);
-  assert(a != 0.0);
-  const double b = 1.0 / a;
+  assert(PetscAbsScalar(a) != 0.0);
+  const PetscScalar b = 1.0 / a;
   (*this) *= b;
   return *this;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::dot(const PETScVector& y) const
+PetscScalar PETScVector::dot(const PETScVector& y) const
 {
   assert(_x);
   assert(y._x);
-  double a;
-  PetscErrorCode ierr = VecDot(y._x, _x, &a);
+  PetscScalar a;
+  PetscErrorCode ierr = VecDot(_x,y._x, &a);
   CHECK_ERROR("VecDot");
   return a;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::axpy(double a, const PETScVector& y)
+void PETScVector::axpy(PetscScalar a, const PETScVector& y)
 {
   assert(_x);
 
@@ -607,10 +609,10 @@ double PETScVector::max() const
   return value;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::sum() const
+PetscScalar PETScVector::sum() const
 {
   assert(_x);
-  double value = 0.0;
+  PetscScalar value = 0.0;
   PetscErrorCode ierr = VecSum(_x, &value);
   CHECK_ERROR("VecSum");
   return value;
@@ -717,7 +719,7 @@ void PETScVector::gather(PETScVector& y,
   CHECK_ERROR("ISDestroy");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather(std::vector<double>& x,
+void PETScVector::gather(std::vector<PetscScalar>& x,
                          const std::vector<dolfin::la_index_t>& indices) const
 {
   x.resize(indices.size());
@@ -727,7 +729,7 @@ void PETScVector::gather(std::vector<double>& x,
   y.get_local(x);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::gather_on_zero(std::vector<double>& x) const
+void PETScVector::gather_on_zero(std::vector<PetscScalar>& x) const
 {
   PetscErrorCode ierr;
 
