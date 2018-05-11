@@ -67,6 +67,7 @@ RUN apt-get -qq update && \
     --CXXOPTFLAGS="-O2 -g" \
     --FOPTFLAGS="-O2 -g" \
     --with-debugging=yes \
+    --with-fortran-bindings=no \
     --download-blacs \
     --download-hypre \
     --download-metis \
