@@ -786,22 +786,16 @@ void la(py::module& m)
       petsc_ks(m, "PETScKrylovSolver", "DOLFIN PETScKrylovSolver object");
 
   petsc_ks
-      .def(py::init([](const MPICommWrapper comm, std::string method,
-                       std::string pc) {
+      .def(py::init([](const MPICommWrapper comm) {
              return std::unique_ptr<dolfin::la::PETScKrylovSolver>(
-                 new dolfin::la::PETScKrylovSolver(comm.get(), method, pc));
+                 new dolfin::la::PETScKrylovSolver(comm.get()));
            }),
-           py::arg("comm"), py::arg("method") = "default",
-           py::arg("pc") = "default")
+           py::arg("comm"))
       .def(py::init<KSP>())
       .def("get_options_prefix",
            &dolfin::la::PETScKrylovSolver::get_options_prefix)
       .def("set_options_prefix",
            &dolfin::la::PETScKrylovSolver::set_options_prefix)
-      .def("get_norm_type", (dolfin::la::PETScKrylovSolver::norm_type(
-                                dolfin::la::PETScKrylovSolver::*)() const)
-                                & dolfin::la::PETScKrylovSolver::get_norm_type)
-      .def("set_norm_type", &dolfin::la::PETScKrylovSolver::set_norm_type)
       .def("set_operator", &dolfin::la::PETScKrylovSolver::set_operator)
       .def("set_operators", &dolfin::la::PETScKrylovSolver::set_operators)
       .def("solve", &dolfin::la::PETScKrylovSolver::solve,
@@ -813,16 +807,6 @@ void la(py::module& m)
       .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
       .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
       .def("ksp", &dolfin::la::PETScKrylovSolver::ksp);
-
-  py::enum_<dolfin::la::PETScKrylovSolver::norm_type>(petsc_ks, "norm_type")
-      .value("none", dolfin::la::PETScKrylovSolver::norm_type::none)
-      .value("default_norm",
-             dolfin::la::PETScKrylovSolver::norm_type::default_norm)
-      .value("preconditioned",
-             dolfin::la::PETScKrylovSolver::norm_type::preconditioned)
-      .value("unpreconditioned",
-             dolfin::la::PETScKrylovSolver::norm_type::unpreconditioned)
-      .value("natural", dolfin::la::PETScKrylovSolver::norm_type::natural);
 
 #ifdef HAS_SLEPC
   // dolfin::la::SLEPcEigenSolver
