@@ -34,14 +34,16 @@ def compute_norm(mesh, degree):
 
     # Compute solution
     w = Function(V)
-
-    A, b = fem.assembling.assemble_system(a, L)
-    solver = PETScKrylovSolver(MPI.comm_world)
-    PETScOptions.set("ksp_type", "preonly")
-    PETScOptions.set("pc_type", "lu")
-    solver.set_from_options()
-    solver.set_operator(A)
-    solver.solve(w.vector(), b)
+    solve(a == L, w, petsc_options={"ksp_type": "preonly",
+                                    "pc_type": "lu"})
+    #
+    # A, b = fem.assembling.assemble_system(a, L)
+    # solver = PETScKrylovSolver(MPI.comm_world)
+    # PETScOptions.set("ksp_type", "preonly")
+    # PETScOptions.set("pc_type", "lu")
+    # solver.set_from_options()
+    # solver.set_operator(A)
+    # solver.solve(w.vector(), b)
 
     # Return norm of solution vector
     return w.vector().norm("l2")
