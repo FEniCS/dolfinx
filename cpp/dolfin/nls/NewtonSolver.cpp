@@ -22,8 +22,6 @@ parameter::Parameters dolfin::nls::NewtonSolver::default_parameters()
 {
   parameter::Parameters p("newton_solver");
 
-  p.add("linear_solver", "default");
-  p.add("preconditioner", "default");
   p.add("maximum_iterations", 50);
   p.add("relative_tolerance", 1e-9);
   p.add("absolute_tolerance", 1e-10);
@@ -66,13 +64,8 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     set_relaxation_parameter(parameters["relaxation_parameter"]);
 
   // Create linear solver if not already created
-  const std::string solver_type = parameters["linear_solver"];
-  const std::string pc_type = parameters["preconditioner"];
   if (!_solver)
-  {
-    _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm(), solver_type,
-                                                      pc_type);
-  }
+    _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm());
   assert(_solver);
 
   // Set parameters for linear solver

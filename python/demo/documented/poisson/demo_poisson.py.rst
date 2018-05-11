@@ -174,7 +174,7 @@ a finite element function space. Next, we can call the :py:func:`solve
 
     # Compute solution
     u = Function(V)
-    solve(a == L, u, bc)
+    solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 The function ``u`` will be modified during the call to solve. The
 default settings for solving a variational problem have been
