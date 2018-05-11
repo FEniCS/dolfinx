@@ -20,20 +20,22 @@ def test_krylov_solver_lu():
 
     a = Constant(1.0)*u*v*dx
     L = Constant(1.0)*v*dx
-    assembler = dolfin.fem.assembling.Assembler(a, L)
+    assembler = fem.assembling.Assembler(a, L)
     A, b = assembler.assemble()
 
     norm = 13.0
 
-    solver = PETScLUSolver(mesh.mpi_comm())
+    solver = PETScKrylovSolver(mesh.mpi_comm())
     solver.set_options_prefix("test_lu_")
-    PETScOptions.set("ksp_type", "preonly")
-    PETScOptions.set("pc_type", "lu")
+    PETScOptions.set("test_lu_ksp_type", "preonly")
+    PETScOptions.set("test_lu_pc_type", "lu")
     solver.set_from_options()
     x = PETScVector(mesh.mpi_comm())
     solver.set_operator(A)
     solver.solve(x, b)
-    assert round(x.norm("l2") - norm, 10) == 0
+
+    # *Tight* tolerance for LU solves
+    assert round(x.norm("l2") - norm, 12) == 0
 
 
 @pytest.mark.skip
@@ -55,23 +57,24 @@ def test_krylov_reuse_pc_lu():
     V = FunctionSpace(mesh, "Lagrange", 1)
     u, v = TrialFunction(V), TestFunction(V)
 
-
     a = Constant(1.0)*u*v*dx
     L = Constant(1.0)*v*dx
-    assembler = dolfin.fem.assembling.Assembler(a, L)
+    assembler = fem.assembling.Assembler(a, L)
     A, b = assembler.assemble()
     norm = 13.0
 
     solver = PETScKrylovSolver(mesh.mpi_comm())
     solver.set_options_prefix("test_lu_")
-    PETScOptions.set("ksp_type", "preonly")
-    PETScOptions.set("pc_type", "lu")
+    PETScOptions.set("test_lu_ksp_type", "preonly")
+    PETScOptions.set("test_lu_pc_type", "lu")
     solver.set_from_options()
+    solver.set_operator(A)
     x = PETScVector(mesh.mpi_comm())
-    solver.solve(A, x, b)
+    solver.solve(x, b)
     assert round(x.norm("l2") - norm, 10) == 0
 
-    assemble(Constant(0.5)*u*v*dx, tensor=A)
+    assembler = fem.assembling.Assembler(Constant(0.5)*u*v*dx, L)
+    assembler.assemble(A)
     x = PETScVector(mesh.mpi_comm())
     solver.solve(x, b)
     assert round(x.norm("l2") - 2.0*norm, 10) == 0

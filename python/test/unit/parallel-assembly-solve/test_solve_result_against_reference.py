@@ -12,7 +12,7 @@ parallel assembly/solve."""
 import pytest
 import sys
 from dolfin import *
-from dolfin.la import PETScOptions
+from dolfin.la import PETScOptions, PETScKrylovSolver
 from dolfin_utils.test import *
 
 # Relative tolerance for regression test
@@ -34,7 +34,14 @@ def compute_norm(mesh, degree):
 
     # Compute solution
     w = Function(V)
-    solve(a == L, w)
+
+    A, b = fem.assembling.assemble_system(a, L)
+    solver = PETScKrylovSolver(MPI.comm_world)
+    PETScOptions.set("ksp_type", "preonly")
+    PETScOptions.set("pc_type", "lu")
+    solver.set_from_options()
+    solver.set_operator(A)
+    solver.solve(w.vector(), b)
 
     # Return norm of solution vector
     return w.vector().norm("l2")
