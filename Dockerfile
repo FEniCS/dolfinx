@@ -17,14 +17,14 @@ ENV OPENBLAS_NUM_THREADS=1 \
 
 # Install dependencies available via apt-get
 RUN apt-get -qq update && \
-    apt-get -y --with-new-pkgs \
-    -o Dpkg::Options::="--force-confold" upgrade && \
+    apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
     cmake \
     doxygen \
     g++ \
     gfortran \
     git \
+    gmsh \
     graphviz \
     libboost-dev \
     libboost-filesystem-dev \
@@ -35,11 +35,11 @@ RUN apt-get -qq update && \
     libboost-thread-dev \
     libboost-timer-dev \
     libeigen3-dev \
+    libhdf5-openmpi-dev \
     liblapack-dev \
-    libmpich-dev \
+    libopenmpi-dev \
     libopenblas-dev \
-    libhdf5-mpich-dev \
-    mpich \
+    openmpi-bin \
     pkg-config \
     python3-dev \
     valgrind \
@@ -66,8 +66,8 @@ RUN apt-get -qq update && \
     --COPTFLAGS="-O2 -g" \
     --CXXOPTFLAGS="-O2 -g" \
     --FOPTFLAGS="-O2 -g" \
-    #--with-debugging=no \
     --with-debugging=yes \
+    --with-fortran-bindings=no \
     --download-blacs \
     --download-hypre \
     --download-metis \
