@@ -198,6 +198,7 @@ def _solve_varproblem(*args, **kwargs):
 
         solver = PETScKrylovSolver(comm)
         solver.set_operator(A)
+        solver.set_from_options()
 
         solver.solve(u.vector(), b)
 
