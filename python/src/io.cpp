@@ -218,6 +218,7 @@ void io(py::module& m)
            }),
            py::arg("comm"), py::arg("filename"))
       .def(py::init<std::string>())
+      .def("close", &dolfin::io::XDMFFile::close)
       .def("__enter__", [](dolfin::io::XDMFFile& self) { return &self; })
       .def("__exit__", [](dolfin::io::XDMFFile& self, py::args args,
                           py::kwargs kwargs) { self.close(); });
