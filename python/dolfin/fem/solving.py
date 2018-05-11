@@ -12,7 +12,7 @@ VariationalProblem/Solver classes as well as the solve function.
 
 import ufl
 import dolfin.cpp as cpp
-from dolfin.cpp.la import PETScVector, PETScMatrix, PETScLUSolver
+from dolfin.cpp.la import PETScVector, PETScMatrix
 from dolfin.cpp.fem import SystemAssembler
 from dolfin.function.function import Function
 from dolfin.fem.form import Form

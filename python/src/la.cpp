@@ -17,7 +17,6 @@
 #include "casters.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/la/PETScKrylovSolver.h>
-#include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
@@ -760,25 +759,6 @@ void la(py::module& m)
        },
        py::is_operator());
   */
-
-  // dolfin::la::PETScLUSolver
-  py::class_<dolfin::la::PETScLUSolver,
-             std::shared_ptr<dolfin::la::PETScLUSolver>>(
-      m, "PETScLUSolver", "DOLFIN PETScLUSolver object")
-      .def(py::init(
-               [](const MPICommWrapper comm, std::string method = "default") {
-                 return std::make_unique<dolfin::la::PETScLUSolver>(comm.get(),
-                                                                    method);
-               }),
-           py::arg("comm"), py::arg("method") = "default")
-      .def("set_operator", &dolfin::la::PETScLUSolver::set_operator)
-      .def("get_options_prefix", &dolfin::la::PETScLUSolver::get_options_prefix)
-      .def("set_options_prefix", &dolfin::la::PETScLUSolver::set_options_prefix)
-      .def("solve",
-           (std::size_t(dolfin::la::PETScLUSolver::*)(
-               dolfin::la::PETScVector&, const dolfin::la::PETScVector&))
-               & dolfin::la::PETScLUSolver::solve)
-      .def("ksp", &dolfin::la::PETScLUSolver::ksp);
 
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
