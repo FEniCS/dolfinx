@@ -277,7 +277,7 @@ bool PETScMatrix::empty() const
   return (sizes[0] < 1) and (sizes[1] < 1);
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::get(double* block, std::size_t m,
+void PETScMatrix::get(PetscScalar* block, std::size_t m,
                       const dolfin::la_index_t* rows, std::size_t n,
                       const dolfin::la_index_t* cols) const
 {
@@ -288,7 +288,7 @@ void PETScMatrix::get(double* block, std::size_t m,
     petsc_error(ierr, __FILE__, "MatGetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set(const double* block, std::size_t m,
+void PETScMatrix::set(const PetscScalar* block, std::size_t m,
                       const dolfin::la_index_t* rows, std::size_t n,
                       const dolfin::la_index_t* cols)
 {
@@ -299,7 +299,7 @@ void PETScMatrix::set(const double* block, std::size_t m,
     petsc_error(ierr, __FILE__, "MatSetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_local(const double* block, std::size_t m,
+void PETScMatrix::set_local(const PetscScalar* block, std::size_t m,
                             const dolfin::la_index_t* rows, std::size_t n,
                             const dolfin::la_index_t* cols)
 {
@@ -310,7 +310,7 @@ void PETScMatrix::set_local(const double* block, std::size_t m,
     petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(const double* block, std::size_t m,
+void PETScMatrix::add(const PetscScalar* block, std::size_t m,
                       const dolfin::la_index_t* rows, std::size_t n,
                       const dolfin::la_index_t* cols)
 {
@@ -321,7 +321,7 @@ void PETScMatrix::add(const double* block, std::size_t m,
     petsc_error(ierr, __FILE__, "MatSetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add_local(const double* block, std::size_t m,
+void PETScMatrix::add_local(const PetscScalar* block, std::size_t m,
                             const dolfin::la_index_t* rows, std::size_t n,
                             const dolfin::la_index_t* cols)
 {
@@ -332,7 +332,7 @@ void PETScMatrix::add_local(const double* block, std::size_t m,
     petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::axpy(double a, const PETScMatrix& A,
+void PETScMatrix::axpy(PetscScalar a, const PETScMatrix& A,
                        bool same_nonzero_pattern)
 {
   PetscErrorCode ierr;
@@ -385,7 +385,7 @@ void PETScMatrix::zero(std::size_t m, const dolfin::la_index_t* rows)
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
-                             double diag)
+                             PetscScalar diag)
 {
   assert(_matA);
   PetscErrorCode ierr;
@@ -541,7 +541,7 @@ void PETScMatrix::zero()
     petsc_error(ierr, __FILE__, "MatZeroEntries");
 }
 //-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator*=(double a)
+const PETScMatrix& PETScMatrix::operator*=(PetscScalar a)
 {
   assert(_matA);
   PetscErrorCode ierr = MatScale(_matA, a);
@@ -550,7 +550,7 @@ const PETScMatrix& PETScMatrix::operator*=(double a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator/=(double a)
+const PETScMatrix& PETScMatrix::operator/=(PetscScalar a)
 {
   assert(_matA);
   MatScale(_matA, 1.0 / a);
@@ -565,6 +565,16 @@ bool PETScMatrix::is_symmetric(double tol) const
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatIsSymmetric");
   return symmetric == PETSC_TRUE ? true : false;
+}
+//-----------------------------------------------------------------------------
+bool PETScMatrix::is_hermitian(double tol) const
+{
+  assert(_matA);
+  PetscBool hermitian = PETSC_FALSE;
+  PetscErrorCode ierr = MatIsHermitian(_matA, tol, &hermitian);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatIsHermitian");
+  return hermitian == PETSC_TRUE ? true : false;
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_options_prefix(std::string options_prefix)
