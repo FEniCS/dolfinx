@@ -53,7 +53,8 @@ def build_nullspace(V, x):
 
 # mesh = UnitCubeMesh(2, 2, 2)
 mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(2, 1, 1)], [
-                      12, 12, 12], CellType.Type.tetrahedron)
+                      12, 12, 12], CellType.Type.tetrahedron,
+                      dolfin.cpp.mesh.GhostMode.none)
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 

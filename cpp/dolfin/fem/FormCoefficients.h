@@ -21,7 +21,7 @@ class GenericFunction;
 
 namespace fem
 {
-  class FiniteElement;
+class FiniteElement;
 
 /// Storage for the coefficients of a Form consisting of GenericFunctions and
 /// the Elements they are defined on
@@ -31,6 +31,9 @@ public:
   /// Initialise the FormCoefficients from a ufc_form, instantiating all the
   /// required elements
   FormCoefficients(const ufc_form& ufc_form);
+
+  /// Initialise the FormCoefficients with their elements only
+  FormCoefficients(std::vector<fem::FiniteElement>& coefficient_elements);
 
   /// Get number of coefficients
   std::size_t size() const;

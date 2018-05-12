@@ -50,15 +50,18 @@ public:
   static mesh::Mesh create(MPI_Comm comm,
                            const std::array<geometry::Point, 2>& p,
                            std::array<std::size_t, 3> n,
-                           mesh::CellType::Type cell_type);
+                           mesh::CellType::Type cell_type,
+                           const mesh::GhostMode ghost_mode);
 
 private:
   // Build mesh
   static mesh::Mesh build_tet(MPI_Comm comm,
                               const std::array<geometry::Point, 2>& p,
-                              std::array<std::size_t, 3> n);
+                              std::array<std::size_t, 3> n,
+                              const mesh::GhostMode ghost_mode);
 
-  static mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n);
+  static mesh::Mesh build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
+                              const mesh::GhostMode ghost_mode);
 };
 } // namespace generation
 } // namespace dolfin

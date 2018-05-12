@@ -45,8 +45,7 @@ void Expression::eval(Eigen::Ref<EigenRowArrayXXd> values,
 void Expression::eval(Eigen::Ref<EigenRowArrayXXd> values,
                       Eigen::Ref<const EigenRowArrayXXd> x) const
 {
-  log::dolfin_error("Expression.cpp", "evaluate expression",
-                    "Missing eval() function (must be overloaded)");
+  throw std::runtime_error("Missing eval() function (must be overloaded)");
 }
 //-----------------------------------------------------------------------------
 std::size_t Expression::value_rank() const { return _value_shape.size(); }
@@ -70,29 +69,29 @@ std::vector<std::size_t> Expression::value_shape() const
 //-----------------------------------------------------------------------------
 void Expression::set_property(std::string name, double value)
 {
-  log::dolfin_error("Expression.cpp", "set property",
-                    "This method should be overloaded in the derived class");
+  throw std::runtime_error(
+      "Expression::set_property should be overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
 double Expression::get_property(std::string name) const
 {
-  log::dolfin_error("Expression.cpp", "get property",
-                    "This method should be overloaded in the derived class");
+  throw std::runtime_error(
+      "Expression::get_property should be overloaded in the derived class");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 void Expression::set_generic_function(std::string name,
                                       std::shared_ptr<GenericFunction>)
 {
-  log::dolfin_error("Expression.cpp", "set property",
-                    "This method should be overloaded in the derived class");
+  throw std::runtime_error("Expression::set_generic_function should be "
+                           "overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<GenericFunction>
 Expression::get_generic_function(std::string name) const
 {
-  log::dolfin_error("Expression.cpp", "get property",
-                    "This method should be overloaded in the derived class");
+  throw std::runtime_error("Expression::get_generic_function should be "
+                           "overloaded in the derived class");
   return std::shared_ptr<GenericFunction>();
 }
 //-----------------------------------------------------------------------------

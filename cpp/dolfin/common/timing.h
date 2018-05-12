@@ -13,15 +13,6 @@
 namespace dolfin
 {
 
-/// Parameter specifying whether to clear timing(s):
-///   * ``TimingClear::keep``
-///   * ``TimingClear::clear``
-enum class TimingClear : bool
-{
-  keep = false,
-  clear = true
-};
-
 /// Timing types:
 ///   * ``TimingType::wall`` wall-clock time
 ///   * ``TimingType::user`` user (cpu) time
@@ -45,61 +36,47 @@ double toc();
 /// Return wall time elapsed since some implementation dependent epoch
 double time();
 
-/// Return a summary of timings and tasks in a _Table_, optionally clearing
-/// stored timings
+/// Return a summary of timings and tasks in a _Table_
 ///
-/// @param    clear (TimingClear)
-///         * ``TimingClear::clear`` resets stored timings
-///         * ``TimingClear::keep`` leaves stored timings intact
 /// @param    type (std::set<TimingType>)
 ///         subset of ``{ TimingType::wall, TimingType::user,
 ///         TimingType::system }``
 ///
 /// @returns    _Table_
 ///         _Table_ with timings
-Table timings(TimingClear clear, std::set<TimingType> type);
+Table timings(std::set<TimingType> type);
 
-/// List a summary of timings and tasks, optionally clearing stored timings.
+/// List a summary of timings and tasks.
 /// ``MPI_AVG`` reduction is printed. Collective on ``MPI_COMM_WORLD``.
 ///
-/// @param    clear (TimingClear)
-///         * ``TimingClear::clear`` resets stored timings
-///         * ``TimingClear::keep`` leaves stored timings intact
 /// @param    type (std::set<TimingType>)
 ///         subset of ``{ TimingType::wall, TimingType::user,
 ///         TimingType::system }``
-void list_timings(TimingClear clear, std::set<TimingType> type);
+void list_timings(std::set<TimingType> type);
 // NOTE: Function marked as 'collective on COMM_WORLD' (instead of
 //       'collective on Logger::mpi_comm()') as user has no clue what the
 //       function has to do with Logger
 
-/// Dump a summary of timings and tasks to XML file, optionally clearing
-/// stored timings. ``MPI_MAX``, ``MPI_MIN`` and ``MPI_AVG`` reductions are
+/// Dump a summary of timings and tasks to XML file.
+/// ``MPI_MAX``, ``MPI_MIN`` and ``MPI_AVG`` reductions are
 /// stored. Collective on ``MPI_COMM_WORLD``.
 ///
 /// @param    filename (std::string)
 ///         output filename; must have ``.xml`` suffix; existing file
 ///         is silently overwritten
-/// @param    clear (TimingClear)
-///         * ``TimingClear::clear`` resets stored timings
-///         * ``TimingClear::keep`` leaves stored timings intact
-void dump_timings_to_xml(std::string filename, TimingClear clear);
+void dump_timings_to_xml(std::string filename);
 // NOTE: Function marked as 'collective on COMM_WORLD' (instead of
 //       'collective on Logger::mpi_comm()') as user has no clue what the
 //       function has to do with Logger
 
 /// Return timing (count, total wall time, total user time,
-/// total system time) for given task, optionally clearing
-/// all timings for the task
+/// total system time) for given task.
 ///
 /// @param    task (std::string)
 ///         name of a task
-/// @param    clear (TimingClear)
-///         * ``TimingClear::clear`` resets stored timings
-///         * ``TimingClear::keep`` leaves stored timings intact
 ///
 /// @returns    std::tuple<std::size_t, double, double, double>
 ///         (count, total wall time, total user time, total system time)
-std::tuple<std::size_t, double, double, double> timing(std::string task,
-                                                       TimingClear clear);
-}
+std::tuple<std::size_t, double, double, double> timing(std::string task);
+
+} // namespace dolfin

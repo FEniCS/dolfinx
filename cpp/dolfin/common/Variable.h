@@ -24,8 +24,8 @@ public:
   /// Create unnamed variable
   Variable();
 
-  /// Create variable with given name and label
-  Variable(const std::string name, const std::string label);
+  /// Create variable with given name
+  Variable(const std::string name);
 
   /// Copy constructor
   Variable(const Variable& variable);
@@ -40,13 +40,10 @@ public:
   const Variable& operator=(const Variable& variable);
 
   /// Rename variable
-  void rename(const std::string name, const std::string label);
+  void rename(const std::string name);
 
   /// Return name
   std::string name() const;
-
-  /// Return label (description)
-  std::string label() const;
 
   /// Get unique identifier.
   ///
@@ -63,9 +60,6 @@ public:
 private:
   // Name
   std::string _name;
-
-  // Label
-  std::string _label;
 
   // Unique identifier
   const std::size_t unique_id;

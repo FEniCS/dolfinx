@@ -163,10 +163,12 @@ the form file) defined relative to this mesh, we do as follows
 
      // Create mesh and function space
      std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};
-     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle));
+     auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
+        MPI_COMM_WORLD, pt, {{32, 32}},
+        mesh::CellType::Type::triangle, mesh::GhostMode::none));
 
-    auto space = std::unique_ptr<dolfin_function_space>(PoissonFunctionSpace());
-    auto V = std::make_shared<function::FunctionSpace>(mesh,
+     auto space = std::unique_ptr<dolfin_function_space>(PoissonFunctionSpace());
+     auto V = std::make_shared<function::FunctionSpace>(mesh,
         std::make_shared<fem::FiniteElement>(std::shared_ptr<ufc_finite_element>(space->element())),
         std::make_shared<fem::DofMap>(std::shared_ptr<ufc_dofmap>(space->dofmap()), *mesh));
 
@@ -239,7 +241,12 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
      assembler.assemble(*A);
      assembler.assemble(*b);
 
-     la::PETScLUSolver lu(MPI_COMM_WORLD, A);
+     la::PETScKrylovSolver lu(MPI_COMM_WORLD);
+     la::PETScOptions::set("ksp_type", "preonly");
+     la::PETScOptions::set("pc_type", "lu");
+     lu.set_from_options();
+
+     lu.set_operator(*A);
      lu.solve(*u.vector(), *b);
 
 

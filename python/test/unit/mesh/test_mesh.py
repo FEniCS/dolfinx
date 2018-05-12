@@ -12,7 +12,7 @@ import os
 
 import FIAT
 from dolfin import *
-from dolfin_utils.test import fixture, set_parameters_fixture
+from dolfin_utils.test import fixture
 from dolfin_utils.test import skip_in_parallel, xfail_in_parallel
 from dolfin_utils.test import cd_tempdir
 
@@ -29,7 +29,8 @@ def mesh1d():
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
     mesh2d = RectangleMesh.create(MPI.comm_world, [Point(0, 0), Point(1, 1)],
-                                  [1, 1], CellType.Type.triangle, 'left')
+                                  [1, 1], CellType.Type.triangle,
+                                  cpp.mesh.GhostMode.none, 'left')
     mesh2d.geometry.points[3] += 0.5*(sqrt(3.0)-1.0)
     return mesh2d
 
@@ -73,7 +74,11 @@ def square():
 
 @fixture
 def rectangle():
-    return RectangleMesh.create(MPI.comm_world, [Point(0, 0), Point(2, 2)], [5, 5], CellType.Type.triangle)
+    return RectangleMesh.create(MPI.comm_world,
+                                [Point(0, 0), Point(2, 2)],
+                                [5, 5],
+                                CellType.Type.triangle,
+                                cpp.mesh.GhostMode.none)
 
 
 @fixture
@@ -83,7 +88,11 @@ def cube():
 
 @fixture
 def box():
-    return BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(2, 2, 2)], [2, 2, 5], CellType.Type.tetrahedron)
+    return BoxMesh.create(MPI.comm_world,
+                          [Point(0, 0, 0), Point(2, 2, 2)],
+                          [2, 2, 5],
+                          CellType.Type.tetrahedron,
+                          cpp.mesh.GhostMode.none)
 
 
 @fixture
@@ -227,7 +236,7 @@ def test_MeshXML2D(cd_tempdir):
     mesh_out = UnitSquareMesh(MPI.comm_world, 3, 3)
     file = XDMFFile(mesh_out.mpi_comm(), "unitsquare.xdmf")
     file.write(mesh_out, XDMFFile.Encoding.ASCII)
-    mesh_in = file.read_mesh(MPI.comm_world)
+    mesh_in = file.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
     assert mesh_in.num_vertices() == 16
 
 
@@ -237,7 +246,7 @@ def test_MeshXML3D(cd_tempdir):
     mesh_out = UnitCubeMesh(MPI.comm_world, 3, 3, 3)
     file = XDMFFile(mesh_out.mpi_comm(), "unitcube.xdmf")
     file.write(mesh_out, XDMFFile.Encoding.ASCII)
-    mesh_in = file.read_mesh(MPI.comm_world)
+    mesh_in = file.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
     assert mesh_in.num_vertices() == 64
 
 
@@ -331,13 +340,6 @@ def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
 
 # - Facilities to run tests on combination of meshes
 
-
-ghost_mode = set_parameters_fixture("ghost_mode", [
-    "none",
-    "shared_facet",
-    "shared_vertex",
-])
-
 mesh_factories = [
     (UnitIntervalMesh, (MPI.comm_world, 8,)),
     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
@@ -364,15 +366,15 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
     shared_vertex mode. Needs implementing.
     """
     if mesh_factory in [UnitSquareMesh, UnitCubeMesh]:
-        if ghost_mode == 'shared_vertex':
+        if ghost_mode == cpp.mesh.GhostMode.shared_vertex:
             pytest.xfail(reason="Missing functionality in '{}' with '' "
                          "mode".format(mesh_factory, ghost_mode))
 
 
 @pytest.mark.parametrize('mesh_factory', mesh_factories_broken_shared_entities)
-def test_shared_entities(mesh_factory, ghost_mode):
+def test_shared_entities(mesh_factory):
     func, args = mesh_factory
-    xfail_ghosted_quads_hexes(func, ghost_mode)
+    # xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
     dim = mesh.topology.dim
 

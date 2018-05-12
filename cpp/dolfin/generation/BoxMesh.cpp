@@ -19,22 +19,24 @@ using namespace dolfin::generation;
 mesh::Mesh BoxMesh::create(MPI_Comm comm,
                            const std::array<geometry::Point, 2>& p,
                            std::array<std::size_t, 3> n,
-                           mesh::CellType::Type cell_type)
+                           mesh::CellType::Type cell_type,
+                           const mesh::GhostMode ghost_mode)
 {
   if (cell_type == mesh::CellType::Type::tetrahedron)
-    return build_tet(comm, p, n);
+    return build_tet(comm, p, n, ghost_mode);
   else if (cell_type == mesh::CellType::Type::hexahedron)
-    return build_hex(comm, n);
+    return build_hex(comm, n, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");
 
   // Will never reach this point
-  return build_tet(comm, p, n);
+  return build_tet(comm, p, n, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
                               const std::array<geometry::Point, 2>& p,
-                              std::array<std::size_t, 3> n)
+                              std::array<std::size_t, 3> n,
+                              const mesh::GhostMode ghost_mode)
 {
   common::Timer timer("Build BoxMesh");
 
@@ -45,7 +47,8 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
     EigenRowArrayXXi64 topo(0, 4);
 
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, "none");
+        comm, mesh::CellType::Type::tetrahedron, geom, topo, {},
+        ghost_mode);
   }
 
   // Extract data
@@ -140,10 +143,12 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   }
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, "none");
+      comm, mesh::CellType::Type::tetrahedron, geom, topo, {},
+      ghost_mode);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
+mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
+                              const mesh::GhostMode ghost_mode)
 {
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
@@ -152,7 +157,8 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
     EigenRowArrayXXi64 topo(0, 8);
 
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::hexahedron, geom, topo, {}, "none");
+        comm, mesh::CellType::Type::hexahedron, geom, topo, {},
+        ghost_mode);
   }
 
   const std::size_t nx = n[0];
@@ -213,6 +219,7 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n)
   }
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::hexahedron, geom, topo, {}, "none");
+      comm, mesh::CellType::Type::hexahedron, geom, topo, {},
+      ghost_mode);
 }
 //-----------------------------------------------------------------------------

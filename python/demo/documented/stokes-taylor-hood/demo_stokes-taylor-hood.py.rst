@@ -88,7 +88,7 @@ following way::
 
     # Load mesh and subdomains
     xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
-    mesh = xdmf.read_mesh(MPI.comm_world)
+    mesh = xdmf.read_mesh(MPI.comm_world, dolfin.cpp.mesh.GhostMode.none)
     sub_domains = xdmf.read_mf_size_t(mesh)
 
     cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
@@ -159,7 +159,8 @@ a deep copy for further computations on the coefficient vectors::
 
     # Compute solution
     w = Function(W)
-    solve(a == L, w, bcs)
+    solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
+          "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
 
     # Split the mixed solution using deepcopy
     # (needed for further computation on coefficient vector)

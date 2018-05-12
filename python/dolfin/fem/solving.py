@@ -12,7 +12,8 @@ VariationalProblem/Solver classes as well as the solve function.
 
 import ufl
 import dolfin.cpp as cpp
-from dolfin.cpp.la import PETScVector, PETScMatrix, PETScLUSolver
+from dolfin.cpp.la import PETScVector, PETScMatrix, \
+    PETScKrylovSolver, PETScOptions
 from dolfin.cpp.fem import SystemAssembler
 from dolfin.function.function import Function
 from dolfin.fem.form import Form
@@ -125,7 +126,7 @@ def solve(*args, **kwargs):
         solve(F == 0, u, bcs=[bc1, bc2])
 
         solve(F == 0, u, bcs, J=J,
-              solver_parameters={"linear_solver": "lu"},
+              petsc_options={"ksp_type": "preonly", "pc_type": "lu"},
               form_compiler_parameters={"optimize": True})
 
 
@@ -180,7 +181,7 @@ def _solve_varproblem(*args, **kwargs):
     "Solve variational problem a == L or F == 0"
 
     # Extract arguments
-    eq, u, bcs, J, tol, M, form_compiler_parameters, solver_parameters \
+    eq, u, bcs, J, tol, M, form_compiler_parameters, petsc_options \
         = _extract_args(*args, **kwargs)
 
     # Solve linear variational problem
@@ -196,9 +197,14 @@ def _solve_varproblem(*args, **kwargs):
         assembler = SystemAssembler(a, L, bcs)
         assembler.assemble(A, b)
 
-        solver = PETScLUSolver(comm)
-        solver.set_operator(A)
+        solver = PETScKrylovSolver(comm)
 
+        solver.set_options_prefix("dolfin_solve_")
+        for k, v in petsc_options.items():
+            PETScOptions.set("dolfin_solve_" + k, v)
+        solver.set_from_options()
+
+        solver.set_operator(A)
         solver.solve(u.vector(), b)
 
     # Solve nonlinear variational problem
@@ -220,7 +226,7 @@ def _solve_varproblem(*args, **kwargs):
 
         # Create solver and call solve
         # solver = NonlinearVariationalSolver(problem)
-        # solver.parameters.update(solver_parameters)
+        # solver.parameters.update(petsc_options)
         # solver.solve()
 
 
@@ -229,7 +235,7 @@ def _extract_args(*args, **kwargs):
 
     # Check for use of valid kwargs
     valid_kwargs = ["bcs", "J", "tol", "M",
-                    "form_compiler_parameters", "solver_parameters"]
+                    "form_compiler_parameters", "petsc_options"]
     for kwarg in kwargs.keys():
         if kwarg not in valid_kwargs:
             raise RuntimeError("Illegal keyword argument \'{}\'.".format(kwarg))
@@ -277,9 +283,9 @@ def _extract_args(*args, **kwargs):
 
     # Extract parameters
     form_compiler_parameters = kwargs.get("form_compiler_parameters", {})
-    solver_parameters = kwargs.get("solver_parameters", {})
+    petsc_options = kwargs.get("petsc_options", {})
 
-    return eq, u, bcs, J, tol, M, form_compiler_parameters, solver_parameters
+    return eq, u, bcs, J, tol, M, form_compiler_parameters, petsc_options
 
 
 def _extract_eq(eq):

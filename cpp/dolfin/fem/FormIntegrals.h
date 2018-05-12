@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <functional>
 #include <memory>
 #include <vector>
@@ -39,6 +40,9 @@ public:
   /// the required integrals
   FormIntegrals(const ufc_form& ufc_form);
 
+  /// Initialise the FormIntegrals as empty
+  FormIntegrals() {}
+
   /// Default cell integral
   std::shared_ptr<const ufc_cell_integral> cell_integral() const;
 
@@ -46,8 +50,19 @@ public:
   std::shared_ptr<const ufc_cell_integral> cell_integral(unsigned int i) const;
 
   /// Get the function for 'tabulate_tensor' for cell integral i
+  /// @param i
+  ///    Integral number
+  /// @returns std::function
+  ///    Function to call for tabulate_tensor on a cell
   const std::function<void(double*, const double* const*, const double*, int)>&
   cell_tabulate_tensor(int i) const;
+
+  /// Get the enabled coefficients on cell integral i
+  /// @param i
+  ///    Integral number
+  /// @returns bool*
+  ///    Pointer to list of enabled coefficients for this integral
+  const bool* cell_enabled_coefficients(int i) const;
 
   /// Set the function for 'tabulate_tensor' for cell integral i
   void set_cell_tabulate_tensor(int i, void (*fn)(double*, const double* const*,
@@ -99,6 +114,10 @@ private:
   std::vector<
       std::function<void(double*, const double* const*, const double*, int)>>
       _cell_tabulate_tensor;
+
+  // Storage for enabled coefficients, to match the functions
+  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      _enabled_coefficients;
 
   // Exterior facet integrals
   std::vector<std::shared_ptr<ufc_exterior_facet_integral>>

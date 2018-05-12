@@ -72,7 +72,7 @@ class FacetArea(BaseExpression):
         ufl_element = ufl.FiniteElement("Discontinuous Lagrange",
                                         mesh.ufl_cell(), 0)
         super().__init__(
-            domain=mesh.ufl_domain(), element=ufl_element, label="FacetArea")
+            domain=mesh.ufl_domain(), element=ufl_element, name="FacetArea")
 
 
 # Simple definition of FacetNormal via UFL

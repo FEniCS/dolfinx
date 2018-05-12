@@ -1373,7 +1373,8 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                 {num_cells_global, 1}, "UInt");
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
+mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
+                               const mesh::GhostMode ghost_mode) const
 {
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
@@ -1475,7 +1476,6 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm) const
   std::iota(global_cell_indices.begin(), global_cell_indices.end(),
             cell_index_offset);
 
-  const std::string ghost_mode = parameter::parameters["ghost_mode"];
   return mesh::MeshPartitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type->cell_type(), points, cells,
       global_cell_indices, ghost_mode);
@@ -1653,11 +1653,14 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     // Adjust num_nodes_per_cell to appropriate size
     num_nodes_per_cell = cell_points.size(0);
     topology_data.reserve(num_nodes_per_cell * mesh.num_cells());
+    const std::vector<std::uint8_t>& perm
+        = mesh.coordinate_dofs().cell_permutation();
+
     for (std::uint32_t c = 0; c != mesh.num_cells(); ++c)
     {
       const std::int32_t* points = cell_points(c);
       for (std::int32_t i = 0; i != num_nodes_per_cell; ++i)
-        topology_data.push_back(global_points[points[i]]);
+        topology_data.push_back(global_points[points[perm[i]]]);
     }
   }
   else

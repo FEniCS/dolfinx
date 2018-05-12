@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "LocalMeshValueCollection.h"
 #include "Mesh.h"
 #include "MeshConnectivity.h"
 #include "MeshEntity.h"
@@ -23,6 +22,9 @@ namespace dolfin
 namespace mesh
 {
 class MeshEntity;
+
+template <typename T>
+class MeshValueCollection;
 
 /// A MeshFunction is a function that can be evaluated at a set of
 /// mesh entities. A MeshFunction is discrete and is only defined at
@@ -209,7 +211,7 @@ template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                               const MeshValueCollection<T>& value_collection,
                               const T& default_value)
-    : common::Variable("f", "unnamed MeshFunction"), _mesh(mesh),
+    : common::Variable("f"), _mesh(mesh),
       _dim(value_collection.dim())
 {
   assert(_mesh);

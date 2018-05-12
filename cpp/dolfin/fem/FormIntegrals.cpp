@@ -34,15 +34,18 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
     }
   }
 
-  // FIXME: Figure out how to update this for ufc_foo_integral
+  _enabled_coefficients.resize(_cell_integrals.size(),
+                               ufc_form.num_coefficients);
+
   // Experimental function pointers for tabulate_tensor cell integral
-  // for (auto& ci : _cell_integrals)
-  // {
-  //   _cell_tabulate_tensor.push_back(std::bind(
-  //       &ufc::cell_integral::tabulate_tensor, ci, std::placeholders::_1,
-  //       std::placeholders::_2, std::placeholders::_3,
-  //       std::placeholders::_4));
-  // }
+  for (unsigned int i = 0; i != _cell_integrals.size(); ++i)
+  {
+    const auto ci = _cell_integrals[i];
+    _cell_tabulate_tensor.push_back(ci->tabulate_tensor);
+    std::copy(ci->enabled_coefficients,
+              ci->enabled_coefficients + ufc_form.num_coefficients,
+              _enabled_coefficients.row(i).data());
+  }
 
   // Exterior facet integrals
   ufc_exterior_facet_integral* _default_exterior_facet_integral
@@ -138,11 +141,20 @@ FormIntegrals::cell_tabulate_tensor(int i) const
   return _cell_tabulate_tensor[i];
 }
 //-----------------------------------------------------------------------------
+const bool* FormIntegrals::cell_enabled_coefficients(int i) const
+{
+  return _enabled_coefficients.row(i).data();
+}
+//-----------------------------------------------------------------------------
 void FormIntegrals::set_cell_tabulate_tensor(
     int i, void (*fn)(double*, const double* const*, const double*, int))
 {
   _cell_tabulate_tensor.resize(i + 1);
   _cell_tabulate_tensor[i] = fn;
+
+  // Enable all coefficients for this integral
+  _enabled_coefficients.conservativeResize(i + 1, Eigen::NoChange);
+  _enabled_coefficients.row(i) = true;
 }
 //-----------------------------------------------------------------------------
 int FormIntegrals::count(FormIntegrals::Type t) const
@@ -150,7 +162,7 @@ int FormIntegrals::count(FormIntegrals::Type t) const
   switch (t)
   {
   case Type::cell:
-    return _cell_integrals.size();
+    return _cell_tabulate_tensor.size();
   case Type::interior_facet:
     return _interior_facet_integrals.size();
   case Type::exterior_facet:
@@ -162,7 +174,10 @@ int FormIntegrals::count(FormIntegrals::Type t) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-int FormIntegrals::num_cell_integrals() const { return _cell_integrals.size(); }
+int FormIntegrals::num_cell_integrals() const
+{
+  return _cell_tabulate_tensor.size();
+}
 //-----------------------------------------------------------------------------
 std::shared_ptr<const ufc_exterior_facet_integral>
 FormIntegrals::exterior_facet_integral() const

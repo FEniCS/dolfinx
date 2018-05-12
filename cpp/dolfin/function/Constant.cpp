@@ -49,8 +49,8 @@ const Constant& Constant::operator=(const Constant& constant)
   // Check value shape
   if (constant.value_shape() != value_shape())
   {
-    log::dolfin_error("Constant.cpp", "assign value to constant",
-                      "Value shape mismatch");
+    throw std::runtime_error(
+        "Cannot assign value to constant. Value shape mismatch");
   }
 
   // Assign values
@@ -64,8 +64,8 @@ const Constant& Constant::operator=(double constant)
   // Check value shape
   if (!value_shape().empty())
   {
-    log::dolfin_error("Constant.cpp", "assign scalar value to constant",
-                      "Constant is not a scalar");
+    throw std::runtime_error(
+        "Cannot assign scalar value to constant. Constant is not a scalar");
   }
 
   // Assign value

@@ -27,11 +27,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXd>& points,
            const Eigen::Ref<const EigenRowArrayXXi64>& cells,
            const std::vector<std::int64_t>& global_cell_indices,
+           const GhostMode ghost_mode,
            std::uint32_t num_ghost_cells)
-    : common::Variable("mesh", "DOLFIN mesh"),
+    : common::Variable("mesh"),
       _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
       _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
-      _mpi_comm(comm), _ghost_mode("none")
+      _mpi_comm(comm), _ghost_mode(ghost_mode)
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
@@ -44,21 +45,26 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
                       "Wrong number of global cell indices");
   }
 
+  // Permutation from VTK to DOLFIN order for cell geometric points
+  // FIXME: should do this also for quad/hex
+  // FIXME: remove duplication in CellType::vtk_mapping()
+  std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
+
   // Decide if the mesh is P2 or other geometry.
   // P1 has num_vertices_per_cell == cells.cols()
   if (num_vertices_per_cell != cells.cols())
   {
-    if (_cell_type->cell_type() == mesh::CellType::Type::triangle
-        and cells.cols() == 6)
+    if (type == mesh::CellType::Type::triangle and cells.cols() == 6)
     {
       log::warning("P2 Mesh of Tri_6");
       _degree = 2;
+      cell_permutation = {0, 1, 2, 5, 3, 4};
     }
-    else if (_cell_type->cell_type() == mesh::CellType::Type::tetrahedron
-             and cells.cols() == 10)
+    else if (type == mesh::CellType::Type::tetrahedron and cells.cols() == 10)
     {
       log::warning("P2 Mesh of Tet_10");
       _degree = 2;
+      cell_permutation = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
     }
     else
     {
@@ -82,8 +88,9 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   std::vector<std::int64_t> global_point_indices;
   EigenRowArrayXXi32 coordinate_dofs;
   std::tie(num_vertices, global_point_indices, coordinate_dofs)
-      = MeshPartitioning::compute_point_mapping(num_vertices_per_cell, cells);
-  _coordinate_dofs.init(tdim, coordinate_dofs);
+      = MeshPartitioning::compute_point_mapping(num_vertices_per_cell, cells,
+                                                cell_permutation);
+  _coordinate_dofs.init(tdim, coordinate_dofs, cell_permutation);
 
   // Distribute the points across processes and calculate shared points
   EigenRowArrayXXd distributed_points;
@@ -168,7 +175,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : common::Variable(mesh.name(), mesh.label()),
+    : common::Variable(mesh.name()),
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(mesh._topology), _geometry(mesh._geometry),
       _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
@@ -211,7 +218,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   _ghost_mode = mesh._ghost_mode;
 
   // Rename
-  rename(mesh.name(), mesh.label());
+  rename(mesh.name());
 
   return *this;
 }
@@ -389,11 +396,8 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-std::string Mesh::get_ghost_mode() const { return _ghost_mode; }
-//-----------------------------------------------------------------------------
-void Mesh::set_ghost_mode(std::string mode)
+mesh::GhostMode Mesh::get_ghost_mode() const
 {
-  assert(mode == "none" or mode == "shared_vertex" or mode == "shared_facet");
-  _ghost_mode = mode;
+  return _ghost_mode;
 }
 //-----------------------------------------------------------------------------

@@ -2,7 +2,6 @@ set(HEADERS
   dolfin_la.h
   PETScBaseMatrix.h
   PETScKrylovSolver.h
-  PETScLUSolver.h
   PETScMatrix.h
   PETScOptions.h
   PETScVector.h
@@ -16,7 +15,6 @@ set(HEADERS
 set(SOURCES
   PETScBaseMatrix.cpp
   PETScKrylovSolver.cpp
-  PETScLUSolver.cpp
   PETScMatrix.cpp
   PETScOptions.cpp
   PETScVector.cpp

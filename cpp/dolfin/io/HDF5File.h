@@ -111,7 +111,8 @@ public:
   /// in the file. This function requires all necessary data for
   /// constructing a mesh::Mesh to be present in the HDF5 file.
   mesh::Mesh read_mesh(MPI_Comm, const std::string data_path,
-                       bool use_partition_from_file) const;
+                       bool use_partition_from_file,
+                       const mesh::GhostMode ghost_mode) const;
 
   /// Construct mesh::Mesh with paths to topology and geometry datasets,
   /// and providing essential meta-data, e.g. geometric dimension
@@ -127,7 +128,8 @@ public:
                        const mesh::CellType& cell_type,
                        const std::int64_t expected_num_global_cells,
                        const std::int64_t expected_num_global_points,
-                       bool use_partition_from_file) const;
+                       bool use_partition_from_file,
+                       const mesh::GhostMode ghost_mode) const;
 
   /// Write mesh::MeshFunction to file in a format suitable for re-reading
   void write(const mesh::MeshFunction<std::size_t>& meshfunction,

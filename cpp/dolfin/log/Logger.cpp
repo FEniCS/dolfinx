@@ -246,8 +246,7 @@ void Logger::set_indentation_level(std::size_t indentation_level)
 void Logger::register_timing(std::string task,
                              std::tuple<double, double, double> elapsed)
 {
-  assert(elapsed
-                >= std::make_tuple(double(0.0), double(0.0), double(0.0)));
+  assert(elapsed >= std::make_tuple(double(0.0), double(0.0), double(0.0)));
 
   // Print a message
   std::stringstream line;
@@ -272,10 +271,10 @@ void Logger::register_timing(std::string task,
   }
 }
 //-----------------------------------------------------------------------------
-void Logger::list_timings(TimingClear clear, std::set<TimingType> type)
+void Logger::list_timings(std::set<TimingType> type)
 {
   // Format and reduce to rank 0
-  Table timings = this->timings(clear, type);
+  Table timings = this->timings(type);
   timings = MPI::avg(_mpi_comm, timings);
   const std::string str = timings.str(true);
 
@@ -297,7 +296,7 @@ std::map<TimingType, std::string> Logger::_TimingType_descr
        {TimingType::user, "usr"},
        {TimingType::system, "sys"}};
 //-----------------------------------------------------------------------------
-Table Logger::timings(TimingClear clear, std::set<TimingType> type)
+Table Logger::timings(std::set<TimingType> type)
 {
   // Generate log::timing table
   Table table("Summary of timings");
@@ -317,15 +316,10 @@ Table Logger::timings(TimingClear clear, std::set<TimingType> type)
     }
   }
 
-  // Clear timings
-  if (static_cast<bool>(clear))
-    _timings.clear();
-
   return table;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::size_t, double, double, double>
-Logger::timing(std::string task, TimingClear clear)
+std::tuple<std::size_t, double, double, double> Logger::timing(std::string task)
 {
   // Find timing
   auto it = _timings.find(task);
@@ -337,10 +331,6 @@ Logger::timing(std::string task, TimingClear clear)
   }
   // Prepare for return for the case of reset
   const auto result = it->second;
-
-  // Clear timing
-  if (static_cast<bool>(clear))
-    _timings.erase(it);
 
   return result;
 }

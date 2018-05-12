@@ -17,7 +17,6 @@
 #include "casters.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/la/PETScKrylovSolver.h>
-#include <dolfin/la/PETScLUSolver.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
@@ -95,10 +94,9 @@ void la(py::module& m)
       .def(py::init(
           [](const MPICommWrapper comm,
              std::array<std::shared_ptr<const dolfin::common::IndexMap>, 2>
-                 index_maps,
-             int dim) {
-            return std::make_unique<dolfin::la::SparsityPattern>(
-                comm.get(), index_maps, dim);
+                 index_maps) {
+            return std::make_unique<dolfin::la::SparsityPattern>(comm.get(),
+                                                                 index_maps);
           }))
       .def(py::init(
           [](const MPICommWrapper comm,
@@ -113,63 +111,15 @@ void la(py::module& m)
       .def("str", &dolfin::la::SparsityPattern::str)
       .def("num_nonzeros", &dolfin::la::SparsityPattern::num_nonzeros)
       .def("num_nonzeros_diagonal",
-           [](const dolfin::la::SparsityPattern& instance) {
-             std::vector<std::size_t> num_nonzeros;
-             instance.num_nonzeros_diagonal(num_nonzeros);
-             return py::array_t<std::size_t>(num_nonzeros.size(),
-                                             num_nonzeros.data());
-           })
+           &dolfin::la::SparsityPattern::num_nonzeros_diagonal)
       .def("num_nonzeros_off_diagonal",
-           [](const dolfin::la::SparsityPattern& instance) {
-             std::vector<std::size_t> num_nonzeros;
-             instance.num_nonzeros_off_diagonal(num_nonzeros);
-             return py::array_t<std::size_t>(num_nonzeros.size(),
-                                             num_nonzeros.data());
-           })
+           &dolfin::la::SparsityPattern::num_nonzeros_off_diagonal)
       .def("num_local_nonzeros",
-           [](const dolfin::la::SparsityPattern& instance) {
-             std::vector<std::size_t> num_nonzeros;
-             instance.num_local_nonzeros(num_nonzeros);
-             return py::array_t<std::size_t>(num_nonzeros.size(),
-                                             num_nonzeros.data());
-           })
-      // FIXME: Switch EigenMap in DOLFIN interface when SWIG is dropped
-      .def(
-          "insert_local",
-          [](dolfin::la::SparsityPattern& self,
-             std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2>
-                 entries) {
-            std::array<dolfin::common::ArrayView<const dolfin::la_index_t>, 2> e
-                = {dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[0].size(), &entries[0][0]),
-                   dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[1].size(), &entries[1][0])};
-            self.insert_local(e);
-          })
-      .def(
-          "insert_global",
-          [](dolfin::la::SparsityPattern& self,
-             std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2>
-                 entries) {
-            std::array<dolfin::common::ArrayView<const dolfin::la_index_t>, 2> e
-                = {dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[0].size(), &entries[0][0]),
-                   dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[1].size(), &entries[1][0])};
-            self.insert_global(e);
-          })
-      .def(
-          "insert_local_global",
-          [](dolfin::la::SparsityPattern& self,
-             std::array<Eigen::Matrix<dolfin::la_index_t, Eigen::Dynamic, 1>, 2>
-                 entries) {
-            std::array<dolfin::common::ArrayView<const dolfin::la_index_t>, 2> e
-                = {dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[0].size(), &entries[0][0]),
-                   dolfin::common::ArrayView<const dolfin::la_index_t>(
-                       entries[1].size(), &entries[1][0])};
-            self.insert_local_global(e);
-          });
+           &dolfin::la::SparsityPattern::num_local_nonzeros)
+      .def("insert_local", &dolfin::la::SparsityPattern::insert_local)
+      .def("insert_global", &dolfin::la::SparsityPattern::insert_global)
+      .def("insert_local_global",
+           &dolfin::la::SparsityPattern::insert_local_global);
 
   // dolfin::GenericTensor
   /*
@@ -810,47 +760,22 @@ void la(py::module& m)
        py::is_operator());
   */
 
-  // dolfin::la::PETScLUSolver
-  py::class_<dolfin::la::PETScLUSolver,
-             std::shared_ptr<dolfin::la::PETScLUSolver>>(
-      m, "PETScLUSolver", "DOLFIN PETScLUSolver object")
-      .def(py::init(
-               [](const MPICommWrapper comm, std::string method = "default") {
-                 return std::make_unique<dolfin::la::PETScLUSolver>(comm.get(),
-                                                                    method);
-               }),
-           py::arg("comm"), py::arg("method") = "default")
-      .def("set_operator", &dolfin::la::PETScLUSolver::set_operator)
-      .def("get_options_prefix", &dolfin::la::PETScLUSolver::get_options_prefix)
-      .def("set_options_prefix", &dolfin::la::PETScLUSolver::set_options_prefix)
-      .def("solve",
-           (std::size_t(dolfin::la::PETScLUSolver::*)(
-               dolfin::la::PETScVector&, const dolfin::la::PETScVector&))
-               & dolfin::la::PETScLUSolver::solve)
-      .def("ksp", &dolfin::la::PETScLUSolver::ksp);
-
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
              std::shared_ptr<dolfin::la::PETScKrylovSolver>>
       petsc_ks(m, "PETScKrylovSolver", "DOLFIN PETScKrylovSolver object");
 
   petsc_ks
-      .def(py::init([](const MPICommWrapper comm, std::string method,
-                       std::string pc) {
+      .def(py::init([](const MPICommWrapper comm) {
              return std::unique_ptr<dolfin::la::PETScKrylovSolver>(
-                 new dolfin::la::PETScKrylovSolver(comm.get(), method, pc));
+                 new dolfin::la::PETScKrylovSolver(comm.get()));
            }),
-           py::arg("comm"), py::arg("method") = "default",
-           py::arg("pc") = "default")
+           py::arg("comm"))
       .def(py::init<KSP>())
       .def("get_options_prefix",
            &dolfin::la::PETScKrylovSolver::get_options_prefix)
       .def("set_options_prefix",
            &dolfin::la::PETScKrylovSolver::set_options_prefix)
-      .def("get_norm_type", (dolfin::la::PETScKrylovSolver::norm_type(
-                                dolfin::la::PETScKrylovSolver::*)() const)
-                                & dolfin::la::PETScKrylovSolver::get_norm_type)
-      .def("set_norm_type", &dolfin::la::PETScKrylovSolver::set_norm_type)
       .def("set_operator", &dolfin::la::PETScKrylovSolver::set_operator)
       .def("set_operators", &dolfin::la::PETScKrylovSolver::set_operators)
       .def("solve", &dolfin::la::PETScKrylovSolver::solve,
@@ -862,16 +787,6 @@ void la(py::module& m)
       .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
       .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
       .def("ksp", &dolfin::la::PETScKrylovSolver::ksp);
-
-  py::enum_<dolfin::la::PETScKrylovSolver::norm_type>(petsc_ks, "norm_type")
-      .value("none", dolfin::la::PETScKrylovSolver::norm_type::none)
-      .value("default_norm",
-             dolfin::la::PETScKrylovSolver::norm_type::default_norm)
-      .value("preconditioned",
-             dolfin::la::PETScKrylovSolver::norm_type::preconditioned)
-      .value("unpreconditioned",
-             dolfin::la::PETScKrylovSolver::norm_type::unpreconditioned)
-      .value("natural", dolfin::la::PETScKrylovSolver::norm_type::natural);
 
 #ifdef HAS_SLEPC
   // dolfin::la::SLEPcEigenSolver

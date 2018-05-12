@@ -37,10 +37,10 @@ la::SparsityPattern SparsityPatternBuilder::build(
   // FIXME: Should check that index maps are matching
 
   // Create empty sparsity pattern
-  la::SparsityPattern pattern(comm, index_maps, 0);
+  la::SparsityPattern pattern(comm, index_maps);
 
-  // Vector to store macro-dofs, if required (for interior facets)
-  std::array<std::vector<dolfin::la_index_t>, 2> macro_dofs;
+  // Array to store macro-dofs, if required (for interior facets)
+  std::array<EigenArrayXlaindex, 2> macro_dofs;
 
   // Create vector to point to dofs
   std::array<common::ArrayView<const dolfin::la_index_t>, 2> dofs;
@@ -52,8 +52,8 @@ la::SparsityPattern SparsityPatternBuilder::build(
   //       memory suboptimal (for restricted Lagrange multipliers) but very
   //       fast and certainly much better than quadratic scaling of usual
   //       insertion below
-  std::vector<std::size_t> global_dofs0
-      = dofmaps[pattern.primary_dim()]->tabulate_global_dofs();
+  const Eigen::Array<std::size_t, Eigen::Dynamic, 1> global_dofs0
+      = dofmaps[0]->tabulate_global_dofs();
   pattern.insert_full_rows_local(global_dofs0);
 
   // FIXME: We iterate over the entire mesh even if the function space
@@ -66,15 +66,8 @@ la::SparsityPattern SparsityPatternBuilder::build(
   {
     for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
     {
-      // Tabulate dofs for each dimension and get local dimensions
-      for (std::size_t i = 0; i < 2; ++i)
-      {
-        auto dmap = dofmaps[i]->cell_dofs(cell.index());
-        dofs[i].set(dmap.size(), dmap.data());
-      }
-
-      // Insert non-zeroes in sparsity pattern
-      pattern.insert_local(dofs);
+      pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
+                           dofmaps[1]->cell_dofs(cell.index()));
     }
   }
 
@@ -82,47 +75,48 @@ la::SparsityPattern SparsityPatternBuilder::build(
   const std::size_t D = mesh.topology().dim();
   if (vertices)
   {
-    mesh.init(0);
-    mesh.init(0, D);
+    throw std::runtime_error("Sparsity pattern building over vertices not working.");
+    // mesh.init(0);
+    // mesh.init(0, D);
 
-    std::array<std::vector<dolfin::la_index_t>, 2> global_dofs;
-    std::array<std::vector<int>, 2> local_to_local_dofs;
+    // std::array<std::vector<dolfin::la_index_t>, 2> global_dofs;
+    // std::array<std::vector<int>, 2> local_to_local_dofs;
 
-    // Resize local dof map vector
-    for (std::size_t i = 0; i < 2; ++i)
-    {
-      global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
-      local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
-    }
+    // // Resize local dof map vector
+    // for (std::size_t i = 0; i < 2; ++i)
+    // {
+    //   global_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
+    //   local_to_local_dofs[i].resize(dofmaps[i]->num_entity_dofs(0));
+    // }
 
-    for (auto& vert : mesh::MeshRange<mesh::Vertex>(mesh))
-    {
-      // Get mesh cell to which mesh vertex belongs (pick first)
-      mesh::Cell mesh_cell(mesh, vert.entities(D)[0]);
+    // for (auto& vert : mesh::MeshRange<mesh::Vertex>(mesh))
+    // {
+    //   // Get mesh cell to which mesh vertex belongs (pick first)
+    //   mesh::Cell mesh_cell(mesh, vert.entities(D)[0]);
 
-      // Check that cell is not a ghost
-      assert(!mesh_cell.is_ghost());
+    //   // Check that cell is not a ghost
+    //   assert(!mesh_cell.is_ghost());
 
-      // Get local index of vertex with respect to the cell
-      const std::size_t local_vertex = mesh_cell.index(vert);
-      for (std::size_t i = 0; i < 2; ++i)
-      {
-        auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
-        dofs[i].set(dmap.size(), dmap.data());
-        dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0,
-                                         local_vertex);
+    //   // Get local index of vertex with respect to the cell
+    //   const std::size_t local_vertex = mesh_cell.index(vert);
+    //   for (std::size_t i = 0; i < 2; ++i)
+    //   {
+    //     auto dmap = dofmaps[i]->cell_dofs(mesh_cell.index());
+    //     dofs[i].set(dmap.size(), dmap.data());
+    //     dofmaps[i]->tabulate_entity_dofs(local_to_local_dofs[i], 0,
+    //                                      local_vertex);
 
-        // Copy cell dofs to local dofs and tabulated values to
-        for (std::size_t j = 0; j < local_to_local_dofs[i].size(); ++j)
-          global_dofs[i][j] = dofs[i][local_to_local_dofs[i][j]];
-      }
+    //     // Copy cell dofs to local dofs and tabulated values to
+    //     for (std::size_t j = 0; j < local_to_local_dofs[i].size(); ++j)
+    //       global_dofs[i][j] = dofs[i][local_to_local_dofs[i][j]];
+    //   }
 
-      // Insert non-zeroes in sparsity pattern
-      std::array<common::ArrayView<const dolfin::la_index_t>, 2> global_dofs_p;
-      for (std::size_t i = 0; i < 2; ++i)
-        global_dofs_p[i].set(global_dofs[i]);
-      pattern.insert_local(global_dofs_p);
-    }
+    //   // Insert non-zeroes in sparsity pattern
+    //   std::array<common::ArrayView<const dolfin::la_index_t>, 2>
+    //   global_dofs_p; for (std::size_t i = 0; i < 2; ++i)
+    //     global_dofs_p[i].set(global_dofs[i]);
+    //   pattern.insert_local(global_dofs_p);
+    // }
   }
 
   // Note: no need to iterate over exterior facets since those dofs
@@ -148,16 +142,8 @@ la::SparsityPattern SparsityPatternBuilder::build(
         // Get cells incident with facet
         assert(facet.num_entities(D) == 1);
         mesh::Cell cell(mesh, facet.entities(D)[0]);
-
-        // Tabulate dofs for each dimension and get local dimensions
-        for (std::size_t i = 0; i < 2; ++i)
-        {
-          auto dmap = dofmaps[i]->cell_dofs(cell.index());
-          dofs[i].set(dmap.size(), dmap.data());
-        }
-
-        // Insert dofs
-        pattern.insert_local(dofs);
+        pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
+                             dofmaps[1]->cell_dofs(cell.index()));
       }
       else if (interior_facets && !this_exterior_facet)
       {
@@ -184,27 +170,25 @@ la::SparsityPattern SparsityPatternBuilder::build(
 
           // Copy cell dofs into macro dof vector
           std::copy(cell_dofs0.data(), cell_dofs0.data() + cell_dofs0.size(),
-                    macro_dofs[i].begin());
+                    macro_dofs[i].data());
           std::copy(cell_dofs1.data(), cell_dofs1.data() + cell_dofs1.size(),
-                    macro_dofs[i].begin() + cell_dofs0.size());
+                    macro_dofs[i].data() + cell_dofs0.size());
 
           // Store pointer to macro dofs
-          dofs[i].set(macro_dofs[i]);
+          // dofs[i].set(macro_dofs[i]);
         }
 
         // Insert dofs
-        pattern.insert_local(dofs);
+        pattern.insert_local(macro_dofs[0], macro_dofs[1]);
       }
     }
   }
 
   if (diagonal)
   {
-    const std::size_t primary_dim = pattern.primary_dim();
-    const std::size_t primary_codim = primary_dim == 0 ? 1 : 0;
-    const auto primary_range = index_maps[primary_dim]->local_range();
+    const auto primary_range = index_maps[0]->local_range();
     const std::size_t secondary_range
-        = index_maps[primary_codim]->size(common::IndexMap::MapSize::GLOBAL);
+        = index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
     const std::size_t diagonal_range
         = std::min((std::size_t)primary_range[1], secondary_range);
 
@@ -216,13 +200,14 @@ la::SparsityPattern SparsityPatternBuilder::build(
     std::vector<dolfin::la_index_t> indices(
         bs * (diagonal_range - primary_range[0]));
     std::iota(indices.begin(), indices.end(), bs * primary_range[0]);
-    const std::array<common::ArrayView<const dolfin::la_index_t>, 2> diags
-        = {{common::ArrayView<const dolfin::la_index_t>(indices.size(),
-                                                        indices.data()),
-            common::ArrayView<const dolfin::la_index_t>(indices.size(),
-                                                        indices.data())}};
 
-    pattern.insert_global(diags);
+    // const std::array<common::ArrayView<const dolfin::la_index_t>, 2> diags
+    //     = {{common::ArrayView<const dolfin::la_index_t>(indices.size(),
+    //                                                     indices.data()),
+    //         common::ArrayView<const dolfin::la_index_t>(indices.size(),
+    //                                                     indices.data())}};
+    Eigen::Map<const EigenArrayXlaindex> rows(indices.data(), indices.size());
+    pattern.insert_global(rows, rows);
   }
 
   // Finalize sparsity pattern (communicate off-process terms)

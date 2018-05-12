@@ -22,8 +22,6 @@ parameter::Parameters dolfin::nls::NewtonSolver::default_parameters()
 {
   parameter::Parameters p("newton_solver");
 
-  p.add("linear_solver", "default");
-  p.add("preconditioner", "default");
   p.add("maximum_iterations", 50);
   p.add("relative_tolerance", 1e-9);
   p.add("absolute_tolerance", 1e-10);
@@ -36,7 +34,7 @@ parameter::Parameters dolfin::nls::NewtonSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : common::Variable("Newton solver", "unnamed"), _newton_iteration(0),
+    : common::Variable("Newton solver"), _newton_iteration(0),
       _krylov_iterations(0), _relaxation_parameter(1.0), _residual(0.0),
       _residual0(0.0), _matA(new la::PETScMatrix(comm)),
       _matP(new la::PETScMatrix(comm)), _dx(new la::PETScVector(comm)),
@@ -66,13 +64,8 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     set_relaxation_parameter(parameters["relaxation_parameter"]);
 
   // Create linear solver if not already created
-  const std::string solver_type = parameters["linear_solver"];
-  const std::string pc_type = parameters["preconditioner"];
   if (!_solver)
-  {
-    _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm(), solver_type,
-                                                      pc_type);
-  }
+    _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm());
   assert(_solver);
 
   // Set parameters for linear solver

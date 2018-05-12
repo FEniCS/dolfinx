@@ -96,14 +96,14 @@ public:
   std::string str(bool verbose) const;
 
   /// Set block of values using local indices
-  void set_local(const double* block, const dolfin::la_index_t* num_rows,
+  void set_local(const PetscScalar* block, const dolfin::la_index_t* num_rows,
                  const dolfin::la_index_t* const* rows)
   {
     set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]);
   }
 
   /// Add block of values using local indices
-  void add_local(const double* block, const dolfin::la_index_t* num_rows,
+  void add_local(const PetscScalar* block, const dolfin::la_index_t* num_rows,
                  const dolfin::la_index_t* const* rows)
   {
     add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]);
@@ -123,29 +123,29 @@ public:
   }
 
   /// Get block of values
-  void get(double* block, std::size_t m, const dolfin::la_index_t* rows,
+  void get(PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,
            std::size_t n, const dolfin::la_index_t* cols) const;
 
   /// Set block of values using global indices
-  void set(const double* block, std::size_t m, const dolfin::la_index_t* rows,
+  void set(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,
            std::size_t n, const dolfin::la_index_t* cols);
 
   /// Set block of values using local indices
-  void set_local(const double* block, std::size_t m,
+  void set_local(const PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows, std::size_t n,
                  const dolfin::la_index_t* cols);
 
   /// Add block of values using global indices
-  void add(const double* block, std::size_t m, const dolfin::la_index_t* rows,
+  void add(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,
            std::size_t n, const dolfin::la_index_t* cols);
 
   /// Add block of values using local indices
-  void add_local(const double* block, std::size_t m,
+  void add_local(const PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows, std::size_t n,
                  const dolfin::la_index_t* cols);
 
   /// Add multiple of given matrix (AXPY operation)
-  void axpy(double a, const PETScMatrix& A, bool same_nonzero_pattern);
+  void axpy(PetscScalar a, const PETScMatrix& A, bool same_nonzero_pattern);
 
   /// Return norm of matrix
   double norm(std::string norm_type) const;
@@ -154,7 +154,7 @@ public:
   void zero(std::size_t m, const dolfin::la_index_t* rows);
 
   /// Zero given rows (local row indices), and set diagonal
-  void zero_local(std::size_t m, const dolfin::la_index_t* rows, double diag);
+  void zero_local(std::size_t m, const dolfin::la_index_t* rows, PetscScalar diag);
 
   /// Matrix-vector product, y = Ax
   void mult(const PETScVector& x, PETScVector& y) const;
@@ -169,16 +169,19 @@ public:
   void set_diagonal(const PETScVector& x);
 
   /// Multiply matrix by given number
-  const PETScMatrix& operator*=(double a);
+  const PETScMatrix& operator*=(PetscScalar a);
 
   /// Divide matrix by given number
-  const PETScMatrix& operator/=(double a);
+  const PETScMatrix& operator/=(PetscScalar a);
 
   /// Assignment operator
   const PETScMatrix& operator=(const PETScMatrix& A);
 
   /// Test if matrix is symmetric
   virtual bool is_symmetric(double tol) const;
+
+  /// Test if matrix is hermitian
+  virtual bool is_hermitian(double tol) const;
 
   //--- Special PETSc Functions ---
 

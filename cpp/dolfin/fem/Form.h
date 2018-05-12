@@ -8,6 +8,7 @@
 
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
+#include "UFC.h"
 #include <dolfin/common/types.h>
 #include <functional>
 #include <map>
@@ -36,6 +37,7 @@ namespace mesh
 class Mesh;
 template <typename T>
 class MeshFunction;
+class Cell;
 } // namespace mesh
 
 namespace fem
@@ -77,6 +79,14 @@ public:
   ///         Vector of function spaces.
   Form(std::shared_ptr<const ufc_form> ufc_form,
        const std::vector<std::shared_ptr<const function::FunctionSpace>>
+           function_spaces);
+
+  /// Create form (no UFC integrals). Integrals can be attached later
+  /// using FormIntegrals::set_cell_tabulate_tensor. Experimental.
+  ///
+  /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
+  ///         Vector of function spaces.
+  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
            function_spaces);
 
   /// Destructor
@@ -232,10 +242,13 @@ public:
       std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains);
 
   /// Access coefficients (non-const)
-  FormCoefficients& coeffs() { return _coefficents; }
+  FormCoefficients& coeffs() { return _coefficients; }
 
   /// Access coefficients (const)
-  const FormCoefficients& coeffs() const { return _coefficents; }
+  const FormCoefficients& coeffs() const { return _coefficients; }
+
+  /// Access form integrals (non-const)
+  FormIntegrals& integrals() { return _integrals; }
 
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
@@ -246,12 +259,24 @@ public:
     return _coord_mapping;
   }
 
+  /// Call tabulate_tensor on a cell, returning the local element matrix
+  /// @param A
+  ///    Local element tensor (to be calculated)
+  /// @param cell
+  ///    Cell on which to calculate
+  /// @param coordinate_dofs
+  ///    Coordinates of the cell
+  ///
+  void
+  tabulate_tensor(double* A, mesh::Cell cell,
+                  Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
+
 private:
   // Integrals associated with the Form
   FormIntegrals _integrals;
 
   // Coefficients associated with the Form
-  FormCoefficients _coefficents;
+  FormCoefficients _coefficients;
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const function::FunctionSpace>> _function_spaces;
@@ -272,10 +297,19 @@ private:
   std::shared_ptr<const mesh::MeshFunction<std::size_t>> dP;
 
   // Coordinate_mapping
-  std::shared_ptr<fem::CoordinateMapping> _coord_mapping;
+  std::shared_ptr<const fem::CoordinateMapping> _coord_mapping;
 
   std::function<int(const char*)> _coefficient_index_map;
   std::function<const char*(int)> _coefficient_name_map;
+
+  // Initialise temporary storage for coefficient values
+  // needed for interface with UFC integrals
+  void init_coeff_scratch_space();
+
+  // Temporary storage for coefficient values
+  std::vector<double> _w;
+  std::vector<double*> _wpointer;
+
 };
 } // namespace fem
 } // namespace dolfin

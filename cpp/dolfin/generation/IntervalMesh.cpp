@@ -17,7 +17,8 @@ using namespace dolfin::generation;
 
 //-----------------------------------------------------------------------------
 mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
-                               std::array<double, 2> x)
+                               std::array<double, 2> x,
+                               const mesh::GhostMode ghost_mode)
 {
   // Receive mesh according to parallel policy
   if (MPI::rank(comm) != 0)
@@ -25,7 +26,7 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
     EigenRowArrayXXd geom(0, 1);
     EigenRowArrayXXi64 topo(0, 2);
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::interval, geom, topo, {}, "none");
+        comm, mesh::CellType::Type::interval, geom, topo, {}, ghost_mode);
   }
 
   const double a = x[0];
@@ -33,16 +34,19 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
   const double ab = (b - a) / static_cast<double>(nx);
 
   if (std::abs(a - b) < DOLFIN_EPS)
-    std::runtime_error("Length of interval is zero. Check your dimensions.");
+  {
+    throw std::runtime_error(
+        "Length of interval is zero. Check your dimensions.");
+  }
 
   if (b < a)
   {
-    std::runtime_error(
+    throw std::runtime_error(
         "Interval length is negative. Check order of arguments.");
   }
 
   if (nx < 1)
-    std::runtime_error("Number of points on interval must be at least 1");
+    throw std::runtime_error("Number of points on interval must be at least 1");
 
   EigenRowArrayXXd geom((nx + 1), 1);
   EigenRowArrayXXi64 topo(nx, 2);
@@ -56,6 +60,6 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
     topo.row(ix) << ix, ix + 1;
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::interval, geom, topo, {}, "none");
+      comm, mesh::CellType::Type::interval, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------
