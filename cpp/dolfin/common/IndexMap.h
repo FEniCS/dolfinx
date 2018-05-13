@@ -69,17 +69,17 @@ public:
   /// range)
   const EigenArrayXi64& ghosts() const;
 
-  /// Get global index for local index i
+  /// Get global index for local index i (index of the block)
   std::size_t local_to_global(std::size_t i) const;
 
   // TODO: remove
   /// Local to global index
-  std::size_t local_to_global_index(std::size_t i) const;
+  // std::size_t local_to_global_index(std::size_t i) const;
 
   /// Owners of ghost entries
   const EigenArrayXi32& ghost_owners() const;
 
-  /// Get process that owns index (global index)
+  /// Get process that owns index (global block index)
   int owner(std::size_t global_index) const;
 
   /// Return MPI communicator
@@ -122,23 +122,5 @@ inline std::size_t IndexMap::local_to_global(std::size_t i) const
     return _ghosts[i - local_size];
 }
 
-// Function which may appear in a hot loop
-inline std::size_t IndexMap::local_to_global_index(std::size_t i) const
-{
-  const std::size_t local_size
-      = _block_size * (_all_ranges[_myrank + 1] - _all_ranges[_myrank]);
-  const std::size_t global_offset = _block_size * _all_ranges[_myrank];
-
-  if (i < local_size)
-    return (i + global_offset);
-  else
-  {
-    const std::div_t div = std::div((i - local_size), _block_size);
-    const int component = div.rem;
-    const int index = div.quot;
-    assert(index < _ghosts.size());
-    return _block_size * _ghosts[index] + component;
-  }
-}
 } // namespace common
 } // namespace dolfin

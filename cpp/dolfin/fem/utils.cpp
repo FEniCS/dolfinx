@@ -325,12 +325,14 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
     const common::IndexMap& index_map_0 = *dofmaps[0]->index_map();
     const auto row_range = A.local_range(0);
 
+    assert(index_map_0.block_size() == 1);
+
     // Set zeros in dense rows in order of increasing column index
     const double block = 0.0;
     dolfin::la_index_t IJ[2];
     for (Eigen::Index i = 0; i < global_dofs.size(); ++i)
     {
-      const std::int64_t I = index_map_0.local_to_global_index(global_dofs[i]);
+      const std::int64_t I = index_map_0.local_to_global(global_dofs[i]);
       if (I >= row_range[0] && I < row_range[1])
       {
         IJ[0] = I;
