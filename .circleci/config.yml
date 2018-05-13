@@ -16,8 +16,8 @@ jobs:
             apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade
             apt-get -y install python3-tk
       - run:
-          name: Install/update Python dependencies
-          command: pip3 install decorator flake8 numba matplotlib pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+          name: Install/update Python (test/doc) dependencies
+          command: pip3 install decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
       - run:
           name: Install FEniCS Python components
           command: |

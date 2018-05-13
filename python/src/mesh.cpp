@@ -63,9 +63,9 @@ void mesh(py::module& m)
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")
-          .value("none", dolfin::mesh::GhostMode::none)
-          .value("shared_facet", dolfin::mesh::GhostMode::shared_facet)
-          .value("shared_vertex", dolfin::mesh::GhostMode::shared_vertex);
+      .value("none", dolfin::mesh::GhostMode::none)
+      .value("shared_facet", dolfin::mesh::GhostMode::shared_facet)
+      .value("shared_vertex", dolfin::mesh::GhostMode::shared_vertex);
 
   // dolfin::mesh::CoordinateDofs class
   py::class_<dolfin::mesh::CoordinateDofs,
@@ -136,15 +136,16 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Mesh, std::shared_ptr<dolfin::mesh::Mesh>,
              dolfin::common::Variable>(m, "Mesh", py::dynamic_attr(),
                                        "DOLFIN Mesh object")
-      .def(py::init([](const MPICommWrapper comm,
-                       dolfin::mesh::CellType::Type type,
-                       Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
-                       Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology,
-                       const std::vector<std::int64_t>& global_cell_indices,
-                       const dolfin::mesh::GhostMode ghost_mode) {
-        return std::make_unique<dolfin::mesh::Mesh>(
-            comm.get(), type, geometry, topology, global_cell_indices, ghost_mode);
-      }))
+      .def(py::init(
+          [](const MPICommWrapper comm, dolfin::mesh::CellType::Type type,
+             const Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
+             const Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology,
+             const std::vector<std::int64_t>& global_cell_indices,
+             const dolfin::mesh::GhostMode ghost_mode) {
+            return std::make_unique<dolfin::mesh::Mesh>(
+                comm.get(), type, geometry, topology, global_cell_indices,
+                ghost_mode);
+          }))
       .def("bounding_box_tree", &dolfin::mesh::Mesh::bounding_box_tree)
       .def("cells",
            [](const dolfin::mesh::Mesh& self) {
@@ -299,9 +300,9 @@ void mesh(py::module& m)
 
   // dolfin::mesh::MeshRangeType enums
   py::enum_<dolfin::mesh::MeshRangeType>(m, "MeshRangeType")
-          .value("REGULAR", dolfin::mesh::MeshRangeType::REGULAR)
-          .value("ALL", dolfin::mesh::MeshRangeType::ALL)
-          .value("GHOST", dolfin::mesh::MeshRangeType::GHOST);
+      .value("REGULAR", dolfin::mesh::MeshRangeType::REGULAR)
+      .value("ALL", dolfin::mesh::MeshRangeType::ALL)
+      .value("GHOST", dolfin::mesh::MeshRangeType::GHOST);
 
 // dolfin::mesh::MeshIterator (Cells, Facets, Faces, Edges, Vertices)
 #define MESHITERATOR_MACRO(TYPE, ENTITYNAME)                                   \

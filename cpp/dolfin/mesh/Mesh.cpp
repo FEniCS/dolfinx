@@ -15,7 +15,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/function/Expression.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/log/log.h>
 
@@ -24,15 +23,14 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
-           const Eigen::Ref<const EigenRowArrayXXd>& points,
-           const Eigen::Ref<const EigenRowArrayXXi64>& cells,
+           const Eigen::Ref<const EigenRowArrayXXd> points,
+           const Eigen::Ref<const EigenRowArrayXXi64> cells,
            const std::vector<std::int64_t>& global_cell_indices,
-           const GhostMode ghost_mode,
-           std::uint32_t num_ghost_cells)
-    : common::Variable("mesh"),
-      _cell_type(mesh::CellType::create(type)), _topology(_cell_type->dim()),
-      _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
-      _mpi_comm(comm), _ghost_mode(ghost_mode)
+           const GhostMode ghost_mode, std::uint32_t num_ghost_cells)
+    : common::Variable("mesh"), _cell_type(mesh::CellType::create(type)),
+      _topology(_cell_type->dim()), _geometry(points),
+      _coordinate_dofs(_cell_type->dim()), _degree(1), _mpi_comm(comm),
+      _ghost_mode(ghost_mode)
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
@@ -41,8 +39,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   if (global_cell_indices.size() > 0
       and global_cell_indices.size() != (std::size_t)cells.rows())
   {
-    log::dolfin_error("Mesh.cpp", "create mesh",
-                      "Wrong number of global cell indices");
+    throw std::runtime_error(
+        "Cannot create mesh. Wrong number of global cell indices");
   }
 
   // Permutation from VTK to DOLFIN order for cell geometric points
@@ -50,35 +48,37 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // FIXME: remove duplication in CellType::vtk_mapping()
   std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
 
-  // Decide if the mesh is P2 or other geometry.
-  // P1 has num_vertices_per_cell == cells.cols()
+  std::cout << "Test cells: " << cells.rows() << ", " << cells.cols() << std::endl;
+  std::cout << "Test points: " << points.rows() << ", " << points.cols() << std::endl;
+
+  // Infer if the mesh has P2 geometry (P1 has num_vertices_per_cell ==
+  // cells.cols())
   if (num_vertices_per_cell != cells.cols())
   {
     if (type == mesh::CellType::Type::triangle and cells.cols() == 6)
     {
-      log::warning("P2 Mesh of Tri_6");
       _degree = 2;
       cell_permutation = {0, 1, 2, 5, 3, 4};
     }
     else if (type == mesh::CellType::Type::tetrahedron and cells.cols() == 10)
     {
-      log::warning("P2 Mesh of Tet_10");
       _degree = 2;
       cell_permutation = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
     }
     else
     {
-      log::dolfin_error("Mesh.cpp", "initialize Mesh",
-                        "Unsupported cell type and/or degree");
+      throw std::runtime_error(
+          "Mistmach between cell type and number of vertices per cell");
     }
   }
 
-  // Global number of points before distributing (which creates duplicates)
+  // Get number of global points before distributing (which creates
+  // duplicates)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 
   // Number of cells, local (not ghost) and global.
   const std::int32_t num_cells = cells.rows();
-  assert((std::int32_t)num_ghost_cells < num_cells);
+  assert((std::int32_t)num_ghost_cells <= num_cells);
   const std::int32_t num_local_cells = num_cells - num_ghost_cells;
   const std::uint64_t num_cells_global = MPI::sum(comm, num_local_cells);
 
@@ -396,8 +396,5 @@ std::string Mesh::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-mesh::GhostMode Mesh::get_ghost_mode() const
-{
-  return _ghost_mode;
-}
+mesh::GhostMode Mesh::get_ghost_mode() const { return _ghost_mode; }
 //-----------------------------------------------------------------------------
