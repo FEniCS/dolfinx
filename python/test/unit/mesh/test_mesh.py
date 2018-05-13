@@ -128,14 +128,15 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
     _check_ufl_domain(box)
 
 
-def test_mesh_construction_gmsh():
+# pygmsh is problematic in parallel because it uses subprocess to call
+# gmsh. To be robust, it would need to call MPI 'spawn'.
+@skip_in_parallel
+def test_mesh_construction_pygmsh():
 
     if MPI.rank(MPI.comm_world) == 0:
-        print("Generate mesh")
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
         points, cells, _, _, _ = pygmsh.generate_mesh(geom, geom_order=1)
-        print("End Generate mesh")
     else:
         points = numpy.zeros([0, 3])
         cells = {
