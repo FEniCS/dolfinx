@@ -70,11 +70,19 @@ public:
   const EigenArrayXi64& ghosts() const;
 
   /// Get global index for local index i (index of the block)
-  std::size_t local_to_global(std::size_t i) const;
+  std::size_t local_to_global(std::size_t i) const
+  {
+    const std::size_t local_size
+        = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
 
-  // TODO: remove
-  /// Local to global index
-  // std::size_t local_to_global_index(std::size_t i) const;
+    if (i < local_size)
+    {
+      const std::size_t global_offset = _all_ranges[_myrank];
+      return (i + global_offset);
+    }
+    else
+      return _ghosts[i - local_size];
+  }
 
   /// Owners of ghost entries
   const EigenArrayXi32& ghost_owners() const;
@@ -108,19 +116,6 @@ private:
   // Block size
   int _block_size;
 };
-
-// Function which may appear in a hot loop
-inline std::size_t IndexMap::local_to_global(std::size_t i) const
-{
-  const std::size_t local_size
-      = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
-  const std::size_t global_offset = _all_ranges[_myrank];
-
-  if (i < local_size)
-    return (i + global_offset);
-  else
-    return _ghosts[i - local_size];
-}
 
 } // namespace common
 } // namespace dolfin
