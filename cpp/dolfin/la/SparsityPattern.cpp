@@ -190,7 +190,10 @@ void SparsityPattern::insert_local(
   // The 1 must be mapped to global entries
   const auto col_map = [](const la_index_t j_index,
                           const common::IndexMap& index_map1) -> la_index_t {
-    return index_map1.local_to_global_index((std::size_t)j_index);
+    const std::div_t div = std::div(j_index, index_map1.block_size());
+    const int component = div.rem;
+    const int index = div.quot;
+    return index_map1.local_to_global(index) + component;
   };
 
   insert_entries(rows, cols, row_map, col_map);
