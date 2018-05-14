@@ -769,3 +769,19 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
         for ent in MeshEntities(mesh, mf.dim):
             diff += (mf_in[ent] - mf[ent])
         assert(diff == 0)
+
+
+def test_xdmf_timeseries_write_to_closed_hdf5_using_with(tempdir):
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
+    V = FunctionSpace(mesh, "CG", 1)
+    u = Function(V)
+
+    filename = os.path.join(tempdir, "time_series_closed_append.xdmf")
+    with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
+        xdmf.write(u, float(0.0))
+
+    xdmf.write(u, float(1.0))
+    xdmf.close()
+
+    xdmf.write(u, float(2.0))
+    xdmf.close()
