@@ -32,7 +32,6 @@ def petsc_krylov_solver_factory(mpi_comm):
 
 solver_factories = [
     petsc_krylov_solver_factory,
-    lambda mpi_comm: dolfin.cpp.la.PETScLUSolver(mpi_comm),
     lambda mpi_comm: None
 ]
 

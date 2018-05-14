@@ -105,7 +105,11 @@ def project(v,
 
     # Construct solver if none exists
     if solver is None:
-        solver = cpp.la.PETScLUSolver(mesh.mpi_comm())
+        solver = dolfin.cpp.la.PETScKrylovSolver(mesh.mpi_comm())
+        solver.set_options_prefix("projection_")
+        dolfin.cpp.la.PETScOptions.set("projection_ksp_type", "preonly")
+        dolfin.cpp.la.PETScOptions.set("projection_pc_type", "lu")
+        solver.set_from_options()
 
     solver.set_operator(A)
     solver.solve(function.vector(), b)
