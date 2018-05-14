@@ -13,6 +13,7 @@
 #include <type_traits>
 #include <utility>
 #include <vector>
+#include <complex>
 
 #ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
@@ -31,7 +32,7 @@ typedef int MPI_Comm;
 
 namespace dolfin
 {
-
+  
 #ifdef HAS_MPI
 class MPIInfo
 {
@@ -278,6 +279,11 @@ template <>
 inline MPI_Datatype MPI::mpi_type<double>()
 {
   return MPI_DOUBLE;
+}
+template <>
+inline MPI_Datatype MPI::mpi_type<std::complex<double>>()
+{
+  return MPI_DOUBLE_COMPLEX;
 }
 template <>
 inline MPI_Datatype MPI::mpi_type<short int>()
