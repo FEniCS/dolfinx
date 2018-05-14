@@ -12,7 +12,7 @@ import dolfin.cpp as cpp
 
 # Import pybind11 objects into dolfin.la
 from dolfin.cpp.la import VectorSpaceBasis  # noqa
-from dolfin.cpp.la import (PETScMatrix, PETScVector, PETScLUSolver,  # noqa
+from dolfin.cpp.la import (PETScMatrix, PETScVector,  # noqa
                            PETScKrylovSolver, PETScOptions)  # noqa
 
 
