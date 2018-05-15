@@ -8,7 +8,6 @@ import os
 import sys
 
 import numpy
-import pygmsh
 import pytest
 
 import dolfin
@@ -133,6 +132,8 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
 @pytest.mark.skip(reason="pymsh calling gmsh fails in container (related to file creation)")
 @skip_in_parallel
 def test_mesh_construction_pygmsh():
+
+    import pygmsh
 
     if MPI.rank(MPI.comm_world) == 0:
         geom = pygmsh.opencascade.Geometry()
