@@ -783,5 +783,5 @@ def test_xdmf_timeseries_write_to_closed_hdf5_using_with(tempdir):
     xdmf.write(u, float(1.0))
     xdmf.close()
 
-    xdmf.write(u, float(2.0))
-    xdmf.close()
+    with xdmf:
+        xdmf.write(u, float(2.0))
