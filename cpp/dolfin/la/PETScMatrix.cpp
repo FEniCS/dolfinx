@@ -458,8 +458,8 @@ void PETScMatrix::hermitiantranspmult(const PETScVector& x, PETScVector& y) cons
 
   if (size(0) != x.size())
   {
-    throw std::runtime_error("Non-matching dimensions for hermitian 
-                              transpose matrix-vector product");
+    throw std::runtime_error("Non-matching dimensions for hermitian" 
+                              "transpose matrix-vector product");
   }
 
   // Resize RHS if empty
