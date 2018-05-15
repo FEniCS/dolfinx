@@ -107,10 +107,9 @@ public:
   ///   topology in local indexing (EigenRowArrayXXi32)
   static std::tuple<std::uint64_t, std::vector<std::int64_t>,
                     EigenRowArrayXXi32>
-  compute_point_mapping(
-      std::uint32_t num_cell_vertices,
-      const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
-      const std::vector<std::uint8_t>& cell_permutation);
+  compute_point_mapping(std::uint32_t num_cell_vertices,
+                        const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
+                        const std::vector<std::uint8_t>& cell_permutation);
 
   // Utility to create global vertex indices, needed for higher
   // order meshes, where there are geometric points which are not
@@ -146,13 +145,12 @@ private:
   // FIXME: Improve this docstring
   // Distribute a layer of cells attached by vertex to boundary updating
   // new_mesh_data and shared_cells. Used when ghosting by vertex.
-  //   static void distribute_cell_layer(
-  //       MPI_Comm mpi_comm, const int num_regular_cells,
-  //       const std::int64_t num_global_vertices,
-  //       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
-  //       EigenRowArrayXXi64& cell_vertices,
-  //       std::vector<std::int64_t>& global_cell_indices,
-  //       std::vector<int>& cell_partition);
+  static void distribute_cell_layer(
+      MPI_Comm mpi_comm, const int num_regular_cells,
+      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
+      EigenRowArrayXXi64& cell_vertices,
+      std::vector<std::int64_t>& global_cell_indices,
+      std::vector<int>& cell_partition);
 
   // FIXME: make clearer what goes in and what comes out
   // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns

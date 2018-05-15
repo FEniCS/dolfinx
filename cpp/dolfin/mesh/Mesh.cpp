@@ -89,6 +89,18 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
                                                 cell_permutation);
   _coordinate_dofs.init(tdim, coordinate_dofs, cell_permutation);
 
+  std::stringstream s;
+
+  s << MPI::rank(comm) << " = ";
+
+  s << "cells = " << cells << "\n";
+
+  for (auto& q : global_point_indices)
+    s << q << " ";
+  s << "\n";
+
+  std::cout << s.str();
+
   // Distribute the points across processes and calculate shared points
   EigenRowArrayXXd distributed_points;
   std::map<std::int32_t, std::set<std::uint32_t>> shared_points;
