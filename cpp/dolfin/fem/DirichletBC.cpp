@@ -79,6 +79,7 @@ void DirichletBC::gather(Map& boundary_values) const
   const GenericDofMap& dofmap = *_function_space->dofmap();
   const auto& shared_nodes = dofmap.shared_nodes();
   const int bs = dofmap.block_size();
+  assert(dofmap.index_map());
 
   // Create list of boundary values to send to each processor
   std::vector<std::vector<std::size_t>> proc_map0(comm_size);
@@ -86,10 +87,11 @@ void DirichletBC::gather(Map& boundary_values) const
   for (Map::const_iterator bv = boundary_values.begin();
        bv != boundary_values.end(); ++bv)
   {
-    // If the boundary value is attached to a shared dof, add it to
-    // the list of boundary values for each of the processors that
-    // share it
-    const int node_index = bv->first / bs;
+    // If the boundary value is attached to a shared dof, add it to the
+    // list of boundary values for each of the processors that share it
+    const std::div_t div = std::div(bv->first, bs);
+    const int component = div.rem;
+    const int node_index = div.quot;
 
     auto shared_node = shared_nodes.find(node_index);
     if (shared_node != shared_nodes.end())
@@ -97,8 +99,9 @@ void DirichletBC::gather(Map& boundary_values) const
       for (auto proc = shared_node->second.begin();
            proc != shared_node->second.end(); ++proc)
       {
-        proc_map0[*proc].push_back(
-            dofmap.index_map()->local_to_global_index(bv->first));
+        const std::size_t global_node
+            = dofmap.index_map()->local_to_global(node_index);
+        proc_map0[*proc].push_back(global_node + component);
         proc_map1[*proc].push_back(bv->second);
       }
     }

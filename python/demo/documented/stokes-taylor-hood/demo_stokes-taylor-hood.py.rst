@@ -159,7 +159,8 @@ a deep copy for further computations on the coefficient vectors::
 
     # Compute solution
     w = Function(W)
-    solve(a == L, w, bcs)
+    solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
+          "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
 
     # Split the mixed solution using deepcopy
     # (needed for further computation on coefficient vector)
