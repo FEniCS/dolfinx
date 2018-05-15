@@ -8,7 +8,6 @@ import os
 import sys
 
 import numpy
-import pygmsh
 import pytest
 
 import dolfin
@@ -130,8 +129,11 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
 
 # pygmsh is problematic in parallel because it uses subprocess to call
 # gmsh. To be robust, it would need to call MPI 'spawn'.
+@pytest.mark.skip(reason="pymsh calling gmsh fails in container (related to file creation)")
 @skip_in_parallel
 def test_mesh_construction_pygmsh():
+
+    import pygmsh
 
     if MPI.rank(MPI.comm_world) == 0:
         geom = pygmsh.opencascade.Geometry()
