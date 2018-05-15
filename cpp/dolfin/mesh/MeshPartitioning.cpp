@@ -422,6 +422,7 @@ void MeshPartitioning::distribute_cell_layer(
     }
   }
 
+  // Add received cells and update sharing information for cells
   cell_vertices.conservativeResize(count, num_cell_vertices);
   std::set<std::uint32_t> sharing_procs;
   std::vector<std::size_t> sharing_cells;
@@ -430,9 +431,9 @@ void MeshPartitioning::distribute_cell_layer(
   {
     for (auto q = p.begin(); q != p.end(); q += num_cell_vertices + 2)
     {
-      const std::size_t shared_vertex = *(q + 2);
       const int owner = *q;
       const std::size_t cell_index = *(q + 1);
+      const std::size_t shared_vertex = *(q + 2);
       const std::size_t local_index
           = cell_global_to_local.find(cell_index)->second;
 
@@ -448,13 +449,11 @@ void MeshPartitioning::distribute_cell_layer(
       if (shared_vertex != last_vertex)
       {
         last_vertex = shared_vertex;
-        for (auto c = sharing_cells.begin(); c != sharing_cells.end(); ++c)
+        for (const auto& c : sharing_cells)
         {
-          auto it = shared_cells.find(*c);
-          if (it == shared_cells.end())
-            shared_cells.insert({*c, sharing_procs});
-          else
-            it->second.insert(sharing_procs.begin(), sharing_procs.end());
+          auto it = shared_cells.insert({c, sharing_procs});
+          if (!it.second)
+            it.first->second.insert(sharing_procs.begin(), sharing_procs.end());
         }
         sharing_procs.clear();
         sharing_cells.clear();
@@ -467,14 +466,12 @@ void MeshPartitioning::distribute_cell_layer(
     }
   }
 
-  // FIXME: is this correct? Seems to be applying same sharing to all cells
-  for (auto c = sharing_cells.begin(); c != sharing_cells.end(); ++c)
+  // Dump data from final vertex into shared_cells
+  for (const auto& c : sharing_cells)
   {
-    auto it = shared_cells.find(*c);
-    if (it == shared_cells.end())
-      shared_cells.insert({*c, sharing_procs});
-    else
-      it->second.insert(sharing_procs.begin(), sharing_procs.end());
+    auto it = shared_cells.insert({c, sharing_procs});
+    if (!it.second)
+      it.first->second.insert(sharing_procs.begin(), sharing_procs.end());
   }
 }
 //-----------------------------------------------------------------------------
