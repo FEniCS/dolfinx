@@ -65,7 +65,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     else
     {
       throw std::runtime_error(
-          "Mistmach between cell type and number of vertices per cell");
+          "Mismatch between cell type and number of vertices per cell");
     }
   }
 
