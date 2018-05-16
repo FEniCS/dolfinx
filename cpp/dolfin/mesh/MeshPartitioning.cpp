@@ -296,14 +296,16 @@ void MeshPartitioning::distribute_cell_layer(
   const int mpi_size = MPI::size(mpi_comm);
   const int mpi_rank = MPI::rank(mpi_comm);
 
-  // Get set of vertices in ghost cells
+  // Map from shared vertex to the set of cells containing it
   std::map<std::int64_t, std::vector<std::int64_t>> sh_vert_to_cell;
 
-  // Make global-to-local map of shared cells
+  // Global to local mapping of cell indices
   std::map<std::int64_t, int> cell_global_to_local;
+
+  // Iterate only over ghost cells
   for (Eigen::Index i = num_regular_cells; i < cell_vertices.rows(); ++i)
   {
-    // Add map entry for each vertex
+    // Add map entry for each vertex of ghost cells
     for (Eigen::Index p = 0; p < cell_vertices.cols(); ++p)
     {
       sh_vert_to_cell.insert(
@@ -313,17 +315,12 @@ void MeshPartitioning::distribute_cell_layer(
     cell_global_to_local.insert({global_cell_indices[i], i});
   }
 
-  // Reduce vertex set to those which also appear in local cells
-  // giving the effective boundary vertices.  Make a map from these
-  // vertices to the set of connected cells (but only adding locally
-  // owned cells)
-
-  // Go through all regular cells to add any previously unshared
-  // cells.
+  // Iterate only over regular (non-ghost) cells
   for (int i = 0; i < num_regular_cells; ++i)
   {
     for (Eigen::Index j = 0; j != cell_vertices.cols(); ++j)
     {
+      // If vertex already in map, append local cell index to set
       auto vc_it = sh_vert_to_cell.find(cell_vertices(i, j));
       if (vc_it != sh_vert_to_cell.end())
       {
@@ -333,12 +330,16 @@ void MeshPartitioning::distribute_cell_layer(
     }
   }
 
-  // Send lists of cells/owners to "owner" of vertex,
+  // sh_vert_to_cell now contains a mapping from the vertices of
+  // ghost cells to any regular cells which they are also incident with.
+
+  // Send lists of cells/owners to "index owner" of vertex,
   // collating and sending back out...
   std::vector<std::vector<std::int64_t>> send_vertcells(mpi_size);
   std::vector<std::vector<std::int64_t>> recv_vertcells(mpi_size);
   for (const auto& vc_it : sh_vert_to_cell)
   {
+    // Generate unique destination "index owner" based on vertex index
     const int dest = (vc_it.first) % mpi_size;
 
     std::vector<std::int64_t>& sendv = send_vertcells[dest];
@@ -364,16 +365,17 @@ void MeshPartitioning::distribute_cell_layer(
 
   // Reset map
   sh_vert_to_cell.clear();
+  std::vector<std::int64_t> cell_set;
   for (int i = 0; i < mpi_size; ++i)
   {
     const std::vector<std::int64_t>& recv_i = recv_vertcells[i];
     for (auto q = recv_i.begin(); q != recv_i.end(); q += num_cell_vertices + 1)
     {
       const std::size_t vertex_index = *(q + 1);
-      std::vector<std::int64_t> cell_set = {i};
+      // Packing: [owner, cell_index, this_vertex, [other_vertices]]
+      cell_set = {i};
       cell_set.insert(cell_set.end(), q, q + num_cell_vertices + 1);
 
-      // Packing: [owner, cell_index, this_vertex, [other_vertices]]
       // Look for vertex in map, and add the attached cell
       auto it = sh_vert_to_cell.insert({vertex_index, cell_set});
       if (!it.second)
@@ -410,10 +412,10 @@ void MeshPartitioning::distribute_cell_layer(
     {
       const std::int64_t owner = *q;
       const std::int64_t cell_index = *(q + 1);
-      auto cell_it = cell_global_to_local.find(cell_index);
-      if (cell_it == cell_global_to_local.end())
+
+      auto cell_insert = cell_global_to_local.insert({cell_index, count});
+      if (cell_insert.second)
       {
-        cell_global_to_local.insert({cell_index, count});
         shared_cells.insert({count, std::set<std::uint32_t>()});
         global_cell_indices.push_back(cell_index);
         cell_partition.push_back(owner);
@@ -424,8 +426,11 @@ void MeshPartitioning::distribute_cell_layer(
 
   // Add received cells and update sharing information for cells
   cell_vertices.conservativeResize(count, num_cell_vertices);
+
+  // Set of processes and cells sharing the same vertex
   std::set<std::uint32_t> sharing_procs;
   std::vector<std::size_t> sharing_cells;
+
   std::size_t last_vertex = std::numeric_limits<std::size_t>::max();
   for (const auto& p : recv_vertcells)
   {

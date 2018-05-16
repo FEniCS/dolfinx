@@ -139,12 +139,11 @@ private:
                           const mesh::GhostMode ghost_mode,
                           const PartitionData& mp);
 
-  // FIXME: The code for this function is really bad. For example, it seems that
-  // cell_vertices carries data in which is used, and is then also modified
-  // (bad!)
-  // FIXME: Improve this docstring
-  // Distribute a layer of cells attached by vertex to boundary updating
-  // new_mesh_data and shared_cells. Used when ghosting by vertex.
+  // Distribute additional cells implied by connectivity via vertex. The input
+  // cell_vertices, shared_cells, global_cell_indices and cell_partition must
+  // already be distributed with a ghost layer by shared_facet.
+  // FIXME: shared_cells, cell_vertices, global_cell_indices and cell_partition
+  // are all modified by this function.
   static void distribute_cell_layer(
       MPI_Comm mpi_comm, const int num_regular_cells,
       std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
