@@ -10,12 +10,6 @@ except ImportError:
     print("This demo requires matplotlib! Bye.")
     exit()
 
-parameters["ghost_mode"] = "shared_vertex"
-#parameters["ghost_mode"] = "shared_facet"
-#parameters["ghost_mode"] = "None"
-parameters["reorder_cells_gps"] = True
-parameters["reorder_vertices_gps"] = True
-
 n = 0
 
 if(len(sys.argv) == 2):
@@ -30,7 +24,7 @@ if(MPI.size(MPI.comm_world) == 1):
 
 #parameters["mesh_partitioner"] = "ParMETIS"
 
-mesh = UnitSquareMesh(8, 8)
+mesh = RectangleMesh.create(MPI.comm_world, [Point(0,0), Point(1, 1)], [8, 8], CellType.Type.triangle, cpp.mesh.GhostMode.shared_vertex)
 # mesh = refine(M)
 
 shared_vertices = np.fromiter(mesh.topology.shared_entities(0).keys(), dtype='uintc')
@@ -43,20 +37,20 @@ ghost_vertices = np.arange(num_regular_vertices, mesh.topology.size(0))
 verts_note = []
 if (n == 0):
     for k,val in mesh.topology.shared_entities(0).items():
-        vtx = Vertex(mesh, k)
-        verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
+        vtx = Vertex(mesh, k).point().array()
+        verts_note.append( (vtx[0], vtx[1], " "+str(val)) )
 elif (n == 1):
     for i in range(mesh.num_vertices()):
         vtx = Vertex(mesh, i)
         val = vtx.global_index()
-        verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
+        verts_note.append( (vtx.point().array()[0], vtx.point().array()[1], " "+str(val)) )
 else:
     for i in range(mesh.num_vertices()):
         vtx = Vertex(mesh, i)
         val = vtx.index()
-        verts_note.append( (vtx.point().x(), vtx.point().y(), " "+str(val)) )
+        verts_note.append( (vtx.point().array()[0], vtx.point().array()[1], " "+str(val)) )
 
-x,y = mesh.coordinates().transpose()
+x,y = mesh.geometry.points.transpose()
 
 rank = MPI.rank(mesh.mpi_comm())
 
@@ -71,14 +65,14 @@ colors=[]
 cmap=['red', 'green', 'yellow', 'purple', 'pink', 'grey', 'blue', 'brown']
 
 idx = 0
-for c in cells(mesh, "all"):
+for c in Cells(mesh, cpp.mesh.MeshRangeType.ALL):
     xc=[]
     yc=[]
-    for v in vertices(c):
-        xc.append(v.point().x())
-        yc.append(v.point().y())
-    xavg = c.midpoint().x()
-    yavg = c.midpoint().y()
+    for v in VertexRange(c):
+        xc.append(v.point().array()[0])
+        yc.append(v.point().array()[1])
+    xavg = c.midpoint().array()[0]
+    yavg = c.midpoint().array()[1]
     cell_str=str(c.index())
 #    if c.index() in shared_cells.keys():
 #        cell_str = str(shared_cells[c.index()])
@@ -93,7 +87,7 @@ for c in cells(mesh, "all"):
 num_regular_facets = mesh.topology.ghost_offset(1)
 facet_note = []
 shared_facets = mesh.topology.shared_entities(1)
-for f in facets(mesh, "all"):
+for f in Facets(mesh, cpp.mesh.MeshRangeType.ALL):
     if (f.num_global_entities(2) == 2):
         color='#ffff88'
     else:
@@ -105,12 +99,12 @@ for f in facets(mesh, "all"):
             color='#ff00ff'
 
     if (n < 3):
-        facet_note.append((f.midpoint().x(), f.midpoint().y(), f.global_index(), color))
+        facet_note.append((f.midpoint().array()[0], f.midpoint().array()[1], f.global_index(), color))
     elif (n == 3):
-        facet_note.append((f.midpoint().x(), f.midpoint().y(), f.index(), color))
+        facet_note.append((f.midpoint().array()[0], f.midpoint().array()[1], f.index(), color))
     else:
         if (f.index() in shared_facets.keys()):
-            facet_note.append((f.midpoint().x(), f.midpoint().y(), shared_facets[f.index()], color))
+            facet_note.append((f.midpoint().array()[0], f.midpoint().array()[1], shared_facets[f.index()], color))
 
 fig, ax = plt.subplots()
 
