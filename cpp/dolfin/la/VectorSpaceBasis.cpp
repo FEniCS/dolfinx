@@ -36,7 +36,7 @@ void VectorSpaceBasis::orthonormalize(double tol)
     if (_basis[i]->norm("l2") < tol)
     {
       log::dolfin_error("VectorSpaceBasis.cpp", "orthonormalize vector basis",
-                   "Vector space has linear dependency");
+                        "Vector space has linear dependency");
     }
 
     // Normalise basis function

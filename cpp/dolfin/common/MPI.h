@@ -7,13 +7,13 @@
 #pragma once
 
 #include <cassert>
+#include <complex>
 #include <cstdint>
 #include <iostream>
 #include <numeric>
 #include <type_traits>
 #include <utility>
 #include <vector>
-#include <complex>
 
 #ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
@@ -32,7 +32,7 @@ typedef int MPI_Comm;
 
 namespace dolfin
 {
-  
+
 #ifdef HAS_MPI
 class MPIInfo
 {
