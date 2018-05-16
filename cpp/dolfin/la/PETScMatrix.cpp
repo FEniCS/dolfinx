@@ -423,60 +423,6 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
     petsc_error(ierr, __FILE__, "MatMult");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::transpmult(const PETScVector& x, PETScVector& y) const
-{
-  assert(_matA);
-
-  if (size(0) != x.size())
-  {
-    log::dolfin_error(
-        "PETScMatrix.cpp",
-        "compute transpose matrix-vector product with PETSc matrix",
-        "Non-matching dimensions for transpose matrix-vector product");
-  }
-
-  // Resize RHS if empty
-  if (y.size() == 0)
-    init_vector(y, 1);
-
-  if (size(1) != y.size())
-  {
-    log::dolfin_error(
-        "PETScMatrix.cpp",
-        "compute transpose matrix-vector product with PETSc matrix",
-        "Vector for transpose matrix-vector result has wrong size");
-  }
-
-  PetscErrorCode ierr = MatMultTranspose(_matA, x.vec(), y.vec());
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatMultTranspose");
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::hermitiantranspmult(const PETScVector& x, PETScVector& y) const
-{
-  assert(_matA);
-
-  if (size(0) != x.size())
-  {
-    throw std::runtime_error("Non-matching dimensions for hermitian" 
-                              "transpose matrix-vector product");
-  }
-
-  // Resize RHS if empty
-  if (y.size() == 0)
-    init_vector(y, 1);
-
-  if (size(1) != y.size())
-  {
-    throw std::runtime_error("Vector for hermitian transpose matrix-vector" 
-                              "result has wrong size");
-  }
-
-  PetscErrorCode ierr = MatMultHermitianTranspose(_matA, x.vec(), y.vec());
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatMultTranspose");
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::get_diagonal(PETScVector& x) const
 {
   assert(_matA);

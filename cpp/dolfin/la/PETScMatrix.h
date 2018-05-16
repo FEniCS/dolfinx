@@ -159,13 +159,6 @@ public:
   /// Matrix-vector product, y = Ax
   void mult(const PETScVector& x, PETScVector& y) const;
 
-  /// Matrix-vector product, y = A^T x
-  void transpmult(const PETScVector& x, PETScVector& y) const;
-
-  /// Matrix-vector product, y = A^H x
-  /// For real numbers transpmult and hermitiantranspmult are identical
-  void hermitiantranspmult(const PETScVector& x, PETScVector& y) const;
-
   /// Get diagonal of a matrix
   void get_diagonal(PETScVector& x) const;
 
