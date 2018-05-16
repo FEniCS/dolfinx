@@ -4,11 +4,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import numpy as np
-from dolfin import *
-
-from dolfin_utils.test import *
+from dolfin import SubDomain, UnitSquareMesh, DOLFIN_EPS, PeriodicBoundaryComputation, MPI
+from dolfin_utils.test import skip_in_parallel, fixture
 
 
 @fixture
@@ -22,6 +20,7 @@ def periodic_boundary():
             y[1] = x[1]
 
     return PeriodicBoundary()
+
 
 @fixture
 def mesh():
