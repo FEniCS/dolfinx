@@ -58,5 +58,5 @@ private:
   // Basis vectors
   const std::vector<std::shared_ptr<PETScVector>> _basis;
 };
-}
-}
+} // namespace la
+} // namespace dolfin
