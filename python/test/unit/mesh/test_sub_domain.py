@@ -4,11 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-
-import pytest
 import numpy as np
-from dolfin import *
-from dolfin_utils.test import skip_in_parallel
+from dolfin import SubDomain, DOLFIN_EPS, MPI, MeshFunction, UnitSquareMesh, UnitCubeMesh, UnitIntervalMesh
 
 
 def test_creation_and_marking():
@@ -35,13 +32,13 @@ def test_creation_and_marking():
     for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh,
                                      UnitCubeMesh]):
         dim = ind + 1
-        args = [10]*dim
+        args = [10] * dim
         mesh = MeshClass(MPI.comm_world, *args)
         mesh.init()
 
         for left, right in subdomain_pairs:
             for t_dim, f_dim in [(0, 0),
-                                 (mesh.topology.dim-1, dim - 1),
+                                 (mesh.topology.dim - 1, dim - 1),
                                  (mesh.topology.dim, dim)]:
                 f = MeshFunction("size_t", mesh, t_dim, 0)
 
@@ -67,7 +64,7 @@ def test_creation_and_marking():
                 ])
 
         for t_dim, f_dim in [(0, 0),
-                             (mesh.topology.dim-1, dim-1),
+                             (mesh.topology.dim - 1, dim - 1),
                              (mesh.topology.dim, dim)]:
             f = MeshFunction("size_t", mesh, t_dim, 0)
 

@@ -1,7 +1,12 @@
+# Copyright (C) 2018 Chris N Richardson
+#
+# This file is part of DOLFIN (https://www.fenicsproject.org)
+#
+# SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 from dolfin import UnitSquareMesh, UnitCubeMesh, MPI
 from dolfin.cpp.refinement import refine
+
 
 def test_RefineUnitSquareMesh():
     """Refine mesh of unit square."""
