@@ -662,15 +662,15 @@ void la(py::module& m)
       .def(py::init([](const dolfin::common::IndexMap map) {
         return std::make_unique<dolfin::la::PETScVector>(map);
       }))
-      .def(py::init([](const MPICommWrapper comm,
-                       std::array<std::int64_t, 2> range,
-                       const Eigen::Ref<
-                           Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>
-                           ghost_indices,
-                       int block_size) {
-        return dolfin::la::PETScVector(comm.get(), range, ghost_indices,
-                                       block_size);
-      }))
+      .def(py::init(
+          [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
+             const Eigen::Ref<
+                 const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>
+                 ghost_indices,
+             int block_size) {
+            return dolfin::la::PETScVector(comm.get(), range, ghost_indices,
+                                           block_size);
+          }))
       .def(py::init<Vec>())
       .def(py::init<const dolfin::la::PETScVector>())
       .def("apply", &dolfin::la::PETScVector::apply)

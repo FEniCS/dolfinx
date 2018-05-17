@@ -37,7 +37,8 @@ def test_save_and_read_vector(tempdir):
     filename = os.path.join(tempdir, "vector.h5")
 
     # Write to file
-    x = PETScVector(MPI.comm_world, [0, 305], [], 1)
+    local_range = MPI.local_range(MPI.comm_world, 305)
+    x = PETScVector(MPI.comm_world, local_range, [], 1)
     x[:] = 1.2
     with HDF5File(MPI.comm_world, filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")
