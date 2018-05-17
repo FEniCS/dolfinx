@@ -88,8 +88,11 @@ void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
   // Create nested (VecNest) vector
   Vec y;
   VecCreateNest(x.mpi_comm(), petsc_vecs.size(), NULL, petsc_vecs.data(), &y);
-  x.reset(y);
-  VecDestroy(&y);
+
+  x = la::PETScVector(y);
+  //x.reset(y);
+  //VecDestroy(&y);
+
 
   /*
   VecSetType(x.vec(), VECNEST);

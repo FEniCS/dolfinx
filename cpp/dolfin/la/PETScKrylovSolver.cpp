@@ -19,8 +19,7 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm)
-    : _ksp(NULL)
+PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm) : _ksp(NULL)
 {
   PetscErrorCode ierr;
 
@@ -30,8 +29,7 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm)
     petsc_error(ierr, __FILE__, "KSPCreate");
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(KSP ksp)
-    : _ksp(ksp)
+PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp)
 {
   PetscErrorCode ierr;
   if (_ksp)
@@ -103,7 +101,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
         "rows and right-hand side vector has %ld rows)",
         M, b.size());
   }
-
 
   // Initialize solution vector, if necessary
   if (x.empty())

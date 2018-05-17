@@ -93,26 +93,19 @@ PETScVector::PETScVector(
   // }
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(MPI_Comm comm) : _x(nullptr)
-{
-  PetscErrorCode ierr = VecCreate(comm, &_x);
-  CHECK_ERROR("VecCreate");
-}
+PETScVector::PETScVector() : _x(nullptr) {}
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x) : _x(x)
 {
   // Increase reference count to PETSc object
+  assert(x);
   PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const PETScVector& v) : _x(nullptr)
 {
-  std::cout << "Copy PETSc vector" << std::endl;
-
-  assert(v._x);
-
-  // Duplicate vector and copy data
   PetscErrorCode ierr;
+  assert(v._x);
   ierr = VecDuplicate(v._x, &_x);
   CHECK_ERROR("VecDuplicate");
   ierr = VecCopy(v._x, _x);
@@ -363,13 +356,12 @@ void PETScVector::zero()
   this->apply();
 }
 //-----------------------------------------------------------------------------
-bool PETScVector::empty() const { return this->size() == 0; }
-//-----------------------------------------------------------------------------
-bool PETScVector::owns_index(std::size_t i) const
+bool PETScVector::empty() const
 {
-  const auto _local_range = local_range();
-  const std::int64_t _i = i;
-  return _i >= _local_range[0] && _i < _local_range[1];
+  if (!_x)
+    return true;
+  else
+    return this->size() == 0;
 }
 //-----------------------------------------------------------------------------
 PETScVector& PETScVector::operator=(const PETScVector& v)
@@ -455,7 +447,6 @@ PETScVector& PETScVector::operator*=(const PetscScalar a)
   PetscErrorCode ierr = VecScale(_x, a);
   CHECK_ERROR("VecScale");
 
-  // Update ghost values
   update_ghost_values();
 
   return *this;
@@ -475,7 +466,6 @@ PETScVector& PETScVector::operator*=(const PETScVector& v)
   PetscErrorCode ierr = VecPointwiseMult(_x, _x, v._x);
   CHECK_ERROR("VecPointwiseMult");
 
-  // Update ghost values
   update_ghost_values();
 
   return *this;
@@ -504,17 +494,9 @@ void PETScVector::axpy(PetscScalar a, const PETScVector& y)
 {
   assert(_x);
   assert(y._x);
-  if (size() != y.size())
-  {
-    log::dolfin_error("PETScVector.cpp",
-                      "perform axpy operation with PETSc vector",
-                      "Vectors are not of the same size");
-  }
-
   PetscErrorCode ierr = VecAXPY(_x, a, y._x);
   CHECK_ERROR("VecAXPY");
 
-  // Update ghost values
   update_ghost_values();
 }
 //-----------------------------------------------------------------------------
@@ -524,7 +506,6 @@ void PETScVector::abs()
   PetscErrorCode ierr = VecAbs(_x);
   CHECK_ERROR("VecAbs");
 
-  // Update ghost values
   update_ghost_values();
 }
 //-----------------------------------------------------------------------------
@@ -677,7 +658,7 @@ void PETScVector::gather(std::vector<PetscScalar>& x,
                          const std::vector<dolfin::la_index_t>& indices) const
 {
   x.resize(indices.size());
-  PETScVector y(PETSC_COMM_SELF);
+  PETScVector y;
   gather(y, indices);
   assert(y.local_size() == x.size());
   y.get_local(x);
@@ -755,19 +736,4 @@ void PETScVector::set_from_options()
 }
 //-----------------------------------------------------------------------------
 Vec PETScVector::vec() const { return _x; }
-//-----------------------------------------------------------------------------
-void PETScVector::reset(Vec vec)
-{
-  assert(_x);
-  PetscErrorCode ierr;
-
-  // Decrease reference count to old Vec object
-  ierr = VecDestroy(&_x);
-  CHECK_ERROR("VecDestroy");
-
-  // Store new Vec object and increment reference count
-  _x = vec;
-  ierr = PetscObjectReference((PetscObject)_x);
-  CHECK_ERROR("PetscObjectReference");
-}
 //-----------------------------------------------------------------------------

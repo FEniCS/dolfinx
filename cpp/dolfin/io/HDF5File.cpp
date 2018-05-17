@@ -187,7 +187,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
          or (data_shape.size() == 2 and data_shape[1] == 1));
 
   // Initialize vector
-  la::PETScVector x(comm);
+  la::PETScVector x;
   if (use_partition_from_file)
   {
     // Get partition from file

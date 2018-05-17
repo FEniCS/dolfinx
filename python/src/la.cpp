@@ -656,12 +656,8 @@ void la(py::module& m)
   // dolfin::la::PETScVector
   py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>>(
       m, "PETScVector", "DOLFIN PETScVector object")
-      .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfin::la::PETScVector>(comm.get());
-      }))
-      .def(py::init([](const dolfin::common::IndexMap map) {
-        return std::make_unique<dolfin::la::PETScVector>(map);
-      }))
+      .def(py::init<>())
+      .def(py::init<const dolfin::common::IndexMap&>())
       .def(py::init(
           [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
              const Eigen::Ref<
@@ -672,7 +668,7 @@ void la(py::module& m)
                                            block_size);
           }))
       .def(py::init<Vec>())
-      .def(py::init<const dolfin::la::PETScVector>())
+      .def(py::init<const dolfin::la::PETScVector&>())
       .def("apply", &dolfin::la::PETScVector::apply)
       .def("norm", &dolfin::la::PETScVector::norm)
       .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
@@ -828,7 +824,7 @@ void la(py::module& m)
       .def("get_eigenpair",
            [](dolfin::la::SLEPcEigenSolver& self, std::size_t i) {
              double lr, lc;
-             dolfin::la::PETScVector r(self.mpi_comm()), c(self.mpi_comm());
+             dolfin::la::PETScVector r, c;
              self.get_eigenpair(lr, lc, r, c, i);
              return py::make_tuple(lr, lc, r, c);
            });

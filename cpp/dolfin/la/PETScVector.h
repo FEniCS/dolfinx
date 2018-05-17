@@ -21,10 +21,7 @@ namespace dolfin
 namespace la
 {
 
-/// A simple vector class based on PETSc.
-///
-/// It is a simple wrapper for a PETSc vector pointer (Vec)
-/// implementing the GenericTensor interface.
+/// It is a simple wrapper for a PETSc vector pointer (Vec).
 ///
 /// The interface is intentionally simple. For advanced usage,
 /// access the PETSc Vec pointer using the function vec() and
@@ -41,8 +38,9 @@ public:
               const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& ghost_indices,
               int block_size);
 
-  /// Create empty vector on an MPI communicator
-  explicit PETScVector(MPI_Comm comm);
+  // FIXME: Try to remove
+  /// Create empty vector
+  PETScVector();
 
   /// Copy constructor
   PETScVector(const PETScVector& x);
@@ -81,9 +79,6 @@ public:
 
   /// Return true if vector is empty
   bool empty() const;
-
-  /// Determine whether global vector index is owned by this process
-  bool owns_index(std::size_t i) const;
 
   /// Get block of values using global indices (all values must be
   /// owned by local process, ghosts cannot be accessed)
@@ -207,10 +202,6 @@ public:
 
   /// Return pointer to PETSc Vec object
   Vec vec() const;
-
-  /// Switch underlying PETSc object. Intended for internal library
-  /// usage.
-  void reset(Vec vec);
 
 private:
   // PETSc Vec pointer

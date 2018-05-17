@@ -500,6 +500,7 @@ void Function::init_vector()
   assert(index_map);
 
   _vector = std::make_shared<la::PETScVector>(*index_map);
+  assert(_vector);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
