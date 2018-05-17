@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cassert>
+#include <complex>
 #include <cstdint>
 #include <iostream>
 #include <numeric>
@@ -278,6 +279,11 @@ template <>
 inline MPI_Datatype MPI::mpi_type<double>()
 {
   return MPI_DOUBLE;
+}
+template <>
+inline MPI_Datatype MPI::mpi_type<std::complex<double>>()
+{
+  return MPI_DOUBLE_COMPLEX;
 }
 template <>
 inline MPI_Datatype MPI::mpi_type<short int>()

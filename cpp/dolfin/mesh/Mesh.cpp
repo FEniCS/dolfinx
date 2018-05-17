@@ -48,9 +48,6 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // FIXME: remove duplication in CellType::vtk_mapping()
   std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
 
-  std::cout << "Test cells: " << cells.rows() << ", " << cells.cols() << std::endl;
-  std::cout << "Test points: " << points.rows() << ", " << points.cols() << std::endl;
-
   // Infer if the mesh has P2 geometry (P1 has num_vertices_per_cell ==
   // cells.cols())
   if (num_vertices_per_cell != cells.cols())
@@ -68,7 +65,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     else
     {
       throw std::runtime_error(
-          "Mistmach between cell type and number of vertices per cell");
+          "Mismatch between cell type and number of vertices per cell");
     }
   }
 
