@@ -32,9 +32,17 @@ const std::map<std::string, NormType> norm_types
   } while (0)
 
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-                         const std::vector<la_index_t>& ghost_indices,
-                         int block_size)
+PETScVector::PETScVector(const common::IndexMap& map)
+    : PETScVector(map.mpi_comm(), map.local_range(), map.ghosts(),
+                  map.block_size())
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
+PETScVector::PETScVector(
+    MPI_Comm comm, std::array<std::int64_t, 2> range,
+    const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& ghost_indices,
+    int block_size)
     : _x(nullptr)
 {
   PetscErrorCode ierr;
@@ -59,7 +67,7 @@ PETScVector::PETScVector(MPI_Comm comm, std::array<std::int64_t, 2> range,
   // Set local-to-global map
   std::vector<PetscInt> l2g(local_size + ghost_indices.size());
   std::iota(l2g.begin(), l2g.begin() + local_size, range[0]);
-  std::copy(ghost_indices.begin(), ghost_indices.end(),
+  std::copy(ghost_indices.data(), ghost_indices.data() + ghost_indices.size(),
             l2g.begin() + local_size);
   ISLocalToGlobalMapping petsc_local_to_global;
   ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size, l2g.size(),

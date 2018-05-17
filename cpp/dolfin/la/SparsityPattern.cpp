@@ -473,8 +473,8 @@ void SparsityPattern::apply()
         = _index_maps[0]->ghost_owners();
 
     // Get local-to-global for unowned blocks
-    const Eigen::Ref<const EigenArrayXi64> local_to_global
-        = _index_maps[0]->ghosts();
+    const Eigen::Ref<const Eigen::Array<la_index_t, Eigen::Dynamic, 1>>
+        local_to_global = _index_maps[0]->ghosts();
 
     std::size_t dim_block_size = _index_maps[0]->block_size();
     for (std::size_t i = 0; i < _non_local.size(); i += 2)

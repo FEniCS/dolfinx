@@ -67,7 +67,7 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const EigenArrayXi64& ghosts() const;
+  const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& ghosts() const;
 
   /// Get global index for local index i (index of the block)
   std::size_t local_to_global(std::size_t i) const
@@ -108,7 +108,7 @@ public:
 
 private:
   // Local-to-global map for ghost indices
-  EigenArrayXi64 _ghosts;
+  Eigen::Array<la_index_t, Eigen::Dynamic, 1> _ghosts;
 
   // Owning process for each ghost index
   EigenArrayXi32 _ghost_owners;

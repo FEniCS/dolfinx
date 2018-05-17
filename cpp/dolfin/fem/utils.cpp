@@ -29,19 +29,11 @@ la::PETScVector dolfin::fem::init_vector(const Form& L)
   if (L.rank() != 1)
     throw std::runtime_error("Cannot initialise vector. Form must be linear.");
 
-  // Get dof map
   auto dofmap = L.function_space(0)->dofmap();
-
-  // Get dimensions and mapping across processes for each dimension
   auto index_map = dofmap->index_map();
+  assert(index_map);
 
-  int block_size = index_map->block_size();
-  const EigenArrayXi64& ghosts = index_map->ghosts();
-  const std::vector<la_index_t> _ghosts(ghosts.data(),
-                                        ghosts.data() + ghosts.size());
-
-  return la::PETScVector(L.mesh()->mpi_comm(), index_map->local_range(),
-                         _ghosts, block_size);
+  return la::PETScVector(*index_map);
 }
 //-----------------------------------------------------------------------------
 void fem::init_nest(la::PETScMatrix& A,

@@ -34,8 +34,12 @@ class PETScVector
 {
 public:
   /// Create vector
+  PETScVector(const common::IndexMap& map);
+
+  /// Create vector
   PETScVector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-              const std::vector<la_index_t>& ghost_indices, int block_size);
+              const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& ghost_indices,
+              int block_size);
 
   /// Create empty vector on an MPI communicator
   explicit PETScVector(MPI_Comm comm);

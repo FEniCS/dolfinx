@@ -62,7 +62,10 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
   }
 }
 //-----------------------------------------------------------------------------
-const EigenArrayXi64& IndexMap::ghosts() const { return _ghosts; }
+const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& IndexMap::ghosts() const
+{
+  return _ghosts;
+}
 //-----------------------------------------------------------------------------
 int IndexMap::owner(std::size_t global_index) const
 {

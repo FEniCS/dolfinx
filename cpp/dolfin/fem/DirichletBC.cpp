@@ -142,8 +142,7 @@ void DirichletBC::gather(Map& boundary_values) const
       const int component = div.rem;
 
       // Get local-to-global for ghost blocks
-      const Eigen::Ref<const EigenArrayXi64> local_to_global
-          = dofmap.index_map()->ghosts();
+      const auto& local_to_global = dofmap.index_map()->ghosts();
 
       // Case 1: dof is not owned by this process
       auto it

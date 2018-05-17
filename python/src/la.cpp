@@ -659,9 +659,14 @@ void la(py::module& m)
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<dolfin::la::PETScVector>(comm.get());
       }))
+      .def(py::init([](const dolfin::common::IndexMap map) {
+        return std::make_unique<dolfin::la::PETScVector>(map);
+      }))
       .def(py::init([](const MPICommWrapper comm,
                        std::array<std::int64_t, 2> range,
-                       const std::vector<dolfin::la_index_t>& ghost_indices,
+                       const Eigen::Ref<
+                           Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>
+                           ghost_indices,
                        int block_size) {
         return dolfin::la::PETScVector(comm.get(), range, ghost_indices,
                                        block_size);
