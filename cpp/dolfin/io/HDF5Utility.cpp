@@ -345,7 +345,7 @@ void HDF5Utility::set_local_vector_values(
     MPI::all_to_all(mpi_comm, send_indices, receive_indices);
   }
 
-  std::vector<double> vector_values(vector_range[1] - vector_range[0]);
+  EigenArrayXd vector_values(vector_range[1] - vector_range[0]);
   for (std::size_t i = 0; i != num_processes; ++i)
   {
     const std::vector<double>& rval = receive_values[i];
