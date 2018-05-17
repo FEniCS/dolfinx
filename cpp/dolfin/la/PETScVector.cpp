@@ -87,36 +87,6 @@ PETScVector::~PETScVector()
     VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(std::array<std::int64_t, 2> range)
-{
-  _init(range, {}, 1);
-}
-//-----------------------------------------------------------------------------
-void PETScVector::_init(std::array<std::int64_t, 2> range,
-                        const std::vector<la_index_t>& ghost_indices,
-                        int block_size)
-{
-  // MPI_Comm comm = this->mpi_comm();
-  if (_x)
-    VecDestroy(&_x);
-
-  PetscErrorCode ierr;
-
-  // Set from PETSc options. This will set the vector type.
-  // ierr = VecSetFromOptions(_x);
-  // CHECK_ERROR("VecSetFromOptions");
-
-  // Get local size
-  assert(range[1] >= range[0]);
-  const std::size_t local_size = block_size * (range[1] - range[0]);
-
-  // FIXME: pass in comm
-  ierr = VecCreateGhostBlock(MPI_COMM_WORLD, block_size, local_size,
-                             PETSC_DECIDE, ghost_indices.size(),
-                             ghost_indices.data(), &_x);
-  CHECK_ERROR("VecCreateGhostBlock");
-}
-//-----------------------------------------------------------------------------
 std::int64_t PETScVector::size() const
 {
   assert(_x);
@@ -362,13 +332,20 @@ bool PETScVector::owns_index(std::size_t i) const
   return _i >= _local_range[0] && _i < _local_range[1];
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator=(const PETScVector& v)
+PETScVector& PETScVector::operator=(const PETScVector& v)
 {
   _x = v._x;
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator=(PetscScalar a)
+PETScVector& PETScVector::operator=(PETScVector&& v)
+{
+  _x = v._x;
+  v._x = nullptr;
+  return *this;
+}
+//-----------------------------------------------------------------------------
+PETScVector& PETScVector::operator=(PetscScalar a)
 {
   assert(_x);
   PetscErrorCode ierr = VecSet(_x, a);
@@ -399,14 +376,14 @@ void PETScVector::update_ghost_values()
   CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator+=(const PETScVector& x)
+PETScVector& PETScVector::operator+=(const PETScVector& x)
 {
   PetscScalar a = 1.0;
   axpy(a, x);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator+=(PetscScalar a)
+PETScVector& PETScVector::operator+=(PetscScalar a)
 {
   assert(_x);
   PetscErrorCode ierr = VecShift(_x, a);
@@ -418,21 +395,21 @@ const PETScVector& PETScVector::operator+=(PetscScalar a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator-=(const PETScVector& x)
+PETScVector& PETScVector::operator-=(const PETScVector& x)
 {
   PetscScalar a = -1.0;
   axpy(a, x);
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator-=(PetscScalar a)
+PETScVector& PETScVector::operator-=(PetscScalar a)
 {
   assert(_x);
   (*this) += -a;
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator*=(const PetscScalar a)
+PETScVector& PETScVector::operator*=(const PetscScalar a)
 {
   assert(_x);
   PetscErrorCode ierr = VecScale(_x, a);
@@ -444,7 +421,7 @@ const PETScVector& PETScVector::operator*=(const PetscScalar a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator*=(const PETScVector& v)
+PETScVector& PETScVector::operator*=(const PETScVector& v)
 {
   assert(_x);
   assert(v._x);
@@ -464,7 +441,7 @@ const PETScVector& PETScVector::operator*=(const PETScVector& v)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScVector& PETScVector::operator/=(const PetscScalar a)
+PETScVector& PETScVector::operator/=(const PetscScalar a)
 {
   assert(_x);
   assert(PetscAbsScalar(a) != 0.0);
@@ -486,7 +463,6 @@ PetscScalar PETScVector::dot(const PETScVector& y) const
 void PETScVector::axpy(PetscScalar a, const PETScVector& y)
 {
   assert(_x);
-
   assert(y._x);
   if (size() != y.size())
   {
@@ -612,7 +588,7 @@ void PETScVector::gather(PETScVector& y,
 
   // Initialize vector if empty
   if (y.empty())
-    y.init({{0, n}});
+    y = PETScVector(PETSC_COMM_SELF, {{0, n}}, {}, 1);
 
   // Check that passed vector has correct size
   if (y.size() != n)

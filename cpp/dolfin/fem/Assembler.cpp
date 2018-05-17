@@ -388,7 +388,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     else if (block_vector and block_type == BlockType::monolithic)
       fem::init_monolithic(b, forms);
     else
-      init(b, *_l[0]);
+      b = init_vector(*_l[0]);
   }
 
   // auto range = b.local_range();

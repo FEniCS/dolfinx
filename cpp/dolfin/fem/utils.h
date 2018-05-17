@@ -20,18 +20,18 @@ namespace la
 {
 class PETScMatrix;
 class PETScVector;
-}
+} // namespace la
 namespace function
 {
 class Function;
 class FunctionSpace;
-}
+} // namespace function
 
 namespace mesh
 {
 class Mesh;
 class MeshGeometry;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -55,7 +55,7 @@ void init_monolithic(la::PETScMatrix& A,
 void init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L);
 
 /// Initialise vector. Vector is not zeroed.
-void init(la::PETScVector& x, const Form& a);
+la::PETScVector init_vector(const Form& L);
 
 /// Return a map between dof indices and vertex indices
 ///
@@ -94,5 +94,5 @@ vertex_to_dof_map(const function::FunctionSpace& space);
 /// Get new global index in 'spliced' indices
 std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
                              const unsigned int field, const unsigned int n);
-}
-}
+} // namespace fem
+} // namespace dolfin

@@ -25,7 +25,7 @@ def test_parallel(tempdir):
 @xfail_with_serial_hdf5_in_parallel
 def test_save_vector(tempdir):
     filename = os.path.join(tempdir, "x.h5")
-    x = PETScVector(MPI.comm_world, 305)
+    x = PETScVector(MPI.comm_world, [0, 305], [], 1)
     x[:] = 1.0
     with HDF5File(MPI.comm_world, filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")
@@ -37,7 +37,7 @@ def test_save_and_read_vector(tempdir):
     filename = os.path.join(tempdir, "vector.h5")
 
     # Write to file
-    x = PETScVector(MPI.comm_world, 305)
+    x = PETScVector(MPI.comm_world, [0, 305], [], 1)
     x[:] = 1.2
     with HDF5File(MPI.comm_world, filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")

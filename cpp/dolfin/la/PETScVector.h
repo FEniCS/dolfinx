@@ -46,21 +46,13 @@ public:
   /// Move constructor
   PETScVector(PETScVector&& x);
 
-  /// Create vector wrapper of PETSc Vec pointer. The reference
-  /// counter of the Vec will be increased, and decreased upon
-  /// destruction of this object.
+  /// Create vector wrapper of PETSc Vec pointer. The reference counter
+  /// of the Vec will be increased, and decreased upon destruction of
+  /// this object.
   explicit PETScVector(Vec x);
 
   /// Destructor
   virtual ~PETScVector();
-
-  /// Initialize vector with given ownership range
-  void init(std::array<std::int64_t, 2> range);
-
-  /// Initialize vector with given ownership range and with ghost
-  /// values
-  void _init(std::array<std::int64_t, 2> range,
-             const std::vector<la_index_t>& ghost_indices, int block_size);
 
   /// Return size of vector
   std::int64_t size() const;
@@ -165,31 +157,34 @@ public:
   PetscScalar sum() const;
 
   /// Multiply vector by given number
-  const PETScVector& operator*=(PetscScalar a);
+  PETScVector& operator*=(PetscScalar a);
 
   /// Multiply vector by another vector pointwise
-  const PETScVector& operator*=(const PETScVector& x);
+  PETScVector& operator*=(const PETScVector& x);
 
   /// Divide vector by given number
-  const PETScVector& operator/=(PetscScalar a);
+  PETScVector& operator/=(PetscScalar a);
 
   /// Add given vector
-  const PETScVector& operator+=(const PETScVector& x);
+  PETScVector& operator+=(const PETScVector& x);
 
   /// Add number to all components of a vector
-  const PETScVector& operator+=(PetscScalar a);
+  PETScVector& operator+=(PetscScalar a);
 
   /// Subtract given vector
-  const PETScVector& operator-=(const PETScVector& x);
+  PETScVector& operator-=(const PETScVector& x);
 
   /// Subtract number from all components of a vector
-  const PETScVector& operator-=(PetscScalar a);
+  PETScVector& operator-=(PetscScalar a);
 
   /// Assignment operator
-  const PETScVector& operator=(const PETScVector& x);
+  PETScVector& operator=(const PETScVector& x);
+
+  /// Move Assignment operator
+  PETScVector& operator=(PETScVector&& x);
 
   /// Assignment operator
-  const PETScVector& operator=(PetscScalar a);
+  PETScVector& operator=(PetscScalar a);
 
   /// Update values shared from remote processes
   void update_ghost_values();

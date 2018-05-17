@@ -8,6 +8,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/types.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
@@ -23,17 +24,13 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(la::PETScVector& x, const Form& a)
+la::PETScVector dolfin::fem::init_vector(const Form& L)
 {
-  if (a.rank() != 1)
-    throw std::runtime_error(
-        "Cannot initialise vector. Form is not a linear form");
-
-  if (!x.empty())
-    throw std::runtime_error("Cannot initialise layout of non-empty matrix");
+  if (L.rank() != 1)
+    throw std::runtime_error("Cannot initialise vector. Form must be linear.");
 
   // Get dof map
-  auto dofmap = a.function_space(0)->dofmap();
+  auto dofmap = L.function_space(0)->dofmap();
 
   // Get dimensions and mapping across processes for each dimension
   auto index_map = dofmap->index_map();
@@ -43,16 +40,8 @@ void dolfin::fem::init(la::PETScVector& x, const Form& a)
   const std::vector<la_index_t> _ghosts(ghosts.data(),
                                         ghosts.data() + ghosts.size());
 
-  std::vector<la_index_t> local_to_global(
-      index_map->size(common::IndexMap::MapSize::ALL));
-  for (std::size_t i = 0; i < local_to_global.size(); ++i)
-    local_to_global[i] = index_map->local_to_global(i);
-
-  // Initialize vector
-  // x = la::PETScVector(a.mesh()->mpi_comm(), index_map->local_range(), _ghosts,
-  //                     block_size);
-  x._init(index_map->local_range(), _ghosts, block_size);
-  //x.new_init(index_map->local_range(), local_to_global, _ghosts, block_size);
+  return la::PETScVector(L.mesh()->mpi_comm(), index_map->local_range(),
+                         _ghosts, block_size);
 }
 //-----------------------------------------------------------------------------
 void fem::init_nest(la::PETScMatrix& A,
@@ -97,9 +86,7 @@ void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
   {
     if (L[i])
     {
-      vecs[i] = std::make_shared<la::PETScVector>(x.mpi_comm());
-      init(*vecs[i], *L[i]);
-
+      vecs[i] = std::make_shared<la::PETScVector>(init_vector(*L[i]));
       petsc_vecs[i] = vecs[i]->vec();
     }
     else
@@ -268,9 +255,10 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
     }
   }
 
-  // Initialize vector
+  // Initialize vector. This needs fixing because in this case we have a
+  // non-standard l2g map
   throw std::runtime_error("This case needs to be updated");
-  //x._init(index_map.local_range(), local_to_global, {}, 1);
+  // x._init(index_map.local_range(), local_to_global, {}, 1);
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(la::PETScMatrix& A, const Form& a)

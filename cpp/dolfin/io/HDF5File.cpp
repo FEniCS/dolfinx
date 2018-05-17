@@ -209,11 +209,13 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
 
     // Initialise vector
     const std::size_t process_num = _mpi_comm.rank();
-    x.init({{(std::int64_t)partitions[process_num],
-             (std::int64_t)partitions[process_num + 1]}});
+    x = la::PETScVector(comm,
+                        {{(std::int64_t)partitions[process_num],
+                          (std::int64_t)partitions[process_num + 1]}},
+                        {}, 1);
   }
   else
-    x.init({{0, data_shape[0]}});
+    x = la::PETScVector(comm, {{0, data_shape[0]}}, {}, 1);
 
   // Get local range
   const std::array<std::int64_t, 2> local_range = x.local_range();
@@ -764,8 +766,8 @@ void HDF5File::write(const function::Function& u, const std::string name,
     const std::size_t vec_count = 1;
 
     // if (!HDF5Interface::has_dataset(_hdf5_file_id, name))
-    //  throw std::runtime_error("Setting attribute on dataset. Dataset does not
-    //  exist");
+    //  throw std::runtime_error("Setting attribute on dataset. Dataset does
+    //  not exist");
 
     // FIXME: is this check required?
     if (HDF5Interface::has_attribute(_hdf5_file_id, name, "count"))
