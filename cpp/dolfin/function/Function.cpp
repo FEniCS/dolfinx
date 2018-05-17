@@ -546,11 +546,16 @@ void Function::init_vector()
     local_to_global[i] = index_map->local_to_global(i);
 
   // Build list of ghosts (global block indices)
-  const std::size_t nowned = index_map->size(common::IndexMap::MapSize::OWNED);
-  assert(nowned + index_map->size(common::IndexMap::MapSize::GHOSTS)
-         == local_to_global.size());
-  std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
-                                         local_to_global.end());
+  // const std::size_t nowned =
+  // index_map->size(common::IndexMap::MapSize::OWNED); assert(nowned +
+  // index_map->size(common::IndexMap::MapSize::GHOSTS)
+  //        == local_to_global.size());
+  // std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
+  //                                        local_to_global.end());
+
+  const EigenArrayXi64& ghosts = index_map->ghosts();
+  const std::vector<la_index_t> _ghosts(ghosts.data(),
+                                        ghosts.data() + ghosts.size());
 
   // Create vector of dofs
   // if (!_vector)
@@ -565,8 +570,16 @@ void Function::init_vector()
   //                      "Consider creating a new function");
   // }
 
+  // std::cout << "Block size test: " << bs << std::endl;
+  // if (MPI::rank(comm) == 1)
+  // {
+  //   std::cout << "Range: " << index_map->local_range()[0] << ", "
+  //             << index_map->local_range()[1] << std::endl;
+  //   std::cout << ghosts << std::endl;
+  //   std::cout << "num ghosts: " << ghosts.size() << std::endl;
+  // }
   _vector = std::make_shared<la::PETScVector>(comm, index_map->local_range(),
-                                              ghosts, bs);
+                                              _ghosts, bs);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------
