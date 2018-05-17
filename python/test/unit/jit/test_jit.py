@@ -202,7 +202,8 @@ def test_compile_extension_module():
 
     ext_module = compile_cpp_code(code)
 
-    vec = PETScVector(MPI.comm_world, [0, 10], [], 1)
+    local_range = MPI.local_range(MPI.comm_world, 10)
+    vec = PETScVector(MPI.comm_world, local_range, [], 1)
     np_vec = vec.get_local()
     np_vec[:] = arange(len(np_vec))
     vec[:] = np_vec

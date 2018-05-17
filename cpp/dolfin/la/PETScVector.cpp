@@ -57,6 +57,11 @@ PETScVector::PETScVector(
   CHECK_ERROR("VecCreateGhostBlock");
   assert(_x);
 
+  PetscInt n0, n1;
+  PetscErrorCode ierr = VecGetOwnershipRange(_x, &n0, &n1);
+  CHECK_ERROR("VecGetOwnershipRange");
+
+
   // Set from PETSc options. This will set the vector type.
   // ierr = VecSetFromOptions(_x);
   // CHECK_ERROR("VecSetFromOptions");
