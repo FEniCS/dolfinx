@@ -213,7 +213,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
              (std::int64_t)partitions[process_num + 1]}});
   }
   else
-    x.init(data_shape[0]);
+    x.init({{0, data_shape[0]}});
 
   // Get local range
   const std::array<std::int64_t, 2> local_range = x.local_range();

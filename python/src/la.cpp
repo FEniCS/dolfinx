@@ -659,11 +659,6 @@ void la(py::module& m)
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<dolfin::la::PETScVector>(comm.get());
       }))
-      .def(py::init([](const MPICommWrapper comm, std::size_t N) {
-        auto _x = std::make_unique<dolfin::la::PETScVector>(comm.get());
-        _x->init(N);
-        return _x;
-      }))
       .def(py::init<Vec>())
       .def(py::init<const dolfin::la::PETScVector>())
       .def("apply", &dolfin::la::PETScVector::apply)

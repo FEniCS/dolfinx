@@ -38,19 +38,21 @@ void dolfin::fem::init(la::PETScVector& x, const Form& a)
   // Get dimensions and mapping across processes for each dimension
   auto index_map = dofmap->index_map();
 
-  // FIXME: Do we need to sort out ghosts here
-  // Build ghost
-  // std::vector<dolfin::la_index_t> ghosts;
-
-  // Build local-to-global index map
   int block_size = index_map->block_size();
+  const EigenArrayXi64& ghosts = index_map->ghosts();
+  const std::vector<la_index_t> _ghosts(ghosts.data(),
+                                        ghosts.data() + ghosts.size());
+
   std::vector<la_index_t> local_to_global(
       index_map->size(common::IndexMap::MapSize::ALL));
   for (std::size_t i = 0; i < local_to_global.size(); ++i)
     local_to_global[i] = index_map->local_to_global(i);
 
   // Initialize vector
-  x.init(index_map->local_range(), local_to_global, {}, block_size);
+  // x = la::PETScVector(a.mesh()->mpi_comm(), index_map->local_range(), _ghosts,
+  //                     block_size);
+  x._init(index_map->local_range(), _ghosts, block_size);
+  //x.new_init(index_map->local_range(), local_to_global, _ghosts, block_size);
 }
 //-----------------------------------------------------------------------------
 void fem::init_nest(la::PETScMatrix& A,
@@ -267,8 +269,8 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
   }
 
   // Initialize vector
-  // x.init(index_map.local_range(), local_to_global, {}, 1);
-  x.init(index_map.local_range(), {}, {}, 1);
+  throw std::runtime_error("This case needs to be updated");
+  //x._init(index_map.local_range(), local_to_global, {}, 1);
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(la::PETScMatrix& A, const Form& a)

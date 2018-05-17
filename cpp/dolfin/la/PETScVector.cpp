@@ -32,6 +32,29 @@ const std::map<std::string, NormType> norm_types
   } while (0)
 
 //-----------------------------------------------------------------------------
+PETScVector::PETScVector(MPI_Comm comm, std::array<std::int64_t, 2> range,
+                         const std::vector<la_index_t>& ghost_indices,
+                         int block_size)
+    : _x(nullptr)
+{
+
+  PetscErrorCode ierr;
+
+  // Get local size
+  assert(range[1] >= range[0]);
+  const std::size_t local_size = block_size * (range[1] - range[0]);
+
+  // FIXME: pass in comm
+  ierr = VecCreateGhostBlock(comm, block_size, local_size, PETSC_DECIDE,
+                             ghost_indices.size(), ghost_indices.data(), &_x);
+  CHECK_ERROR("VecCreateGhostBlock");
+  assert(_x);
+
+  // Set from PETSc options. This will set the vector type.
+  // ierr = VecSetFromOptions(_x);
+  // CHECK_ERROR("VecSetFromOptions");
+}
+//-----------------------------------------------------------------------------
 PETScVector::PETScVector(MPI_Comm comm) : _x(nullptr)
 {
   PetscErrorCode ierr = VecCreate(comm, &_x);
@@ -48,18 +71,15 @@ PETScVector::PETScVector(const PETScVector& v) : _x(nullptr)
 {
   assert(v._x);
 
-  // Duplicate vector
+  // Duplicate vector and copy data
   PetscErrorCode ierr;
   ierr = VecDuplicate(v._x, &_x);
   CHECK_ERROR("VecDuplicate");
-
-  // Copy data
   ierr = VecCopy(v._x, _x);
   CHECK_ERROR("VecCopy");
-
-  // Update ghost values
-  update_ghost_values();
 }
+//-----------------------------------------------------------------------------
+PETScVector::PETScVector(PETScVector&& v) : _x(v._x) { v._x = nullptr; }
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
 {
@@ -67,116 +87,34 @@ PETScVector::~PETScVector()
     VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(std::size_t N)
-{
-  const auto range = dolfin::MPI::local_range(this->mpi_comm(), N);
-  init(range, {}, {}, 1);
-}
-//-----------------------------------------------------------------------------
 void PETScVector::init(std::array<std::int64_t, 2> range)
 {
-  init(range, {}, {}, 1);
+  _init(range, {}, 1);
 }
 //-----------------------------------------------------------------------------
-void PETScVector::init(std::array<std::int64_t, 2> range,
-                       const std::vector<la_index_t>& local_to_global_map,
-                       const std::vector<la_index_t>& ghost_indices,
-                       int block_size)
+void PETScVector::_init(std::array<std::int64_t, 2> range,
+                        const std::vector<la_index_t>& ghost_indices,
+                        int block_size)
 {
-  if (!_x)
-  {
-    log::dolfin_error("PETScVector.h", "initialize vector",
-                      "Underlying PETSc Vec has not been initialized");
-  }
+  // MPI_Comm comm = this->mpi_comm();
+  if (_x)
+    VecDestroy(&_x);
 
   PetscErrorCode ierr;
 
   // Set from PETSc options. This will set the vector type.
-  ierr = VecSetFromOptions(_x);
-  CHECK_ERROR("VecSetFromOptions");
+  // ierr = VecSetFromOptions(_x);
+  // CHECK_ERROR("VecSetFromOptions");
 
   // Get local size
   assert(range[1] >= range[0]);
   const std::size_t local_size = block_size * (range[1] - range[0]);
 
-  // Set vector size
-  ierr = VecSetSizes(_x, local_size, PETSC_DECIDE);
-  CHECK_ERROR("VecSetSizes");
-
-  // Set block size
-  ierr = VecSetBlockSize(_x, block_size);
-  CHECK_ERROR("VecSetBlockSize");
-
-  // Get PETSc Vec type
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  CHECK_ERROR("VecGetType");
-
-  // Add ghost points if Vec type is MPI (throw an error if Vec is not
-  // VECMPI and ghost entry vector is not empty)
-  if (strcmp(vec_type, VECMPI) == 0)
-  {
-    // Note: is re-creating the vector ok?
-    MPI_Comm comm = this->mpi_comm();
-    Vec y;
-    ierr = VecCreateGhostBlock(comm, block_size, local_size, PETSC_DECIDE,
-                               ghost_indices.size(), ghost_indices.data(), &y);
-    if (_x)
-      VecDestroy(&_x);
-    _x = y;
-
-    /*
-    // This version has problem when setting the block size
-    if (block_size == 1)
-      ierr = VecMPISetGhost(_x, ghost_indices.size(), ghost_indices.data());
-    else
-    {
-      std::vector<PetscInt> _ghost_indices(block_size*ghost_indices.size());
-      for (std::size_t i = 0; i < ghost_indices.size(); ++i)
-        for (int j = 0; j < block_size; ++j)
-          _ghost_indices[block_size*i + j] = block_size*ghost_indices[i] + j;
-
-      ierr = VecMPISetGhost(_x, _ghost_indices.size(), _ghost_indices.data());
-    }
-    */
-    CHECK_ERROR("VecMPISetGhost");
-  }
-  else if (!ghost_indices.empty())
-  {
-    log::dolfin_error("PETScVector.cpp", "initialize vector",
-                      "Sequential PETSc Vec objects cannot have ghost entries");
-  }
-
-  // Build local-to-global map
-  ISLocalToGlobalMapping petsc_local_to_global;
-  if (!local_to_global_map.empty())
-  {
-    // Create PETSc local-to-global map
-    ierr = ISLocalToGlobalMappingCreate(
-        PETSC_COMM_SELF, block_size, local_to_global_map.size(),
-        local_to_global_map.data(), PETSC_COPY_VALUES, &petsc_local_to_global);
-    CHECK_ERROR("ISLocalToGlobalMappingCreate");
-  }
-  else
-  {
-    // Fill vector with [i0 + 0, i0 + 1, i0 +2, . . .]
-    std::vector<PetscInt> map(local_size);
-    std::iota(map.begin(), map.end(), range[0]);
-
-    // Create PETSc local-to-global map
-    ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size, map.size(),
-                                        map.data(), PETSC_COPY_VALUES,
-                                        &petsc_local_to_global);
-    CHECK_ERROR("ISLocalToGlobalMappingCreate");
-  }
-
-  // Apply local-to-global map to vector
-  ierr = VecSetLocalToGlobalMapping(_x, petsc_local_to_global);
-  CHECK_ERROR("VecSetLocalToGlobalMapping");
-
-  // Clean-up PETSc local-to-global map
-  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingDestroy");
+  // FIXME: pass in comm
+  ierr = VecCreateGhostBlock(MPI_COMM_WORLD, block_size, local_size,
+                             PETSC_DECIDE, ghost_indices.size(),
+                             ghost_indices.data(), &_x);
+  CHECK_ERROR("VecCreateGhostBlock");
 }
 //-----------------------------------------------------------------------------
 std::int64_t PETScVector::size() const
@@ -540,7 +478,7 @@ PetscScalar PETScVector::dot(const PETScVector& y) const
   assert(_x);
   assert(y._x);
   PetscScalar a;
-  PetscErrorCode ierr = VecDot(_x,y._x, &a);
+  PetscErrorCode ierr = VecDot(_x, y._x, &a);
   CHECK_ERROR("VecDot");
   return a;
 }
@@ -674,7 +612,7 @@ void PETScVector::gather(PETScVector& y,
 
   // Initialize vector if empty
   if (y.empty())
-    y.init(n);
+    y.init({{0, n}});
 
   // Check that passed vector has correct size
   if (y.size() != n)

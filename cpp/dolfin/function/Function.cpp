@@ -495,6 +495,8 @@ void Function::init_vector()
                        "collapsing the function space");
   }
 
+  MPI_Comm comm = _function_space->mesh()->mpi_comm();
+
   // Get index map
   /*
   std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
@@ -551,19 +553,20 @@ void Function::init_vector()
                                          local_to_global.end());
 
   // Create vector of dofs
-  if (!_vector)
-    _vector = std::make_shared<la::PETScVector>(
-        _function_space->mesh()->mpi_comm());
-  assert(_vector);
+  // if (!_vector)
+  //   _vector = std::make_shared<la::PETScVector>(
+  //       _function_space->mesh()->mpi_comm());
+  // assert(_vector);
 
-  if (!_vector->empty())
-  {
-    std::runtime_error("Cannot initialize vector of degrees of freedom for "
-                       "function. Cannot re-initialize a non-empty vector. "
-                       "Consider creating a new function");
-  }
+  // if (!_vector->empty())
+  // {
+  //   std::runtime_error("Cannot initialize vector of degrees of freedom for "
+  //                      "function. Cannot re-initialize a non-empty vector. "
+  //                      "Consider creating a new function");
+  // }
 
-  _vector->init(index_map->local_range(), local_to_global, ghosts, bs);
+  _vector = std::make_shared<la::PETScVector>(comm, index_map->local_range(),
+                                              ghosts, bs);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

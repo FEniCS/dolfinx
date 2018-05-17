@@ -33,11 +33,18 @@ namespace la
 class PETScVector
 {
 public:
+  /// Create vector
+  PETScVector(MPI_Comm comm, std::array<std::int64_t, 2> range,
+              const std::vector<la_index_t>& ghost_indices, int block_size);
+
   /// Create empty vector on an MPI communicator
   explicit PETScVector(MPI_Comm comm);
 
   /// Copy constructor
   PETScVector(const PETScVector& x);
+
+  /// Move constructor
+  PETScVector(PETScVector&& x);
 
   /// Create vector wrapper of PETSc Vec pointer. The reference
   /// counter of the Vec will be increased, and decreased upon
@@ -47,17 +54,13 @@ public:
   /// Destructor
   virtual ~PETScVector();
 
-  /// Initialize vector to global size N
-  void init(std::size_t N);
-
   /// Initialize vector with given ownership range
   void init(std::array<std::int64_t, 2> range);
 
   /// Initialize vector with given ownership range and with ghost
   /// values
-  void init(std::array<std::int64_t, 2> range,
-            const std::vector<la_index_t>& local_to_global_map,
-            const std::vector<la_index_t>& ghost_indices, int block_size);
+  void _init(std::array<std::int64_t, 2> range,
+             const std::vector<la_index_t>& ghost_indices, int block_size);
 
   /// Return size of vector
   std::int64_t size() const;
@@ -88,21 +91,24 @@ public:
 
   /// Get block of values using global indices (all values must be
   /// owned by local process, ghosts cannot be accessed)
-  void get(PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows) const;
+  void get(PetscScalar* block, std::size_t m,
+           const dolfin::la_index_t* rows) const;
 
   /// Get block of values using local indices
   void get_local(PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows) const;
 
   /// Set block of values using global indices
-  void set(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows);
+  void set(const PetscScalar* block, std::size_t m,
+           const dolfin::la_index_t* rows);
 
   /// Set block of values using local indices
   void set_local(const PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows);
 
   /// Add block of values using global indices
-  void add(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows);
+  void add(const PetscScalar* block, std::size_t m,
+           const dolfin::la_index_t* rows);
 
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m,
@@ -211,5 +217,5 @@ private:
   // PETSc Vec pointer
   Vec _x;
 };
-}
-}
+} // namespace la
+} // namespace dolfin
