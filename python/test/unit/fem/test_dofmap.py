@@ -11,8 +11,12 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import *
-from dolfin_utils.test import *
+from dolfin import (UnitSquareMesh, UnitIntervalMesh, UnitCubeMesh, MPI, CellType,
+                    VectorFunctionSpace, Constant, Function, Expression,
+                    FunctionSpace, MixedElement, FiniteElement, VectorElement, Point,
+                    Cells, SubDomain, DOLFIN_EPS, dof_to_vertex_map, vertex_to_dof_map)
+from dolfin.cpp.common import IndexMap
+from dolfin_utils.test import fixture, skip_in_serial, skip_in_parallel, set_parameters_fixture
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -66,7 +70,7 @@ def test_tabulate_all_coordinates(mesh_factory):
     checked_W = [False] * local_size_W
 
     # Check that all coordinates are within the cell it should be
-    for cell in cells(mesh):
+    for cell in Cells(mesh):
         dofs_V = V_dofmap.cell_dofs(cell.index())
         for di in dofs_V:
             if di >= local_size_V:
@@ -103,7 +107,7 @@ def test_tabulate_dofs(mesh_factory):
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
-    for i, cell in enumerate(cells(mesh)):
+    for i, cell in enumerate(Cells(mesh)):
         dofs0 = L0.dofmap().cell_dofs(cell.index())
         dofs1 = L01.dofmap().cell_dofs(cell.index())
         dofs2 = L11.dofmap().cell_dofs(cell.index())
@@ -158,7 +162,7 @@ def test_tabulate_coord_periodic(mesh_factory):
     coord2 = np.zeros((sdim, 2), dtype="d")
     coord3 = np.zeros((sdim, 2), dtype="d")
 
-    for cell in cells(mesh):
+    for cell in Cells(mesh):
         coord0 = V.element().tabulate_dof_coordinates(cell)
         coord1 = L0.element().tabulate_dof_coordinates(cell)
         coord2 = L01.element().tabulate_dof_coordinates(cell)
@@ -213,7 +217,7 @@ def test_tabulate_dofs_periodic(mesh_factory):
     assert L01.dim == V.dim
     assert L11.dim == V.dim
 
-    for i, cell in enumerate(cells(mesh)):
+    for i, cell in enumerate(Cells(mesh)):
         dofs0 = L0.dofmap().cell_dofs(cell.index())
         dofs1 = L01.dofmap().cell_dofs(cell.index())
         dofs2 = L11.dofmap().cell_dofs(cell.index())
@@ -247,6 +251,7 @@ def test_global_dof_builder(mesh_factory):
     W = FunctionSpace(mesh, MixedElement([Q, Q, R, Q]))
     W = FunctionSpace(mesh, V * R)
     W = FunctionSpace(mesh, R * V)
+    assert(W)
 
 
 @pytest.mark.skip
@@ -412,6 +417,7 @@ def test_clear_sub_map_data_scalar(mesh):
 
     V = VectorFunctionSpace(mesh, "CG", 2)
     V1 = V.sub(1)
+    assert(V1)
 
     # Clean sub-map data
     V.dofmap().clear_sub_map_data()
@@ -436,8 +442,10 @@ def test_clear_sub_map_data_vector(mesh):
     W.dofmap().clear_sub_map_data()
     with pytest.raises(RuntimeError):
         W0 = W.sub(0)
+        assert(W0)
     with pytest.raises(RuntimeError):
         W1 = W.sub(1)
+        assert(W1)
 
 
 @pytest.mark.skip
@@ -477,11 +485,9 @@ def test_block_size_real(mesh):
 @skip_in_serial
 @pytest.mark.parametrize(
     'mesh_factory',
-    [(UnitIntervalMesh, (
-        MPI.comm_world,
-        8,
-    )), (UnitSquareMesh, (MPI.comm_world, 4, 4)), (UnitCubeMesh,
-                                                   (MPI.comm_world, 2, 2, 2)),
+    [(UnitIntervalMesh, (MPI.comm_world, 8)),
+     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
+     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
      (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
      (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron))])
 def test_mpi_dofmap_stats(mesh_factory):
