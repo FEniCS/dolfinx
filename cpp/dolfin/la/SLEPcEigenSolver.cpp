@@ -152,9 +152,8 @@ void SLEPcEigenSolver::get_eigenvalue(PetscScalar& lr, PetscScalar& lc,
     EPSGetEigenvalue(_eps, ii, &lr, &lc);
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "extract eigenvalue from SLEPc eigenvalue solver",
-                      "Requested eigenvalue (%d) has not been computed", i);
+    throw std::runtime_error("Requested eigenvalue (%d) has not been computed",
+                             i);
   }
 }
 //-----------------------------------------------------------------------------
@@ -186,9 +185,8 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc,
   }
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "extract eigenpair from SLEPc eigenvalue solver",
-                      "Requested eigenpair (%d) has not been computed", i);
+    throw std::runtime_error("Requested eigenpair (%d) has not been computed",
+                             i);
   }
 }
 //-----------------------------------------------------------------------------
@@ -300,10 +298,8 @@ void SLEPcEigenSolver::read_parameters()
     }
     else
     {
-      log::dolfin_error(
-          "SLEPcEigenSolver.cpp", "set spectral transform",
-          "For an spectral transform, the spectral shift parameter "
-          "must be set");
+      throw std::runtime_error("For an spectral transform, the spectral shift "
+                         "parameter must be set");
     }
   }
 }
@@ -327,9 +323,7 @@ void SLEPcEigenSolver::set_problem_type(std::string type)
     EPSSetProblemType(_eps, EPS_PGNHEP);
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "set problem type for SLEPc eigensolver",
-                      "Unknown problem type (\"%s\")", type.c_str());
+    throw std::runtime_error("Unknown problem type (\"%s\")", type.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -349,9 +343,7 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   }
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "set spectral transform for SLEPc eigensolver",
-                      "Unknown transform (\"%s\")", transform.c_str());
+    throw std::runtime_error("Unknown transform (\"%s\")", transform.c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -404,9 +396,7 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   }
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "set spectrum for SLEPc eigensolver",
-                      "Unknown spectrum type (\"%s\")", spectrum.c_str());
+    throw std::runtime_error("Unknown spectrum type (\"%s\")", spectrum.c_str());
   }
 
   // FIXME: Need to add some test here as most algorithms only compute
@@ -442,9 +432,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(_eps, EPSGD);
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "set solver for SLEPc eigensolver",
-                      "Unknown solver type (\"%s\")", solver.c_str());
+    throw std::runtime_error("Unknown solver type (\"%s\")", solver.c_str());
   }
 }
 //-----------------------------------------------------------------------------
