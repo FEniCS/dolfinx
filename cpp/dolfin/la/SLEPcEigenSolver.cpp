@@ -152,8 +152,8 @@ void SLEPcEigenSolver::get_eigenvalue(PetscScalar& lr, PetscScalar& lc,
     EPSGetEigenvalue(_eps, ii, &lr, &lc);
   else
   {
-    throw std::runtime_error("Requested eigenvalue (%d) has not been computed",
-                             i);
+    throw std::runtime_error("Requested eigenvalue (" + std::to_string(i)
+                             + ") has not been computed");
   }
 }
 //-----------------------------------------------------------------------------
@@ -185,8 +185,8 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc,
   }
   else
   {
-    throw std::runtime_error("Requested eigenpair (%d) has not been computed",
-                             i);
+    throw std::runtime_error("Requested eigenpair (" + std::to_string(i)
+                             + ") has not been computed");
   }
 }
 //-----------------------------------------------------------------------------
@@ -299,7 +299,7 @@ void SLEPcEigenSolver::read_parameters()
     else
     {
       throw std::runtime_error("For an spectral transform, the spectral shift "
-                         "parameter must be set");
+                               "parameter must be set");
     }
   }
 }
@@ -323,7 +323,7 @@ void SLEPcEigenSolver::set_problem_type(std::string type)
     EPSSetProblemType(_eps, EPS_PGNHEP);
   else
   {
-    throw std::runtime_error("Unknown problem type (\"%s\")", type.c_str());
+    throw std::runtime_error("Unknown problem type (" + type + ")");
   }
 }
 //-----------------------------------------------------------------------------
@@ -343,7 +343,7 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   }
   else
   {
-    throw std::runtime_error("Unknown transform (\"%s\")", transform.c_str());
+    throw std::runtime_error("Unknown transform (" + transform + ")");
   }
 }
 //-----------------------------------------------------------------------------
@@ -396,7 +396,7 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   }
   else
   {
-    throw std::runtime_error("Unknown spectrum type (\"%s\")", spectrum.c_str());
+    throw std::runtime_error("Unknown spectrum type (" + spectrum + ")");
   }
 
   // FIXME: Need to add some test here as most algorithms only compute
@@ -432,7 +432,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(_eps, EPSGD);
   else
   {
-    throw std::runtime_error("Unknown solver type (\"%s\")", solver.c_str());
+    throw std::runtime_error("Unknown solver type (" + solver + ")");
   }
 }
 //-----------------------------------------------------------------------------
