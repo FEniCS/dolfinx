@@ -35,7 +35,7 @@ namespace
     PetscInitialize(&argc, &argv, NULL, NULL);
 
     Vec x;
-    VecCreate(MOI_COMM_WORLD, &x);
+    VecCreate(MPI_COMM_WORLD, &x);
     VecDestroy(&x);
 #endif
   }
