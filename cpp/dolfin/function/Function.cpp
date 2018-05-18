@@ -563,7 +563,7 @@ void Function::init_vector()
                        "Consider creating a new function");
   }
 
-  _vector->init(index_map->local_range(), local_to_global, ghosts, bs);
+  _vector->init(index_map->local_range(), ghosts, bs);
   _vector->zero();
 }
 //-----------------------------------------------------------------------------

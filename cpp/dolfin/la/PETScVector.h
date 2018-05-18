@@ -47,16 +47,12 @@ public:
   /// Destructor
   virtual ~PETScVector();
 
-  /// Initialize vector to global size N
-  void init(std::size_t N);
-
-  /// Initialize vector with given ownership range
+  // Initialize vector with ownership range
   void init(std::array<std::int64_t, 2> range);
 
   /// Initialize vector with given ownership range and with ghost
   /// values
   void init(std::array<std::int64_t, 2> range,
-            const std::vector<la_index_t>& local_to_global_map,
             const std::vector<la_index_t>& ghost_indices, int block_size);
 
   /// Return size of vector
@@ -88,21 +84,24 @@ public:
 
   /// Get block of values using global indices (all values must be
   /// owned by local process, ghosts cannot be accessed)
-  void get(PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows) const;
+  void get(PetscScalar* block, std::size_t m,
+           const dolfin::la_index_t* rows) const;
 
   /// Get block of values using local indices
   void get_local(PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows) const;
 
   /// Set block of values using global indices
-  void set(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows);
+  void set(const PetscScalar* block, std::size_t m,
+           const dolfin::la_index_t* rows);
 
   /// Set block of values using local indices
   void set_local(const PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows);
 
   /// Add block of values using global indices
-  void add(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows);
+  void add(const PetscScalar* block, std::size_t m,
+           const dolfin::la_index_t* rows);
 
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m,
@@ -112,7 +111,9 @@ public:
   void get_local(std::vector<PetscScalar>& values) const;
 
   /// Set all values on local process
-  void set_local(const std::vector<PetscScalar>& values);
+  void
+  set_local(const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
+                values);
 
   /// Add values to each entry on local process
   void add_local(const std::vector<PetscScalar>& values);
@@ -128,10 +129,6 @@ public:
   /// operation is collective
   void gather(std::vector<PetscScalar>& x,
               const std::vector<dolfin::la_index_t>& indices) const;
-
-  /// Gather all entries into x on process 0.
-  /// This operation is collective
-  void gather_on_zero(std::vector<PetscScalar>& x) const;
 
   /// Add multiple of given vector (AXPY operation)
   void axpy(PetscScalar a, const PETScVector& x);
@@ -211,5 +208,5 @@ private:
   // PETSc Vec pointer
   Vec _x;
 };
-}
-}
+} // namespace la
+} // namespace dolfin

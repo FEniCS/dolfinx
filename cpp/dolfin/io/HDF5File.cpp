@@ -213,7 +213,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
              (std::int64_t)partitions[process_num + 1]}});
   }
   else
-    x.init(data_shape[0]);
+    x.init({0, data_shape[0]});
 
   // Get local range
   const std::array<std::int64_t, 2> local_range = x.local_range();
@@ -223,7 +223,9 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
       _hdf5_file_id, dataset_name, local_range);
 
   // Set data
-  x.set_local(data);
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> _data(data.data(),
+                                                                 data.size());
+  x.set_local(_data);
   x.apply();
 
   return x;
