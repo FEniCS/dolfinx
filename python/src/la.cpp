@@ -814,9 +814,7 @@ void la(py::module& m)
                         & dolfin::la::SLEPcEigenSolver::solve)
       .def("get_eigenvalue",
            [](dolfin::la::SLEPcEigenSolver& self, std::size_t i) {
-             double lr, lc;
-             self.get_eigenvalue(lr, lc, i);
-             return py::make_tuple(lr, lc);
+             return self.get_eigenvalue(i);
            })
       .def("get_eigenpair",
            [](dolfin::la::SLEPcEigenSolver& self, std::size_t i) {
