@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfin/common/types.h>
+#include <dolfin/la/PETScVector.h>
 #include <vector>
 
 namespace dolfin
@@ -45,14 +46,14 @@ void init_nest(la::PETScMatrix& A,
                std::vector<std::vector<const fem::Form*>> a);
 
 /// Initialise nested (VecNest) vector. Vector is not zeroed.
-void init_nest(la::PETScVector& x, std::vector<const fem::Form*> L);
+la::PETScVector init_nest(std::vector<const fem::Form*> L);
 
 /// Initialise monolithic  matrix. Matrix is not zeroed.
 void init_monolithic(la::PETScMatrix& A,
                      std::vector<std::vector<const fem::Form*>> a);
 
 /// Initialise monolithic vector. Vector is not zeroed.
-void init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L);
+la::PETScVector init_monolithic(std::vector<const fem::Form*> L);
 
 /// Initialise vector. Vector is not zeroed.
 la::PETScVector init_vector(const Form& L);

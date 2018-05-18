@@ -17,7 +17,7 @@ from dolfin_utils.test import skip_in_parallel
 from ufl import dx
 
 
-def xtest_matrix_assembly_block():
+def test_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
