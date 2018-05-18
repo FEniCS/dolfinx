@@ -138,8 +138,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
            eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(PetscScalar& lr, PetscScalar& lc,
-                                      std::size_t i) const
+std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const
 {
   assert(_eps);
   const PetscInt ii = static_cast<PetscInt>(i);
@@ -149,7 +148,17 @@ void SLEPcEigenSolver::get_eigenvalue(PetscScalar& lr, PetscScalar& lc,
   EPSGetConverged(_eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
-    EPSGetEigenvalue(_eps, ii, &lr, &lc);
+  {
+#ifdef PETSC_USE_COMPLEX
+    PetscScalar l;
+    EPSGetEigenvalue(_eps, ii, &l, NULL);
+    return l;
+#else
+    PetscScalar lr, li;
+    EPSGetEigenvalue(_eps, ii, &lr, &li);
+    return std::complex<PetscReal>(lr, li);
+#endif
+  }
   else
   {
     throw std::runtime_error("Requested eigenvalue (" + std::to_string(i)

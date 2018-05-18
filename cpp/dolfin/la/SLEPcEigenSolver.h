@@ -126,7 +126,7 @@ public:
   void solve(std::int64_t n);
 
   /// Get ith eigenvalue
-  void get_eigenvalue(PetscScalar& lr, PetscScalar& lc, std::size_t i) const;
+  std::complex<PetscReal> get_eigenvalue(std::size_t i) const;
 
   /// Get ith eigenpair
   void get_eigenpair(PetscScalar& lr, PetscScalar& lc, PETScVector& r,
