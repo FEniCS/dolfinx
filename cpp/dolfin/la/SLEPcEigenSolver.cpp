@@ -138,7 +138,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
            eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
+void SLEPcEigenSolver::get_eigenvalue(PetscScalar& lr, PetscScalar& lc,
                                       std::size_t i) const
 {
   assert(_eps);
@@ -158,8 +158,9 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
   }
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
-                                     PETScVector& c, std::size_t i) const
+void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc,
+                                     PETScVector& r, PETScVector& c,
+                                     std::size_t i) const
 {
   assert(_eps);
   const PetscInt ii = static_cast<PetscInt>(i);
@@ -378,19 +379,28 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_MAGNITUDE);
     if (parameters["spectral_shift"].is_set())
-      EPSSetTarget(_eps, parameters["spectral_shift"]);
+    {
+      PetscScalar shift = (double)parameters["spectral_shift"];
+      EPSSetTarget(_eps, shift);
+    }
   }
   else if (spectrum == "target real")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_REAL);
     if (parameters["spectral_shift"].is_set())
-      EPSSetTarget(_eps, parameters["spectral_shift"]);
+    {
+      PetscScalar shift = (double)parameters["spectral_shift"];
+      EPSSetTarget(_eps, shift);
+    }
   }
   else if (spectrum == "target imaginary")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_IMAGINARY);
     if (parameters["spectral_shift"].is_set())
-      EPSSetTarget(_eps, parameters["spectral_shift"]);
+    {
+      PetscScalar shift = (double)parameters["spectral_shift"];
+      EPSSetTarget(_eps, shift);
+    }
   }
   else
   {
