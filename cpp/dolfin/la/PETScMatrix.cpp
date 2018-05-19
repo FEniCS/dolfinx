@@ -437,7 +437,7 @@ void PETScMatrix::get_diagonal(PETScVector& x) const
   PetscErrorCode ierr = MatGetDiagonal(_matA, x.vec());
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatGetDiagonal");
-  x.update_ghost_values();
+  x.update_ghosts();
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_diagonal(const PETScVector& x)

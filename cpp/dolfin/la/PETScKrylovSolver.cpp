@@ -137,7 +137,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   }
 
   // Update ghost values in solution vector
-  x.update_ghost_values();
+  x.update_ghosts();
 
   // Get the number of iterations
   PetscInt num_iterations = 0;

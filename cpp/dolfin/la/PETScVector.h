@@ -185,8 +185,8 @@ public:
   /// Assignment operator
   PETScVector& operator=(PetscScalar a);
 
-  /// Update values shared from remote processes
-  void update_ghost_values();
+  /// Update ghost values (gathers ghost values from remote processes)
+  void update_ghosts();
 
   /// Sets the prefix used by PETSc when searching the options
   /// database

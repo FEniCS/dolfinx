@@ -673,9 +673,8 @@ void la(py::module& m)
       .def("norm", &dolfin::la::PETScVector::norm)
       .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScVector::set_options_prefix)
-      .def("update_ghost_values", &dolfin::la::PETScVector::update_ghost_values)
-      .def("size", (std::size_t(dolfin::la::PETScVector::*)() const)
-                       & dolfin::la::PETScVector::size)
+      .def("update_ghosts", &dolfin::la::PETScVector::update_ghosts)
+      .def("size", &dolfin::la::PETScVector::size)
       .def("__add__",
            [](const dolfin::la::PETScVector& self,
               const dolfin::la::PETScVector& x) {

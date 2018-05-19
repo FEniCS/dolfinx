@@ -335,7 +335,7 @@ void PETScVector::apply()
   CHECK_ERROR("VecAssemblyEnd");
 
   // Update any ghost values
-  update_ghost_values();
+  update_ghosts();
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScVector::mpi_comm() const
@@ -353,7 +353,6 @@ void PETScVector::zero()
   PetscScalar a = 0.0;
   PetscErrorCode ierr = VecSet(_x, a);
   CHECK_ERROR("VecSet");
-  this->apply();
 }
 //-----------------------------------------------------------------------------
 bool PETScVector::empty() const
@@ -382,21 +381,19 @@ PETScVector& PETScVector::operator=(PetscScalar a)
   assert(_x);
   PetscErrorCode ierr = VecSet(_x, a);
   CHECK_ERROR("VecSet");
-  apply();
   return *this;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::update_ghost_values()
+void PETScVector::update_ghosts()
 {
   assert(_x);
   PetscErrorCode ierr;
 
-  // Check of vector is ghosted
   Vec xg;
   ierr = VecGhostGetLocalForm(_x, &xg);
   CHECK_ERROR("VecGhostGetLocalForm");
 
-  if (xg)
+  if (xg) // Vec is ghosted
   {
     ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
     CHECK_ERROR("VecGhostUpdateBegin");
@@ -420,10 +417,6 @@ PETScVector& PETScVector::operator+=(PetscScalar a)
   assert(_x);
   PetscErrorCode ierr = VecShift(_x, a);
   CHECK_ERROR("VecShift");
-
-  // Update any ghost values
-  update_ghost_values();
-
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -436,7 +429,6 @@ PETScVector& PETScVector::operator-=(const PETScVector& x)
 //-----------------------------------------------------------------------------
 PETScVector& PETScVector::operator-=(PetscScalar a)
 {
-  assert(_x);
   (*this) += -a;
   return *this;
 }
@@ -446,9 +438,6 @@ PETScVector& PETScVector::operator*=(const PetscScalar a)
   assert(_x);
   PetscErrorCode ierr = VecScale(_x, a);
   CHECK_ERROR("VecScale");
-
-  update_ghost_values();
-
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -456,24 +445,20 @@ PETScVector& PETScVector::operator*=(const PETScVector& v)
 {
   assert(_x);
   assert(v._x);
-  if (size() != v.size())
+  if (local_range() != v.local_range())
   {
-    log::dolfin_error("PETScVector.cpp",
-                      "perform point-wise multiplication with PETSc vector",
-                      "Vectors are not of the same size");
+    throw std::runtime_error("Cannot perform point-wise multiplication os "
+                             "PETSc vector. Vectors are same size/layout");
   }
 
   PetscErrorCode ierr = VecPointwiseMult(_x, _x, v._x);
   CHECK_ERROR("VecPointwiseMult");
-
-  update_ghost_values();
 
   return *this;
 }
 //-----------------------------------------------------------------------------
 PETScVector& PETScVector::operator/=(const PetscScalar a)
 {
-  assert(_x);
   assert(PetscAbsScalar(a) != 0.0);
   const PetscScalar b = 1.0 / a;
   (*this) *= b;
@@ -496,8 +481,6 @@ void PETScVector::axpy(PetscScalar a, const PETScVector& y)
   assert(y._x);
   PetscErrorCode ierr = VecAXPY(_x, a, y._x);
   CHECK_ERROR("VecAXPY");
-
-  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 void PETScVector::abs()
@@ -505,8 +488,6 @@ void PETScVector::abs()
   assert(_x);
   PetscErrorCode ierr = VecAbs(_x);
   CHECK_ERROR("VecAbs");
-
-  update_ghost_values();
 }
 //-----------------------------------------------------------------------------
 double PETScVector::norm(std::string norm_type) const
@@ -671,7 +652,7 @@ void PETScVector::gather_on_zero(std::vector<PetscScalar>& x) const
   if (dolfin::MPI::rank(mpi_comm()) == 0)
     x.resize(size());
   else
-    x.resize(0);
+    x.clear();
 
   assert(_x);
   Vec vout;
@@ -697,9 +678,8 @@ void PETScVector::set_options_prefix(std::string options_prefix)
 {
   if (!_x)
   {
-    log::dolfin_error(
-        "PETScVector.cpp", "setting PETSc options prefix",
-        "Cannot set options prefix since PETSc Vec has not been initialized");
+    throw std::runtime_error(
+        "Cannot set options prefix. PETSc Vec has not been initialized.");
   }
 
   // Set PETSc options prefix
@@ -711,9 +691,8 @@ std::string PETScVector::get_options_prefix() const
 {
   if (!_x)
   {
-    log::dolfin_error(
-        "PETScVector.cpp", "get PETSc options prefix",
-        "Cannot get options prefix since PETSc Vec has not been initialized");
+    throw std::runtime_error(
+        "Cannot get options prefix. PETSc Vec has not been initialized.");
   }
 
   const char* prefix = nullptr;
@@ -726,9 +705,8 @@ void PETScVector::set_from_options()
 {
   if (!_x)
   {
-    log::dolfin_error("PETScVector.cpp",
-                      "call VecSetFromOptions on PETSc Vec object",
-                      "Vec object has not been initialized");
+    throw std::runtime_error(
+        "Cannot call VecSetFromOptions. PETSc Vec has not been initialized.");
   }
 
   PetscErrorCode ierr = VecSetFromOptions(_x);
