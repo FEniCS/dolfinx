@@ -56,6 +56,12 @@ public:
   /// Destructor
   virtual ~PETScVector();
 
+  // Assignment operator (disabled)
+  PETScVector& operator=(const PETScVector& x) = delete;
+
+  /// Move Assignment operator
+  PETScVector& operator=(PETScVector&& x);
+
   /// Return size of vector
   std::int64_t size() const;
 
@@ -65,11 +71,23 @@ public:
   /// Return ownership range of a vector
   std::array<std::int64_t, 2> local_range() const;
 
-  /// Set all entries to zero and keep any sparse structure
-  void zero();
+  /// Set all entries to a
+  void set(PetscScalar a);
 
-  /// Finalize assembly of tensor
+  /// Finalize assembly of vector. Communicates off-process entries
+  /// added or set on this process to the owner, and receives from other
+  /// processes changes to locally owned entries.
   void apply();
+
+  /// Update owned entries owned by this process and which are ghosts on
+  /// other processes, i.e., have been added to by a remote process.
+  /// This is more efficient that apply() when processes only add/set
+  /// their owned entries and the pre-defined ghosts.
+  void apply_ghosts();
+
+  /// Update ghost values (gathers ghost values from the owning
+  /// processes)
+  void update_ghosts();
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
@@ -115,20 +133,16 @@ public:
   void add_local(const std::vector<PetscScalar>& values);
 
   /// Gather entries (given by global indices) into local
-  /// (MPI_COMM_SELF) vector x. Provided x must be empty or of
-  /// correct dimension (same as provided indices).  This operation
-  /// is collective.
+  /// (MPI_COMM_SELF) vector x. Provided x must be empty or of correct
+  /// dimension (same as provided indices). This operation is
+  /// collective.
   void gather(PETScVector& y,
               const std::vector<dolfin::la_index_t>& indices) const;
 
-  /// Gather entries (given by global indices) into x.  This
-  /// operation is collective
+  /// Gather entries (given by global indices) into x. This operation is
+  /// collective.
   void gather(std::vector<PetscScalar>& x,
               const std::vector<dolfin::la_index_t>& indices) const;
-
-  /// Gather all entries into x on process 0.
-  /// This operation is collective
-  void gather_on_zero(std::vector<PetscScalar>& x) const;
 
   /// Add multiple of given vector (AXPY operation)
   void axpy(PetscScalar a, const PETScVector& x);
@@ -136,9 +150,8 @@ public:
   /// Replace all entries in the vector by their absolute values
   void abs();
 
-  /// Return dot product with given vector
-  /// For complex vectors, the argument v gets
-  /// complex conjugate
+  /// Return dot product with given vector. For complex vectors, the
+  /// argument v gets complex conjugate.
   PetscScalar dot(const PETScVector& v) const;
 
   /// Return norm of vector
@@ -161,9 +174,6 @@ public:
   /// Multiply vector by another vector pointwise
   PETScVector& operator*=(const PETScVector& x);
 
-  /// Divide vector by given number
-  PETScVector& operator/=(PetscScalar a);
-
   /// Add given vector
   PETScVector& operator+=(const PETScVector& x);
 
@@ -176,20 +186,7 @@ public:
   /// Subtract number from all components of a vector
   PETScVector& operator-=(PetscScalar a);
 
-  /// Assignment operator
-  PETScVector& operator=(const PETScVector& x);
-
-  /// Move Assignment operator
-  PETScVector& operator=(PETScVector&& x);
-
-  /// Assignment operator
-  PETScVector& operator=(PetscScalar a);
-
-  /// Update ghost values (gathers ghost values from remote processes)
-  void update_ghosts();
-
-  /// Sets the prefix used by PETSc when searching the options
-  /// database
+  /// Sets the prefix used by PETSc when searching the options database
   void set_options_prefix(std::string options_prefix);
 
   /// Returns the prefix used by PETSc when searching the options

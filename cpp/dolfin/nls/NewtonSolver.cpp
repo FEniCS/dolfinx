@@ -110,7 +110,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     // Perform linear solve and update total number of Krylov
     // iterations
     if (!_dx->empty())
-      (*_dx) = 0.0;
+      _dx->set(0.0);
     _krylov_iterations += _solver->solve(*_dx, *_b);
 
     // Update solution

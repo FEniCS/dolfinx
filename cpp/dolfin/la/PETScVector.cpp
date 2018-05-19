@@ -338,6 +338,46 @@ void PETScVector::apply()
   update_ghosts();
 }
 //-----------------------------------------------------------------------------
+void PETScVector::apply_ghosts()
+{
+  assert(_x);
+  PetscErrorCode ierr;
+
+  Vec xg;
+  ierr = VecGhostGetLocalForm(_x, &xg);
+  CHECK_ERROR("VecGhostGetLocalForm");
+  if (xg) // Vec is ghosted
+  {
+    ierr = VecGhostUpdateBegin(_x, ADD_VALUES, SCATTER_REVERSE);
+    CHECK_ERROR("VecGhostUpdateBegin");
+    ierr = VecGhostUpdateEnd(_x, ADD_VALUES, SCATTER_REVERSE);
+    CHECK_ERROR("VecGhostUpdateEnd");
+  }
+
+  ierr = VecGhostRestoreLocalForm(_x, &xg);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
+}
+//-----------------------------------------------------------------------------
+void PETScVector::update_ghosts()
+{
+  assert(_x);
+  PetscErrorCode ierr;
+
+  Vec xg;
+  ierr = VecGhostGetLocalForm(_x, &xg);
+  CHECK_ERROR("VecGhostGetLocalForm");
+  if (xg) // Vec is ghosted
+  {
+    ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
+    CHECK_ERROR("VecGhostUpdateBegin");
+    ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
+    CHECK_ERROR("VecGhostUpdateEnd");
+  }
+
+  ierr = VecGhostRestoreLocalForm(_x, &xg);
+  CHECK_ERROR("VecGhostRestoreLocalForm");
+}
+//-----------------------------------------------------------------------------
 MPI_Comm PETScVector::mpi_comm() const
 {
   assert(_x);
@@ -347,10 +387,9 @@ MPI_Comm PETScVector::mpi_comm() const
   return mpi_comm;
 }
 //-----------------------------------------------------------------------------
-void PETScVector::zero()
+void PETScVector::set(PetscScalar a)
 {
   assert(_x);
-  PetscScalar a = 0.0;
   PetscErrorCode ierr = VecSet(_x, a);
   CHECK_ERROR("VecSet");
 }
@@ -363,46 +402,11 @@ bool PETScVector::empty() const
     return this->size() == 0;
 }
 //-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator=(const PETScVector& v)
-{
-  _x = v._x;
-  return *this;
-}
-//-----------------------------------------------------------------------------
 PETScVector& PETScVector::operator=(PETScVector&& v)
 {
   _x = v._x;
   v._x = nullptr;
   return *this;
-}
-//-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator=(PetscScalar a)
-{
-  assert(_x);
-  PetscErrorCode ierr = VecSet(_x, a);
-  CHECK_ERROR("VecSet");
-  return *this;
-}
-//-----------------------------------------------------------------------------
-void PETScVector::update_ghosts()
-{
-  assert(_x);
-  PetscErrorCode ierr;
-
-  Vec xg;
-  ierr = VecGhostGetLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostGetLocalForm");
-
-  if (xg) // Vec is ghosted
-  {
-    ierr = VecGhostUpdateBegin(_x, INSERT_VALUES, SCATTER_FORWARD);
-    CHECK_ERROR("VecGhostUpdateBegin");
-    ierr = VecGhostUpdateEnd(_x, INSERT_VALUES, SCATTER_FORWARD);
-    CHECK_ERROR("VecGhostUpdateEnd");
-  }
-
-  ierr = VecGhostRestoreLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostRestoreLocalForm");
 }
 //-----------------------------------------------------------------------------
 PETScVector& PETScVector::operator+=(const PETScVector& x)
@@ -445,23 +449,8 @@ PETScVector& PETScVector::operator*=(const PETScVector& v)
 {
   assert(_x);
   assert(v._x);
-  if (local_range() != v.local_range())
-  {
-    throw std::runtime_error("Cannot perform point-wise multiplication os "
-                             "PETSc vector. Vectors are same size/layout");
-  }
-
   PetscErrorCode ierr = VecPointwiseMult(_x, _x, v._x);
   CHECK_ERROR("VecPointwiseMult");
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator/=(const PetscScalar a)
-{
-  assert(PetscAbsScalar(a) != 0.0);
-  const PetscScalar b = 1.0 / a;
-  (*this) *= b;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -643,35 +632,6 @@ void PETScVector::gather(std::vector<PetscScalar>& x,
   gather(y, indices);
   assert(y.local_size() == x.size());
   y.get_local(x);
-}
-//-----------------------------------------------------------------------------
-void PETScVector::gather_on_zero(std::vector<PetscScalar>& x) const
-{
-  PetscErrorCode ierr;
-
-  if (dolfin::MPI::rank(mpi_comm()) == 0)
-    x.resize(size());
-  else
-    x.clear();
-
-  assert(_x);
-  Vec vout;
-  VecScatter scatter;
-  ierr = VecScatterCreateToZero(_x, &scatter, &vout);
-  CHECK_ERROR("VecScatterCreateToZero");
-  ierr = VecScatterBegin(scatter, _x, vout, INSERT_VALUES, SCATTER_FORWARD);
-  CHECK_ERROR("VecScatterBegin");
-  ierr = VecScatterEnd(scatter, _x, vout, INSERT_VALUES, SCATTER_FORWARD);
-  CHECK_ERROR("VecScatterEnd");
-  ierr = VecScatterDestroy(&scatter);
-  CHECK_ERROR("VecScatterDestroy");
-
-  // Wrap PETSc vector
-  if (dolfin::MPI::rank(mpi_comm()) == 0)
-  {
-    PETScVector _vout(vout);
-    _vout.get_local(x);
-  }
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_options_prefix(std::string options_prefix)

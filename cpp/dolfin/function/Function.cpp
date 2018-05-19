@@ -501,6 +501,6 @@ void Function::init_vector()
 
   _vector = std::make_shared<la::PETScVector>(*index_map);
   assert(_vector);
-  _vector->zero();
+  _vector->set(0.0);
 }
 //-----------------------------------------------------------------------------

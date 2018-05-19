@@ -112,7 +112,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "KSPGetInitialGuessNonzero");
     if (nonzero_guess)
-      x.zero();
+      x.set(0.0);
   }
 
   // Solve linear system
@@ -244,9 +244,8 @@ std::string PETScKrylovSolver::str(bool verbose) const
   std::stringstream s;
   if (verbose)
   {
-    log::warning(
-        "Verbose output for PETScKrylovSolver not implemented, calling \
-PETSc KSPView directly.");
+    log::warning("Verbose output for PETScKrylovSolver not implemented, "
+                 "calling PETSc KSPView directly.");
     PetscErrorCode ierr = KSPView(_ksp, PETSC_VIEWER_STDOUT_WORLD);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "KSPView");
