@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
+// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
+// N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -7,6 +8,7 @@
 #pragma once
 
 #include "PETScBaseMatrix.h"
+#include <dolfin/common/types.h>
 #include <map>
 #include <memory>
 #include <petscmat.h>
@@ -34,6 +36,14 @@ class VectorSpaceBasis;
 class PETScMatrix : public PETScBaseMatrix
 {
 public:
+  /// Supported norm types
+  enum class Norm
+  {
+    l1,
+    linf,
+    frobenius
+  };
+
   /// Create empty matrix
   explicit PETScMatrix(MPI_Comm comm);
 
@@ -56,16 +66,10 @@ public:
   bool empty() const;
 
   /// Return size of given dimension
-  std::int64_t size(std::size_t dim) const
-  {
-    return PETScBaseMatrix::size(dim);
-  }
+  std::int64_t size(std::size_t dim) const;
 
   /// Return local ownership range
-  std::array<std::int64_t, 2> local_range(std::size_t dim) const
-  {
-    return PETScBaseMatrix::local_range(dim);
-  }
+  std::array<std::int64_t, 2> local_range(std::size_t dim) const;
 
   /// Return number of non-zero entries in matrix (collective)
   std::size_t nnz() const;
@@ -117,10 +121,7 @@ public:
   ///         Vector to initialise
   /// @param  dim (std::size_t)
   ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-  void init_vector(PETScVector& z, std::size_t dim) const
-  {
-    PETScBaseMatrix::init_vector(z, dim);
-  }
+  void init_vector(PETScVector& z, std::size_t dim) const;
 
   /// Get block of values
   void get(PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,
@@ -150,7 +151,7 @@ public:
   void axpy(PetscScalar a, const PETScMatrix& A, bool same_nonzero_pattern);
 
   /// Return norm of matrix
-  double norm(std::string norm_type) const;
+  double norm(Norm norm_type) const;
 
   /// Set given rows (global row indices) to zero
   void zero(std::size_t m, const dolfin::la_index_t* rows);
@@ -169,19 +170,19 @@ public:
   void set_diagonal(const PETScVector& x);
 
   /// Multiply matrix by given number
-  const PETScMatrix& operator*=(PetscScalar a);
+  PETScMatrix& operator*=(PetscScalar a);
 
   /// Divide matrix by given number
-  const PETScMatrix& operator/=(PetscScalar a);
+  PETScMatrix& operator/=(PetscScalar a);
 
   /// Assignment operator
-  const PETScMatrix& operator=(const PETScMatrix& A);
+  PETScMatrix& operator=(const PETScMatrix& A);
 
   /// Test if matrix is symmetric
-  virtual bool is_symmetric(double tol) const;
+  bool is_symmetric(double tol) const;
 
   /// Test if matrix is hermitian
-  virtual bool is_hermitian(double tol) const;
+  bool is_hermitian(double tol) const;
 
   //--- Special PETSc Functions ---
 
@@ -203,9 +204,6 @@ public:
   /// Attach 'near' nullspace to matrix (used by preconditioners,
   /// such as smoothed aggregation algerbraic multigrid)
   void set_near_nullspace(const la::VectorSpaceBasis& nullspace);
-
-  /// Dump matrix to PETSc binary format
-  void binary_dump(std::string file_name) const;
 
 private:
   // Create PETSc nullspace object

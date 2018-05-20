@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
+// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
+// N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -23,8 +24,6 @@
 using namespace dolfin;
 using namespace dolfin::la;
 
-const std::map<std::string, NormType> PETScMatrix::norm_types
-    = {{"l1", NORM_1}, {"linf", NORM_INFINITY}, {"frobenius", NORM_FROBENIUS}};
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScBaseMatrix()
 {
@@ -277,6 +276,16 @@ bool PETScMatrix::empty() const
   return (sizes[0] < 1) and (sizes[1] < 1);
 }
 //-----------------------------------------------------------------------------
+std::int64_t PETScMatrix::size(std::size_t dim) const
+{
+  return PETScBaseMatrix::size(dim);
+}
+//-----------------------------------------------------------------------------
+std::array<std::int64_t, 2> PETScMatrix::local_range(std::size_t dim) const
+{
+  return PETScBaseMatrix::local_range(dim);
+}
+//-----------------------------------------------------------------------------
 void PETScMatrix::get(PetscScalar* block, std::size_t m,
                       const dolfin::la_index_t* rows, std::size_t n,
                       const dolfin::la_index_t* cols) const
@@ -330,6 +339,11 @@ void PETScMatrix::add_local(const PetscScalar* block, std::size_t m,
       = MatSetValuesLocal(_matA, m, rows, n, cols, block, ADD_VALUES);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+}
+//-----------------------------------------------------------------------------
+void PETScMatrix::init_vector(PETScVector& z, std::size_t dim) const
+{
+  PETScBaseMatrix::init_vector(z, dim);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::axpy(PetscScalar a, const PETScMatrix& A,
@@ -457,22 +471,32 @@ void PETScMatrix::set_diagonal(const PETScVector& x)
   apply(AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
-double PETScMatrix::norm(std::string norm_type) const
+double PETScMatrix::norm(Norm norm_type) const
 {
   assert(_matA);
-
-  // Check that norm is known
-  if (norm_types.count(norm_type) == 0)
+  PetscErrorCode ierr;
+  double value = 0.0;
+  switch (norm_type)
   {
-    log::dolfin_error("PETScMatrix.cpp", "compute norm of PETSc matrix",
-                      "Unknown norm type (\"%s\")", norm_type.c_str());
+  case Norm::l1:
+    ierr = MatNorm(_matA, NORM_1, &value);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "MatNorm");
+    break;
+  case Norm::linf:
+    ierr = MatNorm(_matA, NORM_INFINITY, &value);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "MatNorm");
+    break;
+  case Norm::frobenius:
+    ierr = MatNorm(_matA, NORM_FROBENIUS, &value);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "MatNorm");
+    break;
+  default:
+    throw std::runtime_error("Unknown PETSc Mat norm type");
   }
 
-  double value = 0.0;
-  PetscErrorCode ierr
-      = MatNorm(_matA, norm_types.find(norm_type)->second, &value);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNorm");
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -512,7 +536,7 @@ void PETScMatrix::zero()
     petsc_error(ierr, __FILE__, "MatZeroEntries");
 }
 //-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator*=(PetscScalar a)
+PETScMatrix& PETScMatrix::operator*=(PetscScalar a)
 {
   assert(_matA);
   PetscErrorCode ierr = MatScale(_matA, a);
@@ -521,7 +545,7 @@ const PETScMatrix& PETScMatrix::operator*=(PetscScalar a)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator/=(PetscScalar a)
+PETScMatrix& PETScMatrix::operator/=(PetscScalar a)
 {
   assert(_matA);
   MatScale(_matA, 1.0 / a);
@@ -568,7 +592,7 @@ void PETScMatrix::set_from_options()
   MatSetFromOptions(_matA);
 }
 //-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator=(const PETScMatrix& A)
+PETScMatrix& PETScMatrix::operator=(const PETScMatrix& A)
 {
   if (!A.mat())
   {
@@ -634,25 +658,6 @@ void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
 
   // Decrease reference count for nullspace
   MatNullSpaceDestroy(&petsc_ns);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::binary_dump(std::string file_name) const
-{
-  PetscErrorCode ierr;
-
-  PetscViewer view_out;
-  ierr = PetscViewerBinaryOpen(mpi_comm(), file_name.c_str(), FILE_MODE_WRITE,
-                               &view_out);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "PetscViewerBinaryOpen");
-
-  ierr = MatView(_matA, view_out);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatView");
-
-  ierr = PetscViewerDestroy(&view_out);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "PetscViewerDestroy");
 }
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const

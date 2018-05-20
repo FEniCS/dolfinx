@@ -6,15 +6,12 @@
 
 #pragma once
 
-#include "PETScVector.h"
+#include <array>
 #include <cinttypes>
 #include <cstddef>
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/types.h>
 #include <memory>
 #include <petscmat.h>
 #include <string>
-#include <utility>
 
 namespace dolfin
 {
@@ -25,7 +22,7 @@ class PETScVector;
 /// This class is a base class for matrices that can be used in
 /// PETScKrylovSolver.
 
-class PETScBaseMatrix : public virtual common::Variable
+class PETScBaseMatrix
 {
 public:
   /// Constructor
@@ -35,7 +32,10 @@ public:
   explicit PETScBaseMatrix(Mat A);
 
   /// Copy constructor
-  PETScBaseMatrix(const PETScBaseMatrix& A);
+  PETScBaseMatrix(const PETScBaseMatrix& A) = delete;
+
+  /// Move constructor
+  PETScBaseMatrix(PETScBaseMatrix&& A);
 
   /// Destructor
   ~PETScBaseMatrix();
@@ -67,14 +67,11 @@ public:
   MPI_Comm mpi_comm() const;
 
   /// Return informal string representation (pretty-print)
-  virtual std::string str(bool verbose) const
-  {
-    return "No str function for this PETSc matrix operator.";
-  }
+  virtual std::string str(bool verbose) const;
 
 protected:
   // PETSc Mat pointer
   Mat _matA;
 };
-}
-}
+} // namespace la
+} // namespace dolfin

@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2012 Anders Logg and Garth N. Wells
+// Copyright (C) 2011-2018 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -21,10 +21,15 @@ PETScBaseMatrix::PETScBaseMatrix(Mat A) : _matA(A)
     PetscObjectReference((PetscObject)_matA);
   else
   {
-    log::dolfin_error(
-        "PETScBaseMatrix.cpp", "initialize with PETSc Mat pointer",
+    throw std::runtime_error(
         "Cannot wrap PETSc Mat objects that have not been initialized");
   }
+}
+//-----------------------------------------------------------------------------
+PETScBaseMatrix::PETScBaseMatrix(PETScBaseMatrix&& A)
+{
+  _matA = A._matA;
+  A._matA = nullptr;
 }
 //-----------------------------------------------------------------------------
 PETScBaseMatrix::~PETScBaseMatrix()
@@ -33,12 +38,6 @@ PETScBaseMatrix::~PETScBaseMatrix()
   // reference counts reached zero)
   if (_matA)
     MatDestroy(&_matA);
-}
-//-----------------------------------------------------------------------------
-PETScBaseMatrix::PETScBaseMatrix(const PETScBaseMatrix& A)
-{
-  log::dolfin_error("PETScBaseMatrix.cpp", "copy constructor",
-                    "PETScBaseMatrix does not provide a copy constructor");
 }
 //-----------------------------------------------------------------------------
 std::int64_t PETScBaseMatrix::size(std::size_t dim) const
@@ -75,9 +74,8 @@ std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
   assert(dim <= 1);
   if (dim == 1)
   {
-    log::dolfin_error("PETScBaseMatrix.cpp",
-                      "access local column range for PETSc matrix",
-                      "Only local row range is available for PETSc matrices");
+    throw std::runtime_error(
+        "Only local row range is available for PETSc matrices");
   }
 
   assert(_matA);
@@ -128,5 +126,10 @@ MPI_Comm PETScBaseMatrix::mpi_comm() const
   MPI_Comm mpi_comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
   return mpi_comm;
+}
+//-----------------------------------------------------------------------------
+std::string PETScBaseMatrix::str(bool verbose) const
+{
+  return "No str function for this PETSc matrix operator.";
 }
 //-----------------------------------------------------------------------------

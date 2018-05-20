@@ -226,8 +226,7 @@ void la(py::module& m)
 
   // dolfin::la::PETScBaseMatrix
   py::class_<dolfin::la::PETScBaseMatrix,
-             std::shared_ptr<dolfin::la::PETScBaseMatrix>,
-             dolfin::common::Variable>(m, "PETScBaseMatrix")
+             std::shared_ptr<dolfin::la::PETScBaseMatrix>>(m, "PETScBaseMatrix")
       .def("size",
            (std::int64_t(dolfin::la::PETScBaseMatrix::*)(std::size_t) const)
                & dolfin::la::PETScBaseMatrix::size)
@@ -236,8 +235,10 @@ void la(py::module& m)
 
   // dolfin::la::PETScMatrix
   py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
-             dolfin::la::PETScBaseMatrix>(m, "PETScMatrix",
-                                          "DOLFIN PETScMatrix object")
+             dolfin::la::PETScBaseMatrix>
+      petsc_matrix(m, "PETScMatrix", "PETScMatrix object");
+
+  petsc_matrix
       .def(py::init([](const MPICommWrapper comm) {
         return std::make_unique<dolfin::la::PETScMatrix>(comm.get());
       }))
@@ -254,6 +255,12 @@ void la(py::module& m)
        },
        py::is_operator());
   */
+
+  // dolfin::la::PETScMatrix::Norm enums
+  py::enum_<dolfin::la::PETScMatrix::Norm>(petsc_matrix, "Norm")
+      .value("l1", dolfin::la::PETScMatrix::Norm::l1)
+      .value("linf", dolfin::la::PETScMatrix::Norm::linf)
+      .value("frobenius", dolfin::la::PETScMatrix::Norm::frobenius);
 
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
