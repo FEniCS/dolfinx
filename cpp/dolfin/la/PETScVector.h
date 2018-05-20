@@ -71,8 +71,13 @@ public:
   /// Return ownership range of a vector
   std::array<std::int64_t, 2> local_range() const;
 
-  /// Set all entries to a
+  /// Set all entries to 'a' using VecSet. This is local and does not
+  /// update ghost entries.
   void set(PetscScalar a);
+
+  /// A scalar 'a' using VecSet. This is local and does not update ghost
+  /// entries.
+  void shift(PetscScalar a);
 
   /// Finalize assembly of vector. Communicates off-process entries
   /// added or set on this process to the owner, and receives from other
@@ -193,8 +198,7 @@ public:
   /// database
   std::string get_options_prefix() const;
 
-  /// Call PETSc function VecSetFromOptions on the underlying Vec
-  /// object
+  /// Call PETSc function VecSetFromOptions on the underlying Vec object
   void set_from_options();
 
   /// Return pointer to PETSc Vec object

@@ -394,6 +394,13 @@ void PETScVector::set(PetscScalar a)
   CHECK_ERROR("VecSet");
 }
 //-----------------------------------------------------------------------------
+void PETScVector::shift(PetscScalar a)
+{
+  assert(_x);
+  PetscErrorCode ierr = VecScale(_x, a);
+  CHECK_ERROR("VecScale");
+}
+//-----------------------------------------------------------------------------
 bool PETScVector::empty() const
 {
   if (!_x)
