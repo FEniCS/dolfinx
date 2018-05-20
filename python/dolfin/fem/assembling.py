@@ -56,9 +56,7 @@ class Assembler:
             comm = cpp.MPI.comm_world
             A = cpp.la.PETScMatrix(comm)
         if b is None:
-            # comm = b_dolfin_form.mesh().mpi_comm()
-            comm = cpp.MPI.comm_world
-            b = cpp.la.PETScVector(comm)
+            b = cpp.la.PETScVector()
 
         # self.assembler.assemble(A, b)
         self.assembler.assemble(A, mat_type)
@@ -161,7 +159,7 @@ def assemble_system(A_form,
     if A_tensor is None:
         A_tensor = cpp.la.PETScMatrix(comm_A)
     if b_tensor is None:
-        b_tensor = cpp.la.PETScVector(comm_A)
+        b_tensor = cpp.la.PETScVector()
 
     # Check bcs
     bcs = _wrap_in_list(bcs, 'bcs', cpp.fem.DirichletBC)

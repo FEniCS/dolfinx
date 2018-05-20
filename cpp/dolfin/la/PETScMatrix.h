@@ -127,8 +127,9 @@ public:
            std::size_t n, const dolfin::la_index_t* cols) const;
 
   /// Set block of values using global indices
-  void set(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,
-           std::size_t n, const dolfin::la_index_t* cols);
+  void set(const PetscScalar* block, std::size_t m,
+           const dolfin::la_index_t* rows, std::size_t n,
+           const dolfin::la_index_t* cols);
 
   /// Set block of values using local indices
   void set_local(const PetscScalar* block, std::size_t m,
@@ -136,8 +137,9 @@ public:
                  const dolfin::la_index_t* cols);
 
   /// Add block of values using global indices
-  void add(const PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,
-           std::size_t n, const dolfin::la_index_t* cols);
+  void add(const PetscScalar* block, std::size_t m,
+           const dolfin::la_index_t* rows, std::size_t n,
+           const dolfin::la_index_t* cols);
 
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m,
@@ -154,13 +156,11 @@ public:
   void zero(std::size_t m, const dolfin::la_index_t* rows);
 
   /// Zero given rows (local row indices), and set diagonal
-  void zero_local(std::size_t m, const dolfin::la_index_t* rows, PetscScalar diag);
+  void zero_local(std::size_t m, const dolfin::la_index_t* rows,
+                  PetscScalar diag);
 
   /// Matrix-vector product, y = Ax
   void mult(const PETScVector& x, PETScVector& y) const;
-
-  /// Matrix-vector product, y = A^T x
-  void transpmult(const PETScVector& x, PETScVector& y) const;
 
   /// Get diagonal of a matrix
   void get_diagonal(PETScVector& x) const;
@@ -215,5 +215,5 @@ private:
   // PETSc norm types
   static const std::map<std::string, NormType> norm_types;
 };
-}
-}
+} // namespace la
+} // namespace dolfin

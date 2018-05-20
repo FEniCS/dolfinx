@@ -7,6 +7,7 @@
 #pragma once
 
 #include <cassert>
+#include <complex>
 #include <cstdint>
 #include <iostream>
 #include <numeric>
@@ -74,7 +75,7 @@ public:
     /// Free (destroy) communicator. Calls function 'MPI_Comm_free'.
     void free();
 
-    /// Duplicate communivator, and free any previously created
+    /// Duplicate communicator, and free any previously created
     /// communicator
     void reset(MPI_Comm comm);
 
@@ -82,8 +83,8 @@ public:
     std::uint32_t rank() const;
 
     /// Return size of the group (number of processes) associated
-    /// with the communicator. This function will also intialise MPI
-    /// if it hasn't already been intialised.
+    /// with the communicator. This function will also initialise MPI
+    /// if it hasn't already been initialised.
     std::uint32_t size() const;
 
     /// Set a barrier (synchronization point)
@@ -278,6 +279,11 @@ template <>
 inline MPI_Datatype MPI::mpi_type<double>()
 {
   return MPI_DOUBLE;
+}
+template <>
+inline MPI_Datatype MPI::mpi_type<std::complex<double>>()
+{
+  return MPI_DOUBLE_COMPLEX;
 }
 template <>
 inline MPI_Datatype MPI::mpi_type<short int>()

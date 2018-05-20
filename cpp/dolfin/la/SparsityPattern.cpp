@@ -194,7 +194,10 @@ void SparsityPattern::insert_local(
   // The 1 must be mapped to global entries
   const auto col_map = [](const la_index_t j_index,
                           const common::IndexMap& index_map1) -> la_index_t {
-    return index_map1.local_to_global_index((std::size_t)j_index);
+    const std::div_t div = std::div(j_index, index_map1.block_size());
+    const int component = div.rem;
+    const int index = div.quot;
+    return index_map1.local_to_global(index) + component;
   };
 
   insert_entries(rows, cols, row_map, col_map);
@@ -474,8 +477,8 @@ void SparsityPattern::apply()
         = _index_maps[0]->ghost_owners();
 
     // Get local-to-global for unowned blocks
-    const Eigen::Ref<const EigenArrayXi64> local_to_global
-        = _index_maps[0]->ghosts();
+    const Eigen::Ref<const Eigen::Array<la_index_t, Eigen::Dynamic, 1>>
+        local_to_global = _index_maps[0]->ghosts();
 
     std::size_t dim_block_size = _index_maps[0]->block_size();
     for (std::size_t i = 0; i < _non_local.size(); i += 2)

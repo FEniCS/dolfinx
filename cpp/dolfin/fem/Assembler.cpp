@@ -384,11 +384,11 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 
     // Initialise vector
     if (block_type == BlockType::nested)
-      fem::init_nest(b, forms);
+      b = fem::init_nest(forms);
     else if (block_vector and block_type == BlockType::monolithic)
-      fem::init_monolithic(b, forms);
+      b = fem::init_monolithic(forms);
     else
-      init(b, *_l[0]);
+      b = fem::init_vector(*_l[0]);
   }
 
   // auto range = b.local_range();

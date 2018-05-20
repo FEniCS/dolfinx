@@ -225,12 +225,12 @@ def test_nocaching_values():
     for method in ["topological", "geometric", "pointwise"]:
         bc = DirichletBC(V, 0.0, lambda x, b: True, method=method)
 
-        x.zero()
+        x.set(0.0)
         bc.set_value(Constant(1.0))
         bc.apply(x)
         assert numpy.allclose(x.get_local(), 1.0)
 
-        x.zero()
+        x.set(0.0)
         bc.set_value(Constant(2.0))
         bc.apply(x)
         assert numpy.allclose(x.get_local(), 2.0)

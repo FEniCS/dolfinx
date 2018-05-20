@@ -11,9 +11,9 @@ import platform
 import dolfin
 from dolfin import MPI, compile_cpp_code
 from dolfin.la import PETScVector
-from dolfin_utils.test import (skip_if_not_SLEPc,
-                               skip_if_not_MPI, skip_in_serial,
-                               skip_if_not_petsc4py)
+from dolfin_utils.test import (skip_if_not_SLEPc, skip_if_not_MPI,
+                               skip_in_serial, skip_if_not_petsc4py)
+
 
 @pytest.mark.skip
 def test_nasty_jit_caching_bug():
@@ -27,8 +27,8 @@ def test_nasty_jit_caching_bug():
 
         parameters["form_compiler"]["representation"] = representation
 
-        M1 = assemble(Constant(1.0)*dx(UnitSquareMesh(4, 4)))
-        M2 = assemble(Constant(1.0)*dx(UnitCubeMesh(4, 4, 4)))
+        M1 = assemble(Constant(1.0) * dx(UnitSquareMesh(4, 4)))
+        M2 = assemble(Constant(1.0) * dx(UnitCubeMesh(4, 4, 4)))
 
         assert round(M1 - 1.0, 7) == 0
         assert round(M2 - 1.0, 7) == 0
@@ -202,7 +202,8 @@ def test_compile_extension_module():
 
     ext_module = compile_cpp_code(code)
 
-    vec = PETScVector(MPI.comm_world, 10)
+    local_range = MPI.local_range(MPI.comm_world, 10)
+    vec = PETScVector(MPI.comm_world, local_range, [], 1)
     np_vec = vec.get_local()
     np_vec[:] = arange(len(np_vec))
     vec[:] = np_vec
@@ -225,8 +226,8 @@ def test_compile_extension_module_kwargs():
 @skip_in_serial
 def test_mpi_dependent_jiting():
     # FIXME: Not a proper unit test...
-    from dolfin import (Expression, UnitSquareMesh, Function,
-                        TestFunction, Form, FunctionSpace, dx, CompiledSubDomain,
+    from dolfin import (Expression, UnitSquareMesh, Function, TestFunction,
+                        Form, FunctionSpace, dx, CompiledSubDomain,
                         SubSystemsManager)
 
     # Init petsc (needed to initalize petsc and slepc collectively on
@@ -257,19 +258,19 @@ def test_mpi_dependent_jiting():
     group_comm_1 = petsc.Comm(comm.Create(group.Incl(range(1, 2))))
 
     if size > 2:
-        group_comm_2 = petsc.Comm(comm.Create(group.Incl(range(2,size))))
+        group_comm_2 = petsc.Comm(comm.Create(group.Incl(range(2, size))))
 
     if rank == 0:
         e = Expression("4", mpi_comm=group_comm_0, degree=0)
 
     elif rank == 1:
         e = Expression("5", mpi_comm=group_comm_1, degree=0)
-        domain = CompiledSubDomain("on_boundary", mpi_comm=group_comm_1,
-                                   degree=0)
+        domain = CompiledSubDomain(
+            "on_boundary", mpi_comm=group_comm_1, degree=0)
 
     else:
         mesh = UnitSquareMesh(group_comm_2, 2, 2)
         V = FunctionSpace(mesh, "P", 1)
         u = Function(V)
         v = TestFunction(V)
-        Form(u*v*dx)
+        Form(u * v * dx)

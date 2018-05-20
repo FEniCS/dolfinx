@@ -94,9 +94,11 @@ public:
   /// @param num_ghost_cells
   ///         Number of ghost cells on this process (must be at end of list of
   ///         cells)
+  // FIXME: What about global vertex indices?
+  // FIXME: Be explicit in passing geometry degree/type
   Mesh(MPI_Comm comm, mesh::CellType::Type type,
-       const Eigen::Ref<const EigenRowArrayXXd>& points,
-       const Eigen::Ref<const EigenRowArrayXXi64>& cells,
+       const Eigen::Ref<const EigenRowArrayXXd> points,
+       const Eigen::Ref<const EigenRowArrayXXi64> cells,
        const std::vector<std::int64_t>& global_cell_indices,
        const GhostMode ghost_mode,
        std::uint32_t num_ghost_cells = 0);
@@ -324,6 +326,7 @@ public:
   /// Get coordinate dofs for all local cells
   const CoordinateDofs& coordinate_dofs() const { return _coordinate_dofs; }
 
+  // FIXME: This should be with MeshGeometry
   std::uint32_t degree() const { return _degree; }
 
 private:
@@ -336,9 +339,11 @@ private:
   // Mesh geometry
   MeshGeometry _geometry;
 
+  // FIXME: This should be in geometry!
   // Coordinate dofs
   CoordinateDofs _coordinate_dofs;
 
+  // FXIME: This shouldn't be here
   // Mesh geometric degree (in Lagrange basis) describing coordinate dofs
   std::uint32_t _degree;
 

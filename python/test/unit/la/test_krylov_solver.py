@@ -30,7 +30,7 @@ def test_krylov_solver_lu():
     PETScOptions.set("test_lu_ksp_type", "preonly")
     PETScOptions.set("test_lu_pc_type", "lu")
     solver.set_from_options()
-    x = PETScVector(mesh.mpi_comm())
+    x = PETScVector()
     solver.set_operator(A)
     solver.solve(x, b)
 
