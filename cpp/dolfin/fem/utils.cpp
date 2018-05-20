@@ -8,6 +8,7 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/types.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
@@ -23,34 +24,16 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(la::PETScVector& x, const Form& a)
+la::PETScVector dolfin::fem::init_vector(const Form& L)
 {
-  if (a.rank() != 1)
-    throw std::runtime_error(
-        "Cannot initialise vector. Form is not a linear form");
+  if (L.rank() != 1)
+    throw std::runtime_error("Cannot initialise vector. Form must be linear.");
 
-  if (!x.empty())
-    throw std::runtime_error("Cannot initialise layout of non-empty matrix");
-
-  // Get dof map
-  auto dofmap = a.function_space(0)->dofmap();
-
-  // Get dimensions and mapping across processes for each dimension
+  auto dofmap = L.function_space(0)->dofmap();
   auto index_map = dofmap->index_map();
+  assert(index_map);
 
-  // FIXME: Do we need to sort out ghosts here
-  // Build ghost
-  // std::vector<dolfin::la_index_t> ghosts;
-
-  // Build local-to-global index map
-  int block_size = index_map->block_size();
-  std::vector<la_index_t> local_to_global(
-      index_map->size(common::IndexMap::MapSize::ALL));
-  for (std::size_t i = 0; i < local_to_global.size(); ++i)
-    local_to_global[i] = index_map->local_to_global(i);
-
-  // Initialize vector
-  x.init(index_map->local_range(), local_to_global, {}, block_size);
+  return la::PETScVector(*index_map);
 }
 //-----------------------------------------------------------------------------
 void fem::init_nest(la::PETScMatrix& A,
@@ -86,7 +69,7 @@ void fem::init_nest(la::PETScMatrix& A,
   MatSetUp(A.mat());
 }
 //-----------------------------------------------------------------------------
-void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
+la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
 {
   // Loop over each form and create vector
   std::vector<std::shared_ptr<la::PETScVector>> vecs(L.size());
@@ -95,9 +78,7 @@ void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
   {
     if (L[i])
     {
-      vecs[i] = std::make_shared<la::PETScVector>(x.mpi_comm());
-      init(*vecs[i], *L[i]);
-
+      vecs[i] = std::make_shared<la::PETScVector>(init_vector(*L[i]));
       petsc_vecs[i] = vecs[i]->vec();
     }
     else
@@ -106,14 +87,9 @@ void fem::init_nest(la::PETScVector& x, std::vector<const fem::Form*> L)
 
   // Create nested (VecNest) vector
   Vec y;
-  VecCreateNest(x.mpi_comm(), petsc_vecs.size(), NULL, petsc_vecs.data(), &y);
-  x.reset(y);
-  VecDestroy(&y);
-
-  /*
-  VecSetType(x.vec(), VECNEST);
-  VecNestSetSubVecs(x.vec(), petsc_vecs.size(), NULL, petsc_vecs.data());
-  */
+  VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), NULL, petsc_vecs.data(),
+                &y);
+  return la::PETScVector(y);
 }
 //-----------------------------------------------------------------------------
 void fem::init_monolithic(la::PETScMatrix& A,
@@ -220,15 +196,8 @@ void fem::init_monolithic(la::PETScMatrix& A,
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
 }
 //-----------------------------------------------------------------------------
-void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
+la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
 {
-  // if (a.rank() != 1)
-  //  throw std::runtime_error(
-  //      "Cannot initialise vector. Form is not a linear form");
-
-  if (!x.empty())
-    throw std::runtime_error("Cannot initialise non-empty vector");
-
   // FIXME: handle null blocks
   // FIXME: handle mixed block sizes
 
@@ -236,39 +205,29 @@ void fem::init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L)
   std::vector<const common::IndexMap*> index_maps;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
+    assert(L[i]);
+    assert(L[i]->rank() == 1);
     auto map = L[i]->function_space(0)->dofmap()->index_map();
     local_size += map->size(common::IndexMap::MapSize::OWNED);
     index_maps.push_back(map.get());
-    // int block_size = map->block_size();
   }
 
-  // Create map for combined problem
-  common::IndexMap index_map(x.mpi_comm(), local_size, {}, 1);
-
-  // std::vector<la_index_t> local_to_global(
-  //     map.size(common::IndexMap::MapSize::ALL));
-  // for (std::size_t i = 0; i < local_to_global.size(); ++i)
-  // {
-  //   local_to_global[i] = map.local_to_global(i);
-  //   // std::cout << "l2g: " << i << ", " << local_to_global[i] << std::endl;
-  // }
-
-  std::vector<la_index_t> local_to_global;
+  std::vector<std::size_t> ghosts;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    assert(L[i]);
-    auto map = L[i]->function_space(0)->dofmap()->index_map();
-    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
+    const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& field_ghosts
+        = index_maps[i]->ghosts();
+    for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
     {
-      auto index_k = map->local_to_global(k);
-      std::size_t index = get_global_index(index_maps, i, index_k);
-      local_to_global.push_back(index);
+      std::size_t global_index
+          = get_global_index(index_maps, i, field_ghosts[j]);
+      ghosts.push_back(global_index);
     }
   }
 
-  // Initialize vector
-  // x.init(index_map.local_range(), local_to_global, {}, 1);
-  x.init(index_map.local_range(), {}, {}, 1);
+  // Create map for combined problem
+  common::IndexMap index_map(L[0]->mesh()->mpi_comm(), local_size, {}, 1);
+  return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------
 void dolfin::fem::init(la::PETScMatrix& A, const Form& a)

@@ -25,8 +25,8 @@ void VectorSpaceBasis::orthonormalize(double tol)
   // Loop over each vector in basis
   for (std::size_t i = 0; i < _basis.size(); ++i)
   {
-    // Orthogonalize vector i with respect to previously
-    // orthonormalized vectors
+    // Orthogonalize vector i with respect to previously orthonormalized
+    // vectors
     for (std::size_t j = 0; j < i; ++j)
     {
       const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
@@ -35,12 +35,12 @@ void VectorSpaceBasis::orthonormalize(double tol)
 
     if (_basis[i]->norm("l2") < tol)
     {
-      log::dolfin_error("VectorSpaceBasis.cpp", "orthonormalize vector basis",
-                        "Vector space has linear dependency");
+      throw std::runtime_error(
+          "VectorSpaceBasis has linear dependency. Cannot orthogonalize");
     }
 
     // Normalise basis function
-    (*_basis[i]) /= _basis[i]->norm("l2");
+    (*_basis[i]) *= (1.0 / _basis[i]->norm("l2"));
   }
 }
 //-----------------------------------------------------------------------------

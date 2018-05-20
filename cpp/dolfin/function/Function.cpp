@@ -496,74 +496,11 @@ void Function::init_vector()
   }
 
   // Get index map
-  /*
   std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
   assert(index_map);
 
-  MPI_Comm comm = _function_space->mesh()->mpi_comm();
-
-  // Create layout for initialising tensor
-  //std::shared_ptr<TensorLayout> tensor_layout;
-  //tensor_layout = factory.create_layout(comm, 1);
-  auto tensor_layout = std::make_shared<TensorLayout>(comm, 0,
-  TensorLayout::Sparsity::DENSE);
-
-  assert(tensor_layout);
-  assert(!tensor_layout->sparsity_pattern());
-  assert(_function_space->mesh());
-  tensor_layout->init({index_map}, TensorLayout::Ghosts::GHOSTED);
-
-  // Create vector of dofs
-  if (!_vector)
-    _vector =
-  std::make_shared<la::la::PETScVector>(_function_space->mesh()->mpi_comm());
+  _vector = std::make_shared<la::PETScVector>(*index_map);
   assert(_vector);
-  if (!_vector->empty())
-  {
-    log::dolfin_error("Function.cpp",
-                 "initialize vector of degrees of freedom for function",
-                 "Cannot re-initialize a non-empty vector. Consider creating a
-  new function");
-
-  }
-  _vector->init(*tensor_layout);
-  _vector->zero();
-  */
-
-  // Get index map
-  std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
-  assert(index_map);
-
-  // Get block size
-  std::size_t bs = index_map->block_size();
-
-  // Build local-to-global map (blocks)
-  std::vector<dolfin::la_index_t> local_to_global(
-      index_map->size(common::IndexMap::MapSize::ALL));
-  for (std::size_t i = 0; i < local_to_global.size(); ++i)
-    local_to_global[i] = index_map->local_to_global(i);
-
-  // Build list of ghosts (global block indices)
-  const std::size_t nowned = index_map->size(common::IndexMap::MapSize::OWNED);
-  assert(nowned + index_map->size(common::IndexMap::MapSize::GHOSTS)
-         == local_to_global.size());
-  std::vector<dolfin::la_index_t> ghosts(local_to_global.begin() + nowned,
-                                         local_to_global.end());
-
-  // Create vector of dofs
-  if (!_vector)
-    _vector = std::make_shared<la::PETScVector>(
-        _function_space->mesh()->mpi_comm());
-  assert(_vector);
-
-  if (!_vector->empty())
-  {
-    std::runtime_error("Cannot initialize vector of degrees of freedom for "
-                       "function. Cannot re-initialize a non-empty vector. "
-                       "Consider creating a new function");
-  }
-
-  _vector->init(index_map->local_range(), local_to_global, ghosts, bs);
-  _vector->zero();
+  _vector->set(0.0);
 }
 //-----------------------------------------------------------------------------

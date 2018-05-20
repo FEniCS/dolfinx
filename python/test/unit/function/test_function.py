@@ -52,6 +52,9 @@ def test_compute_point_values(V, W, mesh):
     u.vector()[:] = 1.
     v.vector()[:] = 1.
 
+    u.vector().update_ghosts()
+    v.vector().update_ghosts()
+
     u_values = u.compute_point_values(mesh)
     v_values = v.compute_point_values(mesh)
 

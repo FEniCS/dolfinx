@@ -116,7 +116,7 @@ void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const
 
   // Associate new PETSc Vec with z (this will increase the reference
   // count to x)
-  z.reset(x);
+  z = PETScVector(x);
 
   // Decrease reference count
   VecDestroy(&x);

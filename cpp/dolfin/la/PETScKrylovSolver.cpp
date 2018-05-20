@@ -19,8 +19,7 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm)
-    : _ksp(NULL)
+PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm) : _ksp(NULL)
 {
   PetscErrorCode ierr;
 
@@ -30,8 +29,7 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm)
     petsc_error(ierr, __FILE__, "KSPCreate");
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(KSP ksp)
-    : _ksp(ksp)
+PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp)
 {
   PetscErrorCode ierr;
   if (_ksp)
@@ -104,7 +102,6 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
         M, b.size());
   }
 
-
   // Initialize solution vector, if necessary
   if (x.empty())
   {
@@ -115,7 +112,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "KSPGetInitialGuessNonzero");
     if (nonzero_guess)
-      x.zero();
+      x.set(0.0);
   }
 
   // Solve linear system
@@ -140,7 +137,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   }
 
   // Update ghost values in solution vector
-  x.update_ghost_values();
+  x.update_ghosts();
 
   // Get the number of iterations
   PetscInt num_iterations = 0;
@@ -247,9 +244,8 @@ std::string PETScKrylovSolver::str(bool verbose) const
   std::stringstream s;
   if (verbose)
   {
-    log::warning(
-        "Verbose output for PETScKrylovSolver not implemented, calling \
-PETSc KSPView directly.");
+    log::warning("Verbose output for PETScKrylovSolver not implemented, "
+                 "calling PETSc KSPView directly.");
     PetscErrorCode ierr = KSPView(_ksp, PETSC_VIEWER_STDOUT_WORLD);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "KSPView");

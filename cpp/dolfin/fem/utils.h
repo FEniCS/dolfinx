@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfin/common/types.h>
+#include <dolfin/la/PETScVector.h>
 #include <vector>
 
 namespace dolfin
@@ -20,18 +21,18 @@ namespace la
 {
 class PETScMatrix;
 class PETScVector;
-}
+} // namespace la
 namespace function
 {
 class Function;
 class FunctionSpace;
-}
+} // namespace function
 
 namespace mesh
 {
 class Mesh;
 class MeshGeometry;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -45,17 +46,17 @@ void init_nest(la::PETScMatrix& A,
                std::vector<std::vector<const fem::Form*>> a);
 
 /// Initialise nested (VecNest) vector. Vector is not zeroed.
-void init_nest(la::PETScVector& x, std::vector<const fem::Form*> L);
+la::PETScVector init_nest(std::vector<const fem::Form*> L);
 
 /// Initialise monolithic  matrix. Matrix is not zeroed.
 void init_monolithic(la::PETScMatrix& A,
                      std::vector<std::vector<const fem::Form*>> a);
 
 /// Initialise monolithic vector. Vector is not zeroed.
-void init_monolithic(la::PETScVector& x, std::vector<const fem::Form*> L);
+la::PETScVector init_monolithic(std::vector<const fem::Form*> L);
 
 /// Initialise vector. Vector is not zeroed.
-void init(la::PETScVector& x, const Form& a);
+la::PETScVector init_vector(const Form& L);
 
 /// Return a map between dof indices and vertex indices
 ///
@@ -94,5 +95,5 @@ vertex_to_dof_map(const function::FunctionSpace& space);
 /// Get new global index in 'spliced' indices
 std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
                              const unsigned int field, const unsigned int n);
-}
-}
+} // namespace fem
+} // namespace dolfin

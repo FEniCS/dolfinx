@@ -187,7 +187,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
          or (data_shape.size() == 2 and data_shape[1] == 1));
 
   // Initialize vector
-  la::PETScVector x(comm);
+  la::PETScVector x;
   if (use_partition_from_file)
   {
     // Get partition from file
@@ -198,10 +198,8 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
     // Check that number of MPI processes matches partitioning
     if (_mpi_comm.size() != partitions.size())
     {
-      log::dolfin_error(
-          "HDF5File.cpp", "read vector from file",
-          "Different number of processes used when writing. Cannot "
-          "restore partitioning");
+      throw std::runtime_error("Different number of processes used when "
+                               "writing. Cannot restore partitioning");
     }
 
     // Add global size at end of partition vectors
@@ -209,11 +207,17 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
 
     // Initialise vector
     const std::size_t process_num = _mpi_comm.rank();
-    x.init({{(std::int64_t)partitions[process_num],
-             (std::int64_t)partitions[process_num + 1]}});
+    x = la::PETScVector(comm,
+                        {{(std::int64_t)partitions[process_num],
+                          (std::int64_t)partitions[process_num + 1]}},
+                        Eigen::Array<la_index_t, Eigen::Dynamic, 1>(), 1);
   }
   else
-    x.init(data_shape[0]);
+  {
+    std::array<std::int64_t, 2> local_range
+        = MPI::local_range(comm, data_shape[0]);
+    x = la::PETScVector(comm, local_range, {}, 1);
+  }
 
   // Get local range
   const std::array<std::int64_t, 2> local_range = x.local_range();
@@ -534,8 +538,8 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   if (num_global_cells != mesh->num_entities_global(dim))
   {
-    log::dolfin_error("HDF5File.cpp", "read meshfunction topology",
-                      "Mesh dimension mismatch");
+    throw std::runtime_error(
+        "Cannot read meshfunction topology. Mesh dimension mismatch");
   }
 
   // Divide up cells ~equally between processes
@@ -678,10 +682,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
                                    const std::string name)
 {
   if (meshfunction.size() == 0)
-  {
-    log::dolfin_error("HDF5File.cpp", "save empty mesh::MeshFunction",
-                      "No values in mesh::MeshFunction");
-  }
+    throw std::runtime_error("Cannot save empty mesh::MeshFunction.");
 
   const mesh::Mesh& mesh = *meshfunction.mesh();
   const std::size_t cell_dim = meshfunction.dim();
@@ -764,8 +765,8 @@ void HDF5File::write(const function::Function& u, const std::string name,
     const std::size_t vec_count = 1;
 
     // if (!HDF5Interface::has_dataset(_hdf5_file_id, name))
-    //  throw std::runtime_error("Setting attribute on dataset. Dataset does not
-    //  exist");
+    //  throw std::runtime_error("Setting attribute on dataset. Dataset does
+    //  not exist");
 
     // FIXME: is this check required?
     if (HDF5Interface::has_attribute(_hdf5_file_id, name, "count"))
@@ -785,8 +786,7 @@ void HDF5File::write(const function::Function& u, const std::string name,
 
     if (!HDF5Interface::has_attribute(_hdf5_file_id, name, "count"))
     {
-      log::dolfin_error(
-          "HDF5File.cpp", "append to series",
+      throw std::runtime_error(
           "Function dataset does not contain a series 'count' attribute");
     }
 
@@ -970,8 +970,9 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
   const std::int64_t num_global_cells = dataset_shape[0];
   if (mesh.num_entities_global(mesh.topology().dim()) != num_global_cells)
   {
-    log::dolfin_error("HDF5File.cpp", "read function::Function from file",
-                      "Number of global cells does not match");
+    throw std::runtime_error(
+        "Cannot read function::Function from file. Number of "
+        "global cells does not match.");
   }
 
   // Divide cells equally between processes
@@ -1283,8 +1284,8 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
       if (map_it == entity_map.end())
       {
-        log::dolfin_error("HDF5File.cpp", "find entity in map",
-                          "Error reading mesh::MeshValueCollection");
+        throw std::runtime_error(
+            "Cannot find entity in map when reading mesh::MeshValueCollection");
       }
       for (auto p = map_it->second.begin(); p != map_it->second.end(); p += 2)
       {

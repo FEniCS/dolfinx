@@ -192,7 +192,7 @@ def _solve_varproblem(*args, **kwargs):
 
         comm = L.mesh().mpi_comm()
         A = PETScMatrix(comm)
-        b = PETScVector(comm)
+        b = PETScVector()
 
         assembler = SystemAssembler(a, L, bcs)
         assembler.assemble(A, b)
