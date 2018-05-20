@@ -6,6 +6,7 @@
 
 import pytest
 import os
+from dolfin import cpp
 from dolfin import *
 from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, \
     xfail_with_serial_hdf5_in_parallel
@@ -41,6 +42,6 @@ def test_save_and_read_function_timeseries(tempdir):
         F0 = hdf5_file.read_function(Q, vec_name)
         #timestamp = hdf5_file.attributes(vec_name)["timestamp"]
         #assert timestamp == t
-        result = F0.vector() - F1.vector()
-        assert len(result.get_local().nonzero()[0]) == 0
+        F0.vector().axpy(-1.0, F1.vector())
+        assert F0.vector().norm(dolfin.cpp.la.PETScVector.Norm.l2) < 1.0e-12
     hdf5_file.close()

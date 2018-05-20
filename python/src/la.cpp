@@ -151,9 +151,9 @@ void la(py::module& m)
       .def_static("clear", (void (*)()) & dolfin::la::PETScOptions::clear);
 
   // dolfin::la::PETScVector
-  py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>>(
-      m, "PETScVector", "DOLFIN PETScVector object")
-      .def(py::init<>())
+  py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>>
+      petsc_vector(m, "PETScVector", "PETScVector object");
+  petsc_vector.def(py::init<>())
       .def(py::init<const dolfin::common::IndexMap&>())
       .def(py::init(
           [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
@@ -170,25 +170,12 @@ void la(py::module& m)
       .def("apply_ghosts", &dolfin::la::PETScVector::apply_ghosts)
       .def("update_ghosts", &dolfin::la::PETScVector::update_ghosts)
       .def("norm", &dolfin::la::PETScVector::norm)
+      .def("normalize", &dolfin::la::PETScVector::normalize)
+      .def("axpy", &dolfin::la::PETScVector::axpy)
       .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScVector::set_options_prefix)
       .def("size", &dolfin::la::PETScVector::size)
       .def("set", py::overload_cast<PetscScalar>(&dolfin::la::PETScVector::set))
-      .def("__add__",
-           [](const dolfin::la::PETScVector& self,
-              const dolfin::la::PETScVector& x) {
-             auto y = std::make_shared<dolfin::la::PETScVector>(self);
-             *y += x;
-             return y;
-           },
-           py::is_operator())
-      .def("__sub__",
-           [](dolfin::la::PETScVector& self, const dolfin::la::PETScVector& x) {
-             auto y = std::make_shared<dolfin::la::PETScVector>(self);
-             *y -= x;
-             return y;
-           },
-           py::is_operator())
       .def("get_local",
            [](const dolfin::la::PETScVector& self) {
              std::vector<double> values;
@@ -202,9 +189,10 @@ void la(py::module& m)
             if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
               throw py::error_already_set();
             if (start != 0 or stop != (std::size_t)self.size() or step != 1)
+            {
               throw std::range_error(
                   "Only setting full slices for GenericVector is supported");
-
+            }
             self.set(value);
           })
       .def(
@@ -229,6 +217,12 @@ void la(py::module& m)
           })
       .def("vec", &dolfin::la::PETScVector::vec,
            "Return underlying PETSc Vec object");
+
+  // dolfin::la::PETScVector::Norm enums
+  py::enum_<dolfin::la::PETScVector::Norm>(petsc_vector, "Norm")
+      .value("l1", dolfin::la::PETScVector::Norm::l1)
+      .value("l2", dolfin::la::PETScVector::Norm::l2)
+      .value("linf", dolfin::la::PETScVector::Norm::linf);
 
   // dolfin::la::PETScBaseMatrix
   py::class_<dolfin::la::PETScBaseMatrix,
