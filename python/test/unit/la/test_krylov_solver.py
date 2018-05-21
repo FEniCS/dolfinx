@@ -35,7 +35,7 @@ def test_krylov_solver_lu():
     solver.solve(x, b)
 
     # *Tight* tolerance for LU solves
-    assert round(x.norm(cpp.la.PETScVector.Norm.l2) - norm, 12) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - norm, 12) == 0
 
 
 @pytest.mark.skip
@@ -71,17 +71,17 @@ def test_krylov_reuse_pc_lu():
     solver.set_operator(A)
     x = PETScVector(mesh.mpi_comm())
     solver.solve(x, b)
-    assert round(x.norm(cpp.la.PETScVector.Norm.l2) - norm, 10) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - norm, 10) == 0
 
     assembler = fem.assembling.Assembler(Constant(0.5)*u*v*dx, L)
     assembler.assemble(A)
     x = PETScVector(mesh.mpi_comm())
     solver.solve(x, b)
-    assert round(x.norm(cpp.la.PETScVector.Norm.l2) - 2.0*norm, 10) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - 2.0*norm, 10) == 0
 
     solver.set_operator(A)
     solver.solve(x, b)
-    assert round(x.norm(cpp.la.PETScVector.Norm.l2) - 2.0*norm, 10) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - 2.0*norm, 10) == 0
 
 
 @pytest.mark.skip

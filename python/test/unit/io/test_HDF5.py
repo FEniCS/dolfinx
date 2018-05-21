@@ -49,7 +49,7 @@ def test_save_and_read_vector(tempdir):
         y = vector_file.read_vector(MPI.comm_world, "/my_vector", False)
         assert y.size() == x.size()
         x.axpy(-1.0,  y)
-        assert x.norm(dolfin.cpp.la.PETScVector.Norm.l2) == 0.0
+        assert x.norm(dolfin.cpp.la.Norm.l2) == 0.0
 
 
 @skip_if_not_HDF5
@@ -186,7 +186,7 @@ def test_save_and_read_function(tempdir):
     hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
     F1 = hdf5_file.read_function(Q, "/function")
     F0.vector().axpy(-1.0, F1.vector())
-    assert F0.vector().norm(dolfin.cpp.la.PETScVector.Norm.l2) < 1.0e-12
+    assert F0.vector().norm(dolfin.cpp.la.Norm.l2) < 1.0e-12
     hdf5_file.close()
 
 

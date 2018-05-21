@@ -197,7 +197,7 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
         u_in = file.read_checkpoint(V, "u_out", 0)
 
     u_in.vector().axpy(-1.0, u_out.vector())
-    assert u_in.vector().norm(cpp.la.PETScVector.Norm.l2) < 1.0e-12
+    assert u_in.vector().norm(cpp.la.Norm.l2) < 1.0e-12
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -234,7 +234,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
         u_in = file.read_checkpoint(V, "u_out", 0)
 
     u_in.vector().axpy(-1.0, u_out.vector())
-    assert u_in.vector().norm(cpp.la.PETScVector.Norm.l2) < 1.0e-12
+    assert u_in.vector().norm(cpp.la.Norm.l2) < 1.0e-12
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -262,14 +262,14 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     for i, p in enumerate(times):
         u_in[i].vector().axpy(-1.0, u_out[i].vector())
-        assert u_in[i].vector().norm(cpp.la.PETScVector.Norm.l2) < 1.0e-12
+        assert u_in[i].vector().norm(cpp.la.Norm.l2) < 1.0e-12
 
     # test reading last
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         u_in_last = file.read_checkpoint(V, "u_out", -1)
 
     u_out[-1].vector().axpy(-1.0, u_in_last.vector())
-    assert u_out[-1].vector().norm(cpp.la.PETScVector.Norm.l2) < 1.0e-12
+    assert u_out[-1].vector().norm(cpp.la.Norm.l2) < 1.0e-12
 
 
 @pytest.mark.parametrize("encoding", encodings)

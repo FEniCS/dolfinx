@@ -449,27 +449,27 @@ void PETScVector::abs()
   CHECK_ERROR("VecAbs");
 }
 //-----------------------------------------------------------------------------
-double PETScVector::norm(Norm norm_type) const
+double PETScVector::norm(la::Norm norm_type) const
 {
   assert(_x);
   PetscErrorCode ierr;
   double value = 0.0;
   switch (norm_type)
   {
-  case Norm::l1:
+  case la::Norm::l1:
     ierr = VecNorm(_x, NORM_1, &value);
     CHECK_ERROR("VecNorm");
     break;
-  case Norm::l2:
+  case la::Norm::l2:
     ierr = VecNorm(_x, NORM_2, &value);
     CHECK_ERROR("VecNorm");
     break;
-  case Norm::linf:
+  case la::Norm::linf:
     ierr = VecNorm(_x, NORM_INFINITY, &value);
     CHECK_ERROR("VecNorm");
     break;
   default:
-    throw std::runtime_error("Unknown PETSc Vec norm type");
+    throw std::runtime_error("Norm type not support for PETSc Vec");
   }
 
   return value;

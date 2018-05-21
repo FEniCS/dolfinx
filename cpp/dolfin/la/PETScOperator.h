@@ -9,7 +9,6 @@
 #include <array>
 #include <cinttypes>
 #include <cstddef>
-#include <memory>
 #include <petscmat.h>
 #include <string>
 
@@ -22,26 +21,23 @@ class PETScVector;
 /// This class is a base class for matrices that can be used in
 /// PETScKrylovSolver.
 
-class PETScBaseMatrix
+class PETScOperator
 {
 public:
   /// Constructor
-  PETScBaseMatrix() : _matA(nullptr) {}
+  PETScOperator() : _matA(nullptr) {}
 
   /// Constructor
-  explicit PETScBaseMatrix(Mat A);
+  explicit PETScOperator(Mat A);
 
-  /// Copy constructor
-  PETScBaseMatrix(const PETScBaseMatrix& A) = delete;
+  /// Copy constructor (deleted)
+  PETScOperator(const PETScOperator& A) = delete;
 
   /// Move constructor
-  PETScBaseMatrix(PETScBaseMatrix&& A);
+  PETScOperator(PETScOperator&& A);
 
   /// Destructor
-  ~PETScBaseMatrix();
-
-  /// Return number of rows (dim = 0) or columns (dim = 1)
-  std::int64_t size(std::size_t dim) const;
+  ~PETScOperator();
 
   /// Return number of rows and columns (num_rows, num_cols). PETSc
   /// returns -1 if size has not been set.
@@ -61,7 +57,7 @@ public:
   void init_vector(PETScVector& z, std::size_t dim) const;
 
   /// Return PETSc Mat pointer
-  Mat mat() const { return _matA; }
+  Mat mat() const;
 
   /// Return the MPI communicator
   MPI_Comm mpi_comm() const;

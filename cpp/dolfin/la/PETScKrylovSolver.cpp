@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PETScKrylovSolver.h"
-#include "PETScBaseMatrix.h"
 #include "PETScMatrix.h"
+#include "PETScOperator.h"
 #include "PETScVector.h"
 #include "VectorSpaceBasis.h"
 #include "utils.h"
@@ -56,13 +56,13 @@ PETScKrylovSolver::~PETScKrylovSolver()
     KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const la::PETScBaseMatrix& A)
+void PETScKrylovSolver::set_operator(const la::PETScOperator& A)
 {
   set_operators(A, A);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(const la::PETScBaseMatrix& A,
-                                      const la::PETScBaseMatrix& P)
+void PETScKrylovSolver::set_operators(const la::PETScOperator& A,
+                                      const la::PETScOperator& P)
 {
   assert(A.mat());
   assert(P.mat());
@@ -85,21 +85,20 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   assert(_A);
 
   // Create wrapper around PETSc Mat object
-  la::PETScBaseMatrix A(_A);
+  la::PETScOperator A(_A);
 
   PetscErrorCode ierr;
 
   // Check dimensions
-  const std::int64_t M = A.size(0);
-  const std::int64_t N = A.size(1);
-  if (M != b.size())
+  const std::array<std::int64_t, 2> size = A.size();
+  if (size[0] != b.size())
   {
     log::dolfin_error(
         "PETScKrylovSolver.cpp",
         "unable to solve linear system with PETSc Krylov solver",
         "Non-matching dimensions for linear system (matrix has %ld "
         "rows and right-hand side vector has %ld rows)",
-        M, b.size());
+        size[0], b.size());
   }
 
   // Initialize solution vector, if necessary
@@ -117,10 +116,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
 
   // Solve linear system
   if (dolfin::MPI::rank(this->mpi_comm()) == 0)
-  {
-    log::log(PROGRESS, "PETSc Krylov solver starting to solve %i x %i system.",
-             M, N);
-  }
+    log::log(PROGRESS, "PETSc Krylov solver starting to solve system.");
 
   // Solve system
   if (!transpose)
@@ -266,7 +262,7 @@ MPI_Comm PETScKrylovSolver::mpi_comm() const
 //-----------------------------------------------------------------------------
 KSP PETScKrylovSolver::ksp() const { return _ksp; }
 //-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::_solve(const la::PETScBaseMatrix& A,
+std::size_t PETScKrylovSolver::_solve(const la::PETScOperator& A,
                                       PETScVector& x, const PETScVector& b)
 {
   // Set operator
@@ -378,12 +374,14 @@ void PETScKrylovSolver::write_report(int num_iterations,
 #endif
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::check_dimensions(const la::PETScBaseMatrix& A,
+void PETScKrylovSolver::check_dimensions(const la::PETScOperator& A,
                                          const PETScVector& x,
                                          const PETScVector& b) const
 {
+  std::array<std::int64_t, 2> size = A.size();
+
   // Check dimensions of A
-  if (A.size(0) == 0 || A.size(1) == 0)
+  if (size[0] == 0 || size[1] == 0)
   {
     log::dolfin_error(
         "PETScKrylovSolver.cpp",
@@ -392,25 +390,25 @@ void PETScKrylovSolver::check_dimensions(const la::PETScBaseMatrix& A,
   }
 
   // Check dimensions of A vs b
-  if (A.size(0) != b.size())
+  if (size[0] != b.size())
   {
     log::dolfin_error(
         "PETScKrylovSolver.cpp",
         "unable to solve linear system with PETSc Krylov solver",
         "Non-matching dimensions for linear system (matrix has %ld "
         "rows and right-hand side vector has %ld rows)",
-        A.size(0), b.size());
+        size[0], b.size());
   }
 
   // Check dimensions of A vs x
-  if (!x.empty() && x.size() != A.size(1))
+  if (!x.empty() && x.size() != size[1])
   {
     log::dolfin_error(
         "PETScKrylovSolver.cpp",
         "unable to solve linear system with PETSc Krylov solver",
         "Non-matching dimensions for linear system (matrix has %ld "
         "columns and solution vector has %ld rows)",
-        A.size(1), x.size());
+        size[1], x.size());
   }
 }
 //-----------------------------------------------------------------------------

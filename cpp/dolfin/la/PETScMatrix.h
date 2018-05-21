@@ -7,7 +7,8 @@
 
 #pragma once
 
-#include "PETScBaseMatrix.h"
+#include "PETScOperator.h"
+#include "utils.h"
 #include <dolfin/common/types.h>
 #include <map>
 #include <memory>
@@ -33,17 +34,9 @@ class VectorSpaceBasis;
 /// access the PETSc Mat pointer using the function mat() and
 /// use the standard PETSc interface.
 
-class PETScMatrix : public PETScBaseMatrix
+class PETScMatrix : public PETScOperator
 {
 public:
-  /// Supported norm types
-  enum class Norm
-  {
-    l1,
-    linf,
-    frobenius
-  };
-
   /// Create empty matrix
   explicit PETScMatrix(MPI_Comm comm);
 
@@ -64,9 +57,6 @@ public:
 
   /// Return true if empty
   bool empty() const;
-
-  /// Return size of given dimension
-  std::int64_t size(std::size_t dim) const;
 
   /// Return local ownership range
   std::array<std::int64_t, 2> local_range(std::size_t dim) const;
@@ -151,7 +141,7 @@ public:
   void axpy(PetscScalar a, const PETScMatrix& A, bool same_nonzero_pattern);
 
   /// Return norm of matrix
-  double norm(Norm norm_type) const;
+  double norm(la::Norm norm_type) const;
 
   /// Set given rows (global row indices) to zero
   void zero(std::size_t m, const dolfin::la_index_t* rows);

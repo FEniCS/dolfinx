@@ -25,7 +25,7 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScBaseMatrix()
+PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScOperator()
 {
   // Create uninitialised matrix
   PetscErrorCode ierr = MatCreate(comm, &_matA);
@@ -33,12 +33,12 @@ PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScBaseMatrix()
     petsc_error(ierr, __FILE__, "MatCreate");
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
+PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)
 {
   // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix()
+PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScOperator()
 {
   assert(A.mat());
   if (!A.empty())
@@ -271,19 +271,14 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  auto sizes = la::PETScBaseMatrix::size();
+  auto sizes = la::PETScOperator::size();
   assert((sizes[0] < 1 and sizes[1] < 1) or (sizes[0] > 0 and sizes[1] > 0));
   return (sizes[0] < 1) and (sizes[1] < 1);
 }
 //-----------------------------------------------------------------------------
-std::int64_t PETScMatrix::size(std::size_t dim) const
-{
-  return PETScBaseMatrix::size(dim);
-}
-//-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScMatrix::local_range(std::size_t dim) const
 {
-  return PETScBaseMatrix::local_range(dim);
+  return PETScOperator::local_range(dim);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(PetscScalar* block, std::size_t m,
@@ -343,7 +338,7 @@ void PETScMatrix::add_local(const PetscScalar* block, std::size_t m,
 //-----------------------------------------------------------------------------
 void PETScMatrix::init_vector(PETScVector& z, std::size_t dim) const
 {
-  PETScBaseMatrix::init_vector(z, dim);
+  PETScOperator::init_vector(z, dim);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::axpy(PetscScalar a, const PETScMatrix& A,
@@ -413,8 +408,8 @@ void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
 void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 {
   assert(_matA);
-
-  if (this->size(1) != x.size())
+  const std::array<std::int64_t, 2> size = this->size();
+  if (size[1] != x.size())
   {
     log::dolfin_error("PETScMatrix.cpp",
                       "compute matrix-vector product with PETSc matrix",
@@ -425,7 +420,7 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
   if (y.size() == 0)
     init_vector(y, 0);
 
-  if (size(0) != y.size())
+  if (size[0] != y.size())
   {
     log::dolfin_error("PETScMatrix.cpp",
                       "compute matrix-vector product with PETSc matrix",
@@ -440,8 +435,8 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 void PETScMatrix::get_diagonal(PETScVector& x) const
 {
   assert(_matA);
-
-  if (size(1) != size(0) || size(0) != x.size())
+  const std::array<std::int64_t, 2> size = this->size();
+  if (size[1] != size[0] || size[0] != x.size())
   {
     log::dolfin_error(
         "PETScMatrix.cpp", "get diagonal of a PETSc matrix",
@@ -457,8 +452,8 @@ void PETScMatrix::get_diagonal(PETScVector& x) const
 void PETScMatrix::set_diagonal(const PETScVector& x)
 {
   assert(_matA);
-
-  if (size(1) != size(0) || size(0) != x.size())
+  const std::array<std::int64_t, 2> size = this->size();
+  if (size[1] != size[0] || size[0] != x.size())
   {
     log::dolfin_error(
         "PETScMatrix.cpp", "set diagonal of a PETSc matrix",
@@ -471,24 +466,24 @@ void PETScMatrix::set_diagonal(const PETScVector& x)
   apply(AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
-double PETScMatrix::norm(Norm norm_type) const
+double PETScMatrix::norm(la::Norm norm_type) const
 {
   assert(_matA);
   PetscErrorCode ierr;
   double value = 0.0;
   switch (norm_type)
   {
-  case Norm::l1:
+  case la::Norm::l1:
     ierr = MatNorm(_matA, NORM_1, &value);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "MatNorm");
     break;
-  case Norm::linf:
+  case la::Norm::linf:
     ierr = MatNorm(_matA, NORM_INFINITY, &value);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "MatNorm");
     break;
-  case Norm::frobenius:
+  case la::Norm::frobenius:
     ierr = MatNorm(_matA, NORM_FROBENIUS, &value);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "MatNorm");
@@ -519,7 +514,7 @@ void PETScMatrix::apply(AssemblyType type)
     petsc_error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
-MPI_Comm PETScMatrix::mpi_comm() const { return PETScBaseMatrix::mpi_comm(); }
+MPI_Comm PETScMatrix::mpi_comm() const { return PETScOperator::mpi_comm(); }
 //-----------------------------------------------------------------------------
 std::size_t PETScMatrix::nnz() const
 {
@@ -690,7 +685,10 @@ std::string PETScMatrix::str(bool verbose) const
     }
   }
   else
-    s << "<PETScMatrix of size " << size(0) << " x " << size(1) << ">";
+  {
+    const std::array<std::int64_t, 2> size = this->size();
+    s << "<PETScMatrix of size " << size[0] << " x " << size[1] << ">";
+  }
 
   return s.str();
 }

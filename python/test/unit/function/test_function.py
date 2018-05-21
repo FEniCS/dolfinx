@@ -357,10 +357,10 @@ def test_interpolation_old(V, W, mesh):
     f0 = F0(degree=0)
     f = Function(V)
     f = interpolate(f0, V)
-    assert round(f.vector().norm(cpp.la.PETScVector.Norm.l1) - mesh.num_vertices(), 7) == 0
+    assert round(f.vector().norm(cpp.la.Norm.l1) - mesh.num_vertices(), 7) == 0
 
     # Vector interpolation
     f1 = F1(degree=0)
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector().norm(cpp.la.PETScVector.Norm.l1) - 3*mesh.num_vertices(), 7) == 0
+    assert round(f.vector().norm(cpp.la.Norm.l1) - 3*mesh.num_vertices(), 7) == 0

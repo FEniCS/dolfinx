@@ -84,8 +84,8 @@ def test_numba_assembly():
     assembler.assemble(A, cpp.fem.Assembler.BlockType.monolithic)
     assembler.assemble(b, cpp.fem.Assembler.BlockType.monolithic)
 
-    Anorm = A.norm(cpp.la.PETScMatrix.Norm.frobenius)
-    bnorm = b.norm(cpp.la.PETScVector.Norm.l2)
+    Anorm = A.norm(cpp.la.Norm.frobenius)
+    bnorm = b.norm(cpp.la.Norm.l2)
 
     print(Anorm, bnorm)
 

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "utils.h"
 #include <array>
 #include <cstdint>
 #include <dolfin/common/ArrayView.h>
@@ -30,14 +31,6 @@ namespace la
 class PETScVector
 {
 public:
-  /// Supported norm types
-  enum class Norm
-  {
-    l1,
-    l2,
-    linf
-  };
-
   /// Create vector
   PETScVector(const common::IndexMap& map);
 
@@ -175,7 +168,7 @@ public:
   PetscScalar dot(const PETScVector& v) const;
 
   /// Return norm of vector
-  double norm(Norm norm_type) const;
+  double norm(la::Norm norm_type) const;
 
   /// Normalize vector with respect to the l2 norm. Returns the norm
   /// before normalization.

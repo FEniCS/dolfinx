@@ -168,11 +168,11 @@ a deep copy for further computations on the coefficient vectors::
 
 We can calculate the :math:`L^2` norms of u and p as follows::
 
-    print("Norm of velocity coefficient vector: %.15g" % u.vector().norm(dolfin.cpp.la.PETScVector.Norm.l2))
-    print("Norm of pressure coefficient vector: %.15g" % p.vector().norm(dolfin.cpp.la.PETScVector.Norm.l2))
+    print("Norm of velocity coefficient vector: %.15g" % u.vector().norm(dolfin.cpp.la.Norm.l2))
+    print("Norm of pressure coefficient vector: %.15g" % p.vector().norm(dolfin.cpp.la.Norm.l2))
 
     # Check pressure norm
-    pnorm = p.vector().norm(dolfin.cpp.la.PETScVector.Norm.l2)
+    pnorm = p.vector().norm(dolfin.cpp.la.Norm.l2)
     import numpy as np
     assert np.isclose(pnorm, 4116.91298427)
 

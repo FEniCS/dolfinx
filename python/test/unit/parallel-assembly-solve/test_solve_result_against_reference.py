@@ -46,7 +46,7 @@ def compute_norm(mesh, degree):
     # solver.solve(w.vector(), b)
 
     # Return norm of solution vector
-    return w.vector().norm(cpp.la.PETScVector.Norm.l2)
+    return w.vector().norm(cpp.la.Norm.l2)
 
 def print_reference(results):
     "Print nicely formatted values for gluing into code as a reference"

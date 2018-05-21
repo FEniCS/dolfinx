@@ -204,7 +204,7 @@ bool dolfin::nls::NewtonSolver::converged(
   const double atol = parameters["absolute_tolerance"];
   const bool report = parameters["report"];
 
-  _residual = r.norm(la::PETScVector::Norm::l2);
+  _residual = r.norm(la::Norm::l2);
 
   // If this is the first iteration step, set initial residual
   if (newton_iteration == 0)
