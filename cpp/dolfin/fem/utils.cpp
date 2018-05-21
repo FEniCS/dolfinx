@@ -295,7 +295,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
       if (I >= row_range[0] && I < row_range[1])
       {
         IJ[0] = I;
-        for (std::int64_t J = 0; J < A.size(1); J++)
+        for (std::int64_t J = 0; J < A.size()[1]; J++)
         {
           IJ[1] = J;
           A.set(&block, 1, &IJ[0], 1, &IJ[1]);
@@ -316,7 +316,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
     // Loop over rows and insert 0.0 on the diagonal
     const double block = 0.0;
     const auto row_range = A.local_range(0);
-    const std::int64_t range = std::min(row_range[1], A.size(1));
+    const std::int64_t range = std::min(row_range[1], A.size()[1]);
 
     for (std::int64_t i = row_range[0]; i < range; i++)
     {

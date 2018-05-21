@@ -86,7 +86,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         {
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], _bcs);
-          //mat.apply(la::PETScMatrix::AssemblyType::FINAL);
+          // mat.apply(la::PETScMatrix::AssemblyType::FINAL);
         }
         else
         {
@@ -137,7 +137,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
     // MPI::barrier(MPI_COMM_WORLD);
     std::int64_t offset_row = 0;
-    std::cout << "**** mat size: " << A.size(0) << ", " << A.size(1)
+    std::cout << "**** mat size: " << A.size()[0] << ", " << A.size()[0]
               << std::endl;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {

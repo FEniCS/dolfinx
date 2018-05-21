@@ -1,8 +1,8 @@
 set(HEADERS
   dolfin_la.h
-  PETScBaseMatrix.h
   PETScKrylovSolver.h
   PETScMatrix.h
+  PETScOperator.h
   PETScOptions.h
   PETScVector.h
   Scalar.h
@@ -13,9 +13,9 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  PETScBaseMatrix.cpp
   PETScKrylovSolver.cpp
   PETScMatrix.cpp
+  PETScOperator.cpp
   PETScOptions.cpp
   PETScVector.cpp
   SLEPcEigenSolver.cpp

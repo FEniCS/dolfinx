@@ -6,15 +6,11 @@
 
 #pragma once
 
-#include "PETScVector.h"
+#include <array>
 #include <cinttypes>
 #include <cstddef>
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/types.h>
-#include <memory>
 #include <petscmat.h>
 #include <string>
-#include <utility>
 
 namespace dolfin
 {
@@ -25,23 +21,29 @@ class PETScVector;
 /// This class is a base class for matrices that can be used in
 /// PETScKrylovSolver.
 
-class PETScBaseMatrix : public virtual common::Variable
+class PETScOperator
 {
 public:
   /// Constructor
-  PETScBaseMatrix() : _matA(nullptr) {}
+  PETScOperator() : _matA(nullptr) {}
 
   /// Constructor
-  explicit PETScBaseMatrix(Mat A);
+  explicit PETScOperator(Mat A);
 
-  /// Copy constructor
-  PETScBaseMatrix(const PETScBaseMatrix& A);
+  /// Copy constructor (deleted)
+  PETScOperator(const PETScOperator& A) = delete;
+
+  /// Move constructor
+  PETScOperator(PETScOperator&& A);
 
   /// Destructor
-  ~PETScBaseMatrix();
+  ~PETScOperator();
 
-  /// Return number of rows (dim = 0) or columns (dim = 1)
-  std::int64_t size(std::size_t dim) const;
+  /// Assignment operator (deleted)
+  PETScOperator& operator=(const PETScOperator& A) = delete;
+
+  /// Move assignment operator
+  PETScOperator& operator=(PETScOperator&& A);
 
   /// Return number of rows and columns (num_rows, num_cols). PETSc
   /// returns -1 if size has not been set.
@@ -58,23 +60,20 @@ public:
   ///         Vector to initialise
   /// @param      dim (std::size_t)
   ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-  void init_vector(PETScVector& z, std::size_t dim) const;
+  PETScVector init_vector(std::size_t dim) const;
 
   /// Return PETSc Mat pointer
-  Mat mat() const { return _matA; }
+  Mat mat() const;
 
   /// Return the MPI communicator
   MPI_Comm mpi_comm() const;
 
   /// Return informal string representation (pretty-print)
-  virtual std::string str(bool verbose) const
-  {
-    return "No str function for this PETSc matrix operator.";
-  }
+  virtual std::string str(bool verbose) const;
 
 protected:
   // PETSc Mat pointer
   Mat _matA;
 };
-}
-}
+} // namespace la
+} // namespace dolfin

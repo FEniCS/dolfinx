@@ -201,6 +201,6 @@ private:
   // SLEPc solver pointer
   EPS _eps;
 };
-}
-}
+} // namespace la
+} // namespace dolfin
 #endif
