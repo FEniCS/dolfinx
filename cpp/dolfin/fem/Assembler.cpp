@@ -412,31 +412,19 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       VecNestGetSubVec(b.vec(), i, &sub_b);
       if (_l[i])
       {
-        auto map = _l[i]->function_space(0)->dofmap()->index_map();
-        auto map_size = map->size(common::IndexMap::MapSize::ALL);
-        auto bs = map->block_size();
+        // Get local representation
+        Vec b_local;
+        VecGhostGetLocalForm(sub_b, &b_local);
+        assert(b_local);
+        this->assemble(b_local, *_l[i]);
+        // for (std::size_t j = 0; j < _a[i].size(); ++j)
+        //   apply_bc(vec, *_a[i][j], _bcs);
+        // set_bc(vec, *_l[i], _bcs);
+        VecGhostRestoreLocalForm(sub_b, &b_local);
 
-        // double* b_array;
-        // VecGetArray(sub_b, &b_array);
-        // Eigen::Map<EigenVectorXd> _b_array(b_array, map_size);
-        // this->assemble(_b_array, *_l[i]);
-        // VecRestoreArray(sub_b, &b_array);
-
-        EigenVectorXd _b_array(map_size * bs);
-        _b_array.setZero();
-        this->assemble(_b_array, *_l[i]);
-
-        la::PETScVector vec(sub_b);
-        std::vector<PetscInt> index(map_size * bs);
-        std::iota(index.begin(), index.end(), 0);
-
-        vec.add_local(_b_array.data(), map_size * bs, index.data());
-
-        for (std::size_t j = 0; j < _a[i].size(); ++j)
-          apply_bc(vec, *_a[i][j], _bcs);
-        set_bc(vec, *_l[i], _bcs);
-
-        vec.apply();
+        // Accumulate ghosts on owning process
+        VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
+        VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
       }
       else
       {
@@ -495,32 +483,18 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   }
   else
   {
-    auto map = _l[0]->function_space(0)->dofmap()->index_map();
-    auto map_size = map->size(common::IndexMap::MapSize::ALL);
-    auto bs = map->block_size();
-
-    std::cout << "Single Map size: " << map_size << std::endl;
-    std::cout << "b size: " << b.size() << std::endl;
-    std::cout << "num_maps: " << _l.size() << std::endl;
-
-    // double* b_array;
-    // VecGetArray(b.vec(), &b_array);
-    // Eigen::Map<EigenVectorXd> _b_array(b_array, map_size);
-    EigenVectorXd _b_array(map_size * bs);
-    _b_array.setZero();
-    this->assemble(_b_array, *_l[0]);
-
-    std::vector<PetscInt> index(map_size * bs);
-    std::iota(index.begin(), index.end(), 0);
-    b.add_local(_b_array.data(), map_size * bs, index.data());
-
-    // VecRestoreArray(b.vec(), &b_array);
-
-    // this->assemble(b, *_l[0]);
+    // Get local representation
+    Vec b_local;
+    VecGhostGetLocalForm(b.vec(), &b_local);
+    assert(b_local);
+    this->assemble(b_local, *_l[0]);
     // apply_bc(b, *_a[0][0], _bcs);
     // set_bc(b, *_l[0], _bcs);
-    // b.apply();
-    b.apply();
+    VecGhostRestoreLocalForm(b.vec(), &b_local);
+
+    // Accumulate ghosts on owning process
+    VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
   }
 }
 //-----------------------------------------------------------------------------
@@ -682,6 +656,23 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
   // Finalise matrix
   // A.apply(la::PETScMatrix::AssemblyType::FINAL);
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble(Vec b, const Form& L)
+{
+  // FIXME: Check that we have a sequential vector
+
+  // Get raw array
+  double* values;
+  VecGetArray(b, &values);
+
+  PetscInt size;
+  VecGetSize(b, &size);
+  Eigen::Map<EigenVectorXd> b_array(values, size);
+
+  assemble(b_array, L);
+
+  VecRestoreArray(b, &values);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
