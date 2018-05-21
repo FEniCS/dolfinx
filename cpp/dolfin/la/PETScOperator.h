@@ -39,6 +39,12 @@ public:
   /// Destructor
   ~PETScOperator();
 
+  /// Assignment operator (deleted)
+  PETScOperator& operator=(const PETScOperator& A) = delete;
+
+  /// Move assignment operator
+  PETScOperator& operator=(PETScOperator&& A);
+
   /// Return number of rows and columns (num_rows, num_cols). PETSc
   /// returns -1 if size has not been set.
   std::array<std::int64_t, 2> size() const;
@@ -54,7 +60,7 @@ public:
   ///         Vector to initialise
   /// @param      dim (std::size_t)
   ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-  void init_vector(PETScVector& z, std::size_t dim) const;
+  PETScVector init_vector(std::size_t dim) const;
 
   /// Return PETSc Mat pointer
   Mat mat() const;

@@ -177,8 +177,8 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
 
     // Wrap operator and initialize r and c
     PETScMatrix A_wrapped(A);
-    A_wrapped.init_vector(r, 0);
-    A_wrapped.init_vector(c, 0);
+    r = A_wrapped.init_vector(0);
+    c = A_wrapped.init_vector(0);
 
     // Get eigen pairs
     EPSGetEigenpair(_eps, ii, &lr, &lc, r.vec(), c.vec());

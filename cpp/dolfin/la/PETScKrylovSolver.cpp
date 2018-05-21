@@ -104,7 +104,7 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   // Initialize solution vector, if necessary
   if (x.empty())
   {
-    A.init_vector(x, 1);
+    x = A.init_vector(1);
     // Zero the vector unless PETSc does it for us
     PetscBool nonzero_guess;
     ierr = KSPGetInitialGuessNonzero(_ksp, &nonzero_guess);

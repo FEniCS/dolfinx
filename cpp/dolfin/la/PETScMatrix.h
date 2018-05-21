@@ -47,10 +47,17 @@ public:
   /// Copy constructor
   PETScMatrix(const PETScMatrix& A);
 
+  /// Move constructor (falls through to base class move constructor)
+  PETScMatrix(PETScMatrix&& A) = default;
+
   /// Destructor
   ~PETScMatrix();
 
-  //--- Implementation of the GenericTensor interface ---
+  /// Assignment operator (deleted)
+  PETScMatrix& operator=(const PETScMatrix& A) = delete;
+
+  /// Move assignment operator
+  PETScMatrix& operator=(PETScMatrix&& A) = default;
 
   /// Initialize zero tensor using sparsity pattern
   void init(const SparsityPattern& sparsity_pattern);
@@ -103,16 +110,6 @@ public:
     add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]);
   }
 
-  /// Initialize vector z to be compatible with the matrix-vector product
-  /// y = Ax. In the parallel case, both size and layout are
-  /// important.
-  ///
-  /// @param z (PETScVector&)
-  ///         Vector to initialise
-  /// @param  dim (std::size_t)
-  ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-  void init_vector(PETScVector& z, std::size_t dim) const;
-
   /// Get block of values
   void get(PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,
            std::size_t n, const dolfin::la_index_t* cols) const;
@@ -159,14 +156,8 @@ public:
   /// Set diagonal of a matrix
   void set_diagonal(const PETScVector& x);
 
-  /// Multiply matrix by given number
-  PETScMatrix& operator*=(PetscScalar a);
-
-  /// Divide matrix by given number
-  PETScMatrix& operator/=(PetscScalar a);
-
-  /// Assignment operator
-  PETScMatrix& operator=(const PETScMatrix& A);
+  /// Multiply matrix by scalar
+  void scale(PetscScalar a);
 
   /// Test if matrix is symmetric
   bool is_symmetric(double tol) const;

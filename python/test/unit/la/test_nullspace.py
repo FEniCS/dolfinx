@@ -105,8 +105,7 @@ def test_nullspace_check():
 
     # Assemble matrix and create compatible vector
     A = assemble(a)
-    x = PETScVector()
-    A.init_vector(x, 1)
+    x = A.init_vector(1)
 
     # Create null space basis and test
     null_space = build_elastic_nullspace(V, x)

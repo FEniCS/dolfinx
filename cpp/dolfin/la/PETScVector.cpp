@@ -419,8 +419,9 @@ bool PETScVector::empty() const
 //-----------------------------------------------------------------------------
 PETScVector& PETScVector::operator=(PETScVector&& v)
 {
+  Vec tmp = _x;
   _x = v._x;
-  v._x = nullptr;
+  v._x = tmp;
   return *this;
 }
 //-----------------------------------------------------------------------------

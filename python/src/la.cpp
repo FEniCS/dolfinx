@@ -228,6 +228,7 @@ void la(py::module& m)
   // dolfin::la::PETScOperator
   py::class_<dolfin::la::PETScOperator,
              std::shared_ptr<dolfin::la::PETScOperator>>(m, "PETScOperator")
+      .def("init_vector", &dolfin::la::PETScOperator::init_vector)
       .def("size", &dolfin::la::PETScOperator::size)
       .def("mat", &dolfin::la::PETScOperator::mat,
            "Return underlying PETSc Mat object");
@@ -244,13 +245,6 @@ void la(py::module& m)
       .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
       .def("set_nullspace", &dolfin::la::PETScMatrix::set_nullspace)
       .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace);
-  /*
-  .def("__sub__",
-       [](const dolfin::la::PETScMatrix& self, const dolfin::la::PETScMatrix& B)
-  { dolfin::la::PETScMatrix C(self); C -= B; return C;
-       },
-       py::is_operator());
-  */
 
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
@@ -332,14 +326,5 @@ void la(py::module& m)
       .def("dim", &dolfin::la::VectorSpaceBasis::dim)
       .def("__getitem__", &dolfin::la::VectorSpaceBasis::operator[]);
 
-  // la free functions
-  // m.def("has_linear_algebra_backend",
-  // &dolfin::has_linear_algebra_backend);
-  // m.def("linear_algebra_backends", &dolfin::linear_algebra_backends);
-  // m.def("has_krylov_solver_method", &dolfin::has_krylov_solver_method);
-  // m.def("has_krylov_solver_preconditioner",
-  // &dolfin::has_krylov_solver_preconditioner);
-  // m.def("normalize", &dolfin::normalize, py::arg("x"),
-  // py::arg("normalization_type")="average");
 }
 } // namespace dolfin_wrappers

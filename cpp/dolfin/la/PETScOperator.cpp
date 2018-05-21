@@ -26,7 +26,7 @@ PETScOperator::PETScOperator(Mat A) : _matA(A)
   }
 }
 //-----------------------------------------------------------------------------
-PETScOperator::PETScOperator(PETScOperator&& A)
+PETScOperator::PETScOperator(PETScOperator&& A) : _matA(nullptr)
 {
   _matA = A._matA;
   A._matA = nullptr;
@@ -38,6 +38,14 @@ PETScOperator::~PETScOperator()
   // reference counts reached zero)
   if (_matA)
     MatDestroy(&_matA);
+}
+//-----------------------------------------------------------------------------
+PETScOperator& PETScOperator::operator=(PETScOperator&& A)
+{
+  Mat tmp = _matA;
+  this->_matA = A._matA;
+  A._matA = tmp;
+  return *this;
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScOperator::size() const
@@ -67,7 +75,7 @@ std::array<std::int64_t, 2> PETScOperator::local_range(std::size_t dim) const
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-void PETScOperator::init_vector(PETScVector& z, std::size_t dim) const
+PETScVector PETScOperator::init_vector(std::size_t dim) const
 {
   assert(_matA);
   PetscErrorCode ierr;
@@ -95,10 +103,12 @@ void PETScOperator::init_vector(PETScVector& z, std::size_t dim) const
 
   // Associate new PETSc Vec with z (this will increase the reference
   // count to x)
-  z = PETScVector(x);
+  PETScVector z(x);
 
   // Decrease reference count
   VecDestroy(&x);
+
+  return z;
 }
 //-----------------------------------------------------------------------------
 Mat PETScOperator::mat() const { return _matA; }
