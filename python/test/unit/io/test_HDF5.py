@@ -6,6 +6,7 @@
 
 import pytest
 import os
+import dolfin
 from dolfin import *
 from dolfin_utils.test import (skip_if_not_HDF5, fixture, tempdir,
                                xfail_with_serial_hdf5_in_parallel)
@@ -47,7 +48,8 @@ def test_save_and_read_vector(tempdir):
     with HDF5File(MPI.comm_world, filename, "r") as vector_file:
         y = vector_file.read_vector(MPI.comm_world, "/my_vector", False)
         assert y.size() == x.size()
-        assert (x - y).norm("l1") == 0.0
+        x.axpy(-1.0,  y)
+        assert x.norm(dolfin.cpp.la.Norm.l2) == 0.0
 
 
 @skip_if_not_HDF5
@@ -183,8 +185,8 @@ def test_save_and_read_function(tempdir):
     # Read back from file
     hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
     F1 = hdf5_file.read_function(Q, "/function")
-    result = F0.vector() - F1.vector()
-    assert len(result.get_local().nonzero()[0]) == 0
+    F0.vector().axpy(-1.0, F1.vector())
+    assert F0.vector().norm(dolfin.cpp.la.Norm.l2) < 1.0e-12
     hdf5_file.close()
 
 

@@ -186,7 +186,7 @@ void Function::operator=(const function::FunctionAXPY& axpy)
   assert(axpy.pairs()[0].second);
   *this = *(axpy.pairs()[0].second);
   if (axpy.pairs()[0].first != 1.0)
-    *_vector *= axpy.pairs()[0].first;
+    _vector->scale(axpy.pairs()[0].first);
 
   // Start from item 2 and axpy
   std::vector<

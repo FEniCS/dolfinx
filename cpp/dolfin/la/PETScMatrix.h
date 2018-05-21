@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
+// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
+// N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -6,7 +7,9 @@
 
 #pragma once
 
-#include "PETScBaseMatrix.h"
+#include "PETScOperator.h"
+#include "utils.h"
+#include <dolfin/common/types.h>
 #include <map>
 #include <memory>
 #include <petscmat.h>
@@ -31,7 +34,7 @@ class VectorSpaceBasis;
 /// access the PETSc Mat pointer using the function mat() and
 /// use the standard PETSc interface.
 
-class PETScMatrix : public PETScBaseMatrix
+class PETScMatrix : public PETScOperator
 {
 public:
   /// Create empty matrix
@@ -44,10 +47,17 @@ public:
   /// Copy constructor
   PETScMatrix(const PETScMatrix& A);
 
+  /// Move constructor (falls through to base class move constructor)
+  PETScMatrix(PETScMatrix&& A) = default;
+
   /// Destructor
   ~PETScMatrix();
 
-  //--- Implementation of the GenericTensor interface ---
+  /// Assignment operator (deleted)
+  PETScMatrix& operator=(const PETScMatrix& A) = delete;
+
+  /// Move assignment operator
+  PETScMatrix& operator=(PETScMatrix&& A) = default;
 
   /// Initialize zero tensor using sparsity pattern
   void init(const SparsityPattern& sparsity_pattern);
@@ -55,17 +65,8 @@ public:
   /// Return true if empty
   bool empty() const;
 
-  /// Return size of given dimension
-  std::int64_t size(std::size_t dim) const
-  {
-    return PETScBaseMatrix::size(dim);
-  }
-
   /// Return local ownership range
-  std::array<std::int64_t, 2> local_range(std::size_t dim) const
-  {
-    return PETScBaseMatrix::local_range(dim);
-  }
+  std::array<std::int64_t, 2> local_range(std::size_t dim) const;
 
   /// Return number of non-zero entries in matrix (collective)
   std::size_t nnz() const;
@@ -109,19 +110,6 @@ public:
     add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]);
   }
 
-  /// Initialize vector z to be compatible with the matrix-vector product
-  /// y = Ax. In the parallel case, both size and layout are
-  /// important.
-  ///
-  /// @param z (PETScVector&)
-  ///         Vector to initialise
-  /// @param  dim (std::size_t)
-  ///         The dimension (axis): dim = 0 --> z = y, dim = 1 --> z = x
-  void init_vector(PETScVector& z, std::size_t dim) const
-  {
-    PETScBaseMatrix::init_vector(z, dim);
-  }
-
   /// Get block of values
   void get(PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,
            std::size_t n, const dolfin::la_index_t* cols) const;
@@ -150,7 +138,7 @@ public:
   void axpy(PetscScalar a, const PETScMatrix& A, bool same_nonzero_pattern);
 
   /// Return norm of matrix
-  double norm(std::string norm_type) const;
+  double norm(la::Norm norm_type) const;
 
   /// Set given rows (global row indices) to zero
   void zero(std::size_t m, const dolfin::la_index_t* rows);
@@ -168,20 +156,14 @@ public:
   /// Set diagonal of a matrix
   void set_diagonal(const PETScVector& x);
 
-  /// Multiply matrix by given number
-  const PETScMatrix& operator*=(PetscScalar a);
-
-  /// Divide matrix by given number
-  const PETScMatrix& operator/=(PetscScalar a);
-
-  /// Assignment operator
-  const PETScMatrix& operator=(const PETScMatrix& A);
+  /// Multiply matrix by scalar
+  void scale(PetscScalar a);
 
   /// Test if matrix is symmetric
-  virtual bool is_symmetric(double tol) const;
+  bool is_symmetric(double tol) const;
 
   /// Test if matrix is hermitian
-  virtual bool is_hermitian(double tol) const;
+  bool is_hermitian(double tol) const;
 
   //--- Special PETSc Functions ---
 
@@ -203,9 +185,6 @@ public:
   /// Attach 'near' nullspace to matrix (used by preconditioners,
   /// such as smoothed aggregation algerbraic multigrid)
   void set_near_nullspace(const la::VectorSpaceBasis& nullspace);
-
-  /// Dump matrix to PETSc binary format
-  void binary_dump(std::string file_name) const;
 
 private:
   // Create PETSc nullspace object

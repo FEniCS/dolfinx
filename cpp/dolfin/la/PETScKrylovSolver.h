@@ -21,7 +21,7 @@ class PETScDMCollection;
 
 namespace la
 {
-class PETScBaseMatrix;
+class PETScOperator;
 class PETScMatrix;
 class PETScVector;
 class VectorSpaceBasis;
@@ -45,13 +45,13 @@ public:
 
   /// Set operator (PETScMatrix). This is memory-safe as PETSc will
   /// increase the reference count to the underlying PETSc object.
-  void set_operator(const la::PETScBaseMatrix& A);
+  void set_operator(const la::PETScOperator& A);
 
   /// Set operator and preconditioner matrix (PETScMatrix). This is
   /// memory-safe as PETSc will increase the reference count to the
   /// underlying PETSc objects.
-  void set_operators(const la::PETScBaseMatrix& A,
-                     const la::PETScBaseMatrix& P);
+  void set_operators(const la::PETScOperator& A,
+                     const la::PETScOperator& P);
 
   /// Solve linear system Ax = b and return number of iterations
   /// (A^t x = b if transpose is true)
@@ -91,13 +91,13 @@ public:
 
 private:
   // Solve linear system Ax = b and return number of iterations
-  std::size_t _solve(const la::PETScBaseMatrix& A, PETScVector& x,
+  std::size_t _solve(const la::PETScOperator& A, PETScVector& x,
                      const PETScVector& b);
 
   // Report the number of iterations
   void write_report(int num_iterations, KSPConvergedReason reason);
 
-  void check_dimensions(const la::PETScBaseMatrix& A, const PETScVector& x,
+  void check_dimensions(const la::PETScOperator& A, const PETScVector& x,
                         const PETScVector& b) const;
 
   // PETSc solver pointer

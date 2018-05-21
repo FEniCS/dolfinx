@@ -77,7 +77,7 @@ void SLEPcEigenSolver::solve()
 
   // Wrap operator as short-cut to get size
   PETScMatrix A_wrapped(A);
-  solve(A_wrapped.size(0));
+  solve(A_wrapped.size()[0]);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(std::int64_t n)
@@ -90,7 +90,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 
   // Wrap operator as short-cut to get size
   PETScMatrix A_wrapped(A);
-  assert(n <= A_wrapped.size(0));
+  assert(n <= A_wrapped.size()[0]);
 #endif
 
   // Set number of eigenpairs to compute
@@ -177,8 +177,8 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
 
     // Wrap operator and initialize r and c
     PETScMatrix A_wrapped(A);
-    A_wrapped.init_vector(r, 0);
-    A_wrapped.init_vector(c, 0);
+    r = A_wrapped.init_vector(0);
+    c = A_wrapped.init_vector(0);
 
     // Get eigen pairs
     EPSGetEigenpair(_eps, ii, &lr, &lc, r.vec(), c.vec());

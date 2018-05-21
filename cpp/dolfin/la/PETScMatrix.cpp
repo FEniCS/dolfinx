@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2012 Johan Hoffman, Johan Jansson, Anders Logg
+// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
+// N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -23,10 +24,8 @@
 using namespace dolfin;
 using namespace dolfin::la;
 
-const std::map<std::string, NormType> PETScMatrix::norm_types
-    = {{"l1", NORM_1}, {"linf", NORM_INFINITY}, {"frobenius", NORM_FROBENIUS}};
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScBaseMatrix()
+PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScOperator()
 {
   // Create uninitialised matrix
   PetscErrorCode ierr = MatCreate(comm, &_matA);
@@ -34,12 +33,12 @@ PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScBaseMatrix()
     petsc_error(ierr, __FILE__, "MatCreate");
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A) : PETScBaseMatrix(A)
+PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)
 {
   // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScBaseMatrix()
+PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScOperator()
 {
   assert(A.mat());
   if (!A.empty())
@@ -67,8 +66,8 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   // Throw error if already initialised
   if (!empty())
   {
-    log::dolfin_error("PETScMatrix.cpp", "init PETSc matrix",
-                      "PETScMatrix may not be initialized more than once.");
+    throw std::runtime_error(
+        "PETScMatrix may not be initialized more than once.");
     MatDestroy(&_matA);
   }
 
@@ -272,9 +271,14 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  auto sizes = la::PETScBaseMatrix::size();
+  auto sizes = la::PETScOperator::size();
   assert((sizes[0] < 1 and sizes[1] < 1) or (sizes[0] > 0 and sizes[1] > 0));
   return (sizes[0] < 1) and (sizes[1] < 1);
+}
+//-----------------------------------------------------------------------------
+std::array<std::int64_t, 2> PETScMatrix::local_range(std::size_t dim) const
+{
+  return PETScOperator::local_range(dim);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::get(PetscScalar* block, std::size_t m,
@@ -399,24 +403,8 @@ void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
 void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 {
   assert(_matA);
-
-  if (this->size(1) != x.size())
-  {
-    log::dolfin_error("PETScMatrix.cpp",
-                      "compute matrix-vector product with PETSc matrix",
-                      "Non-matching dimensions for matrix-vector product");
-  }
-
-  // Resize RHS if empty
   if (y.size() == 0)
-    init_vector(y, 0);
-
-  if (size(0) != y.size())
-  {
-    log::dolfin_error("PETScMatrix.cpp",
-                      "compute matrix-vector product with PETSc matrix",
-                      "Vector for matrix-vector result has wrong size");
-  }
+    y = init_vector(0);
 
   PetscErrorCode ierr = MatMult(_matA, x.vec(), y.vec());
   if (ierr != 0)
@@ -426,12 +414,11 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 void PETScMatrix::get_diagonal(PETScVector& x) const
 {
   assert(_matA);
-
-  if (size(1) != size(0) || size(0) != x.size())
+  const std::array<std::int64_t, 2> size = this->size();
+  if (size[1] != size[0] || size[0] != x.size())
   {
-    log::dolfin_error(
-        "PETScMatrix.cpp", "get diagonal of a PETSc matrix",
-        "Matrix and vector dimensions don't match for matrix-vector set");
+    throw std::runtime_error(
+        "Matrix and vector dimensions do not match for matrix-vector set");
   }
 
   PetscErrorCode ierr = MatGetDiagonal(_matA, x.vec());
@@ -443,12 +430,11 @@ void PETScMatrix::get_diagonal(PETScVector& x) const
 void PETScMatrix::set_diagonal(const PETScVector& x)
 {
   assert(_matA);
-
-  if (size(1) != size(0) || size(0) != x.size())
+  const std::array<std::int64_t, 2> size = this->size();
+  if (size[1] != size[0] || size[0] != x.size())
   {
-    log::dolfin_error(
-        "PETScMatrix.cpp", "set diagonal of a PETSc matrix",
-        "Matrix and vector dimensions don't match for matrix-vector set");
+    throw std::runtime_error(
+        "Matrix and vector dimensions do not match for matrix-vector set");
   }
 
   PetscErrorCode ierr = MatDiagonalSet(_matA, x.vec(), INSERT_VALUES);
@@ -457,22 +443,32 @@ void PETScMatrix::set_diagonal(const PETScVector& x)
   apply(AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
-double PETScMatrix::norm(std::string norm_type) const
+double PETScMatrix::norm(la::Norm norm_type) const
 {
   assert(_matA);
-
-  // Check that norm is known
-  if (norm_types.count(norm_type) == 0)
+  PetscErrorCode ierr;
+  double value = 0.0;
+  switch (norm_type)
   {
-    log::dolfin_error("PETScMatrix.cpp", "compute norm of PETSc matrix",
-                      "Unknown norm type (\"%s\")", norm_type.c_str());
+  case la::Norm::l1:
+    ierr = MatNorm(_matA, NORM_1, &value);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "MatNorm");
+    break;
+  case la::Norm::linf:
+    ierr = MatNorm(_matA, NORM_INFINITY, &value);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "MatNorm");
+    break;
+  case la::Norm::frobenius:
+    ierr = MatNorm(_matA, NORM_FROBENIUS, &value);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "MatNorm");
+    break;
+  default:
+    throw std::runtime_error("Unknown PETSc Mat norm type");
   }
 
-  double value = 0.0;
-  PetscErrorCode ierr
-      = MatNorm(_matA, norm_types.find(norm_type)->second, &value);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNorm");
   return value;
 }
 //-----------------------------------------------------------------------------
@@ -495,7 +491,7 @@ void PETScMatrix::apply(AssemblyType type)
     petsc_error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
-MPI_Comm PETScMatrix::mpi_comm() const { return PETScBaseMatrix::mpi_comm(); }
+MPI_Comm PETScMatrix::mpi_comm() const { return PETScOperator::mpi_comm(); }
 //-----------------------------------------------------------------------------
 std::size_t PETScMatrix::nnz() const
 {
@@ -512,20 +508,12 @@ void PETScMatrix::zero()
     petsc_error(ierr, __FILE__, "MatZeroEntries");
 }
 //-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator*=(PetscScalar a)
+void PETScMatrix::scale(PetscScalar a)
 {
   assert(_matA);
   PetscErrorCode ierr = MatScale(_matA, a);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatScale");
-  return *this;
-}
-//-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator/=(PetscScalar a)
-{
-  assert(_matA);
-  MatScale(_matA, 1.0 / a);
-  return *this;
 }
 //-----------------------------------------------------------------------------
 bool PETScMatrix::is_symmetric(double tol) const
@@ -568,47 +556,9 @@ void PETScMatrix::set_from_options()
   MatSetFromOptions(_matA);
 }
 //-----------------------------------------------------------------------------
-const PETScMatrix& PETScMatrix::operator=(const PETScMatrix& A)
-{
-  if (!A.mat())
-  {
-    if (_matA)
-    {
-      log::dolfin_error("PETScMatrix.cpp", "assign to PETSc matrix",
-                        "PETScMatrix may not be initialized more than once.");
-      MatDestroy(&_matA);
-    }
-    _matA = NULL;
-  }
-  else if (this != &A) // Check for self-assignment
-  {
-    if (_matA)
-    {
-      // Get reference count to _matA
-      PetscInt ref_count = 0;
-      PetscObjectGetReference((PetscObject)_matA, &ref_count);
-      if (ref_count > 1)
-      {
-        log::dolfin_error(
-            "PETScMatrix.cpp", "assign to PETSc matrix",
-            "More than one object points to the underlying PETSc object");
-      }
-      log::dolfin_error("PETScMatrix.cpp", "assign to PETSc matrix",
-                        "PETScMatrix may not be initialized more than once.");
-      MatDestroy(&_matA);
-    }
-
-    // Duplicate with the same pattern as A.A
-    PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatDuplicate");
-  }
-  return *this;
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
 {
-  // Build PETSc nullspace
+  // Create PETSc nullspace
   MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
 
   // Attach PETSc nullspace to matrix
@@ -634,25 +584,6 @@ void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
 
   // Decrease reference count for nullspace
   MatNullSpaceDestroy(&petsc_ns);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::binary_dump(std::string file_name) const
-{
-  PetscErrorCode ierr;
-
-  PetscViewer view_out;
-  ierr = PetscViewerBinaryOpen(mpi_comm(), file_name.c_str(), FILE_MODE_WRITE,
-                               &view_out);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "PetscViewerBinaryOpen");
-
-  ierr = MatView(_matA, view_out);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatView");
-
-  ierr = PetscViewerDestroy(&view_out);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "PetscViewerDestroy");
 }
 //-----------------------------------------------------------------------------
 std::string PETScMatrix::str(bool verbose) const
@@ -685,7 +616,10 @@ std::string PETScMatrix::str(bool verbose) const
     }
   }
   else
-    s << "<PETScMatrix of size " << size(0) << " x " << size(1) << ">";
+  {
+    const std::array<std::int64_t, 2> size = this->size();
+    s << "<PETScMatrix of size " << size[0] << " x " << size[1] << ">";
+  }
 
   return s.str();
 }
