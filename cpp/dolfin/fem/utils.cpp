@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
