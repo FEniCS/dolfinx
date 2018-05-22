@@ -33,7 +33,7 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
   assert(!a.empty());
   assert(!a[0].empty());
 
-  // FIXME: check that a is square
+  // FIXME: check that a is rectangular
   // FIXME: a.size() = L.size()
   // FIXME: check ranks
   // FIXME: check that function spaces in the blocks match, and are not
@@ -43,28 +43,43 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 {
+  std::cout << "Star matrix assembly" << std::endl;
   // Check if matrix should be nested
   assert(!_a.empty());
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
 
+  std::cout << "Star matrix assembly (1)" << std::endl;
   if (A.empty())
   {
+    std::cout << "Star matrix assembly (2)" << std::endl;
+
     std::vector<std::vector<const Form*>> forms(
         _a.size(), std::vector<const Form*>(_a[0].size()));
     for (std::size_t i = 0; i < _a.size(); ++i)
       for (std::size_t j = 0; j < _a[i].size(); ++j)
         forms[i][j] = _a[i][j].get();
 
+    std::cout << "Star matrix assembly (3)" << std::endl;
     // Initialise matrix
     if (block_type == BlockType::nested)
     {
       std::cout << "Init MatNest" << std::endl;
       fem::init_nest(A, forms);
+      std::cout << "Post Init MatNest" << std::endl;
     }
     else if (block_matrix and block_type == BlockType::monolithic)
+    {
+      std::cout << "Star matrix assembly (4)" << std::endl;
       fem::init_monolithic(A, forms);
+      std::cout << "Star matrix assembly (5)" << std::endl;
+    }
     else
+    {
+      std::cout << "Star matrix assembly (6)" << std::endl;
       init(A, *_a[0][0]);
+      std::cout << "Star matrix assembly (7)" << std::endl;
+
+    }
   }
 
   // Get PETSc matrix type
@@ -137,8 +152,6 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
     // MPI::barrier(MPI_COMM_WORLD);
     std::int64_t offset_row = 0;
-    std::cout << "**** mat size: " << A.size()[0] << ", " << A.size()[0]
-              << std::endl;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
       // Loop over columns

@@ -236,10 +236,12 @@ void la(py::module& m)
   // dolfin::la::PETScMatrix
   py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
              dolfin::la::PETScOperator>(m, "PETScMatrix", "PETScMatrix object")
-      .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfin::la::PETScMatrix>(comm.get());
-      }))
+      .def(py::init<>())
       .def(py::init<Mat>())
+      .def(py::init(
+          [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
+            return std::make_unique<dolfin::la::PETScMatrix>(comm.get(), p);
+          }))
       .def("norm", &dolfin::la::PETScMatrix::norm)
       .def("get_options_prefix", &dolfin::la::PETScMatrix::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
@@ -325,6 +327,5 @@ void la(py::module& m)
            py::arg("tol") = 1.0e-10)
       .def("dim", &dolfin::la::VectorSpaceBasis::dim)
       .def("__getitem__", &dolfin::la::VectorSpaceBasis::operator[]);
-
 }
 } // namespace dolfin_wrappers

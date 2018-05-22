@@ -26,19 +26,20 @@ namespace la
 class SparsityPattern;
 class VectorSpaceBasis;
 
-/// This class provides a simple matrix class based on PETSc.
-/// It is a wrapper for a PETSc matrix pointer (Mat)
-/// implementing the GenericMatrix interface.
+/// This class provides a simple matrix class based on PETSc. It is a
+/// wrapper for a PETSc matrix pointer (Mat) implementing the
+/// GenericMatrix interface.
 ///
-/// The interface is intentionally simple. For advanced usage,
-/// access the PETSc Mat pointer using the function mat() and
-/// use the standard PETSc interface.
+/// For advanced usage, access the PETSc Mat pointer using the function
+/// mat() and use the standard PETSc interface.
 
 class PETScMatrix : public PETScOperator
 {
 public:
   /// Create empty matrix
-  explicit PETScMatrix(MPI_Comm comm);
+  PETScMatrix();
+
+  PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 
   /// Create a wrapper around a PETSc Mat pointer. The Mat object
   /// should have been created, e.g. via PETSc MatCreate.
@@ -58,9 +59,6 @@ public:
 
   /// Move assignment operator
   PETScMatrix& operator=(PETScMatrix&& A) = default;
-
-  /// Initialize zero tensor using sparsity pattern
-  void init(const SparsityPattern& sparsity_pattern);
 
   /// Return true if empty
   bool empty() const;
@@ -95,20 +93,6 @@ public:
 
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
-
-  /// Set block of values using local indices
-  void set_local(const PetscScalar* block, const dolfin::la_index_t* num_rows,
-                 const dolfin::la_index_t* const* rows)
-  {
-    set_local(block, num_rows[0], rows[0], num_rows[1], rows[1]);
-  }
-
-  /// Add block of values using local indices
-  void add_local(const PetscScalar* block, const dolfin::la_index_t* num_rows,
-                 const dolfin::la_index_t* const* rows)
-  {
-    add_local(block, num_rows[0], rows[0], num_rows[1], rows[1]);
-  }
 
   /// Get block of values
   void get(PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,

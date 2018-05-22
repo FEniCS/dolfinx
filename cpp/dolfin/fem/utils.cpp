@@ -53,8 +53,10 @@ void fem::init_nest(la::PETScMatrix& A,
     {
       if (a[i][j])
       {
-        mats[i][j] = std::make_shared<la::PETScMatrix>(A.mpi_comm());
+        mats[i][j] = std::make_shared<la::PETScMatrix>();
+        std::cout << "  init mat" << std::endl;
         init(*mats[i][j], *a[i][j]);
+        std::cout << "  post init mat" << std::endl;
         petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
@@ -63,10 +65,13 @@ void fem::init_nest(la::PETScMatrix& A,
   }
 
   // Initialise block (MatNest) matrix
-  MatSetType(A.mat(), MATNEST);
-  MatNestSetSubMats(A.mat(), petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
+  Mat _A;
+  MatCreate(a[0][0]->mesh()->mpi_comm(), &_A);
+  MatSetType(_A, MATNEST);
+  MatNestSetSubMats(_A, petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
                     NULL, petsc_mats.data());
-  MatSetUp(A.mat());
+  MatSetUp(_A);
+  A = la::PETScMatrix(_A);
 }
 //-----------------------------------------------------------------------------
 la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
@@ -135,11 +140,11 @@ void fem::init_monolithic(la::PETScMatrix& A,
 
   // Create merged sparsity pattern
   // std::cout << "  Build merged sparsity pattern" << std::endl;
-  la::SparsityPattern pattern(A.mpi_comm(), p);
+  la::SparsityPattern pattern(a[0][0]->mesh()->mpi_comm(), p);
 
   // Initialise matrix
   // std::cout << "  Init parent matrix" << std::endl;
-  A.init(pattern);
+  A = la::PETScMatrix(a[0][0]->mesh()->mpi_comm(), pattern);
   // std::cout << "  Post init parent matrix" << std::endl;
 
   // Build list of row and column index maps (over each block)
@@ -261,7 +266,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 
   // Create and build sparsity pattern
   la::SparsityPattern pattern = SparsityPatternBuilder::build(
-      A.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
+      mesh.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
       (a.integrals().num_interior_facet_integrals() > 0),
       (a.integrals().num_exterior_facet_integrals() > 0),
       (a.integrals().num_vertex_integrals() > 0), keep_diagonal);
@@ -269,7 +274,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 
   // Initialize matrix
   common::Timer t1("Init tensor");
-  A.init(pattern);
+  A = la::PETScMatrix(a.mesh()->mpi_comm(), pattern);
   t1.stop();
 
   // Insert zeros to dense rows in increasing order of column index

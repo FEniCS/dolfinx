@@ -52,9 +52,7 @@ class Assembler:
 
         # Create matrix/vector (if required)
         if A is None:
-            # comm = A_dolfin_form.mesh().mpi_comm()
-            comm = cpp.MPI.comm_world
-            A = cpp.la.PETScMatrix(comm)
+            A = cpp.la.PETScMatrix()
         if b is None:
             b = cpp.la.PETScVector()
 

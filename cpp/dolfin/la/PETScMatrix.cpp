@@ -25,53 +25,22 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(MPI_Comm comm) : PETScOperator()
+PETScMatrix::PETScMatrix() : PETScOperator()
 {
+  // // Create uninitialised matrix
+  // PetscErrorCode ierr = MatCreate(comm, &_matA);
+  // if (ierr != 0)
+  //   petsc_error(ierr, __FILE__, "MatCreate");
+}
+//-----------------------------------------------------------------------------
+PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
+{
+  PetscErrorCode ierr;
+
   // Create uninitialised matrix
-  PetscErrorCode ierr = MatCreate(comm, &_matA);
+  ierr = MatCreate(comm, &_matA);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatCreate");
-}
-//-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)
-{
-  // Reference count to A is incremented in base class
-}
-//-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScOperator()
-{
-  assert(A.mat());
-  if (!A.empty())
-  {
-    PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatDuplicate");
-  }
-  else
-  {
-    // Create uninitialised matrix
-    PetscErrorCode ierr = MatCreate(A.mpi_comm(), &_matA);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatCreate");
-  }
-}
-//-----------------------------------------------------------------------------
-PETScMatrix::~PETScMatrix()
-{
-  // Do nothing (PETSc matrix is destroyed in base class)
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
-{
-  // Throw error if already initialised
-  if (!empty())
-  {
-    throw std::runtime_error(
-        "PETScMatrix may not be initialized more than once.");
-    MatDestroy(&_matA);
-  }
-
-  PetscErrorCode ierr;
 
   // Get common::IndexMaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
@@ -267,10 +236,41 @@ void PETScMatrix::init(const la::SparsityPattern& sparsity_pattern)
   ierr = MatSetOption(_matA, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetOption");
+
+}
+//-----------------------------------------------------------------------------
+PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)
+{
+  // Reference count to A is incremented in base class
+}
+//-----------------------------------------------------------------------------
+PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScOperator()
+{
+  assert(A.mat());
+  if (!A.empty())
+  {
+    PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "MatDuplicate");
+  }
+  else
+  {
+    // Create uninitialised matrix
+    PetscErrorCode ierr = MatCreate(A.mpi_comm(), &_matA);
+    if (ierr != 0)
+      petsc_error(ierr, __FILE__, "MatCreate");
+  }
+}
+//-----------------------------------------------------------------------------
+PETScMatrix::~PETScMatrix()
+{
+  // Do nothing (PETSc matrix is destroyed in base class)
 }
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
+  if (!_matA)
+    return true;
   auto sizes = la::PETScOperator::size();
   assert((sizes[0] < 1 and sizes[1] < 1) or (sizes[0] > 0 and sizes[1] > 0));
   return (sizes[0] < 1) and (sizes[1] < 1);
