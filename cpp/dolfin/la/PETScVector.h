@@ -10,7 +10,6 @@
 #include "utils.h"
 #include <array>
 #include <cstdint>
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <memory>

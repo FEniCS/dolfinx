@@ -6,7 +6,6 @@
 
 #include "GraphBuilder.h"
 #include <algorithm>
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -39,18 +38,17 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   // Build graph
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    auto _dofs0 = dofmap0.cell_dofs(cell.index());
-    auto _dofs1 = dofmap1.cell_dofs(cell.index());
+    Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>> dofs0
+        = dofmap0.cell_dofs(cell.index());
+    Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>> dofs1
+        = dofmap1.cell_dofs(cell.index());
 
-    common::ArrayView<const dolfin::la_index_t> dofs0(_dofs0.size(),
-                                                      _dofs0.data());
-    common::ArrayView<const dolfin::la_index_t> dofs1(_dofs1.size(),
-                                                      _dofs1.data());
-
-    for (auto node0 : dofs0)
-      for (auto node1 : dofs1)
-        if (node0 != node1)
-          graph[node0].insert(node1);
+    for (Eigen::Index i = 0; i < dofs0.size(); ++i)
+    {
+      for (Eigen::Index j = 0; j < dofs1.size(); ++j)
+        if (dofs0[i] != dofs1[j])
+          graph[dofs0[i]].insert(dofs1[j]);
+    }
   }
 
   return graph;
