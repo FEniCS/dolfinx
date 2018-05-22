@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -332,93 +331,6 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
   }
 
   return A;
-}
-//-----------------------------------------------------------------------------
-std::vector<std::size_t>
-dolfin::fem::dof_to_vertex_map(const function::FunctionSpace& space)
-{
-  // Get vertex_to_dof_map and invert it
-  const std::vector<dolfin::la_index_t> vertex_map = vertex_to_dof_map(space);
-  std::vector<std::size_t> return_map(vertex_map.size());
-  for (std::size_t i = 0; i < vertex_map.size(); i++)
-    return_map[vertex_map[i]] = i;
-  return return_map;
-}
-//-----------------------------------------------------------------------------
-std::vector<dolfin::la_index_t>
-dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
-{
-  // Get the mesh
-  assert(space.mesh());
-  assert(space.dofmap());
-  const mesh::Mesh& mesh = *space.mesh();
-  const GenericDofMap& dofmap = *space.dofmap();
-
-  if (dofmap.is_view())
-    std::runtime_error("Cannot tabulate vertex_to_dof_map for a subspace");
-
-  // Initialize vertex to cell connections
-  const std::size_t top_dim = mesh.topology().dim();
-  mesh.init(0, top_dim);
-
-  // Num dofs per vertex
-  const std::size_t dofs_per_vertex = dofmap.num_entity_dofs(0);
-  const std::size_t vert_per_cell
-      = mesh.topology().connectivity(top_dim, 0).size(0);
-  if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
-    std::runtime_error("Can only tabulate dofs on vertices");
-
-  // Allocate data for tabulating local to local map
-  std::vector<int> local_to_local_map(dofs_per_vertex);
-
-  // Create return data structure
-  std::vector<dolfin::la_index_t> return_map(dofs_per_vertex
-                                             * mesh.num_entities(0));
-
-  // Iterate over all vertices (including ghosts)
-  std::size_t local_vertex_ind = 0;
-  const auto v_begin = mesh::MeshIterator<mesh::Vertex>(mesh, 0);
-  const auto v_end
-      = mesh::MeshIterator<mesh::Vertex>(mesh, mesh.num_entities(0));
-  for (auto vertex = v_begin; vertex != v_end; ++vertex)
-  {
-    // Get the first cell connected to the vertex
-    const mesh::Cell cell(mesh, vertex->entities(top_dim)[0]);
-
-// Find local vertex number
-#ifdef DEBUG
-    bool vertex_found = false;
-#endif
-    for (std::size_t i = 0; i < cell.num_entities(0); i++)
-    {
-      if (cell.entities(0)[i] == vertex->index())
-      {
-        local_vertex_ind = i;
-#ifdef DEBUG
-        vertex_found = true;
-#endif
-        break;
-      }
-    }
-    assert(vertex_found);
-
-    // Get all cell dofs
-    auto cell_dofs = dofmap.cell_dofs(cell.index());
-
-    // Tabulate local to local map of dofs on local vertex
-    dofmap.tabulate_entity_dofs(local_to_local_map, 0, local_vertex_ind);
-
-    // Fill local dofs for the vertex
-    for (std::size_t local_dof = 0; local_dof < dofs_per_vertex; local_dof++)
-    {
-      const dolfin::la_index_t global_dof
-          = cell_dofs[local_to_local_map[local_dof]];
-      return_map[dofs_per_vertex * vertex->index() + local_dof] = global_dof;
-    }
-  }
-
-  // Return the map
-  return return_map;
 }
 //-----------------------------------------------------------------------------
 std::size_t

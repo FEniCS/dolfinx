@@ -12,7 +12,6 @@ namespace dolfin
 
 // DOLFIN common
 
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/SubSystemsManager.h>

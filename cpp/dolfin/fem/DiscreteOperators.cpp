@@ -6,7 +6,6 @@
 
 #include "DiscreteOperators.h"
 #include <array>
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/FunctionSpace.h>
