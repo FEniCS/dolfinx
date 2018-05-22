@@ -39,17 +39,16 @@ namespace fem
 class Form;
 
 /// Initialise matrix. Matrix is not zeroed.
-void init(la::PETScMatrix& A, const Form& a);
+la::PETScMatrix init_matrix(const Form& a);
 
 /// Initialise nested (MatNest) matrix. Matrix is not zeroed.
-void init_nest(la::PETScMatrix& A,
-               std::vector<std::vector<const fem::Form*>> a);
+la::PETScMatrix init_nest_matrix(std::vector<std::vector<const fem::Form*>> a);
 
 /// Initialise nested (VecNest) vector. Vector is not zeroed.
 la::PETScVector init_nest(std::vector<const fem::Form*> L);
 
 /// Initialise monolithic  matrix. Matrix is not zeroed.
-void init_monolithic(la::PETScMatrix& A,
+la::PETScMatrix init_monolithic_matrix(
                      std::vector<std::vector<const fem::Form*>> a);
 
 /// Initialise monolithic vector. Vector is not zeroed.

@@ -59,24 +59,21 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       for (std::size_t j = 0; j < _a[i].size(); ++j)
         forms[i][j] = _a[i][j].get();
 
-    std::cout << "Star matrix assembly (3)" << std::endl;
     // Initialise matrix
     if (block_type == BlockType::nested)
     {
-      std::cout << "Init MatNest" << std::endl;
-      fem::init_nest(A, forms);
-      std::cout << "Post Init MatNest" << std::endl;
+      A = fem::init_nest_matrix(forms);
     }
     else if (block_matrix and block_type == BlockType::monolithic)
     {
       std::cout << "Star matrix assembly (4)" << std::endl;
-      fem::init_monolithic(A, forms);
+      A = fem::init_monolithic_matrix(forms);
       std::cout << "Star matrix assembly (5)" << std::endl;
     }
     else
     {
       std::cout << "Star matrix assembly (6)" << std::endl;
-      init(A, *_a[0][0]);
+      A = init_matrix(*_a[0][0]);
       std::cout << "Star matrix assembly (7)" << std::endl;
 
     }

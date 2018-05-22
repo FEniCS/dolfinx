@@ -36,8 +36,8 @@ la::PETScVector dolfin::fem::init_vector(const Form& L)
   return la::PETScVector(*index_map);
 }
 //-----------------------------------------------------------------------------
-void fem::init_nest(la::PETScMatrix& A,
-                    std::vector<std::vector<const fem::Form*>> a)
+la::PETScMatrix
+fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
 {
   // FIXME: check that a is square
 
@@ -53,10 +53,10 @@ void fem::init_nest(la::PETScMatrix& A,
     {
       if (a[i][j])
       {
-        mats[i][j] = std::make_shared<la::PETScMatrix>();
-        std::cout << "  init mat" << std::endl;
-        init(*mats[i][j], *a[i][j]);
-        std::cout << "  post init mat" << std::endl;
+        mats[i][j] = std::make_shared<la::PETScMatrix>(init_matrix(*a[i][j]) );
+        // std::cout << "  init mat" << std::endl;
+        // init(*mats[i][j], *a[i][j]);
+        // std::cout << "  post init mat" << std::endl;
         petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
@@ -71,7 +71,7 @@ void fem::init_nest(la::PETScMatrix& A,
   MatNestSetSubMats(_A, petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
                     NULL, petsc_mats.data());
   MatSetUp(_A);
-  A = la::PETScMatrix(_A);
+  return la::PETScMatrix(_A);
 }
 //-----------------------------------------------------------------------------
 la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
@@ -97,7 +97,7 @@ la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
   return la::PETScVector(y);
 }
 //-----------------------------------------------------------------------------
-void fem::init_monolithic(la::PETScMatrix& A,
+la::PETScMatrix fem::init_monolithic_matrix(
                           std::vector<std::vector<const fem::Form*>> a)
 {
   // FIXME: handle null blocks
@@ -144,7 +144,7 @@ void fem::init_monolithic(la::PETScMatrix& A,
 
   // Initialise matrix
   // std::cout << "  Init parent matrix" << std::endl;
-  A = la::PETScMatrix(a[0][0]->mesh()->mpi_comm(), pattern);
+  la::PETScMatrix A(a[0][0]->mesh()->mpi_comm(), pattern);
   // std::cout << "  Post init parent matrix" << std::endl;
 
   // Build list of row and column index maps (over each block)
@@ -165,8 +165,7 @@ void fem::init_monolithic(la::PETScMatrix& A,
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     auto map = a[i][0]->function_space(0)->dofmap()->index_map();
-    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
-         ++k)
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
     {
       auto index_k = map->local_to_global(k);
       std::size_t index = get_global_index(index_maps[0], i, index_k);
@@ -176,8 +175,7 @@ void fem::init_monolithic(la::PETScMatrix& A,
   for (std::size_t i = 0; i < a[0].size(); ++i)
   {
     auto map = a[0][i]->function_space(1)->dofmap()->index_map();
-    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL);
-         ++k)
+    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
     {
       auto index_k = map->local_to_global(k);
       std::size_t index = get_global_index(index_maps[1], i, index_k);
@@ -201,6 +199,8 @@ void fem::init_monolithic(la::PETScMatrix& A,
   // Clean up local-to-global maps
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+
+  return A;
 }
 //-----------------------------------------------------------------------------
 la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
@@ -237,7 +237,7 @@ la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
+la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
 {
   bool keep_diagonal = false;
   if (a.rank() != 2)
@@ -245,9 +245,6 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
     throw std::runtime_error(
         "Cannot initialise matrx. Form is not a bilinear form");
   }
-
-  if (!A.empty())
-    throw std::runtime_error("Cannot initialise layout of non-empty matrix");
 
   // Get dof maps
   std::array<const GenericDofMap*, 2> dofmaps
@@ -274,7 +271,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 
   // Initialize matrix
   common::Timer t1("Init tensor");
-  A = la::PETScMatrix(a.mesh()->mpi_comm(), pattern);
+  la::PETScMatrix A(a.mesh()->mpi_comm(), pattern);
   t1.stop();
 
   // Insert zeros to dense rows in increasing order of column index
@@ -333,6 +330,8 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 
     A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
+
+  return A;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::size_t>
