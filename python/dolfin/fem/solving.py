@@ -187,8 +187,8 @@ def _solve_varproblem(*args, **kwargs):
     # Solve linear variational problem
     if isinstance(eq.lhs, ufl.Form) and isinstance(eq.rhs, ufl.Form):
 
-        a = Form(eq.lhs)
-        L = Form(eq.rhs)
+        a = Form(eq.lhs, form_compiler_parameters=form_compiler_parameters)
+        L = Form(eq.rhs, form_compiler_parameters=form_compiler_parameters)
 
         comm = L.mesh().mpi_comm()
         A = PETScMatrix(comm)
