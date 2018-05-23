@@ -36,6 +36,7 @@ class VectorSpaceBasis;
 class PETScMatrix : public PETScOperator
 {
 public:
+  // FIXME: Remove?
   /// Create empty matrix
   PETScMatrix();
 

@@ -42,9 +42,10 @@ PETScOperator::~PETScOperator()
 //-----------------------------------------------------------------------------
 PETScOperator& PETScOperator::operator=(PETScOperator&& A)
 {
-  Mat tmp = _matA;
-  this->_matA = A._matA;
-  A._matA = tmp;
+  if (_matA)
+    MatDestroy(&_matA);
+  _matA = A._matA;
+  A._matA = nullptr;
   return *this;
 }
 //-----------------------------------------------------------------------------
