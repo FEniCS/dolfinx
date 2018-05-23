@@ -152,10 +152,8 @@ def assemble_system(A_form,
     b_dolfin_form = _create_dolfin_form(b_form, form_compiler_parameters)
 
     # Create tensors
-    comm_A = A_dolfin_form.mesh().mpi_comm()
-    # comm_b = A_dolfin_form.mesh().mpi_comm()
     if A_tensor is None:
-        A_tensor = cpp.la.PETScMatrix(comm_A)
+        A_tensor = cpp.la.PETScMatrix()
     if b_tensor is None:
         b_tensor = cpp.la.PETScVector()
 
