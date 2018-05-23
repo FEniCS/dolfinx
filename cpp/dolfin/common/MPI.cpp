@@ -49,8 +49,10 @@ void dolfin::MPI::Comm::free()
   {
     int err = MPI_Comm_free(&_comm);
     if (err != MPI_SUCCESS)
+    {
       std::cout << "Error when destroying communicator (MPI_Comm_free)."
                 << std::endl;
+    }
   }
 #endif
 }

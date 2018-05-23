@@ -174,7 +174,7 @@ a finite element function space. Next, we can call the :py:func:`solve
 
     # Compute solution
     u = Function(V)
-    solve(a == L, u, bc)
+    solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 
 The function ``u`` will be modified during the call to solve. The
 default settings for solving a variational problem have been
@@ -188,8 +188,8 @@ for later visualization and also plot it using
 the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 
     # Save solution in XDMF format
-    file = XDMFFile(MPI.comm_world, "poisson.xdmf")
-    file.write(u, XDMFFile.Encoding.HDF5)
+    with XDMFFile(MPI.comm_world, "poisson.xdmf") as file:
+        file.write(u, XDMFFile.Encoding.HDF5)
 
     # Plot solution
     import matplotlib.pyplot as plt

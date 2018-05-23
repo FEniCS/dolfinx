@@ -126,11 +126,11 @@ public:
   void solve(std::int64_t n);
 
   /// Get ith eigenvalue
-  void get_eigenvalue(double& lr, double& lc, std::size_t i) const;
+  std::complex<PetscReal> get_eigenvalue(std::size_t i) const;
 
   /// Get ith eigenpair
-  void get_eigenpair(double& lr, double& lc, PETScVector& r, PETScVector& c,
-                     std::size_t i) const;
+  void get_eigenpair(PetscScalar& lr, PetscScalar& lc, PETScVector& r,
+                     PETScVector& c, std::size_t i) const;
 
   /// Get the number of iterations used by the solver
   std::size_t get_iteration_number() const;
@@ -201,6 +201,6 @@ private:
   // SLEPc solver pointer
   EPS _eps;
 };
-}
-}
+} // namespace la
+} // namespace dolfin
 #endif

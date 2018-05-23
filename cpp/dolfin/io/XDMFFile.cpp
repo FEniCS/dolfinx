@@ -445,6 +445,12 @@ void XDMFFile::write(const function::Function& u, double time_step,
       _hdf5_file = std::make_unique<HDF5File>(
           mesh.mpi_comm(), get_hdf5_filename(_filename), "a");
     }
+    else if ((_counter != 0) and (!_hdf5_file))
+    {
+      // The XDMFFile was previously closed, and now must be reopened
+      _hdf5_file = std::make_unique<HDF5File>(
+              mesh.mpi_comm(), get_hdf5_filename(_filename), "a");
+    }
     assert(_hdf5_file);
     h5_id = _hdf5_file->h5_id();
   }

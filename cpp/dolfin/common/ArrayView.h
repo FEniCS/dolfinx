@@ -14,6 +14,8 @@ namespace dolfin
 namespace common
 {
 
+// FIXME: To be removed
+
 /// This class provides a wrapper for a pointer to an array. It
 /// never owns the data, and will not be valid if the underlying
 /// data goes out-of-scope.

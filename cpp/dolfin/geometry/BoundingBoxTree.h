@@ -6,11 +6,11 @@
 
 #pragma once
 
+#include <dolfin/geometry/Point.h>
+#include <limits>
 #include <memory>
 #include <sstream>
 #include <vector>
-#include <limits>
-#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
@@ -20,7 +20,7 @@ namespace mesh
 {
 class Mesh;
 class MeshEntity;
-}
+} // namespace mesh
 
 namespace geometry
 {
@@ -228,10 +228,12 @@ private:
   }
 
   // Check whether point (x) is in bounding box (node)
-  bool point_in_bbox(const double* x, unsigned int node) const;
+  bool point_in_bbox(const double* x, unsigned int node,
+                     double rtol = 1e-14) const;
 
   // Check whether bounding box (a) collides with bounding box (node)
-  bool bbox_in_bbox(const double* a, unsigned int node) const;
+  bool bbox_in_bbox(const double* a, unsigned int node,
+                    double rtol = 1e-14) const;
 
   // Compute squared distance between point and bounding box
   double compute_squared_distance_bbox(const double* x,
@@ -282,5 +284,5 @@ private:
   // Global tree for mesh ownership of each process (same on all processes)
   std::shared_ptr<BoundingBoxTree> _global_tree;
 };
-}
-}
+} // namespace geometry
+} // namespace dolfin

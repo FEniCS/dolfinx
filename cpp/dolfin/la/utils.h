@@ -12,8 +12,18 @@ namespace dolfin
 {
 namespace la
 {
+
+/// Norm types
+enum class Norm
+{
+  l1,
+  l2,
+  linf,
+  frobenius
+};
+
 /// Print error message for PETSc calls that return an error
 void petsc_error(int error_code, std::string filename,
                  std::string petsc_function);
-}
-}
+} // namespace la
+} // namespace dolfin

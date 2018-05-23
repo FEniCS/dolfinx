@@ -11,6 +11,79 @@ from dolfin import *
 from dolfin.la import PETScKrylovSolver, PETScVector, PETScMatrix, PETScOptions
 from dolfin_utils.test import skip_in_parallel
 
+
+def test_krylov_solver_lu():
+
+    mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    u, v = TrialFunction(V), TestFunction(V)
+
+    a = Constant(1.0)*u*v*dx
+    L = Constant(1.0)*v*dx
+    assembler = fem.assembling.Assembler(a, L)
+    A, b = assembler.assemble()
+
+    norm = 13.0
+
+    solver = PETScKrylovSolver(mesh.mpi_comm())
+    solver.set_options_prefix("test_lu_")
+    PETScOptions.set("test_lu_ksp_type", "preonly")
+    PETScOptions.set("test_lu_pc_type", "lu")
+    solver.set_from_options()
+    x = PETScVector()
+    solver.set_operator(A)
+    solver.solve(x, b)
+
+    # *Tight* tolerance for LU solves
+    assert round(x.norm(cpp.la.Norm.l2) - norm, 12) == 0
+
+
+@pytest.mark.skip
+def test_krylov_reuse_pc_lu():
+    """Test that LU re-factorisation is only performed after
+    set_operator(A) is called"""
+
+    # Test requires PETSc version 3.5 or later. Use petsc4py to check
+    # version number.
+    try:
+        from petsc4py import PETSc
+    except ImportError:
+        pytest.skip("petsc4py required to check PETSc version")
+    else:
+        if not PETSc.Sys.getVersion() >= (3, 5, 0):
+            pytest.skip("PETSc version must be 3.5  of higher")
+
+    mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
+    V = FunctionSpace(mesh, "Lagrange", 1)
+    u, v = TrialFunction(V), TestFunction(V)
+
+    a = Constant(1.0)*u*v*dx
+    L = Constant(1.0)*v*dx
+    assembler = fem.assembling.Assembler(a, L)
+    A, b = assembler.assemble()
+    norm = 13.0
+
+    solver = PETScKrylovSolver(mesh.mpi_comm())
+    solver.set_options_prefix("test_lu_")
+    PETScOptions.set("test_lu_ksp_type", "preonly")
+    PETScOptions.set("test_lu_pc_type", "lu")
+    solver.set_from_options()
+    solver.set_operator(A)
+    x = PETScVector(mesh.mpi_comm())
+    solver.solve(x, b)
+    assert round(x.norm(cpp.la.Norm.l2) - norm, 10) == 0
+
+    assembler = fem.assembling.Assembler(Constant(0.5)*u*v*dx, L)
+    assembler.assemble(A)
+    x = PETScVector(mesh.mpi_comm())
+    solver.solve(x, b)
+    assert round(x.norm(cpp.la.Norm.l2) - 2.0*norm, 10) == 0
+
+    solver.set_operator(A)
+    solver.solve(x, b)
+    assert round(x.norm(cpp.la.Norm.l2) - 2.0*norm, 10) == 0
+
+
 @pytest.mark.skip
 def test_krylov_samg_solver_elasticity():
     "Test PETScKrylovSolver with smoothed aggregation AMG"
@@ -106,7 +179,6 @@ def test_krylov_samg_solver_elasticity():
             assert niter < 18
 
 
-
 @pytest.mark.skip
 def test_krylov_reuse_pc():
     "Test preconditioner re-use with PETScKrylovSolver"
@@ -121,8 +193,8 @@ def test_krylov_reuse_pc():
     # Forms
     a, L = inner(grad(u), grad(v))*dx, dot(Constant(1.0), v)*dx
 
-    A, P = PETScMatrix(mesh.mpi_comm()), PETScMatrix(mesh.mpi_comm())
-    b = PETScVector(mesh.mpi_comm())
+    A, P = PETScMatrix(), PETScMatrix()
+    b = PETScVector()
 
     # Assemble linear algebra objects
     assemble(a, tensor=A)
@@ -175,4 +247,3 @@ def test_krylov_reuse_pc():
     x = PETScVector()
     num_iter = solver.solve(x, b)
     assert num_iter == num_iter_mod
-

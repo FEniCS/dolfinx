@@ -25,22 +25,21 @@ void VectorSpaceBasis::orthonormalize(double tol)
   // Loop over each vector in basis
   for (std::size_t i = 0; i < _basis.size(); ++i)
   {
-    // Orthogonalize vector i with respect to previously
-    // orthonormalized vectors
+    // Orthogonalize vector i with respect to previously orthonormalized
+    // vectors
     for (std::size_t j = 0; j < i; ++j)
     {
-      const double dot_ij = _basis[i]->dot(*_basis[j]);
+      const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
       _basis[i]->axpy(-dot_ij, *_basis[j]);
     }
 
-    if (_basis[i]->norm("l2") < tol)
-    {
-      log::dolfin_error("VectorSpaceBasis.cpp", "orthonormalize vector basis",
-                   "Vector space has linear dependency");
-    }
-
     // Normalise basis function
-    (*_basis[i]) /= _basis[i]->norm("l2");
+   const PetscScalar norm = _basis[i]->normalize();
+    if (norm  < tol)
+    {
+      throw std::runtime_error(
+          "VectorSpaceBasis has linear dependency. Cannot orthogonalize");
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -53,7 +52,7 @@ bool VectorSpaceBasis::is_orthonormal(double tol) const
       assert(_basis[i]);
       assert(_basis[j]);
       const double delta_ij = (i == j) ? 1.0 : 0.0;
-      const double dot_ij = _basis[i]->dot(*_basis[j]);
+      const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
       if (std::abs(delta_ij - dot_ij) > tol)
         return false;
     }
@@ -72,7 +71,7 @@ bool VectorSpaceBasis::is_orthogonal(double tol) const
       assert(_basis[j]);
       if (i != j)
       {
-        const double dot_ij = _basis[i]->dot(*_basis[j]);
+        const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
         if (std::abs(dot_ij) > tol)
           return false;
       }
@@ -87,7 +86,7 @@ void VectorSpaceBasis::orthogonalize(PETScVector& x) const
   for (std::size_t i = 0; i < _basis.size(); i++)
   {
     assert(_basis[i]);
-    const double dot = _basis[i]->dot(x);
+    const PetscScalar dot = _basis[i]->dot(x);
     x.axpy(-dot, *_basis[i]);
   }
 }

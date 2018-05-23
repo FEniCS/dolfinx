@@ -22,6 +22,7 @@
 
 #include <dolfin.h>
 #include <catch.hpp>
+#include <petscvec.h>
 
 namespace
 {
@@ -33,7 +34,9 @@ namespace
     char **argv = NULL;
     PetscInitialize(&argc, &argv, NULL, NULL);
 
-    dolfin::la::PETScVector(MPI_COMM_WORLD);
+    Vec x;
+    VecCreate(MPI_COMM_WORLD, &x);
+    VecDestroy(&x);
 #endif
   }
 }

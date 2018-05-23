@@ -28,7 +28,7 @@ def test_scalar_p1():
     mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
     Vuc = Function(Vf)
     mat.mult(uc.vector(), Vuc.vector())
-    as_backend_type(Vuc.vector()).update_ghost_values()
+    Vuc.vector().update_ghost_values()
 
     diff = Function(Vf)
     diff.assign(Vuc - uf)
@@ -52,7 +52,7 @@ def test_scalar_p1_scaled_mesh():
     mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
     Vuc = Function(Vf)
     mat.mult(uc.vector(), Vuc.vector())
-    as_backend_type(Vuc.vector()).update_ghost_values()
+    Vuc.vector().update_ghost_values()
 
     diff = Function(Vf)
     diff.assign(Vuc - uf)
@@ -66,7 +66,7 @@ def test_scalar_p1_scaled_mesh():
 
     mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
     mat.mult(uc.vector(), Vuc.vector())
-    as_backend_type(Vuc.vector()).update_ghost_values()
+    Vuc.vector().update_ghost_values()
 
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
@@ -86,7 +86,7 @@ def test_scalar_p2():
     mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
     Vuc = Function(Vf)
     mat.mult(uc.vector(), Vuc.vector())
-    as_backend_type(Vuc.vector()).update_ghost_values()
+    Vuc.vector().update_ghost_values()
 
     diff = Function(Vf)
     diff.assign(Vuc - uf)
@@ -107,7 +107,7 @@ def test_vector_p1_2d():
     mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
     Vuc = Function(Vf)
     mat.mult(uc.vector(), Vuc.vector())
-    as_backend_type(Vuc.vector()).update_ghost_values()
+    Vuc.vector().update_ghost_values()
 
     diff = Function(Vf)
     diff.assign(Vuc - uf)
@@ -128,7 +128,7 @@ def test_vector_p2_2d():
     mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
     Vuc = Function(Vf)
     mat.mult(uc.vector(), Vuc.vector())
-    as_backend_type(Vuc.vector()).update_ghost_values()
+    Vuc.vector().update_ghost_values()
 
     diff = Function(Vf)
     diff.assign(Vuc - uf)
@@ -149,7 +149,7 @@ def test_vector_p1_3d():
     mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
     Vuc = Function(Vf)
     mat.mult(uc.vector(), Vuc.vector())
-    as_backend_type(Vuc.vector()).update_ghost_values()
+    Vuc.vector().update_ghost_values()
 
     diff = Function(Vf)
     diff.assign(Vuc - uf)
@@ -175,7 +175,7 @@ def test_taylor_hood_cube():
     mat = PETScDMCollection.create_transfer_matrix(Zc, Zf)
     Zuc = Function(Zf)
     mat.mult(zc.vector(), Zuc.vector())
-    as_backend_type(Zuc.vector()).update_ghost_values()
+    Zuc.vector().update_ghost_values()
 
     diff = Function(Zf)
     diff.assign(Zuc - zf)

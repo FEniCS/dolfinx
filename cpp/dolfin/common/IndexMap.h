@@ -67,19 +67,27 @@ public:
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const EigenArrayXi64& ghosts() const;
+  const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& ghosts() const;
 
-  /// Get global index for local index i
-  std::size_t local_to_global(std::size_t i) const;
+  /// Get global index for local index i (index of the block)
+  std::size_t local_to_global(std::size_t i) const
+  {
+    const std::size_t local_size
+        = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
 
-  // TODO: remove
-  /// Local to global index
-  std::size_t local_to_global_index(std::size_t i) const;
+    if (i < local_size)
+    {
+      const std::size_t global_offset = _all_ranges[_myrank];
+      return (i + global_offset);
+    }
+    else
+      return _ghosts[i - local_size];
+  }
 
   /// Owners of ghost entries
   const EigenArrayXi32& ghost_owners() const;
 
-  /// Get process that owns index (global index)
+  /// Get process that owns index (global block index)
   int owner(std::size_t global_index) const;
 
   /// Return MPI communicator
@@ -87,7 +95,8 @@ public:
 
 private:
   // MPI Communicator
-  dolfin::MPI::Comm _mpi_comm;
+  // dolfin::MPI::Comm _mpi_comm;
+  MPI_Comm _mpi_comm;
 
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
@@ -100,7 +109,7 @@ public:
 
 private:
   // Local-to-global map for ghost indices
-  EigenArrayXi64 _ghosts;
+  Eigen::Array<la_index_t, Eigen::Dynamic, 1> _ghosts;
 
   // Owning process for each ghost index
   EigenArrayXi32 _ghost_owners;
@@ -109,36 +118,5 @@ private:
   int _block_size;
 };
 
-// Function which may appear in a hot loop
-inline std::size_t IndexMap::local_to_global(std::size_t i) const
-{
-  const std::size_t local_size
-      = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
-  const std::size_t global_offset = _all_ranges[_myrank];
-
-  if (i < local_size)
-    return (i + global_offset);
-  else
-    return _ghosts[i - local_size];
-}
-
-// Function which may appear in a hot loop
-inline std::size_t IndexMap::local_to_global_index(std::size_t i) const
-{
-  const std::size_t local_size
-      = _block_size * (_all_ranges[_myrank + 1] - _all_ranges[_myrank]);
-  const std::size_t global_offset = _block_size * _all_ranges[_myrank];
-
-  if (i < local_size)
-    return (i + global_offset);
-  else
-  {
-    const std::div_t div = std::div((i - local_size), _block_size);
-    const int component = div.rem;
-    const int index = div.quot;
-    assert(index < _ghosts.size());
-    return _block_size * _ghosts[index] + component;
-  }
-}
 } // namespace common
 } // namespace dolfin

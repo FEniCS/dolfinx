@@ -159,7 +159,8 @@ a deep copy for further computations on the coefficient vectors::
 
     # Compute solution
     w = Function(W)
-    solve(a == L, w, bcs)
+    solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
+          "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
 
     # Split the mixed solution using deepcopy
     # (needed for further computation on coefficient vector)
@@ -167,11 +168,11 @@ a deep copy for further computations on the coefficient vectors::
 
 We can calculate the :math:`L^2` norms of u and p as follows::
 
-    print("Norm of velocity coefficient vector: %.15g" % u.vector().norm("l2"))
-    print("Norm of pressure coefficient vector: %.15g" % p.vector().norm("l2"))
+    print("Norm of velocity coefficient vector: %.15g" % u.vector().norm(dolfin.cpp.la.Norm.l2))
+    print("Norm of pressure coefficient vector: %.15g" % p.vector().norm(dolfin.cpp.la.Norm.l2))
 
     # Check pressure norm
-    pnorm = p.vector().norm("l2")
+    pnorm = p.vector().norm(dolfin.cpp.la.Norm.l2)
     import numpy as np
     assert np.isclose(pnorm, 4116.91298427)
 

@@ -19,9 +19,11 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
       _block_size(block_size)
 {
   // Calculate offsets
-  MPI::all_gather(_mpi_comm.comm(), local_size, _all_ranges);
+  MPI::all_gather(_mpi_comm, local_size, _all_ranges);
+  //MPI::all_gather(_mpi_comm.comm(), local_size, _all_ranges);
 
-  const std::size_t mpi_size = _mpi_comm.size();
+  //const std::size_t mpi_size = _mpi_comm.size();
+  const std::size_t mpi_size = dolfin::MPI::size(_mpi_comm);
   for (std::size_t i = 1; i < mpi_size; ++i)
     _all_ranges[i] += _all_ranges[i - 1];
 
@@ -62,7 +64,10 @@ std::size_t IndexMap::size(const IndexMap::MapSize type) const
   }
 }
 //-----------------------------------------------------------------------------
-const EigenArrayXi64& IndexMap::ghosts() const { return _ghosts; }
+const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& IndexMap::ghosts() const
+{
+  return _ghosts;
+}
 //-----------------------------------------------------------------------------
 int IndexMap::owner(std::size_t global_index) const
 {
@@ -72,5 +77,6 @@ int IndexMap::owner(std::size_t global_index) const
 //-----------------------------------------------------------------------------
 const EigenArrayXi32& IndexMap::ghost_owners() const { return _ghost_owners; }
 //----------------------------------------------------------------------------
-MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
+// MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
+MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------

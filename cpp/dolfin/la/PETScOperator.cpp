@@ -1,10 +1,10 @@
-// Copyright (C) 2011-2012 Anders Logg and Garth N. Wells
+// Copyright (C) 2011-2018 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "PETScBaseMatrix.h"
+#include "PETScOperator.h"
 #include "PETScVector.h"
 #include "utils.h"
 #include <dolfin/log/log.h>
@@ -14,20 +14,27 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
-PETScBaseMatrix::PETScBaseMatrix(Mat A) : _matA(A)
+PETScOperator::PETScOperator() : _matA(nullptr) {}
+//-----------------------------------------------------------------------------
+PETScOperator::PETScOperator(Mat A) : _matA(A)
 {
   // Increase reference count, and throw error if Mat pointer is NULL
   if (_matA)
     PetscObjectReference((PetscObject)_matA);
   else
   {
-    log::dolfin_error(
-        "PETScBaseMatrix.cpp", "initialize with PETSc Mat pointer",
+    throw std::runtime_error(
         "Cannot wrap PETSc Mat objects that have not been initialized");
   }
 }
 //-----------------------------------------------------------------------------
-PETScBaseMatrix::~PETScBaseMatrix()
+PETScOperator::PETScOperator(PETScOperator&& A) : _matA(nullptr)
+{
+  _matA = A._matA;
+  A._matA = nullptr;
+}
+//-----------------------------------------------------------------------------
+PETScOperator::~PETScOperator()
 {
   // Decrease reference count (PETSc will destroy object once
   // reference counts reached zero)
@@ -35,32 +42,16 @@ PETScBaseMatrix::~PETScBaseMatrix()
     MatDestroy(&_matA);
 }
 //-----------------------------------------------------------------------------
-PETScBaseMatrix::PETScBaseMatrix(const PETScBaseMatrix& A)
+PETScOperator& PETScOperator::operator=(PETScOperator&& A)
 {
-  log::dolfin_error("PETScBaseMatrix.cpp", "copy constructor",
-                    "PETScBaseMatrix does not provide a copy constructor");
+  if (_matA)
+    MatDestroy(&_matA);
+  _matA = A._matA;
+  A._matA = nullptr;
+  return *this;
 }
 //-----------------------------------------------------------------------------
-std::int64_t PETScBaseMatrix::size(std::size_t dim) const
-{
-  if (dim > 1)
-  {
-    log::dolfin_error("PETScBaseMatrix.cpp", "access size of PETSc matrix",
-                      "Illegal axis (%d), must be 0 or 1", dim);
-  }
-
-  assert(_matA);
-  PetscInt m(0), n(0);
-  PetscErrorCode ierr = MatGetSize(_matA, &m, &n);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MetGetSize");
-  if (dim == 0)
-    return m > 0 ? m : 0;
-  else
-    return n > 0 ? n : 0;
-}
-//-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> PETScBaseMatrix::size() const
+std::array<std::int64_t, 2> PETScOperator::size() const
 {
   assert(_matA);
   PetscInt m(0), n(0);
@@ -70,14 +61,13 @@ std::array<std::int64_t, 2> PETScBaseMatrix::size() const
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
+std::array<std::int64_t, 2> PETScOperator::local_range(std::size_t dim) const
 {
   assert(dim <= 1);
   if (dim == 1)
   {
-    log::dolfin_error("PETScBaseMatrix.cpp",
-                      "access local column range for PETSc matrix",
-                      "Only local row range is available for PETSc matrices");
+    throw std::runtime_error(
+        "Only local row range is available for PETSc matrices");
   }
 
   assert(_matA);
@@ -88,12 +78,11 @@ std::array<std::int64_t, 2> PETScBaseMatrix::local_range(std::size_t dim) const
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const
+PETScVector PETScOperator::init_vector(std::size_t dim) const
 {
   assert(_matA);
   PetscErrorCode ierr;
 
-  // Create new PETSc vector
   Vec x = nullptr;
   if (dim == 0)
   {
@@ -109,24 +98,33 @@ void PETScBaseMatrix::init_vector(PETScVector& z, std::size_t dim) const
   }
   else
   {
-    log::dolfin_error("PETScBaseMatrix.cpp",
+    log::dolfin_error("PETScOperator.cpp",
                       "initialize PETSc vector to match PETSc matrix",
                       "Dimension must be 0 or 1, not %d", dim);
   }
 
   // Associate new PETSc Vec with z (this will increase the reference
   // count to x)
-  z.reset(x);
+  PETScVector z(x);
 
   // Decrease reference count
   VecDestroy(&x);
+
+  return z;
 }
 //-----------------------------------------------------------------------------
-MPI_Comm PETScBaseMatrix::mpi_comm() const
+MPI_Comm PETScOperator::mpi_comm() const
 {
   assert(_matA);
   MPI_Comm mpi_comm = MPI_COMM_NULL;
   PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
   return mpi_comm;
+}
+//-----------------------------------------------------------------------------
+Mat PETScOperator::mat() const { return _matA; }
+//-----------------------------------------------------------------------------
+std::string PETScOperator::str(bool verbose) const
+{
+  return "No str function for this PETSc matrix operator.";
 }
 //-----------------------------------------------------------------------------
