@@ -236,7 +236,6 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   ierr = MatSetOption(_matA, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetOption");
-
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)
@@ -267,10 +266,7 @@ PETScMatrix::~PETScMatrix()
   // Do nothing (PETSc matrix is destroyed in base class)
 }
 //-----------------------------------------------------------------------------
-bool PETScMatrix::empty() const
-{
-  return _matA == nullptr ? true : false;
-}
+bool PETScMatrix::empty() const { return _matA == nullptr ? true : false; }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScMatrix::local_range(std::size_t dim) const
 {
@@ -379,8 +375,6 @@ void PETScMatrix::apply(AssemblyType type)
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatAssemblyEnd");
 }
-//-----------------------------------------------------------------------------
-MPI_Comm PETScMatrix::mpi_comm() const { return PETScOperator::mpi_comm(); }
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {

@@ -83,7 +83,6 @@ PETScVector PETScOperator::init_vector(std::size_t dim) const
   assert(_matA);
   PetscErrorCode ierr;
 
-  // Create new PETSc vector
   Vec x = nullptr;
   if (dim == 0)
   {
@@ -114,8 +113,6 @@ PETScVector PETScOperator::init_vector(std::size_t dim) const
   return z;
 }
 //-----------------------------------------------------------------------------
-Mat PETScOperator::mat() const { return _matA; }
-//-----------------------------------------------------------------------------
 MPI_Comm PETScOperator::mpi_comm() const
 {
   assert(_matA);
@@ -123,6 +120,8 @@ MPI_Comm PETScOperator::mpi_comm() const
   PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
   return mpi_comm;
 }
+//-----------------------------------------------------------------------------
+Mat PETScOperator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 std::string PETScOperator::str(bool verbose) const
 {

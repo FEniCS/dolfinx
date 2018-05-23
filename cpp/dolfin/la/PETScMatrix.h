@@ -10,10 +10,7 @@
 #include "PETScOperator.h"
 #include "utils.h"
 #include <dolfin/common/types.h>
-#include <map>
-#include <memory>
 #include <petscmat.h>
-#include <petscsys.h>
 #include <string>
 
 namespace dolfin
@@ -86,9 +83,6 @@ public:
   ///   FLUSH  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
   void apply(AssemblyType type);
 
-  /// Return MPI communicator
-  MPI_Comm mpi_comm() const;
-
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
@@ -153,9 +147,6 @@ private:
   // Create PETSc nullspace object
   MatNullSpace
   create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const;
-
-  // PETSc norm types
-  static const std::map<std::string, NormType> norm_types;
 };
 } // namespace la
 } // namespace dolfin
