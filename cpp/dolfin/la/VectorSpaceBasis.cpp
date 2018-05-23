@@ -33,14 +33,13 @@ void VectorSpaceBasis::orthonormalize(double tol)
       _basis[i]->axpy(-dot_ij, *_basis[j]);
     }
 
-    if (_basis[i]->norm("l2") < tol)
+    // Normalise basis function
+   const PetscScalar norm = _basis[i]->normalize();
+    if (norm  < tol)
     {
       throw std::runtime_error(
           "VectorSpaceBasis has linear dependency. Cannot orthogonalize");
     }
-
-    // Normalise basis function
-    (*_basis[i]) *= (1.0 / _basis[i]->norm("l2"));
   }
 }
 //-----------------------------------------------------------------------------

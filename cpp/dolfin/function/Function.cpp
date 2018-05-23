@@ -177,28 +177,6 @@ Function Function::sub(std::size_t i) const
   return Function(sub_space, _vector);
 }
 //-----------------------------------------------------------------------------
-void Function::operator=(const function::FunctionAXPY& axpy)
-{
-  if (axpy.pairs().size() == 0)
-    throw std::runtime_error("FunctionAXPY is empty.");
-
-  // Make an initial assign and scale
-  assert(axpy.pairs()[0].second);
-  *this = *(axpy.pairs()[0].second);
-  if (axpy.pairs()[0].first != 1.0)
-    *_vector *= axpy.pairs()[0].first;
-
-  // Start from item 2 and axpy
-  std::vector<
-      std::pair<double, std::shared_ptr<const Function>>>::const_iterator it;
-  for (it = axpy.pairs().begin() + 1; it != axpy.pairs().end(); it++)
-  {
-    assert(it->second);
-    assert(it->second->vector());
-    _vector->axpy(it->first, *(it->second->vector()));
-  }
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<la::PETScVector> Function::vector()
 {
   assert(_vector);

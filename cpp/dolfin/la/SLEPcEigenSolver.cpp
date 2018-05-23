@@ -77,7 +77,7 @@ void SLEPcEigenSolver::solve()
 
   // Wrap operator as short-cut to get size
   PETScMatrix A_wrapped(A);
-  solve(A_wrapped.size(0));
+  solve(A_wrapped.size()[0]);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(std::int64_t n)
@@ -90,7 +90,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 
   // Wrap operator as short-cut to get size
   PETScMatrix A_wrapped(A);
-  assert(n <= A_wrapped.size(0));
+  assert(n <= A_wrapped.size()[0]);
 #endif
 
   // Set number of eigenpairs to compute
@@ -138,8 +138,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
            eps_type, num_iterations);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
-                                      std::size_t i) const
+std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const
 {
   assert(_eps);
   const PetscInt ii = static_cast<PetscInt>(i);
@@ -149,17 +148,27 @@ void SLEPcEigenSolver::get_eigenvalue(double& lr, double& lc,
   EPSGetConverged(_eps, &num_computed_eigenvalues);
 
   if (ii < num_computed_eigenvalues)
-    EPSGetEigenvalue(_eps, ii, &lr, &lc);
+  {
+#ifdef PETSC_USE_COMPLEX
+    PetscScalar l;
+    EPSGetEigenvalue(_eps, ii, &l, NULL);
+    return l;
+#else
+    PetscScalar lr, li;
+    EPSGetEigenvalue(_eps, ii, &lr, &li);
+    return std::complex<PetscReal>(lr, li);
+#endif
+  }
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "extract eigenvalue from SLEPc eigenvalue solver",
-                      "Requested eigenvalue (%d) has not been computed", i);
+    throw std::runtime_error("Requested eigenvalue (" + std::to_string(i)
+                             + ") has not been computed");
   }
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
-                                     PETScVector& c, std::size_t i) const
+void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc,
+                                     PETScVector& r, PETScVector& c,
+                                     std::size_t i) const
 {
   assert(_eps);
   const PetscInt ii = static_cast<PetscInt>(i);
@@ -177,17 +186,16 @@ void SLEPcEigenSolver::get_eigenpair(double& lr, double& lc, PETScVector& r,
 
     // Wrap operator and initialize r and c
     PETScMatrix A_wrapped(A);
-    A_wrapped.init_vector(r, 0);
-    A_wrapped.init_vector(c, 0);
+    r = A_wrapped.init_vector(0);
+    c = A_wrapped.init_vector(0);
 
     // Get eigen pairs
     EPSGetEigenpair(_eps, ii, &lr, &lc, r.vec(), c.vec());
   }
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "extract eigenpair from SLEPc eigenvalue solver",
-                      "Requested eigenpair (%d) has not been computed", i);
+    throw std::runtime_error("Requested eigenpair (" + std::to_string(i)
+                             + ") has not been computed");
   }
 }
 //-----------------------------------------------------------------------------
@@ -299,10 +307,8 @@ void SLEPcEigenSolver::read_parameters()
     }
     else
     {
-      log::dolfin_error(
-          "SLEPcEigenSolver.cpp", "set spectral transform",
-          "For an spectral transform, the spectral shift parameter "
-          "must be set");
+      throw std::runtime_error("For an spectral transform, the spectral shift "
+                               "parameter must be set");
     }
   }
 }
@@ -326,9 +332,7 @@ void SLEPcEigenSolver::set_problem_type(std::string type)
     EPSSetProblemType(_eps, EPS_PGNHEP);
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "set problem type for SLEPc eigensolver",
-                      "Unknown problem type (\"%s\")", type.c_str());
+    throw std::runtime_error("Unknown problem type (" + type + ")");
   }
 }
 //-----------------------------------------------------------------------------
@@ -348,9 +352,7 @@ void SLEPcEigenSolver::set_spectral_transform(std::string transform,
   }
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "set spectral transform for SLEPc eigensolver",
-                      "Unknown transform (\"%s\")", transform.c_str());
+    throw std::runtime_error("Unknown transform (" + transform + ")");
   }
 }
 //-----------------------------------------------------------------------------
@@ -378,25 +380,32 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_MAGNITUDE);
     if (parameters["spectral_shift"].is_set())
-      EPSSetTarget(_eps, parameters["spectral_shift"]);
+    {
+      PetscScalar shift = (double)parameters["spectral_shift"];
+      EPSSetTarget(_eps, shift);
+    }
   }
   else if (spectrum == "target real")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_REAL);
     if (parameters["spectral_shift"].is_set())
-      EPSSetTarget(_eps, parameters["spectral_shift"]);
+    {
+      PetscScalar shift = (double)parameters["spectral_shift"];
+      EPSSetTarget(_eps, shift);
+    }
   }
   else if (spectrum == "target imaginary")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_IMAGINARY);
     if (parameters["spectral_shift"].is_set())
-      EPSSetTarget(_eps, parameters["spectral_shift"]);
+    {
+      PetscScalar shift = (double)parameters["spectral_shift"];
+      EPSSetTarget(_eps, shift);
+    }
   }
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "set spectrum for SLEPc eigensolver",
-                      "Unknown spectrum type (\"%s\")", spectrum.c_str());
+    throw std::runtime_error("Unknown spectrum type (" + spectrum + ")");
   }
 
   // FIXME: Need to add some test here as most algorithms only compute
@@ -432,9 +441,7 @@ void SLEPcEigenSolver::set_solver(std::string solver)
     EPSSetType(_eps, EPSGD);
   else
   {
-    log::dolfin_error("SLEPcEigenSolver.cpp",
-                      "set solver for SLEPc eigensolver",
-                      "Unknown solver type (\"%s\")", solver.c_str());
+    throw std::runtime_error("Unknown solver type (" + solver + ")");
   }
 }
 //-----------------------------------------------------------------------------

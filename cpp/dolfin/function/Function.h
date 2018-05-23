@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "FunctionAXPY.h"
 #include "GenericFunction.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
@@ -24,7 +23,7 @@ namespace mesh
 {
 class Cell;
 class Mesh;
-} // namespace mesh
+}
 
 namespace function
 {
@@ -77,12 +76,6 @@ public:
   // @param v (_Function_)
   //         Another function.
   // const Function& operator= (const Function& v);
-
-  /// Assignment from linear combination of function
-  ///
-  /// @param axpy (_FunctionAXPY_)
-  ///         A linear combination of other Functions
-  void operator=(const function::FunctionAXPY& axpy);
 
   /// Extract subfunction (view into the Function)
   ///

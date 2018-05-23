@@ -6,7 +6,6 @@
 
 #include "SparsityPatternBuilder.h"
 #include <algorithm>
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -43,7 +42,7 @@ la::SparsityPattern SparsityPatternBuilder::build(
   std::array<EigenArrayXlaindex, 2> macro_dofs;
 
   // Create vector to point to dofs
-  std::array<common::ArrayView<const dolfin::la_index_t>, 2> dofs;
+  //std::array<common::ArrayView<const dolfin::la_index_t>, 2> dofs;
 
   // Build sparsity pattern for reals (globally supported basis members)
   // NOTE: It is very important that this is done before other integrals

@@ -79,13 +79,13 @@ def test_numba_assembly():
         L = cpp.fem.Form(ufc_form, [Q._cpp_object])
 
     assembler = cpp.fem.Assembler([[a]], [L], [])
-    A = PETScMatrix(MPI.comm_world)
+    A = PETScMatrix()
     b = PETScVector()
     assembler.assemble(A, cpp.fem.Assembler.BlockType.monolithic)
     assembler.assemble(b, cpp.fem.Assembler.BlockType.monolithic)
 
-    Anorm = A.norm('frobenius')
-    bnorm = b.norm('l2')
+    Anorm = A.norm(cpp.la.Norm.frobenius)
+    bnorm = b.norm(cpp.la.Norm.l2)
 
     print(Anorm, bnorm)
 

@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2016 Johan Hoffman, Johan Jansson, Anders Logg
+// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
+// N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -6,9 +7,9 @@
 
 #pragma once
 
+#include "utils.h"
 #include <array>
 #include <cstdint>
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <memory>
@@ -23,9 +24,8 @@ namespace la
 
 /// It is a simple wrapper for a PETSc vector pointer (Vec).
 ///
-/// The interface is intentionally simple. For advanced usage,
-/// access the PETSc Vec pointer using the function vec() and
-/// use the standard PETSc interface.
+/// For advanced usage, access the PETSc Vec pointer using the function
+/// vec() and use the standard PETSc interface.
 
 class PETScVector
 {
@@ -62,13 +62,13 @@ public:
   /// Move Assignment operator
   PETScVector& operator=(PETScVector&& x);
 
-  /// Return size of vector
+  /// Return global size of vector
   std::int64_t size() const;
 
-  /// Return local size of vector
+  /// Return local size of vector (belonging to this process)
   std::size_t local_size() const;
 
-  /// Return ownership range of a vector
+  /// Return ownership range for process
   std::array<std::int64_t, 2> local_range() const;
 
   /// Set all entries to 'a' using VecSet. This is local and does not
@@ -79,9 +79,15 @@ public:
   /// entries.
   void shift(PetscScalar a);
 
+  /// Multiply by scala a
+  void scale(PetscScalar a);
+
+  /// Multiply vector by vector x pointwise
+  void mult(const PETScVector& x);
+
   /// Finalize assembly of vector. Communicates off-process entries
   /// added or set on this process to the owner, and receives from other
-  /// processes changes to locally owned entries.
+  /// processes changes to owned entries.
   void apply();
 
   /// Update owned entries owned by this process and which are ghosts on
@@ -102,11 +108,6 @@ public:
 
   /// Return true if vector is empty
   bool empty() const;
-
-  /// Get block of values using global indices (all values must be
-  /// owned by local process, ghosts cannot be accessed)
-  void get(PetscScalar* block, std::size_t m,
-           const dolfin::la_index_t* rows) const;
 
   /// Get block of values using local indices
   void get_local(PetscScalar* block, std::size_t m,
@@ -144,12 +145,7 @@ public:
   void gather(PETScVector& y,
               const std::vector<dolfin::la_index_t>& indices) const;
 
-  /// Gather entries (given by global indices) into x. This operation is
-  /// collective.
-  void gather(std::vector<PetscScalar>& x,
-              const std::vector<dolfin::la_index_t>& indices) const;
-
-  /// Add multiple of given vector (AXPY operation)
+  /// Add multiple of given vector (AXPY operation, this = a*x + this)
   void axpy(PetscScalar a, const PETScVector& x);
 
   /// Replace all entries in the vector by their absolute values
@@ -160,36 +156,22 @@ public:
   PetscScalar dot(const PETScVector& v) const;
 
   /// Return norm of vector
-  double norm(std::string norm_type) const;
+  double norm(la::Norm norm_type) const;
 
-  /// Return minimum value of vector
-  /// For complex vectors - return the minimum real part
-  double min() const;
+  /// Normalize vector with respect to the l2 norm. Returns the norm
+  /// before normalization.
+  PetscReal normalize();
 
-  /// Return maximum value of vector
-  /// For complex vectors - return the maximum real part
-  double max() const;
+  /// Return minimum value of vector, and location of entry. For complex
+  /// vectors returns the minimum real part.
+  std::pair<double, PetscInt> min() const;
 
-  /// Return sum of values of vector
+  /// Return maximum value of vector, and location of entry. For complex
+  /// vectors returns the maximum real part.
+  std::pair<double, PetscInt> max() const;
+
+  /// Return sum of entries
   PetscScalar sum() const;
-
-  /// Multiply vector by given number
-  PETScVector& operator*=(PetscScalar a);
-
-  /// Multiply vector by another vector pointwise
-  PETScVector& operator*=(const PETScVector& x);
-
-  /// Add given vector
-  PETScVector& operator+=(const PETScVector& x);
-
-  /// Add number to all components of a vector
-  PETScVector& operator+=(PetscScalar a);
-
-  /// Subtract given vector
-  PETScVector& operator-=(const PETScVector& x);
-
-  /// Subtract number from all components of a vector
-  PETScVector& operator-=(PetscScalar a);
 
   /// Sets the prefix used by PETSc when searching the options database
   void set_options_prefix(std::string options_prefix);

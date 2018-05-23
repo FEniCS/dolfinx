@@ -37,7 +37,7 @@ void AssemblerBase::init_global_tensor(la::PETScVector& b, const Form& L)
 //-----------------------------------------------------------------------------
 void AssemblerBase::init_global_tensor(la::PETScMatrix& A, const Form& a)
 {
-  fem::init(A, a);
+  A = fem::init_matrix(a);
   if (!add_values)
     A.zero();
 }

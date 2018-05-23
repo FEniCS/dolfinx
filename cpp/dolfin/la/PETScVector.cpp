@@ -1,4 +1,5 @@
-// Copyright (C) 2004-2016 Johan Hoffman, Johan Jansson, Anders Logg
+// Copyright (C) 2004-2018 Johan Hoffman, Johan Jansson, Anders Logg and Garth
+// N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -17,12 +18,6 @@
 
 using namespace dolfin;
 using namespace dolfin::la;
-
-namespace
-{
-const std::map<std::string, NormType> norm_types
-    = {{"l1", NORM_1}, {"l2", NORM_2}, {"linf", NORM_INFINITY}};
-}
 
 #define CHECK_ERROR(NAME)                                                      \
   do                                                                           \
@@ -120,49 +115,50 @@ PETScVector::~PETScVector()
     VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
+PETScVector& PETScVector::operator=(PETScVector&& v)
+{
+  if (_x)
+    VecDestroy(&_x);
+  _x = v._x;
+  v._x = nullptr;
+  return *this;
+}
+//-----------------------------------------------------------------------------
 std::int64_t PETScVector::size() const
 {
-  assert(_x);
-  PetscErrorCode ierr;
-
-  // Return zero if vector type has not been set (Vec has not been
-  // initialized)
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  if (vec_type == nullptr)
-    return 0;
-  CHECK_ERROR("VecGetType");
+  if (!_x)
+  {
+    throw std::runtime_error(
+        "PETSc vector has not been initialised. Cannot return size.");
+  }
 
   PetscInt n = 0;
-  assert(_x);
-  ierr = VecGetSize(_x, &n);
+  PetscErrorCode ierr = VecGetSize(_x, &n);
   CHECK_ERROR("VecGetSize");
-
-  return n > 0 ? n : 0;
+  return n;
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScVector::local_size() const
 {
-  assert(_x);
-  PetscErrorCode ierr;
-
-  // Return zero if vector type has not been set
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  if (vec_type == nullptr)
-    return 0;
-  CHECK_ERROR("VecGetType");
+  if (!_x)
+  {
+    throw std::runtime_error(
+        "PETSc vector has not been initialised. Cannot return local size.");
+  }
 
   PetscInt n = 0;
-  ierr = VecGetLocalSize(_x, &n);
+  PetscErrorCode ierr = VecGetLocalSize(_x, &n);
   CHECK_ERROR("VecGetLocalSize");
-
   return n;
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScVector::local_range() const
 {
-  assert(_x);
+  if (!_x)
+  {
+    throw std::runtime_error(
+        "PETSc vector has not been initialised. Cannot return local range.");
+  }
 
   PetscInt n0, n1;
   PetscErrorCode ierr = VecGetOwnershipRange(_x, &n0, &n1);
@@ -201,8 +197,8 @@ void PETScVector::set_local(const std::vector<PetscScalar>& values)
   const std::size_t local_size = _local_range[1] - _local_range[0];
   if (values.size() != local_size)
   {
-    log::dolfin_error("PETScVector.cpp", "set local values of PETSc vector",
-                      "Size of values array is not equal to local vector size");
+    throw std::runtime_error("Cannot set local values of PETSc vector. Size of "
+                             "values array is not equal to local vector size");
   }
 
   if (local_size == 0)
@@ -211,7 +207,6 @@ void PETScVector::set_local(const std::vector<PetscScalar>& values)
   // Build array of local indices
   std::vector<PetscInt> rows(local_size, 0);
   std::iota(rows.begin(), rows.end(), 0);
-
   PetscErrorCode ierr = VecSetValuesLocal(_x, local_size, rows.data(),
                                           values.data(), INSERT_VALUES);
   CHECK_ERROR("VecSetValuesLocal");
@@ -224,8 +219,8 @@ void PETScVector::add_local(const std::vector<PetscScalar>& values)
   const std::size_t local_size = _local_range[1] - _local_range[0];
   if (values.size() != local_size)
   {
-    log::dolfin_error("PETScVector.cpp", "add local values to PETSc vector",
-                      "Size of values array is not equal to local vector size");
+    throw std::runtime_error("Cannot add local values to PETSc vector. Size of "
+                             "values array is not equal to local vector size");
   }
 
   if (local_size == 0)
@@ -234,7 +229,6 @@ void PETScVector::add_local(const std::vector<PetscScalar>& values)
   // Build array of local indices
   std::vector<PetscInt> rows(local_size);
   std::iota(rows.begin(), rows.end(), 0);
-
   PetscErrorCode ierr = VecSetValuesLocal(_x, local_size, rows.data(),
                                           values.data(), ADD_VALUES);
   CHECK_ERROR("VecSetValuesLocal");
@@ -279,17 +273,6 @@ void PETScVector::get_local(PetscScalar* block, std::size_t m,
     ierr = VecGhostRestoreLocalForm(_x, &xg);
     CHECK_ERROR("VecGhostRestoreLocalForm");
   }
-}
-//-----------------------------------------------------------------------------
-void PETScVector::get(PetscScalar* block, std::size_t m,
-                      const dolfin::la_index_t* rows) const
-{
-  if (m == 0)
-    return;
-
-  assert(_x);
-  PetscErrorCode ierr = VecGetValues(_x, m, rows, block);
-  CHECK_ERROR("VecGetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const PetscScalar* block, std::size_t m,
@@ -397,68 +380,32 @@ void PETScVector::set(PetscScalar a)
 void PETScVector::shift(PetscScalar a)
 {
   assert(_x);
-  PetscErrorCode ierr = VecScale(_x, a);
-  CHECK_ERROR("VecScale");
-}
-//-----------------------------------------------------------------------------
-bool PETScVector::empty() const
-{
-  if (!_x)
-    return true;
-  else
-    return this->size() == 0;
-}
-//-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator=(PETScVector&& v)
-{
-  _x = v._x;
-  v._x = nullptr;
-  return *this;
-}
-//-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator+=(const PETScVector& x)
-{
-  PetscScalar a = 1.0;
-  axpy(a, x);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator+=(PetscScalar a)
-{
-  assert(_x);
   PetscErrorCode ierr = VecShift(_x, a);
   CHECK_ERROR("VecShift");
-  return *this;
 }
 //-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator-=(const PETScVector& x)
-{
-  PetscScalar a = -1.0;
-  axpy(a, x);
-  return *this;
-}
-//-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator-=(PetscScalar a)
-{
-  (*this) += -a;
-  return *this;
-}
-//-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator*=(const PetscScalar a)
+void PETScVector::scale(PetscScalar a)
 {
   assert(_x);
   PetscErrorCode ierr = VecScale(_x, a);
   CHECK_ERROR("VecScale");
-  return *this;
 }
 //-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator*=(const PETScVector& v)
+void PETScVector::mult(const PETScVector& v)
 {
   assert(_x);
   assert(v._x);
   PetscErrorCode ierr = VecPointwiseMult(_x, _x, v._x);
   CHECK_ERROR("VecPointwiseMult");
-  return *this;
+}
+//-----------------------------------------------------------------------------
+bool PETScVector::empty() const
+{
+  return _x == nullptr ? true : false;
+  // if (!_x)
+  //   return true;
+  // else
+  //   return this->size() == 0;
 }
 //-----------------------------------------------------------------------------
 PetscScalar PETScVector::dot(const PETScVector& y) const
@@ -486,39 +433,57 @@ void PETScVector::abs()
   CHECK_ERROR("VecAbs");
 }
 //-----------------------------------------------------------------------------
-double PETScVector::norm(std::string norm_type) const
+double PETScVector::norm(la::Norm norm_type) const
 {
   assert(_x);
-  if (norm_types.count(norm_type) == 0)
+  PetscErrorCode ierr;
+  double value = 0.0;
+  switch (norm_type)
   {
-    log::dolfin_error("PETScVector.cpp", "compute norm of PETSc vector",
-                      "Unknown norm type (\"%s\")", norm_type.c_str());
+  case la::Norm::l1:
+    ierr = VecNorm(_x, NORM_1, &value);
+    CHECK_ERROR("VecNorm");
+    break;
+  case la::Norm::l2:
+    ierr = VecNorm(_x, NORM_2, &value);
+    CHECK_ERROR("VecNorm");
+    break;
+  case la::Norm::linf:
+    ierr = VecNorm(_x, NORM_INFINITY, &value);
+    CHECK_ERROR("VecNorm");
+    break;
+  default:
+    throw std::runtime_error("Norm type not support for PETSc Vec");
   }
 
-  double value = 0.0;
-  PetscErrorCode ierr = VecNorm(_x, norm_types.find(norm_type)->second, &value);
-  CHECK_ERROR("VecNorm");
   return value;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::min() const
+PetscReal PETScVector::normalize()
 {
   assert(_x);
-  double value = 0.0;
-  PetscInt position = 0;
-  PetscErrorCode ierr = VecMin(_x, &position, &value);
+  PetscReal norm;
+  PetscErrorCode ierr = VecNormalize(_x, &norm);
+  CHECK_ERROR("VecNormalize");
+  return norm;
+}
+//-----------------------------------------------------------------------------
+std::pair<double, PetscInt> PETScVector::min() const
+{
+  assert(_x);
+  std::pair<double, PetscInt> data;
+  PetscErrorCode ierr = VecMin(_x, &data.second, &data.first);
   CHECK_ERROR("VecMin");
-  return value;
+  return data;
 }
 //-----------------------------------------------------------------------------
-double PETScVector::max() const
+std::pair<double, PetscInt> PETScVector::max() const
 {
   assert(_x);
-  double value = 0.0;
-  PetscInt position = 0;
-  PetscErrorCode ierr = VecMax(_x, &position, &value);
+  std::pair<double, PetscInt> data;
+  PetscErrorCode ierr = VecMax(_x, &data.second, &data.first);
   CHECK_ERROR("VecMax");
-  return value;
+  return data;
 }
 //-----------------------------------------------------------------------------
 PetscScalar PETScVector::sum() const
@@ -629,16 +594,6 @@ void PETScVector::gather(PETScVector& y,
   CHECK_ERROR("ISDestroy");
   ierr = ISDestroy(&to);
   CHECK_ERROR("ISDestroy");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::gather(std::vector<PetscScalar>& x,
-                         const std::vector<dolfin::la_index_t>& indices) const
-{
-  x.resize(indices.size());
-  PETScVector y;
-  gather(y, indices);
-  assert(y.local_size() == x.size());
-  y.get_local(x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_options_prefix(std::string options_prefix)

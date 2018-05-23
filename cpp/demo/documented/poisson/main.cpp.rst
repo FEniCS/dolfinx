@@ -234,7 +234,7 @@ call the ``solve`` function with the arguments ``a == L``, ``u`` and
 
      // Compute solution
      function::Function u(V);
-     auto A = std::make_shared<la::PETScMatrix>(MPI_COMM_WORLD);
+     auto A = std::make_shared<la::PETScMatrix>();
      auto b = std::make_shared<la::PETScVector>();
 
      fem::SystemAssembler assembler(a, L, bc);

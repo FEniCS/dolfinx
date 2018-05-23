@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -36,8 +35,8 @@ la::PETScVector dolfin::fem::init_vector(const Form& L)
   return la::PETScVector(*index_map);
 }
 //-----------------------------------------------------------------------------
-void fem::init_nest(la::PETScMatrix& A,
-                    std::vector<std::vector<const fem::Form*>> a)
+la::PETScMatrix
+fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
 {
   // FIXME: check that a is square
 
@@ -53,8 +52,10 @@ void fem::init_nest(la::PETScMatrix& A,
     {
       if (a[i][j])
       {
-        mats[i][j] = std::make_shared<la::PETScMatrix>(A.mpi_comm());
-        init(*mats[i][j], *a[i][j]);
+        mats[i][j] = std::make_shared<la::PETScMatrix>(init_matrix(*a[i][j]) );
+        // std::cout << "  init mat" << std::endl;
+        // init(*mats[i][j], *a[i][j]);
+        // std::cout << "  post init mat" << std::endl;
         petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
@@ -63,10 +64,13 @@ void fem::init_nest(la::PETScMatrix& A,
   }
 
   // Initialise block (MatNest) matrix
-  MatSetType(A.mat(), MATNEST);
-  MatNestSetSubMats(A.mat(), petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
+  Mat _A;
+  MatCreate(a[0][0]->mesh()->mpi_comm(), &_A);
+  MatSetType(_A, MATNEST);
+  MatNestSetSubMats(_A, petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
                     NULL, petsc_mats.data());
-  MatSetUp(A.mat());
+  MatSetUp(_A);
+  return la::PETScMatrix(_A);
 }
 //-----------------------------------------------------------------------------
 la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
@@ -92,7 +96,7 @@ la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
   return la::PETScVector(y);
 }
 //-----------------------------------------------------------------------------
-void fem::init_monolithic(la::PETScMatrix& A,
+la::PETScMatrix fem::init_monolithic_matrix(
                           std::vector<std::vector<const fem::Form*>> a)
 {
   // FIXME: handle null blocks
@@ -135,11 +139,11 @@ void fem::init_monolithic(la::PETScMatrix& A,
 
   // Create merged sparsity pattern
   // std::cout << "  Build merged sparsity pattern" << std::endl;
-  la::SparsityPattern pattern(A.mpi_comm(), p);
+  la::SparsityPattern pattern(a[0][0]->mesh()->mpi_comm(), p);
 
   // Initialise matrix
   // std::cout << "  Init parent matrix" << std::endl;
-  A.init(pattern);
+  la::PETScMatrix A(a[0][0]->mesh()->mpi_comm(), pattern);
   // std::cout << "  Post init parent matrix" << std::endl;
 
   // Build list of row and column index maps (over each block)
@@ -194,6 +198,8 @@ void fem::init_monolithic(la::PETScMatrix& A,
   // Clean up local-to-global maps
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
   ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+
+  return A;
 }
 //-----------------------------------------------------------------------------
 la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
@@ -230,7 +236,7 @@ la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------
-void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
+la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
 {
   bool keep_diagonal = false;
   if (a.rank() != 2)
@@ -238,9 +244,6 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
     throw std::runtime_error(
         "Cannot initialise matrx. Form is not a bilinear form");
   }
-
-  if (!A.empty())
-    throw std::runtime_error("Cannot initialise layout of non-empty matrix");
 
   // Get dof maps
   std::array<const GenericDofMap*, 2> dofmaps
@@ -259,7 +262,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 
   // Create and build sparsity pattern
   la::SparsityPattern pattern = SparsityPatternBuilder::build(
-      A.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
+      mesh.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
       (a.integrals().num_interior_facet_integrals() > 0),
       (a.integrals().num_exterior_facet_integrals() > 0),
       (a.integrals().num_vertex_integrals() > 0), keep_diagonal);
@@ -267,7 +270,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 
   // Initialize matrix
   common::Timer t1("Init tensor");
-  A.init(pattern);
+  la::PETScMatrix A(a.mesh()->mpi_comm(), pattern);
   t1.stop();
 
   // Insert zeros to dense rows in increasing order of column index
@@ -295,7 +298,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
       if (I >= row_range[0] && I < row_range[1])
       {
         IJ[0] = I;
-        for (std::int64_t J = 0; J < A.size(1); J++)
+        for (std::int64_t J = 0; J < A.size()[1]; J++)
         {
           IJ[1] = J;
           A.set(&block, 1, &IJ[0], 1, &IJ[1]);
@@ -316,7 +319,7 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
     // Loop over rows and insert 0.0 on the diagonal
     const double block = 0.0;
     const auto row_range = A.local_range(0);
-    const std::int64_t range = std::min(row_range[1], A.size(1));
+    const std::int64_t range = std::min(row_range[1], A.size()[1]);
 
     for (std::int64_t i = row_range[0]; i < range; i++)
     {
@@ -326,93 +329,8 @@ void dolfin::fem::init(la::PETScMatrix& A, const Form& a)
 
     A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::size_t>
-dolfin::fem::dof_to_vertex_map(const function::FunctionSpace& space)
-{
-  // Get vertex_to_dof_map and invert it
-  const std::vector<dolfin::la_index_t> vertex_map = vertex_to_dof_map(space);
-  std::vector<std::size_t> return_map(vertex_map.size());
-  for (std::size_t i = 0; i < vertex_map.size(); i++)
-    return_map[vertex_map[i]] = i;
-  return return_map;
-}
-//-----------------------------------------------------------------------------
-std::vector<dolfin::la_index_t>
-dolfin::fem::vertex_to_dof_map(const function::FunctionSpace& space)
-{
-  // Get the mesh
-  assert(space.mesh());
-  assert(space.dofmap());
-  const mesh::Mesh& mesh = *space.mesh();
-  const GenericDofMap& dofmap = *space.dofmap();
 
-  if (dofmap.is_view())
-    std::runtime_error("Cannot tabulate vertex_to_dof_map for a subspace");
-
-  // Initialize vertex to cell connections
-  const std::size_t top_dim = mesh.topology().dim();
-  mesh.init(0, top_dim);
-
-  // Num dofs per vertex
-  const std::size_t dofs_per_vertex = dofmap.num_entity_dofs(0);
-  const std::size_t vert_per_cell
-      = mesh.topology().connectivity(top_dim, 0).size(0);
-  if (vert_per_cell * dofs_per_vertex != dofmap.max_element_dofs())
-    std::runtime_error("Can only tabulate dofs on vertices");
-
-  // Allocate data for tabulating local to local map
-  std::vector<int> local_to_local_map(dofs_per_vertex);
-
-  // Create return data structure
-  std::vector<dolfin::la_index_t> return_map(dofs_per_vertex
-                                             * mesh.num_entities(0));
-
-  // Iterate over all vertices (including ghosts)
-  std::size_t local_vertex_ind = 0;
-  const auto v_begin = mesh::MeshIterator<mesh::Vertex>(mesh, 0);
-  const auto v_end
-      = mesh::MeshIterator<mesh::Vertex>(mesh, mesh.num_entities(0));
-  for (auto vertex = v_begin; vertex != v_end; ++vertex)
-  {
-    // Get the first cell connected to the vertex
-    const mesh::Cell cell(mesh, vertex->entities(top_dim)[0]);
-
-// Find local vertex number
-#ifdef DEBUG
-    bool vertex_found = false;
-#endif
-    for (std::size_t i = 0; i < cell.num_entities(0); i++)
-    {
-      if (cell.entities(0)[i] == vertex->index())
-      {
-        local_vertex_ind = i;
-#ifdef DEBUG
-        vertex_found = true;
-#endif
-        break;
-      }
-    }
-    assert(vertex_found);
-
-    // Get all cell dofs
-    auto cell_dofs = dofmap.cell_dofs(cell.index());
-
-    // Tabulate local to local map of dofs on local vertex
-    dofmap.tabulate_entity_dofs(local_to_local_map, 0, local_vertex_ind);
-
-    // Fill local dofs for the vertex
-    for (std::size_t local_dof = 0; local_dof < dofs_per_vertex; local_dof++)
-    {
-      const dolfin::la_index_t global_dof
-          = cell_dofs[local_to_local_map[local_dof]];
-      return_map[dofs_per_vertex * vertex->index() + local_dof] = global_dof;
-    }
-  }
-
-  // Return the map
-  return return_map;
+  return A;
 }
 //-----------------------------------------------------------------------------
 std::size_t
