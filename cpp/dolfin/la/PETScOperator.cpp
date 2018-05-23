@@ -14,6 +14,8 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
+PETScOperator::PETScOperator() : _matA(nullptr) {}
+//-----------------------------------------------------------------------------
 PETScOperator::PETScOperator(Mat A) : _matA(A)
 {
   // Increase reference count, and throw error if Mat pointer is NULL

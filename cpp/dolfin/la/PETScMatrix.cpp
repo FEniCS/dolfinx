@@ -269,27 +269,12 @@ PETScMatrix::~PETScMatrix()
 //-----------------------------------------------------------------------------
 bool PETScMatrix::empty() const
 {
-  if (!_matA)
-    return true;
-  auto sizes = la::PETScOperator::size();
-  assert((sizes[0] < 1 and sizes[1] < 1) or (sizes[0] > 0 and sizes[1] > 0));
-  return (sizes[0] < 1) and (sizes[1] < 1);
+  return _matA == nullptr ? true : false;
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScMatrix::local_range(std::size_t dim) const
 {
   return PETScOperator::local_range(dim);
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::get(PetscScalar* block, std::size_t m,
-                      const dolfin::la_index_t* rows, std::size_t n,
-                      const dolfin::la_index_t* cols) const
-{
-  // Get matrix entries (must be on this process)
-  assert(_matA);
-  PetscErrorCode ierr = MatGetValues(_matA, m, rows, n, cols, block);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatGetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const PetscScalar* block, std::size_t m,
@@ -336,70 +321,6 @@ void PETScMatrix::add_local(const PetscScalar* block, std::size_t m,
     petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::axpy(PetscScalar a, const PETScMatrix& A,
-                       bool same_nonzero_pattern)
-{
-  PetscErrorCode ierr;
-
-  assert(_matA);
-  assert(A.mat());
-  if (same_nonzero_pattern)
-  {
-    ierr = MatAXPY(_matA, a, A.mat(), SAME_NONZERO_PATTERN);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAXPY");
-  }
-  else
-  {
-    // NOTE: Performing MatAXPY with DIFFERENT_NONZERO_PATTERN
-    // destroys the local-to-global maps. We therefore assign the map
-    // from *this. This is not ideal, the overloaded operations,
-    // e.g. operator()+, do not allow 'same_nonzero_pattern' to be
-    // set.
-
-    // Get local-to-global map for PETSc matrix
-    ISLocalToGlobalMapping rmapping0;
-    ISLocalToGlobalMapping cmapping0;
-    MatGetLocalToGlobalMapping(_matA, &rmapping0, &cmapping0);
-
-    // Increase reference count to prevent destruction
-    PetscObjectReference((PetscObject)rmapping0);
-    PetscObjectReference((PetscObject)cmapping0);
-
-    ierr = MatAXPY(_matA, a, A.mat(), DIFFERENT_NONZERO_PATTERN);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatAXPY");
-
-    // Set local-to-global map and decrease reference count to maps
-    MatSetLocalToGlobalMapping(_matA, rmapping0, cmapping0);
-    ISLocalToGlobalMappingDestroy(&rmapping0);
-    ISLocalToGlobalMappingDestroy(&cmapping0);
-  }
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::zero(std::size_t m, const dolfin::la_index_t* rows)
-{
-  assert(_matA);
-
-  PetscErrorCode ierr;
-  PetscScalar null = 0.0;
-  ierr = MatZeroRows(_matA, static_cast<PetscInt>(m), rows, null, NULL, NULL);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatZeroRows");
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::zero_local(std::size_t m, const dolfin::la_index_t* rows,
-                             PetscScalar diag)
-{
-  assert(_matA);
-  PetscErrorCode ierr;
-  std::cout << "Testing m: " << m << std::endl;
-  std::cout << "Testing r: " << rows[0] << std::endl;
-  ierr = MatZeroRowsLocal(_matA, m, rows, diag, NULL, NULL);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatZeroRowsLocal");
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
 {
   assert(_matA);
@@ -409,38 +330,6 @@ void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
   PetscErrorCode ierr = MatMult(_matA, x.vec(), y.vec());
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatMult");
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::get_diagonal(PETScVector& x) const
-{
-  assert(_matA);
-  const std::array<std::int64_t, 2> size = this->size();
-  if (size[1] != size[0] || size[0] != x.size())
-  {
-    throw std::runtime_error(
-        "Matrix and vector dimensions do not match for matrix-vector set");
-  }
-
-  PetscErrorCode ierr = MatGetDiagonal(_matA, x.vec());
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatGetDiagonal");
-  x.update_ghosts();
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::set_diagonal(const PETScVector& x)
-{
-  assert(_matA);
-  const std::array<std::int64_t, 2> size = this->size();
-  if (size[1] != size[0] || size[0] != x.size())
-  {
-    throw std::runtime_error(
-        "Matrix and vector dimensions do not match for matrix-vector set");
-  }
-
-  PetscErrorCode ierr = MatDiagonalSet(_matA, x.vec(), INSERT_VALUES);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatDiagonalSet");
-  apply(AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(la::Norm norm_type) const
@@ -492,13 +381,6 @@ void PETScMatrix::apply(AssemblyType type)
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScMatrix::mpi_comm() const { return PETScOperator::mpi_comm(); }
-//-----------------------------------------------------------------------------
-std::size_t PETScMatrix::nnz() const
-{
-  MatInfo info;
-  MatGetInfo(_matA, MAT_GLOBAL_SUM, &info);
-  return info.nz_allocated;
-}
 //-----------------------------------------------------------------------------
 void PETScMatrix::zero()
 {

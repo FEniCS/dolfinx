@@ -25,7 +25,7 @@ class PETScOperator
 {
 public:
   /// Constructor
-  PETScOperator() : _matA(nullptr) {}
+  PETScOperator();
 
   /// Constructor
   explicit PETScOperator(Mat A);
@@ -49,6 +49,7 @@ public:
   /// returns -1 if size has not been set.
   std::array<std::int64_t, 2> size() const;
 
+  // FIXME: Remove? Not appropriate for operator?
   /// Return local range along dimension dim
   std::array<std::int64_t, 2> local_range(std::size_t dim) const;
 

@@ -67,9 +67,6 @@ public:
   /// Return local ownership range
   std::array<std::int64_t, 2> local_range(std::size_t dim) const;
 
-  /// Return number of non-zero entries in matrix (collective)
-  std::size_t nnz() const;
-
   /// Set all entries to zero and keep any sparse structure
   void zero();
 
@@ -95,10 +92,6 @@ public:
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;
 
-  /// Get block of values
-  void get(PetscScalar* block, std::size_t m, const dolfin::la_index_t* rows,
-           std::size_t n, const dolfin::la_index_t* cols) const;
-
   /// Set block of values using global indices
   void set(const PetscScalar* block, std::size_t m,
            const dolfin::la_index_t* rows, std::size_t n,
@@ -119,27 +112,12 @@ public:
                  const dolfin::la_index_t* rows, std::size_t n,
                  const dolfin::la_index_t* cols);
 
-  /// Add multiple of given matrix (AXPY operation)
-  void axpy(PetscScalar a, const PETScMatrix& A, bool same_nonzero_pattern);
-
   /// Return norm of matrix
   double norm(la::Norm norm_type) const;
 
-  /// Set given rows (global row indices) to zero
-  void zero(std::size_t m, const dolfin::la_index_t* rows);
-
-  /// Zero given rows (local row indices), and set diagonal
-  void zero_local(std::size_t m, const dolfin::la_index_t* rows,
-                  PetscScalar diag);
-
+  // FIXME: Move to PETScOperator
   /// Matrix-vector product, y = Ax
   void mult(const PETScVector& x, PETScVector& y) const;
-
-  /// Get diagonal of a matrix
-  void get_diagonal(PETScVector& x) const;
-
-  /// Set diagonal of a matrix
-  void set_diagonal(const PETScVector& x);
 
   /// Multiply matrix by scalar
   void scale(PetscScalar a);
