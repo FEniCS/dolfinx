@@ -64,6 +64,10 @@ SparsityPattern::SparsityPattern(
     col_local_size += (local_range[1] - local_range[0]);
   }
 
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  //   std::cout << "Col offset and locale size: " << col_process_offset << ", "
+  //             << col_local_size << std::endl;
+
   // Iterate over block rows
   std::size_t row_local_offset = 0;
   // std::size_t col_global_offset = 0;

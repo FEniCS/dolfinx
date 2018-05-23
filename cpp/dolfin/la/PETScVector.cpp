@@ -115,49 +115,50 @@ PETScVector::~PETScVector()
     VecDestroy(&_x);
 }
 //-----------------------------------------------------------------------------
+PETScVector& PETScVector::operator=(PETScVector&& v)
+{
+  if (_x)
+    VecDestroy(&_x);
+  _x = v._x;
+  v._x = nullptr;
+  return *this;
+}
+//-----------------------------------------------------------------------------
 std::int64_t PETScVector::size() const
 {
-  assert(_x);
-  PetscErrorCode ierr;
-
-  // Return zero if vector type has not been set (Vec has not been
-  // initialized)
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  if (vec_type == nullptr)
-    return 0;
-  CHECK_ERROR("VecGetType");
+  if (!_x)
+  {
+    throw std::runtime_error(
+        "PETSc vector has not been initialised. Cannot return size.");
+  }
 
   PetscInt n = 0;
-  assert(_x);
-  ierr = VecGetSize(_x, &n);
+  PetscErrorCode ierr = VecGetSize(_x, &n);
   CHECK_ERROR("VecGetSize");
-
-  return n > 0 ? n : 0;
+  return n;
 }
 //-----------------------------------------------------------------------------
 std::size_t PETScVector::local_size() const
 {
-  assert(_x);
-  PetscErrorCode ierr;
-
-  // Return zero if vector type has not been set
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  if (vec_type == nullptr)
-    return 0;
-  CHECK_ERROR("VecGetType");
+  if (!_x)
+  {
+    throw std::runtime_error(
+        "PETSc vector has not been initialised. Cannot return local size.");
+  }
 
   PetscInt n = 0;
-  ierr = VecGetLocalSize(_x, &n);
+  PetscErrorCode ierr = VecGetLocalSize(_x, &n);
   CHECK_ERROR("VecGetLocalSize");
-
   return n;
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScVector::local_range() const
 {
-  assert(_x);
+  if (!_x)
+  {
+    throw std::runtime_error(
+        "PETSc vector has not been initialised. Cannot return local range.");
+  }
 
   PetscInt n0, n1;
   PetscErrorCode ierr = VecGetOwnershipRange(_x, &n0, &n1);
@@ -272,17 +273,6 @@ void PETScVector::get_local(PetscScalar* block, std::size_t m,
     ierr = VecGhostRestoreLocalForm(_x, &xg);
     CHECK_ERROR("VecGhostRestoreLocalForm");
   }
-}
-//-----------------------------------------------------------------------------
-void PETScVector::get(PetscScalar* block, std::size_t m,
-                      const dolfin::la_index_t* rows) const
-{
-  if (m == 0)
-    return;
-
-  assert(_x);
-  PetscErrorCode ierr = VecGetValues(_x, m, rows, block);
-  CHECK_ERROR("VecGetValues");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const PetscScalar* block, std::size_t m,
@@ -411,18 +401,11 @@ void PETScVector::mult(const PETScVector& v)
 //-----------------------------------------------------------------------------
 bool PETScVector::empty() const
 {
-  if (!_x)
-    return true;
-  else
-    return this->size() == 0;
-}
-//-----------------------------------------------------------------------------
-PETScVector& PETScVector::operator=(PETScVector&& v)
-{
-  Vec tmp = _x;
-  _x = v._x;
-  v._x = tmp;
-  return *this;
+  return _x == nullptr ? true : false;
+  // if (!_x)
+  //   return true;
+  // else
+  //   return this->size() == 0;
 }
 //-----------------------------------------------------------------------------
 PetscScalar PETScVector::dot(const PETScVector& y) const
@@ -611,16 +594,6 @@ void PETScVector::gather(PETScVector& y,
   CHECK_ERROR("ISDestroy");
   ierr = ISDestroy(&to);
   CHECK_ERROR("ISDestroy");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::gather(std::vector<PetscScalar>& x,
-                         const std::vector<dolfin::la_index_t>& indices) const
-{
-  x.resize(indices.size());
-  PETScVector y;
-  gather(y, indices);
-  assert(y.local_size() == x.size());
-  y.get_local(x);
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_options_prefix(std::string options_prefix)

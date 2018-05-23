@@ -190,13 +190,13 @@ def _solve_varproblem(*args, **kwargs):
         a = Form(eq.lhs, form_compiler_parameters=form_compiler_parameters)
         L = Form(eq.rhs, form_compiler_parameters=form_compiler_parameters)
 
-        comm = L.mesh().mpi_comm()
-        A = PETScMatrix(comm)
+        A = PETScMatrix()
         b = PETScVector()
 
         assembler = SystemAssembler(a, L, bcs)
         assembler.assemble(A, b)
 
+        comm = L.mesh().mpi_comm()
         solver = PETScKrylovSolver(comm)
 
         solver.set_options_prefix("dolfin_solve_")

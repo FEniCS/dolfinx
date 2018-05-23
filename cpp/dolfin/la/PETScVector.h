@@ -109,12 +109,6 @@ public:
   /// Return true if vector is empty
   bool empty() const;
 
-  /// Get block of values using global indices (all values must be owned
-  /// by local process, ghosts cannot be accessed). Size 'm' must be
-  /// less than local size.
-  void get(PetscScalar* block, std::size_t m,
-           const dolfin::la_index_t* rows) const;
-
   /// Get block of values using local indices
   void get_local(PetscScalar* block, std::size_t m,
                  const dolfin::la_index_t* rows) const;
@@ -149,11 +143,6 @@ public:
   /// dimension (same as provided indices). This operation is
   /// collective.
   void gather(PETScVector& y,
-              const std::vector<dolfin::la_index_t>& indices) const;
-
-  /// Gather entries (given by global indices) into x. This operation is
-  /// collective.
-  void gather(std::vector<PetscScalar>& x,
               const std::vector<dolfin::la_index_t>& indices) const;
 
   /// Add multiple of given vector (AXPY operation, this = a*x + this)

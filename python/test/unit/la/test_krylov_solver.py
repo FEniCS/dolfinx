@@ -193,8 +193,8 @@ def test_krylov_reuse_pc():
     # Forms
     a, L = inner(grad(u), grad(v))*dx, dot(Constant(1.0), v)*dx
 
-    A, P = PETScMatrix(mesh.mpi_comm()), PETScMatrix(mesh.mpi_comm())
-    b = PETScVector(mesh.mpi_comm())
+    A, P = PETScMatrix(), PETScMatrix()
+    b = PETScVector()
 
     # Assemble linear algebra objects
     assemble(a, tensor=A)

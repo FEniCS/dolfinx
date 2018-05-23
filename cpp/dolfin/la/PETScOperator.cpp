@@ -14,6 +14,8 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
+PETScOperator::PETScOperator() : _matA(nullptr) {}
+//-----------------------------------------------------------------------------
 PETScOperator::PETScOperator(Mat A) : _matA(A)
 {
   // Increase reference count, and throw error if Mat pointer is NULL
@@ -42,9 +44,10 @@ PETScOperator::~PETScOperator()
 //-----------------------------------------------------------------------------
 PETScOperator& PETScOperator::operator=(PETScOperator&& A)
 {
-  Mat tmp = _matA;
-  this->_matA = A._matA;
-  A._matA = tmp;
+  if (_matA)
+    MatDestroy(&_matA);
+  _matA = A._matA;
+  A._matA = nullptr;
   return *this;
 }
 //-----------------------------------------------------------------------------
@@ -80,7 +83,6 @@ PETScVector PETScOperator::init_vector(std::size_t dim) const
   assert(_matA);
   PetscErrorCode ierr;
 
-  // Create new PETSc vector
   Vec x = nullptr;
   if (dim == 0)
   {
@@ -111,8 +113,6 @@ PETScVector PETScOperator::init_vector(std::size_t dim) const
   return z;
 }
 //-----------------------------------------------------------------------------
-Mat PETScOperator::mat() const { return _matA; }
-//-----------------------------------------------------------------------------
 MPI_Comm PETScOperator::mpi_comm() const
 {
   assert(_matA);
@@ -120,6 +120,8 @@ MPI_Comm PETScOperator::mpi_comm() const
   PetscObjectGetComm((PetscObject)_matA, &mpi_comm);
   return mpi_comm;
 }
+//-----------------------------------------------------------------------------
+Mat PETScOperator::mat() const { return _matA; }
 //-----------------------------------------------------------------------------
 std::string PETScOperator::str(bool verbose) const
 {

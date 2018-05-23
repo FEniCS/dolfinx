@@ -70,9 +70,6 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   std::vector<std::size_t> local_to_global_map1
       = V1.dofmap()->tabulate_local_to_global_dofs();
 
-  // Declare matrix
-  auto A = std::make_shared<la::PETScMatrix>(mesh.mpi_comm());
-
   // Initialize edge -> vertex connections
   mesh.init(1, 0);
 
@@ -112,7 +109,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   pattern.apply();
 
   // Initialise matrix
-  A->init(pattern);
+  auto A = std::make_shared<la::PETScMatrix>(mesh.mpi_comm(), pattern);
 
   // Build discrete gradient operator/matrix
   for (auto& edge : mesh::MeshRange<mesh::Edge>(mesh))
