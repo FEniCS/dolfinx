@@ -433,11 +433,11 @@ void PETScVector::abs()
   CHECK_ERROR("VecAbs");
 }
 //-----------------------------------------------------------------------------
-double PETScVector::norm(la::Norm norm_type) const
+PetscReal PETScVector::norm(la::Norm norm_type) const
 {
   assert(_x);
   PetscErrorCode ierr;
-  double value = 0.0;
+  PetscReal value = 0.0;
   switch (norm_type)
   {
   case la::Norm::l1:

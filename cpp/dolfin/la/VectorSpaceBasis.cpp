@@ -34,7 +34,7 @@ void VectorSpaceBasis::orthonormalize(double tol)
     }
 
     // Normalise basis function
-   const PetscScalar norm = _basis[i]->normalize();
+   const PetscReal norm = _basis[i]->normalize();
     if (norm  < tol)
     {
       throw std::runtime_error(
