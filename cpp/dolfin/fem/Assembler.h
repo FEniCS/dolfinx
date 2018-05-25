@@ -75,7 +75,8 @@ private:
                      std::vector<std::shared_ptr<const DirichletBC>> bcs,
                      int offset0 = 0, int offset1 = 0);
 
-  // Set bcs (set entries of b to be equal to boundary value)
+  // Hack for setting bcs (set entries of b to be equal to boundary
+  // value). Does not set ghosts.
   static void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
                      const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);

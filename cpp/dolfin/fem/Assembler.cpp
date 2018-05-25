@@ -48,6 +48,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   assert(!_a.empty());
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
 
+  // Empty bcs (while testing)
+  std::vector<std::shared_ptr<const DirichletBC>> bcs; // = _bcs;
+
   if (A.empty())
   {
     std::vector<std::vector<const Form*>> forms(
@@ -83,7 +86,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         if (_a[i][j])
         {
           la::PETScMatrix mat(subA);
-          this->assemble(mat, *_a[i][j], _bcs);
+          this->assemble(mat, *_a[i][j], bcs);
           // mat.apply(la::PETScMatrix::AssemblyType::FINAL);
         }
         else
@@ -109,7 +112,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           // Build index set for block
           auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
-          // auto map0_size = map0->size(common::IndexMap::MapSize::OWNED);
+          // int map0_size_owned = map0->size(common::IndexMap::MapSize::OWNED);
           // auto map1_size = map1->size(common::IndexMap::MapSize::OWNED);
           auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
           auto map1_size = map1->size(common::IndexMap::MapSize::ALL);
@@ -131,8 +134,42 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
           // Assemble block
           la::PETScMatrix mat(subA);
+          this->assemble(mat, *_a[i][j], bcs);
 
-          // Add bcs to list for diagonal block
+          mat.apply(la::PETScMatrix::AssemblyType::FLUSH);
+
+          // Place '1' on diagonal
+          if (_a[i][j]->function_space(0) == _a[i][j]->function_space(1))
+          {
+            auto space = _a[i][j]->function_space(0);
+            DirichletBC::Map boundary_values;
+            for (std::size_t i = 0; i < bcs.size(); ++i)
+            {
+              assert(bcs[i]);
+              assert(bcs[i]->function_space());
+              if (space->contains(*bcs[i]->function_space()))
+              {
+                // FIXME: find way to avoid gather, or perform with a single
+                // gather
+                bcs[i]->get_boundary_values(boundary_values);
+                if (MPI::size(MPI_COMM_WORLD) > 1
+                    and _bcs[i]->method() != DirichletBC::Method::pointwise)
+                {
+                  bcs[i]->gather(boundary_values);
+                }
+              }
+            }
+
+            // double one = 1.0;
+            // for (auto bc : boundary_values)
+            // {
+            //   PetscInt row = bc.first;
+            //   if (row < map0_size_owned)
+            //     mat.add_local(&one, 1, &row, 1, &row);
+            // }
+          }
+
+          // // Add bcs to list for diagonal block
           // if (_a[i][j]->function_space(0) == _a[i][j]->function_space(1))
           // {
           //   const PetscInt* l2g;
@@ -142,9 +179,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           //   DirichletBC::Map boundary_values;
           //   for (std::size_t i = 0; i < _bcs.size(); ++i)
           //   {
-          //     assert(_bcs[i]);
-          //     assert(_bcs[i]->function_space());
-          //     if (space->contains(*_bcs[i]->function_space()))
+          //     assert(bcs[i]);
+          //     assert(bcs[i]->function_space());
+          //     if (space->contains(*bcs[i]->function_space()))
           //     {
           //       // FIXME: find way to avoid gather, or perform with a single
           //       // gather
@@ -166,10 +203,6 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
           //   ISRestoreIndices(is0, &l2g);
           // }
-
-          // if (MPI::rank(MPI_COMM_WORLD) == 0)
-          // if (i == 1 and j == 1)
-          this->assemble(mat, *_a[i][j], _bcs);
 
           // Restore sub-matrix and destroy index sets
           MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
@@ -207,9 +240,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
   else
   {
-    this->assemble(A, *_a[0][0], _bcs);
+    this->assemble(A, *_a[0][0], bcs);
 
-    // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
+    //A.apply(la::PETScMatrix::AssemblyType::FLUSH);
 
     // Place '1' on diagonal
     // std::vector<la_index_t> bc_dofs;
@@ -217,32 +250,31 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     {
       auto space = _a[0][0]->function_space(0);
       DirichletBC::Map boundary_values;
-      for (std::size_t i = 0; i < _bcs.size(); ++i)
+      for (std::size_t i = 0; i < bcs.size(); ++i)
       {
-        assert(_bcs[i]);
-        assert(_bcs[i]->function_space());
-        if (space->contains(*_bcs[i]->function_space()))
+        assert(bcs[i]);
+        assert(bcs[i]->function_space());
+        if (space->contains(*bcs[i]->function_space()))
         {
           // FIXME: find way to avoid gather, or perform with a single
           // gather
-          _bcs[i]->get_boundary_values(boundary_values);
+          bcs[i]->get_boundary_values(boundary_values);
           if (MPI::size(MPI_COMM_WORLD) > 1
               and _bcs[i]->method() != DirichletBC::Method::pointwise)
           {
-            _bcs[i]->gather(boundary_values);
+            bcs[i]->gather(boundary_values);
           }
         }
       }
 
-      double one = 1.0;
+      //double one = 1.0;
       for (auto bc : boundary_values)
       {
         PetscInt row = bc.first;
-        A.set_local(&one, 1, &row, 1, &row);
+        std::cout << "Setting row: " << row << std::endl;
+        //A.set_local(&one, 1, &row, 1, &row);
       }
     }
-
-    // A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
@@ -254,10 +286,14 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   assert(!_l.empty());
   const bool block_vector = _l.size() > 1;
 
+  for (std::size_t i = 0; i < _l.size(); ++i)
+  {
+    if (!_l[i])
+      throw std::runtime_error("Cannot have NULL linear form block.");
+  }
+
   if (b.empty())
   {
-    // Initialise matrix if empty
-
     // Build array of pointers to forms
     std::vector<const Form*> forms(_a.size());
     for (std::size_t i = 0; i < _l.size(); ++i)
@@ -281,47 +317,32 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   {
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
-      // Get subvector
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
-      if (_l[i])
-      {
-        // Get local representation
-        Vec b_local;
-        VecGhostGetLocalForm(sub_b, &b_local);
-        assert(b_local);
-        this->assemble(b_local, *_l[i]);
+      Vec b_local;
+      VecGhostGetLocalForm(sub_b, &b_local);
+      assert(b_local);
+      this->assemble(b_local, *_l[i]);
 
-        // Modify RHS for Dirichlet bcs
-        // for (std::size_t j = 0; j < _a[i].size(); ++j)
-        //   apply_bc(vec, *_a[i][j], _bcs);
+      // Modify RHS for Dirichlet bcs
+      // for (std::size_t j = 0; j < _a[i].size(); ++j)
+      //   apply_bc(vec, *_a[i][j], _bcs);
 
-        VecGhostRestoreLocalForm(sub_b, &b_local);
-        VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
-        VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
+      VecGhostRestoreLocalForm(sub_b, &b_local);
+      VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
 
-        // Set boundary values (local only)
-        PetscScalar* values;
-        VecGhostGetLocalForm(sub_b, &b_local);
-        PetscInt size;
-        VecGetSize(b_local, &size);
-        VecGetArray(b_local, &values);
-        Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values, size);
-        set_bc(vec, *_l[i], _bcs);
-        VecRestoreArray(b_local, &values);
-        VecGhostRestoreLocalForm(sub_b, &b_local);
-
-
-      }
-      else
-      {
-        // FIXME: Figure out how to check that vector block is null
-        // Null block, do nothing
-        std::cout << "WARNING: null linear form. Untested " << std::endl;
-      }
+      // Set boundary values (local only)
+      PetscInt local_size;
+      VecGetLocalSize(sub_b, &local_size);
+      PetscScalar* values;
+      VecGetArray(sub_b, &values);
+      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
+                                                                   local_size);
+      set_bc(vec, *_l[i], _bcs);
+      VecRestoreArray(sub_b, &values);
     }
   }
-
   else if (block_vector)
   {
     std::vector<const common::IndexMap*> index_maps;
@@ -338,41 +359,38 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     VecGetArray(b_local, &values);
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
-      if (_l[i])
+      auto map = _l[i]->function_space(0)->dofmap()->index_map();
+      auto map_size0 = map->size(common::IndexMap::MapSize::OWNED);
+      auto map_size1 = map->size(common::IndexMap::MapSize::GHOSTS);
+
+      int offset0(0), offset1(0);
+      for (std::size_t j = 0; j < _l.size(); ++j)
+        offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(
+            common::IndexMap::MapSize::OWNED);
+      for (std::size_t j = 0; j < i; ++j)
       {
-        auto map = _l[i]->function_space(0)->dofmap()->index_map();
-        auto map_size0 = map->size(common::IndexMap::MapSize::OWNED);
-        auto map_size1 = map->size(common::IndexMap::MapSize::GHOSTS);
-
-        int offset0(0), offset1(0);
-        for (std::size_t j = 0; j < _l.size(); ++j)
-          offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(
-              common::IndexMap::MapSize::OWNED);
-        for (std::size_t j = 0; j < i; ++j)
-        {
-          offset0 += _l[j]->function_space(0)->dofmap()->index_map()->size(
-              common::IndexMap::MapSize::OWNED);
-          offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(
-              common::IndexMap::MapSize::GHOSTS);
-        }
-
-        // Assemble
-        EigenVectorXd b_vec(map_size0 + map_size1);
-        b_vec.setZero();
-        this->assemble(b_vec, *_l[i]);
-
-        // Modify vector for bcs
-        // for (std::size_t j = 0; j < _a[i].size(); ++j)
-        //   apply_bc(b_local, *_a[i][j], _bcs);
-
-        // set_bc(b_local, *_l[i], _bcs);
-
-        // Copy data into PETSc Vector
-        for (std::size_t j = 0; j < map_size0; ++j)
-          values[offset0 + j] = b_vec[j];
-        for (std::size_t j = 0; j < map_size1; ++j)
-          values[offset1 + j] = b_vec[map_size0 + j];
+        offset0 += _l[j]->function_space(0)->dofmap()->index_map()->size(
+            common::IndexMap::MapSize::OWNED);
+        offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(
+            common::IndexMap::MapSize::GHOSTS);
       }
+
+      // Assemble
+      EigenVectorXd b_vec(map_size0 + map_size1);
+      b_vec.setZero();
+      this->assemble(b_vec, *_l[i]);
+
+      // Modify vector for bcs
+      // for (std::size_t j = 0; j < _a[i].size(); ++j)
+      //   apply_bc(b_local, *_a[i][j], _bcs);
+
+      // set_bc(b_local, *_l[i], _bcs);
+
+      // Copy data into PETSc Vector
+      for (std::size_t j = 0; j < map_size0; ++j)
+        values[offset0 + j] = b_vec[j];
+      for (std::size_t j = 0; j < map_size1; ++j)
+        values[offset1 + j] = b_vec[map_size0 + j];
     }
 
     VecRestoreArray(b_local, &values);
@@ -380,6 +398,21 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+
+    std::size_t offset = 0;
+    for (std::size_t i = 0; i < _l.size(); ++i)
+    {
+      auto map = _l[i]->function_space(0)->dofmap()->index_map();
+      auto map_size0 = map->size(common::IndexMap::MapSize::OWNED);
+
+      PetscScalar* values;
+      VecGetArray(b.vec(), &values);
+      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(
+          values + offset, map_size0);
+      set_bc(vec, *_l[i], _bcs);
+      VecRestoreArray(b.vec(), &values);
+      offset += map_size0;
+    }
   }
   else
   {
@@ -389,13 +422,21 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     assert(b_local);
     this->assemble(b_local, *_l[0]);
     // apply_bc(b, *_a[0][0], _bcs);
-    // set_bc(b, *_l[0], _bcs);
 
     // Accumulate ghosts on owning process
     VecGhostRestoreLocalForm(b.vec(), &b_local);
 
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+
+    auto map = _l[0]->function_space(0)->dofmap()->index_map();
+    auto map_size0 = map->size(common::IndexMap::MapSize::OWNED);
+    PetscScalar* values;
+    VecGetArray(b.vec(), &values);
+    Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
+                                                                 map_size0);
+    set_bc(vec, *_l[0], _bcs);
+    VecRestoreArray(b.vec(), &values);
   }
 }
 //-----------------------------------------------------------------------------
@@ -729,9 +770,9 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void Assembler::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-                       const Form& L,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs)
+void Assembler::set_bc(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Get mesh from form
   assert(L.mesh());
