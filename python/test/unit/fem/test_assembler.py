@@ -34,7 +34,7 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
-    u_bc = dolfin.function.constant.Constant(1.0)
+    u_bc = dolfin.function.constant.Constant(50.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
@@ -57,7 +57,7 @@ def test_matrix_assembly_block():
 
     # Create assembler
     assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
-                                                [L0, L1], [])
+                                                [L0, L1], [bc])
 
     # Monolithic blocked
     A0, b0 = assembler.assemble(
@@ -82,6 +82,8 @@ def test_matrix_assembly_block():
                 A_sub = A1.mat().getNestSubMatrix(row, col)
                 norm = A_sub.norm()
                 Anorm1 += norm * norm
+                #A_sub.view()
+
         # is_rows, is_cols = A1.mat().getNestLocalISs()
         # for is0 in is_rows:
         #     for is1 in is_cols:
@@ -104,7 +106,7 @@ def test_matrix_assembly_block():
     L = zero * f * v0 * ufl.dx + g * v1 * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    assembler = dolfin.fem.assembling.Assembler([[a]], [L], [])
+    assembler = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
 
     A2, b2 = assembler.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)

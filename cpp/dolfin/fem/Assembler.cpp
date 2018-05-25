@@ -49,7 +49,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
 
   // Empty bcs (while testing)
-  std::vector<std::shared_ptr<const DirichletBC>> bcs; // = _bcs;
+  std::vector<std::shared_ptr<const DirichletBC>> bcs = _bcs;
 
   if (A.empty())
   {
@@ -87,7 +87,38 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         {
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], bcs);
-          // mat.apply(la::PETScMatrix::AssemblyType::FINAL);
+          mat.apply(la::PETScMatrix::AssemblyType::FLUSH);
+
+          // Place '1' on diagonal
+          if (_a[i][j]->function_space(0) == _a[i][j]->function_space(1))
+          {
+            auto space = _a[i][j]->function_space(0);
+            DirichletBC::Map boundary_values;
+            for (std::size_t k = 0; k < bcs.size(); ++k)
+            {
+              assert(bcs[k]);
+              assert(bcs[k]->function_space());
+              if (space->contains(*bcs[k]->function_space()))
+              {
+                // FIXME: find way to avoid gather, or perform with a single
+                // gather
+                bcs[k]->get_boundary_values(boundary_values);
+                if (MPI::size(MPI_COMM_WORLD) > 1
+                    and _bcs[k]->method() != DirichletBC::Method::pointwise)
+                {
+                  bcs[k]->gather(boundary_values);
+                }
+              }
+            }
+
+            double one = 1.0;
+            for (auto bc : boundary_values)
+            {
+              PetscInt row = bc.first;
+              // std::cout << "Setting row: " << row << std::endl;
+              mat.set_local(&one, 1, &row, 1, &row);
+            }
+          }
         }
         else
         {
@@ -112,7 +143,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           // Build index set for block
           auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
-          // int map0_size_owned = map0->size(common::IndexMap::MapSize::OWNED);
+          int map0_size_owned = map0->size(common::IndexMap::MapSize::OWNED);
           // auto map1_size = map1->size(common::IndexMap::MapSize::OWNED);
           auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
           auto map1_size = map1->size(common::IndexMap::MapSize::ALL);
@@ -143,66 +174,31 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           {
             auto space = _a[i][j]->function_space(0);
             DirichletBC::Map boundary_values;
-            for (std::size_t i = 0; i < bcs.size(); ++i)
+            for (std::size_t k = 0; k < bcs.size(); ++k)
             {
-              assert(bcs[i]);
-              assert(bcs[i]->function_space());
-              if (space->contains(*bcs[i]->function_space()))
+              assert(bcs[k]);
+              assert(bcs[k]->function_space());
+              if (space->contains(*bcs[k]->function_space()))
               {
                 // FIXME: find way to avoid gather, or perform with a single
                 // gather
-                bcs[i]->get_boundary_values(boundary_values);
+                bcs[k]->get_boundary_values(boundary_values);
                 if (MPI::size(MPI_COMM_WORLD) > 1
-                    and _bcs[i]->method() != DirichletBC::Method::pointwise)
+                    and bcs[k]->method() != DirichletBC::Method::pointwise)
                 {
-                  bcs[i]->gather(boundary_values);
+                  bcs[k]->gather(boundary_values);
                 }
               }
             }
 
-            // double one = 1.0;
-            // for (auto bc : boundary_values)
-            // {
-            //   PetscInt row = bc.first;
-            //   if (row < map0_size_owned)
-            //     mat.add_local(&one, 1, &row, 1, &row);
-            // }
+            double one = 1.0;
+            for (auto bc : boundary_values)
+            {
+              PetscInt row = bc.first;
+              if (row < map0_size_owned)
+                mat.add_local(&one, 1, &row, 1, &row);
+            }
           }
-
-          // // Add bcs to list for diagonal block
-          // if (_a[i][j]->function_space(0) == _a[i][j]->function_space(1))
-          // {
-          //   const PetscInt* l2g;
-          //   ISGetIndices(is0, &l2g);
-
-          //   auto space = _a[i][j]->function_space(0);
-          //   DirichletBC::Map boundary_values;
-          //   for (std::size_t i = 0; i < _bcs.size(); ++i)
-          //   {
-          //     assert(bcs[i]);
-          //     assert(bcs[i]->function_space());
-          //     if (space->contains(*bcs[i]->function_space()))
-          //     {
-          //       // FIXME: find way to avoid gather, or perform with a single
-          //       // gather
-          //       _bcs[i]->get_boundary_values(boundary_values);
-          //       if (MPI::size(MPI_COMM_WORLD) > 1
-          //           and _bcs[i]->method() != DirichletBC::Method::pointwise)
-          //       {
-          //         _bcs[i]->gather(boundary_values);
-          //       }
-          //     }
-          //   }
-
-          //   for (auto bc : boundary_values)
-          //   {
-          //     la_index_t dof_local = bc.first;
-          //     la_index_t dof_global = l2g[dof_local];
-          //     bc_values.push_back({dof_global, bc.second});
-          //   }
-
-          //   ISRestoreIndices(is0, &l2g);
-          // }
 
           // Restore sub-matrix and destroy index sets
           MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
@@ -242,10 +238,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   {
     this->assemble(A, *_a[0][0], bcs);
 
-    //A.apply(la::PETScMatrix::AssemblyType::FLUSH);
+    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
 
     // Place '1' on diagonal
-    // std::vector<la_index_t> bc_dofs;
     if (_a[0][0]->function_space(0) == _a[0][0]->function_space(1))
     {
       auto space = _a[0][0]->function_space(0);
@@ -267,12 +262,12 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         }
       }
 
-      //double one = 1.0;
+      double one = 1.0;
       for (auto bc : boundary_values)
       {
         PetscInt row = bc.first;
-        std::cout << "Setting row: " << row << std::endl;
-        //A.set_local(&one, 1, &row, 1, &row);
+        // std::cout << "Setting row: " << row << std::endl;
+        A.set_local(&one, 1, &row, 1, &row);
       }
     }
   }
