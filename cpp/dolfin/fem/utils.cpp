@@ -232,7 +232,7 @@ la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
   }
 
   // Create map for combined problem
-  common::IndexMap index_map(L[0]->mesh()->mpi_comm(), local_size, {}, 1);
+  common::IndexMap index_map(L[0]->mesh()->mpi_comm(), local_size, ghosts, 1);
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------

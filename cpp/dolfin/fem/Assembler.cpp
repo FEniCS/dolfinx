@@ -272,13 +272,6 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       b = fem::init_vector(*_l[0]);
   }
 
-  // auto range = b.local_range();
-  // if (MPI::rank(MPI_COMM_WORLD) == 0)
-  // {
-  //   std::cout << " Local range: " << range[0] << ", " << range[1] <<
-  //   std::endl; std::cout << " size: " << b.size() << std::endl;
-  // }
-
   // Get vector type
   VecType vec_type;
   VecGetType(b.vec(), &vec_type);
@@ -298,12 +291,15 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         VecGhostGetLocalForm(sub_b, &b_local);
         assert(b_local);
         this->assemble(b_local, *_l[i]);
+
+        // Modify RHS for Dirichlet bcs
         // for (std::size_t j = 0; j < _a[i].size(); ++j)
         //   apply_bc(vec, *_a[i][j], _bcs);
-        // set_bc(vec, *_l[i], _bcs);
-        VecGhostRestoreLocalForm(sub_b, &b_local);
 
-        // Accumulate ghosts on owning process
+        // Set RHS to bc for constrained dofs (owned dofs only)
+        // set_bc(vec, *_l[i], _bcs);
+
+        VecGhostRestoreLocalForm(sub_b, &b_local);
         VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
         VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
       }
@@ -322,45 +318,55 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     {
       auto map = _l[i]->function_space(0)->dofmap()->index_map();
       index_maps.push_back(map.get());
-    }
 
-    // std::cout << "Assembling block vector (non-nested)" << std::endl;
-    std::int64_t offset = 0;
+    }
+    // Get local representation
+    Vec b_local;
+    VecGhostGetLocalForm(b.vec(), &b_local);
+    assert(b_local);
+    PetscScalar* values;
+    VecGetArray(b_local, &values);
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
       if (_l[i])
       {
         auto map = _l[i]->function_space(0)->dofmap()->index_map();
-        auto map_size = map->size(common::IndexMap::MapSize::ALL);
+        auto map_size0 = map->size(common::IndexMap::MapSize::OWNED);
+        auto map_size1 = map->size(common::IndexMap::MapSize::GHOSTS);
+
+        int offset0(0), offset1(0);
+        for (std::size_t j = 0; j < _l.size(); ++j)
+          offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(common::IndexMap::MapSize::OWNED);
+        for (std::size_t j = 0; j < i; ++j)
+        {
+          offset0 += _l[j]->function_space(0)->dofmap()->index_map()->size(common::IndexMap::MapSize::OWNED);
+          offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(common::IndexMap::MapSize::GHOSTS);
+        }
 
         // Assemble
-        EigenVectorXd b_local(map_size);
-        b_local.setZero();
-        this->assemble(b_local, *_l[i]);
+        EigenVectorXd b_vec(map_size0 + map_size1);
+        b_vec.setZero();
+        this->assemble(b_vec, *_l[i]);
 
         // Modify vector for bcs
         // for (std::size_t j = 0; j < _a[i].size(); ++j)
         //   apply_bc(b_local, *_a[i][j], _bcs);
+
         // set_bc(b_local, *_l[i], _bcs);
 
-        // Build local-to-global map
-        std::vector<PetscInt> local_to_global_map(
-            map->size(common::IndexMap::MapSize::ALL));
-        for (std::size_t k = 0; k < local_to_global_map.size(); ++k)
-        {
-          std::size_t k_global = map->local_to_global(k);
-          local_to_global_map[k]
-              = fem::get_global_index(index_maps, i, k_global);
-        }
-
-        // Add to global vector
-        b.add(b_local.data(), map_size, local_to_global_map.data());
-
-        offset += map_size;
+        // Copy data into PETSc Vector
+        for (std::size_t j = 0; j < map_size0; ++j)
+          values[offset0 + j] = b_vec[j];
+        for (std::size_t j = 0; j < map_size1; ++j)
+          values[offset1 + j] = b_vec[map_size0 + j];
       }
     }
 
-    b.apply();
+    VecRestoreArray(b_local, &values);
+    VecGhostRestoreLocalForm(b.vec(), &b_local);
+
+    VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
   }
   else
   {
@@ -371,9 +377,10 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     this->assemble(b_local, *_l[0]);
     // apply_bc(b, *_a[0][0], _bcs);
     // set_bc(b, *_l[0], _bcs);
-    VecGhostRestoreLocalForm(b.vec(), &b_local);
 
     // Accumulate ghosts on owning process
+    VecGhostRestoreLocalForm(b.vec(), &b_local);
+
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
   }
@@ -746,6 +753,5 @@ void Assembler::set_bc(la::PETScVector& b, const Form& L,
   }
 
   b.set_local(values.data(), values.size(), rows.data());
-  b.apply();
 }
 //-----------------------------------------------------------------------------
