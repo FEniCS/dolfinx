@@ -194,7 +194,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       offset_row += map0_size;
     }
 
-    //A.apply(la::PETScMatrix::AssemblyType::FLUSH);
+    // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
 
     // // Place '1' on diagonal
     // for (auto bc : bc_values)
@@ -209,7 +209,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   {
     this->assemble(A, *_a[0][0], _bcs);
 
-    //A.apply(la::PETScMatrix::AssemblyType::FLUSH);
+    // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
 
     // Place '1' on diagonal
     // std::vector<la_index_t> bc_dofs;
@@ -242,7 +242,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       }
     }
 
-    //A.apply(la::PETScMatrix::AssemblyType::FINAL);
+    // A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
@@ -296,12 +296,22 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
         // for (std::size_t j = 0; j < _a[i].size(); ++j)
         //   apply_bc(vec, *_a[i][j], _bcs);
 
-        // Set RHS to bc for constrained dofs (owned dofs only)
-        // set_bc(vec, *_l[i], _bcs);
-
         VecGhostRestoreLocalForm(sub_b, &b_local);
         VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
         VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
+
+        // Set boundary values (local only)
+        PetscScalar* values;
+        VecGhostGetLocalForm(sub_b, &b_local);
+        PetscInt size;
+        VecGetSize(b_local, &size);
+        VecGetArray(b_local, &values);
+        Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values, size);
+        set_bc(vec, *_l[i], _bcs);
+        VecRestoreArray(b_local, &values);
+        VecGhostRestoreLocalForm(sub_b, &b_local);
+
+
       }
       else
       {
@@ -311,6 +321,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       }
     }
   }
+
   else if (block_vector)
   {
     std::vector<const common::IndexMap*> index_maps;
@@ -318,7 +329,6 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     {
       auto map = _l[i]->function_space(0)->dofmap()->index_map();
       index_maps.push_back(map.get());
-
     }
     // Get local representation
     Vec b_local;
@@ -336,11 +346,14 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
 
         int offset0(0), offset1(0);
         for (std::size_t j = 0; j < _l.size(); ++j)
-          offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(common::IndexMap::MapSize::OWNED);
+          offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(
+              common::IndexMap::MapSize::OWNED);
         for (std::size_t j = 0; j < i; ++j)
         {
-          offset0 += _l[j]->function_space(0)->dofmap()->index_map()->size(common::IndexMap::MapSize::OWNED);
-          offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(common::IndexMap::MapSize::GHOSTS);
+          offset0 += _l[j]->function_space(0)->dofmap()->index_map()->size(
+              common::IndexMap::MapSize::OWNED);
+          offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(
+              common::IndexMap::MapSize::GHOSTS);
         }
 
         // Assemble
@@ -716,13 +729,13 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
   b.apply();
 }
 //-----------------------------------------------------------------------------
-void Assembler::set_bc(la::PETScVector& b, const Form& L,
+void Assembler::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+                       const Form& L,
                        std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Get mesh from form
   assert(L.mesh());
   const mesh::Mesh& mesh = *L.mesh();
-
   auto V = L.function_space(0);
 
   // Get bcs
@@ -742,16 +755,10 @@ void Assembler::set_bc(la::PETScVector& b, const Form& L,
     }
   }
 
-  std::vector<double> values;
-  values.reserve(boundary_values.size());
-  std::vector<la_index_t> rows;
-  rows.reserve(boundary_values.size());
   for (auto bc : boundary_values)
   {
-    rows.push_back(bc.first);
-    values.push_back(bc.second);
+    if (bc.first < (std::size_t)b.size())
+      b[bc.first] = bc.second;
   }
-
-  b.set_local(values.data(), values.size(), rows.data());
 }
 //-----------------------------------------------------------------------------

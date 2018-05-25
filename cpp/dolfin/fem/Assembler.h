@@ -72,6 +72,12 @@ private:
 
   // Set bcs (set entries of b to be equal to boundary value)
   static void set_bc(la::PETScVector& b, const Form& L,
+                     std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                     int offset0 = 0, int offset1 = 0);
+
+  // Set bcs (set entries of b to be equal to boundary value)
+  static void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+                     const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Bilinear and linear forms
