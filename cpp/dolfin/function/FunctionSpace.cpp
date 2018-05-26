@@ -257,8 +257,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   // Get local size
   assert(_dofmap);
   std::size_t bs = _dofmap->block_size();
-  std::size_t local_size
-      = bs * _dofmap->index_map()->size(common::IndexMap::MapSize::OWNED);
+  std::size_t local_size = bs * _dofmap->index_map()->size_local();
 
   // Dof coordinate on reference element
   const EigenRowArrayXXd& X = _element->dof_reference_coordinates();

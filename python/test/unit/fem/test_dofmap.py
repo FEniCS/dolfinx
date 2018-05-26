@@ -453,12 +453,10 @@ def test_local_dimension(mesh_factory):
         dofmap = space.dofmap()
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
         ownership_range = dofmap.ownership_range()
-        dim1 = dofmap.index_map().size(IndexMap.MapSize.OWNED)
-        dim2 = dofmap.index_map().size(IndexMap.MapSize.UNOWNED)
-        dim3 = dofmap.index_map().size(IndexMap.MapSize.ALL)
+        dim1 = dofmap.index_map().size_local()
+        dim2 = dofmap.index_map().num_ghosts()
         assert dim1 == ownership_range[1] - ownership_range[0]
-        assert dim3 == local_to_global_map.size
-        assert dim1 + dim2 == dim3
+        assert dim1 + dim2 == local_to_global_map.size
         # with pytest.raises(RuntimeError):
         #    dofmap.index_map().size('foo')
 

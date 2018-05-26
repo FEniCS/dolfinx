@@ -114,8 +114,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           // Build index set for block
           auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
-          auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
-          auto map1_size = map1->size(common::IndexMap::MapSize::ALL);
+          auto map0_size = map0->size_local() + map0->num_ghosts();
+          auto map1_size = map1->size_local() + map1->num_ghosts();
 
           std::vector<PetscInt> index0(map0_size);
           std::vector<PetscInt> index1(map1_size);
@@ -152,7 +152,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         }
       }
       auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
-      auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
+      auto map0_size = map0->size_local() + map0->num_ghosts();
       offset_row += map0_size;
     }
 
@@ -245,19 +245,19 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
       auto map = _l[i]->function_space(0)->dofmap()->index_map();
-      auto map_size0 = map->size(common::IndexMap::MapSize::OWNED);
-      auto map_size1 = map->size(common::IndexMap::MapSize::GHOSTS);
+      auto map_size0 = map->size_local();
+      auto map_size1 = map->num_ghosts();
 
       int offset0(0), offset1(0);
       for (std::size_t j = 0; j < _l.size(); ++j)
-        offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(
-            common::IndexMap::MapSize::OWNED);
+        offset1
+            += _l[j]->function_space(0)->dofmap()->index_map()->size_local();
       for (std::size_t j = 0; j < i; ++j)
       {
-        offset0 += _l[j]->function_space(0)->dofmap()->index_map()->size(
-            common::IndexMap::MapSize::OWNED);
-        offset1 += _l[j]->function_space(0)->dofmap()->index_map()->size(
-            common::IndexMap::MapSize::GHOSTS);
+        offset0
+            += _l[j]->function_space(0)->dofmap()->index_map()->size_local();
+        offset1
+            += _l[j]->function_space(0)->dofmap()->index_map()->num_ghosts();
       }
 
       // Assemble
@@ -272,9 +272,9 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       // set_bc(b_local, *_l[i], _bcs);
 
       // Copy data into PETSc Vector
-      for (std::size_t j = 0; j < map_size0; ++j)
+      for (int j = 0; j < map_size0; ++j)
         values[offset0 + j] = b_vec[j];
-      for (std::size_t j = 0; j < map_size1; ++j)
+      for (int j = 0; j < map_size1; ++j)
         values[offset1 + j] = b_vec[map_size0 + j];
     }
 
@@ -288,7 +288,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
       auto map = _l[i]->function_space(0)->dofmap()->index_map();
-      auto map_size0 = map->size(common::IndexMap::MapSize::OWNED);
+      auto map_size0 = map->size_local();
 
       PetscScalar* values;
       VecGetArray(b.vec(), &values);
@@ -315,7 +315,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
     auto map = _l[0]->function_space(0)->dofmap()->index_map();
-    auto map_size0 = map->size(common::IndexMap::MapSize::OWNED);
+    auto map_size0 = map->size_local();
     PetscScalar* values;
     VecGetArray(b.vec(), &values);
     Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
@@ -442,7 +442,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   // Place '1' on the diagonal if entry is owned by this process
   if (V0 == V1)
   {
-    int local_size = map0.index_map()->size(common::IndexMap::MapSize::OWNED);
+    int local_size = map0.index_map()->size_local();
     double one = 1.0;
     for (auto bc : boundary_values0)
     {

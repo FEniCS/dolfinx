@@ -88,9 +88,10 @@ void common(py::module& m)
 
   // dolfin::common::IndexMap
   py::class_<dolfin::common::IndexMap,
-             std::shared_ptr<dolfin::common::IndexMap>>
-      index_map(m, "IndexMap");
-  index_map.def("size", &dolfin::common::IndexMap::size)
+             std::shared_ptr<dolfin::common::IndexMap>>(m, "IndexMap")
+      .def("size_local", &dolfin::common::IndexMap::size_local)
+      .def("size_global", &dolfin::common::IndexMap::size_global)
+      .def("num_ghosts", &dolfin::common::IndexMap::num_ghosts)
       .def("block_size", &dolfin::common::IndexMap::block_size,
            "Return block size")
       .def("local_range", &dolfin::common::IndexMap::local_range,
@@ -101,13 +102,6 @@ void common(py::module& m)
       .def("ghosts", &dolfin::common::IndexMap::ghosts,
            py::return_value_policy::reference_internal,
            "Return list of ghost indices");
-
-  // dolfin::common::IndexMap enums
-  py::enum_<dolfin::common::IndexMap::MapSize>(index_map, "MapSize")
-      .value("ALL", dolfin::common::IndexMap::MapSize::ALL)
-      .value("OWNED", dolfin::common::IndexMap::MapSize::OWNED)
-      .value("GHOSTS", dolfin::common::IndexMap::MapSize::GHOSTS)
-      .value("GLOBAL", dolfin::common::IndexMap::MapSize::GLOBAL);
 
   // dolfin::common::Timer
   py::class_<dolfin::common::Timer, std::shared_ptr<dolfin::common::Timer>>(

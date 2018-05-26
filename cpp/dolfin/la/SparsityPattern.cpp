@@ -21,8 +21,7 @@ SparsityPattern::SparsityPattern(
     : _mpi_comm(comm), _index_maps(index_maps)
 {
   const std::size_t local_size0
-      = index_maps[0]->block_size()
-        * index_maps[0]->size(common::IndexMap::MapSize::OWNED);
+      = index_maps[0]->block_size() * index_maps[0]->size_local();
 
   _diagonal.resize(local_size0);
   _off_diagonal.resize(local_size0);
@@ -77,8 +76,7 @@ SparsityPattern::SparsityPattern(
     assert(patterns[row][0]);
     // std::cout << "Row: " << row << std::endl;
     assert(patterns[row][0]->_index_maps[0]);
-    std::size_t row_size = patterns[row][0]->_index_maps[0]->size(
-        common::IndexMap::MapSize::OWNED);
+    std::size_t row_size = patterns[row][0]->_index_maps[0]->size_local();
     assert(row_size == patterns[row][0]->_diagonal.size());
     this->_diagonal.resize(this->_diagonal.size() + row_size);
     if (distributed)
@@ -139,8 +137,7 @@ SparsityPattern::SparsityPattern(
       }
 
       // Increment global column offset
-      col_global_offset
-          += p->_index_maps[1]->size(common::IndexMap::MapSize::OWNED);
+      col_global_offset += p->_index_maps[1]->size_local();
     }
 
     // Increment local row offset
@@ -234,8 +231,7 @@ void SparsityPattern::insert_entries(
   const common::IndexMap& index_map1 = *_index_maps[1];
 
   std::size_t bs0 = index_map0.block_size();
-  const std::size_t local_size0
-      = bs0 * index_map0.size(common::IndexMap::MapSize::OWNED);
+  const std::size_t local_size0 = bs0 * index_map0.size_local();
 
   std::size_t bs1 = index_map1.block_size();
   const auto local_range1 = index_map1.local_range();
@@ -323,7 +319,7 @@ void SparsityPattern::insert_full_rows_local(
 {
   std::size_t bs0 = _index_maps[0]->block_size();
   const std::size_t ghosted_size0
-      = bs0 * _index_maps[0]->size(common::IndexMap::MapSize::ALL);
+      = bs0 * (_index_maps[0]->size_local() + _index_maps[0]->num_ghosts());
   _full_rows.set().reserve(rows.size());
   for (Eigen::Index i = 0; i < rows.rows(); ++i)
   {
@@ -359,12 +355,10 @@ std::size_t SparsityPattern::num_nonzeros() const
 
   // Contribution from full rows
   std::size_t bs0 = _index_maps[0]->block_size();
-  const std::size_t local_size0
-      = bs0 * _index_maps[0]->size(common::IndexMap::MapSize::OWNED);
+  const std::size_t local_size0 = bs0 * _index_maps[0]->size_local();
 
   std::size_t bs1 = _index_maps[1]->block_size();
-  const std::size_t ncols
-      = bs1 * _index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
+  const std::size_t ncols = bs1 * _index_maps[1]->size_global();
   for (const auto& full_row : _full_rows)
     if (full_row < local_size0)
       nz += ncols;
@@ -384,12 +378,10 @@ EigenArrayXi32 SparsityPattern::num_nonzeros_diagonal() const
   if (_full_rows.size() > 0)
   {
     std::size_t bs0 = _index_maps[0]->block_size();
-    const std::size_t local_size0
-        = bs0 * _index_maps[0]->size(common::IndexMap::MapSize::OWNED);
+    const std::size_t local_size0 = bs0 * _index_maps[0]->size_local();
 
     std::size_t bs1 = _index_maps[1]->block_size();
-    const std::size_t ncols
-        = bs1 * _index_maps[1]->size(common::IndexMap::MapSize::OWNED);
+    const std::size_t ncols = bs1 * _index_maps[1]->size_local();
     for (const auto row : _full_rows)
       if (row < local_size0)
         num_nonzeros[row] = ncols;
@@ -420,13 +412,11 @@ EigenArrayXi32 SparsityPattern::num_nonzeros_off_diagonal() const
   if (_full_rows.size() > 0)
   {
     std::size_t bs0 = _index_maps[0]->block_size();
-    const std::size_t local_size0
-        = bs0 * _index_maps[0]->size(common::IndexMap::MapSize::OWNED);
+    const std::size_t local_size0 = bs0 * _index_maps[0]->size_local();
 
     std::size_t bs1 = _index_maps[1]->block_size();
-    const std::size_t ncols
-        = bs1 * _index_maps[1]->size(common::IndexMap::MapSize::GLOBAL)
-          - bs1 * _index_maps[1]->size(common::IndexMap::MapSize::OWNED);
+    const std::size_t ncols = bs1 * _index_maps[1]->size_global()
+                              - bs1 * _index_maps[1]->size_local();
     for (const auto row : _full_rows)
     {
       if (row < local_size0)
@@ -455,8 +445,7 @@ void SparsityPattern::apply()
   std::size_t bs1 = _index_maps[1]->block_size();
   const auto local_range0 = _index_maps[0]->local_range();
   const auto local_range1 = _index_maps[1]->local_range();
-  const std::size_t local_size0
-      = bs0 * _index_maps[0]->size(common::IndexMap::MapSize::OWNED);
+  const std::size_t local_size0 = bs0 * _index_maps[0]->size_local();
   const std::size_t offset0 = bs0 * local_range0[0];
 
   const std::size_t num_processes = _mpi_comm.size();
@@ -600,8 +589,7 @@ SparsityPattern::diagonal_pattern(Type type) const
   if (_full_rows.size() > 0)
   {
     std::size_t bs0 = _index_maps[0]->block_size();
-    const std::size_t local_size0
-        = bs0 * _index_maps[0]->size(common::IndexMap::MapSize::OWNED);
+    const std::size_t local_size0 = bs0 * _index_maps[0]->size_local();
 
     std::size_t bs1 = _index_maps[1]->block_size();
     const auto range1 = _index_maps[1]->local_range();
@@ -635,13 +623,11 @@ SparsityPattern::off_diagonal_pattern(Type type) const
   if (_full_rows.size() > 0)
   {
     std::size_t bs0 = _index_maps[0]->block_size();
-    const std::size_t local_size0
-        = bs0 * _index_maps[0]->size(common::IndexMap::MapSize::OWNED);
+    const std::size_t local_size0 = bs0 * _index_maps[0]->size_local();
 
     std::size_t bs1 = _index_maps[1]->block_size();
     const auto range1 = _index_maps[1]->local_range();
-    const std::size_t N1
-        = bs1 * _index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
+    const std::size_t N1 = bs1 * _index_maps[1]->size_global();
     for (const auto row : _full_rows)
     {
       if (row >= local_size0)
@@ -679,12 +665,10 @@ void SparsityPattern::info_statistics() const
                                          + num_nonzeros_non_local;
 
   std::size_t bs0 = _index_maps[0]->block_size();
-  std::size_t size0
-      = bs0 * _index_maps[0]->size(common::IndexMap::MapSize::GLOBAL);
+  std::size_t size0 = bs0 * _index_maps[0]->size_global();
 
   std::size_t bs1 = _index_maps[1]->block_size();
-  std::size_t size1
-      = bs1 * _index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
+  std::size_t size1 = bs1 * _index_maps[1]->size_global();
 
   // Return number of entries
   std::cout << "Matrix of size " << size0 << " x " << size1 << " has "

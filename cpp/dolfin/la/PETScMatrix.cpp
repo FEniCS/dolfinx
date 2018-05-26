@@ -51,10 +51,8 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
       = {{index_maps[0]->block_size(), index_maps[1]->block_size()}};
 
   // Get global dimensions and local range
-  const std::size_t M
-      = block_sizes[0] * index_maps[0]->size(common::IndexMap::MapSize::GLOBAL);
-  const std::size_t N
-      = block_sizes[1] * index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
+  const std::size_t M = block_sizes[0] * index_maps[0]->size_global();
+  const std::size_t N = block_sizes[1] * index_maps[1]->size_global();
 
   const std::array<std::int64_t, 2> row_range = index_maps[0]->local_range();
   const std::array<std::int64_t, 2> col_range = index_maps[1]->local_range();
@@ -118,9 +116,9 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   assert(block_sizes[0] % block_size == 0);
   assert(block_sizes[1] % block_size == 0);
   std::vector<PetscInt> _map0, _map1;
-  _map0.resize(index_maps[0]->size(common::IndexMap::MapSize::ALL)
+  _map0.resize((index_maps[0]->size_local() + index_maps[0]->num_ghosts())
                * (block_sizes[0] / block_size));
-  _map1.resize(index_maps[1]->size(common::IndexMap::MapSize::ALL)
+  _map1.resize((index_maps[1]->size_local() + index_maps[1]->num_ghosts())
                * (block_sizes[1] / block_size));
 
   // for (std::size_t i = 0; i < _map0.size(); ++i)
@@ -129,32 +127,22 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   //   _map1[i] = index_maps[1]->local_to_global(i);
 
   // std::cout << "Prep IS (0)" << std::endl;
-  MPI::barrier(MPI_COMM_WORLD);
-  for (std::size_t i = 0;
-       i < index_maps[0]->size(common::IndexMap::MapSize::ALL); ++i)
+  const int row_size
+      = index_maps[0]->size_local() + index_maps[0]->num_ghosts();
+  for (int i = 0; i < row_size; ++i)
   {
     std::size_t bs = block_sizes[0] / block_size;
     auto index = index_maps[0]->local_to_global(i);
     for (std::size_t j = 0; j < bs; ++j)
     {
       _map0[i * bs + j] = bs * index + j;
-      // if (MPI::rank(MPI_COMM_WORLD) == 1)
-      // {
-      //   std::cout << "l2g: " << _map0[i * bs + j] << ", "
-      //             << index_maps[0]->size(common::IndexMap::MapSize::ALL) <<
-      //             ", "
-      //             << index_maps[0]->size(common::IndexMap::MapSize::OWNED)
-      //             << ", "
-      //             << index_maps[0]->size(common::IndexMap::MapSize::UNOWNED)
-      //             << std::endl;
-      // }
     }
   }
-  MPI::barrier(MPI_COMM_WORLD);
 
   // std::cout << "Prep IS (1)" << std::endl;
-  for (std::size_t i = 0;
-       i < index_maps[1]->size(common::IndexMap::MapSize::ALL); ++i)
+  const int col_size
+      = index_maps[1]->size_local() + index_maps[1]->num_ghosts();
+  for (int i = 0; i < col_size; ++i)
   {
     std::size_t bs = block_sizes[1] / block_size;
     auto index = index_maps[1]->local_to_global(i);

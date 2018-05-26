@@ -52,7 +52,7 @@ fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
     {
       if (a[i][j])
       {
-        mats[i][j] = std::make_shared<la::PETScMatrix>(init_matrix(*a[i][j]) );
+        mats[i][j] = std::make_shared<la::PETScMatrix>(init_matrix(*a[i][j]));
         // std::cout << "  init mat" << std::endl;
         // init(*mats[i][j], *a[i][j]);
         // std::cout << "  post init mat" << std::endl;
@@ -96,8 +96,8 @@ la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
   return la::PETScVector(y);
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix fem::init_monolithic_matrix(
-                          std::vector<std::vector<const fem::Form*>> a)
+la::PETScMatrix
+fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
 {
   // FIXME: handle null blocks
 
@@ -164,7 +164,8 @@ la::PETScMatrix fem::init_monolithic_matrix(
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     auto map = a[i][0]->function_space(0)->dofmap()->index_map();
-    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
+    std::size_t size = map->size_local() + map->num_ghosts();
+    for (std::size_t k = 0; k < size; ++k)
     {
       auto index_k = map->local_to_global(k);
       std::size_t index = get_global_index(index_maps[0], i, index_k);
@@ -174,7 +175,8 @@ la::PETScMatrix fem::init_monolithic_matrix(
   for (std::size_t i = 0; i < a[0].size(); ++i)
   {
     auto map = a[0][i]->function_space(1)->dofmap()->index_map();
-    for (std::size_t k = 0; k < map->size(common::IndexMap::MapSize::ALL); ++k)
+    std::size_t size = map->size_local() + map->num_ghosts();
+    for (std::size_t k = 0; k < size; ++k)
     {
       auto index_k = map->local_to_global(k);
       std::size_t index = get_global_index(index_maps[1], i, index_k);
@@ -214,7 +216,7 @@ la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
     assert(L[i]);
     assert(L[i]->rank() == 1);
     auto map = L[i]->function_space(0)->dofmap()->index_map();
-    local_size += map->size(common::IndexMap::MapSize::OWNED);
+    local_size += map->size_local();
     index_maps.push_back(map.get());
   }
 

@@ -28,17 +28,6 @@ namespace common
 class IndexMap
 {
 public:
-  /// MapSize (ALL=(all indices in this map), OWNED=(indices owned by this
-  /// process), GHOST=(ghost (unowned) local indices), GLOBAL=(total indices
-  /// on communicator)
-  enum class MapSize : int32_t
-  {
-    ALL = 0,
-    OWNED = 1,
-    GHOSTS = 2,
-    GLOBAL = 3
-  };
-
   /// Create Index map with local_size owned blocks on this process, and blocks
   /// have size block_size.
   ///
@@ -61,9 +50,14 @@ public:
   /// Block size
   int block_size() const;
 
-  /// Size of set (MapSize::OWNED, MapSize::GHOSTS, MapSize::ALL or
-  /// MapSize::GLOBAL)
-  std::size_t size(MapSize type) const;
+  /// Number of ghost indices on this process
+  std::int32_t num_ghosts() const;
+
+  /// Number of indices owned by on this process
+  std::int32_t size_local() const;
+
+  /// Number indices across communicator
+  std::int64_t size_global() const;
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
