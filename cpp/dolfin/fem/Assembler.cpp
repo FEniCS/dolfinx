@@ -87,46 +87,17 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         {
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], bcs);
-          mat.apply(la::PETScMatrix::AssemblyType::FLUSH);
-
-          // Place '1' on diagonal
-          if (_a[i][j]->function_space(0) == _a[i][j]->function_space(1))
-          {
-            auto space = _a[i][j]->function_space(0);
-            DirichletBC::Map boundary_values;
-            for (std::size_t k = 0; k < bcs.size(); ++k)
-            {
-              assert(bcs[k]);
-              assert(bcs[k]->function_space());
-              if (space->contains(*bcs[k]->function_space()))
-              {
-                // FIXME: find way to avoid gather, or perform with a single
-                // gather
-                bcs[k]->get_boundary_values(boundary_values);
-                if (MPI::size(MPI_COMM_WORLD) > 1
-                    and _bcs[k]->method() != DirichletBC::Method::pointwise)
-                {
-                  bcs[k]->gather(boundary_values);
-                }
-              }
-            }
-
-            double one = 1.0;
-            for (auto bc : boundary_values)
-            {
-              PetscInt row = bc.first;
-              // std::cout << "Setting row: " << row << std::endl;
-              mat.set_local(&one, 1, &row, 1, &row);
-            }
-          }
         }
         else
         {
           // FIXME: Figure out how to check that matrix block is null
           // Null block, do nothing
+          throw std::runtime_error("Null block not supported/tested yet.");
         }
       }
     }
+
+    A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
   else if (block_matrix)
   {
@@ -143,8 +114,6 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           // Build index set for block
           auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
-          int map0_size_owned = map0->size(common::IndexMap::MapSize::OWNED);
-          // auto map1_size = map1->size(common::IndexMap::MapSize::OWNED);
           auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
           auto map1_size = map1->size(common::IndexMap::MapSize::ALL);
 
@@ -167,46 +136,11 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], bcs);
 
-          mat.apply(la::PETScMatrix::AssemblyType::FLUSH);
-
-          // Place '1' on diagonal
-          if (_a[i][j]->function_space(0) == _a[i][j]->function_space(1))
-          {
-            auto space = _a[i][j]->function_space(0);
-            DirichletBC::Map boundary_values;
-            for (std::size_t k = 0; k < bcs.size(); ++k)
-            {
-              assert(bcs[k]);
-              assert(bcs[k]->function_space());
-              if (space->contains(*bcs[k]->function_space()))
-              {
-                // FIXME: find way to avoid gather, or perform with a single
-                // gather
-                bcs[k]->get_boundary_values(boundary_values);
-                if (MPI::size(MPI_COMM_WORLD) > 1
-                    and bcs[k]->method() != DirichletBC::Method::pointwise)
-                {
-                  bcs[k]->gather(boundary_values);
-                }
-              }
-            }
-
-            double one = 1.0;
-            for (auto bc : boundary_values)
-            {
-              PetscInt row = bc.first;
-              if (row < map0_size_owned)
-                mat.add_local(&one, 1, &row, 1, &row);
-            }
-          }
-
           // Restore sub-matrix and destroy index sets
           MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
 
           ISDestroy(&is0);
           ISDestroy(&is1);
-
-          // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
 
           offset_col += map1_size;
         }
@@ -219,60 +153,16 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       }
       auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
       auto map0_size = map0->size(common::IndexMap::MapSize::ALL);
-      // auto map0_size = map0->size(common::IndexMap::MapSize::OWNED);
       offset_row += map0_size;
     }
 
-    // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
-
-    // // Place '1' on diagonal
-    // for (auto bc : bc_values)
-    // {
-    //   la_index_t row = bc.first;
-    //   double one = 1.0;
-    //   A.set_local(&one, 1, &row, 1, &row);
-    // }
     A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
   else
   {
     this->assemble(A, *_a[0][0], bcs);
-
-    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
-
-    // Place '1' on diagonal
-    if (_a[0][0]->function_space(0) == _a[0][0]->function_space(1))
-    {
-      auto space = _a[0][0]->function_space(0);
-      DirichletBC::Map boundary_values;
-      for (std::size_t i = 0; i < bcs.size(); ++i)
-      {
-        assert(bcs[i]);
-        assert(bcs[i]->function_space());
-        if (space->contains(*bcs[i]->function_space()))
-        {
-          // FIXME: find way to avoid gather, or perform with a single
-          // gather
-          bcs[i]->get_boundary_values(boundary_values);
-          if (MPI::size(MPI_COMM_WORLD) > 1
-              and _bcs[i]->method() != DirichletBC::Method::pointwise)
-          {
-            bcs[i]->gather(boundary_values);
-          }
-        }
-      }
-
-      double one = 1.0;
-      for (auto bc : boundary_values)
-      {
-        PetscInt row = bc.first;
-        // std::cout << "Setting row: " << row << std::endl;
-        A.set_local(&one, 1, &row, 1, &row);
-      }
-    }
+    A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
-
-  A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScVector& b, BlockType block_type)
@@ -458,41 +348,46 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim);
 
-  // Function spaces for each axis
-  std::array<const function::FunctionSpace*, 2> spaces
-      = {{a.function_space(0).get(), a.function_space(1).get()}};
-
-  // Collect pointers to dof maps
-  std::array<const GenericDofMap*, 2> dofmaps
-      = {{spaces[0]->dofmap().get(), spaces[1]->dofmap().get()}};
+  // Function spaces and dofmaps for each axis
+  assert(a.function_space(0));
+  assert(a.function_space(1));
+  const function::FunctionSpace& V0 = *a.function_space(0);
+  const function::FunctionSpace& V1 = *a.function_space(1);
+  assert(V0.dofmap());
+  assert(V1.dofmap());
+  const fem::GenericDofMap& map0 = *V0.dofmap();
+  const fem::GenericDofMap& map1 = *V1.dofmap();
 
   // FIXME: Move out of this function
   // FIXME: For the matrix, we only need to know if there is a boundary
   // condition on the entry. The value is not required.
   // FIXME: Avoid duplication when spaces[0] == spaces[1]
   // Collect boundary conditions by matrix axis
-  std::array<DirichletBC::Map, 2> boundary_values;
+  DirichletBC::Map boundary_values0, boundary_values1;
   for (std::size_t i = 0; i < bcs.size(); ++i)
   {
     assert(bcs[i]);
     assert(bcs[i]->function_space());
-    for (std::size_t axis = 0; axis < 2; ++axis)
+    if (V0.contains(*bcs[i]->function_space()))
     {
-      if (spaces[axis]->contains(*bcs[i]->function_space()))
+      // FIXME: find way to avoid gather, or perform with a single
+      // gather
+      bcs[i]->get_boundary_values(boundary_values0);
+      if (MPI::size(mesh.mpi_comm()) > 1
+          and bcs[i]->method() != DirichletBC::Method::pointwise)
       {
-        // FIXME: find way to avoid gather, or perform with a single
-        // gather
-        bcs[i]->get_boundary_values(boundary_values[axis]);
-        if (MPI::size(mesh.mpi_comm()) > 1
-            and bcs[i]->method() != DirichletBC::Method::pointwise)
-        {
-          bcs[i]->gather(boundary_values[axis]);
-        }
+        bcs[i]->gather(boundary_values0);
       }
-      // else
-      // {
-      //   std::cout << "     No spaces match: " << std::endl;
-      // }
+    }
+
+    if (V1.contains(*bcs[i]->function_space()))
+    {
+      bcs[i]->get_boundary_values(boundary_values1);
+      if (MPI::size(mesh.mpi_comm()) > 1
+          and bcs[i]->method() != DirichletBC::Method::pointwise)
+      {
+        bcs[i]->gather(boundary_values1);
+      }
     }
   }
 
@@ -511,8 +406,8 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get dof maps for cell
-    auto dmap0 = dofmaps[0]->cell_dofs(cell.index());
-    auto dmap1 = dofmaps[1]->cell_dofs(cell.index());
+    auto dmap0 = map0.cell_dofs(cell.index());
+    auto dmap1 = map1.cell_dofs(cell.index());
 
     // Size data structure for assembly
     Ae.resize(dmap0.size(), dmap1.size());
@@ -522,77 +417,40 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
     // FIXME: Pass in list  of cells, and list of local dofs, with
     // Dirichlet conditions
-    // Note: could use zero dof indices to have PETSc do this
+    // Note: could use negative dof indices to have PETSc do this
     // Zero rows/columns for Dirichlet bcs
     for (int i = 0; i < Ae.rows(); ++i)
     {
       const std::size_t ii = dmap0[i];
-      DirichletBC::Map::const_iterator bc_value = boundary_values[0].find(ii);
-      if (bc_value != boundary_values[0].end())
+      DirichletBC::Map::const_iterator bc_value = boundary_values0.find(ii);
+      if (bc_value != boundary_values0.end())
         Ae.row(i).setZero();
     }
     // Loop over columns
     for (int j = 0; j < Ae.cols(); ++j)
     {
       const std::size_t jj = dmap1[j];
-      DirichletBC::Map::const_iterator bc_value = boundary_values[1].find(jj);
-      if (bc_value != boundary_values[1].end())
+      DirichletBC::Map::const_iterator bc_value = boundary_values1.find(jj);
+      if (bc_value != boundary_values1.end())
         Ae.col(j).setZero();
     }
 
-    // Ae.setZero();
-
-    // Add to matrix
-    /*
-    std::cout << "Add to matrix: " << std::endl;
-    for (std::size_t i = 0; i < dmap0.size(); ++i)
-      std::cout << "  0: " << dmap0[i] << std::endl;
-    for (std::size_t i = 0; i < dmap1.size(); ++i)
-      std::cout << "  1: " << dmap1[i] << std::endl;
-  */
-
-    // if (MPI::rank(MPI_COMM_WORLD) == 1)
-    {
-      // std::cout << "dmaps" << std::endl;
-      // std::cout << dmap0 << std::endl;
-      // std::cout << "-----" << std::endl;
-      // std::cout << dmap1 << std::endl;
-      // std::cout << "-----" << std::endl;
-      A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
-                  dmap1.data());
-    }
-    // std::cout << "Post add to matrix: " << std::endl;
+    A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
+                dmap1.data());
   }
 
-  // Flush matrix
-  // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
-
-  // FIXME: Only set if we own the entry
-  // FIXME: Move this outside of function? Can then flush later.
-  // Place '1' on diagonal for bc entries
-  // if (spaces[0] == spaces[1])
-  // {
-  //   // Note: set diagonal using PETScMatrix::set_local since other functions,
-  //   // e.g. PETScMatrix::set_local, do not work for all PETSc Mat types
-
-  //   auto range = A.local_range(0);
-  //   std::cout << "**** l comm test: " << MPI::size(A.mpi_comm()) <<
-  //   std::endl; if (MPI::rank(MPI_COMM_WORLD) == 0)
-  //     std::cout << "**R: " << range[0] << ", " << range[1] << std::endl;
-  //   for (auto bc : boundary_values[0])
-  //   {
-  //     la_index_t row = bc.first;
-  //     double one = 1.0;
-  //     // if (row >= range[0] and row < range[1])
-  //     if (MPI::rank(MPI_COMM_WORLD) > 0)
-  //       A.set_local(&one, 1, &row, 1, &row);
-  //   }
-  // }
-
-  // A.apply(la::PETScMatrix::AssemblyType::FLUSH);
-
-  // Finalise matrix
-  // A.apply(la::PETScMatrix::AssemblyType::FINAL);
+  // Place '1' on the diagonal if entry is owned by this process
+  if (V0 == V1)
+  {
+    int local_size = map0.index_map()->size(common::IndexMap::MapSize::OWNED);
+    double one = 1.0;
+    for (auto bc : boundary_values0)
+    {
+      la_index_t row = bc.first;
+      if (row < local_size)
+        A.add_local(&one, 1, &row, 1, &row);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(Vec b, const Form& L)

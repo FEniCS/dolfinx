@@ -116,3 +116,4 @@ def test_matrix_assembly_block():
     bnorm2 = b2.vec().norm()
     assert Anorm0 == pytest.approx(Anorm2, 1.0e-9)
     assert bnorm0 == pytest.approx(bnorm2, 1.0e-9)
+
