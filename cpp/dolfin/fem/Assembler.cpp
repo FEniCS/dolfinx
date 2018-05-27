@@ -215,7 +215,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       PetscScalar* bvalues;
       VecGetArray(b_local, &bvalues);
       Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(bvalues,
-                                                                   size);
+                                                                    size);
       for (std::size_t j = 0; j < _a[i].size(); ++j)
         apply_bc(bvec, *_a[i][j], _bcs);
 
@@ -626,7 +626,6 @@ void Assembler::apply_bc(
       {
         be -= Ae.col(j) * bc->second;
       }
-
     }
 
     for (Eigen::Index k = 0; k < dmap0.size(); ++k)
