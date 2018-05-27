@@ -67,16 +67,14 @@ private:
 
   // Modify RHS vector to account for boundary condition (b <- b - Ax,
   // where x holds prescribed boundary values)
-  static void apply_bc(la::PETScVector& b, const Form& a,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
-  // Set bcs (set entries of b to be equal to boundary value)
-  static void set_bc(la::PETScVector& b, const Form& L,
-                     std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                     int offset0 = 0, int offset1 = 0);
+  static void
+      apply_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+               const Form& a,
+               std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Hack for setting bcs (set entries of b to be equal to boundary
-  // value). Does not set ghosts.
+  // value). Does not set ghosts. Size of b must be same as owned
+  // length.
   static void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
                      const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);

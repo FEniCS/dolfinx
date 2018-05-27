@@ -210,8 +210,16 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       this->assemble(b_local, *_l[i]);
 
       // Modify RHS for Dirichlet bcs
-      // for (std::size_t j = 0; j < _a[i].size(); ++j)
-      //   apply_bc(vec, *_a[i][j], _bcs);
+      PetscInt size = 0;
+      VecGetSize(b_local, &size);
+      PetscScalar* bvalues;
+      VecGetArray(b_local, &bvalues);
+      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(bvalues,
+                                                                   size);
+      for (std::size_t j = 0; j < _a[i].size(); ++j)
+        apply_bc(bvec, *_a[i][j], _bcs);
+
+      VecRestoreArray(b_local, &bvalues);
 
       VecGhostRestoreLocalForm(sub_b, &b_local);
       VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
@@ -265,11 +273,9 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       b_vec.setZero();
       this->assemble(b_vec, *_l[i]);
 
-      // Modify vector for bcs
-      // for (std::size_t j = 0; j < _a[i].size(); ++j)
-      //   apply_bc(b_local, *_a[i][j], _bcs);
-
-      // set_bc(b_local, *_l[i], _bcs);
+      // Modify RHS for Dirichlet bcs
+      for (std::size_t j = 0; j < _a[i].size(); ++j)
+        apply_bc(b_vec, *_a[i][j], _bcs);
 
       // Copy data into PETSc Vector
       for (int j = 0; j < map_size0; ++j)
@@ -306,7 +312,16 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     VecGhostGetLocalForm(b.vec(), &b_local);
     assert(b_local);
     this->assemble(b_local, *_l[0]);
-    // apply_bc(b, *_a[0][0], _bcs);
+
+    // Modify RHS for Dirichlet bcs
+    PetscInt size = 0;
+    VecGetSize(b_local, &size);
+    PetscScalar* bvalues;
+    VecGetArray(b_local, &bvalues);
+    Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(bvalues,
+                                                                  size);
+    apply_bc(bvec, *_a[0][0], _bcs);
+    VecRestoreArray(b_local, &bvalues);
 
     // Accumulate ghosts on owning process
     VecGhostRestoreLocalForm(b.vec(), &b_local);
@@ -515,8 +530,9 @@ void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::apply_bc(la::PETScVector& b, const Form& a,
-                         std::vector<std::shared_ptr<const DirichletBC>> bcs)
+void Assembler::apply_bc(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Get mesh from form
   assert(a.mesh());
@@ -571,16 +587,14 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
       }
     }
 
-    // std::cout << "Applying bcs" << std::endl;
     if (!has_bc)
       continue;
-    // std::cout << "  has bc" << std::endl;
 
     // Get cell vertex coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap1->cell_dofs(cell.index());
+    auto dmap0 = dofmap0->cell_dofs(cell.index());
     Ae.resize(dmap0.size(), dmap1.size());
     Ae.setZero();
     a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
@@ -612,15 +626,12 @@ void Assembler::apply_bc(la::PETScVector& b, const Form& a,
       {
         be -= Ae.col(j) * bc->second;
       }
+
     }
 
-    // Add to vector
-    b.add_local(be.data(), dmap0.size(), dmap0.data());
+    for (Eigen::Index k = 0; k < dmap0.size(); ++k)
+      b[dmap0[k]] += be[k];
   }
-
-  // FIXME: Put this elsewhere?
-  // Finalise matrix
-  b.apply();
 }
 //-----------------------------------------------------------------------------
 void Assembler::set_bc(
