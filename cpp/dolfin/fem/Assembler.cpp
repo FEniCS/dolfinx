@@ -160,10 +160,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
   else
   {
-    std::cout << "Start matrix assembly" << std::endl;
     this->assemble(A, *_a[0][0], bcs);
     A.apply(la::PETScMatrix::AssemblyType::FINAL);
-    std::cout << "End matrix assembly" << std::endl;
   }
 }
 //-----------------------------------------------------------------------------
@@ -309,8 +307,6 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   }
   else
   {
-    std::cout << "Start vector assembly" << std::endl;
-
     // Get local representation
     Vec b_local;
     VecGhostGetLocalForm(b.vec(), &b_local);
@@ -341,7 +337,6 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
                                                                  map_size0);
     set_bc(vec, *_l[0], _bcs);
     VecRestoreArray(b.vec(), &values);
-    std::cout << "End vector assembly" << std::endl;
   }
 }
 //-----------------------------------------------------------------------------
@@ -383,7 +378,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   // condition on the entry. The value is not required.
   // FIXME: Avoid duplication when spaces[0] == spaces[1]
   // Collect boundary conditions by matrix axis
-  std::cout << "Sort out bcs (matrix)" << std::endl;
   DirichletBC::Map boundary_values0, boundary_values1;
   for (std::size_t i = 0; i < bcs.size(); ++i)
   {
@@ -391,7 +385,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     assert(bcs[i]->function_space());
     if (V0.contains(*bcs[i]->function_space()))
     {
-      std::cout << "  A0" << std::endl;
       // FIXME: find way to avoid gather, or perform with a single
       // gather
       bcs[i]->get_boundary_values(boundary_values0);
@@ -400,22 +393,18 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       {
         bcs[i]->gather(boundary_values0);
       }
-      std::cout << "  A1" << std::endl;
     }
 
     if (V1.contains(*bcs[i]->function_space()))
     {
-      std::cout << "  B0" << std::endl;
       bcs[i]->get_boundary_values(boundary_values1);
       if (MPI::size(mesh.mpi_comm()) > 1
           and bcs[i]->method() != DirichletBC::Method::pointwise)
       {
         bcs[i]->gather(boundary_values1);
       }
-      std::cout << "  B1" << std::endl;
     }
   }
-  std::cout << "End sort out bcs (matrix)" << std::endl;
 
   // Data structures used in assembly
   EigenRowArrayXXd coordinate_dofs;
@@ -424,7 +413,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   // Iterate over all cells
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    // std::cout << "Iterate over cells" << std::endl;
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
@@ -476,10 +464,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       if (row < local_size)
         A.add_local(&one, 1, &row, 1, &row);
     }
-  }
-  else
-  {
-    std::cout << "Oops, not applying bc" << std::endl;
   }
 }
 //-----------------------------------------------------------------------------
