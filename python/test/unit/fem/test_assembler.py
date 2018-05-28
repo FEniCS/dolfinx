@@ -19,7 +19,7 @@ from petsc4py import PETSc
 from slepc4py import SLEPc
 
 
-def test_matrix_assembly_block():
+def xtest_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
@@ -198,6 +198,7 @@ def test_assembly_solve_block():
     x1norm = x1.vec().norm()
 
     assert x0norm == pytest.approx(x1norm, 1.0e-10)
+    print("xnorm: ", x0norm)
 
     return
 
@@ -217,7 +218,7 @@ def test_assembly_solve_block():
 
     A2, b2 = assembler.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    return
+    #return
     A2norm = A2.mat().norm()
     b2norm = b2.vec().norm()
 

@@ -65,7 +65,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     else if (block_matrix and block_type == BlockType::monolithic)
       A = fem::init_monolithic_matrix(forms);
     else
-      A = init_matrix(*_a[0][0]);
+      A = fem::init_matrix(*_a[0][0]);
   }
 
   // Get PETSc matrix type
