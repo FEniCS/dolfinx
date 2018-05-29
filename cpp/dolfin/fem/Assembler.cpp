@@ -76,6 +76,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   // Assemble matrix
   if (is_matnest)
   {
+      std::cout << "0 ************************" << std::endl;
+
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
       for (std::size_t j = 0; j < _a[i].size(); ++j)
@@ -101,6 +103,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
   else if (block_matrix)
   {
+    std::cout << "1 ************************" << std::endl;
+
     std::vector<std::pair<la_index_t, double>> bc_values;
     std::int64_t offset_row = 0;
     for (std::size_t i = 0; i < _a.size(); ++i)
@@ -160,6 +164,15 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
   else
   {
+    std::cout << "2 ************************" << std::endl;
+    ISLocalToGlobalMapping l2g0, l2g1;
+    MatGetLocalToGlobalMapping(A.mat(), &l2g0, &l2g1);
+    if (MPI::rank(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << "View l2g" << std::endl;
+      ISLocalToGlobalMappingView(l2g0, PETSC_VIEWER_STDOUT_SELF);
+    }
+
     this->assemble(A, *_a[0][0], bcs);
     A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
@@ -449,22 +462,27 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
         Ae.col(j).setZero();
     }
 
-    A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
+    if (MPI::rank(MPI_COMM_WORLD) == 0)
+    {
+      std::cout << dmap0 << std::endl;
+      // std::cout << dmap1 << std::endl;
+      A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
                 dmap1.data());
+    }
   }
 
   // Place '1' on the diagonal if entry is owned by this process
-  if (V0 == V1)
-  {
-    int local_size = map0.index_map()->block_size()*map0.index_map()->size_local();
-    double one = 1.0;
-    for (auto bc : boundary_values0)
-    {
-      la_index_t row = bc.first;
-      if (row < local_size)
-        A.add_local(&one, 1, &row, 1, &row);
-    }
-  }
+  // if (V0 == V1)
+  // {
+  //   int local_size = map0.index_map()->block_size()*map0.index_map()->size_local();
+  //   double one = 1.0;
+  //   for (auto bc : boundary_values0)
+  //   {
+  //     la_index_t row = bc.first;
+  //     if (row < local_size)
+  //       A.add_local(&one, 1, &row, 1, &row);
+  //   }
+  // }
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(Vec b, const Form& L)

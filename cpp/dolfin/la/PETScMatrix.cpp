@@ -68,13 +68,19 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
         "checking.");
     block_size = 1;
   }
+  block_size = 1;
 
   // Get number of nonzeros for each row from sparsity pattern
   EigenArrayXi32 num_nonzeros_diagonal
       = sparsity_pattern.num_nonzeros_diagonal();
+  //std::cout << num_nonzeros_diagonal << std::endl;
   EigenArrayXi32 num_nonzeros_off_diagonal
       = sparsity_pattern.num_nonzeros_off_diagonal();
-
+  if (MPI::rank(MPI_COMM_WORLD) == 0)
+  {
+    std::cout << "Num diag: " << num_nonzeros_diagonal.size() << std::endl;
+    std::cout << "Num off diag: " << num_nonzeros_off_diagonal.size() << std::endl;
+  }
   // if (block_size == 1)
   //  std::cout << "*** mat size: " << m << ", " << n << std::endl;
 
@@ -90,6 +96,11 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
     petsc_error(ierr, __FILE__, "MatSetFromOptions");
 
   // Build data to initialise sparsity pattern (modify for block size)
+  // if (MPI::rank(MPI_COMM_WORLD) == 1)
+  // {
+  //   std::cout << "Num diag rows: " << num_nonzeros_diagonal.size() << std::endl;
+  //   std::cout << "Num non-diag rows: " << num_nonzeros_off_diagonal.size() << std::endl;
+  // }
   std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.size()
                                                / block_size),
       _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.size() / block_size);
@@ -98,14 +109,19 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   {
     _num_nonzeros_diagonal[i]
         = dolfin_ceil_div(num_nonzeros_diagonal[block_size * i], block_size);
+    if (MPI::rank(MPI_COMM_WORLD) == 0)
+      std::cout << "NDiag: " << _num_nonzeros_diagonal[i] << std::endl;
   }
   for (std::size_t i = 0; i < _num_nonzeros_off_diagonal.size(); ++i)
   {
     _num_nonzeros_off_diagonal[i] = dolfin_ceil_div(
         num_nonzeros_off_diagonal[block_size * i], block_size);
+    if (MPI::rank(MPI_COMM_WORLD) == 0)
+     std::cout << "Off-diag: " << _num_nonzeros_off_diagonal[i] << std::endl;
   }
 
   // Allocate space (using data from sparsity pattern)
+  std::cout << "Test block size: " << block_size << std::endl;
   ierr = MatXAIJSetPreallocation(_matA, block_size,
                                  _num_nonzeros_diagonal.data(),
                                  _num_nonzeros_off_diagonal.data(), NULL, NULL);
@@ -151,17 +167,15 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   }
   // std::cout << "End Prep IS" << std::endl;
 
-  /*
-  if (block_size == 1)
-  {
-    std::cout << "** Local-to-global maps" << std::endl;
-    for (std::size_t i = 0; i < _map0.size(); ++i)
-      std::cout << "   " << _map0[i] << std::endl;
-    std::cout << "------------------" << std::endl;
-    for (std::size_t i = 0; i < _map1.size(); ++i)
-      std::cout << "   " << _map1[i] << std::endl;
-  }
-  */
+  // if (MPI::rank(MPI_COMM_WORLD) == 1)
+  // {
+  //   std::cout << "** Local-to-global maps" << std::endl;
+  //   for (std::size_t i = 0; i < _map0.size(); ++i)
+  //     std::cout << "   " << _map0[i] << std::endl;
+  //   std::cout << "------------------" << std::endl;
+  //   for (std::size_t i = 0; i < _map1.size(); ++i)
+  //     std::cout << "   " << _map1[i] << std::endl;
+  // }
 
   // FIXME: In many cases the rows and columns could shared a common
   // local-to-global map
@@ -192,10 +206,10 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   // Note: This should be called after having set the local-to-global
   // map for MATIS (this is a dummy call if _matA is not of type
   // MATIS)
-  ierr = MatISSetPreallocation(_matA, 0, _num_nonzeros_diagonal.data(), 0,
-                               _num_nonzeros_off_diagonal.data());
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatISSetPreallocation");
+  // ierr = MatISSetPreallocation(_matA, 0, _num_nonzeros_diagonal.data(), 0,
+  //                              _num_nonzeros_off_diagonal.data());
+  // if (ierr != 0)
+  //   petsc_error(ierr, __FILE__, "MatISSetPreallocation");
 
   // if (MPI::rank(MPI_COMM_WORLD) == 1)
   // {
@@ -217,6 +231,7 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
 
   // Do not allow more entries than have been pre-allocated
   ierr = MatSetOption(_matA, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_TRUE);
+  // ierr = MatSetOption(_matA, MAT_NEW_NONZERO_ALLOCATION_ERR, PETSC_FALSE);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetOption");
 
