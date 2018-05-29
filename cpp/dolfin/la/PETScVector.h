@@ -156,7 +156,7 @@ public:
   PetscScalar dot(const PETScVector& v) const;
 
   /// Return norm of vector
-  double norm(la::Norm norm_type) const;
+  PetscReal norm(la::Norm norm_type) const;
 
   /// Normalize vector with respect to the l2 norm. Returns the norm
   /// before normalization.
