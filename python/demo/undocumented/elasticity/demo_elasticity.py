@@ -118,9 +118,9 @@ null_space = build_nullspace(V, u.vector())
 
 # Attach near nullspace to matrix
 A.set_near_nullspace(null_space)
-# as_backend_type(A).set_near_nullspace(null_space)
 
 # Set solver options
+PETScOptions.set("ksp_view")
 PETScOptions.set("ksp_type", "cg")
 PETScOptions.set("ksp_rtol", 1.0e-12)
 PETScOptions.set("pc_type", "gamg")
