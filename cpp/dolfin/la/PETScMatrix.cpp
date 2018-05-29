@@ -68,7 +68,7 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
         "checking.");
     block_size = 1;
   }
-  block_size = 1;
+  //block_size = 1;
 
   // Get number of nonzeros for each row from sparsity pattern
   EigenArrayXi32 num_nonzeros_diagonal
@@ -76,11 +76,11 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   //std::cout << num_nonzeros_diagonal << std::endl;
   EigenArrayXi32 num_nonzeros_off_diagonal
       = sparsity_pattern.num_nonzeros_off_diagonal();
-  if (MPI::rank(MPI_COMM_WORLD) == 0)
-  {
-    std::cout << "Num diag: " << num_nonzeros_diagonal.size() << std::endl;
-    std::cout << "Num off diag: " << num_nonzeros_off_diagonal.size() << std::endl;
-  }
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  // {
+  //   std::cout << "!Num diag: " << num_nonzeros_diagonal.size() << std::endl;
+  //   std::cout << "!Num off diag: " << num_nonzeros_off_diagonal.size() << std::endl;
+  // }
   // if (block_size == 1)
   //  std::cout << "*** mat size: " << m << ", " << n << std::endl;
 
@@ -101,6 +101,14 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   //   std::cout << "Num diag rows: " << num_nonzeros_diagonal.size() << std::endl;
   //   std::cout << "Num non-diag rows: " << num_nonzeros_off_diagonal.size() << std::endl;
   // }
+  // if (MPI::rank(MPI_COMM_WORLD) == 0)
+  // {
+  //   for (int i = 0;  i < num_nonzeros_diagonal.size(); ++i)
+  //     std::cout << "Num d entries: " << num_nonzeros_diagonal[i] << std::endl;
+  //   for (int i = 0;  i < num_nonzeros_off_diagonal.size(); ++i)
+  //     std::cout << "Num offd entries: " << num_nonzeros_off_diagonal[i] << std::endl;
+  // }
+
   std::vector<PetscInt> _num_nonzeros_diagonal(num_nonzeros_diagonal.size()
                                                / block_size),
       _num_nonzeros_off_diagonal(num_nonzeros_off_diagonal.size() / block_size);
@@ -109,15 +117,19 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   {
     _num_nonzeros_diagonal[i]
         = dolfin_ceil_div(num_nonzeros_diagonal[block_size * i], block_size);
-    if (MPI::rank(MPI_COMM_WORLD) == 0)
-      std::cout << "NDiag: " << _num_nonzeros_diagonal[i] << std::endl;
+    // if (MPI::rank(MPI_COMM_WORLD) == 0)
+    // {
+    //   std::cout << "NDiag: " << _num_nonzeros_diagonal[i] << std::endl;
+    // }
   }
   for (std::size_t i = 0; i < _num_nonzeros_off_diagonal.size(); ++i)
   {
     _num_nonzeros_off_diagonal[i] = dolfin_ceil_div(
         num_nonzeros_off_diagonal[block_size * i], block_size);
-    if (MPI::rank(MPI_COMM_WORLD) == 0)
-     std::cout << "Off-diag: " << _num_nonzeros_off_diagonal[i] << std::endl;
+    // if (MPI::rank(MPI_COMM_WORLD) == 0)
+    // {
+    //  std::cout << "Off-diag: " << _num_nonzeros_off_diagonal[i] << std::endl;
+    // }
   }
 
   // Allocate space (using data from sparsity pattern)

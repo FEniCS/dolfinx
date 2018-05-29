@@ -76,7 +76,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   // Assemble matrix
   if (is_matnest)
   {
-      std::cout << "0 ************************" << std::endl;
+    std::cout << "0 ************************" << std::endl;
 
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
@@ -165,15 +165,17 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   else
   {
     std::cout << "2 ************************" << std::endl;
-    ISLocalToGlobalMapping l2g0, l2g1;
-    MatGetLocalToGlobalMapping(A.mat(), &l2g0, &l2g1);
-    if (MPI::rank(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << "View l2g" << std::endl;
-      ISLocalToGlobalMappingView(l2g0, PETSC_VIEWER_STDOUT_SELF);
-    }
+    // ISLocalToGlobalMapping l2g0, l2g1;
+    // MatGetLocalToGlobalMapping(A.mat(), &l2g0, &l2g1);
+    // if (MPI::rank(MPI_COMM_WORLD) == 0)
+    // {
+    //   std::cout << "View l2g" << std::endl;
+    //   ISLocalToGlobalMappingView(l2g0, PETSC_VIEWER_STDOUT_SELF);
+    // }
 
+    std::cout << "Start assembly" << std::endl;
     this->assemble(A, *_a[0][0], bcs);
+    std::cout << "End assembly" << std::endl;
     A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
 }
@@ -343,7 +345,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
     auto map = _l[0]->function_space(0)->dofmap()->index_map();
-    auto map_size0 = map->block_size()*map->size_local();
+    auto map_size0 = map->block_size() * map->size_local();
     PetscScalar* values;
     VecGetArray(b.vec(), &values);
     Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
@@ -391,9 +393,11 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   // condition on the entry. The value is not required.
   // FIXME: Avoid duplication when spaces[0] == spaces[1]
   // Collect boundary conditions by matrix axis
+  std::cout << "Update bcs" << std::endl;
   DirichletBC::Map boundary_values0, boundary_values1;
   for (std::size_t i = 0; i < bcs.size(); ++i)
   {
+    std::cout << "Loops 1" << std::endl;
     assert(bcs[i]);
     assert(bcs[i]->function_space());
     if (V0.contains(*bcs[i]->function_space()))
@@ -404,7 +408,9 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       if (MPI::size(mesh.mpi_comm()) > 1
           and bcs[i]->method() != DirichletBC::Method::pointwise)
       {
+        std::cout << "Gather 1" << std::endl;
         bcs[i]->gather(boundary_values0);
+        std::cout << "Post Gather 1" << std::endl;
       }
     }
 
@@ -414,10 +420,12 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       if (MPI::size(mesh.mpi_comm()) > 1
           and bcs[i]->method() != DirichletBC::Method::pointwise)
       {
+        std::cout << "Gather 2" << std::endl;
         bcs[i]->gather(boundary_values1);
       }
     }
   }
+  std::cout << "End update bcs" << std::endl;
 
   // Data structures used in assembly
   EigenRowArrayXXd coordinate_dofs;
@@ -464,19 +472,21 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
     if (MPI::rank(MPI_COMM_WORLD) == 0)
     {
+      std::cout << "cell " << cell.midpoint()[0] << ", " << cell.midpoint()[1] << std::endl;
+      std::cout << "size " << map0.index_map()->size_local() << ", " << map0.index_map()->num_ghosts() << std::endl;
       std::cout << dmap0 << std::endl;
       // std::cout << dmap1 << std::endl;
-      A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
-                dmap1.data());
+      // A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
+      //             dmap1.data());
     }
   }
 
   // Place '1' on the diagonal if entry is owned by this process
   // if (V0 == V1)
   // {
-  //   int local_size = map0.index_map()->block_size()*map0.index_map()->size_local();
-  //   double one = 1.0;
-  //   for (auto bc : boundary_values0)
+  //   int local_size =
+  //   map0.index_map()->block_size()*map0.index_map()->size_local(); double one
+  //   = 1.0; for (auto bc : boundary_values0)
   //   {
   //     la_index_t row = bc.first;
   //     if (row < local_size)

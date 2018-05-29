@@ -120,7 +120,10 @@ def xtest_matrix_assembly_block():
     assert bnorm0 == pytest.approx(bnorm2, 1.0e-9)
 
 
-def xtest_assembly_solve_block():
+def test_assembly_solve_block():
+    """Solve a two-field mass-matrix like problem with blocked matrix approaches
+    and test that solution is the same.
+    """
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
     p0, p1 = 1, 1
@@ -132,81 +135,71 @@ def xtest_assembly_solve_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
-    u_bc0 = dolfin.function.constant.Constant(50.0)
-    u_bc1 = dolfin.function.constant.Constant(20.0)
-    bc0 = dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary)
-    bc1 = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)
+    # u_bc0 = dolfin.function.constant.Constant(50.0)
+    # u_bc1 = dolfin.function.constant.Constant(20.0)
+    # bc0 = dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary)
+    # bc1 = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)
 
-    # Variational problem
-    u, p = dolfin.function.argument.TrialFunction(
-        V0), dolfin.function.argument.TrialFunction(V1)
-    v, q = dolfin.function.argument.TestFunction(
-        V0), dolfin.function.argument.TestFunction(V1)
+    # # Variational problem
+    # u, p = dolfin.function.argument.TrialFunction(
+    #     V0), dolfin.function.argument.TrialFunction(V1)
+    # v, q = dolfin.function.argument.TestFunction(
+    #     V0), dolfin.function.argument.TestFunction(V1)
     f = dolfin.function.constant.Constant(1.0)
     g = dolfin.function.constant.Constant(-3.0)
-    zero = dolfin.function.constant.Constant(0.0)
+    # zero = dolfin.function.constant.Constant(0.0)
 
-    a00 = u * v * dx
-    a01 = zero * v * p * dx
-    a10 = zero * q * u * dx
-    a11 = q * p * dx
-    L0 = f * v * dx
-    L1 = g * q * dx
+    # a00 = u * v * dx
+    # a01 = zero * v * p * dx
+    # a10 = zero * q * u * dx
+    # a11 = q * p * dx
+    # L0 = f * v * dx
+    # L1 = g * q * dx
 
-    def monitor(ksp, its, rnorm):
-        pass
-        # print("Norm:", its, rnorm)
+    # def monitor(ksp, its, rnorm):
+    #     pass
+    #     # print("Norm:", its, rnorm)
 
-    # Create assembler
-    assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
-                                                [L0, L1], [bc0, bc1])
+    # # Create assembler
+    # assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
+    #                                             [L0, L1], [bc0, bc1])
 
     # # Monolithic blocked
-    A0, b0 = assembler.assemble(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    A0norm = A0.mat().norm()
-    b0norm = b0.vec().norm()
+    # A0, b0 = assembler.assemble(
+    #     mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    # A0norm = A0.mat().norm()
+    # b0norm = b0.vec().norm()
 
-    x0 = A0.mat().createVecLeft()
-    ksp = PETSc.KSP()
-    ksp.create(PETSc.COMM_WORLD)
-    ksp.setOperators(A0.mat())
-    ksp.setTolerances(rtol=1.0e-12)
-    #ksp.setMonitor(monitor)
-    ksp.setType('cg')
-    ksp.setFromOptions()
-    #ksp.view()
-    ksp.solve(b0.vec(), x0)
-    x0norm = x0.norm()
+    # x0 = A0.mat().createVecLeft()
+    # ksp = PETSc.KSP()
+    # ksp.create(PETSc.COMM_WORLD)
+    # ksp.setOperators(A0.mat())
+    # ksp.setTolerances(rtol=1.0e-12)
+    # # ksp.setMonitor(monitor)
+    # ksp.setType('cg')
+    # ksp.setFromOptions()
+    # # ksp.view()
+    # ksp.solve(b0.vec(), x0)
+    # x0norm = x0.norm()
 
-    if dolfin.cpp.MPI.rank(mesh.mpi_comm()) == 0:
-        print("Anorm 0: ", A0norm)
-        print("bnorm 0: ", b0norm)
-        print("xnorm 0: ", x0norm)
+    # # Nested (MatNest)
+    # A1, b1 = assembler.assemble(
+    #     mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
+    # b1norm = b1.vec().norm()
+    # assert b0norm == pytest.approx(b1norm, 1.0e-12)
 
-    A0.mat().view()
-    return
-
-    # Nested (MatNest)
-    A1, b1 = assembler.assemble(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
-    b1norm = b1.vec().norm()
-    assert b0norm == pytest.approx(b1norm, 1.0e-12)
-
-    x1 = dolfin.la.PETScVector(b1)
-    ksp = PETSc.KSP()
-    ksp.create(PETSc.COMM_WORLD)
-    #ksp.setMonitor(monitor)
-    ksp.setTolerances(rtol=1.0e-12)
-    ksp.setOperators(A1.mat())
-    ksp.setType('cg')
-    ksp.setFromOptions()
-    #ksp.view()
-    ksp.solve(b1.vec(), x1.vec())
-    x1norm = x1.vec().norm()
-
-    assert x0norm == pytest.approx(x1norm, 1.0e-10)
-    return
+    # x1 = dolfin.la.PETScVector(b1)
+    # ksp = PETSc.KSP()
+    # ksp.create(PETSc.COMM_WORLD)
+    # # ksp.setMonitor(monitor)
+    # ksp.setTolerances(rtol=1.0e-12)
+    # ksp.setOperators(A1.mat())
+    # ksp.setType('cg')
+    # ksp.setFromOptions()
+    # # ksp.view()
+    # ksp.solve(b1.vec(), x1.vec())
+    # x1norm = x1.vec().norm()
+    # assert x0norm == pytest.approx(x1norm, 1.0e-10)
 
     # Monolithic version
     E = P0 * P1
@@ -216,18 +209,17 @@ def xtest_assembly_solve_block():
     a = u0 * v0 * dx + u1 * v1 * dx
     L = f * v0 * ufl.dx + g * v1 * dx
 
-    # bc0 = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    # bc1 = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
     u_bc = dolfin.function.constant.Constant((50.0, 20.0))
     bc = dolfin.fem.dirichletbc.DirichletBC(W, u_bc, boundary)
     assembler = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
 
-    print("----------------------------")
     A2, b2 = assembler.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    #return
+    return
     A2norm = A2.mat().norm()
     b2norm = b2.vec().norm()
+    assert A2norm == pytest.approx(A0norm, 1.0e-12)
+    assert b2norm == pytest.approx(b0norm, 1.0e-12)
 
     x2 = dolfin.cpp.la.PETScVector(b2)
     ksp = PETSc.KSP()
@@ -237,92 +229,7 @@ def xtest_assembly_solve_block():
     ksp.setType('cg')
     ksp.setTolerances(rtol=1.0e-9)
     ksp.setFromOptions()
-    ksp.view()
+    # ksp.view()
     ksp.solve(b2.vec(), x2.vec())
     x2norm = x2.vec().norm()
-    # print("---------- Done (2): ", x2norm)
-    # print("---------- Done (test): ", x0norm)
-
-    # solver2 = dolfin.la.PETScKrylovSolver(mesh.mpi_comm())
-    # #solver2.set_options_prefix("test_lu_")
-    # # dolfin.la.PETScOptions.set("test_lu_ksp_type", "preonly")
-    # # dolfin.la.PETScOptions.set("test_lu_pc_type", "lu")
-    # #dolfin.la.PETScOptions.set("ksp_type", "preonly")
-    # dolfin.la.PETScOptions.set("pc_type", "lu")
-    # dolfin.la.PETScOptions.set("ksp_view")
-    # dolfin.la.PETScOptions.set("ksp_monitor_true_residual")
-
-    # solver2.set_operator(A2)
-    # solver2.set_from_options()
-
-    # solver2.ksp().view()
-    # solver2.ksp().monitor()
-
-    # from petsc4py import PETSc
-    # Monitor = PETSc.KSP.Monitor
-    # solve.ksp().setMonitor(Monitor.TRUE_RESIDUAL_NORM)
-    # self.ksp.setMonitor(Monitor.DEFAULT)
-    # self.ksp.setMonitor(Monitor.TRUE_RESIDUAL_NORM)
-    # self.ksp.setMonitor(Monitor.SOLUTION)
-
-    # solver2.solve(x2, b2)
-
-    # x2.vec().view()
-
-def test_assembly_solve_test():
-
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
-    p0, p1 = 1, 1
-    P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
-    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p1)
-
-    def boundary(x):
-        return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
-
-    f = dolfin.function.constant.Constant(1.0)
-    g = dolfin.function.constant.Constant(-3.0)
-
-    # Monolithic version
-    E = P0 * P1
-    W = dolfin.function.functionspace.FunctionSpace(mesh, E)
-    u0, u1 = dolfin.function.argument.TrialFunctions(W)
-    v0, v1 = dolfin.function.argument.TestFunctions(W)
-    a = u0 * v0 * dx + u1 * v1 * dx
-    L = f * v0 * ufl.dx + g * v1 * dx
-
-    u_bc = dolfin.function.constant.Constant((50.0, 20.0))
-    bc = dolfin.fem.dirichletbc.DirichletBC(W, u_bc, boundary)
-    assembler = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
-
-    A2, b2 = assembler.assemble(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    # A2, b2 = dolfin.fem.assembling.assemble_system(a, L, bc)
-
-    A2norm = A2.mat().norm()
-    b2norm = b2.vec().norm()
-    if dolfin.cpp.MPI.rank(mesh.mpi_comm()) == 0:
-        print("Anorm2: ", A2norm)
-        print("bnorm2: ", b2norm)
-    return
-
-    x2 = dolfin.cpp.la.PETScVector(b2)
-    ksp = PETSc.KSP()
-    ksp.create(PETSc.COMM_WORLD)
-    #ksp.setMonitor(monitor)
-    ksp.setOperators(A2.mat())
-    ksp.setType('cg')
-    ksp.setTolerances(rtol=1.0e-9)
-    ksp.setFromOptions()
-    #ksp.view()
-    ksp.solve(b2.vec(), x2.vec())
-    x2norm = x2.vec().norm()
-
-    A2norm = A2.mat().norm()
-    b2norm = b2.vec().norm()
-    x2norm = x2.vec().norm()
-    if dolfin.cpp.MPI.rank(mesh.mpi_comm()) == 0:
-        print("Anorm2: ", A2norm)
-        print("bnorm2: ", b2norm)
-        print("xnorm2: ", x2norm)
-
-    A2.mat().view()
+    assert x2norm == pytest.approx(x0norm, 1.0e-10)
