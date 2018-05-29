@@ -101,7 +101,7 @@ void DirichletBC::gather(Map& boundary_values) const
       {
         const std::size_t global_node
             = dofmap.index_map()->local_to_global(node_index);
-        proc_map0[*proc].push_back(global_node + component);
+        proc_map0[*proc].push_back(bs*global_node + component);
         proc_map1[*proc].push_back(bv->second);
       }
     }

@@ -133,7 +133,7 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   }
 
   // Allocate space (using data from sparsity pattern)
-  std::cout << "Test block size: " << block_size << std::endl;
+  // std::cout << "Test block size: " << block_size << std::endl;
   ierr = MatXAIJSetPreallocation(_matA, block_size,
                                  _num_nonzeros_diagonal.data(),
                                  _num_nonzeros_off_diagonal.data(), NULL, NULL);
