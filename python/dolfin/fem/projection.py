@@ -28,8 +28,7 @@ def project(v,
             bcs=None,
             mesh=None,
             function=None,
-            solver_type="lu",
-            preconditioner_type="default",
+            solver=None,
             form_compiler_parameters=None):
     """Return projection of given expression *v* onto the finite element
     space *V*.
@@ -103,7 +102,17 @@ def project(v,
     # Solve linear system for projection
     if function is None:
         function = Function(V)
-    cpp.la.solve(A, function.vector(), b, solver_type, preconditioner_type)
+
+    # Construct solver if none exists
+    if solver is None:
+        solver = dolfin.cpp.la.PETScKrylovSolver(mesh.mpi_comm())
+        solver.set_options_prefix("projection_")
+        dolfin.cpp.la.PETScOptions.set("projection_ksp_type", "preonly")
+        dolfin.cpp.la.PETScOptions.set("projection_pc_type", "lu")
+        solver.set_from_options()
+
+    solver.set_operator(A)
+    solver.solve(function.vector(), b)
 
     return function
 
