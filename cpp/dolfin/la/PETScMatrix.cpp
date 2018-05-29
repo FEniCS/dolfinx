@@ -98,7 +98,8 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
       map0[i * factor + j] = factor * index + j;
   }
 
-  const int col_block_size = n + index_maps[1]->num_ghosts();
+  const int col_block_size
+      = index_maps[1]->size_local() + index_maps[1]->num_ghosts();
   for (int i = 0; i < col_block_size; ++i)
   {
     std::size_t factor = bs1 / bs;
