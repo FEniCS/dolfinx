@@ -7,10 +7,7 @@
 #pragma once
 
 #include <string>
-
-#ifdef HAS_PETSC
 #include <petsc.h>
-#endif
 
 namespace dolfin
 {
@@ -66,7 +63,6 @@ public:
   /// finalised)
   static bool mpi_finalized();
 
-#ifdef HAS_PETSC
   /// PETSc error handler. Logs everything known to DOLFIN logging
   /// system (with level TRACE) and stores the error message into
   /// pests_err_msg member.
@@ -74,7 +70,6 @@ public:
   PetscDolfinErrorHandler(MPI_Comm comm, int line, const char* fun,
                           const char* file, PetscErrorCode n, PetscErrorType p,
                           const char* mess, void* ctx);
-#endif
 
   /// Last recorded PETSc error message
   std::string petsc_err_msg;

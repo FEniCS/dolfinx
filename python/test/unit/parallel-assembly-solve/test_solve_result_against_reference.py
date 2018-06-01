@@ -118,8 +118,7 @@ def test_computed_norms_against_references():
 
     # For MUMPS, increase estimated require memory increase. Typically
     # required for high order elements on small meshes in 3D
-    if has_petsc():
-        PETScOptions.set("mat_mumps_icntl_14", 40)
+    PETScOptions.set("mat_mumps_icntl_14", 40)
 
     # Iterate over test cases and collect results
     results = []
@@ -130,8 +129,7 @@ def test_computed_norms_against_references():
             results.append((mesh[1], degree, norm))
 
     # Change option back to default
-    if has_petsc():
-        PETScOptions.set("mat_mumps_icntl_14", 20)
+    PETScOptions.set("mat_mumps_icntl_14", 20)
 
     # Check results
     errors = check_results(results, reference, tol)

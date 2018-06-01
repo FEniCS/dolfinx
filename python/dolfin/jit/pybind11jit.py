@@ -66,13 +66,6 @@ def compile_cpp_code(cpp_code):
 
     params['build']['cxxflags'] += tuple(dmacros)
 
-    # This seems to be needed by OSX but not in Linux
-    # FIXME: probably needed for other libraries too
-    # if cpp.common.has_petsc():
-    #     import os
-    #     params['build']['libs'] += ['petsc']
-    #     params['build']['lib_dirs'] += [os.environ["PETSC_DIR"] + "/lib"]
-
     module_hash = hashlib.md5(cpp_code.encode('utf-8')).hexdigest()
     module_name = "dolfin_cpp_module_" + module_hash
 
