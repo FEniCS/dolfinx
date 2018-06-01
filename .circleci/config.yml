@@ -80,7 +80,7 @@ jobs:
           name: Run Python unit tests (serial)
           command: |
             cd python/test/unit
-            python3 -m pytest -n 2 .
+            python3 -m pytest -n 3 .
       - run:
           name: Run Python unit tests (MPI)
           command: |
