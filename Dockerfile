@@ -56,7 +56,7 @@ RUN wget https://bootstrap.pypa.io/get-pip.py && \
 
 
 # Install PETSc from source. PETSc build system needs Python 2 :(.
-ARG PETSC_VERSION=3.9.1
+ARG PETSC_VERSION=3.9.2
 # Install PETSc with real scalar
 # PETSC_DIR=/usr/local/petsc-32
 RUN apt-get -qq update && \
