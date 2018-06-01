@@ -39,7 +39,7 @@ jobs:
           command: mkdir -p build && cd build && cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer ../cpp/
       - run:
           name: Build DOLFIN and install (C++)
-          command: cd build && ninja -j2 install
+          command: cd build && ninja -j3 install
       - run:
           name: Build and run C++ unit tests (serial)
           command: cd build && ninja -j2 unittests && ctest -R unittests
