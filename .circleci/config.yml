@@ -42,7 +42,7 @@ jobs:
           command: cd build && ninja -j3 install
       - run:
           name: Build and run C++ unit tests (serial)
-          command: cd build && ninja -j2 unittests && ctest -R unittests
+          command: cd build && ninja -j3 unittests && ctest -R unittests
       #- run:
       #    name: Build and run C++ regressions tests (serial)
       #    command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
@@ -55,8 +55,8 @@ jobs:
           command: |
             cd cpp/demo/documented/poisson
             python3 -m ffc -l dolfin Poisson.ufl
-            cmake .
-            make
+            cmake -G Ninja .
+            ninja
             ./demo_poisson
 
       - run:
