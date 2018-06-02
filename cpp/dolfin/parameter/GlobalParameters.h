@@ -66,12 +66,6 @@ public:
     p.add("partitioning_approach", "PARTITION",
           {"PARTITION", "REPARTITION", "REFINE"});
 
-    //-- Linear algebra
-
-#ifdef HAS_PETSC
-    p.add("use_petsc_signal_handler", false);
-#endif
-
     return p;
   }
 };

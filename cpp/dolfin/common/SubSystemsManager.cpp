@@ -10,9 +10,7 @@
 #include <mpi.h>
 #endif
 
-#ifdef HAS_PETSC
 #include <petsc.h>
-#endif
 
 #ifdef HAS_SLEPC
 #include <slepc.h>
@@ -87,21 +85,16 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {
-#ifdef HAS_PETSC
   // Dummy command-line arguments
   int argc = 0;
   char** argv = NULL;
 
   // Initialize PETSc
   init_petsc(argc, argv);
-#else
-  throw std::runtime_error("DOLFIN has not been configured with PETSc support");
-#endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc(int argc, char* argv[])
 {
-#ifdef HAS_PETSC
   if (singleton().petsc_initialized)
     return;
 
@@ -142,10 +135,6 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   // for MPI finalization)
   if (mpi_initialized() && !mpi_init_status)
     singleton().control_mpi = false;
-
-#else
-  throw std::runtime_error("DOLFIN has not been configured with PETSc support");
-#endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize()
@@ -200,7 +189,6 @@ void SubSystemsManager::finalize_mpi()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_petsc()
 {
-#ifdef HAS_PETSC
   if (singleton().petsc_initialized)
   {
     if (!PetscFinalizeCalled)
@@ -213,16 +201,13 @@ void SubSystemsManager::finalize_petsc()
     SlepcFinalize();
 #endif
   }
-#else
-// Do nothing
-#endif
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
 {
-  // This function not affected if MPI_Finalize has been called. It
-  // returns true if MPI_Init has been called at any point, even if
-  // MPI_Finalize has been called.
+// This function not affected if MPI_Finalize has been called. It
+// returns true if MPI_Init has been called at any point, even if
+// MPI_Finalize has been called.
 
 #ifdef HAS_MPI
   int mpi_initialized;
@@ -246,7 +231,6 @@ bool SubSystemsManager::mpi_finalized()
 #endif
 }
 //-----------------------------------------------------------------------------
-#ifdef HAS_PETSC
 PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
     MPI_Comm comm, int line, const char* fun, const char* file,
     PetscErrorCode n, PetscErrorType p, const char* mess, void* ctx)
@@ -276,5 +260,4 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   // Continue with error handling
   PetscFunctionReturn(n);
 }
-#endif
 //-----------------------------------------------------------------------------

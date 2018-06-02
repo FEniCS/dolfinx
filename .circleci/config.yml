@@ -10,12 +10,6 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install/update apt dependencies
-          command:  |
-            apt-get -qq update
-            apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade
-            apt-get -y install python3-tk
-      - run:
           name: Install/update Python (test/doc) dependencies
           command: pip3 install decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
       - run:
@@ -36,13 +30,13 @@ jobs:
           command: cd cpp/doc && doxygen
       - run:
           name: Configure DOLFIN (C++)
-          command: mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Developer ../cpp/
+          command: mkdir -p build && cd build && cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer ../cpp/
       - run:
           name: Build DOLFIN and install (C++)
-          command: cd build && make -j2 install
+          command: cd build && ninja -j3 install
       - run:
           name: Build and run C++ unit tests (serial)
-          command: cd build && make -j2 unittests && ctest -R unittests
+          command: cd build && ninja -j3 unittests && ctest -R unittests
       #- run:
       #    name: Build and run C++ regressions tests (serial)
       #    command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
@@ -55,8 +49,8 @@ jobs:
           command: |
             cd cpp/demo/documented/poisson
             python3 -m ffc -l dolfin Poisson.ufl
-            cmake .
-            make
+            cmake -G Ninja .
+            ninja
             ./demo_poisson
 
       - run:
@@ -80,7 +74,7 @@ jobs:
           name: Run Python unit tests (serial)
           command: |
             cd python/test/unit
-            python3 -m pytest -n 2 .
+            python3 -m pytest -n 3 .
       - run:
           name: Run Python unit tests (MPI)
           command: |
