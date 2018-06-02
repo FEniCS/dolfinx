@@ -13,6 +13,10 @@
 
 namespace dolfin
 {
+namespace common
+{
+class IndexMap;
+} // namespace common
 namespace function
 {
 class FunctionSpace;
@@ -66,6 +70,9 @@ public:
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
 private:
+  // Get IndexSets (IS) for stacked index maps
+  std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);
+
   // Get sub-matrix
   la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);
 
@@ -107,8 +114,7 @@ private:
   // Dirichlet boundary conditions
   std::vector<std::shared_ptr<const DirichletBC>> _bcs;
 
-  //std::array<std::vector<IS>, 2> _block_is;
-
+  // std::array<std::vector<IS>, 2> _block_is;
 };
 } // namespace fem
 } // namespace dolfin

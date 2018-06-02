@@ -83,6 +83,15 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   MatGetType(A.mat(), &mat_type);
   const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
 
+  // Collect index sets
+  std::vector<std::vector<const common::IndexMap*>> maps(2);
+  for (std::size_t i = 0; i < _a.size(); ++i)
+    maps[0].push_back(_a[i][0]->function_space(0)->dofmap()->index_map().get());
+  for (std::size_t i = 0; i < _a[0].size(); ++i)
+    maps[1].push_back(_a[0][i]->function_space(1)->dofmap()->index_map().get());
+  std::vector<IS> is_row = compute_index_sets(maps[0]);
+  std::vector<IS> is_col = compute_index_sets(maps[1]);
+
   // Assemble matrix
   if (is_matnest)
   {
@@ -90,9 +99,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     {
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
-        la::PETScMatrix Asub = get_sub_matrix(A, i, j);
         if (_a[i][j])
         {
+         la::PETScMatrix Asub = get_sub_matrix(A, i, j);
           this->assemble(Asub, *_a[i][j], bcs);
           if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
             ident(Asub, *_a[i][j]->function_space(0), _bcs);
@@ -106,50 +115,21 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
   else if (block_matrix)
   {
-    std::vector<std::pair<la_index_t, double>> bc_values;
-    std::int64_t offset_row = 0;
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
-      // Loop over columns
-      std::int64_t offset_col = 0;
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         if (_a[i][j])
         {
-          // Build index set for block
-          auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
-          auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
-          auto map0_size = map0->size_local() + map0->num_ghosts();
-          auto map1_size = map1->size_local() + map1->num_ghosts();
-
-          std::vector<PetscInt> index0(map0_size);
-          std::vector<PetscInt> index1(map1_size);
-          std::iota(index0.begin(), index0.end(), offset_row);
-          std::iota(index1.begin(), index1.end(), offset_col);
-
-          IS is0, is1;
-          ISCreateBlock(MPI_COMM_SELF, map0->block_size(), index0.size(),
-                        index0.data(), PETSC_COPY_VALUES, &is0);
-          ISCreateBlock(MPI_COMM_SELF, map1->block_size(), index1.size(),
-                        index1.data(), PETSC_COPY_VALUES, &is1);
-
-          // Get sub-matrix (using local indices for is0 and is1)
           Mat subA;
-          MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
+          MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
 
-          // Assemble block
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], bcs);
           if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
             ident(mat, *_a[i][j]->function_space(0), _bcs);
 
-          // Restore sub-matrix and destroy index sets
-          MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
-
-          ISDestroy(&is0);
-          ISDestroy(&is1);
-
-          offset_col += map1_size;
+          MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
         }
         else
         {
@@ -158,9 +138,6 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           throw std::runtime_error("Null block not supported/tested yet.");
         }
       }
-      auto map0 = _a[i][0]->function_space(0)->dofmap()->index_map();
-      auto map0_size = map0->size_local() + map0->num_ghosts();
-      offset_row += map0_size;
     }
   }
   else
@@ -171,6 +148,11 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
+
+  for (std::size_t i = 0; i < is_row.size(); ++i)
+    ISDestroy(&is_row[i]);
+  for (std::size_t i = 0; i < is_col.size(); ++i)
+    ISDestroy(&is_col[i]);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScVector& b, BlockType block_type)
@@ -392,6 +374,26 @@ void Assembler::ident(la::PETScMatrix& A, const function::FunctionSpace& V,
     if (row < local_size)
       A.add_local(&one, 1, &row, 1, &row);
   }
+}
+//-----------------------------------------------------------------------------
+std::vector<IS>
+Assembler::compute_index_sets(std::vector<const common::IndexMap*> maps)
+{
+  std::vector<IS> is(maps.size());
+
+  std::size_t offset = 0;
+  for (std::size_t i = 0; i < maps.size(); ++i)
+  {
+    assert(maps[i]);
+    const int size = maps[i]->size_local() + maps[i]->num_ghosts();
+    std::vector<PetscInt> index(size);
+    std::iota(index.begin(), index.end(), offset);
+    ISCreateBlock(MPI_COMM_SELF, maps[i]->block_size(), index.size(),
+                  index.data(), PETSC_COPY_VALUES, &is[i]);
+    offset += size;
+  }
+
+  return is;
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix Assembler::get_sub_matrix(const la::PETScMatrix& A, int i,
