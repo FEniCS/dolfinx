@@ -13,6 +13,10 @@
 
 namespace dolfin
 {
+namespace function
+{
+class FunctionSpace;
+} // namespace function
 namespace la
 {
 class PETScMatrix;
@@ -53,9 +57,20 @@ public:
   /// Assemble matrix and vector
   void assemble(la::PETScMatrix& A, la::PETScVector& b);
 
+  /// Add '1' to diagonal for Dirichlet rows. Rows must be local to the
+  /// process.
+  static void ident(la::PETScMatrix& A, const function::FunctionSpace& V,
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
 private:
-  // Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed
-  // on diagonal
+  // Get list of local dof indices with boundary conditions applied
+  // std::vector<PetscInt> dirichlet_indices();
+
+  // Flag indicating if cell has a Dirichlet bc applied to it (true ->
+  // has bc)
+  // std::vector<bool> has_dirichlet_bc();
+
+  // Assemble matrix. Dirichlet rows/columns are zeroed.
   static void assemble(la::PETScMatrix& A, const Form& a,
                        std::vector<std::shared_ptr<const DirichletBC>> bcs);
 

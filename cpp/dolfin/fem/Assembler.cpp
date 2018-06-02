@@ -87,6 +87,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
         {
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], bcs);
+          if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
+            ident(mat, *_a[i][j]->function_space(0), _bcs);
         }
         else
         {
@@ -135,6 +137,8 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           // Assemble block
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], bcs);
+          if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
+            ident(mat, *_a[i][j]->function_space(0), _bcs);
 
           // Restore sub-matrix and destroy index sets
           MatRestoreLocalSubMatrix(A.mat(), is0, is1, &subA);
@@ -161,6 +165,9 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   else
   {
     this->assemble(A, *_a[0][0], bcs);
+    if (*_a[0][0]->function_space(0) == *_a[0][0]->function_space(1))
+      ident(A, *_a[0][0]->function_space(0), _bcs);
+
     A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
 }
@@ -351,6 +358,41 @@ void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
   assemble(b);
 }
 //-----------------------------------------------------------------------------
+void Assembler::ident(la::PETScMatrix& A, const function::FunctionSpace& V,
+                      std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  assert(V.mesh());
+  const mesh::Mesh& mesh = *V.mesh();
+
+  DirichletBC::Map boundary_values;
+  for (std::size_t i = 0; i < bcs.size(); ++i)
+  {
+    assert(bcs[i]);
+    assert(bcs[i]->function_space());
+    if (V.contains(*bcs[i]->function_space()))
+    {
+      // FIXME: find way to avoid gather, or perform with a single
+      // gather
+      bcs[i]->get_boundary_values(boundary_values);
+      if (MPI::size(mesh.mpi_comm()) > 1
+          and bcs[i]->method() != DirichletBC::Method::pointwise)
+      {
+        bcs[i]->gather(boundary_values);
+      }
+    }
+  }
+
+  auto map = V.dofmap()->index_map();
+  int local_size = map->block_size() * map->size_local();
+  double one = 1.0;
+  for (auto bc : boundary_values)
+  {
+    la_index_t row = bc.first;
+    if (row < local_size)
+      A.add_local(&one, 1, &row, 1, &row);
+  }
+}
+//-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScMatrix& A, const Form& a,
                          std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
@@ -451,22 +493,6 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
     A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
                 dmap1.data());
-  }
-
-  // Place '1' on the diagonal if entry is owned by this process (must
-  // not touch unowned entries, othwise these will summed in the
-  // communication phase)
-  if (V0 == V1)
-  {
-    int local_size
-        = map0.index_map()->block_size() * map0.index_map()->size_local();
-    double one = 1.0;
-    for (auto bc : boundary_values0)
-    {
-      la_index_t row = bc.first;
-      if (row < local_size)
-        A.add_local(&one, 1, &row, 1, &row);
-    }
   }
 }
 //-----------------------------------------------------------------------------
