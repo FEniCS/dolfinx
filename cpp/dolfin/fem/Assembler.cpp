@@ -42,6 +42,16 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
   // - figure out number or blocks (row and column)
 }
 //-----------------------------------------------------------------------------
+Assembler::~Assembler()
+{
+  // for (std::size_t i = 0; i < _block_is.size(); ++i)
+  // {
+  //   // for (std::size_t j = 0; j < _block_is[j].size(); ++j)
+  //   //   if (_block_is[i][j])
+  //   //     ISDestroy(&_block_is[i][j]);
+  // }
+}
+//-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 {
   // Check if matrix should be nested
@@ -80,26 +90,19 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     {
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
-        // Get submatrix
-        Mat subA;
-        MatNestGetSubMat(A.mat(), i, j, &subA);
+        la::PETScMatrix Asub = get_sub_matrix(A, i, j);
         if (_a[i][j])
         {
-          la::PETScMatrix mat(subA);
-          this->assemble(mat, *_a[i][j], bcs);
+          this->assemble(Asub, *_a[i][j], bcs);
           if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
-            ident(mat, *_a[i][j]->function_space(0), _bcs);
+            ident(Asub, *_a[i][j]->function_space(0), _bcs);
         }
         else
         {
-          // FIXME: Figure out how to check that matrix block is null
-          // Null block, do nothing
           throw std::runtime_error("Null block not supported/tested yet.");
         }
       }
     }
-
-    A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
   else if (block_matrix)
   {
@@ -159,17 +162,15 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       auto map0_size = map0->size_local() + map0->num_ghosts();
       offset_row += map0_size;
     }
-
-    A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
   else
   {
     this->assemble(A, *_a[0][0], bcs);
     if (*_a[0][0]->function_space(0) == *_a[0][0]->function_space(1))
       ident(A, *_a[0][0]->function_space(0), _bcs);
-
-    A.apply(la::PETScMatrix::AssemblyType::FINAL);
   }
+
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScVector& b, BlockType block_type)
@@ -391,6 +392,39 @@ void Assembler::ident(la::PETScMatrix& A, const function::FunctionSpace& V,
     if (row < local_size)
       A.add_local(&one, 1, &row, 1, &row);
   }
+}
+//-----------------------------------------------------------------------------
+la::PETScMatrix Assembler::get_sub_matrix(const la::PETScMatrix& A, int i,
+                                          int j)
+{
+  MatType mat_type;
+  MatGetType(A.mat(), &mat_type);
+  const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
+
+  Mat subA;
+  if (is_matnest)
+    MatNestGetSubMat(A.mat(), i, j, &subA);
+  else
+  {
+    // // Monolithic
+    // auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
+    // auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
+    // auto map0_size = map0->size_local() + map0->num_ghosts();
+    // auto map1_size = map1->size_local() + map1->num_ghosts();
+    // std::vector<PetscInt> index0(map0_size), index1(map1_size);
+    // std::iota(index0.begin(), index0.end(), offset_row);
+    // std::iota(index1.begin(), index1.end(), offset_col);
+
+    // IS is0, is1;
+    // ISCreateBlock(MPI_COMM_SELF, map0->block_size(), index0.size(),
+    //               index0.data(), PETSC_COPY_VALUES, &is0);
+    // ISCreateBlock(MPI_COMM_SELF, map1->block_size(), index1.size(),
+    //               index1.data(), PETSC_COPY_VALUES, &is1);
+
+    // MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
+  }
+
+  return la::PETScMatrix(subA);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScMatrix& A, const Form& a,

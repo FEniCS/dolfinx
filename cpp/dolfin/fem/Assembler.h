@@ -46,6 +46,9 @@ public:
             std::vector<std::shared_ptr<const Form>> L,
             std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
+  /// Destructor
+  ~Assembler();
+
   /// Assemble matrix. Dirichlet rows/columns are zeroed, with '1'
   /// placed on diagonal
   void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
@@ -63,6 +66,9 @@ public:
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
 private:
+  // Get sub-matrix
+  la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);
+
   // Get list of local dof indices with boundary conditions applied
   // std::vector<PetscInt> dirichlet_indices();
 
@@ -100,6 +106,9 @@ private:
 
   // Dirichlet boundary conditions
   std::vector<std::shared_ptr<const DirichletBC>> _bcs;
+
+  //std::array<std::vector<IS>, 2> _block_is;
+
 };
 } // namespace fem
 } // namespace dolfin
