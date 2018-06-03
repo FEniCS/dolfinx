@@ -93,7 +93,28 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   std::vector<IS> is_col = compute_index_sets(maps[1]);
 
   // Assemble matrix
-  if (is_matnest)
+  // if (is_matnest)
+  // {
+  //   for (std::size_t i = 0; i < _a.size(); ++i)
+  //   {
+  //     for (std::size_t j = 0; j < _a[i].size(); ++j)
+  //     {
+  //       if (_a[i][j])
+  //       {
+  //        la::PETScMatrix Asub = get_sub_matrix(A, i, j);
+  //         this->assemble(Asub, *_a[i][j], bcs);
+  //         if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
+  //           ident(Asub, *_a[i][j]->function_space(0), _bcs);
+  //       }
+  //       else
+  //       {
+  //         throw std::runtime_error("Null block not supported/tested yet.");
+  //       }
+  //     }
+  //   }
+  // }
+  // else if (block_matrix)
+  if (is_matnest or block_matrix)
   {
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
@@ -101,28 +122,47 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       {
         if (_a[i][j])
         {
-         la::PETScMatrix Asub = get_sub_matrix(A, i, j);
-          this->assemble(Asub, *_a[i][j], bcs);
-          if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
-            ident(Asub, *_a[i][j]->function_space(0), _bcs);
-        }
-        else
-        {
-          throw std::runtime_error("Null block not supported/tested yet.");
-        }
-      }
-    }
-  }
-  else if (block_matrix)
-  {
-    for (std::size_t i = 0; i < _a.size(); ++i)
-    {
-      for (std::size_t j = 0; j < _a[i].size(); ++j)
-      {
-        if (_a[i][j])
-        {
+          if (is_matnest)
+          {
+            IS is_rows[2], is_cols[2];
+            IS is_rowsl[2], is_colsl[2];
+            MatNestGetLocalISs(A.mat(), is_rowsl, is_colsl);
+            MatNestGetISs(A.mat(), is_rows, is_cols);
+            // MPI_Comm mpi_comm = MPI_COMM_NULL;
+            // PetscObjectGetComm((PetscObject)is_cols[1], &mpi_comm);
+            // std::cout << "Test size: " << MPI::size(mpi_comm) << std::endl;
+            if (i == 0 and j == 0)
+            {
+              if (MPI::rank(MPI_COMM_WORLD) == 1)
+              {
+                ISView(is_rowsl[i], PETSC_VIEWER_STDOUT_SELF);
+                ISView(is_row[i], PETSC_VIEWER_STDOUT_SELF);
+              }
+              ISView(is_rows[i], PETSC_VIEWER_STDOUT_WORLD);
+
+
+              Mat subA;
+              MatNestGetSubMat(A.mat(), i, j, &subA);
+              // std::cout << "Mat (0) address: " << &subA << std::endl;
+              la::PETScMatrix Atest(subA);
+              // auto orange = Atest.local_range(0);
+              // if (MPI::rank(MPI_COMM_WORLD) == 1)
+              //   std::cout << "orange: " << orange[0] << ", " << orange[1]
+              //             << std::endl;
+
+              ISLocalToGlobalMapping l2g0, l2g1;
+              MatGetLocalToGlobalMapping(subA, &l2g0, &l2g1);
+              if (MPI::rank(MPI_COMM_WORLD) == 1)
+                ISLocalToGlobalMappingView(l2g0, PETSC_VIEWER_STDOUT_SELF);
+              // MPI_Comm mpi_comm = MPI_COMM_NULL;
+              // PetscObjectGetComm((PetscObject)l2g0, &mpi_comm);
+              // std::cout << "Test size: " << MPI::size(mpi_comm) << std::endl;
+            }
+          }
+
           Mat subA;
           MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
+          // std::cout << "Mat (1) address: " << &subA << std::endl;
 
           la::PETScMatrix mat(subA);
           this->assemble(mat, *_a[i][j], bcs);
@@ -385,6 +425,9 @@ Assembler::compute_index_sets(std::vector<const common::IndexMap*> maps)
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
     assert(maps[i]);
+    // if (MPI::rank(MPI_COMM_WORLD) == 1)
+    //   std::cout << "CCC: " << i << ", " << maps[i]->size_local() << ", "
+    //             << maps[i]->num_ghosts() << std::endl;
     const int size = maps[i]->size_local() + maps[i]->num_ghosts();
     std::vector<PetscInt> index(size);
     std::iota(index.begin(), index.end(), offset);

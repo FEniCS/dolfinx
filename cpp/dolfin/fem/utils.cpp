@@ -138,13 +138,10 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
   }
 
   // Create merged sparsity pattern
-  // std::cout << "  Build merged sparsity pattern" << std::endl;
   la::SparsityPattern pattern(a[0][0]->mesh()->mpi_comm(), p);
 
   // Initialise matrix
-  // std::cout << "  Init parent matrix" << std::endl;
   la::PETScMatrix A(a[0][0]->mesh()->mpi_comm(), pattern);
-  // std::cout << "  Post init parent matrix" << std::endl;
 
   // Build list of row and column index maps (over each block)
   std::array<std::vector<const common::IndexMap*>, 2> index_maps;
@@ -183,8 +180,6 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
       _maps[1].push_back(index);
     }
   }
-
-  // exit(0);
 
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
@@ -341,8 +336,6 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
 {
   // Get process that owns global index
   int owner = maps[field]->owner(n);
-  // if (MPI::rank(MPI_COMM_WORLD) == 1)
-  //   std::cout << "    owning process: " << owner << std::endl;
 
   // Offset from lower rank processes
   std::size_t offset = 0;
@@ -350,22 +343,14 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   {
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
-      // if (MPI::rank(MPI_COMM_WORLD) == 1)
-      //   std::cout << "   p off: " << maps[j]->_all_ranges[owner] <<
-      //   std::endl;
       if (j != field)
-      {
         offset += maps[j]->_all_ranges[owner];
-      }
     }
   }
 
   // Local (process) offset
   for (unsigned int i = 0; i < field; ++i)
     offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner]);
-
-  // if (MPI::rank(MPI_COMM_WORLD) == 2)
-  //   std::cout << "    proc offeset (2): " << offset << std::endl;
 
   return n + offset;
 }
