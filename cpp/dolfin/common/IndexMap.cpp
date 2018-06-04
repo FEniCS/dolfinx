@@ -20,9 +20,9 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
 {
   // Calculate offsets
   MPI::all_gather(_mpi_comm, local_size, _all_ranges);
-  //MPI::all_gather(_mpi_comm.comm(), local_size, _all_ranges);
+  // MPI::all_gather(_mpi_comm.comm(), local_size, _all_ranges);
 
-  //const std::size_t mpi_size = _mpi_comm.size();
+  // const std::size_t mpi_size = _mpi_comm.size();
   const std::size_t mpi_size = dolfin::MPI::size(_mpi_comm);
   for (std::size_t i = 1; i < mpi_size; ++i)
     _all_ranges[i] += _all_ranges[i - 1];
@@ -46,23 +46,14 @@ std::array<std::int64_t, 2> IndexMap::local_range() const
 //-----------------------------------------------------------------------------
 int IndexMap::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
-std::size_t IndexMap::size(const IndexMap::MapSize type) const
+std::int32_t IndexMap::num_ghosts() const { return _ghosts.size(); }
+//-----------------------------------------------------------------------------
+std::int32_t IndexMap::size_local() const
 {
-  switch (type)
-  {
-  case IndexMap::MapSize::OWNED:
-    return _all_ranges[_myrank + 1] - _all_ranges[_myrank];
-  case IndexMap::MapSize::GLOBAL:
-    return _all_ranges.back();
-  case IndexMap::MapSize::ALL:
-    return _all_ranges[_myrank + 1] - _all_ranges[_myrank] + _ghosts.size();
-  case IndexMap::MapSize::GHOSTS:
-    return _ghosts.size();
-  default:
-    throw std::runtime_error("Unknown size type");
-    return 0;
-  }
+  return _all_ranges[_myrank + 1] - _all_ranges[_myrank];
 }
+//-----------------------------------------------------------------------------
+std::int64_t IndexMap::size_global() const { return _all_ranges.back(); }
 //-----------------------------------------------------------------------------
 const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& IndexMap::ghosts() const
 {

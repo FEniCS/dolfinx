@@ -245,9 +245,8 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   std::size_t N = coarse_space.dim();
 
   // Local dimension of the dofs and of the transfer matrix
-  std::size_t m = finemap->index_map()->size(common::IndexMap::MapSize::OWNED);
-  std::size_t n
-      = coarsemap->index_map()->size(common::IndexMap::MapSize::OWNED);
+  std::size_t m = finemap->index_map()->size_local();
+  std::size_t n = coarsemap->index_map()->size_local();
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.

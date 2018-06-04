@@ -118,9 +118,9 @@ null_space = build_nullspace(V, u.vector())
 
 # Attach near nullspace to matrix
 A.set_near_nullspace(null_space)
-# as_backend_type(A).set_near_nullspace(null_space)
 
 # Set solver options
+PETScOptions.set("ksp_view")
 PETScOptions.set("ksp_type", "cg")
 PETScOptions.set("ksp_rtol", 1.0e-12)
 PETScOptions.set("pc_type", "gamg")
@@ -149,7 +149,7 @@ solver.solve(u.vector(), b)
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
-file.write(u, XDMFFile.Encoding.ASCII)
+file.write(u)
 
 unorm = u.vector().norm(dolfin.cpp.la.Norm.l2)
 if MPI.rank(mesh.mpi_comm()) == 0:

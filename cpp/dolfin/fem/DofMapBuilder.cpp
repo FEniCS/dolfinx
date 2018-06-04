@@ -152,8 +152,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   auto index_map = std::make_unique<common::IndexMap>(
       mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, bs);
   assert(index_map);
-  assert(MPI::sum(mesh.mpi_comm(),
-                  bs * index_map->size(common::IndexMap::MapSize::OWNED))
+  assert(MPI::sum(mesh.mpi_comm(), bs * index_map->size_local())
          == global_dimension);
 
   // Update shared_nodes for node reordering
@@ -691,6 +690,7 @@ DofMapBuilder::extract_ufc_sub_dofmap(
 std::size_t DofMapBuilder::compute_blocksize(const ufc_dofmap& ufc_dofmap,
                                              std::size_t tdim)
 {
+  //return 1;
   bool has_block_structure = false;
   if (ufc_dofmap.num_sub_dofmaps > 1)
   {
