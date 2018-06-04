@@ -13,9 +13,9 @@
 
 // Typedefs for ufc_scalar - to be used in UFC.h
 #ifdef PETSC_USE_SCALAR
-using ufc_scalar = std::complex<double>;
+using ufc_scalar_t = std::complex<double>;
 #else
-using ufc_scalar = double;
+using ufc_scalar_t = double;
 #endif
 
 namespace dolfin
