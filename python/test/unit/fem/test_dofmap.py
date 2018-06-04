@@ -12,10 +12,9 @@ import numpy as np
 import pytest
 
 from dolfin import (UnitSquareMesh, UnitIntervalMesh, UnitCubeMesh, MPI, CellType,
-                    VectorFunctionSpace, Constant, Function, Expression,
+                    VectorFunctionSpace,
                     FunctionSpace, MixedElement, FiniteElement, VectorElement, Point,
-                    Cells, SubDomain, DOLFIN_EPS, dof_to_vertex_map, vertex_to_dof_map)
-from dolfin.cpp.common import IndexMap
+                    Cells, SubDomain, DOLFIN_EPS)
 from dolfin_utils.test import fixture, skip_in_serial, skip_in_parallel, set_parameters_fixture
 
 xfail = pytest.mark.xfail(strict=True)
