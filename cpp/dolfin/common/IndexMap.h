@@ -28,17 +28,6 @@ namespace common
 class IndexMap
 {
 public:
-  /// MapSize (ALL=(all indices in this map), OWNED=(indices owned by this
-  /// process), GHOST=(ghost (unowned) local indices), GLOBAL=(total indices
-  /// on communicator)
-  enum class MapSize : int32_t
-  {
-    ALL = 0,
-    OWNED = 1,
-    GHOSTS = 2,
-    GLOBAL = 3
-  };
-
   /// Create Index map with local_size owned blocks on this process, and blocks
   /// have size block_size.
   ///
@@ -61,13 +50,18 @@ public:
   /// Block size
   int block_size() const;
 
-  /// Size of set (MapSize::OWNED, MapSize::GHOSTS, MapSize::ALL or
-  /// MapSize::GLOBAL)
-  std::size_t size(MapSize type) const;
+  /// Number of ghost indices on this process
+  std::int32_t num_ghosts() const;
+
+  /// Number of indices owned by on this process
+  std::int32_t size_local() const;
+
+  /// Number indices across communicator
+  std::int64_t size_global() const;
 
   /// Local-to-global map for ghosts (local indexing beyond end of local
   /// range)
-  const EigenArrayXi64& ghosts() const;
+  const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& ghosts() const;
 
   /// Get global index for local index i (index of the block)
   std::size_t local_to_global(std::size_t i) const
@@ -95,7 +89,8 @@ public:
 
 private:
   // MPI Communicator
-  dolfin::MPI::Comm _mpi_comm;
+  // dolfin::MPI::Comm _mpi_comm;
+  MPI_Comm _mpi_comm;
 
   // Cache rank on mpi_comm (otherwise calls to MPI_Comm_rank can be
   // excessive)
@@ -108,7 +103,7 @@ public:
 
 private:
   // Local-to-global map for ghost indices
-  EigenArrayXi64 _ghosts;
+  Eigen::Array<la_index_t, Eigen::Dynamic, 1> _ghosts;
 
   // Owning process for each ghost index
   EigenArrayXi32 _ghost_owners;

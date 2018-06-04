@@ -731,7 +731,6 @@ void BoundingBoxTree::tree_print(std::stringstream& s, unsigned int i)
   }
 }
 //-----------------------------------------------------------------------------
-/// Sort leaf bounding boxes along given axis
 void BoundingBoxTree::sort_bboxes(
     std::size_t axis, const std::vector<double>& leaf_bboxes,
     const std::vector<unsigned int>::iterator& begin,
@@ -739,10 +738,8 @@ void BoundingBoxTree::sort_bboxes(
     const std::vector<unsigned int>::iterator& end)
 {
   // Comparison lambda function with capture
-  auto cmp =
-      [& gdim = _gdim, &leaf_bboxes, &axis ](unsigned int i, unsigned int j)
-          ->bool
-  {
+  auto cmp = [& gdim = _gdim, &leaf_bboxes, &axis](unsigned int i,
+                                                   unsigned int j) -> bool {
     const double* bi = leaf_bboxes.data() + 2 * gdim * i + axis;
     const double* bj = leaf_bboxes.data() + 2 * gdim * j + axis;
     return (bi[0] + bi[gdim]) < (bj[0] + bj[gdim]);
@@ -751,7 +748,6 @@ void BoundingBoxTree::sort_bboxes(
   std::nth_element(begin, middle, end, cmp);
 }
 //-----------------------------------------------------------------------------
-/// Compute bounding box of points
 void BoundingBoxTree::compute_bbox_of_points(
     double* bbox, std::size_t& axis, const std::vector<Point>& points,
     const std::vector<unsigned int>::iterator& begin,
@@ -788,7 +784,6 @@ void BoundingBoxTree::compute_bbox_of_points(
     }
 }
 //-----------------------------------------------------------------------------
-/// Compute bounding box of bounding boxes
 void BoundingBoxTree::compute_bbox_of_bboxes(
     double* bbox, std::size_t& axis, const std::vector<double>& leaf_bboxes,
     const std::vector<unsigned int>::iterator& begin,
@@ -837,7 +832,6 @@ void BoundingBoxTree::compute_bbox_of_bboxes(
   }
 }
 //-----------------------------------------------------------------------------
-/// Compute squared distance between point and point
 double BoundingBoxTree::compute_squared_distance_point(const double* x,
                                                        unsigned int node) const
 {
@@ -849,7 +843,6 @@ double BoundingBoxTree::compute_squared_distance_point(const double* x,
   return d;
 }
 //-----------------------------------------------------------------------------
-/// Compute squared distance between point and bounding box
 double BoundingBoxTree::compute_squared_distance_bbox(const double* x,
                                                       unsigned int node) const
 {
@@ -875,29 +868,26 @@ double BoundingBoxTree::compute_squared_distance_bbox(const double* x,
   return r2;
 }
 //-----------------------------------------------------------------------------
-/// Check whether bounding box (a) collides with bounding box (node)
-bool BoundingBoxTree::bbox_in_bbox(const double* a, unsigned int node) const
+bool BoundingBoxTree::bbox_in_bbox(const double* a, unsigned int node,
+                                   double rtol) const
 {
   const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
-
   for (unsigned int i = 0; i != _gdim; ++i)
   {
-    const double eps = DOLFIN_EPS_LARGE * (b[i + _gdim] - b[i]);
+    const double eps = rtol * (b[i + _gdim] - b[i]);
     if (b[i] - eps > a[i + _gdim] or a[i] > b[i + _gdim] + eps)
       return false;
   }
-
   return true;
 }
 //-----------------------------------------------------------------------------
-/// Check whether point (x) is in bounding box (node)
-bool BoundingBoxTree::point_in_bbox(const double* x,
-                                    const unsigned int node) const
+bool BoundingBoxTree::point_in_bbox(const double* x, const unsigned int node,
+                                    double rtol) const
 {
   const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
   for (unsigned int i = 0; i != _gdim; ++i)
   {
-    const double eps = DOLFIN_EPS_LARGE * (b[i + _gdim] - b[i]);
+    const double eps = rtol * (b[i + _gdim] - b[i]);
     if (b[i] - eps > x[i] or x[i] > b[i + _gdim] + eps)
       return false;
   }

@@ -8,21 +8,13 @@
 
 #include <Eigen/Dense>
 #include <cstdint>
-#ifdef HAS_PETSC
 #include <petscsys.h>
-#endif
 
 namespace dolfin
 {
 
-/// Index type for compatibility with linear algebra backend(s)
-#ifdef HAS_PETSC
-// typedef PetscInt la_index_t;
+// Index type for compatibility with linear algebra backend
 using la_index_t = PetscInt;
-#else
-// typedef std::int32_t la_index_t;
-using la_index_t = std::int32_t;
-#endif
 
 // Typedefs for Eigen
 

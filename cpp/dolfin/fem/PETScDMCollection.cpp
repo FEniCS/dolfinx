@@ -15,7 +15,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -246,9 +245,8 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   std::size_t N = coarse_space.dim();
 
   // Local dimension of the dofs and of the transfer matrix
-  std::size_t m = finemap->index_map()->size(common::IndexMap::MapSize::OWNED);
-  std::size_t n
-      = coarsemap->index_map()->size(common::IndexMap::MapSize::OWNED);
+  std::size_t m = finemap->index_map()->size_local();
+  std::size_t n = coarsemap->index_map()->size_local();
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.

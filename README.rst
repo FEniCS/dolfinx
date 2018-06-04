@@ -82,6 +82,6 @@ For questions about using DOLFIN-X, visit the FEniCS Q&A page:
 
 https://www.allanswered.com/community/s/fenics-project/
 
-For bug reports, visit the DOLFIN-X Bitbucket page:
+For bug reports, visit the DOLFIN-X GitHub page:
 
 https://github.com/FEniCS/dolfinx

@@ -2,7 +2,6 @@ set(HEADERS
   Constant.h
   dolfin_function.h
   Expression.h
-  FunctionAXPY.h
   Function.h
   FunctionSpace.h
   GenericFunction.h
@@ -12,7 +11,6 @@ set(HEADERS
 set(SOURCES
   Constant.cpp
   Expression.cpp
-  FunctionAXPY.cpp
   Function.cpp
   FunctionSpace.cpp
   GenericFunction.cpp

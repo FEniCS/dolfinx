@@ -25,22 +25,21 @@ void VectorSpaceBasis::orthonormalize(double tol)
   // Loop over each vector in basis
   for (std::size_t i = 0; i < _basis.size(); ++i)
   {
-    // Orthogonalize vector i with respect to previously
-    // orthonormalized vectors
+    // Orthogonalize vector i with respect to previously orthonormalized
+    // vectors
     for (std::size_t j = 0; j < i; ++j)
     {
       const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
       _basis[i]->axpy(-dot_ij, *_basis[j]);
     }
 
-    if (_basis[i]->norm("l2") < tol)
-    {
-      log::dolfin_error("VectorSpaceBasis.cpp", "orthonormalize vector basis",
-                        "Vector space has linear dependency");
-    }
-
     // Normalise basis function
-    (*_basis[i]) /= _basis[i]->norm("l2");
+   const PetscReal norm = _basis[i]->normalize();
+    if (norm  < tol)
+    {
+      throw std::runtime_error(
+          "VectorSpaceBasis has linear dependency. Cannot orthogonalize");
+    }
   }
 }
 //-----------------------------------------------------------------------------

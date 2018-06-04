@@ -101,7 +101,7 @@ void DirichletBC::gather(Map& boundary_values) const
       {
         const std::size_t global_node
             = dofmap.index_map()->local_to_global(node_index);
-        proc_map0[*proc].push_back(global_node + component);
+        proc_map0[*proc].push_back(bs*global_node + component);
         proc_map1[*proc].push_back(bv->second);
       }
     }
@@ -142,8 +142,7 @@ void DirichletBC::gather(Map& boundary_values) const
       const int component = div.rem;
 
       // Get local-to-global for ghost blocks
-      const Eigen::Ref<const EigenArrayXi64> local_to_global
-          = dofmap.index_map()->ghosts();
+      const auto& local_to_global = dofmap.index_map()->ghosts();
 
       // Case 1: dof is not owned by this process
       auto it

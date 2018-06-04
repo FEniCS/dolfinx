@@ -13,9 +13,6 @@
 void dolfin::init(int argc, char* argv[])
 {
   log::log(PROGRESS, "Initializing DOLFIN version %s.", DOLFIN_VERSION);
-
-#ifdef HAS_PETSC
   common::SubSystemsManager::init_petsc(argc, argv);
-#endif
 }
 //-----------------------------------------------------------------------------

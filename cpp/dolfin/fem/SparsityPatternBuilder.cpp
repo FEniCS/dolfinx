@@ -6,7 +6,6 @@
 
 #include "SparsityPatternBuilder.h"
 #include <algorithm>
-#include <dolfin/common/ArrayView.h>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -43,7 +42,7 @@ la::SparsityPattern SparsityPatternBuilder::build(
   std::array<EigenArrayXlaindex, 2> macro_dofs;
 
   // Create vector to point to dofs
-  std::array<common::ArrayView<const dolfin::la_index_t>, 2> dofs;
+  // std::array<common::ArrayView<const dolfin::la_index_t>, 2> dofs;
 
   // Build sparsity pattern for reals (globally supported basis members)
   // NOTE: It is very important that this is done before other integrals
@@ -75,7 +74,8 @@ la::SparsityPattern SparsityPatternBuilder::build(
   const std::size_t D = mesh.topology().dim();
   if (vertices)
   {
-    throw std::runtime_error("Sparsity pattern building over vertices not working.");
+    throw std::runtime_error(
+        "Sparsity pattern building over vertices not working.");
     // mesh.init(0);
     // mesh.init(0, D);
 
@@ -187,8 +187,7 @@ la::SparsityPattern SparsityPatternBuilder::build(
   if (diagonal)
   {
     const auto primary_range = index_maps[0]->local_range();
-    const std::size_t secondary_range
-        = index_maps[1]->size(common::IndexMap::MapSize::GLOBAL);
+    const std::size_t secondary_range = index_maps[1]->size_global();
     const std::size_t diagonal_range
         = std::min((std::size_t)primary_range[1], secondary_range);
 

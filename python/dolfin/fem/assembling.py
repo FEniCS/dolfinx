@@ -52,13 +52,9 @@ class Assembler:
 
         # Create matrix/vector (if required)
         if A is None:
-            # comm = A_dolfin_form.mesh().mpi_comm()
-            comm = cpp.MPI.comm_world
-            A = cpp.la.PETScMatrix(comm)
+            A = cpp.la.PETScMatrix()
         if b is None:
-            # comm = b_dolfin_form.mesh().mpi_comm()
-            comm = cpp.MPI.comm_world
-            b = cpp.la.PETScVector(comm)
+            b = cpp.la.PETScVector()
 
         # self.assembler.assemble(A, b)
         self.assembler.assemble(A, mat_type)
@@ -156,12 +152,10 @@ def assemble_system(A_form,
     b_dolfin_form = _create_dolfin_form(b_form, form_compiler_parameters)
 
     # Create tensors
-    comm_A = A_dolfin_form.mesh().mpi_comm()
-    # comm_b = A_dolfin_form.mesh().mpi_comm()
     if A_tensor is None:
-        A_tensor = cpp.la.PETScMatrix(comm_A)
+        A_tensor = cpp.la.PETScMatrix()
     if b_tensor is None:
-        b_tensor = cpp.la.PETScVector(comm_A)
+        b_tensor = cpp.la.PETScVector()
 
     # Check bcs
     bcs = _wrap_in_list(bcs, 'bcs', cpp.fem.DirichletBC)

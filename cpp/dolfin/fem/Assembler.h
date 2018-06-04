@@ -6,15 +6,21 @@
 
 #pragma once
 
-#include <array>
-#include <boost/multi_array.hpp>
 #include <dolfin/common/types.h>
 #include <memory>
-#include <utility>
+#include <petscvec.h>
 #include <vector>
 
 namespace dolfin
 {
+namespace common
+{
+class IndexMap;
+} // namespace common
+namespace function
+{
+class FunctionSpace;
+} // namespace function
 namespace la
 {
 class PETScMatrix;
@@ -27,7 +33,8 @@ namespace fem
 class DirichletBC;
 class Form;
 
-/// Assembly of LHS and RHS Forms with DirichletBC boundary conditions applied
+/// Assembly of LHS and RHS Forms with DirichletBC boundary conditions
+/// applied
 class Assembler
 {
 public:
@@ -43,33 +50,61 @@ public:
             std::vector<std::shared_ptr<const Form>> L,
             std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  /// Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
-  /// diagonal
+  /// Destructor
+  ~Assembler();
+
+  /// Assemble matrix. Dirichlet rows/columns are zeroed, with '1'
+  /// placed on diagonal
   void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
 
-  /// Assemble vector. Boundary conditions have no effect on the assembled
-  /// vector.
+  /// Assemble vector. Boundary conditions have no effect on the
+  /// assembled vector.
   void assemble(la::PETScVector& b, BlockType type = BlockType::nested);
 
   /// Assemble matrix and vector
   void assemble(la::PETScMatrix& A, la::PETScVector& b);
 
+  /// Add '1' to diagonal for Dirichlet rows. Rows must be local to the
+  /// process.
+  static void ident(la::PETScMatrix& A, const function::FunctionSpace& V,
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
 private:
-  // Assemble matrix. Dirichlet rows/columns are zeroed, with '1' placed on
-  // diagonal
+  // Get IndexSets (IS) for stacked index maps
+  std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);
+
+  // Get sub-matrix
+  la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);
+
+  // Get list of local dof indices with boundary conditions applied
+  // std::vector<PetscInt> dirichlet_indices();
+
+  // Flag indicating if cell has a Dirichlet bc applied to it (true ->
+  // has bc)
+  // std::vector<bool> has_dirichlet_bc();
+
+  // Assemble matrix. Dirichlet rows/columns are zeroed.
   static void assemble(la::PETScMatrix& A, const Form& a,
                        std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
+  // Assemble vector into sequential PETSc Vec
+  static void assemble(Vec b, const Form& L);
 
   // Assemble vector
   static void assemble(Eigen::Ref<EigenVectorXd> b, const Form& L);
 
   // Modify RHS vector to account for boundary condition (b <- b - Ax,
   // where x holds prescribed boundary values)
-  static void apply_bc(la::PETScVector& b, const Form& a,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs);
+  static void
+      apply_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+               const Form& a,
+               std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // Set bcs (set entries of b to be equal to boundary value)
-  static void set_bc(la::PETScVector& b, const Form& L,
+  // Hack for setting bcs (set entries of b to be equal to boundary
+  // value). Does not set ghosts. Size of b must be same as owned
+  // length.
+  static void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+                     const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Bilinear and linear forms
@@ -78,6 +113,8 @@ private:
 
   // Dirichlet boundary conditions
   std::vector<std::shared_ptr<const DirichletBC>> _bcs;
+
+  // std::array<std::vector<IS>, 2> _block_is;
 };
 } // namespace fem
 } // namespace dolfin

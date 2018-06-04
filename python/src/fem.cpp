@@ -422,49 +422,5 @@ void fem(py::module& m)
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
 #endif
-
-  // FEM utils free functions
-  // m.def("create_mesh", dolfin::fem::create_mesh);
-  // m.def("create_mesh", [](const py::object u) {
-  //  auto _u =
-  //  u.attr("_cpp_object").cast<dolfin::function::Function*>();
-  //  return dolfin::fem::create_mesh(*_u);
-  //});
-
-  // m.def("set_coordinates", &dolfin::fem::set_coordinates);
-  // m.def("set_coordinates", [](dolfin::mesh::MeshGeometry
-  // &geometry,
-  //                             const py::object u) {
-  //   auto _u = u.attr("_cpp_object").cast<const
-  //   dolfin::function::Function
-  //   *>(); dolfin::fem::set_coordinates(geometry, *_u);
-  // });
-
-  // m.def("get_coordinates", &dolfin::fem::get_coordinates);
-  // m.def("get_coordinates",
-  //       [](py::object u, const dolfin::mesh::MeshGeometry
-  //       &geometry) {
-  //         auto _u =
-  //         u.attr("_cpp_object").cast<dolfin::function::Function
-  //         *>(); return dolfin::fem::get_coordinates(*_u,
-  //         geometry);
-  //       });
-
-  m.def("vertex_to_dof_map", [](const dolfin::function::FunctionSpace& V) {
-    const auto _v2d = dolfin::fem::vertex_to_dof_map(V);
-    return py::array_t<dolfin::la_index_t>(_v2d.size(), _v2d.data());
-  });
-
-  m.def("vertex_to_dof_map", [](py::object V) {
-    auto _V = V.attr("_cpp_object").cast<dolfin::function::FunctionSpace*>();
-    const auto _v2d = dolfin::fem::vertex_to_dof_map(*_V);
-    return py::array_t<dolfin::la_index_t>(_v2d.size(), _v2d.data());
-  });
-  m.def("dof_to_vertex_map", &dolfin::fem::dof_to_vertex_map);
-  m.def("dof_to_vertex_map", [](py::object V) {
-    auto _V = V.attr("_cpp_object").cast<dolfin::function::FunctionSpace*>();
-    const auto _d2v = dolfin::fem::dof_to_vertex_map(*_V);
-    return py::array_t<std::size_t>(_d2v.size(), _d2v.data());
-  });
 }
 } // namespace dolfin_wrappers

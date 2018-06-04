@@ -52,6 +52,9 @@ def test_compute_point_values(V, W, mesh):
     u.vector()[:] = 1.
     v.vector()[:] = 1.
 
+    u.vector().update_ghosts()
+    v.vector().update_ghosts()
+
     u_values = u.compute_point_values(mesh)
     v_values = v.compute_point_values(mesh)
 
@@ -83,43 +86,43 @@ def test_assign(V, W):
         scalars = {u: 1.0, u0: 2.0, u1: 3.0, u2: 4.0, u3: 5.0}
 
         uu = Function(V0)
-        uu.assign(2*u)
+        uu.assign(2 * u)
         assert uu.vector().get_local().sum() == u0.vector().get_local().sum()
 
         uu = Function(V1)
-        uu.assign(3*u)
+        uu.assign(3 * u)
         assert uu.vector().get_local().sum() == u1.vector().get_local().sum()
 
         # Test complex assignment
-        expr = 3*u - 4*u1 - 0.1*4*u*4 + u2 + 3*u0/3./0.5
-        expr_scalar = 3 - 4*3 - 0.1*4*4+4. + 3*2./3./0.5
+        expr = 3 * u - 4 * u1 - 0.1 * 4 * u * 4 + u2 + 3 * u0 / 3. / 0.5
+        expr_scalar = 3 - 4 * 3 - 0.1 * 4 * 4 + 4. + 3 * 2. / 3. / 0.5
         uu.assign(expr)
         assert (round(uu.vector().get_local().sum() -
-                      float(expr_scalar*uu.vector().size()), 7) == 0)
+                      float(expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test expression scaling
-        expr = 3*expr
+        expr = 3 * expr
         expr_scalar *= 3
         uu.assign(expr)
         assert (round(uu.vector().get_local().sum() -
-                      float(expr_scalar*uu.vector().size()), 7) == 0)
+                      float(expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test expression scaling
-        expr = expr/4.5
+        expr = expr / 4.5
         expr_scalar /= 4.5
         uu.assign(expr)
         assert (round(uu.vector().get_local().sum() -
-                      float(expr_scalar*uu.vector().size()), 7) == 0)
+                      float(expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test self assignment
-        expr = 3*u - Constant(5)*u2 + u1 - 5*u
-        expr_scalar = 3 - 5*4. + 3. - 5
+        expr = 3 * u - Constant(5) * u2 + u1 - 5 * u
+        expr_scalar = 3 - 5 * 4. + 3. - 5
         u.assign(expr)
         assert (round(u.vector().get_local().sum() -
-                      float(expr_scalar*u.vector().size()), 7) == 0)
+                      float(expr_scalar * u.vector().size()), 7) == 0)
 
         # Test zero assignment
-        u.assign(-u2/2 + 2*u1 - u1/0.5 + u2*0.5)
+        u.assign(-u2 / 2 + 2 * u1 - u1 / 0.5 + u2 * 0.5)
         assert round(u.vector().get_local().sum() - 0.0, 7) == 0
 
         # Test errounious assignments
@@ -128,96 +131,15 @@ def test_assign(V, W):
         with pytest.raises(RuntimeError):
             uu.assign(1.0)
         with pytest.raises(RuntimeError):
-            uu.assign(4*f)
+            uu.assign(4 * f)
 
         if not vector_space:
             with pytest.raises(RuntimeError):
-                uu.assign(u*u0)
+                uu.assign(u * u0)
             with pytest.raises(RuntimeError):
-                uu.assign(4/u0)
+                uu.assign(4 / u0)
             with pytest.raises(RuntimeError):
-                uu.assign(4*u*u1)
-
-
-@pytest.mark.skip
-def test_axpy(V, W):
-    for V0, V1, vector_space in [(V, W, False), (W, V, True)]:
-        u = Function(V0)
-        u0 = Function(V0)
-        u1 = Function(V0)
-        u2 = Function(V0)
-        u3 = Function(V1)
-
-        u.vector()[:] = 1.0
-        u0.vector()[:] = 2.0
-        u1.vector()[:] = 3.0
-        u2.vector()[:] = 4.0
-        u3.vector()[:] = 5.0
-
-        axpy = FunctionAXPY(u1, 2.0)
-        u.assign(axpy)
-        expr_scalar = 3*2
-
-        assert (round(u.vector().get_local().sum() -
-                      float(expr_scalar*u.vector().size()), 7) == 0)
-
-        axpy = FunctionAXPY([(2.0, u1), (3.0, u2)])
-
-        u.assign(axpy)
-        expr_scalar = 3*2+3*4.0
-
-        assert (round(u.vector().get_local().sum() -
-                      float(expr_scalar*u.vector().size()), 7) == 0)
-
-        axpy = axpy*3.0
-        u.assign(axpy)
-        expr_scalar *= 3.0
-
-        assert (round(u.vector().get_local().sum() -
-                      float(expr_scalar*u.vector().size()), 7) == 0)
-
-        axpy0 = axpy/5.0
-        u.assign(axpy0)
-        expr_scalar0 = expr_scalar/5.0
-
-        assert (round(u.vector().get_local().sum() -
-                      float(expr_scalar0*u.vector().size()), 7) == 0)
-
-        axpy1 = axpy0+axpy
-        u.assign(axpy1)
-        expr_scalar1 = expr_scalar0 + expr_scalar
-
-        assert (round(u.vector().sum() -
-                      float(expr_scalar1*u.vector().size()), 7) == 0)
-
-        axpy1 = axpy0-axpy
-        u.assign(axpy1)
-        expr_scalar1 = expr_scalar0 - expr_scalar
-
-        assert (round(u.vector().sum() -
-                      float(expr_scalar1*u.vector().size()), 7) == 0)
-
-        axpy1 = axpy0+u1
-        u.assign(axpy1)
-        expr_scalar1 = expr_scalar0 + 3.0
-
-        assert (round(u.vector().sum() -
-                      float(expr_scalar1*u.vector().size()), 7) == 0)
-
-        axpy1 = axpy0 - u2
-        u.assign(axpy1)
-        expr_scalar1 = expr_scalar0 - 4.0
-
-        assert (round(u.vector().sum() -
-                      float(expr_scalar1*u.vector().size()), 7) == 0)
-
-        with pytest.raises((RuntimeError, TypeError)):
-            FunctionAXPY(u, u3, 0)
-
-        axpy = FunctionAXPY(u3, 2.0)
-
-        with pytest.raises(RuntimeError):
-            axpy + u
+                uu.assign(4 * u * u1)
 
 
 @pytest.mark.skip
@@ -227,16 +149,16 @@ def test_call(R, V, W, mesh):
     u1 = Function(V)
     u2 = Function(W)
     e0 = Expression("x[0] + x[1] + x[2]", degree=1)
-    e1 = Expression(("x[0] + x[1] + x[2]",
-                     "x[0] - x[1] - x[2]",
-                     "x[0] + x[1] + x[2]"), degree=1)
+    e1 = Expression(
+        ("x[0] + x[1] + x[2]", "x[0] - x[1] - x[2]", "x[0] + x[1] + x[2]"),
+        degree=1)
 
     u0.vector()[:] = 1.0
     u1.interpolate(e0)
     u2.interpolate(e1)
 
-    p0 = (Vertex(mesh, 0).point() + Vertex(mesh, 1).point())/2.0
-    x0 = (mesh.geometry.x()[0] + mesh.geometry.x()[1])/2.0
+    p0 = (Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0
+    x0 = (mesh.geometry.x()[0] + mesh.geometry.x()[1]) / 2.0
     x1 = tuple(x0)
 
     assert round(u0(*x1) - u0(x0), 7) == 0
@@ -315,13 +237,12 @@ def test_near_evaluations(R, mesh):
     u0 = Function(R)
     u0.vector()[:] = 1.0
     a = Vertex(mesh, 0).point().array()
-    offset = 0.99*DOLFIN_EPS
+    offset = 0.99 * DOLFIN_EPS
 
     a_shift_x = Point(a[0] - offset, a[1], a[2]).array()
     assert round(u0(a)[0] - u0(a_shift_x)[0], 7) == 0
 
-    a_shift_xyz = Point(a[0] - offset / sqrt(3),
-                        a[1] - offset / sqrt(3),
+    a_shift_xyz = Point(a[0] - offset / sqrt(3), a[1] - offset / sqrt(3),
                         a[2] - offset / sqrt(3)).array()
     assert round(u0(a)[0] - u0(a_shift_xyz)[0], 7) == 0
 
@@ -336,7 +257,6 @@ def test_interpolation_jit_rank1(W):
 
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
-
     class F0(UserExpression):
         def eval(self, values, x):
             values[:, 0] = 1.0
@@ -348,16 +268,17 @@ def test_interpolation_old(V, W, mesh):
             values[:, 2] = 1.0
 
         def value_shape(self):
-            return (3,)
+            return (3, )
 
     # Scalar interpolation
     f0 = F0(degree=0)
     f = Function(V)
     f = interpolate(f0, V)
-    assert round(f.vector().norm("l1") - mesh.num_vertices(), 7) == 0
+    assert round(f.vector().norm(cpp.la.Norm.l1) - mesh.num_vertices(), 7) == 0
 
     # Vector interpolation
     f1 = F1(degree=0)
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector().norm("l1") - 3*mesh.num_vertices(), 7) == 0
+    assert round(f.vector().norm(cpp.la.Norm.l1) - 3 * mesh.num_vertices(),
+                 7) == 0

@@ -16,13 +16,11 @@ std::vector<std::size_t> GenericDofMap::tabulate_local_to_global_dofs() const
   const auto idxmap = index_map();
   assert(idxmap);
   const std::size_t bs = idxmap->block_size();
-  const Eigen::Ref<const EigenArrayXi64> local_to_global_unowned
-      = idxmap->ghosts();
-  const std::size_t local_ownership_size
-      = bs * idxmap->size(common::IndexMap::MapSize::OWNED);
+  const auto& local_to_global_unowned = idxmap->ghosts();
+  const std::size_t local_ownership_size = bs * idxmap->size_local();
 
   std::vector<std::size_t> local_to_global_map(
-      bs * idxmap->size(common::IndexMap::MapSize::ALL));
+      bs * (idxmap->size_local() + idxmap->num_ghosts()));
 
   const std::size_t global_offset = bs * idxmap->local_range()[0];
   for (std::size_t i = 0; i < local_ownership_size; ++i)

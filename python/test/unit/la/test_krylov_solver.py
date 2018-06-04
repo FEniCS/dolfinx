@@ -30,12 +30,12 @@ def test_krylov_solver_lu():
     PETScOptions.set("test_lu_ksp_type", "preonly")
     PETScOptions.set("test_lu_pc_type", "lu")
     solver.set_from_options()
-    x = PETScVector(mesh.mpi_comm())
+    x = PETScVector()
     solver.set_operator(A)
     solver.solve(x, b)
 
     # *Tight* tolerance for LU solves
-    assert round(x.norm("l2") - norm, 12) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - norm, 12) == 0
 
 
 @pytest.mark.skip
@@ -71,17 +71,17 @@ def test_krylov_reuse_pc_lu():
     solver.set_operator(A)
     x = PETScVector(mesh.mpi_comm())
     solver.solve(x, b)
-    assert round(x.norm("l2") - norm, 10) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - norm, 10) == 0
 
     assembler = fem.assembling.Assembler(Constant(0.5)*u*v*dx, L)
     assembler.assemble(A)
     x = PETScVector(mesh.mpi_comm())
     solver.solve(x, b)
-    assert round(x.norm("l2") - 2.0*norm, 10) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - 2.0*norm, 10) == 0
 
     solver.set_operator(A)
     solver.solve(x, b)
-    assert round(x.norm("l2") - 2.0*norm, 10) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - 2.0*norm, 10) == 0
 
 
 @pytest.mark.skip
@@ -193,8 +193,8 @@ def test_krylov_reuse_pc():
     # Forms
     a, L = inner(grad(u), grad(v))*dx, dot(Constant(1.0), v)*dx
 
-    A, P = PETScMatrix(mesh.mpi_comm()), PETScMatrix(mesh.mpi_comm())
-    b = PETScVector(mesh.mpi_comm())
+    A, P = PETScMatrix(), PETScMatrix()
+    b = PETScVector()
 
     # Assemble linear algebra objects
     assemble(a, tensor=A)

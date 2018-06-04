@@ -31,9 +31,6 @@ bool has_debug();
 /// Return true if DOLFIN is compiled with MPI
 bool has_mpi();
 
-/// Return true if DOLFIN is compiled with PETSc
-bool has_petsc();
-
 /// Return true if DOLFIN is compiled with SLEPc
 bool has_slepc();
 

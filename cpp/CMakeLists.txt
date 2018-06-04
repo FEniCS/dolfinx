@@ -70,7 +70,6 @@ include(FeatureSummary)
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
 option(DOLFIN_AUTO_DETECT_MPI "Detect MPI automatically (turn this off to use the MPI compiler wrappers directly via setting CXX, CXX, FC)." ON)
-option(DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors." OFF)
 #option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
@@ -82,7 +81,6 @@ add_feature_info(DOLFIN_AUTO_DETECT_MPI DOLFIN_AUTO_DETECT_MPI "Detect MPI autom
 #add_feature_info(DOLFIN_ENABLE_CODE_COVERAGE DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage.")
 add_feature_info(DOLFIN_WITH_LIBRARY_VERSION DOLFIN_WITH_LIBRARY_VERSION "Build with library version information.")
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
-add_feature_info(DOLFIN_DEPRECATION_ERROR DOLFIN_DEPRECATION_ERROR "Turn deprecation warnings into errors.")
 #add_feature_info(DOLFIN_ENABLE_GEOMETRY_DEBUGGING DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging.")
 
 # Add shared library paths so shared libs in non-system paths are found
@@ -258,7 +256,13 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-#------------------------------------------------------------------------------
+find_package(PETSc 3.7)
+set_package_properties(PETSc PROPERTIES TYPE REQUIRED
+  DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
+  URL "https://www.mcs.anl.gov/petsc/"
+  PURPOSE "PETSc linear algebra backend")
+
+  #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
 # Is this still needed?
@@ -275,22 +279,12 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   URL "https://bitbucket.org/fenics-project/ffc")
 
 # Check for PETSc and SLEPc
-set(PETSC_FOUND FALSE)
 set(SLEPC_FOUND FALSE)
-if (DOLFIN_ENABLE_PETSC)
-  find_package(PETSc 3.7)
-  set_package_properties(PETSc PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation"
-    URL "https://www.mcs.anl.gov/petsc/"
-    PURPOSE "Enables the PETSc linear algebra backend")
-
-  set(SLEPC_FOUND FALSE)
-  if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
-    find_package(SLEPc 3.7)
-    set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
-      URL "http://slepc.upv.es/")
-  endif()
+if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
+  find_package(SLEPc 3.7)
+  set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
+    URL "http://slepc.upv.es/")
 endif()
 
 # Check for ParMETIS and SCOTCH
