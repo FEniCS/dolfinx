@@ -6,16 +6,18 @@
 
 import pytest
 import os
-import numpy as np
-from dolfin import *
-from dolfin_utils.test import skip_in_parallel, fixture, tempdir
-import dolfin.io
+from dolfin import (XDMFFile, MPI, MeshValueCollection, MeshEntities, Vertices, Facets, Cells,
+                    UnitCubeMesh, FunctionSpace, Function, Edges, MeshFunction, UnitSquareMesh,
+                    VectorFunctionSpace, TensorFunctionSpace, UnitIntervalMesh, cpp, Expression,
+                    interpolate, FiniteElement, VectorElement, Constant, has_hdf5, has_hdf5_parallel,
+                    CellType)
+from dolfin_utils.test import tempdir
 
 # Supported XDMF file encoding
 encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
 
 # Data types supported in templating
-#data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
+# data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
 data_types = (('int', int), ('size_t', int), ('double', float))
 
 # Finite elements tested
@@ -156,7 +158,6 @@ def test_save_and_load_3d_mesh(tempdir, encoding):
 def test_save_1d_scalar(tempdir, encoding):
     if invalid_config(encoding):
         pytest.skip("XDMF unsupported in current configuration")
-    filename1 = os.path.join(tempdir, "u1.xdmf")
     filename2 = os.path.join(tempdir, "u1_.xdmf")
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     # FIXME: This randomly hangs in parallel
@@ -248,8 +249,8 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
     V = FunctionSpace(mesh, FE)
 
     times = [0.5, 0.2, 0.1]
-    u_out = [None]*len(times)
-    u_in = [None]*len(times)
+    u_out = [None] * len(times)
+    u_in = [None] * len(times)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         for i, p in enumerate(times):
@@ -435,7 +436,7 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         file.write(mf, encoding)
 
-    #mf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
+    # mf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "cells")
@@ -455,7 +456,7 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
 
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
-    mf = MeshFunction(dtype_str, mesh, mesh.topology.dim-1, 0)
+    mf = MeshFunction(dtype_str, mesh, mesh.topology.dim - 1, 0)
     mf.rename("facets")
 
     if (MPI.size(mesh.mpi_comm()) == 1):
@@ -488,7 +489,7 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
 
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
-    mf = MeshFunction(dtype_str, mesh, mesh.topology.dim-1, 0)
+    mf = MeshFunction(dtype_str, mesh, mesh.topology.dim - 1, 0)
     mf.rename("facets")
 
     if (MPI.size(mesh.mpi_comm()) == 1):
@@ -655,7 +656,6 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
             mvc = read_function(mesh, tag)
 
 
-
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("data_type", data_types)
 def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
@@ -672,7 +672,7 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
 
         vf = MeshFunction(dtype_str, mesh, 0, 0)
         vf.rename("vertices")
-        ff = MeshFunction(dtype_str, mesh, mesh.topology.dim-1, 0)
+        ff = MeshFunction(dtype_str, mesh, mesh.topology.dim - 1, 0)
         ff.rename("facets")
         cf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
         cf.rename("cells")

@@ -7,7 +7,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import *
+from dolfin import (UnitCubeMesh, FunctionSpace, VectorFunctionSpace, VectorElement, FiniteElement,
+                    Function, TestFunction, TrialFunction, grad, triangle, MPI)
 from ufl.log import UFLException
 from dolfin_utils.test import fixture
 
@@ -31,7 +32,7 @@ def W(mesh):
 def Q(mesh):
     W = VectorElement('CG', mesh.ufl_cell(), 1)
     V = FiniteElement('CG', mesh.ufl_cell(), 1)
-    return FunctionSpace(mesh, W*V)
+    return FunctionSpace(mesh, W * V)
 
 
 @fixture

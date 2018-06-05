@@ -9,7 +9,7 @@
 import pytest
 import numpy as np
 
-from dolfin import *
+from dolfin import Point, DOLFIN_EPS, DOLFIN_PI
 
 
 def test_point_getitem():
@@ -68,6 +68,6 @@ def test_point_array():
 def test_point_equality():
     p = Point(1.23, 2, DOLFIN_PI)
     q = Point(1.23, 2, DOLFIN_PI)
-    r = Point(1.23+DOLFIN_EPS, 2, DOLFIN_PI)
+    r = Point(1.23 + DOLFIN_EPS, 2, DOLFIN_PI)
     assert p == q
     assert p != r

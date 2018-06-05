@@ -16,7 +16,7 @@ from dolfin import (MPI, RectangleMesh, BoxMesh, UnitIntervalMesh,
                     UnitSquareMesh, UnitCubeMesh, CellType, Vertex,
                     XDMFFile, Point, Cell, Cells, MeshFunction,
                     MeshEntity, MeshEntities, cpp)
-from dolfin_utils.test import cd_tempdir, fixture, skip_in_parallel
+from dolfin_utils.test import cd_tempdir, fixture, skip_in_parallel  # noqa
 
 
 @fixture
@@ -253,7 +253,7 @@ def test_Assign(mesh, f):
     assert f[v] == 10
 
 
-@skip_in_parallel
+@skip_in_parallel  # noqa
 def test_Write(cd_tempdir, f):
     """Construct and save a simple meshfunction."""
     f = f
