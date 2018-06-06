@@ -230,12 +230,12 @@ def test_mpi_dependent_jiting():
 
     try:
         import mpi4py.MPI as mpi
-    except:
+    except ImportError:
         return
 
     try:
         import petsc4py.PETSc as petsc
-    except:
+    except ImportError:
         return
 
     # Set communicator and get process information

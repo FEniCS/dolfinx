@@ -60,7 +60,7 @@ def test_diff_then_integrate():
 
     try:
         import scipy
-    except:
+    except ImportError:
         scipy = None
 
     if hasattr(math, 'erf') or scipy is not None:
