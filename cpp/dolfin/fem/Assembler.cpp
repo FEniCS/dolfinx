@@ -131,15 +131,27 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
             // MPI_Comm mpi_comm = MPI_COMM_NULL;
             // PetscObjectGetComm((PetscObject)is_cols[1], &mpi_comm);
             // std::cout << "Test size: " << MPI::size(mpi_comm) << std::endl;
-            if (i == 0 and j == 0)
+            if (i == 1 and j == 0)
             {
+              if (MPI::rank(MPI_COMM_WORLD) == 1)
+              {
+                std::cout << "DOLFIN l2g" << std::endl;
+                auto index_map
+                    = _a[i][j]->function_space(0)->dofmap()->index_map();
+                std::cout << "  Range: " << index_map->local_range()[0] << ", "
+                          << index_map->local_range()[1] << std::endl;
+                std::cout << "Num ghots: " << index_map->num_ghosts() << std::endl;
+                auto ghosts = index_map->ghosts();
+                std::cout << ghosts << std::endl;
+              }
+
               if (MPI::rank(MPI_COMM_WORLD) == 1)
               {
                 ISView(is_rowsl[i], PETSC_VIEWER_STDOUT_SELF);
                 ISView(is_row[i], PETSC_VIEWER_STDOUT_SELF);
+                std::cout << "----------------------" << std::endl;
               }
               ISView(is_rows[i], PETSC_VIEWER_STDOUT_WORLD);
-
 
               Mat subA;
               MatNestGetSubMat(A.mat(), i, j, &subA);
