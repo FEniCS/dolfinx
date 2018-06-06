@@ -1,6 +1,6 @@
-import pytest
 import gc
 from dolfin import MPI
+
 
 def pytest_runtest_teardown(item):
     """Collect garbage after every test to force calling

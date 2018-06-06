@@ -6,9 +6,6 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
-
-import gc
 import random
 from time import sleep
 
@@ -18,6 +15,7 @@ from dolfin.timer import Timer
 
 # Seed random generator for determinism
 random.seed(0)
+
 
 def get_random_task_name():
     """Get pseudo-random string"""
@@ -38,6 +36,7 @@ def test_context_manager_named():
     t = timing(task)
     assert t[0] == 1
     assert t[1] >= 0.05
+
 
 def test_context_manager_anonymous():
     """Test that anonymous Timer works as context manager"""

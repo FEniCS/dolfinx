@@ -7,9 +7,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import *
-from dolfin.la import PETScKrylovSolver, PETScVector, PETScMatrix, PETScOptions
-from dolfin_utils.test import skip_in_parallel
+from dolfin import (UnitSquareMesh, FunctionSpace, MPI, TrialFunction, TestFunction,
+                    Constant, dx, cpp, sym, dot, inner, grad, tr, Identity, VectorFunctionSpace,
+                    Function, DirichletBC, fem)
+from dolfin.la import PETScKrylovSolver, PETScVector, PETScMatrix, PETScOptions, VectorSpaceBasis
+from dolfin.fem.assembling import assemble_system
 
 
 def test_krylov_solver_lu():
@@ -18,8 +20,8 @@ def test_krylov_solver_lu():
     V = FunctionSpace(mesh, "Lagrange", 1)
     u, v = TrialFunction(V), TestFunction(V)
 
-    a = Constant(1.0)*u*v*dx
-    L = Constant(1.0)*v*dx
+    a = Constant(1.0) * u * v * dx
+    L = Constant(1.0) * v * dx
     assembler = fem.assembling.Assembler(a, L)
     A, b = assembler.assemble()
 
@@ -57,8 +59,8 @@ def test_krylov_reuse_pc_lu():
     V = FunctionSpace(mesh, "Lagrange", 1)
     u, v = TrialFunction(V), TestFunction(V)
 
-    a = Constant(1.0)*u*v*dx
-    L = Constant(1.0)*v*dx
+    a = Constant(1.0) * u * v * dx
+    L = Constant(1.0) * v * dx
     assembler = fem.assembling.Assembler(a, L)
     A, b = assembler.assemble()
     norm = 13.0
@@ -73,15 +75,15 @@ def test_krylov_reuse_pc_lu():
     solver.solve(x, b)
     assert round(x.norm(cpp.la.Norm.l2) - norm, 10) == 0
 
-    assembler = fem.assembling.Assembler(Constant(0.5)*u*v*dx, L)
+    assembler = fem.assembling.Assembler(Constant(0.5) * u * v * dx, L)
     assembler.assemble(A)
     x = PETScVector(mesh.mpi_comm())
     solver.solve(x, b)
-    assert round(x.norm(cpp.la.Norm.l2) - 2.0*norm, 10) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - 2.0 * norm, 10) == 0
 
     solver.set_operator(A)
     solver.solve(x, b)
-    assert round(x.norm(cpp.la.Norm.l2) - 2.0*norm, 10) == 0
+    assert round(x.norm(cpp.la.Norm.l2) - 2.0 * norm, 10) == 0
 
 
 @pytest.mark.skip
@@ -113,12 +115,12 @@ def test_krylov_samg_solver_elasticity():
         # Elasticity parameters
         E = 1.0e9
         nu = 0.3
-        mu = E/(2.0*(1.0 + nu))
-        lmbda = E*nu/((1.0 + nu)*(1.0 - 2.0*nu))
+        mu = E / (2.0 * (1.0 + nu))
+        lmbda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
 
         # Stress computation
         def sigma(v):
-            return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(2)
+            return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(grad(v))) * Identity(2)
 
         # Define problem
         mesh = UnitSquareMesh(MPI.comm_world, N, N)
@@ -129,7 +131,7 @@ def test_krylov_samg_solver_elasticity():
         v = TestFunction(V)
 
         # Forms
-        a, L = inner(sigma(u), grad(v))*dx, dot(Constant((1.0, 1.0)), v)*dx
+        a, L = inner(sigma(u), grad(v)) * dx, dot(Constant((1.0, 1.0)), v) * dx
 
         # Assemble linear algebra objects
         A, b = assemble_system(a, L, bc)
@@ -148,8 +150,8 @@ def test_krylov_samg_solver_elasticity():
 
         # Create PETSC smoothed aggregation AMG preconditioner, and
         # create CG solver
-        pc = PETScPreconditioner(method)
-        solver = PETScKrylovSolver("cg", pc)
+#        pc = PETScPreconditioner(method)
+        solver = PETScKrylovSolver("cg", method)
 
         # Set matrix operator
         solver.set_operator(A)
@@ -191,15 +193,15 @@ def test_krylov_reuse_pc():
     v = TestFunction(V)
 
     # Forms
-    a, L = inner(grad(u), grad(v))*dx, dot(Constant(1.0), v)*dx
+    a, L = inner(grad(u), grad(v)) * dx, dot(Constant(1.0), v) * dx
 
     A, P = PETScMatrix(), PETScMatrix()
     b = PETScVector()
 
     # Assemble linear algebra objects
-    assemble(a, tensor=A)
-    assemble(a, tensor=P)
-    assemble(L, tensor=b)
+    assemble(a, tensor=A)  # noqa
+    assemble(a, tensor=P)  # noqa
+    assemble(L, tensor=b)  # noqa
 
     # Apply boundary conditions
     bc.apply(A)
@@ -216,8 +218,8 @@ def test_krylov_reuse_pc():
 
     # Change preconditioner matrix (bad matrix) and solve (PC will be
     # updated)
-    a_p = u*v*dx
-    assemble(a_p, tensor=P)
+    a_p = u * v * dx
+    assemble(a_p, tensor=P)  # noqa
     bc.apply(P)
     x = PETScVector()
     num_iter_mod = solver.solve(x, b)
@@ -226,7 +228,7 @@ def test_krylov_reuse_pc():
     # Change preconditioner matrix (good matrix) and solve (PC will be
     # updated)
     a_p = a
-    assemble(a_p, tensor=P)
+    assemble(a_p, tensor=P)  # noqa
     bc.apply(P)
     x = PETScVector()
     num_iter = solver.solve(x, b)
@@ -235,8 +237,8 @@ def test_krylov_reuse_pc():
     # Change preconditioner matrix (bad matrix) and solve (PC will not
     # be updated)
     solver.set_reuse_preconditioner(True)
-    a_p = u*v*dx
-    assemble(a_p, tensor=P)
+    a_p = u * v * dx
+    assemble(a_p, tensor=P)  # noqa
     bc.apply(P)
     x = PETScVector()
     num_iter = solver.solve(x, b)
