@@ -4,22 +4,22 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import os
 import dolfin
-from dolfin import *
-from dolfin_utils.test import (skip_if_not_HDF5, fixture, tempdir,
-                               xfail_with_serial_hdf5_in_parallel)
+from dolfin import (HDF5File, MPI, UnitSquareMesh, UnitCubeMesh, MeshFunction,
+                    MeshValueCollection, Expression, Cell, MeshEntity, MeshEntities,
+                    Function, FunctionSpace, cpp)
+from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_with_serial_hdf5_in_parallel)
 from dolfin.la import PETScVector
-import dolfin.io as io
+assert(tempdir)
 
 
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_parallel(tempdir):
     filename = os.path.join(tempdir, "y.h5")
-    have_parallel = has_hdf5_parallel()
     hdf5 = HDF5File(MPI.comm_world, filename, "w")
+    assert(hdf5)
 
 
 @skip_if_not_HDF5
@@ -48,7 +48,7 @@ def test_save_and_read_vector(tempdir):
     with HDF5File(MPI.comm_world, filename, "r") as vector_file:
         y = vector_file.read_vector(MPI.comm_world, "/my_vector", False)
         assert y.size() == x.size()
-        x.axpy(-1.0,  y)
+        x.axpy(-1.0, y)
         assert x.norm(dolfin.cpp.la.Norm.l2) == 0.0
 
 
@@ -117,7 +117,8 @@ def test_save_and_read_mesh_value_collection(tempdir):
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
     mesh = UnitCubeMesh(MPI.comm_world, ndiv, ndiv, ndiv)
 
-    def point2list(p): return [p[0], p[1], p[2]]
+    def point2list(p):
+        return [p[0], p[1], p[2]]
 
     # write to file
     with HDF5File(mesh.mpi_comm(), filename, 'w') as f:
@@ -126,7 +127,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
             mesh.init(dim)
             for e in MeshEntities(mesh, dim):
                 # this can be easily computed to the check the value
-                val = int(ndiv*sum(point2list(e.midpoint()))) + 1
+                val = int(ndiv * sum(point2list(e.midpoint()))) + 1
                 mvc.set_value(e.index(), val)
             f.write(mvc, "/mesh_value_collection_{}".format(dim))
 
@@ -138,7 +139,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
             for (cell, lidx), val in mvc.values().items():
                 eidx = Cell(mesh, cell).entities(dim)[lidx]
                 mid = point2list(MeshEntity(mesh, dim, eidx).midpoint())
-                assert val == int(ndiv*sum(mid)) + 1
+                assert val == int(ndiv * sum(mid)) + 1
 
 
 @skip_if_not_HDF5

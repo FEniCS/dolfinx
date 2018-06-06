@@ -12,6 +12,7 @@ from dolfin import (XDMFFile, MPI, MeshValueCollection, MeshEntities, Vertices, 
                     interpolate, FiniteElement, VectorElement, Constant, has_hdf5, has_hdf5_parallel,
                     CellType)
 from dolfin_utils.test import tempdir
+assert(tempdir)
 
 # Supported XDMF file encoding
 encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
