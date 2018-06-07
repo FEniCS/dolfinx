@@ -6,9 +6,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import *
+from dolfin import (UnitCubeMesh, UnitSquareMesh, MPI, VectorFunctionSpace,
+                    TrialFunction, TestFunction, Constant, inner, grad, sym, dot, dx)
+from dolfin.la import VectorSpaceBasis
+
 import pytest
-from dolfin_utils.test import *
+# from dolfin_utils.test import *
+
 
 def build_elastic_nullspace(V, x):
     """Function to build nullspace for 2D/3D elasticity"""
@@ -25,21 +29,21 @@ def build_elastic_nullspace(V, x):
 
     # Build translational null space basis
     for i in range(gdim):
-        V.sub(i).dofmap().set(nullspace_basis[i], 1.0);
+        V.sub(i).dofmap().set(nullspace_basis[i], 1.0)
 
     # Build rotational null space basis
     if gdim == 2:
-        V.sub(0).set_x(nullspace_basis[2], -1.0, 1);
-        V.sub(1).set_x(nullspace_basis[2], 1.0, 0);
+        V.sub(0).set_x(nullspace_basis[2], -1.0, 1)
+        V.sub(1).set_x(nullspace_basis[2], 1.0, 0)
     elif gdim == 3:
-        V.sub(0).set_x(nullspace_basis[3], -1.0, 1);
-        V.sub(1).set_x(nullspace_basis[3],  1.0, 0);
+        V.sub(0).set_x(nullspace_basis[3], -1.0, 1)
+        V.sub(1).set_x(nullspace_basis[3], 1.0, 0)
 
-        V.sub(0).set_x(nullspace_basis[4],  1.0, 2);
-        V.sub(2).set_x(nullspace_basis[4], -1.0, 0);
+        V.sub(0).set_x(nullspace_basis[4], 1.0, 2)
+        V.sub(2).set_x(nullspace_basis[4], -1.0, 0)
 
-        V.sub(2).set_x(nullspace_basis[5],  1.0, 1);
-        V.sub(1).set_x(nullspace_basis[5], -1.0, 2);
+        V.sub(2).set_x(nullspace_basis[5], 1.0, 1)
+        V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
 
     for x in nullspace_basis:
         x.apply("insert")
@@ -54,15 +58,15 @@ def build_broken_elastic_nullspace(V, x):
     nullspace_basis = [x.copy() for i in range(4)]
 
     # Build translational null space basis
-    V.sub(0).dofmap().set(nullspace_basis[0], 1.0);
-    V.sub(1).dofmap().set(nullspace_basis[1], 1.0);
+    V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
+    V.sub(1).dofmap().set(nullspace_basis[1], 1.0)
 
     # Build rotational null space basis
-    V.sub(0).set_x(nullspace_basis[2], -1.0, 1);
-    V.sub(1).set_x(nullspace_basis[2], 1.0, 0);
+    V.sub(0).set_x(nullspace_basis[2], -1.0, 1)
+    V.sub(1).set_x(nullspace_basis[2], 1.0, 0)
 
     # Add vector that is not in nullspace
-    V.sub(1).set_x(nullspace_basis[3], 1.0, 1);
+    V.sub(1).set_x(nullspace_basis[3], 1.0, 1)
 
     for x in nullspace_basis:
         x.apply("insert")
@@ -76,9 +80,9 @@ def test_nullspace_orthogonal():
     for mesh in meshes:
         for p in range(1, 4):
             V = VectorFunctionSpace(mesh, 'CG', p)
-            zero = Constant([0.0]*mesh.geometry.dim)
-            L = dot(TestFunction(V), zero)*dx
-            x = assemble(L)
+            zero = Constant([0.0] * mesh.geometry.dim)
+            L = dot(TestFunction(V), zero) * dx
+            x = assemble(L)  # noqa
 
             # Build nullspace
             null_space = build_elastic_nullspace(V, x)
@@ -93,6 +97,7 @@ def test_nullspace_orthogonal():
             assert null_space.is_orthogonal()
             assert null_space.is_orthonormal()
 
+
 @pytest.mark.skip
 def test_nullspace_check():
     # Mesh
@@ -101,23 +106,20 @@ def test_nullspace_check():
     # Elasticity form
     V = VectorFunctionSpace(mesh, 'CG', 1)
     u, v = TrialFunction(V), TestFunction(V)
-    a = inner(sym(grad(u)), grad(v))*dx
+    a = inner(sym(grad(u)), grad(v)) * dx
 
     # Assemble matrix and create compatible vector
-    A = assemble(a)
+    A = assemble(a)  # noqa
     x = A.init_vector(1)
 
     # Create null space basis and test
     null_space = build_elastic_nullspace(V, x)
-    assert in_nullspace(A, null_space)
-    assert in_nullspace(A, null_space, "right")
-    assert in_nullspace(A, null_space, "left")
+    assert in_nullspace(A, null_space)  # noqa
+    assert in_nullspace(A, null_space, "right")  # noqa
+    assert in_nullspace(A, null_space, "left")  # noqa
 
     # Create incorect null space basis and test
     null_space = build_broken_elastic_nullspace(V, x)
-    assert not in_nullspace(A, null_space)
-    assert not in_nullspace(A, null_space, "right")
-    assert not in_nullspace(A, null_space, "left")
-
-    # Reset backend
-    parameters["linear_algebra_backend"] = prev_backend
+    assert not in_nullspace(A, null_space)  # noqa
+    assert not in_nullspace(A, null_space, "right")  # noqa
+    assert not in_nullspace(A, null_space, "left")  # noqa

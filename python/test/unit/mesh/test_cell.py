@@ -39,7 +39,7 @@ def test_distance_tetrahedron():
     mesh = UnitCubeMesh(MPI.comm_self, 1, 1, 1)
     cell = Cell(mesh, 5)
 
-    assert round(cell.distance(Point(-1.0, -1.0, -1.0))-numpy.sqrt(3), 7) == 0
+    assert round(cell.distance(Point(-1.0, -1.0, -1.0)) - numpy.sqrt(3), 7) == 0
     assert round(cell.distance(Point(-1.0, 0.5, 0.5)) - 1, 7) == 0
     assert round(cell.distance(Point(0.5, 0.5, 0.5)) - 0.0, 7) == 0
 
@@ -72,12 +72,12 @@ def test_volume_quadrilateralR2():
 
 
 @pytest.mark.parametrize('coordinates', [[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]],
-    [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
+                                         [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(coordinates):
 
     mesh = Mesh(MPI.comm_world, CellType.Type.quadrilateral,
                 numpy.array(coordinates, dtype=numpy.float64),
-                numpy.array([[0,1,2,3]], dtype=numpy.int32), [],
+                numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
                 cpp.mesh.GhostMode.none)
 
     mesh.init()
@@ -87,7 +87,7 @@ def test_volume_quadrilateralR3(coordinates):
 
 
 @pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30,
-    1e5, 1e10, 1e15, 1e20, 1e30])
+                                     1e5, 1e10, 1e15, 1e20, 1e30])
 def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
     with pytest.raises(RuntimeError) as error:
@@ -105,7 +105,7 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
         mesh.init()
         cell = Cell(mesh, 0)
-        volume = cell.volume()
+        cell.volume()
 
     assert "are not coplanar" in str(error.value)
 
@@ -127,6 +127,6 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
                     cpp.mesh.GhostMode.none)
         mesh.init()
         cell = Cell(mesh, 0)
-        volume = cell.volume()
+        cell.volume()
 
     assert "are not coplanar" in str(error.value)

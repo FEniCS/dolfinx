@@ -6,7 +6,7 @@
 
 import pytest
 import numpy.random
-from dolfin import *
+from dolfin import UnitSquareMesh, UnitCubeMesh, MPI, MeshFunction, Vertex
 from dolfin_utils.test import fixture, skip_in_parallel
 
 

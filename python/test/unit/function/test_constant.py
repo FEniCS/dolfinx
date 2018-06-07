@@ -8,8 +8,10 @@
 
 import pytest
 from numpy import array
-from dolfin import *
+from dolfin import (Constant, interval, triangle, tetrahedron, quadrilateral, hexahedron,
+                    UnitCubeMesh, grad, MPI, CellType)
 from ufl import UFLException
+
 
 def test_name_argument():
     u = Constant(1.0)
@@ -56,9 +58,10 @@ def testGrad():
     assert zero == gradient(c3)
 
 
-@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (MPI.comm_world, 3, 3, 3)), (UnitCubeMesh, (MPI.comm_world, 3, 3, 3, CellType.Type.hexahedron))])
+@pytest.mark.parametrize('mesh_factory', [(UnitCubeMesh, (MPI.comm_world, 3, 3, 3)),
+                                          (UnitCubeMesh, (MPI.comm_world, 3, 3, 3, CellType.Type.hexahedron))])
 def test_compute_point_values(mesh_factory):
-    from numpy import zeros, all, array
+    from numpy import all
 
     func, args = mesh_factory
     mesh = func(*args)
@@ -71,6 +74,7 @@ def test_compute_point_values(mesh_factory):
 
     assert all(e0_values == 1)
     assert all(e1_values == [1, 2, 3])
+
 
 def test_values():
     import numpy as np

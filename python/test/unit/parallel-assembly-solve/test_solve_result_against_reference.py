@@ -9,14 +9,15 @@ parallel assembly/solve."""
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
-import sys
-from dolfin import *
-from dolfin.la import PETScOptions, PETScKrylovSolver
-from dolfin_utils.test import *
+from dolfin import (MPI, TestFunction, TrialFunction, FunctionSpace,
+                    UnitSquareMesh, UnitCubeMesh,
+                    Expression, dot, grad, dx, ds, Function, solve, cpp)
+from dolfin.la import PETScOptions
+from dolfin_utils.test import gc_barrier
 
 # Relative tolerance for regression test
 tol = 1e-10
+
 
 def compute_norm(mesh, degree):
     "Solve on given mesh file and degree of function space."
@@ -29,8 +30,8 @@ def compute_norm(mesh, degree):
     u = TrialFunction(V)
     f = Expression("sin(x[0])", degree=degree)
     g = Expression("x[0]*x[1]", degree=degree)
-    a = dot(grad(v), grad(u))*dx + v*u*dx
-    L = v*f*dx - v*g*ds
+    a = dot(grad(v), grad(u)) * dx + v * u * dx
+    L = v * f * dx - v * g * ds
 
     # Compute solution
     w = Function(V)
@@ -48,6 +49,7 @@ def compute_norm(mesh, degree):
     # Return norm of solution vector
     return w.vector().norm(cpp.la.Norm.l2)
 
+
 def print_reference(results):
     "Print nicely formatted values for gluing into code as a reference"
     MPI.barrier(MPI.comm_world)
@@ -63,6 +65,7 @@ def print_reference(results):
                 print("}")
     MPI.barrier(MPI.comm_world)
 
+
 def check_results(results, reference, tol):
     "Compare results with reference"
     errors = []
@@ -75,6 +78,7 @@ def check_results(results, reference, tol):
             if diff >= tol:
                 errors.append((mesh_file, degree, norm, ref, diff))
     return errors
+
 
 def print_errors(errors):
     MPI.barrier(MPI.comm_world)
@@ -90,30 +94,31 @@ def print_errors(errors):
                 print("(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff))
     MPI.barrier(MPI.comm_world)
 
+
 def test_computed_norms_against_references():
     # Reference values for norm of solution vector
-    reference = { ("16x16 unit tri square", 1): 9.547454087328376 ,
-                  ("16x16 unit tri square", 2): 18.42366670418269 ,
-                  ("16x16 unit tri square", 3): 27.29583104732836 ,
-                  ("16x16 unit tri square", 4): 36.16867128121694 ,
-                  ("4x4x4 unit tet cube", 1): 12.23389289626038 ,
-                  ("4x4x4 unit tet cube", 2): 28.96491629163837 ,
-                  ("4x4x4 unit tet cube", 3): 49.97350551329799 ,
-                  ("4x4x4 unit tet cube", 4): 74.49938266409099 ,
-                  ("16x16 unit quad square", 1): 9.550848071820747 ,
-                  ("16x16 unit quad square", 2): 18.423668706176354 ,
-                  ("16x16 unit quad square", 3): 27.295831017251672 ,
-                  ("16x16 unit quad square", 4): 36.168671281610855 ,
-                  ("4x4x4 unit hex cube", 1): 12.151954087339782 ,
-                  ("4x4x4 unit hex cube", 2): 28.965646690046885 ,
-                  ("4x4x4 unit hex cube", 3): 49.97349423895635 ,
-                  ("4x4x4 unit hex cube", 4): 74.49938136593539 }
+    reference = {("16x16 unit tri square", 1): 9.547454087328376,
+                 ("16x16 unit tri square", 2): 18.42366670418269,
+                 ("16x16 unit tri square", 3): 27.29583104732836,
+                 ("16x16 unit tri square", 4): 36.16867128121694,
+                 ("4x4x4 unit tet cube", 1): 12.23389289626038,
+                 ("4x4x4 unit tet cube", 2): 28.96491629163837,
+                 ("4x4x4 unit tet cube", 3): 49.97350551329799,
+                 ("4x4x4 unit tet cube", 4): 74.49938266409099,
+                 ("16x16 unit quad square", 1): 9.550848071820747,
+                 ("16x16 unit quad square", 2): 18.423668706176354,
+                 ("16x16 unit quad square", 3): 27.295831017251672,
+                 ("16x16 unit quad square", 4): 36.168671281610855,
+                 ("4x4x4 unit hex cube", 1): 12.151954087339782,
+                 ("4x4x4 unit hex cube", 2): 28.965646690046885,
+                 ("4x4x4 unit hex cube", 3): 49.97349423895635,
+                 ("4x4x4 unit hex cube", 4): 74.49938136593539}
 
     # Mesh files and degrees to check
     meshes = [(UnitSquareMesh(MPI.comm_world, 16, 16), "16x16 unit tri square"),
-              (UnitCubeMesh(MPI.comm_world, 4, 4, 4),  "4x4x4 unit tet cube"),]
-            #   (UnitSquareMesh(MPI.comm_world, 16, 16, CellType.Type.quadrilateral), "16x16 unit quad square"),
-            #   (UnitCubeMesh(MPI.comm_world, 4, 4, 4, CellType.Type.hexahedron), "4x4x4 unit hex cube")]
+              (UnitCubeMesh(MPI.comm_world, 4, 4, 4), "4x4x4 unit tet cube")]
+    # (UnitSquareMesh(MPI.comm_world, 16, 16, CellType.Type.quadrilateral), "16x16 unit quad square"),
+    # (UnitCubeMesh(MPI.comm_world, 4, 4, 4, CellType.Type.hexahedron), "4x4x4 unit hex cube")]
     degrees = [1, 2]
 
     # For MUMPS, increase estimated require memory increase. Typically
@@ -139,8 +144,8 @@ def test_computed_norms_against_references():
         print_errors(errors)
 
     # Print results for use as reference
-    if any(e[-1] is None for e in errors): # e[-1] is diff
+    if any(e[-1] is None for e in errors):  # e[-1] is diff
         print_reference(results)
 
     # A passing test should have no errors
-    assert len(errors) == 0 # See stdout for detailed norms and diffs.
+    assert len(errors) == 0  # See stdout for detailed norms and diffs.
