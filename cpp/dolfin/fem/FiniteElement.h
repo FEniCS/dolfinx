@@ -163,15 +163,16 @@ public:
   ///         The coordinates of all dofs on the reference cell.
   const EigenRowArrayXXd& dof_reference_coordinates() const { return _refX; }
 
-  // FIXME: pass coordinate map
-  /// TODO: Remove? Document. See:
-  /// ffc/uflacs/backends/ufc/evaluatedof.py:_change_variables()
-  void map_dofs(double* values, const Eigen::Ref<const EigenRowArrayXXd>& vals,
-                const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
+  /// Map values of field from physical to reference space which has
+  /// been evaluated at points given by dof_reference_coordinates()
+  void transform_values(
+      double* reference_values,
+      const Eigen::Ref<const EigenRowArrayXXd>& physical_values,
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
   {
     assert(_ufc_element);
-    _ufc_element->map_dofs(values, vals.data(), coordinate_dofs.data(), 1,
-                           nullptr);
+    _ufc_element->transform_values(reference_values, physical_values.data(),
+                                   coordinate_dofs.data(), 1, nullptr);
   }
 
   /// Return the number of sub elements (for a mixed element)
