@@ -7,12 +7,12 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <complex>
 #include <cstdint>
 #include <petscsys.h>
 
 // Typedefs for ufc_scalar - to be used in UFC.h
-#ifdef PETSC_USE_SCALAR
+#ifdef PETSC_USE_COMPLEX
+#include <complex>
 using ufc_scalar_t = std::complex<double>;
 #else
 using ufc_scalar_t = double;
