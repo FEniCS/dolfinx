@@ -29,6 +29,7 @@ def jit_generate(class_data, module_name, signature, parameters):
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Expression.h>
 #include <Eigen/Dense>
+#include <petscsys.h>
 
 {math_header}
 
@@ -44,7 +45,8 @@ namespace dolfin
             {constructor}
        }}
 
-       void eval(Eigen::Ref<EigenRowArrayXXd> values, Eigen::Ref<const EigenRowArrayXXd> _x) const override
+       void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> values,
+       Eigen::Ref<const EigenRowArrayXXd> _x) const override
        {{
          for (unsigned int i = 0; i != _x.rows(); ++i)
          {{
