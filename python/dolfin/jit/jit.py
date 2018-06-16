@@ -167,7 +167,7 @@ def compile_class(cpp_data):
         if hasattr(v, '_cpp_object') and isinstance(v._cpp_object, cpp.function.GenericFunction):
             property_str += '*'
 
-    hash_str = str(statements) + str(property_str)
+    hash_str = str(statements) + str(property_str) + cpp.__version__
     module_hash = hashlib.md5(hash_str.encode('utf-8')).hexdigest()
     module_name = "dolfin_" + name + "_" + module_hash
 
