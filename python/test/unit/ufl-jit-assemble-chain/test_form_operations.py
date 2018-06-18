@@ -7,7 +7,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import *
+from dolfin import (RectangleMesh, MPI, Point, CellType, FunctionSpace, Constant,
+                    TestFunction, TrialFunction, inner, grad, dx, system, lhs, rhs)
+
 
 @pytest.mark.skip
 def test_lhs_rhs_simple():
@@ -21,18 +23,18 @@ def test_lhs_rhs_simple():
     v = TestFunction(V)
     u = TrialFunction(V)
 
-    F = inner(g*grad(f*v), grad(u))*dx + f*v*dx
+    F = inner(g * grad(f * v), grad(u)) * dx + f * v * dx
     a, L = system(F)
 
     Fl = lhs(F)
     Fr = rhs(F)
+    assert(Fr)
 
-    a0 = inner(grad(v), grad(u))*dx
+    a0 = inner(grad(v), grad(u)) * dx
 
-    n = assemble(a).norm("frobenius")
-    nl = assemble(Fl).norm("frobenius")
-    n0 = 6.0*assemble(a0).norm("frobenius")
+    n = assemble(a).norm("frobenius")  # noqa
+    nl = assemble(Fl).norm("frobenius")  # noqa
+    n0 = 6.0 * assemble(a0).norm("frobenius")  # noqa
 
     assert round(n - n0, 7) == 0
     assert round(n - nl, 7) == 0
-

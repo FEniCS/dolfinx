@@ -4,13 +4,11 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import os
-from dolfin import cpp
-from dolfin import *
-from dolfin_utils.test import skip_if_not_HDF5, fixture, tempdir, \
-    xfail_with_serial_hdf5_in_parallel
+from dolfin import (UnitSquareMesh, MPI, FunctionSpace, Function, Expression, HDF5File)
+from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_with_serial_hdf5_in_parallel)
 import dolfin.io
+assert(tempdir)
 
 
 @skip_if_not_HDF5
@@ -40,8 +38,8 @@ def test_save_and_read_function_timeseries(tempdir):
         F1.interpolate(E)
         vec_name = "/function/vector_%d" % t
         F0 = hdf5_file.read_function(Q, vec_name)
-        #timestamp = hdf5_file.attributes(vec_name)["timestamp"]
-        #assert timestamp == t
+        # timestamp = hdf5_file.attributes(vec_name)["timestamp"]
+        # assert timestamp == t
         F0.vector().axpy(-1.0, F1.vector())
         assert F0.vector().norm(dolfin.cpp.la.Norm.l2) < 1.0e-12
     hdf5_file.close()

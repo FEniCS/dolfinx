@@ -8,6 +8,7 @@
 
 import dolfin
 
+
 def test_log_level_comparable():
     info = dolfin.cpp.log.LogLevel.INFO
     warning = dolfin.cpp.log.LogLevel.WARNING

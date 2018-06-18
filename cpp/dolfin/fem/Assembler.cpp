@@ -458,7 +458,7 @@ la::PETScMatrix Assembler::get_sub_matrix(const la::PETScMatrix& A, int i,
   MatGetType(A.mat(), &mat_type);
   const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
 
-  Mat subA;
+  Mat subA = nullptr;
   if (is_matnest)
     MatNestGetSubMat(A.mat(), i, j, &subA);
   else

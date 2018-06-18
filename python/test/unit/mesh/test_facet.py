@@ -6,6 +6,7 @@
 
 from dolfin import UnitSquareMesh, Facets, MPI
 
+
 def test_normal():
     "Test that the normal() method is wrapped"
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4)

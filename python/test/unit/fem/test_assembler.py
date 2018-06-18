@@ -6,7 +6,6 @@
 """Unit tests for assembly"""
 
 import math
-import os
 
 import numpy
 import pytest
@@ -14,7 +13,6 @@ from petsc4py import PETSc
 
 import dolfin
 import ufl
-from dolfin_utils.test import skip_in_parallel
 from ufl import dx
 
 

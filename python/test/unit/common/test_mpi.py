@@ -7,8 +7,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import dolfin
-from dolfin import MPI
-from dolfin_utils.test import skip_if_not_petsc4py
 
 
 def test_mpi_comm_wrapper():

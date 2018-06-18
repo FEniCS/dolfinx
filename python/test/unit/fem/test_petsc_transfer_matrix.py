@@ -7,11 +7,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-import numpy as np
-from dolfin import *
+from dolfin import (UnitCubeMesh, UnitSquareMesh, FunctionSpace, MPI, Expression, interpolate, Function,
+                    VectorElement, FiniteElement, MixedElement, VectorFunctionSpace)
 from dolfin.cpp.fem import PETScDMCollection
 
-from dolfin_utils.test import *
 
 @pytest.mark.xfail
 def test_scalar_p1():
@@ -33,6 +32,7 @@ def test_scalar_p1():
     diff = Function(Vf)
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
+
 
 @pytest.mark.xfail
 def test_scalar_p1_scaled_mesh():
@@ -71,6 +71,7 @@ def test_scalar_p1_scaled_mesh():
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
 
+
 @pytest.mark.xfail
 def test_scalar_p2():
     meshc = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
@@ -91,6 +92,7 @@ def test_scalar_p2():
     diff = Function(Vf)
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
+
 
 @pytest.mark.xfail
 def test_vector_p1_2d():
@@ -113,6 +115,7 @@ def test_vector_p1_2d():
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
 
+
 @pytest.mark.xfail
 def test_vector_p2_2d():
     meshc = UnitSquareMesh(MPI.comm_world, 5, 4)
@@ -134,6 +137,7 @@ def test_vector_p2_2d():
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
 
+
 @pytest.mark.xfail
 def test_vector_p1_3d():
     meshc = UnitCubeMesh(MPI.comm_world, 2, 3, 4)
@@ -154,6 +158,7 @@ def test_vector_p1_3d():
     diff = Function(Vf)
     diff.assign(Vuc - uf)
     assert diff.vector().norm("l2") < 1.0e-12
+
 
 @pytest.mark.xfail
 def test_taylor_hood_cube():

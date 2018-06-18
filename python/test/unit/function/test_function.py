@@ -7,13 +7,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import *
-from dolfin.cpp.generation import UnitTriangleMesh
-from dolfin.parameter import parameters
+from dolfin import (UnitCubeMesh, FunctionSpace, VectorFunctionSpace, Constant, MPI, Point, Function,
+                    UserExpression, interpolate, Expression, DOLFIN_EPS, Vertex, lt, cpp)
+from math import sqrt
 import numpy
 import ufl
 
-from dolfin_utils.test import skip_in_parallel, pushpop_parameters, fixture
+from dolfin_utils.test import skip_in_parallel, fixture
 
 
 @fixture
@@ -45,7 +45,7 @@ def test_name_argument(W):
 
 
 def test_compute_point_values(V, W, mesh):
-    from numpy import zeros, all, array
+    from numpy import all
     u = Function(V)
     v = Function(W)
 
@@ -61,6 +61,9 @@ def test_compute_point_values(V, W, mesh):
     u_ones = numpy.ones_like(u_values, dtype=numpy.float64)
     assert all(numpy.isclose(u_values, u_ones))
 
+    v_ones = numpy.ones_like(v_values, dtype=numpy.float64)
+    assert all(numpy.isclose(v_values, v_ones))
+
     u_values2 = u.compute_point_values()
 
     assert all(u_values == u_values2)
@@ -68,7 +71,6 @@ def test_compute_point_values(V, W, mesh):
 
 @pytest.mark.skip
 def test_assign(V, W):
-    from ufl.algorithms import replace
 
     for V0, V1, vector_space in [(V, W, False), (W, V, True)]:
         u = Function(V0)
@@ -82,8 +84,6 @@ def test_assign(V, W):
         u1.vector()[:] = 3.0
         u2.vector()[:] = 4.0
         u3.vector()[:] = 5.0
-
-        scalars = {u: 1.0, u0: 2.0, u1: 3.0, u2: 4.0, u3: 5.0}
 
         uu = Function(V0)
         uu.assign(2 * u)
@@ -144,7 +144,7 @@ def test_assign(V, W):
 
 @pytest.mark.skip
 def test_call(R, V, W, mesh):
-    from numpy import zeros, all, array
+    from numpy import zeros, all
     u0 = Function(R)
     u1 = Function(V)
     u2 = Function(W)

@@ -6,7 +6,7 @@
 
 import pytest
 import numpy
-from dolfin import *
+from dolfin import UnitCubeMesh, MPI, Vertices, Edges, Faces, Facets, Cells, VertexRange
 
 
 def test_vertex_iterators():
@@ -33,14 +33,6 @@ def test_vertex_iterators():
             assert numpy.all(con(i) == v.entities(j))
 
     assert n == mesh.num_vertices()
-
-    # Check coordinate assignment
-    # FIXME: Outcomment to hopefully please Mac-buildbot
-    #end_point = numpy.array([v.x(0), v.x(1), v.x(2)])
-    #mesh.coordinates()[:] += 2
-    #assert end_point[0] + 2 == mesh.coordinates()[-1,0]
-    #assert end_point[1] + 2 == mesh.coordinates()[-1,1]
-    #assert end_point[2] + 2 == mesh.coordinates()[-1,2]
 
 
 def test_edge_iterators():

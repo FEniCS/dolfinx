@@ -47,8 +47,7 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
     EigenRowArrayXXi64 topo(0, 4);
 
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::tetrahedron, geom, topo, {},
-        ghost_mode);
+        comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, ghost_mode);
   }
 
   // Extract data
@@ -143,8 +142,7 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   }
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::tetrahedron, geom, topo, {},
-      ghost_mode);
+      comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
@@ -157,8 +155,7 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
     EigenRowArrayXXi64 topo(0, 8);
 
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::hexahedron, geom, topo, {},
-        ghost_mode);
+        comm, mesh::CellType::Type::hexahedron, geom, topo, {}, ghost_mode);
   }
 
   const std::size_t nx = n[0];
@@ -219,7 +216,6 @@ mesh::Mesh BoxMesh::build_hex(MPI_Comm comm, std::array<std::size_t, 3> n,
   }
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::hexahedron, geom, topo, {},
-      ghost_mode);
+      comm, mesh::CellType::Type::hexahedron, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------

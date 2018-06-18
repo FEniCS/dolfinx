@@ -51,11 +51,11 @@ def test_NormalPoint(cube, square):
 @skip_in_parallel
 def test_NormalComponent(cube, square):
     """Compute normal vector components to each face."""
-    D = cube.topology.dim
+
     cube.init(2)
     for f in Faces(cube):
         n = f.normal()
-        norm = sum([x*x for x in n])
+        norm = sum([x * x for x in n])
         assert round(norm - 1.0, 7) == 0
 
     f = Face(square, 0)

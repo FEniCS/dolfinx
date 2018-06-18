@@ -4,7 +4,6 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
 import sys
 
 import numpy
@@ -12,9 +11,12 @@ import pytest
 
 import dolfin
 import FIAT
-from dolfin import *
-from dolfin_utils.test import (cd_tempdir, fixture, skip_in_parallel,
-                               xfail_in_parallel)
+from math import sqrt
+from dolfin import (MPI, RectangleMesh, BoxMesh, UnitIntervalMesh,
+                    UnitSquareMesh, UnitCubeMesh, CellType, Vertex,
+                    XDMFFile, Point, Cell, Cells, MeshFunction,
+                    MeshEntity, MeshEntities, cpp)
+from dolfin_utils.test import cd_tempdir, fixture, skip_in_parallel  # noqa
 
 
 @fixture
@@ -111,7 +113,6 @@ def test_UFLCell(interval, square, rectangle, cube, box):
 
 
 def test_UFLDomain(interval, square, rectangle, cube, box):
-    import ufl
 
     def _check_ufl_domain(mesh):
         domain = mesh.ufl_domain()
@@ -252,7 +253,7 @@ def test_Assign(mesh, f):
     assert f[v] == 10
 
 
-@skip_in_parallel
+@skip_in_parallel  # noqa
 def test_Write(cd_tempdir, f):
     """Construct and save a simple meshfunction."""
     f = f
@@ -302,7 +303,6 @@ def test_cell_circumradius(c0, c1, c5):
 
 @skip_in_parallel
 def test_cell_h(c0, c1, c5):
-    from math import isnan
     assert round(c0.h() - sqrt(2.0), 7) == 0
     assert round(c1.h() - sqrt(2.0), 7) == 0
     assert round(c5.h() - sqrt(2.0), 7) == 0
@@ -397,8 +397,6 @@ def test_shared_entities(mesh_factory):
                 assert isinstance(sharing, set)
                 assert (len(sharing) > 0) == e.is_shared()
 
-        n_entities = mesh.num_entities(shared_dim)
-        n_global_entities = mesh.num_entities_global(shared_dim)
         shared_entities = mesh.topology.shared_entities(shared_dim)
 
         # Check that sum(local-shared) = global count
@@ -420,7 +418,6 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    tdim = mesh.topology.dim
 
     # Create FIAT cell
     cell_name = CellType.type2string(mesh.type().cell_type())

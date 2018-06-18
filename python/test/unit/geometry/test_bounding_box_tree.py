@@ -6,9 +6,6 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
-import numpy
-
 from dolfin import BoundingBoxTree
 from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 from dolfin import Point
@@ -17,7 +14,7 @@ from dolfin import MPI
 from dolfin_utils.test import skip_in_parallel
 
 
-#--- compute_collisions with point ---
+# --- compute_collisions with point ---
 
 @skip_in_parallel
 def test_compute_collisions_point_1d():
@@ -36,8 +33,8 @@ def test_compute_collisions_point_1d():
 @skip_in_parallel
 def test_compute_collisions_point_2d():
 
-    reference = {1: set([226]),
-                 2: set([136, 137])}
+    #    reference = {1: set([226]),
+    #                 2: set([136, 137])}
 
     p = Point(0.3, 0.3)
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
@@ -50,7 +47,7 @@ def test_compute_collisions_point_2d():
             mp = ent.midpoint()
             x = (mp[0], mp[1])
             print("test: {}".format(x))
-        #assert set(entities) == reference[dim]
+        # assert set(entities) == reference[dim]
 
 
 @skip_in_parallel
@@ -73,7 +70,7 @@ def test_compute_collisions_point_3d():
         if dim != tdim - 1 and dim != tdim - 2:
             assert set(entities) == reference[dim]
 
-#--- compute_collisions with tree ---
+# --- compute_collisions with tree ---
 
 
 @skip_in_parallel
@@ -165,7 +162,7 @@ def test_compute_collisions_tree_3d():
         assert set(entities_A) == references[i][0]
         assert set(entities_B) == references[i][1]
 
-#--- compute_entity_collisions with point ---
+# --- compute_entity_collisions with point ---
 
 
 @skip_in_parallel
@@ -217,7 +214,7 @@ def test_compute_entity_collisions_3d():
     entities = tree.compute_entity_collisions(p, mesh)
     assert set(entities) == reference
 
-#--- compute_entity_collisions with tree ---
+# --- compute_entity_collisions with tree ---
 
 
 @skip_in_parallel
@@ -312,7 +309,7 @@ def test_compute_entity_collisions_tree_3d():
         assert set(entities_A) == references[i][0]
         assert set(entities_B) == references[i][1]
 
-#--- compute_first_collision with point ---
+# --- compute_first_collision with point ---
 
 
 @skip_in_parallel
@@ -385,7 +382,7 @@ def test_compute_first_collision_3d():
     first = tree.compute_first_collision(p)
     assert first in reference[mesh.topology.dim]
 
-#--- compute_first_entity_collision with point ---
+# --- compute_first_entity_collision with point ---
 
 
 @skip_in_parallel
@@ -438,7 +435,7 @@ def test_compute_first_entity_collision_3d():
     first = tree.compute_first_entity_collision(p, mesh)
     assert first in reference
 
-#--- compute_closest_entity with point ---
+# --- compute_closest_entity with point ---
 
 
 @skip_in_parallel
