@@ -21,7 +21,7 @@ def test_matrix_assembly_block():
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
 
-    #mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 4, 8)
+    # mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 4, 8)
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
 
     p0, p1 = 1, 2
