@@ -7,6 +7,7 @@
 #include "FiniteElement.h"
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
+#include <memory>
 
 using namespace dolfin;
 using namespace dolfin::fem;
