@@ -13,8 +13,8 @@ if sys.version_info < (3, 5):
     print("Python 3.5 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "2018.1.0.dev0"
-RESTRICT_REQUIREMENTS = ">=2018.1.0.dev0,<2018.2"
+VERSION = "2018.2.0.dev0"
+RESTRICT_REQUIREMENTS = ">=2018.2.0.dev0,<2018.3"
 
 REQUIREMENTS = [
     "numpy",
