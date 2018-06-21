@@ -153,7 +153,7 @@ void function(py::module& m)
              }
              else
              {
-               double _v = value.cast<double>();
+               PetscScalar _v = value.cast<PetscScalar>();
                self.set_property(name, _v);
              }
            })
