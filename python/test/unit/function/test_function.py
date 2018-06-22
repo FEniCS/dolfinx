@@ -142,7 +142,6 @@ def test_assign(V, W):
                 uu.assign(4 * u * u1)
 
 
-@pytest.mark.skip
 def test_call(R, V, W, mesh):
     from numpy import zeros, all
     u0 = Function(R)
@@ -157,22 +156,17 @@ def test_call(R, V, W, mesh):
     u1.interpolate(e0)
     u2.interpolate(e1)
 
-    p0 = (Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0
-    x0 = (mesh.geometry.x()[0] + mesh.geometry.x()[1]) / 2.0
-    x1 = tuple(x0)
+    p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0).array()
+    x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
 
-    assert round(u0(*x1) - u0(x0), 7) == 0
-    assert round(u0(x1) - u0(p0), 7) == 0
-    assert round(u1(x1) - u1(x0), 7) == 0
-    assert round(u1(*x1) - u1(p0), 7) == 0
-    assert round(u2(x1)[0] - u1(p0), 7) == 0
+    assert round(u0(x0)[0] - u0(x0)[0], 7) == 0
+    assert round(u0(x0)[0] - u0(p0)[0], 7) == 0
+    assert round(u1(x0)[0] - u1(x0)[0], 7) == 0
+    assert round(u1(x0)[0] - u1(p0)[0], 7) == 0
+    assert round(u2(x0)[0][0] - u1(p0)[0], 7) == 0
 
-    assert all(u2(*x1) == u2(x0))
-    assert all(u2(*x1) == u2(p0))
-
-    values = zeros(mesh.geometry.dim, dtype='d')
-    u2(p0, values=values)
-    assert all(values == u2(x0))
+    assert all(u2(x0) == u2(x0))
+    assert all(u2(x0) == u2(p0))
 
     with pytest.raises(TypeError):
         u0([0, 0, 0, 0])
