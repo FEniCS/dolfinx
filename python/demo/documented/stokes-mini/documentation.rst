@@ -42,7 +42,7 @@ following way:
 
 Next, we define a :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` on Mini element
-``V * Q``. UFL object ``V = VectorElement(P1 + B)`` stands for
+``V * Q``. UFL object ``V = VectorElement(NodalEnrichedElement(P1, B))`` stands for
 the vectorial Lagrange element of degree 1 enriched with the cubic
 Bubble. ``V * Q`` defines the mixed element for velocity and pressure.
 
@@ -50,8 +50,8 @@ Bubble. ``V * Q`` defines the mixed element for velocity and pressure.
 
     # Build function spaces on Mini element
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
-    B = FiniteElement("Bubble",   mesh.ufl_cell(), 3)
-    V = VectorElement(P1 + B)
+    B = FiniteElement("Bubble",   mesh.ufl_cell(), mesh.topology.dim + 1)
+    V = VectorElement(NodalEnrichedElement(P1, B))
     Q = P1
     W = FunctionSpace(mesh, V * Q)
 
@@ -61,13 +61,10 @@ defining the boundaries, we define boundary conditions:
 .. code-block:: python
 
     # No-slip boundary condition for velocity
-    # NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
-    noslip = project(Constant((0, 0)), W.sub(0).collapse())
-    bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
+    bc0 = DirichletBC(W.sub(0), (0, 0), sub_domains, 0)
 
     # Inflow boundary condition for velocity
-    # NOTE: Projection here is inefficient workaround of issue #489, FFC issue #69
-    inflow = project(Expression(("-sin(x[1]*pi)", "0.0"), degree=2), W.sub(0).collapse())
+    inflow = Expression(("-sin(x[1]*pi)", "0.0"), degree=2)
     bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
 
     # Collect boundary conditions
@@ -91,10 +88,10 @@ formulation of the Stokes equations are defined as follows:
 .. code-block:: python
 
     # Define variational problem
-    (u, p) = TrialFunctions(W)
-    (v, q) = TestFunctions(W)
+    u, p = TrialFunctions(W)
+    v, q = TestFunctions(W)
     f = Constant((0, 0))
-    a = (inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
+    a = (inner(grad(u), grad(v)) - div(v)*p - q*div(u))*dx
     L = inner(f, v)*dx
 
 To compute the solution we use the bilinear and linear forms, and the
@@ -118,7 +115,7 @@ a deep copy for further computations on the coefficient vectors.
 
     # Split the mixed solution using deepcopy
     # (needed for further computation on coefficient vector)
-    (u, p) = w.split(True)
+    u, p = w.split(True)
 
 We may be interested in the :math:`l^2` norms of u and p, they can be
 calculated and printed by writing
@@ -134,7 +131,7 @@ when we just plot the result) by writing
 .. code-block:: python
 
     # Split the mixed solution using a shallow copy
-    (u, p) = w.split()
+    u, p = w.split()
 
 Finally, we can store to file and plot the solutions.
 
