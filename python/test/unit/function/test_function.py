@@ -150,7 +150,7 @@ def test_assign(V, W):
 
 
 def test_call(R, V, W, Q, mesh):
-    from numpy import zeros, all
+    from numpy import all
     u0 = Function(R)
     u1 = Function(V)
     u2 = Function(W)
