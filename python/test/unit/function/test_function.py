@@ -182,7 +182,7 @@ def test_call(R, V, W, Q, mesh):
 
     assert all(u2(x0) == u2(x0))
     assert all(u2(x0) == u2(p0))
-    assert all(u3(x0)[0][:3] == u2(x0))
+    assert all(u3(x0)[0][:3] == u2(x0)[0])
 
     with pytest.raises(TypeError):
         u0([0, 0, 0, 0])
