@@ -124,8 +124,7 @@ std::size_t DofMap::max_element_dofs() const
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
   assert(_ufc_dofmap);
-  assert(_ufc_dofmap->num_entity_dofs);
-  return _ufc_dofmap->num_entity_dofs(entity_dim);
+  return _ufc_dofmap->num_entity_dofs[entity_dim];
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_facet_dofs() const
@@ -164,11 +163,10 @@ void DofMap::tabulate_entity_dofs(std::vector<int>& element_dofs,
                                   std::size_t cell_entity_index) const
 {
   assert(_ufc_dofmap);
-  assert(_ufc_dofmap->num_entity_dofs);
-  if (_ufc_dofmap->num_entity_dofs(entity_dim) == 0)
+  if (_ufc_dofmap->num_entity_dofs[entity_dim] == 0)
     return;
 
-  element_dofs.resize(_ufc_dofmap->num_entity_dofs(entity_dim));
+  element_dofs.resize(_ufc_dofmap->num_entity_dofs[entity_dim]);
   assert(_ufc_dofmap->tabulate_entity_dofs);
   _ufc_dofmap->tabulate_entity_dofs(element_dofs.data(), entity_dim,
                                     cell_entity_index);
@@ -224,7 +222,7 @@ void DofMap::check_provided_entities(const ufc_dofmap& dofmap,
   // Check that we have all mesh entities
   for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
   {
-    if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
+    if (dofmap.num_entity_dofs[d] > 0 && mesh.num_entities(d) == 0)
     {
       throw std::runtime_error("Missing entities of dimension "
                                + std::to_string(d) + " in dofmap construction");
