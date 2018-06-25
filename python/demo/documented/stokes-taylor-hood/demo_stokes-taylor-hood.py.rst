@@ -174,7 +174,7 @@ We can calculate the :math:`L^2` norms of u and p as follows::
     # Check pressure norm
     pnorm = p.vector().norm(dolfin.cpp.la.Norm.l2)
     import numpy as np
-    assert np.isclose(pnorm, 4116.91298427)
+    assert np.isclose(pnorm, 4147.69457577)
 
 Finally, we can save and plot the solutions::
 
