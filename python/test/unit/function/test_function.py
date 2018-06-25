@@ -150,7 +150,7 @@ def test_assign(V, W):
 
 
 def test_call(R, V, W, Q, mesh):
-    from numpy import all
+    from numpy import all, allclose
     u0 = Function(R)
     u1 = Function(V)
     u2 = Function(W)
@@ -182,7 +182,7 @@ def test_call(R, V, W, Q, mesh):
 
     assert all(u2(x0) == u2(x0))
     assert all(u2(x0) == u2(p0))
-    assert all(u3(x0)[0][:3] == u2(x0))
+    assert allclose(u3(x0)[0][:3], u2(x0)[0], rtol=1e-15, atol=1e-15)
 
     with pytest.raises(TypeError):
         u0([0, 0, 0, 0])
