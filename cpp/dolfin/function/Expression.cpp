@@ -128,10 +128,6 @@ void Expression::restrict(
   // Evaluate all points in one call
   eval(eval_values, eval_points, cell);
 
-  // Transpose for vector values
-  // FIXME: remove need for this - needs work in ffc
-  eval_values.transposeInPlace();
-
   // FIXME: *do not* use UFC directly
   // Apply a mapping to the reference element.
   // FIXME: not needed for Lagrange elements, eliminate.
