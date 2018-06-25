@@ -224,6 +224,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   assert(coarse_space.mesh());
   const mesh::Mesh meshc = *coarse_space.mesh();
   std::size_t gdim = meshc.geometry().dim();
+  std::size_t tdim = meshc.topology().dim();
 
   // MPI communicator, size and rank
   const MPI_Comm mpi_comm = meshc.mpi_comm();
@@ -486,7 +487,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   std::vector<std::vector<dolfin::la_index_t>> col_indices(
       m_owned, std::vector<dolfin::la_index_t>(eldim));
   std::vector<std::vector<double>> values(m_owned, std::vector<double>(eldim));
-  std::vector<double> temp_values(eldim * data_size);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> temp_values(1, eldim, data_size);
 
   // Initialise global sparsity pattern: record on-process and
   // off-process dependencies of fine dofs
@@ -501,11 +502,18 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   EigenRowArrayXXd coordinate_dofs; // cell dofs coordinates vector
 
   // Loop over the found coarse cells
+  Eigen::Map<const EigenRowArrayXXd> x(found_points.data(), found_ids.size(),
+                                       gdim);
+  const auto cmap = meshc.geometry().coord_mapping;
+  EigenRowArrayXXd X(1, gdim);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
+  EigenArrayXd detJ(1);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
+
   for (unsigned int i = 0; i < found_ids.size(); ++i)
   {
     // Get coarse cell id and point
     unsigned int id = found_ids[i];
-    geometry::Point curr_point(gdim, &found_points[i * gdim]);
 
     // Create coarse cell
     mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
@@ -516,10 +524,9 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values
-    throw std::runtime_error(
-        "PETScDMCollection needs updating for FiniteElement change");
-    // el->evaluate_basis_all(temp_values.data(), curr_point.coordinates(),
-    //                       coordinate_dofs.data(), -1);
+
+    cmap->compute_reference_geometry(X, J, detJ, K, x.row(i), coordinate_dofs);
+    el->evaluate_reference_basis(temp_values, X);
 
     // Get the coarse dofs associated with this cell
     auto temp_dofs = coarsemap->cell_dofs(id);
@@ -540,7 +547,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
         // Set the column
         col_indices[fine_row][j] = coarse_dof;
         // Set the value
-        values[fine_row][j] = temp_values[data_size * j + k];
+        values[fine_row][j] = temp_values(0, j, k);
 
         int pc = coarsemap->index_map()->owner(coarse_dof / data_size);
         if (p == pc)
