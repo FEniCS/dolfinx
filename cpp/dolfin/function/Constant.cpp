@@ -16,19 +16,19 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-Constant::Constant(double value) : Expression({}), _values(1, value)
+Constant::Constant(PetscScalar value) : Expression({}), _values(1, value)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(std::vector<double> values)
+Constant::Constant(std::vector<PetscScalar> values)
     : Expression({values.size()}), _values(values)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Constant::Constant(std::vector<std::size_t> value_shape,
-                   std::vector<double> values)
+                   std::vector<PetscScalar> values)
     : Expression(value_shape), _values(values)
 {
   // Do nothing
@@ -59,7 +59,7 @@ const Constant& Constant::operator=(const Constant& constant)
   return *this;
 }
 //-----------------------------------------------------------------------------
-const Constant& Constant::operator=(double constant)
+const Constant& Constant::operator=(PetscScalar constant)
 {
   // Check value shape
   if (!value_shape().empty())
@@ -75,13 +75,15 @@ const Constant& Constant::operator=(double constant)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::vector<double> Constant::values() const
+std::vector<PetscScalar> Constant::values() const
 {
   assert(!_values.empty());
   return _values;
 }
 //-----------------------------------------------------------------------------
-void Constant::eval(Eigen::Ref<EigenRowArrayXXd> values,
+void Constant::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>>
+                        values,
                     Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   // Copy values
@@ -107,7 +109,7 @@ std::string Constant::str(bool verbose) const
         ossv << "(";
         // Avoid a trailing ", "
         std::copy(_values.begin(), _values.end() - 1,
-                  std::ostream_iterator<double>(ossv, ", "));
+                  std::ostream_iterator<PetscScalar>(ossv, ", "));
         ossv << _values.back();
         ossv << ")";
       }

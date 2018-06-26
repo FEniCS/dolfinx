@@ -10,6 +10,7 @@
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>
+#include <petscsys.h>
 #include <vector>
 
 namespace dolfin
@@ -23,7 +24,7 @@ namespace mesh
 {
 class Cell;
 class Mesh;
-}
+} // namespace mesh
 
 namespace function
 {
@@ -113,7 +114,9 @@ public:
   ///         The values.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
   ///         The coordinates.
-  void eval(Eigen::Ref<EigenRowArrayXXd> values,
+  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>>
+                values,
             Eigen::Ref<const EigenRowArrayXXd> x) const override;
 
   /// Interpolate function (on possibly non-matching meshes)
@@ -153,13 +156,15 @@ public:
   ///         The coordinates of the point.
   /// @param    cell (mesh::Cell)
   ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<EigenRowArrayXXd> values,
+  virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>>
+                        values,
                     Eigen::Ref<const EigenRowArrayXXd> x,
                     const mesh::Cell& cell) const override;
 
   /// Restrict function to local cell (compute expansion coefficients w)
   ///
-  /// @param    w (list of doubles)
+  /// @param    w (list of PetscScalars)
   ///         Expansion coefficients.
   /// @param    element (_FiniteElement_)
   ///         The element.
@@ -168,7 +173,7 @@ public:
   /// @param  coordinate_dofs (double *)
   ///         The coordinates
   virtual void restrict(
-      double* w, const fem::FiniteElement& element, const mesh::Cell& cell,
+      PetscScalar* w, const fem::FiniteElement& element, const mesh::Cell& cell,
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const override;
 
   /// Compute values at all mesh points
@@ -177,14 +182,16 @@ public:
   ///         The mesh.
   /// @returns  point_values (EigenRowArrayXXd)
   ///         The values at all geometric points
-  virtual EigenRowArrayXXd
+  virtual Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                       Eigen::RowMajor>
   compute_point_values(const mesh::Mesh& mesh) const override;
 
   /// Compute values at all mesh points
   ///
   /// @returns    point_values (EigenRowArrayXXd)
   ///         The values at all geometric points
-  EigenRowArrayXXd compute_point_values() const;
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  compute_point_values() const;
 
 private:
   // Initialize vector

@@ -108,7 +108,7 @@ void FunctionSpace::interpolate_from_any(
   std::size_t gdim = _mesh->geometry().dim();
 
   // Initialize local arrays
-  std::vector<double> cell_coefficients(_dofmap->max_element_dofs());
+  std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
 
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs;
@@ -300,7 +300,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   return x;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::set_x(la::PETScVector& x, double value,
+void FunctionSpace::set_x(la::PETScVector& x, PetscScalar value,
                           std::size_t component) const
 {
   assert(_mesh);
@@ -308,7 +308,7 @@ void FunctionSpace::set_x(la::PETScVector& x, double value,
   assert(_element);
 
   const std::size_t gdim = _mesh->geometry().dim();
-  std::vector<double> x_values;
+  std::vector<PetscScalar> x_values;
 
   // Dof coordinate on reference element
   const EigenRowArrayXXd& X = _element->dof_reference_coordinates();
