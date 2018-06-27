@@ -23,16 +23,21 @@ GenericFunction::~GenericFunction()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::eval(Eigen::Ref<EigenRowArrayXXd> values,
-                           Eigen::Ref<const EigenRowArrayXXd> x,
-                           const mesh::Cell& cell) const
+void GenericFunction::eval(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        values,
+    Eigen::Ref<const EigenRowArrayXXd> x, const mesh::Cell& cell) const
 {
   // Redirect to simple eval
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void GenericFunction::eval(Eigen::Ref<EigenRowArrayXXd> values,
-                           Eigen::Ref<const EigenRowArrayXXd> x) const
+void GenericFunction::eval(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        values,
+    Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   log::dolfin_error("GenericFunction.cpp", "evaluate function (Eigen version)",
                     "Missing eval() function (must be overloaded)");

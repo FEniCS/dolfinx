@@ -92,7 +92,7 @@ const fem::FiniteElement& FormCoefficients::element(std::size_t i) const
   return _elements[i];
 }
 //-----------------------------------------------------------------------------
-const std::size_t FormCoefficients::original_position(std::size_t i) const
+std::size_t FormCoefficients::original_position(std::size_t i) const
 {
   assert(i < _original_pos.size());
   return _original_pos[i];
