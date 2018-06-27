@@ -378,10 +378,12 @@ void mesh(py::module& m)
       .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR>& self,             \
                          const SCALAR& value) { self = value; })               \
       .def("where_equal", &dolfin::mesh::MeshFunction<SCALAR>::where_equal)    \
-      .def("array", [](dolfin::mesh::MeshFunction<SCALAR>& self) {             \
-        return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(            \
-            self.values(), self.size());                                       \
-      })
+      .def("array",                                                            \
+           [](dolfin::mesh::MeshFunction<SCALAR>& self) {                      \
+             return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(       \
+                 self.values(), self.size());                                  \
+           },                                                                  \
+           py::return_value_policy::reference_internal)
 
   MESHFUNCTION_MACRO(bool, Bool);
   MESHFUNCTION_MACRO(int, Int);
@@ -492,5 +494,5 @@ void mesh(py::module& m)
           &dolfin::mesh::PeriodicBoundaryComputation::compute_periodic_pairs)
       .def_static("masters_slaves",
                   &dolfin::mesh::PeriodicBoundaryComputation::masters_slaves);
-}
+} // namespace dolfin_wrappers
 } // namespace dolfin_wrappers
