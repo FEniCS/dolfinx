@@ -88,7 +88,8 @@ bool VectorSpaceBasis::in_nullspace(const PETScMatrix& A, double tol) const
   for (auto x : _basis)
   {
     A.mult(*x, y);
-    if (y.norm(la::Norm::l2) > tol)
+    const double norm = y.norm(la::Norm::l2);
+    if (norm > tol)
       return false;
   }
 

@@ -319,6 +319,8 @@ void la(py::module& m)
            py::arg("tol") = 1.0e-10)
       .def("is_orthogonal", &dolfin::la::VectorSpaceBasis::is_orthogonal,
            py::arg("tol") = 1.0e-10)
+      .def("in_nullspace", &dolfin::la::VectorSpaceBasis::in_nullspace,
+           py::arg("A"), py::arg("tol") = 1.0e-10)
       .def("orthogonalize", &dolfin::la::VectorSpaceBasis::orthogonalize)
       .def("orthonormalize", &dolfin::la::VectorSpaceBasis::orthonormalize,
            py::arg("tol") = 1.0e-10)

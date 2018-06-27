@@ -1,20 +1,24 @@
 "Unit tests for nullspace test"
 
-# Copyright (C) 2014 Garth N. Wells
+# Copyright (C) 2014-2018 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (UnitCubeMesh, UnitSquareMesh, MPI, VectorFunctionSpace,
-                    TrialFunction, TestFunction, Constant, inner, grad, sym, dot, dx)
-from dolfin.la import VectorSpaceBasis
-
 import pytest
-# from dolfin_utils.test import *
+
+import ufl
+from dolfin import (MPI, Constant, Point, TestFunction, TrialFunction,
+                    UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, dx,
+                    grad, inner, la, sym, fem)
+from dolfin.cpp.mesh import CellType, GhostMode
+from dolfin.fem import assembling
+from dolfin.la import VectorSpaceBasis
+from dolfin.cpp.generation import BoxMesh
 
 
-def build_elastic_nullspace(V, x):
+def build_elastic_nullspace(V):
     """Function to build nullspace for 2D/3D elasticity"""
 
     # Get geometric dim
@@ -25,7 +29,9 @@ def build_elastic_nullspace(V, x):
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    nullspace_basis = [x.copy() for i in range(dim)]
+    nullspace_basis = [
+        la.PETScVector(V.dofmap().index_map()) for i in range(dim)
+    ]
 
     # Build translational null space basis
     for i in range(gdim):
@@ -46,16 +52,18 @@ def build_elastic_nullspace(V, x):
         V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
 
     for x in nullspace_basis:
-        x.apply("insert")
+        x.apply()
 
     return VectorSpaceBasis(nullspace_basis)
 
 
-def build_broken_elastic_nullspace(V, x):
+def build_broken_elastic_nullspace(V):
     """Function to build incorrect null space for 2D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [x.copy() for i in range(4)]
+    nullspace_basis = [
+        la.PETScVector(V.dofmap().index_map()) for i in range(4)
+    ]
 
     # Build translational null space basis
     V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
@@ -69,57 +77,62 @@ def build_broken_elastic_nullspace(V, x):
     V.sub(1).set_x(nullspace_basis[3], 1.0, 1)
 
     for x in nullspace_basis:
-        x.apply("insert")
+        x.apply()
+
     return VectorSpaceBasis(nullspace_basis)
 
 
-@pytest.mark.skip
-def test_nullspace_orthogonal():
+@pytest.mark.parametrize("mesh", [
+    UnitSquareMesh(MPI.comm_world, 12, 13),
+    UnitCubeMesh(MPI.comm_world, 12, 18, 15)
+])
+@pytest.mark.parametrize("degree", [1, 2])
+def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
-    meshes = [UnitSquareMesh(MPI.comm_world, 12, 12), UnitCubeMesh(MPI.comm_world, 4, 4, 4)]
-    for mesh in meshes:
-        for p in range(1, 4):
-            V = VectorFunctionSpace(mesh, 'CG', p)
-            zero = Constant([0.0] * mesh.geometry.dim)
-            L = dot(TestFunction(V), zero) * dx
-            x = assemble(L)  # noqa
+    V = VectorFunctionSpace(mesh, 'Lagrange', degree)
+    null_space = build_elastic_nullspace(V)
+    assert not null_space.is_orthogonal()
+    assert not null_space.is_orthonormal()
 
-            # Build nullspace
-            null_space = build_elastic_nullspace(V, x)
-
-            assert not null_space.is_orthogonal()
-            assert not null_space.is_orthonormal()
-
-            # Orthogonalise nullspace
-            null_space.orthonormalize()
-
-            # Checl that null space basis is orthonormal
-            assert null_space.is_orthogonal()
-            assert null_space.is_orthonormal()
+    null_space.orthonormalize()
+    assert null_space.is_orthogonal()
+    assert null_space.is_orthonormal()
 
 
-@pytest.mark.skip
-def test_nullspace_check():
-    # Mesh
-    mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
-
-    # Elasticity form
-    V = VectorFunctionSpace(mesh, 'CG', 1)
+@pytest.mark.parametrize("mesh", [
+    UnitSquareMesh(MPI.comm_world, 12, 13),
+    BoxMesh.create(
+        MPI.comm_world,
+        [Point(0.8, -0.2, 1.2), Point(3.0, 11.0, -5.0)], [12, 18, 25],
+        cell_type=CellType.Type.tetrahedron,
+        ghost_mode=GhostMode.none),
+])
+@pytest.mark.parametrize("degree", [1, 2])
+def test_nullspace_check(mesh, degree):
+    V = VectorFunctionSpace(mesh, 'Lagrange', degree)
     u, v = TrialFunction(V), TestFunction(V)
-    a = inner(sym(grad(u)), grad(v)) * dx
+
+    mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
+
+    E, nu = 2.0e2, 0.3
+    mu = E / (2.0 * (1.0 + nu))
+    lmbda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
+
+    def sigma(w, gdim):
+        return 2.0 * mu * ufl.sym(grad(w)) + lmbda * ufl.tr(
+            grad(w)) * ufl.Identity(gdim)
+
+    a = inner(grad(v), sigma(u, mesh.geometry.dim)) * dx
+    zero = mesh.geometry.dim * (0.0, )
+    L = inner(v, Constant(zero)) * dx
 
     # Assemble matrix and create compatible vector
-    A = assemble(a)  # noqa
-    x = A.init_vector(1)
+    A, L = assembling.assemble_system(a, L, [])
 
     # Create null space basis and test
-    null_space = build_elastic_nullspace(V, x)
-    assert in_nullspace(A, null_space)  # noqa
-    assert in_nullspace(A, null_space, "right")  # noqa
-    assert in_nullspace(A, null_space, "left")  # noqa
+    null_space = build_elastic_nullspace(V)
+    assert null_space.in_nullspace(A, tol=1.0e-8)
 
-    # Create incorect null space basis and test
-    null_space = build_broken_elastic_nullspace(V, x)
-    assert not in_nullspace(A, null_space)  # noqa
-    assert not in_nullspace(A, null_space, "right")  # noqa
-    assert not in_nullspace(A, null_space, "left")  # noqa
+    # Create incorrect null space basis and test
+    null_space = build_broken_elastic_nullspace(V)
+    assert not null_space.in_nullspace(A, tol=1.0e-8)
