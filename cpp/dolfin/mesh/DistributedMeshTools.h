@@ -63,10 +63,9 @@ public:
   /// Compute map from local index of shared entity to list
   /// of sharing process and local index,
   /// i.e. (local index, [(sharing process p, local index on p)])
-  static std::
-      unordered_map<std::uint32_t,
-                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>
-      compute_shared_entities(const Mesh& mesh, std::size_t d);
+  static std::unordered_map<
+      std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>
+  compute_shared_entities(const Mesh& mesh, std::size_t d);
 
   /// Reorders the points in a distributed mesh according to
   /// their global index, and redistributes them evenly across processes
@@ -77,7 +76,8 @@ public:
   ///    Array of points in global order
   static EigenRowArrayXXd reorder_points_by_global_indices(const Mesh& mesh);
 
-  /// Reorder the values according to explicit global indices, distributing evenly across processes
+  /// Reorder the values according to explicit global indices, distributing
+  /// evenly across processes
   /// @param mpi_comm
   ///    MPI Communicator
   /// @param values
@@ -87,12 +87,22 @@ public:
   static EigenRowArrayXXd reorder_values_by_global_indices(
       MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
       const std::vector<std::int64_t>& global_indices);
-  
-  static Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> 
-     reorder_values_by_global_indices(
-      MPI_Comm mpi_comm, 
-      const Eigen::Ref<const Eigen::Array<std::complex<double>, 
-        Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
+
+  /// Reorder the values according to explicit global indices, distributing
+  /// evenly across processes
+  /// @param mpi_comm
+  ///    MPI Communicator
+  /// @param values
+  ///    Complex values to reorder
+  /// @param global_indices
+  ///    Global index for each row of values
+  static Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
+                      Eigen::RowMajor>
+  reorder_values_by_global_indices(
+      MPI_Comm mpi_comm,
+      const Eigen::Ref<const Eigen::Array<std::complex<double>, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          values,
       const std::vector<std::int64_t>& global_indices);
 
 private:
@@ -177,20 +187,20 @@ private:
       const MPI_Comm mpi_comm, std::size_t num_local_entities,
       std::size_t num_processes, std::size_t process_number);
 
-  /// Reorder the values according to explicit global indices, distributing evenly across processes
+  /// Reorder the values according to explicit global indices, distributing
+  /// evenly across processes
   /// @param mpi_comm
   ///    MPI Communicator
   /// @param values
   ///    Values to reorder
   /// @param global_indices
   ///    Global index for each row of values
- template <typename Scalar>
- static Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  reorder_values(
-      MPI_Comm mpi_comm,
-      const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-          values,
-      const std::vector<std::int64_t>& global_indices)
+  template <typename Scalar>
+  static Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  reorder_values(MPI_Comm mpi_comm,
+                 const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>& values,
+                 const std::vector<std::int64_t>& global_indices)
   {
     common::Timer t("DistributedMeshTools: reorder values");
 
@@ -258,5 +268,5 @@ private:
     return new_values;
   }
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin
