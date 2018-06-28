@@ -105,7 +105,6 @@ endif()
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
-list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
@@ -253,13 +252,12 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-find_package(PETSc 3.7)
+find_package(PETSc 3.7 REQUIRED)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
   PURPOSE "PETSc linear algebra backend")
 
-  #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
 # Is this still needed?
