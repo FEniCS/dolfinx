@@ -93,8 +93,8 @@ def test_scalar_p2():
 
 
 def test_vector_p1_2d():
-    meshc = UnitSquareMesh(MPI.comm_world, 3, 3)
-    meshf = UnitSquareMesh(MPI.comm_world, 5, 5)
+    meshc = UnitSquareMesh(MPI.comm_world, 1, 1)
+    meshf = UnitSquareMesh(MPI.comm_world, 2, 2)
 
     Vc = VectorFunctionSpace(meshc, "CG", 1)
     Vf = VectorFunctionSpace(meshf, "CG", 1)
@@ -103,14 +103,19 @@ def test_vector_p1_2d():
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
-    Vuc = Function(Vf)
-    mat.mult(uc.vector(), Vuc.vector())
-    Vuc.vector().update_ghost_values()
+    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
+    print(mat.getSize())
+    arr = mat.getValues(range(18), range(8))
+    import numpy
+    numpy.set_printoptions(precision=2, suppress=True)
+    print(arr)
 
-    diff = Function(Vf)
-    diff.assign(Vuc - uf)
-    assert diff.vector().norm("l2") < 1.0e-12
+    Vuc = Function(Vf)
+    mat.mult(uc.vector().vec(), Vuc.vector().vec())
+
+    diff = Vuc.vector()
+    diff.vec().axpy(-1, uf.vector().vec())
+    assert diff.norm(Norm.l2) < 1.0e-12
 
 
 @pytest.mark.skip
@@ -135,7 +140,6 @@ def test_vector_p2_2d():
     assert diff.vector().norm("l2") < 1.0e-12
 
 
-@pytest.mark.skip
 def test_vector_p1_3d():
     meshc = UnitCubeMesh(MPI.comm_world, 2, 3, 4)
     meshf = UnitCubeMesh(MPI.comm_world, 3, 4, 5)
@@ -147,7 +151,7 @@ def test_vector_p1_3d():
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
+    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
     Vuc = Function(Vf)
     mat.mult(uc.vector(), Vuc.vector())
     Vuc.vector().update_ghost_values()
