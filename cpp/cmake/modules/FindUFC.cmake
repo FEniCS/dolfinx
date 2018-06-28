@@ -38,6 +38,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+find_package(PythonInterp 3)
+if (NOT PYTHONINTERP_FOUND AND NOT DEFINED UFC_INCLUDE_DIRS)
+  message(FATAL_ERROR "Unable to find Python interpreter to query FFC about location of UFC headers. Set UFC_INCLUDE_DIRS to the location of ufc.h, or install Python and FFC.")
+endif()
+
 execute_process(
   COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.backends.ufc.get_include_path())"
   OUTPUT_VARIABLE UFC_INCLUDE_DIR

@@ -260,13 +260,6 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
 
 # Run tests to find optional packages
 
-# Is this still needed?
-find_package(PythonInterp 3)
-
-set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Interactive high-level object-oriented language"
-  URL "http://www.python.org")
-
 # Check for required package UFC
 find_package(UFC MODULE ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
@@ -390,7 +383,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 
 #------------------------------------------------------------------------------
 # Generate demo files from rst
-
+find_package(PythonInterp 3)
 if (PYTHONINTERP_FOUND)
   message(STATUS "")
   message(STATUS "Generating demo source files from reStructuredText")
