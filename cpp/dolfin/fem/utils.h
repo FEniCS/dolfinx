@@ -54,9 +54,6 @@ la::PETScMatrix init_monolithic_matrix(
 /// Initialise monolithic vector. Vector is not zeroed.
 la::PETScVector init_monolithic(std::vector<const fem::Form*> L);
 
-/// Initialise vector. Vector is not zeroed.
-la::PETScVector init_vector(const Form& L);
-
 /// Get new global index in 'spliced' indices
 std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
                              const unsigned int field, const unsigned int n);
