@@ -2766,7 +2766,7 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
   }
 
   // Reorder values by global point indices
-  EigenRowArrayXXd in_vals =  Eigen::Map<EigenRowArrayXXd> (_data_values.data(),
+  Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
                                        _data_values.size() / width, width);
   EigenRowArrayXXd vals
       = mesh::DistributedMeshTools::reorder_values_by_global_indices(

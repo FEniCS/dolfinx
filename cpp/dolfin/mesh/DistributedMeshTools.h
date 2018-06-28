@@ -7,6 +7,7 @@
 #pragma once
 
 #include <array>
+#include <complex>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -83,79 +84,16 @@ public:
   ///    Values to reorder
   /// @param global_indices
   ///    Global index for each row of values
- template <typename Scalar>
- static Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  reorder_values_by_global_indices(
-      MPI_Comm mpi_comm,
-      const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-          values,
-      const std::vector<std::int64_t>& global_indices)
-  {
-    common::Timer t("DistributedMeshTools: reorder values");
-
-    // Number of items to redistribute
-    const std::size_t num_local_indices = global_indices.size();
-    assert(num_local_indices == (std::size_t)values.rows());
-
-    // Calculate size of overall global vector by finding max index value
-    // anywhere
-    const std::size_t global_vector_size
-        = MPI::max(mpi_comm, *std::max_element(global_indices.begin(),
-                                               global_indices.end()))
-          + 1;
-
-    // Send unwanted values off process
-    const std::size_t mpi_size = MPI::size(mpi_comm);
-    std::vector<std::vector<std::size_t>> indices_to_send(mpi_size);
-    std::vector<std::vector<Scalar>> values_to_send(mpi_size);
-
-    // Go through local vector and append value to the appropriate list
-    // to send to correct process
-    for (std::size_t i = 0; i != num_local_indices; ++i)
-    {
-      const std::size_t global_i = global_indices[i];
-      const std::size_t process_i
-          = MPI::index_owner(mpi_comm, global_i, global_vector_size);
-      indices_to_send[process_i].push_back(global_i);
-      values_to_send[process_i].insert(values_to_send[process_i].end(),
-                                       values.row(i).data(),
-                                       values.row(i).data() + values.cols());
-    }
-
-    // Redistribute the values to the appropriate process - including
-    // self. All values are "in the air" at this point. Receive into flat
-    // arrays.
-    std::vector<std::size_t> received_indices;
-    std::vector<Scalar> received_values;
-    MPI::all_to_all(mpi_comm, indices_to_send, received_indices);
-    MPI::all_to_all(mpi_comm, values_to_send, received_values);
-
-    // Map over received values as Eigen array
-    assert(received_indices.size() * values.cols() == received_values.size());
-    Eigen::Map<
-        Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        received_values_array(received_values.data(), received_indices.size(),
-                              values.cols());
-
-    // Create array for new data. Note that any indices which are not received
-    // will be uninitialised.
-    const std::array<std::int64_t, 2> range
-        = MPI::local_range(mpi_comm, global_vector_size);
-    Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        new_values(range[1] - range[0], values.cols());
-
-    // Go through received data in descending order, and place in local
-    // partition of the global vector. Any duplicate data (with same index)
-    // will be overwritten by values from the lowest rank process.
-    for (std::int32_t j = received_indices.size() - 1; j >= 0; --j)
-    {
-      const std::int64_t global_i = received_indices[j];
-      assert(global_i >= range[0] && global_i < range[1]);
-      new_values.row(global_i - range[0]) = received_values_array.row(j);
-    }
-
-    return new_values;
-  }
+  static EigenRowArrayXXd reorder_values_by_global_indices(
+      MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
+      const std::vector<std::int64_t>& global_indices);
+  
+  static Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> 
+     reorder_values_by_global_indices(
+      MPI_Comm mpi_comm, 
+      const Eigen::Ref<const Eigen::Array<std::complex<double>, 
+        Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
+      const std::vector<std::int64_t>& global_indices);
 
 private:
   // Data structure for a mesh entity (list of vertices, using
@@ -238,6 +176,87 @@ private:
   static std::pair<std::size_t, std::size_t> compute_num_global_entities(
       const MPI_Comm mpi_comm, std::size_t num_local_entities,
       std::size_t num_processes, std::size_t process_number);
+
+  /// Reorder the values according to explicit global indices, distributing evenly across processes
+  /// @param mpi_comm
+  ///    MPI Communicator
+  /// @param values
+  ///    Values to reorder
+  /// @param global_indices
+  ///    Global index for each row of values
+ template <typename Scalar>
+ static Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  reorder_values(
+      MPI_Comm mpi_comm,
+      const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+          values,
+      const std::vector<std::int64_t>& global_indices)
+  {
+    common::Timer t("DistributedMeshTools: reorder values");
+
+    // Number of items to redistribute
+    const std::size_t num_local_indices = global_indices.size();
+    assert(num_local_indices == (std::size_t)values.rows());
+
+    // Calculate size of overall global vector by finding max index value
+    // anywhere
+    const std::size_t global_vector_size
+        = MPI::max(mpi_comm, *std::max_element(global_indices.begin(),
+                                               global_indices.end()))
+          + 1;
+
+    // Send unwanted values off process
+    const std::size_t mpi_size = MPI::size(mpi_comm);
+    std::vector<std::vector<std::size_t>> indices_to_send(mpi_size);
+    std::vector<std::vector<Scalar>> values_to_send(mpi_size);
+
+    // Go through local vector and append value to the appropriate list
+    // to send to correct process
+    for (std::size_t i = 0; i != num_local_indices; ++i)
+    {
+      const std::size_t global_i = global_indices[i];
+      const std::size_t process_i
+          = MPI::index_owner(mpi_comm, global_i, global_vector_size);
+      indices_to_send[process_i].push_back(global_i);
+      values_to_send[process_i].insert(values_to_send[process_i].end(),
+                                       values.row(i).data(),
+                                       values.row(i).data() + values.cols());
+    }
+
+    // Redistribute the values to the appropriate process - including
+    // self. All values are "in the air" at this point. Receive into flat
+    // arrays.
+    std::vector<std::size_t> received_indices;
+    std::vector<Scalar> received_values;
+    MPI::all_to_all(mpi_comm, indices_to_send, received_indices);
+    MPI::all_to_all(mpi_comm, values_to_send, received_values);
+
+    // Map over received values as Eigen array
+    assert(received_indices.size() * values.cols() == received_values.size());
+    Eigen::Map<
+        Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        received_values_array(received_values.data(), received_indices.size(),
+                              values.cols());
+
+    // Create array for new data. Note that any indices which are not received
+    // will be uninitialised.
+    const std::array<std::int64_t, 2> range
+        = MPI::local_range(mpi_comm, global_vector_size);
+    Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        new_values(range[1] - range[0], values.cols());
+
+    // Go through received data in descending order, and place in local
+    // partition of the global vector. Any duplicate data (with same index)
+    // will be overwritten by values from the lowest rank process.
+    for (std::int32_t j = received_indices.size() - 1; j >= 0; --j)
+    {
+      const std::int64_t global_i = received_indices[j];
+      assert(global_i >= range[0] && global_i < range[1]);
+      new_values.row(global_i - range[0]) = received_values_array.row(j);
+    }
+
+    return new_values;
+  }
 };
 }
 }

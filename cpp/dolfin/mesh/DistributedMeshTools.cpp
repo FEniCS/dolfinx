@@ -1106,3 +1106,24 @@ DistributedMeshTools::reorder_points_by_global_indices(const Mesh& mesh)
                                           mesh.geometry().global_indices());
 }
 //-----------------------------------------------------------------------------
+EigenRowArrayXXd
+DistributedMeshTools::reorder_values_by_global_indices(
+      MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
+      const std::vector<std::int64_t>& global_indices)
+{
+  EigenRowArrayXXd in_values = values;
+  return reorder_values(mpi_comm, in_values, global_indices);
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> 
+DistributedMeshTools::reorder_values_by_global_indices(
+      MPI_Comm mpi_comm, 
+      const Eigen::Ref<const Eigen::Array<std::complex<double>, 
+        Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> >& values,
+      const std::vector<std::int64_t>& global_indices)
+{
+  Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> 
+    in_values = values;
+  return reorder_values(mpi_comm, in_values, global_indices);
+}
+//-----------------------------------------------------------------------------
