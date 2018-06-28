@@ -269,7 +269,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 
 # Check for PETSc and SLEPc
 set(SLEPC_FOUND FALSE)
-if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
+if (DOLFIN_ENABLE_SLEPC)
   find_package(SLEPc 3.7)
   set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
