@@ -1110,8 +1110,7 @@ EigenRowArrayXXd DistributedMeshTools::reorder_values_by_global_indices(
     MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
     const std::vector<std::int64_t>& global_indices)
 {
-  EigenRowArrayXXd in_values = values;
-  return reorder_values(mpi_comm, in_values, global_indices);
+  return reorder_values(mpi_comm, values, global_indices);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
@@ -1123,9 +1122,6 @@ DistributedMeshTools::reorder_values_by_global_indices(
         values,
     const std::vector<std::int64_t>& global_indices)
 {
-  Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
-               Eigen::RowMajor>
-      in_values = values;
-  return reorder_values(mpi_comm, in_values, global_indices);
+  return reorder_values(mpi_comm, values, global_indices);
 }
 //-----------------------------------------------------------------------------

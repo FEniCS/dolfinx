@@ -197,10 +197,11 @@ private:
   ///    Global index for each row of values
   template <typename Scalar>
   static Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  reorder_values(MPI_Comm mpi_comm,
-                 const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>& values,
-                 const std::vector<std::int64_t>& global_indices)
+  reorder_values(
+      MPI_Comm mpi_comm,
+      const Eigen::Ref<const Eigen::Array<
+          Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
+      const std::vector<std::int64_t>& global_indices)
   {
     common::Timer t("DistributedMeshTools: reorder values");
 
