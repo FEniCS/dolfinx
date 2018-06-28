@@ -1,4 +1,4 @@
-"Unit tests for nullspace test"
+"Unit tests for nullspaces"
 
 # Copyright (C) 2014-2018 Garth N. Wells
 #
@@ -10,12 +10,11 @@ import pytest
 
 import ufl
 from dolfin import (MPI, Constant, Point, TestFunction, TrialFunction,
-                    UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, dx,
-                    grad, inner, la, sym, fem)
+                    UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, fem, la)
+from dolfin.cpp.generation import BoxMesh
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assembling
-from dolfin.la import VectorSpaceBasis
-from dolfin.cpp.generation import BoxMesh
+from ufl import dx, grad, inner
 
 
 def build_elastic_nullspace(V):
@@ -54,7 +53,7 @@ def build_elastic_nullspace(V):
     for x in nullspace_basis:
         x.apply()
 
-    return VectorSpaceBasis(nullspace_basis)
+    return la.VectorSpaceBasis(nullspace_basis)
 
 
 def build_broken_elastic_nullspace(V):
@@ -79,7 +78,7 @@ def build_broken_elastic_nullspace(V):
     for x in nullspace_basis:
         x.apply()
 
-    return VectorSpaceBasis(nullspace_basis)
+    return la.VectorSpaceBasis(nullspace_basis)
 
 
 @pytest.mark.parametrize("mesh", [
@@ -132,7 +131,11 @@ def test_nullspace_check(mesh, degree):
     # Create null space basis and test
     null_space = build_elastic_nullspace(V)
     assert null_space.in_nullspace(A, tol=1.0e-8)
+    null_space.orthonormalize()
+    assert null_space.in_nullspace(A, tol=1.0e-8)
 
     # Create incorrect null space basis and test
     null_space = build_broken_elastic_nullspace(V)
+    assert not null_space.in_nullspace(A, tol=1.0e-8)
+    null_space.orthonormalize()
     assert not null_space.in_nullspace(A, tol=1.0e-8)
