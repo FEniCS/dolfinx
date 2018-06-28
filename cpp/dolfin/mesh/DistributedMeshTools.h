@@ -86,7 +86,7 @@ public:
  static Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   reorder_values_by_global_indices(
       MPI_Comm mpi_comm,
-      const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      const Eigen::Array<Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
           values,
       const std::vector<std::int64_t>& global_indices)
   {
