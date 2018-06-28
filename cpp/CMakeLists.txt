@@ -105,7 +105,6 @@ endif()
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
-list(APPEND OPTIONAL_PACKAGES "MPI")
 list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
@@ -200,18 +199,16 @@ endif()
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
-if (DOLFIN_ENABLE_MPI)
-  if (DOLFIN_AUTO_DETECT_MPI)
-    find_package(MPI)
-    set_package_properties(MPI PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Message Passing Interface (MPI)"
-      PURPOSE "Enables DOLFIN to run in parallel with MPI")
-  else()
-    # Assume user has set MPI compiler wrappers (via CXX, etc or
-    # CMAKE_CXX_COMPILER, etc)
-    set(MPI_CXX_FOUND TRUE)
-    set(MPI_C_FOUND TRUE)
-  endif()
+if (DOLFIN_AUTO_DETECT_MPI)
+  find_package(MPI REQUIRED)
+  set_package_properties(MPI PROPERTIES TYPE REQUIRED 
+    DESCRIPTION "Message Passing Interface (MPI)"
+    PURPOSE "Enables DOLFIN to run in parallel with MPI")
+else()
+  # Assume user has set MPI compiler wrappers (via CXX, etc or
+  # CMAKE_CXX_COMPILER, etc)
+  set(MPI_CXX_FOUND TRUE)
+  set(MPI_C_FOUND TRUE)
 endif()
 
 #------------------------------------------------------------------------------
