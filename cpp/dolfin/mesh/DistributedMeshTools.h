@@ -8,6 +8,7 @@
 
 #include <array>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <map>
 #include <numeric>
