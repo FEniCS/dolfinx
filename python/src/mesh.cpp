@@ -231,7 +231,8 @@ void mesh(py::module& m)
            [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(
                  self.entities(dim), self.num_entities(dim));
-           })
+           },
+           py::return_value_policy::reference_internal)
       .def("midpoint", &dolfin::mesh::MeshEntity::midpoint,
            "Midpoint of Entity")
       .def("sharing_processes", &dolfin::mesh::MeshEntity::sharing_processes)
