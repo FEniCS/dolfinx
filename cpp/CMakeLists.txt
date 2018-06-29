@@ -105,8 +105,6 @@ endif()
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
-list(APPEND OPTIONAL_PACKAGES "MPI")
-list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
@@ -200,18 +198,16 @@ endif()
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
-if (DOLFIN_ENABLE_MPI)
-  if (DOLFIN_AUTO_DETECT_MPI)
-    find_package(MPI)
-    set_package_properties(MPI PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Message Passing Interface (MPI)"
-      PURPOSE "Enables DOLFIN to run in parallel with MPI")
-  else()
-    # Assume user has set MPI compiler wrappers (via CXX, etc or
-    # CMAKE_CXX_COMPILER, etc)
-    set(MPI_CXX_FOUND TRUE)
-    set(MPI_C_FOUND TRUE)
-  endif()
+if (DOLFIN_AUTO_DETECT_MPI)
+  find_package(MPI REQUIRED)
+  set_package_properties(MPI PROPERTIES TYPE REQUIRED 
+    DESCRIPTION "Message Passing Interface (MPI)"
+    PURPOSE "Enables DOLFIN to run in parallel with MPI")
+else()
+  # Assume user has set MPI compiler wrappers (via CXX, etc or
+  # CMAKE_CXX_COMPILER, etc)
+  set(MPI_CXX_FOUND TRUE)
+  set(MPI_C_FOUND TRUE)
 endif()
 
 #------------------------------------------------------------------------------
@@ -256,21 +252,13 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-find_package(PETSc 3.7)
+find_package(PETSc 3.7 REQUIRED)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
   PURPOSE "PETSc linear algebra backend")
 
-  #------------------------------------------------------------------------------
 # Run tests to find optional packages
-
-# Is this still needed?
-find_package(PythonInterp 3)
-
-set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Interactive high-level object-oriented language"
-  URL "http://www.python.org")
 
 # Check for required package UFC
 find_package(UFC MODULE ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR})
@@ -280,7 +268,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 
 # Check for PETSc and SLEPc
 set(SLEPC_FOUND FALSE)
-if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
+if (DOLFIN_ENABLE_SLEPC)
   find_package(SLEPc 3.7)
   set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
@@ -395,7 +383,7 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 
 #------------------------------------------------------------------------------
 # Generate demo files from rst
-
+find_package(PythonInterp 3)
 if (PYTHONINTERP_FOUND)
   message(STATUS "")
   message(STATUS "Generating demo source files from reStructuredText")
