@@ -12,6 +12,7 @@ from dolfin import (UnitCubeMesh, UnitSquareMesh, FunctionSpace, MPI, Expression
 from dolfin.cpp.fem import PETScDMCollection
 from dolfin.cpp.la import Norm
 
+
 def test_scalar_p1():
     meshc = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     meshf = UnitCubeMesh(MPI.comm_world, 3, 4, 5)
