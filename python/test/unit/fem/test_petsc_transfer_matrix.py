@@ -92,8 +92,8 @@ def test_scalar_p2():
 
 
 def test_vector_p1_2d():
-    meshc = UnitSquareMesh(MPI.comm_world, 1, 1)
-    meshf = UnitSquareMesh(MPI.comm_world, 2, 2)
+    meshc = UnitSquareMesh(MPI.comm_world, 5, 4)
+    meshf = UnitSquareMesh(MPI.comm_world, 7, 8)
 
     Vc = VectorFunctionSpace(meshc, "CG", 1)
     Vf = VectorFunctionSpace(meshf, "CG", 1)
