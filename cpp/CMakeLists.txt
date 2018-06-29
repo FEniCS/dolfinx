@@ -202,8 +202,8 @@ endif()
 
 if (DOLFIN_ENABLE_MPI)
   if (DOLFIN_AUTO_DETECT_MPI)
-    find_package(MPI)
-    set_package_properties(MPI PROPERTIES TYPE OPTIONAL
+    find_package(MPI REQUIRED)
+    set_package_properties(MPI PROPERTIES TYPE REQUIRED
       DESCRIPTION "Message Passing Interface (MPI)"
       PURPOSE "Enables DOLFIN to run in parallel with MPI")
   else()
