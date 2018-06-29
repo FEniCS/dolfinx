@@ -100,7 +100,11 @@ class BaseExpression(ufl.Coefficient):
             assert len(shape) == len(component)
             value_size = product(shape)
             index = flatten_multiindex(component, shape_to_strides(shape))
-            values = numpy.zeros(value_size)
+            if cpp.common.has_petsc_complex():
+                dtype = numpy.complex128
+            else:
+                dtype = numpy.float64
+            values = numpy.zeros(value_size, dtype)
             # FIXME: use a function with a return value
             self(*x, values=values)
             return values[index]
@@ -134,17 +138,21 @@ class BaseExpression(ufl.Coefficient):
 
         # If values (return argument) is passed, check the type and
         # length
+        if cpp.common.has_petsc_complex():
+            dtype = numpy.complex128
+        else:
+            dtype = numpy.float64
         values = kwargs.get("values", None)
         if values is not None:
             if not isinstance(values, numpy.ndarray):
                 raise TypeError("expected a NumPy array for 'values'")
-            if len(values) != value_size or not numpy.issubdtype(values.dtype, 'd'):
-                raise TypeError("expected a double NumPy array of length"
+            if len(values) != value_size or not numpy.issubdtype(values.dtype, dtype):
+                raise TypeError("expected a NumPy array of length"
                                 " %d for return values." % value_size)
             values_provided = True
         else:
             values_provided = False
-            values = numpy.zeros(value_size, dtype='d')
+            values = numpy.zeros(value_size, dtype=dtype)
 
         # Get dim if element has any domains
         cell = self.ufl_element().cell()
@@ -166,7 +174,7 @@ class BaseExpression(ufl.Coefficient):
 
         # Convert it to an 1D numpy array
         try:
-            x = numpy.fromiter(x, 'd')
+            x = numpy.fromiter(x, dtype)
         except (TypeError, ValueError, AssertionError):
             raise TypeError("expected scalar arguments for the coordinates")
 
@@ -265,7 +273,7 @@ class ExpressionParameters(object):
 
     def __getitem__(self, key):
         if key in self._params.keys():
-            if isinstance(self._params[key], (float, int)):
+            if isinstance(self._params[key], (float, complex, int)):
                 return self._cpp_object.get_property(key)
             else:
                 return self._cpp_object.get_generic_function(key)

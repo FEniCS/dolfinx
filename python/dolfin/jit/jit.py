@@ -124,6 +124,7 @@ _math_header = """
 %s
 
 const double pi = DOLFIN_PI;
+const PetscComplex j = PETSC_i;
 """ % "\n".join("using std::%s;" % mf for mf in _cpp_math_builtins)
 
 

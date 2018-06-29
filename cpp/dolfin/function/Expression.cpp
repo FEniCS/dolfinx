@@ -34,7 +34,9 @@ Expression::~Expression()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<EigenRowArrayXXd> values,
+void Expression::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                              Eigen::Dynamic, Eigen::RowMajor>>
+                          values,
                       Eigen::Ref<const EigenRowArrayXXd> x,
                       const mesh::Cell& cell) const
 {
@@ -42,7 +44,9 @@ void Expression::eval(Eigen::Ref<EigenRowArrayXXd> values,
   eval(values, x);
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<EigenRowArrayXXd> values,
+void Expression::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                              Eigen::Dynamic, Eigen::RowMajor>>
+                          values,
                       Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   throw std::runtime_error("Missing eval() function (must be overloaded)");
@@ -67,13 +71,13 @@ std::vector<std::size_t> Expression::value_shape() const
   return _value_shape;
 }
 //-----------------------------------------------------------------------------
-void Expression::set_property(std::string name, double value)
+void Expression::set_property(std::string name, PetscScalar value)
 {
   throw std::runtime_error(
       "Expression::set_property should be overloaded in the derived class");
 }
 //-----------------------------------------------------------------------------
-double Expression::get_property(std::string name) const
+PetscScalar Expression::get_property(std::string name) const
 {
   throw std::runtime_error(
       "Expression::get_property should be overloaded in the derived class");
@@ -96,7 +100,7 @@ Expression::get_generic_function(std::string name) const
 }
 //-----------------------------------------------------------------------------
 void Expression::restrict(
-    double* w, const fem::FiniteElement& element, const mesh::Cell& cell,
+    PetscScalar* w, const fem::FiniteElement& element, const mesh::Cell& cell,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   // Get evaluation points
@@ -119,18 +123,16 @@ void Expression::restrict(
   }
   const fem::CoordinateMapping& cmap = *cell.mesh().geometry().coord_mapping;
 
-  EigenRowArrayXXd eval_points(ndofs, gdim);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      eval_points(ndofs, gdim);
   cmap.compute_physical_coordinates(eval_points, X, coordinate_dofs);
 
   // Storage for evaluation values
-  EigenRowArrayXXd eval_values(ndofs, vs);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      eval_values(ndofs, vs);
 
   // Evaluate all points in one call
   eval(eval_values, eval_points, cell);
-
-  // Transpose for vector values
-  // FIXME: remove need for this - needs work in ffc
-  eval_values.transposeInPlace();
 
   // FIXME: *do not* use UFC directly
   // Apply a mapping to the reference element.
@@ -139,14 +141,16 @@ void Expression::restrict(
   element.transform_values(w, eval_values, coordinate_dofs);
 }
 //-----------------------------------------------------------------------------
-EigenRowArrayXXd Expression::compute_point_values(const mesh::Mesh& mesh) const
+Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+Expression::compute_point_values(const mesh::Mesh& mesh) const
 {
   // Local data for vertex values
   const std::size_t size = value_size();
-  Eigen::RowVectorXd local_vertex_values(size);
+  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> local_vertex_values(size);
 
   // Resize vertex_values
-  EigenRowArrayXXd vertex_values(mesh.num_vertices(), size);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      vertex_values(mesh.num_vertices(), size);
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
