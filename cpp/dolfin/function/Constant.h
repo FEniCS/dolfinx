@@ -8,6 +8,7 @@
 
 #include "Expression.h"
 #include <Eigen/Dense>
+#include <petscsys.h>
 #include <vector>
 
 namespace dolfin
@@ -25,27 +26,29 @@ public:
   // FIXME: remove once Expression constructor is fixed for scalars
   /// Create scalar constant
   ///
-  /// @param  value (double)
+  /// @param  value (PetscScalar)
   ///         The scalar to create a Constant object from.
   ///
   /// @code{.cpp}
   ///         Constant c(1.0);
+  ///         Constant c(1.0,1.0);
   /// @endcode
-  explicit Constant(double value);
+  explicit Constant(PetscScalar value);
 
   /// Create vector-valued constant
   ///
-  /// @param values (std::vector<double>)
+  /// @param values (std::vector<PetscScalar>)
   ///         Values to create a vector-valued constant from.
-  explicit Constant(std::vector<double> values);
+  explicit Constant(std::vector<PetscScalar> values);
 
   /// Create tensor-valued constant for flattened array of values
   ///
   /// @param value_shape (std::vector<std::size_t>)
   ///         Shape of tensor.
-  /// @param values (std::vector<double>)
+  /// @param values (std::vector<PetscScalar>)
   ///         Values to create tensor-valued constant from.
-  Constant(std::vector<std::size_t> value_shape, std::vector<double> values);
+  Constant(std::vector<std::size_t> value_shape,
+           std::vector<PetscScalar> values);
 
   /// Copy constructor
   ///
@@ -64,26 +67,28 @@ public:
 
   /// Assignment operator
   ///
-  /// @param constant (double)
+  /// @param constant (PetscScalar)
   ///         Another constant.
-  const Constant& operator=(double constant);
+  const Constant& operator=(PetscScalar constant);
 
   /// Return copy of this Constant's current values
   ///
-  /// @return std::vector<double>
+  /// @return std::vector<PetscScalar>
   ///         The vector of scalar values of the constant.
-  std::vector<double> values() const;
+  std::vector<PetscScalar> values() const;
 
   //--- Implementation of Expression interface ---
 
-  void eval(Eigen::Ref<EigenRowArrayXXd> values,
+  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>>
+                values,
             Eigen::Ref<const EigenRowArrayXXd> x) const override;
 
   virtual std::string str(bool verbose) const override;
 
 private:
   // Values of constant function
-  std::vector<double> _values;
+  std::vector<PetscScalar> _values;
 };
-}
-}
+} // namespace function
+} // namespace dolfin

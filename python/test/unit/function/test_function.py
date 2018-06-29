@@ -7,7 +7,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import (UnitCubeMesh, FunctionSpace, VectorFunctionSpace, Constant, MPI, Point, Function,
+from dolfin import (UnitCubeMesh,
+                    FunctionSpace, VectorFunctionSpace, TensorFunctionSpace,
+                    Constant, MPI, Point, Function,
                     UserExpression, interpolate, Expression, DOLFIN_EPS, Vertex, lt, cpp)
 from math import sqrt
 import numpy
@@ -34,6 +36,11 @@ def V(mesh):
 @fixture
 def W(mesh):
     return VectorFunctionSpace(mesh, 'CG', 1)
+
+
+@fixture
+def Q(mesh):
+    return TensorFunctionSpace(mesh, 'CG', 1)
 
 
 def test_name_argument(W):
@@ -142,37 +149,40 @@ def test_assign(V, W):
                 uu.assign(4 * u * u1)
 
 
-@pytest.mark.skip
-def test_call(R, V, W, mesh):
-    from numpy import zeros, all
+def test_call(R, V, W, Q, mesh):
+    from numpy import all, allclose
     u0 = Function(R)
     u1 = Function(V)
     u2 = Function(W)
+    u3 = Function(Q)
+
     e0 = Expression("x[0] + x[1] + x[2]", degree=1)
     e1 = Expression(
         ("x[0] + x[1] + x[2]", "x[0] - x[1] - x[2]", "x[0] + x[1] + x[2]"),
+        degree=1)
+    e2 = Expression(
+        (("x[0] + x[1] + x[2]", "x[0] - x[1] - x[2]", "x[0] + x[1] + x[2]"),
+         ("x[0]", "x[1]", "x[2]"),
+         ("-x[0]", "-x[1]", "-x[2]")),
         degree=1)
 
     u0.vector()[:] = 1.0
     u1.interpolate(e0)
     u2.interpolate(e1)
+    u3.interpolate(e2)
 
-    p0 = (Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0
-    x0 = (mesh.geometry.x()[0] + mesh.geometry.x()[1]) / 2.0
-    x1 = tuple(x0)
+    p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0).array()
+    x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
 
-    assert round(u0(*x1) - u0(x0), 7) == 0
-    assert round(u0(x1) - u0(p0), 7) == 0
-    assert round(u1(x1) - u1(x0), 7) == 0
-    assert round(u1(*x1) - u1(p0), 7) == 0
-    assert round(u2(x1)[0] - u1(p0), 7) == 0
+    assert round(u0(x0)[0] - u0(x0)[0], 7) == 0
+    assert round(u0(x0)[0] - u0(p0)[0], 7) == 0
+    assert round(u1(x0)[0] - u1(x0)[0], 7) == 0
+    assert round(u1(x0)[0] - u1(p0)[0], 7) == 0
+    assert round(u2(x0)[0][0] - u1(p0)[0], 7) == 0
 
-    assert all(u2(*x1) == u2(x0))
-    assert all(u2(*x1) == u2(p0))
-
-    values = zeros(mesh.geometry.dim, dtype='d')
-    u2(p0, values=values)
-    assert all(values == u2(x0))
+    assert all(u2(x0) == u2(x0))
+    assert all(u2(x0) == u2(p0))
+    assert allclose(u3(x0)[0][:3], u2(x0)[0], rtol=1e-15, atol=1e-15)
 
     with pytest.raises(TypeError):
         u0([0, 0, 0, 0])

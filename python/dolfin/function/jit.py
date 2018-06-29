@@ -29,6 +29,7 @@ def jit_generate(class_data, module_name, signature, parameters):
 #include <dolfin/common/constants.h>
 #include <dolfin/function/Expression.h>
 #include <Eigen/Dense>
+#include <petscsys.h>
 
 {math_header}
 
@@ -44,7 +45,8 @@ namespace dolfin
             {constructor}
        }}
 
-       void eval(Eigen::Ref<EigenRowArrayXXd> values, Eigen::Ref<const EigenRowArrayXXd> _x) const override
+       void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> values,
+       Eigen::Ref<const EigenRowArrayXXd> _x) const override
        {{
          for (unsigned int i = 0; i != _x.rows(); ++i)
          {{
@@ -53,13 +55,13 @@ namespace dolfin
          }}
        }}
 
-       void set_property(std::string name, double _value) override
+       void set_property(std::string name, PetscScalar _value) override
        {{
 {set_props}
        throw std::runtime_error("No such property");
        }}
 
-       double get_property(std::string name) const override
+       PetscScalar get_property(std::string name) const override
        {{
 {get_props}
        throw std::runtime_error("No such property");
@@ -111,8 +113,8 @@ extern "C" DLL_EXPORT dolfin::function::Expression * create_{classname}()
     properties = class_data["properties"]
     for k in properties:
         value = properties[k]
-        if isinstance(value, (float, int)):
-            members += "double " + k + ";\n"
+        if isinstance(value, (float, int, complex)):
+            members += "PetscScalar " + k + ";\n"
             set_props += _set_props.format(key_name=k, name=k)
             get_props += _get_props.format(key_name=k, name=k)
         elif hasattr(value, "_cpp_object"):
@@ -124,12 +126,12 @@ extern "C" DLL_EXPORT dolfin::function::Expression * create_{classname}()
 
             value_size = value._cpp_object.value_size()
             if value_size == 1:
-                _setup_statement = """          double {key};
-            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<double, 1, 1>>(&{key}), x);\n""".format(key=k)
+                _setup_statement = """          PetscScalar {key};
+            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<PetscScalar, 1, 1>>(&{key}), x);\n""".format(key=k)
             else:
-                _setup_statement = """          double {key}[{value_size}];
+                _setup_statement = """          PetscScalar {key}[{value_size}];
 
-            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<double, {value_size}, 1>>({key}), x);\n""".format(key=k, value_size=value_size)  # noqa:E501
+            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<PetscScalar, {value_size}, 1>>({key}), x);\n""".format(key=k, value_size=value_size)  # noqa:E501
             statement = _setup_statement + statement
 
     # Set the value_shape to pass to initialiser

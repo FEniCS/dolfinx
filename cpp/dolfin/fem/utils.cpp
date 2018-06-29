@@ -19,21 +19,10 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <memory>
 
 using namespace dolfin;
 
-//-----------------------------------------------------------------------------
-la::PETScVector dolfin::fem::init_vector(const Form& L)
-{
-  if (L.rank() != 1)
-    throw std::runtime_error("Cannot initialise vector. Form must be linear.");
-
-  auto dofmap = L.function_space(0)->dofmap();
-  auto index_map = dofmap->index_map();
-  assert(index_map);
-
-  return la::PETScVector(*index_map);
-}
 //-----------------------------------------------------------------------------
 la::PETScMatrix
 fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
@@ -82,7 +71,8 @@ la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
   {
     if (L[i])
     {
-      vecs[i] = std::make_shared<la::PETScVector>(init_vector(*L[i]));
+      const common::IndexMap& index_map = *L[i]->function_space(0)->dofmap()->index_map();
+      vecs[i] = std::make_shared<la::PETScVector>(index_map);
       petsc_vecs[i] = vecs[i]->vec();
     }
     else

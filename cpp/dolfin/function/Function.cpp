@@ -90,7 +90,7 @@ Function::Function(const Function& v)
 
     // Gather values into a vector
     assert(v.vector());
-    std::vector<double> gathered_values(collapsed_map.size());
+    std::vector<PetscScalar> gathered_values(collapsed_map.size());
     v.vector()->get_local(gathered_values.data(), gathered_values.size(),
                           old_rows.data());
 
@@ -198,7 +198,9 @@ std::shared_ptr<const la::PETScVector> Function::vector() const
   return _vector;
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
+void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>>
+                        values,
                     Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   assert(_function_space);
@@ -240,7 +242,9 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
+void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>>
+                        values,
                     Eigen::Ref<const EigenRowArrayXXd> x,
                     const mesh::Cell& cell) const
 {
@@ -260,7 +264,8 @@ void Function::eval(Eigen::Ref<EigenRowArrayXXd> values,
   const fem::FiniteElement& element = *_function_space->element();
 
   // Create work vector for expansion coefficients
-  Eigen::RowVectorXd coefficients(element.space_dimension());
+  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
+      element.space_dimension());
 
   // Cell coordinates (re-allocated inside function for thread safety)
   EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
@@ -369,7 +374,8 @@ std::vector<std::size_t> Function::value_shape() const
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(
-    double* w, const fem::FiniteElement& element, const mesh::Cell& dolfin_cell,
+    PetscScalar* w, const fem::FiniteElement& element,
+    const mesh::Cell& dolfin_cell,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   assert(w);
@@ -398,7 +404,8 @@ void Function::restrict(
   //  }
 }
 //-----------------------------------------------------------------------------
-EigenRowArrayXXd Function::compute_point_values(const mesh::Mesh& mesh) const
+Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+Function::compute_point_values(const mesh::Mesh& mesh) const
 {
   assert(_function_space);
   assert(_function_space->mesh());
@@ -420,12 +427,14 @@ EigenRowArrayXXd Function::compute_point_values(const mesh::Mesh& mesh) const
   const std::size_t value_size_loc = value_size();
 
   // Resize Array for holding point values
-  EigenRowArrayXXd point_values(mesh.geometry().num_points(), value_size_loc);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      point_values(mesh.geometry().num_points(), value_size_loc);
 
   // Interpolate point values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
   EigenRowArrayXXd x(num_cell_vertices, mesh.geometry().dim());
-  EigenRowArrayXXd values(num_cell_vertices, value_size_loc);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values(num_cell_vertices, value_size_loc);
 
   const std::size_t tdim = mesh.topology().dim();
   const mesh::MeshConnectivity& cell_dofs
@@ -449,7 +458,8 @@ EigenRowArrayXXd Function::compute_point_values(const mesh::Mesh& mesh) const
   return point_values;
 }
 //-----------------------------------------------------------------------------
-EigenRowArrayXXd Function::compute_point_values() const
+Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+Function::compute_point_values() const
 {
   assert(_function_space);
   assert(_function_space->mesh());

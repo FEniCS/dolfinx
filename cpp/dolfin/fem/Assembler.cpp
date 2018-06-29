@@ -232,7 +232,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     else if (block_vector and block_type == BlockType::monolithic)
       b = fem::init_monolithic(forms);
     else
-      b = fem::init_vector(*_l[0]);
+      b = la::PETScVector(*_l[0]->function_space(0)->dofmap()->index_map());
   }
 
   // Get vector type

@@ -281,8 +281,16 @@ class Function(ufl.Coefficient):
         # Assume all args are x argument
         x = np.array(args)
 
+        dim = self.ufl_domain().geometric_dimension()
+        if x.shape[-1] != dim:
+            raise TypeError("expected the geometry argument to be of "
+                            "length %d" % dim)
+
         value_size = ufl.product(self.ufl_element().value_shape())
-        values = np.empty((1, value_size))
+        if cpp.common.has_petsc_complex():
+            values = np.empty((1, value_size), dtype=np.complex128)
+        else:
+            values = np.empty((1, value_size))
 
         # The actual evaluation
         self._cpp_object.eval(values, x)

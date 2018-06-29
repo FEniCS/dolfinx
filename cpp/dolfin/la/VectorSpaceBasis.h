@@ -13,6 +13,7 @@ namespace dolfin
 {
 namespace la
 {
+class PETScMatrix;
 class PETScVector;
 
 /// This class defines a basis for vector spaces, typically used for
@@ -44,6 +45,9 @@ public:
 
   /// Test if basis is orthogonal
   bool is_orthogonal(double tol = 1.0e-10) const;
+
+  /// Test if basis is in null space of A
+  bool in_nullspace(const PETScMatrix& A, double tol = 1.0e-10) const;
 
   /// Orthogonalize x with respect to basis
   void orthogonalize(PETScVector& x) const;
