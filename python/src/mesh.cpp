@@ -91,8 +91,10 @@ void mesh(py::module& m)
       .def("x", &dolfin::mesh::MeshGeometry::x,
            py::return_value_policy::reference_internal,
            "Return coordinates of a point")
-      .def_property_readonly(
+      .def_property(
           "points", py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
+          [](dolfin::mesh::MeshGeometry& self,
+             dolfin::EigenRowArrayXXd values) { self.points() = values; },
           "Return coordinates of all points")
       .def_readwrite("coord_mapping",
                      &dolfin::mesh::MeshGeometry::coord_mapping);
