@@ -484,9 +484,10 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // Initialise row and column indices and values of the transfer
   // matrix
-  std::vector<std::vector<dolfin::la_index_t>> col_indices(
-      m_owned, std::vector<dolfin::la_index_t>(eldim));
-  std::vector<std::vector<double>> values(m_owned, std::vector<double>(eldim));
+  Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, Eigen::Dynamic,
+               Eigen::RowMajor>
+      col_indices(m_owned, eldim);
+  EigenRowArrayXXd values(m_owned, eldim);
   Eigen::Tensor<double, 3, Eigen::RowMajor> temp_values(1, eldim, data_size);
 
   // Initialise global sparsity pattern: record on-process and
@@ -545,9 +546,9 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
             = coarse_local_to_global_dofs[temp_dofs[j]];
 
         // Set the column
-        col_indices[fine_row][j] = coarse_dof;
+        col_indices(fine_row, j) = coarse_dof;
         // Set the value
-        values[fine_row][j] = temp_values(0, j, k);
+        values(fine_row, j) = temp_values(0, j, k);
 
         int pc = coarsemap->index_map()->owner(coarse_dof / data_size);
         if (p == pc)
@@ -615,8 +616,9 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   for (unsigned int fine_row = 0; fine_row < m_owned; ++fine_row)
   {
     PetscInt fine_dof = global_row_indices[fine_row];
-    ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row].data(),
-                        values[fine_row].data(), INSERT_VALUES);
+    ierr
+        = MatSetValues(I, 1, &fine_dof, eldim, col_indices.row(fine_row).data(),
+                       values.row(fine_row).data(), INSERT_VALUES);
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
   }
 

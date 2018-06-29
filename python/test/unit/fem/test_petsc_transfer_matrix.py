@@ -54,7 +54,6 @@ def test_scalar_p1_scaled_mesh():
     diff = Vuc.vector()
     diff.vec().axpy(-1, uf.vector().vec())
 
-    print(diff.norm(Norm.l2))
     assert diff.norm(Norm.l2) < 1.0e-12
 
     # Now make coarse mesh larger than fine mesh
@@ -104,11 +103,6 @@ def test_vector_p1_2d():
     uf = interpolate(u, Vf)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
-    print(mat.getSize())
-    arr = mat.getValues(range(18), range(8))
-    import numpy
-    numpy.set_printoptions(precision=2, suppress=True)
-    print(arr)
 
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
@@ -118,7 +112,6 @@ def test_vector_p1_2d():
     assert diff.norm(Norm.l2) < 1.0e-12
 
 
-@pytest.mark.skip
 def test_vector_p2_2d():
     meshc = UnitSquareMesh(MPI.comm_world, 5, 4)
     meshf = UnitSquareMesh(MPI.comm_world, 5, 8)
@@ -130,14 +123,13 @@ def test_vector_p2_2d():
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf)
+    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
     Vuc = Function(Vf)
-    mat.mult(uc.vector(), Vuc.vector())
-    Vuc.vector().update_ghost_values()
+    mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
-    diff = Function(Vf)
-    diff.assign(Vuc - uf)
-    assert diff.vector().norm("l2") < 1.0e-12
+    diff = Vuc.vector()
+    diff.vec().axpy(-1, uf.vector().vec())
+    assert diff.norm(Norm.l2) < 1.0e-12
 
 
 def test_vector_p1_3d():
@@ -153,12 +145,11 @@ def test_vector_p1_3d():
 
     mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
     Vuc = Function(Vf)
-    mat.mult(uc.vector(), Vuc.vector())
-    Vuc.vector().update_ghost_values()
+    mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
-    diff = Function(Vf)
-    diff.assign(Vuc - uf)
-    assert diff.vector().norm("l2") < 1.0e-12
+    diff = Vuc.vector()
+    diff.vec().axpy(-1, uf.vector().vec())
+    assert diff.norm(Norm.l2) < 1.0e-12
 
 
 @pytest.mark.xfail
