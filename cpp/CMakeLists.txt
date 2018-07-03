@@ -1,7 +1,6 @@
 # Top level CMakeLists.txt file for DOLFIN
 
-# Require CMake 3.5
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.5)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
