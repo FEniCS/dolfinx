@@ -116,11 +116,6 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
 
-# Required packages
-# TODO: Remove #ifdef in code?
-option("DOLFIN_ENABLE_PETSC" "Compile with support for PETSc." ON)
-option("DOLFIN_ENABLE_MPI" "Compile with support for MPI." ON)
-
 #------------------------------------------------------------------------------
 # Package-specific options
 
