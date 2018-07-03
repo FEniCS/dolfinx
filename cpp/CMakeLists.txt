@@ -396,6 +396,8 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
+find_package(PythonInterp 3)
+
 if (PYTHONINTERP_FOUND)
   message(STATUS "")
   message(STATUS "Generating demo source files from reStructuredText")
@@ -416,7 +418,7 @@ endif()
 # and tests
 
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/Poisson.h)
+if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/Poisson.h)
   message(STATUS "")
   message(STATUS "Generating form files in demo and test and directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
@@ -444,7 +446,7 @@ endif()
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
 
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/CMakeLists.txt)
+if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/CMakeLists.txt)
   message(STATUS "")
   message(STATUS "Generating CMakeLists.txt files in demo and test directories")
   message(STATUS "-------------------------------------------------------------------")
@@ -473,7 +475,7 @@ endif()
 # FIXME: We should probably just generate them directly in the build
 # directory...
 
-if (COPY_DEMO_TEST_DEMO_DATA)
+if (PYTHONINTERP_FOUND AND COPY_DEMO_TEST_DEMO_DATA)
   message(STATUS "")
   message(STATUS "Copying demo and test data to build directory.")
   message(STATUS "----------------------------------------------")
@@ -535,15 +537,19 @@ set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 # Add target "copy_data_test_demo"
-add_custom_target(copy_data_test_demo
-  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+if (PYTHONINTERP_FOUND)
+  add_custom_target(copy_data_test_demo
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
 # Add target "demos" for building the demos
-add_custom_target(demos
-  COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo demos_source
-  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
+if (PYTHONINTERP_FOUND)
+  add_custom_target(demos
+    COMMAND ${MAKE_PROGRAM}
+    DEPENDS copy_data_test_demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
+endif()
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
