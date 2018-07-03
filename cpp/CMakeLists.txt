@@ -1,7 +1,7 @@
 # Top level CMakeLists.txt file for DOLFIN
 
 # Require CMake 3.5
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.6)
 
 #------------------------------------------------------------------------------
 # Set project name and version number
@@ -175,19 +175,6 @@ if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   # Use -isystem incluse flag with Intel compiler
   set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
 endif()
-
-# Set system include flags to get around CMake bug on OSX with gcc See
-# http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
-#if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
-#endif()
-
-#if (APPLE)
-#  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
-#  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-long-long")
-#  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-long-long")
-#  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wno-long-long")
-#endif()
 
 #------------------------------------------------------------------------------
 # Check for MPI
