@@ -105,8 +105,6 @@ endif()
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
-list(APPEND OPTIONAL_PACKAGES "MPI")
-list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
@@ -118,6 +116,11 @@ foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
   option(${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}." ON)
   add_feature_info(${OPTION_NAME} ${OPTION_NAME} "Compile with support for ${OPTIONAL_PACKAGE}.")
 endforeach()
+
+# Required packages
+# TODO: Remove #ifdef in code?
+option("DOLFIN_ENABLE_PETSC" "Compile with support for PETSc." ON)
+option("DOLFIN_ENABLE_MPI" "Compile with support for MPI." ON)
 
 #------------------------------------------------------------------------------
 # Package-specific options
@@ -200,18 +203,16 @@ endif()
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
-if (DOLFIN_ENABLE_MPI)
-  if (DOLFIN_AUTO_DETECT_MPI)
-    find_package(MPI REQUIRED)
-    set_package_properties(MPI PROPERTIES TYPE REQUIRED
-      DESCRIPTION "Message Passing Interface (MPI)"
-      PURPOSE "Enables DOLFIN to run in parallel with MPI")
-  else()
-    # Assume user has set MPI compiler wrappers (via CXX, etc or
-    # CMAKE_CXX_COMPILER, etc)
-    set(MPI_CXX_FOUND TRUE)
-    set(MPI_C_FOUND TRUE)
-  endif()
+if (DOLFIN_AUTO_DETECT_MPI)
+  find_package(MPI REQUIRED)
+  set_package_properties(MPI PROPERTIES TYPE REQUIRED
+    DESCRIPTION "Message Passing Interface (MPI)"
+    PURPOSE "Enables DOLFIN to run in parallel with MPI")
+else()
+  # Assume user has set MPI compiler wrappers (via CXX, etc or
+  # CMAKE_CXX_COMPILER, etc)
+  set(MPI_CXX_FOUND TRUE)
+  set(MPI_C_FOUND TRUE)
 endif()
 
 #------------------------------------------------------------------------------
@@ -273,7 +274,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 
 # Check for PETSc and SLEPc
 set(SLEPC_FOUND FALSE)
-if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
+if (DOLFIN_ENABLE_SLEPC)
   find_package(SLEPc 3.7)
   set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
@@ -281,22 +282,20 @@ if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
 endif()
 
 # Check for ParMETIS and SCOTCH
-if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
-  if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS 4.0.2)
-    set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
-      URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
-      PURPOSE "Enables parallel graph partitioning")
-  endif()
+if (DOLFIN_ENABLE_PARMETIS)
+  find_package(ParMETIS 4.0.2)
+  set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
+    URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
+    PURPOSE "Enables parallel graph partitioning")
+endif()
 
-  if (DOLFIN_ENABLE_SCOTCH)
-    find_package(SCOTCH)
-    set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
-      URL "https://www.labri.fr/perso/pelegrin/scotch"
-      PURPOSE "Enables parallel graph partitioning")
-  endif()
+if (DOLFIN_ENABLE_SCOTCH)
+  find_package(SCOTCH)
+  set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
+    URL "https://www.labri.fr/perso/pelegrin/scotch"
+    PURPOSE "Enables parallel graph partitioning")
 endif()
 
 # Check for HDF5
@@ -304,11 +303,12 @@ if (DOLFIN_ENABLE_HDF5)
   if (NOT DEFINED ENV{HDF5_ROOT})
     set(ENV{HDF5_ROOT} "$ENV{HDF5_DIR}")
   endif()
-  set(HDF5_PREFER_PARALLEL FALSE)
-  if (DOLFIN_ENABLE_MPI)
-    set(HDF5_PREFER_PARALLEL TRUE)
-  endif()
+  set(HDF5_PREFER_PARALLEL TRUE)
   find_package(HDF5 COMPONENTS C)
+  if (NOT HDF5_IS_PARALLEL)
+      set(HDF5_FOUND FALSE)
+      message(STATUS "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR")
+  endif()
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
     URL "https://www.hdfgroup.org/HDF5")
