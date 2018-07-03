@@ -174,15 +174,6 @@ set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   # Use -isystem incluse flag with Intel compiler
   set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
-
-  # Stop spurious warnings from older Intel compilers
-  #if("${CMAKE_CXX_COMPILER_VERSION}" LESS "13")
-  #  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd654,1125")
-  #  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd654,1125")
-  #  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd654,1125")
-  #  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd654,1125")
-  #  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd654,1125")
-  #endif()
 endif()
 
 # Set system include flags to get around CMake bug on OSX with gcc See
