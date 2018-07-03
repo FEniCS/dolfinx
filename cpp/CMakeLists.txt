@@ -262,15 +262,8 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   URL "https://www.mcs.anl.gov/petsc/"
   PURPOSE "PETSc linear algebra backend")
 
-  #------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Run tests to find optional packages
-
-# Is this still needed?
-find_package(PythonInterp 3)
-
-set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Interactive high-level object-oriented language"
-  URL "http://www.python.org")
 
 # Check for required package UFC
 find_package(UFC MODULE ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR})
