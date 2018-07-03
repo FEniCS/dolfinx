@@ -224,6 +224,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   assert(coarse_space.mesh());
   const mesh::Mesh meshc = *coarse_space.mesh();
   std::size_t gdim = meshc.geometry().dim();
+  std::size_t tdim = meshc.topology().dim();
 
   // MPI communicator, size and rank
   const MPI_Comm mpi_comm = meshc.mpi_comm();
@@ -245,8 +246,8 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   std::size_t N = coarse_space.dim();
 
   // Local dimension of the dofs and of the transfer matrix
-  std::size_t m = finemap->index_map()->size_local();
-  std::size_t n = coarsemap->index_map()->size_local();
+  std::array<std::int64_t, 2> m = finemap->ownership_range();
+  std::array<std::int64_t, 2> n = coarsemap->ownership_range();
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
@@ -483,10 +484,11 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // Initialise row and column indices and values of the transfer
   // matrix
-  std::vector<std::vector<dolfin::la_index_t>> col_indices(
-      m_owned, std::vector<dolfin::la_index_t>(eldim));
-  std::vector<std::vector<double>> values(m_owned, std::vector<double>(eldim));
-  std::vector<double> temp_values(eldim * data_size);
+  Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, Eigen::Dynamic,
+               Eigen::RowMajor>
+      col_indices(m_owned, eldim);
+  EigenRowArrayXXd values(m_owned, eldim);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> temp_values(1, eldim, data_size);
 
   // Initialise global sparsity pattern: record on-process and
   // off-process dependencies of fine dofs
@@ -501,11 +503,18 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   EigenRowArrayXXd coordinate_dofs; // cell dofs coordinates vector
 
   // Loop over the found coarse cells
+  Eigen::Map<const EigenRowArrayXXd> x(found_points.data(), found_ids.size(),
+                                       gdim);
+  const auto cmap = meshc.geometry().coord_mapping;
+  EigenRowArrayXXd X(1, gdim);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> J(1, gdim, tdim);
+  EigenArrayXd detJ(1);
+  Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
+
   for (unsigned int i = 0; i < found_ids.size(); ++i)
   {
     // Get coarse cell id and point
     unsigned int id = found_ids[i];
-    geometry::Point curr_point(gdim, &found_points[i * gdim]);
 
     // Create coarse cell
     mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
@@ -516,10 +525,9 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values
-    throw std::runtime_error(
-        "PETScDMCollection needs updating for FiniteElement change");
-    // el->evaluate_basis_all(temp_values.data(), curr_point.coordinates(),
-    //                       coordinate_dofs.data(), -1);
+
+    cmap->compute_reference_geometry(X, J, detJ, K, x.row(i), coordinate_dofs);
+    el->evaluate_reference_basis(temp_values, X);
 
     // Get the coarse dofs associated with this cell
     auto temp_dofs = coarsemap->cell_dofs(id);
@@ -538,9 +546,9 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
             = coarse_local_to_global_dofs[temp_dofs[j]];
 
         // Set the column
-        col_indices[fine_row][j] = coarse_dof;
+        col_indices(fine_row, j) = coarse_dof;
         // Set the value
-        values[fine_row][j] = temp_values[data_size * j + k];
+        values(fine_row, j) = temp_values(0, j, k);
 
         int pc = coarsemap->index_map()->owner(coarse_dof / data_size);
         if (p == pc)
@@ -553,12 +561,12 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // Communicate off-process columns nnz, and flatten to get nnz per
   // row we also keep track of the ownership range
-  std::size_t mbegin = finemap->ownership_range()[0];
-  std::size_t mend = finemap->ownership_range()[1];
+  std::size_t mbegin = m[0];
+  std::size_t mend = m[1];
   std::vector<dolfin::la_index_t> recv_onnz;
   MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
 
-  std::vector<dolfin::la_index_t> onnz(m, 0);
+  std::vector<dolfin::la_index_t> onnz(m[1] - m[0], 0);
   for (const auto& q : recv_onnz)
   {
     assert(q >= (dolfin::la_index_t)mbegin and q < (dolfin::la_index_t)mend);
@@ -569,7 +577,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   // row
   std::vector<dolfin::la_index_t> recv_dnnz;
   MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
-  std::vector<dolfin::la_index_t> dnnz(m, 0);
+  std::vector<dolfin::la_index_t> dnnz(m[1] - m[0], 0);
   for (const auto& q : recv_dnnz)
   {
     assert(q >= (dolfin::la_index_t)mbegin and q < (dolfin::la_index_t)mend);
@@ -583,11 +591,12 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   // Create and initialise the transfer matrix as MATMPIAIJ/MATSEQAIJ
   ierr = MatCreate(mpi_comm, &I);
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
+
   if (mpi_size > 1)
   {
     ierr = MatSetType(I, MATMPIAIJ);
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = MatSetSizes(I, m, n, M, N);
+    ierr = MatSetSizes(I, m[1] - m[0], n[1] - n[0], M, N);
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
     ierr = MatMPIAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data(),
                                      PETSC_DEFAULT, onnz.data());
@@ -597,7 +606,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   {
     ierr = MatSetType(I, MATSEQAIJ);
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
-    ierr = MatSetSizes(I, m, n, M, N);
+    ierr = MatSetSizes(I, m[1] - m[0], n[1] - n[0], M, N);
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
     ierr = MatSeqAIJSetPreallocation(I, PETSC_DEFAULT, dnnz.data());
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
@@ -607,8 +616,9 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   for (unsigned int fine_row = 0; fine_row < m_owned; ++fine_row)
   {
     PetscInt fine_dof = global_row_indices[fine_row];
-    ierr = MatSetValues(I, 1, &fine_dof, eldim, col_indices[fine_row].data(),
-                        values[fine_row].data(), INSERT_VALUES);
+    ierr
+        = MatSetValues(I, 1, &fine_dof, eldim, col_indices.row(fine_row).data(),
+                       values.row(fine_row).data(), INSERT_VALUES);
     CHKERRABORT(PETSC_COMM_WORLD, ierr);
   }
 
