@@ -78,15 +78,6 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
       = build_ufc_node_graph(ufc_map, mesh, bs);
   assert(ufc_node_dofmap);
 
-  std::cout << "node_graph0 = ";
-  for (auto& q : node_graph0)
-  {
-    std::cout << "[";
-    for (auto& r : q)
-      std::cout << r << " ";
-    std::cout << "]\n";
-  }
-
   // Set global dimension
   std::size_t global_dimension = 0;
   for (std::size_t d = 0; d < D + 1; ++d)
@@ -116,11 +107,6 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   std::vector<int> shared_nodes = compute_shared_nodes(
       node_graph0, node_local_to_global0.size(), *ufc_node_dofmap, mesh);
 
-  std::cout << "shared_nodes = ";
-  for (auto& q : shared_nodes)
-    std::cout << q << " ";
-  std::cout << "\n";
-
   // Compute:
   // (a) owned and shared nodes (and owned and un-owned):
   //    -1: unowned, 0: owned and shared, 1: owned and not shared;
@@ -148,20 +134,6 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
       = compute_node_reordering(
           shared_node_to_processes0, node_local_to_global0, node_graph0,
           node_ownership0, global_nodes0, mesh.mpi_comm());
-
-  std::cout << "node_old_to_new_local = ";
-  for (auto& q : node_old_to_new_local)
-    std::cout << q << " ";
-  std::cout << "\n";
-
-  std::cout << "node_graph0 = ";
-  for (auto& q : node_graph0)
-  {
-    std::cout << "[";
-    for (auto& r : q)
-      std::cout << r << " ";
-    std::cout << "]\n";
-  }
 
   auto index_map = std::make_unique<common::IndexMap>(
       mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, bs);
@@ -576,8 +548,6 @@ DofMapBuilder::extract_global_dofs(
       }
     }
 
-    std::cout << "global_dof = " << global_dof << "\n";
-
     if (global_dof)
     {
       unsigned int d = 0;
@@ -869,8 +839,6 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
         std::int64_t v0g = mesh::Vertex(mesh, v0).global_index();
         std::int64_t v1g = mesh::Vertex(mesh, v1).global_index();
         flip.push_back(v1g > v0g);
-        std::cout << i << "] " << v0g << " " << v1g << " " << flip.back()
-                  << "\n";
       }
     }
 
@@ -892,30 +860,12 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
       offset += dofmaps[0]->num_entity_dofs[1];
     }
 
-    std::cout << "G: ";
-    for (auto& q : ufc_nodes_global)
-      std::cout << q << " ";
-    std::cout << "\n\n";
-    std::cout << "L: ";
-    for (auto& q : ufc_nodes_global)
-      std::cout << q << " ";
-    std::cout << "\n";
-
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
     {
       assert(ufc_nodes_local[i] < (int)node_local_to_global.size());
       node_local_to_global[ufc_nodes_local[i]] = ufc_nodes_global[i];
     }
-  }
-
-  std::cout << "node_dofmap = ";
-  for (auto& q : node_dofmap)
-  {
-    std::cout << "[";
-    for (auto& r : q)
-      std::cout << r << " ";
-    std::cout << "]\n";
   }
 
   return std::make_tuple(std::move(dofmaps[0]), std::move(node_dofmap),
