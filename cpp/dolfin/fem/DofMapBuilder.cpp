@@ -76,7 +76,6 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   //   from the mesh if the dofmap is constrained
   std::vector<std::size_t> node_local_to_global0;
   std::vector<std::vector<la_index_t>> node_graph0;
-  std::vector<int> node_ufc_local_to_local0;
   std::unique_ptr<const ufc_dofmap> ufc_node_dofmap;
   std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0)
       = build_ufc_node_graph(ufc_map, mesh, bs);
@@ -97,16 +96,6 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   std::set<std::size_t> global_nodes0;
   std::tie(global_nodes0, std::ignore)
       = extract_global_dofs(*ufc_node_dofmap, num_mesh_entities_local);
-  if (!node_ufc_local_to_local0.empty())
-  {
-    std::set<std::size_t> remapped_global_nodes;
-    for (auto node : global_nodes0)
-    {
-      assert(node < node_ufc_local_to_local0.size());
-      remapped_global_nodes.insert(node_ufc_local_to_local0[node]);
-    }
-    global_nodes0 = remapped_global_nodes;
-  }
 
   // Dynamic data structure to build dofmap graph
   std::vector<std::vector<la_index_t>> dofmap_graph;
@@ -806,7 +795,10 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   std::vector<std::vector<int64_t>> entity_indices(D + 1);
   std::vector<const int64_t*> entity_indices_ptr(entity_indices.size());
   for (std::size_t d = 0; d <= D; ++d)
+  {
     entity_indices[d].resize(mesh.type().num_entities(d));
+    entity_indices_ptr[d] = entity_indices[d].data();
+  }
 
   // Resize local-to-global map
   std::vector<std::size_t> node_local_to_global(offset_local[1]);
@@ -820,9 +812,6 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
-    // FIXME: Can the pointers be copied outside of this loop?
-    for (std::size_t i = 0; i < entity_indices.size(); ++i)
-      entity_indices_ptr[i] = entity_indices[i].data();
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
                               num_mesh_entities_local.data(),
                               entity_indices_ptr.data());
@@ -831,9 +820,6 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
-    // FIXME: Do the pointers need to be copied again?
-    for (std::size_t i = 0; i < entity_indices.size(); ++i)
-      entity_indices_ptr[i] = entity_indices[i].data();
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
                               num_mesh_entities_global.data(),
                               entity_indices_ptr.data());
