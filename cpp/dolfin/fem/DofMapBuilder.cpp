@@ -15,6 +15,7 @@
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
+#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -76,7 +77,6 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   //   from the mesh if the dofmap is constrained
   std::vector<std::size_t> node_local_to_global0;
   std::vector<std::vector<la_index_t>> node_graph0;
-  std::vector<int> node_ufc_local_to_local0;
   std::unique_ptr<const ufc_dofmap> ufc_node_dofmap;
   std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0)
       = build_ufc_node_graph(ufc_map, mesh, bs);
@@ -97,16 +97,6 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   std::set<std::size_t> global_nodes0;
   std::tie(global_nodes0, std::ignore)
       = extract_global_dofs(*ufc_node_dofmap, num_mesh_entities_local);
-  if (!node_ufc_local_to_local0.empty())
-  {
-    std::set<std::size_t> remapped_global_nodes;
-    for (auto node : global_nodes0)
-    {
-      assert(node < node_ufc_local_to_local0.size());
-      remapped_global_nodes.insert(node_ufc_local_to_local0[node]);
-    }
-    global_nodes0 = remapped_global_nodes;
-  }
 
   // Dynamic data structure to build dofmap graph
   std::vector<std::vector<la_index_t>> dofmap_graph;
@@ -562,6 +552,8 @@ DofMapBuilder::extract_global_dofs(
       }
     }
 
+    std::cout << "global_dof = " << global_dof << "\n";
+
     if (global_dof)
     {
       unsigned int d = 0;
@@ -806,10 +798,19 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   std::vector<std::vector<int64_t>> entity_indices(D + 1);
   std::vector<const int64_t*> entity_indices_ptr(entity_indices.size());
   for (std::size_t d = 0; d <= D; ++d)
+  {
     entity_indices[d].resize(mesh.type().num_entities(d));
+    entity_indices_ptr[d] = entity_indices[d].data();
+  }
 
   // Resize local-to-global map
   std::vector<std::size_t> node_local_to_global(offset_local[1]);
+
+  // Get the edges of a standard cell
+  boost::multi_array<std::int32_t, 2> edges;
+  std::vector<std::int32_t> vertices(mesh.type().num_entities(0));
+  std::iota(vertices.begin(), vertices.end(), 0);
+  mesh.type().create_entities(edges, 1, vertices.data());
 
   // Build dofmaps from ufc_dofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -820,9 +821,6 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
-    // FIXME: Can the pointers be copied outside of this loop?
-    for (std::size_t i = 0; i < entity_indices.size(); ++i)
-      entity_indices_ptr[i] = entity_indices[i].data();
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
                               num_mesh_entities_local.data(),
                               entity_indices_ptr.data());
@@ -831,12 +829,53 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
-    // FIXME: Do the pointers need to be copied again?
-    for (std::size_t i = 0; i < entity_indices.size(); ++i)
-      entity_indices_ptr[i] = entity_indices[i].data();
+
+    // Reverse engineer for higher order, flipping dofs when needed
+    std::vector<bool> flip;
+    if (needs_entities[1])
+    {
+      const std::int32_t* cell_vertices = cell.entities(0);
+      for (unsigned int i = 0; i != edges.shape()[0]; ++i)
+      {
+        std::int32_t v0 = cell_vertices[edges[i][0]];
+        std::int32_t v1 = cell_vertices[edges[i][1]];
+        std::int64_t v0g = mesh::Vertex(mesh, v0).global_index();
+        std::int64_t v1g = mesh::Vertex(mesh, v1).global_index();
+        flip.push_back(v1g > v0g);
+        std::cout << i << "] " << v0g << " " << v1g << " " << flip.back()
+                  << "\n";
+      }
+    }
+
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
                               num_mesh_entities_global.data(),
                               entity_indices_ptr.data());
+
+    std::int32_t offset
+        = dofmaps[0]->num_entity_dofs[0] * mesh.type().num_entities(0);
+
+    for (const auto& f : flip)
+    {
+      if (f)
+      {
+        std::reverse(ufc_nodes_global.data() + offset,
+                     ufc_nodes_global.data() + offset
+                         + dofmaps[0]->num_entity_dofs[1]);
+        std::reverse(ufc_nodes_local.data() + offset,
+                     ufc_nodes_local.data() + offset
+                         + dofmaps[0]->num_entity_dofs[1]);
+      }
+      offset += dofmaps[0]->num_entity_dofs[1];
+    }
+
+    std::cout << "G: ";
+    for (auto& q : ufc_nodes_global)
+      std::cout << q << " ";
+    std::cout << "\n\n";
+    std::cout << "L: ";
+    for (auto& q : ufc_nodes_global)
+      std::cout << q << " ";
+    std::cout << "\n";
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
