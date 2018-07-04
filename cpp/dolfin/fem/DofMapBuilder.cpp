@@ -832,9 +832,12 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
   // Get the edges of a standard cell
   boost::multi_array<std::int32_t, 2> edges;
-  std::vector<std::int32_t> vertices(mesh.type().num_entities(0));
-  std::iota(vertices.begin(), vertices.end(), 0);
-  mesh.type().create_entities(edges, 1, vertices.data());
+  if (needs_entities[1] and mesh.topology().dim() > 1)
+  {
+    std::vector<std::int32_t> vertices(mesh.type().num_entities(0));
+    std::iota(vertices.begin(), vertices.end(), 0);
+    mesh.type().create_entities(edges, 1, vertices.data());
+  }
 
   // Build dofmaps from ufc_dofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -856,7 +859,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Reverse engineer for higher order, flipping dofs when needed
     std::vector<bool> flip;
-    if (needs_entities[1])
+    if (needs_entities[1] and mesh.topology().dim() > 1)
     {
       const std::int32_t* cell_vertices = cell.entities(0);
       for (unsigned int i = 0; i != edges.shape()[0]; ++i)
