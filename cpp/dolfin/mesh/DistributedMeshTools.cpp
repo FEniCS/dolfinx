@@ -17,6 +17,7 @@
 #include "dolfin/graph/SCOTCH.h"
 #include "dolfin/log/log.h"
 #include <boost/multi_array.hpp>
+#include <complex>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -1179,4 +1180,16 @@ DistributedMeshTools::reorder_values_by_global_indices(
 
   return new_values;
 }
+//-----------------------------------------------------------------------------
+template EigenRowArrayXXd
+DistributedMeshTools::reorder_values_by_global_indices<double>(
+    MPI_Comm mpi_comm,
+    const Eigen::Ref<const EigenRowArrayXXd>& values,
+    const std::vector<std::int64_t>& global_indices);
+//-----------------------------------------------------------------------------
+template Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+DistributedMeshTools::reorder_values_by_global_indices<std::complex<double>>(
+    MPI_Comm mpi_comm,
+    const Eigen::Ref<const Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
+    const std::vector<std::int64_t>& global_indices);
 //-----------------------------------------------------------------------------
