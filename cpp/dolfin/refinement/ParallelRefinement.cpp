@@ -221,7 +221,7 @@ void ParallelRefinement::create_new_vertices()
                                        _new_vertex_coordinates.size() / gdim,
                                        gdim);
   EigenRowArrayXXd tmp
-      = mesh::DistributedMeshTools::reorder_values_by_global_indices(
+      = mesh::DistributedMeshTools::reorder_values_by_global_indices<double>(
           _mesh.mpi_comm(), old_tmp, global_indices);
 
   _new_vertex_coordinates

@@ -2769,7 +2769,7 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
   Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
                                        _data_values.size() / width, width);
   EigenRowArrayXXd vals
-      = mesh::DistributedMeshTools::reorder_values_by_global_indices(
+      = mesh::DistributedMeshTools::reorder_values_by_global_indices<PetscScalar>(
           mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
   _data_values = std::vector<double>(vals.data(), vals.data() + vals.size());
 
