@@ -56,8 +56,8 @@ if (DEFINED UFC_INCLUDE_DIR)
        MESSAGE(STATUS "Could not find UFC.")
    endif()
 else()
-  MESSAGE(STATUS "Asking Python module FFC for location of UFC...")
   find_package(PythonInterp 3 REQUIRED)
+  MESSAGE(STATUS "Asking Python module FFC for location of UFC...")
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.backends.ufc.get_include_path())"
     OUTPUT_VARIABLE UFC_INCLUDE_DIR
