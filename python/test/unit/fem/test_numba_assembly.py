@@ -6,8 +6,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (cpp, UnitSquareMesh, MPI, FunctionSpace, dx, dot, grad,
-                    TestFunction, TrialFunction, list_timings, TimingType)
+from dolfin import (cpp, UnitSquareMesh, MPI, FunctionSpace, has_petsc_complex,
+                    dx, dot, grad, TestFunction, TrialFunction, list_timings,
+                    TimingType)
 from dolfin.la import PETScMatrix, PETScVector
 from numba import cfunc, types, carray, typeof
 import numpy as np
@@ -15,8 +16,11 @@ import numpy as np
 from dolfin.jit.jit import ffc_jit
 
 # Define scalar_type here (change to np.complex128 for complex)
-# e.g. if has_petsc_complex(): scalar_type = np.complex128
-scalar_type = np.float64
+# e.g. if has_petsc_complex(): scalar_type = np.
+if has_petsc_complex():
+    scalar_type = np.complex128
+else:
+    scalar_type = np.float64
 
 
 def tabulate_tensor_A(A_, w_, coords_, cell_orientation):

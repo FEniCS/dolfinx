@@ -7,7 +7,7 @@
 import os
 from dolfin import (XDMFFile, Function, FunctionSpace,
                     VectorFunctionSpace, Expression, MPI, cpp, fem)
-from dolfin_utils.test import tempdir
+from dolfin_utils.test import tempdir, skip_if_complex
 assert(tempdir)
 
 
@@ -26,6 +26,7 @@ def test_read_write_p2_mesh(tempdir):
     assert mesh2.num_entities_global(0) == mesh.num_entities_global(0)
 
 
+@skip_if_complex
 def test_read_write_p2_function(tempdir):
     mesh = cpp.generation.UnitDiscMesh.create(MPI.comm_world, 3,
                                               cpp.mesh.GhostMode.none)

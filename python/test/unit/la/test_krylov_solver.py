@@ -20,8 +20,8 @@ def test_krylov_solver_lu():
     V = FunctionSpace(mesh, "Lagrange", 1)
     u, v = TrialFunction(V), TestFunction(V)
 
-    a = Constant(1.0) * u * v * dx
-    L = Constant(1.0) * v * dx
+    a = Constant(1.0) * inner(u, v) * dx
+    L = inner(Constant(1.0), v) * dx
     assembler = fem.assembling.Assembler(a, L)
     A, b = assembler.assemble()
 

@@ -9,7 +9,8 @@ import dolfin
 from dolfin import (HDF5File, MPI, UnitSquareMesh, UnitCubeMesh, MeshFunction,
                     MeshValueCollection, Expression, Cell, MeshEntity, MeshEntities,
                     Function, FunctionSpace, cpp)
-from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_with_serial_hdf5_in_parallel)
+from dolfin_utils.test import (skip_if_not_HDF5, skip_if_complex, tempdir,
+                               xfail_with_serial_hdf5_in_parallel)
 from dolfin.la import PETScVector
 assert(tempdir)
 
@@ -22,6 +23,7 @@ def test_parallel(tempdir):
     assert(hdf5)
 
 
+@skip_if_complex
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_save_vector(tempdir):
@@ -32,6 +34,7 @@ def test_save_vector(tempdir):
         vector_file.write(x, "/my_vector")
 
 
+@skip_if_complex
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_vector(tempdir):
@@ -165,6 +168,7 @@ def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir
             assert mvc.get_value(0, 0) == 1
 
 
+@skip_if_complex
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_function(tempdir):

@@ -13,7 +13,7 @@ from petsc4py import PETSc
 
 import dolfin
 import ufl
-from ufl import dx
+from ufl import dx, inner
 
 
 def xtest_matrix_assembly_block():
@@ -146,12 +146,12 @@ def test_assembly_solve_block():
     g = dolfin.function.constant.Constant(-3.0)
     zero = dolfin.function.constant.Constant(0.0)
 
-    a00 = u * v * dx
-    a01 = zero * v * p * dx
-    a10 = zero * q * u * dx
-    a11 = q * p * dx
-    L0 = f * v * dx
-    L1 = g * q * dx
+    a00 = inner(u, v) * dx
+    a01 = zero * inner(p, v) * dx
+    a10 = zero * inner(u, q) * dx
+    a11 = inner(p, q) * dx
+    L0 = inner(f, v) * dx
+    L1 = inner(g, q) * dx
 
     def monitor(ksp, its, rnorm):
         pass
@@ -202,8 +202,8 @@ def test_assembly_solve_block():
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
     u0, u1 = dolfin.function.argument.TrialFunctions(W)
     v0, v1 = dolfin.function.argument.TestFunctions(W)
-    a = u0 * v0 * dx + u1 * v1 * dx
-    L = f * v0 * ufl.dx + g * v1 * dx
+    a = inner(u0, v0) * dx + inner(u1, v1) * dx
+    L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     u_bc = dolfin.function.constant.Constant((50.0, 20.0))
     bc = dolfin.fem.dirichletbc.DirichletBC(W, u_bc, boundary)

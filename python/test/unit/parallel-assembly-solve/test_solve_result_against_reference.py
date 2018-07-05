@@ -10,8 +10,8 @@ parallel assembly/solve."""
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from dolfin import (MPI, TestFunction, TrialFunction, FunctionSpace,
-                    UnitSquareMesh, UnitCubeMesh,
-                    Expression, dot, grad, dx, ds, Function, solve, cpp)
+                    UnitSquareMesh, UnitCubeMesh, Expression,
+                    inner, grad, dx, ds, Function, solve, cpp)
 from dolfin.la import PETScOptions
 from dolfin_utils.test import gc_barrier
 
@@ -30,8 +30,8 @@ def compute_norm(mesh, degree):
     u = TrialFunction(V)
     f = Expression("sin(x[0])", degree=degree)
     g = Expression("x[0]*x[1]", degree=degree)
-    a = dot(grad(v), grad(u)) * dx + v * u * dx
-    L = v * f * dx - v * g * ds
+    a = inner(grad(u), grad(v)) * dx + inner(u, v) * dx
+    L = inner(f, v) * dx - inner(g, v) * ds
 
     # Compute solution
     w = Function(V)

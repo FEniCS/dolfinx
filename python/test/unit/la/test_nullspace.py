@@ -121,9 +121,9 @@ def test_nullspace_check(mesh, degree):
         return 2.0 * mu * ufl.sym(grad(w)) + lmbda * ufl.tr(
             grad(w)) * ufl.Identity(gdim)
 
-    a = inner(grad(v), sigma(u, mesh.geometry.dim)) * dx
+    a = inner(sigma(u, mesh.geometry.dim), grad(v)) * dx
     zero = mesh.geometry.dim * (0.0, )
-    L = inner(v, Constant(zero)) * dx
+    L = inner(Constant(zero), v) * dx
 
     # Assemble matrix and create compatible vector
     A, L = assembling.assemble_system(a, L, [])
