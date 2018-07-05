@@ -29,7 +29,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
   _cell_dimension = _ufc_dofmap->num_element_dofs;
 
   std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
-           _global_nodes, _neighbours, _dofmap)
+           _neighbours, _dofmap)
       = DofMapBuilder::build(*_ufc_dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Build new dof map
   std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
-           _global_nodes, _neighbours, _dofmap)
+           _neighbours, _dofmap)
       = DofMapBuilder::build(*_ufc_dofmap, mesh);
   _cell_dimension = _ufc_dofmap->num_element_dofs;
 
