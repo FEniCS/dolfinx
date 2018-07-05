@@ -7,9 +7,7 @@
 #pragma once
 
 #include <array>
-#include <complex>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <map>
 #include <numeric>
@@ -91,26 +89,7 @@ public:
       const Eigen::Ref<const Eigen::Array<
           Scalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>& values,
       const std::vector<std::int64_t>& global_indices);
-//   static EigenRowArrayXXd reorder_values_by_global_indices(
-//       MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& values,
-//       const std::vector<std::int64_t>& global_indices);
 
-//   /// Reorder the values according to explicit global indices, distributing
-//   /// evenly across processes
-//   /// @param mpi_comm
-//   ///    MPI Communicator
-//   /// @param values
-//   ///    Complex values to reorder
-//   /// @param global_indices
-//   ///    Global index for each row of values
-//   static Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
-//                       Eigen::RowMajor>
-//   reorder_values_by_global_indices(
-//       MPI_Comm mpi_comm,
-//       const Eigen::Ref<const Eigen::Array<std::complex<double>, Eigen::Dynamic,
-//                                           Eigen::Dynamic, Eigen::RowMajor>>&
-//           values,
-//       const std::vector<std::int64_t>& global_indices);
 
 private:
   // Data structure for a mesh entity (list of vertices, using
