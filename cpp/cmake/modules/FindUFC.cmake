@@ -88,9 +88,7 @@ else()
   )
 endif()
 
-mark_as_advanced(UFC_VERSION)
-mark_as_advanced(UFC_INCLUDE_DIR)
-mark_as_advanced(UFC_SIGNATURE)
+mark_as_advanced(UFC_VERSION UFC_INCLUDE_DIRS UFC_SIGNATURE UFC_VERSION_OK)
 # Standard package handling
 find_package_handle_standard_args(UFC
                                   "UFC could not be found."
