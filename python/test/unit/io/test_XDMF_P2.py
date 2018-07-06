@@ -16,8 +16,8 @@ def test_read_write_p2_mesh(tempdir):
                                               cpp.mesh.GhostMode.none)
 
     filename = os.path.join(tempdir, "tri6_mesh.xdmf")
-    with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.write(mesh, XDMFFile.Encoding.HDF5)
+    with XDMFFile(mesh.mpi_comm(), filename, XDMFFile.Encoding.HDF5) as xdmf:
+        xdmf.write(mesh)
 
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         mesh2 = xdmf.read_mesh(mesh.mpi_comm(), cpp.mesh.GhostMode.none)
@@ -37,13 +37,13 @@ def test_read_write_p2_function(tempdir):
     F.interpolate(Expression("x[0]", degree=1))
 
     filename = os.path.join(tempdir, "tri6_function.xdmf")
-    with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.write(F, XDMFFile.Encoding.HDF5)
+    with XDMFFile(mesh.mpi_comm(), filename, XDMFFile.Encoding.HDF5) as xdmf:
+        xdmf.write(F)
 
     Q = VectorFunctionSpace(mesh, "Lagrange", 1)
     F = Function(Q)
     F.interpolate(Expression(("x[0]", "x[1]"), degree=1))
 
     filename = os.path.join(tempdir, "tri6_vector_function.xdmf")
-    with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.write(F, XDMFFile.Encoding.HDF5)
+    with XDMFFile(mesh.mpi_comm(), filename, XDMFFile.Encoding.HDF5) as xdmf:
+        xdmf.write(F)
