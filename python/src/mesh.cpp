@@ -91,8 +91,10 @@ void mesh(py::module& m)
       .def("x", &dolfin::mesh::MeshGeometry::x,
            py::return_value_policy::reference_internal,
            "Return coordinates of a point")
-      .def_property_readonly(
+      .def_property(
           "points", py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
+          [](dolfin::mesh::MeshGeometry& self,
+             dolfin::EigenRowArrayXXd values) { self.points() = values; },
           "Return coordinates of all points")
       .def_readwrite("coord_mapping",
                      &dolfin::mesh::MeshGeometry::coord_mapping);
@@ -229,7 +231,8 @@ void mesh(py::module& m)
            [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(
                  self.entities(dim), self.num_entities(dim));
-           })
+           },
+           py::return_value_policy::reference_internal)
       .def("midpoint", &dolfin::mesh::MeshEntity::midpoint,
            "Midpoint of Entity")
       .def("sharing_processes", &dolfin::mesh::MeshEntity::sharing_processes)

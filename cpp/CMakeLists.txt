@@ -199,8 +199,8 @@ endif()
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+# Note: When updating Boost version, also update FindDOLFIN.cmake.
 find_package(Boost 1.56 QUIET REQUIRED)
-set(DOLFIN_BOOST_VERSION CACHE STRING Boost_VERSION)
 
 # Boost public/private libraries to link to.
 # Note: These should all be private as they do not appear in the

@@ -27,8 +27,9 @@ C++ core
 - Eigen3 (http://eigen.tuxfamily.org)
 - pkg-config (https://www.freedesktop.org/wiki/Software/pkg-config/)
 - Python 3 [build dependency]
-- HDF5 (with MPI support enabled)
+- FFC-X [build dependency, for ``ufc.h`` and ``ufc_geometry.h`` headers]
 - MPI
+- HDF5 (with MPI support enabled)
 - PETSc [2]_
 
 .. rubric:: Optional
@@ -46,7 +47,7 @@ Below are additional requirements for the Python interface.
 .. rubric:: Required
 
 - Python 3
-- FFC-X
+- FFC-X (https://github.com/FEniCS/ffcx), UFL, FIAT, and dijitso (http://bitbucket.org/fenics-project/).
 - pybind11 (https://github.com/pybind/pybind11)
 - NumPy (http://www.numpy.org)
 - petsc4py
@@ -83,7 +84,7 @@ Python
 After installtion of the C++ core, from the ``python/`` directory the
 Python interface can be installed using::
 
-    pip install .
+    pip3 install .
 
 
 Docker container
