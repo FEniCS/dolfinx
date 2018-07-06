@@ -1,6 +1,5 @@
 # Top level CMakeLists.txt file for DOLFIN
 
-# Require CMake 3.5
 cmake_minimum_required(VERSION 3.5)
 
 #------------------------------------------------------------------------------
@@ -17,9 +16,7 @@ if (NOT DOLFIN_VERSION_RELEASE)
 endif()
 
 #------------------------------------------------------------------------------
-# Require and use C++14
-
-# Use C++11
+# Use C++14
 set(CMAKE_CXX_STANDARD 14)
 
 # Require C++14
@@ -105,8 +102,6 @@ endif()
 
 # List optional packages
 set(OPTIONAL_PACKAGES "")
-list(APPEND OPTIONAL_PACKAGES "MPI")
-list(APPEND OPTIONAL_PACKAGES "PETSc")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
@@ -171,47 +166,23 @@ set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
   # Use -isystem incluse flag with Intel compiler
   set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
-
-  # Stop spurious warnings from older Intel compilers
-  #if("${CMAKE_CXX_COMPILER_VERSION}" LESS "13")
-  #  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -wd654,1125")
-  #  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -wd654,1125")
-  #  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -wd654,1125")
-  #  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -wd654,1125")
-  #  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -wd654,1125")
-  #endif()
 endif()
-
-# Set system include flags to get around CMake bug on OSX with gcc See
-# http://public.kitware.com/Bug/print_bug_page.php?bug_id=10837
-#if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-#  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
-#endif()
-
-#if (APPLE)
-#  set(CMAKE_INCLUDE_SYSTEM_FLAG_CXX "-isystem ")
-#  set(CMAKE_CXX_FLAGS_DEVELOPER "${CMAKE_CXX_FLAGS_DEVELOPER} -Wno-long-long")
-#  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wno-long-long")
-#  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -Wno-long-long")
-#endif()
 
 #------------------------------------------------------------------------------
 # Check for MPI
 
 # FIXME: Should be set CMake to use the MPI compiler wrappers?
 
-if (DOLFIN_ENABLE_MPI)
-  if (DOLFIN_AUTO_DETECT_MPI)
-    find_package(MPI)
-    set_package_properties(MPI PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Message Passing Interface (MPI)"
-      PURPOSE "Enables DOLFIN to run in parallel with MPI")
-  else()
-    # Assume user has set MPI compiler wrappers (via CXX, etc or
-    # CMAKE_CXX_COMPILER, etc)
-    set(MPI_CXX_FOUND TRUE)
-    set(MPI_C_FOUND TRUE)
-  endif()
+if (DOLFIN_AUTO_DETECT_MPI)
+  find_package(MPI REQUIRED)
+  set_package_properties(MPI PROPERTIES TYPE REQUIRED
+    DESCRIPTION "Message Passing Interface (MPI)"
+    PURPOSE "Enables DOLFIN to run in parallel with MPI")
+else()
+  # Assume user has set MPI compiler wrappers (via CXX, etc or
+  # CMAKE_CXX_COMPILER, etc)
+  set(MPI_CXX_FOUND TRUE)
+  set(MPI_C_FOUND TRUE)
 endif()
 
 #------------------------------------------------------------------------------
@@ -228,6 +199,7 @@ endif()
 set(Boost_NO_BOOST_CMAKE true)
 
 set(Boost_USE_MULTITHREADED $ENV{BOOST_USE_MULTITHREADED})
+# Note: When updating Boost version, also update FindDOLFIN.cmake.
 find_package(Boost 1.56 QUIET REQUIRED)
 
 # Boost public/private libraries to link to.
@@ -262,15 +234,8 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   URL "https://www.mcs.anl.gov/petsc/"
   PURPOSE "PETSc linear algebra backend")
 
-  #------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Run tests to find optional packages
-
-# Is this still needed?
-find_package(PythonInterp 3)
-
-set_package_properties(PythonInterp PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Interactive high-level object-oriented language"
-  URL "http://www.python.org")
 
 # Check for required package UFC
 find_package(UFC MODULE ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR})
@@ -280,7 +245,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
 
 # Check for PETSc and SLEPc
 set(SLEPC_FOUND FALSE)
-if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
+if (DOLFIN_ENABLE_SLEPC)
   find_package(SLEPc 3.7)
   set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
@@ -288,22 +253,20 @@ if (PETSC_FOUND AND DOLFIN_ENABLE_SLEPC)
 endif()
 
 # Check for ParMETIS and SCOTCH
-if (DOLFIN_ENABLE_MPI AND MPI_C_FOUND)
-  if (DOLFIN_ENABLE_PARMETIS)
-    find_package(ParMETIS 4.0.2)
-    set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
-      URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
-      PURPOSE "Enables parallel graph partitioning")
-  endif()
+if (DOLFIN_ENABLE_PARMETIS)
+  find_package(ParMETIS 4.0.2)
+  set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
+    URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
+    PURPOSE "Enables parallel graph partitioning")
+endif()
 
-  if (DOLFIN_ENABLE_SCOTCH)
-    find_package(SCOTCH)
-    set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
-      DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
-      URL "https://www.labri.fr/perso/pelegrin/scotch"
-      PURPOSE "Enables parallel graph partitioning")
-  endif()
+if (DOLFIN_ENABLE_SCOTCH)
+  find_package(SCOTCH)
+  set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
+    DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
+    URL "https://www.labri.fr/perso/pelegrin/scotch"
+    PURPOSE "Enables parallel graph partitioning")
 endif()
 
 # Check for HDF5
@@ -311,11 +274,12 @@ if (DOLFIN_ENABLE_HDF5)
   if (NOT DEFINED ENV{HDF5_ROOT})
     set(ENV{HDF5_ROOT} "$ENV{HDF5_DIR}")
   endif()
-  set(HDF5_PREFER_PARALLEL FALSE)
-  if (DOLFIN_ENABLE_MPI)
-    set(HDF5_PREFER_PARALLEL TRUE)
-  endif()
+  set(HDF5_PREFER_PARALLEL TRUE)
   find_package(HDF5 COMPONENTS C)
+  if (NOT HDF5_IS_PARALLEL)
+      set(HDF5_FOUND FALSE)
+      message(STATUS "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR")
+  endif()
   set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
     URL "https://www.hdfgroup.org/HDF5")
@@ -396,6 +360,8 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
 #------------------------------------------------------------------------------
 # Generate demo files from rst
 
+find_package(PythonInterp 3)
+
 if (PYTHONINTERP_FOUND)
   message(STATUS "")
   message(STATUS "Generating demo source files from reStructuredText")
@@ -416,7 +382,7 @@ endif()
 # and tests
 
 set(COPY_DEMO_TEST_DEMO_DATA FALSE)
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/Poisson.h)
+if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/Poisson.h)
   message(STATUS "")
   message(STATUS "Generating form files in demo and test and directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
@@ -444,7 +410,7 @@ endif()
 # FIXME: Generate files in Build directory instead?
 # NOTE: We need to call this script after generate-formfiles
 
-if (NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/CMakeLists.txt)
+if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poisson/CMakeLists.txt)
   message(STATUS "")
   message(STATUS "Generating CMakeLists.txt files in demo and test directories")
   message(STATUS "-------------------------------------------------------------------")
@@ -473,7 +439,7 @@ endif()
 # FIXME: We should probably just generate them directly in the build
 # directory...
 
-if (COPY_DEMO_TEST_DEMO_DATA)
+if (PYTHONINTERP_FOUND AND COPY_DEMO_TEST_DEMO_DATA)
   message(STATUS "")
   message(STATUS "Copying demo and test data to build directory.")
   message(STATUS "----------------------------------------------")
@@ -535,15 +501,19 @@ set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
 
 # Add target "copy_data_test_demo"
-add_custom_target(copy_data_test_demo
-  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+if (PYTHONINTERP_FOUND)
+  add_custom_target(copy_data_test_demo
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+endif()
 
 # Add target "demos" for building the demos
-add_custom_target(demos
-  COMMAND ${MAKE_PROGRAM}
-  DEPENDS copy_data_test_demo demos_source
-  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
+if (PYTHONINTERP_FOUND)
+  add_custom_target(demos
+    COMMAND ${MAKE_PROGRAM}
+    DEPENDS copy_data_test_demo demos_source
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
+endif()
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
