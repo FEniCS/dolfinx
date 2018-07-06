@@ -37,7 +37,7 @@ skip_in_serial = pytest.mark.skipif(MPI.size(MPI.comm_world) <= 1,
 #                                     reason="This test does not work with 64-bit linear algebra indices.")
 
 # Skips with respect to the scalar type
-skip_if_complex = pytest.mark.skipif(has_petsc_complex(),
+skip_if_complex = pytest.mark.skipif(complex_mode(),
                                      reason="This test does not work in complex mode.")
 
 # Skips with respect to build type

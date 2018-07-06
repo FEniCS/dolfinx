@@ -6,7 +6,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (cpp, UnitSquareMesh, MPI, FunctionSpace, has_petsc_complex,
+from dolfin import (cpp, UnitSquareMesh, MPI, FunctionSpace, complex_mode,
                     dx, dot, grad, TestFunction, TrialFunction, list_timings,
                     TimingType)
 from dolfin.la import PETScMatrix, PETScVector
@@ -16,8 +16,7 @@ import numpy as np
 from dolfin.jit.jit import ffc_jit
 
 # Define scalar_type here (change to np.complex128 for complex)
-# e.g. if has_petsc_complex(): scalar_type = np.
-if has_petsc_complex():
+if complex_mode():
     scalar_type = np.complex128
 else:
     scalar_type = np.float64
