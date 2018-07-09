@@ -7,7 +7,7 @@
 import os
 from dolfin import (XDMFFile, Function, FunctionSpace,
                     VectorFunctionSpace, Expression, MPI, cpp, fem)
-from dolfin_utils.test import tempdir, skip_if_complex
+from dolfin_utils.test import tempdir, xfail_if_complex
 assert(tempdir)
 
 
