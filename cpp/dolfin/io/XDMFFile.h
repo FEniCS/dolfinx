@@ -97,24 +97,15 @@ public:
     ASCII
   };
 
-/// Default encoding type
-#ifdef HAS_HDF5
-  static const Encoding default_encoding = Encoding::HDF5;
-#else
-  static const Encoding default_encoding = Encoding::ASCII;
-#endif
-
   /// Constructor
-  XDMFFile(const std::string filename) : XDMFFile(MPI_COMM_WORLD, filename) {}
-
-  /// Constructor
-  XDMFFile(MPI_Comm comm, const std::string filename)
-      : XDMFFile(MPI_COMM_WORLD, filename, default_encoding)
+  XDMFFile(const std::string filename, const std::string file_mode)
+      : XDMFFile(MPI_COMM_WORLD, filename, file_mode)
   {
   }
 
   /// Constructor
-  XDMFFile(MPI_Comm comm, const std::string filename, const Encoding encoding);
+  XDMFFile(MPI_Comm comm, const std::string filename,
+           const std::string file_mode);
 
   /// Destructor
   ~XDMFFile();
@@ -555,7 +546,9 @@ private:
   std::unique_ptr<pugi::xml_document> _xml_doc;
 
   // Encoding of this file
-  const Encoding _encoding;
+  Encoding _encoding;
+
+  const std::string _file_mode;
 };
 
 #ifndef DOXYGEN_IGNORE

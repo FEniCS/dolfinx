@@ -41,21 +41,34 @@ using namespace dolfin::io;
 
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
-                   const Encoding encoding)
+                   const std::string file_mode)
     : _mpi_comm(comm), _filename(filename), _counter(0),
-      _xml_doc(new pugi::xml_document), _encoding(encoding)
+      _xml_doc(new pugi::xml_document), _file_mode(file_mode)
 {
 
-  if (encoding == Encoding::HDF5 and !has_hdf5())
+  if (!(_file_mode == "a" or _file_mode == "r" or _file_mode == "w"
+        or _file_mode == "wb" or _file_mode == "ab"))
   {
-    throw std::runtime_error("Cannot create XDMF in HDF5 encoding. (DOLFIN not "
-                             "compied with HDF5 support)");
+    throw std::runtime_error("Unknown file mode used in XDMFFile.");
   }
 
-  if (encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  // For binary modes set HDF5 encoding
+  if (_file_mode == "wb" or _file_mode == "ab")
+  {
+    _encoding = Encoding::HDF5;
+  }
+
+  if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
     throw std::runtime_error(
-        "Cannot create ASCII XDMF in parallel (use HDF5 encoding).");
+        "Cannot create XDMF in binary encoding. (DOLFIN not "
+        "compiled with HDF5 support)");
+  }
+
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  {
+    throw std::runtime_error(
+        "Cannot create ASCII XDMF in parallel (use binary file mode).");
   }
 
   // Rewrite the mesh at every time step in a time series. Should be
@@ -70,6 +83,42 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   // Flush datasets to disk at each timestep. Allows inspection of the
   // HDF5 file whilst running, at some performance cost.
   parameters.add("flush_output", false);
+
+  // If XDMF XML file exists
+  if (boost::filesystem::exists(_filename))
+  {
+
+    pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+
+    if (!result)
+    {
+      throw std::runtime_error("Unable to load XDMF XML file.");
+    }
+
+    if (_file_mode[0] == 'a')
+    {
+      // If XML file is corrupted or empty and we want to append
+      if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
+      {
+        throw std::runtime_error(
+            "XDMF XML file has corrupted structure. Unable to append it.");
+      }
+    }
+
+    if (_file_mode[0] == 'w')
+    {
+      // XML file has to be overwritten
+      _xml_doc->reset();
+
+      // Prepare new XML structure
+      pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+      assert(xdmf_node);
+      xdmf_node.append_attribute("Version") = "3.0";
+
+      pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+      assert(domain_node);
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 XDMFFile::~XDMFFile() { close(); }
@@ -85,15 +134,27 @@ void XDMFFile::close()
 void XDMFFile::write(const mesh::Mesh& mesh)
 {
 
-  // Open a HDF5 file if using HDF5 encoding (truncate)
+  if (_file_mode[0] == 'r')
+  {
+    throw std::runtime_error("Writing in \"r\" file mode not allowed.");
+  }
+
+  if (_file_mode[0] == 'a')
+  {
+    throw std::runtime_error("Appending mesh to XDMFFile not implemented.");
+  }
+
+  // Open a HDF5 file if using HDF5 encoding
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
   if (_encoding == Encoding::HDF5)
   {
     // Open file
+    // For HDF5File only first file_mode character is relevant
     h5_file = std::make_unique<HDF5File>(mesh.mpi_comm(),
-                                         get_hdf5_filename(_filename), "w");
+                                         get_hdf5_filename(_filename),
+                                         std::string(1, _file_mode[0]));
     assert(h5_file);
 
     // Get file handle
@@ -101,7 +162,7 @@ void XDMFFile::write(const mesh::Mesh& mesh)
   }
 #endif
 
-  // Reset pugi doc
+  // Reset (internal) pugi doc
   _xml_doc->reset();
 
   // Add XDMF node and version attribute
@@ -128,6 +189,11 @@ void XDMFFile::write_checkpoint(const function::Function& u,
                                 std::string function_name, double time_step)
 {
 
+  if (_file_mode[0] == 'r')
+  {
+    throw std::runtime_error("Writing in \"r\" file mode not allowed.");
+  }
+
   if (!name_same_on_all_procs(function_name))
   {
     throw std::runtime_error("Function name must be the same on all processes "
@@ -139,74 +205,19 @@ void XDMFFile::write_checkpoint(const function::Function& u,
            "time step %f.",
            function_name.c_str(), _filename.c_str(), time_step);
 
-  // If XML file exists load it to member _xml_doc
-  if (boost::filesystem::exists(_filename))
-  {
-    log::log(WARNING, "Appending to an existing XDMF XML file \"%s\".",
-             _filename.c_str());
-
-    pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
-    assert(result);
-
-    if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
-    {
-      log::log(WARNING, "File \"%s\" contains invalid XDMF. Writing new XDMF.",
-               _filename.c_str());
-    }
-  }
-
-  bool truncate_hdf = false;
-
-  // If the XML file doesn't have expected structure (domain) reset the file
-  // and create empty structure
-  if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
-  {
-    _xml_doc->reset();
-
-    // Prepare new XML structure
-    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
-    assert(xdmf_node);
-    xdmf_node.append_attribute("Version") = "3.0";
-
-    pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-    assert(domain_node);
-
-    truncate_hdf = true;
-  }
-
-  if (truncate_hdf and boost::filesystem::exists(get_hdf5_filename(_filename)))
-  {
-    log::log(WARNING, "HDF file \"%s\" will be overwritten.",
-             get_hdf5_filename(_filename).c_str());
-  }
-
-  // Open the HDF5 file if using HDF5 encoding (truncate)
+  // Open the HDF5 file if using HDF5 encoding
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
   if (_encoding == Encoding::HDF5)
   {
-    if (truncate_hdf)
-    {
-      // We are writing for the first time, any HDF file must be overwritten
-      _hdf5_file = std::make_unique<HDF5File>(
-          _mpi_comm.comm(), get_hdf5_filename(_filename), "w");
-    }
-    else if (_hdf5_file)
-    {
-      // Pointer to HDF file is active, we are writing time series
-      // or adding function with flush_output=false
-    }
-    else
-    {
-      // Pointer is empty, we are writing time series
-      // or adding function to already flushed file
-      _hdf5_file = std::unique_ptr<HDF5File>(
-          new HDF5File(_mpi_comm.comm(), get_hdf5_filename(_filename), "a"));
-    }
-    assert(_hdf5_file);
+    // We are writing for the first time, any HDF file must be overwritten
+    _hdf5_file = std::make_unique<HDF5File>(_mpi_comm.comm(),
+                                            get_hdf5_filename(_filename),
+                                            std::string(1, _file_mode[0]));
     h5_id = _hdf5_file->h5_id();
   }
 #endif
+
   // From this point _xml_doc points to a valid XDMF XML document
   // with expected structure
 
@@ -231,8 +242,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   }
   else
   {
-    log::log(PROGRESS,
-             "XDMF time series for function \"%s\" not empty. Appending.",
+    log::log(PROGRESS, "XDMF time series for function \"%s\" not empty.",
              function_name.c_str());
   }
 
@@ -294,6 +304,17 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const function::Function& u)
 {
+
+  if (_file_mode[0] == 'r')
+  {
+    throw std::runtime_error("Writing in \"r\" file mode not allowed.");
+  }
+
+  if (_file_mode[0] == 'a')
+  {
+    throw std::runtime_error(
+        "Appending function to XDMFFile without timestep not implemented.");
+  }
 
   // If counter is non-zero, a time series has been saved before
   if (_counter != 0)
@@ -374,6 +395,11 @@ void XDMFFile::write(const function::Function& u)
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const function::Function& u, double time_step)
 {
+
+  if (_file_mode[0] == 'r')
+  {
+    throw std::runtime_error("Writing in \"r\" file mode not allowed.");
+  }
 
   const mesh::Mesh& mesh = *u.function_space()->mesh();
 
@@ -585,6 +611,11 @@ void XDMFFile::write_mesh_value_collection(
     const mesh::MeshValueCollection<T>& mvc)
 {
 
+  if (_file_mode[0] == 'r')
+  {
+    throw std::runtime_error("Writing in \"r\" file mode not allowed.");
+  }
+
   // Provide some very basic functionality for saving
   // mesh::MeshValueCollections mainly for saving values on a boundary mesh
 
@@ -600,26 +631,7 @@ void XDMFFile::write_mesh_value_collection(
   }
 
   pugi::xml_node domain_node;
-  std::string hdf_filemode = "a";
-  if (_xml_doc->child("Xdmf").empty())
-  {
-    // Reset pugi
-    _xml_doc->reset();
-    // Add XDMF node and version attribute
-    _xml_doc->append_child(pugi::node_doctype)
-        .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
-    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
-    assert(xdmf_node);
-    xdmf_node.append_attribute("Version") = "3.0";
-    xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-
-    // Add domain node and add name attribute
-    domain_node = xdmf_node.append_child("Domain");
-    hdf_filemode = "w";
-  }
-  else
-    domain_node = _xml_doc->child("Xdmf").child("Domain");
-
+  domain_node = _xml_doc->child("Xdmf").child("Domain");
   assert(domain_node);
 
   // Open a HDF5 file if using HDF5 encoding
@@ -629,8 +641,9 @@ void XDMFFile::write_mesh_value_collection(
   if (_encoding == Encoding::HDF5)
   {
     // Open file
-    h5_file = std::make_unique<HDF5File>(
-        mesh->mpi_comm(), get_hdf5_filename(_filename), hdf_filemode);
+    h5_file = std::make_unique<HDF5File>(mesh->mpi_comm(),
+                                         get_hdf5_filename(_filename),
+                                         std::string(1, _file_mode[0]));
     assert(h5_file);
 
     // Get file handle
@@ -804,13 +817,15 @@ mesh::MeshValueCollection<T>
 XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
                                      std::string name) const
 {
-  // Load XML doc from file
-  pugi::xml_document xml_doc;
-  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-  assert(result);
+
+  if (_file_mode[0] == 'w' or _file_mode[0] == 'a')
+  {
+    throw std::runtime_error(
+        "Reading in \"w\" or \"a\" file mode not allowed.");
+  }
 
   // Get XDMF node
-  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
+  pugi::xml_node xdmf_node = _xml_doc->child("Xdmf");
   assert(xdmf_node);
 
   // Get domain node
@@ -979,6 +994,16 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 void XDMFFile::write(const std::vector<geometry::Point>& points)
 {
 
+  if (_file_mode[0] == 'r')
+  {
+    throw std::runtime_error("Writing in \"r\" file mode not allowed.");
+  }
+
+  if (_file_mode[0] == 'a')
+  {
+    throw std::runtime_error("Appending points to XDMFFile not implemented.");
+  }
+
   // Open a HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
@@ -987,7 +1012,8 @@ void XDMFFile::write(const std::vector<geometry::Point>& points)
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(_mpi_comm.comm(),
-                                         get_hdf5_filename(_filename), "w");
+                                         get_hdf5_filename(_filename),
+                                         std::string(1, _file_mode[0]));
     assert(h5_file);
 
     // Get file handle
@@ -1050,6 +1076,17 @@ void XDMFFile::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
 void XDMFFile::write(const std::vector<geometry::Point>& points,
                      const std::vector<double>& values)
 {
+
+  if (_file_mode[0] == 'r')
+  {
+    throw std::runtime_error("Writing in \"r\" file mode not allowed.");
+  }
+
+  if (_file_mode[0] == 'a')
+  {
+    throw std::runtime_error("Appending points to XDMFFile not implemented.");
+  }
+
   // Write clouds of points to XDMF/HDF5 with values
   assert(points.size() == values.size());
 
@@ -1064,7 +1101,8 @@ void XDMFFile::write(const std::vector<geometry::Point>& points,
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(_mpi_comm.comm(),
-                                         get_hdf5_filename(_filename), "w");
+                                         get_hdf5_filename(_filename),
+                                         std::string(1, _file_mode[0]));
     assert(h5_file);
 
     // Get file handle
@@ -1300,6 +1338,13 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
                                const mesh::GhostMode ghost_mode) const
 {
+
+  if (_file_mode[0] == 'w' or _file_mode[0] == 'a')
+  {
+    throw std::runtime_error(
+        "Reading in \"w\" or \"a\" file mode not allowed.");
+  }
+
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
   // of the HDF5 files(s) and the XDMF is not opened from its own directory)
   boost::filesystem::path xdmf_filename(_filename);
@@ -1409,6 +1454,13 @@ function::Function
 XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                           std::string func_name, std::int64_t counter) const
 {
+
+  if (_file_mode[0] == 'w' or _file_mode[0] == 'a')
+  {
+    throw std::runtime_error(
+        "Reading in \"w\" or \"a\" file mode not allowed.");
+  }
+
   if (!name_same_on_all_procs(func_name))
   {
     throw std::runtime_error("Function name must be the same on all processes "
@@ -2149,13 +2201,15 @@ mesh::MeshFunction<T>
 XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
                              std::string name) const
 {
-  // Load XML doc from file
-  pugi::xml_document xml_doc;
-  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
-  assert(result);
+
+  if (_file_mode[0] == 'w' or _file_mode[0] == 'a')
+  {
+    throw std::runtime_error(
+        "Reading in \"w\" or \"a\" file mode not allowed.");
+  }
 
   // Get XDMF node
-  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
+  pugi::xml_node xdmf_node = _xml_doc->child("Xdmf");
   assert(xdmf_node);
 
   // Get domain node
@@ -2411,6 +2465,11 @@ template <typename T>
 void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
 {
 
+  if (_file_mode[0] == 'r')
+  {
+    throw std::runtime_error("Writing in \"r\" file mode not allowed.");
+  }
+
   if (meshfunction.size() == 0)
   {
     log::dolfin_error("XDMFFile.cpp", "save empty mesh::MeshFunction",
@@ -2423,6 +2482,42 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
 
   // Check if _xml_doc already has data. If not, create an outer structure
   // If it already has data, then we may append to it.
+
+  // If XML file exists
+  if (boost::filesystem::exists(_filename))
+  {
+
+    pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
+
+    if (!result)
+    {
+      throw std::runtime_error("Unable to load XDMF XML file.");
+    }
+
+    if (_file_mode[0] == 'a')
+    {
+      // If XML file is corrupted or empty and we want to append
+      if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
+      {
+        throw std::runtime_error(
+            "XDMF XML file has corrupted structure. Unable to append it.");
+      }
+    }
+
+    if (_file_mode[0] == 'w')
+    {
+      // XML file has to be overwritten
+      _xml_doc->reset();
+
+      // Prepare new XML structure
+      pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+      assert(xdmf_node);
+      xdmf_node.append_attribute("Version") = "3.0";
+
+      pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+      assert(domain_node);
+    }
+  }
 
   pugi::xml_node domain_node;
   std::string hdf_filemode = "a";
