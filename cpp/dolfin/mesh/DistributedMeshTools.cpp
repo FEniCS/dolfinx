@@ -27,7 +27,7 @@ namespace
 {
 template <typename T>
 Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-reorder_array_by_global_indices(
+reorder_values_by_global_indices(
     MPI_Comm mpi_comm,
     const Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>& values,
@@ -1182,7 +1182,8 @@ DistributedMeshTools::reorder_by_global_indices(
                                         Eigen::RowMajor>>& values,
     const std::vector<std::int64_t>& global_indices)
 {
-  return reorder_array<double>(mpi_comm, values, global_indices);
+  return reorder_values_by_global_indices<double>(mpi_comm, values,
+                                                  global_indices);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic,
@@ -1194,6 +1195,7 @@ DistributedMeshTools::reorder_by_global_indices(
         values,
     const std::vector<std::int64_t>& global_indices)
 {
-  return reorder_array<std::complex<double>>(mpi_comm, values, global_indices);
+  return reorder_values_by_global_indices<std::complex<double>>(
+      mpi_comm, values, global_indices);
 }
 //-----------------------------------------------------------------------------
