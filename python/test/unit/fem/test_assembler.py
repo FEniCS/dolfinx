@@ -16,12 +16,13 @@ import ufl
 from ufl import dx, inner
 
 
-def xtest_matrix_assembly_block():
+def test_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
 
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 4, 8)
+    # mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 4, 8)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -117,7 +118,7 @@ def xtest_matrix_assembly_block():
     assert bnorm0 == pytest.approx(bnorm2, 1.0e-9)
 
 
-def test_assembly_solve_block():
+def xtest_assembly_solve_block():
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
     """
