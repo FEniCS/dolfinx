@@ -213,17 +213,16 @@ void io(py::module& m)
 
   xdmf_file
       .def(py::init([](const MPICommWrapper comm, std::string filename,
-                       const dolfin::io::XDMFFile::Encoding encoding) {
+                       const std::string file_mode) {
              return std::make_unique<dolfin::io::XDMFFile>(comm.get(), filename,
-                                                           encoding);
+                                                           file_mode);
            }),
-           py::arg("comm"), py::arg("filename"), py::arg("encoding"))
-      .def(py::init([](const MPICommWrapper comm, std::string filename) {
-             return std::make_unique<dolfin::io::XDMFFile>(comm.get(),
-                                                           filename);
-           }),
-           py::arg("comm"), py::arg("filename"))
-      .def(py::init<std::string>())
+           py::arg("comm"), py::arg("filename"), py::arg("file_mode"))
+      .def(
+          py::init([](const std::string filename, const std::string file_mode) {
+            return std::make_unique<dolfin::io::XDMFFile>(filename, file_mode);
+          }),
+          py::arg("filename"), py::arg("file_mode"))
       .def("close", &dolfin::io::XDMFFile::close)
       .def("__enter__", [](dolfin::io::XDMFFile& self) { return &self; })
       .def("__exit__", [](dolfin::io::XDMFFile& self, py::args args,
@@ -288,29 +287,31 @@ void io(py::module& m)
       // Points
       .def("write",
            [](dolfin::io::XDMFFile& instance, py::list points) {
-    auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
-    instance.write(_points);
+             auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
+             instance.write(_points);
            },
            py::arg("points"))
       // Points with values
       .def("write",
            [](dolfin::io::XDMFFile& instance, py::list points,
               std::vector<double>& values) {
-    auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
-    instance.write(_points, values);
+             auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
+             instance.write(_points, values);
            },
            py::arg("points"), py::arg("values"))
       // py:object / dolfin.function.function.Function
       .def("write",
            [](dolfin::io::XDMFFile& instance, const py::object u) {
-    auto _u = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-    instance.write(*_u);
+             auto _u
+                 = u.attr("_cpp_object").cast<dolfin::function::Function*>();
+             instance.write(*_u);
            },
            py::arg("u"))
       .def("write",
            [](dolfin::io::XDMFFile& instance, const py::object u, double t) {
-    auto _u = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-    instance.write(*_u, t);
+             auto _u
+                 = u.attr("_cpp_object").cast<dolfin::function::Function*>();
+             instance.write(*_u, t);
            },
            py::arg("u"), py::arg("t"))
       // Check points
@@ -318,14 +319,15 @@ void io(py::module& m)
            [](dolfin::io::XDMFFile& instance,
               const dolfin::function::Function& u, std::string function_name,
               double time_step) {
-    instance.write_checkpoint(u, function_name, time_step);
+             instance.write_checkpoint(u, function_name, time_step);
            },
            py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0)
       .def("write_checkpoint",
            [](dolfin::io::XDMFFile& instance, const py::object u,
               std::string function_name, double time_step) {
-    auto _u = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-    instance.write_checkpoint(*_u, function_name, time_step);
+             auto _u
+                 = u.attr("_cpp_object").cast<dolfin::function::Function*>();
+             instance.write_checkpoint(*_u, function_name, time_step);
            },
            py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0);
 
@@ -335,7 +337,7 @@ void io(py::module& m)
       .def("read_mesh",
            [](dolfin::io::XDMFFile& self, const MPICommWrapper comm,
               const dolfin::mesh::GhostMode ghost_mode) {
-    return self.read_mesh(comm.get(), ghost_mode);
+             return self.read_mesh(comm.get(), ghost_mode);
            })
       // MeshFunction
       .def("read_mf_bool", &dolfin::io::XDMFFile::read_mf_bool, py::arg("mesh"),
