@@ -83,7 +83,7 @@ void DirichletBC::gather(Map& boundary_values) const
 
   // Create list of boundary values to send to each processor
   std::vector<std::vector<std::size_t>> proc_map0(comm_size);
-  std::vector<std::vector<double>> proc_map1(comm_size);
+  std::vector<std::vector<PetscScalar>> proc_map1(comm_size);
   for (Map::const_iterator bv = boundary_values.begin();
        bv != boundary_values.end(); ++bv)
   {
@@ -109,7 +109,7 @@ void DirichletBC::gather(Map& boundary_values) const
 
   // Distribute the lists between neighbours
   std::vector<std::size_t> received_bvc0;
-  std::vector<double> received_bvc1;
+  std::vector<PetscScalar> received_bvc1;
   MPI::all_to_all(mpi_comm, proc_map0, received_bvc0);
   MPI::all_to_all(mpi_comm, proc_map1, received_bvc1);
   assert(received_bvc0.size() == received_bvc1.size());
@@ -123,7 +123,7 @@ void DirichletBC::gather(Map& boundary_values) const
   boundary_values.reserve(num_dofs);
 
   // Add the received boundary values to the local boundary values
-  std::vector<std::pair<std::int64_t, double>> _vec(received_bvc0.size());
+  std::vector<std::pair<std::int64_t, PetscScalar>> _vec(received_bvc0.size());
   for (std::size_t i = 0; i < _vec.size(); ++i)
   {
     // Global dof index
@@ -203,7 +203,7 @@ void DirichletBC::homogenize()
   else if (value_rank == 1)
   {
     const std::size_t value_dim = _g->value_dimension(0);
-    std::vector<double> values(value_dim, 0.0);
+    std::vector<PetscScalar> values(value_dim, 0.0);
     std::shared_ptr<function::Constant> zero(new function::Constant(values));
     set_value(zero);
   }
@@ -212,7 +212,7 @@ void DirichletBC::homogenize()
     std::vector<std::size_t> value_shape;
     for (std::size_t i = 0; i < value_rank; i++)
       value_shape.push_back(_g->value_dimension(i));
-    std::vector<double> values(_g->value_size(), 0.0);
+    std::vector<PetscScalar> values(_g->value_size(), 0.0);
     std::shared_ptr<function::Constant> zero(
         new function::Constant(value_shape, values));
     set_value(zero);
@@ -425,7 +425,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     for (std::size_t i = 0; i < dofmap.num_facet_dofs(); i++)
     {
       const std::size_t local_dof = cell_dofs[data.facet_dofs[i]];
-      const double value = data.w[data.facet_dofs[i]];
+      const PetscScalar value = data.w[data.facet_dofs[i]];
       boundary_values[local_dof] = value;
     }
   }
@@ -557,7 +557,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
           }
 
           // Set boundary value
-          const double value = data.w[i];
+          const PetscScalar value = data.w[i];
           boundary_values[global_dof] = value;
         }
       }
@@ -663,7 +663,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
         _cells_to_localdofs[cell.index()].push_back(i);
 
         // Set boundary value
-        const double value = data.w[i];
+        const PetscScalar value = data.w[i];
         boundary_values[global_dof] = value;
       }
     }
@@ -699,7 +699,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
         const std::size_t global_dof = cell_dofs[local_dof];
 
         // Set boundary value
-        const double value = data.w[local_dof];
+        const PetscScalar value = data.w[local_dof];
         boundary_values[global_dof] = value;
       }
     }

@@ -25,7 +25,7 @@ namespace la
 {
 class PETScMatrix;
 class PETScVector;
-}
+} // namespace la
 
 namespace common
 {
@@ -45,7 +45,7 @@ class Facet;
 class Mesh;
 template <typename T>
 class MeshFunction;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -92,7 +92,7 @@ private:
   public:
     Scratch(const Form& a, const Form& L);
     ~Scratch();
-    std::array<std::vector<double>, 2> Ae;
+    std::array<std::vector<PetscScalar>, 2> Ae;
   };
 
   // Check form arity
@@ -135,7 +135,7 @@ private:
   // Compute exterior facet (and possibly connected cell)
   // contribution
   static void compute_exterior_facet_tensor(
-      std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
+      std::array<std::vector<PetscScalar>, 2>& Ae, std::array<UFC*, 2>& ufc,
       EigenRowArrayXXd& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
@@ -164,13 +164,14 @@ private:
   // Modified matrix insertion for case when rhs has facet integrals
   // and lhs has no facet integrals
   static void matrix_block_add(
-      la::PETScMatrix& tensor, std::vector<double>& Ae,
-      std::vector<double>& macro_A, const std::array<bool, 2>& add_local_tensor,
+      la::PETScMatrix& tensor, std::vector<PetscScalar>& Ae,
+      std::vector<PetscScalar>& macro_A,
+      const std::array<bool, 2>& add_local_tensor,
       const std::array<std::vector<common::ArrayView<const la_index_t>>, 2>&
           cell_dofs);
 
   static void
-  apply_bc(double* A, double* b,
+  apply_bc(PetscScalar* A, PetscScalar* b,
            const std::vector<DirichletBC::Map>& boundary_values,
            const common::ArrayView<const dolfin::la_index_t>& global_dofs0,
            const common::ArrayView<const dolfin::la_index_t>& global_dofs1);
@@ -186,5 +187,5 @@ private:
                        const std::vector<DirichletBC::Map>& boundary_values,
                        const common::ArrayView<const dolfin::la_index_t>& dofs);
 };
-}
-}
+} // namespace fem
+} // namespace dolfin
