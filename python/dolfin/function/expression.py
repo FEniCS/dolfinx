@@ -100,7 +100,7 @@ class BaseExpression(ufl.Coefficient):
             assert len(shape) == len(component)
             value_size = product(shape)
             index = flatten_multiindex(component, shape_to_strides(shape))
-            if cpp.common.complex_mode():
+            if cpp.common.has_petsc_complex():
                 dtype = numpy.complex128
             else:
                 dtype = numpy.float64
@@ -138,7 +138,7 @@ class BaseExpression(ufl.Coefficient):
 
         # If values (return argument) is passed, check the type and
         # length
-        if cpp.common.complex_mode():
+        if cpp.common.has_petsc_complex():
             dtype = numpy.complex128
         else:
             dtype = numpy.float64
