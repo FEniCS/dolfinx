@@ -142,7 +142,7 @@ formulation of the Stokes equations are defined as follows::
     (u, p) = TrialFunctions(W)
     (v, q) = TestFunctions(W)
     f = Constant((0, 0))
-    a = (inner(grad(u), grad(v)) - div(v)*p + q*div(u))*dx
+    a = (inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q))*dx
     L = inner(f, v)*dx
 
 We also need to create a :py:class:`Function
