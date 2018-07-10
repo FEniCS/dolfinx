@@ -46,14 +46,14 @@ def test_matrix_assembly_block():
     g = dolfin.function.constant.Constant(-3.0)
     zero = dolfin.function.constant.Constant(0.0)
 
-    a00 = u * v * dx
-    a01 = v * p * dx
-    a10 = q * u * dx
-    a11 = q * p * dx
+    a00 = inner(u, v) * dx
+    a01 = inner(p, v) * dx
+    a10 = inner(u, q) * dx
+    a11 = inner(p, q) * dx
     # a11 = None
 
-    L0 = zero * f * v * dx
-    L1 = g * q * dx
+    L0 = zero * inner(f, v) * dx
+    L1 = inner(g, q) * dx
 
     # Create assembler
     assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
@@ -102,8 +102,8 @@ def test_matrix_assembly_block():
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
     u0, u1 = dolfin.function.argument.TrialFunctions(W)
     v0, v1 = dolfin.function.argument.TestFunctions(W)
-    a = u0 * v0 * dx + u1 * v1 * dx + u0 * v1 * dx + u1 * v0 * dx
-    L = zero * f * v0 * ufl.dx + g * v1 * dx
+    a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(u1, v0) * dx
+    L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
     assembler = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
