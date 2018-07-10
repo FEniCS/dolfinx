@@ -123,7 +123,7 @@ void Expression::restrict(
   }
   const fem::CoordinateMapping& cmap = *cell.mesh().geometry().coord_mapping;
 
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       eval_points(ndofs, gdim);
   cmap.compute_physical_coordinates(eval_points, X, coordinate_dofs);
 
