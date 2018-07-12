@@ -59,6 +59,7 @@ void mesh(py::module& m)
   celltype.def("type2string", &dolfin::mesh::CellType::type2string)
       .def("string2type", &dolfin::mesh::CellType::string2type)
       .def("cell_type", &dolfin::mesh::CellType::cell_type)
+      .def("num_entities", &dolfin::mesh::CellType::num_entities)
       .def("description", &dolfin::mesh::CellType::description);
 
   // dolfin::mesh::GhostMode enums
