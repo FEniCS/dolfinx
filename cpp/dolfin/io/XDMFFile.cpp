@@ -52,11 +52,16 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
     throw std::runtime_error("Unknown file mode used in XDMFFile.");
   }
 
+  // FIXME: Encoding serves just as proxy here, not really needed to keep it
   // For binary modes set HDF5 encoding
   if (_file_mode == "wb" or _file_mode == "ab")
   {
-    // FIXME: Encoding serves just as proxy here, not really needed to keep it
     _encoding = Encoding::HDF5;
+  }
+  else if (_file_mode[0] == 'r')
+  {
+    // In read mode encoding is not known now
+    // It is read from the XML file
   }
   else
   {
