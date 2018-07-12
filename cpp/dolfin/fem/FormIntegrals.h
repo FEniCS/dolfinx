@@ -10,7 +10,6 @@
 #include <dolfin/common/types.h>
 #include <functional>
 #include <memory>
-#include <petscis.h>
 #include <vector>
 
 struct ufc_cell_integral;
