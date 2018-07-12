@@ -530,6 +530,9 @@ private:
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 
+  // Integer HDF file identificator
+  hid_t _h5_id;
+
 #ifdef HAS_HDF5
   // HDF5 data file
   std::unique_ptr<HDF5File> _hdf5_file;
@@ -537,9 +540,6 @@ private:
 
   // Cached filename
   const std::string _filename;
-
-  // Counter for time series
-  std::size_t _counter;
 
   // The XML document currently representing the XDMF which needs to be
   // kept open for time series etc.
