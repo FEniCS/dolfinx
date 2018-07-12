@@ -795,6 +795,7 @@ def test_xdmf_timeseries_write_to_closed_hdf5_using_with(tempdir):
     xdmf = XDMFFile(mesh.mpi_comm(), filename, "wb")
     xdmf.write(u, float(0.0))
     xdmf.write(u, float(1.0))
+    xdmf.close()
 
     with XDMFFile(mesh.mpi_comm(), filename, "ab") as xdmf:
         xdmf.write(u, float(2.0))
