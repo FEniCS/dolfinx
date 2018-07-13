@@ -54,39 +54,39 @@ public:
          const bool* enabled_coefficients);
 
   /// Pointer to coefficient data. Used to support UFC interface.
-  const double* const* w() const { return w_pointer.data(); }
+  const PetscScalar* const* w() const { return w_pointer.data(); }
 
   /// Pointer to coefficient data. Used to support UFC interface. None
   /// const version
-  double** w() { return w_pointer.data(); }
+  PetscScalar** w() { return w_pointer.data(); }
 
   /// Pointer to macro element coefficient data. Used to support UFC
   /// interface.
-  const double* const* macro_w() const { return macro_w_pointer.data(); }
+  const PetscScalar* const* macro_w() const { return macro_w_pointer.data(); }
 
   /// Pointer to macro element coefficient data. Used to support UFC
   /// interface. Non-const version.
-  double** macro_w() { return macro_w_pointer.data(); }
+  PetscScalar** macro_w() { return macro_w_pointer.data(); }
 
   /// Local tensor
-  std::vector<double> A;
+  std::vector<PetscScalar> A;
 
   /// Local tensor for macro element
-  std::vector<double> macro_A;
+  std::vector<PetscScalar> macro_A;
 
 private:
-  // Coefficients (std::vector<double*> is used to interface with UFC)
-  std::vector<double> _w;
-  std::vector<double*> w_pointer;
+  // Coefficients (std::vector<PetscScalar*> is used to interface with UFC)
+  std::vector<PetscScalar> _w;
+  std::vector<PetscScalar*> w_pointer;
 
-  // Coefficients on macro element (std::vector<double*> is used to
+  // Coefficients on macro element (std::vector<PetscScalar*> is used to
   // interface with UFC)
-  std::vector<double> _macro_w;
-  std::vector<double*> macro_w_pointer;
+  std::vector<PetscScalar> _macro_w;
+  std::vector<PetscScalar*> macro_w_pointer;
 
 public:
   /// The form
   const Form& dolfin_form;
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

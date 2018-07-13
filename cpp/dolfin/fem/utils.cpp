@@ -277,7 +277,7 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
     assert(index_map_0.block_size() == 1);
 
     // Set zeros in dense rows in order of increasing column index
-    const double block = 0.0;
+    const PetscScalar block = 0.0;
     dolfin::la_index_t IJ[2];
     for (Eigen::Index i = 0; i < global_dofs.size(); ++i)
     {
@@ -304,7 +304,7 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
   if (keep_diagonal)
   {
     // Loop over rows and insert 0.0 on the diagonal
-    const double block = 0.0;
+    const PetscScalar block = 0.0;
     const auto row_range = A.local_range(0);
     const std::int64_t range = std::min(row_range[1], A.size()[1]);
 
