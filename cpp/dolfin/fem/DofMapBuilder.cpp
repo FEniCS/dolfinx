@@ -821,14 +821,12 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
                               num_mesh_entities_local.data(),
                               entity_indices_ptr.data());
-    std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
-              cell_nodes.begin());
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
 
-    // Reverse engineer for higher order, flipping dofs when needed
-    std::vector<bool> flip;
+    // Find out which edges are in reverse orientation
+    std::vector<int> edge_orientation;
     if (needs_entities[1] and mesh.topology().dim() > 1)
     {
       const std::int32_t* cell_vertices = cell.entities(0);
@@ -838,7 +836,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
         std::int32_t v1 = cell_vertices[edges[i][1]];
         std::int64_t v0g = mesh::Vertex(mesh, v0).global_index();
         std::int64_t v1g = mesh::Vertex(mesh, v1).global_index();
-        flip.push_back(v1g > v0g);
+        edge_orientation.push_back((int)(v1g > v0g));
       }
     }
 
@@ -846,19 +844,20 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
                               num_mesh_entities_global.data(),
                               entity_indices_ptr.data());
 
-    std::int32_t offset
-        = dofmaps[0]->num_entity_dofs[0] * mesh.type().num_entities(0);
+    std::cout << "perm = ";
+    for (unsigned int i = 0; i < local_dim; ++i)
+      std::cout << dofmaps[0]->tabulate_dof_permutations(
+                       edge_orientation.data(), i)
+                << " ";
+    std::cout << "\n";
 
-    for (const auto& f : flip)
-    {
-      if (f)
-      {
-        std::reverse(cell_nodes.data() + offset,
-                     cell_nodes.data() + offset
-                         + dofmaps[0]->num_entity_dofs[1]);
-      }
-      offset += dofmaps[0]->num_entity_dofs[1];
-    }
+    // Copy to cell dofs, with permutation
+    for (unsigned int i = 0; i < local_dim; ++i)
+      cell_nodes[i] = ufc_nodes_local[dofmaps[0]->tabulate_dof_permutations(
+          edge_orientation.data(), i)];
+
+    // std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
+    //              cell_nodes.begin());
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
