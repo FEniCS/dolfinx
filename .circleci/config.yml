@@ -84,7 +84,7 @@ jobs:
           name: Run Python unit tests (MPI)
           command: |
             cd python/test/unit
-            mpirun --allow-run-as-root -n 3 python3 -m pytest .
+            mpirun --allow-run-as-root -n 3 python3 -m pytest . -vsx
       - run:
           name: Run Python demos (serial)
           command: |
