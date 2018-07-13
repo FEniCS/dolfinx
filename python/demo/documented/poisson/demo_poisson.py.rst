@@ -160,7 +160,7 @@ the linear form ``L`` (using UFL operators). In summary, this reads ::
     f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
     g = Expression("sin(5*x[0])", degree=2)
     a = inner(grad(u), grad(v))*dx
-    L = f*v*dx + g*v*ds
+    L = inner(f, v)*dx + inner(g, v)*ds
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem. First, we need to define a

@@ -6,21 +6,18 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (cpp, UnitSquareMesh, MPI, FunctionSpace, dx, dot, grad,
-                    TestFunction, TrialFunction, list_timings, TimingType)
+from dolfin import (cpp, UnitSquareMesh, MPI, FunctionSpace,
+                    dx, dot, grad, TestFunction, TrialFunction, list_timings,
+                    TimingType)
 from dolfin.la import PETScMatrix, PETScVector
 from numba import cfunc, types, carray, typeof
-import numpy as np
-
 from dolfin.jit.jit import ffc_jit
-
-# Define scalar_type here (change to np.complex128 for complex)
-# e.g. if has_petsc_complex(): scalar_type = np.complex128
-scalar_type = np.float64
+import numpy as np
+from petsc4py.PETSc import ScalarType
 
 
 def tabulate_tensor_A(A_, w_, coords_, cell_orientation):
-    A = carray(A_, (3, 3), dtype=scalar_type)
+    A = carray(A_, (3, 3), dtype=ScalarType)
     coordinate_dofs = carray(coords_, (3, 2), dtype=np.float64)
 
     # Ke=∫Ωe BTe Be dΩ
@@ -33,13 +30,13 @@ def tabulate_tensor_A(A_, w_, coords_, cell_orientation):
 
     B = np.array(
         [y1 - y2, y2 - y0, y0 - y1, x2 - x1, x0 - x2, x1 - x0],
-        dtype=scalar_type).reshape(2, 3)
+        dtype=ScalarType).reshape(2, 3)
 
     A[:, :] = np.dot(B.T, B) / (2 * Ae)
 
 
 def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
-    b = carray(b_, (3), dtype=scalar_type)
+    b = carray(b_, (3), dtype=ScalarType)
     coordinate_dofs = carray(coords_, (3, 2), dtype=np.float64)
     x0, y0 = coordinate_dofs[0, :]
     x1, y1 = coordinate_dofs[1, :]
@@ -61,8 +58,8 @@ def test_numba_assembly():
     L = cpp.fem.Form([Q._cpp_object])
 
     sig = types.void(
-        types.CPointer(typeof(scalar_type())),
-        types.CPointer(types.CPointer(typeof(scalar_type()))),
+        types.CPointer(typeof(ScalarType())),
+        types.CPointer(types.CPointer(typeof(ScalarType()))),
         types.CPointer(types.double), types.intc)
 
     fnA = cfunc(sig, cache=True)(tabulate_tensor_A)
