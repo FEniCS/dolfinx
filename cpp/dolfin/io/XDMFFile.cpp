@@ -58,11 +58,6 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   {
     _encoding = Encoding::HDF5;
   }
-  else if (_file_mode[0] == 'r')
-  {
-    // In read mode encoding is not known now
-    // It is read from the XML file
-  }
   else
   {
     _encoding = Encoding::ASCII;
@@ -75,10 +70,11 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
         "compiled with HDF5 support)");
   }
 
-  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1
+      and (_file_mode[0] == 'w' or _file_mode[0] == 'a'))
   {
-    throw std::runtime_error(
-        "Cannot create ASCII XDMF in parallel (use binary file mode).");
+    throw std::runtime_error("Cannot write or append to ASCII XDMF in "
+                             "parallel (use binary file mode).");
   }
 
   // Rewrite the mesh at every time step in a time series. Should be
@@ -144,20 +140,17 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
 
     pugi::xml_node domain_node = xdmf_node.append_child("Domain");
     assert(domain_node);
-}
+  }
 
 #ifdef HAS_HDF5
-  if (_encoding == Encoding::HDF5)
+  if (_encoding == Encoding::HDF5 and _file_mode[0] != 'r')
   {
-    if (_file_mode[0] == 'w' or _file_mode[0] == 'a')
-    {
-      // Open HDF file
-      _hdf5_file = std::make_unique<HDF5File>(_mpi_comm.comm(),
-                                              get_hdf5_filename(_filename),
-                                              std::string(1, _file_mode[0]));
-      assert(_hdf5_file);
-      _h5_id = _hdf5_file->h5_id();
-    }
+    // Open HDF file if encoding is known
+    _hdf5_file = std::make_unique<HDF5File>(_mpi_comm.comm(),
+                                            get_hdf5_filename(_filename),
+                                            std::string(1, _file_mode[0]));
+    assert(_hdf5_file);
+    _h5_id = _hdf5_file->h5_id();
   }
 #endif
 }
@@ -182,6 +175,7 @@ void XDMFFile::write(const mesh::Mesh& mesh)
 
   if (_file_mode[0] == 'a')
   {
+    // TODO: Implement mesh appending
     throw std::runtime_error("Appending mesh to XDMFFile not implemented.");
   }
 
@@ -1352,9 +1346,9 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
   pugi::xml_node grid_node
       = _xml_doc
             ->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
-                          "@Name='"
-                          + func_name + "']/Grid[" + selector + "]")
-                             .c_str())
+                           "@Name='"
+                           + func_name + "']/Grid[" + selector + "]")
+                              .c_str())
             .node();
 
   assert(grid_node);
