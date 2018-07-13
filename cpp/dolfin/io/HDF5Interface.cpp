@@ -51,9 +51,7 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
   else if (mode == "a")
   {
     if (file_exists)
-    {
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-    }
     else
     {
       // If file doesn't exists but we want to append it
@@ -65,13 +63,11 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
   else if (mode == "r")
   {
     if (file_exists)
-    {
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-    }
     else
     {
-      log::dolfin_error("HDF5Interface.cpp", "open HDF5 file",
-                        "File \"%s\" does not exist", filename.c_str());
+      throw std::runtime_error("Unable to open HDF5 file. File " + filename
+                               + " does not exist.");
     }
   }
   assert(file_id != HDF5_FAIL);

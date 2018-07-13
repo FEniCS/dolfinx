@@ -48,20 +48,14 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
 
   if (!(_file_mode == "a" or _file_mode == "r" or _file_mode == "w"
         or _file_mode == "wb" or _file_mode == "ab"))
-  {
     throw std::runtime_error("Unknown file mode used in XDMFFile.");
-  }
 
   // FIXME: Encoding serves just as proxy here, not really needed to keep it
   // For binary modes set HDF5 encoding
   if (_file_mode == "wb" or _file_mode == "ab")
-  {
     _encoding = Encoding::HDF5;
-  }
   else
-  {
     _encoding = Encoding::ASCII;
-  }
 
   if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
@@ -127,9 +121,9 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
       assert(domain_node);
     }
   }
-  // XML file doesn't exist we need to prepare some
   else
   {
+    // XML file doesn't exist we need to prepare some
     // Reset just to be sure
     _xml_doc->reset();
 
@@ -169,15 +163,11 @@ void XDMFFile::write(const mesh::Mesh& mesh)
 {
 
   if (_file_mode[0] == 'r')
-  {
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
-  }
 
   if (_file_mode[0] == 'a')
-  {
     // TODO: Implement mesh appending
     throw std::runtime_error("Appending mesh to XDMFFile not implemented.");
-  }
 
   // Add domain node and add name attribute
   pugi::xml_node domain_node = _xml_doc->child("Xdmf").child("Domain");
@@ -196,9 +186,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 {
 
   if (_file_mode[0] == 'r')
-  {
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
-  }
 
   if (!name_same_on_all_procs(function_name))
   {
@@ -297,9 +285,7 @@ void XDMFFile::write(const function::Function& u)
 {
 
   if (_file_mode[0] == 'r')
-  {
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
-  }
 
   if (_file_mode[0] == 'a')
   {
@@ -355,9 +341,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
 {
 
   if (_file_mode[0] == 'r')
-  {
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
-  }
 
   const mesh::Mesh& mesh = *u.function_space()->mesh();
 
@@ -530,9 +514,7 @@ void XDMFFile::write_mesh_value_collection(
 {
 
   if (_file_mode[0] == 'r')
-  {
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
-  }
 
   // Provide some very basic functionality for saving
   // mesh::MeshValueCollections mainly for saving values on a boundary mesh
@@ -898,14 +880,10 @@ void XDMFFile::write(const std::vector<geometry::Point>& points)
 {
 
   if (_file_mode[0] == 'r')
-  {
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
-  }
 
   if (_file_mode[0] == 'a')
-  {
     throw std::runtime_error("Appending points to XDMFFile not implemented.");
-  }
 
   pugi::xml_node domain_node = _xml_doc->child("Xdmf").child("Domain");
   assert(domain_node);
@@ -956,14 +934,10 @@ void XDMFFile::write(const std::vector<geometry::Point>& points,
 {
 
   if (_file_mode[0] == 'r')
-  {
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
-  }
 
   if (_file_mode[0] == 'a')
-  {
     throw std::runtime_error("Appending points to XDMFFile not implemented.");
-  }
 
   // Write clouds of points to XDMF/HDF5 with values
   assert(points.size() == values.size());
@@ -2306,9 +2280,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
 {
 
   if (_file_mode[0] == 'r')
-  {
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
-  }
 
   std::string name = meshfunction.name();
 
