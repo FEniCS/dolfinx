@@ -46,6 +46,8 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
       _xml_doc(new pugi::xml_document), _file_mode(file_mode)
 {
 
+  _mpi_comm.barrier();
+
   if (!(_file_mode == "a" or _file_mode == "r" or _file_mode == "w"
         or _file_mode == "wb" or _file_mode == "ab"))
     throw std::runtime_error("Unknown file mode used in XDMFFile.");
