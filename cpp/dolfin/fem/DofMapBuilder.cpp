@@ -846,15 +846,15 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     std::cout << "perm = ";
     for (unsigned int i = 0; i < local_dim; ++i)
-      std::cout << dofmaps[0]->tabulate_dof_permutations(
-                       edge_orientation.data(), i)
+      std::cout << dofmaps[0]->tabulate_dof_permutations(entity_indices_ptr[0],
+                                                         i)
                 << " ";
     std::cout << "\n";
 
     // Copy to cell dofs, with permutation
     for (unsigned int i = 0; i < local_dim; ++i)
       cell_nodes[i] = ufc_nodes_local[dofmaps[0]->tabulate_dof_permutations(
-          edge_orientation.data(), i)];
+          entity_indices_ptr[0], i)];
 
     // std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
     //              cell_nodes.begin());
