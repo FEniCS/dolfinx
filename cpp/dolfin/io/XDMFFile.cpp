@@ -46,11 +46,11 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
       _xml_doc(new pugi::xml_document), _file_mode(file_mode)
 {
 
-  _mpi_comm.barrier();
-
   if (!(_file_mode == "a" or _file_mode == "r" or _file_mode == "w"
         or _file_mode == "wb" or _file_mode == "ab"))
+  {
     throw std::runtime_error("Unknown file mode used in XDMFFile.");
+  }
 
   // FIXME: Encoding serves just as proxy here, not really needed to keep it
   // For binary modes set HDF5 encoding
@@ -156,6 +156,8 @@ XDMFFile::~XDMFFile() { close(); }
 void XDMFFile::close()
 {
 #ifdef HAS_HDF5
+  // Wait for others to close collectively
+  _mpi_comm.barrier();
   // Close the HDF5 file
   _hdf5_file.reset();
 #endif
@@ -344,6 +346,12 @@ void XDMFFile::write(const function::Function& u, double time_step)
 
   if (_file_mode[0] == 'r')
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
+
+  if (!name_same_on_all_procs(u.name()))
+  {
+    throw std::runtime_error("Function name must be the same on all processes "
+                             "when writing to XDMF file.");
+  }
 
   const mesh::Mesh& mesh = *u.function_space()->mesh();
 

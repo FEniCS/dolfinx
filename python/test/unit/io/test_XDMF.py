@@ -172,6 +172,7 @@ def test_save_1d_scalar(tempdir, encoding):
     # FIXME: This randomly hangs in parallel
     V = FunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
+    u.rename("u")
     u.vector()[:] = 1.0
 
     with XDMFFile(mesh.mpi_comm(), filename2, "w" + encoding) as file:
@@ -291,6 +292,7 @@ def test_save_2d_scalar(tempdir, encoding):
     # FIXME: This randomly hangs in parallel
     V = FunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
+    u.rename("u")
     u.vector()[:] = 1.0
 
     with XDMFFile(mesh.mpi_comm(), filename, "w" + encoding) as file:
@@ -321,6 +323,7 @@ def test_save_2d_vector(tempdir, encoding):
     u = Function(V)
     c = Constant((1.0, 2.0))
     u.interpolate(c)
+    u.rename("u")
 
     with XDMFFile(mesh.mpi_comm(), filename, "w" + encoding) as file:
         file.write(u)
@@ -335,6 +338,7 @@ def test_save_3d_vector(tempdir, encoding):
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 1))
     c = Constant((1.0, 2.0, 3.0))
     u.interpolate(c)
+    u.rename("u")
 
     with XDMFFile(mesh.mpi_comm(), filename, "w" + encoding) as file:
         file.write(u)
@@ -347,6 +351,7 @@ def test_save_3d_vector_series(tempdir, encoding):
     filename = os.path.join(tempdir, "u_3D.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+    u.rename("u")
 
     with XDMFFile(mesh.mpi_comm(), filename, "w" + encoding) as file:
         u.vector()[:] = 1.0
@@ -367,6 +372,7 @@ def test_save_2d_tensor(tempdir, encoding):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
+    u.rename("u")
 
     with XDMFFile(mesh.mpi_comm(), filename, "w" + encoding) as file:
         file.write(u)
@@ -380,6 +386,7 @@ def test_save_3d_tensor(tempdir, encoding):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
     u.vector()[:] = 1.0
+    u.rename("u")
 
     with XDMFFile(mesh.mpi_comm(), filename, "w" + encoding) as file:
         file.write(u)
@@ -789,6 +796,7 @@ def test_xdmf_timeseries_write_to_closed_hdf5_using_with(tempdir):
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     V = FunctionSpace(mesh, "CG", 1)
     u = Function(V)
+    u.rename("u")
 
     filename = os.path.join(tempdir, "time_series_closed_append.xdmf")
 
