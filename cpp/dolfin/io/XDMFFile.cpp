@@ -171,7 +171,6 @@ void XDMFFile::write(const mesh::Mesh& mesh)
     throw std::runtime_error("Writing in \"r\" file mode not allowed.");
 
   if (_file_mode[0] == 'a')
-    // TODO: Implement mesh appending
     throw std::runtime_error("Appending mesh to XDMFFile not implemented.");
 
   // Add domain node and add name attribute

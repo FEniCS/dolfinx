@@ -90,14 +90,6 @@ public:
     ASCII
   };
 
-  /// Overloaded XDMFFile constructor
-  ///
-  /// Constructs XDMFFile with MPI_COMM_WORLD
-  XDMFFile(const std::string filename, const std::string file_mode)
-      : XDMFFile(MPI_COMM_WORLD, filename, file_mode)
-  {
-  }
-
   /// Constructs XDMFFile
   ///
   /// @param    comm

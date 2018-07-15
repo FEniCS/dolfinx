@@ -218,11 +218,6 @@ void io(py::module& m)
                                                            file_mode);
            }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"))
-      .def(
-          py::init([](const std::string filename, const std::string file_mode) {
-            return std::make_unique<dolfin::io::XDMFFile>(filename, file_mode);
-          }),
-          py::arg("filename"), py::arg("file_mode"))
       .def("close", &dolfin::io::XDMFFile::close)
       .def("__enter__", [](dolfin::io::XDMFFile& self) { return &self; })
       .def("__exit__", [](dolfin::io::XDMFFile& self, py::args args,
