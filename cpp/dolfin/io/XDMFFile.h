@@ -73,13 +73,6 @@ class HDF5File;
 /// (http://www.xdmf.org) format. It creates an XML file that
 /// describes the data and points to a HDF5 file that stores the
 /// actual problem data. Output of data in parallel is supported.
-///
-/// XDMF is not suitable for checkpointing as it may decimate some
-/// data.
-
-// FIXME: Set read mode when creating file obejct?
-
-// FIXME: Set encoding when opening file
 
 // FIXME: Remove the duplicate read_mf_foo functions. Challenge is the
 // templated reader code would then expose a lot code publically.
@@ -97,13 +90,30 @@ public:
     ASCII
   };
 
-  /// Constructor
+  /// Overloaded XDMFFile constructor
+  ///
+  /// Constructs XDMFFile with MPI_COMM_WORLD
   XDMFFile(const std::string filename, const std::string file_mode)
       : XDMFFile(MPI_COMM_WORLD, filename, file_mode)
   {
   }
 
-  /// Constructor
+  /// Constructs XDMFFile
+  ///
+  /// @param    comm
+  ///         MPI communicator used for all parallel communication
+  ///         within this file.
+  /// @param    filename
+  ///         Name of file to construct. Must be in format {filename}.xdmf.
+  /// @param    file_mode
+  ///         File mode accepts string values "a", "w", "r", "ab", "wb".
+  ///         Their meaning is the standard C language defined in
+  ///         https://en.cppreference.com/w/cpp/io/c/fopen.
+  ///         Second letter of encoding "b" states for binary IO. In such case
+  ///         HDF is used to store heavy data in {filename}.h5 file.
+  ///         For read mode "r" no binary identificator is accepted since
+  ///         ascii/binary mode is read from XML file.
+  ///
   XDMFFile(MPI_Comm comm, const std::string filename,
            const std::string file_mode);
 
