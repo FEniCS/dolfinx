@@ -86,8 +86,11 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename,
   // HDF5 file whilst running, at some performance cost.
   parameters.add("flush_output", false);
 
+  // Synchronize before filesystem check
+  _mpi_comm.barrier();
+  bool exists = boost::filesystem::exists(_filename);
   // If XDMF XML file exists physically
-  if (boost::filesystem::exists(_filename))
+  if (exists)
   {
     // Load its XML structure into internal XML file
     pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
@@ -156,8 +159,6 @@ XDMFFile::~XDMFFile() { close(); }
 void XDMFFile::close()
 {
 #ifdef HAS_HDF5
-  // Wait for others to close collectively
-  _mpi_comm.barrier();
   // Close the HDF5 file
   _hdf5_file.reset();
 #endif
