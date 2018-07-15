@@ -87,7 +87,7 @@ following way::
     from dolfin import *
 
     # Load mesh and subdomains
-    xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
+    xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf", "r")
     mesh = xdmf.read_mesh(MPI.comm_world, dolfin.cpp.mesh.GhostMode.none)
     sub_domains = xdmf.read_mf_size_t(mesh)
 
@@ -179,10 +179,10 @@ We can calculate the :math:`L^2` norms of u and p as follows::
 Finally, we can save and plot the solutions::
 
     # Save solution in XDMF format
-    with XDMFFile(MPI.comm_world, "velocity.xdmf") as ufile_xdmf:
+    with XDMFFile(MPI.comm_world, "velocity.xdmf", "wb") as ufile_xdmf:
         ufile_xdmf.write(u)
 
-    with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
+    with XDMFFile(MPI.comm_world, "pressure.xdmf", "wb") as pfile_xdmf:
         pfile_xdmf.write(p)
 
     # Plot solution

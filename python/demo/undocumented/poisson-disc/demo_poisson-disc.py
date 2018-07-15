@@ -70,8 +70,8 @@ def compute_rates():
     for coordinate_degree in (1, 2):
         for element_degree in (1, 2):
             print("\nUsing coordinate degree %d, element degree %d" % (coordinate_degree, element_degree))
-            encoding = XDMFFile.Encoding.HDF5 if has_hdf5() else XDMFFile.Encoding.ASCII
-            ufile = XDMFFile(MPI.comm_world, "poisson-disc-degree-x%d-e%d.xdmf" % (coordinate_degree, element_degree), encoding)
+            encoding = "b" if has_hdf5() else ""
+            ufile = XDMFFile(MPI.comm_world, "poisson-disc-degree-x%d-e%d.xdmf" % (coordinate_degree, element_degree), "w" + encoding)
             preverr = None
             prevh = None
             for i, nsteps in enumerate((1, 8, 64)):

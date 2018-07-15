@@ -117,10 +117,10 @@ solver.solve(BucklingProblem(), u.vector(), u_min.vector(), u_max.vector())
 
 # Save solution in XDMF format if available
 if has_hdf5():
-    out = XDMFFile(mesh.mpi_comm(), "u.xdmf", XDMFFile.Encoding.HDF5)
+    out = XDMFFile(mesh.mpi_comm(), "u.xdmf", "wb")
     out.write(u)
 elif MPI.size(mesh.mpi_comm()) == 1:
-    out = XDMFFile(mesh.mpi_comm(), "u.xdmf", XDMFFile.Encoding.ASCII)
+    out = XDMFFile(mesh.mpi_comm(), "u.xdmf", "w")
     out.write(u)
 else:
     # Save solution in vtk format
