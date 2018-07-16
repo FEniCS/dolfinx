@@ -15,7 +15,6 @@
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
-#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -800,15 +799,6 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   // Resize local-to-global map
   std::vector<std::size_t> node_local_to_global(offset_local[1]);
 
-  // Get the edges of a standard cell
-  boost::multi_array<std::int32_t, 2> edges;
-  if (needs_entities[1] and mesh.topology().dim() > 1)
-  {
-    std::vector<std::int32_t> vertices(mesh.type().num_entities(0));
-    std::iota(vertices.begin(), vertices.end(), 0);
-    mesh.type().create_entities(edges, 1, vertices.data());
-  }
-
   // Build dofmaps from ufc_dofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
@@ -824,21 +814,6 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
-
-    // Find out which edges are in reverse orientation
-    std::vector<int> edge_orientation;
-    if (needs_entities[1] and mesh.topology().dim() > 1)
-    {
-      const std::int32_t* cell_vertices = cell.entities(0);
-      for (unsigned int i = 0; i != edges.shape()[0]; ++i)
-      {
-        std::int32_t v0 = cell_vertices[edges[i][0]];
-        std::int32_t v1 = cell_vertices[edges[i][1]];
-        std::int64_t v0g = mesh::Vertex(mesh, v0).global_index();
-        std::int64_t v1g = mesh::Vertex(mesh, v1).global_index();
-        edge_orientation.push_back((int)(v1g > v0g));
-      }
-    }
 
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
                               num_mesh_entities_global.data(),

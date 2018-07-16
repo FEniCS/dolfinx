@@ -14,6 +14,7 @@ from dolfin_utils.test import skip_in_parallel
 import numpy
 import itertools
 
+
 @skip_in_parallel
 def test_p4_scalar_vector():
 
