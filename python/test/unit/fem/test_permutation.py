@@ -10,10 +10,11 @@
 from dolfin import (Mesh, MPI, CellType, fem, FunctionSpace,
                     VectorFunctionSpace, interpolate, Expression)
 from dolfin.cpp.mesh import GhostMode
+from dolfin_utils.test import skip_in_parallel
 import numpy
 import itertools
 
-
+@skip_in_parallel
 def test_p4_scalar_vector():
 
     perms = itertools.permutations([1, 2, 3, 4])
