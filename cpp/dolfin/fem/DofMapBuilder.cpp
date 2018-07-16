@@ -844,20 +844,10 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
                               num_mesh_entities_global.data(),
                               entity_indices_ptr.data());
 
-    std::cout << "perm = ";
-    for (unsigned int i = 0; i < local_dim; ++i)
-      std::cout << dofmaps[0]->tabulate_dof_permutations(entity_indices_ptr[0],
-                                                         i)
-                << " ";
-    std::cout << "\n";
-
     // Copy to cell dofs, with permutation
     for (unsigned int i = 0; i < local_dim; ++i)
       cell_nodes[i] = ufc_nodes_local[dofmaps[0]->tabulate_dof_permutations(
           entity_indices_ptr[0], i)];
-
-    // std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
-    //              cell_nodes.begin());
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
