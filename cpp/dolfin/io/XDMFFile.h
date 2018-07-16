@@ -532,7 +532,7 @@ private:
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 
-  // Integer HDF file identificator
+  // HDF5 file handle
   hid_t _h5_id;
 
 #ifdef HAS_HDF5
