@@ -666,6 +666,9 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   // Resize local-to-global map
   std::vector<std::size_t> node_local_to_global(offset_local[1]);
 
+  // Vector for dof permutation
+  std::vector<int> permutation(local_dim);
+
   // Build dofmaps from ufc_dofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
@@ -686,10 +689,12 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
                               num_mesh_entities_global.data(),
                               entity_indices_ptr.data());
 
+    dofmaps[0]->tabulate_dof_permutations(
+        entity_indices_ptr[0], permutation.data(), permutation.size());
+
     // Copy to cell dofs, with permutation
     for (unsigned int i = 0; i < local_dim; ++i)
-      cell_nodes[i] = ufc_nodes_local[dofmaps[0]->tabulate_dof_permutations(
-          entity_indices_ptr[0], i)];
+      cell_nodes[i] = ufc_nodes_local[permutation[i]];
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)
