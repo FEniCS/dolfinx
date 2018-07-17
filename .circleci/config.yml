@@ -19,7 +19,7 @@ jobs:
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
-            pip3 install git+https://github.com/fenics/ffcx.git@chris/ufc-permute-dofs --upgrade
+            pip3 install git+https://github.com/fenics/ffcx.git --upgrade
             rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
       - run:
           name: Flake8 checks on Python code
@@ -57,7 +57,7 @@ jobs:
           name: Build Python interface
           command: |
             cd python
-            python3 setup.py install --debug
+            CXXFLAGS="-fno-lto" pip3 -v install . --user
 
       - run:
           name: Build DOLFIN Python documentation
