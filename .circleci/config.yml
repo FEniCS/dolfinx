@@ -57,7 +57,7 @@ jobs:
           name: Build Python interface
           command: |
             cd python
-            pip3 -v install . --user
+            python3 setup.py install --debug
 
       - run:
           name: Build DOLFIN Python documentation
