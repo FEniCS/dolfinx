@@ -15,7 +15,6 @@
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
-#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -667,15 +666,6 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   // Resize local-to-global map
   std::vector<std::size_t> node_local_to_global(offset_local[1]);
 
-  // Get the edges of a standard cell
-  boost::multi_array<std::int32_t, 2> edges;
-  if (needs_entities[1] and mesh.topology().dim() > 1)
-  {
-    std::vector<std::int32_t> vertices(mesh.type().num_entities(0));
-    std::iota(vertices.begin(), vertices.end(), 0);
-    mesh.type().create_entities(edges, 1, vertices.data());
-  }
-
   // Build dofmaps from ufc_dofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
@@ -688,44 +678,18 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
     dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
                               num_mesh_entities_local.data(),
                               entity_indices_ptr.data());
-    std::copy(ufc_nodes_local.begin(), ufc_nodes_local.end(),
-              cell_nodes.begin());
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
-
-    // Reverse engineer for higher order, flipping dofs when needed
-    std::vector<bool> flip;
-    if (needs_entities[1] and mesh.topology().dim() > 1)
-    {
-      const std::int32_t* cell_vertices = cell.entities(0);
-      for (unsigned int i = 0; i != edges.shape()[0]; ++i)
-      {
-        std::int32_t v0 = cell_vertices[edges[i][0]];
-        std::int32_t v1 = cell_vertices[edges[i][1]];
-        std::int64_t v0g = mesh::Vertex(mesh, v0).global_index();
-        std::int64_t v1g = mesh::Vertex(mesh, v1).global_index();
-        flip.push_back(v1g > v0g);
-      }
-    }
 
     dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
                               num_mesh_entities_global.data(),
                               entity_indices_ptr.data());
 
-    std::int32_t offset
-        = dofmaps[0]->num_entity_dofs[0] * mesh.type().num_entities(0);
-
-    for (const auto& f : flip)
-    {
-      if (f)
-      {
-        std::reverse(cell_nodes.data() + offset,
-                     cell_nodes.data() + offset
-                         + dofmaps[0]->num_entity_dofs[1]);
-      }
-      offset += dofmaps[0]->num_entity_dofs[1];
-    }
+    // Copy to cell dofs, with permutation
+    for (unsigned int i = 0; i < local_dim; ++i)
+      cell_nodes[i] = ufc_nodes_local[dofmaps[0]->tabulate_dof_permutations(
+          entity_indices_ptr[0], i)];
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)

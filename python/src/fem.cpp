@@ -95,6 +95,8 @@ void fem(py::module& m)
       m, "FiniteElement", "DOLFIN FiniteElement object")
       .def(py::init<std::shared_ptr<const ufc_finite_element>>())
       .def("num_sub_elements", &dolfin::fem::FiniteElement::num_sub_elements)
+      .def("dof_reference_coordinates",
+           &dolfin::fem::FiniteElement::dof_reference_coordinates)
       // TODO: Update for change to Eigen::Tensor
       //   .def("tabulate_dof_coordinates",
       //        [](const dolfin::fem::FiniteElement &self,

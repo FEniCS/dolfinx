@@ -1704,8 +1704,9 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
   // Pack geometry data
-  EigenRowArrayXXd _x
-      = mesh::DistributedMeshTools::reorder_points_by_global_indices(mesh);
+  EigenRowArrayXXd _x = mesh::DistributedMeshTools::reorder_by_global_indices(
+      mesh.mpi_comm(), mesh.geometry().points(),
+      mesh.geometry().global_indices());
   std::vector<double> x(_x.data(), _x.data() + _x.size());
 
   // XDMF does not support 1D, so handle as special case
@@ -2768,9 +2769,8 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
   // Reorder values by global point indices
   Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
                                        _data_values.size() / width, width);
-  EigenRowArrayXXd vals
-      = mesh::DistributedMeshTools::reorder_values_by_global_indices(
-          mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
+  EigenRowArrayXXd vals = mesh::DistributedMeshTools::reorder_by_global_indices(
+      mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
   _data_values = std::vector<double>(vals.data(), vals.data() + vals.size());
 
   return _data_values;
