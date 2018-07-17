@@ -91,7 +91,9 @@ private:
   static void assemble(Vec b, const Form& L);
 
   // Assemble vector
-  static void assemble(Eigen::Ref<EigenVectorXd> b, const Form& L);
+  static void
+      assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+               const Form& L);
 
   // Modify RHS vector to account for boundary condition (b <- b - Ax,
   // where x holds prescribed boundary values)

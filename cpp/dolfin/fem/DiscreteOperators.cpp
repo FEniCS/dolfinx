@@ -116,7 +116,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   {
     dolfin::la_index_t row;
     dolfin::la_index_t cols[2];
-    double values[2];
+    PetscScalar values[2];
 
     row = local_to_global_map0[edge_to_dof[edge.index()]];
 

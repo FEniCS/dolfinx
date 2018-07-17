@@ -487,7 +487,8 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, Eigen::Dynamic,
                Eigen::RowMajor>
       col_indices(m_owned, eldim);
-  EigenRowArrayXXd values(m_owned, eldim);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values(m_owned, eldim);
   Eigen::Tensor<double, 3, Eigen::RowMajor> temp_values(1, eldim, data_size);
 
   // Initialise global sparsity pattern: record on-process and

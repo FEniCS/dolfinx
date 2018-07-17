@@ -201,12 +201,12 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   return std::make_pair(dofmap, std::move(collapsed_map));
 }
 //-----------------------------------------------------------------------------
-void DofMap::set(la::PETScVector& x, double value) const
+void DofMap::set(la::PETScVector& x, PetscScalar value) const
 {
   assert(_dofmap.size() % _cell_dimension == 0);
   const std::size_t num_cells = _dofmap.size() / _cell_dimension;
 
-  std::vector<double> _value(_cell_dimension, value);
+  std::vector<PetscScalar> _value(_cell_dimension, value);
   for (std::size_t i = 0; i < num_cells; ++i)
   {
     auto dofs = cell_dofs(i);
