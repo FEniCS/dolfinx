@@ -66,31 +66,26 @@ def compute(nsteps, coordinate_degree, element_degree, gdim):
 def compute_rates():
     "Compute convergence rates for degrees 1 and 2."
     gdim = 2
-    tdim = gdim
     for coordinate_degree in (1, 2):
         for element_degree in (1, 2):
-            print("\nUsing coordinate degree %d, element degree %d" % (coordinate_degree, element_degree))
-            ufile = XDMFFile(MPI.comm_world, "poisson-disc-degree-x%d-e%d.xdmf" % (coordinate_degree, element_degree))
-            encoding = XDMFFile.Encoding.HDF5 if has_hdf5() else XDMFFile.Encoding.ASCII
+            print(f"Using coordinate degree {coordinate_degree}, element degree {element_degree}")
+            encoding = "b" if has_hdf5() else ""
+            ufile = XDMFFile(MPI.comm_world, f"poisson-disc-degree-x{coordinate_degree}-e{element_degree}.xdmf", "w" + encoding)
             preverr = None
             prevh = None
             for i, nsteps in enumerate((1, 8, 64)):
                 err, h, area, num_cells, u = compute(nsteps, coordinate_degree, element_degree, gdim)
                 if preverr is None:
                     conv = 0.0
-                    print("conv =  N/A, h = %.3e, err = %.3e, area = %.16f, num_cells = %d" % (h, err, area, num_cells))
+                    print(f"conv =  N/A, h = {h:.3e}, err = {err:.3e}, area = {area:.16f}, num_cells = {num_cells:d}")
                 else:
                     conv = math.log(preverr/err, prevh/h)
-                    print("conv = %1.2f, h = %.3e, err = %.3e, area = %.16f, num_cells = %d" % (conv, h, err, area, num_cells))
+                    print(f"conv = {conv:1.2f}, h = {h:.3e}, err = {err:.3e}, area = {area:.16f}, num_cells = {num_cells:d}")
                 preverr = err
                 prevh = h
 
                 # Save solution to file
                 u.rename('u')
-
-                if MPI.size(MPI.comm_world) > 1 and encoding == XDMFFile.Encoding.ASCII:
-                    print("XDMF file output not supported in parallel without HDF5")
-                else:
-                    ufile.write(u, encoding)
+                ufile.write(u)
 
 compute_rates()

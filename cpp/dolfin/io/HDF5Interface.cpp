@@ -10,7 +10,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 
-
 #define HDF5_FAIL -1
 #define HDF5_MAXSTRLEN 80
 
@@ -34,10 +33,14 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
     assert(status != HDF5_FAIL);
     MPI_Info_free(&info);
 #else
-    throw std::runtime_error("Cannot use MPI-IO output if DOLFIN is not configured with MPI");
+    throw std::runtime_error(
+        "Cannot use MPI-IO output if DOLFIN is not configured with MPI");
 #endif
   }
 #endif
+
+  // Query file existence only once
+  bool file_exists = boost::filesystem::exists(filename);
 
   hid_t file_id = HDF5_FAIL;
   if (mode == "w")
@@ -45,26 +48,26 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
     // Create file for write, (overwriting existing file, if present)
     file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
   }
-  else
+  else if (mode == "a")
   {
-    // Check that file exists
-    if (!boost::filesystem::is_regular_file(filename))
-    {
-      log::dolfin_error("HDF5Interface.cpp", "open HDF5 file",
-                   "File \"%s\" does not exist", filename.c_str());
-    }
-
-    if (mode == "a")
-    {
-      // Open file existing file for append
+    if (file_exists)
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-    }
-    else if (mode == "r")
-      file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
     else
     {
-      log::dolfin_error("HDF5Interface.cpp", "open HDF5 file",
-                   "Unknown file mode \"%s\"", mode.c_str());
+      // If file doesn't exists but we want to append it
+      // create new
+      file_id
+          = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+    }
+  }
+  else if (mode == "r")
+  {
+    if (file_exists)
+      file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+    else
+    {
+      throw std::runtime_error("Unable to open HDF5 file. File " + filename
+                               + " does not exist.");
     }
   }
   assert(file_id != HDF5_FAIL);
@@ -425,7 +428,7 @@ void HDF5Interface::set_mpi_atomicity(const hid_t hdf5_file_handle,
   herr_t status = H5Fset_mpi_atomicity(hdf5_file_handle, atomic);
   if (status == HDF5_FAIL)
     log::dolfin_error("HDF5Interface.cpp", "set MPI atomicity flag",
-                 "Setting the MPI atomicity flag failed");
+                      "Setting the MPI atomicity flag failed");
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -436,9 +439,8 @@ bool HDF5Interface::get_mpi_atomicity(const hid_t hdf5_file_handle)
   herr_t status = H5Fget_mpi_atomicity(hdf5_file_handle, &atomic);
   if (status == HDF5_FAIL)
     log::dolfin_error("HDF5Interface.cpp", "get MPI atomicity flag",
-                 "Getting the MPI atomicity flag failed");
+                      "Getting the MPI atomicity flag failed");
 #endif
   return (bool)atomic;
 }
 //-----------------------------------------------------------------------------
-

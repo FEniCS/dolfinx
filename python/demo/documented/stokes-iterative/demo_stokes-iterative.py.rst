@@ -203,7 +203,7 @@ Finally, we can play with the result in different ways: ::
     u, p = U.split()
 
     # Save solution in VTK format
-    with XDMFFile(mesh.mpi_comm(), "velocity.xdmf") as ufile_xdmf:
+    with XDMFFile(mesh.mpi_comm(), "velocity.xdmf", "wb") as ufile_xdmf:
         ufile_xdmf.write(u)
-    with XDMFFile(mesh.mpi_comm(), "pressure.xdmf") as pfile_xdmf:
+    with XDMFFile(mesh.mpi_comm(), "pressure.xdmf", "wb") as pfile_xdmf:
         pfile_xdmf.write(p)

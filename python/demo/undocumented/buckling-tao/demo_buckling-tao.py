@@ -116,12 +116,12 @@ parameters.parse()
 solver.solve(BucklingProblem(), u.vector(), u_min.vector(), u_max.vector())
 
 # Save solution in XDMF format if available
-out = XDMFFile(mesh.mpi_comm(), "u.xdmf")
 if has_hdf5():
+    out = XDMFFile(mesh.mpi_comm(), "u.xdmf", "wb")
     out.write(u)
 elif MPI.size(mesh.mpi_comm()) == 1:
-    encoding = XDMFFile.Encoding.ASCII
-    out.write(u, encoding)
+    out = XDMFFile(mesh.mpi_comm(), "u.xdmf", "w")
+    out.write(u)
 else:
     # Save solution in vtk format
     out = File("u.pvd")

@@ -46,7 +46,7 @@ from .cpp.fem import (FiniteElement, DofMap)
 
 from .cpp.geometry import BoundingBoxTree, Point
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
-from .cpp.io import XDMFFile, VTKFile
+from .cpp.io import VTKFile
 
 if has_slepc():
     from .cpp.la import SLEPcEigenSolver
@@ -79,6 +79,10 @@ from .function.specialfunctions import (
 from .function.expression import Expression, UserExpression, CompiledExpression
 
 from .generation import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
+
+# IO
+from .io.xdmffile import XDMFFile
+from .io.hdf5file import HDF5File
 
 # experimental
 from .jit.pybind11jit import compile_cpp_code
