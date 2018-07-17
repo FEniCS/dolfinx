@@ -13,6 +13,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <complex>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/utils.h>
@@ -362,21 +363,13 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
   assert(grid_node);
 
   // Get function::Function data values and shape
-  std::vector<double> data_values;
+  std::vector<PetscScalar> data_values;
   bool cell_centred = has_cell_centred_data(u);
 
   if (cell_centred)
     data_values = get_cell_data_values(u);
   else
     data_values = get_point_data_values(u);
-
-  // Add attribute node
-  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
-  assert(attribute_node);
-  attribute_node.append_attribute("Name") = u.name().c_str();
-  attribute_node.append_attribute("AttributeType")
-      = rank_to_string(u.value_rank()).c_str();
-  attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
   // Add attribute DataItem node and write data
   std::int64_t width = get_padded_width(u);
@@ -387,8 +380,62 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
       = cell_centred ? mesh.num_entities_global(mesh.topology().dim())
                      : num_points;
 
+#ifdef PETSC_USE_COMPLEX
+  std::string real_attr_name = "Real_";
+  real_attr_name.append(u.name());
+  std::string imag_attr_name = "Imaginary_";
+  imag_attr_name.append(u.name());
+
+  // Add real attribute node
+  pugi::xml_node real_attribute_node = grid_node.append_child("Attribute");
+  assert(real_attribute_node);
+  real_attribute_node.append_attribute("Name") = real_attr_name.c_str();
+  real_attribute_node.append_attribute("AttributeType")
+      = rank_to_string(u.value_rank()).c_str();
+  real_attribute_node.append_attribute("Center")
+      = cell_centred ? "Cell" : "Node";
+
+  // Add imaginary attribute node
+  pugi::xml_node imaginary_attribute_node = grid_node.append_child("Attribute");
+  assert(imaginary_attribute_node);
+  imaginary_attribute_node.append_attribute("Name") = imag_attr_name.c_str();
+  imaginary_attribute_node.append_attribute("AttributeType")
+      = rank_to_string(u.value_rank()).c_str();
+  imaginary_attribute_node.append_attribute("Center")
+      = cell_centred ? "Cell" : "Node";
+
+  // Can be avoided by using Eigen?
+  std::vector<double> real_data_values(data_values.size());
+  std::vector<double> imag_data_values(data_values.size());
+
+  for (unsigned int i = 0; i < data_values.size(); i++)
+  {
+    real_data_values[i] = std::real(data_values[i]);
+    imag_data_values[i] = std::imag(data_values[i]);
+  }
+
+  // Add real part
+  add_data_item(_mpi_comm.comm(), real_attribute_node, h5_id,
+                "/VisualisationVector/real/0", real_data_values,
+                {num_values, width});
+
+  // Add imaginary part
+  add_data_item(_mpi_comm.comm(), imaginary_attribute_node, h5_id,
+                "/VisualisationVector/imaginary/0", imag_data_values,
+                {num_values, width});
+#else
+  // Add attribute node
+  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
+  assert(attribute_node);
+  attribute_node.append_attribute("Name") = u.name().c_str();
+  attribute_node.append_attribute("AttributeType")
+      = rank_to_string(u.value_rank()).c_str();
+  attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
+
+
   add_data_item(_mpi_comm.comm(), attribute_node, h5_id,
                 "/VisualisationVector/0", data_values, {num_values, width});
+#endif
 
   // Save XML file (on process 0 only)
   if (_mpi_comm.rank() == 0)
@@ -531,7 +578,7 @@ void XDMFFile::write(const function::Function& u, double time_step,
   }
 
   // Get function::Function data values and shape
-  std::vector<double> data_values;
+  std::vector<PetscScalar> data_values;
   bool cell_centred = has_cell_centred_data(u);
 
   if (cell_centred)
@@ -1352,7 +1399,8 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   // Get all local data
   const la::PETScVector& u_vector = *u.vector();
-  std::vector<double> local_data;
+
+  std::vector<PetscScalar> local_data;
   u_vector.get_local(local_data);
 
   add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
@@ -2650,7 +2698,8 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
   ++_counter;
 }
 //-----------------------------------------------------------------------------
-std::vector<double> XDMFFile::get_cell_data_values(const function::Function& u)
+std::vector<PetscScalar>
+XDMFFile::get_cell_data_values(const function::Function& u)
 {
   assert(u.function_space()->dofmap());
   assert(u.vector());
@@ -2679,7 +2728,7 @@ std::vector<double> XDMFFile::get_cell_data_values(const function::Function& u)
   }
 
   // Get  values
-  std::vector<double> data_values(dof_set.size());
+  std::vector<PetscScalar> data_values(dof_set.size());
   assert(u.vector());
   u.vector()->get_local(data_values.data(), dof_set.size(), dof_set.data());
 
@@ -2689,7 +2738,7 @@ std::vector<double> XDMFFile::get_cell_data_values(const function::Function& u)
     data_values.resize(3 * num_local_cells);
     for (int j = (num_local_cells - 1); j >= 0; --j)
     {
-      double nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
+      PetscScalar nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
       std::copy(nd, nd + 3, &data_values[j * 3]);
     }
   }
@@ -2698,15 +2747,15 @@ std::vector<double> XDMFFile::get_cell_data_values(const function::Function& u)
     data_values.resize(9 * num_local_cells);
     for (int j = (num_local_cells - 1); j >= 0; --j)
     {
-      double nd[9] = {data_values[j * 4],
-                      data_values[j * 4 + 1],
-                      0,
-                      data_values[j * 4 + 2],
-                      data_values[j * 4 + 3],
-                      0,
-                      0,
-                      0,
-                      0};
+      PetscScalar nd[9] = {data_values[j * 4],
+                           data_values[j * 4 + 1],
+                           0,
+                           data_values[j * 4 + 2],
+                           data_values[j * 4 + 3],
+                           0,
+                           0,
+                           0,
+                           0};
       std::copy(nd, nd + 9, &data_values[j * 9]);
     }
   }
@@ -2733,7 +2782,8 @@ bool XDMFFile::has_cell_centred_data(const function::Function& u)
   return (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim);
 }
 //-----------------------------------------------------------------------------
-std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
+std::vector<PetscScalar>
+XDMFFile::get_point_data_values(const function::Function& u)
 {
   const auto mesh = u.function_space()->mesh();
 
@@ -2744,7 +2794,7 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
   // FIXME: Unpick the below code for the new layout of data from
   //        GenericFunction::compute_vertex_values
   const std::size_t num_local_points = mesh->geometry().num_points();
-  std::vector<double> _data_values(width * num_local_points, 0.0);
+  std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
 
   if (u.value_rank() > 0)
   {
@@ -2761,22 +2811,25 @@ std::vector<double> XDMFFile::get_point_data_values(const function::Function& u)
   }
   else
   {
-    _data_values = std::vector<double>(
+    _data_values = std::vector<PetscScalar>(
         data_values.data(),
         data_values.data() + data_values.rows() * data_values.cols());
   }
 
   // Reorder values by global point indices
-  Eigen::Map<EigenRowArrayXXd> in_vals(_data_values.data(),
-                                       _data_values.size() / width, width);
-  EigenRowArrayXXd vals = mesh::DistributedMeshTools::reorder_by_global_indices(
-      mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
-  _data_values = std::vector<double>(vals.data(), vals.data() + vals.size());
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                          Eigen::RowMajor>>
+      in_vals(_data_values.data(), _data_values.size() / width, width);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      vals = mesh::DistributedMeshTools::reorder_by_global_indices(
+          mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
+  _data_values
+      = std::vector<PetscScalar>(vals.data(), vals.data() + vals.size());
 
   return _data_values;
 }
 //-----------------------------------------------------------------------------
-std::vector<double> XDMFFile::get_p2_data_values(const function::Function& u)
+std::vector<PetscScalar> XDMFFile::get_p2_data_values(const function::Function& u)
 {
   const auto mesh = u.function_space()->mesh();
 
@@ -2785,7 +2838,7 @@ std::vector<double> XDMFFile::get_p2_data_values(const function::Function& u)
   const std::size_t num_local_points
       = mesh->num_entities(0) + mesh->num_entities(1);
   const std::size_t width = get_padded_width(u);
-  std::vector<double> data_values(width * num_local_points);
+  std::vector<PetscScalar> data_values(width * num_local_points);
   std::vector<dolfin::la_index_t> data_dofs(data_values.size(), 0);
 
   assert(u.function_space()->dofmap());
