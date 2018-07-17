@@ -9,6 +9,7 @@ import dolfin.cpp as cpp
 from dolfin.function.functionspace import FunctionSpace
 from dolfin.function.function import Function
 
+
 class XDMFFile(cpp.io.XDMFFile):
 
     def read_checkpoint(self, V: FunctionSpace, name: str, counter: int=-1):
