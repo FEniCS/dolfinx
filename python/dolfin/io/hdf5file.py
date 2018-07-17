@@ -14,7 +14,7 @@ class HDF5File(cpp.io.HDF5File):
 
     def read_function(self, V: FunctionSpace, name: str):
         """Reads in function
-        
+
         Parameters
         ----------
         V
