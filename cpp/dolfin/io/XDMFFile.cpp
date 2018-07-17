@@ -396,15 +396,15 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
       = cell_centred ? "Cell" : "Node";
 
   // Add imaginary attribute node
-  pugi::xml_node imaginary_attribute_node = grid_node.append_child("Attribute");
-  assert(imaginary_attribute_node);
-  imaginary_attribute_node.append_attribute("Name") = imag_attr_name.c_str();
-  imaginary_attribute_node.append_attribute("AttributeType")
+  pugi::xml_node imag_attribute_node = grid_node.append_child("Attribute");
+  assert(imag_attribute_node);
+  imag_attribute_node.append_attribute("Name") = imag_attr_name.c_str();
+  imag_attribute_node.append_attribute("AttributeType")
       = rank_to_string(u.value_rank()).c_str();
-  imaginary_attribute_node.append_attribute("Center")
+  imag_attribute_node.append_attribute("Center")
       = cell_centred ? "Cell" : "Node";
 
-  // Can be avoided by using Eigen?
+  // Copies can be avoided by using Eigen?
   std::vector<double> real_data_values(data_values.size());
   std::vector<double> imag_data_values(data_values.size());
 
@@ -420,7 +420,7 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
                 {num_values, width});
 
   // Add imaginary part
-  add_data_item(_mpi_comm.comm(), imaginary_attribute_node, h5_id,
+  add_data_item(_mpi_comm.comm(), imag_attribute_node, h5_id,
                 "/VisualisationVector/imaginary/0", imag_data_values,
                 {num_values, width});
 #else
@@ -585,7 +585,58 @@ void XDMFFile::write(const function::Function& u, double time_step,
     data_values = get_cell_data_values(u);
   else
     data_values = get_point_data_values(u);
+  
+  // Add attribute DataItem node and write data
+  std::int64_t width = get_padded_width(u);
+  assert(data_values.size() % width == 0);
+  std::int64_t num_values
+      = cell_centred ? mesh.num_entities_global(mesh.topology().dim())
+                     : mesh.num_entities_global(0);
 
+#ifdef PETSC_USE_COMPLEX
+  
+  std::string real_attr_name = "Real_";
+  real_attr_name.append(u.name());
+  std::string imag_attr_name = "Imaginary_";
+  imag_attr_name.append(u.name());
+
+  // Add real attribute node
+  pugi::xml_node real_attribute_node = mesh_node.append_child("Attribute");
+  assert(real_attribute_node);
+  real_attribute_node.append_attribute("Name") = real_attr_name.c_str();
+  real_attribute_node.append_attribute("AttributeType")
+      = rank_to_string(u.value_rank()).c_str();
+  real_attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
+
+  // Add imaginary attribute node
+  pugi::xml_node imag_attribute_node = mesh_node.append_child("Attribute");
+  assert(real_attribute_node);
+  imag_attribute_node.append_attribute("Name") = imag_attr_name.c_str();
+  imag_attribute_node.append_attribute("AttributeType")
+      = rank_to_string(u.value_rank()).c_str();
+  imag_attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
+
+  const std::string real_dataset_name
+    = "/VisualisationVector/real/" + std::to_string(_counter);
+  const std::string imag_dataset_name
+    = "/VisualisationVector/imag/" + std::to_string(_counter);
+
+  std::vector<double> real_data_values(data_values.size());
+  std::vector<double> imag_data_values(data_values.size());
+
+  for (unsigned int i = 0; i < data_values.size(); i++)
+  {
+    real_data_values[i] = std::real(data_values[i]);
+    imag_data_values[i] = std::imag(data_values[i]);
+  }
+
+  add_data_item(_mpi_comm.comm(), real_attribute_node, h5_id, real_dataset_name,
+                data_values, {num_values, width});
+  
+  add_data_item(_mpi_comm.comm(), imag_attribute_node, h5_id, imag_dataset_name,
+              data_values, {num_values, width});
+
+#else
   // Add attribute node
   pugi::xml_node attribute_node = mesh_node.append_child("Attribute");
   assert(attribute_node);
@@ -594,18 +645,12 @@ void XDMFFile::write(const function::Function& u, double time_step,
       = rank_to_string(u.value_rank()).c_str();
   attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-  // Add attribute DataItem node and write data
-  std::int64_t width = get_padded_width(u);
-  assert(data_values.size() % width == 0);
-  std::int64_t num_values
-      = cell_centred ? mesh.num_entities_global(mesh.topology().dim())
-                     : mesh.num_entities_global(0);
-
   const std::string dataset_name
       = "/VisualisationVector/" + std::to_string(_counter);
 
   add_data_item(_mpi_comm.comm(), attribute_node, h5_id, dataset_name,
                 data_values, {num_values, width});
+#endif
 
   // Save XML file (on process 0 only)
   if (_mpi_comm.rank() == 0)
