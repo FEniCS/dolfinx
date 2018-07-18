@@ -34,7 +34,7 @@ from .cpp import __version__
 from .cpp.common import Variable, TimingType, timing, timings, list_timings
 from .cpp.common import config
 
-if config.has_hdf5():
+if config.has_hdf5:
     from .cpp.io import HDF5File
 
 from .cpp import MPI
@@ -45,7 +45,7 @@ from .cpp.geometry import BoundingBoxTree, Point
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
 from .cpp.io import XDMFFile, VTKFile
 
-if config.has_slepc():
+if config.has_slepc:
     from .cpp.la import SLEPcEigenSolver
 
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, CellType, Cell, Facet,
