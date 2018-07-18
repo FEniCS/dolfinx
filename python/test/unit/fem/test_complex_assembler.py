@@ -9,8 +9,10 @@ import ufl
 import dolfin
 import numpy as np
 from ufl import dx, grad, inner
+from dolfin_utils.test.skips import skip_if_not_complex
 
 
+@skip_if_not_complex
 def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""
 
@@ -54,6 +56,7 @@ def test_complex_assembly():
     assert np.isclose(b2_norm, b1_norm)
 
 
+@skip_if_not_complex
 def test_complex_assembly_solve():
     """
     Solve a positive definite helmholtz problem and verify solution
