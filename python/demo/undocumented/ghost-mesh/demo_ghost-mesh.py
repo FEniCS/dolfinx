@@ -136,7 +136,7 @@ for note in facet_note:
 
 # # Save solution in XDMF format if available
 # xdmf = XDMFFile(mesh.mpi_comm(), "Q.xdmf")
-# if has_hdf5():
+# if config.has_hdf5:
 #     xdmf.write(Q)
 # elif MPI.size(mesh.mpi_comm()) == 1:
 #     encoding = XDMFFile.Encoding.ASCII

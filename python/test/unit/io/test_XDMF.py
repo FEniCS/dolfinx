@@ -9,8 +9,7 @@ import os
 from dolfin import (XDMFFile, MPI, MeshValueCollection, MeshEntities, Vertices, Facets, Cells,
                     UnitCubeMesh, FunctionSpace, Function, Edges, MeshFunction, UnitSquareMesh,
                     VectorFunctionSpace, TensorFunctionSpace, UnitIntervalMesh, cpp, Expression,
-                    interpolate, FiniteElement, VectorElement, Constant, has_hdf5, has_hdf5_parallel,
-                    CellType)
+                    interpolate, FiniteElement, VectorElement, Constant, config, CellType)
 from dolfin_utils.test import tempdir
 assert(tempdir)
 
@@ -43,9 +42,9 @@ def mesh_factory(tdim, n):
 
 
 def invalid_config(encoding):
-    return (not has_hdf5() and encoding == XDMFFile.Encoding.HDF5) \
+    return (not config.has_hdf5 and encoding == XDMFFile.Encoding.HDF5) \
         or (encoding == XDMFFile.Encoding.ASCII and MPI.size(MPI.comm_world) > 1) \
-        or (not has_hdf5_parallel() and MPI.size(MPI.comm_world) > 1)
+        or (not config.has_hdf5_parallel and MPI.size(MPI.comm_world) > 1)
 
 
 def invalid_fe(fe_family, fe_degree):
