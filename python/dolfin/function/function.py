@@ -287,7 +287,7 @@ class Function(ufl.Coefficient):
                             "length %d" % dim)
 
         value_size = ufl.product(self.ufl_element().value_shape())
-        if cpp.common.config.has_petsc_complex:
+        if cpp.common.config.complex_mode:
             values = np.empty((1, value_size), dtype=np.complex128)
         else:
             values = np.empty((1, value_size))

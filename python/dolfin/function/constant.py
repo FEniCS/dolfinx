@@ -54,7 +54,7 @@ class Constant(ufl.Coefficient):
 
         array = numpy.array(value)
         rank = len(array.shape)
-        if cpp.common.config.has_petsc_complex:
+        if cpp.common.config.complex_mode:
             value_list = list(map(numpy.complex128, array.flat))
         else:
             value_list = list(map(float, array.flat))

@@ -8,14 +8,11 @@
 import ufl
 import dolfin
 import numpy as np
-import pytest
 from ufl import dx, grad, inner
-
-# FIXME: Move to dolfin_utils.test.skips
-pytestmark = pytest.mark.skipif(not dolfin.config.has_petsc_complex,
-                                reason="Only works in complex mode.")
+from dolfin_utils.test.skips import skip_if_not_complex
 
 
+@skip_if_not_complex
 def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""
 
@@ -59,6 +56,7 @@ def test_complex_assembly():
     assert np.isclose(b2_norm, b1_norm)
 
 
+@skip_if_not_complex
 def test_complex_assembly_solve():
     """
     Solve a positive definite helmholtz problem and verify solution

@@ -34,7 +34,7 @@ bool dolfin::has_debug()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_petsc_complex()
+bool dolfin::has_complex_mode()
 {
 #ifdef PETSC_USE_COMPLEX
   return true;
