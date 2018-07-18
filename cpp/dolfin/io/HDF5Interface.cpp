@@ -27,15 +27,11 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
 #ifdef H5_HAVE_PARALLEL
   if (use_mpi_io)
   {
-#ifdef HAS_MPI
     MPI_Info info;
     MPI_Info_create(&info);
     herr_t status = H5Pset_fapl_mpio(plist_id, mpi_comm, info);
     assert(status != HDF5_FAIL);
     MPI_Info_free(&info);
-#else
-    throw std::runtime_error("Cannot use MPI-IO output if DOLFIN is not configured with MPI");
-#endif
   }
 #endif
 
