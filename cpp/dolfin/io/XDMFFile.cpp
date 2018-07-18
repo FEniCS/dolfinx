@@ -219,64 +219,64 @@ void XDMFFile::write_checkpoint(const function::Function& u,
     h5_id = _hdf5_file->h5_id();
   }
 #endif
-    // From this point _xml_doc points to a valid XDMF XML document
-    // with expected structure
+  // From this point _xml_doc points to a valid XDMF XML document
+  // with expected structure
 
-    // Find temporal grid with name equal to the name of function we're about
-    // to save
-    pugi::xml_node func_temporal_grid_node
-        = _xml_doc
-              ->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
-                             "@Name='"
+  // Find temporal grid with name equal to the name of function we're about
+  // to save
+  pugi::xml_node func_temporal_grid_node
+      = _xml_doc
+            ->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
+                           "@Name='"
                            + function_name + "']")
-                                .c_str())
-              .node();
+                              .c_str())
+            .node();
 
-    // If there is no such temporal grid then create one
-    if (func_temporal_grid_node.empty())
-    {
-      func_temporal_grid_node
-          = _xml_doc->select_node("/Xdmf/Domain").node().append_child("Grid");
-      func_temporal_grid_node.append_attribute("GridType") = "Collection";
-      func_temporal_grid_node.append_attribute("CollectionType") = "Temporal";
-func_temporal_grid_node.append_attribute("Name") = function_name.c_str();
-    }
-    else
-    {
-      log::log(PROGRESS,
-               "XDMF time series for function \"%s\" not empty. Appending.",
+  // If there is no such temporal grid then create one
+  if (func_temporal_grid_node.empty())
+  {
+    func_temporal_grid_node
+        = _xml_doc->select_node("/Xdmf/Domain").node().append_child("Grid");
+    func_temporal_grid_node.append_attribute("GridType") = "Collection";
+    func_temporal_grid_node.append_attribute("CollectionType") = "Temporal";
+    func_temporal_grid_node.append_attribute("Name") = function_name.c_str();
+  }
+  else
+  {
+    log::log(PROGRESS,
+             "XDMF time series for function \"%s\" not empty. Appending.",
              function_name.c_str());
-    }
+  }
 
-    //
-    // Write mesh
-    //
+  //
+  // Write mesh
+  //
 
-    std::size_t counter = func_temporal_grid_node.select_nodes("Grid").size();
-    std::string function_time_name
+  std::size_t counter = func_temporal_grid_node.select_nodes("Grid").size();
+  std::string function_time_name
       = function_name + "_" + std::to_string(counter);
 
-    const mesh::Mesh& mesh = *u.function_space()->mesh();
-    add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
            function_name + "/" + function_time_name);
 
-    // Get newly (by add_mesh) created Grid
-    pugi::xml_node mesh_grid_node
-        = func_temporal_grid_node
-              .select_node(("Grid[@Name='" + mesh.name() + "']").c_str())
-              .node();
-    assert(mesh_grid_node);
+  // Get newly (by add_mesh) created Grid
+  pugi::xml_node mesh_grid_node
+      = func_temporal_grid_node
+            .select_node(("Grid[@Name='" + mesh.name() + "']").c_str())
+            .node();
+  assert(mesh_grid_node);
 
-    // Change it's name to {function_name}_{counter}
-    // where counter = number of children in temporal grid node
-    mesh_grid_node.attribute("Name") = function_time_name.c_str();
+  // Change it's name to {function_name}_{counter}
+  // where counter = number of children in temporal grid node
+  mesh_grid_node.attribute("Name") = function_time_name.c_str();
 
-    pugi::xml_node time_node = mesh_grid_node.append_child("Time");
-    time_node.append_attribute("Value") = std::to_string(time_step).c_str();
+  pugi::xml_node time_node = mesh_grid_node.append_child("Time");
+  time_node.append_attribute("Value") = std::to_string(time_step).c_str();
 
-    //
-    // Write function
-    //
+  //
+  // Write function
+  //
 
   add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
                function_name + "/" + function_time_name, u, function_name,
@@ -2847,7 +2847,8 @@ XDMFFile::get_point_data_values(const function::Function& u)
   return _data_values;
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscScalar> XDMFFile::get_p2_data_values(const function::Function& u)
+std::vector<PetscScalar>
+XDMFFile::get_p2_data_values(const function::Function& u)
 {
   const auto mesh = u.function_space()->mesh();
 
@@ -3047,6 +3048,6 @@ std::string XDMFFile::rank_to_string(std::size_t value_rank)
     return "Scalar";
   else if (value_rank == 1)
     return "Vector";
-  return "Tensor"; 
+  return "Tensor";
 }
 //-----------------------------------------------------------------------------
