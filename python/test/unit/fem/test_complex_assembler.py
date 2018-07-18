@@ -11,10 +11,6 @@ import numpy as np
 import pytest
 from ufl import dx, grad, inner
 
-# FIXME: Move to dolfin_utils.test.skips
-pytestmark = pytest.mark.skipif(not dolfin.config.has_petsc_complex,
-                                reason="Only works in complex mode.")
-
 
 def test_complex_assembly():
     """Test assembly of complex matrices and vectors"""

@@ -61,6 +61,8 @@ void common(py::module& m)
 
   // From dolfin/common/defines.h
   py::class_<py::handle>(m, "config", "DOLFIN configuration")
+      .def_property_readonly_static("complex_mode",
+                                    STATIC_METHOD(dolfin::has_complex_mode()))
       .def_property_readonly_static("has_debug",
                                     STATIC_METHOD(dolfin::has_debug()))
       .def_property_readonly_static("has_hdf5",
@@ -71,8 +73,6 @@ void common(py::module& m)
                                     STATIC_METHOD(dolfin::has_parmetis()))
       .def_property_readonly_static("has_scotch",
                                     STATIC_METHOD(dolfin::has_scotch()))
-      .def_property_readonly_static("has_petsc_complex",
-                                    STATIC_METHOD(dolfin::has_petsc_complex()))
       .def_property_readonly_static("has_slepc",
                                     STATIC_METHOD(dolfin::has_slepc()))
       .def_property_readonly_static("git_commit_hash",

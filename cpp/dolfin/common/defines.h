@@ -28,9 +28,8 @@ std::size_t sizeof_la_index_t();
 /// i.e., with assertions on
 bool has_debug();
 
-/// Return true if DOLFIN is configured with PETSc compiled
-/// with scalars represented as complex numbers
-bool has_petsc_complex();
+/// Return true if DOLFIN is compiled with complex numbers
+bool has_complex_mode();
 
 /// Return true if DOLFIN is compiled with SLEPc
 bool has_slepc();
