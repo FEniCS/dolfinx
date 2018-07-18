@@ -219,64 +219,64 @@ void XDMFFile::write_checkpoint(const function::Function& u,
     h5_id = _hdf5_file->h5_id();
   }
 #endif
-  // From this point _xml_doc points to a valid XDMF XML document
-  // with expected structure
+    // From this point _xml_doc points to a valid XDMF XML document
+    // with expected structure
 
-  // Find temporal grid with name equal to the name of function we're about
-  // to save
-  pugi::xml_node func_temporal_grid_node
-      = _xml_doc
-            ->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
-                           "@Name='"
+    // Find temporal grid with name equal to the name of function we're about
+    // to save
+    pugi::xml_node func_temporal_grid_node
+        = _xml_doc
+              ->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
+                             "@Name='"
                            + function_name + "']")
-                              .c_str())
-            .node();
+                                .c_str())
+              .node();
 
-  // If there is no such temporal grid then create one
-  if (func_temporal_grid_node.empty())
-  {
-    func_temporal_grid_node
-        = _xml_doc->select_node("/Xdmf/Domain").node().append_child("Grid");
-    func_temporal_grid_node.append_attribute("GridType") = "Collection";
-    func_temporal_grid_node.append_attribute("CollectionType") = "Temporal";
-    func_temporal_grid_node.append_attribute("Name") = function_name.c_str();
-  }
-  else
-  {
-    log::log(PROGRESS,
-             "XDMF time series for function \"%s\" not empty. Appending.",
+    // If there is no such temporal grid then create one
+    if (func_temporal_grid_node.empty())
+    {
+      func_temporal_grid_node
+          = _xml_doc->select_node("/Xdmf/Domain").node().append_child("Grid");
+      func_temporal_grid_node.append_attribute("GridType") = "Collection";
+      func_temporal_grid_node.append_attribute("CollectionType") = "Temporal";
+func_temporal_grid_node.append_attribute("Name") = function_name.c_str();
+    }
+    else
+    {
+      log::log(PROGRESS,
+               "XDMF time series for function \"%s\" not empty. Appending.",
              function_name.c_str());
-  }
+    }
 
-  //
-  // Write mesh
-  //
+    //
+    // Write mesh
+    //
 
-  std::size_t counter = func_temporal_grid_node.select_nodes("Grid").size();
-  std::string function_time_name
+    std::size_t counter = func_temporal_grid_node.select_nodes("Grid").size();
+    std::string function_time_name
       = function_name + "_" + std::to_string(counter);
 
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
+    const mesh::Mesh& mesh = *u.function_space()->mesh();
+    add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
            function_name + "/" + function_time_name);
 
-  // Get newly (by add_mesh) created Grid
-  pugi::xml_node mesh_grid_node
-      = func_temporal_grid_node
-            .select_node(("Grid[@Name='" + mesh.name() + "']").c_str())
-            .node();
-  assert(mesh_grid_node);
+    // Get newly (by add_mesh) created Grid
+    pugi::xml_node mesh_grid_node
+        = func_temporal_grid_node
+              .select_node(("Grid[@Name='" + mesh.name() + "']").c_str())
+              .node();
+    assert(mesh_grid_node);
 
-  // Change it's name to {function_name}_{counter}
-  // where counter = number of children in temporal grid node
-  mesh_grid_node.attribute("Name") = function_time_name.c_str();
+    // Change it's name to {function_name}_{counter}
+    // where counter = number of children in temporal grid node
+    mesh_grid_node.attribute("Name") = function_time_name.c_str();
 
-  pugi::xml_node time_node = mesh_grid_node.append_child("Time");
-  time_node.append_attribute("Value") = std::to_string(time_step).c_str();
+    pugi::xml_node time_node = mesh_grid_node.append_child("Time");
+    time_node.append_attribute("Value") = std::to_string(time_step).c_str();
 
-  //
-  // Write function
-  //
+    //
+    // Write function
+    //
 
   add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
                function_name + "/" + function_time_name, u, function_name,
@@ -381,48 +381,34 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
                      : num_points;
 
 #ifdef PETSC_USE_COMPLEX
-  std::string real_attr_name = "Real_";
-  real_attr_name.append(u.name());
-  std::string imag_attr_name = "Imaginary_";
-  imag_attr_name.append(u.name());
 
-  // Add real attribute node
-  pugi::xml_node real_attribute_node = grid_node.append_child("Attribute");
-  assert(real_attribute_node);
-  real_attribute_node.append_attribute("Name") = real_attr_name.c_str();
-  real_attribute_node.append_attribute("AttributeType")
-      = rank_to_string(u.value_rank()).c_str();
-  real_attribute_node.append_attribute("Center")
-      = cell_centred ? "Cell" : "Node";
-
-  // Add imaginary attribute node
-  pugi::xml_node imag_attribute_node = grid_node.append_child("Attribute");
-  assert(imag_attribute_node);
-  imag_attribute_node.append_attribute("Name") = imag_attr_name.c_str();
-  imag_attribute_node.append_attribute("AttributeType")
-      = rank_to_string(u.value_rank()).c_str();
-  imag_attribute_node.append_attribute("Center")
-      = cell_centred ? "Cell" : "Node";
-
-  // Copies can be avoided by using Eigen?
-  std::vector<double> real_data_values(data_values.size());
-  std::vector<double> imag_data_values(data_values.size());
-
-  for (unsigned int i = 0; i < data_values.size(); i++)
+  std::vector<std::string> components = {"real", "imag"};
+  for (const std::string component : components)
   {
-    real_data_values[i] = std::real(data_values[i]);
-    imag_data_values[i] = std::imag(data_values[i]);
+    std::string attr_name = component + "_" + u.name();
+    // Add attribute node
+    pugi::xml_node attribute_node = grid_node.append_child("Attribute");
+    assert(attribute_node);
+    attribute_node.append_attribute("Name") = attr_name.c_str();
+    attribute_node.append_attribute("AttributeType")
+        = rank_to_string(u.value_rank()).c_str();
+    attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
+
+    std::vector<double> component_data_values(data_values.size());
+    for (unsigned int i = 0; i < data_values.size(); i++)
+    {
+      if (component == components[0])
+        component_data_values[i] = data_values[i].real();
+      else if (component == components[1])
+        component_data_values[i] = std::imag(data_values[i]);
+    }
+
+    // Add data item of component
+    add_data_item(_mpi_comm.comm(), attribute_node, h5_id,
+                  "/VisualisationVector/" + component + "/0",
+                  component_data_values, {num_values, width});
   }
 
-  // Add real part
-  add_data_item(_mpi_comm.comm(), real_attribute_node, h5_id,
-                "/VisualisationVector/real/0", real_data_values,
-                {num_values, width});
-
-  // Add imaginary part
-  add_data_item(_mpi_comm.comm(), imag_attribute_node, h5_id,
-                "/VisualisationVector/imaginary/0", imag_data_values,
-                {num_values, width});
 #else
   // Add attribute node
   pugi::xml_node attribute_node = grid_node.append_child("Attribute");
@@ -431,7 +417,6 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
   attribute_node.append_attribute("AttributeType")
       = rank_to_string(u.value_rank()).c_str();
   attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
-
 
   add_data_item(_mpi_comm.comm(), attribute_node, h5_id,
                 "/VisualisationVector/0", data_values, {num_values, width});
@@ -585,7 +570,7 @@ void XDMFFile::write(const function::Function& u, double time_step,
     data_values = get_cell_data_values(u);
   else
     data_values = get_point_data_values(u);
-  
+
   // Add attribute DataItem node and write data
   std::int64_t width = get_padded_width(u);
   assert(data_values.size() % width == 0);
@@ -594,47 +579,35 @@ void XDMFFile::write(const function::Function& u, double time_step,
                      : mesh.num_entities_global(0);
 
 #ifdef PETSC_USE_COMPLEX
-  
-  std::string real_attr_name = "Real_";
-  real_attr_name.append(u.name());
-  std::string imag_attr_name = "Imaginary_";
-  imag_attr_name.append(u.name());
 
-  // Add real attribute node
-  pugi::xml_node real_attribute_node = mesh_node.append_child("Attribute");
-  assert(real_attribute_node);
-  real_attribute_node.append_attribute("Name") = real_attr_name.c_str();
-  real_attribute_node.append_attribute("AttributeType")
-      = rank_to_string(u.value_rank()).c_str();
-  real_attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
-
-  // Add imaginary attribute node
-  pugi::xml_node imag_attribute_node = mesh_node.append_child("Attribute");
-  assert(real_attribute_node);
-  imag_attribute_node.append_attribute("Name") = imag_attr_name.c_str();
-  imag_attribute_node.append_attribute("AttributeType")
-      = rank_to_string(u.value_rank()).c_str();
-  imag_attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
-
-  const std::string real_dataset_name
-    = "/VisualisationVector/real/" + std::to_string(_counter);
-  const std::string imag_dataset_name
-    = "/VisualisationVector/imag/" + std::to_string(_counter);
-
-  std::vector<double> real_data_values(data_values.size());
-  std::vector<double> imag_data_values(data_values.size());
-
-  for (unsigned int i = 0; i < data_values.size(); i++)
+  std::vector<std::string> components = {"real", "imag"};
+  for (const std::string component : components)
   {
-    real_data_values[i] = std::real(data_values[i]);
-    imag_data_values[i] = std::imag(data_values[i]);
-  }
+    std::string attr_name = component + "_" + u.name();
+    // Add attribute node
+    pugi::xml_node attribute_node = mesh_node.append_child("Attribute");
+    assert(attribute_node);
+    attribute_node.append_attribute("Name") = attr_name.c_str();
+    attribute_node.append_attribute("AttributeType")
+        = rank_to_string(u.value_rank()).c_str();
+    attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-  add_data_item(_mpi_comm.comm(), real_attribute_node, h5_id, real_dataset_name,
-                data_values, {num_values, width});
-  
-  add_data_item(_mpi_comm.comm(), imag_attribute_node, h5_id, imag_dataset_name,
-              data_values, {num_values, width});
+    const std::string dataset_name
+        = "/VisualisationVector/" + component + "/" + std::to_string(_counter);
+
+    std::vector<double> component_data_values(data_values.size());
+    for (unsigned int i = 0; i < data_values.size(); i++)
+    {
+      if (component == components[0])
+        component_data_values[i] = data_values[i].real();
+      else if (component == components[1])
+        component_data_values[i] = data_values[i].imag();
+    }
+
+    // Add data item of component
+    add_data_item(_mpi_comm.comm(), attribute_node, h5_id, dataset_name,
+                  component_data_values, {num_values, width});
+  }
 
 #else
   // Add attribute node
@@ -3074,6 +3047,6 @@ std::string XDMFFile::rank_to_string(std::size_t value_rank)
     return "Scalar";
   else if (value_rank == 1)
     return "Vector";
-  return "Tensor";
+  return "Tensor"; 
 }
 //-----------------------------------------------------------------------------
