@@ -8,7 +8,6 @@
 import ufl
 import dolfin
 import numpy as np
-import pytest
 from ufl import dx, grad, inner
 
 
