@@ -65,10 +65,13 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
     }
     else
     {
-      log::dolfin_error("HDF5Interface.cpp", "open HDF5 file",
-                        "File \"%s\" does not exist", filename.c_str());
+      throw std::runtime_error("Unable to open HDF5 file. File " + filename
+                               + " does not exist.");
     }
   }
+  else
+    throw std::runtime_error("File mode " + mode + " not recognized.");
+
   assert(file_id != HDF5_FAIL);
 
   // Release file-access template
