@@ -5,26 +5,26 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy as np
-from dolfin import SubDomain, DOLFIN_EPS, MPI, MeshFunction, UnitSquareMesh, UnitCubeMesh, UnitIntervalMesh
+from dolfin import SubDomain, config, MPI, MeshFunction, UnitSquareMesh, UnitCubeMesh, UnitIntervalMesh
 
 
 def test_creation_and_marking():
 
     class Left(SubDomain):
         def inside(self, x, on_boundary):
-            return x[:, 0] < DOLFIN_EPS
+            return x[:, 0] < config.DOLFIN_EPS
 
     class LeftOnBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return np.logical_and(x[:, 0] < DOLFIN_EPS, on_boundary)
+            return np.logical_and(x[:, 0] < config.DOLFIN_EPS, on_boundary)
 
     class Right(SubDomain):
         def inside(self, x, on_boundary):
-            return x[:, 0] > 1.0 - DOLFIN_EPS
+            return x[:, 0] > 1.0 - config.DOLFIN_EPS
 
     class RightOnBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return np.logical_and(x[:, 0] > 1.0 - DOLFIN_EPS, on_boundary)
+            return np.logical_and(x[:, 0] > 1.0 - config.DOLFIN_EPS, on_boundary)
 
     subdomain_pairs = [(Left(), Right()),
                        (LeftOnBoundary(), RightOnBoundary())]

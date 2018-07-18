@@ -118,7 +118,7 @@ often wise to instead specify :math:`|x - 1| < \epsilon`, where
     # Sub domain for Dirichlet boundary condition
     class DirichletBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
+            return abs(x[0] - 1.0) < config.DOLFIN_EPS and on_boundary
 
 We then define a mesh of the domain and a finite element function
 space V relative to this mesh. We use the built-in mesh provided by

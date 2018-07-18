@@ -53,15 +53,15 @@ J = derivative(F, u, du)
 # Symmetry condition (to block rigid body rotations)
 tol = mesh.hmin()
 def symmetry_line(x):
-    return abs(x[0]) < DOLFIN_EPS
+    return abs(x[0]) < config.DOLFIN_EPS
 bc = DirichletBC(V.sub(0), 0., symmetry_line, method="pointwise")
 
 # The displacement u must be such that the current configuration x+u
 # remains in the box [xmin,xmax] x [umin,ymax]
 constraint_u = Expression(("xmax - x[0]","ymax - x[1]"),
-                          xmax=1.0+DOLFIN_EPS,  ymax=1.0, degree=1)
+                          xmax=1.0+config.DOLFIN_EPS,  ymax=1.0, degree=1)
 constraint_l = Expression(("xmin - x[0]","ymin - x[1]"),
-                          xmin=-1.0-DOLFIN_EPS, ymin=-1.0, degree=1)
+                          xmin=-1.0-config.DOLFIN_EPS, ymin=-1.0, degree=1)
 umin = interpolate(constraint_l, V)
 umax = interpolate(constraint_u, V)
 

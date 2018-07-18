@@ -33,8 +33,6 @@ from .cpp import __version__
 
 from .cpp.common import Variable, TimingType, timing, timings, list_timings
 from .cpp.common import config
-DOLFIN_EPS = config.DOLFIN_EPS  # FIXME: Remove me
-DOLFIN_PI = config.DOLFIN_PI  # FIXME: Remove me
 
 if config.has_hdf5:
     from .cpp.io import HDF5File

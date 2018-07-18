@@ -10,7 +10,7 @@ import pytest
 from dolfin import (UnitCubeMesh,
                     FunctionSpace, VectorFunctionSpace, TensorFunctionSpace,
                     Constant, MPI, Point, Function,
-                    UserExpression, interpolate, Expression, DOLFIN_EPS, Vertex, lt, cpp)
+                    UserExpression, interpolate, Expression, config, Vertex, lt, cpp)
 from math import sqrt
 import numpy
 import ufl
@@ -248,7 +248,7 @@ def test_near_evaluations(R, mesh):
     u0 = Function(R)
     u0.vector()[:] = 1.0
     a = Vertex(mesh, 0).point().array()
-    offset = 0.99 * DOLFIN_EPS
+    offset = 0.99 * config.DOLFIN_EPS
 
     a_shift_x = Point(a[0] - offset, a[1], a[2]).array()
     assert round(u0(a)[0] - u0(a_shift_x)[0], 7) == 0

@@ -127,7 +127,7 @@ small number (such as machine precision).)::
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
-        return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+        return x[0] < config.DOLFIN_EPS or x[0] > 1.0 - config.DOLFIN_EPS
 
 Now, the Dirichlet boundary condition can be created using the class
 :py:class:`DirichletBC <dolfin.cpp.fem.DirichletBC>`.  A

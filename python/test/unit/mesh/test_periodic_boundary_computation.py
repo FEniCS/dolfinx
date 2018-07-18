@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy as np
-from dolfin import SubDomain, UnitSquareMesh, DOLFIN_EPS, PeriodicBoundaryComputation, MPI
+from dolfin import SubDomain, UnitSquareMesh, config, PeriodicBoundaryComputation, MPI
 from dolfin_utils.test import skip_in_parallel, fixture
 
 
@@ -13,7 +13,7 @@ from dolfin_utils.test import skip_in_parallel, fixture
 def periodic_boundary():
     class PeriodicBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return x[0] < DOLFIN_EPS
+            return x[0] < config.DOLFIN_EPS
 
         def map(self, x, y):
             y[0] = x[0] - 1.0

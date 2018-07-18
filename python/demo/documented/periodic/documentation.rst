@@ -37,7 +37,7 @@ for a function at the given point ``x``.
         def eval(self, values, x):
             dx = x[0] - 0.5
             dy = x[1] - 0.5
-            values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) \
+            values[0] = x[0]*sin(5.0*config.DOLFIN_PI*x[1]) \
                         + 1.0*exp(-(dx*dx + dy*dy)/0.02)
 
 To define the boundaries, we create subclasses of the class
@@ -57,7 +57,7 @@ precision).)
     # Sub domain for Dirichlet boundary condition
     class DirichletBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return bool((x[1] < DOLFIN_EPS or x[1] > (1.0 - DOLFIN_EPS)) \
+            return bool((x[1] < config.DOLFIN_EPS or x[1] > (1.0 - config.DOLFIN_EPS)) \
                         and on_boundary)
 
 The periodic boundary is defined by PeriodicBoundary and we define
@@ -75,7 +75,7 @@ the boundary by making an instance of the class.
 
         # Left boundary is "target domain" G
         def inside(self, x, on_boundary):
-            return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
+            return bool(x[0] < config.DOLFIN_EPS and x[0] > -config.DOLFIN_EPS and on_boundary)
 
         # Map right boundary (H) to left boundary (G)
         def map(self, x, y):

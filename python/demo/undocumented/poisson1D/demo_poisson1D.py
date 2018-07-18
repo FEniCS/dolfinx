@@ -29,7 +29,7 @@ V = FunctionSpace(mesh, "CG", 1)
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and x[0] < DOLFIN_EPS
+        return on_boundary and x[0] < config.DOLFIN_EPS
 
 # Define variational problem
 u = TrialFunction(V)

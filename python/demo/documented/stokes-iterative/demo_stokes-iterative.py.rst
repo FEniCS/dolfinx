@@ -115,10 +115,10 @@ and is a stable, standard element pair for the Stokes equations.) ::
 Next, we define the boundary conditions. ::
 
     # Boundaries
-    def right(x, on_boundary): return x[0] > (1.0 - DOLFIN_EPS)
-    def left(x, on_boundary): return x[0] < DOLFIN_EPS
+    def right(x, on_boundary): return x[0] > (1.0 - config.DOLFIN_EPS)
+    def left(x, on_boundary): return x[0] < config.DOLFIN_EPS
     def top_bottom(x, on_boundary):
-        return x[1] > 1.0 - DOLFIN_EPS or x[1] < DOLFIN_EPS
+        return x[1] > 1.0 - config.DOLFIN_EPS or x[1] < config.DOLFIN_EPS
 
     # No-slip boundary condition for velocity
     noslip = Constant((0.0, 0.0, 0.0))

@@ -9,7 +9,7 @@
 
 from dolfin import (TestFunction, TrialFunction, dot, grad, dx,
                     DirichletBC, UnitSquareMesh, UnitCubeMesh, inner, div, Expression,
-                    Constant, TestFunctions, TrialFunctions, DOLFIN_EPS, FunctionSpace,
+                    Constant, TestFunctions, TrialFunctions, config, FunctionSpace,
                     MixedElement, VectorElement, FiniteElement)
 from dolfin.la import PETScVector, PETScOptions, PETScKrylovSolver
 from dolfin.cpp.fem import PETScDMCollection
@@ -98,13 +98,13 @@ def xtest_mg_solver_stokes():
 
     # Boundaries
     def right(x, on_boundary):
-        return x[0] > (1.0 - DOLFIN_EPS)
+        return x[0] > (1.0 - config.DOLFIN_EPS)
 
     def left(x, on_boundary):
-        return x[0] < DOLFIN_EPS
+        return x[0] < config.DOLFIN_EPS
 
     def top_bottom(x, on_boundary):
-        return x[1] > 1.0 - DOLFIN_EPS or x[1] < DOLFIN_EPS
+        return x[1] > 1.0 - config.DOLFIN_EPS or x[1] < config.DOLFIN_EPS
 
     # No-slip boundary condition for velocity
     noslip = Constant((0.0, 0.0, 0.0))
