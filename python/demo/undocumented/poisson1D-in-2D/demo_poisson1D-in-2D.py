@@ -69,7 +69,7 @@ rotation.rotate(mesh)
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and rotation.to_interval(x) < DOLFIN_EPS
+        return on_boundary and rotation.to_interval(x) < config.DOLFIN_EPS
 
 
 # Define variational problem

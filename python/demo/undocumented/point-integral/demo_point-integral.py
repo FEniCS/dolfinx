@@ -29,7 +29,7 @@ V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
 def boundary(x):
-    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+    return x[0] < config.DOLFIN_EPS or x[0] > 1.0 - config.DOLFIN_EPS
 
 def center_func(x):
     return (0.45 <= x[0] and x[0] <= 0.55 and near(x[1], 0.5)) or \

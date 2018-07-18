@@ -66,7 +66,7 @@ mesh.geometry.coord_mapping = cmap
 
 
 def boundary(x, on_boundary):
-    return np.logical_or(x[:, 0] < DOLFIN_EPS, x[:, 0] > 1.0 - DOLFIN_EPS)
+    return np.logical_or(x[:, 0] < config.DOLFIN_EPS, x[:, 0] > 1.0 - config.DOLFIN_EPS)
 
 
 # Rotation rate and mass density

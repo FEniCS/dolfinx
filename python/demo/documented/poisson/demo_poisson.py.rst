@@ -116,7 +116,7 @@ small number (such as machine precision).) ::
 
     # Define Dirichlet boundary (x = 0 or x = 1)
     def boundary(x):
-        return np.logical_or(x[:, 0] < DOLFIN_EPS, x[:, 0] > 1.0 - DOLFIN_EPS)
+        return np.logical_or(x[:, 0] < config.DOLFIN_EPS, x[:, 0] > 1.0 - config.DOLFIN_EPS)
 
 Now, the Dirichlet boundary condition can be created using the class
 :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`. A

@@ -223,7 +223,7 @@ essential boundary): ::
 
     # Define essential boundary
     def boundary(x):
-        return x[1] < DOLFIN_EPS or x[1] > 1.0 - DOLFIN_EPS
+        return x[1] < config.DOLFIN_EPS or x[1] > 1.0 - config.DOLFIN_EPS
 
 Now, all the pieces are in place for the construction of the essential
 boundary condition: ::

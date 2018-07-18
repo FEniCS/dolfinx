@@ -12,13 +12,13 @@ class Source(UserExpression):
     def eval(self, values, x):
         dx = x[0] - 0.5
         dy = x[1] - 0.5
-        values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) \
+        values[0] = x[0]*sin(5.0*config.DOLFIN_PI*x[1]) \
                     + 1.0*exp(-(dx*dx + dy*dy)/0.02)
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return bool((x[1] < DOLFIN_EPS or x[1] > (1.0 - DOLFIN_EPS)) \
+        return bool((x[1] < config.DOLFIN_EPS or x[1] > (1.0 - config.DOLFIN_EPS)) \
                     and on_boundary)
 
 # Sub domain for Periodic boundary condition
@@ -26,7 +26,7 @@ class PeriodicBoundary(SubDomain):
 
     # Left boundary is "target domain" G
     def inside(self, x, on_boundary):
-        return bool(x[0] < DOLFIN_EPS and x[0] > -DOLFIN_EPS and on_boundary)
+        return bool(x[0] < config.DOLFIN_EPS and x[0] > -config.DOLFIN_EPS and on_boundary)
 
     # Map right boundary (H) to left boundary (G)
     def map(self, x, y):

@@ -19,7 +19,7 @@ parameters["ghost_mode"] = "shared_facet"
 
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return abs(x[0] - 1.0) < DOLFIN_EPS and on_boundary
+        return abs(x[0] - 1.0) < config.DOLFIN_EPS and on_boundary
 
 # Load mesh
 mesh = Mesh("../unitsquare_64_64.xml.gz")

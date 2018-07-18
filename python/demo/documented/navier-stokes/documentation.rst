@@ -170,7 +170,7 @@ The time-stepping loop is now implemented as follows:
 
     # Time-stepping
     t = dt
-    while t < T + DOLFIN_EPS:
+    while t < T + config.DOLFIN_EPS:
 
         # Update pressure boundary condition
         p_in.t = t

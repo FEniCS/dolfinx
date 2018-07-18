@@ -81,7 +81,7 @@ plt.figure()
 plot(u, title=r"t = {0:1.1f}".format(0.0))
 i += 1 
 
-while t - T < DOLFIN_EPS:
+while t - T < config.DOLFIN_EPS:
     # Assemble vector and apply boundary conditions
     b = assemble(L)
     bc.apply(b)

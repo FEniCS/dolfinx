@@ -14,7 +14,7 @@ import pytest
 from dolfin import (UnitSquareMesh, UnitIntervalMesh, UnitCubeMesh, MPI, CellType,
                     VectorFunctionSpace,
                     FunctionSpace, MixedElement, FiniteElement, VectorElement, Point,
-                    Cells, SubDomain, DOLFIN_EPS)
+                    Cells, SubDomain, config)
 from dolfin_utils.test import fixture, skip_in_serial, skip_in_parallel, set_parameters_fixture
 
 xfail = pytest.mark.xfail(strict=True)
@@ -131,7 +131,7 @@ def test_tabulate_dofs(mesh_factory):
 def test_tabulate_coord_periodic(mesh_factory):
     class PeriodicBoundary2(SubDomain):
         def inside(self, x, on_boundary):
-            return x[0] < DOLFIN_EPS
+            return x[0] < config.DOLFIN_EPS
 
         def map(self, x, y):
             y[0] = x[0] - 1.0
@@ -183,7 +183,7 @@ def test_tabulate_coord_periodic(mesh_factory):
 def test_tabulate_dofs_periodic(mesh_factory):
     class PeriodicBoundary2(SubDomain):
         def inside(self, x, on_boundary):
-            return x[0] < DOLFIN_EPS
+            return x[0] < config.DOLFIN_EPS
 
         def map(self, x, y):
             y[0] = x[0] - 1.0
