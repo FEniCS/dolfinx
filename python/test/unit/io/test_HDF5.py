@@ -5,13 +5,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+
 import dolfin
-from dolfin import (HDF5File, MPI, UnitSquareMesh, UnitCubeMesh, MeshFunction,
-                    MeshValueCollection, Expression, Cell, MeshEntity, MeshEntities,
-                    Function, FunctionSpace, cpp)
-from dolfin_utils.test import (skip_if_not_HDF5, xfail_if_complex, tempdir,
-                               xfail_with_serial_hdf5_in_parallel)
+from dolfin import (MPI, Cell, Expression, Function, FunctionSpace, HDF5File,
+                    MeshEntities, MeshEntity, MeshFunction,
+                    MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
 from dolfin.la import PETScVector
+from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_if_complex,
+                               xfail_with_serial_hdf5_in_parallel)
+import dolfin.io
+
 assert(tempdir)
 
 
