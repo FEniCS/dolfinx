@@ -13,7 +13,7 @@ class HDF5File(cpp.io.HDF5File):
 
     def read_function(self, V, name: str):
         """Reads in function
-        
+
         Parameters
         ----------
         V
@@ -36,7 +36,8 @@ class HDF5File(cpp.io.HDF5File):
         return Function(V, u_cpp.vector())
 
 
-class VTKFile(cpp.io.VTKFile): pass
+class VTKFile(cpp.io.VTKFile):
+    pass
 
 
 class XDMFFile(cpp.io.XDMFFile):
