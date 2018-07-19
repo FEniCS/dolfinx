@@ -29,9 +29,7 @@ class HDF5File(cpp.io.HDF5File):
         dolfin.Function
         """
 
-        # Try to extract cpp object
         V_cpp = getattr(V, "_cpp_object", V)
-
         u_cpp = self.read(V_cpp, name)
         return Function(V, u_cpp.vector())
 
@@ -64,8 +62,6 @@ class XDMFFile(cpp.io.XDMFFile):
         dolfin.Function
         """
 
-        # Try to extract cpp object
         V_cpp = getattr(V, "_cpp_object", V)
-
         u_cpp = self._read_checkpoint(V_cpp, name, counter)
         return Function(V, u_cpp.vector())
