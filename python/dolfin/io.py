@@ -1,32 +1,70 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017 Chris N. Richardson, Garth N. Wells, Michal Habera
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import dolfin.cpp as cpp
-import dolfin.function.function
-
-# Functions to extend cpp.io.HDF5File with
+from dolfin.function.function import Function
 
 
-def read_function(self, V, name):
-    # Read cpp function
-    u_cpp = self.read(V._cpp_object, name)
-    return dolfin.function.function.Function(V, u_cpp.vector())
+class HDF5File(cpp.io.HDF5File):
+
+    def read_function(self, V, name: str):
+        """Reads in function
+        
+        Parameters
+        ----------
+        V
+            Function space of saved function.
+        name
+            Name of function as saved into HDF file.
+        Note
+        ----
+        Parameter `V: Function space` must be the same as saved function space
+        except for ordering of mesh entities.
+        Returns
+        -------
+        dolfin.Function
+        """
+
+        # Try to extract cpp object
+        V_cpp = getattr(V, "_cpp_object", V)
+
+        u_cpp = self.read(V_cpp, name)
+        return Function(V, u_cpp.vector())
 
 
-cpp.io.HDF5File.read_function = read_function
-del read_function
+class VTKFile(cpp.io.VTKFile): pass
 
 
-def read_checkpoint(self, V, name, counter=-1):
-    # Read cpp function
-    u_cpp = self._read_checkpoint(V._cpp_object, name, counter)
-    return dolfin.function.function.Function(V, u_cpp.vector())
+class XDMFFile(cpp.io.XDMFFile):
 
+    def read_checkpoint(self, V, name: str, counter: int=-1):
+        """Reads in function from checkpointing format
+        Parameters
+        ----------
+        V
+            Function space of saved function.
+        name
+            Name of function as saved into XDMF file.
+        counter : optional
+            Position of function in the file within functions of the same
+            name. Counter is used to read function saved as time series.
+            To get last saved function use counter=-1, or counter=-2 for
+            one before last, etc.
+        Note
+        ----
+        Parameter `V: Function space` must be the same as saved function space
+        except for ordering of mesh entities.
+        Returns
+        -------
+        dolfin.Function
+        """
 
-cpp.io.XDMFFile.read_checkpoint = read_checkpoint
+        # Try to extract cpp object
+        V_cpp = getattr(V, "_cpp_object", V)
 
-del read_checkpoint
+        u_cpp = self._read_checkpoint(V_cpp, name, counter)
+        return Function(V, u_cpp.vector())

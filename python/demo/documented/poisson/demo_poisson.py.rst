@@ -79,6 +79,7 @@ First, the :py:mod:`dolfin` module is imported: ::
     import numpy as np
     import dolfin
     from dolfin import *
+    from dolfin.io import XDMFFile
 
 We begin by defining a mesh of the domain and a finite element
 function space :math:`V` relative to this mesh. As the unit square is

@@ -11,6 +11,7 @@ smoothed aggregation algerbaric multigrid."""
 import numpy as np
 import dolfin
 from dolfin import *
+from dolfin.io import XDMFFile
 from dolfin.la import (VectorSpaceBasis, PETScVector, PETScOptions,
                        PETScKrylovSolver)
 from dolfin.fem.assembling import assemble_system

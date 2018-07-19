@@ -6,11 +6,12 @@
 
 import pytest
 import os
-from dolfin import (XDMFFile, MPI, MeshValueCollection, MeshEntities, Vertices, Facets, Cells,
+from dolfin import (MPI, MeshValueCollection, MeshEntities, Vertices, Facets, Cells,
                     UnitCubeMesh, FunctionSpace, Function, Edges, MeshFunction, UnitSquareMesh,
                     VectorFunctionSpace, TensorFunctionSpace, UnitIntervalMesh, cpp, Expression,
                     interpolate, FiniteElement, VectorElement, Constant, has_hdf5, has_hdf5_parallel,
                     CellType)
+from dolfin.io import XDMFFile
 from dolfin_utils.test import tempdir
 assert(tempdir)
 

@@ -85,6 +85,7 @@ following way::
 
     import dolfin
     from dolfin import *
+    from dolfin.io import XDMFFile
 
     # Load mesh and subdomains
     xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")

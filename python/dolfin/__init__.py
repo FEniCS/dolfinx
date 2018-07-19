@@ -37,16 +37,12 @@ from .cpp.common import (Variable, has_debug, has_hdf5, has_scotch,
                          git_commit_hash, DOLFIN_EPS, DOLFIN_PI, TimingType,
                          timing, timings, list_timings)
 
-if has_hdf5():
-    from .cpp.io import HDF5File
-
 from .cpp import MPI
 from .cpp.function import (Expression, Constant)
 from .cpp.fem import (FiniteElement, DofMap)
 
 from .cpp.geometry import BoundingBoxTree, Point
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
-from .cpp.io import XDMFFile, VTKFile
 
 if has_slepc():
     from .cpp.la import SLEPcEigenSolver
