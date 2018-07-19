@@ -34,15 +34,6 @@ bool dolfin::has_debug()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_mpi()
-{
-#ifdef HAS_MPI
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
 bool dolfin::has_petsc_complex()
 {
 #ifdef PETSC_USE_COMPLEX

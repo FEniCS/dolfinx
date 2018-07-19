@@ -43,13 +43,10 @@
 
 using namespace dolfin;
 
-#if defined(HAS_PETSC) and defined(PETSC_HAVE_HYPRE)
+#if defined(PETSC_HAVE_HYPRE)
 
 int main()
 {
-  // Set PETSc as default linear algebra backend
-  parameters["linear_algebra_backend"] = "PETSc";
-
   // Everywhere on exterior surface
   class DirichletBoundary: public SubDomain
   {
@@ -156,7 +153,7 @@ int main()
 
 int main()
 {
-  log::info("This demo requires DOLFIN to be configured with PETSc (with Hypre).");
+  log::info("This demo requires PETSc to be configured with Hypre.");
   return 0;
 }
 

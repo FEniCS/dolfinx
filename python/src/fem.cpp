@@ -393,7 +393,6 @@ void fem(py::module& m)
         self.set_bounds(_lb, _ub);
       });
 
-#ifdef HAS_PETSC
   // dolfin::fem::PETScDMCollection
   py::class_<dolfin::fem::PETScDMCollection,
              std::shared_ptr<dolfin::fem::PETScDMCollection>>(
@@ -425,6 +424,5 @@ void fem(py::module& m)
           })
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
-#endif
 }
 } // namespace dolfin_wrappers

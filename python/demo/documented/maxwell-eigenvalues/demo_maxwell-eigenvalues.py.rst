@@ -122,15 +122,12 @@ spot.
 The implementation
 ------------------
 
-**Preamble.** First we import ``dolfin`` and ``numpy`` and make sure
-that dolfin has been configured with PETSc and SLEPc (since we depend
-on the SLEPc eigenvalue solver). ::
+**Preamble.** First we import ``dolfin`` and ``numpy`` and
+make sure that dolfin has been configured with SLEPc (since
+we depend on the SLEPc eigenvalue solver). ::
 
   from dolfin import *
   import numpy as np
-  if not has_linear_algebra_backend("PETSc"):
-      print("DOLFIN has not been configured with PETSc. Exiting.")
-      exit()
   if not has_slepc():
       print("DOLFIN has not been configured with SLEPc. Exiting.")
       exit()

@@ -11,8 +11,6 @@ from dolfin import *
 
 
 # Skips with dependencies
-skip_if_not_MPI = pytest.mark.skipif(not has_mpi(),
-                                     reason="Skipping unit test(s) depending on MPI.")
 skip_if_not_HDF5 = pytest.mark.skipif(not has_hdf5(),
                                       reason="Skipping unit test(s) depending on HDF5.")
 skip_if_not_petsc4py = pytest.mark.skipif(not has_petsc4py(),

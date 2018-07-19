@@ -67,11 +67,6 @@ dolfin::VectorSpaceBasis build_near_nullspace(const dolfin::FunctionSpace& V,
 
 int main()
 {
-  #ifdef HAS_PETSC
-
-  // Set backend to PETSC
-  parameters["linear_algebra_backend"] = "PETSc";
-
   // Inner surface subdomain
   class InnerSurface : public SubDomain
   {
@@ -201,14 +196,9 @@ int main()
     file << partitions;
   }
 
-  // Displace mesh and write 
+  // Displace mesh and write
   ALE::move(*mesh, *u);
   XDMFFile("deformed_mesh.xdmf").write(*mesh);
-
-  #else
-  dolfin::cout << "DOLFIN must be configured with PETSc to run this demo."
-               << dolfin::endl;
-  #endif
 
   return 0;
 }

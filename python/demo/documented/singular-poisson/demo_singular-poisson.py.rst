@@ -99,18 +99,6 @@ First, the modules :py:mod:`dolfin` and matplotlib are imported: ::
    from dolfin import *
    import matplotlib.pyplot as plt
 
-Then, we check that dolfin is configured with the backend called
-PETSc, since it provides us with a wide range of methods used by
-:py:class:`KrylovSolver <dolfin.cpp.la.KrylovSolver>`. We set PETSc as
-our backend for linear algebra::
-
-   # Test for PETSc
-   if not has_linear_algebra_backend("PETSc"):
-       info("DOLFIN has not been configured with PETSc. Exiting.")
-       exit()
-
-   parameters["linear_algebra_backend"] = "PETSc"
-
 We begin by defining a mesh of the domain and a finite element
 function space :math:`V` relative to this mesh. We use a built-in mesh
 provided by the class :py:class:`UnitSquareMesh

@@ -17,10 +17,6 @@ from dolfin import *
 import matplotlib.pyplot as plt
 
 
-if not has_petsc():
-    print("DOLFIN must be compiled at least with PETSc 3.6 to run this demo.")
-    exit(0)
-
 # Read mesh and refine once
 mesh = Mesh("../buckling.xml.gz")
 mesh = refine(mesh)

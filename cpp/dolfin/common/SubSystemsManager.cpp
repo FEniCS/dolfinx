@@ -4,12 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#ifdef HAS_MPI
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <iostream>
 #include <mpi.h>
-#endif
-
 #include <petsc.h>
 
 #ifdef HAS_SLEPC
@@ -46,7 +43,6 @@ SubSystemsManager::~SubSystemsManager() { finalize(); }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_mpi()
 {
-#ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
   if (mpi_initialized)
@@ -58,15 +54,11 @@ void SubSystemsManager::init_mpi()
   char* c = const_cast<char*>(s.c_str());
   SubSystemsManager::init_mpi(0, &c, MPI_THREAD_MULTIPLE);
   singleton().control_mpi = true;
-#else
-// Do nothing
-#endif
 }
 //-----------------------------------------------------------------------------
 int SubSystemsManager::init_mpi(int argc, char* argv[],
                                 int required_thread_level)
 {
-#ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
   if (mpi_initialized)
@@ -78,9 +70,6 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   singleton().control_mpi = true;
 
   return provided;
-#else
-  return -1;
-#endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
@@ -153,7 +142,6 @@ bool SubSystemsManager::responsible_petsc()
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_mpi()
 {
-#ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
 
@@ -182,9 +170,6 @@ void SubSystemsManager::finalize_mpi()
 
     singleton().control_mpi = false;
   }
-#else
-// Do nothing
-#endif
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::finalize_petsc()
@@ -209,26 +194,16 @@ bool SubSystemsManager::mpi_initialized()
 // returns true if MPI_Init has been called at any point, even if
 // MPI_Finalize has been called.
 
-#ifdef HAS_MPI
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
   return mpi_initialized;
-#else
-  // DOLFIN is not configured for MPI (it might be through PETSc)
-  return false;
-#endif
 }
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_finalized()
 {
-#ifdef HAS_MPI
   int mpi_finalized;
   MPI_Finalized(&mpi_finalized);
   return mpi_finalized;
-#else
-  // DOLFIN is not configured for MPI (it might be through PETSc)
-  return false;
-#endif
 }
 //-----------------------------------------------------------------------------
 PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
