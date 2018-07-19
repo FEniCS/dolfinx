@@ -28,39 +28,38 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
     MPI_Info info;
     MPI_Info_create(&info);
     herr_t status = H5Pset_fapl_mpio(plist_id, mpi_comm, info);
-    assert(status != HDF5_FAIL);
+    assert(status > 0);
     MPI_Info_free(&info);
   }
 #endif
 
-  // Query file existence only once
-  bool file_exists = boost::filesystem::exists(filename);
-
   hid_t file_id = HDF5_FAIL;
-  if (mode == "w")
+  if (mode == "w") // Create file for write, overwriting any existing file
   {
-    // Create file for write, (overwriting existing file, if present)
     file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+    if (file_id < 0)
+      throw std::runtime_error("Failed to create HDF5 file.");
   }
-  else if (mode == "a")
+  else if (mode == "a") // Open file to append, creating if does not exist
   {
-    if (file_exists)
-    {
+    if (boost::filesystem::exists(filename))
       file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
-    }
     else
     {
-      // If file doesn't exists but we want to append it
-      // create new
       file_id
           = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
     }
+    if (file_id < 0)
+      throw std::runtime_error(
+          "Failed to create/open HDF5 file (append mode).");
   }
-  else if (mode == "r")
+  else if (mode == "r") // Open file to read
   {
-    if (file_exists)
+    if (boost::filesystem::exists(filename))
     {
-      file_id = H5Fopen(filename.c_str(), H5F_ACC_RDWR, plist_id);
+      file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, plist_id);
+      if (file_id < 0)
+        throw std::runtime_error("Failed to open HDF5 file.");
     }
     else
     {
@@ -69,37 +68,37 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
     }
   }
 
-  // Release file-access template
-  herr_t status = H5Pclose(plist_id);
-  assert(status != HDF5_FAIL);
+  if (H5Pclose(plist_id) < 0)
+    throw std::runtime_error("Failed to close HDF5 file property list.");
 
   return file_id;
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::close_file(const hid_t hdf5_file_handle)
 {
-  herr_t status = H5Fclose(hdf5_file_handle);
-  assert(status != HDF5_FAIL);
+  if (H5Fclose(hdf5_file_handle) < 0)
+    throw std::runtime_error("Failed to close HDF5 file.");
 }
 //-----------------------------------------------------------------------------
 void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
 {
-  herr_t status = H5Fflush(hdf5_file_handle, H5F_SCOPE_GLOBAL);
-  assert(status != HDF5_FAIL);
+  if (H5Fflush(hdf5_file_handle, H5F_SCOPE_GLOBAL) < 0)
+    throw std::runtime_error("Failed to flush HDF5 file.");
 }
 //-----------------------------------------------------------------------------
 std::string HDF5Interface::get_filename(hid_t hdf5_file_handle)
 {
   // Get length of filename
-  ssize_t length = H5Fget_name(hdf5_file_handle, NULL, 0);
-  assert(length > 0);
+  const ssize_t length = H5Fget_name(hdf5_file_handle, NULL, 0);
+  if (length < 0)
+    throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
   // Allocate memory
   std::vector<char> name(length + 1);
 
   // Retrieve filename
-  length = H5Fget_name(hdf5_file_handle, name.data(), length + 1);
-  assert(length > 0);
+  if (H5Fget_name(hdf5_file_handle, name.data(), length + 1) < 0)
+    throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
   return std::string(name.begin(), name.end());
 }
@@ -109,31 +108,37 @@ HDF5Interface::get_attribute_type(const hid_t hdf5_file_handle,
                                   const std::string dataset_path,
                                   const std::string attribute_name)
 {
-  herr_t status;
-
   // Open dataset or group by name
   const hid_t dset_id
       = H5Oopen(hdf5_file_handle, dataset_path.c_str(), H5P_DEFAULT);
-  assert(dset_id != HDF5_FAIL);
+  if (dset_id < 0)
+    throw std::runtime_error("Failed to open HDF5 dataset.");
 
   // Open attribute by name and get its type
   const hid_t attr_id = H5Aopen(dset_id, attribute_name.c_str(), H5P_DEFAULT);
-  assert(attr_id != HDF5_FAIL);
+  if (attr_id < 0)
+    throw std::runtime_error("Failed to open HDF5 attribute.");
   const hid_t attr_type = H5Aget_type(attr_id);
-  assert(attr_type != HDF5_FAIL);
+  if (attr_type < 0)
+    throw std::runtime_error("Failed to get HDF5 attribute type.");
 
   // Determine type of attribute
   const hid_t h5class = H5Tget_class(attr_type);
+  if (h5class < 0)
+    throw std::runtime_error("Failed to get HDF5 attribute type.");
 
   // Get size of space, will determine if it is a vector or not
   const hid_t dataspace = H5Aget_space(attr_id);
-  assert(dataspace != HDF5_FAIL);
+  if (dataspace < 0)
+    throw std::runtime_error("Failed to get HDF5 dataspace.");
   hsize_t cur_size[10];
   hsize_t max_size[10];
   const int ndims = H5Sget_simple_extent_dims(dataspace, cur_size, max_size);
+  if (ndims < 0)
+    throw std::runtime_error("Call to H5Sget_simple_extent_dims unsuccessful");
 
+  // FIXME: Use std::map (put in anonymous namespace)
   std::string attribute_type_description;
-
   if (h5class == H5T_FLOAT && ndims == 0)
     attribute_type_description = "float";
   else if (h5class == H5T_INTEGER && ndims == 0)
@@ -148,20 +153,20 @@ HDF5Interface::get_attribute_type(const hid_t hdf5_file_handle,
     attribute_type_description = "unsupported";
 
   // Close dataspace
-  status = H5Sclose(dataspace);
-  assert(status != HDF5_FAIL);
+  if (H5Sclose(dataspace) < 0)
+    throw std::runtime_error("Call to H5Sclose unsuccessful");
 
   // Close attribute type
-  status = H5Tclose(attr_type);
-  assert(status != HDF5_FAIL);
+  if (H5Tclose(attr_type) < 0)
+    throw std::runtime_error("Call to H5Tclose unsuccessful");
 
   // Close attribute
-  status = H5Aclose(attr_id);
-  assert(status != HDF5_FAIL);
+  if (H5Aclose(attr_id) < 0)
+    throw std::runtime_error("Call to H5Aclose unsuccessful");
 
   // Close dataset or group
-  status = H5Oclose(dset_id);
-  assert(status != HDF5_FAIL);
+  if (H5Oclose(dset_id) < 0)
+    throw std::runtime_error("Call to H5Oclose unsuccessful");
 
   return attribute_type_description;
 }
