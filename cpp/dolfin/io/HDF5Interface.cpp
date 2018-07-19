@@ -10,7 +10,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/log/log.h>
 
-#define HDF5_FAIL -1
 #define HDF5_MAXSTRLEN 80
 
 using namespace dolfin;
@@ -69,10 +68,6 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
                                + " does not exist.");
     }
   }
-  else
-    throw std::runtime_error("File mode " + mode + " not recognized.");
-
-  assert(file_id != HDF5_FAIL);
 
   // Release file-access template
   herr_t status = H5Pclose(plist_id);
@@ -428,9 +423,8 @@ void HDF5Interface::set_mpi_atomicity(const hid_t hdf5_file_handle,
 {
 #ifdef H5_HAVE_PARALLEL
   herr_t status = H5Fset_mpi_atomicity(hdf5_file_handle, atomic);
-  if (status == HDF5_FAIL)
-    log::dolfin_error("HDF5Interface.cpp", "set MPI atomicity flag",
-                      "Setting the MPI atomicity flag failed");
+  if (status < 0)
+    throw std::runtime_error("Setting the MPI atomicity flag failed");
 #endif
 }
 //-----------------------------------------------------------------------------
@@ -439,9 +433,8 @@ bool HDF5Interface::get_mpi_atomicity(const hid_t hdf5_file_handle)
   hbool_t atomic = false;
 #ifdef H5_HAVE_PARALLEL
   herr_t status = H5Fget_mpi_atomicity(hdf5_file_handle, &atomic);
-  if (status == HDF5_FAIL)
-    log::dolfin_error("HDF5Interface.cpp", "get MPI atomicity flag",
-                      "Getting the MPI atomicity flag failed");
+  if (status < 0)
+    throw std::runtime_error("Getting the MPI atomicity flag failed");
 #endif
   return (bool)atomic;
 }
