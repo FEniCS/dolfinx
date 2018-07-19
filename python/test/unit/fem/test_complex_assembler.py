@@ -11,7 +11,8 @@ import numpy as np
 import pytest
 from ufl import dx, grad, inner
 
-pytestmark = pytest.mark.skipif(not dolfin.has_petsc_complex(),
+# FIXME: Move to dolfin_utils.test.skips
+pytestmark = pytest.mark.skipif(not dolfin.config.has_petsc_complex,
                                 reason="Only works in complex mode.")
 
 

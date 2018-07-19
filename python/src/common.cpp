@@ -25,6 +25,24 @@
 #include "MPICommWrapper.h"
 #include "casters.h"
 
+#ifdef HAS_PYBIND11_MPI4PY
+#define HAS_MPI4PY true;
+#else
+#define HAS_MPI4PY false;
+#endif
+#ifdef HAS_PYBIND11_PETSC4PY
+#define HAS_PETSC4PY true;
+#else
+#define HAS_PETSC4PY false;
+#endif
+#ifdef HAS_PYBIND11_SLEPC4PY
+#define HAS_SLEPC4PY true;
+#else
+#define HAS_SLEPC4PY false;
+#endif
+
+#define STATIC_METHOD(RETURN) [](py::object) { return RETURN ; }
+
 namespace py = pybind11;
 
 namespace dolfin_wrappers
@@ -42,48 +60,35 @@ void common(py::module& m)
       .def_readwrite("parameters", &dolfin::common::Variable::parameters);
 
   // From dolfin/common/defines.h
-  m.def("has_debug", &dolfin::has_debug);
-  m.def("has_hdf5", &dolfin::has_hdf5);
-  m.def("has_hdf5_parallel", &dolfin::has_hdf5_parallel);
-  m.def("has_mpi4py",
-        []() {
-#ifdef HAS_PYBIND11_MPI4PY
-          return true;
-#else
-          return false;
-#endif
-        },
-        "Return `True` if DOLFIN is configured with mpi4py");
-  m.def("has_parmetis", &dolfin::has_parmetis);
-  m.def("has_scotch", &dolfin::has_scotch);
-  m.def("has_petsc_complex", &dolfin::has_petsc_complex,
-        "Return True if PETSc scalar is complex.");
-  m.def("has_slepc", &dolfin::has_slepc,
-        "Return `True` if DOLFIN is configured with SLEPc");
-  m.def("has_petsc4py",
-        []() {
-#ifdef HAS_PYBIND11_PETSC4PY
-          return true;
-#else
-          return false;
-#endif
-        },
-        "Return `True` if DOLFIN is configured with petsc4py");
-  m.def("has_slepc4py",
-        []() {
-#ifdef HAS_PYBIND11_SLEPC4PY
-          return true;
-#else
-          return false;
-#endif
-        },
-        "Return `True` if DOLFIN is configured with slepc4py");
-  m.def("git_commit_hash", &dolfin::git_commit_hash,
-        "Returns git hash for this build.");
-  m.def("sizeof_la_index_t", &dolfin::sizeof_la_index_t);
-
-  m.attr("DOLFIN_EPS") = DOLFIN_EPS;
-  m.attr("DOLFIN_PI") = DOLFIN_PI;
+  py::class_<py::handle>(m, "config", "DOLFIN configuration")
+      .def_property_readonly_static("has_debug",
+                                    STATIC_METHOD(dolfin::has_debug()))
+      .def_property_readonly_static("has_hdf5",
+                                    STATIC_METHOD(dolfin::has_hdf5()))
+      .def_property_readonly_static("has_hdf5_parallel",
+                                    STATIC_METHOD(dolfin::has_hdf5_parallel()))
+      .def_property_readonly_static("has_parmetis",
+                                    STATIC_METHOD(dolfin::has_parmetis()))
+      .def_property_readonly_static("has_scotch",
+                                    STATIC_METHOD(dolfin::has_scotch()))
+      .def_property_readonly_static("has_petsc_complex",
+                                    STATIC_METHOD(dolfin::has_petsc_complex()))
+      .def_property_readonly_static("has_slepc",
+                                    STATIC_METHOD(dolfin::has_slepc()))
+      .def_property_readonly_static("git_commit_hash",
+                                    STATIC_METHOD(dolfin::git_commit_hash()))
+      .def_property_readonly_static("sizeof_la_index_t",
+                                    STATIC_METHOD(dolfin::sizeof_la_index_t()))
+      .def_property_readonly_static("DOLFIN_EPS",
+                                    STATIC_METHOD(DOLFIN_EPS))
+      .def_property_readonly_static("DOLFIN_PI",
+                                    STATIC_METHOD(DOLFIN_PI))
+      .def_property_readonly_static("has_mpi4py",
+                                    STATIC_METHOD(HAS_MPI4PY))
+      .def_property_readonly_static("has_petsc4py",
+                                    STATIC_METHOD(HAS_PETSC4PY))
+      .def_property_readonly_static("has_slepc4py",
+                                    STATIC_METHOD(HAS_SLEPC4PY));
 
   // dolfin::common::IndexMap
   py::class_<dolfin::common::IndexMap,
@@ -175,12 +180,11 @@ void mpi(py::module& m)
   // dolfin::MPI
   py::class_<dolfin::MPI>(m, "MPI", "MPI utilities")
       .def_property_readonly_static(
-          "comm_world",
-          [](py::object) { return MPICommWrapper(MPI_COMM_WORLD); })
+          "comm_world", STATIC_METHOD(MPICommWrapper(MPI_COMM_WORLD)))
       .def_property_readonly_static(
-          "comm_self", [](py::object) { return MPICommWrapper(MPI_COMM_SELF); })
+          "comm_self", STATIC_METHOD(MPICommWrapper(MPI_COMM_SELF)))
       .def_property_readonly_static(
-          "comm_null", [](py::object) { return MPICommWrapper(MPI_COMM_NULL); })
+          "comm_null", STATIC_METHOD(MPICommWrapper(MPI_COMM_NULL)))
       .def_static("init",
                   (void (*)()) & dolfin::common::SubSystemsManager::init_mpi,
                   "Initialise MPI")

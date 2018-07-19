@@ -128,7 +128,7 @@ we depend on the SLEPc eigenvalue solver). ::
 
   from dolfin import *
   import numpy as np
-  if not has_slepc():
+  if not config.has_slepc:
       print("DOLFIN has not been configured with SLEPc. Exiting.")
       exit()
 

@@ -52,7 +52,7 @@ def test_mpi_pybind11():
     """
 
     # Import MPI_COMM_WORLD
-    if dolfin.has_mpi4py():
+    if dolfin.config.has_mpi4py:
         from mpi4py import MPI
         w1 = MPI.COMM_WORLD
     else:
@@ -66,7 +66,7 @@ def test_mpi_pybind11():
     # Pass a comm into C++ and get a new wrapper of the same comm back
     w2 = mod.test_comm_passing(w1)
 
-    if dolfin.has_mpi4py():
+    if dolfin.config.has_mpi4py:
         assert isinstance(w2, MPI.Comm)
     else:
         assert isinstance(w2, dolfin.cpp.MPICommWrapper)
