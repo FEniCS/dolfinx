@@ -27,8 +27,8 @@ hid_t HDF5Interface::open_file(MPI_Comm mpi_comm, const std::string filename,
   {
     MPI_Info info;
     MPI_Info_create(&info);
-    herr_t status = H5Pset_fapl_mpio(plist_id, mpi_comm, info);
-    assert(status >= 0);
+    if (H5Pset_fapl_mpio(plist_id, mpi_comm, info) < 0)
+      throw std::runtime_error("Call to H5Pset_fapl_mpio unsuccessful");
     MPI_Info_free(&info);
   }
 #endif
