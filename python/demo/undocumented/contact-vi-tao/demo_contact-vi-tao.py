@@ -11,6 +11,7 @@ in a box of the same size."""
 
 
 from dolfin import *
+from dolfin.io import XDMFFile
 import matplotlib.pyplot as plt
 
 
