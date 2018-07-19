@@ -39,6 +39,8 @@ Python
 
    dolfin.generation
 
+   dolfin.io
+
    dolfin.jit
    dolfin.jit.jit
    dolfin.jit.pybind11jit
