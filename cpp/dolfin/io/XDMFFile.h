@@ -105,11 +105,8 @@ public:
 #endif
 
   /// Constructor
-  XDMFFile(const std::string filename)
-      : XDMFFile(MPI_COMM_WORLD, filename, default_encoding) {}
-
-  /// Constructor
-  XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding);
+  XDMFFile(MPI_Comm comm, const std::string filename,
+           Encoding encoding = default_encoding);
 
   /// Destructor
   ~XDMFFile();
@@ -578,7 +575,7 @@ private:
   // kept open for time series etc.
   std::unique_ptr<pugi::xml_document> _xml_doc;
 
-  Encoding _encoding;
+  const Encoding _encoding;
 };
 
 #ifndef DOXYGEN_IGNORE
