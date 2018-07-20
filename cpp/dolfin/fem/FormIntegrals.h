@@ -122,7 +122,7 @@ private:
       _cell_tabulate_tensor;
 
   // Storage for the batch size of each integral
-  Eigen::Array<int, Eigen::Dynamic, 1, Eigen::RowMajor>
+  Eigen::Array<int, Eigen::Dynamic, 1>
       _cell_batch_size;
 
   // Storage for enabled coefficients, to match the functions
