@@ -190,7 +190,7 @@ the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 
     # Save solution in XDMF format
     with XDMFFile(MPI.comm_world, "poisson.xdmf") as file:
-        file.write(u, XDMFFile.Encoding.HDF5)
+        file.write(u, encoding=XDMFFile.Encoding.HDF5)
 
     # Plot solution
     import matplotlib.pyplot as plt
