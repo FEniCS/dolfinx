@@ -141,12 +141,24 @@ class XDMFFile:
         """Close file"""
         self._cpp_object.close()
 
-    # FIXME: Clean up the ordering of arguments and remove *args and
-    # **kwargs - it's very confused
-    def write(self, o, *args, **kwargs):
-        """Write object to file"""
+    def write(self, o, t=None, encoding=Encoding.HDF5):
+        """Write object to file
+
+        Parameters
+        ----------
+        o
+            The object to write to file
+        t
+            The time stamp
+        encoding
+            File encoding for 'heavy' data
+
+        """
         o_cpp = getattr(o, "_cpp_object", o)
-        self._cpp_object.write(o_cpp, *args, **kwargs)
+        if t is None:
+            self._cpp_object.write(o_cpp, encoding)
+        else:
+            self._cpp_object.write(o_cpp, t, encoding)
 
     # ----------------------------------------------------------
 
