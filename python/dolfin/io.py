@@ -5,14 +5,17 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+"""IO interfaces for inout data, post-processing and checkpointing"""
+
 import dolfin.cpp as cpp
 from dolfin.function.function import Function
 
 
 class HDF5File(cpp.io.HDF5File):
+    """Interface to HDF5 files"""
 
     def read_function(self, V, name: str):
-        """Reads in function
+        """Read finite element Function from file
 
         Parameters
         ----------
@@ -26,7 +29,8 @@ class HDF5File(cpp.io.HDF5File):
         except for ordering of mesh entities.
         Returns
         -------
-        dolfin.Function
+        dolfin.function.function.Function
+            Function read from file
         """
 
         V_cpp = getattr(V, "_cpp_object", V)
@@ -35,13 +39,15 @@ class HDF5File(cpp.io.HDF5File):
 
 
 class VTKFile(cpp.io.VTKFile):
+    """Interface to VTK files"""
     pass
 
 
 class XDMFFile(cpp.io.XDMFFile):
+    """Interface to XDMF files"""
 
     def read_checkpoint(self, V, name: str, counter: int=-1):
-        """Reads in function from checkpointing format
+        """Read finite element Function from checkpointing format
         Parameters
         ----------
         V
@@ -59,7 +65,8 @@ class XDMFFile(cpp.io.XDMFFile):
         except for ordering of mesh entities.
         Returns
         -------
-        dolfin.Function
+        dolfin.function.function.Function
+            The finite element Function read from checkpoint file
         """
 
         V_cpp = getattr(V, "_cpp_object", V)
