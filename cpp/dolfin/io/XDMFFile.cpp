@@ -40,9 +40,9 @@ using namespace dolfin;
 using namespace dolfin::io;
 
 //-----------------------------------------------------------------------------
-XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename)
+XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding)
     : _mpi_comm(comm), _filename(filename), _counter(0),
-      _xml_doc(new pugi::xml_document)
+      _xml_doc(new pugi::xml_document), _encoding(encoding)
 {
   // Rewrite the mesh at every time step in a time series. Should be
   // turned off if the mesh remains constant.
@@ -68,16 +68,16 @@ void XDMFFile::close()
 #endif
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::Mesh& mesh, const Encoding encoding)
+void XDMFFile::write(const mesh::Mesh& mesh)
 {
   // Check that encoding
-  if (encoding == Encoding::HDF5 and !has_hdf5())
+  if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
     throw std::runtime_error("Cannot write XDMF in HDF5 encoding. (DOLFIN not "
                              "compied with HDF5 support)");
   }
 
-  if (encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -87,7 +87,7 @@ void XDMFFile::write(const mesh::Mesh& mesh, const Encoding encoding)
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
-  if (encoding == Encoding::HDF5)
+  if (_encoding == Encoding::HDF5)
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(mesh.mpi_comm(),
@@ -123,17 +123,16 @@ void XDMFFile::write(const mesh::Mesh& mesh, const Encoding encoding)
 }
 //-----------------------------------------------------------------------------
 void XDMFFile::write_checkpoint(const function::Function& u,
-                                std::string function_name, double time_step,
-                                const Encoding encoding)
+                                std::string function_name, double time_step)
 {
   // Check that encoding
-  if (encoding == Encoding::HDF5 and !has_hdf5())
+  if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
     throw std::runtime_error("DOLFIN has not been compiled with HDF5 support. "
                              "Cannot write XDMF in HDF5 encoding.");
   }
 
-  if (encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -194,7 +193,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   // Open the HDF5 file if using HDF5 encoding (truncate)
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
-  if (encoding == Encoding::HDF5)
+  if (_encoding == Encoding::HDF5)
   {
     if (truncate_hdf)
     {
@@ -303,16 +302,16 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 #endif
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const function::Function& u, const Encoding encoding)
+void XDMFFile::write(const function::Function& u)
 {
   // Check that encoding
-  if (encoding == Encoding::HDF5 and !has_hdf5())
+  if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
     throw std::runtime_error("DOLFIN has not been compiled with HDF5 support. "
                              "Cannot write XDMF in HDF5 encoding.");
   }
 
-  if (encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -334,7 +333,7 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
-  if (encoding == Encoding::HDF5)
+  if (_encoding == Encoding::HDF5)
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(mesh.mpi_comm(),
@@ -395,17 +394,16 @@ void XDMFFile::write(const function::Function& u, const Encoding encoding)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const function::Function& u, double time_step,
-                     const Encoding encoding)
+void XDMFFile::write(const function::Function& u, double time_step)
 {
   // Check that encoding
-  if (encoding == Encoding::HDF5 and !has_hdf5())
+  if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
     throw std::runtime_error("DOLFIN has not been compiled with HDF5 support. "
                              "Cannot write XDMF in HDF5 encoding.");
   }
 
-  if (encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -432,7 +430,7 @@ void XDMFFile::write(const function::Function& u, double time_step,
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
   // Open the HDF5 file for first time, if using HDF5 encoding
-  if (encoding == Encoding::HDF5)
+  if (_encoding == Encoding::HDF5)
   {
     // Truncate the file the first time
     if (_counter == 0)
@@ -566,7 +564,7 @@ void XDMFFile::write(const function::Function& u, double time_step,
 
 #ifdef HAS_HDF5
   // Close the HDF5 file if in "flush" mode
-  if (encoding == Encoding::HDF5 and parameters["flush_output"])
+  if (_encoding == Encoding::HDF5 and parameters["flush_output"])
   {
     assert(_hdf5_file);
     _hdf5_file.reset();
@@ -576,66 +574,58 @@ void XDMFFile::write(const function::Function& u, double time_step,
   ++_counter;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::MeshFunction<bool>& meshfunction,
-                     const Encoding encoding)
+void XDMFFile::write(const mesh::MeshFunction<bool>& meshfunction)
 {
-  write_mesh_function(meshfunction, encoding);
+  write_mesh_function(meshfunction);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::MeshFunction<int>& meshfunction,
-                     const Encoding encoding)
+void XDMFFile::write(const mesh::MeshFunction<int>& meshfunction)
 {
-  write_mesh_function(meshfunction, encoding);
+  write_mesh_function(meshfunction);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::MeshFunction<std::size_t>& meshfunction,
-                     const Encoding encoding)
+void XDMFFile::write(const mesh::MeshFunction<std::size_t>& meshfunction)
 {
-  write_mesh_function(meshfunction, encoding);
+  write_mesh_function(meshfunction);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::MeshFunction<double>& meshfunction,
-                     const Encoding encoding)
+void XDMFFile::write(const mesh::MeshFunction<double>& meshfunction)
 {
-  write_mesh_function(meshfunction, encoding);
+  write_mesh_function(meshfunction);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::MeshValueCollection<bool>& mvc,
-                     const Encoding encoding)
+void XDMFFile::write(const mesh::MeshValueCollection<bool>& mvc)
 {
-  write_mesh_value_collection(mvc, encoding);
+  write_mesh_value_collection(mvc);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::MeshValueCollection<int>& mvc,
-                     const Encoding encoding)
+void XDMFFile::write(const mesh::MeshValueCollection<int>& mvc)
 {
-  write_mesh_value_collection(mvc, encoding);
+  write_mesh_value_collection(mvc);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::MeshValueCollection<std::size_t>& mvc,
-                     const Encoding encoding)
+void XDMFFile::write(const mesh::MeshValueCollection<std::size_t>& mvc)
 {
-  write_mesh_value_collection(mvc, encoding);
+  write_mesh_value_collection(mvc);
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const mesh::MeshValueCollection<double>& mvc,
-                     const Encoding encoding)
+void XDMFFile::write(const mesh::MeshValueCollection<double>& mvc)
 {
-  write_mesh_value_collection(mvc, encoding);
+  write_mesh_value_collection(mvc);
 }
 //-----------------------------------------------------------------------------
 template <typename T>
 void XDMFFile::write_mesh_value_collection(
-    const mesh::MeshValueCollection<T>& mvc, const Encoding encoding)
+    const mesh::MeshValueCollection<T>& mvc)
 {
   // Check that encoding
-  if (encoding == Encoding::HDF5 and !has_hdf5())
+  if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
     throw std::runtime_error("DOLFIN has not been compiled with HDF5 support. "
                              "Cannot write XDMF in HDF5 encoding.");
   }
 
-  if (encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -682,7 +672,7 @@ void XDMFFile::write_mesh_value_collection(
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
-  if (encoding == Encoding::HDF5)
+  if (_encoding == Encoding::HDF5)
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(
@@ -1032,17 +1022,16 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   return mvc;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<geometry::Point>& points,
-                     const Encoding encoding)
+void XDMFFile::write(const std::vector<geometry::Point>& points)
 {
   // Check that encoding
-  if (encoding == Encoding::HDF5 and !has_hdf5())
+  if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
     throw std::runtime_error("DOLFIN has not been compiled with HDF5 support. "
                              "Cannot write XDMF in HDF5 encoding.");
   }
 
-  if (encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -1052,7 +1041,7 @@ void XDMFFile::write(const std::vector<geometry::Point>& points,
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
-  if (encoding == Encoding::HDF5)
+  if (_encoding == Encoding::HDF5)
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(_mpi_comm.comm(),
@@ -1117,19 +1106,19 @@ void XDMFFile::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
 }
 //----------------------------------------------------------------------------
 void XDMFFile::write(const std::vector<geometry::Point>& points,
-                     const std::vector<double>& values, const Encoding encoding)
+                     const std::vector<double>& values)
 {
   // Write clouds of points to XDMF/HDF5 with values
   assert(points.size() == values.size());
 
   // Check that encoding is supported
-  if (encoding == Encoding::HDF5 and !has_hdf5())
+  if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
     throw std::runtime_error("DOLFIN has not been compiled with HDF5 support. "
                              "Cannot write XDMF in HDF5 encoding.");
   }
 
-  if (encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -1142,7 +1131,7 @@ void XDMFFile::write(const std::vector<geometry::Point>& points,
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
-  if (encoding == Encoding::HDF5)
+  if (_encoding == Encoding::HDF5)
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(_mpi_comm.comm(),
@@ -2491,17 +2480,16 @@ std::string XDMFFile::get_hdf5_filename(std::string xdmf_filename)
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
-                                   Encoding encoding)
+void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
 {
   // Check that encoding
-  if (encoding == Encoding::HDF5 and !has_hdf5())
+  if (_encoding == Encoding::HDF5 and !has_hdf5())
   {
     throw std::runtime_error("DOLFIN has not been compiled with HDF5 support. "
                              "Cannot write XDMF in HDF5 encoding.");
   }
 
-  if (encoding == Encoding::ASCII and _mpi_comm.size() != 1)
+  if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
@@ -2548,7 +2536,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
   hid_t h5_id = -1;
 #ifdef HAS_HDF5
   std::unique_ptr<HDF5File> h5_file;
-  if (encoding == Encoding::HDF5)
+  if (_encoding == Encoding::HDF5)
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(

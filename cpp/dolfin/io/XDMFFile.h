@@ -105,10 +105,11 @@ public:
 #endif
 
   /// Constructor
-  XDMFFile(const std::string filename) : XDMFFile(MPI_COMM_WORLD, filename) {}
+  XDMFFile(const std::string filename)
+      : XDMFFile(MPI_COMM_WORLD, filename, default_encoding) {}
 
   /// Constructor
-  XDMFFile(MPI_Comm comm, const std::string filename);
+  XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding);
 
   /// Destructor
   ~XDMFFile();
@@ -136,7 +137,7 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const mesh::Mesh& mesh, Encoding encoding = default_encoding);
+  void write(const mesh::Mesh& mesh);
 
   /// Save a function::Function to XDMF file for checkpointing, using an
   /// associated HDF5 file, or storing the data inline as XML.
@@ -160,8 +161,7 @@ public:
   ///         Encoding to use: HDF5 or ASCII
   ///
   void write_checkpoint(const function::Function& u, std::string function_name,
-                        double time_step = 0.0,
-                        Encoding encoding = default_encoding);
+                        double time_step = 0.0);
 
   /// Save a function::Function to XDMF file for visualisation, using an
   /// associated HDF5 file, or storing the data inline as XML.
@@ -171,7 +171,7 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const function::Function& u, Encoding encoding = default_encoding);
+  void write(const function::Function& u);
 
   /// Save a function::Function with timestamp to XDMF file for visualisation,
   /// using an associated HDF5 file, or storing the data inline as
@@ -197,8 +197,7 @@ public:
   /// @param   encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const function::Function& u, double t,
-             Encoding encoding = default_encoding);
+  void write(const function::Function& u, double t);
 
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
@@ -208,8 +207,7 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const mesh::MeshFunction<bool>& meshfunction,
-             Encoding encoding = default_encoding);
+  void write(const mesh::MeshFunction<bool>& meshfunction);
 
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
@@ -230,8 +228,7 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const mesh::MeshFunction<std::size_t>& meshfunction,
-             Encoding encoding = default_encoding);
+  void write(const mesh::MeshFunction<std::size_t>& meshfunction);
 
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
@@ -241,8 +238,7 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const mesh::MeshFunction<double>& meshfunction,
-             Encoding encoding = default_encoding);
+  void write(const mesh::MeshFunction<double>& meshfunction);
 
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
@@ -252,8 +248,7 @@ public:
   /// @param encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const mesh::MeshValueCollection<bool>& mvc,
-             Encoding encoding = default_encoding);
+  void write(const mesh::MeshValueCollection<bool>& mvc);
 
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
@@ -263,8 +258,7 @@ public:
   /// @param encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const mesh::MeshValueCollection<int>& mvc,
-             Encoding encoding = default_encoding);
+  void write(const mesh::MeshValueCollection<int>& mvc);
 
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
@@ -274,8 +268,7 @@ public:
   /// @param  encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const mesh::MeshValueCollection<std::size_t>& mvc,
-             Encoding encoding = default_encoding);
+  void write(const mesh::MeshValueCollection<std::size_t>& mvc);
 
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
@@ -285,8 +278,7 @@ public:
   /// @param encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const mesh::MeshValueCollection<double>& mvc,
-             Encoding encoding = default_encoding);
+  void write(const mesh::MeshValueCollection<double>& mvc);
 
   /// Save a cloud of points to file using an associated HDF5 file,
   /// or storing the data inline as XML.
@@ -296,8 +288,7 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const std::vector<geometry::Point>& points,
-             Encoding encoding = default_encoding);
+  void write(const std::vector<geometry::Point>& points);
 
   /// Save a cloud of points, with scalar values using an associated
   /// HDF5 file, or storing the data inline as XML.
@@ -310,8 +301,7 @@ public:
   ///         Encoding to use: HDF5 or ASCII
   ///
   void write(const std::vector<geometry::Point>& points,
-             const std::vector<double>& values,
-             Encoding encoding = default_encoding);
+             const std::vector<double>& values);
 
   /// Read in the first mesh::Mesh in XDMF file
   ///
@@ -426,8 +416,7 @@ public:
 private:
   // Generic MVC writer
   template <typename T>
-  void write_mesh_value_collection(const mesh::MeshValueCollection<T>& mvc,
-                                   Encoding encoding);
+  void write_mesh_value_collection(const mesh::MeshValueCollection<T>& mvc);
 
   // Generic MVC reader
   template <typename T>
@@ -525,8 +514,7 @@ private:
 
   // Generic mesh::MeshFunction writer
   template <typename T>
-  void write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
-                           Encoding encoding);
+  void write_mesh_function(const mesh::MeshFunction<T>& meshfunction);
 
   // Get data width - normally the same as u.value_size(), but expand
   // for 2D vector/tensor because XDMF presents everything as 3D
@@ -590,6 +578,8 @@ private:
   // The XML document currently representing the XDMF which needs to be
   // kept open for time series etc.
   std::unique_ptr<pugi::xml_document> _xml_doc;
+
+  Encoding _encoding;
 };
 
 #ifndef DOXYGEN_IGNORE
