@@ -38,15 +38,15 @@ class HDF5File:
         """Get atomicity of the HDF5 file"""
         return self._cpp_object.get_mpi_atomicity()
 
-    def set_mpi_atomicity(self, atomicity: bool):
+    def set_mpi_atomicity(self, atomicity: bool) -> None:
         """Set atomicity of the HDF5 file"""
         self._cpp_object.set_mpi_atomicity(atomicity)
 
-    def close(self):
+    def close(self) -> None:
         """Close file"""
         self._cpp_object.close()
 
-    def write(self, o, name, t=None):
+    def write(self, o, name, t=None) -> None:
         """Write object to file"""
         o_cpp = getattr(o, "_cpp_object", o)
         if t is None:
@@ -137,11 +137,11 @@ class XDMFFile:
     def __exit__(self, exception_type, exception_value, traceback):
         return self._cpp_object.close()
 
-    def close(self):
+    def close(self) -> None:
         """Close file"""
         self._cpp_object.close()
 
-    def write(self, o, t=None, encoding=Encoding.HDF5):
+    def write(self, o, t=None, encoding=Encoding.HDF5) -> None:
         """Write object to file
 
         Parameters
@@ -197,7 +197,7 @@ class XDMFFile:
     def read_mesh(self, mpi_comm, ghost_mode):
         return self._cpp_object.read_mesh(mpi_comm, ghost_mode)
 
-    def read_checkpoint(self, V, name: str, counter: int = -1):
+    def read_checkpoint(self, V, name: str, counter: int = -1) -> Function:
         """Read finite element Function from checkpointing format
 
         Parameters
@@ -229,7 +229,7 @@ class XDMFFile:
                          u,
                          name: str,
                          time_step: float = 0.0,
-                         encoding=Encoding.HDF5):
+                         encoding=Encoding.HDF5) -> None:
         """Write finite element Function in checkpointing format
 
         """
