@@ -48,9 +48,6 @@ void io(py::module& m)
                                                            file_mode);
            }),
            py::arg("comm"), py::arg("filename"), py::arg("file_mode"))
-      .def("__enter__", [](dolfin::io::HDF5File& self) { return &self; })
-      .def("__exit__", [](dolfin::io::HDF5File& self, py::args args,
-                          py::kwargs kwargs) { self.close(); })
       .def("close", &dolfin::io::HDF5File::close)
       .def("flush", &dolfin::io::HDF5File::flush)
       // read
@@ -67,25 +64,6 @@ void io(py::module& m)
              return self.read_vector(comm.get(), data_path,
                                      use_partition_from_file);
            })
-
-      //   .def("read",
-      //        (void (dolfin::io::HDF5File::*)(
-      //            dolfin::mesh::MeshValueCollection<bool>&, std::string)
-      //            const) & dolfin::io::HDF5File::read,
-      //        py::arg("mvc"), py::arg("name"))
-      //   .def("read",
-      //        (void (dolfin::io::HDF5File::*)(
-      //            dolfin::mesh::MeshValueCollection<std::size_t>&,
-      //            std::string)
-      //             const)
-      //            & dolfin::io::HDF5File::read,
-      //        py::arg("mvc"), py::arg("name"))
-      //   .def("read",
-      //        (void (dolfin::io::HDF5File::*)(
-      //            dolfin::mesh::MeshValueCollection<double>&, std::string)
-      //            const) & dolfin::io::HDF5File::read,
-      //        py::arg("mvc"), py::arg("name"))
-
       .def("read_mf_bool", &dolfin::io::HDF5File::read_mf_bool, py::arg("mesh"),
            py::arg("name"))
       .def("read_mf_int", &dolfin::io::HDF5File::read_mf_int, py::arg("mesh"),
@@ -101,31 +79,6 @@ void io(py::module& m)
            py::arg("mesh"), py::arg("name"))
       .def("read_mvc_double", &dolfin::io::HDF5File::read_mvc_double,
            py::arg("mesh"), py::arg("name"))
-
-      //   .def("read",
-      //        (void
-      //        (dolfin::io::HDF5File::*)(dolfin::mesh::MeshFunction<bool>&,
-      //                                        std::string) const)
-      //            & dolfin::io::HDF5File::read,
-      //        py::arg("meshfunction"), py::arg("name"))
-      //   .def("read",
-      //        (void (dolfin::io::HDF5File::*)(
-      //            dolfin::mesh::MeshFunction<std::size_t>&, std::string)
-      //            const) & dolfin::io::HDF5File::read,
-      //        py::arg("meshfunction"), py::arg("name"))
-      //   .def("read",
-      //        (void
-      //        (dolfin::io::HDF5File::*)(dolfin::mesh::MeshFunction<int>&,
-      //                                        std::string) const)
-      //            & dolfin::io::HDF5File::read,
-      //        py::arg("meshfunction"), py::arg("name"))
-      //   .def("read",
-      //        (void
-      //        (dolfin::io::HDF5File::*)(dolfin::mesh::MeshFunction<double>&,
-      //                                        std::string) const)
-      //            & dolfin::io::HDF5File::read,
-      //        py::arg("meshfunction"), py::arg("name"))
-
       .def("read",
            py::overload_cast<
                std::shared_ptr<const dolfin::function::FunctionSpace>,
@@ -185,21 +138,6 @@ void io(py::module& m)
            (void (dolfin::io::HDF5File::*)(const dolfin::function::Function&,
                                            std::string, double))
                & dolfin::io::HDF5File::write,
-           py::arg("u"), py::arg("name"), py::arg("t"))
-      .def("write",
-           [](dolfin::io::HDF5File& self, py::object u, std::string name) {
-             auto _u
-                 = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-             self.write(*_u, name);
-           },
-           py::arg("u"), py::arg("name"))
-      .def("write",
-           [](dolfin::io::HDF5File& self, py::object u, std::string name,
-              double t) {
-             auto _u
-                 = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-             self.write(*_u, name, t);
-           },
            py::arg("u"), py::arg("name"), py::arg("t"))
       .def("set_mpi_atomicity", &dolfin::io::HDF5File::set_mpi_atomicity)
       .def("get_mpi_atomicity", &dolfin::io::HDF5File::get_mpi_atomicity)
@@ -328,41 +266,12 @@ void io(py::module& m)
            },
            py::arg("points"), py::arg("values"),
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      // py:object / dolfin.function.function.Function
-      .def("write",
-           [](dolfin::io::XDMFFile& instance, const py::object u,
-              dolfin::io::XDMFFile::Encoding encoding) {
-             auto _u
-                 = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-             instance.write(*_u, encoding);
-           },
-           py::arg("u"),
-           py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      .def("write",
-           [](dolfin::io::XDMFFile& instance, const py::object u, double t,
-              dolfin::io::XDMFFile::Encoding encoding) {
-             auto _u
-                 = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-             instance.write(*_u, t, encoding);
-           },
-           py::arg("u"), py::arg("t"),
-           py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
       // Check points
       .def("write_checkpoint",
            [](dolfin::io::XDMFFile& instance,
               const dolfin::function::Function& u, std::string function_name,
               double time_step, dolfin::io::XDMFFile::Encoding encoding) {
              instance.write_checkpoint(u, function_name, time_step, encoding);
-           },
-           py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0,
-           py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5)
-      .def("write_checkpoint",
-           [](dolfin::io::XDMFFile& instance, const py::object u,
-              std::string function_name, double time_step,
-              dolfin::io::XDMFFile::Encoding encoding) {
-             auto _u
-                 = u.attr("_cpp_object").cast<dolfin::function::Function*>();
-             instance.write_checkpoint(*_u, function_name, time_step, encoding);
            },
            py::arg("u"), py::arg("function_name"), py::arg("time_step") = 0.0,
            py::arg("encoding") = dolfin::io::XDMFFile::Encoding::HDF5);

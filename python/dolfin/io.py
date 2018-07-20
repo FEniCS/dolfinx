@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017 Chris N. Richardson, Garth N. Wells, Michal Habera
+# Copyright (C) 2017-2018 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -33,6 +33,14 @@ class HDF5File:
 
     def __exit__(self, exception_type, exception_value, traceback):
         return self._cpp_object.close()
+
+    def get_mpi_atomicity(self) -> bool:
+        """Get atomicity of the HDF5 file"""
+        return self._cpp_object.get_mpi_atomicity()
+
+    def set_mpi_atomicity(self, atomicity: bool):
+        """Set atomicity of the HDF5 file"""
+        self._cpp_object.set_mpi_atomicity(atomicity)
 
     def close(self):
         """Close file"""
@@ -109,8 +117,78 @@ class VTKFile(cpp.io.VTKFile):
     pass
 
 
-class XDMFFile(cpp.io.XDMFFile):
+class XDMFFile:
     """Interface to XDMF files"""
+
+    # Import encoding (find better way?)
+    Encoding = cpp.io.XDMFFile.Encoding
+
+    def __init__(self, mpi_comm, filename: str):
+        """Open XDMF file
+
+        Parameters
+        ----------
+        mpi_comm
+            The MPI communicator
+        filename
+            Name of the file
+
+        """
+        self._cpp_object = cpp.io.XDMFFile(mpi_comm, filename)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        return self._cpp_object.close()
+
+    def close(self):
+        """Close file"""
+        self._cpp_object.close()
+
+    # FIXME: Clean up the ordering of arguments and remove *args and
+    # **kwargs - it's very confused
+    def write(self, o, *args, **kwargs):
+        """Write object to file"""
+        o_cpp = getattr(o, "_cpp_object", o)
+        self._cpp_object.write(o_cpp, *args, **kwargs)
+
+    # ----------------------------------------------------------
+
+    # FIXME: implement a common function for multiple types
+
+    # def read_mvc_size_t(self, mesh, name: str = ""):
+    #     """Read MeshValueCollection of type size_t"""
+    #     return self._cpp_object.read_mvc_size_t(mesh, name)
+
+    def read_mvc_int(self, mesh, name: str = ""):
+        """Read MeshValueCollection of type int"""
+        return self._cpp_object.read_mvc_int(mesh, name)
+
+    def read_mvc_size_t(self, mesh, name: str = ""):
+        """Read MeshValueCollection of type size_t"""
+        return self._cpp_object.read_mvc_size_t(mesh, name)
+
+    def read_mvc_double(self, mesh, name: str = ""):
+        """Read MeshValueCollection of type float"""
+        return self._cpp_object.read_mvc_double(mesh, name)
+
+    def read_mf_int(self, mesh, name: str = ""):
+        """Read MeshFunction of type int"""
+        return self._cpp_object.read_mf_int(mesh, name)
+
+    def read_mf_size_t(self, mesh, name: str = ""):
+        """Read MeshFunction of type size_t"""
+        return self._cpp_object.read_mf_size_t(mesh, name)
+
+    def read_mf_double(self, mesh, name: str = ""):
+        """Read MeshFunction of type double"""
+        return self._cpp_object.read_mf_double(mesh, name)
+
+    # ----------------------------------------------------------
+
+    def read_mesh(self, mpi_comm, ghost_mode):
+        return self._cpp_object.read_mesh(mpi_comm, ghost_mode)
 
     def read_checkpoint(self, V, name: str, counter: int = -1):
         """Read finite element Function from checkpointing format
@@ -136,5 +214,17 @@ class XDMFFile(cpp.io.XDMFFile):
         """
 
         V_cpp = getattr(V, "_cpp_object", V)
-        u_cpp = self._read_checkpoint(V_cpp, name, counter)
+        u_cpp = self._cpp_object._read_checkpoint(V_cpp, name, counter)
         return Function(V, u_cpp.vector())
+
+    def write_checkpoint(self,
+                         u,
+                         name: str,
+                         time_step: float = 0.0,
+                         encoding=Encoding.HDF5):
+        """Write finite element Function in checkpointing format
+
+        """
+
+        o_cpp = getattr(u, "_cpp_object", u)
+        self._cpp_object.write_checkpoint(o_cpp, name, time_step, encoding)
