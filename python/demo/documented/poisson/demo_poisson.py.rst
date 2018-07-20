@@ -189,8 +189,9 @@ for later visualization and also plot it using
 the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 
     # Save solution in XDMF format
-    with XDMFFile(MPI.comm_world, "poisson.xdmf") as file:
-        file.write(u, encoding=XDMFFile.Encoding.HDF5)
+    with XDMFFile(MPI.comm_world, "poisson.xdmf",
+                  encoding=XDMFFile.Encoding.HDF5) as file:
+        file.write(u)
 
     # Plot solution
     import matplotlib.pyplot as plt
