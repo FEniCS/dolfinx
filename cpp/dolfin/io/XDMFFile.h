@@ -217,8 +217,7 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const mesh::MeshFunction<int>& meshfunction,
-             Encoding encoding = default_encoding);
+  void write(const mesh::MeshFunction<int>& meshfunction);
 
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.

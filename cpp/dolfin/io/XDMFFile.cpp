@@ -291,7 +291,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 
 #ifdef HAS_HDF5
   // Close the HDF5 file if in "flush" mode
-  if (encoding == Encoding::HDF5 and parameters["flush_output"])
+  if (_encoding == Encoding::HDF5 and parameters["flush_output"])
   {
     log::log(PROGRESS, "Writing function in \"flush_output\" mode. HDF5 "
                        "file will be flushed (closed).");
