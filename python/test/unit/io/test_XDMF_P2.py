@@ -5,8 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
-from dolfin import (XDMFFile, Function, FunctionSpace,
+from dolfin import (Function, FunctionSpace,
                     VectorFunctionSpace, Expression, MPI, cpp, fem)
+from dolfin.io import XDMFFile
 from dolfin_utils.test import tempdir, xfail_if_complex
 assert(tempdir)
 
@@ -17,7 +18,7 @@ def test_read_write_p2_mesh(tempdir):
 
     filename = os.path.join(tempdir, "tri6_mesh.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.write(mesh, XDMFFile.Encoding.HDF5)
+        xdmf.write(mesh, encoding=XDMFFile.Encoding.HDF5)
 
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         mesh2 = xdmf.read_mesh(mesh.mpi_comm(), cpp.mesh.GhostMode.none)
@@ -39,7 +40,7 @@ def test_read_write_p2_function(tempdir):
 
     filename = os.path.join(tempdir, "tri6_function.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.write(F, XDMFFile.Encoding.HDF5)
+        xdmf.write(F, encoding=XDMFFile.Encoding.HDF5)
 
     Q = VectorFunctionSpace(mesh, "Lagrange", 1)
     F = Function(Q)
@@ -47,4 +48,4 @@ def test_read_write_p2_function(tempdir):
 
     filename = os.path.join(tempdir, "tri6_vector_function.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        xdmf.write(F, XDMFFile.Encoding.HDF5)
+        xdmf.write(F, encoding=XDMFFile.Encoding.HDF5)

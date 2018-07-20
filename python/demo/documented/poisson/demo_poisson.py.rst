@@ -79,6 +79,7 @@ First, the :py:mod:`dolfin` module is imported: ::
     import numpy as np
     import dolfin
     from dolfin import *
+    from dolfin.io import XDMFFile
 
 We begin by defining a mesh of the domain and a finite element
 function space :math:`V` relative to this mesh. As the unit square is
@@ -189,7 +190,7 @@ the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 
     # Save solution in XDMF format
     with XDMFFile(MPI.comm_world, "poisson.xdmf") as file:
-        file.write(u, XDMFFile.Encoding.HDF5)
+        file.write(u, encoding=XDMFFile.Encoding.HDF5)
 
     # Plot solution
     import matplotlib.pyplot as plt

@@ -7,13 +7,14 @@
 import os
 
 import dolfin
-from dolfin import (MPI, Cell, Expression, Function, FunctionSpace, HDF5File,
-                    MeshEntities, MeshEntity, MeshFunction,
+from dolfin import (MPI, Cell, Expression, Function, FunctionSpace,
+                    MeshEntities, MeshEntity, MeshFunction, has_hdf5,
                     MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
 from dolfin.la import PETScVector
 from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_if_complex,
                                xfail_with_serial_hdf5_in_parallel)
-import dolfin.io
+if has_hdf5():
+    from dolfin.io import HDF5File
 
 assert(tempdir)
 

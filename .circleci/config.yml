@@ -26,16 +26,16 @@ jobs:
           command: python3 -m flake8 python/dolfin
 
       - run:
-          name: Build DOLFIN C++ documentation
+          name: Build documentation (C++)
           command: cd cpp/doc && doxygen
       - run:
-          name: Configure DOLFIN (C++)
+          name: Configure (C++)
           command: mkdir -p build && cd build && cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer ../cpp/
       - run:
-          name: Build DOLFIN and install (C++)
+          name: Build and install (C++)
           command: cd build && ninja -j3 install
       - run:
-          name: Build and run C++ unit tests (serial)
+          name: Build and run unit tests (C++, serial)
           command: cd build && ninja -j3 unittests && ctest -R unittests
       #- run:
       #    name: Build and run C++ regressions tests (serial)
@@ -45,7 +45,7 @@ jobs:
       #    command: cd build && make -j2 demos && ctest -R demo -R mpi
 
       - run:
-          name: Build and run C++ demos
+          name: Build and run demos (C++)
           command: |
             cd cpp/demo/documented/poisson
             python3 -m ffc -l dolfin Poisson.ufl
@@ -54,13 +54,13 @@ jobs:
             ./demo_poisson
 
       - run:
-          name: Build Python interface
+          name: Build Python/pybind11 interface
           command: |
             cd python
             pip3 -v install . --user
 
       - run:
-          name: Build DOLFIN Python documentation
+          name: Build documentation (Python)
           command: |
             cd python/demo && python3 ./generate-demo-files.py
             cd ../doc && make html
@@ -71,22 +71,22 @@ jobs:
             - cpp/doc/html/
 
       - run:
-          name: Run flake8 on Python unit tests
+          name: Run flake8 on unit tests
           command: |
             cd python/test/unit
             python3 -m flake8 .
       - run:
-          name: Run Python unit tests (serial)
+          name: Run unit tests (Python, serial)
           command: |
             cd python/test/unit
             python3 -m pytest -n 3 .
       - run:
-          name: Run Python unit tests (MPI)
+          name: Run unit tests (Python, MPI)
           command: |
             cd python/test/unit
             mpirun --allow-run-as-root -n 3 python3 -m pytest .
       - run:
-          name: Run Python demos (serial)
+          name: Run demos (Python, serial)
           command: |
             cd python/demo
             python3 ./generate-demo-files.py
@@ -96,7 +96,7 @@ jobs:
             python3 demo_stokes-taylor-hood.py
 
       - run:
-          name: Run Python demos (MPI)
+          name: Run demos (Python, MPI)
           command: |
             cd python/demo
             mpirun --allow-run-as-root -np 3 python3 documented/poisson/demo_poisson.py

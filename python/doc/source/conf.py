@@ -29,6 +29,7 @@ shutil.copytree("../../demo/documented", "demos")
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.mathjax',
+              'sphinx.ext.napoleon',
               'sphinx.ext.viewcode']
 
 # Add any paths that contain templates here, relative to this directory.
@@ -169,3 +170,8 @@ texinfo_documents = [
 
 autodoc_default_flags = ['members', 'show-inheritance']
 autosummary_generate = True
+autoclass_content = "init"
+
+napoleon_google_docstring = False
+napoleon_use_admonition_for_notes = False
+#napoleon_include_init_with_doc= False

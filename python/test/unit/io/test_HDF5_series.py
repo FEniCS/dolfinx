@@ -5,10 +5,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
-from dolfin import (UnitSquareMesh, MPI, FunctionSpace, Function, Expression, HDF5File)
+from dolfin import (UnitSquareMesh, MPI, FunctionSpace, Function, Expression,
+                    has_hdf5)
+import dolfin.cpp as cpp
 from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_if_complex,
                                xfail_with_serial_hdf5_in_parallel)
-import dolfin.io
+if has_hdf5():
+    from dolfin.io import HDF5File
 assert(tempdir)
 
 
@@ -43,5 +46,5 @@ def test_save_and_read_function_timeseries(tempdir):
         # timestamp = hdf5_file.attributes(vec_name)["timestamp"]
         # assert timestamp == t
         F0.vector().axpy(-1.0, F1.vector())
-        assert F0.vector().norm(dolfin.cpp.la.Norm.l2) < 1.0e-12
+        assert F0.vector().norm(cpp.la.Norm.l2) < 1.0e-12
     hdf5_file.close()

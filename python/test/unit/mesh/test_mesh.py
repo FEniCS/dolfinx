@@ -14,8 +14,9 @@ import FIAT
 from math import sqrt
 from dolfin import (MPI, RectangleMesh, BoxMesh, UnitIntervalMesh,
                     UnitSquareMesh, UnitCubeMesh, CellType, Vertex,
-                    XDMFFile, Point, Cell, Cells, MeshFunction,
+                    Point, Cell, Cells, MeshFunction,
                     MeshEntity, MeshEntities, cpp)
+from dolfin.io import XDMFFile
 from dolfin_utils.test import cd_tempdir, fixture, skip_in_parallel  # noqa
 
 
@@ -260,7 +261,7 @@ def test_Write(cd_tempdir, f):
     f[0] = 1
     f[1] = 2
     file = XDMFFile(f.mesh().mpi_comm(), "saved_mesh_function.xdmf")
-    file.write(f, XDMFFile.Encoding.ASCII)
+    file.write(f, encoding=XDMFFile.Encoding.ASCII)
 
 
 def test_hash():
