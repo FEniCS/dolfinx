@@ -34,6 +34,7 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
     }
   }
 
+  _cell_batch_size.resize(_cell_integrals.size(), Eigen::NoChange);
   _enabled_coefficients.resize(_cell_integrals.size(),
                                ufc_form.num_coefficients);
 
@@ -42,6 +43,7 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   {
     const auto ci = _cell_integrals[i];
     _cell_tabulate_tensor.push_back(ci->tabulate_tensor);
+    _cell_batch_size[i] = ci->cell_batch_size;
     std::copy(ci->enabled_coefficients,
               ci->enabled_coefficients + ufc_form.num_coefficients,
               _enabled_coefficients.row(i).data());
@@ -140,6 +142,11 @@ const std::function<void(PetscScalar*, const PetscScalar* const*, const double*,
 FormIntegrals::cell_tabulate_tensor(int i) const
 {
   return _cell_tabulate_tensor[i];
+}
+//-----------------------------------------------------------------------------
+int FormIntegrals::cell_batch_size(int i) const
+{
+  return _cell_batch_size.row(i);
 }
 //-----------------------------------------------------------------------------
 const bool* FormIntegrals::cell_enabled_coefficients(int i) const

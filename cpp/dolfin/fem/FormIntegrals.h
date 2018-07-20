@@ -66,6 +66,9 @@ public:
   ///    Pointer to list of enabled coefficients for this integral
   const bool* cell_enabled_coefficients(int i) const;
 
+  /// The number of cells that can be passed into integral i simultaneously
+  int cell_batch_size(int i) const;
+
   /// Set the function for 'tabulate_tensor' for cell integral i
   void set_cell_tabulate_tensor(int i, void (*fn)(PetscScalar*,
                                                   const PetscScalar* const*,
@@ -117,6 +120,10 @@ private:
   std::vector<std::function<void(PetscScalar*, const PetscScalar* const*,
                                  const double*, int)>>
       _cell_tabulate_tensor;
+
+  // Storage for the batch size of each integral
+  Eigen::Array<int, Eigen::Dynamic, 1, Eigen::RowMajor>
+      _cell_batch_size;
 
   // Storage for enabled coefficients, to match the functions
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
