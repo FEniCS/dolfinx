@@ -4,7 +4,7 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""IO interfaces for inout data, post-processing and checkpointing"""
+"""IO module for input data, post-processing and checkpointing"""
 
 import dolfin.cpp as cpp
 from dolfin.function.function import Function
@@ -112,11 +112,6 @@ class HDF5File:
         return Function(V, u_cpp.vector())
 
 
-class VTKFile(cpp.io.VTKFile):
-    """Interface to VTK files"""
-    pass
-
-
 class XDMFFile:
     """Interface to XDMF files"""
 
@@ -214,7 +209,7 @@ class XDMFFile:
         """
 
         V_cpp = getattr(V, "_cpp_object", V)
-        u_cpp = self._cpp_object._read_checkpoint(V_cpp, name, counter)
+        u_cpp = self._cpp_object.read_checkpoint(V_cpp, name, counter)
         return Function(V, u_cpp.vector())
 
     def write_checkpoint(self,

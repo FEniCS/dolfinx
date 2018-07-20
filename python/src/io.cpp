@@ -8,7 +8,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/io/HDF5File.h>
-#include <dolfin/io/VTKFile.h>
 #include <dolfin/io/XDMFFile.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -30,15 +29,6 @@ namespace dolfin_wrappers
 
 void io(py::module& m)
 {
-  // dolfin::io::VTKFile
-  py::class_<dolfin::io::VTKFile, std::shared_ptr<dolfin::io::VTKFile>>(
-      m, "VTKFile")
-      .def(py::init<std::string>())
-      .def("write",
-           [](dolfin::io::VTKFile& instance, const dolfin::mesh::Mesh& mesh) {
-             instance.write(mesh);
-           });
-
   // dolfin::io::HDF5File
   py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>,
              dolfin::common::Variable>(m, "HDF5File", py::dynamic_attr())
@@ -155,11 +145,7 @@ void io(py::module& m)
                                                            filename);
            }),
            py::arg("comm"), py::arg("filename"))
-      .def(py::init<std::string>())
-      .def("close", &dolfin::io::XDMFFile::close)
-      .def("__enter__", [](dolfin::io::XDMFFile& self) { return &self; })
-      .def("__exit__", [](dolfin::io::XDMFFile& self, py::args args,
-                          py::kwargs kwargs) { self.close(); });
+      .def("close", &dolfin::io::XDMFFile::close);
 
   // dolfin::io::XDMFFile::Encoding enums
   py::enum_<dolfin::io::XDMFFile::Encoding>(xdmf_file, "Encoding")
@@ -303,7 +289,7 @@ void io(py::module& m)
       .def("read_mvc_double", &dolfin::io::XDMFFile::read_mvc_double,
            py::arg("mesh"), py::arg("name") = "")
       // Checkpointing
-      .def("_read_checkpoint", &dolfin::io::XDMFFile::read_checkpoint,
+      .def("read_checkpoint", &dolfin::io::XDMFFile::read_checkpoint,
            py::arg("V"), py::arg("name"), py::arg("counter") = -1);
 }
 } // namespace dolfin_wrappers
