@@ -14,6 +14,7 @@ upwards (and not downwards) in order to minimise the potential energy."""
 
 
 from dolfin import *
+from dolfin.io import XDMFFile
 import matplotlib.pyplot as plt
 
 

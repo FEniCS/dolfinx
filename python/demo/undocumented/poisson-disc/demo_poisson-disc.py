@@ -23,6 +23,7 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 
 
 from dolfin import *
+from dolfin.io import XDMFFile
 import math
 parameters["form_compiler"]["representation"] = "uflacs"
 

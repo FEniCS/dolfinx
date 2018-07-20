@@ -5,8 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
-from dolfin import (XDMFFile, Function, FunctionSpace,
+from dolfin import (Function, FunctionSpace,
                     VectorFunctionSpace, Expression, MPI, cpp, fem)
+from dolfin.io import XDMFFile
 from dolfin_utils.test import tempdir, xfail_if_complex
 assert(tempdir)
 
