@@ -260,6 +260,10 @@ public:
     return _coord_mapping;
   }
 
+  /// Get the number of cells that should be supplied to tabulate_tensor
+  int
+  cell_batch_size() const;
+
   /// Call tabulate_tensor on a cell, returning the local element matrix
   /// @param A
   ///    Local element tensor (to be calculated)

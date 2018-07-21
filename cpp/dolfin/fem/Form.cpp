@@ -252,6 +252,14 @@ void Form::set_vertex_domains(
   dP = vertex_domains;
 }
 //-----------------------------------------------------------------------------
+int Form::cell_batch_size() const
+{
+  // FIXME: idx depends on cell? see tabulate_tensor
+  std::uint32_t idx = 0;
+
+  return _integrals.cell_batch_size(idx);
+}
+//-----------------------------------------------------------------------------
 void Form::tabulate_tensor(
     PetscScalar* A, mesh::Cell cell,
     Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
