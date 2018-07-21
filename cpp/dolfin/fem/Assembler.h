@@ -53,7 +53,7 @@ public:
   /// Destructor
   ~Assembler();
 
-  /// Assemble matrix. Dirichlet rows/columns are zeroed, with '1'
+  /// Assemble matrix. Dirichlet rows/columns are zeroed, and '1'
   /// placed on diagonal
   void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
 
@@ -83,9 +83,13 @@ private:
   // has bc)
   // std::vector<bool> has_dirichlet_bc();
 
-  // Assemble matrix. Dirichlet rows/columns are zeroed.
-  static void assemble(la::PETScMatrix& A, const Form& a,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs);
+  // Assemble matrix, with Dirichlet rows/columns zeroed. The matrix A
+  // must already be initialisd. The matrix may be a proxy, i.e. a view
+  // into a larger matrix, and assembly is performed using local
+  // indices.
+  static void
+  assemble_matrix(la::PETScMatrix& A, const Form& a,
+                  std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Assemble vector into sequential PETSc Vec
   static void assemble(Vec b, const Form& L);
@@ -108,6 +112,8 @@ private:
   static void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
                      const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
+  static std::vector<std::int32_t> compute_bc_indices(const DirichletBC& bc);
 
   // Bilinear and linear forms
   std::vector<std::vector<std::shared_ptr<const Form>>> _a;
