@@ -613,6 +613,8 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
       // Scatter
       // FIXME
+
+      cell_batch.clear();
     }
   }
   //else
