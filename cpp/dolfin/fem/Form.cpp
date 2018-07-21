@@ -285,8 +285,13 @@ void Form::tabulate_tensor(
   if (dx)
   {
     // FIXME: check on idx validity
-    // FIXME: check if all cells have same idx!
     idx = (*dx)[cell_batch.front()] + 1;
+
+    // FIXME: make this a precondition on the caller site
+    for (const auto& cell : cell_batch)
+      if (idx != (*dx)[cell] + 1)
+        throw std::runtime_error("Different integrals in a single cell batch "
+                                 "are not supported.");
   }
 
   // FIXME: move this to init function
