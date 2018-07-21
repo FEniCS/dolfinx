@@ -285,7 +285,7 @@ void Form::tabulate_tensor(
   if (dx)
   {
     // FIXME: check on idx validity
-    // FIXME: check if all cells have same idx?
+    // FIXME: check if all cells have same idx!
     idx = (*dx)[cell_batch.front()] + 1;
   }
 

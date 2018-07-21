@@ -558,7 +558,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     coordinate_dofs_batch.resize(cell_batch_size);
 
     Eigen::Matrix<PetscScalar, Eigen::Dynamic, 
-                    Eigen::Dynamic, Eigen::RowMajor> Ae_cell;
+                  Eigen::Dynamic, Eigen::RowMajor> Ae_cell;
 
     auto mesh_range = mesh::MeshRange<mesh::Cell>(mesh);
     auto cell_it = mesh_range.begin();
@@ -627,7 +627,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
         {
           const std::size_t kk = dmap0[k];
           DirichletBC::Map::const_iterator bc_value 
-            = boundary_values0.find(kk);
+              = boundary_values0.find(kk);
           if (bc_value != boundary_values0.end())
             Ae_cell.row(k).setZero();
         }
@@ -636,7 +636,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
         {
           const std::size_t ll = dmap1[l];
           DirichletBC::Map::const_iterator bc_value 
-            = boundary_values1.find(ll);
+              = boundary_values1.find(ll);
           if (bc_value != boundary_values1.end())
             Ae_cell.col(l).setZero();
         }
@@ -883,7 +883,7 @@ void Assembler::apply_bc(
     coordinate_dofs_batch.resize(cell_batch_size);
 
     Eigen::Matrix<PetscScalar, Eigen::Dynamic, 
-                    Eigen::Dynamic, Eigen::RowMajor> Ae_cell;
+                  Eigen::Dynamic, Eigen::RowMajor> Ae_cell;
 
     auto mesh_range = mesh::MeshRange<mesh::Cell>(mesh);
     auto cell_it = mesh_range.begin();
@@ -899,6 +899,7 @@ void Assembler::apply_bc(
           if (current_batch_size != 0)
             for (int j = current_batch_size; j < cell_batch_size; ++j)
               cell_batch.push_back(cell_batch.back());
+              
           break;
         }
 
