@@ -548,22 +548,30 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
   const int cell_batch_size = a.cell_batch_size();
   if (cell_batch_size > 1)
-  {
-    // Batch assembly
+  { 
+    // Batched assembly
+
     std::vector<mesh::Cell> cell_batch;
     cell_batch.reserve(cell_batch_size);
 
-    EigenRowArrayXXd coordinate_dofs_batch;
+    std::vector<EigenRowArrayXXd> coordinate_dofs_batch;
+    coordinate_dofs_batch.resize(cell_batch_size);
+
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 
+                    Eigen::Dynamic, Eigen::RowMajor> Ae_cell;
 
     auto mesh_range = mesh::MeshRange<mesh::Cell>(mesh);
-    for (auto cell_it = mesh_range.begin(); cell_it != mesh_range.end();)
+    auto cell_it = mesh_range.begin();
+    // Loop over the mesh
+    while (cell_it != mesh_range.end())
     {
       // Try to get enough cells for a batch
-      for (int i = 0; i < cell_batch_size; ++i)
+      int current_batch_size = 0;
+      while (current_batch_size < cell_batch_size) 
       {
         // Append dummy cells if end of mesh is reached
         if (cell_it == mesh_range.end()) {
-          for (int j = i; j < cell_batch_size; ++j)
+          for (int j = current_batch_size; j < cell_batch_size; ++j)
             cell_batch.push_back(cell_batch.back());
           break;
         }
@@ -577,27 +585,14 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
         cell_batch.push_back(cell);
         ++cell_it;
+        ++current_batch_size;
       }
 
-      // Gather and stride cell coordinate dofs
+      // Gather coordinate dofs
       for (int i = 0; i < cell_batch_size; ++i) 
       {
-        auto& cell = cell_batch[i];
-        cell.get_coordinate_dofs(coordinate_dofs);
-
-        if (coordinate_dofs_batch.size() == 0)
-          coordinate_dofs_batch.resize(coordinate_dofs.rows(), 
-                                       coordinate_dofs.cols() 
-                                         * cell_batch_size);
-
-        for (int k = 0; k < coordinate_dofs.rows(); ++k) 
-        {
-          for (int l = 0; l < coordinate_dofs.cols(); ++l)
-          {
-            coordinate_dofs_batch(k, l * cell_batch_size + i) 
-              = coordinate_dofs(k, l);
-          }
-        }
+        const auto& cell = cell_batch[i];
+        cell.get_coordinate_dofs(coordinate_dofs_batch[i]);
       }
 
       // Get dimensions of cell matrices
@@ -608,17 +603,55 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       Ae.resize(map0_size, map1_size * cell_batch_size);
       Ae.setZero();
 
-      // Tabulate tensor
+      // Compute cell matrix
       a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
 
       // Scatter
-      // FIXME
+      for (int i = 0; i < current_batch_size; ++i)
+      {
+        auto& cell = cell_batch[i];
+
+        // Get dof maps for cell
+        auto dmap0 = map0.cell_dofs(cell.index());
+        auto dmap1 = map1.cell_dofs(cell.index());
+
+        Ae_cell.resize(dmap0.size(), dmap1.size());
+
+        // "Unstride" cell matrix
+        for (int k = 0; k < Ae_cell.rows(); ++k)
+          for (int l = 0; l < Ae_cell.cols(); ++l)
+            Ae_cell(k,l) = Ae(k, cell_batch_size*l + i);
+
+        // Zero rows/columns for Dirichlet bcs
+        for (int k = 0; k < Ae_cell.rows(); ++k)
+        {
+          const std::size_t kk = dmap0[k];
+          DirichletBC::Map::const_iterator bc_value 
+            = boundary_values0.find(kk);
+          if (bc_value != boundary_values0.end())
+            Ae_cell.row(k).setZero();
+        }
+        // Loop over columns
+        for (int l = 0; l < Ae_cell.cols(); ++l)
+        {
+          const std::size_t ll = dmap1[l];
+          DirichletBC::Map::const_iterator bc_value 
+            = boundary_values1.find(ll);
+          if (bc_value != boundary_values1.end())
+            Ae_cell.col(l).setZero();
+        }
+
+        A.add_local(Ae_cell.data(), dmap0.size(), dmap0.data(), dmap1.size(),
+                    dmap1.data());
+      }
 
       cell_batch.clear();
     }
   }
-  //else
-  {
+  else
+  { 
+    // Non-batched assembly
+
     // Iterate over all cells
     for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
     {
@@ -702,29 +735,102 @@ void Assembler::assemble(
   EigenRowArrayXXd coordinate_dofs;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  // Iterate over all cells
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  const int cell_batch_size = L.cell_batch_size();
+  if (cell_batch_size > 1)
   {
-    // Check that cell is not a ghost
-    assert(!cell.is_ghost());
+    // Batched assembly
 
-    // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
+    std::vector<mesh::Cell> cell_batch;
+    cell_batch.reserve(cell_batch_size);
 
-    // Get dof maps for cell
-    auto dmap = dofmap->cell_dofs(cell.index());
-    // auto dmap1 = dofmaps[1]->cell_dofs(cell.index());
+    std::vector<EigenRowArrayXXd> coordinate_dofs_batch;
+    coordinate_dofs_batch.resize(cell_batch_size);
 
-    // Size data structure for assembly
-    be.resize(dmap.size());
-    be.setZero();
+    auto mesh_range = mesh::MeshRange<mesh::Cell>(mesh);
+    auto cell_it = mesh_range.begin();
+    // Loop over the mesh
+    while (cell_it != mesh_range.end())
+    {
+      // Try to get enough cells for a batch
+      int current_batch_size = 0;
+      while (current_batch_size < cell_batch_size)
+      {
+        // Append dummy cells if end of mesh is reached
+        if (cell_it == mesh_range.end()) {
+          for (int j = current_batch_size; j < cell_batch_size; ++j)
+            cell_batch.push_back(cell_batch.back());
+          break;
+        }
 
-    // Compute cell matrix
-    L.tabulate_tensor(be.data(), cell, coordinate_dofs);
+        mesh::Cell& cell = *cell_it;
 
-    // Add to vector
-    for (Eigen::Index i = 0; i < dmap.size(); ++i)
-      b[dmap[i]] += be[i];
+        // Check that cell is not a ghost
+        assert(!cell.is_ghost());
+
+        // FIXME: Check that all cells belong to the same domain?
+
+        cell_batch.push_back(cell);
+        ++cell_it;
+        ++current_batch_size;
+      }
+
+      // Gather coordinate dofs
+      for (int i = 0; i < cell_batch_size; ++i) 
+      {
+        const auto& cell = cell_batch[i];
+        cell.get_coordinate_dofs(coordinate_dofs_batch[i]);
+      }
+
+      // Get dimensions of cell matrices
+      auto map_size = dofmap->cell_dofs(cell_batch.front().index()).size();
+
+      // Size data structure for assembly
+      be.resize(map_size * cell_batch_size);
+      be.setZero();
+
+      // Compute cell matrix
+      L.tabulate_tensor(be.data(), cell_batch, coordinate_dofs_batch);
+
+      // Scatter (add to vector)
+      for (int i = 0; i < current_batch_size; ++i)
+      {
+        auto& cell = cell_batch[i];
+        auto dmap = dofmap->cell_dofs(cell.index());
+        for (Eigen::Index j = 0; j < dmap.size(); ++j)
+          b[dmap[j]] += be[cell_batch_size*j + i];
+      }
+
+      cell_batch.clear();
+    }
+  }
+  else
+  {
+    // Non-batched assembly
+
+    // Iterate over all cells
+    for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+    {
+      // Check that cell is not a ghost
+      assert(!cell.is_ghost());
+
+      // Get cell vertex coordinates
+      cell.get_coordinate_dofs(coordinate_dofs);
+
+      // Get dof maps for cell
+      auto dmap = dofmap->cell_dofs(cell.index());
+      // auto dmap1 = dofmaps[1]->cell_dofs(cell.index());
+
+      // Size data structure for assembly
+      be.resize(dmap.size());
+      be.setZero();
+
+      // Compute cell matrix
+      L.tabulate_tensor(be.data(), cell, coordinate_dofs);
+
+      // Add to vector
+      for (Eigen::Index i = 0; i < dmap.size(); ++i)
+        b[dmap[i]] += be[i];
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -765,70 +871,205 @@ void Assembler::apply_bc(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
   EigenRowArrayXXd coordinate_dofs;
 
-  // Iterate over all cells
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  const int cell_batch_size = a.cell_batch_size();
+  if (cell_batch_size > 1)
   {
-    // Check that cell is not a ghost
-    assert(!cell.is_ghost());
+    // Batched apply_bc
 
-    // Get dof maps for cell
-    auto dmap1 = dofmap1->cell_dofs(cell.index());
+    std::vector<mesh::Cell> cell_batch;
+    cell_batch.reserve(cell_batch_size);
 
-    // Check if bc is applied to cell
-    bool has_bc = false;
-    for (int i = 0; i < dmap1.size(); ++i)
+    std::vector<EigenRowArrayXXd> coordinate_dofs_batch;
+    coordinate_dofs_batch.resize(cell_batch_size);
+
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 
+                    Eigen::Dynamic, Eigen::RowMajor> Ae_cell;
+
+    auto mesh_range = mesh::MeshRange<mesh::Cell>(mesh);
+    auto cell_it = mesh_range.begin();
+    // Loop over the mesh
+    while (cell_it != mesh_range.end())
     {
-      const std::size_t ii = dmap1[i];
-      if (boundary_values.find(ii) != boundary_values.end())
+      // Try to get enough cells for a batch
+      int current_batch_size = 0;
+      while (current_batch_size < cell_batch_size)
       {
-        has_bc = true;
+        // Append dummy cells if end of mesh is reached
+        if (cell_it == mesh_range.end()) {
+          if (current_batch_size != 0)
+            for (int j = current_batch_size; j < cell_batch_size; ++j)
+              cell_batch.push_back(cell_batch.back());
+          break;
+        }
+
+        mesh::Cell& cell = *cell_it;
+
+        // Check that cell is not a ghost
+        assert(!cell.is_ghost());
+
+        // Get dof maps for cell
+        auto dmap1 = dofmap1->cell_dofs(cell.index());
+
+        // Check if bc is applied to cell
+        bool has_bc = false;
+        for (int j = 0; j < dmap1.size(); ++j)
+        {
+          const std::size_t jj = dmap1[j];
+          if (boundary_values.find(jj) != boundary_values.end())
+          {
+            has_bc = true;
+            break;
+          }
+        }
+
+        // FIXME: Check that all cells belong to the same domain?
+
+        if (has_bc) {
+          cell_batch.push_back(cell);
+          ++current_batch_size;
+        }
+
+        ++cell_it;
+      }
+
+      // Stop the procedure if no more cells with bcs were found
+      if (current_batch_size == 0)
         break;
-      }
-    }
 
-    if (!has_bc)
-      continue;
-
-    // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
-
-    // Size data structure for assembly
-    auto dmap0 = dofmap0->cell_dofs(cell.index());
-    Ae.resize(dmap0.size(), dmap1.size());
-    Ae.setZero();
-    a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
-
-    // FIXME: Is this required?
-    // Zero Dirichlet rows in Ae
-    /*
-    if (spaces[0] == spaces[1])
-    {
-      for (int i = 0; i < dmap0.size(); ++i)
+      // Gather coordinate dofs
+      for (int i = 0; i < cell_batch_size; ++i) 
       {
-        const std::size_t ii = dmap0[i];
-        auto bc = boundary_values.find(ii);
+        const auto& cell = cell_batch[i];
+        cell.get_coordinate_dofs(coordinate_dofs_batch[i]);
+      }
+
+      // Get dimensions of cell matrices
+      auto map0_size = dofmap0->cell_dofs(cell_batch.front().index()).size();
+      auto map1_size = dofmap1->cell_dofs(cell_batch.front().index()).size();
+
+      // Size data structure for assembly
+      Ae.resize(map0_size, map1_size * cell_batch_size);
+      Ae.setZero();
+
+      // Compute cell matrix
+      a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
+
+      // Write the boundary conditions to the vector
+      for (int i = 0; i < current_batch_size; ++i)
+      {
+        auto& cell = cell_batch[i];
+
+        // Get dof maps for cell
+        auto dmap0 = dofmap0->cell_dofs(cell.index());
+        auto dmap1 = dofmap1->cell_dofs(cell.index());
+
+        // FIXME: Is this required?
+        // Zero Dirichlet rows in Ae
+        /*
+        if (spaces[0] == spaces[1])
+        {
+          for (int i = 0; i < dmap0.size(); ++i)
+          {
+            const std::size_t ii = dmap0[i];
+            auto bc = boundary_values.find(ii);
+            if (bc != boundary_values.end())
+              Ae.row(i).setZero();
+          }
+        }
+        */
+
+        // Size data structure for assembly
+        be.resize(dmap0.size());
+        be.setZero();
+
+        for (int j = 0; j < dmap1.size(); ++j)
+        {
+          const std::size_t jj = dmap1[j];
+          auto bc = boundary_values.find(jj);
+          if (bc != boundary_values.end())
+          {
+            auto Ae_col = Ae.col(cell_batch_size*j + i);
+            for (int k = 0; k < be.size(); ++k)
+              be[k] -= Ae_col[k] * bc->second;
+          }
+        }
+
+        for (Eigen::Index k = 0; k < dmap0.size(); ++k)
+          b[dmap0[k]] += be[k];
+      }
+
+      cell_batch.clear();
+    }
+  }
+  else
+  {
+    // Non-batched apply_bc
+
+    // Iterate over all cells
+    for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+    {
+      // Check that cell is not a ghost
+      assert(!cell.is_ghost());
+
+      // Get dof maps for cell
+      auto dmap1 = dofmap1->cell_dofs(cell.index());
+
+      // Check if bc is applied to cell
+      bool has_bc = false;
+      for (int i = 0; i < dmap1.size(); ++i)
+      {
+        const std::size_t ii = dmap1[i];
+        if (boundary_values.find(ii) != boundary_values.end())
+        {
+          has_bc = true;
+          break;
+        }
+      }
+
+      if (!has_bc)
+        continue;
+
+      // Get cell vertex coordinates
+      cell.get_coordinate_dofs(coordinate_dofs);
+
+      // Size data structure for assembly
+      auto dmap0 = dofmap0->cell_dofs(cell.index());
+      Ae.resize(dmap0.size(), dmap1.size());
+      Ae.setZero();
+      a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
+
+      // FIXME: Is this required?
+      // Zero Dirichlet rows in Ae
+      /*
+      if (spaces[0] == spaces[1])
+      {
+        for (int i = 0; i < dmap0.size(); ++i)
+        {
+          const std::size_t ii = dmap0[i];
+          auto bc = boundary_values.find(ii);
+          if (bc != boundary_values.end())
+            Ae.row(i).setZero();
+        }
+      }
+      */
+
+      // Size data structure for assembly
+      be.resize(dmap0.size());
+      be.setZero();
+
+      for (int j = 0; j < dmap1.size(); ++j)
+      {
+        const std::size_t jj = dmap1[j];
+        auto bc = boundary_values.find(jj);
         if (bc != boundary_values.end())
-          Ae.row(i).setZero();
+        {
+          be -= Ae.col(j) * bc->second;
+        }
       }
+
+      for (Eigen::Index k = 0; k < dmap0.size(); ++k)
+        b[dmap0[k]] += be[k];
     }
-    */
-
-    // Size data structure for assembly
-    be.resize(dmap0.size());
-    be.setZero();
-
-    for (int j = 0; j < dmap1.size(); ++j)
-    {
-      const std::size_t jj = dmap1[j];
-      auto bc = boundary_values.find(jj);
-      if (bc != boundary_values.end())
-      {
-        be -= Ae.col(j) * bc->second;
-      }
-    }
-
-    for (Eigen::Index k = 0; k < dmap0.size(); ++k)
-      b[dmap0[k]] += be[k];
   }
 }
 //-----------------------------------------------------------------------------

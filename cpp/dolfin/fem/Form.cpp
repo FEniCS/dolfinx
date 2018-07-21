@@ -264,40 +264,74 @@ void Form::tabulate_tensor(
     PetscScalar* A, mesh::Cell cell,
     Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
 {
+  assert(cell_batch_size() == 1);
+
+  std::vector<mesh::Cell> cell_batch{cell};
+  std::vector<EigenRowArrayXXd> coordinate_dofs_batch{coordinate_dofs};
+  tabulate_tensor(A, cell_batch, coordinate_dofs_batch);
+}
+//-----------------------------------------------------------------------------
+void Form::tabulate_tensor(
+    PetscScalar* A, const std::vector<mesh::Cell>& cell_batch,
+    const std::vector<EigenRowArrayXXd>& coordinate_dofs_batch) const
+{
+  const int cell_batch_size = this->cell_batch_size();
+
+  assert(cell_batch.size() == cell_batch_size);
+  assert(cell_batch.size() == coordinate_dofs_batch.size());
+
   // Switch integral based on domain from dx MeshFunction
   std::uint32_t idx = 0;
   if (dx)
   {
     // FIXME: check on idx validity
-    idx = (*dx)[cell] + 1;
+    // FIXME: check if all cells have same idx?
+    idx = (*dx)[cell_batch.front()] + 1;
   }
 
-  // Restrict coefficients to cell
-  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
-  for (std::size_t i = 0; i < _coefficients.size(); ++i)
+  // FIXME: move this to init function
+  EigenRowArrayXXd coordinate_dofs_strided;
+  coordinate_dofs_strided.resize(coordinate_dofs_batch.front().rows(),
+                                 coordinate_dofs_batch.front().cols() *
+                                 coordinate_dofs_batch.size());
+
+  for (std::size_t i = 0; i < cell_batch.size(); ++i)
   {
-    if (enabled_coefficients[i])
+    auto& cell = cell_batch[i];
+    auto& coordinate_dofs = coordinate_dofs_batch[i];
+
+    // Make coordinate dofs strided over cells
+    for (int k = 0; k < coordinate_dofs.rows(); ++k)  
+      for (int l = 0; l < coordinate_dofs.cols(); ++l) 
+        coordinate_dofs_strided(k, l * cell_batch_size + i)  
+          = coordinate_dofs(k, l); 
+
+    // Restrict coefficients to cell
+    const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
+    for (std::size_t j = 0; j < _coefficients.size(); ++j)
     {
-      std::shared_ptr<const function::GenericFunction> coefficient
-          = _coefficients.get(i);
-      const FiniteElement& element = _coefficients.element(i);
-      coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
+      if (enabled_coefficients[j])
+      {
+        std::shared_ptr<const function::GenericFunction> coefficient
+            = _coefficients.get(j);
+        const FiniteElement& element = _coefficients.element(j);
+
+        // FIXME: combine this somehow with the init method
+        std::vector<PetscScalar> w;
+        w.resize(element.space_dimension() * 2);
+
+        coefficient->restrict(w.data(), element, cell, coordinate_dofs);
+
+        // Make coefficient values strided
+        for (std::size_t k = 0; k < w.size(); ++k)
+          _wpointer[j][cell_batch_size * k] = w[k];
+      }
     }
   }
 
   // Compute cell matrix
   auto tab_fn = _integrals.cell_tabulate_tensor(idx);
-  tab_fn(A, _wpointer.data(), coordinate_dofs.data(), 1);
-}
-//-----------------------------------------------------------------------------
-void Form::tabulate_tensor(
-    PetscScalar* A, const std::vector<mesh::Cell>& cells,
-    Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
-{
-  if (cells.size() == 1) 
-    tabulate_tensor(A, cells.front(), coordinate_dofs);
-  else
-    throw std::runtime_error("Cell batching not implemented!");
+  tab_fn(A, _wpointer.data(), coordinate_dofs_strided.data(), 1);
 }
 //-----------------------------------------------------------------------------
 void Form::init_coeff_scratch_space()
@@ -313,7 +347,7 @@ void Form::init_coeff_scratch_space()
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
   {
     const FiniteElement& element = _coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension() * 2);
+    n.push_back(n.back() + element.space_dimension() * cell_batch_size() * 2);
   }
   // Allocate memory capable of storing all coefficient values
   // in a contiguous block

@@ -287,7 +287,7 @@ public:
   ///
   void
   tabulate_tensor(PetscScalar* A, const std::vector<mesh::Cell>& cells,
-                  Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
+                  const std::vector<EigenRowArrayXXd>& coordinate_dofs) const;
 
 private:
   // Integrals associated with the Form
