@@ -264,7 +264,7 @@ public:
   int
   cell_batch_size() const;
 
-  /// Call tabulate_tensor on a cell, returning the local element matrix
+  /// Call tabulate_tensor on a cell, computing the local element matrix
   /// @param A
   ///    Local element tensor (to be calculated)
   /// @param cell
@@ -274,6 +274,19 @@ public:
   ///
   void
   tabulate_tensor(PetscScalar* A, mesh::Cell cell,
+                  Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
+
+  /// Call tabulate_tensor on a cell batch, computing the local element matrix
+  /// for multiple cells
+  /// @param A
+  ///    Local element tensor (to be calculated)
+  /// @param cell
+  ///    Cell on which to calculate
+  /// @param coordinate_dofs
+  ///    Coordinates of the cell
+  ///
+  void
+  tabulate_tensor(PetscScalar* A, const std::vector<mesh::Cell>& cells,
                   Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
 
 private:

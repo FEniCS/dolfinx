@@ -290,6 +290,16 @@ void Form::tabulate_tensor(
   tab_fn(A, _wpointer.data(), coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
+void Form::tabulate_tensor(
+    PetscScalar* A, const std::vector<mesh::Cell>& cells,
+    Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
+{
+  if (cells.size() == 1) 
+    tabulate_tensor(A, cells.front(), coordinate_dofs);
+  else
+    throw std::runtime_error("Cell batching not implemented!");
+}
+//-----------------------------------------------------------------------------
 void Form::init_coeff_scratch_space()
 {
   const std::size_t num_coeffs = _coefficients.size();

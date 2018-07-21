@@ -546,10 +546,10 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
-  // Batch assembly
   const int cell_batch_size = a.cell_batch_size();
-  //if (cell_batch_size > 1)
+  if (cell_batch_size > 1)
   {
+    // Batch assembly
     std::vector<mesh::Cell> cell_batch;
     cell_batch.reserve(cell_batch_size);
 
@@ -609,7 +609,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       Ae.setZero();
 
       // Tabulate tensor
-      //a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
+      a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
 
       // Scatter
       // FIXME
@@ -638,7 +638,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
       a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
 
-      // FIXME: Pass in list  of cells, and list of local dofs, with
+      // FIXME: Pass in list of cells, and list of local dofs, with
       // Dirichlet conditions
       // Note: could use negative dof indices to have PETSc do this
       // Zero rows/columns for Dirichlet bcs
