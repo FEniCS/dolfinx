@@ -21,7 +21,7 @@ namespace function
 {
 class GenericFunction;
 class FunctionSpace;
-}
+} // namespace function
 
 namespace mesh
 {
@@ -29,7 +29,7 @@ class Facet;
 template <typename T>
 class MeshFunction;
 class SubDomain;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -101,7 +101,7 @@ class DirichletBC : public common::Variable
 
 public:
   /// map type used by DirichletBC
-  typedef std::unordered_map<std::size_t, double> Map;
+  typedef std::unordered_map<std::size_t, PetscScalar> Map;
 
   /// Method of boundary condition application
   enum class Method
@@ -316,7 +316,7 @@ private:
     LocalData(const function::FunctionSpace& V);
 
     // Coefficients
-    std::vector<double> w;
+    std::vector<PetscScalar> w;
 
     // mesh::Facet dofs
     std::vector<int> facet_dofs;
@@ -325,5 +325,5 @@ private:
     EigenRowArrayXXd coordinates;
   };
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

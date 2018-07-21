@@ -15,7 +15,7 @@ from math import sqrt
 import numpy
 import ufl
 
-from dolfin_utils.test import skip_in_parallel, fixture
+from dolfin_utils.test import skip_in_parallel, fixture, skip_if_complex
 
 
 @fixture
@@ -190,6 +190,7 @@ def test_call(R, V, W, Q, mesh):
         u0([0, 0])
 
 
+@skip_if_complex
 def test_constant_float_conversion():
     c = Constant(3.45)
     assert float(c.values()[0]) == 3.45
@@ -236,8 +237,8 @@ def test_interpolation_jit_rank0(V):
     f = Expression("1.0", degree=0)
     w = interpolate(f, V)
     x = w.vector()
-    assert MPI.max(MPI.comm_world, x.get_local().max()) == 1
-    assert MPI.min(MPI.comm_world, x.get_local().min()) == 1
+    assert MPI.max(MPI.comm_world, abs(x.get_local()).max()) == 1
+    assert MPI.min(MPI.comm_world, abs(x.get_local()).min()) == 1
 
 
 @skip_in_parallel
@@ -261,8 +262,8 @@ def test_interpolation_jit_rank1(W):
     f = Expression(("1.0", "1.0", "1.0"), degree=0)
     w = interpolate(f, W)
     x = w.vector()
-    assert x.get_local().max() == 1
-    assert x.get_local().min() == 1
+    assert abs(x.get_local()).max() == 1
+    assert abs(x.get_local()).min() == 1
 
 
 @skip_in_parallel

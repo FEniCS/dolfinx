@@ -130,5 +130,5 @@ private:
   // UFC finite element
   std::shared_ptr<const ufc_coordinate_mapping> _ufc_cm;
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

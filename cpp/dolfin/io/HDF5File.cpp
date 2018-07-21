@@ -266,8 +266,9 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
       _vertex_coords = mesh.geometry().points();
     else
     {
-      _vertex_coords
-          = mesh::DistributedMeshTools::reorder_points_by_global_indices(mesh);
+      _vertex_coords = mesh::DistributedMeshTools::reorder_by_global_indices(
+          mesh.mpi_comm(), mesh.geometry().points(),
+          mesh.geometry().global_indices());
     }
     std::vector<double> vertex_coords(
         _vertex_coords.data(), _vertex_coords.data() + _vertex_coords.size());

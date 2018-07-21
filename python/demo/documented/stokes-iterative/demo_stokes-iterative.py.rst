@@ -95,6 +95,7 @@ subspace method which is suitable for symmetric indefinite problems.
 If not available, costly QMR method is choosen. ::
 
     from dolfin import *
+    from dolfin.io import XDMFFile
 
 Next, we define the mesh (a :py:class:`UnitCubeMesh
 <dolfin.cpp.UnitCubeMesh>`) and a mixed finite element ``TH``.  Then

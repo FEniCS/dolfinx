@@ -5,8 +5,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-"""This module provides a small Python layer on top of the C++
-VariationalProblem/Solver classes as well as the solve function.
+"""Simple interface for solving variational problems
+
+A small Python layer on top of the C++ VariationalProblem/Solver classes
+as well as the solve function.
 
 """
 

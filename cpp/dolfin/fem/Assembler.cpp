@@ -140,7 +140,6 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
                     = _a[i][j]->function_space(0)->dofmap()->index_map();
                 std::cout << "  Range: " << index_map->local_range()[0] << ", "
                           << index_map->local_range()[1] << std::endl;
-                std::cout << "Num ghots: " << index_map->num_ghosts() << std::endl;
                 auto ghosts = index_map->ghosts();
                 std::cout << ghosts << std::endl;
               }
@@ -311,7 +310,8 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       }
 
       // Assemble
-      EigenVectorXd b_vec(map_size0 + map_size1);
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec(map_size0
+                                                          + map_size1);
       b_vec.setZero();
       this->assemble(b_vec, *_l[i]);
 
@@ -419,7 +419,7 @@ void Assembler::ident(la::PETScMatrix& A, const function::FunctionSpace& V,
 
   auto map = V.dofmap()->index_map();
   int local_size = map->block_size() * map->size_local();
-  double one = 1.0;
+  PetscScalar one = 1.0;
   for (auto bc : boundary_values)
   {
     la_index_t row = bc.first;
@@ -541,7 +541,8 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
   // Data structures used in assembly
   EigenRowArrayXXd coordinate_dofs;
-  EigenRowMatrixXd Ae;
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      Ae;
 
   // Iterate over all cells
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -592,19 +593,21 @@ void Assembler::assemble(Vec b, const Form& L)
   // FIXME: Check that we have a sequential vector
 
   // Get raw array
-  double* values;
+  PetscScalar* values;
   VecGetArray(b, &values);
 
   PetscInt size;
   VecGetSize(b, &size);
-  Eigen::Map<EigenVectorXd> b_array(values, size);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_array(values,
+                                                                    size);
 
   assemble(b_array, L);
 
   VecRestoreArray(b, &values);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
+void Assembler::assemble(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
   // if (b.empty())
   //  init(b, L);
@@ -621,7 +624,7 @@ void Assembler::assemble(Eigen::Ref<EigenVectorXd> b, const Form& L)
 
   // Data structures used in assembly
   EigenRowArrayXXd coordinate_dofs;
-  EigenVectorXd be;
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -681,8 +684,9 @@ void Assembler::apply_bc(
   auto dofmap0 = a.function_space(0)->dofmap();
   auto dofmap1 = a.function_space(1)->dofmap();
 
-  EigenRowMatrixXd Ae;
-  EigenVectorXd be;
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      Ae;
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
   EigenRowArrayXXd coordinate_dofs;
 
   // Iterate over all cells

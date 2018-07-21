@@ -32,11 +32,6 @@ from dolfin import *
 import matplotlib.pyplot as plt
 
 
-# Check that DOLFIN has been configured with PETSc
-if not has_petsc():
-    print("This demo requires DOLFIN to be configured with PETSc.")
-    exit()
-
 # Check that PETSc has been configured with HYPRE
 if not "hypre_amg" in PETScPreconditioner.preconditioners():
     print("This demo requires PETSc to be configured with HYPRE.")
@@ -53,9 +48,6 @@ try:
 except AttributeError:
     print("This demo requires a recent petsc4py with HYPRE bindings.")
     exit()
-
-# Set PETSc as default linear algebra backend
-parameters["linear_algebra_backend"] = "PETSc";
 
 # Load sphere mesh
 mesh = Mesh("../sphere.xml.gz")

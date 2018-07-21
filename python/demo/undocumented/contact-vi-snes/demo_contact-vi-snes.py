@@ -13,11 +13,6 @@ from dolfin import *
 import matplotlib.pyplot as plt
 
 
-# This demo requires PETSc
-if not has_petsc():
-    print("DOLFIN must be compiled with PETSc to run this demo.")
-    exit(0)
-
 # Create mesh
 mesh = Mesh("../circle_yplane.xml.gz")
 

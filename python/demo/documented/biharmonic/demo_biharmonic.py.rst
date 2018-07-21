@@ -101,6 +101,7 @@ First, the necessary modules are imported::
 
     import matplotlib.pyplot as plt
     from dolfin import *
+    from dolfin.io import XDMFFile
 
 Next, some parameters for the form compiler are set::
 

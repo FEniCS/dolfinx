@@ -14,7 +14,6 @@ from dolfin import (TestFunction, TrialFunction, dot, grad, dx,
 from dolfin.la import PETScVector, PETScOptions, PETScKrylovSolver
 from dolfin.cpp.fem import PETScDMCollection
 from dolfin.fem.assembling import assemble_system
-from dolfin.parameter import parameters
 
 import pytest
 from dolfin_utils.test import skip_if_not_petsc4py
@@ -82,9 +81,7 @@ def test_mg_solver_laplace():
 
 
 @skip_if_not_petsc4py
-def xtest_mg_solver_stokes(pushpop_parameters):
-
-    parameters["linear_algebra_backend"] = "PETSc"
+def xtest_mg_solver_stokes():
 
     mesh0 = UnitCubeMesh(2, 2, 2)
     mesh1 = UnitCubeMesh(4, 4, 4)

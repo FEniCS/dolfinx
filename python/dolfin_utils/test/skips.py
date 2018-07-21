@@ -11,8 +11,6 @@ from dolfin import *
 
 
 # Skips with dependencies
-skip_if_not_MPI = pytest.mark.skipif(not has_mpi(),
-                                     reason="Skipping unit test(s) depending on MPI.")
 skip_if_not_HDF5 = pytest.mark.skipif(not has_hdf5(),
                                       reason="Skipping unit test(s) depending on HDF5.")
 skip_if_not_petsc4py = pytest.mark.skipif(not has_petsc4py(),
@@ -35,6 +33,12 @@ skip_in_serial = pytest.mark.skipif(MPI.size(MPI.comm_world) <= 1,
 # Skips with respect to linear algebra index type
 # skip_64bit_int = pytest.mark.skipif(cpp.common.sizeof_la_index() == 8,
 #                                     reason="This test does not work with 64-bit linear algebra indices.")
+
+# Skips with respect to the scalar type
+skip_if_complex = pytest.mark.skipif(has_petsc_complex(),
+                                     reason="This test does not work in complex mode.")
+xfail_if_complex = pytest.mark.xfail(has_petsc_complex(),
+                                      reason="This test does not work in complex mode.")
 
 # Skips with respect to build type
 skip_in_debug = pytest.mark.skipif(has_debug(),

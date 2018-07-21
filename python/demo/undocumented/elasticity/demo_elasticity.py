@@ -11,6 +11,7 @@ smoothed aggregation algerbaric multigrid."""
 import numpy as np
 import dolfin
 from dolfin import *
+from dolfin.io import XDMFFile
 from dolfin.la import (VectorSpaceBasis, PETScVector, PETScOptions,
                        PETScKrylovSolver)
 from dolfin.fem.assembling import assemble_system
@@ -31,10 +32,10 @@ def build_nullspace(V, x):
 
     # Build rotational null space basis
     V.sub(0).set_x(nullspace_basis[3], -1.0, 1)
-    V.sub(1).set_x(nullspace_basis[3],  1.0, 0)
-    V.sub(0).set_x(nullspace_basis[4],  1.0, 2)
+    V.sub(1).set_x(nullspace_basis[3], 1.0, 0)
+    V.sub(0).set_x(nullspace_basis[4], 1.0, 2)
     V.sub(2).set_x(nullspace_basis[4], -1.0, 0)
-    V.sub(2).set_x(nullspace_basis[5],  1.0, 1)
+    V.sub(2).set_x(nullspace_basis[5], 1.0, 1)
     V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
 
     for x in nullspace_basis:
@@ -81,14 +82,14 @@ f = Expression(("0.0", "1.0e10", "0.0"), degree=2)
 # Elasticity parameters
 E = 1.0e9
 nu = 0.0
-mu = E/(2.0*(1.0 + nu))
-lmbda = E*nu/((1.0 + nu)*(1.0 - 2.0*nu))
+mu = E / (2.0 * (1.0 + nu))
+lmbda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
 
 # Stress computation
 
 
 def sigma(v):
-    return 2.0*mu*sym(grad(v)) + lmbda*tr(sym(grad(v)))*Identity(len(v))
+    return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(grad(v))) * Identity(len(v))
 
 
 # Create function space
@@ -97,8 +98,8 @@ V = VectorFunctionSpace(mesh, "Lagrange", 1)
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-a = inner(sigma(u), grad(v))*dx
-L = inner(f, v)*dx
+a = inner(sigma(u), grad(v)) * dx
+L = inner(f, v) * dx
 
 # Set up boundary condition on inner surface
 c = Constant((0.0, 0.0, 0.0))

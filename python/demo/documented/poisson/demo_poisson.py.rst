@@ -79,6 +79,7 @@ First, the :py:mod:`dolfin` module is imported: ::
     import numpy as np
     import dolfin
     from dolfin import *
+    from dolfin.io import XDMFFile
 
 We begin by defining a mesh of the domain and a finite element
 function space :math:`V` relative to this mesh. As the unit square is
@@ -160,7 +161,7 @@ the linear form ``L`` (using UFL operators). In summary, this reads ::
     f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
     g = Expression("sin(5*x[0])", degree=2)
     a = inner(grad(u), grad(v))*dx
-    L = f*v*dx + g*v*ds
+    L = inner(f, v)*dx + inner(g, v)*ds
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem. First, we need to define a
@@ -188,8 +189,9 @@ for later visualization and also plot it using
 the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 
     # Save solution in XDMF format
-    with XDMFFile(MPI.comm_world, "poisson.xdmf") as file:
-        file.write(u, XDMFFile.Encoding.HDF5)
+    with XDMFFile(MPI.comm_world, "poisson.xdmf",
+                  encoding=XDMFFile.Encoding.HDF5) as file:
+        file.write(u)
 
     # Plot solution
     import matplotlib.pyplot as plt

@@ -19,7 +19,7 @@ class Cell;
 class Facet;
 template <typename T>
 class MeshFunction;
-}
+} // namespace mesh
 
 namespace fem
 {
@@ -40,7 +40,7 @@ public:
   /// assemble_cell(), assemble_exterior_facet(),
   /// assemble_interior_facet().
   static void assemble(
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,     ///< [in]
@@ -48,24 +48,24 @@ public:
       const mesh::MeshFunction<std::size_t>* cell_domains,           ///< [in]
       const mesh::MeshFunction<std::size_t>* exterior_facet_domains, ///< [in]
       const mesh::MeshFunction<std::size_t>* interior_facet_domains  ///< [in]
-      );
+  );
 
   /// Worker method called by assemble() to perform assembly of
   /// volume integrals (UFL measure dx).
   static void assemble_cell(
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs, ///< [in]
       const mesh::Cell& cell,                                    ///< [in]
       const mesh::MeshFunction<std::size_t>* cell_domains        ///< [in]
-      );
+  );
 
   /// Worker method called by assemble() for each of the cell's
   /// external facets to perform assembly of external facet
   /// integrals (UFL measure ds).
   static void assemble_exterior_facet(
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,    ///< [in]
@@ -73,13 +73,13 @@ public:
       const mesh::Facet& facet,                                     ///< [in]
       const std::size_t local_facet,                                ///< [in]
       const mesh::MeshFunction<std::size_t>* exterior_facet_domains ///< [in]
-      );
+  );
 
   /// Worker method called by assemble() for each of the cell's
   /// internal facets to perform assembly of internal facet
   /// integrals (UFL measure dS)
   static void assemble_interior_facet(
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                     Eigen::RowMajor>& A, ///< [out] The tensor to assemble.
       UFC& ufc,                          ///< [in]
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,     ///< [in]
@@ -88,7 +88,7 @@ public:
       const std::size_t local_facet,                                 ///< [in]
       const mesh::MeshFunction<std::size_t>* interior_facet_domains, ///< [in]
       const mesh::MeshFunction<std::size_t>* cell_domains            ///< [in]
-      );
+  );
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

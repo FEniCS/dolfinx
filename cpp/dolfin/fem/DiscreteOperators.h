@@ -54,5 +54,5 @@ public:
   build_gradient(const function::FunctionSpace& V0,
                  const function::FunctionSpace& V1);
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

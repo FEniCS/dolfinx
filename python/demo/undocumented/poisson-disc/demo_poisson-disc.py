@@ -23,6 +23,7 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 
 
 from dolfin import *
+from dolfin.io import XDMFFile
 import math
 parameters["form_compiler"]["representation"] = "uflacs"
 
@@ -91,6 +92,6 @@ def compute_rates():
                 if MPI.size(MPI.comm_world) > 1 and encoding == XDMFFile.Encoding.ASCII:
                     print("XDMF file output not supported in parallel without HDF5")
                 else:
-                    ufile.write(u, encoding)
+                    ufile.write(u, encoding=encoding)
 
 compute_rates()

@@ -21,6 +21,7 @@
 #endif
 
 #include "casters.h"
+#include <dolfin/common/types.h>
 #include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -95,6 +96,8 @@ void fem(py::module& m)
       m, "FiniteElement", "DOLFIN FiniteElement object")
       .def(py::init<std::shared_ptr<const ufc_finite_element>>())
       .def("num_sub_elements", &dolfin::fem::FiniteElement::num_sub_elements)
+      .def("dof_reference_coordinates",
+           &dolfin::fem::FiniteElement::dof_reference_coordinates)
       // TODO: Update for change to Eigen::Tensor
       //   .def("tabulate_dof_coordinates",
       //        [](const dolfin::fem::FiniteElement &self,
@@ -354,8 +357,9 @@ void fem(py::module& m)
       .def("set_vertex_domains", &dolfin::fem::Form::set_vertex_domains)
       .def("set_cell_tabulate",
            [](dolfin::fem::Form& self, unsigned int i, std::size_t addr) {
-             auto tabulate_tensor_ptr = (void (*)(double*, const double* const*,
-                                                  const double*, int))addr;
+             auto tabulate_tensor_ptr
+                 = (void (*)(PetscScalar*, const PetscScalar* const*,
+                             const double*, int))addr;
              self.integrals().set_cell_tabulate_tensor(i, tabulate_tensor_ptr);
            })
       .def("rank", &dolfin::fem::Form::rank)
@@ -389,7 +393,6 @@ void fem(py::module& m)
         self.set_bounds(_lb, _ub);
       });
 
-#ifdef HAS_PETSC
   // dolfin::fem::PETScDMCollection
   py::class_<dolfin::fem::PETScDMCollection,
              std::shared_ptr<dolfin::fem::PETScDMCollection>>(
@@ -421,6 +424,5 @@ void fem(py::module& m)
           })
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
-#endif
 }
 } // namespace dolfin_wrappers

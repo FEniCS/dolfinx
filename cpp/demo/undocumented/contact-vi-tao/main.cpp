@@ -60,8 +60,6 @@ public:
 
 int main()
 {
-#ifdef HAS_PETSC
-
   // Read mesh
   auto mesh = std::make_shared<Mesh>("../circle_yplane.xml.gz");
 
@@ -114,12 +112,6 @@ int main()
   TAOSolver.solve(A, *usol.vector(), b, *xl_f.vector(), *xu_f.vector());
 
   XDMFFile("u.xdmf").write(usol);
-
-  #else
-
-  cout << "This demo requires DOLFIN to be configured with PETSc version 3.6 or later" << endl;
-
-  #endif
 
   return 0;
 }

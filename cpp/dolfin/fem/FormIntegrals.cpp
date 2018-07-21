@@ -135,7 +135,8 @@ FormIntegrals::cell_integral(unsigned int i) const
     return _cell_integrals[i + 1];
 }
 //-----------------------------------------------------------------------------
-const std::function<void(double*, const double* const*, const double*, int)>&
+const std::function<void(PetscScalar*, const PetscScalar* const*, const double*,
+                         int)>&
 FormIntegrals::cell_tabulate_tensor(int i) const
 {
   return _cell_tabulate_tensor[i];
@@ -147,7 +148,8 @@ const bool* FormIntegrals::cell_enabled_coefficients(int i) const
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_cell_tabulate_tensor(
-    int i, void (*fn)(double*, const double* const*, const double*, int))
+    int i,
+    void (*fn)(PetscScalar*, const PetscScalar* const*, const double*, int))
 {
   _cell_tabulate_tensor.resize(i + 1);
   _cell_tabulate_tensor[i] = fn;

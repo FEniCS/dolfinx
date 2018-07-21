@@ -98,6 +98,15 @@ foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PRIVATE})
   target_link_libraries(dolfin PRIVATE "Boost::${BOOST_PACKAGE}")
 endforeach()
 
+# MPI
+set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
+target_include_directories(dolfin SYSTEM PUBLIC ${MPI_CXX_INCLUDE_PATH})
+
+# PETSc
+target_link_libraries(dolfin PUBLIC PETSC::petsc)
+target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
+
 #------------------------------------------------------------------------------
 # Optional packages
 
@@ -117,13 +126,6 @@ if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   target_link_libraries(dolfin PRIVATE SLEPC::slepc_static)
 endif()
 
-# PETSc
-if (DOLFIN_ENABLE_PETSC AND PETSC_FOUND)
-  target_compile_definitions(dolfin PUBLIC HAS_PETSC)
-  target_link_libraries(dolfin PUBLIC PETSC::petsc)
-  target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
-endif()
-
 # SCOTCH
 if (DOLFIN_ENABLE_SCOTCH AND SCOTCH_FOUND)
   target_compile_definitions(dolfin PUBLIC HAS_SCOTCH)
@@ -138,13 +140,6 @@ if (DOLFIN_ENABLE_PARMETIS AND PARMETIS_FOUND)
   target_include_directories(dolfin SYSTEM PRIVATE ${PARMETIS_INCLUDE_DIRS})
 endif()
 
-# MPI
-if (DOLFIN_ENABLE_MPI AND MPI_CXX_FOUND)
-  set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-  target_compile_definitions(dolfin PUBLIC HAS_MPI)
-  target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
-  target_include_directories(dolfin SYSTEM PUBLIC ${MPI_CXX_INCLUDE_PATH})
-endif()
 
 if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING AND GMP_FOUND AND MPFR_FOUND AND CGAL_FOUND)
   message(STATUS "Appending link flags for geometry debugging")
