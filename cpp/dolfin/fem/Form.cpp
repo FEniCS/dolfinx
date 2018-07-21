@@ -303,11 +303,12 @@ void Form::tabulate_tensor(
     // Make coordinate dofs strided over cells
     for (int k = 0; k < coordinate_dofs.rows(); ++k)  
       for (int l = 0; l < coordinate_dofs.cols(); ++l) 
-        coordinate_dofs_strided(k, l * cell_batch_size + i)  
-          = coordinate_dofs(k, l); 
+        coordinate_dofs_strided(k, cell_batch_size * l + i)  
+            = coordinate_dofs(k, l); 
 
     // Restrict coefficients to cell
-    const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
+    const bool* enabled_coefficients
+        = _integrals.cell_enabled_coefficients(idx);
     for (std::size_t j = 0; j < _coefficients.size(); ++j)
     {
       if (enabled_coefficients[j])
@@ -324,7 +325,7 @@ void Form::tabulate_tensor(
 
         // Make coefficient values strided
         for (std::size_t k = 0; k < w.size(); ++k)
-          _wpointer[j][cell_batch_size * k] = w[k];
+          _wpointer[j][cell_batch_size * k + i] = w[k];
       }
     }
   }
