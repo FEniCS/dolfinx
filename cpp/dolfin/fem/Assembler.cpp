@@ -546,47 +546,119 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
-  // Iterate over all cells
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  // Batch assembly
+  const int cell_batch_size = a.cell_batch_size();
+  //if (cell_batch_size > 1)
   {
-    // Check that cell is not a ghost
-    assert(!cell.is_ghost());
+    std::vector<mesh::Cell> cell_batch;
+    cell_batch.reserve(cell_batch_size);
 
-    // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
+    EigenRowArrayXXd coordinate_dofs_batch;
 
-    // Get dof maps for cell
-    auto dmap0 = map0.cell_dofs(cell.index());
-    auto dmap1 = map1.cell_dofs(cell.index());
-
-    // Size data structure for assembly
-    Ae.resize(dmap0.size(), dmap1.size());
-    Ae.setZero();
-
-    a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
-
-    // FIXME: Pass in list  of cells, and list of local dofs, with
-    // Dirichlet conditions
-    // Note: could use negative dof indices to have PETSc do this
-    // Zero rows/columns for Dirichlet bcs
-    for (int i = 0; i < Ae.rows(); ++i)
+    auto mesh_range = mesh::MeshRange<mesh::Cell>(mesh);
+    for (auto cell_it = mesh_range.begin(); cell_it != mesh_range.end();)
     {
-      const std::size_t ii = dmap0[i];
-      DirichletBC::Map::const_iterator bc_value = boundary_values0.find(ii);
-      if (bc_value != boundary_values0.end())
-        Ae.row(i).setZero();
-    }
-    // Loop over columns
-    for (int j = 0; j < Ae.cols(); ++j)
-    {
-      const std::size_t jj = dmap1[j];
-      DirichletBC::Map::const_iterator bc_value = boundary_values1.find(jj);
-      if (bc_value != boundary_values1.end())
-        Ae.col(j).setZero();
-    }
+      // Try to get enough cells for a batch
+      for (int i = 0; i < cell_batch_size; ++i)
+      {
+        // Append dummy cells if end of mesh is reached
+        if (cell_it == mesh_range.end()) {
+          for (int j = i; j < cell_batch_size; ++j)
+            cell_batch.push_back(cell_batch.back());
+          break;
+        }
 
-    A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
-                dmap1.data());
+        mesh::Cell& cell = *cell_it;
+
+        // Check that cell is not a ghost
+        assert(!cell.is_ghost());
+
+        // FIXME: Check that all cells belong to the same domain?
+
+        cell_batch.push_back(cell);
+        ++cell_it;
+      }
+
+      // Gather and stride cell coordinate dofs
+      for (int i = 0; i < cell_batch_size; ++i) 
+      {
+        auto& cell = cell_batch[i];
+        cell.get_coordinate_dofs(coordinate_dofs);
+
+        if (coordinate_dofs_batch.size() == 0)
+          coordinate_dofs_batch.resize(coordinate_dofs.rows(), 
+                                       coordinate_dofs.cols() 
+                                         * cell_batch_size);
+
+        for (int k = 0; k < coordinate_dofs.rows(); ++k) 
+        {
+          for (int l = 0; l < coordinate_dofs.cols(); ++l)
+          {
+            coordinate_dofs_batch(k, l * cell_batch_size + i) 
+              = coordinate_dofs(k, l);
+          }
+        }
+      }
+
+      // Get dimensions of cell matrices
+      auto map0_size = map0.cell_dofs(cell_batch.front().index()).size();
+      auto map1_size = map1.cell_dofs(cell_batch.front().index()).size();
+
+      // Size data structure for assembly
+      Ae.resize(map0_size, map1_size * cell_batch_size);
+      Ae.setZero();
+
+      // Tabulate tensor
+      //a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
+
+      // Scatter
+      // FIXME
+    }
+  }
+  //else
+  {
+    // Iterate over all cells
+    for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+    {
+      // Check that cell is not a ghost
+      assert(!cell.is_ghost());
+
+      // Get cell vertex coordinates
+      cell.get_coordinate_dofs(coordinate_dofs);
+
+      // Get dof maps for cell
+      auto dmap0 = map0.cell_dofs(cell.index());
+      auto dmap1 = map1.cell_dofs(cell.index());
+
+      // Size data structure for assembly
+      Ae.resize(dmap0.size(), dmap1.size());
+      Ae.setZero();
+
+      a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
+
+      // FIXME: Pass in list  of cells, and list of local dofs, with
+      // Dirichlet conditions
+      // Note: could use negative dof indices to have PETSc do this
+      // Zero rows/columns for Dirichlet bcs
+      for (int i = 0; i < Ae.rows(); ++i)
+      {
+        const std::size_t ii = dmap0[i];
+        DirichletBC::Map::const_iterator bc_value = boundary_values0.find(ii);
+        if (bc_value != boundary_values0.end())
+          Ae.row(i).setZero();
+      }
+      // Loop over columns
+      for (int j = 0; j < Ae.cols(); ++j)
+      {
+        const std::size_t jj = dmap1[j];
+        DirichletBC::Map::const_iterator bc_value = boundary_values1.find(jj);
+        if (bc_value != boundary_values1.end())
+          Ae.col(j).setZero();
+      }
+
+      A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
+                  dmap1.data());
+    }
   }
 }
 //-----------------------------------------------------------------------------
