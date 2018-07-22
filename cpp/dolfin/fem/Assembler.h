@@ -86,10 +86,11 @@ private:
   // Assemble matrix, with Dirichlet rows/columns zeroed. The matrix A
   // must already be initialisd. The matrix may be a proxy, i.e. a view
   // into a larger matrix, and assembly is performed using local
-  // indices.
+  // indices. Matrix is not finalisd.
   static void
   assemble_matrix(la::PETScMatrix& A, const Form& a,
-                  std::vector<std::shared_ptr<const DirichletBC>> bcs);
+                  const std::vector<std::int32_t>& bc_dofs0,
+                  const std::vector<std::int32_t>& bc_dofs1);
 
   // Assemble vector into sequential PETSc Vec
   static void assemble(Vec b, const Form& L);

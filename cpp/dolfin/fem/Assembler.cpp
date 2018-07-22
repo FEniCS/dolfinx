@@ -175,8 +175,27 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
           // std::cout << "Mat (1) address: " << &subA << std::endl;
 
+          std::vector<std::int32_t> bc_dofs0, bc_dofs1;
+          for (std::size_t k = 0; k < bcs.size(); ++k)
+          {
+            assert(bcs[k]);
+            assert(bcs[k]->function_space());
+            if (_a[i][j]->function_space(0)->contains(
+                    *bcs[k]->function_space()))
+            {
+              std::vector<std::int32_t> bcd = compute_bc_indices(*bcs[k]);
+              bc_dofs0.insert(bc_dofs0.end(), bcd.begin(), bcd.end());
+            }
+            if (_a[i][j]->function_space(1)->contains(
+                    *bcs[k]->function_space()))
+            {
+              std::vector<std::int32_t> bcd1 = compute_bc_indices(*bcs[k]);
+              bc_dofs1.insert(bc_dofs1.end(), bcd1.begin(), bcd1.end());
+            }
+          }
+
           la::PETScMatrix mat(subA);
-          this->assemble_matrix(mat, *_a[i][j], bcs);
+          this->assemble_matrix(mat, *_a[i][j], bc_dofs0, bc_dofs1);
           if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
             ident(mat, *_a[i][j]->function_space(0), _bcs);
 
@@ -193,7 +212,24 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
   }
   else
   {
-    this->assemble_matrix(A, *_a[0][0], bcs);
+    std::vector<std::int32_t> bc_dofs0, bc_dofs1;
+    for (std::size_t k = 0; k < bcs.size(); ++k)
+    {
+      assert(bcs[k]);
+      assert(bcs[k]->function_space());
+      if (_a[0][0]->function_space(0)->contains(*bcs[k]->function_space()))
+      {
+        std::vector<std::int32_t> bcd0 = compute_bc_indices(*bcs[k]);
+        bc_dofs0.insert(bc_dofs0.end(), bcd0.begin(), bcd0.end());
+      }
+      if (_a[0][0]->function_space(1)->contains(*bcs[k]->function_space()))
+      {
+        std::vector<std::int32_t> bcd1 = compute_bc_indices(*bcs[k]);
+        bc_dofs1.insert(bc_dofs1.end(), bcd1.begin(), bcd1.end());
+      }
+    }
+
+    this->assemble_matrix(A, *_a[0][0], bc_dofs0, bc_dofs1);
     if (*_a[0][0]->function_space(0) == *_a[0][0]->function_space(1))
       ident(A, *_a[0][0]->function_space(0), _bcs);
   }
@@ -484,9 +520,9 @@ la::PETScMatrix Assembler::get_sub_matrix(const la::PETScMatrix& A, int i,
   return la::PETScMatrix(subA);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_matrix(
-    la::PETScMatrix& A, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+void Assembler::assemble_matrix(la::PETScMatrix& A, const Form& a,
+                                const std::vector<std::int32_t>& bc_dofs0,
+                                const std::vector<std::int32_t>& bc_dofs1)
 {
   assert(!A.empty());
 
@@ -513,22 +549,22 @@ void Assembler::assemble_matrix(
   // Collect boundary conditions by matrix axis
   // DirichletBC::Map boundary_values0, boundary_values1;
 
-  std::vector<std::int32_t> bc_dofs0, bc_dofs1;
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-  {
-    assert(bcs[i]);
-    assert(bcs[i]->function_space());
-    if (V0.contains(*bcs[i]->function_space()))
-    {
-      std::vector<std::int32_t> bcd = compute_bc_indices(*bcs[i]);
-      bc_dofs0.insert(bc_dofs0.end(), bcd.begin(), bcd.end());
-    }
-    if (V1.contains(*bcs[i]->function_space()))
-    {
-      std::vector<std::int32_t> bcd = compute_bc_indices(*bcs[i]);
-      bc_dofs1.insert(bc_dofs1.end(), bcd.begin(), bcd.end());
-    }
-  }
+  // std::vector<std::int32_t> bc_dofs0, bc_dofs1;
+  // for (std::size_t i = 0; i < bcs.size(); ++i)
+  // {
+  //   assert(bcs[i]);
+  //   assert(bcs[i]->function_space());
+  //   if (V0.contains(*bcs[i]->function_space()))
+  //   {
+  //     std::vector<std::int32_t> bcd = compute_bc_indices(*bcs[i]);
+  //     bc_dofs0.insert(bc_dofs0.end(), bcd.begin(), bcd.end());
+  //   }
+  //   if (V1.contains(*bcs[i]->function_space()))
+  //   {
+  //     std::vector<std::int32_t> bcd = compute_bc_indices(*bcs[i]);
+  //     bc_dofs1.insert(bc_dofs1.end(), bcd.begin(), bcd.end());
+  //   }
+  // }
 
   // Data structures used in assembly
   EigenRowArrayXXd coordinate_dofs;
