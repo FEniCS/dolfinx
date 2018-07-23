@@ -261,7 +261,7 @@ def test_Write(cd_tempdir, f):
     f[0] = 1
     f[1] = 2
     file = XDMFFile(f.mesh().mpi_comm(), "saved_mesh_function.xdmf")
-    file.write(f, encoding=XDMFFile.Encoding.ASCII)
+    file.write(f)
 
 
 def test_hash():
