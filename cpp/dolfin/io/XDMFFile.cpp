@@ -289,8 +289,8 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 #else
   // Write function
   add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
-               function_name + "/" + function_time_name, u, function_name,
-               mesh);
+               function_name + "/" + function_time_name, u, function_name, mesh,
+               "");
 #endif
 
   // Save XML file (on process 0 only)
@@ -1442,9 +1442,8 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                 h5_path + "/" + component + "/vector", component_data_values,
                 {(std::int64_t)u_vector.size(), 1}, "Float");
 #else
-  std::vector<double> local_data;
   u_vector.get_local(local_data);
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path "/vector",
+  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
                 local_data, {(std::int64_t)u_vector.size(), 1}, "Float");
 #endif
 
