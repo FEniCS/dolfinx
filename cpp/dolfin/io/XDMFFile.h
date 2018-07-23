@@ -435,7 +435,8 @@ private:
   // Add function to a XML node
   static void add_function(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                            std::string h5_path, const function::Function& u,
-                           std::string function_name, const mesh::Mesh& mesh);
+                           std::string function_name, const mesh::Mesh& mesh, 
+                           std::string component);
 
   // Add set of points to XDMF xml_node and write data
   static void add_points(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
