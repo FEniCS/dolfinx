@@ -435,8 +435,8 @@ private:
   // Add function to a XML node
   static void add_function(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                            std::string h5_path, const function::Function& u,
-                           std::string function_name, const mesh::Mesh& mesh, 
-                           std::string component);
+                           std::string function_name, const mesh::Mesh& mesh,
+                           const std::string component = "");
 
   // Add set of points to XDMF xml_node and write data
   static void add_points(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
@@ -527,7 +527,8 @@ private:
 
   // Get point data values collocated at P2 geometry points (vertices
   // and edges) flattened as a 2D array
-  static std::vector<PetscScalar> get_p2_data_values(const function::Function& u);
+  static std::vector<PetscScalar>
+  get_p2_data_values(const function::Function& u);
 
   // Get cell data values as a flattened 2D array
   static std::vector<PetscScalar>

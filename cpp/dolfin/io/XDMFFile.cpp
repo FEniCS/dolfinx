@@ -289,8 +289,8 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 #else
   // Write function
   add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
-               function_name + "/" + function_time_name, u, function_name, mesh,
-               "");
+               function_name + "/" + function_time_name, u, function_name,
+               mesh);
 #endif
 
   // Save XML file (on process 0 only)
@@ -1315,7 +1315,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                             hid_t h5_id, std::string h5_path,
                             const function::Function& u,
                             std::string function_name, const mesh::Mesh& mesh,
-                            std::string component = "")
+                            const std::string component)
 {
   log::log(PROGRESS, "Adding function to node \"%s\"",
            xml_node.path('/').c_str());
