@@ -8,6 +8,7 @@
 #include "HDF5File.h"
 #include "HDF5Utility.h"
 #include "pugixml.hpp"
+#include <algorithm>
 #include <boost/algorithm/string.hpp>
 #include <boost/container/vector.hpp>
 #include <boost/filesystem.hpp>
@@ -282,10 +283,10 @@ void XDMFFile::write_checkpoint(const function::Function& u,
                component);
 
   // Write the imaginary component of function u
-  // component = "imag";
-  // add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
-  //             function_name + "/" + function_time_name, u, function_name,
-  //             mesh, component);
+  component = "imag";
+  add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
+               function_name + "/" + function_time_name, u, function_name, mesh,
+               component);
 #else
   // Write function
   add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
@@ -1368,7 +1369,10 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   if (component.empty())
     attr_name = function_name;
   else
+  {
     attr_name = component + "_" + function_name;
+    h5_path = h5_path + "/" + component;
+  }
 
   pugi::xml_node fe_attribute_node = xml_node.append_child("Attribute");
   fe_attribute_node.append_attribute("ItemType") = "FiniteElementFunction";
@@ -1428,7 +1432,6 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   std::vector<PetscScalar> local_data;
   u_vector.get_local(local_data);
 #ifdef PETSC_USE_COMPLEX
-
   std::vector<double> component_data_values(local_data.size());
   for (unsigned int i = 0; i < local_data.size(); i++)
   {
@@ -1438,9 +1441,9 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
       component_data_values[i] = std::imag(local_data[i]);
   }
 
-  add_data_item(mpi_comm, fe_attribute_node, h5_id,
-                h5_path + "/" + component + "/vector", component_data_values,
-                {(std::int64_t)u_vector.size(), 1}, "Float");
+  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
+                component_data_values, {(std::int64_t)u_vector.size(), 1},
+                "Float");
 #else
   u_vector.get_local(local_data);
   add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
@@ -1632,6 +1635,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
   assert(grid_node);
 
 #ifdef PETSC_USE_COMPLEX
+  // Find FE attribute node of the real component (default)
   pugi::xml_node fe_attribute_node
       = grid_node
             .select_node(("Attribute[@ItemType=\"FiniteElementFunction\" and"
@@ -1639,13 +1643,23 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                           + func_name + "']")
                              .c_str())
             .node();
+  assert(fe_attribute_node);
+
+  // Find FE attribute node of the imaginary component
+  pugi::xml_node imag_fe_attribute_node
+      = grid_node
+            .select_node(("Attribute[@ItemType=\"FiniteElementFunction\" and"
+                          "@Name='imag_"
+                          + func_name + "']")
+                             .c_str())
+            .node();
+  assert(imag_fe_attribute_node);
 #else
   pugi::xml_node fe_attribute_node
       = grid_node.select_node("Attribute[@ItemType=\"FiniteElementFunction\"]")
             .node();
-#endif
-
   assert(fe_attribute_node);
+#endif
 
   // Get cells dofs indices = dofmap
   pugi::xml_node cell_dofs_dataitem
@@ -1706,9 +1720,34 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
   const std::array<std::int64_t, 2> input_vector_range
       = MPI::local_range(_mpi_comm.comm(), num_global_dofs);
 
+#ifdef PETSC_USE_COMPLEX
+  // Read real component of function vector
+  std::vector<double> real_vector = get_dataset<double>(
+      _mpi_comm.comm(), vector_dataitem, parent_path, input_vector_range);
+
+  // Get extra vector for the imaginary component
+  pugi::xml_node imag_vector_dataitem
+      = imag_fe_attribute_node.select_node("DataItem[position()=2]").node();
+  assert(imag_vector_dataitem);
+
+  // Read imaginary component of function vector
+  std::vector<double> imag_vector = get_dataset<double>(
+      _mpi_comm.comm(), imag_vector_dataitem, parent_path, input_vector_range);
+
+  assert(real_vector.size() == imag_vector.size());
+
+  std::vector<std::complex<double>> vector;
+  vector.reserve(real_vector.size());
+
+  // Compose complex function vector
+  std::transform(begin(real_vector), end(real_vector), begin(imag_vector),
+                 std::back_inserter(vector),
+                 [](double r, double i) { return std::complex<double>(r, i); });
+#else
   // Read function vector
   std::vector<double> vector = get_dataset<double>(
       _mpi_comm.comm(), vector_dataitem, parent_path, input_vector_range);
+#endif
 
   function::Function u(V);
   assert(u.vector());

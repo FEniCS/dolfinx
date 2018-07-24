@@ -285,7 +285,7 @@ void HDF5Utility::set_local_vector_values(
     const std::vector<size_t>& cells,
     const std::vector<dolfin::la_index_t>& cell_dofs,
     const std::vector<std::int64_t>& x_cell_dofs,
-    const std::vector<double>& vector,
+    const std::vector<PetscScalar>& vector,
     const std::array<std::int64_t, 2> input_vector_range,
     const fem::GenericDofMap& dofmap)
 {
@@ -316,10 +316,10 @@ void HDF5Utility::set_local_vector_values(
   // Shift to dividing things into the vector range of Function Vector
   const std::array<std::int64_t, 2> vector_range = x.local_range();
 
-  std::vector<std::vector<double>> receive_values(num_processes);
+  std::vector<std::vector<PetscScalar>> receive_values(num_processes);
   std::vector<std::vector<dolfin::la_index_t>> receive_indices(num_processes);
   {
-    std::vector<std::vector<double>> send_values(num_processes);
+    std::vector<std::vector<PetscScalar>> send_values(num_processes);
     std::vector<std::vector<dolfin::la_index_t>> send_indices(num_processes);
     const std::size_t n_vector_vals
         = input_vector_range[1] - input_vector_range[0];
@@ -348,7 +348,7 @@ void HDF5Utility::set_local_vector_values(
   std::vector<PetscScalar> vector_values(vector_range[1] - vector_range[0]);
   for (std::size_t i = 0; i != num_processes; ++i)
   {
-    const std::vector<double>& rval = receive_values[i];
+    const std::vector<PetscScalar>& rval = receive_values[i];
     const std::vector<dolfin::la_index_t>& rindex = receive_indices[i];
     assert(rval.size() == rindex.size());
     for (std::size_t j = 0; j != rindex.size(); ++j)
