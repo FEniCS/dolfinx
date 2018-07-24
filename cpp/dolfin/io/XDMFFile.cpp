@@ -1629,9 +1629,9 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                           + func_name + "']/Grid[" + selector + "]")
                              .c_str())
             .node();
-
   assert(grid_node);
 
+#ifdef PETSC_USE_COMPLEX
   pugi::xml_node fe_attribute_node
       = grid_node
             .select_node(("Attribute[@ItemType=\"FiniteElementFunction\" and"
@@ -1639,6 +1639,12 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                           + func_name + "']")
                              .c_str())
             .node();
+#else
+  pugi::xml_node fe_attribute_node
+      = grid_node.select_node("Attribute[@ItemType=\"FiniteElementFunction\"]")
+            .node();
+#endif
+
   assert(fe_attribute_node);
 
   // Get cells dofs indices = dofmap
