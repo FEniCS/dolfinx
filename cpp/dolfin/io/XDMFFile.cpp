@@ -1639,24 +1639,13 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                           + func_name + "']")
                              .c_str())
             .node();
-  assert(fe_attribute_node);
-
-  // Find FE attribute node of the imaginary component
-  pugi::xml_node imag_fe_attribute_node
-      = grid_node
-            .select_node(("Attribute[@ItemType=\"FiniteElementFunction\" and"
-                          "@Name='imag_"
-                          + func_name + "']")
-                             .c_str())
-            .node();
-  assert(imag_fe_attribute_node);
 #else
   pugi::xml_node fe_attribute_node
       = grid_node.select_node("Attribute[@ItemType=\"FiniteElementFunction\"]")
             .node();
-  assert(fe_attribute_node);
 #endif
 
+  assert(fe_attribute_node);
   // Get cells dofs indices = dofmap
   pugi::xml_node cell_dofs_dataitem
       = fe_attribute_node.select_node("DataItem[position()=1]").node();
@@ -1720,6 +1709,16 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
   // Read real component of function vector
   std::vector<double> real_vector = get_dataset<double>(
       _mpi_comm.comm(), vector_dataitem, parent_path, input_vector_range);
+
+  // Find FE attribute node of the imaginary component
+  pugi::xml_node imag_fe_attribute_node
+      = grid_node
+            .select_node(("Attribute[@ItemType=\"FiniteElementFunction\" and"
+                          "@Name='imag_"
+                          + func_name + "']")
+                             .c_str())
+            .node();
+  assert(imag_fe_attribute_node);
 
   // Get extra FE attribute of the imaginary component
   pugi::xml_node imag_vector_dataitem
