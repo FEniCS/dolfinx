@@ -14,7 +14,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <complex>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/utils.h>
@@ -393,12 +392,11 @@ void XDMFFile::write(const function::Function& u)
                      : num_points;
 
 #ifdef PETSC_USE_COMPLEX
-
   std::vector<std::string> components = {"real", "imag"};
   for (const std::string component : components)
   {
     std::string attr_name = component + "_" + u.name();
-    // Add attribute node
+    // Add attribute node of the current component
     pugi::xml_node attribute_node = grid_node.append_child("Attribute");
     assert(attribute_node);
     attribute_node.append_attribute("Name") = attr_name.c_str();
@@ -406,13 +404,14 @@ void XDMFFile::write(const function::Function& u)
         = rank_to_string(u.value_rank()).c_str();
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
+    // FIXME: Avoid copies by writing directly a compound data
     std::vector<double> component_data_values(data_values.size());
     for (unsigned int i = 0; i < data_values.size(); i++)
     {
       if (component == components[0])
         component_data_values[i] = data_values[i].real();
       else if (component == components[1])
-        component_data_values[i] = std::imag(data_values[i]);
+        component_data_values[i] = data_values[i].imag();
     }
 
     // Add data item of component
@@ -590,7 +589,6 @@ void XDMFFile::write(const function::Function& u, double time_step)
                      : mesh.num_entities_global(0);
 
 #ifdef PETSC_USE_COMPLEX
-
   std::vector<std::string> components = {"real", "imag"};
   for (const std::string component : components)
   {
@@ -606,6 +604,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
     const std::string dataset_name
         = "/VisualisationVector/" + component + "/" + std::to_string(_counter);
 
+    // FIXME: Avoid copies by writing directly a compound data
     std::vector<double> component_data_values(data_values.size());
     for (unsigned int i = 0; i < data_values.size(); i++)
     {
@@ -1428,17 +1427,18 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   // Get all local data
   const la::PETScVector& u_vector = *u.vector();
-
   std::vector<PetscScalar> local_data;
   u_vector.get_local(local_data);
+
 #ifdef PETSC_USE_COMPLEX
+  // FIXME: Avoid copies by writing directly a compound data
   std::vector<double> component_data_values(local_data.size());
   for (unsigned int i = 0; i < local_data.size(); i++)
   {
     if (component == "real")
-      component_data_values[i] = std::real(local_data[i]);
+      component_data_values[i] = local_data[i].real();
     else if (component == "imag")
-      component_data_values[i] = std::imag(local_data[i]);
+      component_data_values[i] = local_data[i].imag();
   }
 
   add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
@@ -1725,7 +1725,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
   std::vector<double> real_vector = get_dataset<double>(
       _mpi_comm.comm(), vector_dataitem, parent_path, input_vector_range);
 
-  // Get extra vector for the imaginary component
+  // Get extra FE attribute of the imaginary component
   pugi::xml_node imag_vector_dataitem
       = imag_fe_attribute_node.select_node("DataItem[position()=2]").node();
   assert(imag_vector_dataitem);
@@ -1736,13 +1736,12 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
 
   assert(real_vector.size() == imag_vector.size());
 
-  std::vector<std::complex<double>> vector;
-  vector.reserve(real_vector.size());
-
   // Compose complex function vector
+  std::vector<PetscScalar> vector;
+  vector.reserve(real_vector.size());
   std::transform(begin(real_vector), end(real_vector), begin(imag_vector),
                  std::back_inserter(vector),
-                 [](double r, double i) { return std::complex<double>(r, i); });
+                 [](double r, double i) { return r + i * PETSC_i; });
 #else
   // Read function vector
   std::vector<double> vector = get_dataset<double>(
@@ -2909,9 +2908,11 @@ XDMFFile::get_point_data_values(const function::Function& u)
   Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                           Eigen::RowMajor>>
       in_vals(_data_values.data(), _data_values.size() / width, width);
+
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vals = mesh::DistributedMeshTools::reorder_by_global_indices(
           mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
+
   _data_values
       = std::vector<PetscScalar>(vals.data(), vals.data() + vals.size());
 
