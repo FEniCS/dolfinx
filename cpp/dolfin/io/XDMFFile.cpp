@@ -274,24 +274,18 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   time_node.append_attribute("Value") = std::to_string(time_step).c_str();
 
 #ifdef PETSC_USE_COMPLEX
-  std::string component;
-  // Write the real component of function u
-  component = "real";
-  add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
-               function_name + "/" + function_time_name, u, function_name, mesh,
-               component);
-
-  // Write the imaginary component of function u
-  component = "imag";
-  add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
-               function_name + "/" + function_time_name, u, function_name, mesh,
-               component);
+  std::vector<std::string> components = {"real", "imag"};
 #else
-  // Write function
-  add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
-               function_name + "/" + function_time_name, u, function_name,
-               mesh);
+  std::vector<std::string> components = {""};
 #endif
+
+  // Write function u (for each of its components)
+  for (const std::string component : components)
+  {
+    add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
+                 function_name + "/" + function_time_name, u, function_name,
+                 mesh, component);
+  }
 
   // Save XML file (on process 0 only)
   if (_mpi_comm.rank() == 0)
@@ -393,9 +387,18 @@ void XDMFFile::write(const function::Function& u)
 
 #ifdef PETSC_USE_COMPLEX
   std::vector<std::string> components = {"real", "imag"};
+#else
+  std::vector<std::string> components = {""};
+#endif
+
   for (const std::string component : components)
   {
-    std::string attr_name = component + "_" + u.name();
+    std::string attr_name;
+    if (component.empty())
+      attr_name = u.name();
+    else
+      attr_name = component + "_" + u.name();
+
     // Add attribute node of the current component
     pugi::xml_node attribute_node = grid_node.append_child("Attribute");
     assert(attribute_node);
@@ -404,6 +407,7 @@ void XDMFFile::write(const function::Function& u)
         = rank_to_string(u.value_rank()).c_str();
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
+#ifdef PETSC_USE_COMPLEX
     // FIXME: Avoid copies by writing directly a compound data
     std::vector<double> component_data_values(data_values.size());
     for (unsigned int i = 0; i < data_values.size(); i++)
@@ -413,25 +417,16 @@ void XDMFFile::write(const function::Function& u)
       else if (component == components[1])
         component_data_values[i] = data_values[i].imag();
     }
-
     // Add data item of component
     add_data_item(_mpi_comm.comm(), attribute_node, h5_id,
                   "/VisualisationVector/" + component + "/0",
                   component_data_values, {num_values, width});
-  }
-
 #else
-  // Add attribute node
-  pugi::xml_node attribute_node = grid_node.append_child("Attribute");
-  assert(attribute_node);
-  attribute_node.append_attribute("Name") = u.name().c_str();
-  attribute_node.append_attribute("AttributeType")
-      = rank_to_string(u.value_rank()).c_str();
-  attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
-
-  add_data_item(_mpi_comm.comm(), attribute_node, h5_id,
-                "/VisualisationVector/0", data_values, {num_values, width});
+    // Add data item
+    add_data_item(_mpi_comm.comm(), attribute_node, h5_id,
+                  "/VisualisationVector/0", data_values, {num_values, width});
 #endif
+  }
 
   // Save XML file (on process 0 only)
   if (_mpi_comm.rank() == 0)
@@ -590,9 +585,25 @@ void XDMFFile::write(const function::Function& u, double time_step)
 
 #ifdef PETSC_USE_COMPLEX
   std::vector<std::string> components = {"real", "imag"};
+#else
+  std::vector<std::string> components = {""};
+#endif
+
   for (const std::string component : components)
   {
-    std::string attr_name = component + "_" + u.name();
+    std::string attr_name;
+    std::string dataset_name;
+    if (component.empty())
+    {
+      attr_name = u.name();
+      dataset_name = "/VisualisationVector/" + std::to_string(_counter);
+    }
+    else
+    {
+      attr_name = component + "_" + u.name();
+      dataset_name = "/VisualisationVector/" + component + "/"
+                     + std::to_string(_counter);
+    }
     // Add attribute node
     pugi::xml_node attribute_node = mesh_node.append_child("Attribute");
     assert(attribute_node);
@@ -601,9 +612,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
         = rank_to_string(u.value_rank()).c_str();
     attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
 
-    const std::string dataset_name
-        = "/VisualisationVector/" + component + "/" + std::to_string(_counter);
-
+#ifdef PETSC_USE_COMPLEX
     // FIXME: Avoid copies by writing directly a compound data
     std::vector<double> component_data_values(data_values.size());
     for (unsigned int i = 0; i < data_values.size(); i++)
@@ -613,27 +622,15 @@ void XDMFFile::write(const function::Function& u, double time_step)
       else if (component == components[1])
         component_data_values[i] = data_values[i].imag();
     }
-
     // Add data item of component
     add_data_item(_mpi_comm.comm(), attribute_node, h5_id, dataset_name,
                   component_data_values, {num_values, width});
-  }
-
 #else
-  // Add attribute node
-  pugi::xml_node attribute_node = mesh_node.append_child("Attribute");
-  assert(attribute_node);
-  attribute_node.append_attribute("Name") = u.name().c_str();
-  attribute_node.append_attribute("AttributeType")
-      = rank_to_string(u.value_rank()).c_str();
-  attribute_node.append_attribute("Center") = cell_centred ? "Cell" : "Node";
-
-  const std::string dataset_name
-      = "/VisualisationVector/" + std::to_string(_counter);
-
-  add_data_item(_mpi_comm.comm(), attribute_node, h5_id, dataset_name,
-                data_values, {num_values, width});
+    // Add data item
+    add_data_item(_mpi_comm.comm(), attribute_node, h5_id, dataset_name,
+                  data_values, {num_values, width});
 #endif
+  }
 
   // Save XML file (on process 0 only)
   if (_mpi_comm.rank() == 0)
@@ -1445,7 +1442,6 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                 component_data_values, {(std::int64_t)u_vector.size(), 1},
                 "Float");
 #else
-  u_vector.get_local(local_data);
   add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
                 local_data, {(std::int64_t)u_vector.size(), 1}, "Float");
 #endif
