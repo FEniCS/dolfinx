@@ -144,7 +144,7 @@ FormIntegrals::cell_tabulate_tensor(int i) const
   return _cell_tabulate_tensor[i];
 }
 //-----------------------------------------------------------------------------
-int FormIntegrals::cell_batch_size(int i) const
+unsigned int FormIntegrals::cell_batch_size(int i) const
 {
   return _cell_batch_size[i];
 }

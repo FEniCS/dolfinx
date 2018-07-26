@@ -67,7 +67,7 @@ public:
   const bool* cell_enabled_coefficients(int i) const;
 
   /// The number of cells that can be passed into integral i simultaneously
-  int cell_batch_size(int i) const;
+  unsigned int cell_batch_size(int i) const;
 
   /// Set the function for 'tabulate_tensor' for cell integral i
   void set_cell_tabulate_tensor(int i, void (*fn)(PetscScalar*,

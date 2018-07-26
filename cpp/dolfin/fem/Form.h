@@ -261,7 +261,7 @@ public:
   }
 
   /// Get the number of cells that should be supplied to tabulate_tensor
-  int
+  unsigned int
   cell_batch_size() const;
 
   /// Call tabulate_tensor on a cell, computing the local element matrix
