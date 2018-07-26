@@ -549,7 +549,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   const int cell_batch_size = a.cell_batch_size();
   if (cell_batch_size > 1)
   { 
-    // Batched assembly
+    // Cell batch assembly
 
     std::vector<mesh::Cell> cell_batch;
     cell_batch.reserve(cell_batch_size);
