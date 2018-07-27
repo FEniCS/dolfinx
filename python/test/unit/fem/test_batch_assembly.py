@@ -16,10 +16,10 @@ import ufl
 from ufl import dot, grad, dx
 
 
-def test_batch_assebly():
+def test_batch_assembly():
     def assemble_test(cell_batch_size: int):
         mesh = dolfin.UnitCubeMesh(MPI.comm_world, 2, 3, 4)
-        Q = ufl.FunctionSpace(mesh, "Lagrange", 1)
+        Q = dolfin.FunctionSpace(mesh, "Lagrange", 1)
 
         u = ufl.TrialFunction(Q)
         v = ufl.TestFunction(Q)
@@ -28,8 +28,8 @@ def test_batch_assebly():
         def boundary(x):
             return numpy.sum(numpy.logical_or(x < DOLFIN_EPS, x > 1.0 - DOLFIN_EPS), axis=1) > 0
 
-        u0 = ufl.Constant(0.0)
-        bc = ufl.DirichletBC(Q, u0, boundary)
+        u0 = dolfin.Constant(0.0)
+        bc = dolfin.DirichletBC(Q, u0, boundary)
 
         # Initialize bilinear form and rhs
         a = dolfin.cpp.fem.Form([Q._cpp_object, Q._cpp_object])
@@ -45,7 +45,7 @@ def test_batch_assebly():
         a = dolfin.cpp.fem.Form(ufc_form, [Q._cpp_object, Q._cpp_object])
 
         # Rhs
-        f = ufl.Expression("2.0", element=Q.ufl_element())
+        f = dolfin.Expression("2.0", element=Q.ufl_element())
         jit_result = ffc_jit(f * v * dx,
                              form_compiler_parameters={"cell_batch_size": cell_batch_size,
                                                        "enable_cross_element_gcc_ext": True})
