@@ -550,7 +550,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   if (cell_batch_size > 1)
   { 
     // Cell batch assembly
-    std::vector<const mesh::Cell> cell_batch;
+    std::vector<mesh::Cell> cell_batch;
     cell_batch.reserve(cell_batch_size);
 
     std::vector<EigenRowArrayXXd> coordinate_dofs_batch;
@@ -576,12 +576,13 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
         // Append dummy cells if end of mesh is reached
         // occurs if mesh.num_cells() % cell_batch_length != 0
         if (cell_it == mesh_range.end()) {
-          for (int j = current_batch_size; j < cell_batch_size; ++j)
+          for (unsigned int j = current_batch_size; j < cell_batch_size; ++j) {
             // Dummy. 
             cell_batch.push_back(cell_batch.back());
-          // Note that in this case the counter current_batch_size is not
-          // incremented, and therefore no unstriding/assembly operations occur
-          // later on for the dummy cells.
+            // Note that in this case the counter current_batch_size is not
+            // incremented, and therefore no unstriding/assembly operations occur
+            // later on for the dummy cells.
+          }
           break;
         }
 
