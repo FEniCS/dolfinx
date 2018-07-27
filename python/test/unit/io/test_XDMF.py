@@ -66,7 +66,6 @@ def worker_id(request):
         return 'master'
 
 
-@pytest.fixture
 def imaginary_part():
     """Return the imaginary unit in complex mode (complex scalar),
     in real mode return zero (float)
