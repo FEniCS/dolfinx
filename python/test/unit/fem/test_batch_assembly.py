@@ -17,9 +17,10 @@ from ufl import inner, grad, dx
 def test_batch_assembly():
     def assemble_test(cell_batch_size: int):
         mesh = dolfin.UnitCubeMesh(MPI.comm_world, 2, 3, 4)
-        element = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+        element_p1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+        element_p2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
-        Q = dolfin.function.functionspace.FunctionSpace(mesh, element)
+        Q = dolfin.function.functionspace.FunctionSpace(mesh, element_p2)
 
         u = dolfin.function.argument.TrialFunction(Q)
         v = dolfin.function.argument.TestFunction(Q)
@@ -30,9 +31,10 @@ def test_batch_assembly():
         u_bc = dolfin.function.constant.Constant(50.0)
         bc = dolfin.fem.dirichletbc.DirichletBC(Q, u_bc, boundary)
 
-        f = dolfin.function.constant.Constant(1.0)
+        c = dolfin.function.expression.Expression("3.14*x[0]", element=element_p1)
+        f = dolfin.function.expression.Expression("0.4*x[1]*x[2]", element=element_p2)
 
-        a = inner(grad(u), grad(v)) * dx
+        a = inner(c * grad(u), grad(v)) * dx
         L = f * v * dx
 
         # Create assembler
@@ -53,5 +55,3 @@ def test_batch_assembly():
 
     assert(numpy.isclose(A1norm, A4norm))
     assert(numpy.isclose(b1norm, b4norm))
-
-    print(A1norm)
