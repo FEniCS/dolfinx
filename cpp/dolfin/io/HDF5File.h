@@ -30,7 +30,7 @@ namespace function
 {
 // class Function;
 class FunctionSpace;
-}
+} // namespace function
 
 namespace geometry
 {
@@ -278,5 +278,5 @@ void HDF5File::write_data(const std::string dataset_name,
                                global_size, use_mpi_io, chunking);
 }
 //---------------------------------------------------------------------------
-}
-}
+} // namespace io
+} // namespace dolfin
