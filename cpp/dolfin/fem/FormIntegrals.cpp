@@ -156,7 +156,8 @@ const bool* FormIntegrals::cell_enabled_coefficients(int i) const
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_cell_tabulate_tensor(
     int i,
-    void (*fn)(PetscScalar*, const PetscScalar* const*, const double*, int))
+    void (*fn)(PetscScalar*, const PetscScalar* const*, const double*, int),
+    unsigned int cell_batch_size)
 {
   _cell_tabulate_tensor.resize(i + 1);
   _cell_tabulate_tensor[i] = fn;
@@ -164,6 +165,9 @@ void FormIntegrals::set_cell_tabulate_tensor(
   // Enable all coefficients for this integral
   _enabled_coefficients.conservativeResize(i + 1, Eigen::NoChange);
   _enabled_coefficients.row(i) = true;
+
+  _cell_batch_size.conservativeResize(i + 1, Eigen::NoChange);
+  _cell_batch_size.row(i) = cell_batch_size;
 }
 //-----------------------------------------------------------------------------
 int FormIntegrals::count(FormIntegrals::Type t) const

@@ -72,7 +72,8 @@ public:
   /// Set the function for 'tabulate_tensor' for cell integral i
   void set_cell_tabulate_tensor(int i, void (*fn)(PetscScalar*,
                                                   const PetscScalar* const*,
-                                                  const double*, int));
+                                                  const double*, int),
+                                unsigned int cell_batch_size = 1);
 
   /// Number of integrals of given type
   int count(FormIntegrals::Type t) const;
