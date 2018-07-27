@@ -68,8 +68,8 @@ def worker_id(request):
 
 @pytest.fixture
 def imaginary_part():
-    """Return the imaginary part, in real mode should be a 
-    zero (float).
+    """Return the imaginary unit in complex mode (complex scalar), 
+    in real mode return zero (float)
 
     """
     if has_petsc_complex():
@@ -244,9 +244,9 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
         if mesh.geometry.dim == 1:
             u_out.interpolate(Expression(("x[0] + j*x[0]", ), degree=1))
         elif mesh.geometry.dim == 2:
-            u_out.interpolate(Expression(("x[0]*x[1]", "x[0] + j*x[0]"), degree=2))
+            u_out.interpolate(Expression(("j*x[0]*x[1]", "x[0] + j*x[0]"), degree=2))
         elif mesh.geometry.dim == 3:
-            u_out.interpolate(Expression(("x[0]*x[1]", "x[0] + j*x[0]", "x[2]"), degree=2))
+            u_out.interpolate(Expression(("j*x[0]*x[1]", "x[0] + j*x[0]", "x[2]"), degree=2))
     else:
         if mesh.geometry.dim == 1:
             u_out.interpolate(Expression(("x[0]", ), degree=1))
