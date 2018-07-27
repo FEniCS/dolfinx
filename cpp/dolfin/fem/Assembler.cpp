@@ -546,33 +546,42 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
-  const int cell_batch_size = a.cell_batch_size();
+  const unsigned int cell_batch_size = a.cell_batch_size();
   if (cell_batch_size > 1)
   { 
     // Cell batch assembly
-
-    std::vector<mesh::Cell> cell_batch;
+    std::vector<const mesh::Cell> cell_batch;
     cell_batch.reserve(cell_batch_size);
 
     std::vector<EigenRowArrayXXd> coordinate_dofs_batch;
     coordinate_dofs_batch.resize(cell_batch_size);
 
+    // Ae is used by tabulate_tensor to store the strided batched cell tensor.
+    // Ae_cell is used by the batch assembler as storage to unpack the strided
+    // cell tensor Ae.
     Eigen::Matrix<PetscScalar, Eigen::Dynamic, 
                   Eigen::Dynamic, Eigen::RowMajor> Ae_cell;
 
+    unsigned int current_batch_size = 0;
     auto mesh_range = mesh::MeshRange<mesh::Cell>(mesh);
     auto cell_it = mesh_range.begin();
     // Loop over the mesh
+    // Cannot use for loop as we need to move over cell_batch_size
+    // at a time.
     while (cell_it != mesh_range.end())
     {
-      // Try to get enough cells for a batch
-      int current_batch_size = 0;
+      // 
       while (current_batch_size < cell_batch_size) 
       {
         // Append dummy cells if end of mesh is reached
+        // occurs if mesh.num_cells() % cell_batch_length != 0
         if (cell_it == mesh_range.end()) {
           for (int j = current_batch_size; j < cell_batch_size; ++j)
+            // Dummy. 
             cell_batch.push_back(cell_batch.back());
+          // Note that in this case the counter current_batch_size is not
+          // incremented, and therefore no unstriding/assembly operations occur
+          // later on for the dummy cells.
           break;
         }
 
@@ -589,7 +598,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       }
 
       // Gather coordinate dofs
-      for (int i = 0; i < cell_batch_size; ++i) 
+      for (unsigned int i = 0; i < cell_batch_size; ++i) 
       {
         const auto& cell = cell_batch[i];
         cell.get_coordinate_dofs(coordinate_dofs_batch[i]);
@@ -599,7 +608,8 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       auto map0_size = map0.cell_dofs(cell_batch.front().index()).size();
       auto map1_size = map1.cell_dofs(cell_batch.front().index()).size();
 
-      // Size data structure for assembly
+      // Size strided data structure for batch assembly
+      // noop if not changed, which is usually (always?) the case.
       Ae.resize(map0_size, map1_size * cell_batch_size);
       Ae.setZero();
 
@@ -607,7 +617,9 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
 
       // Scatter
-      for (int i = 0; i < current_batch_size; ++i)
+      // NOTE: Alternatively, we could keep Ae as-is and construct the 
+      // a strided cell_dofs.
+      for (unsigned int i = 0; i < current_batch_size; ++i)
       {
         auto& cell = cell_batch[i];
 
@@ -615,12 +627,15 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
         auto dmap0 = map0.cell_dofs(cell.index());
         auto dmap1 = map1.cell_dofs(cell.index());
 
+        // noop if sizes match, which is usually (always?) the case.
         Ae_cell.resize(dmap0.size(), dmap1.size());
 
         // "Unstride" cell matrix
-        for (int k = 0; k < Ae_cell.rows(); ++k)
-          for (int l = 0; l < Ae_cell.cols(); ++l)
+        for (int k = 0; k < Ae_cell.rows(); ++k) {
+          for (int l = 0; l < Ae_cell.cols(); ++l) {
             Ae_cell(k,l) = Ae(k, cell_batch_size*l + i);
+          }
+        }
 
         // Zero rows/columns for Dirichlet bcs
         for (int k = 0; k < Ae_cell.rows(); ++k)
@@ -644,7 +659,9 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
         A.add_local(Ae_cell.data(), dmap0.size(), dmap0.data(), dmap1.size(),
                     dmap1.data());
       }
-
+     
+      // Reset for the next while loop.
+      current_batch_size = 0;
       cell_batch.clear();
     }
   }
