@@ -15,7 +15,7 @@ from ufl import inner, grad, dx
 
 
 def test_batch_assembly():
-    def assemble_test(cell_batch_size: int):
+    def assemble_poisson(cell_batch_size: int):
         mesh = dolfin.UnitCubeMesh(MPI.comm_world, 2, 3, 4)
         element_p1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
         element_p2 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 2)
@@ -38,14 +38,18 @@ def test_batch_assembly():
         L = f * v * dx
 
         # Create assembler
-        assembler = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
+        cxx_flags = ""
+        assembler = dolfin.fem.assembling.Assembler([[a]], [L], [bc],
+                                                    form_compiler_parameters={"cell_batch_size": cell_batch_size,
+                                                                              "enable_cross_element_gcc_ext": True,
+                                                                              "cpp_optimize_flags": cxx_flags})
 
         A, b = assembler.assemble(mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
 
         return A, b
 
-    A1, b1 = assemble_test(cell_batch_size=1)
-    A4, b4 = assemble_test(cell_batch_size=4)
+    A1, b1 = assemble_poisson(cell_batch_size=1)
+    A4, b4 = assemble_poisson(cell_batch_size=4)
 
     A1norm = A1.norm(dolfin.cpp.la.Norm.frobenius)
     b1norm = b1.norm(dolfin.cpp.la.Norm.l2)
