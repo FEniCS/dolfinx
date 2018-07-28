@@ -325,8 +325,11 @@ private:
   void init_coeff_scratch_space();
 
   // Temporary storage for coefficient values
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> _w;
-  std::vector<PetscScalar*> _wpointer;
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> _w_temp;
+  PetscScalar* _w_temp_ptr;
+
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> _w_interleaved;
+  std::vector<PetscScalar*> _w_ptr;
 };
 } // namespace fem
 } // namespace dolfin

@@ -323,22 +323,18 @@ void Form::tabulate_tensor(
             = _coefficients.get(j);
         const FiniteElement& element = _coefficients.element(j);
 
-        // FIXME: combine this somehow with the init method
-        std::vector<PetscScalar> w;
-        w.resize(element.space_dimension() * 2);
-
-        coefficient->restrict(w.data(), element, cell, coordinate_dofs);
+        coefficient->restrict(_w_temp_ptr, element, cell, coordinate_dofs);
 
         // Make coefficient values strided
-        for (std::size_t k = 0; k < w.size(); ++k)
-          _wpointer[j][cell_batch_size * k + i] = w[k];
+        for (std::uint32_t k = 0; k < element.space_dimension() * 2; ++k)
+          _w_ptr[j][cell_batch_size * k + i] = _w_temp[k];
       }
     }
   }
 
   // Compute cell matrix
   auto tab_fn = _integrals.cell_tabulate_tensor(idx);
-  tab_fn(A, _wpointer.data(), coordinate_dofs_strided.data(), 1);
+  tab_fn(A, _w_ptr.data(), coordinate_dofs_strided.data(), 1);
 }
 //-----------------------------------------------------------------------------
 void Form::init_coeff_scratch_space()
@@ -350,18 +346,24 @@ void Form::init_coeff_scratch_space()
   // Allowing double space here, so that the same scratch
   // space can be also used for "macro" elements (two
   // neighbouring cells) for interior facet integrals.
-  std::vector<std::uint32_t> n = {0};
+  std::vector<std::uint32_t> ns = {0};
+  std::uint32_t n_max = 0;
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
   {
     const FiniteElement& element = _coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension() * cell_batch_size() * 2);
+    std::uint32_t n = element.space_dimension() * cell_batch_size() * 2;
+    n_max = std::max(n_max, n);
+    ns.push_back(ns.back() + n);
   }
   // Allocate memory capable of storing all coefficient values
   // in a contiguous block
-  _w.resize(n.back());
+  _w_temp.resize(n_max);
+  _w_temp_ptr = _w_temp.data();
+
+  _w_interleaved.resize(ns.back());
   // Create pointers into _w for each coefficient
-  _wpointer.resize(num_coeffs);
+  _w_ptr.resize(num_coeffs);
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
-    _wpointer[i] = _w.data() + n[i];
+    _w_ptr[i] = _w_interleaved.data() + ns[i];
 }
 //-----------------------------------------------------------------------------
