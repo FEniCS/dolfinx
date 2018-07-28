@@ -50,6 +50,9 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   # Add include directories needed to use DOLFIN
   include_directories(${DOLFIN_INCLUDE_DIRS})
 
+  # Force Eigen to use 32-byte alignment for compatibility with AVX code 
+  add_definitions(-DEIGEN_MAX_ALIGN_BYTES=32) 
+
   # Add compiler flags needed to use DOLFIN
   #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DOLFIN_CXX_FLAGS}")
   #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${DOLFIN_LINK_FLAGS}")
