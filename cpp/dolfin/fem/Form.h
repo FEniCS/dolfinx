@@ -325,7 +325,7 @@ private:
   void init_coeff_scratch_space();
 
   // Temporary storage for coefficient values
-  std::vector<PetscScalar> _w;
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> _w;
   std::vector<PetscScalar*> _wpointer;
 };
 } // namespace fem

@@ -295,7 +295,8 @@ void Form::tabulate_tensor(
   }
 
   // FIXME: move this to init function
-  EigenRowArrayXXd coordinate_dofs_strided;
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic,
+                Eigen::Dynamic, Eigen::RowMajor> coordinate_dofs_strided;
   coordinate_dofs_strided.resize(coordinate_dofs_batch.front().rows(),
                                  coordinate_dofs_batch.front().cols() *
                                  coordinate_dofs_batch.size());
