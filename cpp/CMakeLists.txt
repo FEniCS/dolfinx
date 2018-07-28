@@ -117,7 +117,9 @@ endforeach()
 #------------------------------------------------------------------------------
 # Package-specific options
 
-# None at the moment
+# Force Eigen to use 32-byte alignment of dynamically sized matrices
+# for compatibility with AVX code
+add_definitions(-DEIGEN_MAX_ALIGN_BYTES=32)
 
 #------------------------------------------------------------------------------
 # Compiler flags
@@ -434,7 +436,7 @@ if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/documented/poiss
 endif()
 
 #------------------------------------------------------------------------------
-# Copy data in demo/test direcories to the build directories
+# Copy data in demo/test directories to the build directories
 
 # FIXME: We should probably just generate them directly in the build
 # directory...
