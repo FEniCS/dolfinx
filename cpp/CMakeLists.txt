@@ -117,8 +117,7 @@ endforeach()
 #------------------------------------------------------------------------------
 # Package-specific options
 
-# Force Eigen to use 32-byte alignment for compatibility with AVX code 
-add_definitions(-DEIGEN_MAX_ALIGN_BYTES=32) 
+# None at the moment
 
 #------------------------------------------------------------------------------
 # Compiler flags
