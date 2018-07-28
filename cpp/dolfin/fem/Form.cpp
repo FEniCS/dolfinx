@@ -266,9 +266,30 @@ void Form::tabulate_tensor(
 {
   assert(cell_batch_size() == 1);
 
-  std::vector<mesh::Cell> cell_batch{cell};
-  std::vector<EigenRowArrayXXd> coordinate_dofs_batch{coordinate_dofs};
-  tabulate_tensor(A, cell_batch, coordinate_dofs_batch);
+  // Switch integral based on domain from dx MeshFunction
+  std::uint32_t idx = 0;
+  if (dx)
+  {
+    // FIXME: check on idx validity
+    idx = (*dx)[cell] + 1;
+  }
+
+  // Restrict coefficients to cell
+  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
+  for (std::size_t i = 0; i < _coefficients.size(); ++i)
+  {
+    if (enabled_coefficients[i])
+    {
+      std::shared_ptr<const function::GenericFunction> coefficient
+          = _coefficients.get(i);
+      const FiniteElement& element = _coefficients.element(i);
+      coefficient->restrict(_w_ptr[i], element, cell, coordinate_dofs);
+    }
+  }
+
+  // Compute cell matrix
+  auto tab_fn = _integrals.cell_tabulate_tensor(idx);
+  tab_fn(A, _w_ptr.data(), coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
 void Form::tabulate_tensor(
