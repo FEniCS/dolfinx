@@ -88,6 +88,8 @@ target_include_directories(dolfin SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 
 # Eigen3
 target_include_directories(dolfin SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
+# Force Eigen to use 32-byte alignment for compatibility with AVX code
+target_compile_definitions(dolfin PUBLIC EIGEN_MAX_ALIGN_BYTES=32)
 
 # Boost
 target_link_libraries(dolfin PUBLIC Boost::boost)
