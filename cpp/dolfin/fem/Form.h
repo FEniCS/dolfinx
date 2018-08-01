@@ -287,7 +287,8 @@ public:
   ///
   void
   tabulate_tensor_batch(PetscScalar* A, const std::vector<mesh::Cell>& cells,
-                  const std::vector<EigenRowArrayXXd>& coordinate_dofs) const;
+                        const std::vector<EigenRowArrayXXd>& coordinate_dofs) 
+                        const;
 
 private:
   // Integrals associated with the Form
@@ -325,11 +326,15 @@ private:
   void init_coeff_scratch_space();
 
   // Temporary storage for coefficient values
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> _w_temp;
-  PetscScalar* _w_temp_ptr;
-
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> _w_interleaved;
   std::vector<PetscScalar*> _w_ptr;
+
+  // Temporary storage for coefficient evaluation
+  mutable Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> _w_temp;
+
+  // Temporary storage for coordinate dof values
+  mutable Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, 
+                        Eigen::RowMajor> _coord_dofs;
 };
 } // namespace fem
 } // namespace dolfin

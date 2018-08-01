@@ -315,23 +315,21 @@ void Form::tabulate_tensor_batch(
                                  "are not supported.");
   }
 
-  // FIXME: move this to init function
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic,
-                Eigen::Dynamic, Eigen::RowMajor> coordinate_dofs_strided;
-  coordinate_dofs_strided.resize(coordinate_dofs_batch.front().rows(),
+  // Ensure that temporary coord dofs storage is large enough
+  _coord_dofs.conservativeResize(coordinate_dofs_batch.front().rows(),
                                  coordinate_dofs_batch.front().cols() *
                                  coordinate_dofs_batch.size());
 
+  // FIXME: Consider making parts of the following code batched
   for (std::size_t i = 0; i < cell_batch.size(); ++i)
   {
     auto& cell = cell_batch[i];
     auto& coordinate_dofs = coordinate_dofs_batch[i];
 
     // Make coordinate dofs strided over cells
-    for (int k = 0; k < coordinate_dofs.rows(); ++k)  
-      for (int l = 0; l < coordinate_dofs.cols(); ++l) 
-        coordinate_dofs_strided(k, cell_batch_size * l + i)  
-            = coordinate_dofs(k, l); 
+    for (int k = 0; k < coordinate_dofs.rows(); ++k)
+      for (int l = 0; l < coordinate_dofs.cols(); ++l)
+        _coord_dofs(k, cell_batch_size * l + i) = coordinate_dofs(k, l);
 
     // Restrict coefficients to cell
     const bool* enabled_coefficients
@@ -344,7 +342,7 @@ void Form::tabulate_tensor_batch(
             = _coefficients.get(j);
         const FiniteElement& element = _coefficients.element(j);
 
-        coefficient->restrict(_w_temp_ptr, element, cell, coordinate_dofs);
+        coefficient->restrict(_w_temp.data(), element, cell, coordinate_dofs);
 
         // Make coefficient values strided
         for (std::uint32_t k = 0; k < element.space_dimension() * 2; ++k)
@@ -355,7 +353,7 @@ void Form::tabulate_tensor_batch(
 
   // Compute cell matrix
   auto tab_fn = _integrals.cell_tabulate_tensor(idx);
-  tab_fn(A, _w_ptr.data(), coordinate_dofs_strided.data(), 1);
+  tab_fn(A, _w_ptr.data(), _coord_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
 void Form::init_coeff_scratch_space()
@@ -379,7 +377,6 @@ void Form::init_coeff_scratch_space()
   // Allocate memory capable of storing all coefficient values
   // in a contiguous block
   _w_temp.resize(n_max);
-  _w_temp_ptr = _w_temp.data();
 
   _w_interleaved.resize(ns.back());
   // Create pointers into _w for each coefficient
