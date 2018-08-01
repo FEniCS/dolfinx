@@ -292,7 +292,7 @@ void Form::tabulate_tensor(
   tab_fn(A, _w_ptr.data(), coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
-void Form::tabulate_tensor(
+void Form::tabulate_tensor_batch(
     PetscScalar* A, const std::vector<mesh::Cell>& cell_batch,
     const std::vector<EigenRowArrayXXd>& coordinate_dofs_batch) const
 {

@@ -286,7 +286,7 @@ public:
   ///    Coordinates of the cell
   ///
   void
-  tabulate_tensor(PetscScalar* A, const std::vector<mesh::Cell>& cells,
+  tabulate_tensor_batch(PetscScalar* A, const std::vector<mesh::Cell>& cells,
                   const std::vector<EigenRowArrayXXd>& coordinate_dofs) const;
 
 private:

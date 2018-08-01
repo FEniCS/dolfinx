@@ -630,7 +630,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
         // Compute cell matrix
         Ae.setZero();
-        a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
+        a.tabulate_tensor_batch(Ae.data(), cell_batch, coordinate_dofs_batch);
 
         // Apply zeros for Dirichlet bcs and scatter cell matrix
         for (unsigned int i = 0; i < current_batch_size; ++i)
@@ -823,7 +823,7 @@ void Assembler::assemble(
       be.setZero();
 
       // Compute cell matrix
-      L.tabulate_tensor(be.data(), cell_batch, coordinate_dofs_batch);
+      L.tabulate_tensor_batch(be.data(), cell_batch, coordinate_dofs_batch);
 
       // Scatter (add to vector)
       for (int i = 0; i < current_batch_size; ++i)
@@ -987,7 +987,7 @@ void Assembler::apply_bc(
       Ae.setZero();
 
       // Compute cell matrix
-      a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
+      a.tabulate_tensor_batch(Ae.data(), cell_batch, coordinate_dofs_batch);
 
       // Write the boundary conditions to the vector
       for (int i = 0; i < current_batch_size; ++i)
