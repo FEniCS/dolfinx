@@ -550,9 +550,12 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   if (cell_batch_size > 1)
   { 
     // Cell batch assembly
+
+    // Storage of cell proxy objects for one batch
     std::vector<mesh::Cell> cell_batch;
     cell_batch.reserve(cell_batch_size);
 
+    // Coordinate arrays for each cell of the batch
     std::vector<EigenRowArrayXXd> coordinate_dofs_batch;
     coordinate_dofs_batch.resize(cell_batch_size);
 
@@ -562,108 +565,121 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     Eigen::Matrix<PetscScalar, Eigen::Dynamic, 
                   Eigen::Dynamic, Eigen::RowMajor> Ae_cell;
 
+    // Counter to keep track how many cells were actually gathered for the
+    // current batch (may be smaller than cell_batch_size)
     unsigned int current_batch_size = 0;
+
     auto mesh_range = mesh::MeshRange<mesh::Cell>(mesh);
     auto cell_it = mesh_range.begin();
-    // Loop over the mesh
-    // Cannot use for loop as we need to move over cell_batch_size
-    // at a time.
-    while (cell_it != mesh_range.end())
+
+    if (cell_it != mesh_range.end())
     {
-      // 
-      while (current_batch_size < cell_batch_size) 
+      // Assume that all cells have the same dofmap 
+      // (otherwise batched assembly would be broken anyway)
+      const auto dmap0_size = map0.cell_dofs(cell_it->index()).size();
+      const auto dmap1_size = map1.cell_dofs(cell_it->index()).size();
+
+      // Initialize storage for strided batch cell matrix
+      Ae.resize(dmap0_size, dmap1_size * cell_batch_size);
+
+      // Loop over the mesh
+      // Cannot use for-loop as we need to move over cell_batch_size
+      // at a time.
+      while (cell_it != mesh_range.end())
       {
-        // Append dummy cells if end of mesh is reached
-        // occurs if mesh.num_cells() % cell_batch_length != 0
-        if (cell_it == mesh_range.end()) {
-          for (unsigned int j = current_batch_size; j < cell_batch_size; ++j) {
-            // Dummy. 
-            cell_batch.push_back(cell_batch.back());
-            // Note that in this case the counter current_batch_size is not
-            // incremented, and therefore no unstriding/assembly operations occur
-            // later on for the dummy cells.
-          }
-          break;
-        }
-
-        mesh::Cell& cell = *cell_it;
-
-        // Check that cell is not a ghost
-        assert(!cell.is_ghost());
-
-        // FIXME: Check that all cells belong to the same domain?
-
-        cell_batch.push_back(cell);
-        ++cell_it;
-        ++current_batch_size;
-      }
-
-      // Gather coordinate dofs
-      for (unsigned int i = 0; i < cell_batch_size; ++i) 
-      {
-        const auto& cell = cell_batch[i];
-        cell.get_coordinate_dofs(coordinate_dofs_batch[i]);
-      }
-
-      // Get dimensions of cell matrices
-      auto map0_size = map0.cell_dofs(cell_batch.front().index()).size();
-      auto map1_size = map1.cell_dofs(cell_batch.front().index()).size();
-
-      // Size strided data structure for batch assembly
-      // noop if not changed, which is usually (always?) the case.
-      Ae.resize(map0_size, map1_size * cell_batch_size);
-      Ae.setZero();
-
-      // Compute cell matrix
-      a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
-
-      // Scatter
-      // NOTE: Alternatively, we could keep Ae as-is and construct the 
-      // a strided cell_dofs.
-      for (unsigned int i = 0; i < current_batch_size; ++i)
-      {
-        auto& cell = cell_batch[i];
-
-        // Get dof maps for cell
-        auto dmap0 = map0.cell_dofs(cell.index());
-        auto dmap1 = map1.cell_dofs(cell.index());
-
-        // noop if sizes match, which is usually (always?) the case.
-        Ae_cell.resize(dmap0.size(), dmap1.size());
-
-        // "Unstride" cell matrix
-        for (int k = 0; k < Ae_cell.rows(); ++k) {
-          for (int l = 0; l < Ae_cell.cols(); ++l) {
-            Ae_cell(k,l) = Ae(k, cell_batch_size*l + i);
-          }
-        }
-
-        // Zero rows/columns for Dirichlet bcs
-        for (int k = 0; k < Ae_cell.rows(); ++k)
+        // Loop trying to gather a full batch of cells
+        while (current_batch_size < cell_batch_size) 
         {
-          const std::size_t kk = dmap0[k];
-          DirichletBC::Map::const_iterator bc_value 
-              = boundary_values0.find(kk);
-          if (bc_value != boundary_values0.end())
-            Ae_cell.row(k).setZero();
-        }
-        // Loop over columns
-        for (int l = 0; l < Ae_cell.cols(); ++l)
-        {
-          const std::size_t ll = dmap1[l];
-          DirichletBC::Map::const_iterator bc_value 
-              = boundary_values1.find(ll);
-          if (bc_value != boundary_values1.end())
-            Ae_cell.col(l).setZero();
+          // Append dummy cells if end of mesh is reached
+          // occurs if mesh.num_cells() % cell_batch_length != 0
+          if (cell_it == mesh_range.end())
+          {
+            for (unsigned int j = current_batch_size; j < cell_batch_size; ++j)
+            {
+              // Dummy. 
+              cell_batch.push_back(cell_batch.back());
+              // Note that in this case the counter current_batch_size is not
+              // incremented, and therefore no unstriding/assembly operations
+              // occur later on for the dummy cells.
+            }
+            break;
+          }
+
+          mesh::Cell& cell = *cell_it;
+
+          // Check that cell is not a ghost
+          assert(!cell.is_ghost());
+
+          // FIXME: Check that all cells belong to the same domain?
+
+          cell_batch.push_back(cell);
+          ++cell_it;
+          ++current_batch_size;
         }
 
-        A.add_local(Ae_cell.data(), dmap0.size(), dmap0.data(), dmap1.size(),
-                    dmap1.data());
+        // Gather coordinate dofs
+        for (unsigned int i = 0; i < cell_batch_size; ++i) 
+        {
+          const auto& cell = cell_batch[i];
+          cell.get_coordinate_dofs(coordinate_dofs_batch[i]);
+
+          // Make sure that dofmap sizes don't change
+          assert(map0.cell_dofs(cell.index()).size() == dmap0_size);
+          assert(map1.cell_dofs(cell.index()).size() == dmap1_size);
+        }
+
+        // Compute cell matrix
+        Ae.setZero();
+        a.tabulate_tensor(Ae.data(), cell_batch, coordinate_dofs_batch);
+
+        // Apply zeros for Dirichlet bcs and scatter cell matrix
+        for (unsigned int i = 0; i < current_batch_size; ++i)
+        {
+          const auto& cell = cell_batch[i];
+
+          // Get dof maps for cell
+          const auto& dmap0 = map0.cell_dofs(cell.index());
+          const auto& dmap1 = map1.cell_dofs(cell.index());
+
+          // noop if sizes match, which is usually (always?) the case
+          Ae_cell.resize(dmap0.size(), dmap1.size());
+
+          // "Un-stride" cell matrix
+          for (int k = 0; k < Ae_cell.rows(); ++k) {
+            for (int l = 0; l < Ae_cell.cols(); ++l) {
+              Ae_cell(k,l) = Ae(k, cell_batch_size*l + i);
+            }
+          }
+
+          // Zero rows for Dirichlet bcs
+          for (int k = 0; k < Ae_cell.rows(); ++k)
+          {
+            const std::size_t kk = dmap0[k];
+            DirichletBC::Map::const_iterator bc_value 
+                = boundary_values0.find(kk);
+            if (bc_value != boundary_values0.end())
+              Ae_cell.row(k).setZero();
+          }
+          // Zero cols for Dirichlet bcs
+          for (int l = 0; l < Ae_cell.cols(); ++l)
+          {
+            const std::size_t ll = dmap1[l];
+            DirichletBC::Map::const_iterator bc_value 
+                = boundary_values1.find(ll);
+            if (bc_value != boundary_values1.end())
+              Ae_cell.col(l).setZero();
+          }
+
+          // Add cell matrix to global matrix
+          A.add_local(Ae_cell.data(), 
+                      dmap0.size(), dmap0.data(), 
+                      dmap1.size(), dmap1.data());
+        }
+      
+        // Reset the batch for the next loop iteration
+        current_batch_size = 0;
+        cell_batch.clear();
       }
-     
-      // Reset for the next while loop.
-      current_batch_size = 0;
-      cell_batch.clear();
     }
   }
   else
