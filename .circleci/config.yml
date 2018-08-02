@@ -202,11 +202,11 @@ workflows:
           filters:
             branches:
               only:
-                - igor/nightly-build
+                - master
   nightly:
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "0 2 * * *"
           filters:
             branches:
               only:
