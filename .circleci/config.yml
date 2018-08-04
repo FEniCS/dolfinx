@@ -1,4 +1,122 @@
+install-dependencies: &install-dependencies
+  name: Install/update Python (test/doc) dependencies
+  command: pip3 install decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+
+install-python-components: &install-python-components
+  name: Install FEniCS Python components
+  command: |
+            pip3 uninstall --yes fenics-fiat fenics-ufl fenics-dijitso fenics-ffc
+            pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
+            pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
+            pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
+            pip3 install git+https://github.com/IgorBaratta/ffcx --upgrade
+            rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
+
+flake8-python-code: &flake8-python-code
+  name: Flake8 checks on Python code
+  command: python3 -m flake8 python/dolfin
+
+build-documentation-cpp: &build-documentation-cpp
+  name: Build documentation (C++)
+  command: cd cpp/doc && doxygen
+
+configure-cpp: &configure-cpp
+  name: Configure (C++)
+  command: mkdir -p build && cd build && cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer ../cpp/
+
+build-install-cpp: &build-install-cpp
+  name: Build and install (C++)
+  command: cd build && ninja -j3 install
+
+unit-tests-cpp: &unit-tests-cpp
+  name: Build and run unit tests (C++, serial)
+  command: cd build && ninja -j3 unittests && ctest -R unittests
+
+regression-tests-cpp: &regression-tests-cpp
+  name: Build and run C++ regressions tests (serial)
+  command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
+
+regression-tests-cpp-mpi: &regression-tests-cpp-mpi
+  name: Run C++ regression tests (MPI)
+  command: cd build && make -j2 demos && ctest -R demo -R mpi
+
+demos-cpp: &demos-cpp
+  name: Build and run demos (C++)
+  command: |
+    cd cpp/demo/documented/poisson
+    python3 -m ffc -l dolfin Poisson.ufl
+    cmake -G Ninja .
+    ninja
+    ./demo_poisson
+
+demos-cpp-complex: &demos-cpp-complex
+  name: Build and run demos (C++)
+  command: |
+    cd cpp/demo/documented/poisson
+    python3 -m ffc -l dolfin -f 'scalar_type' 'double complex' -r 'tsfc' Poisson.ufl
+    cmake -G Ninja .
+    ninja
+    ./demo_poisson
+
+python-interface: &python-interface
+  name: Build Python/pybind11 interface
+  command: |
+    cd python
+    pip3 -v install . --user
+
+build-documentation-python: &build-documentation-python
+  name: Build documentation (Python)
+  command: |
+    cd python/demo && python3 ./generate-demo-files.py
+    cd ../doc && make html
+
+flake8-unit-tests: &flake8-unit-tests
+  name: Run flake8 on unit tests
+  command: |
+    cd python/test/unit
+    python3 -m flake8 .
+
+unit-tests-python: &unit-tests-python
+  name: Run unit tests (Python, serial)
+  command: |
+    cd python/test/unit
+    python3 -m pytest -n 3 .
+
+unit-tests-python-mpi: &unit-tests-python-mpi
+  name: Run unit tests (Python, MPI)
+  command: |
+    cd python/test/unit
+    mpirun --allow-run-as-root -n 3 python3 -m pytest .
+
+demos-python: &demos-python
+  name: Run demos (Python, serial)
+  command: |
+    cd python/demo
+    python3 ./generate-demo-files.py
+    python3 undocumented/elasticity/demo_elasticity.py
+    python3 documented/poisson/demo_poisson.py
+    cd documented/stokes-taylor-hood
+    python3 demo_stokes-taylor-hood.py
+
+demos-python-mpi: &demos-python-mpi
+  name: Run demos (Python, MPI)
+  command: |
+    cd python/demo
+    mpirun --allow-run-as-root -np 3 python3 documented/poisson/demo_poisson.py
+    mpirun --allow-run-as-root -np 3 python3 undocumented/elasticity/demo_elasticity.py
+    cd documented/stokes-taylor-hood
+    mpirun --allow-run-as-root -np 3 python3 demo_stokes-taylor-hood.py
+
+aditional-complex-dependencies: &aditional-complex-dependencies
+  name: Install additional Python dependencies (complex mode)
+  command: |
+            pip3 install six singledispatch pulp networkx
+            pip3 install git+https://github.com/blechta/FInAT.git --upgrade
+            pip3 install git+https://github.com/blechta/COFFEE.git --upgrade
+            pip3 install git+https://github.com/blechta/tsfc.git --upgrade
+
 version: 2
+
 jobs:
   build:
     docker:
@@ -9,116 +127,26 @@ jobs:
       DEBIAN_FRONTEND: "noninteractive"
     steps:
       - checkout
-      - run:
-          name: Install/update Python (test/doc) dependencies
-          command: pip3 install decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
-      - run:
-          name: Install FEniCS Python components
-          command: |
-            pip3 uninstall --yes fenics-fiat fenics-ufl fenics-dijitso fenics-ffc
-            pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
-            pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
-            pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
-            pip3 install git+https://github.com/fenics/ffcx.git --upgrade
-            rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
-      - run:
-          name: Flake8 checks on Python code
-          command: python3 -m flake8 python/dolfin
-
-      - run:
-          name: Build documentation (C++)
-          command: cd cpp/doc && doxygen
-      - run:
-          name: Configure (C++)
-          command: mkdir -p build && cd build && cmake -G Ninja -DCMAKE_BUILD_TYPE=Developer ../cpp/
-      - run:
-          name: Build and install (C++)
-          command: cd build && ninja -j3 install
-      - run:
-          name: Build and run unit tests (C++, serial)
-          command: cd build && ninja -j3 unittests && ctest -R unittests
-      #- run:
-      #    name: Build and run C++ regressions tests (serial)
-      #    command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
-      #- run:
-      #    name: Run C++ regression tests (MPI)
-      #    command: cd build && make -j2 demos && ctest -R demo -R mpi
-
-      - run:
-          name: Build and run demos (C++)
-          command: |
-            cd cpp/demo/documented/poisson
-            python3 -m ffc -l dolfin Poisson.ufl
-            cmake -G Ninja .
-            ninja
-            ./demo_poisson
-
-      - run:
-          name: Build Python/pybind11 interface
-          command: |
-            cd python
-            pip3 -v install . --user
-
-      - run:
-          name: Build documentation (Python)
-          command: |
-            cd python/demo && python3 ./generate-demo-files.py
-            cd ../doc && make html
+      - run: *install-dependencies
+      - run: *install-python-components
+      - run: *flake8-python-code
+      - run: *build-documentation-cpp
+      - run: *configure-cpp
+      - run: *build-install-cpp
+      - run: *unit-tests-cpp
+      - run: *demos-cpp
+      - run: *python-interface
+      - run: *build-documentation-python
+      - run: *flake8-unit-tests
+      - run: *unit-tests-python
+      - run: *unit-tests-python-mpi
+      - run: *demos-python
+      - run: *demos-python-mpi
       - persist_to_workspace:
           root: .
           paths:
             - python/doc/build/html/
             - cpp/doc/html/
-
-      - run:
-          name: Run flake8 on unit tests
-          command: |
-            cd python/test/unit
-            python3 -m flake8 .
-      - run:
-          name: Run unit tests (Python, serial)
-          command: |
-            cd python/test/unit
-            python3 -m pytest -n 3 .
-      - run:
-          name: Run unit tests (Python, MPI)
-          command: |
-            cd python/test/unit
-            mpirun --allow-run-as-root -n 3 python3 -m pytest .
-      - run:
-          name: Run demos (Python, serial)
-          command: |
-            cd python/demo
-            python3 ./generate-demo-files.py
-            python3 undocumented/elasticity/demo_elasticity.py
-            python3 documented/poisson/demo_poisson.py
-            cd documented/stokes-taylor-hood
-            python3 demo_stokes-taylor-hood.py
-
-      - run:
-          name: Run demos (Python, MPI)
-          command: |
-            cd python/demo
-            mpirun --allow-run-as-root -np 3 python3 documented/poisson/demo_poisson.py
-            mpirun --allow-run-as-root -np 3 python3 undocumented/elasticity/demo_elasticity.py
-            cd documented/stokes-taylor-hood
-            mpirun --allow-run-as-root -np 3 python3 demo_stokes-taylor-hood.py
-
-      #- run:
-      #    name: Run Python unit tests (serial)
-      #    command: python3 -m pytest -n 2 python/test/unit/
-      #- run:
-      #    name: Run Python unit tests (MPI)
-      #    command: mpirun -n 3 python3 -m pytest python/test/unit/
-      #- run:
-      #    name: Generate Python demo (regression) programs
-      #    command: python3 python/demo/generate-demo-files.py
-      #- run:
-      #    name: Run Python regression tests (serial)
-      #    command: python3 -m pytest -v -n2 python/demo/test.py
-      #- run:
-      #    name: Run Python regression tests (MPI)
-      #    command: python3 -m pytest -v python/demo/test.py --mpiexec=mpiexec --num-proc=3
 
   pushdoc:
     docker:
@@ -137,6 +165,32 @@ jobs:
           name: Push C++ API doc to fenicsproject.org
           command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
+  build-complex:
+    docker:
+      - image: quay.io/igorbaratta/dolfinx-complex:latest
+    environment:
+      MPLBACKEND: "agg"
+      DOLFIN_NOPLOT: 1
+      DEBIAN_FRONTEND: "noninteractive"
+    steps:
+      - checkout
+      - run: *install-dependencies
+      - run: *aditional-complex-dependencies
+      - run: *install-python-components
+      - run: *flake8-python-code
+      - run: *build-documentation-cpp
+      - run: *configure-cpp
+      - run: *build-install-cpp
+      - run: *unit-tests-cpp
+      - run: *demos-cpp-complex
+      - run: *python-interface
+      - run: *build-documentation-python
+      - run: *flake8-unit-tests
+      - run: *unit-tests-python
+      - run: *unit-tests-python-mpi
+      - run: *demos-python
+      - run: *demos-python-mpi
+
 workflows:
   version: 2
   build-and-pushdoc:
@@ -149,3 +203,13 @@ workflows:
             branches:
               only:
                 - master
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 5 * * *"
+          filters:
+            branches:
+              only:
+                - igor/nightly-build
+    jobs:
+      - build-complex
