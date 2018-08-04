@@ -114,7 +114,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   }
 
   // Get  values
-  std::vector<double> values(dof_set.size());
+  std::vector<PetscScalar> values(dof_set.size());
   assert(u.vector());
   u.vector()->get_local(values.data(), dof_set.size(), dof_set.data());
 
@@ -126,7 +126,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
 //----------------------------------------------------------------------------
 std::string VTKWriter::ascii_cell_data(const mesh::Mesh& mesh,
                                        const std::vector<std::size_t>& offset,
-                                       const std::vector<double>& values,
+                                       const std::vector<PetscScalar>& values,
                                        std::size_t data_dim, std::size_t rank)
 {
   std::ostringstream ss;
