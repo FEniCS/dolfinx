@@ -546,6 +546,14 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
+  // FIXME: Technically, cell_batch_size has to depend on the cell because
+  //   every subdomain gets its own tabulate_tensor. However, this is currently
+  //   not implemented in Form.
+  //   Possible fixes:
+  //     - Precondition: all integrals of a form have the same batch size.
+  //     - Let it batch size vary, this requires a smarter assembly loop,
+  //       e.g. by collecting cells of a certain subdomain until enough for
+  //       batched evaluation have been found.
   const unsigned int cell_batch_size = a.cell_batch_size();
   if (cell_batch_size > 1)
   { 
@@ -562,7 +570,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
     // Ae is used by tabulate_tensor to store the strided batched cell tensor.
     // Ae_cell is used by the batch assembler as storage to unpack the strided
     // cell tensor Ae.
-    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic,
                   Eigen::Dynamic, Eigen::RowMajor> Ae_cell;
 
     // Counter to keep track how many cells were actually gathered for the
@@ -574,7 +582,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
 
     if (cell_it != mesh_range.end())
     {
-      // Assume that all cells have the same dofmap 
+      // Assume that all cells have the same dofmap
       // (otherwise batched assembly would be broken anyway)
       const auto dmap0_size = map0.cell_dofs(cell_it->index()).size();
       const auto dmap1_size = map1.cell_dofs(cell_it->index()).size();
@@ -588,7 +596,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
       while (cell_it != mesh_range.end())
       {
         // Loop trying to gather a full batch of cells
-        while (current_batch_size < cell_batch_size) 
+        while (current_batch_size < cell_batch_size)
         {
           // Append dummy cells if end of mesh is reached
           // occurs if mesh.num_cells() % cell_batch_length != 0
@@ -596,10 +604,10 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
           {
             for (unsigned int j = current_batch_size; j < cell_batch_size; ++j)
             {
-              // Dummy. 
+              // Dummy.
               cell_batch.push_back(cell_batch.back());
               // Note that in this case the counter current_batch_size is not
-              // incremented, and therefore no unstriding/assembly operations
+              // incremented, and therefore no un-striding/assembly operations
               // occur later on for the dummy cells.
             }
             break;
@@ -655,7 +663,7 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
           for (int k = 0; k < Ae_cell.rows(); ++k)
           {
             const std::size_t kk = dmap0[k];
-            DirichletBC::Map::const_iterator bc_value 
+            DirichletBC::Map::const_iterator bc_value
                 = boundary_values0.find(kk);
             if (bc_value != boundary_values0.end())
               Ae_cell.row(k).setZero();
@@ -664,15 +672,15 @@ void Assembler::assemble(la::PETScMatrix& A, const Form& a,
           for (int l = 0; l < Ae_cell.cols(); ++l)
           {
             const std::size_t ll = dmap1[l];
-            DirichletBC::Map::const_iterator bc_value 
+            DirichletBC::Map::const_iterator bc_value
                 = boundary_values1.find(ll);
             if (bc_value != boundary_values1.end())
               Ae_cell.col(l).setZero();
           }
 
           // Add cell matrix to global matrix
-          A.add_local(Ae_cell.data(), 
-                      dmap0.size(), dmap0.data(), 
+          A.add_local(Ae_cell.data(),
+                      dmap0.size(), dmap0.data(),
                       dmap1.size(), dmap1.data());
         }
       

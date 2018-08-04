@@ -333,7 +333,7 @@ private:
   mutable Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> _w_temp;
 
   // Temporary storage for coordinate dof values
-  mutable Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, 
+  mutable Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                         Eigen::RowMajor> _coord_dofs;
 };
 } // namespace fem

@@ -254,7 +254,8 @@ void Form::set_vertex_domains(
 //-----------------------------------------------------------------------------
 unsigned int Form::cell_batch_size() const
 {
-  // FIXME: idx depends on cell? see tabulate_tensor
+  // FIXME: Current implementation assumes that all subdmains/integrals share
+  //   the same cell_batch_size
   std::uint32_t idx = 0;
 
   return _integrals.cell_batch_size(idx);
@@ -308,32 +309,31 @@ void Form::tabulate_tensor_batch(
     // FIXME: check on idx validity
     idx = (*dx)[cell_batch.front()] + 1;
 
-    // FIXME: make this a precondition on the caller site
+    // FIXME: see cell_batch_size() and Assembler::assemble()
     for (const auto& cell : cell_batch)
       if (idx != (*dx)[cell] + 1)
         throw std::runtime_error("Different integrals in a single cell batch "
                                  "are not supported.");
   }
 
-  // Ensure that temporary coord dofs storage is large enough
-  _coord_dofs.conservativeResize(coordinate_dofs_batch.front().rows(),
-                                 coordinate_dofs_batch.front().cols() *
-                                 coordinate_dofs_batch.size());
+  // The following code can unfortunately not be trivially implemented without
+  // copying values from non-interleaved single-cell arrays to the interleaved
+  // arrays required by the batched tabulate_tensor functions.
+  // Reasons:
+  //   - Expression-type coefficients are user provided
+  //   - Function-type coefficients use PETSc get_local functions
+  //   - If the cases above are not batched, coordinate_dofs are also
+  //     required to not be interleaved for correct per-cell evaluation
 
-  // FIXME: Consider making parts of the following code batched
+  // Restrict coefficients and make cell-interleaved copy
   for (std::size_t i = 0; i < cell_batch.size(); ++i)
   {
-    auto& cell = cell_batch[i];
-    auto& coordinate_dofs = coordinate_dofs_batch[i];
+    const auto& cell = cell_batch[i];
+    const auto& cell_coord_dofs = coordinate_dofs_batch[i];
 
-    // Make coordinate dofs strided over cells
-    for (int k = 0; k < coordinate_dofs.rows(); ++k)
-      for (int l = 0; l < coordinate_dofs.cols(); ++l)
-        _coord_dofs(k, cell_batch_size * l + i) = coordinate_dofs(k, l);
-
-    // Restrict coefficients to cell
     const bool* enabled_coefficients
         = _integrals.cell_enabled_coefficients(idx);
+
     for (std::size_t j = 0; j < _coefficients.size(); ++j)
     {
       if (enabled_coefficients[j])
@@ -342,16 +342,35 @@ void Form::tabulate_tensor_batch(
             = _coefficients.get(j);
         const FiniteElement& element = _coefficients.element(j);
 
-        coefficient->restrict(_w_temp.data(), element, cell, coordinate_dofs);
+        coefficient->restrict(_w_temp.data(), element, cell, cell_coord_dofs);
 
-        // Make coefficient values strided
+        // Copy restricted values to cell-interleaved coefficient array
         for (std::uint32_t k = 0; k < element.space_dimension() * 2; ++k)
           _w_ptr[j][cell_batch_size * k + i] = _w_temp[k];
       }
     }
   }
 
-  // Compute cell matrix
+  // Ensure that temporary coordinate dofs storage is large enough
+  _coord_dofs.conservativeResize(coordinate_dofs_batch.front().rows(),
+                                 coordinate_dofs_batch.front().cols() *
+                                 coordinate_dofs_batch.size());
+
+  // Create cell-interleaved copy of coordinate dofs
+  for (std::size_t i = 0; i < cell_batch.size(); ++i)
+  {
+    const auto& cell_coord_dofs = coordinate_dofs_batch[i];
+    for (int k = 0; k < cell_coord_dofs.rows(); ++k)
+    {
+      for (int l = 0; l < cell_coord_dofs.cols(); ++l)
+      {
+        _coord_dofs(k, cell_batch_size * l + i)
+            = cell_coord_dofs(k, l);
+      }
+    }
+  }
+
+  // Call to batched tabulate_tensor method with interleaved inputs/outputs
   auto tab_fn = _integrals.cell_tabulate_tensor(idx);
   tab_fn(A, _w_ptr.data(), _coord_dofs.data(), 1);
 }
@@ -374,10 +393,13 @@ void Form::init_coeff_scratch_space()
     n_max = std::max(n_max, n);
     ns.push_back(ns.back() + n);
   }
-  // Allocate memory capable of storing all coefficient values
+
+  // Allocate memory capable of temporarily storing values of any coefficient
   // in a contiguous block
   _w_temp.resize(n_max);
 
+  // Memory for storing all coefficients as input for tabulate_tensor
+  // May be used for interleaved storage when using batched assembly
   _w_interleaved.resize(ns.back());
   // Create pointers into _w for each coefficient
   _w_ptr.resize(num_coeffs);
