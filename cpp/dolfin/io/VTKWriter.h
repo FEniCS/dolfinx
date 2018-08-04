@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <string>
+#include <petscsys.h>
 #include <vector>
 
 namespace dolfin
@@ -40,7 +41,7 @@ private:
   // Write cell data (ascii)
   static std::string ascii_cell_data(const mesh::Mesh& mesh,
                                      const std::vector<std::size_t>& offset,
-                                     const std::vector<double>& values,
+                                     const std::vector<PetscScalar>& values,
                                      std::size_t dim, std::size_t rank);
 
   // mesh::Mesh writer (ascii)
