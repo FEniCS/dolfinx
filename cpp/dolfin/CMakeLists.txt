@@ -86,9 +86,15 @@ endif()
 # UFC
 target_include_directories(dolfin SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 
+# Currently only used for Eigen
+set(DOLFIN_ALIGNMENT_BYTES "32" CACHE STRING "\
+Minimum alignment in bytes used for numeric arrays. \
+For compatibility with AVX2, AVX-512... vectorized user code. \
+")
+
 # Eigen3
 target_include_directories(dolfin SYSTEM PUBLIC ${EIGEN3_INCLUDE_DIR})
-target_compile_definitions(dolfin PUBLIC EIGEN_MAX_ALIGN_BYTES=32)
+target_compile_definitions(dolfin PUBLIC "EIGEN_MAX_ALIGN_BYTES=${DOLFIN_ALIGNMENT_BYTES}")
 
 # Boost
 target_link_libraries(dolfin PUBLIC Boost::boost)
