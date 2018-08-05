@@ -66,10 +66,14 @@ public:
 
   /// Add '1' to diagonal for Dirichlet rows. Rows must be local to the
   /// process.
-  static void ident(la::PETScMatrix& A, const function::FunctionSpace& V,
-                    std::vector<std::shared_ptr<const DirichletBC>> bcs);
+  static void ident(la::PETScMatrix& A, const std::vector<la_index_t>& rows,
+                    PetscScalar diag = 1.0);
 
 private:
+  static std::vector<la_index_t>
+  get_local_bc_rows(const function::FunctionSpace& V,
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
   // Get IndexSets (IS) for stacked index maps
   std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);
 
