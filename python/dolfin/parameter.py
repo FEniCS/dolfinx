@@ -9,6 +9,7 @@
 
 import dolfin.cpp
 from ffc import default_jit_parameters
+from dolfin.cpp.common import has_petsc_complex
 from dolfin.cpp.parameter import parameters, Parameters
 
 
@@ -72,6 +73,9 @@ def ffc_default_parameters():
             p[key] = None
         else:
             p.add(key, value)
+
+    # Update the scalar type according to the mode (real or complex)
+    p["scalar_type"] = "double complex" if has_petsc_complex() else "double"
 
     return p
 
