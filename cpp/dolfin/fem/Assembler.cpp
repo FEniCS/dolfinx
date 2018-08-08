@@ -197,7 +197,11 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           la::PETScMatrix mat(subA);
           this->assemble_matrix(mat, *_a[i][j], bc_dofs0, bc_dofs1);
           if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
-            ident(mat, *_a[i][j]->function_space(0), _bcs);
+          {
+            const std::vector<la_index_t> rows
+                = get_local_bc_rows(*_a[i][j]->function_space(0), _bcs);
+            ident(mat, rows);
+          }
 
           MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
         }
@@ -231,7 +235,11 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
     this->assemble_matrix(A, *_a[0][0], bc_dofs0, bc_dofs1);
     if (*_a[0][0]->function_space(0) == *_a[0][0]->function_space(1))
-      ident(A, *_a[0][0]->function_space(0), _bcs);
+    {
+      const std::vector<la_index_t> rows
+          = get_local_bc_rows(*_a[0][0]->function_space(0), _bcs);
+      ident(A, rows);
+    }
   }
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
@@ -429,8 +437,16 @@ void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
   assemble(b);
 }
 //-----------------------------------------------------------------------------
-void Assembler::ident(la::PETScMatrix& A, const function::FunctionSpace& V,
-                      std::vector<std::shared_ptr<const DirichletBC>> bcs)
+void Assembler::ident(la::PETScMatrix& A, const std::vector<la_index_t>& rows,
+                      PetscScalar diag)
+{
+  for (auto row : rows)
+    A.add_local(&diag, 1, &row, 1, &row);
+}
+//-----------------------------------------------------------------------------
+std::vector<la_index_t> Assembler::get_local_bc_rows(
+    const function::FunctionSpace& V,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   assert(V.mesh());
   const mesh::Mesh& mesh = *V.mesh();
@@ -455,13 +471,14 @@ void Assembler::ident(la::PETScMatrix& A, const function::FunctionSpace& V,
 
   auto map = V.dofmap()->index_map();
   int local_size = map->block_size() * map->size_local();
-  PetscScalar one = 1.0;
+  std::vector<la_index_t> rows;
   for (auto bc : boundary_values)
   {
     la_index_t row = bc.first;
     if (row < local_size)
-      A.add_local(&one, 1, &row, 1, &row);
+      rows.push_back(row);
   }
+  return rows;
 }
 //-----------------------------------------------------------------------------
 std::vector<IS>
