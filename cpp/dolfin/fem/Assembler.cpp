@@ -198,7 +198,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           this->assemble_matrix(mat, *_a[i][j], bc_dofs0, bc_dofs1);
           if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
           {
-            const std::vector<la_index_t> rows
+            const Eigen::Array<la_index_t, Eigen::Dynamic, 1> rows
                 = get_local_bc_rows(*_a[i][j]->function_space(0), _bcs);
             ident(mat, rows);
           }
@@ -236,7 +236,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     this->assemble_matrix(A, *_a[0][0], bc_dofs0, bc_dofs1);
     if (*_a[0][0]->function_space(0) == *_a[0][0]->function_space(1))
     {
-      const std::vector<la_index_t> rows
+      const Eigen::Array<la_index_t, Eigen::Dynamic, 1> rows
           = get_local_bc_rows(*_a[0][0]->function_space(0), _bcs);
       ident(A, rows);
     }
@@ -437,14 +437,17 @@ void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
   assemble(b);
 }
 //-----------------------------------------------------------------------------
-void Assembler::ident(la::PETScMatrix& A, const std::vector<la_index_t>& rows,
-                      PetscScalar diag)
+void Assembler::ident(
+    la::PETScMatrix& A,
+    const Eigen::Ref<const Eigen::Array<la_index_t, Eigen::Dynamic, 1>> rows,
+    PetscScalar diag)
 {
-  for (auto row : rows)
-    A.add_local(&diag, 1, &row, 1, &row);
+  MatZeroRowsLocal(A.mat(), rows.size(), rows.data(), diag, NULL, NULL);
+  // for (auto row : rows)
+  //   A.add_local(&diag, 1, &row, 1, &row);
 }
 //-----------------------------------------------------------------------------
-std::vector<la_index_t> Assembler::get_local_bc_rows(
+Eigen::Array<la_index_t, Eigen::Dynamic, 1> Assembler::get_local_bc_rows(
     const function::FunctionSpace& V,
     std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
@@ -471,13 +474,16 @@ std::vector<la_index_t> Assembler::get_local_bc_rows(
 
   auto map = V.dofmap()->index_map();
   int local_size = map->block_size() * map->size_local();
-  std::vector<la_index_t> rows;
+  std::vector<la_index_t> _rows;
   for (auto bc : boundary_values)
   {
     la_index_t row = bc.first;
     if (row < local_size)
-      rows.push_back(row);
+      _rows.push_back(row);
   }
+
+  Eigen::Array<la_index_t, Eigen::Dynamic, 1> rows = Eigen::Map<Eigen::Array<la_index_t, Eigen::Dynamic, 1>>(_rows.data(), _rows.size());
+
   return rows;
 }
 //-----------------------------------------------------------------------------
