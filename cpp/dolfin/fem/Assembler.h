@@ -10,6 +10,7 @@
 #include <memory>
 #include <petscvec.h>
 #include <vector>
+#include <dolfin/la/PETScMatrix.h>
 
 namespace dolfin
 {
@@ -23,7 +24,7 @@ class FunctionSpace;
 } // namespace function
 namespace la
 {
-class PETScMatrix;
+//class PETScMatrix;
 class PETScVector;
 } // namespace la
 
@@ -55,14 +56,13 @@ public:
 
   /// Assemble matrix. Dirichlet rows/columns are zeroed, and '1'
   /// placed on diagonal
-  void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
+  la::PETScMatrix assemble_matrix(BlockType type = BlockType::nested);
+  void assemble(la::PETScMatrix& A);
 
   /// Assemble vector. Boundary conditions have no effect on the
   /// assembled vector.
-  void assemble(la::PETScVector& b, BlockType type = BlockType::nested);
-
-  /// Assemble matrix and vector
-  void assemble(la::PETScMatrix& A, la::PETScVector& b);
+  la::PETScVector assemble_vector(BlockType type = BlockType::nested);
+  void assemble(la::PETScVector& b);
 
   /// Add '1' to diagonal for Dirichlet rows. Rows must be local to the
   /// process.
@@ -93,7 +93,7 @@ private:
   // must already be initialisd. The matrix may be a proxy, i.e. a view
   // into a larger matrix, and assembly is performed using local
   // indices. Matrix is not finalisd.
-  static void assemble_matrix(la::PETScMatrix& A, const Form& a,
+  static void _assemble_matrix(la::PETScMatrix& A, const Form& a,
                               const std::vector<std::int32_t>& bc_dofs0,
                               const std::vector<std::int32_t>& bc_dofs1);
 

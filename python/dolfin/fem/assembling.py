@@ -51,15 +51,15 @@ class Assembler:
             # Create assembler
             self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
 
-        # Create matrix/vector (if required)
         if A is None:
-            A = cpp.la.PETScMatrix()
+            A = self.assembler.assemble_matrix(mat_type)
+        else:
+            self.assembler.assemble(A)
         if b is None:
-            b = cpp.la.PETScVector()
+            b = self.assembler.assemble_vector(mat_type)
+        else:
+            self.assembler.assemble(b)
 
-        # self.assembler.assemble(A, b)
-        self.assembler.assemble(A, mat_type)
-        self.assembler.assemble(b, mat_type)
         return A, b
 
 

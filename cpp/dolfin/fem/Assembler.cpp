@@ -52,7 +52,31 @@ Assembler::~Assembler()
   // }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
+la::PETScMatrix Assembler::assemble_matrix(BlockType block_type)
+{
+  // Check if matrix should be nested
+  assert(!_a.empty());
+  const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
+
+  std::vector<std::vector<const Form*>> forms(
+      _a.size(), std::vector<const Form*>(_a[0].size()));
+  for (std::size_t i = 0; i < _a.size(); ++i)
+    for (std::size_t j = 0; j < _a[i].size(); ++j)
+      forms[i][j] = _a[i][j].get();
+
+  la::PETScMatrix A;
+  if (block_type == BlockType::nested)
+    A = fem::init_nest_matrix(forms);
+  else if (block_matrix and block_type == BlockType::monolithic)
+    A = fem::init_monolithic_matrix(forms);
+  else
+    A = fem::init_matrix(*_a[0][0]);
+
+  assemble(A);
+  return A;
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble(la::PETScMatrix& A)
 {
   // Check if matrix should be nested
   assert(!_a.empty());
@@ -60,23 +84,6 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 
   // Empty bcs (while testing)
   std::vector<std::shared_ptr<const DirichletBC>> bcs = _bcs;
-
-  if (A.empty())
-  {
-    std::vector<std::vector<const Form*>> forms(
-        _a.size(), std::vector<const Form*>(_a[0].size()));
-    for (std::size_t i = 0; i < _a.size(); ++i)
-      for (std::size_t j = 0; j < _a[i].size(); ++j)
-        forms[i][j] = _a[i][j].get();
-
-    // Initialise matrix
-    if (block_type == BlockType::nested)
-      A = fem::init_nest_matrix(forms);
-    else if (block_matrix and block_type == BlockType::monolithic)
-      A = fem::init_monolithic_matrix(forms);
-    else
-      A = fem::init_matrix(*_a[0][0]);
-  }
 
   // Get PETSc matrix type
   MatType mat_type;
@@ -195,7 +202,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           }
 
           la::PETScMatrix mat(subA);
-          this->assemble_matrix(mat, *_a[i][j], bc_dofs0, bc_dofs1);
+          this->_assemble_matrix(mat, *_a[i][j], bc_dofs0, bc_dofs1);
           if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
           {
             const Eigen::Array<la_index_t, Eigen::Dynamic, 1> rows
@@ -233,7 +240,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
       }
     }
 
-    this->assemble_matrix(A, *_a[0][0], bc_dofs0, bc_dofs1);
+    this->_assemble_matrix(A, *_a[0][0], bc_dofs0, bc_dofs1);
     if (*_a[0][0]->function_space(0) == *_a[0][0]->function_space(1))
     {
       const Eigen::Array<la_index_t, Eigen::Dynamic, 1> rows
@@ -250,9 +257,31 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     ISDestroy(&is_col[i]);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(la::PETScVector& b, BlockType block_type)
+la::PETScVector Assembler::assemble_vector(BlockType block_type)
 {
-  // Check if matrix should be nested
+  assert(!_l.empty());
+  const bool block_vector = _l.size() > 1;
+
+  // Build array of pointers to forms
+  std::vector<const Form*> forms(_a.size());
+  for (std::size_t i = 0; i < _l.size(); ++i)
+    forms[i] = _l[i].get();
+
+  // Initialise vector
+  la::PETScVector b;
+  if (block_type == BlockType::nested)
+    b = fem::init_nest(forms);
+  else if (block_vector and block_type == BlockType::monolithic)
+    b = fem::init_monolithic(forms);
+  else
+    b = la::PETScVector(*_l[0]->function_space(0)->dofmap()->index_map());
+
+  assemble(b);
+  return b;
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble(la::PETScVector& b)
+{
   assert(!_l.empty());
   const bool block_vector = _l.size() > 1;
 
@@ -260,22 +289,6 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   {
     if (!_l[i])
       throw std::runtime_error("Cannot have NULL linear form block.");
-  }
-
-  if (b.empty())
-  {
-    // Build array of pointers to forms
-    std::vector<const Form*> forms(_a.size());
-    for (std::size_t i = 0; i < _l.size(); ++i)
-      forms[i] = _l[i].get();
-
-    // Initialise vector
-    if (block_type == BlockType::nested)
-      b = fem::init_nest(forms);
-    else if (block_vector and block_type == BlockType::monolithic)
-      b = fem::init_monolithic(forms);
-    else
-      b = la::PETScVector(*_l[0]->function_space(0)->dofmap()->index_map());
   }
 
   // Get vector type
@@ -426,25 +439,13 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
-{
-  // TODO: pre common boundary condition data
-
-  // Assemble matrix
-  assemble(A);
-
-  // Assemble vector
-  assemble(b);
-}
-//-----------------------------------------------------------------------------
 void Assembler::ident(
     la::PETScMatrix& A,
     const Eigen::Ref<const Eigen::Array<la_index_t, Eigen::Dynamic, 1>> rows,
     PetscScalar diag)
 {
+  // FIXME: make this process-wise to avoid extra communication step
   MatZeroRowsLocal(A.mat(), rows.size(), rows.data(), diag, NULL, NULL);
-  // for (auto row : rows)
-  //   A.add_local(&diag, 1, &row, 1, &row);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<la_index_t, Eigen::Dynamic, 1> Assembler::get_local_bc_rows(
@@ -482,7 +483,9 @@ Eigen::Array<la_index_t, Eigen::Dynamic, 1> Assembler::get_local_bc_rows(
       _rows.push_back(row);
   }
 
-  Eigen::Array<la_index_t, Eigen::Dynamic, 1> rows = Eigen::Map<Eigen::Array<la_index_t, Eigen::Dynamic, 1>>(_rows.data(), _rows.size());
+  Eigen::Array<la_index_t, Eigen::Dynamic, 1> rows
+      = Eigen::Map<Eigen::Array<la_index_t, Eigen::Dynamic, 1>>(_rows.data(),
+                                                                _rows.size());
 
   return rows;
 }
@@ -543,7 +546,7 @@ la::PETScMatrix Assembler::get_sub_matrix(const la::PETScMatrix& A, int i,
   return la::PETScMatrix(subA);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_matrix(la::PETScMatrix& A, const Form& a,
+void Assembler::_assemble_matrix(la::PETScMatrix& A, const Form& a,
                                 const std::vector<std::int32_t>& bc_dofs0,
                                 const std::vector<std::int32_t>& bc_dofs1)
 {
@@ -564,30 +567,6 @@ void Assembler::assemble_matrix(la::PETScMatrix& A, const Form& a,
   assert(V1.dofmap());
   const fem::GenericDofMap& map0 = *V0.dofmap();
   const fem::GenericDofMap& map1 = *V1.dofmap();
-
-  // FIXME: Move out of this function
-  // FIXME: For the matrix, we only need to know if there is a boundary
-  // condition on the entry. The value is not required.
-  // FIXME: Avoid duplication when spaces[0] == spaces[1]
-  // Collect boundary conditions by matrix axis
-  // DirichletBC::Map boundary_values0, boundary_values1;
-
-  // std::vector<std::int32_t> bc_dofs0, bc_dofs1;
-  // for (std::size_t i = 0; i < bcs.size(); ++i)
-  // {
-  //   assert(bcs[i]);
-  //   assert(bcs[i]->function_space());
-  //   if (V0.contains(*bcs[i]->function_space()))
-  //   {
-  //     std::vector<std::int32_t> bcd = compute_bc_indices(*bcs[i]);
-  //     bc_dofs0.insert(bc_dofs0.end(), bcd.begin(), bcd.end());
-  //   }
-  //   if (V1.contains(*bcs[i]->function_space()))
-  //   {
-  //     std::vector<std::int32_t> bcd = compute_bc_indices(*bcs[i]);
-  //     bc_dofs1.insert(bc_dofs1.end(), bcd.begin(), bcd.end());
-  //   }
-  // }
 
   // Data structures used in assembly
   EigenRowArrayXXd coordinate_dofs;
