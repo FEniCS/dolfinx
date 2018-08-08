@@ -5,8 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
-from dolfin import (Function, FunctionSpace,
-                    VectorFunctionSpace, Expression, MPI, cpp, fem)
+from dolfin import (Function, FunctionSpace, VectorFunctionSpace,
+                    Expression, MPI, cpp, fem, has_petsc_complex)
 from dolfin.io import XDMFFile
 from dolfin_utils.test import tempdir
 assert(tempdir)
@@ -36,7 +36,10 @@ def test_read_write_p2_function(tempdir):
     Q = FunctionSpace(mesh, "Lagrange", 2)
 
     F = Function(Q)
-    F.interpolate(Expression("x[0]", degree=1))
+    if has_petsc_complex():
+        F.interpolate(Expression("x[0] + j*x[0]", degree=1))
+    else:
+        F.interpolate(Expression("x[0]", degree=1))
 
     filename = os.path.join(tempdir, "tri6_function.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename,
@@ -45,7 +48,10 @@ def test_read_write_p2_function(tempdir):
 
     Q = VectorFunctionSpace(mesh, "Lagrange", 1)
     F = Function(Q)
-    F.interpolate(Expression(("x[0]", "x[1]"), degree=1))
+    if has_petsc_complex():
+        F.interpolate(Expression(("x[0] + j*x[0]", "x[1] + j*x[1]"), degree=1))
+    else:
+        F.interpolate(Expression(("x[0]", "x[1]"), degree=1))
 
     filename = os.path.join(tempdir, "tri6_vector_function.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename,
