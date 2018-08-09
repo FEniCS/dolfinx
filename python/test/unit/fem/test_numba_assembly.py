@@ -9,7 +9,6 @@
 from dolfin import (cpp, UnitSquareMesh, MPI, FunctionSpace,
                     dx, dot, grad, TestFunction, TrialFunction, list_timings,
                     TimingType)
-from dolfin.la import PETScMatrix, PETScVector
 from numba import cfunc, types, carray, typeof
 from dolfin.jit.jit import ffc_jit
 import numpy as np
