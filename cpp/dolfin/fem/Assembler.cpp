@@ -707,7 +707,7 @@ void Assembler::assemble_matrix(la::PETScMatrix& A, const Form& a,
           for (int k = 0; k < Ae_cell.rows(); ++k)
           {
             const std::size_t kk = dmap0[k];
-            if (std::find(bc_dofs0.begin(), bc_dofs0.end(), ii) 
+            if (std::find(bc_dofs0.begin(), bc_dofs0.end(), kk) 
                 != bc_dofs0.end())
               Ae_cell.row(k).setZero();
           }
@@ -715,7 +715,7 @@ void Assembler::assemble_matrix(la::PETScMatrix& A, const Form& a,
           for (int l = 0; l < Ae_cell.cols(); ++l)
           {
             const std::size_t ll = dmap1[l];
-            if (std::find(bc_dofs0.begin(), bc_dofs0.end(), ii) 
+            if (std::find(bc_dofs0.begin(), bc_dofs0.end(), ll) 
                 != bc_dofs0.end())
               Ae_cell.col(l).setZero();
           }
