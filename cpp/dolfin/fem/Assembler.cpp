@@ -445,7 +445,12 @@ void Assembler::ident(
     PetscScalar diag)
 {
   // FIXME: make this process-wise to avoid extra communication step
-  MatZeroRowsLocal(A.mat(), rows.size(), rows.data(), diag, NULL, NULL);
+  //MatZeroRowsLocal(A.mat(), rows.size(), rows.data(), diag, NULL, NULL);
+  for (Eigen::Index i = 0; i < rows.size(); ++i)
+  {
+    const la_index_t row = rows[i];
+    A.add_local(&diag, 1, &row, 1, &row);
+  }
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<la_index_t, Eigen::Dynamic, 1> Assembler::get_local_bc_rows(
@@ -547,8 +552,8 @@ la::PETScMatrix Assembler::get_sub_matrix(const la::PETScMatrix& A, int i,
 }
 //-----------------------------------------------------------------------------
 void Assembler::_assemble_matrix(la::PETScMatrix& A, const Form& a,
-                                const std::vector<std::int32_t>& bc_dofs0,
-                                const std::vector<std::int32_t>& bc_dofs1)
+                                 const std::vector<std::int32_t>& bc_dofs0,
+                                 const std::vector<std::int32_t>& bc_dofs1)
 {
   assert(!A.empty());
 
