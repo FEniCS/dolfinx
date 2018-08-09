@@ -53,7 +53,7 @@ public:
   /// Destructor
   ~Assembler();
 
-  /// Assemble matrix. Dirichlet rows/columns are zeroed, with '1'
+  /// Assemble matrix. Dirichlet rows/columns are zeroed, and '1'
   /// placed on diagonal
   void assemble(la::PETScMatrix& A, BlockType type = BlockType::nested);
 
@@ -66,10 +66,14 @@ public:
 
   /// Add '1' to diagonal for Dirichlet rows. Rows must be local to the
   /// process.
-  static void ident(la::PETScMatrix& A, const function::FunctionSpace& V,
-                    std::vector<std::shared_ptr<const DirichletBC>> bcs);
+  static void ident(la::PETScMatrix& A, const std::vector<la_index_t>& rows,
+                    PetscScalar diag = 1.0);
 
 private:
+  static std::vector<la_index_t>
+  get_local_bc_rows(const function::FunctionSpace& V,
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
   // Get IndexSets (IS) for stacked index maps
   std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);
 
@@ -83,9 +87,14 @@ private:
   // has bc)
   // std::vector<bool> has_dirichlet_bc();
 
-  // Assemble matrix. Dirichlet rows/columns are zeroed.
-  static void assemble(la::PETScMatrix& A, const Form& a,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs);
+  // Assemble matrix, with Dirichlet rows/columns zeroed. The matrix A
+  // must already be initialisd. The matrix may be a proxy, i.e. a view
+  // into a larger matrix, and assembly is performed using local
+  // indices. Matrix is not finalisd.
+  static void
+  assemble_matrix(la::PETScMatrix& A, const Form& a,
+                  const std::vector<std::int32_t>& bc_dofs0,
+                  const std::vector<std::int32_t>& bc_dofs1);
 
   // Assemble vector into sequential PETSc Vec
   static void assemble(Vec b, const Form& L);
@@ -108,6 +117,8 @@ private:
   static void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
                      const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
+  static std::vector<std::int32_t> compute_bc_indices(const DirichletBC& bc);
 
   // Bilinear and linear forms
   std::vector<std::vector<std::shared_ptr<const Form>>> _a;
