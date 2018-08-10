@@ -36,6 +36,8 @@ class Assembler:
         self.form_compiler_parameters = form_compiler_parameters
 
     def assemble(self, A=None, b=None, mat_type=cpp.fem.Assembler.BlockType.monolithic):
+        has_bilinear_forms = len(self.a) != 0 and len(self.a[0]) != 0
+
         if self.assembler is None:
             # Compile forms
             try:
@@ -52,13 +54,14 @@ class Assembler:
             self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
 
         # Create matrix/vector (if required)
-        if A is None:
+        if A is None and has_bilinear_forms:
             A = cpp.la.PETScMatrix()
         if b is None:
             b = cpp.la.PETScVector()
 
         # self.assembler.assemble(A, b)
-        self.assembler.assemble(A, mat_type)
+        if has_bilinear_forms:
+            self.assembler.assemble(A, mat_type)
         self.assembler.assemble(b, mat_type)
         return A, b
 
