@@ -30,8 +30,8 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs)
     : _a(a), _l(L), _bcs(bcs)
 {
-  assert(!a.empty());
-  assert(!a[0].empty());
+  assert(bcs.empty() || !a.empty());
+  assert(bcs.empty() || !a[0].empty());
 
   // TODO:
   // - check that a is rectangular
@@ -54,8 +54,9 @@ Assembler::~Assembler()
 //-----------------------------------------------------------------------------
 void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
 {
-  // Check if matrix should be nested
   assert(!_a.empty());
+
+  // Check if matrix should be nested
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
 
   // Empty bcs (while testing)
@@ -265,7 +266,7 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
   if (b.empty())
   {
     // Build array of pointers to forms
-    std::vector<const Form*> forms(_a.size());
+    std::vector<const Form*> forms(_l.size());
     for (std::size_t i = 0; i < _l.size(); ++i)
       forms[i] = _l[i].get();
 
@@ -301,8 +302,11 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       VecGetArray(b_local, &bvalues);
       Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(bvalues,
                                                                     size);
-      for (std::size_t j = 0; j < _a[i].size(); ++j)
-        apply_bc(bvec, *_a[i][j], _bcs);
+      if (!_bcs.empty())
+      {
+        for (std::size_t j = 0; j < _a[i].size(); ++j)
+          apply_bc(bvec, *_a[i][j], _bcs);
+      }
 
       VecRestoreArray(b_local, &bvalues);
 
@@ -360,8 +364,11 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
       this->assemble(b_vec, *_l[i]);
 
       // Modify RHS for Dirichlet bcs
-      for (std::size_t j = 0; j < _a[i].size(); ++j)
-        apply_bc(b_vec, *_a[i][j], _bcs);
+      if (!_bcs.empty()) 
+      {
+        for (std::size_t j = 0; j < _a[i].size(); ++j)
+          apply_bc(b_vec, *_a[i][j], _bcs);
+      }
 
       // Copy data into PETSc Vector
       for (int j = 0; j < map_size0; ++j)
@@ -406,7 +413,8 @@ void Assembler::assemble(la::PETScVector& b, BlockType block_type)
     VecGetArray(b_local, &bvalues);
     Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(bvalues,
                                                                   size);
-    apply_bc(bvec, *_a[0][0], _bcs);
+    if (!_bcs.empty())
+      apply_bc(bvec, *_a[0][0], _bcs);
     VecRestoreArray(b_local, &bvalues);
 
     // Accumulate ghosts on owning process
