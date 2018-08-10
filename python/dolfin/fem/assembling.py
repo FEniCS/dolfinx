@@ -25,19 +25,14 @@ __all__ = ["assemble_local", "SystemAssembler"]
 
 class Assembler:
     def __init__(self, a, L, bcs=None, form_compiler_parameters=None):
-
-        self.a = a
+        self.a = a if a else [[]]
         self.L = L
-        if bcs is None:
-            self.bcs = []
-        else:
-            self.bcs = bcs
+        self.bcs = bcs if bcs else []
+
         self.assembler = None
         self.form_compiler_parameters = form_compiler_parameters
 
     def assemble(self, A=None, b=None, mat_type=cpp.fem.Assembler.BlockType.monolithic):
-        has_bilinear_forms = len(self.a) != 0 and len(self.a[0]) != 0
-
         if self.assembler is None:
             # Compile forms
             try:
@@ -53,16 +48,21 @@ class Assembler:
             # Create assembler
             self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
 
-        # Create matrix/vector (if required)
-        if A is None and has_bilinear_forms:
-            A = cpp.la.PETScMatrix()
-        if b is None:
-            b = cpp.la.PETScVector()
+        # Check if a bilinear form was specified
+        try:
+            has_bilinear_forms = len(self.a) != 0 and len(self.a[0]) != 0
+        except TypeError:
+            has_bilinear_forms = True
 
-        # self.assembler.assemble(A, b)
+        # Assemble bilinear form
         if has_bilinear_forms:
+            A = A if A else cpp.la.PETScMatrix()
             self.assembler.assemble(A, mat_type)
+
+        # Assemble linear form
+        b = b if b else cpp.la.PETScVector()
         self.assembler.assemble(b, mat_type)
+
         return A, b
 
 
