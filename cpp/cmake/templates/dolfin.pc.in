@@ -1,8 +1,8 @@
 # pkg-config configuration for DOLFIN
 prefix=@CMAKE_INSTALL_PREFIX@
 exec_prefix=@CMAKE_INSTALL_PREFIX@
-libdir=${exec_prefix}/lib
-includedir=${prefix}/include
+libdir=@DOLFIN_LIB_DIR@
+includedir=@DOLFIN_INCLUDE_DIR@
 compiler=@CMAKE_CXX_COMPILER@
 definitions=@PKG_DEFINITIONS@
 extlibs=@DOLFIN_EXT_LIBS@
