@@ -210,6 +210,6 @@ workflows:
           filters:
             branches:
               only:
-                - igor/nightly-build
+                - master
     jobs:
       - build-complex
