@@ -2879,7 +2879,8 @@ XDMFFile::get_point_data_values(const function::Function& u)
   const std::size_t num_local_points = mesh->geometry().num_points();
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
 
-  if (u.value_rank() > 0)
+  const std::size_t value_rank = u.value_rank();
+  if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
     const std::size_t value_size = u.value_size();
@@ -2887,7 +2888,8 @@ XDMFFile::get_point_data_values(const function::Function& u)
     {
       for (std::size_t j = 0; j < value_size; j++)
       {
-        std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
+        std::size_t tensor_2d_offset
+            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
         _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
       }
     }
