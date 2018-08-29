@@ -6,6 +6,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os, matplotlib
+if 'DISPLAY' not in os.environ:
+    matplotlib.use('agg')
+
 import numpy as np
 import matplotlib.pyplot as plt
 import dolfin.cpp.mesh
@@ -15,7 +19,7 @@ from dolfin import *
 # Create mesh
 n = 12
 mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(1, 1, 1)], [
-                      n, n, n], CellType.Type.tetrahedron)
+                      n, n, n], CellType.Type.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
 
 # Print minimum and maximum radius ratio
 qmin, qmax = MeshQuality.radius_ratio_min_max(mesh)

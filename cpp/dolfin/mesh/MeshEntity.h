@@ -125,6 +125,9 @@ public:
   /// dimension.
   inline std::size_t num_entities(std::size_t dim) const
   {
+    if (dim == _dim)
+      return 1;
+
     return _mesh->topology().connectivity(_dim, dim).size(_local_index);
   }
 
@@ -139,6 +142,9 @@ public:
   ///         dimension.
   std::size_t num_global_entities(std::size_t dim) const
   {
+    if (dim == _dim)
+      return 1;
+
     return _mesh->topology().connectivity(_dim, dim).size_global(_local_index);
   }
 
@@ -152,6 +158,9 @@ public:
   ///         The index for incident mesh entities of given dimension.
   const std::int32_t* entities(std::size_t dim) const
   {
+    if (dim == _dim)
+      return &_local_index;
+
     const std::int32_t* initialized_mesh_entities
         = _mesh->topology().connectivity(_dim, dim)(_local_index);
     assert(initialized_mesh_entities);
