@@ -18,9 +18,8 @@ def boundary_value(n):
 # Load mesh and subdomains
 xdmf_mesh = XDMFFile(MPI.comm_world, "dolfin_fine.xdmf")
 mesh = xdmf_mesh.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
-print(mesh)
 sub_domains = xdmf_mesh.read_mf_size_t(mesh)
-print(sub_domains, sub_domains.dim)
+
 h = CellDiameter(mesh)
 
 # Create FunctionSpaces
