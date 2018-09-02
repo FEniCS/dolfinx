@@ -81,7 +81,7 @@ else()
 endif()
 
 #------------------------------------------------------------------------------
-# Add include directories and libs of required packages
+# Add include directories and libraries of required packages
 
 # UFC
 target_include_directories(dolfin SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
@@ -99,9 +99,7 @@ foreach (BOOST_PACKAGE ${DOLFIN_BOOST_COMPONENTS_PRIVATE})
 endforeach()
 
 # MPI
-set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
-target_include_directories(dolfin SYSTEM PUBLIC ${MPI_CXX_INCLUDE_PATH})
+target_link_libraries(dolfin PUBLIC MPI::MPI_CXX)
 
 # PETSc
 target_link_libraries(dolfin PUBLIC PETSC::petsc)
