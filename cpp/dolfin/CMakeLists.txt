@@ -102,7 +102,7 @@ target_include_directories(dolfin SYSTEM PUBLIC ${UFC_INCLUDE_DIRS})
 set(DOLFIN_EIGEN_MAX_ALIGN_BYTES "32" CACHE STRING "\
 Minimum alignment in bytes used for Eigen data structures. Set to 32 for \
 compatibility with AVX user-compiled code and 64 for AVX-512 user-compiled \
-code. Set to 0 for ideal alignment on your CPU. Note that if an architecture \
+code. Set to 0 for ideal alignment according to -march. Note that if an architecture \
 flag (e.g. \"-march=skylake-avx512\") is set for DOLFIN, Eigen will use the \
 appropriate ideal alignment instead if it is stricter. Otherwise, the value \
 of this variable will be used by Eigen for the alignment of all data structures.\\ 
