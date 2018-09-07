@@ -7,9 +7,13 @@ between different finite element spaces."""
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import *
-import matplotlib.pyplot as plt
+import os, matplotlib
+if 'DISPLAY' not in os.environ:
+    matplotlib.use('agg')
 
+from dolfin import *
+from dolfin.plotting import plot
+import matplotlib.pyplot as plt
 
 # Create mesh and define function spaces
 mesh = UnitSquareMesh(MPI.comm_world, 64, 64)

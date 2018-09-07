@@ -103,7 +103,7 @@ def project(v,
     # Solve linear system for projection
     if function is None:
         function = Function(V)
-    cpp.la.solve(A, function.vector(), b, solver_type, preconditioner_type)
+    dolfin.la.solver.solve(A, function.vector(), b, solver_type, preconditioner_type)
 
     return function
 
