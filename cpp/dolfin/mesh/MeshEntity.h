@@ -127,8 +127,8 @@ public:
   {
     if (dim == _dim)
       return 1;
-
-    return _mesh->topology().connectivity(_dim, dim).size(_local_index);
+    else
+      return _mesh->topology().connectivity(_dim, dim).size(_local_index);
   }
 
   /// Return global number of incident mesh entities of given
@@ -144,8 +144,8 @@ public:
   {
     if (dim == _dim)
       return 1;
-
-    return _mesh->topology().connectivity(_dim, dim).size_global(_local_index);
+    else
+      return _mesh->topology().connectivity(_dim, dim).size_global(_local_index);
   }
 
   /// Return array of indices for incident mesh entities of given
@@ -160,11 +160,13 @@ public:
   {
     if (dim == _dim)
       return &_local_index;
-
-    const std::int32_t* initialized_mesh_entities
+    else
+    {
+      const std::int32_t* initialized_mesh_entities
         = _mesh->topology().connectivity(_dim, dim)(_local_index);
-    assert(initialized_mesh_entities);
-    return initialized_mesh_entities;
+      assert(initialized_mesh_entities);
+      return initialized_mesh_entities;
+    }
   }
 
   /// Check if given entity is incident
