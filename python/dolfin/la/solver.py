@@ -9,6 +9,7 @@
 import dolfin.cpp as cpp
 from dolfin import MPI
 
+
 def solve(A, x, b, method="default", preconditioner="default"):
     """Solve linear system Ax = b.
 
