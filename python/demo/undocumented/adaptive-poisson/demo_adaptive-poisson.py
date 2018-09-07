@@ -42,9 +42,7 @@ import numpy
 
 class Boundary(SubDomain):
     def inside(self, x, on_boundary):
-        result = numpy.empty((x.shape[0]), dtype=bool)
-        result.fill(on_boundary)
-        return result
+        return numpy.full(x.shape[:1], on_boundary)
 
 subdomain = Boundary()
 
