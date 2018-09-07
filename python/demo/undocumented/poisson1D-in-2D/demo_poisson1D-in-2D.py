@@ -24,7 +24,7 @@ from dolfin import *
 import numpy
 
 # Create mesh and function space
-squaremesh = UnitSquareMesh(50,2)
+squaremesh = UnitSquareMesh(MPI.comm_world, 50, 2)
 
 boundarymesh = BoundaryMesh(squaremesh, "exterior")
 

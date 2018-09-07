@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 
 # Create mesh and define function spaces
-mesh = UnitSquareMesh(256, 256)
+mesh = UnitSquareMesh(MPI.comm_world, 256, 256)
 V = FunctionSpace(mesh, "CG", 1)
 VV = VectorFunctionSpace(mesh, "CG", 1)
 

@@ -12,16 +12,20 @@ manifolds."""
 # Begin demo
 
 from dolfin import *
+from dolfin import cpp
+from dolfin.io import XDMFFile
 import numpy
 import matplotlib.pyplot as plt
 
 
 # Read mesh
-mesh = Mesh("../sphere_16.xml.gz")
+xdmf = XDMFFile(MPI.comm_world, "sphere_16.xdmf")
+mesh = xdmf.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
+
 
 # Define global normal
-global_normal = Expression(("x[0]", "x[1]", "x[2]"), degree=1)
-mesh.init_cell_orientations(global_normal)
+# global_normal = Expression(("x[0]", "x[1]", "x[2]"), degree=1)
+# mesh.init_cell_orientations(global_normal)
 
 # Define function spaces and basis functions
 RT1 = FiniteElement("RT", mesh.ufl_cell(), 1)
@@ -40,14 +44,14 @@ L = g*v*dx
 
 # Tune some factorization options
 # Avoid factors memory exhaustion due to excessive pivoting
-PETScOptions.set("mat_mumps_icntl_14", 40.0)
-PETScOptions.set("mat_mumps_icntl_7", "0")
+# PETScOptions.set("mat_mumps_icntl_14", 40.0)
+# PETScOptions.set("mat_mumps_icntl_7", "0")
 # Avoid zero pivots on 64-bit SuperLU_dist
-PETScOptions.set("mat_superlu_dist_colperm", "MMD_ATA")
+# PETScOptions.set("mat_superlu_dist_colperm", "MMD_ATA")
 
 # Solve problem
 w = Function(W)
-solve(a == L, w, solver_parameters={"symmetric": True})
+solve(a == L, w)
 (sigma, u, r) = w.split()
 
 # Plot CG1 representation of solutions

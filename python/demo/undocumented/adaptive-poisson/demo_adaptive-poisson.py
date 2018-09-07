@@ -18,8 +18,14 @@ edge (jump) terms and the size of the interpolation constant.
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os, matplotlib
+if 'DISPLAY' not in os.environ:
+    matplotlib.use('agg')
 
 from dolfin import *
+from dolfin.cpp.refinement import refine
+import dolfin
+import dolfin.plotting
 from numpy import array, sqrt
 from math import pow
 
@@ -28,9 +34,17 @@ REFINE_RATIO = 0.50  # Refine 50 % of the cells in each iteration
 MAX_ITER = 20        # Maximal number of iterations
 
 # Create initial mesh
-mesh = UnitSquareMesh(4, 4)
+mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
 source_str = "exp(-100.0*(pow(x[0], 2) + pow(x[1], 2)))"
 source = eval("lambda x: " + source_str)
+
+import numpy
+
+class Boundary(SubDomain):
+    def inside(self, x, on_boundary):
+        return numpy.full(x.shape[:1], on_boundary)
+
+subdomain = Boundary()
 
 # Adaptive algorithm
 for level in range(MAX_ITER):
@@ -45,16 +59,16 @@ for level in range(MAX_ITER):
 
     # Define boundary condition
     u0 = Constant(0.0)
-    bc = DirichletBC(V, u0, DomainBoundary())
+    bc = DirichletBC(V, u0, subdomain)
 
     # Compute solution
     u = Function(V)
     solve(a == L, u, bc)
 
     # Compute error indicators
-    h = array([c.h() for c in cells(mesh)])
-    K = array([c.volume() for c in cells(mesh)])
-    R = array([abs(source([c.midpoint().x(), c.midpoint().y()])) for c in cells(mesh)])
+    h = array([c.h() for c in Cells(mesh)])
+    K = array([c.volume() for c in Cells(mesh)])
+    R = array([abs(source([c.midpoint()[0], c.midpoint()[1]])) for c in Cells(mesh)])
     gamma = h*R*sqrt(K)
 
     # Compute error estimate
@@ -64,18 +78,19 @@ for level in range(MAX_ITER):
 
     # Check convergence
     if E < TOL:
-        info("Success, solution converged after %d iterations" % level)
+        print("Success, solution converged after %d iterations" % level)
         break
 
     # Mark cells for refinement
-    cell_markers = MeshFunction("bool", mesh, mesh.topology.dim)
+    cell_markers = MeshFunction("bool", mesh, mesh.topology.dim, False)
     gamma_0 = sorted(gamma, reverse=True)[int(len(gamma)*REFINE_RATIO)]
     gamma_0 = MPI.max(mesh.mpi_comm(), gamma_0)
-    for c in cells(mesh):
+    for c in Cells(mesh):
         cell_markers[c] = gamma[c.index()] > gamma_0
 
     # Refine mesh
     mesh = refine(mesh, cell_markers)
+    mesh.geometry.coord_mapping = dolfin.fem.create_coordinate_map(mesh)
 
     # Plot mesh
-    plot(mesh)
+    dolfin.plotting.plot(mesh)

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/refinement/refine.h>
 
 #include "casters.h"
@@ -18,9 +19,16 @@ void refinement(py::module& m)
 {
 
   // dolfin::refinement::refine
-  m.def("refine", py::overload_cast<const dolfin::mesh::Mesh&, bool>(
-                      &dolfin::refinement::refine),
+  m.def("refine",
+        py::overload_cast<const dolfin::mesh::Mesh&, bool>(
+            &dolfin::refinement::refine),
         py::arg("mesh"), py::arg("redistribute") = true);
+
+  m.def("refine",
+        py::overload_cast<const dolfin::mesh::Mesh&,
+                          const dolfin::mesh::MeshFunction<bool>&, bool>(
+            &dolfin::refinement::refine),
+        py::arg("mesh"), py::arg("marker"), py::arg("redistribute") = true);
 }
 
 } // namespace dolfin_wrappers
