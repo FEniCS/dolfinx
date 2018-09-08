@@ -37,7 +37,7 @@ def jit_generate(cpp_code, module_name, signature, parameters):
 
 
 def compile_cpp_code(cpp_code, include_dirs=[], libs=[], lib_dirs=[],
-        cxxflags=[]):
+                     cxxflags=[]):
     """Compile a user C(++) string and expose as a Python object with
     pybind11.
     """
