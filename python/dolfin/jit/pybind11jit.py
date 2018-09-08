@@ -68,7 +68,7 @@ def compile_cpp_code(cpp_code, include_dirs=[], libs=[], lib_dirs=[],
     params['build']['include_dirs'] += include_dirs
     params['build']['libs'] += libs
     params['build']['lib_dirs'] += lib_dirs
-    params['build']['cxxflags'] += cxxflags
+    params['build']['cxxflags'] += tuple(cxxflags)
 
     hash_str = cpp_code + cpp.__version__
     module_hash = hashlib.md5(hash_str.encode('utf-8')).hexdigest()
