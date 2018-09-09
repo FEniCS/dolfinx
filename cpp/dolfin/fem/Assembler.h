@@ -66,11 +66,11 @@ public:
 
   /// Add '1' to diagonal for Dirichlet rows. Rows must be local to the
   /// process.
-  static void ident(la::PETScMatrix& A, const std::vector<la_index_t>& rows,
+  static void ident(la::PETScMatrix& A, const std::vector<PetscInt>& rows,
                     PetscScalar diag = 1.0);
 
 private:
-  static std::vector<la_index_t>
+  static std::vector<PetscInt>
   get_local_bc_rows(const function::FunctionSpace& V,
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 

@@ -38,7 +38,7 @@ std::vector<std::size_t> GenericDofMap::tabulate_local_to_global_dofs() const
   return local_to_global_map;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index_t> GenericDofMap::dofs(const mesh::Mesh& mesh,
+std::vector<PetscInt> GenericDofMap::dofs(const mesh::Mesh& mesh,
                                                     std::size_t dim) const
 {
   // Check number of dofs per entity (on each cell)
@@ -46,10 +46,10 @@ std::vector<dolfin::la_index_t> GenericDofMap::dofs(const mesh::Mesh& mesh,
 
   // Return empty vector if not dofs on requested entity
   if (num_dofs_per_entity == 0)
-    return std::vector<dolfin::la_index_t>();
+    return std::vector<PetscInt>();
 
   // Vector to hold list of dofs
-  std::vector<dolfin::la_index_t> dof_list(mesh.num_entities(dim)
+  std::vector<PetscInt> dof_list(mesh.num_entities(dim)
                                            * num_dofs_per_entity);
 
   // Iterate over cells
@@ -70,7 +70,7 @@ std::vector<dolfin::la_index_t> GenericDofMap::dofs(const mesh::Mesh& mesh,
       for (std::size_t i = 0; i < entity_dofs_local.size(); ++i)
       {
         const std::size_t entity_dof_local = entity_dofs_local[i];
-        const dolfin::la_index_t dof_index = cell_dof_list[entity_dof_local];
+        const PetscInt dof_index = cell_dof_list[entity_dof_local];
         assert(e.index() * num_dofs_per_entity + i < dof_list.size());
         dof_list[e.index() * num_dofs_per_entity + i] = dof_index;
       }
@@ -82,7 +82,7 @@ std::vector<dolfin::la_index_t> GenericDofMap::dofs(const mesh::Mesh& mesh,
   return dof_list;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index_t>
+std::vector<PetscInt>
 GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
                            const std::vector<std::size_t>& entity_indices) const
 {
@@ -95,7 +95,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
 
   // Allocate the the array to return
   const std::size_t num_marked_entities = entity_indices.size();
-  std::vector<dolfin::la_index_t> entity_to_dofs(num_marked_entities
+  std::vector<PetscInt> entity_to_dofs(num_marked_entities
                                                  * dofs_per_entity);
 
   // Allocate data for tabulating local to local map
@@ -131,7 +131,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
     for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
     {
       // Map dofs
-      const dolfin::la_index_t global_dof
+      const PetscInt global_dof
           = cell_dof_list[local_to_local_map[local_dof]];
       entity_to_dofs[dofs_per_entity * i + local_dof] = global_dof;
     }
@@ -139,7 +139,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
   return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------
-std::vector<dolfin::la_index_t>
+std::vector<PetscInt>
 GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
 {
   // Get some dimensions
@@ -151,7 +151,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
   mesh.init(entity_dim, top_dim);
 
   // Allocate the the array to return
-  std::vector<dolfin::la_index_t> entity_to_dofs(num_mesh_entities
+  std::vector<PetscInt> entity_to_dofs(num_mesh_entities
                                                  * dofs_per_entity);
 
   // Allocate data for tabulating local to local map
@@ -185,7 +185,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
     for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
     {
       // Map dofs
-      const dolfin::la_index_t global_dof
+      const PetscInt global_dof
           = cell_dof_list[local_to_local_map[local_dof]];
       entity_to_dofs[dofs_per_entity * entity.index() + local_dof] = global_dof;
     }

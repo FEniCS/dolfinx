@@ -39,10 +39,10 @@ la::SparsityPattern SparsityPatternBuilder::build(
   la::SparsityPattern pattern(comm, index_maps);
 
   // Array to store macro-dofs, if required (for interior facets)
-  std::array<EigenArrayXlaindex, 2> macro_dofs;
+  std::array<EigenArrayXpetscint, 2> macro_dofs;
 
   // Create vector to point to dofs
-  // std::array<common::ArrayView<const dolfin::la_index_t>, 2> dofs;
+  // std::array<common::ArrayView<const PetscInt>, 2> dofs;
 
   // Build sparsity pattern for reals (globally supported basis members)
   // NOTE: It is very important that this is done before other integrals
@@ -79,7 +79,7 @@ la::SparsityPattern SparsityPatternBuilder::build(
     // mesh.init(0);
     // mesh.init(0, D);
 
-    // std::array<std::vector<dolfin::la_index_t>, 2> global_dofs;
+    // std::array<std::vector<PetscInt>, 2> global_dofs;
     // std::array<std::vector<int>, 2> local_to_local_dofs;
 
     // // Resize local dof map vector
@@ -112,7 +112,7 @@ la::SparsityPattern SparsityPatternBuilder::build(
     //   }
 
     //   // Insert non-zeroes in sparsity pattern
-    //   std::array<common::ArrayView<const dolfin::la_index_t>, 2>
+    //   std::array<common::ArrayView<const PetscInt>, 2>
     //   global_dofs_p; for (std::size_t i = 0; i < 2; ++i)
     //     global_dofs_p[i].set(global_dofs[i]);
     //   pattern.insert_local(global_dofs_p);
@@ -196,16 +196,16 @@ la::SparsityPattern SparsityPatternBuilder::build(
           "Add diagonal with non-matching block sizes not working yet.");
     std::size_t bs = index_maps[0]->block_size();
 
-    std::vector<dolfin::la_index_t> indices(
+    std::vector<PetscInt> indices(
         bs * (diagonal_range - primary_range[0]));
     std::iota(indices.begin(), indices.end(), bs * primary_range[0]);
 
-    // const std::array<common::ArrayView<const dolfin::la_index_t>, 2> diags
-    //     = {{common::ArrayView<const dolfin::la_index_t>(indices.size(),
+    // const std::array<common::ArrayView<const PetscInt>, 2> diags
+    //     = {{common::ArrayView<const PetscInt>(indices.size(),
     //                                                     indices.data()),
-    //         common::ArrayView<const dolfin::la_index_t>(indices.size(),
+    //         common::ArrayView<const PetscInt>(indices.size(),
     //                                                     indices.data())}};
-    Eigen::Map<const EigenArrayXlaindex> rows(indices.data(), indices.size());
+    Eigen::Map<const EigenArrayXpetscint> rows(indices.data(), indices.size());
     pattern.insert_global(rows, rows);
   }
 

@@ -167,25 +167,25 @@ private:
       la::PETScMatrix& tensor, std::vector<PetscScalar>& Ae,
       std::vector<PetscScalar>& macro_A,
       const std::array<bool, 2>& add_local_tensor,
-      const std::array<std::vector<common::ArrayView<const la_index_t>>, 2>&
+      const std::array<std::vector<common::ArrayView<const PetscInt>>, 2>&
           cell_dofs);
 
   static void
   apply_bc(PetscScalar* A, PetscScalar* b,
            const std::vector<DirichletBC::Map>& boundary_values,
-           const common::ArrayView<const dolfin::la_index_t>& global_dofs0,
-           const common::ArrayView<const dolfin::la_index_t>& global_dofs1);
+           const common::ArrayView<const PetscInt>& global_dofs0,
+           const common::ArrayView<const PetscInt>& global_dofs1);
 
   // Return true if cell has an Dirichlet/essential boundary
   // condition applied
   static bool has_bc(const DirichletBC::Map& boundary_values,
-                     const common::ArrayView<const dolfin::la_index_t>& dofs);
+                     const common::ArrayView<const PetscInt>& dofs);
 
   // Return true if element matrix is required
   static bool
   cell_matrix_required(const la::PETScMatrix* A, const void* integral,
                        const std::vector<DirichletBC::Map>& boundary_values,
-                       const common::ArrayView<const dolfin::la_index_t>& dofs);
+                       const common::ArrayView<const PetscInt>& dofs);
 };
 } // namespace fem
 } // namespace dolfin

@@ -190,8 +190,8 @@ std::array<std::int64_t, 2> PETScMatrix::local_range(std::size_t dim) const
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const PetscScalar* block, std::size_t m,
-                      const dolfin::la_index_t* rows, std::size_t n,
-                      const dolfin::la_index_t* cols)
+                      const PetscInt* rows, std::size_t n,
+                      const PetscInt* cols)
 {
   assert(_matA);
   PetscErrorCode ierr
@@ -201,8 +201,8 @@ void PETScMatrix::set(const PetscScalar* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set_local(const PetscScalar* block, std::size_t m,
-                            const dolfin::la_index_t* rows, std::size_t n,
-                            const dolfin::la_index_t* cols)
+                            const PetscInt* rows, std::size_t n,
+                            const PetscInt* cols)
 {
   assert(_matA);
   PetscErrorCode ierr
@@ -212,8 +212,8 @@ void PETScMatrix::set_local(const PetscScalar* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add(const PetscScalar* block, std::size_t m,
-                      const dolfin::la_index_t* rows, std::size_t n,
-                      const dolfin::la_index_t* cols)
+                      const PetscInt* rows, std::size_t n,
+                      const PetscInt* cols)
 {
   assert(_matA);
   PetscErrorCode ierr
@@ -223,8 +223,8 @@ void PETScMatrix::add(const PetscScalar* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add_local(const PetscScalar* block, std::size_t m,
-                            const dolfin::la_index_t* rows, std::size_t n,
-                            const dolfin::la_index_t* cols)
+                            const PetscInt* rows, std::size_t n,
+                            const PetscInt* cols)
 {
   assert(_matA);
   PetscErrorCode ierr

@@ -155,15 +155,15 @@ public:
   /// @param     cell_index (std::size_t)
   ///         The cell index.
   ///
-  /// @return         Eigen::Map<const Eigen::Array<dolfin::la_index_t,
+  /// @return         Eigen::Map<const Eigen::Array<PetscInt,
   /// Eigen::Dynamic, 1>>
-  Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>
+  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   cell_dofs(std::size_t cell_index) const
   {
     const std::size_t index = cell_index * _cell_dimension;
     assert(index + _cell_dimension <= _dofmap.size());
     return Eigen::Map<
-        const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>(
+        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
         &_dofmap[index], _cell_dimension);
   }
 
@@ -250,7 +250,7 @@ private:
                                       const mesh::Mesh& mesh);
 
   // Cell-local-to-dof map (dofs for cell dofmap[i])
-  std::vector<dolfin::la_index_t> _dofmap;
+  std::vector<PetscInt> _dofmap;
 
   // List of global nodes
   std::set<std::size_t> _global_nodes;

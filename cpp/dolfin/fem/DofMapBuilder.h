@@ -50,7 +50,7 @@ public:
   /// @param[in] dolfin_mesh
   static std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
                     std::vector<int>, std::unordered_map<int, std::vector<int>>,
-                    std::set<int>, std::vector<dolfin::la_index_t>>
+                    std::set<int>, std::vector<PetscInt>>
   build(const ufc_dofmap& ufc_map, const mesh::Mesh& dolfin_mesh);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
@@ -60,7 +60,7 @@ public:
   /// @param[in] component
   /// @param[in] mesh
   static std::tuple<std::unique_ptr<const ufc_dofmap>, std::int64_t,
-                    std::int64_t, std::vector<dolfin::la_index_t>>
+                    std::int64_t, std::vector<PetscInt>>
   build_sub_map_view(const ufc_dofmap& parent_ufc_dofmap,
                      const std::vector<int>& parent_ufc_local_to_local,
                      const int parent_block_size,
@@ -70,7 +70,7 @@ public:
 
 private:
   // Build simple local UFC-based dofmap data structure
-  static std::vector<std::vector<dolfin::la_index_t>>
+  static std::vector<std::vector<PetscInt>>
   build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
 
   // Compute which process 'owns' each node (point at which dofs live)
@@ -88,14 +88,14 @@ private:
   static std::tuple<int, std::vector<short int>,
                     std::unordered_map<int, std::vector<int>>, std::set<int>>
   compute_node_ownership(
-      const std::vector<std::vector<la_index_t>>& node_dofmap,
+      const std::vector<std::vector<PetscInt>>& node_dofmap,
       const std::vector<int>& boundary_nodes,
       const std::vector<std::size_t>& node_local_to_global,
       const mesh::Mesh& mesh, const std::size_t global_dim);
 
   // Build dofmap based on re-ordered nodes
-  static std::vector<std::vector<la_index_t>>
-  build_dofmap(const std::vector<std::vector<la_index_t>>& node_dofmap,
+  static std::vector<std::vector<PetscInt>>
+  build_dofmap(const std::vector<std::vector<PetscInt>>& node_dofmap,
                const std::vector<int>& old_to_new_node_local,
                const std::size_t block_size);
 
@@ -123,7 +123,7 @@ private:
   // Build graph from UFC 'node' dofmap. Returns (ufc_dofmap,
   // node_dofmap, node_local_to_global)
   static std::tuple<std::unique_ptr<const ufc_dofmap>,
-                    std::vector<std::vector<la_index_t>>,
+                    std::vector<std::vector<PetscInt>>,
                     std::vector<std::size_t>>
   build_ufc_node_graph(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh,
                        const std::size_t block_size);
@@ -133,7 +133,7 @@ private:
   // nodes in ghost layer of other processes are marked -2, and
   // ghost nodes are marked as -3
   static std::vector<int>
-  compute_shared_nodes(const std::vector<std::vector<la_index_t>>& node_dofmap,
+  compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
                        const std::size_t num_nodes_local,
                        const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
 
@@ -144,7 +144,7 @@ private:
       const std::unordered_map<int, std::vector<int>>&
           node_to_sharing_processes,
       const std::vector<std::size_t>& old_local_to_global,
-      const std::vector<std::vector<la_index_t>>& node_dofmap,
+      const std::vector<std::vector<PetscInt>>& node_dofmap,
       const std::vector<short int>& node_ownership, const MPI_Comm mpi_comm);
 
   static void
