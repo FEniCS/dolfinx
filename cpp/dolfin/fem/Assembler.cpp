@@ -198,7 +198,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
           this->assemble_matrix(mat, *_a[i][j], bc_dofs0, bc_dofs1);
           if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
           {
-            const std::vector<la_index_t> rows
+            const std::vector<PetscInt> rows
                 = get_local_bc_rows(*_a[i][j]->function_space(0), _bcs);
             ident(mat, rows);
           }
@@ -236,7 +236,7 @@ void Assembler::assemble(la::PETScMatrix& A, BlockType block_type)
     this->assemble_matrix(A, *_a[0][0], bc_dofs0, bc_dofs1);
     if (*_a[0][0]->function_space(0) == *_a[0][0]->function_space(1))
     {
-      const std::vector<la_index_t> rows
+      const std::vector<PetscInt> rows
           = get_local_bc_rows(*_a[0][0]->function_space(0), _bcs);
       ident(A, rows);
     }
@@ -437,14 +437,14 @@ void Assembler::assemble(la::PETScMatrix& A, la::PETScVector& b)
   assemble(b);
 }
 //-----------------------------------------------------------------------------
-void Assembler::ident(la::PETScMatrix& A, const std::vector<la_index_t>& rows,
+void Assembler::ident(la::PETScMatrix& A, const std::vector<PetscInt>& rows,
                       PetscScalar diag)
 {
   for (auto row : rows)
     A.add_local(&diag, 1, &row, 1, &row);
 }
 //-----------------------------------------------------------------------------
-std::vector<la_index_t> Assembler::get_local_bc_rows(
+std::vector<PetscInt> Assembler::get_local_bc_rows(
     const function::FunctionSpace& V,
     std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
@@ -471,10 +471,10 @@ std::vector<la_index_t> Assembler::get_local_bc_rows(
 
   auto map = V.dofmap()->index_map();
   int local_size = map->block_size() * map->size_local();
-  std::vector<la_index_t> rows;
+  std::vector<PetscInt> rows;
   for (auto bc : boundary_values)
   {
-    la_index_t row = bc.first;
+    PetscInt row = bc.first;
     if (row < local_size)
       rows.push_back(row);
   }
@@ -598,9 +598,9 @@ void Assembler::assemble_matrix(la::PETScMatrix& A, const Form& a,
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get dof maps for cell
-    Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>> dmap0
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
         = map0.cell_dofs(cell.index());
-    Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>> dmap1
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
         = map1.cell_dofs(cell.index());
 
     Ae.resize(dmap0.size(), dmap1.size());

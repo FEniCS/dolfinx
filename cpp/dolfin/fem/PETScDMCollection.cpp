@@ -484,7 +484,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // Initialise row and column indices and values of the transfer
   // matrix
-  Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, Eigen::Dynamic,
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic,
                Eigen::RowMajor>
       col_indices(m_owned, eldim);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -493,8 +493,8 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // Initialise global sparsity pattern: record on-process and
   // off-process dependencies of fine dofs
-  std::vector<std::vector<dolfin::la_index_t>> send_dnnz(mpi_size);
-  std::vector<std::vector<dolfin::la_index_t>> send_onnz(mpi_size);
+  std::vector<std::vector<PetscInt>> send_dnnz(mpi_size);
+  std::vector<std::vector<PetscInt>> send_onnz(mpi_size);
 
   // Initialise local to global dof maps (needed to allocate the
   // entries of the transfer matrix with the correct global indices)
@@ -564,24 +564,24 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   // row we also keep track of the ownership range
   std::size_t mbegin = m[0];
   std::size_t mend = m[1];
-  std::vector<dolfin::la_index_t> recv_onnz;
+  std::vector<PetscInt> recv_onnz;
   MPI::all_to_all(mpi_comm, send_onnz, recv_onnz);
 
-  std::vector<dolfin::la_index_t> onnz(m[1] - m[0], 0);
+  std::vector<PetscInt> onnz(m[1] - m[0], 0);
   for (const auto& q : recv_onnz)
   {
-    assert(q >= (dolfin::la_index_t)mbegin and q < (dolfin::la_index_t)mend);
+    assert(q >= (PetscInt)mbegin and q < (PetscInt)mend);
     ++onnz[q - mbegin];
   }
 
   // Communicate on-process columns nnz, and flatten to get nnz per
   // row
-  std::vector<dolfin::la_index_t> recv_dnnz;
+  std::vector<PetscInt> recv_dnnz;
   MPI::all_to_all(mpi_comm, send_dnnz, recv_dnnz);
-  std::vector<dolfin::la_index_t> dnnz(m[1] - m[0], 0);
+  std::vector<PetscInt> dnnz(m[1] - m[0], 0);
   for (const auto& q : recv_dnnz)
   {
-    assert(q >= (dolfin::la_index_t)mbegin and q < (dolfin::la_index_t)mend);
+    assert(q >= (PetscInt)mbegin and q < (PetscInt)mend);
     ++dnnz[q - mbegin];
   }
 

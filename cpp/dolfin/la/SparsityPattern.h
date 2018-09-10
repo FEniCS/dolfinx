@@ -68,18 +68,18 @@ public:
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
   /// Insert non-zero entries using global indices
-  void insert_global(const Eigen::Ref<const EigenArrayXlaindex> rows,
-                     const Eigen::Ref<const EigenArrayXlaindex> cols);
+  void insert_global(const Eigen::Ref<const EigenArrayXpetscint> rows,
+                     const Eigen::Ref<const EigenArrayXpetscint> cols);
 
   /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(const Eigen::Ref<const EigenArrayXlaindex> rows,
-                    const Eigen::Ref<const EigenArrayXlaindex> cols);
+  void insert_local(const Eigen::Ref<const EigenArrayXpetscint> rows,
+                    const Eigen::Ref<const EigenArrayXpetscint> cols);
 
   // FIXME: Remove?
   /// Insert non-zero entries using local (process-wise) indices for the
   /// primary dimension and global indices for the co-dimension
-  void insert_local_global(const Eigen::Ref<const EigenArrayXlaindex> rows,
-                           const Eigen::Ref<const EigenArrayXlaindex> cols);
+  void insert_local_global(const Eigen::Ref<const EigenArrayXpetscint> rows,
+                           const Eigen::Ref<const EigenArrayXpetscint> cols);
 
   /// Insert full rows (or columns, according to primary dimension)
   /// using local (process-wise) indices. This must be called before any
@@ -138,9 +138,9 @@ private:
   void insert_entries(
       const Eigen::Ref<const EigenArrayXi32> rows,
       const Eigen::Ref<const EigenArrayXi32> cols,
-      const std::function<la_index_t(const la_index_t,
+      const std::function<PetscInt(const PetscInt,
                                      const common::IndexMap&)>& row_map,
-      const std::function<la_index_t(const la_index_t,
+      const std::function<PetscInt(const PetscInt,
                                      const common::IndexMap&)>& col_map);
 
   // Print some useful information

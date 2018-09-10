@@ -55,7 +55,7 @@ std::int32_t IndexMap::size_local() const
 //-----------------------------------------------------------------------------
 std::int64_t IndexMap::size_global() const { return _all_ranges.back(); }
 //-----------------------------------------------------------------------------
-const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& IndexMap::ghosts() const
+const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
 {
   return _ghosts;
 }

@@ -36,7 +36,7 @@ PETScVector::PETScVector(const common::IndexMap& map)
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
-    const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& ghost_indices,
+    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
     int block_size)
     : _x(nullptr)
 {
@@ -235,7 +235,7 @@ void PETScVector::add_local(const std::vector<PetscScalar>& values)
 }
 //-----------------------------------------------------------------------------
 void PETScVector::get_local(PetscScalar* block, std::size_t m,
-                            const dolfin::la_index_t* rows) const
+                            const PetscInt* rows) const
 {
   if (m == 0)
     return;
@@ -276,7 +276,7 @@ void PETScVector::get_local(PetscScalar* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set(const PetscScalar* block, std::size_t m,
-                      const dolfin::la_index_t* rows)
+                      const PetscInt* rows)
 {
   assert(_x);
   PetscErrorCode ierr = VecSetValues(_x, m, rows, block, INSERT_VALUES);
@@ -284,7 +284,7 @@ void PETScVector::set(const PetscScalar* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_local(const PetscScalar* block, std::size_t m,
-                            const dolfin::la_index_t* rows)
+                            const PetscInt* rows)
 {
   assert(_x);
   PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, INSERT_VALUES);
@@ -292,7 +292,7 @@ void PETScVector::set_local(const PetscScalar* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add(const PetscScalar* block, std::size_t m,
-                      const dolfin::la_index_t* rows)
+                      const PetscInt* rows)
 {
   assert(_x);
   PetscErrorCode ierr = VecSetValues(_x, m, rows, block, ADD_VALUES);
@@ -300,7 +300,7 @@ void PETScVector::add(const PetscScalar* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScVector::add_local(const PetscScalar* block, std::size_t m,
-                            const dolfin::la_index_t* rows)
+                            const PetscInt* rows)
 {
   assert(_x);
   PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, ADD_VALUES);
@@ -534,7 +534,7 @@ std::string PETScVector::str(bool verbose) const
 }
 //-----------------------------------------------------------------------------
 void PETScVector::gather(PETScVector& y,
-                         const std::vector<dolfin::la_index_t>& indices) const
+                         const std::vector<PetscInt>& indices) const
 {
   assert(_x);
   PetscErrorCode ierr;

@@ -208,7 +208,7 @@ la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
   std::vector<std::size_t> ghosts;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& field_ghosts
+    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& field_ghosts
         = index_maps[i]->ghosts();
     for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
     {
@@ -278,7 +278,7 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
 
     // Set zeros in dense rows in order of increasing column index
     const PetscScalar block = 0.0;
-    dolfin::la_index_t IJ[2];
+    PetscInt IJ[2];
     for (Eigen::Index i = 0; i < global_dofs.size(); ++i)
     {
       const std::int64_t I = index_map_0.local_to_global(global_dofs[i]);
@@ -310,7 +310,7 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
 
     for (std::int64_t i = row_range[0]; i < range; i++)
     {
-      const dolfin::la_index_t _i = i;
+      const PetscInt _i = i;
       A.set(&block, 1, &_i, 1, &_i);
     }
 

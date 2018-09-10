@@ -31,7 +31,7 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, std::unique_ptr<common::IndexMap>, std::vector<int>,
            std::unordered_map<int, std::vector<int>>, std::set<int>,
-           std::vector<dolfin::la_index_t>>
+           std::vector<PetscInt>>
 DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 {
   common::Timer t0("Init dofmap");
@@ -55,7 +55,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   // - node dofmap (node_dofmap)
   // - local-to-global node indices (node_local_to_global)
   std::vector<std::size_t> node_local_to_global0;
-  std::vector<std::vector<la_index_t>> node_graph0;
+  std::vector<std::vector<PetscInt>> node_graph0;
   std::unique_ptr<const ufc_dofmap> ufc_node_dofmap;
   std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0)
       = build_ufc_node_graph(ufc_map, mesh, bs);
@@ -71,7 +71,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   assert(global_dimension % bs == 0);
 
   // Dynamic data structure to build dofmap graph
-  std::vector<std::vector<la_index_t>> dofmap_graph;
+  std::vector<std::vector<PetscInt>> dofmap_graph;
 
   // Re-order and switch to local indexing in dofmap when distributed
   // for process locality and set local_range
@@ -130,7 +130,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   dofmap_graph = build_dofmap(node_graph0, node_old_to_new_local, bs);
 
   // Build flattened dofmap graph
-  std::vector<dolfin::la_index_t> cell_dofmap;
+  std::vector<PetscInt> cell_dofmap;
   for (auto const& cell_dofs : dofmap_graph)
     cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
 
@@ -150,7 +150,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::unique_ptr<const ufc_dofmap>, std::int64_t, std::int64_t,
-           std::vector<dolfin::la_index_t>>
+           std::vector<PetscInt>>
 DofMapBuilder::build_sub_map_view(
     const ufc_dofmap& parent_ufc_dofmap,
     const std::vector<int>& parent_ufc_local_to_local,
@@ -180,7 +180,7 @@ DofMapBuilder::build_sub_map_view(
 
   // Build local UFC-based dof map for sub-dofmap (dynamic data
   // structure to build dofmap graph)
-  std::vector<std::vector<la_index_t>> sub_dofmap_graph
+  std::vector<std::vector<PetscInt>> sub_dofmap_graph
       = build_local_ufc_dofmap(*ufc_sub_dofmap, mesh);
 
   // Add offset to local UFC dofmap
@@ -227,7 +227,7 @@ DofMapBuilder::build_sub_map_view(
   }
 
   // Construct flattened dofmap
-  std::vector<dolfin::la_index_t> cell_dofmap;
+  std::vector<PetscInt> cell_dofmap;
   for (auto const& cell_dofs : sub_dofmap_graph)
     cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
 
@@ -235,7 +235,7 @@ DofMapBuilder::build_sub_map_view(
                          std::move(global_dimension), std::move(cell_dofmap));
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<dolfin::la_index_t>>
+std::vector<std::vector<PetscInt>>
 DofMapBuilder::build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap,
                                       const mesh::Mesh& mesh)
 {
@@ -264,8 +264,8 @@ DofMapBuilder::build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap,
     entity_indices[d].resize(mesh.type().num_entities(d));
 
   // Build dofmap from ufc_dofmap
-  std::vector<std::vector<dolfin::la_index_t>> dofmap(
-      mesh.num_cells(), std::vector<la_index_t>(ufc_dofmap.num_element_dofs));
+  std::vector<std::vector<PetscInt>> dofmap(
+      mesh.num_cells(), std::vector<PetscInt>(ufc_dofmap.num_element_dofs));
   std::vector<int64_t> dof_holder(ufc_dofmap.num_element_dofs);
   std::vector<const int64_t*> _entity_indices(entity_indices.size());
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -288,7 +288,7 @@ DofMapBuilder::build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap,
 std::tuple<int, std::vector<short int>,
            std::unordered_map<int, std::vector<int>>, std::set<int>>
 DofMapBuilder::compute_node_ownership(
-    const std::vector<std::vector<la_index_t>>& dofmap,
+    const std::vector<std::vector<PetscInt>>& dofmap,
     const std::vector<int>& shared_nodes,
     const std::vector<std::size_t>& local_to_global, const mesh::Mesh& mesh,
     const std::size_t global_dim)
@@ -587,7 +587,7 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc_dofmap& ufc_dofmap,
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::unique_ptr<const ufc_dofmap>,
-           std::vector<std::vector<la_index_t>>, std::vector<std::size_t>>
+           std::vector<std::vector<PetscInt>>, std::vector<std::size_t>>
 DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
                                     const mesh::Mesh& mesh,
                                     const std::size_t block_size)
@@ -645,7 +645,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   }
 
   // Allocate space for dof map
-  std::vector<std::vector<la_index_t>> node_dofmap(mesh.num_cells());
+  std::vector<std::vector<PetscInt>> node_dofmap(mesh.num_cells());
 
   // Get standard local elem2ent dimension
   const std::size_t local_dim = dofmaps[0]->num_element_dofs;
@@ -673,7 +673,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Get reference to container for cell dofs
-    std::vector<la_index_t>& cell_nodes = node_dofmap[cell.index()];
+    std::vector<PetscInt>& cell_nodes = node_dofmap[cell.index()];
     cell_nodes.resize(local_dim);
 
     // Tabulate standard UFC dof map for first space (local)
@@ -711,7 +711,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 }
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapBuilder::compute_shared_nodes(
-    const std::vector<std::vector<la_index_t>>& node_dofmap,
+    const std::vector<std::vector<PetscInt>>& node_dofmap,
     const std::size_t num_nodes_local, const ufc_dofmap& ufc_dofmap,
     const mesh::Mesh& mesh)
 {
@@ -730,7 +730,7 @@ std::vector<int> DofMapBuilder::compute_shared_nodes(
   bool has_ghost_cells = false;
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    const std::vector<la_index_t>& cell_nodes = node_dofmap[c.index()];
+    const std::vector<PetscInt>& cell_nodes = node_dofmap[c.index()];
     if (c.is_shared())
     {
       const int status = (c.is_ghost()) ? -3 : -2;
@@ -776,7 +776,7 @@ std::vector<int> DofMapBuilder::compute_shared_nodes(
     const mesh::Cell cell0(mesh, f.entities(D)[0]);
 
     // Tabulate dofs (local) on cell
-    const std::vector<la_index_t>& cell_nodes = node_dofmap[cell0.index()];
+    const std::vector<PetscInt>& cell_nodes = node_dofmap[cell0.index()];
 
     // Tabulate which dofs are on the facet
     ufc_dofmap.tabulate_facet_dofs(facet_nodes.data(), cell0.index(f));
@@ -799,7 +799,7 @@ std::pair<std::vector<int>, std::vector<std::size_t>>
 DofMapBuilder::compute_node_reordering(
     const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
     const std::vector<std::size_t>& old_local_to_global,
-    const std::vector<std::vector<la_index_t>>& node_dofmap,
+    const std::vector<std::vector<PetscInt>>& node_dofmap,
     const std::vector<short int>& node_ownership, MPI_Comm mpi_comm)
 {
   // Count number of locally owned nodes
@@ -850,7 +850,7 @@ DofMapBuilder::compute_node_reordering(
   for (std::size_t cell = 0; cell < node_dofmap.size(); ++cell)
   {
     // Cell dofmaps with old local indices
-    const std::vector<la_index_t>& nodes = node_dofmap[cell];
+    const std::vector<PetscInt>& nodes = node_dofmap[cell];
     std::vector<int> local_old;
 
     // Loop over nodes collecting valid local nodes
@@ -986,12 +986,12 @@ DofMapBuilder::compute_node_reordering(
                         std::move(local_to_global_unowned));
 }
 //-----------------------------------------------------------------------------
-std::vector<std::vector<la_index_t>> DofMapBuilder::build_dofmap(
-    const std::vector<std::vector<la_index_t>>& node_dofmap,
+std::vector<std::vector<PetscInt>> DofMapBuilder::build_dofmap(
+    const std::vector<std::vector<PetscInt>>& node_dofmap,
     const std::vector<int>& old_to_new_node_local, const std::size_t block_size)
 {
   // Build dofmap looping over nodes
-  std::vector<std::vector<la_index_t>> dofmap(node_dofmap.size());
+  std::vector<std::vector<PetscInt>> dofmap(node_dofmap.size());
   for (std::size_t i = 0; i < node_dofmap.size(); ++i)
   {
     const std::size_t local_dim0 = node_dofmap[i].size();

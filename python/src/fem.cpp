@@ -138,19 +138,19 @@ void fem(py::module& m)
       .def("neighbours", &dolfin::fem::GenericDofMap::neighbours)
       .def("shared_nodes", &dolfin::fem::GenericDofMap::shared_nodes)
       .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
-      .def("dofs", (std::vector<dolfin::la_index_t>(
+      .def("dofs", (std::vector<PetscInt>(
                        dolfin::fem::GenericDofMap::*)() const)
                        & dolfin::fem::GenericDofMap::dofs)
       .def("dofs",
-           (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)(
+           (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)(
                const dolfin::mesh::Mesh&, std::size_t) const)
                & dolfin::fem::GenericDofMap::dofs)
       .def("entity_dofs",
-           (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)(
+           (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)(
                const dolfin::mesh::Mesh&, std::size_t) const)
                & dolfin::fem::GenericDofMap::entity_dofs)
       .def("entity_dofs",
-           (std::vector<dolfin::la_index_t>(dolfin::fem::GenericDofMap::*)(
+           (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)(
                const dolfin::mesh::Mesh&, std::size_t,
                const std::vector<std::size_t>&) const)
                & dolfin::fem::GenericDofMap::entity_dofs)

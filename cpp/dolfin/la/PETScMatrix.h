@@ -88,23 +88,23 @@ public:
 
   /// Set block of values using global indices
   void set(const PetscScalar* block, std::size_t m,
-           const dolfin::la_index_t* rows, std::size_t n,
-           const dolfin::la_index_t* cols);
+           const PetscInt* rows, std::size_t n,
+           const PetscInt* cols);
 
   /// Set block of values using local indices
   void set_local(const PetscScalar* block, std::size_t m,
-                 const dolfin::la_index_t* rows, std::size_t n,
-                 const dolfin::la_index_t* cols);
+                 const PetscInt* rows, std::size_t n,
+                 const PetscInt* cols);
 
   /// Add block of values using global indices
   void add(const PetscScalar* block, std::size_t m,
-           const dolfin::la_index_t* rows, std::size_t n,
-           const dolfin::la_index_t* cols);
+           const PetscInt* rows, std::size_t n,
+           const PetscInt* cols);
 
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m,
-                 const dolfin::la_index_t* rows, std::size_t n,
-                 const dolfin::la_index_t* cols);
+                 const PetscInt* rows, std::size_t n,
+                 const PetscInt* cols);
 
   /// Return norm of matrix
   double norm(la::Norm norm_type) const;
