@@ -20,7 +20,8 @@ using namespace dolfin::fem;
 
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble(
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        A,
     UFC& ufc, const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
     const mesh::Cell& cell, const mesh::MeshFunction<std::size_t>* cell_domains,
     const mesh::MeshFunction<std::size_t>* exterior_facet_domains,
@@ -68,7 +69,8 @@ void LocalAssembler::assemble(
 }
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_cell(
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        A,
     UFC& ufc, const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
     const mesh::Cell& cell, const mesh::MeshFunction<std::size_t>* cell_domains)
 {
@@ -110,7 +112,8 @@ void LocalAssembler::assemble_cell(
 }
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_exterior_facet(
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        A,
     UFC& ufc, const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
     const mesh::Cell& cell, const mesh::Facet& facet,
     const std::size_t local_facet,
@@ -155,7 +158,8 @@ void LocalAssembler::assemble_exterior_facet(
 }
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_interior_facet(
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& A,
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        A,
     UFC& ufc, const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs,
     const mesh::Cell& cell, const mesh::Facet& facet,
     const std::size_t local_facet,

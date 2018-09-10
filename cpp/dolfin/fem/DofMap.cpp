@@ -29,7 +29,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
   _cell_dimension = _ufc_dofmap->num_element_dofs;
 
   std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
-           _global_nodes, _neighbours, _dofmap)
+           _neighbours, _dofmap)
       = DofMapBuilder::build(*_ufc_dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
 
   // Build new dof map
   std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
-           _global_nodes, _neighbours, _dofmap)
+           _neighbours, _dofmap)
       = DofMapBuilder::build(*_ufc_dofmap, mesh);
   _cell_dimension = _ufc_dofmap->num_element_dofs;
 
@@ -201,12 +201,12 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   return std::make_pair(dofmap, std::move(collapsed_map));
 }
 //-----------------------------------------------------------------------------
-void DofMap::set(la::PETScVector& x, double value) const
+void DofMap::set(la::PETScVector& x, PetscScalar value) const
 {
   assert(_dofmap.size() % _cell_dimension == 0);
   const std::size_t num_cells = _dofmap.size() / _cell_dimension;
 
-  std::vector<double> _value(_cell_dimension, value);
+  std::vector<PetscScalar> _value(_cell_dimension, value);
   for (std::size_t i = 0; i < num_cells; ++i)
   {
     auto dofs = cell_dofs(i);

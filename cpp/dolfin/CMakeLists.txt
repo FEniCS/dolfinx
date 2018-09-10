@@ -100,12 +100,10 @@ endforeach()
 
 # MPI
 set(DOLFIN_CXX_FLAGS "${DOLFIN_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-target_compile_definitions(dolfin PUBLIC HAS_MPI)
 target_link_libraries(dolfin PUBLIC ${MPI_CXX_LIBRARIES})
 target_include_directories(dolfin SYSTEM PUBLIC ${MPI_CXX_INCLUDE_PATH})
 
 # PETSc
-target_compile_definitions(dolfin PUBLIC HAS_PETSC)
 target_link_libraries(dolfin PUBLIC PETSC::petsc)
 target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
 

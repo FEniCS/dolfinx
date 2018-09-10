@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include <array>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <array>
 #include <string>
 #include <utility>
 #include <vector>
@@ -86,7 +86,7 @@ public:
                           const std::vector<size_t>& cells,
                           const std::vector<dolfin::la_index_t>& cell_dofs,
                           const std::vector<std::int64_t>& x_cell_dofs,
-                          const std::vector<double>& vector,
+                          const std::vector<PetscScalar>& vector,
                           std::array<std::int64_t, 2> input_vector_range,
                           const fem::GenericDofMap& dofmap);
 };

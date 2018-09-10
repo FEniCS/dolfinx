@@ -9,7 +9,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#ifdef HAS_PETSC
 #include <petscdm.h>
 #include <petscksp.h>
 #include <petscmat.h>
@@ -97,5 +96,3 @@ PETSC_CASTER_MACRO(Vec, vec);
 }
 
 #undef PETSC_CASTER_MACRO
-
-#endif

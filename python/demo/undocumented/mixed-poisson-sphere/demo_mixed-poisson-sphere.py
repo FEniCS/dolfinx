@@ -39,12 +39,11 @@ a = (inner(sigma, tau) + div(sigma)*v + div(tau)*u + r*v + t*u)*dx
 L = g*v*dx
 
 # Tune some factorization options
-if has_petsc():
-    # Avoid factors memory exhaustion due to excessive pivoting
-    PETScOptions.set("mat_mumps_icntl_14", 40.0)
-    PETScOptions.set("mat_mumps_icntl_7", "0")
-    # Avoid zero pivots on 64-bit SuperLU_dist
-    PETScOptions.set("mat_superlu_dist_colperm", "MMD_ATA")
+# Avoid factors memory exhaustion due to excessive pivoting
+PETScOptions.set("mat_mumps_icntl_14", 40.0)
+PETScOptions.set("mat_mumps_icntl_7", "0")
+# Avoid zero pivots on 64-bit SuperLU_dist
+PETScOptions.set("mat_superlu_dist_colperm", "MMD_ATA")
 
 # Solve problem
 w = Function(W)

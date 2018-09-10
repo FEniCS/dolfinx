@@ -63,7 +63,6 @@ class Flux : public Expression
 
 int main()
 {
-  #ifdef HAS_PETSC
   // Create mesh and function space
   auto mesh = std::make_shared<UnitSquareMesh>(128, 128);
   auto V = std::make_shared<Poisson::FunctionSpace>(mesh);
@@ -132,10 +131,6 @@ int main()
 
   // Write out solution to XDMF file.
   XDMFFile("u.xdmf").write(u);
-
-  #else
-  cout << "This demo requires DOLFIN to be confugured with PETSc." << endl;
-  #endif
 
   return 0;
 }

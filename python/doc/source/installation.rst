@@ -50,13 +50,13 @@ Below are additional requirements for the Python interface.
 - FFC-X (https://github.com/FEniCS/ffcx), UFL, FIAT, and dijitso (http://bitbucket.org/fenics-project/).
 - pybind11 (https://github.com/pybind/pybind11)
 - NumPy (http://www.numpy.org)
-- petsc4py
 
 
 .. rubric:: Recommended
 
 - Matplotlib (required for plotting)
 - mpi4py
+- petsc4py
 - slepc4py
 
 

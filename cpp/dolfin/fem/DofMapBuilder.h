@@ -50,8 +50,7 @@ public:
   /// @param[in] dolfin_mesh
   static std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
                     std::vector<int>, std::unordered_map<int, std::vector<int>>,
-                    std::set<std::size_t>, std::set<int>,
-                    std::vector<dolfin::la_index_t>>
+                    std::set<int>, std::vector<dolfin::la_index_t>>
   build(const ufc_dofmap& ufc_map, const mesh::Mesh& dolfin_mesh);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
@@ -91,7 +90,6 @@ private:
   compute_node_ownership(
       const std::vector<std::vector<la_index_t>>& node_dofmap,
       const std::vector<int>& boundary_nodes,
-      const std::set<std::size_t>& global_nodes,
       const std::vector<std::size_t>& node_local_to_global,
       const mesh::Mesh& mesh, const std::size_t global_dim);
 
@@ -147,8 +145,7 @@ private:
           node_to_sharing_processes,
       const std::vector<std::size_t>& old_local_to_global,
       const std::vector<std::vector<la_index_t>>& node_dofmap,
-      const std::vector<short int>& node_ownership,
-      const std::set<std::size_t>& global_nodes, const MPI_Comm mpi_comm);
+      const std::vector<short int>& node_ownership, const MPI_Comm mpi_comm);
 
   static void
   get_cell_entities_local(std::vector<std::vector<int64_t>>& entity_indices,

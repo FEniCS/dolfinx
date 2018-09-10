@@ -96,7 +96,6 @@ public:
     {
       assert(pos < 2);
       _connections = &e._local_index + pos;
-      _entity._local_index = e._local_index;
       return;
     }
 
@@ -107,7 +106,6 @@ public:
     // Pointer to array of connections
     assert(!c.empty());
     _connections = c(e.index()) + pos;
-    _entity._local_index = *_connections;
   }
 
   /// Constructor from MeshEntity
@@ -120,7 +118,6 @@ public:
     {
       assert(pos < 2);
       _connections = &e._local_index + pos;
-      _entity._local_index = e._local_index;
       return;
     }
 
@@ -131,7 +128,6 @@ public:
     // Pointer to array of connections
     assert(!c.empty());
     _connections = c(e.index()) + pos;
-    _entity._local_index = *_connections;
   }
 
   /// Copy constructor

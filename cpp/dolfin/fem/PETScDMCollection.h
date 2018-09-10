@@ -98,5 +98,5 @@ private:
   // The PETSc DM objects
   std::vector<DM> _dms;
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

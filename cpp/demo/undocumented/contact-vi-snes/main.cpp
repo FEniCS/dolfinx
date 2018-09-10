@@ -67,8 +67,6 @@ public:
 
 int main()
 {
-#ifdef HAS_PETSC
-
   // Read mesh and create function space
   auto mesh = std::make_shared<Mesh>("../circle_yplane.xml.gz");
 
@@ -138,8 +136,6 @@ int main()
   // Save solution in VTK format
   File file("displacement.pvd");
   file << *u;
-
-#endif
 
   return 0;
 }

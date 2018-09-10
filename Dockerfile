@@ -39,6 +39,7 @@ RUN apt-get -qq update && \
     liblapack-dev \
     libopenmpi-dev \
     libopenblas-dev \
+    ninja-build \
     openmpi-bin \
     pkg-config \
     python3-dev \

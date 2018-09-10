@@ -5,12 +5,17 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
+
 import dolfin
-from dolfin import (HDF5File, MPI, UnitSquareMesh, UnitCubeMesh, MeshFunction,
-                    MeshValueCollection, Expression, Cell, MeshEntity, MeshEntities,
-                    Function, FunctionSpace, cpp)
-from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_with_serial_hdf5_in_parallel)
+from dolfin import (MPI, Cell, Expression, Function, FunctionSpace,
+                    MeshEntities, MeshEntity, MeshFunction, has_hdf5,
+                    MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
 from dolfin.la import PETScVector
+from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_if_complex,
+                               xfail_with_serial_hdf5_in_parallel)
+if has_hdf5():
+    from dolfin.io import HDF5File
+
 assert(tempdir)
 
 
@@ -22,6 +27,7 @@ def test_parallel(tempdir):
     assert(hdf5)
 
 
+@xfail_if_complex
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_save_vector(tempdir):
@@ -32,6 +38,7 @@ def test_save_vector(tempdir):
         vector_file.write(x, "/my_vector")
 
 
+@xfail_if_complex
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_vector(tempdir):
@@ -165,6 +172,7 @@ def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(tempdir
             assert mvc.get_value(0, 0) == 1
 
 
+@xfail_if_complex
 @skip_if_not_HDF5
 @xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_function(tempdir):

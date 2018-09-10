@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <dolfin/common/types.h>
 #include "SystemAssembler.h"
 #include "AssemblerBase.h"
 #include "DirichletBC.h"
@@ -15,7 +16,6 @@
 #include <array>
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/GenericFunction.h>
 #include <dolfin/la/PETScMatrix.h>
@@ -239,7 +239,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
 
     const std::size_t num_bc_dofs = boundary_values[0].size();
     std::vector<dolfin::la_index_t> bc_indices;
-    std::vector<double> bc_values;
+    std::vector<PetscScalar> bc_values;
     bc_indices.reserve(num_bc_dofs);
     bc_values.reserve(num_bc_dofs);
 
@@ -251,7 +251,7 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
     }
 
     // Modify bc values
-    std::vector<double> x0_values(num_bc_dofs);
+    std::vector<PetscScalar> x0_values(num_bc_dofs);
     x0->get_local(x0_values.data(), num_bc_dofs, bc_indices.data());
     for (std::size_t i = 0; i < num_bc_dofs; i++)
       boundary_values[0][bc_indices[i]] = x0_values[i] - bc_values[i];
@@ -854,7 +854,7 @@ void SystemAssembler::facet_wise_assembly(
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_exterior_facet_tensor(
-    std::array<std::vector<double>, 2>& Ae, std::array<UFC*, 2>& ufc,
+    std::array<std::vector<PetscScalar>, 2>& Ae, std::array<UFC*, 2>& ufc,
     EigenRowArrayXXd& coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
@@ -981,8 +981,9 @@ void SystemAssembler::compute_interior_facet_tensor(
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::matrix_block_add(
-    la::PETScMatrix& tensor, std::vector<double>& Ae,
-    std::vector<double>& macro_A, const std::array<bool, 2>& add_local_tensor,
+    la::PETScMatrix& tensor, std::vector<PetscScalar>& Ae,
+    std::vector<PetscScalar>& macro_A,
+    const std::array<bool, 2>& add_local_tensor,
     const std::array<std::vector<common::ArrayView<const la_index_t>>, 2>&
         cell_dofs)
 {
@@ -1008,7 +1009,8 @@ void SystemAssembler::matrix_block_add(
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::apply_bc(
-    double* A, double* b, const std::vector<DirichletBC::Map>& boundary_values,
+    PetscScalar* A, PetscScalar* b,
+    const std::vector<DirichletBC::Map>& boundary_values,
     const common::ArrayView<const dolfin::la_index_t>& global_dofs0,
     const common::ArrayView<const dolfin::la_index_t>& global_dofs1)
 {
@@ -1016,10 +1018,11 @@ void SystemAssembler::apply_bc(
   assert(b);
 
   // Wrap matrix and vector using Eigen
-  Eigen::Map<
-      Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                           Eigen::RowMajor>>
       _matA(A, global_dofs0.size(), global_dofs1.size());
-  Eigen::Map<Eigen::VectorXd> _b(b, global_dofs0.size());
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _b(
+      b, global_dofs0.size());
 
   if (boundary_values.size() == 1)
   {
