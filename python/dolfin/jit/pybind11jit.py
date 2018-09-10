@@ -36,12 +36,10 @@ def jit_generate(cpp_code, module_name, signature, parameters):
     return code_h, code_c, depends
 
 
-def compile_cpp_code(cpp_code):
+def compile_cpp_code(cpp_code, include_dirs=[], libs=[], lib_dirs=[],
+                     cxxflags=[]):
     """Compile a user C(++) string and expose as a Python object with
     pybind11.
-
-    Note: this is experimental
-
     """
 
     # Set compiler/build options
@@ -65,6 +63,12 @@ def compile_cpp_code(cpp_code):
     dmacros = ['-D' + dm for dm in dolfin_pc['define_macros']]
 
     params['build']['cxxflags'] += tuple(dmacros)
+
+    # Parse argument compilation options
+    params['build']['include_dirs'] += include_dirs
+    params['build']['libs'] += libs
+    params['build']['lib_dirs'] += lib_dirs
+    params['build']['cxxflags'] += tuple(cxxflags)
 
     hash_str = cpp_code + cpp.__version__
     module_hash = hashlib.md5(hash_str.encode('utf-8')).hexdigest()
