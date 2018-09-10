@@ -48,7 +48,7 @@ if (DEFINED UFC_INCLUDE_DIR)
     set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h and ufc_geometry.h")
     execute_process(
       COMMAND /bin/bash -c "cat ${UFC_INCLUDE_DIR}/ufc.h ${UFC_INCLUDE_DIR}/ufc_geometry.h | sha1sum | cut -c 1-40"
-      OUTPUT_VARIABLE UFC_SIGNATURE)
+      OUTPUT_VARIABLE UFC_SIGNATURE OUTPUT_STRIP_TRAILING_WHITESPACE)
     # Assume user knows what they are doing.
     set(UFC_VERSION ${UFC_FIND_VERSION})
     set(UFC_VERSION_OK TRUE)
