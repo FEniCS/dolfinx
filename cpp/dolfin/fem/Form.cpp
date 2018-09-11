@@ -169,7 +169,7 @@ std::size_t Form::original_coefficient_position(std::size_t i) const
 std::size_t Form::max_element_tensor_size() const
 {
   std::size_t num_entries = 1;
-  for (const auto& V : _function_spaces)
+  for (auto& V : _function_spaces)
   {
     assert(V->dofmap());
     num_entries *= V->dofmap()->max_element_dofs();
@@ -278,7 +278,9 @@ void Form::tabulate_tensor(
   }
 
   // Compute cell matrix
-  auto tab_fn = _integrals.cell_tabulate_tensor(idx);
+  const std::function<void(PetscScalar*, const PetscScalar* const*,
+                           const double*, int)>& tab_fn
+      = _integrals.cell_tabulate_tensor(idx);
   tab_fn(A, _wpointer.data(), coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
