@@ -67,8 +67,8 @@ def test_numba_assembly():
     b = PETScVector()
     assembler.assemble(A, cpp.fem.Assembler.BlockType.monolithic)
     assembler.assemble(b, cpp.fem.Assembler.BlockType.monolithic)
-    #A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
-    #b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
+    # A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
+    # b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
 
     Anorm = A.norm(cpp.la.Norm.frobenius)
     bnorm = b.norm(cpp.la.Norm.l2)
@@ -85,9 +85,7 @@ def test_cffi_assembly():
     if MPI.rank(mesh.mpi_comm()) == 0:
         from cffi import FFI
         ffibuilder = FFI()
-        ffibuilder.set_source(
-            "_cffi_kernelA",
-            r"""
+        ffibuilder.set_source("_cffi_kernelA", r"""
         #include <stdalign.h>
         void tabulate_tensor_poissonA(double* restrict A, const double* const* w,
                                     const double* restrict coordinate_dofs,
@@ -197,3 +195,8 @@ def test_cffi_assembly():
     assert (np.isclose(bnorm, 0.0739710713711999))
 
     list_timings([TimingType.wall])
+
+    print("Test:", PETSc.ScalarType)
+    print("Test:", PETSc.ScalarType())
+    print("Test:", type(PETSc.ScalarType()))
+    print("Test:", numba.typeof(PETSc.ScalarType()))
