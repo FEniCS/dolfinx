@@ -12,6 +12,7 @@ from petsc4py import PETSc
 
 from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
                     list_timings)
+from dolfin.la import PETScMatrix, PETScVector
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
@@ -62,8 +63,12 @@ def test_numba_assembly():
     L.set_cell_tabulate(0, tabulate_tensor_b.address)
 
     assembler = cpp.fem.Assembler([[a]], [L], [])
-    A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
-    b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
+    A = PETScMatrix()
+    b = PETScVector()
+    assembler.assemble(A, cpp.fem.Assembler.BlockType.monolithic)
+    assembler.assemble(b, cpp.fem.Assembler.BlockType.monolithic)
+    #A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
+    #b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
 
     Anorm = A.norm(cpp.la.Norm.frobenius)
     bnorm = b.norm(cpp.la.Norm.l2)
@@ -179,8 +184,12 @@ def test_cffi_assembly():
     L.set_cell_tabulate(0, ptrL)
 
     assembler = cpp.fem.Assembler([[a]], [L], [])
-    A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
-    b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
+    A = PETScMatrix()
+    b = PETScVector()
+    assembler.assemble(A, cpp.fem.Assembler.BlockType.monolithic)
+    assembler.assemble(b, cpp.fem.Assembler.BlockType.monolithic)
+    # A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
+    # b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
 
     Anorm = A.norm(cpp.la.Norm.frobenius)
     bnorm = b.norm(cpp.la.Norm.l2)
