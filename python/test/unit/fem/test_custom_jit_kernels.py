@@ -21,7 +21,7 @@ c_signature = numba.types.void(
     numba.types.CPointer(numba.types.double), numba.types.intc)
 
 
-@numba.cfunc(c_signature, cache=True)
+@numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_A(A_, w_, coords_, cell_orientation):
     A = numba.carray(A_, (3, 3), dtype=PETSc.ScalarType)
     coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
@@ -39,7 +39,7 @@ def tabulate_tensor_A(A_, w_, coords_, cell_orientation):
     A[:, :] = np.dot(B.T, B) / (2 * Ae)
 
 
-@numba.cfunc(c_signature, cache=True)
+@numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
     coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
@@ -78,7 +78,7 @@ def test_numba_assembly():
     list_timings([TimingType.wall])
 
 
-def test_cffi_assembly():
+def xtest_cffi_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
     V = FunctionSpace(mesh, "Lagrange", 1)
 
