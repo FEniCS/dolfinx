@@ -195,8 +195,3 @@ def test_cffi_assembly():
     assert (np.isclose(bnorm, 0.0739710713711999))
 
     list_timings([TimingType.wall])
-
-    print("Test:", PETSc.ScalarType)
-    print("Test:", PETSc.ScalarType())
-    print("Test:", type(PETSc.ScalarType()))
-    print("Test:", numba.typeof(PETSc.ScalarType()))
