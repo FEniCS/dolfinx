@@ -162,7 +162,7 @@ RUN pip3 install --no-cache-dir https://bitbucket.org/petsc/petsc4py/downloads/p
     pip3 install --no-cache-dir https://bitbucket.org/slepc/slepc4py/downloads/slepc4py-${SLEPC4PY_VERSION}.tar.gz
 
 # Install pybind11
-ARG PYBIND11_VERSION=2.2.3
+ARG PYBIND11_VERSION=2.2.4
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
     tar -xf v${PYBIND11_VERSION}.tar.gz && \
     cd pybind11-${PYBIND11_VERSION} && \
