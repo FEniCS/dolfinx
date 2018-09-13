@@ -127,10 +127,10 @@ std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
   return _ufc_dofmap->num_entity_dofs[entity_dim];
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::num_facet_dofs() const
+std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 {
   assert(_ufc_dofmap);
-  return _ufc_dofmap->num_facet_dofs;
+  return _ufc_dofmap->num_entity_closure_dofs[entity_dim];
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
@@ -148,14 +148,16 @@ const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
 //-----------------------------------------------------------------------------
 const std::set<int>& DofMap::neighbours() const { return _neighbours; }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_facet_dofs(std::vector<int>& element_dofs,
-                                 std::size_t cell_facet_index) const
+void DofMap::tabulate_entity_closure_dofs(std::vector<int>& element_dofs,
+                                          std::size_t entity_dim,
+                                          std::size_t cell_entity_index) const
 {
   assert(_ufc_dofmap);
-  element_dofs.resize(_ufc_dofmap->num_facet_dofs);
+  element_dofs.resize(_ufc_dofmap->num_entity_closure_dofs[entity_dim]);
 
-  assert(_ufc_dofmap->tabulate_facet_dofs);
-  _ufc_dofmap->tabulate_facet_dofs(element_dofs.data(), cell_facet_index);
+  assert(_ufc_dofmap->tabulate_entity_closure_dofs);
+  _ufc_dofmap->tabulate_entity_closure_dofs(element_dofs.data(), entity_dim,
+                                            cell_entity_index);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_entity_dofs(std::vector<int>& element_dofs,
