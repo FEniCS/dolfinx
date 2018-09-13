@@ -125,7 +125,7 @@ public:
   virtual std::size_t num_entity_dofs(std::size_t entity_dim) const;
 
   /// Return the number of closure dofs for a given entity dimension
-  ///s
+  /// s
   /// @param     entity_dim (std::size_t)
   ///         Entity dimension
   ///
