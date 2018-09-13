@@ -271,13 +271,13 @@ DofMapBuilder::build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap,
   std::vector<int64_t> dof_holder(num_element_dofs);
   std::vector<const int64_t*> _entity_indices(entity_indices.size());
 
-  std::vector<int> num_cell_entities, num_entity_dofs;
-  const mesh::CellType& cell_type = mesh.type();
-  for (std::size_t i = 0; i <= cell_type.dim(); ++i)
-  {
-    num_cell_entities.push_back(cell_type.num_entities(i));
-    num_entity_dofs.push_back(ufc_dofmap.num_entity_dofs[i]);
-  }
+  // std::vector<int> num_cell_entities, num_entity_dofs;
+  // const mesh::CellType& cell_type = mesh.type();
+  // for (std::size_t i = 0; i <= cell_type.dim(); ++i)
+  // {
+  //   num_cell_entities.push_back(cell_type.num_entities(i));
+  //   num_entity_dofs.push_back(ufc_dofmap.num_entity_dofs[i]);
+  // }
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
@@ -287,10 +287,12 @@ DofMapBuilder::build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap,
     // Tabulate dofs for cell
     for (std::size_t i = 0; i < entity_indices.size(); ++i)
       _entity_indices[i] = entity_indices[i].data();
-    GenericDofMap::ufc_tabulate_dofs(
-        dof_holder.data(), D - 1, num_cell_entities.data(),
-        num_mesh_entities.data(), _entity_indices.data(),
-        num_entity_dofs.data());
+    ufc_dofmap.tabulate_dofs(dof_holder.data(), num_mesh_entities.data(),
+                             _entity_indices.data());
+    // GenericDofMap::ufc_tabulate_dofs(
+    //     dof_holder.data(), D, num_cell_entities.data(),
+    //     num_mesh_entities.data(), _entity_indices.data(),
+    //     num_entity_dofs.data());
     std::copy(dof_holder.begin(), dof_holder.end(),
               dofmap[cell.index()].begin());
   }
@@ -689,6 +691,8 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   {
     num_cell_entities.push_back(cell_type.num_entities(i));
     num_entity_dofs.push_back(dofmaps[0]->num_entity_dofs[i]);
+    // std::cout << "i: " << num_cell_entities.back() << ", "
+    //           << num_entity_dofs.back() << std::endl;
   }
 
   // Build dofmaps from ufc_dofmap
@@ -700,24 +704,33 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
-    // dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
-    //                           num_mesh_entities_local.data(),
-    //                           entity_indices_ptr.data());
-    GenericDofMap::ufc_tabulate_dofs(
-        ufc_nodes_local.data(), D - 1, num_cell_entities.data(),
-        num_mesh_entities_local.data(), entity_indices_ptr.data(),
-        num_entity_dofs.data());
+    dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
+                              num_mesh_entities_local.data(),
+                              entity_indices_ptr.data());
+    // std::cout << "Old map: ";
+    // for (std::size_t i = 0; i < ufc_nodes_local.size(); ++i)
+    //   std::cout << ufc_nodes_local[i] << " ";
+    // std::cout << std::endl;
+    // GenericDofMap::ufc_tabulate_dofs(
+    //     ufc_nodes_local.data(), D, num_cell_entities.data(),
+    //     num_mesh_entities_local.data(), entity_indices_ptr.data(),
+    //     num_entity_dofs.data());
+    // std::cout << "New map: ";
+    // for (std::size_t i = 0; i < ufc_nodes_local.size(); ++i)
+    //   std::cout << ufc_nodes_local[i] << " ";
+    // std::cout << std::endl;
+    // std::cout << std::endl;
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
 
-    // dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
-    //                           num_mesh_entities_global.data(),
-    //                           entity_indices_ptr.data());
-    GenericDofMap::ufc_tabulate_dofs(
-        ufc_nodes_global.data(), D - 1, num_cell_entities.data(),
-        num_mesh_entities_global.data(), entity_indices_ptr.data(),
-        num_entity_dofs.data());
+    dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
+                              num_mesh_entities_global.data(),
+                              entity_indices_ptr.data());
+    // GenericDofMap::ufc_tabulate_dofs(
+    //     ufc_nodes_global.data(), D, num_cell_entities.data(),
+    //     num_mesh_entities_global.data(), entity_indices_ptr.data(),
+    //     num_entity_dofs.data());
 
     // Get the edge and facet permutations of the dofs for this cell, based on
     // global vertex indices.

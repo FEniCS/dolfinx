@@ -194,22 +194,20 @@ void GenericDofMap::ufc_tabulate_dofs(int64_t* dofs, const int tdim,
                                       const int64_t** entity_indices,
                                       const int* num_entity_dofs)
 {
+  throw std::runtime_error("This function is not working for general mixed elements.");
+
   int64_t offset = 0;
-  int index = 0;
+  int64_t index = 0;
   for (int d = 0; d <= tdim; ++d)
   {
-    const std::size_t n_cell_entities = num_cell_entities[d];
-    const std::size_t n_entity_dofs = num_entity_dofs[d];
-
-    // Loop over cell entities
-    for (std::size_t e = 0; e < n_cell_entities; ++e)
+    // Loop over all cell entities of topological dimension d
+    for (std::size_t e = 0; e < num_cell_entities[d]; ++e)
     {
-
-      // Loop over dofs attached to entity
-      for (std::size_t i = 0; i < n_entity_dofs; ++i)
-        dofs[index++] = offset + n_entity_dofs * entity_indices[e][i] + i;
-      offset += n_entity_dofs * num_global_entities[e];
+      // Loop over dofs attached to entity e
+      for (std::size_t i = 0; i < num_entity_dofs[d]; ++i)
+        dofs[index++] = offset + num_entity_dofs[d] * entity_indices[d][e] + i;
     }
+    offset += num_entity_dofs[d] * num_global_entities[d];
   }
 }
 //-----------------------------------------------------------------------------
