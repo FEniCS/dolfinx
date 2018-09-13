@@ -188,26 +188,32 @@ std::vector<PetscInt> GenericDofMap::entity_dofs(const mesh::Mesh& mesh,
   return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------
-void GenericDofMap::ufc_tabulate_dofs(int64_t* dofs, const int tdim,
-                                      const int* num_cell_entities,
-                                      const int64_t* num_global_entities,
-                                      const int64_t** entity_indices,
-                                      const int* num_entity_dofs)
+void GenericDofMap::ufc_tabulate_dofs(
+    int64_t* dofs,
+    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+    const int64_t* num_global_entities, const int64_t** entity_indices)
 {
-  throw std::runtime_error("This function is not working for general mixed elements.");
-
-  int64_t offset = 0;
-  int64_t index = 0;
-  for (int d = 0; d <= tdim; ++d)
+  // Loop over cell entity types (vertex, edge, etc)
+  std::size_t offset = 0;
+  for (std::size_t d = 0; d < entity_dofs.size(); ++d)
   {
-    // Loop over all cell entities of topological dimension d
-    for (std::size_t e = 0; e < num_cell_entities[d]; ++e)
+    // Loop over each entity of dimension d
+    for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
     {
-      // Loop over dofs attached to entity e
-      for (std::size_t i = 0; i < num_entity_dofs[d]; ++i)
-        dofs[index++] = offset + num_entity_dofs[d] * entity_indices[d][e] + i;
+      const int num_entity_dofs = entity_dofs[d][i].size();
+
+      // Loop over dofs belong to entity e of dimension d (d, e)
+      for (std::size_t dof = 0; dof < entity_dofs[d][i].size(); ++dof)
+      {
+        // d: topological dimension
+        // i: local entity index
+        // dof: local index of dof at (d, i)
+        dofs[entity_dofs[d][i][dof]]
+            = offset + num_entity_dofs * entity_indices[d][i] + dof;
+      }
+      //offset += num_global_entities[d];
     }
-    offset += num_entity_dofs[d] * num_global_entities[d];
+    offset += entity_dofs[d][0].size() * num_global_entities[d];
   }
 }
 //-----------------------------------------------------------------------------

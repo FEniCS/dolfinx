@@ -183,6 +183,8 @@ DofMapBuilder::build_sub_map_view(
   std::vector<std::vector<PetscInt>> sub_dofmap_graph
       = build_local_ufc_dofmap(*ufc_sub_dofmap, mesh);
 
+  // FIXME: This offset is probably breaking sub-map extraction with new
+  //        tabulate_dofs function
   // Add offset to local UFC dofmap
   for (std::size_t i = 0; i < sub_dofmap_graph.size(); ++i)
   {
@@ -279,20 +281,32 @@ DofMapBuilder::build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap,
   //   num_entity_dofs.push_back(ufc_dofmap.num_entity_dofs[i]);
   // }
 
+  const mesh::CellType& cell_type = mesh.type();
+  std::vector<std::vector<std::vector<int>>> entity_dofs(D + 1);
+  for (std::size_t d = 0; d < entity_dofs.size(); ++d)
+  {
+    entity_dofs[d].resize(cell_type.num_entities(d));
+    for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
+    {
+      entity_dofs[d][i].resize(ufc_dofmap.num_entity_dofs[d]);
+      ufc_dofmap.tabulate_entity_dofs(entity_dofs[d][i].data(), d, i);
+    }
+  }
+
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Fill entity indices array
     get_cell_entities_local(entity_indices, cell, needs_entities);
 
     // Tabulate dofs for cell
+    // throw std::runtime_error("Don't want to be here");
     for (std::size_t i = 0; i < entity_indices.size(); ++i)
       _entity_indices[i] = entity_indices[i].data();
-    ufc_dofmap.tabulate_dofs(dof_holder.data(), num_mesh_entities.data(),
-                             _entity_indices.data());
-    // GenericDofMap::ufc_tabulate_dofs(
-    //     dof_holder.data(), D, num_cell_entities.data(),
-    //     num_mesh_entities.data(), _entity_indices.data(),
-    //     num_entity_dofs.data());
+    // ufc_dofmap.tabulate_dofs(dof_holder.data(), num_mesh_entities.data(),
+    //                          _entity_indices.data());
+    GenericDofMap::ufc_tabulate_dofs(dof_holder.data(), entity_dofs,
+                                     num_mesh_entities.data(),
+                                     _entity_indices.data());
     std::copy(dof_holder.begin(), dof_holder.end(),
               dofmap[cell.index()].begin());
   }
@@ -685,15 +699,27 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   // Vector for dof permutation
   std::vector<int> permutation(local_dim);
 
-  std::vector<int> num_cell_entities, num_entity_dofs;
   const mesh::CellType& cell_type = mesh.type();
-  for (std::size_t i = 0; i <= cell_type.dim(); ++i)
+  std::vector<std::vector<std::vector<int>>> entity_dofs(D + 1);
+  for (std::size_t d = 0; d < entity_dofs.size(); ++d)
   {
-    num_cell_entities.push_back(cell_type.num_entities(i));
-    num_entity_dofs.push_back(dofmaps[0]->num_entity_dofs[i]);
-    // std::cout << "i: " << num_cell_entities.back() << ", "
-    //           << num_entity_dofs.back() << std::endl;
+    entity_dofs[d].resize(cell_type.num_entities(d));
+    for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
+    {
+      entity_dofs[d][i].resize(dofmaps[0]->num_entity_dofs[d]);
+      dofmaps[0]->tabulate_entity_dofs(entity_dofs[d][i].data(), d, i);
+    }
   }
+
+  // std::vector<int> num_cell_entities, num_entity_dofs;
+  // const mesh::CellType& cell_type = mesh.type();
+  // for (std::size_t i = 0; i <= cell_type.dim(); ++i)
+  // {
+  //   num_cell_entities.push_back(cell_type.num_entities(i));
+  //   num_entity_dofs.push_back(dofmaps[0]->num_entity_dofs[i]);
+  //   // std::cout << "i: " << num_cell_entities.back() << ", "
+  //   //           << num_entity_dofs.back() << std::endl;
+  // }
 
   // Build dofmaps from ufc_dofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -704,17 +730,16 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
-    dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
-                              num_mesh_entities_local.data(),
-                              entity_indices_ptr.data());
+    // dofmaps[0]->tabulate_dofs(ufc_nodes_local.data(),
+    //                           num_mesh_entities_local.data(),
+    //                           entity_indices_ptr.data());
     // std::cout << "Old map: ";
     // for (std::size_t i = 0; i < ufc_nodes_local.size(); ++i)
     //   std::cout << ufc_nodes_local[i] << " ";
     // std::cout << std::endl;
-    // GenericDofMap::ufc_tabulate_dofs(
-    //     ufc_nodes_local.data(), D, num_cell_entities.data(),
-    //     num_mesh_entities_local.data(), entity_indices_ptr.data(),
-    //     num_entity_dofs.data());
+    GenericDofMap::ufc_tabulate_dofs(ufc_nodes_local.data(), entity_dofs,
+                                     num_mesh_entities_local.data(),
+                                     entity_indices_ptr.data());
     // std::cout << "New map: ";
     // for (std::size_t i = 0; i < ufc_nodes_local.size(); ++i)
     //   std::cout << ufc_nodes_local[i] << " ";
@@ -723,14 +748,12 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
-
-    dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
-                              num_mesh_entities_global.data(),
-                              entity_indices_ptr.data());
-    // GenericDofMap::ufc_tabulate_dofs(
-    //     ufc_nodes_global.data(), D, num_cell_entities.data(),
-    //     num_mesh_entities_global.data(), entity_indices_ptr.data(),
-    //     num_entity_dofs.data());
+    // dofmaps[0]->tabulate_dofs(ufc_nodes_global.data(),
+    //                           num_mesh_entities_global.data(),
+    //                           entity_indices_ptr.data());
+    GenericDofMap::ufc_tabulate_dofs(ufc_nodes_global.data(), entity_dofs,
+                                     num_mesh_entities_global.data(),
+                                     entity_indices_ptr.data());
 
     // Get the edge and facet permutations of the dofs for this cell, based on
     // global vertex indices.
