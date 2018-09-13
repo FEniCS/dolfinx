@@ -26,7 +26,8 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
       _ufc_offset(-1)
 {
   assert(_ufc_dofmap);
-  _cell_dimension = _ufc_dofmap->num_element_dofs;
+  _cell_dimension = _ufc_dofmap->num_element_support_dofs
+                    + _ufc_dofmap->num_global_support_dofs;
 
   std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
            _neighbours, _dofmap)
@@ -56,7 +57,8 @@ DofMap::DofMap(const DofMap& parent_dofmap,
           parent_dofmap.block_size(), parent_offset, component, mesh);
 
   assert(_ufc_dofmap);
-  _cell_dimension = _ufc_dofmap->num_element_dofs;
+  _cell_dimension = _ufc_dofmap->num_element_support_dofs
+                    + _ufc_dofmap->num_global_support_dofs;
 
   // FIXME: check that below is correct
   if (_ufc_dofmap->num_sub_dofmaps > 0)
@@ -84,7 +86,8 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
            _neighbours, _dofmap)
       = DofMapBuilder::build(*_ufc_dofmap, mesh);
-  _cell_dimension = _ufc_dofmap->num_element_dofs;
+  _cell_dimension = _ufc_dofmap->num_element_support_dofs
+                    + _ufc_dofmap->num_global_support_dofs;
 
   // Dimension sanity checks
   assert(dofmap_view._dofmap.size()
@@ -118,7 +121,8 @@ std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 std::size_t DofMap::max_element_dofs() const
 {
   assert(_ufc_dofmap);
-  return _ufc_dofmap->num_element_dofs;
+  return _ufc_dofmap->num_element_support_dofs
+         + _ufc_dofmap->num_global_support_dofs;
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
