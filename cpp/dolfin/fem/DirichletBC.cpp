@@ -101,7 +101,7 @@ void DirichletBC::gather(Map& boundary_values) const
       {
         const std::size_t global_node
             = dofmap.index_map()->local_to_global(node_index);
-        proc_map0[*proc].push_back(bs*global_node + component);
+        proc_map0[*proc].push_back(bs * global_node + component);
         proc_map1[*proc].push_back(bv->second);
       }
     }
@@ -386,8 +386,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   EigenRowArrayXXd coordinate_dofs;
 
   // Allocate space
+  const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(D - 1);
   boundary_values.reserve(boundary_values.size()
-                          + _facets.size() * dofmap.num_facet_dofs());
+                          + _facets.size() * num_facet_dofs);
 
   // Iterate over marked
   assert(_function_space->element());
@@ -419,10 +420,11 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     auto cell_dofs = dofmap.cell_dofs(cell.index());
 
     // Tabulate which dofs are on the facet
-    dofmap.tabulate_facet_dofs(data.facet_dofs, facet_local_index);
+    dofmap.tabulate_entity_closure_dofs(data.facet_dofs, D - 1,
+                                        facet_local_index);
 
     // Pick values for facet
-    for (std::size_t i = 0; i < dofmap.num_facet_dofs(); i++)
+    for (std::size_t i = 0; i < num_facet_dofs; i++)
     {
       const std::size_t local_dof = cell_dofs[data.facet_dofs[i]];
       const PetscScalar value = data.w[data.facet_dofs[i]];
@@ -774,7 +776,9 @@ bool DirichletBC::on_facet(const Eigen::Ref<EigenArrayXd> coordinates,
 //-----------------------------------------------------------------------------
 DirichletBC::LocalData::LocalData(const function::FunctionSpace& V)
     : w(V.dofmap()->max_element_dofs(), 0.0),
-      facet_dofs(V.dofmap()->num_facet_dofs(), 0),
+      facet_dofs(
+          V.dofmap()->num_entity_closure_dofs(V.mesh()->geometry().dim() - 1),
+          0),
       // FIXME: the below should not be max_element_dofs! It should be fixed.
       coordinates(V.dofmap()->max_element_dofs(), V.mesh()->geometry().dim())
 {
