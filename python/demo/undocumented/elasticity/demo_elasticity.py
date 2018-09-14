@@ -168,7 +168,7 @@ if MPI.rank(mesh.mpi_comm()) == 0:
 # File("stress.pvd") << stress
 
 # Plot solution
-import matplotlib.pyplot as plt
-import dolfin.plotting
-dolfin.plotting.plot(u)
-plt.show()
+# import matplotlib.pyplot as plt
+# import dolfin.plotting
+# dolfin.plotting.plot(u)
+# plt.show()

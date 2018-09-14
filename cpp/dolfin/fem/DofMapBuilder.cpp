@@ -189,7 +189,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
     const int num_sub_dofs = ufc_sub_dofmap->num_element_support_dofs;
     auto dmap_parent = parent_dofmap.cell_dofs(c);
     sub_dofmap_graph[c].resize(num_sub_dofs);
-    for (std::size_t i = 0; i < num_sub_dofs; ++i)
+    for (int i = 0; i < num_sub_dofs; ++i)
       sub_dofmap_graph[c][i] = dmap_parent[ufc_local_offset + i];
   }
 
@@ -556,7 +556,7 @@ DofMapBuilder::extract_ufc_sub_dofmap_new(
   }
 
   // Check if there are any sub systems, and for available sub systems
-  const int num_sub_dofmaps = ufc_map.num_sub_dofmaps;
+  const std::size_t num_sub_dofmaps = ufc_map.num_sub_dofmaps;
   if (num_sub_dofmaps == 0)
   {
     throw std::runtime_error("Extracting subsystem of degree of freedom "
@@ -692,6 +692,8 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
       num_mesh_entities_global[d] = mesh.num_entities_global(d);
     }
   }
+
+  std::cout << "******: " << block_size << std::endl;
 
   // Extract sub-dofmaps
   // std::vector<std::unique_ptr<const ufc_dofmap>> dofmaps(block_size);
