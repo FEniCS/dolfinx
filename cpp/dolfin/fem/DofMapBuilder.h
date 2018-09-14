@@ -49,8 +49,8 @@ public:
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
   static std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
-                    std::vector<int>, std::unordered_map<int, std::vector<int>>,
-                    std::set<int>, std::vector<PetscInt>>
+                    std::unordered_map<int, std::vector<int>>, std::set<int>,
+                    std::vector<PetscInt>>
   build(const ufc_dofmap& ufc_map, const mesh::Mesh& dolfin_mesh);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
@@ -61,8 +61,8 @@ public:
   /// @param[in] mesh
   static std::tuple<std::unique_ptr<const ufc_dofmap>, std::int64_t,
                     std::int64_t, std::vector<PetscInt>>
-  build_sub_map_view(const ufc_dofmap& parent_ufc_dofmap,
-                     const std::vector<int>& parent_ufc_local_to_local,
+  build_sub_map_view(const DofMap& parent_dofmap,
+                     const ufc_dofmap& parent_ufc_dofmap,
                      const int parent_block_size,
                      const std::int64_t parent_offset,
                      const std::vector<std::size_t>& component,
@@ -87,11 +87,10 @@ private:
   // shared_node_to_processes, neighbours)
   static std::tuple<int, std::vector<short int>,
                     std::unordered_map<int, std::vector<int>>, std::set<int>>
-  compute_node_ownership(
-      const std::vector<std::vector<PetscInt>>& node_dofmap,
-      const std::vector<int>& boundary_nodes,
-      const std::vector<std::size_t>& node_local_to_global,
-      const mesh::Mesh& mesh, const std::size_t global_dim);
+  compute_node_ownership(const std::vector<std::vector<PetscInt>>& node_dofmap,
+                         const std::vector<int>& boundary_nodes,
+                         const std::vector<std::size_t>& node_local_to_global,
+                         const mesh::Mesh& mesh, const std::size_t global_dim);
 
   // Build dofmap based on re-ordered nodes
   static std::vector<std::vector<PetscInt>>
@@ -109,12 +108,10 @@ private:
                       std::set<std::size_t> global_dofs = {},
                       std::size_t offset_local = 0);
 
-  // Recursively extract UFC sub-dofmap and compute offset
-  static std::pair<std::unique_ptr<ufc_dofmap>, std::size_t>
-  extract_ufc_sub_dofmap(const ufc_dofmap& ufc_dofmap,
-                         const std::vector<std::size_t>& component,
-                         const std::vector<int64_t>& num_global_mesh_entities,
-                         std::size_t offset = 0);
+  // Recursively extract UFC sub-dofmap and cell-wise components for sub-map
+  static std::pair<std::unique_ptr<ufc_dofmap>, int> extract_ufc_sub_dofmap_new(
+      const ufc_dofmap& ufc_dofmap, const std::vector<std::size_t>& component,
+      const std::vector<int>& num_cell_entities, int offset = 0);
 
   // Compute block size, e.g. in 3D elasticity block_size = 3
   static std::size_t compute_blocksize(const ufc_dofmap& ufc_dofmap,
@@ -140,12 +137,12 @@ private:
   // FIXME: document better
   // Return (old-to-new_local, local_to_global_unowned) maps
   static std::pair<std::vector<int>, std::vector<std::size_t>>
-  compute_node_reordering(
-      const std::unordered_map<int, std::vector<int>>&
-          node_to_sharing_processes,
-      const std::vector<std::size_t>& old_local_to_global,
-      const std::vector<std::vector<PetscInt>>& node_dofmap,
-      const std::vector<short int>& node_ownership, const MPI_Comm mpi_comm);
+  compute_node_reordering(const std::unordered_map<int, std::vector<int>>&
+                              node_to_sharing_processes,
+                          const std::vector<std::size_t>& old_local_to_global,
+                          const std::vector<std::vector<PetscInt>>& node_dofmap,
+                          const std::vector<short int>& node_ownership,
+                          const MPI_Comm mpi_comm);
 
   static void
   get_cell_entities_local(std::vector<std::vector<int64_t>>& entity_indices,

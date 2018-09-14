@@ -136,6 +136,12 @@ public:
 
   /// Get block size
   virtual int block_size() const = 0;
+
+  /// UFC dofmap (temporary replacement for generated dofmap)
+  static void ufc_tabulate_dofs(
+      int64_t* dofs,
+      const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+      const int64_t* num_global_entities, const int64_t** entity_indices);
 };
 } // namespace fem
 } // namespace dolfin
