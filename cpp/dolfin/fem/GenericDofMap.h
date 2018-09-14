@@ -73,24 +73,23 @@ public:
 
   /// Return the dof indices associated with entities of given dimension and
   /// entity indices
-  std::vector<PetscInt>
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1>
   entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
               const std::vector<std::size_t>& entity_indices) const;
 
   /// Return the dof indices associated with all entities of given dimension
-  std::vector<PetscInt> entity_dofs(const mesh::Mesh& mesh,
-                                    std::size_t entity_dim) const;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+  entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const;
 
   /// Tabulate the local-to-local mapping of dofs on entity
   /// (dim, local_entity)
-  virtual void tabulate_entity_dofs(std::vector<int>& element_dofs,
-                                    std::size_t entity_dim,
-                                    std::size_t cell_entity_index) const = 0;
+  virtual Eigen::Array<int, Eigen::Dynamic, 1>
+  tabulate_entity_dofs(std::size_t entity_dim,
+                       std::size_t cell_entity_index) const = 0;
 
   /// Tabulate local-local closure dofs on entity
-  virtual void
-  tabulate_entity_closure_dofs(std::vector<int>& element_dofs,
-                               std::size_t entity_dim,
+  virtual Eigen::Array<int, Eigen::Dynamic, 1>
+  tabulate_entity_closure_dofs(std::size_t entity_dim,
                                std::size_t cell_entity_index) const = 0;
 
   /// Tabulate globally supported dofs
@@ -109,7 +108,8 @@ public:
 
   /// Return list of dof indices on this process that belong to mesh
   /// entities of dimension dim
-  std::vector<PetscInt> dofs(const mesh::Mesh& mesh, std::size_t dim) const;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
+                                                 std::size_t dim) const;
 
   /// Set dof entries in vector to a specified value. Parallel
   /// layout of vector must be consistent with dof map range. This
@@ -121,7 +121,8 @@ public:
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
 
   /// Tabulate map between local (process) and global dof indices
-  std::vector<std::size_t> tabulate_local_to_global_dofs() const;
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1>
+  tabulate_local_to_global_dofs() const;
 
   /// Return map from shared nodes to the processes (not including
   /// the current process) that share it.

@@ -834,7 +834,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  std::vector<std::size_t> local_to_global_map
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
       = dofmap.tabulate_local_to_global_dofs();
 
   for (std::size_t i = 0; i != n_cells; ++i)
@@ -992,10 +992,9 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
           {{cell_range[0], cell_range[1] + 1}});
 
   // Read cell-DOF maps
-  std::vector<PetscInt> input_cell_dofs
-      = HDF5Interface::read_dataset<PetscInt>(
-          _hdf5_file_id, cell_dofs_dataset_name,
-          {{x_cell_dofs.front(), x_cell_dofs.back()}});
+  std::vector<PetscInt> input_cell_dofs = HDF5Interface::read_dataset<PetscInt>(
+      _hdf5_file_id, cell_dofs_dataset_name,
+      {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
   la::PETScVector& x = *u.vector();
 
