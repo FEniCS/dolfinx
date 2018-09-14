@@ -599,6 +599,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
     }
   }
 
+  // FIXME: Simplify
   std::vector<std::unique_ptr<const ufc_dofmap>> dofmaps(block_size);
   std::size_t local_size = 0;
   if (block_size > 1)
