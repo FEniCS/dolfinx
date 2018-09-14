@@ -108,13 +108,6 @@ private:
                       std::set<std::size_t> global_dofs = {},
                       std::size_t offset_local = 0);
 
-//   // Recursively extract UFC sub-dofmap and compute offset
-//   static std::pair<std::unique_ptr<ufc_dofmap>, std::size_t>
-//   extract_ufc_sub_dofmap(const ufc_dofmap& ufc_dofmap,
-//                          const std::vector<std::size_t>& component,
-//                          const std::vector<int64_t>& num_global_mesh_entities,
-//                          std::size_t offset = 0);
-
   // Recursively extract UFC sub-dofmap and cell-wise components for sub-map
   static std::pair<std::unique_ptr<ufc_dofmap>, int> extract_ufc_sub_dofmap_new(
       const ufc_dofmap& ufc_dofmap, const std::vector<std::size_t>& component,

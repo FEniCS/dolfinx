@@ -59,10 +59,6 @@ DofMap::DofMap(const DofMap& parent_dofmap,
   _cell_dimension = _ufc_dofmap->num_element_support_dofs
                     + _ufc_dofmap->num_global_support_dofs;
 
-  // // FIXME: check that below is correct
-  // if (_ufc_dofmap->num_sub_dofmaps > 0)
-  //   _ufc_local_to_local = parent_dofmap._ufc_local_to_local;
-
   // FIXME: this will be wrong
   _shared_nodes = parent_dofmap._shared_nodes;
 
