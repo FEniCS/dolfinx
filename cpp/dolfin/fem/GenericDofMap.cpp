@@ -70,7 +70,7 @@ GenericDofMap::dofs(const mesh::Mesh& mesh, std::size_t dim) const
     for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, dim))
     {
       // Get dof index and add to list
-      for (std::size_t i = 0; i < entity_dofs_local.size(); ++i)
+      for (Eigen::Index i = 0; i < entity_dofs_local[local_index].size(); ++i)
       {
         const std::size_t entity_dof_local = entity_dofs_local[local_index][i];
         const PetscInt dof_index = cell_dof_list[entity_dof_local];
@@ -78,7 +78,6 @@ GenericDofMap::dofs(const mesh::Mesh& mesh, std::size_t dim) const
                < dof_list.size());
         dof_list[e.index() * num_dofs_per_entity + i] = dof_index;
       }
-
       ++local_index;
     }
   }
