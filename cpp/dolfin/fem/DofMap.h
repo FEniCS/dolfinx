@@ -266,10 +266,6 @@ private:
   // UFC dof map
   std::shared_ptr<const ufc_dofmap> _ufc_dofmap;
 
-  // Map from UFC dof numbering to renumbered dof (ufc_dof ->
-  // actual_dof, both using local indices)
-  std::vector<int> _ufc_local_to_local;
-
   // Global dimension
   std::int64_t _global_dimension;
 
