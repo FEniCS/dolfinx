@@ -258,22 +258,16 @@ void fem(py::module& m)
            std::vector<std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
            std::vector<std::shared_ptr<const dolfin::fem::Form>>,
            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>())
-      .def(
-          "assemble",
-          py::overload_cast<dolfin::la::PETScMatrix&, dolfin::la::PETScVector&>(
-              &dolfin::fem::Assembler::assemble))
-      .def("assemble", py::overload_cast<dolfin::la::PETScMatrix&,
-                                         dolfin::fem::Assembler::BlockType>(
+      .def("assemble_matrix", &dolfin::fem::Assembler::assemble_matrix)
+      .def("assemble_vector", &dolfin::fem::Assembler::assemble_vector)
+      .def("assemble", py::overload_cast<dolfin::la::PETScMatrix&>(
                            &dolfin::fem::Assembler::assemble))
-      .def("assemble", py::overload_cast<dolfin::la::PETScVector&,
-                                         dolfin::fem::Assembler::BlockType>(
+      .def("assemble", py::overload_cast<dolfin::la::PETScVector&>(
                            &dolfin::fem::Assembler::assemble));
 
   // dolfin::fem::AssemblerBase
   py::class_<dolfin::fem::AssemblerBase,
              std::shared_ptr<dolfin::fem::AssemblerBase>>(m, "AssemblerBase")
-      //.def("init_global_tensor",
-      //&dolfin::fem::AssemblerBase::init_global_tensor)
       .def_readwrite("add_values", &dolfin::fem::AssemblerBase::add_values)
       .def_readwrite("keep_diagonal",
                      &dolfin::fem::AssemblerBase::keep_diagonal)
