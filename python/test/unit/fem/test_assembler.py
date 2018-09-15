@@ -17,6 +17,28 @@ import ufl
 from ufl import dx, inner
 
 
+def test_basic_assembly():
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
+    V = dolfin.FunctionSpace(mesh, "Lagrange", 1)
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+
+    a = dolfin.Constant(1.0) * inner(u, v) * dx
+    L = inner(dolfin.Constant(1.0), v) * dx
+    assembler = dolfin.fem.assembler.Assembler(a, L)
+
+    # Initial assembly
+    A = assembler.assemble_matrix()
+    b = assembler.assemble_vector()
+    assert isinstance(A, dolfin.cpp.la.PETScMatrix)
+    assert isinstance(b, dolfin.cpp.la.PETScVector)
+
+    # Second assembly
+    A = assembler.assemble(A)
+    b = assembler.assemble(b)
+    assert isinstance(A, dolfin.cpp.la.PETScMatrix)
+    assert isinstance(b, dolfin.cpp.la.PETScVector)
+
+
 def test_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
@@ -114,8 +136,10 @@ def test_matrix_assembly_block():
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
     assembler = dolfin.fem.assembler.Assembler([[a]], [L], [bc])
 
-    A2 = assembler.assemble_matrix(mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    b2 = assembler.assemble_vector(mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    A2 = assembler.assemble_matrix(
+        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    b2 = assembler.assemble_vector(
+        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     assert A2.mat().getType() != "nest"
 
     Anorm2 = A2.mat().norm()

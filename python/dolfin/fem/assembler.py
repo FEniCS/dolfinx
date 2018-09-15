@@ -8,13 +8,10 @@
 
 """
 
-from functools import singledispatch
-
 import dolfin.cpp as cpp
 import ufl
-from dolfin.fem.form import Form
-
 from dolfin.fem.assembling import _create_dolfin_form
+from dolfin.fem.form import Form
 
 
 class Assembler:
@@ -29,98 +26,22 @@ class Assembler:
         self.assembler = None
         self.form_compiler_parameters = form_compiler_parameters
 
-    @singledispatch
-    def assemble(self, x, mat_type=cpp.fem.Assembler.BlockType.monolithic):
-        raise RuntimeError("Unsupported ttype")
-
-    @assemble.register(cpp.la.PETScMatrix)
-    def assemble_matrix_tmp(self, A):
-        if self.assembler is None:
-            # Compile forms
-            try:
-                a_forms = [[
-                    _create_dolfin_form(a, self.form_compiler_parameters)
-                    for a in row
-                ] for row in self.a]
-            except TypeError:
-                a_forms = [[
-                    _create_dolfin_form(self.a, self.form_compiler_parameters)
-                ]]
-            try:
-                L_forms = [
-                    _create_dolfin_form(L, self.form_compiler_parameters)
-                    for L in self.L
-                ]
-            except TypeError:
-                L_forms = [
-                    _create_dolfin_form(self.L, self.form_compiler_parameters)
-                ]
-
-            # Create assembler
-            self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
-
-        self.assembler.assemble(A)
-        return A
-
-    @assemble.register(cpp.la.PETScVector)
-    def assemble_vector_tmp(self, b):
-        if self.assembler is None:
-            # Compile forms
-            try:
-                a_forms = [[
-                    _create_dolfin_form(a, self.form_compiler_parameters)
-                    for a in row
-                ] for row in self.a]
-            except TypeError:
-                a_forms = [[
-                    _create_dolfin_form(self.a, self.form_compiler_parameters)
-                ]]
-            try:
-                L_forms = [
-                    _create_dolfin_form(L, self.form_compiler_parameters)
-                    for L in self.L
-                ]
-            except TypeError:
-                L_forms = [
-                    _create_dolfin_form(self.L, self.form_compiler_parameters)
-                ]
-
-            # Create assembler
-            self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
-
-        self.assembler.assemble(b)
-        return b
+    def assemble(self, x):
+        self._compile_forms()
+        self.assembler.assemble(x)
+        return x
 
     def assemble_matrix(self, mat_type=cpp.fem.Assembler.BlockType.monolithic):
-        if self.assembler is None:
-            # Compile forms
-            try:
-                a_forms = [[
-                    _create_dolfin_form(a, self.form_compiler_parameters)
-                    for a in row
-                ] for row in self.a]
-            except TypeError:
-                a_forms = [[
-                    _create_dolfin_form(self.a, self.form_compiler_parameters)
-                ]]
-            try:
-                L_forms = [
-                    _create_dolfin_form(L, self.form_compiler_parameters)
-                    for L in self.L
-                ]
-            except TypeError:
-                L_forms = [
-                    _create_dolfin_form(self.L, self.form_compiler_parameters)
-                ]
-
-            # Create assembler
-            self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
-
+        self._compile_forms()
         return self.assembler.assemble_matrix(mat_type)
 
     def assemble_vector(self, mat_type=cpp.fem.Assembler.BlockType.monolithic):
+        self._compile_forms()
+        return self.assembler.assemble_vector(mat_type)
+
+    # FIXME: simplify this function
+    def _compile_forms(self):
         if self.assembler is None:
-            # Compile forms
             try:
                 a_forms = [[
                     _create_dolfin_form(a, self.form_compiler_parameters)
@@ -142,5 +63,3 @@ class Assembler:
 
             # Create assembler
             self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
-
-        return self.assembler.assemble_vector(mat_type)
