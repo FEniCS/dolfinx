@@ -80,7 +80,7 @@ def test_matrix_assembly_block():
 
     # Create assembler
     assembler = dolfin.fem.assemble.Assembler([[a00, a01], [a10, a11]],
-                                               [L0, L1], [bc])
+                                              [L0, L1], [bc])
 
     # Monolithic blocked
     A0 = assembler.assemble_matrix(
@@ -190,7 +190,7 @@ def xtest_assembly_solve_block():
 
     # Create assembler
     assembler = dolfin.fem.assemble.Assembler([[a00, a01], [a10, a11]],
-                                               [L0, L1], [bc0, bc1])
+                                              [L0, L1], [bc0, bc1])
 
     # Monolithic blocked
     A0, b0 = assembler.assemble(
