@@ -54,24 +54,30 @@ public:
   /// Destructor
   ~Assembler();
 
+  /// Return assembled matrix. Dirichlet rows/columns are zeroed, and
+  /// '1' placed on diagonal.
+  la::PETScMatrix assemble_matrix(BlockType type = BlockType::nested);
+
   /// Assemble matrix. Dirichlet rows/columns are zeroed, and '1'
   /// placed on diagonal
-  la::PETScMatrix assemble_matrix(BlockType type = BlockType::nested);
   void assemble(la::PETScMatrix& A);
+
+  /// Return assembled vector. Boundary conditions have no effect on the
+  /// assembled vector.
+  la::PETScVector assemble_vector(BlockType type = BlockType::nested);
 
   /// Assemble vector. Boundary conditions have no effect on the
   /// assembled vector.
-  la::PETScVector assemble_vector(BlockType type = BlockType::nested);
   void assemble(la::PETScVector& b);
 
-  /// Add '1' to diagonal for Dirichlet rows. Rows must be local to the
-  /// process.
+private:
+  // Add '1' to diagonal for Dirichlet rows. Rows must be local to the
+  // process.
   static void
   ident(la::PETScMatrix& A,
         const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
         PetscScalar diag = 1.0);
 
-private:
   static Eigen::Array<PetscInt, Eigen::Dynamic, 1>
   get_local_bc_rows(const function::FunctionSpace& V,
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);

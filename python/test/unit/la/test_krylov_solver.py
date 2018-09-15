@@ -7,11 +7,15 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import (UnitSquareMesh, FunctionSpace, MPI, TrialFunction, TestFunction,
-                    Constant, dx, cpp, sym, dot, inner, grad, tr, Identity, VectorFunctionSpace,
-                    Function, DirichletBC, fem)
-from dolfin.la import PETScKrylovSolver, PETScVector, PETScMatrix, PETScOptions, VectorSpaceBasis
+
+from dolfin import (MPI, Constant, DirichletBC, Function, FunctionSpace,
+                    Identity, TestFunction, TrialFunction, UnitSquareMesh,
+                    VectorFunctionSpace, cpp, dot, dx, fem, grad, inner, sym,
+                    tr)
+from dolfin.fem import assembler
 from dolfin.fem.assembling import assemble_system
+from dolfin.la import (PETScKrylovSolver, PETScMatrix, PETScOptions,
+                       PETScVector, VectorSpaceBasis)
 
 
 def test_krylov_solver_lu():
@@ -22,8 +26,9 @@ def test_krylov_solver_lu():
 
     a = Constant(1.0) * inner(u, v) * dx
     L = inner(Constant(1.0), v) * dx
-    assembler = fem.assembling.Assembler(a, L)
-    A, b = assembler.assemble()
+    assembler = fem.assembler.Assembler(a, L)
+    A = assembler.assemble_matrix()
+    b = assembler.assemble_vector()
 
     norm = 13.0
 
@@ -61,8 +66,9 @@ def test_krylov_reuse_pc_lu():
 
     a = Constant(1.0) * u * v * dx
     L = Constant(1.0) * v * dx
-    assembler = fem.assembling.Assembler(a, L)
-    A, b = assembler.assemble()
+    assembler = fem.assembler.Assembler(a, L)
+    A = assembler.assemble_matrix()
+    b = assembler.assemble_vector()
     norm = 13.0
 
     solver = PETScKrylovSolver(mesh.mpi_comm())
@@ -75,7 +81,7 @@ def test_krylov_reuse_pc_lu():
     solver.solve(x, b)
     assert round(x.norm(cpp.la.Norm.l2) - norm, 10) == 0
 
-    assembler = fem.assembling.Assembler(Constant(0.5) * u * v * dx, L)
+    assembler = fem.assembler.Assembler(Constant(0.5) * u * v * dx, L)
     assembler.assemble(A)
     x = PETScVector(mesh.mpi_comm())
     solver.solve(x, b)

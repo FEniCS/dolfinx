@@ -12,6 +12,7 @@ import pytest
 from petsc4py import PETSc
 
 import dolfin
+import dolfin.fem.assembler
 import ufl
 from ufl import dx, inner
 
@@ -56,18 +57,22 @@ def test_matrix_assembly_block():
     L1 = inner(g, q) * dx
 
     # Create assembler
-    assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
-                                                [L0, L1], [bc])
+    assembler = dolfin.fem.assembler.Assembler([[a00, a01], [a10, a11]],
+                                               [L0, L1], [bc])
 
     # Monolithic blocked
-    A0, b0 = assembler.assemble(
+    A0 = assembler.assemble_matrix(
+        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    b0 = assembler.assemble_vector(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     assert A0.mat().getType() != "nest"
     Anorm0 = A0.mat().norm()
     bnorm0 = b0.vec().norm()
 
     # Nested (MatNest)
-    A1, b1 = assembler.assemble(
+    A1 = assembler.assemble_matrix(
+        mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
+    b1 = assembler.assemble_vector(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
     assert A1.mat().getType() == "nest"
 
@@ -102,14 +107,15 @@ def test_matrix_assembly_block():
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
     u0, u1 = dolfin.function.argument.TrialFunctions(W)
     v0, v1 = dolfin.function.argument.TestFunctions(W)
-    a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(u1, v0) * dx
+    a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
+        u1, v0) * dx
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    assembler = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
+    assembler = dolfin.fem.assembler.Assembler([[a]], [L], [bc])
 
-    A2, b2 = assembler.assemble(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    A2 = assembler.assemble_matrix(mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    b2 = assembler.assemble_vector(mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
     assert A2.mat().getType() != "nest"
 
     Anorm2 = A2.mat().norm()
@@ -159,8 +165,8 @@ def xtest_assembly_solve_block():
         # print("Norm:", its, rnorm)
 
     # Create assembler
-    assembler = dolfin.fem.assembling.Assembler([[a00, a01], [a10, a11]],
-                                                [L0, L1], [bc0, bc1])
+    assembler = dolfin.fem.assembler.Assembler([[a00, a01], [a10, a11]],
+                                               [L0, L1], [bc0, bc1])
 
     # Monolithic blocked
     A0, b0 = assembler.assemble(
@@ -208,7 +214,7 @@ def xtest_assembly_solve_block():
 
     u_bc = dolfin.function.constant.Constant((50.0, 20.0))
     bc = dolfin.fem.dirichletbc.DirichletBC(W, u_bc, boundary)
-    assembler = dolfin.fem.assembling.Assembler([[a]], [L], [bc])
+    assembler = dolfin.fem.assembler.Assembler([[a]], [L], [bc])
 
     A2, b2 = assembler.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)

@@ -138,22 +138,19 @@ void fem(py::module& m)
       .def("neighbours", &dolfin::fem::GenericDofMap::neighbours)
       .def("shared_nodes", &dolfin::fem::GenericDofMap::shared_nodes)
       .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
-      .def("dofs", (std::vector<PetscInt>(
-                       dolfin::fem::GenericDofMap::*)() const)
-                       & dolfin::fem::GenericDofMap::dofs)
       .def("dofs",
-           (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)(
-               const dolfin::mesh::Mesh&, std::size_t) const)
+           (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)() const)
                & dolfin::fem::GenericDofMap::dofs)
-      .def("entity_dofs",
-           (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)(
-               const dolfin::mesh::Mesh&, std::size_t) const)
-               & dolfin::fem::GenericDofMap::entity_dofs)
-      .def("entity_dofs",
-           (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)(
-               const dolfin::mesh::Mesh&, std::size_t,
-               const std::vector<std::size_t>&) const)
-               & dolfin::fem::GenericDofMap::entity_dofs)
+      .def("dofs", (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)(
+                       const dolfin::mesh::Mesh&, std::size_t) const)
+                       & dolfin::fem::GenericDofMap::dofs)
+      .def("entity_dofs", (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)(
+                              const dolfin::mesh::Mesh&, std::size_t) const)
+                              & dolfin::fem::GenericDofMap::entity_dofs)
+      .def("entity_dofs", (std::vector<PetscInt>(dolfin::fem::GenericDofMap::*)(
+                              const dolfin::mesh::Mesh&, std::size_t,
+                              const std::vector<std::size_t>&) const)
+                              & dolfin::fem::GenericDofMap::entity_dofs)
       .def("num_entity_dofs", &dolfin::fem::GenericDofMap::num_entity_dofs)
       .def("tabulate_local_to_global_dofs",
            &dolfin::fem::GenericDofMap::tabulate_local_to_global_dofs)

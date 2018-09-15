@@ -23,46 +23,6 @@ from dolfin.fem.form import Form
 __all__ = ["assemble_local", "SystemAssembler"]
 
 
-class Assembler:
-    def __init__(self, a, L, bcs=None, form_compiler_parameters=None):
-
-        self.a = a
-        self.L = L
-        if bcs is None:
-            self.bcs = []
-        else:
-            self.bcs = bcs
-        self.assembler = None
-        self.form_compiler_parameters = form_compiler_parameters
-
-    def assemble(self, A=None, b=None, mat_type=cpp.fem.Assembler.BlockType.monolithic):
-        if self.assembler is None:
-            # Compile forms
-            try:
-                a_forms = [[_create_dolfin_form(a, self.form_compiler_parameters)
-                            for a in row] for row in self.a]
-            except TypeError:
-                a_forms = [[_create_dolfin_form(self.a, self.form_compiler_parameters)]]
-            try:
-                L_forms = [_create_dolfin_form(L, self.form_compiler_parameters) for L in self.L]
-            except TypeError:
-                L_forms = [_create_dolfin_form(self.L, self.form_compiler_parameters)]
-
-            # Create assembler
-            self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
-
-        if A is None:
-            A = self.assembler.assemble_matrix(mat_type)
-        else:
-            self.assembler.assemble(A)
-        if b is None:
-            b = self.assembler.assemble_vector(mat_type)
-        else:
-            self.assembler.assemble(b)
-
-        return A, b
-
-
 def _create_dolfin_form(form,
                         form_compiler_parameters=None,
                         function_spaces=None):
