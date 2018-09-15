@@ -8,15 +8,14 @@
 
 """
 
+import typing
+
 import dolfin.cpp as cpp
-import ufl
-from dolfin.fem.assembling import _create_dolfin_form
-from dolfin.fem.form import Form
+from dolfin.fem.assembling import _create_cpp_form
 
 
 class Assembler:
     def __init__(self, a, L, bcs=None, form_compiler_parameters=None):
-
         self.a = a
         self.L = L
         if bcs is None:
@@ -26,16 +25,25 @@ class Assembler:
         self.assembler = None
         self.form_compiler_parameters = form_compiler_parameters
 
-    def assemble(self, x):
+    def assemble(self, x: typing.Union[cpp.la.PETScMatrix, cpp.la.PETScVector]
+                 ) -> typing.Union[cpp.la.PETScMatrix, cpp.la.PETScVector]:
+        """Assemble form into linear alebra object. The linear algebra
+        object must already be initialised.
+
+        """
         self._compile_forms()
         self.assembler.assemble(x)
         return x
 
-    def assemble_matrix(self, mat_type=cpp.fem.Assembler.BlockType.monolithic):
+    def assemble_matrix(self, mat_type=cpp.fem.Assembler.BlockType.monolithic
+                        ) -> cpp.la.PETScMatrix:
+        """Assemble matrix from bilinear form"""
         self._compile_forms()
         return self.assembler.assemble_matrix(mat_type)
 
-    def assemble_vector(self, mat_type=cpp.fem.Assembler.BlockType.monolithic):
+    def assemble_vector(self, mat_type=cpp.fem.Assembler.BlockType.monolithic
+                        ) -> cpp.la.PETScVector:
+        """Assemble vector from bilinear form"""
         self._compile_forms()
         return self.assembler.assemble_vector(mat_type)
 
@@ -44,22 +52,21 @@ class Assembler:
         if self.assembler is None:
             try:
                 a_forms = [[
-                    _create_dolfin_form(a, self.form_compiler_parameters)
+                    _create_cpp_form(a, self.form_compiler_parameters)
                     for a in row
                 ] for row in self.a]
             except TypeError:
                 a_forms = [[
-                    _create_dolfin_form(self.a, self.form_compiler_parameters)
+                    _create_cpp_form(self.a, self.form_compiler_parameters)
                 ]]
             try:
                 L_forms = [
-                    _create_dolfin_form(L, self.form_compiler_parameters)
+                    _create_cpp_form(L, self.form_compiler_parameters)
                     for L in self.L
                 ]
             except TypeError:
                 L_forms = [
-                    _create_dolfin_form(self.L, self.form_compiler_parameters)
+                    _create_cpp_form(self.L, self.form_compiler_parameters)
                 ]
 
-            # Create assembler
             self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)

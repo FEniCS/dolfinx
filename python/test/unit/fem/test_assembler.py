@@ -12,7 +12,7 @@ import pytest
 from petsc4py import PETSc
 
 import dolfin
-import dolfin.fem.assembler
+import dolfin.fem.assemble
 import ufl
 from ufl import dx, inner
 
@@ -24,7 +24,7 @@ def test_basic_assembly():
 
     a = dolfin.Constant(1.0) * inner(u, v) * dx
     L = inner(dolfin.Constant(1.0), v) * dx
-    assembler = dolfin.fem.assembler.Assembler(a, L)
+    assembler = dolfin.fem.assemble.Assembler(a, L)
 
     # Initial assembly
     A = assembler.assemble_matrix()
@@ -79,7 +79,7 @@ def test_matrix_assembly_block():
     L1 = inner(g, q) * dx
 
     # Create assembler
-    assembler = dolfin.fem.assembler.Assembler([[a00, a01], [a10, a11]],
+    assembler = dolfin.fem.assemble.Assembler([[a00, a01], [a10, a11]],
                                                [L0, L1], [bc])
 
     # Monolithic blocked
@@ -134,7 +134,7 @@ def test_matrix_assembly_block():
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    assembler = dolfin.fem.assembler.Assembler([[a]], [L], [bc])
+    assembler = dolfin.fem.assemble.Assembler([[a]], [L], [bc])
 
     A2 = assembler.assemble_matrix(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
@@ -189,7 +189,7 @@ def xtest_assembly_solve_block():
         # print("Norm:", its, rnorm)
 
     # Create assembler
-    assembler = dolfin.fem.assembler.Assembler([[a00, a01], [a10, a11]],
+    assembler = dolfin.fem.assemble.Assembler([[a00, a01], [a10, a11]],
                                                [L0, L1], [bc0, bc1])
 
     # Monolithic blocked
