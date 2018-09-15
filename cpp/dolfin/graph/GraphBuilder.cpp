@@ -38,9 +38,9 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   // Build graph
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>> dofs0
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs0
         = dofmap0.cell_dofs(cell.index());
-    Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>> dofs1
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs1
         = dofmap1.cell_dofs(cell.index());
 
     for (Eigen::Index i = 0; i < dofs0.size(); ++i)

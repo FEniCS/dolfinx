@@ -35,7 +35,7 @@ public:
 
   /// Create vector
   PETScVector(MPI_Comm comm, std::array<std::int64_t, 2> range,
-              const Eigen::Array<la_index_t, Eigen::Dynamic, 1>& ghost_indices,
+              const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
               int block_size);
 
   // FIXME: Try to remove
@@ -111,23 +111,23 @@ public:
 
   /// Get block of values using local indices
   void get_local(PetscScalar* block, std::size_t m,
-                 const dolfin::la_index_t* rows) const;
+                 const PetscInt* rows) const;
 
   /// Set block of values using global indices
   void set(const PetscScalar* block, std::size_t m,
-           const dolfin::la_index_t* rows);
+           const PetscInt* rows);
 
   /// Set block of values using local indices
   void set_local(const PetscScalar* block, std::size_t m,
-                 const dolfin::la_index_t* rows);
+                 const PetscInt* rows);
 
   /// Add block of values using global indices
   void add(const PetscScalar* block, std::size_t m,
-           const dolfin::la_index_t* rows);
+           const PetscInt* rows);
 
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m,
-                 const dolfin::la_index_t* rows);
+                 const PetscInt* rows);
 
   /// Get all values on local process
   void get_local(std::vector<PetscScalar>& values) const;
@@ -143,7 +143,7 @@ public:
   /// dimension (same as provided indices). This operation is
   /// collective.
   void gather(PETScVector& y,
-              const std::vector<dolfin::la_index_t>& indices) const;
+              const std::vector<PetscInt>& indices) const;
 
   /// Add multiple of given vector (AXPY operation, this = a*x + this)
   void axpy(PetscScalar a, const PETScVector& x);

@@ -51,7 +51,7 @@ public:
   static std::pair<std::vector<std::size_t>, std::vector<std::size_t>>
   map_gdof_to_cell(const MPI_Comm mpi_comm,
                    const std::vector<std::size_t>& input_cells,
-                   const std::vector<dolfin::la_index_t>& input_cell_dofs,
+                   const std::vector<PetscInt>& input_cell_dofs,
                    const std::vector<std::int64_t>& x_cell_dofs,
                    const std::array<std::int64_t, 2> vector_range);
 
@@ -61,7 +61,7 @@ public:
   /// DOFs in the range of "vector_range".
   ///
   /// Returns global_dof
-  static std::vector<dolfin::la_index_t> get_global_dof(
+  static std::vector<PetscInt> get_global_dof(
       MPI_Comm mpi_comm,
       const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
       const std::vector<std::size_t>& remote_local_dofi,
@@ -84,7 +84,7 @@ public:
   set_local_vector_values(MPI_Comm mpi_comm, la::PETScVector& x,
                           const mesh::Mesh& mesh,
                           const std::vector<size_t>& cells,
-                          const std::vector<dolfin::la_index_t>& cell_dofs,
+                          const std::vector<PetscInt>& cell_dofs,
                           const std::vector<std::int64_t>& x_cell_dofs,
                           const std::vector<PetscScalar>& vector,
                           std::array<std::int64_t, 2> input_vector_range,

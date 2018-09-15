@@ -7,13 +7,17 @@ non-matching mesh."""
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os, matplotlib
+if 'DISPLAY' not in os.environ:
+    matplotlib.use('agg')
+
 from dolfin import *
+from dolfin.plotting import plot
 import matplotlib.pyplot as plt
 
-
 # Create mesh and define function spaces
-mesh0 = UnitSquareMesh(16, 16)
-mesh1 = UnitSquareMesh(64, 64)
+mesh0 = UnitSquareMesh(MPI.comm_world, 16, 16)
+mesh1 = UnitSquareMesh(MPI.comm_world, 64, 64)
 
 # Create expression on P3
 u0 = Expression("sin(10.0*x[0])*sin(10.0*x[1])", degree=3)
@@ -34,6 +38,8 @@ solve(a == L, u1)
 # Plot functions
 plt.figure()
 plot(u0, mesh=mesh0, title="u0")
+plt.savefig("plot0.pdf")
 plt.figure()
 plot(u1, title="u1")
+plt.savefig("plot1.pdf")
 plt.show()

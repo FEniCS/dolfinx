@@ -156,21 +156,21 @@ SparsityPattern::SparsityPattern(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
-    const Eigen::Ref<const EigenArrayXlaindex> rows,
-    const Eigen::Ref<const EigenArrayXlaindex> cols)
+    const Eigen::Ref<const EigenArrayXpetscint> rows,
+    const Eigen::Ref<const EigenArrayXpetscint> cols)
 {
   // The primary_dim is global and must be mapped to local
-  const auto row_map = [](const la_index_t i_index,
-                          const common::IndexMap& index_map0) -> la_index_t {
+  const auto row_map = [](const PetscInt i_index,
+                          const common::IndexMap& index_map0) -> PetscInt {
     std::size_t bs = index_map0.block_size();
     assert(bs * index_map0.local_range()[0] <= (std::size_t)i_index
            and (std::size_t) i_index < bs * index_map0.local_range()[1]);
-    return i_index - (la_index_t)bs * index_map0.local_range()[0];
+    return i_index - (PetscInt)bs * index_map0.local_range()[0];
   };
 
   // The 1 is already global and stays the same
-  const auto col_map = [](const la_index_t j_index,
-                          const common::IndexMap& index_map1) -> la_index_t {
+  const auto col_map = [](const PetscInt j_index,
+                          const common::IndexMap& index_map1) -> PetscInt {
     return j_index;
   };
 
@@ -178,18 +178,18 @@ void SparsityPattern::insert_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
-    const Eigen::Ref<const EigenArrayXlaindex> rows,
-    const Eigen::Ref<const EigenArrayXlaindex> cols)
+    const Eigen::Ref<const EigenArrayXpetscint> rows,
+    const Eigen::Ref<const EigenArrayXpetscint> cols)
 {
   // The primary_dim is local and stays the same
-  const auto row_map = [](const la_index_t i_index,
-                          const common::IndexMap& index_map0) -> la_index_t {
+  const auto row_map = [](const PetscInt i_index,
+                          const common::IndexMap& index_map0) -> PetscInt {
     return i_index;
   };
 
   // The 1 must be mapped to global entries
-  const auto col_map = [](const la_index_t j_index,
-                          const common::IndexMap& index_map1) -> la_index_t {
+  const auto col_map = [](const PetscInt j_index,
+                          const common::IndexMap& index_map1) -> PetscInt {
     const int bs = index_map1.block_size();
     const std::div_t div = std::div(j_index, bs);
     const int component = div.rem;
@@ -201,16 +201,16 @@ void SparsityPattern::insert_local(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local_global(
-    const Eigen::Ref<const EigenArrayXlaindex> rows,
-    const Eigen::Ref<const EigenArrayXlaindex> cols)
+    const Eigen::Ref<const EigenArrayXpetscint> rows,
+    const Eigen::Ref<const EigenArrayXpetscint> cols)
 {
-  const auto row_map = [](const la_index_t i_index,
-                          const common::IndexMap& index_map0) -> la_index_t {
+  const auto row_map = [](const PetscInt i_index,
+                          const common::IndexMap& index_map0) -> PetscInt {
     return i_index;
   };
 
-  const auto col_map = [](const la_index_t j_index,
-                          const common::IndexMap& index_map1) -> la_index_t {
+  const auto col_map = [](const PetscInt j_index,
+                          const common::IndexMap& index_map1) -> PetscInt {
     return j_index;
   };
 
@@ -218,15 +218,15 @@ void SparsityPattern::insert_local_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_entries(
-    const Eigen::Ref<const EigenArrayXlaindex> rows,
-    const Eigen::Ref<const EigenArrayXlaindex> cols,
-    const std::function<la_index_t(const la_index_t, const common::IndexMap&)>&
+    const Eigen::Ref<const EigenArrayXpetscint> rows,
+    const Eigen::Ref<const EigenArrayXpetscint> cols,
+    const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
         row_map,
-    const std::function<la_index_t(const la_index_t, const common::IndexMap&)>&
+    const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
         col_map)
 {
-  const Eigen::Ref<const EigenArrayXlaindex> map_i = rows;
-  const Eigen::Ref<const EigenArrayXlaindex> map_j = cols;
+  const Eigen::Ref<const EigenArrayXpetscint> map_i = rows;
+  const Eigen::Ref<const EigenArrayXpetscint> map_j = cols;
   const common::IndexMap& index_map0 = *_index_maps[0];
   const common::IndexMap& index_map1 = *_index_maps[1];
 
@@ -256,7 +256,7 @@ void SparsityPattern::insert_entries(
     for (Eigen::Index i = 0; i < map_i.size(); ++i)
     {
       auto i_index = map_i[i];
-      assert(i_index < (la_index_t)_diagonal.size());
+      assert(i_index < (PetscInt)_diagonal.size());
       if (!has_full_rows || _full_rows.find(i) == full_rows_end)
       {
         _diagonal[i_index].insert(map_j.data(), map_j.data() + map_j.size());
@@ -278,22 +278,22 @@ void SparsityPattern::insert_entries(
         continue;
       }
 
-      if (I < (la_index_t)local_size0)
+      if (I < (PetscInt)local_size0)
       {
         // Store local entry in diagonal or off-diagonal block
         for (Eigen::Index j = 0; j < map_j.size(); ++j)
         {
           auto j_index = map_j[j];
           const auto J = col_map(j_index, index_map1);
-          if ((la_index_t)(bs1 * local_range1[0]) <= J
-              and J < (la_index_t)(bs1 * local_range1[1]))
+          if ((PetscInt)(bs1 * local_range1[0]) <= J
+              and J < (PetscInt)(bs1 * local_range1[1]))
           {
-            assert(I < (la_index_t)_diagonal.size());
+            assert(I < (PetscInt)_diagonal.size());
             _diagonal[I].insert(J);
           }
           else
           {
-            assert(I < (la_index_t)_off_diagonal.size());
+            assert(I < (PetscInt)_off_diagonal.size());
             _off_diagonal[I].insert(J);
           }
         }
@@ -466,7 +466,7 @@ void SparsityPattern::apply()
         = _index_maps[0]->ghost_owners();
 
     // Get local-to-global for unowned blocks
-    const Eigen::Ref<const Eigen::Array<la_index_t, Eigen::Dynamic, 1>>
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
         local_to_global = _index_maps[0]->ghosts();
 
     std::size_t dim_block_size = _index_maps[0]->block_size();
@@ -486,7 +486,7 @@ void SparsityPattern::apply()
       assert(p != proc_number);
 
       // Get global I index
-      la_index_t I = 0;
+      PetscInt I = 0;
       if (i_index < local_size0)
         I = i_index + offset0;
       else
@@ -515,11 +515,11 @@ void SparsityPattern::apply()
     for (std::size_t i = 0; i < non_local_received.size(); i += 2)
     {
       // Get global row and column
-      const la_index_t I = non_local_received[i];
-      const la_index_t J = non_local_received[i + 1];
+      const PetscInt I = non_local_received[i];
+      const PetscInt J = non_local_received[i + 1];
 
       // Sanity check
-      if (I < local_range0[0] or I >= (la_index_t)(bs0 * local_range0[1]))
+      if (I < local_range0[0] or I >= (PetscInt)(bs0 * local_range0[1]))
       {
         throw std::runtime_error(
             "Received illegal sparsity pattern entry for row/column "
@@ -532,8 +532,8 @@ void SparsityPattern::apply()
       const std::size_t i_index = I - offset0;
 
       // Insert in diagonal or off-diagonal block
-      if ((la_index_t)(bs1 * local_range1[0]) <= J
-          and J < (la_index_t)(bs1 * local_range1[1]))
+      if ((PetscInt)(bs1 * local_range1[0]) <= J
+          and J < (PetscInt)(bs1 * local_range1[1]))
       {
         assert(i_index < _diagonal.size());
         _diagonal[i_index].insert(J);

@@ -25,7 +25,7 @@ du/dn(x, y) = sin(5*x) for y = 0 or y = 1
 from dolfin import *
 from dolfin.io import XDMFFile
 import math
-parameters["form_compiler"]["representation"] = "uflacs"
+# parameters["form_compiler"]["representation"] = "uflacs"
 
 def compute(nsteps, coordinate_degree, element_degree, gdim):
     # Create mesh and define function space

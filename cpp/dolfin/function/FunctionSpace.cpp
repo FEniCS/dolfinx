@@ -291,8 +291,8 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
     // Copy dof coordinates into vector
     for (Eigen::Index i = 0; i < dofs.size(); ++i)
     {
-      const dolfin::la_index_t dof = dofs[i];
-      if (dof < (dolfin::la_index_t)local_size)
+      const PetscInt dof = dofs[i];
+      if (dof < (PetscInt)local_size)
         x.row(dof) = coordinates.row(i);
     }
   }

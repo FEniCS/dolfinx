@@ -26,10 +26,10 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
       _ufc_offset(-1)
 {
   assert(_ufc_dofmap);
-  _cell_dimension = _ufc_dofmap->num_element_dofs;
+  _cell_dimension = _ufc_dofmap->num_element_support_dofs
+                    + _ufc_dofmap->num_global_support_dofs;
 
-  std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
-           _neighbours, _dofmap)
+  std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
       = DofMapBuilder::build(*_ufc_dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
@@ -52,15 +52,12 @@ DofMap::DofMap(const DofMap& parent_dofmap,
   assert(parent_dofmap._ufc_dofmap);
   std::tie(_ufc_dofmap, _ufc_offset, _global_dimension, _dofmap)
       = DofMapBuilder::build_sub_map_view(
-          *parent_dofmap._ufc_dofmap, parent_dofmap._ufc_local_to_local,
-          parent_dofmap.block_size(), parent_offset, component, mesh);
+          parent_dofmap, *parent_dofmap._ufc_dofmap, parent_dofmap.block_size(),
+          parent_offset, component, mesh);
 
   assert(_ufc_dofmap);
-  _cell_dimension = _ufc_dofmap->num_element_dofs;
-
-  // FIXME: check that below is correct
-  if (_ufc_dofmap->num_sub_dofmaps > 0)
-    _ufc_local_to_local = parent_dofmap._ufc_local_to_local;
+  _cell_dimension = _ufc_dofmap->num_element_support_dofs
+                    + _ufc_dofmap->num_global_support_dofs;
 
   // FIXME: this will be wrong
   _shared_nodes = parent_dofmap._shared_nodes;
@@ -81,10 +78,10 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   check_provided_entities(*_ufc_dofmap, mesh);
 
   // Build new dof map
-  std::tie(_global_dimension, _index_map, _ufc_local_to_local, _shared_nodes,
-           _neighbours, _dofmap)
+  std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
       = DofMapBuilder::build(*_ufc_dofmap, mesh);
-  _cell_dimension = _ufc_dofmap->num_element_dofs;
+  _cell_dimension = _ufc_dofmap->num_element_support_dofs
+                    + _ufc_dofmap->num_global_support_dofs;
 
   // Dimension sanity checks
   assert(dofmap_view._dofmap.size()
@@ -118,7 +115,8 @@ std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 std::size_t DofMap::max_element_dofs() const
 {
   assert(_ufc_dofmap);
-  return _ufc_dofmap->num_element_dofs;
+  return _ufc_dofmap->num_element_support_dofs
+         + _ufc_dofmap->num_global_support_dofs;
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
@@ -127,10 +125,10 @@ std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
   return _ufc_dofmap->num_entity_dofs[entity_dim];
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::num_facet_dofs() const
+std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 {
   assert(_ufc_dofmap);
-  return _ufc_dofmap->num_facet_dofs;
+  return _ufc_dofmap->num_entity_closure_dofs[entity_dim];
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
@@ -148,14 +146,16 @@ const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
 //-----------------------------------------------------------------------------
 const std::set<int>& DofMap::neighbours() const { return _neighbours; }
 //-----------------------------------------------------------------------------
-void DofMap::tabulate_facet_dofs(std::vector<int>& element_dofs,
-                                 std::size_t cell_facet_index) const
+void DofMap::tabulate_entity_closure_dofs(std::vector<int>& element_dofs,
+                                          std::size_t entity_dim,
+                                          std::size_t cell_entity_index) const
 {
   assert(_ufc_dofmap);
-  element_dofs.resize(_ufc_dofmap->num_facet_dofs);
+  element_dofs.resize(_ufc_dofmap->num_entity_closure_dofs[entity_dim]);
 
-  assert(_ufc_dofmap->tabulate_facet_dofs);
-  _ufc_dofmap->tabulate_facet_dofs(element_dofs.data(), cell_facet_index);
+  assert(_ufc_dofmap->tabulate_entity_closure_dofs);
+  _ufc_dofmap->tabulate_entity_closure_dofs(element_dofs.data(), entity_dim,
+                                            cell_entity_index);
 }
 //-----------------------------------------------------------------------------
 void DofMap::tabulate_entity_dofs(std::vector<int>& element_dofs,

@@ -18,17 +18,26 @@ and homogeneous Dirichlet boundary conditions.
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os, matplotlib
+if 'DISPLAY' not in os.environ:
+    matplotlib.use('agg')
+
 from dolfin import *
+from dolfin.io import XDMFFile
+from dolfin.plotting import plot
+import numpy
 import matplotlib.pyplot as plt
 
 
 # Create mesh and define function space
-mesh = UnitSquareMesh(64, 64)
+mesh = UnitSquareMesh(MPI.comm_world, 64, 64)
 V = FunctionSpace(mesh, "CG", 2)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
 def boundary(x):
-    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS or x[1] < DOLFIN_EPS or x[1] > 1.0 - DOLFIN_EPS
+    result0 = numpy.logical_or(x[:, 0] < DOLFIN_EPS, x[:, 0] > 1.0 - DOLFIN_EPS)
+    result1 = numpy.logical_or(x[:, 1] < DOLFIN_EPS, x[:, 1] > 1.0 - DOLFIN_EPS)
+    return numpy.logical_or(result0, result1)
 
 # Define boundary condition
 u0 = Constant(0.0)
@@ -56,9 +65,10 @@ u = Function(V)
 solve(a == L, u, bc)
 
 # Save solution in VTK format
-file = File("conditional.pvd")
-file << u
+file = XDMFFile(MPI.comm_world, "conditional.xdmf")
+file.write(u)
 
 # Plot solution
 plot(u)
+plt.savefig("plot.pdf")
 plt.show()

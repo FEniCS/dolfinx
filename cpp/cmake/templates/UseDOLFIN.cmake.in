@@ -20,6 +20,9 @@ if (NOT DOLFIN_USE_FILE_INCLUDED)
   # Add DOLFIN-installed FindFoo.cmake files to path
   list(APPEND CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/@DOLFIN_SHARE_DIR@/cmake")
 
+  # Find MPI
+  find_package(MPI REQUIRED)
+
   # Check for Boost
   set(BOOST_ROOT $ENV{BOOST_DIR} $ENV{BOOST_HOME})
   if (BOOST_ROOT)

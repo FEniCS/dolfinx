@@ -38,42 +38,57 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-find_package(PythonInterp 3 REQUIRED)
+# Two paths: Set UFC_INCLUDE_DIR manually, or ask Python/FFC for location
+# of UFC headers.
 
-execute_process(
-  COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.backends.ufc.get_include_path())"
-  OUTPUT_VARIABLE UFC_INCLUDE_DIR
-  )
+if (DEFINED UFC_INCLUDE_DIR)
+  MESSAGE(STATUS "Looking for UFC in ${UFC_INCLUDE_DIR}...")
 
-if (UFC_INCLUDE_DIR)
-  set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h")
-  mark_as_advanced(UFC_INCLUDE_DIRS)
-
+  if (EXISTS "${UFC_INCLUDE_DIR}/ufc.h" AND EXISTS "${UFC_INCLUDE_DIR}/ufc_geometry.h")
+    set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h and ufc_geometry.h")
+    execute_process(
+      COMMAND /bin/bash -c "cat ${UFC_INCLUDE_DIR}/ufc.h ${UFC_INCLUDE_DIR}/ufc_geometry.h | sha1sum | cut -c 1-40"
+      OUTPUT_VARIABLE UFC_SIGNATURE OUTPUT_STRIP_TRAILING_WHITESPACE)
+    # Assume user knows what they are doing.
+    set(UFC_VERSION ${UFC_FIND_VERSION})
+    set(UFC_VERSION_OK TRUE)
+   else()
+       MESSAGE(STATUS "Could not find UFC.")
+   endif()
+else()
+  MESSAGE(STATUS "Asking Python module FFC for location of UFC...")
+  find_package(PythonInterp 3 REQUIRED)
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.__version__)"
-    OUTPUT_VARIABLE UFC_VERSION
+    COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.backends.ufc.get_include_path())"
+    OUTPUT_VARIABLE UFC_INCLUDE_DIR
     )
-  mark_as_advanced(UFC_VERSION)
 
-  if (UFC_FIND_VERSION)
-    # Check if version found is >= required version
-    if (NOT "${UFC_VERSION}" VERSION_LESS "${UFC_FIND_VERSION}")
+  if (UFC_INCLUDE_DIR)
+    set(UFC_INCLUDE_DIRS ${UFC_INCLUDE_DIR} CACHE STRING "Where to find ufc.h and ufc_geometry.h")
+
+    execute_process(
+      COMMAND ${PYTHON_EXECUTABLE} -c "import ffc, sys; sys.stdout.write(ffc.__version__)"
+      OUTPUT_VARIABLE UFC_VERSION
+      )
+
+    if (UFC_FIND_VERSION)
+      # Check if version found is >= required version
+      if (NOT "${UFC_VERSION}" VERSION_LESS "${UFC_FIND_VERSION}")
+        set(UFC_VERSION_OK TRUE)
+      endif()
+    else()
+      # No specific version requested
       set(UFC_VERSION_OK TRUE)
     endif()
-  else()
-    # No specific version requested
-    set(UFC_VERSION_OK TRUE)
   endif()
-  mark_as_advanced(UFC_VERSION_OK)
 
   execute_process(
     COMMAND ${PYTHON_EXECUTABLE} -c "import ffc.backends.ufc, sys; sys.stdout.write(ffc.backends.ufc.get_signature())"
     OUTPUT_VARIABLE UFC_SIGNATURE
-    )
-  mark_as_advanced(UFC_SIGNATURE)
-
+  )
 endif()
 
+mark_as_advanced(UFC_VERSION UFC_INCLUDE_DIRS UFC_SIGNATURE UFC_VERSION_OK)
 # Standard package handling
 find_package_handle_standard_args(UFC
                                   "UFC could not be found."

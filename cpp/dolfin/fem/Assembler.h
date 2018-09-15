@@ -68,7 +68,7 @@ public:
   /// process.
   static void ident(
       la::PETScMatrix& A,
-      const Eigen::Ref<const Eigen::Array<la_index_t, Eigen::Dynamic, 1>> rows,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
       PetscScalar diag = 1.0);
 
 private:

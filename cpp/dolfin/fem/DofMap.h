@@ -124,11 +124,14 @@ public:
   ///         Number of dofs associated with given entity dimension
   virtual std::size_t num_entity_dofs(std::size_t entity_dim) const;
 
-  /// Return number of facet dofs
+  /// Return the number of closure dofs for a given entity dimension
+  /// s
+  /// @param     entity_dim (std::size_t)
+  ///         Entity dimension
   ///
   /// @return     std::size_t
-  ///         The number of facet dofs.
-  std::size_t num_facet_dofs() const;
+  ///         Number of dofs associated with closure of given entity dimension
+  virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const;
 
   /// Return the ownership range (dofs in this range are owned by
   /// this process)
@@ -155,28 +158,30 @@ public:
   /// @param     cell_index (std::size_t)
   ///         The cell index.
   ///
-  /// @return         Eigen::Map<const Eigen::Array<dolfin::la_index_t,
+  /// @return         Eigen::Map<const Eigen::Array<PetscInt,
   /// Eigen::Dynamic, 1>>
-  Eigen::Map<const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>
+  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   cell_dofs(std::size_t cell_index) const
   {
     const std::size_t index = cell_index * _cell_dimension;
     assert(index + _cell_dimension <= _dofmap.size());
-    return Eigen::Map<
-        const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>(
+    return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
         &_dofmap[index], _cell_dimension);
   }
 
-  /// Tabulate local-local facet dofs
+  /// Tabulate local-local closure dofs on entity of cell
   ///
   /// @param    element_dofs (std::size_t)
   ///         Degrees of freedom on a single element.
-  /// @param    cell_facet_index (std::size_t)
-  ///         The local facet index on the cell.
-  void tabulate_facet_dofs(std::vector<int>& element_dofs,
-                           std::size_t cell_facet_index) const;
+  /// @param   entity_dim (std::size_t)
+  ///         The entity dimension.
+  /// @param    cell_entity_index (std::size_t)
+  ///         The local entity index on the cell.
+  void tabulate_entity_closure_dofs(std::vector<int>& element_dofs,
+                                    std::size_t entity_dim,
+                                    std::size_t cell_entity_index) const;
 
-  /// Tabulate local-local mapping of dofs on entity (dim, local_entity)
+  /// Tabulate local-local mapping of dofs on entity of cell
   ///
   /// @param    element_dofs (std::size_t)
   ///         Degrees of freedom on a single element.
@@ -250,7 +255,7 @@ private:
                                       const mesh::Mesh& mesh);
 
   // Cell-local-to-dof map (dofs for cell dofmap[i])
-  std::vector<dolfin::la_index_t> _dofmap;
+  std::vector<PetscInt> _dofmap;
 
   // List of global nodes
   std::set<std::size_t> _global_nodes;
@@ -260,10 +265,6 @@ private:
 
   // UFC dof map
   std::shared_ptr<const ufc_dofmap> _ufc_dofmap;
-
-  // Map from UFC dof numbering to renumbered dof (ufc_dof ->
-  // actual_dof, both using local indices)
-  std::vector<int> _ufc_local_to_local;
 
   // Global dimension
   std::int64_t _global_dimension;

@@ -21,9 +21,6 @@ std::string ufc_signature();
 /// not known)
 std::string git_commit_hash();
 
-/// Return sizeof the dolfin::la_index_t type
-std::size_t sizeof_la_index_t();
-
 /// Return true if DOLFIN is compiled in debugging mode,
 /// i.e., with assertions on
 bool has_debug();

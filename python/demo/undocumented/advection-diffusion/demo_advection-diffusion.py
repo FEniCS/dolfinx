@@ -5,6 +5,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from dolfin import *
+from dolfin import cpp
+from dolfin.io import XDMFFile
 import matplotlib.pyplot as plt
 
 def boundary_value(n):
@@ -14,8 +16,10 @@ def boundary_value(n):
         return 1.0
 
 # Load mesh and subdomains
-mesh = Mesh("../dolfin_fine.xml.gz")
-sub_domains = MeshFunction("size_t", mesh, "../dolfin_fine_subdomains.xml.gz");
+xdmf_mesh = XDMFFile(MPI.comm_world, "dolfin_fine.xdmf")
+mesh = xdmf_mesh.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
+sub_domains = xdmf_mesh.read_mf_size_t(mesh)
+
 h = CellDiameter(mesh)
 
 # Create FunctionSpaces
@@ -23,8 +27,8 @@ Q = FunctionSpace(mesh, "CG", 1)
 V = VectorFunctionSpace(mesh, "CG", 2)
 
 # Create velocity Function from file
-velocity = Function(V);
-File("../dolfin_fine_velocity.xml.gz") >> velocity
+xdmf_velocity = XDMFFile(MPI.comm_world, "dolfin_fine_velocity.xdmf")
+velocity = xdmf_velocity.read_checkpoint(V, "velocity")
 
 # Initialise source function and previous solution function
 f  = Constant(0.0)
@@ -70,7 +74,7 @@ solver = LUSolver(A)
 solver.parameters["reuse_factorization"] = True
 
 # Output file
-out_file = File("results/temperature.pvd")
+out_file = VTKFile("results/temperature.pvd")
 
 # Set intial condition
 u = u0
@@ -79,7 +83,7 @@ u = u0
 i = 0
 plt.figure()
 plot(u, title=r"t = {0:1.1f}".format(0.0))
-i += 1 
+i += 1
 
 while t - T < DOLFIN_EPS:
     # Assemble vector and apply boundary conditions
@@ -93,7 +97,7 @@ while t - T < DOLFIN_EPS:
     u0 = u
 
     # Plot solution
-    if i % 5 == 0: 
+    if i % 5 == 0:
         plt.figure()
         plot(u, title=r"t = {0:1.1f}".format(t))
 

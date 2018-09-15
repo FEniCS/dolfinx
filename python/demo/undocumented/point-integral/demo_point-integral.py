@@ -21,19 +21,21 @@ du/dn(x, y) = A*sin(5*x) for y = 0 or y = 1
 # Begin demo
 
 from dolfin import *
+import numpy as np
 import matplotlib.pyplot as plt
 
 # Create mesh and define function space
-mesh = UnitSquareMesh(128, 128)
+mesh = UnitSquareMesh(MPI.comm_world, 128, 128)
 V = FunctionSpace(mesh, "Lagrange", 1)
 
 # Define Dirichlet boundary (x = 0 or x = 1)
 def boundary(x):
-    return x[0] < DOLFIN_EPS or x[0] > 1.0 - DOLFIN_EPS
+    return np.logical_or(x[:, 0] < DOLFIN_EPS, x[:, 0] > 1.0 - DOLFIN_EPS)
 
 def center_func(x):
-    return (0.45 <= x[0] and x[0] <= 0.55 and near(x[1], 0.5)) or \
-           0.45 <= x[1] and x[1] <= 0.55 and near(x[0], 0.5)
+    r1 = np.logical_and(np.logical_and(0.45 <= x[:, 0], x[:, 0] <= 0.55), np.isclose(x[:, 1], 0.5))
+    r2 = np.logical_and(np.logical_and(0.45 <= x[:, 1], x[:, 1] <= 0.55), np.isclose(x[:, 0], 0.5))
+    return np.logical_or(r1, r2)
 
 # Define domain for point integral
 center_domain = MeshFunction("size_t", mesh, 0, 0)

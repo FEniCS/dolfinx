@@ -1,6 +1,6 @@
 install-dependencies: &install-dependencies
   name: Install/update Python (test/doc) dependencies
-  command: pip3 install decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+  command: pip3 install cffi decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
 
 install-python-components: &install-python-components
   name: Install FEniCS Python components
@@ -9,7 +9,7 @@ install-python-components: &install-python-components
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
-            pip3 install git+https://github.com/IgorBaratta/ffcx --upgrade
+            pip3 install git+https://github.com/FEniCS/ffcx --upgrade
             rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
 flake8-python-code: &flake8-python-code
@@ -210,6 +210,6 @@ workflows:
           filters:
             branches:
               only:
-                - igor/nightly-build
+                - master
     jobs:
       - build-complex

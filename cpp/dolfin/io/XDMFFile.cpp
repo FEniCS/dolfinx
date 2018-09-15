@@ -1388,7 +1388,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
 
   const std::size_t tdim = mesh.topology().dim();
-  std::vector<dolfin::la_index_t> cell_dofs;
+  std::vector<PetscInt> cell_dofs;
   std::vector<std::size_t> x_cell_dofs;
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
@@ -1405,7 +1405,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
     for (Eigen::Index j = 0; j < cell_dofs_i.size(); ++j)
     {
       auto p = cell_dofs_i[j];
-      assert(p < (dolfin::la_index_t)local_to_global_map.size());
+      assert(p < (PetscInt)local_to_global_map.size());
       cell_dofs.push_back(local_to_global_map[p]);
     }
   }
@@ -1693,7 +1693,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
       {{cell_range[0], cell_range[1] + 1}});
 
   // Read cell dofmaps
-  std::vector<dolfin::la_index_t> cell_dofs = get_dataset<dolfin::la_index_t>(
+  std::vector<PetscInt> cell_dofs = get_dataset<PetscInt>(
       _mpi_comm.comm(), cell_dofs_dataitem, parent_path,
       {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
@@ -2797,7 +2797,7 @@ XDMFFile::get_cell_data_values(const function::Function& u)
   const std::size_t local_size = num_local_cells * value_size;
 
   // Build lists of dofs and create map
-  std::vector<dolfin::la_index_t> dof_set;
+  std::vector<PetscInt> dof_set;
   dof_set.reserve(local_size);
   const auto dofmap = u.function_space()->dofmap();
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
@@ -2879,7 +2879,8 @@ XDMFFile::get_point_data_values(const function::Function& u)
   const std::size_t num_local_points = mesh->geometry().num_points();
   std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
 
-  if (u.value_rank() > 0)
+  const std::size_t value_rank = u.value_rank();
+  if (value_rank > 0)
   {
     // Transpose vector/tensor data arrays
     const std::size_t value_size = u.value_size();
@@ -2887,7 +2888,8 @@ XDMFFile::get_point_data_values(const function::Function& u)
     {
       for (std::size_t j = 0; j < value_size; j++)
       {
-        std::size_t tensor_2d_offset = (j > 1 && value_size == 4) ? 1 : 0;
+        std::size_t tensor_2d_offset
+            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
         _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
       }
     }
@@ -2925,7 +2927,7 @@ XDMFFile::get_p2_data_values(const function::Function& u)
       = mesh->num_entities(0) + mesh->num_entities(1);
   const std::size_t width = get_padded_width(u);
   std::vector<PetscScalar> data_values(width * num_local_points);
-  std::vector<dolfin::la_index_t> data_dofs(data_values.size(), 0);
+  std::vector<PetscInt> data_dofs(data_values.size(), 0);
 
   assert(u.function_space()->dofmap());
   const auto dofmap = u.function_space()->dofmap();

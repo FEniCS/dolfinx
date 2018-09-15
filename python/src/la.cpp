@@ -166,7 +166,7 @@ void la(py::module& m)
       .def(py::init(
           [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
              const Eigen::Ref<
-                 const Eigen::Array<dolfin::la_index_t, Eigen::Dynamic, 1>>
+                 const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
                  ghost_indices,
              int block_size) {
             return dolfin::la::PETScVector(comm.get(), range, ghost_indices,

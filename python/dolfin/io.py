@@ -7,6 +7,7 @@
 """IO module for input data, post-processing and checkpointing"""
 
 import dolfin.cpp as cpp
+import dolfin.fem
 from dolfin.function.function import Function
 
 
@@ -84,8 +85,10 @@ class HDF5File:
 
     def read_mesh(self, mpi_comm, data_path: str,
                   use_partition_from_file: bool, ghost_mode):
-        return self._cpp_object.read_mesh(mpi_comm, data_path,
+        mesh = self._cpp_object.read_mesh(mpi_comm, data_path,
                                           use_partition_from_file, ghost_mode)
+        mesh.geometry.coord_mapping = dolfin.fem.create_coordinate_map(mesh)
+        return mesh
 
     def read_function(self, V, name: str):
         """Read finite element Function from file
@@ -195,7 +198,9 @@ class XDMFFile:
     # ----------------------------------------------------------
 
     def read_mesh(self, mpi_comm, ghost_mode):
-        return self._cpp_object.read_mesh(mpi_comm, ghost_mode)
+        mesh = self._cpp_object.read_mesh(mpi_comm, ghost_mode)
+        mesh.geometry.coord_mapping = dolfin.fem.create_coordinate_map(mesh)
+        return mesh
 
     def read_checkpoint(self, V, name: str, counter: int = -1) -> Function:
         """Read finite element Function from checkpointing format

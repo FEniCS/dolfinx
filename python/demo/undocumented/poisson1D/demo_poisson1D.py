@@ -18,18 +18,25 @@ and boundary conditions given by
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os, matplotlib
+if 'DISPLAY' not in os.environ:
+    matplotlib.use('agg')
+
 from dolfin import *
+from dolfin.io import XDMFFile
+from dolfin.plotting import plot
 import matplotlib.pyplot as plt
+import numpy
 
 
 # Create mesh and function space
-mesh = UnitIntervalMesh(50)
+mesh = UnitIntervalMesh(MPI.comm_world, 50)
 V = FunctionSpace(mesh, "CG", 1)
 
 # Sub domain for Dirichlet boundary condition
 class DirichletBoundary(SubDomain):
     def inside(self, x, on_boundary):
-        return on_boundary and x[0] < DOLFIN_EPS
+        return numpy.logical_and(x[:, 0] < DOLFIN_EPS, on_boundary)
 
 # Define variational problem
 u = TrialFunction(V)
@@ -49,9 +56,10 @@ u = Function(V)
 solve(a == L, u, bc)
 
 # Save solution to file
-file = File("poisson.pvd")
-file << u
+file = XDMFFile(MPI.comm_world, "poisson.xdmf")
+file.write(u)
 
 # Plot solution
 plot(u)
+plt.savefig('plot.pdf')
 plt.show()
