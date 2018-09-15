@@ -12,7 +12,6 @@ from petsc4py import PETSc
 
 from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
                     list_timings)
-from dolfin.la import PETScMatrix, PETScVector
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
