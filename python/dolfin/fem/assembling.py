@@ -23,49 +23,8 @@ from dolfin.fem.form import Form
 __all__ = ["assemble_local", "SystemAssembler"]
 
 
-class Assembler:
-    def __init__(self, a, L, bcs=None, form_compiler_parameters=None):
-
-        self.a = a
-        self.L = L
-        if bcs is None:
-            self.bcs = []
-        else:
-            self.bcs = bcs
-        self.assembler = None
-        self.form_compiler_parameters = form_compiler_parameters
-
-    def assemble(self, A=None, b=None, mat_type=cpp.fem.Assembler.BlockType.monolithic):
-        if self.assembler is None:
-            # Compile forms
-            try:
-                a_forms = [[_create_dolfin_form(a, self.form_compiler_parameters)
-                            for a in row] for row in self.a]
-            except TypeError:
-                a_forms = [[_create_dolfin_form(self.a, self.form_compiler_parameters)]]
-            try:
-                L_forms = [_create_dolfin_form(L, self.form_compiler_parameters) for L in self.L]
-            except TypeError:
-                L_forms = [_create_dolfin_form(self.L, self.form_compiler_parameters)]
-
-            # Create assembler
-            self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
-
-        # Create matrix/vector (if required)
-        if A is None:
-            A = cpp.la.PETScMatrix()
-        if b is None:
-            b = cpp.la.PETScVector()
-
-        # self.assembler.assemble(A, b)
-        self.assembler.assemble(A, mat_type)
-        self.assembler.assemble(b, mat_type)
-        return A, b
-
-
-def _create_dolfin_form(form,
-                        form_compiler_parameters=None,
-                        function_spaces=None):
+def _create_cpp_form(form, form_compiler_parameters=None,
+                     function_spaces=None):
     # First check if we got a cpp.Form
     if isinstance(form, cpp.fem.Form):
 
@@ -94,7 +53,7 @@ def assemble_local(form, cell, form_compiler_parameters=None):
     if isinstance(form, cpp.fem.Form):
         dolfin_form = form
     else:
-        dolfin_form = _create_dolfin_form(form, form_compiler_parameters)
+        dolfin_form = _create_cpp_form(form, form_compiler_parameters)
     result = cpp.fem.assemble_local(dolfin_form, cell)
     if result.shape[1] == 1:
         if result.shape[0] == 1:
@@ -149,8 +108,8 @@ def assemble_system(A_form,
     """
     # Create dolfin Form objects referencing all data needed by
     # assembler
-    A_dolfin_form = _create_dolfin_form(A_form, form_compiler_parameters)
-    b_dolfin_form = _create_dolfin_form(b_form, form_compiler_parameters)
+    A_dolfin_form = _create_cpp_form(A_form, form_compiler_parameters)
+    b_dolfin_form = _create_cpp_form(b_form, form_compiler_parameters)
 
     # Create tensors
     if A_tensor is None:
@@ -235,8 +194,8 @@ class SystemAssembler(cpp.fem.SystemAssembler):
         """
         # Create dolfin Form objects referencing all data needed by
         # assembler
-        A_dolfin_form = _create_dolfin_form(A_form, form_compiler_parameters)
-        b_dolfin_form = _create_dolfin_form(b_form, form_compiler_parameters)
+        A_dolfin_form = _create_cpp_form(A_form, form_compiler_parameters)
+        b_dolfin_form = _create_cpp_form(b_form, form_compiler_parameters)
 
         # Check bcs
         bcs = _wrap_in_list(bcs, 'bcs', cpp.fem.DirichletBC)
