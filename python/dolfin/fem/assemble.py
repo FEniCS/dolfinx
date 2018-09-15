@@ -4,7 +4,7 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Assemble variational forms into linear algebra objects.
+"""Tools for assembling variational forms into linear algebra objects.
 
 """
 
@@ -15,6 +15,8 @@ from dolfin.fem.assembling import _create_cpp_form
 
 
 class Assembler:
+    """Assemble variational forms"""
+
     def __init__(self, a, L, bcs=None, form_compiler_parameters=None):
         self.a = a
         self.L = L
@@ -27,7 +29,7 @@ class Assembler:
 
     def assemble(self, x: typing.Union[cpp.la.PETScMatrix, cpp.la.PETScVector]
                  ) -> typing.Union[cpp.la.PETScMatrix, cpp.la.PETScVector]:
-        """Assemble form into linear alebra object. The linear algebra
+        """Assemble a form into linear alebra object. The linear algebra
         object must already be initialised.
 
         """
@@ -37,13 +39,13 @@ class Assembler:
 
     def assemble_matrix(self, mat_type=cpp.fem.Assembler.BlockType.monolithic
                         ) -> cpp.la.PETScMatrix:
-        """Assemble matrix from bilinear form"""
+        """Return assembled matrix from bilinear form"""
         self._compile_forms()
         return self.assembler.assemble_matrix(mat_type)
 
     def assemble_vector(self, mat_type=cpp.fem.Assembler.BlockType.monolithic
                         ) -> cpp.la.PETScVector:
-        """Assemble vector from bilinear form"""
+        """Create assembled vector from linear form"""
         self._compile_forms()
         return self.assembler.assemble_vector(mat_type)
 
