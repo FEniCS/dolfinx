@@ -448,7 +448,7 @@ void Assembler::ident(
   // MatZeroRowsLocal(A.mat(), rows.size(), rows.data(), diag, NULL, NULL);
   for (Eigen::Index i = 0; i < rows.size(); ++i)
   {
-    const la_index_t row = rows[i];
+    const PetscInt row = rows[i];
     A.add_local(&diag, 1, &row, 1, &row);
   }
 }
@@ -488,9 +488,9 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> Assembler::get_local_bc_rows(
       _rows.push_back(row);
   }
 
-  Eigen::Array<la_index_t, Eigen::Dynamic, 1> rows
-      = Eigen::Map<Eigen::Array<la_index_t, Eigen::Dynamic, 1>>(_rows.data(),
-                                                                _rows.size());
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
+      = Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(_rows.data(),
+                                                              _rows.size());
 
   return rows;
 }

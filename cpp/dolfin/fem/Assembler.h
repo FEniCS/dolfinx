@@ -7,10 +7,10 @@
 #pragma once
 
 #include <dolfin/common/types.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <memory>
 #include <petscvec.h>
 #include <vector>
-#include <dolfin/la/PETScMatrix.h>
 
 namespace dolfin
 {
@@ -24,7 +24,7 @@ class FunctionSpace;
 } // namespace function
 namespace la
 {
-//class PETScMatrix;
+// class PETScMatrix;
 class PETScVector;
 } // namespace la
 
@@ -66,13 +66,13 @@ public:
 
   /// Add '1' to diagonal for Dirichlet rows. Rows must be local to the
   /// process.
-  static void ident(
-      la::PETScMatrix& A,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-      PetscScalar diag = 1.0);
+  static void
+  ident(la::PETScMatrix& A,
+        const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+        PetscScalar diag = 1.0);
 
 private:
-  static Eigen::Array<la_index_t, Eigen::Dynamic, 1>
+  static Eigen::Array<PetscInt, Eigen::Dynamic, 1>
   get_local_bc_rows(const function::FunctionSpace& V,
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
@@ -94,8 +94,8 @@ private:
   // into a larger matrix, and assembly is performed using local
   // indices. Matrix is not finalisd.
   static void _assemble_matrix(la::PETScMatrix& A, const Form& a,
-                              const std::vector<std::int32_t>& bc_dofs0,
-                              const std::vector<std::int32_t>& bc_dofs1);
+                               const std::vector<std::int32_t>& bc_dofs0,
+                               const std::vector<std::int32_t>& bc_dofs1);
 
   // Assemble vector into sequential PETSc Vec
   static void assemble(Vec b, const Form& L);
