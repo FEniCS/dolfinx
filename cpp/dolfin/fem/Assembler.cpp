@@ -54,16 +54,16 @@ Assembler::~Assembler()
 //-----------------------------------------------------------------------------
 la::PETScMatrix Assembler::assemble_matrix(BlockType block_type)
 {
-  // Check if matrix should be nested
-  assert(!_a.empty());
-  const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
-
+  // Pack forms
   std::vector<std::vector<const Form*>> forms(
       _a.size(), std::vector<const Form*>(_a[0].size()));
   for (std::size_t i = 0; i < _a.size(); ++i)
     for (std::size_t j = 0; j < _a[i].size(); ++j)
       forms[i][j] = _a[i][j].get();
 
+  // Initialise matrix
+  assert(!_a.empty());
+  const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
   la::PETScMatrix A;
   if (block_type == BlockType::nested)
     A = fem::init_nest_matrix(forms);
@@ -72,6 +72,7 @@ la::PETScMatrix Assembler::assemble_matrix(BlockType block_type)
   else
     A = fem::init_matrix(*_a[0][0]);
 
+  // Assemble and return
   assemble(A);
   return A;
 }
@@ -81,9 +82,6 @@ void Assembler::assemble(la::PETScMatrix& A)
   // Check if matrix should be nested
   assert(!_a.empty());
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
-
-  // Empty bcs (while testing)
-  std::vector<std::shared_ptr<const DirichletBC>> bcs = _bcs;
 
   // Get PETSc matrix type
   MatType mat_type;
@@ -183,20 +181,20 @@ void Assembler::assemble(la::PETScMatrix& A)
           // std::cout << "Mat (1) address: " << &subA << std::endl;
 
           std::vector<std::int32_t> bc_dofs0, bc_dofs1;
-          for (std::size_t k = 0; k < bcs.size(); ++k)
+          for (std::size_t k = 0; k < _bcs.size(); ++k)
           {
-            assert(bcs[k]);
-            assert(bcs[k]->function_space());
+            assert(_bcs[k]);
+            assert(_bcs[k]->function_space());
             if (_a[i][j]->function_space(0)->contains(
-                    *bcs[k]->function_space()))
+                    *_bcs[k]->function_space()))
             {
-              std::vector<std::int32_t> bcd = compute_bc_indices(*bcs[k]);
+              std::vector<std::int32_t> bcd = compute_bc_indices(*_bcs[k]);
               bc_dofs0.insert(bc_dofs0.end(), bcd.begin(), bcd.end());
             }
             if (_a[i][j]->function_space(1)->contains(
-                    *bcs[k]->function_space()))
+                    *_bcs[k]->function_space()))
             {
-              std::vector<std::int32_t> bcd1 = compute_bc_indices(*bcs[k]);
+              std::vector<std::int32_t> bcd1 = compute_bc_indices(*_bcs[k]);
               bc_dofs1.insert(bc_dofs1.end(), bcd1.begin(), bcd1.end());
             }
           }
@@ -224,18 +222,18 @@ void Assembler::assemble(la::PETScMatrix& A)
   else
   {
     std::vector<std::int32_t> bc_dofs0, bc_dofs1;
-    for (std::size_t k = 0; k < bcs.size(); ++k)
+    for (std::size_t k = 0; k < _bcs.size(); ++k)
     {
-      assert(bcs[k]);
-      assert(bcs[k]->function_space());
-      if (_a[0][0]->function_space(0)->contains(*bcs[k]->function_space()))
+      assert(_bcs[k]);
+      assert(_bcs[k]->function_space());
+      if (_a[0][0]->function_space(0)->contains(*_bcs[k]->function_space()))
       {
-        std::vector<std::int32_t> bcd0 = compute_bc_indices(*bcs[k]);
+        std::vector<std::int32_t> bcd0 = compute_bc_indices(*_bcs[k]);
         bc_dofs0.insert(bc_dofs0.end(), bcd0.begin(), bcd0.end());
       }
-      if (_a[0][0]->function_space(1)->contains(*bcs[k]->function_space()))
+      if (_a[0][0]->function_space(1)->contains(*_bcs[k]->function_space()))
       {
-        std::vector<std::int32_t> bcd1 = compute_bc_indices(*bcs[k]);
+        std::vector<std::int32_t> bcd1 = compute_bc_indices(*_bcs[k]);
         bc_dofs1.insert(bc_dofs1.end(), bcd1.begin(), bcd1.end());
       }
     }
@@ -259,16 +257,15 @@ void Assembler::assemble(la::PETScMatrix& A)
 //-----------------------------------------------------------------------------
 la::PETScVector Assembler::assemble_vector(BlockType block_type)
 {
-  assert(!_l.empty());
-  const bool block_vector = _l.size() > 1;
-
   // Build array of pointers to forms
+  assert(!_l.empty());
   std::vector<const Form*> forms(_a.size());
   for (std::size_t i = 0; i < _l.size(); ++i)
     forms[i] = _l[i].get();
 
   // Initialise vector
   la::PETScVector b;
+  const bool block_vector = _l.size() > 1;
   if (block_type == BlockType::nested)
     b = fem::init_nest(forms);
   else if (block_vector and block_type == BlockType::monolithic)
@@ -305,21 +302,29 @@ void Assembler::assemble(la::PETScVector& b)
       Vec b_local;
       VecGhostGetLocalForm(sub_b, &b_local);
       assert(b_local);
-      this->assemble(b_local, *_l[i]);
 
-      // Modify RHS for Dirichlet bcs
+      // Wrap as Eigen vector
       PetscInt size = 0;
       VecGetSize(b_local, &size);
       PetscScalar* bvalues;
       VecGetArray(b_local, &bvalues);
       Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(bvalues,
                                                                     size);
-      for (std::size_t j = 0; j < _a[i].size(); ++j)
-        apply_bc(bvec, *_a[i][j], _bcs);
 
+      // Assemble
+      this->assemble(bvec, *_l[i]);
+
+      // Modify RHS for Dirichlet bcs
+      for (std::size_t j = 0; j < _a[i].size(); ++j)
+        modify_bc(bvec, *_a[i][j], _bcs);
+
+      // Restore array
       VecRestoreArray(b_local, &bvalues);
 
+      // Restore ghosted form
       VecGhostRestoreLocalForm(sub_b, &b_local);
+
+      // Update local entries that are ghosts on other processes
       VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
 
@@ -374,7 +379,7 @@ void Assembler::assemble(la::PETScVector& b)
 
       // Modify RHS for Dirichlet bcs
       for (std::size_t j = 0; j < _a[i].size(); ++j)
-        apply_bc(b_vec, *_a[i][j], _bcs);
+        modify_bc(b_vec, *_a[i][j], _bcs);
 
       // Copy data into PETSc Vector
       for (int j = 0; j < map_size0; ++j)
@@ -410,16 +415,22 @@ void Assembler::assemble(la::PETScVector& b)
     Vec b_local;
     VecGhostGetLocalForm(b.vec(), &b_local);
     assert(b_local);
-    this->assemble(b_local, *_l[0]);
 
-    // Modify RHS for Dirichlet bcs
+    // Vec b_local;
+    // VecGhostGetLocalForm(sub_b, &b_local);
+    // assert(b_local);
+
+    // Wrap as Eigen vector
     PetscInt size = 0;
     VecGetSize(b_local, &size);
     PetscScalar* bvalues;
     VecGetArray(b_local, &bvalues);
     Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(bvalues,
                                                                   size);
-    apply_bc(bvec, *_a[0][0], _bcs);
+    this->assemble(bvec, *_l[0]);
+
+    // Modify RHS for Dirichlet bcs
+    modify_bc(bvec, *_a[0][0], _bcs);
     VecRestoreArray(b_local, &bvalues);
 
     // Accumulate ghosts on owning process
@@ -620,24 +631,6 @@ void Assembler::_assemble_matrix(la::PETScMatrix& A, const Form& a,
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble(Vec b, const Form& L)
-{
-  // FIXME: Check that we have a sequential vector
-
-  // Get raw array
-  PetscScalar* values;
-  VecGetArray(b, &values);
-
-  PetscInt size;
-  VecGetSize(b, &size);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_array(values,
-                                                                    size);
-
-  assemble(b_array, L);
-
-  VecRestoreArray(b, &values);
-}
-//-----------------------------------------------------------------------------
 void Assembler::assemble(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
@@ -684,7 +677,7 @@ void Assembler::assemble(
   }
 }
 //-----------------------------------------------------------------------------
-void Assembler::apply_bc(
+void Assembler::modify_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {

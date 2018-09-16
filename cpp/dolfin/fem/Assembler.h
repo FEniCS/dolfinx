@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <memory>
@@ -66,9 +67,14 @@ public:
   /// assembled vector.
   la::PETScVector assemble_vector(BlockType type = BlockType::nested);
 
-  /// Assemble vector. Boundary conditions have no effect on the
-  /// assembled vector.
+  /// Assemble vector and modify for boundary conditions.
   void assemble(la::PETScVector& b);
+
+  // Assemble linear form into an Eigen vector. The Eigen vector must
+  // the correct size. This local to a process.
+  static void
+      assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+               const Form& L);
 
 private:
   // Add '1' to diagonal for Dirichlet rows. Rows must be local to the
@@ -103,20 +109,12 @@ private:
                                const std::vector<std::int32_t>& bc_dofs0,
                                const std::vector<std::int32_t>& bc_dofs1);
 
-  // Assemble vector into sequential PETSc Vec
-  static void assemble(Vec b, const Form& L);
-
-  // Assemble vector
-  static void
-      assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-               const Form& L);
-
   // Modify RHS vector to account for boundary condition (b <- b - Ax,
   // where x holds prescribed boundary values)
   static void
-      apply_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-               const Form& a,
-               std::vector<std::shared_ptr<const DirichletBC>> bcs);
+      modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+                const Form& a,
+                std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Hack for setting bcs (set entries of b to be equal to boundary
   // value). Does not set ghosts. Size of b must be same as owned

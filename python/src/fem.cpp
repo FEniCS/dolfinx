@@ -271,7 +271,12 @@ void fem(py::module& m)
       .def("assemble", py::overload_cast<dolfin::la::PETScMatrix&>(
                            &dolfin::fem::Assembler::assemble))
       .def("assemble", py::overload_cast<dolfin::la::PETScVector&>(
-                           &dolfin::fem::Assembler::assemble));
+                           &dolfin::fem::Assembler::assemble))
+      .def_static(
+          "assemble",
+          py::overload_cast<
+              Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
+              const dolfin::fem::Form&>(&dolfin::fem::Assembler::assemble));
 
   // dolfin::fem::AssemblerBase
   py::class_<dolfin::fem::AssemblerBase,
