@@ -167,7 +167,7 @@ jobs:
 
   build-complex:
     docker:
-      - image: quay.io/igorbaratta/dolfinx-complex:latest
+      - image: quay.io/fenicsproject/dolfinx:latest
     environment:
       MPLBACKEND: "agg"
       DOLFIN_NOPLOT: 1
