@@ -58,7 +58,7 @@ demos-cpp-complex: &demos-cpp-complex
     ninja
     ./demo_poisson
 
-python-interface: &python-interface
+build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
   command: |
     cd python
@@ -135,7 +135,7 @@ jobs:
       - run: *build-install-cpp
       - run: *unit-tests-cpp
       - run: *demos-cpp
-      - run: *python-interface
+      - run: *build-python-interface
       - run: *build-documentation-python
       - run: *flake8-unit-tests
       - run: *unit-tests-python
@@ -183,7 +183,7 @@ jobs:
       - run: *build-install-cpp
       - run: *unit-tests-cpp
       - run: *demos-cpp-complex
-      - run: *python-interface
+      - run: *build-python-interface
       - run: *build-documentation-python
       - run: *flake8-unit-tests
       - run: *unit-tests-python
