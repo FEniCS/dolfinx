@@ -87,7 +87,6 @@ void Assembler::assemble(la::PETScMatrix& A)
   assert(!_a.empty());
   const bool block_matrix = _a.size() > 1 or _a[0].size() > 1;
 
-  // Get PETSc matrix type
   MatType mat_type;
   MatGetType(A.mat(), &mat_type);
   const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
@@ -98,8 +97,6 @@ void Assembler::assemble(la::PETScMatrix& A)
     maps[0].push_back(_a[i][0]->function_space(0)->dofmap()->index_map().get());
   for (std::size_t i = 0; i < _a[0].size(); ++i)
     maps[1].push_back(_a[0][i]->function_space(1)->dofmap()->index_map().get());
-  std::vector<IS> is_row = compute_index_sets(maps[0]);
-  std::vector<IS> is_col = compute_index_sets(maps[1]);
 
   // Assemble matrix
   // if (is_matnest)
@@ -125,60 +122,63 @@ void Assembler::assemble(la::PETScMatrix& A)
   // else if (block_matrix)
   if (is_matnest or block_matrix)
   {
+    std::vector<IS> is_row = compute_index_sets(maps[0]);
+    std::vector<IS> is_col = compute_index_sets(maps[1]);
+
     for (std::size_t i = 0; i < _a.size(); ++i)
     {
       for (std::size_t j = 0; j < _a[i].size(); ++j)
       {
         if (_a[i][j])
         {
-          if (is_matnest)
-          {
-            IS is_rows[2], is_cols[2];
-            IS is_rowsl[2], is_colsl[2];
-            MatNestGetLocalISs(A.mat(), is_rowsl, is_colsl);
-            MatNestGetISs(A.mat(), is_rows, is_cols);
-            // MPI_Comm mpi_comm = MPI_COMM_NULL;
-            // PetscObjectGetComm((PetscObject)is_cols[1], &mpi_comm);
-            // std::cout << "Test size: " << MPI::size(mpi_comm) << std::endl;
-            if (i == 1 and j == 0)
-            {
-              if (MPI::rank(MPI_COMM_WORLD) == 1)
-              {
-                std::cout << "DOLFIN l2g" << std::endl;
-                auto index_map
-                    = _a[i][j]->function_space(0)->dofmap()->index_map();
-                std::cout << "  Range: " << index_map->local_range()[0] << ", "
-                          << index_map->local_range()[1] << std::endl;
-                auto ghosts = index_map->ghosts();
-                std::cout << ghosts << std::endl;
-              }
+          // if (is_matnest)
+          // {
+          //   IS is_rows[2], is_cols[2];
+          //   IS is_rowsl[2], is_colsl[2];
+          //   MatNestGetLocalISs(A.mat(), is_rowsl, is_colsl);
+          //   MatNestGetISs(A.mat(), is_rows, is_cols);
+          //   // MPI_Comm mpi_comm = MPI_COMM_NULL;
+          //   // PetscObjectGetComm((PetscObject)is_cols[1], &mpi_comm);
+          //   // std::cout << "Test size: " << MPI::size(mpi_comm) << std::endl;
+          //   if (i == 1 and j == 0)
+          //   {
+          //     if (MPI::rank(MPI_COMM_WORLD) == 1)
+          //     {
+          //       std::cout << "DOLFIN l2g" << std::endl;
+          //       auto index_map
+          //           = _a[i][j]->function_space(0)->dofmap()->index_map();
+          //       std::cout << "  Range: " << index_map->local_range()[0] << ", "
+          //                 << index_map->local_range()[1] << std::endl;
+          //       auto ghosts = index_map->ghosts();
+          //       std::cout << ghosts << std::endl;
+          //     }
 
-              if (MPI::rank(MPI_COMM_WORLD) == 1)
-              {
-                ISView(is_rowsl[i], PETSC_VIEWER_STDOUT_SELF);
-                ISView(is_row[i], PETSC_VIEWER_STDOUT_SELF);
-                std::cout << "----------------------" << std::endl;
-              }
-              ISView(is_rows[i], PETSC_VIEWER_STDOUT_WORLD);
+          //     // if (MPI::rank(MPI_COMM_WORLD) == 1)
+          //     // {
+          //     //   ISView(is_rowsl[i], PETSC_VIEWER_STDOUT_SELF);
+          //     //   ISView(is_row[i], PETSC_VIEWER_STDOUT_SELF);
+          //     //   std::cout << "----------------------" << std::endl;
+          //     // }
+          //     // ISView(is_rows[i], PETSC_VIEWER_STDOUT_WORLD);
 
-              Mat subA;
-              MatNestGetSubMat(A.mat(), i, j, &subA);
-              // std::cout << "Mat (0) address: " << &subA << std::endl;
-              la::PETScMatrix Atest(subA);
-              // auto orange = Atest.local_range(0);
-              // if (MPI::rank(MPI_COMM_WORLD) == 1)
-              //   std::cout << "orange: " << orange[0] << ", " << orange[1]
-              //             << std::endl;
+          //     Mat subA;
+          //     MatNestGetSubMat(A.mat(), i, j, &subA);
+          //     // std::cout << "Mat (0) address: " << &subA << std::endl;
+          //     // la::PETScMatrix Atest(subA);
+          //     // auto orange = Atest.local_range(0);
+          //     // if (MPI::rank(MPI_COMM_WORLD) == 1)
+          //     //   std::cout << "orange: " << orange[0] << ", " << orange[1]
+          //     //             << std::endl;
 
-              ISLocalToGlobalMapping l2g0, l2g1;
-              MatGetLocalToGlobalMapping(subA, &l2g0, &l2g1);
-              if (MPI::rank(MPI_COMM_WORLD) == 1)
-                ISLocalToGlobalMappingView(l2g0, PETSC_VIEWER_STDOUT_SELF);
-              // MPI_Comm mpi_comm = MPI_COMM_NULL;
-              // PetscObjectGetComm((PetscObject)l2g0, &mpi_comm);
-              // std::cout << "Test size: " << MPI::size(mpi_comm) << std::endl;
-            }
-          }
+          //     // ISLocalToGlobalMapping l2g0, l2g1;
+          //     // MatGetLocalToGlobalMapping(subA, &l2g0, &l2g1);
+          //     // if (MPI::rank(MPI_COMM_WORLD) == 1)
+          //     //   ISLocalToGlobalMappingView(l2g0, PETSC_VIEWER_STDOUT_SELF);
+          //     // MPI_Comm mpi_comm = MPI_COMM_NULL;
+          //     // PetscObjectGetComm((PetscObject)l2g0, &mpi_comm);
+          //     // std::cout << "Test size: " << MPI::size(mpi_comm) << std::endl;
+          //   }
+          // }
 
           Mat subA;
           MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
@@ -226,6 +226,10 @@ void Assembler::assemble(la::PETScMatrix& A)
         }
       }
     }
+    for (std::size_t i = 0; i < is_row.size(); ++i)
+      ISDestroy(&is_row[i]);
+    for (std::size_t i = 0; i < is_col.size(); ++i)
+      ISDestroy(&is_col[i]);
   }
   else
   {
@@ -256,11 +260,6 @@ void Assembler::assemble(la::PETScMatrix& A)
   }
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
-
-  for (std::size_t i = 0; i < is_row.size(); ++i)
-    ISDestroy(&is_row[i]);
-  for (std::size_t i = 0; i < is_col.size(); ++i)
-    ISDestroy(&is_col[i]);
 }
 //-----------------------------------------------------------------------------
 la::PETScVector Assembler::assemble_vector(BlockType block_type)
@@ -289,11 +288,9 @@ void Assembler::assemble(la::PETScVector& b)
 {
   assert(!_l.empty());
 
-  // Get PETSc vector type
   VecType vec_type;
   VecGetType(b.vec(), &vec_type);
   bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-
   if (is_vecnest)
   {
     for (std::size_t i = 0; i < _l.size(); ++i)
@@ -342,11 +339,7 @@ void Assembler::assemble(la::PETScVector& b)
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec(map_size0
                                                           + map_size1);
       b_vec.setZero();
-      this->assemble(b_vec, *_l[i]);
-
-      // Modify RHS for Dirichlet bcs
-      for (std::size_t j = 0; j < _a[i].size(); ++j)
-        modify_bc(b_vec, *_a[i][j], _bcs);
+      this->assemble(b_vec, *_l[i], _a[i], _bcs);
 
       // Copy data into PETSc Vector
       for (int j = 0; j < map_size0; ++j)
@@ -412,9 +405,7 @@ void Assembler::assemble_local(
   Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(b_array, size);
 
   //  Assemble and then modify for Dirichlet bcs  (b  <- b - A x_(bc))
-  assemble(bvec, L);
-  for (std::size_t j = 0; j < a.size(); ++j)
-    modify_bc(bvec, *a[j], bcs);
+  assemble(bvec, L, a, bcs);
 
   // Restore array
   VecRestoreArray(b, &b_array);
@@ -602,7 +593,9 @@ void Assembler::_assemble_matrix(la::PETScMatrix& A, const Form& a,
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    const std::vector<std::shared_ptr<const Form>> a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // if (b.empty())
   //  init(b, L);
@@ -645,6 +638,10 @@ void Assembler::assemble(
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }
+
+  // Modify for any bcs
+  for (std::size_t i = 0; i < a.size(); ++i)
+    modify_bc(b, *a[i], bcs);
 }
 //-----------------------------------------------------------------------------
 void Assembler::modify_bc(

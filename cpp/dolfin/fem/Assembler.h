@@ -74,7 +74,8 @@ public:
   // the correct size. This local to a process.
   static void
       assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-               const Form& L);
+               const Form& L, const std::vector<std::shared_ptr<const Form>> a,
+               const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
 private:
   // Assemble linear form into a ghosted PETSc Vec
