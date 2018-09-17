@@ -129,10 +129,6 @@ private:
   // Get sub-matrix
   la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);
 
-  // Flag indicating if cell has a Dirichlet bc applied to it (true ->
-  // has bc)
-  // std::vector<bool> has_dirichlet_bc();
-
   // Assemble matrix, with Dirichlet rows/columns zeroed. The matrix A
   // must already be initialised. The matrix may be a proxy, i.e. a view
   // into a larger matrix, and assembly is performed using local
@@ -148,7 +144,7 @@ private:
                 const Form& a,
                 std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // Set bc values in owned part of the PETSc Vec
+  // Set bc values in owned (local) part of the PETSc Vec
   static void set_bc(Vec b, const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
@@ -158,8 +154,6 @@ private:
   static void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
                      const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
-  // static std::vector<std::int32_t> compute_bc_indices(const DirichletBC& bc);
 
   // Bilinear and linear forms
   std::vector<std::vector<std::shared_ptr<const Form>>> _a;
