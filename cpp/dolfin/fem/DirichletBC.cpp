@@ -390,6 +390,12 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   boundary_values.reserve(boundary_values.size()
                           + _facets.size() * num_facet_dofs);
 
+  // Build local dofs for each facet
+  const mesh::CellType& cell_type = mesh.type();
+  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> facet_dofs;
+  for (std::size_t i = 0; i < cell_type.num_entities(D - 1); ++i)
+    facet_dofs.push_back(dofmap.tabulate_entity_closure_dofs(D - 1, i));
+
   // Iterate over marked
   assert(_function_space->element());
   for (std::size_t f = 0; f < _facets.size(); ++f)
@@ -397,7 +403,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Create facet
     const mesh::Facet facet(mesh, _facets[f]);
 
-    // Get cell to which facet belongs.
+    // Get cell to which facet belongs
     assert(facet.num_entities(D) > 0);
     const std::size_t cell_index = facet.entities(D)[0];
 
@@ -419,15 +425,11 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
     // Tabulate dofs on cell
     auto cell_dofs = dofmap.cell_dofs(cell.index());
 
-    // Tabulate which dofs are on the facet
-    dofmap.tabulate_entity_closure_dofs(data.facet_dofs, D - 1,
-                                        facet_local_index);
-
     // Pick values for facet
     for (std::size_t i = 0; i < num_facet_dofs; i++)
     {
-      const std::size_t local_dof = cell_dofs[data.facet_dofs[i]];
-      const PetscScalar value = data.w[data.facet_dofs[i]];
+      const std::size_t local_dof = cell_dofs[facet_dofs[facet_local_index][i]];
+      const PetscScalar value = data.w[facet_dofs[facet_local_index][i]];
       boundary_values[local_dof] = value;
     }
   }
@@ -776,9 +778,6 @@ bool DirichletBC::on_facet(const Eigen::Ref<EigenArrayXd> coordinates,
 //-----------------------------------------------------------------------------
 DirichletBC::LocalData::LocalData(const function::FunctionSpace& V)
     : w(V.dofmap()->max_element_dofs(), 0.0),
-      facet_dofs(
-          V.dofmap()->num_entity_closure_dofs(V.mesh()->geometry().dim() - 1),
-          0),
       // FIXME: the below should not be max_element_dofs! It should be fixed.
       coordinates(V.dofmap()->max_element_dofs(), V.mesh()->geometry().dim())
 {
