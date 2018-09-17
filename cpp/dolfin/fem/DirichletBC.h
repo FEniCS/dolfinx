@@ -247,6 +247,15 @@ public:
   ///         "geometric" or "pointwise").
   Method method() const;
 
+  // FIXME: What about ghost indices?
+  // FIXME: Consider return a reference and caching this data
+  /// Return array of indices with dofs applied. Indices are local to the
+  /// process
+  ///
+  /// @return Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+  ///         Dof indices with boundary condition applied.
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dof_indices() const;
+
 private:
   class LocalData;
 

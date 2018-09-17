@@ -84,6 +84,8 @@ private:
         const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
         PetscScalar diag = 1.0);
 
+  // Get dof indices that have a boundary condition applied. Indices
+  // are local and ghost indices are not included.
   static Eigen::Array<PetscInt, Eigen::Dynamic, 1>
   get_local_bc_rows(const function::FunctionSpace& V,
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
@@ -123,7 +125,7 @@ private:
                      const Form& L,
                      std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  static std::vector<std::int32_t> compute_bc_indices(const DirichletBC& bc);
+  // static std::vector<std::int32_t> compute_bc_indices(const DirichletBC& bc);
 
   // Bilinear and linear forms
   std::vector<std::vector<std::shared_ptr<const Form>>> _a;

@@ -188,14 +188,14 @@ void Assembler::assemble(la::PETScMatrix& A)
             if (_a[i][j]->function_space(0)->contains(
                     *_bcs[k]->function_space()))
             {
-              std::vector<std::int32_t> bcd = compute_bc_indices(*_bcs[k]);
-              bc_dofs0.insert(bc_dofs0.end(), bcd.begin(), bcd.end());
+              Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd = _bcs[k]->dof_indices();
+              bc_dofs0.insert(bc_dofs0.end(), bcd.data(), bcd.data() + bcd.size());
             }
             if (_a[i][j]->function_space(1)->contains(
                     *_bcs[k]->function_space()))
             {
-              std::vector<std::int32_t> bcd1 = compute_bc_indices(*_bcs[k]);
-              bc_dofs1.insert(bc_dofs1.end(), bcd1.begin(), bcd1.end());
+              Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd1 = _bcs[k]->dof_indices();
+              bc_dofs1.insert(bc_dofs1.end(), bcd1.data(), bcd1.data()+ bcd1.size());
             }
           }
 
@@ -228,13 +228,13 @@ void Assembler::assemble(la::PETScMatrix& A)
       assert(_bcs[k]->function_space());
       if (_a[0][0]->function_space(0)->contains(*_bcs[k]->function_space()))
       {
-        std::vector<std::int32_t> bcd0 = compute_bc_indices(*_bcs[k]);
-        bc_dofs0.insert(bc_dofs0.end(), bcd0.begin(), bcd0.end());
+        Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd0 = _bcs[k]->dof_indices();
+        bc_dofs0.insert(bc_dofs0.end(), bcd0.data(), bcd0.data()+ bcd0.size());
       }
       if (_a[0][0]->function_space(1)->contains(*_bcs[k]->function_space()))
       {
-        std::vector<std::int32_t> bcd1 = compute_bc_indices(*_bcs[k]);
-        bc_dofs1.insert(bc_dofs1.end(), bcd1.begin(), bcd1.end());
+        Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd1 = _bcs[k]->dof_indices();
+        bc_dofs1.insert(bc_dofs1.end(), bcd1.data(), bcd1.data()+ bcd1.size());
       }
     }
 
@@ -812,22 +812,5 @@ void Assembler::set_bc(
     if (bc.first < (std::size_t)b.size())
       b[bc.first] = bc.second;
   }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t> Assembler::compute_bc_indices(const DirichletBC& bc)
-{
-  DirichletBC::Map boundary_values;
-  bc.get_boundary_values(boundary_values);
-  if (MPI::size(bc.function_space()->mesh()->mpi_comm()) > 1
-      and bc.method() != DirichletBC::Method::pointwise)
-  {
-    bc.gather(boundary_values);
-  }
-
-  std::vector<std::int32_t> bc_indices;
-  for (auto& e : boundary_values)
-    bc_indices.push_back(e.first);
-
-  return bc_indices;
 }
 //-----------------------------------------------------------------------------

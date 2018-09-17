@@ -226,6 +226,26 @@ void DirichletBC::set_value(std::shared_ptr<const function::GenericFunction> g)
 //-----------------------------------------------------------------------------
 DirichletBC::Method DirichletBC::method() const { return _method; }
 //-----------------------------------------------------------------------------
+Eigen::Array<PetscInt, Eigen::Dynamic, 1> DirichletBC::dof_indices() const
+{
+  // FIXME: Optimise this operation, and consider caching
+  Map boundary_values;
+  get_boundary_values(boundary_values);
+
+  // FIXMEL Eliminate comm
+  assert(_function_space->mesh());
+  MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
+  if (MPI::size(mpi_comm) > 1 and this->method() != DirichletBC::Method::pointwise)
+    this->gather(boundary_values);
+
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(boundary_values.size());
+  std::size_t i = 0;
+  for (auto& bc : boundary_values)
+    dofs[i++] = bc.first;
+
+  return dofs;
+}
+//-----------------------------------------------------------------------------
 void DirichletBC::check() const
 {
   assert(_g);
