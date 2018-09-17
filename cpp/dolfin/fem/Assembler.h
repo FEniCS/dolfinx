@@ -26,7 +26,7 @@ class FunctionSpace;
 } // namespace function
 namespace la
 {
-// class PETScMatrix;
+class PETScMatrix;
 class PETScVector;
 } // namespace la
 
@@ -39,6 +39,39 @@ class Form;
 /// Assemble form
 boost::variant<double, la::PETScVector, la::PETScMatrix>
 assemble(const Form& a);
+
+/// Re-assemble linear form. The vector must already be appropriately
+/// initialised. set_bc must be called after this call to insert bc
+/// values. The 'test space' for L should be the same as the test space
+/// for the bilinear forms in [a]. The vector b is modified for boundary
+/// conditions in [bcs] that share a a trial space with [a], i.e. b <- b
+/// - Ax.
+void assemble(const Form& L, const std::vector<std::shared_ptr<const Form>> a,
+              std::vector<std::shared_ptr<const DirichletBC>> bcs,
+              la::PETScVector& b, double scale = 1.0);
+
+/// Re-assemble bilinear form. The matrix must already be appropriately
+/// initialised.
+void assemble(const Form& a,
+              std::vector<std::shared_ptr<const DirichletBC>> bcs,
+              la::PETScMatrix& A, double scale = 1.0);
+
+// FIXME: Consider if L is required
+/// Set bc values in owned (local) part of the PETScVector
+void set_bc(la::PETScVector& b, const Form& L,
+            std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
+// FIXME: Consider if L is required
+/// Set bc values in owned (local) part of the PETSc Vec
+void set_bc(Vec b, const Form& L,
+            std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
+// FIXME: Consider if L is required
+// Hack for setting bcs (set entries of b to be equal to boundary
+// value). Does not set ghosts. Size of b must be same as owned
+// length.
+void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+            const Form& L, std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
 /// Assembly of LHS and RHS Forms with DirichletBC boundary conditions
 /// applied
@@ -84,15 +117,6 @@ public:
                const Form& L, const std::vector<std::shared_ptr<const Form>> a,
                const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // Assemble linear form into a PETScVector
-  // static void
-  // assemble(PETScVector& b, const Form& L,
-  //          const std::vector<std::shared_ptr<const Form>> a,
-  //          const std::vector<std::shared_ptr<const DirichletBC>> bcs)
-  // {
-  //   assemble_single(b.vec(), L, a, bcs);
-  // }
-
   /// Assemble linear form into a ghosted PETSc Vec. The vector is modified
   // for b <- b - A x_bc, where x_bc contains prescribed values, and BC
   // values set in bc positions.
@@ -124,10 +148,11 @@ private:
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Get IndexSets (IS) for stacked index maps
-  std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);
+  static std::vector<IS>
+  compute_index_sets(std::vector<const common::IndexMap*> maps);
 
   // Get sub-matrix
-  la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);
+  static la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);
 
   // Assemble matrix, with Dirichlet rows/columns zeroed. The matrix A
   // must already be initialised. The matrix may be a proxy, i.e. a view
@@ -143,17 +168,6 @@ private:
       modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
                 const Form& a,
                 std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
-  // Set bc values in owned (local) part of the PETSc Vec
-  static void set_bc(Vec b, const Form& L,
-                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
-  // Hack for setting bcs (set entries of b to be equal to boundary
-  // value). Does not set ghosts. Size of b must be same as owned
-  // length.
-  static void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-                     const Form& L,
-                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Bilinear and linear forms
   std::vector<std::vector<std::shared_ptr<const Form>>> _a;

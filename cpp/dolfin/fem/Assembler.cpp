@@ -93,7 +93,72 @@ fem::assemble(const Form& a)
   }
 }
 //-----------------------------------------------------------------------------
+void fem::assemble(const Form& L,
+                   const std::vector<std::shared_ptr<const Form>> a,
+                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                   la::PETScVector& b, double scale)
 
+{
+  if (L.rank() != 1)
+    throw std::runtime_error("Form must be rank 1");
+  Assembler::assemble(b.vec(), L, a, bcs);
+}
+//-----------------------------------------------------------------------------
+void fem::assemble(const Form& a,
+                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                   la::PETScMatrix& A, double scale)
+
+{
+  throw std::runtime_error("Short-hand matrix assembly no implemented yet");
+  if (a.rank() != 2)
+    throw std::runtime_error("Form must be rank 1");
+}
+//-----------------------------------------------------------------------------
+void fem::set_bc(la::PETScVector& b, const Form& L,
+                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  set_bc(b.vec(), L, bcs);
+}
+//-----------------------------------------------------------------------------
+void fem::set_bc(Vec b, const Form& L,
+                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  PetscInt local_size;
+  VecGetLocalSize(b, &local_size);
+  PetscScalar* values;
+  VecGetArray(b, &values);
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
+                                                               local_size);
+  set_bc(vec, L, bcs);
+  VecRestoreArray(b, &values);
+}
+//-----------------------------------------------------------------------------
+void fem::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+                 const Form& L,
+                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  // FIXME: optimise this function
+
+  auto V = L.function_space(0);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices;
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values;
+  for (std::size_t i = 0; i < bcs.size(); ++i)
+  {
+    assert(bcs[i]);
+    assert(bcs[i]->function_space());
+    if (V->contains(*bcs[i]->function_space()))
+    {
+      std::tie(indices, values) = bcs[i]->bcs();
+      for (Eigen::Index j = 0; j < indices.size(); ++j)
+      {
+        // FIXME: this check is because DirichletBC::dofs include ghosts
+        if (indices[j] < (PetscInt)b.size())
+          b[indices[j]] = values[j];
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
                      std::vector<std::shared_ptr<const Form>> L,
@@ -720,6 +785,8 @@ void Assembler::modify_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
+  assert(a.rank() == 2);
+
   // Get mesh from form
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
@@ -817,45 +884,6 @@ void Assembler::modify_bc(
 
     for (Eigen::Index k = 0; k < dmap0.size(); ++k)
       b[dmap0[k]] += be[k];
-  }
-}
-//-----------------------------------------------------------------------------
-void Assembler::set_bc(Vec b, const Form& L,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs)
-{
-  PetscInt local_size;
-  VecGetLocalSize(b, &local_size);
-  PetscScalar* values;
-  VecGetArray(b, &values);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
-                                                               local_size);
-  set_bc(vec, L, bcs);
-  VecRestoreArray(b, &values);
-}
-//-----------------------------------------------------------------------------
-void Assembler::set_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs)
-{
-  // FIXME: optimise this function
-
-  auto V = L.function_space(0);
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices;
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values;
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-  {
-    assert(bcs[i]);
-    assert(bcs[i]->function_space());
-    if (V->contains(*bcs[i]->function_space()))
-    {
-      std::tie(indices, values) = bcs[i]->bcs();
-      for (Eigen::Index j = 0; j < indices.size(); ++j)
-      {
-        // FIXME: this check is because DirichletBC::dofs include ghosts
-        if (indices[j] < (PetscInt)b.size())
-          b[indices[j]] = values[j];
-      }
-    }
   }
 }
 //-----------------------------------------------------------------------------

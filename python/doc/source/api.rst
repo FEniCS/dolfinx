@@ -19,7 +19,7 @@ Python
    dolfin.pkgconfig
    dolfin.timer
 
-   dolfin.fem.assemble
+   dolfin.fem
    dolfin.fem.assembling
    dolfin.fem.formmanipulations
    dolfin.fem.form

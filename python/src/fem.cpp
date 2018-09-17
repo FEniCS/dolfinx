@@ -250,7 +250,20 @@ void fem(py::module& m)
       });
 
   // dolfin::fem::assemble
-  m.def("assemble", &dolfin::fem::assemble, "Assemble form over mesh");
+  m.def("assemble",
+        py::overload_cast<const dolfin::fem::Form&>(&dolfin::fem::assemble),
+        "Assemble form over mesh");
+  m.def("assemble",
+        py::overload_cast<
+            const dolfin::fem::Form&,
+            const std::vector<std::shared_ptr<const dolfin::fem::Form>>,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
+            dolfin::la::PETScVector&, double>(&dolfin::fem::assemble),
+        py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("b"),
+        py::arg("scale") = 1.0, "Assemble linear over mesh into vector");
+  //   m.def("assemble",
+  //         py::overload_cast<dolfin::fem::Form&>(&dolfin::fem::assemble),
+  //         "Assemble form over mesh");
 
   // dolfin::fem::Assembler
   py::class_<dolfin::fem::Assembler, std::shared_ptr<dolfin::fem::Assembler>>
