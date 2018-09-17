@@ -110,6 +110,7 @@ demos-python-mpi: &demos-python-mpi
 additional-complex-dependencies: &additional-complex-dependencies
   name: Install additional Python dependencies (complex mode)
   command: |
+            pip3 uninstall -y petsc4py && pip3 install --no-cache-dir https://bitbucket.org/petsc/petsc4py/downloads/petsc4py-3.9.1.tar.gz
             pip3 install six singledispatch pulp networkx
             pip3 install git+https://github.com/blechta/FInAT.git --upgrade
             pip3 install git+https://github.com/blechta/COFFEE.git --upgrade
@@ -207,7 +208,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 15 * * *"
+          cron: "30 15 * * *"
           filters:
             branches:
               only:
