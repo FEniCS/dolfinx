@@ -77,6 +77,12 @@ public:
                const Form& L);
 
 private:
+  // Assemble linear form into a local PETSc Vec.
+  static void
+  assemble_local(Vec& b, const Form& L,
+                 const std::vector<std::shared_ptr<const Form>> a,
+                 const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
   // Add '1' to diagonal for Dirichlet rows. Rows must be local to the
   // process.
   static void

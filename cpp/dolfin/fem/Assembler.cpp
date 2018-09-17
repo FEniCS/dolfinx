@@ -301,34 +301,17 @@ void Assembler::assemble(la::PETScVector& b)
   {
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
+      // Get sub-vector
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
+
       Vec b_local;
       VecGhostGetLocalForm(sub_b, &b_local);
-      assert(b_local);
+      assemble_local(b_local, *_l[i], _a[i], _bcs);
 
-      // Wrap as Eigen vector
-      PetscInt size = 0;
-      VecGetSize(b_local, &size);
-      PetscScalar* bvalues;
-      VecGetArray(b_local, &bvalues);
-      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(bvalues,
-                                                                    size);
-
-      // Assemble
-      this->assemble(bvec, *_l[i]);
-
-      // Modify RHS for Dirichlet bcs
-      for (std::size_t j = 0; j < _a[i].size(); ++j)
-        modify_bc(bvec, *_a[i][j], _bcs);
-
-      // Restore array
-      VecRestoreArray(b_local, &bvalues);
-
-      // Restore ghosted form
+      // Restore ghosted form and update local (owned) entries that are ghosts
+      // on other processes
       VecGhostRestoreLocalForm(sub_b, &b_local);
-
-      // Update local entries that are ghosts on other processes
       VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
 
@@ -415,31 +398,14 @@ void Assembler::assemble(la::PETScVector& b)
   }
   else
   {
-    // Get local representation
+    // Get local representation and assemble
     Vec b_local;
     VecGhostGetLocalForm(b.vec(), &b_local);
     assert(b_local);
+    assemble_local(b_local, *_l[0], _a[0], _bcs);
 
-    // Vec b_local;
-    // VecGhostGetLocalForm(sub_b, &b_local);
-    // assert(b_local);
-
-    // Wrap as Eigen vector
-    PetscInt size = 0;
-    VecGetSize(b_local, &size);
-    PetscScalar* bvalues;
-    VecGetArray(b_local, &bvalues);
-    Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(bvalues,
-                                                                  size);
-    this->assemble(bvec, *_l[0]);
-
-    // Modify RHS for Dirichlet bcs
-    modify_bc(bvec, *_a[0][0], _bcs);
-    VecRestoreArray(b_local, &bvalues);
-
-    // Accumulate ghosts on owning process
+    // Restore ghost Vec and accumulate ghosts on owning process
     VecGhostRestoreLocalForm(b.vec(), &b_local);
-
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
@@ -452,6 +418,28 @@ void Assembler::assemble(la::PETScVector& b)
     set_bc(vec, *_l[0], _bcs);
     VecRestoreArray(b.vec(), &values);
   }
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble_local(
+    Vec& b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  // FIXME: check that b is a local PETSc Vec
+
+  // Wrap local PETSc Vec as an Eigen vector
+  PetscInt size = 0;
+  VecGetSize(b, &size);
+  PetscScalar* b_array;
+  VecGetArray(b, &b_array);
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(b_array, size);
+
+  //  Assemble and then modify for Dirichlet bcs  (b  <- b - A x_(bc))
+  assemble(bvec, L);
+  for (std::size_t j = 0; j < a.size(); ++j)
+    modify_bc(bvec, *a[j], bcs);
+
+  // Restore array
+  VecRestoreArray(b, &b_array);
 }
 //-----------------------------------------------------------------------------
 void Assembler::ident(
