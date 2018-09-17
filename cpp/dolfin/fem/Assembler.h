@@ -96,17 +96,14 @@ private:
   // Get sub-matrix
   la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);
 
-  // Get list of local dof indices with boundary conditions applied
-  // std::vector<PetscInt> dirichlet_indices();
-
   // Flag indicating if cell has a Dirichlet bc applied to it (true ->
   // has bc)
   // std::vector<bool> has_dirichlet_bc();
 
   // Assemble matrix, with Dirichlet rows/columns zeroed. The matrix A
-  // must already be initialisd. The matrix may be a proxy, i.e. a view
+  // must already be initialised. The matrix may be a proxy, i.e. a view
   // into a larger matrix, and assembly is performed using local
-  // indices. Matrix is not finalisd.
+  // indices. Matrix is not finalised.
   static void _assemble_matrix(la::PETScMatrix& A, const Form& a,
                                const std::vector<std::int32_t>& bc_dofs0,
                                const std::vector<std::int32_t>& bc_dofs1);

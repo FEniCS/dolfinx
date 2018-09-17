@@ -188,14 +188,18 @@ void Assembler::assemble(la::PETScMatrix& A)
             if (_a[i][j]->function_space(0)->contains(
                     *_bcs[k]->function_space()))
             {
-              Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd = _bcs[k]->dof_indices();
-              bc_dofs0.insert(bc_dofs0.end(), bcd.data(), bcd.data() + bcd.size());
+              Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd
+                  = _bcs[k]->dof_indices();
+              bc_dofs0.insert(bc_dofs0.end(), bcd.data(),
+                              bcd.data() + bcd.size());
             }
             if (_a[i][j]->function_space(1)->contains(
                     *_bcs[k]->function_space()))
             {
-              Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd1 = _bcs[k]->dof_indices();
-              bc_dofs1.insert(bc_dofs1.end(), bcd1.data(), bcd1.data()+ bcd1.size());
+              Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd1
+                  = _bcs[k]->dof_indices();
+              bc_dofs1.insert(bc_dofs1.end(), bcd1.data(),
+                              bcd1.data() + bcd1.size());
             }
           }
 
@@ -229,12 +233,12 @@ void Assembler::assemble(la::PETScMatrix& A)
       if (_a[0][0]->function_space(0)->contains(*_bcs[k]->function_space()))
       {
         Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd0 = _bcs[k]->dof_indices();
-        bc_dofs0.insert(bc_dofs0.end(), bcd0.data(), bcd0.data()+ bcd0.size());
+        bc_dofs0.insert(bc_dofs0.end(), bcd0.data(), bcd0.data() + bcd0.size());
       }
       if (_a[0][0]->function_space(1)->contains(*_bcs[k]->function_space()))
       {
         Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd1 = _bcs[k]->dof_indices();
-        bc_dofs1.insert(bc_dofs1.end(), bcd1.data(), bcd1.data()+ bcd1.size());
+        bc_dofs1.insert(bc_dofs1.end(), bcd1.data(), bcd1.data() + bcd1.size());
       }
     }
 
@@ -785,32 +789,25 @@ void Assembler::set_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
-  // Get mesh from form
-  assert(L.mesh());
-  const mesh::Mesh& mesh = *L.mesh();
-  auto V = L.function_space(0);
+  // FIXME: optimise this function
 
-  // Get bcs
-  DirichletBC::Map boundary_values;
+  auto V = L.function_space(0);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices;
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values;
   for (std::size_t i = 0; i < bcs.size(); ++i)
   {
     assert(bcs[i]);
     assert(bcs[i]->function_space());
     if (V->contains(*bcs[i]->function_space()))
     {
-      bcs[i]->get_boundary_values(boundary_values);
-      if (MPI::size(mesh.mpi_comm()) > 1
-          and bcs[i]->method() != DirichletBC::Method::pointwise)
+      std::tie(indices, values) = bcs[i]->bcs();
+      for (Eigen::Index j = 0; j < indices.size(); ++j)
       {
-        bcs[i]->gather(boundary_values);
+        // FIXME: this check is because DirichletBC::dofs include ghosts
+        if (indices[j] < (PetscInt)b.size())
+          b[indices[j]] = values[j];
       }
     }
-  }
-
-  for (auto bc : boundary_values)
-  {
-    if (bc.first < (std::size_t)b.size())
-      b[bc.first] = bc.second;
   }
 }
 //-----------------------------------------------------------------------------

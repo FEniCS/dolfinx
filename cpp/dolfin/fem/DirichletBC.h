@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <unordered_map>
+#include <utility>
 
 namespace dolfin
 {
@@ -255,6 +256,14 @@ public:
   /// @return Eigen::Array<PetscInt, Eigen::Dynamic, 1>
   ///         Dof indices with boundary condition applied.
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dof_indices() const;
+
+  // FIXME: What about ghost indices?
+  // FIXME: Consider return a reference and caching this data
+  /// Return array of indices and dof values. Indices are local to the
+  /// process
+  std::pair<Eigen::Array<PetscInt, Eigen::Dynamic, 1>,
+            Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
+  bcs() const;
 
 private:
   class LocalData;
