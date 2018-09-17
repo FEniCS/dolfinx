@@ -35,8 +35,14 @@ namespace fem
 class DirichletBC;
 class Form;
 
-// Assemble functional
+/// Assemble functional
 double assemble_scalar(const Form& M);
+
+/// Assemble linear form
+la::PETScVector assemble_vector(const Form& L);
+
+/// Assemble bilinear form
+la::PETScMatrix assemble_matrix(const Form& a);
 
 /// Assembly of LHS and RHS Forms with DirichletBC boundary conditions
 /// applied
@@ -80,13 +86,22 @@ public:
                const Form& L, const std::vector<std::shared_ptr<const Form>> a,
                const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-private:
+  // Assemble linear form into a PETScVector
+  // static void
+  // assemble(PETScVector& b, const Form& L,
+  //          const std::vector<std::shared_ptr<const Form>> a,
+  //          const std::vector<std::shared_ptr<const DirichletBC>> bcs)
+  // {
+  //   assemble_single(b.vec(), L, a, bcs);
+  // }
+
   // Assemble linear form into a ghosted PETSc Vec
   static void
   assemble_single(Vec b, const Form& L,
                   const std::vector<std::shared_ptr<const Form>> a,
                   const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
+private:
   // Assemble linear form into a local PETSc Vec.
   static void
   assemble_local(Vec& b, const Form& L,

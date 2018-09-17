@@ -26,7 +26,7 @@ def test_krylov_solver_lu():
 
     a = Constant(1.0) * inner(u, v) * dx
     L = inner(Constant(1.0), v) * dx
-    assembler = fem.assemble.Assembler(a, L)
+    assembler = fem.Assembler(a, L)
     A = assembler.assemble_matrix()
     b = assembler.assemble_vector()
 
@@ -66,7 +66,7 @@ def test_krylov_reuse_pc_lu():
 
     a = Constant(1.0) * u * v * dx
     L = Constant(1.0) * v * dx
-    assembler = fem.assemble.Assembler(a, L)
+    assembler = fem.Assembler(a, L)
     A = assembler.assemble_matrix()
     b = assembler.assemble_vector()
     norm = 13.0
@@ -126,7 +126,8 @@ def test_krylov_samg_solver_elasticity():
 
         # Stress computation
         def sigma(v):
-            return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(grad(v))) * Identity(2)
+            return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(
+                grad(v))) * Identity(2)
 
         # Define problem
         mesh = UnitSquareMesh(MPI.comm_world, N, N)
@@ -156,7 +157,6 @@ def test_krylov_samg_solver_elasticity():
 
         # Create PETSC smoothed aggregation AMG preconditioner, and
         # create CG solver
-#        pc = PETScPreconditioner(method)
         solver = PETScKrylovSolver("cg", method)
 
         # Set matrix operator

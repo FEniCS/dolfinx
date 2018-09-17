@@ -54,6 +54,25 @@ double fem::assemble_scalar(const fem::Form& M)
   return MPI::sum(mesh.mpi_comm(), value);
 }
 //-----------------------------------------------------------------------------
+la::PETScVector fem::assemble_vector(const Form& L)
+{
+  if (L.rank() != 1)
+    throw std::runtime_error("Form must be rank 1");
+  la::PETScVector b
+      = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
+  Assembler::assemble_single(b.vec(), L, {}, {});
+  return b;
+}
+//-----------------------------------------------------------------------------
+la::PETScMatrix assemble_matrix(const Form& a)
+{
+  if (1.rank() != 2)
+    throw std::runtime_error("Form must be rank 2");
+  la::PETScMatrix A = fem::init_matrix(a);
+  throw std::runtime_error("Not implemented");
+  return A;
+}
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,

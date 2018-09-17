@@ -249,7 +249,10 @@ void fem(py::module& m)
         self.set_value(_u);
       });
 
-  m.def("assemble_scalar", &dolfin::fem::assemble_scalar);
+  m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
+        "Assemble functional into a scalar");
+  m.def("assemble_vector", &dolfin::fem::assemble_vector,
+        "Assemble linear form into a vector");
 
   // dolfin::fem::Assembler
   py::class_<dolfin::fem::Assembler, std::shared_ptr<dolfin::fem::Assembler>>

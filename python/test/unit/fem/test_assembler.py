@@ -12,7 +12,6 @@ import pytest
 from petsc4py import PETSc
 
 import dolfin
-import dolfin.fem.assemble
 import ufl
 from ufl import dx, inner
 
@@ -22,12 +21,12 @@ def test_assemble_functional():
     V = dolfin.FunctionSpace(mesh, "Lagrange", 1)
 
     M = dolfin.Constant(1.0) * dx(domain=mesh)
-    value = dolfin.fem.assemble_scalar(M)
+    value = dolfin.fem.assemble(M)
     assert value == pytest.approx(1.0, 1e-12)
 
     f = dolfin.function.expression.Expression("x[0]", degree=1)
     M = f * dx(domain=mesh)
-    value = dolfin.fem.assemble_scalar(M)
+    value = dolfin.fem.assemble(M)
     assert value == pytest.approx(0.5, 1e-12)
 
 
@@ -38,7 +37,7 @@ def test_basic_assembly():
 
     a = dolfin.Constant(1.0) * inner(u, v) * dx
     L = inner(dolfin.Constant(1.0), v) * dx
-    assembler = dolfin.fem.assemble.Assembler(a, L)
+    assembler = dolfin.fem.Assembler(a, L)
 
     # Initial assembly
     A = assembler.assemble_matrix()
@@ -93,8 +92,7 @@ def test_matrix_assembly_block():
     L1 = inner(g, q) * dx
 
     # Create assembler
-    assembler = dolfin.fem.assemble.Assembler([[a00, a01], [a10, a11]],
-                                              [L0, L1], [bc])
+    assembler = dolfin.fem.Assembler([[a00, a01], [a10, a11]], [L0, L1], [bc])
 
     # Monolithic blocked
     A0 = assembler.assemble_matrix(
@@ -148,7 +146,7 @@ def test_matrix_assembly_block():
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    assembler = dolfin.fem.assemble.Assembler([[a]], [L], [bc])
+    assembler = dolfin.fem.Assembler([[a]], [L], [bc])
 
     A2 = assembler.assemble_matrix(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
@@ -203,8 +201,8 @@ def xtest_assembly_solve_block():
         # print("Norm:", its, rnorm)
 
     # Create assembler
-    assembler = dolfin.fem.assemble.Assembler([[a00, a01], [a10, a11]],
-                                              [L0, L1], [bc0, bc1])
+    assembler = dolfin.fem.Assembler([[a00, a01], [a10, a11]], [L0, L1],
+                                     [bc0, bc1])
 
     # Monolithic blocked
     A0, b0 = assembler.assemble(
