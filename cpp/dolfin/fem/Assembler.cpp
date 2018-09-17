@@ -33,6 +33,10 @@ Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
   assert(!a.empty());
   assert(!a[0].empty());
 
+  for (std::size_t i = 0; i < _l.size(); ++i)
+    if (!_l[i])
+      throw std::runtime_error("Cannot have NULL linear form block.");
+
   // TODO:
   // - check that a is rectangular
   // - a.size() = L.size()
@@ -284,15 +288,8 @@ la::PETScVector Assembler::assemble_vector(BlockType block_type)
 void Assembler::assemble(la::PETScVector& b)
 {
   assert(!_l.empty());
-  const bool block_vector = _l.size() > 1;
 
-  for (std::size_t i = 0; i < _l.size(); ++i)
-  {
-    if (!_l[i])
-      throw std::runtime_error("Cannot have NULL linear form block.");
-  }
-
-  // Get vector type
+  // Get PETSc vector type
   VecType vec_type;
   VecGetType(b.vec(), &vec_type);
   bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
@@ -301,33 +298,16 @@ void Assembler::assemble(la::PETScVector& b)
   {
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
-      // Get sub-vector
+      // Get sub-vector and assemble
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
-
-      Vec b_local;
-      VecGhostGetLocalForm(sub_b, &b_local);
-      assemble_local(b_local, *_l[i], _a[i], _bcs);
-
-      // Restore ghosted form and update local (owned) entries that are ghosts
-      // on other processes
-      VecGhostRestoreLocalForm(sub_b, &b_local);
-      VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
-      VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
-
-      // Set boundary values (local only)
-      PetscInt local_size;
-      VecGetLocalSize(sub_b, &local_size);
-      PetscScalar* values;
-      VecGetArray(sub_b, &values);
-      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
-                                                                   local_size);
-      set_bc(vec, *_l[i], _bcs);
-      VecRestoreArray(sub_b, &values);
+      assemble_single(sub_b, *_l[i], _a[i], _bcs);
     }
   }
-  else if (block_vector)
+  else if (_l.size() > 1)
   {
+    // FIXME: simplify and hide complexity of this case
+
     std::vector<const common::IndexMap*> index_maps;
     for (std::size_t i = 0; i < _l.size(); ++i)
     {
@@ -397,27 +377,25 @@ void Assembler::assemble(la::PETScVector& b)
     }
   }
   else
-  {
-    // Get local representation and assemble
-    Vec b_local;
-    VecGhostGetLocalForm(b.vec(), &b_local);
-    assert(b_local);
-    assemble_local(b_local, *_l[0], _a[0], _bcs);
+    assemble_single(b.vec(), *_l[0], _a[0], _bcs);
+}
+//-----------------------------------------------------------------------------
+void Assembler::assemble_single(
+    Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  Vec b_local;
+  VecGhostGetLocalForm(b, &b_local);
+  assemble_local(b_local, L, a, bcs);
 
-    // Restore ghost Vec and accumulate ghosts on owning process
-    VecGhostRestoreLocalForm(b.vec(), &b_local);
-    VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-    VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+  // Restore ghosted form and update local (owned) entries that are
+  // ghosts on other processes
+  VecGhostRestoreLocalForm(b, &b_local);
+  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 
-    auto map = _l[0]->function_space(0)->dofmap()->index_map();
-    auto map_size0 = map->block_size() * map->size_local();
-    PetscScalar* values;
-    VecGetArray(b.vec(), &values);
-    Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
-                                                                 map_size0);
-    set_bc(vec, *_l[0], _bcs);
-    VecRestoreArray(b.vec(), &values);
-  }
+  // Set boundary values (local only)
+  set_bc(b, L, bcs);
 }
 //-----------------------------------------------------------------------------
 void Assembler::assemble_local(
@@ -771,6 +749,19 @@ void Assembler::modify_bc(
     for (Eigen::Index k = 0; k < dmap0.size(); ++k)
       b[dmap0[k]] += be[k];
   }
+}
+//-----------------------------------------------------------------------------
+void Assembler::set_bc(Vec b, const Form& L,
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  PetscInt local_size;
+  VecGetLocalSize(b, &local_size);
+  PetscScalar* values;
+  VecGetArray(b, &values);
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
+                                                               local_size);
+  set_bc(vec, L, bcs);
+  VecRestoreArray(b, &values);
 }
 //-----------------------------------------------------------------------------
 void Assembler::set_bc(

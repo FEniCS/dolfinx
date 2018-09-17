@@ -77,6 +77,12 @@ public:
                const Form& L);
 
 private:
+  // Assemble linear form into a ghosted PETSc Vec
+  static void
+  assemble_single(Vec b, const Form& L,
+                  const std::vector<std::shared_ptr<const Form>> a,
+                  const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
   // Assemble linear form into a local PETSc Vec.
   static void
   assemble_local(Vec& b, const Form& L,
@@ -120,6 +126,10 @@ private:
       modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
                 const Form& a,
                 std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
+  // Set bc values in owned part of the PETSc Vec
+  static void set_bc(Vec b, const Form& L,
+                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Hack for setting bcs (set entries of b to be equal to boundary
   // value). Does not set ghosts. Size of b must be same as owned
