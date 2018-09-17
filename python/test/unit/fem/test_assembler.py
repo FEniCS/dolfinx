@@ -17,6 +17,20 @@ import ufl
 from ufl import dx, inner
 
 
+def test_assemble_functional():
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
+    V = dolfin.FunctionSpace(mesh, "Lagrange", 1)
+
+    M = dolfin.Constant(1.0) * dx(domain=mesh)
+    value = dolfin.fem.assemble_scalar(M)
+    assert value == pytest.approx(1.0, 1e-12)
+
+    f = dolfin.function.expression.Expression("x[0]", degree=1)
+    M = f * dx(domain=mesh)
+    value = dolfin.fem.assemble_scalar(M)
+    assert value == pytest.approx(0.5, 1e-12)
+
+
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = dolfin.FunctionSpace(mesh, "Lagrange", 1)

@@ -24,6 +24,37 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
+double fem::assemble_scalar(const fem::Form& M)
+{
+  if (M.rank() != 0)
+    throw std::runtime_error("Form must be rank 0");
+
+  // Get mesh from form
+  assert(M.mesh());
+  const mesh::Mesh& mesh = *M.mesh();
+
+  const std::size_t tdim = mesh.topology().dim();
+  mesh.init(tdim);
+
+  // Data structure used in assembly
+  EigenRowArrayXXd coordinate_dofs;
+
+  // Iterate over all cells
+  double value = 0.0;
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  {
+    double cell_value = 0.0;
+    assert(!cell.is_ghost());
+    cell.get_coordinate_dofs(coordinate_dofs);
+    M.tabulate_tensor(&cell_value, cell, coordinate_dofs);
+    value += cell_value;
+  }
+
+  // FIXME: apply MPI sum
+  return MPI::sum(mesh.mpi_comm(), value);
+}
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
                      std::vector<std::shared_ptr<const Form>> L,
@@ -139,15 +170,16 @@ void Assembler::assemble(la::PETScMatrix& A)
           //   MatNestGetISs(A.mat(), is_rows, is_cols);
           //   // MPI_Comm mpi_comm = MPI_COMM_NULL;
           //   // PetscObjectGetComm((PetscObject)is_cols[1], &mpi_comm);
-          //   // std::cout << "Test size: " << MPI::size(mpi_comm) << std::endl;
-          //   if (i == 1 and j == 0)
+          //   // std::cout << "Test size: " << MPI::size(mpi_comm) <<
+          //   std::endl; if (i == 1 and j == 0)
           //   {
           //     if (MPI::rank(MPI_COMM_WORLD) == 1)
           //     {
           //       std::cout << "DOLFIN l2g" << std::endl;
           //       auto index_map
           //           = _a[i][j]->function_space(0)->dofmap()->index_map();
-          //       std::cout << "  Range: " << index_map->local_range()[0] << ", "
+          //       std::cout << "  Range: " << index_map->local_range()[0] << ",
+          //       "
           //                 << index_map->local_range()[1] << std::endl;
           //       auto ghosts = index_map->ghosts();
           //       std::cout << ghosts << std::endl;
@@ -173,10 +205,12 @@ void Assembler::assemble(la::PETScMatrix& A)
           //     // ISLocalToGlobalMapping l2g0, l2g1;
           //     // MatGetLocalToGlobalMapping(subA, &l2g0, &l2g1);
           //     // if (MPI::rank(MPI_COMM_WORLD) == 1)
-          //     //   ISLocalToGlobalMappingView(l2g0, PETSC_VIEWER_STDOUT_SELF);
+          //     //   ISLocalToGlobalMappingView(l2g0,
+          //     PETSC_VIEWER_STDOUT_SELF);
           //     // MPI_Comm mpi_comm = MPI_COMM_NULL;
           //     // PetscObjectGetComm((PetscObject)l2g0, &mpi_comm);
-          //     // std::cout << "Test size: " << MPI::size(mpi_comm) << std::endl;
+          //     // std::cout << "Test size: " << MPI::size(mpi_comm) <<
+          //     std::endl;
           //   }
           // }
 
@@ -625,7 +659,6 @@ void Assembler::assemble(
 
     // Get dof maps for cell
     auto dmap = dofmap->cell_dofs(cell.index());
-    // auto dmap1 = dofmaps[1]->cell_dofs(cell.index());
 
     // Size data structure for assembly
     be.resize(dmap.size());

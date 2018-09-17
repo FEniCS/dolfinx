@@ -35,6 +35,9 @@ namespace fem
 class DirichletBC;
 class Form;
 
+// Assemble functional
+double assemble_scalar(const Form& M);
+
 /// Assembly of LHS and RHS Forms with DirichletBC boundary conditions
 /// applied
 class Assembler

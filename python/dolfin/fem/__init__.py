@@ -5,9 +5,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import ufl
-from dolfin.jit.jit import ffc_jit
 import dolfin.cpp
+import ufl
+from dolfin.fem.assembling import _create_cpp_form
+from dolfin.jit.jit import ffc_jit
+
+
+def assemble_scalar(M) -> float:
+    """Assemble functional M over mesh and return scalar value"""
+    return dolfin.cpp.fem.assemble_scalar(_create_cpp_form(M))
 
 
 def create_coordinate_map(o):
@@ -25,7 +31,8 @@ def create_coordinate_map(o):
             cmap_ptr = ffc_jit(o)
         else:
             raise TypeError(
-                "Cannot create coordinate map from an object of type: {}".format(type(o)))
+                "Cannot create coordinate map from an object of type: {}".
+                format(type(o)))
     except Exception:
         print("Failed to create compiled coordinate map")
         raise
