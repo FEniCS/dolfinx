@@ -107,7 +107,7 @@ demos-python-mpi: &demos-python-mpi
     cd documented/stokes-taylor-hood
     mpirun --allow-run-as-root -np 3 python3 demo_stokes-taylor-hood.py
 
-aditional-complex-dependencies: &aditional-complex-dependencies
+additional-complex-dependencies: &additional-complex-dependencies
   name: Install additional Python dependencies (complex mode)
   command: |
             pip3 install six singledispatch pulp networkx
@@ -172,10 +172,11 @@ jobs:
       MPLBACKEND: "agg"
       DOLFIN_NOPLOT: 1
       DEBIAN_FRONTEND: "noninteractive"
+      PETSC_DIR: "/usr/local/petsc-complex-32"
     steps:
       - checkout
       - run: *install-dependencies
-      - run: *aditional-complex-dependencies
+      - run: *additional-complex-dependencies
       - run: *install-python-components
       - run: *flake8-python-code
       - run: *build-documentation-cpp
@@ -206,7 +207,7 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 5 * * *"
+          cron: "0 15 * * *"
           filters:
             branches:
               only:
