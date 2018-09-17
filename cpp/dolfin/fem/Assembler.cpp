@@ -62,7 +62,7 @@ la::PETScVector assemble_vector(const Form& L)
     throw std::runtime_error("Form must be rank 1");
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
-  Assembler::assemble_single(b.vec(), L, {}, {});
+  Assembler::assemble(b.vec(), L, {}, {});
   return b;
 }
 //-----------------------------------------------------------------------------
@@ -371,7 +371,7 @@ void Assembler::assemble(la::PETScVector& b)
       // Get sub-vector and assemble
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
-      assemble_single(sub_b, *_l[i], _a[i], _bcs);
+      assemble(sub_b, *_l[i], _a[i], _bcs);
     }
   }
   else if (_l.size() > 1)
@@ -443,10 +443,10 @@ void Assembler::assemble(la::PETScVector& b)
     }
   }
   else
-    assemble_single(b.vec(), *_l[0], _a[0], _bcs);
+    assemble(b.vec(), *_l[0], _a[0], _bcs);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_single(
+void Assembler::assemble(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {

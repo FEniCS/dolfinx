@@ -75,8 +75,10 @@ public:
   /// Assemble vector and modify for boundary conditions.
   void assemble(la::PETScVector& b);
 
-  // Assemble linear form into an Eigen vector. The Eigen vector must
-  // the correct size. This local to a process.
+  /// Assemble linear form into an Eigen vector. The Eigen vector must
+  /// the correct size. This local to a process. The vector is modified
+  /// for b <- b - A x_bc, where x_bc contains prescribed values. BC
+  /// values are not inserted into bc positions.
   static void
       assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
                const Form& L, const std::vector<std::shared_ptr<const Form>> a,
@@ -91,14 +93,18 @@ public:
   //   assemble_single(b.vec(), L, a, bcs);
   // }
 
-  // Assemble linear form into a ghosted PETSc Vec
+  /// Assemble linear form into a ghosted PETSc Vec. The vector is modified
+  // for b <- b - A x_bc, where x_bc contains prescribed values, and BC
+  // values set in bc positions.
   static void
-  assemble_single(Vec b, const Form& L,
-                  const std::vector<std::shared_ptr<const Form>> a,
-                  const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+  assemble(Vec b, const Form& L,
+           const std::vector<std::shared_ptr<const Form>> a,
+           const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
 private:
-  // Assemble linear form into a local PETSc Vec.
+  // Assemble linear form into a local PETSc Vec. The vector is modified
+  // for b <- b - A x_bc, where x_bc contains prescribed values. BC
+  // values are not inserted into bc positions.
   static void
   assemble_local(Vec& b, const Form& L,
                  const std::vector<std::shared_ptr<const Form>> a,
