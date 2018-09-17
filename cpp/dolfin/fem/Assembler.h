@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <boost/variant.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <memory>
@@ -35,14 +36,9 @@ namespace fem
 class DirichletBC;
 class Form;
 
-/// Assemble functional
-double assemble_scalar(const Form& M);
-
-/// Assemble linear form
-la::PETScVector assemble_vector(const Form& L);
-
-/// Assemble bilinear form
-la::PETScMatrix assemble_matrix(const Form& a);
+/// Assemble form
+boost::variant<double, la::PETScVector, la::PETScMatrix>
+assemble(const Form& a);
 
 /// Assembly of LHS and RHS Forms with DirichletBC boundary conditions
 /// applied

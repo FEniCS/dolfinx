@@ -249,10 +249,8 @@ void fem(py::module& m)
         self.set_value(_u);
       });
 
-  m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
-        "Assemble functional into a scalar");
-  m.def("assemble_vector", &dolfin::fem::assemble_vector,
-        "Assemble linear form into a vector");
+  // dolfin::fem::assemble
+  m.def("assemble", &dolfin::fem::assemble, "Assemble form over mesh");
 
   // dolfin::fem::Assembler
   py::class_<dolfin::fem::Assembler, std::shared_ptr<dolfin::fem::Assembler>>
@@ -277,11 +275,6 @@ void fem(py::module& m)
                            &dolfin::fem::Assembler::assemble))
       .def("assemble", py::overload_cast<dolfin::la::PETScVector&>(
                            &dolfin::fem::Assembler::assemble));
-  //   .def_static(
-  //       "assemble_boo",
-  //       py::overload_cast<
-  //           Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>,
-  //           const dolfin::fem::Form&>(&dolfin::fem::Assembler::assemble));
 
   // dolfin::fem::AssemblerBase
   py::class_<dolfin::fem::AssemblerBase,

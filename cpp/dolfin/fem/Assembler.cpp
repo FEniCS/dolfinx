@@ -24,7 +24,9 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
-double fem::assemble_scalar(const fem::Form& M)
+namespace
+{
+double assemble_scalar(const fem::Form& M)
 {
   if (M.rank() != 0)
     throw std::runtime_error("Form must be rank 0");
@@ -54,7 +56,7 @@ double fem::assemble_scalar(const fem::Form& M)
   return MPI::sum(mesh.mpi_comm(), value);
 }
 //-----------------------------------------------------------------------------
-la::PETScVector fem::assemble_vector(const Form& L)
+la::PETScVector assemble_vector(const Form& L)
 {
   if (L.rank() != 1)
     throw std::runtime_error("Form must be rank 1");
@@ -66,11 +68,29 @@ la::PETScVector fem::assemble_vector(const Form& L)
 //-----------------------------------------------------------------------------
 la::PETScMatrix assemble_matrix(const Form& a)
 {
-  if (1.rank() != 2)
+  if (a.rank() != 2)
     throw std::runtime_error("Form must be rank 2");
   la::PETScMatrix A = fem::init_matrix(a);
-  throw std::runtime_error("Not implemented");
+  throw std::runtime_error("Short-hand matrix assembly implemented yet.");
   return A;
+}
+} // namespace
+
+//-----------------------------------------------------------------------------
+boost::variant<double, la::PETScVector, la::PETScMatrix>
+fem::assemble(const Form& a)
+{
+  if (a.rank() == 0)
+    return assemble_scalar(a);
+  else if (a.rank() == 1)
+    return assemble_vector(a);
+  else if (a.rank() == 2)
+    return assemble_matrix(a);
+  else
+  {
+    throw std::runtime_error("Unsupported rank");
+    return 0.0;
+  }
 }
 //-----------------------------------------------------------------------------
 

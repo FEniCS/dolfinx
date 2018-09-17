@@ -8,22 +8,15 @@
 import typing
 
 from dolfin import cpp
-import dolfin.cpp
 import ufl
 from dolfin.fem.assembling import _create_cpp_form
 from dolfin.jit.jit import ffc_jit
 
 
-def assemble(a):
-    """Assemble form mesh and return scalar value"""
+def assemble(a) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
+    """Assemble form over mesh"""
     a_cpp = _create_cpp_form(a)
-    if a_cpp.rank() == 0:
-        return cpp.fem.assemble_scalar(a_cpp)
-    elif a_cpp.rank() == 0:
-        return cpp.fem.assemble_vector(a_cpp)
-    else:
-        raise RuntimeError("Assembly of Form of rank {} not supported".format(
-            a_cpp.rank()))
+    return cpp.fem.assemble(a_cpp)
 
 
 class Assembler:
