@@ -18,7 +18,6 @@ from ufl import dx, inner
 
 def test_assemble_functional():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
-    V = dolfin.FunctionSpace(mesh, "Lagrange", 1)
 
     M = dolfin.Constant(1.0) * dx(domain=mesh)
     value = dolfin.fem.assemble(M)
