@@ -168,12 +168,11 @@ jobs:
 
   build-complex:
     docker:
-      - image: quay.io/fenicsproject/dolfinx:latest
+      - image: quay.io/fenicsproject/dolfinx:complex
     environment:
       MPLBACKEND: "agg"
       DOLFIN_NOPLOT: 1
       DEBIAN_FRONTEND: "noninteractive"
-      PETSC_DIR: "/usr/local/petsc-complex-32"
     steps:
       - checkout
       - run: *install-dependencies
