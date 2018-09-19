@@ -194,6 +194,7 @@ workflows:
   build-and-pushdoc:
     jobs:
       - build
+      - build-complex
       - pushdoc:
           requires:
             - build
