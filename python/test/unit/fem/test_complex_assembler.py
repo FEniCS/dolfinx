@@ -32,7 +32,7 @@ def test_complex_assembly():
     a_real = inner(u, v) * dx
     L1 = inner(g, v) * dx
 
-    assembler = dolfin.fem.assemble.Assembler(a_real, L1)
+    assembler = dolfin.fem.Assembler(a_real, L1)
     bnorm = assembler.assemble_vector().norm(dolfin.cpp.la.Norm.l1)
     b_norm_ref = abs(-2 + 3.0j)
     assert np.isclose(bnorm, b_norm_ref)
@@ -41,7 +41,7 @@ def test_complex_assembly():
     a_imag = j * inner(u, v) * dx
     f = dolfin.Expression("j*sin(2*pi*x[0])", degree=2)
     L0 = inner(f, v) * dx
-    assembler = dolfin.fem.assemble.Assembler(a_imag, L0)
+    assembler = dolfin.fem.Assembler(a_imag, L0)
     A1_norm = assembler.assemble_matrix().norm(dolfin.cpp.la.Norm.frobenius)
     b1_norm = assembler.assemble_vector().norm(dolfin.cpp.la.Norm.l2)
     assert np.isclose(A0_norm, A1_norm)
@@ -49,7 +49,7 @@ def test_complex_assembly():
     a_complex = (1 + j) * inner(u, v) * dx
     f = dolfin.Expression("sin(2*pi*x[0])", degree=2)
     L2 = inner(f, v) * dx
-    assembler = dolfin.fem.assemble.Assembler(a_complex, L2)
+    assembler = dolfin.fem.Assembler(a_complex, L2)
     A2_norm = assembler.assemble_matrix().norm(dolfin.cpp.la.Norm.frobenius)
     b2_norm = assembler.assemble_vector().norm(dolfin.cpp.la.Norm.l2)
 
@@ -81,7 +81,7 @@ def test_complex_assembly_solve():
     L = inner(f, v) * dx
 
     # Create assembler and compute numerical soltion
-    assembler = dolfin.fem.assemble.Assembler(a, L)
+    assembler = dolfin.fem.Assembler(a, L)
     A = assembler.assemble_matrix()
     b = assembler.assemble_vector()
     solver = dolfin.cpp.la.PETScKrylovSolver(mesh.mpi_comm())
