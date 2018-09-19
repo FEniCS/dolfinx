@@ -59,15 +59,15 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   }
 
   // Build maps from entities to local dof indices
-  const std::vector<PetscInt> edge_to_dof
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> edge_to_dof
       = V0.dofmap()->dofs(mesh, 1);
-  const std::vector<PetscInt> vertex_to_dof
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1> vertex_to_dof
       = V1.dofmap()->dofs(mesh, 0);
 
   // Build maps from local dof numbering to global
-  std::vector<std::size_t> local_to_global_map0
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map0
       = V0.dofmap()->tabulate_local_to_global_dofs();
-  std::vector<std::size_t> local_to_global_map1
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map1
       = V1.dofmap()->tabulate_local_to_global_dofs();
 
   // Initialize edge -> vertex connections

@@ -1393,7 +1393,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  std::vector<std::size_t> local_to_global_map
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
       = dofmap.tabulate_local_to_global_dofs();
 
   // Add number of dofs for each cell
@@ -1693,9 +1693,9 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
       {{cell_range[0], cell_range[1] + 1}});
 
   // Read cell dofmaps
-  std::vector<PetscInt> cell_dofs = get_dataset<PetscInt>(
-      _mpi_comm.comm(), cell_dofs_dataitem, parent_path,
-      {{x_cell_dofs.front(), x_cell_dofs.back()}});
+  std::vector<PetscInt> cell_dofs
+      = get_dataset<PetscInt>(_mpi_comm.comm(), cell_dofs_dataitem, parent_path,
+                              {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
   const std::vector<std::int64_t> vector_shape
       = get_dataset_shape(vector_dataitem);

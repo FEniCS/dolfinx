@@ -1,11 +1,13 @@
 install-dependencies: &install-dependencies
-  name: Install/update Python (test/doc) dependencies
-  command: pip3 install cffi decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+  name: Install/update (test/doc) dependencies
+  command: |
+            apt-get -qq update
+            apt-get -y install libfreetype6-dev
+            pip3 -q install cffi decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
 
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-            pip3 uninstall --yes fenics-fiat fenics-ufl fenics-dijitso fenics-ffc
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
@@ -14,7 +16,9 @@ install-python-components: &install-python-components
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code
-  command: python3 -m flake8 python/dolfin
+  command: |
+            python3 -m flake8 python/dolfin
+            python3 -m flake8 python/test
 
 build-documentation-cpp: &build-documentation-cpp
   name: Build documentation (C++)
@@ -53,12 +57,12 @@ demos-cpp-complex: &demos-cpp-complex
   name: Build and run demos (C++)
   command: |
     cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin -f 'scalar_type' 'double complex' -r 'tsfc' Poisson.ufl
+    python3 -m ffc -l dolfin -f 'scalar_type' 'double complex' Poisson.ufl
     cmake -G Ninja .
     ninja
     ./demo_poisson
 
-python-interface: &python-interface
+build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
   command: |
     cd python
@@ -69,12 +73,6 @@ build-documentation-python: &build-documentation-python
   command: |
     cd python/demo && python3 ./generate-demo-files.py
     cd ../doc && make html
-
-flake8-unit-tests: &flake8-unit-tests
-  name: Run flake8 on unit tests
-  command: |
-    cd python/test/unit
-    python3 -m flake8 .
 
 unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
@@ -107,14 +105,6 @@ demos-python-mpi: &demos-python-mpi
     cd documented/stokes-taylor-hood
     mpirun --allow-run-as-root -np 3 python3 demo_stokes-taylor-hood.py
 
-aditional-complex-dependencies: &aditional-complex-dependencies
-  name: Install additional Python dependencies (complex mode)
-  command: |
-            pip3 install six singledispatch pulp networkx
-            pip3 install git+https://github.com/blechta/FInAT.git --upgrade
-            pip3 install git+https://github.com/blechta/COFFEE.git --upgrade
-            pip3 install git+https://github.com/blechta/tsfc.git --upgrade
-
 version: 2
 
 jobs:
@@ -135,9 +125,8 @@ jobs:
       - run: *build-install-cpp
       - run: *unit-tests-cpp
       - run: *demos-cpp
-      - run: *python-interface
+      - run: *build-python-interface
       - run: *build-documentation-python
-      - run: *flake8-unit-tests
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
       - run: *demos-python
@@ -147,6 +136,30 @@ jobs:
           paths:
             - python/doc/build/html/
             - cpp/doc/html/
+
+  build-complex:
+    docker:
+      - image: quay.io/fenicsproject/dolfinx:complex
+    environment:
+      MPLBACKEND: "agg"
+      DOLFIN_NOPLOT: 1
+      DEBIAN_FRONTEND: "noninteractive"
+    steps:
+      - checkout
+      - run: *install-dependencies
+      - run: *install-python-components
+      - run: *flake8-python-code
+      - run: *build-documentation-cpp
+      - run: *configure-cpp
+      - run: *build-install-cpp
+      - run: *unit-tests-cpp
+      - run: *demos-cpp-complex
+      - run: *build-python-interface
+      - run: *build-documentation-python
+      - run: *unit-tests-python
+      - run: *unit-tests-python-mpi
+      - run: *demos-python
+      - run: *demos-python-mpi
 
   pushdoc:
     docker:
@@ -165,37 +178,13 @@ jobs:
           name: Push C++ API doc to fenicsproject.org
           command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
 
-  build-complex:
-    docker:
-      - image: quay.io/igorbaratta/dolfinx-complex:latest
-    environment:
-      MPLBACKEND: "agg"
-      DOLFIN_NOPLOT: 1
-      DEBIAN_FRONTEND: "noninteractive"
-    steps:
-      - checkout
-      - run: *install-dependencies
-      - run: *aditional-complex-dependencies
-      - run: *install-python-components
-      - run: *flake8-python-code
-      - run: *build-documentation-cpp
-      - run: *configure-cpp
-      - run: *build-install-cpp
-      - run: *unit-tests-cpp
-      - run: *demos-cpp-complex
-      - run: *python-interface
-      - run: *build-documentation-python
-      - run: *flake8-unit-tests
-      - run: *unit-tests-python
-      - run: *unit-tests-python-mpi
-      - run: *demos-python
-      - run: *demos-python-mpi
 
 workflows:
   version: 2
   build-and-pushdoc:
     jobs:
       - build
+      - build-complex
       - pushdoc:
           requires:
             - build

@@ -9,7 +9,8 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> GenericDofMap::tabulate_local_to_global_dofs() const
+Eigen::Array<std::size_t, Eigen::Dynamic, 1>
+GenericDofMap::tabulate_local_to_global_dofs() const
 {
   // FIXME: use common::IndexMap::local_to_global_index?
 
@@ -19,7 +20,7 @@ std::vector<std::size_t> GenericDofMap::tabulate_local_to_global_dofs() const
   const auto& local_to_global_unowned = idxmap->ghosts();
   const std::size_t local_ownership_size = bs * idxmap->size_local();
 
-  std::vector<std::size_t> local_to_global_map(
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map(
       bs * (idxmap->size_local() + idxmap->num_ghosts()));
 
   const std::size_t global_offset = bs * idxmap->local_range()[0];
@@ -38,21 +39,27 @@ std::vector<std::size_t> GenericDofMap::tabulate_local_to_global_dofs() const
   return local_to_global_map;
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscInt> GenericDofMap::dofs(const mesh::Mesh& mesh,
-                                          std::size_t dim) const
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+GenericDofMap::dofs(const mesh::Mesh& mesh, std::size_t dim) const
 {
   // Check number of dofs per entity (on each cell)
   const std::size_t num_dofs_per_entity = num_entity_dofs(dim);
 
   // Return empty vector if not dofs on requested entity
   if (num_dofs_per_entity == 0)
-    return std::vector<PetscInt>();
+    return Eigen::Array<PetscInt, Eigen::Dynamic, 1>();
 
   // Vector to hold list of dofs
-  std::vector<PetscInt> dof_list(mesh.num_entities(dim) * num_dofs_per_entity);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dof_list(mesh.num_entities(dim)
+                                                     * num_dofs_per_entity);
+
+  // Build local dofs for each entity of dimension dim
+  const mesh::CellType& cell_type = mesh.type();
+  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs_local;
+  for (std::size_t i = 0; i < cell_type.num_entities(dim); ++i)
+    entity_dofs_local.push_back(tabulate_entity_dofs(dim, i));
 
   // Iterate over cells
-  std::vector<int> entity_dofs_local;
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Get local-to-global dofmap for cell
@@ -62,18 +69,15 @@ std::vector<PetscInt> GenericDofMap::dofs(const mesh::Mesh& mesh,
     unsigned int local_index = 0;
     for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, dim))
     {
-      // Tabulate cell-wise index of all dofs on entity
-      tabulate_entity_dofs(entity_dofs_local, dim, local_index);
-
       // Get dof index and add to list
-      for (std::size_t i = 0; i < entity_dofs_local.size(); ++i)
+      for (Eigen::Index i = 0; i < entity_dofs_local[local_index].size(); ++i)
       {
-        const std::size_t entity_dof_local = entity_dofs_local[i];
+        const std::size_t entity_dof_local = entity_dofs_local[local_index][i];
         const PetscInt dof_index = cell_dof_list[entity_dof_local];
-        assert(e.index() * num_dofs_per_entity + i < dof_list.size());
+        assert((Eigen::Index)(e.index() * num_dofs_per_entity + i)
+               < dof_list.size());
         dof_list[e.index() * num_dofs_per_entity + i] = dof_index;
       }
-
       ++local_index;
     }
   }
@@ -81,7 +85,7 @@ std::vector<PetscInt> GenericDofMap::dofs(const mesh::Mesh& mesh,
   return dof_list;
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscInt>
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
 GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
                            const std::vector<std::size_t>& entity_indices) const
 {
@@ -94,10 +98,14 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
 
   // Allocate the the array to return
   const std::size_t num_marked_entities = entity_indices.size();
-  std::vector<PetscInt> entity_to_dofs(num_marked_entities * dofs_per_entity);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> entity_to_dofs(num_marked_entities
+                                                           * dofs_per_entity);
 
-  // Allocate data for tabulating local to local map
-  std::vector<int> local_to_local_map(dofs_per_entity);
+  // Build local dofs for each entity of dimension dim
+  const mesh::CellType& cell_type = mesh.type();
+  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> local_to_local_map;
+  for (std::size_t i = 0; i < cell_type.num_entities(entity_dim); ++i)
+    local_to_local_map.push_back(tabulate_entity_dofs(entity_dim, i));
 
   // Iterate over entities
   std::size_t local_entity_ind = 0;
@@ -122,22 +130,20 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
     // Get all cell dofs
     const auto cell_dof_list = cell_dofs(cell.index());
 
-    // Tabulate local to local map of dofs on local entity
-    tabulate_entity_dofs(local_to_local_map, entity_dim, local_entity_ind);
-
     // Fill local dofs for the entity
     for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
     {
       // Map dofs
-      const PetscInt global_dof = cell_dof_list[local_to_local_map[local_dof]];
+      const PetscInt global_dof
+          = cell_dof_list[local_to_local_map[local_entity_ind][local_dof]];
       entity_to_dofs[dofs_per_entity * i + local_dof] = global_dof;
     }
   }
   return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscInt> GenericDofMap::entity_dofs(const mesh::Mesh& mesh,
-                                                 std::size_t entity_dim) const
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
 {
   // Get some dimensions
   const std::size_t top_dim = mesh.topology().dim();
@@ -148,10 +154,14 @@ std::vector<PetscInt> GenericDofMap::entity_dofs(const mesh::Mesh& mesh,
   mesh.init(entity_dim, top_dim);
 
   // Allocate the the array to return
-  std::vector<PetscInt> entity_to_dofs(num_mesh_entities * dofs_per_entity);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> entity_to_dofs(num_mesh_entities
+                                                           * dofs_per_entity);
 
-  // Allocate data for tabulating local to local map
-  std::vector<int> local_to_local_map(dofs_per_entity);
+  // Build local dofs for each entity of dimension dim
+  const mesh::CellType& cell_type = mesh.type();
+  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> local_to_local_map;
+  for (std::size_t i = 0; i < cell_type.num_entities(entity_dim); ++i)
+    local_to_local_map.push_back(tabulate_entity_dofs(entity_dim, i));
 
   // Iterate over entities
   std::size_t local_entity_ind = 0;
@@ -174,14 +184,12 @@ std::vector<PetscInt> GenericDofMap::entity_dofs(const mesh::Mesh& mesh,
     // Get all cell dofs
     const auto cell_dof_list = cell_dofs(cell.index());
 
-    // Tabulate local to local map of dofs on local entity
-    tabulate_entity_dofs(local_to_local_map, entity_dim, local_entity_ind);
-
     // Fill local dofs for the entity
     for (std::size_t local_dof = 0; local_dof < dofs_per_entity; ++local_dof)
     {
       // Map dofs
-      const PetscInt global_dof = cell_dof_list[local_to_local_map[local_dof]];
+      const PetscInt global_dof
+          = cell_dof_list[local_to_local_map[local_entity_ind][local_dof]];
       entity_to_dofs[dofs_per_entity * entity.index() + local_dof] = global_dof;
     }
   }

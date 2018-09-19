@@ -336,9 +336,6 @@ private:
     // Coefficients
     std::vector<PetscScalar> w;
 
-    // mesh::Facet dofs
-    std::vector<int> facet_dofs;
-
     // Coordinates for dofs
     EigenRowArrayXXd coordinates;
   };
