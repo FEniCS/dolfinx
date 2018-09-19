@@ -42,17 +42,16 @@ double assemble_scalar(const fem::Form& M)
   EigenRowArrayXXd coordinate_dofs;
 
   // Iterate over all cells
-  PETScScalar value = 0.0;
+  PetscScalar value = 0.0;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    PETScScalar cell_value = 0.0;
+    PetscScalar cell_value = 0.0;
     assert(!cell.is_ghost());
     cell.get_coordinate_dofs(coordinate_dofs);
     M.tabulate_tensor(&cell_value, cell, coordinate_dofs);
     value += cell_value;
   }
 
-  // FIXME: apply MPI sum
   return MPI::sum(mesh.mpi_comm(), PetscRealPart(value));
 }
 //-----------------------------------------------------------------------------
