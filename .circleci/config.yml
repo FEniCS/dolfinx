@@ -3,12 +3,11 @@ install-dependencies: &install-dependencies
   command: |
             apt-get -qq update
             apt-get -y install libfreetype6-dev
-            pip3 install cffi decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+            pip3 -q install cffi decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
 
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-            pip3 uninstall --yes fenics-fiat fenics-ufl fenics-dijitso fenics-ffc
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
@@ -109,7 +108,7 @@ demos-python-mpi: &demos-python-mpi
 additional-complex-dependencies: &additional-complex-dependencies
   name: Install additional Python dependencies (complex mode)
   command: |
-            pip3 install six singledispatch pulp networkx
+            pip3 -q install six singledispatch pulp networkx
             pip3 install git+https://github.com/blechta/FInAT.git --upgrade
             pip3 install git+https://github.com/blechta/COFFEE.git --upgrade
             pip3 install git+https://github.com/blechta/tsfc.git --upgrade
@@ -194,6 +193,7 @@ workflows:
   build-and-pushdoc:
     jobs:
       - build
+      - build-complex
       - pushdoc:
           requires:
             - build
