@@ -53,7 +53,7 @@ double assemble_scalar(const fem::Form& M)
   }
 
   // FIXME: apply MPI sum
-  return MPI::sum(mesh.mpi_comm(), value);
+  return MPI::sum(mesh.mpi_comm(), PetscRealPart(value));
 }
 //-----------------------------------------------------------------------------
 la::PETScVector assemble_vector(const Form& L)
