@@ -42,10 +42,10 @@ double assemble_scalar(const fem::Form& M)
   EigenRowArrayXXd coordinate_dofs;
 
   // Iterate over all cells
-  double value = 0.0;
+  PETScScalar value = 0.0;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    double cell_value = 0.0;
+    PETScScalar cell_value = 0.0;
     assert(!cell.is_ghost());
     cell.get_coordinate_dofs(coordinate_dofs);
     M.tabulate_tensor(&cell_value, cell, coordinate_dofs);
