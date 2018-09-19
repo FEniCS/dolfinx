@@ -3,12 +3,11 @@ install-dependencies: &install-dependencies
   command: |
             apt-get -qq update
             apt-get -y install libfreetype6-dev
-            pip3 install cffi decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+            pip3 -q install cffi decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
 
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-            pip3 uninstall --yes fenics-fiat fenics-ufl fenics-dijitso fenics-ffc
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
@@ -185,6 +184,7 @@ workflows:
   build-and-pushdoc:
     jobs:
       - build
+      - build-complex
       - pushdoc:
           requires:
             - build
