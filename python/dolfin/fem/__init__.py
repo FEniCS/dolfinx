@@ -8,12 +8,11 @@
 import functools
 import typing
 
-import dolfin.fem.dirichletbc
 import ufl
 from dolfin import cpp
 from dolfin.fem.assembling import _create_cpp_form
-from dolfin.jit.jit import ffc_jit
 from dolfin.fem.dirichletbc import DirichletBC
+from dolfin.jit.jit import ffc_jit
 
 
 @functools.singledispatch
@@ -31,6 +30,7 @@ def _(b: cpp.la.PETScVector, L, a=[], bcs=[], scale: float=1.0) -> cpp.la.PETScV
     cpp.fem.assemble(b, L_cpp, a_cpp, bcs, scale)
     return b
 
+
 @assemble.register(cpp.la.PETScMatrix)
 def _(A: cpp.la.PETScMatrix, a, bcs=[], scale: float=1.0) -> cpp.la.PETScMatrix:
     """Assemble bilinear form into matrix"""
@@ -40,7 +40,6 @@ def _(A: cpp.la.PETScMatrix, a, bcs=[], scale: float=1.0) -> cpp.la.PETScMatrix:
 
 
 def set_bc(b: cpp.la.PETScVector, L, bcs: typing.List[DirichletBC]) -> None:
-# def set_bc(b: cpp.la.PETScVector, L, bcs) -> None:
     """Insert boundary condition values into vector"""
     cpp.fem.set_bc(b, L, bcs)
 
