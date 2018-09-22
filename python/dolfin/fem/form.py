@@ -1,85 +1,86 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2018 Chris N. Richardson, Garth N. Wells and Michal Habera
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
-"""FIXME: Add description"""
 
 import ufl
 import dolfin.cpp as cpp
 from dolfin.jit.jit import dolfin_pc, ffc_jit
 
 
-class Form(cpp.fem.Form):
-    def __init__(self, form, **kwargs):
+class Form:
+    def __init__(self, form: ufl.Form, form_compiler_parameters: list=[]):
+        """Create dolfin Form
+        
+        Parameters
+        ----------
+        form
+            Pure UFL form
+        form_compiler_parameters
+            Parameters used in JIT FFC compilation of this form
 
-        # Check form argument
-        if not isinstance(form, ufl.Form):
-            raise RuntimeError("Expected a ufl.Form.")
-
-        sd = form.subdomain_data()
-        self.subdomains, = list(sd.values())  # Assuming single domain
-        domain, = list(sd.keys())  # Assuming single domain
-        mesh = domain.ufl_cargo()
-
-        # Having a mesh in the form is a requirement
-        if mesh is None:
-            raise RuntimeError("Expecting to find a Mesh in the form.")
-
-        form_compiler_parameters = kwargs.pop("form_compiler_parameters", None)
+        Note
+        ----
+        This wrapper for UFL form is responsible for the actual FFC compilation
+        and attaching coefficients and domains specific data to the underlying
+        C++ Form.
+        """
+        self.form_compiler_parameters = form_compiler_parameters
 
         # Add DOLFIN include paths (just the Boost path for special
         # math functions is really required)
         # FIXME: move getting include paths to elsewhere
-        if form_compiler_parameters is None:
-            form_compiler_parameters = {"external_include_dirs": dolfin_pc["include_dirs"]}
+        if self.form_compiler_parameters is None:
+            self.form_compiler_parameters = {"external_include_dirs": dolfin_pc["include_dirs"]}
         else:
             # FIXME: add paths if dict entry already exists
-            form_compiler_parameters["external_include_dirs"] = dolfin_pc["include_dirs"]
+            self.form_compiler_parameters["external_include_dirs"] = dolfin_pc["include_dirs"]
 
-        ufc_form = ffc_jit(form, form_compiler_parameters=form_compiler_parameters,
+        # Extract subdomain data from UFL form
+        sd = form.subdomain_data()
+        self._subdomains, = list(sd.values())  # Assuming single domain
+        domain, = list(sd.keys())  # Assuming single domain
+        mesh = domain.ufl_cargo()
+
+        # Compile UFL form with JIT
+        ufc_form = ffc_jit(form, form_compiler_parameters=self.form_compiler_parameters,
                            mpi_comm=mesh.mpi_comm())
+        # Cast compiled library to pointer to ufc_form
         ufc_form = cpp.fem.make_ufc_form(ufc_form[0])
 
+        # For every argument in form extract its function space
         function_spaces = [func.function_space()._cpp_object for func in form.arguments()]
 
-        cpp.fem.Form.__init__(self, ufc_form, function_spaces)
+        # Prepare dolfin.Form and hold it as a member
+        self._cpp_form = cpp.fem.Form(ufc_form, function_spaces)
 
+        # Need to fill the form with coefficients data
+        # For every coefficient in form take its CPP object
         original_coefficients = form.coefficients()
-        self.coefficients = []
-        for i in range(self.num_coefficients()):
-            j = self.original_coefficient_position(i)
-            self.coefficients.append(original_coefficients[j].cpp_object())
+        for i in range(self._cpp_form.num_coefficients()):
+            j = self._cpp_form.original_coefficient_position(i)
+            self._cpp_form.set_coefficient(j, original_coefficients[i].cpp_object())
 
-        # Type checking coefficients
-        if not all(isinstance(c, (cpp.function.GenericFunction))
-                   for c in self.coefficients):
-            coefficient_error = "Error while extracting coefficients. "
-            raise TypeError(coefficient_error +
-                            "Either provide a dict of cpp.function.GenericFunctions, " +
-                            "or use Function to define your form.")
-
-        for i in range(self.num_coefficients()):
-            if isinstance(self.coefficients[i], cpp.function.GenericFunction):
-                self.set_coefficient(i, self.coefficients[i])
+        if mesh is None:
+            raise RuntimeError("Expecting to find a Mesh in the form.")
 
         # Attach mesh (because function spaces and coefficients may be
         # empty lists)
         if not function_spaces:
-            self.set_mesh(mesh)
+            self._cpp_form.set_mesh(mesh)
 
         # Attach subdomains to C++ Form if we have them
-        subdomains = self.subdomains.get("cell")
+        subdomains = self._subdomains.get("cell")
         if subdomains is not None:
-            self.set_cell_domains(subdomains)
-        subdomains = self.subdomains.get("exterior_facet")
+            self._cpp_form.set_cell_domains(subdomains)
+        subdomains = self._subdomains.get("exterior_facet")
         if subdomains is not None:
-            self.set_exterior_facet_domains(subdomains)
-        subdomains = self.subdomains.get("interior_facet")
+            self._cpp_form.set_exterior_facet_domains(subdomains)
+        subdomains = self._subdomains.get("interior_facet")
         if subdomains is not None:
-            self.set_interior_facet_domains(subdomains)
-        subdomains = self.subdomains.get("vertex")
+            self._cpp_form.set_interior_facet_domains(subdomains)
+        subdomains = self._subdomains.get("vertex")
         if subdomains is not None:
-            self.set_vertex_domains(subdomains)
+            self._cpp_form.set_vertex_domains(subdomains)
