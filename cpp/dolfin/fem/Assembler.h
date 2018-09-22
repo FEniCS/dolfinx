@@ -46,15 +46,16 @@ assemble(const Form& a);
 /// for the bilinear forms in [a]. The vector b is modified for boundary
 /// conditions in [bcs] that share a a trial space with [a], i.e. b <- b
 /// - Ax.
-void assemble(const Form& L, const std::vector<std::shared_ptr<const Form>> a,
+void assemble(la::PETScVector& b, const Form& L,
+              const std::vector<std::shared_ptr<const Form>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              la::PETScVector& b, double scale = 1.0);
+              double scale = 1.0);
 
 /// Re-assemble bilinear form. The matrix must already be appropriately
 /// initialised.
-void assemble(const Form& a,
+void assemble(la::PETScMatrix& A, const Form& a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              la::PETScMatrix& A, double scale = 1.0);
+              double scale = 1.0);
 
 // FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETScVector

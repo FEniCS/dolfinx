@@ -245,14 +245,23 @@ void fem(py::module& m)
   m.def("assemble",
         py::overload_cast<const dolfin::fem::Form&>(&dolfin::fem::assemble),
         "Assemble form over mesh");
-  m.def("assemble",
-        py::overload_cast<
-            const dolfin::fem::Form&,
-            const std::vector<std::shared_ptr<const dolfin::fem::Form>>,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            dolfin::la::PETScVector&, double>(&dolfin::fem::assemble),
-        py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("b"),
-        py::arg("scale") = 1.0, "Assemble linear over mesh into vector");
+  m.def(
+      "assemble",
+      py::overload_cast<
+          dolfin::la::PETScVector&, const dolfin::fem::Form&,
+          const std::vector<std::shared_ptr<const dolfin::fem::Form>>,
+          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
+          &dolfin::fem::assemble),
+      py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"),
+      py::arg("scale") = 1.0, "Assemble linear over mesh into vector");
+  m.def(
+      "assemble",
+      py::overload_cast<
+          dolfin::la::PETScMatrix&, const dolfin::fem::Form&,
+          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
+          &dolfin::fem::assemble),
+      py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("scale") = 1.0,
+      "Assemble bilinear over mesh into matrix");
   m.def("set_bc",
         py::overload_cast<
             dolfin::la::PETScVector&, const dolfin::fem::Form&,

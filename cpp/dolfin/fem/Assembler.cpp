@@ -92,10 +92,10 @@ fem::assemble(const Form& a)
   }
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(const Form& L,
+void fem::assemble(la::PETScVector& b, const Form& L,
                    const std::vector<std::shared_ptr<const Form>> a,
                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   la::PETScVector& b, double scale)
+                   double scale)
 
 {
   if (L.rank() != 1)
@@ -103,9 +103,9 @@ void fem::assemble(const Form& L,
   Assembler::assemble(b.vec(), L, a, bcs);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(const Form& a,
+void fem::assemble(la::PETScMatrix& A, const Form& a,
                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   la::PETScMatrix& A, double scale)
+                   double scale)
 
 {
   throw std::runtime_error("Short-hand matrix assembly no implemented yet");

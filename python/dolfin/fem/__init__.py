@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import singledispatch
+import functools
 import typing
 
 import dolfin.fem.dirichletbc
@@ -13,9 +13,10 @@ import ufl
 from dolfin import cpp
 from dolfin.fem.assembling import _create_cpp_form
 from dolfin.jit.jit import ffc_jit
+from dolfin.fem.dirichletbc import DirichletBC
 
 
-@singledispatch
+@functools.singledispatch
 def assemble(a) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
     """Assemble a form over mesh"""
     a_cpp = _create_cpp_form(a)
@@ -23,20 +24,30 @@ def assemble(a) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
 
 
 @assemble.register(cpp.la.PETScVector)
-def _(b: cpp.la.PETScVector, L, a=[], bcs=[], scale=1.0: float) -> None:
+def _(b: cpp.la.PETScVector, L, a=[], bcs=[], scale: float=1.0) -> cpp.la.PETScVector:
     """Assemble linear form into vector"""
     L_cpp = _create_cpp_form(L)
     a_cpp = [_create_cpp_form(form) for form in a]
-    cpp.fem.assemble(L_cpp, b, a_cpp, bcs, scale)
+    cpp.fem.assemble(b, L_cpp, a_cpp, bcs, scale)
+    return b
+
+@assemble.register(cpp.la.PETScMatrix)
+def _(A: cpp.la.PETScMatrix, a, bcs=[], scale: float=1.0) -> cpp.la.PETScMatrix:
+    """Assemble bilinear form into matrix"""
+    a_cpp = _create_cpp_form(a)
+    cpp.fem.assemble(A, a_cpp, bcs, scale)
+    return A
 
 
-def set_bc(b: cpp.la.PETScVector, L, bcs: typing.List[dolfin.fem.dirichletbc.DirichletBC]) -> None:
+def set_bc(b: cpp.la.PETScVector, L, bcs: typing.List[DirichletBC]) -> None:
+# def set_bc(b: cpp.la.PETScVector, L, bcs) -> None:
     """Insert boundary condition values into vector"""
     cpp.fem.set_bc(b, L, bcs)
 
 
 class Assembler:
     """Assemble variational forms"""
+
     def __init__(self, a, L, bcs=None, form_compiler_parameters=None):
         self.a = a
         self.L = L

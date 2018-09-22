@@ -36,18 +36,17 @@ def test_basic_assembly():
 
     a = dolfin.Constant(1.0) * inner(u, v) * dx
     L = inner(dolfin.Constant(1.0), v) * dx
-    assembler = dolfin.fem.Assembler(a, L)
 
     # Initial assembly
-    A = assembler.assemble_matrix()
-    b = assembler.assemble_vector()
-    assert isinstance(A, dolfin.cpp.la.PETScMatrix)
+    # A = dolfin.fem.assemble(a)
+    b = dolfin.fem.assemble(L)
+    # assert isinstance(A, dolfin.cpp.la.PETScMatrix)
     assert isinstance(b, dolfin.cpp.la.PETScVector)
 
     # Second assembly
-    A = assembler.assemble(A)
-    b = assembler.assemble(b)
-    assert isinstance(A, dolfin.cpp.la.PETScMatrix)
+    # A = assembler.assemble(A)
+    b = dolfin.fem.assemble(b, L)
+    # assert isinstance(A, dolfin.cpp.la.PETScMatrix)
     assert isinstance(b, dolfin.cpp.la.PETScVector)
 
 
