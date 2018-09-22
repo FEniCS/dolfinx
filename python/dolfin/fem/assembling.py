@@ -41,7 +41,7 @@ def _create_cpp_form(form, form_compiler_parameters=None):
         form = Form(
             form,
             form_compiler_parameters=form_compiler_parameters)
-        return form._cpp_form
+        return form._cpp_object
     else:
         raise TypeError("Invalid form type %s" % (type(form), ))
 
