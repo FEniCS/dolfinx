@@ -23,7 +23,7 @@ def assemble(a) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
 
 
 @assemble.register(cpp.la.PETScVector)
-def _(b: cpp.la.PETScVector, L, a=[], bcs=[], scale: float=1.0) -> cpp.la.PETScVector:
+def assemble_vector(b: cpp.la.PETScVector, L, a=[], bcs=[], scale: float=1.0) -> cpp.la.PETScVector:
     """Assemble linear form into vector"""
     L_cpp = _create_cpp_form(L)
     a_cpp = [_create_cpp_form(form) for form in a]
@@ -32,7 +32,7 @@ def _(b: cpp.la.PETScVector, L, a=[], bcs=[], scale: float=1.0) -> cpp.la.PETScV
 
 
 @assemble.register(cpp.la.PETScMatrix)
-def _(A: cpp.la.PETScMatrix, a, bcs=[], scale: float=1.0) -> cpp.la.PETScMatrix:
+def assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[], scale: float=1.0) -> cpp.la.PETScMatrix:
     """Assemble bilinear form into matrix"""
     a_cpp = _create_cpp_form(a)
     cpp.fem.assemble(A, a_cpp, bcs, scale)
