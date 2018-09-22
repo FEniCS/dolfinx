@@ -253,6 +253,12 @@ void fem(py::module& m)
             dolfin::la::PETScVector&, double>(&dolfin::fem::assemble),
         py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("b"),
         py::arg("scale") = 1.0, "Assemble linear over mesh into vector");
+  m.def("set_bc",
+        py::overload_cast<
+            dolfin::la::PETScVector&, const dolfin::fem::Form&,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>(
+            &dolfin::fem::set_bc),
+        "Insert boundary condition values into vector");
   //   m.def("assemble",
   //         py::overload_cast<dolfin::fem::Form&>(&dolfin::fem::assemble),
   //         "Assemble form over mesh");
