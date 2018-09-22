@@ -13,7 +13,7 @@ from dolfin.jit.jit import dolfin_pc, ffc_jit
 class Form:
     def __init__(self, form: ufl.Form, form_compiler_parameters: list=[]):
         """Create dolfin Form
-        
+
         Parameters
         ----------
         form
