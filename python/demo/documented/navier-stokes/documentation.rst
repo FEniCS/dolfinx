@@ -84,7 +84,7 @@ outflow boundaries:
 .. code-block:: python
 
     # Define boundary conditions
-    noslip  = DirichletBC(V, (0, 0),
+    noslip  = DirichletBC(V, Constant((0, 0)),
                           "on_boundary && \
                            (x[0] < DOLFIN_EPS | x[1] < DOLFIN_EPS | \
                            (x[0] > 0.5 - DOLFIN_EPS && x[1] > 0.5 - DOLFIN_EPS))")
@@ -112,7 +112,7 @@ below:
 
     # Define coefficients
     k = dt
-    f = (0, 0)
+    f = as_vector((0, 0))
 
 The next step is now to define the variational problems for the three
 steps of Chorin's method. We do this by defining a pair of bilinear
