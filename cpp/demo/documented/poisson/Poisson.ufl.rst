@@ -15,7 +15,7 @@ functions on triangles (or in order words, continuous piecewise linear
 polynomials on triangles).
 
 Next, we use this element to initialize the trial and test functions
-(:math:`u` and :math:`v`)
+(:math:`u` and :math:`v`)::
 
    u = TrialFunction(element)
    v = TestFunction(element)
@@ -25,6 +25,8 @@ Next, we use this element to initialize the trial and test functions
    x_shift = x[0] - 0.5
    y_shift = x[1] - 0.5
    f = 10 * exp(-(x_shift * x_shift + y_shift * y_shift) / 0.02)
+
+   g = sin(5.0 * x[0])
 
 Finally, we define the bilinear and linear forms according to the
 variational formulation of the equations::
