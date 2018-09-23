@@ -91,45 +91,6 @@ equation.  For convenience we also include the DOLFIN namespace.
 
    using namespace dolfin;
 
-Then follows the definition of the coefficient functions (for
-:math:`f` and :math:`g`), which are derived from the
-:cpp:class:`Expression` class in DOLFIN
-
-.. code-block:: cpp
-
-   // Source term (right-hand side)
-   class Source : public function::Expression
-   {
-   public:
-     Source() : function::Expression({}) {}
-
-     void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>> values,
-        Eigen::Ref<const EigenRowArrayXXd> x) const
-     {
-     for (unsigned int i = 0; i != x.rows(); ++i)
-       {
-         double dx = x(i, 0) - 0.5;
-         double dy = x(i, 1) - 0.5;
-         values(i, 0) = 10*exp(-(dx*dx + dy*dy) / 0.02);
-       }
-     }
-   };
-
-   // Normal derivative (Neumann boundary condition)
-   class dUdN : public function::Expression
-   {
-   public:
-     dUdN() : function::Expression({}) {}
-
-     void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>> values,
-              Eigen::Ref<const EigenRowArrayXXd> x) const
-     {
-       for (unsigned int i = 0; i != x.rows(); ++i)
-           values(i, 0) = sin(5*x(i, 0));
-     }
-   };
 
 The ``DirichletBoundary`` is derived from the :cpp:class:`SubDomain`
 class and defines the part of the boundary to which the Dirichlet
@@ -196,9 +157,7 @@ as follows:
 
 Next, we define the variational formulation by initializing the
 bilinear and linear forms (:math:`a`, :math:`L`) using the previously
-defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
-source and boundary flux term (:math:`f`, :math:`g`) and attach these
-to the linear form.
+defined :cpp:class:`FunctionSpace` ``V``.
 
 .. code-block:: cpp
 
@@ -212,14 +171,6 @@ to the linear form.
     auto L = std::make_shared<fem::Form>(
         std::shared_ptr<ufc_form>(form_L->form()),
         std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
-     auto f = std::make_shared<Source>();
-     auto g = std::make_shared<dUdN>();
-     //L->f = f;
-     //L->g = g;
-
-    L->set_coefficient_index_to_name_map(form_L->coefficient_number_map);
-    L->set_coefficient_name_to_index_map(form_L->coefficient_name_map);
-    L->set_coefficients({ {"f", f}, {"g", g} });
 
     // Attach 'coordinate mapping' to mesh
     auto cmap = a->coordinate_mapping();
