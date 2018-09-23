@@ -9,6 +9,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/LogStream.h>

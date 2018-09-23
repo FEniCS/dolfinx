@@ -9,6 +9,7 @@
 #include "Form.h"
 #include "GenericDofMap.h"
 #include <dolfin/common/types.h>
+#include <dolfin/function/GenericFunction.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Cell.h>

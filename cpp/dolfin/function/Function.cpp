@@ -107,65 +107,6 @@ Function::Function(const Function& v)
   }
 }
 //-----------------------------------------------------------------------------
-/*
-const Function& Function::operator= (const Function& v)
-{
-  assert(v._vector);
-
-  // Make a copy of all the data, or if v is a sub-function, then we
-  // collapse the dof map and copy only the relevant entries from the
-  // vector of v.
-  if (v._vector->size() == v._function_space->dim())
-  {
-    // Copy function space
-    _function_space = v._function_space;
-
-    // Copy vector
-    _vector = v._vector->copy();
-
-    // Clear subfunction cache
-    _sub_functions.clear();
-  }
-  else
-  {
-    // Create new collapsed FunctionSpace
-    std::unordered_map<std::size_t, std::size_t> collapsed_map;
-    _function_space = v._function_space->collapse(collapsed_map);
-
-    // Get row indices of original and new vectors
-    std::unordered_map<std::size_t, std::size_t>::const_iterator entry;
-    std::vector<PetscInt> new_rows(collapsed_map.size());
-    std::vector<PetscInt> old_rows(collapsed_map.size());
-    std::size_t i = 0;
-    for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
-    {
-      new_rows[i]   = entry->first;
-      old_rows[i++] = entry->second;
-    }
-
-    // Gather values into a vector
-    assert(v.vector());
-    std::vector<double> gathered_values(collapsed_map.size());
-    v.vector()->get_local(gathered_values.data(), gathered_values.size(),
-                          old_rows.data());
-
-    // Initial new vector (global)
-    init_vector();
-    assert(_function_space->dofmap());
-    assert(_vector->size()
-                  == _function_space->dofmap()->global_dimension());
-
-    // FIXME (local): Check this for local or global
-    // Set values in vector
-    this->_vector->set_local(gathered_values.data(), collapsed_map.size(),
-                             new_rows.data());
-    this->_vector->apply("insert");
-  }
-
-  return *this;
-}
-*/
-//-----------------------------------------------------------------------------
 Function Function::sub(std::size_t i) const
 {
   // Extract function subspace
@@ -340,15 +281,6 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const GenericFunction& v)
-{
-  assert(_vector);
-  assert(_function_space);
-
-  // Interpolate
-  _function_space->interpolate(*_vector, v);
-}
-//-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const
 {
   assert(_function_space);
@@ -373,6 +305,14 @@ std::vector<std::size_t> Function::value_shape() const
   return _shape;
 }
 //-----------------------------------------------------------------------------
+std::size_t Function::value_size() const
+{
+  std::size_t size = 1;
+  for (std::size_t i = 0; i < value_rank(); ++i)
+    size *= value_dimension(i);
+  return size;
+}
+//-----------------------------------------------------------------------------
 void Function::restrict(
     PetscScalar* w, const fem::FiniteElement& element,
     const mesh::Cell& dolfin_cell,
@@ -395,13 +335,9 @@ void Function::restrict(
     _vector->get_local(w, dofs.size(), dofs.data());
   }
   else
-    dolfin_not_implemented();
-
-  //  {
-  //    // Restrict as UFC function (by calling eval)
-  //    element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
-  //                          ufc_cell);
-  //  }
+  {
+    throw std::runtime_error("Restriction to foreign element not allowed");
+  }
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

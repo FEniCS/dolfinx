@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "GenericFunction.h"
+#include <dolfin/common/Variable.h>
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>
@@ -18,6 +18,11 @@ namespace dolfin
 namespace la
 {
 class PETScVector;
+}
+
+namespace fem
+{
+class FiniteElement;
 }
 
 namespace mesh
@@ -37,7 +42,7 @@ class FunctionSpace;
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
 
-class Function : public GenericFunction
+class Function : public common::Variable
 {
 public:
   Function() {}
@@ -70,13 +75,7 @@ public:
   Function(const Function& v);
 
   /// Destructor
-  virtual ~Function() = default;
-
-  // Assignment from function
-  //
-  // @param v (_Function_)
-  //         Another function.
-  // const Function& operator= (const Function& v);
+  ~Function() = default;
 
   /// Extract subfunction (view into the Function)
   ///
@@ -90,7 +89,7 @@ public:
   ///
   /// @returns _FunctionSpace_
   ///         Return the shared pointer.
-  virtual std::shared_ptr<const FunctionSpace> function_space() const override
+  std::shared_ptr<const FunctionSpace> function_space() const
   {
     assert(_function_space);
     return _function_space;
@@ -117,21 +116,13 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x) const override;
-
-  /// Interpolate function (on possibly non-matching meshes)
-  ///
-  /// @param    v (GenericFunction)
-  ///         The function to be interpolated.
-  void interpolate(const GenericFunction& v);
-
-  //--- Implementation of GenericFunction interface ---
+            Eigen::Ref<const EigenRowArrayXXd> x) const;
 
   /// Return value rank
   ///
   /// @returns std::size_t
   ///         The value rank.
-  virtual std::size_t value_rank() const override;
+  std::size_t value_rank() const;
 
   /// Return value dimension for given axis
   ///
@@ -140,13 +131,16 @@ public:
   ///
   /// @returns    std::size_t
   ///         The value dimension.
-  virtual std::size_t value_dimension(std::size_t i) const override;
+  std::size_t value_dimension(std::size_t i) const;
 
   /// Return value shape
   ///
   /// @returns std::vector<std::size_t>
   ///         The value shape.
-  virtual std::vector<std::size_t> value_shape() const override;
+  std::vector<std::size_t> value_shape() const;
+
+  /// Return value size (product of value dimensions)
+  std::size_t value_size() const;
 
   /// Evaluate at given point in given cell
   ///
@@ -156,11 +150,11 @@ public:
   ///         The coordinates of the point.
   /// @param    cell (mesh::Cell)
   ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
                     Eigen::Ref<const EigenRowArrayXXd> x,
-                    const mesh::Cell& cell) const override;
+                    const mesh::Cell& cell) const;
 
   /// Restrict function to local cell (compute expansion coefficients w)
   ///
@@ -172,9 +166,9 @@ public:
   ///         The cell.
   /// @param  coordinate_dofs (double *)
   ///         The coordinates
-  virtual void restrict(
+  void restrict(
       PetscScalar* w, const fem::FiniteElement& element, const mesh::Cell& cell,
-      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const override;
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Compute values at all mesh points
   ///
@@ -182,9 +176,9 @@ public:
   ///         The mesh.
   /// @returns  point_values (EigenRowArrayXXd)
   ///         The values at all geometric points
-  virtual Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>
-  compute_point_values(const mesh::Mesh& mesh) const override;
+  compute_point_values(const mesh::Mesh& mesh) const;
 
   /// Compute values at all mesh points
   ///
