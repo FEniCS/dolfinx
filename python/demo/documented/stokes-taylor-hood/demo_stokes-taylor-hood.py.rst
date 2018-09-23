@@ -142,7 +142,7 @@ formulation of the Stokes equations are defined as follows::
     # Define variational problem
     (u, p) = TrialFunctions(W)
     (v, q) = TestFunctions(W)
-    f = as_vector((0, 0))
+    f = Function(W).sub(0)
     a = (inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q))*dx
     L = inner(f, v)*dx
 
