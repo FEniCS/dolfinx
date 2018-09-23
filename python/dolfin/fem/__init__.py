@@ -9,6 +9,8 @@ import ufl
 from dolfin.jit.jit import ffc_jit
 import dolfin.cpp
 
+from .form import Form
+
 
 def create_coordinate_map(o):
     """Return a compiled UFC coordinate_mapping object"""
