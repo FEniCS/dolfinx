@@ -11,6 +11,8 @@ import dolfin.cpp
 
 from .form import Form
 
+__all__ = ["Form"]
+
 
 def create_coordinate_map(o):
     """Return a compiled UFC coordinate_mapping object"""
