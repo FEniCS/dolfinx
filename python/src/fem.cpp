@@ -241,10 +241,54 @@ void fem(py::module& m)
         self.set_value(_u);
       });
 
+  py::enum_<dolfin::fem::BlockType>(m, "BlockType")
+      .value("monolithic", dolfin::fem::BlockType::monolithic)
+      .value("nested", dolfin::fem::BlockType::nested);
+
   // dolfin::fem::assemble
   m.def("assemble",
         py::overload_cast<const dolfin::fem::Form&>(&dolfin::fem::assemble),
         "Assemble form over mesh");
+  m.def("assemble_blocked",
+        py::overload_cast<
+            std::vector<const dolfin::fem::Form*>,
+            const std::vector<
+                std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
+            dolfin::fem::BlockType, double>(&dolfin::fem::assemble),
+        py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("block_type"),
+        py::arg("scale") = 1.0,
+        "Assemble linear forms over mesh into blocked vector");
+  m.def(
+      "assemble_blocked",
+      py::overload_cast<
+          dolfin::la::PETScVector&, std::vector<const dolfin::fem::Form*>,
+          const std::vector<
+              std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
+          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
+          &dolfin::fem::assemble),
+      py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"),
+      py::arg("scale") = 1.0,
+      "Re-assemble linear forms over mesh into blocked vector");
+
+  m.def("assemble_blocked",
+        py::overload_cast<
+            const std::vector<std::vector<const dolfin::fem::Form*>>,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
+            dolfin::fem::BlockType, double>(&dolfin::fem::assemble),
+        py::arg("a"), py::arg("bcs"), py::arg("block_type"),
+        py::arg("scale") = 1.0,
+        "Assemble bilinear forms over mesh into blocked matrix");
+  m.def(
+      "assemble_blocked",
+      py::overload_cast<
+          dolfin::la::PETScMatrix&,
+          const std::vector<std::vector<const dolfin::fem::Form*>>,
+          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
+          &dolfin::fem::assemble),
+      py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("scale") = 1.0,
+      "Re-assemble bilinear forms over mesh into blocked matrix");
+
   m.def(
       "assemble",
       py::overload_cast<
@@ -288,17 +332,18 @@ void fem(py::module& m)
       .def(py::init<
            std::vector<std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
            std::vector<std::shared_ptr<const dolfin::fem::Form>>,
-           std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>())
-      .def("assemble_matrix", &dolfin::fem::Assembler::assemble_matrix)
-      .def("assemble_vector", &dolfin::fem::Assembler::assemble_vector)
-      .def("assemble", py::overload_cast<dolfin::la::PETScMatrix&>(
-                           &dolfin::fem::Assembler::assemble))
-      .def("assemble", py::overload_cast<dolfin::la::PETScVector&>(
-                           &dolfin::fem::Assembler::assemble));
+           std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>());
+      //   .def("assemble_matrix", &dolfin::fem::Assembler::assemble_matrix)
+      //   .def("assemble_vector", &dolfin::fem::Assembler::assemble_vector)
+      //   .def("assemble", py::overload_cast<dolfin::la::PETScMatrix&>(
+      //                        &dolfin::fem::Assembler::assemble));
+      //   .def("assemble", py::overload_cast<dolfin::la::PETScVector&>(
+      //                        &dolfin::fem::Assembler::assemble));
 
-  // dolfin::fem::AssemblerBase
-  py::class_<dolfin::fem::AssemblerBase,
-             std::shared_ptr<dolfin::fem::AssemblerBase>>(m, "AssemblerBase")
+      // dolfin::fem::AssemblerBase
+      py::class_<dolfin::fem::AssemblerBase,
+                 std::shared_ptr<dolfin::fem::AssemblerBase>>(m,
+                                                              "AssemblerBase")
       .def_readwrite("add_values", &dolfin::fem::AssemblerBase::add_values)
       .def_readwrite("keep_diagonal",
                      &dolfin::fem::AssemblerBase::keep_diagonal)

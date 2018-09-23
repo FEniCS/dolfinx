@@ -26,9 +26,8 @@ def test_krylov_solver_lu():
 
     a = Constant(1.0) * inner(u, v) * dx
     L = inner(Constant(1.0), v) * dx
-    assembler = fem.Assembler(a, L)
-    A = assembler.assemble_matrix()
-    b = assembler.assemble_vector()
+    A = assemble(a)
+    b = assemble(L)
 
     norm = 13.0
 

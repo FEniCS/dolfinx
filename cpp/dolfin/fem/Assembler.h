@@ -36,18 +36,48 @@ namespace fem
 class DirichletBC;
 class Form;
 
+/// Assembly type for block forms
+enum class BlockType
+{
+  monolithic,
+  nested
+};
+
 /// Assemble form
 boost::variant<double, la::PETScVector, la::PETScMatrix>
 assemble(const Form& a);
 
-/// Re-assemble linear form. The vector must already be appropriately
-/// initialised. set_bc must be called after this call to insert bc
-/// values. The 'test space' for L should be the same as the test space
-/// for the bilinear forms in [a]. The vector b is modified for boundary
-/// conditions in [bcs] that share a a trial space with [a], i.e. b <- b
-/// - Ax.
+/// Assemble blocked linear forms
+la::PETScVector
+assemble(std::vector<const Form*> L,
+         const std::vector<std::vector<std::shared_ptr<const Form>>> a,
+         std::vector<std::shared_ptr<const DirichletBC>> bcs,
+         BlockType block_type, double scale = 1.0);
+
+/// Re-assemble blocked linear forms
+void assemble(la::PETScVector& b, std::vector<const Form*> L,
+              const std::vector<std::vector<std::shared_ptr<const Form>>> a,
+              std::vector<std::shared_ptr<const DirichletBC>> bcs,
+              double scale = 1.0);
+
+/// Re-assemble single linear form. The vector must already be
+/// appropriately initialised. set_bc must be called after this call to
+/// insert bc values. The 'test space' for L should be the same as the
+/// test space for the bilinear forms in [a]. The vector b is modified
+/// for boundary conditions in [bcs] that share a a trial space with
+/// [a], i.e. b <- b - Ax.
 void assemble(la::PETScVector& b, const Form& L,
               const std::vector<std::shared_ptr<const Form>> a,
+              std::vector<std::shared_ptr<const DirichletBC>> bcs,
+              double scale = 1.0);
+
+/// Assemble blocked bilinear forms into a matrix
+la::PETScMatrix assemble(const std::vector<std::vector<const Form*>> a,
+                         std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                         BlockType block_type, double scale = 1.0);
+
+/// Re-assemble blocked bilinear forms into a matrix
+void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double scale = 1.0);
 
@@ -56,6 +86,8 @@ void assemble(la::PETScVector& b, const Form& L,
 void assemble(la::PETScMatrix& A, const Form& a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double scale = 1.0);
+
+//----------------------------------------------------------------------------
 
 // FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETScVector
@@ -94,21 +126,6 @@ public:
   /// Destructor
   ~Assembler();
 
-  /// Return assembled matrix. Dirichlet rows/columns are zeroed, and
-  /// '1' placed on diagonal.
-  la::PETScMatrix assemble_matrix(BlockType type = BlockType::nested);
-
-  /// Assemble matrix. Dirichlet rows/columns are zeroed, and '1'
-  /// placed on diagonal
-  void assemble(la::PETScMatrix& A);
-
-  /// Return assembled vector. Boundary conditions have no effect on the
-  /// assembled vector.
-  la::PETScVector assemble_vector(BlockType type = BlockType::nested);
-
-  /// Assemble vector and modify for boundary conditions.
-  void assemble(la::PETScVector& b);
-
   /// Assemble linear form into an Eigen vector. The Eigen vector must
   /// the correct size. This local to a process. The vector is modified
   /// for b <- b - A x_bc, where x_bc contains prescribed values. BC
@@ -126,7 +143,11 @@ public:
            const std::vector<std::shared_ptr<const Form>> a,
            const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-private:
+  // Get IndexSets (IS) for stacked index maps
+  static std::vector<IS>
+  compute_index_sets(std::vector<const common::IndexMap*> maps);
+
+  // private:
   // Assemble linear form into a local PETSc Vec. The vector is modified
   // for b <- b - A x_bc, where x_bc contains prescribed values. BC
   // values are not inserted into bc positions.
@@ -147,10 +168,6 @@ private:
   static Eigen::Array<PetscInt, Eigen::Dynamic, 1>
   get_local_bc_rows(const function::FunctionSpace& V,
                     std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
-  // Get IndexSets (IS) for stacked index maps
-  static std::vector<IS>
-  compute_index_sets(std::vector<const common::IndexMap*> maps);
 
   // Get sub-matrix
   static la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);

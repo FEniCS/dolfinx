@@ -23,7 +23,8 @@ def assemble(a) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
 
 
 @assemble.register(cpp.la.PETScVector)
-def assemble_vector(b: cpp.la.PETScVector, L, a=[], bcs=[], scale: float=1.0) -> cpp.la.PETScVector:
+def assemble_vector(b: cpp.la.PETScVector, L, a=[], bcs=[],
+                    scale: float = 1.0) -> cpp.la.PETScVector:
     """Assemble linear form into vector"""
     L_cpp = _create_cpp_form(L)
     a_cpp = [_create_cpp_form(form) for form in a]
@@ -32,76 +33,41 @@ def assemble_vector(b: cpp.la.PETScVector, L, a=[], bcs=[], scale: float=1.0) ->
 
 
 @assemble.register(cpp.la.PETScMatrix)
-def assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[], scale: float=1.0) -> cpp.la.PETScMatrix:
+def assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[],
+                    scale: float = 1.0) -> cpp.la.PETScMatrix:
     """Assemble bilinear form into matrix"""
     a_cpp = _create_cpp_form(a)
     cpp.fem.assemble(A, a_cpp, bcs, scale)
     return A
 
 
+def assemble_nested_vector(L, a, bcs, block_type,
+                           scale: float = 1.0) -> cpp.la.PETScVector:
+    """Assemble linear form into vector"""
+    L_cpp = [_create_cpp_form(form) for form in L]
+    a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
+    return cpp.fem.assemble_blocked(L_cpp, a_cpp, bcs, block_type, scale)
+
+
+def assemble_nested(b: cpp.la.PETScVector, L, a, bcs,
+                    scale: float = 1.0) -> cpp.la.PETScVector:
+    """Re-assemble linear form into vector"""
+    L_cpp = [_create_cpp_form(form) for form in L]
+    a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
+    cpp.fem.assemble_blocked(b, L_cpp, a_cpp, bcs, scale)
+    return b
+
+
+def assemble_nested_matrix(a, bcs, block_type,
+                           scale: float = 1.0) -> cpp.la.PETScVector:
+    """Assemble bilinear forms into matrix"""
+    a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
+    return cpp.fem.assemble_blocked(a_cpp, bcs, block_type, scale)
+
+
 def set_bc(b: cpp.la.PETScVector, L, bcs: typing.List[DirichletBC]) -> None:
     """Insert boundary condition values into vector"""
     cpp.fem.set_bc(b, L, bcs)
-
-
-class Assembler:
-    """Assemble variational forms"""
-
-    def __init__(self, a, L, bcs=None, form_compiler_parameters=None):
-        self.a = a
-        self.L = L
-        if bcs is None:
-            self.bcs = []
-        else:
-            self.bcs = bcs
-        self.assembler = None
-        self.form_compiler_parameters = form_compiler_parameters
-
-    def assemble(self, x: typing.Union[cpp.la.PETScMatrix, cpp.la.PETScVector]
-                 ) -> typing.Union[cpp.la.PETScMatrix, cpp.la.PETScVector]:
-        """Assemble a form into linear alebra object. The linear algebra
-        object must already be initialised.
-
-        """
-        self._compile_forms()
-        self.assembler.assemble(x)
-        return x
-
-    def assemble_matrix(self, mat_type=cpp.fem.Assembler.BlockType.monolithic
-                        ) -> cpp.la.PETScMatrix:
-        """Return assembled matrix from bilinear form"""
-        self._compile_forms()
-        return self.assembler.assemble_matrix(mat_type)
-
-    def assemble_vector(self, mat_type=cpp.fem.Assembler.BlockType.monolithic
-                        ) -> cpp.la.PETScVector:
-        """Create assembled vector from linear form"""
-        self._compile_forms()
-        return self.assembler.assemble_vector(mat_type)
-
-    # FIXME: simplify this function
-    def _compile_forms(self):
-        if self.assembler is None:
-            try:
-                a_forms = [[
-                    _create_cpp_form(a, self.form_compiler_parameters)
-                    for a in row
-                ] for row in self.a]
-            except TypeError:
-                a_forms = [[
-                    _create_cpp_form(self.a, self.form_compiler_parameters)
-                ]]
-            try:
-                L_forms = [
-                    _create_cpp_form(L, self.form_compiler_parameters)
-                    for L in self.L
-                ]
-            except TypeError:
-                L_forms = [
-                    _create_cpp_form(self.L, self.form_compiler_parameters)
-                ]
-
-            self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)
 
 
 def create_coordinate_map(o):
