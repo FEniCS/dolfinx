@@ -296,11 +296,6 @@ void fem(py::module& m)
             &dolfin::fem::set_bc),
         "Insert boundary condition values into vector");
 
-  // dolfin::fem::Assembler::BlockType enum
-  py::enum_<dolfin::fem::Assembler::BlockType>(assembler, "BlockType")
-      .value("nested", dolfin::fem::Assembler::BlockType::nested)
-      .value("monolithic", dolfin::fem::Assembler::BlockType::monolithic);
-
   // dolfin::fem::AssemblerBase
   py::class_<dolfin::fem::AssemblerBase,
              std::shared_ptr<dolfin::fem::AssemblerBase>>(m, "AssemblerBase")

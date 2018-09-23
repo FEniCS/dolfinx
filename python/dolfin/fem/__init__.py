@@ -28,7 +28,7 @@ def assemble(a) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
 @assemble.register(cpp.la.PETScVector)
 def assemble_vector(b: cpp.la.PETScVector, L, a=[], bcs=[],
                     scale: float = 1.0) -> cpp.la.PETScVector:
-    """Assemble linear form into vector"""
+    """Assemble linear form into a vector"""
     try:
         L_cpp = [_create_cpp_form(form) for form in L]
         a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
@@ -58,15 +58,6 @@ def assemble_nested_vector(L, a, bcs, block_type,
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     return cpp.fem.assemble_blocked(L_cpp, a_cpp, bcs, block_type, scale)
-
-
-def assemble_nested(b: cpp.la.PETScVector, L, a, bcs,
-                    scale: float = 1.0) -> cpp.la.PETScVector:
-    """Re-assemble linear form into vector"""
-    L_cpp = [_create_cpp_form(form) for form in L]
-    a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    cpp.fem.assemble_blocked(b, L_cpp, a_cpp, bcs, scale)
-    return b
 
 
 def assemble_nested_matrix(a, bcs, block_type,

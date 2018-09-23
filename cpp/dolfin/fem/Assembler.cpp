@@ -455,37 +455,6 @@ void fem::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-Assembler::Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
-                     std::vector<std::shared_ptr<const Form>> L,
-                     std::vector<std::shared_ptr<const DirichletBC>> bcs)
-    : _a(a), _l(L), _bcs(bcs)
-{
-  assert(!a.empty());
-  assert(!a[0].empty());
-
-  for (std::size_t i = 0; i < _l.size(); ++i)
-    if (!_l[i])
-      throw std::runtime_error("Cannot have NULL linear form block.");
-
-  // TODO:
-  // - check that a is rectangular
-  // - a.size() = L.size()
-  // - check ranks
-  // - check that function spaces in the blocks match, and are not
-  //        repeated
-  // - figure out number or blocks (row and column)
-}
-//-----------------------------------------------------------------------------
-Assembler::~Assembler()
-{
-  // for (std::size_t i = 0; i < _block_is.size(); ++i)
-  // {
-  //   // for (std::size_t j = 0; j < _block_is[j].size(); ++j)
-  //   //   if (_block_is[i][j])
-  //   //     ISDestroy(&_block_is[i][j]);
-  // }
-}
-//-----------------------------------------------------------------------------
 void Assembler::assemble(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs)

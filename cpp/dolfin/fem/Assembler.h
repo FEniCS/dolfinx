@@ -94,21 +94,6 @@ void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
 class Assembler
 {
 public:
-  /// Assembly type for block forms
-  enum class BlockType
-  {
-    monolithic,
-    nested
-  };
-
-  /// Constructor
-  Assembler(std::vector<std::vector<std::shared_ptr<const Form>>> a,
-            std::vector<std::shared_ptr<const Form>> L,
-            std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
-  /// Destructor
-  ~Assembler();
-
   /// Assemble linear form into an Eigen vector. The Eigen vector must
   /// the correct size. This local to a process. The vector is modified
   /// for b <- b - A x_bc, where x_bc contains prescribed values. BC
