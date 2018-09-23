@@ -23,7 +23,7 @@ def test_local_assembler_1D():
     v = TestFunction(V)
     c = Cell(mesh, 0)
 
-    a_scalar = Constant(1) * dx(domain=mesh)
+    a_scalar = 1 * dx(domain=mesh)
     a_vector = v * dx
     a_matrix = u * v * dx
 

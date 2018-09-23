@@ -22,8 +22,10 @@ def test_basic_assembly():
     V = dolfin.FunctionSpace(mesh, "Lagrange", 1)
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
-    a = dolfin.Constant(1.0) * inner(u, v) * dx
-    L = inner(dolfin.Constant(1.0), v) * dx
+    f = dolfin.Function(V)
+
+    a = inner(u, v) * dx
+    L = inner(f, v) * dx
     assembler = dolfin.fem.assemble.Assembler(a, L)
 
     # Initial assembly
@@ -65,9 +67,8 @@ def test_matrix_assembly_block():
         V0), dolfin.function.argument.TrialFunction(V1)
     v, q = dolfin.function.argument.TestFunction(
         V0), dolfin.function.argument.TestFunction(V1)
-    f = dolfin.function.constant.Constant(1.0)
-    g = dolfin.function.constant.Constant(-3.0)
-    zero = dolfin.function.constant.Constant(0.0)
+    f = 1.0
+    g = -3.0
 
     a00 = inner(u, v) * dx
     a01 = inner(p, v) * dx
@@ -75,7 +76,7 @@ def test_matrix_assembly_block():
     a11 = inner(p, q) * dx
     # a11 = None
 
-    L0 = zero * inner(f, v) * dx
+    L0 = inner(f, v) * dx
     L1 = inner(g, q) * dx
 
     # Create assembler
@@ -131,7 +132,7 @@ def test_matrix_assembly_block():
     v0, v1 = dolfin.function.argument.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
         u1, v0) * dx
-    L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
+    L =  inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
     assembler = dolfin.fem.assemble.Assembler([[a]], [L], [bc])
@@ -173,9 +174,9 @@ def xtest_assembly_solve_block():
         V0), dolfin.function.argument.TrialFunction(V1)
     v, q = dolfin.function.argument.TestFunction(
         V0), dolfin.function.argument.TestFunction(V1)
-    f = dolfin.function.constant.Constant(1.0)
-    g = dolfin.function.constant.Constant(-3.0)
-    zero = dolfin.function.constant.Constant(0.0)
+    f = 1.0
+    g = -3.0
+    zero = 0.0
 
     a00 = inner(u, v) * dx
     a01 = zero * inner(p, v) * dx

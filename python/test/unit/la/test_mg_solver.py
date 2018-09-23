@@ -120,7 +120,7 @@ def xtest_mg_solver_stokes():
     # Define variational problem
     (u, p) = TrialFunctions(W)
     (v, q) = TestFunctions(W)
-    f = Constant((0.0, 0.0, 0.0))
+    f = (0.0, 0.0, 0.0)
     a = inner(grad(u), grad(v)) * dx + div(v) * p * dx + q * div(u) * dx
     L = inner(f, v) * dx
 

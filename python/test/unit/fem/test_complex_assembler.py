@@ -26,8 +26,8 @@ def test_complex_assembly():
     u = dolfin.function.argument.TrialFunction(V)
     v = dolfin.function.argument.TestFunction(V)
 
-    g = dolfin.function.constant.Constant(-2 + 3.0j)
-    j = dolfin.function.constant.Constant(1.0j)
+    g = -2 + 3.0j
+    j = 1.0j
 
     a_real = inner(u, v) * dx
     L1 = inner(g, v) * dx
@@ -76,7 +76,7 @@ def test_complex_assembly_solve():
     # Variational problem
     u = dolfin.function.argument.TrialFunction(V)
     v = dolfin.function.argument.TestFunction(V)
-    C = dolfin.function.constant.Constant(1 + 1j)
+    C = 1 + 1j
     a = C * inner(grad(u), grad(v)) * dx + C * inner(u, v) * dx
     L = inner(f, v) * dx
 
