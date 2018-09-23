@@ -132,7 +132,7 @@ def test_matrix_assembly_block():
     v0, v1 = dolfin.function.argument.TestFunctions(W)
     a = inner(u0, v0) * dx + inner(u1, v1) * dx + inner(u0, v1) * dx + inner(
         u1, v0) * dx
-    L =  inner(f, v0) * ufl.dx + inner(g, v1) * dx
+    L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
     assembler = dolfin.fem.assemble.Assembler([[a]], [L], [bc])

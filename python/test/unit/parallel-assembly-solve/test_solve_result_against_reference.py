@@ -10,8 +10,8 @@ parallel assembly/solve."""
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from dolfin import (MPI, SpatialCoordinate, TestFunction,
-    TrialFunction, FunctionSpace, UnitSquareMesh, UnitCubeMesh,
-    Expression, inner, grad, dx, ds, Function, solve, cpp)
+                    TrialFunction, FunctionSpace, UnitSquareMesh, UnitCubeMesh,
+                    inner, grad, dx, ds, Function, solve, cpp)
 from dolfin.la import PETScOptions
 from dolfin_utils.test import gc_barrier
 
@@ -103,21 +103,20 @@ def test_computed_norms_against_references():
     # Reference values for norm of solution vector
     reference = {("16x16 unit tri square", 1): 9.544967937540488,
                  ("16x16 unit tri square", 2): 18.42366676312568,
-                #  ("16x16 unit tri square", 3): 27.29583104732836,
-                #  ("16x16 unit tri square", 4): 36.16867128121694,
+                 ("16x16 unit tri square", 3): 27.29583104732836,
+                 ("16x16 unit tri square", 4): 36.16867128121694,
                  ("4x4x4 unit tet cube", 1): 12.09116450742752,
                  ("4x4x4 unit tet cube", 2): 28.96492975422821,
-                #  ("4x4x4 unit tet cube", 3): 49.97350551329799,
-                #  ("4x4x4 unit tet cube", 4): 74.49938266409099,
-                #  ("16x16 unit quad square", 1): 9.550848071820747,
-                #  ("16x16 unit quad square", 2): 18.423668706176354,
-                #  ("16x16 unit quad square", 3): 27.295831017251672,
-                #  ("16x16 unit quad square", 4): 36.168671281610855,
-                #  ("4x4x4 unit hex cube", 1): 12.151954087339782,
-                #  ("4x4x4 unit hex cube", 2): 28.965646690046885,
-                #  ("4x4x4 unit hex cube", 3): 49.97349423895635,
-                #  ("4x4x4 unit hex cube", 4): 74.49938136593539,
-    }
+                 ("4x4x4 unit tet cube", 3): 49.97350551329799,
+                 ("4x4x4 unit tet cube", 4): 74.49938266409099,
+                 ("16x16 unit quad square", 1): 9.550848071820747,
+                 ("16x16 unit quad square", 2): 18.423668706176354,
+                 ("16x16 unit quad square", 3): 27.295831017251672,
+                 ("16x16 unit quad square", 4): 36.168671281610855,
+                 ("4x4x4 unit hex cube", 1): 12.151954087339782,
+                 ("4x4x4 unit hex cube", 2): 28.965646690046885,
+                 ("4x4x4 unit hex cube", 3): 49.97349423895635,
+                 ("4x4x4 unit hex cube", 4): 74.49938136593539}
 
     # Mesh files and degrees to check
     meshes = [(UnitSquareMesh(MPI.comm_world, 16, 16), "16x16 unit tri square"),

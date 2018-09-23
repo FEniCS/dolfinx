@@ -9,7 +9,7 @@
 import pytest
 import numpy
 from dolfin import (UnitIntervalMesh, UnitSquareMesh,
-                    Constant, Cell, TestFunction, TrialFunction, MPI, Cells, dx,
+                    Cell, TestFunction, TrialFunction, MPI, Cells, dx,
                     ds, dS, dot, Form, FunctionSpace, VectorFunctionSpace,
                     Expression, FacetNormal)
 from dolfin.fem.assembling import assemble_local

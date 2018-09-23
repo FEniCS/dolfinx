@@ -9,7 +9,7 @@
 import pytest
 
 import ufl
-from dolfin import (MPI, Constant, Point, TestFunction, TrialFunction,
+from dolfin import (MPI, Point, TestFunction, TrialFunction,
                     Function, UnitCubeMesh, UnitSquareMesh,
                     VectorFunctionSpace, fem, la)
 from dolfin.cpp.generation import BoxMesh
