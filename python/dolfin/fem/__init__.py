@@ -8,8 +8,7 @@
 import ufl
 from dolfin.jit.jit import ffc_jit
 import dolfin.cpp
-
-from .form import Form
+from dolfin.fem.form import Form
 
 __all__ = ["Form"]
 
