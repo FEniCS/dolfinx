@@ -108,7 +108,7 @@ demos-python-mpi: &demos-python-mpi
 version: 2
 
 jobs:
-  build:
+  build-real:
     docker:
       - image: quay.io/fenicsproject/dolfinx:latest
     environment:
@@ -183,22 +183,22 @@ workflows:
   version: 2
   build-and-pushdoc:
     jobs:
-      - build
+      - build-real
       - build-complex
       - pushdoc:
           requires:
-            - build
+            - build-real
           filters:
             branches:
               only:
                 - master
-  nightly:
-    triggers:
-      - schedule:
-          cron: "0 5 * * *"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - build-complex
+  # nightly:
+  #   triggers:
+  #     - schedule:
+  #         cron: "0 5 * * *"
+  #         filters:
+  #           branches:
+  #             only:
+  #               - master
+  #   jobs:
+  #     - build-complex
