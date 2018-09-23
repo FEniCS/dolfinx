@@ -57,6 +57,9 @@ test_*_tempdir
 /cpp/demo/**/*.cpp
 /cpp/demo/**/*.c
 
+!/cpp/demo/documented/poisson/*.ufl
+!/cpp/demo/documented/poisson/*.cpp
+
 # Tests
 /python/test/unit/**/*.xml
 /cpp/test/unit/mesh/*.{xml,m}
