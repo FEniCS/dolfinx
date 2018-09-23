@@ -71,7 +71,7 @@ def test_compute_point_values(V, W, mesh):
     v_ones = numpy.ones_like(v_values, dtype=numpy.float64)
     assert all(numpy.isclose(v_values, v_ones))
 
-    u_values2 = u.compute_point_values()
+    u_values2 = u.compute_point_values(mesh)
 
     assert all(u_values == u_values2)
 
