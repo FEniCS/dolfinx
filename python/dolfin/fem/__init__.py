@@ -26,9 +26,14 @@ def assemble(a) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
 def assemble_vector(b: cpp.la.PETScVector, L, a=[], bcs=[],
                     scale: float = 1.0) -> cpp.la.PETScVector:
     """Assemble linear form into vector"""
-    L_cpp = _create_cpp_form(L)
-    a_cpp = [_create_cpp_form(form) for form in a]
-    cpp.fem.assemble(b, L_cpp, a_cpp, bcs, scale)
+    try:
+        L_cpp = [_create_cpp_form(form) for form in L]
+        a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
+    except TypeError:
+        L_cpp = [_create_cpp_form(L)]
+        a_cpp = [[_create_cpp_form(form) for form in a]]
+
+    cpp.fem.assemble_blocked(b, L_cpp, a_cpp, bcs, scale)
     return b
 
 
@@ -36,8 +41,11 @@ def assemble_vector(b: cpp.la.PETScVector, L, a=[], bcs=[],
 def assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[],
                     scale: float = 1.0) -> cpp.la.PETScMatrix:
     """Assemble bilinear form into matrix"""
-    a_cpp = _create_cpp_form(a)
-    cpp.fem.assemble(A, a_cpp, bcs, scale)
+    try:
+        a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
+    except TypeError:
+        a_cpp = [[_create_cpp_form(a)]]
+    cpp.fem.assemble_blocked(A, a_cpp, bcs, scale)
     return A
 
 

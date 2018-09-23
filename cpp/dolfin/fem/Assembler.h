@@ -60,17 +60,6 @@ void assemble(la::PETScVector& b, std::vector<const Form*> L,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double scale = 1.0);
 
-/// Re-assemble single linear form. The vector must already be
-/// appropriately initialised. set_bc must be called after this call to
-/// insert bc values. The 'test space' for L should be the same as the
-/// test space for the bilinear forms in [a]. The vector b is modified
-/// for boundary conditions in [bcs] that share a a trial space with
-/// [a], i.e. b <- b - Ax.
-void assemble(la::PETScVector& b, const Form& L,
-              const std::vector<std::shared_ptr<const Form>> a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double scale = 1.0);
-
 /// Assemble blocked bilinear forms into a matrix
 la::PETScMatrix assemble(const std::vector<std::vector<const Form*>> a,
                          std::vector<std::shared_ptr<const DirichletBC>> bcs,
@@ -78,12 +67,6 @@ la::PETScMatrix assemble(const std::vector<std::vector<const Form*>> a,
 
 /// Re-assemble blocked bilinear forms into a matrix
 void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double scale = 1.0);
-
-/// Re-assemble bilinear form. The matrix must already be appropriately
-/// initialised.
-void assemble(la::PETScMatrix& A, const Form& a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double scale = 1.0);
 

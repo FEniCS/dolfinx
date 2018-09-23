@@ -204,17 +204,6 @@ void fem::assemble(
     Assembler::assemble(b.vec(), *L[0], a[0], bcs);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(la::PETScVector& b, const Form& L,
-                   const std::vector<std::shared_ptr<const Form>> a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double scale)
-
-{
-  if (L.rank() != 1)
-    throw std::runtime_error("Form must be rank 1");
-  Assembler::assemble(b.vec(), L, a, bcs);
-}
-//-----------------------------------------------------------------------------
 la::PETScMatrix
 fem::assemble(const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
@@ -418,14 +407,6 @@ void fem::assemble(la::PETScMatrix& A,
   }
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
-}
-//-----------------------------------------------------------------------------
-void fem::assemble(la::PETScMatrix& A, const Form& a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double scale)
-
-{
-  return fem::assemble(A, {{&a}}, bcs, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc(la::PETScVector& b, const Form& L,
