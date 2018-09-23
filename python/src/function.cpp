@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <dolfin/common/Variable.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Constant.h>
@@ -215,7 +216,7 @@ void function(py::module& m)
   // dolfin::function::Function
   py::class_<dolfin::function::Function,
              std::shared_ptr<dolfin::function::Function>,
-             dolfin::function::GenericFunction>(m, "Function",
+             dolfin::common::Variable>(m, "Function",
                                                 "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")
@@ -234,6 +235,37 @@ void function(py::module& m)
              self.eval(values, x);
              return values;
            })
+      .def("compute_point_values",
+           [](dolfin::function::Function& self) {
+             auto V = self.function_space();
+             if (!V)
+               throw py::value_error("Function has no function space. "
+                                     "You must supply a mesh.");
+             auto mesh = V->mesh();
+             if (!mesh)
+               throw py::value_error("Function has no function space "
+                                     "mesh. You must supply a mesh.");
+             return self.compute_point_values(*mesh);
+           },
+           "Compute values at all mesh points by using the mesh "
+           "function.function_space().mesh()")
+      .def("eval",
+           [](const dolfin::function::Function& self,
+              Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>
+                  u,
+              Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
+              const dolfin::mesh::Cell& cell) { self.eval(u, x, cell); },
+           "Evaluate Function (cell version)")
+      .def("eval",
+           (void (dolfin::function::Function::*)(
+               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                       Eigen::Dynamic, Eigen::RowMajor>>,
+               Eigen::Ref<const dolfin::EigenRowArrayXXd>) const)
+               & dolfin::function::Function::eval,
+           py::arg("values"), py::arg("x"), "Evaluate Function")
+      .def("function_space",
+           &dolfin::function::Function::function_space)
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
       .def("interpolate",
@@ -248,6 +280,12 @@ void function(py::module& m)
              instance.interpolate(*_v);
            },
            "Interpolate the function u")
+      .def("value_dimension",
+           &dolfin::function::Function::value_dimension)
+      .def("value_size", &dolfin::function::Function::value_size)
+      .def("value_rank", &dolfin::function::Function::value_rank)
+      .def_property_readonly("value_shape",
+                             &dolfin::function::Function::value_shape)
       // FIXME: A lot of error when using non-const version - misused
       // by Python interface?
       .def("vector",
