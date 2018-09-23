@@ -12,7 +12,10 @@ import ufl
 from dolfin import cpp
 from dolfin.fem.assembling import _create_cpp_form
 from dolfin.fem.dirichletbc import DirichletBC
+from dolfin.fem.form import Form
 from dolfin.jit.jit import ffc_jit
+
+__all__ = ["Form"]
 
 
 @functools.singledispatch

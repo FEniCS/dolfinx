@@ -195,10 +195,10 @@ def _solve_varproblem(*args, **kwargs):
         A = PETScMatrix()
         b = PETScVector()
 
-        assembler = SystemAssembler(a, L, bcs)
+        assembler = SystemAssembler(a._cpp_object, L._cpp_object, bcs)
         assembler.assemble(A, b)
 
-        comm = L.mesh().mpi_comm()
+        comm = L._cpp_object.mesh().mpi_comm()
         solver = PETScKrylovSolver(comm)
 
         solver.set_options_prefix("dolfin_solve_")
