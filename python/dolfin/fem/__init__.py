@@ -19,7 +19,8 @@ __all__ = ["Form"]
 
 
 @functools.singledispatch
-def assemble(M, a=None, bcs=None, scale: float=1.0) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
+def assemble(M, a=None, bcs=None, scale: float = 1.0
+             ) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
     """Assemble a form over mesh"""
     if not a and not bcs:
         M_cpp = _create_cpp_form(M)
@@ -30,14 +31,16 @@ def assemble(M, a=None, bcs=None, scale: float=1.0) -> typing.Union[float, cpp.l
             a_cpp = _create_cpp_form(a)
         except TypeError:
             a_cpp = [_create_cpp_form(a0) for a0 in a]
-        return cpp.fem.assemble(M, a0, bcs, cpp.fem.BlockType.monolithic, scale)
+        return cpp.fem.assemble(M, a_cpp, bcs, cpp.fem.BlockType.monolithic,
+                                scale)
     else:
         # Assemble bilinear form
         return cpp.fem.assemble(M, bcs, cpp.fem.BlockType.monolithic, scale)
 
 
 # @assemble.register(list)
-# def assemble_block(M, a=None, bcs=None, block_type, scale: float=1.0) -> typing.Union[cpp.la.PETScMatrix, cpp.la.PETScVector]:
+# def assemble_block(M, a=None, bcs=None, block_type,
+#                   scale: float=1.0) -> typing.Union[cpp.la.PETScMatrix, cpp.la.PETScVector]:
 #     """Assemble a block (nest) form over mesh"""
 #     M_cpp = [_create_cpp_form(form) for form in M]
 #             return cpp.fem.assemble(M_cpp)
