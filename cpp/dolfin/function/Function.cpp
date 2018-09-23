@@ -6,6 +6,7 @@
 
 #include "Function.h"
 #include "FunctionSpace.h"
+#include "GenericFunction.h"
 #include <algorithm>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
@@ -279,6 +280,15 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
       }
     }
   }
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate(const GenericFunction& v)
+{
+  assert(_vector);
+  assert(_function_space);
+
+  // Interpolate
+  _function_space->interpolate(*_vector, v);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const

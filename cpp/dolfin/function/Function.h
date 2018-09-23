@@ -34,6 +34,7 @@ class Mesh;
 namespace function
 {
 class FunctionSpace;
+class GenericFunction;
 
 /// This class represents a function \f$ u_h \f$ in a finite
 /// element function space \f$ V_h \f$, given by
@@ -117,6 +118,12 @@ public:
                                     Eigen::RowMajor>>
                 values,
             Eigen::Ref<const EigenRowArrayXXd> x) const;
+
+  /// Interpolate function (on possibly non-matching meshes)
+  ///
+  /// @param    v (GenericFunction)
+  ///         The function to be interpolated.
+  void interpolate(const GenericFunction& v);
 
   /// Return value rank
   ///
