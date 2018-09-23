@@ -157,7 +157,8 @@ source function :math:`f`. This is done just as for the :ref:`Poisson
 demo <demo_poisson_equation>`::
 
     # Define source function
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
+    x = SpatialCoordinate(mesh)
+    f = 10.0 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
 
 We are now ready to define the variational forms a and L. Since,
 :math:`u_0 = 0` in this example, the boundary term on the right-hand

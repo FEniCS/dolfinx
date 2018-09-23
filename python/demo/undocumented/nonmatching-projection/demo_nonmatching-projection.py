@@ -19,8 +19,9 @@ import matplotlib.pyplot as plt
 mesh0 = UnitSquareMesh(MPI.comm_world, 16, 16)
 mesh1 = UnitSquareMesh(MPI.comm_world, 64, 64)
 
-# Create expression on P3
-u0 = Expression("sin(10.0*x[0])*sin(10.0*x[1])", degree=3)
+# Create UFL expression
+x = SpatialCoordinate(mesh)
+u0 = sin(10.0 * x[0]) * sin(10.0 * x[1])
 
 # Define projection space
 P1 = FunctionSpace(mesh1, "CG", 1)

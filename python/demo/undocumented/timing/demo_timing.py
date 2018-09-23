@@ -12,8 +12,9 @@ mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
 V = FunctionSpace(mesh, "Lagrange", 1)
 bc = DirichletBC(V, 0.0, lambda x: np.logical_or(np.isclose(x[:,0], 0.0), np.isclose(x[:, 0], 1.0)))
 u, v = TrialFunction(V), TestFunction(V)
-f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
-g = Expression("sin(5*x[0])", degree=2)
+x = SpatialCoordinate(mesh)
+f = 10 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+g = sin(5*x[0])
 a = inner(grad(u), grad(v))*dx
 L = f*v*dx + g*v*ds
 u = Function(V)

@@ -183,7 +183,8 @@ summary, this reads::
     # Define variational problem
     u = Function(V)
     v = TestFunction(V)
-    f = Expression("x[0]*sin(x[1])", degree=2)
+    x = SpatialCoordinate(mesh)
+    f = x[0] * sin(x[1])
     F = inner((1 + u**2)*grad(u), grad(v))*dx - f*v*dx
 
 Now, we have specified the variational forms and can consider the

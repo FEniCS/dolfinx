@@ -20,7 +20,8 @@ mesh = UnitSquareMesh(MPI.comm_world, 64, 64)
 P1 = FunctionSpace(mesh, "CG", 1)
 
 # Define function
-v = Expression("sin(10.0*x[0])*sin(10.0*x[1])", degree=2)
+x = SpatialCoordinate(mesh)
+v = sin(10.0*x[0])*sin(10.0*x[1])
 
 # Compute projection (L2-projection)
 Pv = project(v, V=P1)

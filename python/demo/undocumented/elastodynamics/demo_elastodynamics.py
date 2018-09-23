@@ -110,7 +110,7 @@ v0 = Function(V)
 a0 = Function(V)
 
 # External forces (body and applied tractions
-f  = Constant((0.0, 0.0))
+f  = (0.0, 0.0)
 p  = Traction(dt, t, False, degree=1)
 p0 = Traction(dt, t, True, degree=1)
 
@@ -139,7 +139,7 @@ L =  factor_m1*inner(r, u0)*dx + factor_m2*inner(r, v0)*dx \
    + inner(r, f)*dx + (1.0-alpha_f)*inner(r, p)*dss(3) + alpha_f*inner(r, p0)*dss(3)
 
 # Set up boundary condition at left end
-zero = Constant((0.0, 0.0))
+zero = (0.0, 0.0)
 bc = DirichletBC(V, zero, left)
 
 # FIXME: This demo needs some improved commenting

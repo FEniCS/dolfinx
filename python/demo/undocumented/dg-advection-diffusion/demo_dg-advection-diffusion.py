@@ -37,13 +37,13 @@ v   = TestFunction(V_dg)
 phi = TrialFunction(V_dg)
 
 # Diffusivity
-kappa = Constant(0.0)
+kappa = 0.0
 
 # Source term
-f = Constant(0.0)
+f = 0.0
 
 # Penalty term
-alpha = Constant(5.0)
+alpha = 5.0
 
 # Mesh-related functions
 n = FacetNormal(mesh)

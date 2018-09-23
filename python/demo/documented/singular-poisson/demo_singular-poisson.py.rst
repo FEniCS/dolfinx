@@ -121,15 +121,11 @@ and a :py:class:`TestFunction
 
 Further, the source :math:`f` and the boundary normal derivative
 :math:`g` are involved in the variational forms, and hence we must
-specify these. Both :math:`f` and :math:`g` are given by simple
-mathematical formulas, and can be easily declared using the
-:py:class:`Expression <dolfin.functions.expression.Expression>`
-class. Note that the strings defining f and g use C++ syntax since,
-for efficiency, DOLFIN will generate and compile C++ code for these
-expressions at run-time. ::
+specify these. ::
 
-   f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
-   g = Expression("-sin(5*x[0])", degree=2)
+   x = SpatialCoordinate(mesh)
+   f = 10 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+   g = -sin(5 * x[0])
 
 With :math:`u,v,f` and :math:`g`, we can write down the bilinear form
 :math:`a` and the linear form :math:`L` (using UFL operators). ::
