@@ -328,7 +328,7 @@ void fem(py::module& m)
            &dolfin::fem::Form::original_coefficient_position)
       .def("set_coefficient",
            [](dolfin::fem::Form& self, std::size_t i,
-              std::shared_ptr<const dolfin::function::GenericFunction> f) {
+              std::shared_ptr<const dolfin::function::Function> f) {
              self.coeffs().set(i, f);
            })
       .def("set_mesh", &dolfin::fem::Form::set_mesh)
