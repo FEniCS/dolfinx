@@ -11,7 +11,7 @@ from dolfin.jit.jit import dolfin_pc, ffc_jit
 
 
 class Form(ufl.Form):
-    def __init__(self, form: ufl.Form, form_compiler_parameters: list=[]):
+    def __init__(self, form: ufl.Form, form_compiler_parameters: dict=None):
         """Create dolfin Form
 
         Parameters
@@ -73,14 +73,13 @@ class Form(ufl.Form):
 
         # Attach subdomains to C++ Form if we have them
         subdomains = self._subdomains.get("cell")
-        if subdomains is not None:
-            self._cpp_object.set_cell_domains(subdomains)
+        self._cpp_object.set_cell_domains(subdomains)
+
         subdomains = self._subdomains.get("exterior_facet")
-        if subdomains is not None:
-            self._cpp_object.set_exterior_facet_domains(subdomains)
+        self._cpp_object.set_exterior_facet_domains(subdomains)
+
         subdomains = self._subdomains.get("interior_facet")
-        if subdomains is not None:
-            self._cpp_object.set_interior_facet_domains(subdomains)
+        self._cpp_object.set_interior_facet_domains(subdomains)
+
         subdomains = self._subdomains.get("vertex")
-        if subdomains is not None:
-            self._cpp_object.set_vertex_domains(subdomains)
+        self._cpp_object.set_vertex_domains(subdomains)
