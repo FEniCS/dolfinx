@@ -7,6 +7,10 @@
 
 import os
 
+from dolfin.jit.jit import ffc_jit
+
+__all__ = ["ffc_jit"]
+
 
 def get_pybind_include():
     """Find the pybind11 include path"""

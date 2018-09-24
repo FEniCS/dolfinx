@@ -10,8 +10,8 @@
 
 import typing
 
-import dolfin.cpp as cpp
-from dolfin.fem.assembling import _create_cpp_form
+from dolfin import cpp
+from dolfin import fem
 
 
 class Assembler:
@@ -54,21 +54,21 @@ class Assembler:
         if self.assembler is None:
             try:
                 a_forms = [[
-                    _create_cpp_form(a, self.form_compiler_parameters)
+                    fem.assembling._create_cpp_form(a, self.form_compiler_parameters)
                     for a in row
                 ] for row in self.a]
             except TypeError:
                 a_forms = [[
-                    _create_cpp_form(self.a, self.form_compiler_parameters)
+                    fem.assembling._create_cpp_form(self.a, self.form_compiler_parameters)
                 ]]
             try:
                 L_forms = [
-                    _create_cpp_form(L, self.form_compiler_parameters)
+                    fem.assembling._create_cpp_form(L, self.form_compiler_parameters)
                     for L in self.L
                 ]
             except TypeError:
                 L_forms = [
-                    _create_cpp_form(self.L, self.form_compiler_parameters)
+                    fem.assembling._create_cpp_form(self.L, self.form_compiler_parameters)
                 ]
 
             self.assembler = cpp.fem.Assembler(a_forms, L_forms, self.bcs)

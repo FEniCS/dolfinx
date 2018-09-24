@@ -12,15 +12,15 @@ finite element space.
 """
 
 import ufl
-import dolfin.cpp as cpp
-import dolfin
+
+from dolfin import cpp
 from dolfin.function.argument import TestFunction, TrialFunction
 from dolfin.function.function import Function
 from dolfin.fem.assembling import assemble_system
 from dolfin.function.functionspace import (FunctionSpace, VectorFunctionSpace,
                                            TensorFunctionSpace)
-
-__all__ = ['project']
+from dolfin.la.solver import solve
+from dolfin.function.expression import Expression
 
 
 def project(v,
@@ -72,7 +72,7 @@ def project(v,
     if V is None:
         # Create function space based on Expression element if trying
         # to project an Expression
-        if isinstance(v, dolfin.function.expression.Expression):
+        if isinstance(v, Expression):
             if mesh is not None and isinstance(mesh, cpp.mesh.Mesh):
                 V = FunctionSpace(mesh, v.ufl_element())
             # else:
@@ -103,7 +103,7 @@ def project(v,
     # Solve linear system for projection
     if function is None:
         function = Function(V)
-    dolfin.la.solver.solve(A, function.vector(), b, solver_type, preconditioner_type)
+    solve(A, function.vector(), b, solver_type, preconditioner_type)
 
     return function
 

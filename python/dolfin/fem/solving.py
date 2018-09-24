@@ -13,7 +13,8 @@ as well as the solve function.
 """
 
 import ufl
-import dolfin.cpp as cpp
+
+from dolfin import cpp
 from dolfin.cpp.la import PETScVector, PETScMatrix, \
     PETScKrylovSolver, PETScOptions
 from dolfin.cpp.fem import SystemAssembler

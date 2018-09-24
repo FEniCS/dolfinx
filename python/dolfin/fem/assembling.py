@@ -17,10 +17,9 @@ rely on the dolfin::Form class which is not used on the Python side.
 """
 
 import ufl
-import dolfin.cpp as cpp
-import dolfin.fem as fem
 
-__all__ = ["assemble_local", "SystemAssembler"]
+from dolfin import cpp
+from dolfin import fem
 
 
 def _create_cpp_form(form, form_compiler_parameters=None):

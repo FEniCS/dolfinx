@@ -6,12 +6,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import ufl
-import ufl.algorithms.elementtransformations
+
 from dolfin.function.functionspace import FunctionSpace
 from dolfin.function.function import Function
 from dolfin.function.argument import Argument
-
-__all__ = ["derivative", "adjoint", "increase_order", "tear"]
 
 
 def adjoint(form, reordered_arguments=None):
