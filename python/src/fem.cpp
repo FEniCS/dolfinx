@@ -249,7 +249,7 @@ void fem(py::module& m)
   m.def("assemble",
         py::overload_cast<const dolfin::fem::Form&>(&dolfin::fem::assemble),
         "Assemble form over mesh");
-  m.def("assemble_blocked",
+  m.def("assemble_blocked_vector",
         py::overload_cast<
             std::vector<const dolfin::fem::Form*>,
             const std::vector<
@@ -260,7 +260,7 @@ void fem(py::module& m)
         py::arg("scale") = 1.0,
         "Assemble linear forms over mesh into blocked vector");
   m.def(
-      "assemble_blocked",
+      "reassemble_blocked_vector",
       py::overload_cast<
           dolfin::la::PETScVector&, std::vector<const dolfin::fem::Form*>,
           const std::vector<
@@ -271,23 +271,22 @@ void fem(py::module& m)
       py::arg("scale") = 1.0,
       "Re-assemble linear forms over mesh into blocked vector");
 
-  m.def("assemble_blocked",
+  m.def("assemble_blocked_matrix",
         py::overload_cast<
             const std::vector<std::vector<const dolfin::fem::Form*>>,
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            dolfin::fem::BlockType, double>(&dolfin::fem::assemble),
+            dolfin::fem::BlockType>(&dolfin::fem::assemble),
         py::arg("a"), py::arg("bcs"), py::arg("block_type"),
-        py::arg("scale") = 1.0,
-        "Assemble bilinear forms over mesh into blocked matrix");
-  m.def(
-      "assemble_blocked",
-      py::overload_cast<
-          dolfin::la::PETScMatrix&,
-          const std::vector<std::vector<const dolfin::fem::Form*>>,
-          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
-          &dolfin::fem::assemble),
-      py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("scale") = 1.0,
-      "Re-assemble bilinear forms over mesh into blocked matrix");
+        "Assemble bilinear forms over mesh into blocked "
+        "matrix");
+  m.def("reassemble_blocked_matrix",
+        py::overload_cast<
+            dolfin::la::PETScMatrix&,
+            const std::vector<std::vector<const dolfin::fem::Form*>>,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>(
+            &dolfin::fem::assemble),
+        py::arg("A"), py::arg("a"), py::arg("bcs"),
+        "Re-assemble bilinear forms over mesh into blocked matrix");
 
   m.def("set_bc",
         py::overload_cast<

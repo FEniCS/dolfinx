@@ -63,12 +63,11 @@ void assemble(la::PETScVector& b, std::vector<const Form*> L,
 /// Assemble blocked bilinear forms into a matrix
 la::PETScMatrix assemble(const std::vector<std::vector<const Form*>> a,
                          std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                         BlockType block_type, double scale = 1.0);
+                         BlockType block_type);
 
 /// Re-assemble blocked bilinear forms into a matrix
 void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double scale = 1.0);
+              std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
 //----------------------------------------------------------------------------
 

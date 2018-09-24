@@ -19,43 +19,23 @@ __all__ = ["Form"]
 
 
 @functools.singledispatch
-def assemble(M, a=None, bcs=None, scale: float = 1.0
+def assemble(M: typing.Union[Form, cpp.fem.Form]
              ) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
     """Assemble a form over mesh"""
-    if not a and not bcs:
-        M_cpp = _create_cpp_form(M)
-        return cpp.fem.assemble(M_cpp)
-    elif a and bcs:
-        # Assemble linear form
-        try:
-            a_cpp = _create_cpp_form(a)
-        except TypeError:
-            a_cpp = [_create_cpp_form(a0) for a0 in a]
-        return cpp.fem.assemble(M, a_cpp, bcs, cpp.fem.BlockType.monolithic,
-                                scale)
-    else:
-        # Assemble bilinear form
-        return cpp.fem.assemble(M, bcs, cpp.fem.BlockType.monolithic, scale)
-
-
-# @assemble.register(list)
-# def assemble_block(M, a=None, bcs=None, block_type,
-#                   scale: float=1.0) -> typing.Union[cpp.la.PETScMatrix, cpp.la.PETScVector]:
-#     """Assemble a block (nest) form over mesh"""
-#     M_cpp = [_create_cpp_form(form) for form in M]
-#             return cpp.fem.assemble(M_cpp)
-#         except:
-#             raise RuntimeError("Need to fix exception type")
-#     elif a and bcs:
-#         # vector
-#     else:
-#         assemble_matrix()
+    M_cpp = _create_cpp_form(M)
+    return cpp.fem.assemble(M_cpp)
 
 
 @assemble.register(cpp.la.PETScVector)
-def assemble_vector(b: cpp.la.PETScVector, L, a=[], bcs=[],
+def assemble_vector(b: cpp.la.PETScVector,
+                    L,
+                    a=[],
+                    bcs: typing.List[DirichletBC] = [],
                     scale: float = 1.0) -> cpp.la.PETScVector:
-    """Assemble linear form into a vector"""
+    """Re-assemble linear form into a vector, with modification for Dirichlet
+    boundary conditions
+
+    """
     try:
         L_cpp = [_create_cpp_form(form) for form in L]
         a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
@@ -63,35 +43,41 @@ def assemble_vector(b: cpp.la.PETScVector, L, a=[], bcs=[],
         L_cpp = [_create_cpp_form(L)]
         a_cpp = [[_create_cpp_form(form) for form in a]]
 
-    cpp.fem.assemble_blocked(b, L_cpp, a_cpp, bcs, scale)
+    cpp.fem.reassemble_blocked_vector(b, L_cpp, a_cpp, bcs, scale)
     return b
 
 
 @assemble.register(cpp.la.PETScMatrix)
-def assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[],
-                    scale: float = 1.0) -> cpp.la.PETScMatrix:
-    """Assemble bilinear form into matrix"""
+def assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[]) -> cpp.la.PETScMatrix:
+    """Re-assemble bilinear form into a vector, with rows and columns with Dirichlet
+    boundary conditions zeroed.
+
+    """
     try:
         a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     except TypeError:
         a_cpp = [[_create_cpp_form(a)]]
-    cpp.fem.assemble_blocked(A, a_cpp, bcs, scale)
+    cpp.fem.reassemble_blocked_matrix(A, a_cpp, bcs)
     return A
 
 
-def assemble_nested_vector(L, a, bcs, block_type,
-                           scale: float = 1.0) -> cpp.la.PETScVector:
+def assemble_vector(L,
+                    a,
+                    bcs: typing.List[DirichletBC],
+                    block_type,
+                    scale: float = 1.0) -> cpp.la.PETScVector:
     """Assemble linear form into vector"""
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    return cpp.fem.assemble_blocked(L_cpp, a_cpp, bcs, block_type, scale)
+    return cpp.fem.assemble_blocked_vector(L_cpp, a_cpp, bcs, block_type,
+                                           scale)
 
 
-def assemble_nested_matrix(a, bcs, block_type,
-                           scale: float = 1.0) -> cpp.la.PETScVector:
+def assemble_matrix(a, bcs: typing.List[DirichletBC],
+                    block_type) -> cpp.la.PETScMatrix:
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    return cpp.fem.assemble_blocked(a_cpp, bcs, block_type, scale)
+    return cpp.fem.assemble_blocked_matrix(a_cpp, bcs, block_type)
 
 
 def set_bc(b: cpp.la.PETScVector, L, bcs: typing.List[DirichletBC]) -> None:

@@ -207,7 +207,7 @@ void fem::assemble(
 la::PETScMatrix
 fem::assemble(const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              BlockType block_type, double scale)
+              BlockType block_type)
 {
   assert(!a.empty());
   const bool block_matrix = a.size() > 1 or a[0].size() > 1;
@@ -219,14 +219,13 @@ fem::assemble(const std::vector<std::vector<const Form*>> a,
   else
     A = fem::init_matrix(*a[0][0]);
 
-  assemble(A, a, bcs, scale);
+  assemble(A, a, bcs);
   return A;
 }
 //-----------------------------------------------------------------------------
 void fem::assemble(la::PETScMatrix& A,
                    const std::vector<std::vector<const Form*>> a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double scale)
+                   std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   // Check if matrix should be nested
   assert(!a.empty());
