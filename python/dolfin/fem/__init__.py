@@ -27,11 +27,11 @@ def assemble(M: typing.Union[Form, cpp.fem.Form]
 
 
 @assemble.register(cpp.la.PETScVector)
-def assemble_vector(b: cpp.la.PETScVector,
-                    L,
-                    a=[],
-                    bcs: typing.List[DirichletBC] = [],
-                    scale: float = 1.0) -> cpp.la.PETScVector:
+def _assemble_vector(b: cpp.la.PETScVector,
+                     L,
+                     a=[],
+                     bcs: typing.List[DirichletBC] = [],
+                     scale: float = 1.0) -> cpp.la.PETScVector:
     """Re-assemble linear form into a vector, with modification for Dirichlet
     boundary conditions
 
@@ -48,7 +48,7 @@ def assemble_vector(b: cpp.la.PETScVector,
 
 
 @assemble.register(cpp.la.PETScMatrix)
-def assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[]) -> cpp.la.PETScMatrix:
+def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[]) -> cpp.la.PETScMatrix:
     """Re-assemble bilinear form into a vector, with rows and columns with Dirichlet
     boundary conditions zeroed.
 
