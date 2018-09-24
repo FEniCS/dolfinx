@@ -15,9 +15,6 @@ from dolfin.fem.dirichletbc import DirichletBC
 from dolfin.fem.form import Form
 from dolfin.jit.jit import ffc_jit
 
-__all__ = ["Form"]
-
-
 @functools.singledispatch
 def assemble(M: typing.Union[Form, cpp.fem.Form]
              ) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
@@ -64,7 +61,7 @@ def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[]) -> cpp.la.PETScMatrix:
 def assemble_vector(L,
                     a,
                     bcs: typing.List[DirichletBC],
-                    block_type,
+                    block_type: cpp.fem.BlockType,
                     scale: float = 1.0) -> cpp.la.PETScVector:
     """Assemble linear form into vector"""
     L_cpp = [_create_cpp_form(form) for form in L]
