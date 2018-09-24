@@ -32,28 +32,24 @@ def test_complex_assembly():
     a_real = inner(u, v) * dx
     L1 = inner(g, v) * dx
 
-    assembler = dolfin.fem.assemble.Assembler(a_real, L1)
-    bnorm = assembler.assemble_vector().norm(dolfin.cpp.la.Norm.l1)
+    bnorm = dolfin.fem.assemble(L1).norm(dolfin.cpp.la.Norm.l1)
     b_norm_ref = abs(-2 + 3.0j)
     assert np.isclose(bnorm, b_norm_ref)
-    A0_norm = assembler.assemble_matrix().norm(dolfin.cpp.la.Norm.frobenius)
+    A0_norm = dolfin.fem.assemble(a_real).norm(dolfin.cpp.la.Norm.frobenius)
 
     a_imag = j * inner(u, v) * dx
     f = dolfin.Expression("j*sin(2*pi*x[0])", degree=2)
     L0 = inner(f, v) * dx
-    assembler = dolfin.fem.assemble.Assembler(a_imag, L0)
-    A1_norm = assembler.assemble_matrix().norm(dolfin.cpp.la.Norm.frobenius)
-    b1_norm = assembler.assemble_vector().norm(dolfin.cpp.la.Norm.l2)
+    A1_norm = dolfin.fem.assemble(a_imag).norm(dolfin.cpp.la.Norm.frobenius)
     assert np.isclose(A0_norm, A1_norm)
+    b1_norm = dolfin.fem.assemble(L0).norm(dolfin.cpp.la.Norm.l2)
 
     a_complex = (1 + j) * inner(u, v) * dx
     f = dolfin.Expression("sin(2*pi*x[0])", degree=2)
     L2 = inner(f, v) * dx
-    assembler = dolfin.fem.assemble.Assembler(a_complex, L2)
-    A2_norm = assembler.assemble_matrix().norm(dolfin.cpp.la.Norm.frobenius)
-    b2_norm = assembler.assemble_vector().norm(dolfin.cpp.la.Norm.l2)
-
+    A2_norm = dolfin.fem.assemble(a_complex).norm(dolfin.cpp.la.Norm.frobenius)
     assert np.isclose(A1_norm, A2_norm / np.sqrt(2))
+    b2_norm = dolfin.fem.assemble(L2).norm(dolfin.cpp.la.Norm.l2)
     assert np.isclose(b2_norm, b1_norm)
 
 
@@ -80,10 +76,11 @@ def test_complex_assembly_solve():
     a = C * inner(grad(u), grad(v)) * dx + C * inner(u, v) * dx
     L = inner(f, v) * dx
 
-    # Create assembler and compute numerical soltion
-    assembler = dolfin.fem.assemble.Assembler(a, L)
-    A = assembler.assemble_matrix()
-    b = assembler.assemble_vector()
+    # Assemble
+    A = dolfin.fem.assemble(a)
+    b = dolfin.fem.assemble(L)
+
+    # Create solver
     solver = dolfin.cpp.la.PETScKrylovSolver(mesh.mpi_comm())
     dolfin.cpp.la.PETScOptions.set("ksp_type", "preonly")
     dolfin.cpp.la.PETScOptions.set("pc_type", "lu")
@@ -98,5 +95,4 @@ def test_complex_assembly_solve():
 
     xnorm = x.norm(dolfin.cpp.la.Norm.l2)
     x_ref_norm = u_ref.vector().norm(dolfin.cpp.la.Norm.l2)
-
     assert np.isclose(xnorm, x_ref_norm)
