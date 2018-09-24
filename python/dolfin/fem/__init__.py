@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2018 Michal Habera
+# Copyright (C) 2017-2018 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #

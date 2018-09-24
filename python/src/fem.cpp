@@ -241,29 +241,66 @@ void fem(py::module& m)
         self.set_value(_u);
       });
 
-  // dolfin::fem::Assembler
-  py::class_<dolfin::fem::Assembler, std::shared_ptr<dolfin::fem::Assembler>>
-      assembler(
-          m, "Assembler",
-          "Assembler object for assembling forms into matrices and vectors");
+  py::enum_<dolfin::fem::BlockType>(
+      m, "BlockType",
+      "Enum for matrix/vector assembly type for nested problems")
+      //   .value("monolithic", dolfin::fem::BlockType::monolithic,
+      //          "Use monolithic linear algebra data structures for block
+      //          forms")
+      //   .value("nested", dolfin::fem::BlockType::nested,
+      //          "Use nested linear algebra data structures for block forms");
+      .value("monolithic", dolfin::fem::BlockType::monolithic)
+      .value("nested", dolfin::fem::BlockType::nested);
 
-  // dolfin::fem::Assembler::BlockType enum
-  py::enum_<dolfin::fem::Assembler::BlockType>(assembler, "BlockType")
-      .value("nested", dolfin::fem::Assembler::BlockType::nested)
-      .value("monolithic", dolfin::fem::Assembler::BlockType::monolithic);
+  // dolfin::fem::assemble
+  m.def("assemble",
+        py::overload_cast<const dolfin::fem::Form&>(&dolfin::fem::assemble),
+        "Assemble form over mesh");
+  m.def("assemble_blocked_vector",
+        py::overload_cast<
+            std::vector<const dolfin::fem::Form*>,
+            const std::vector<
+                std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
+            dolfin::fem::BlockType, double>(&dolfin::fem::assemble),
+        py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("block_type"),
+        py::arg("scale") = 1.0,
+        "Assemble linear forms over mesh into blocked vector");
+  m.def(
+      "reassemble_blocked_vector",
+      py::overload_cast<
+          dolfin::la::PETScVector&, std::vector<const dolfin::fem::Form*>,
+          const std::vector<
+              std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
+          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
+          &dolfin::fem::assemble),
+      py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"),
+      py::arg("scale") = 1.0,
+      "Re-assemble linear forms over mesh into blocked vector");
 
-  // dolfin::fem::Assembler
-  assembler
-      .def(py::init<
-           std::vector<std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
-           std::vector<std::shared_ptr<const dolfin::fem::Form>>,
-           std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>())
-      .def("assemble_matrix", &dolfin::fem::Assembler::assemble_matrix)
-      .def("assemble_vector", &dolfin::fem::Assembler::assemble_vector)
-      .def("assemble", py::overload_cast<dolfin::la::PETScMatrix&>(
-                           &dolfin::fem::Assembler::assemble))
-      .def("assemble", py::overload_cast<dolfin::la::PETScVector&>(
-                           &dolfin::fem::Assembler::assemble));
+  m.def("assemble_blocked_matrix",
+        py::overload_cast<
+            const std::vector<std::vector<const dolfin::fem::Form*>>,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
+            dolfin::fem::BlockType>(&dolfin::fem::assemble),
+        py::arg("a"), py::arg("bcs"), py::arg("block_type"),
+        "Assemble bilinear forms over mesh into blocked "
+        "matrix");
+  m.def("reassemble_blocked_matrix",
+        py::overload_cast<
+            dolfin::la::PETScMatrix&,
+            const std::vector<std::vector<const dolfin::fem::Form*>>,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>(
+            &dolfin::fem::assemble),
+        py::arg("A"), py::arg("a"), py::arg("bcs"),
+        "Re-assemble bilinear forms over mesh into blocked matrix");
+
+  m.def("set_bc",
+        py::overload_cast<
+            dolfin::la::PETScVector&, const dolfin::fem::Form&,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>(
+            &dolfin::fem::set_bc),
+        "Insert boundary condition values into vector");
 
   // dolfin::fem::AssemblerBase
   py::class_<dolfin::fem::AssemblerBase,

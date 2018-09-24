@@ -12,7 +12,7 @@ from dolfin import jit
 
 
 class Form(ufl.Form):
-    def __init__(self, form: ufl.Form, form_compiler_parameters: dict=None):
+    def __init__(self, form: ufl.Form, form_compiler_parameters: dict = None):
         """Create dolfin Form
 
         Parameters
@@ -34,10 +34,13 @@ class Form(ufl.Form):
         # math functions is really required)
         # FIXME: move getting include paths to elsewhere
         if self.form_compiler_parameters is None:
-            self.form_compiler_parameters = {"external_include_dirs": jit.dolfin_pc["include_dirs"]}
+            self.form_compiler_parameters = {
+                "external_include_dirs": jit.dolfin_pc["include_dirs"]
+            }
         else:
             # FIXME: add paths if dict entry already exists
-            self.form_compiler_parameters["external_include_dirs"] = jit.dolfin_pc["include_dirs"]
+            self.form_compiler_parameters["external_include_dirs"] = jit.dolfin_pc[
+                "include_dirs"]
 
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
@@ -47,13 +50,16 @@ class Form(ufl.Form):
 
         # Compile UFL form with JIT
         ufc_form = jit.ffc_jit(
-            form, form_compiler_parameters=self.form_compiler_parameters,
+            form,
+            form_compiler_parameters=self.form_compiler_parameters,
             mpi_comm=mesh.mpi_comm())
         # Cast compiled library to pointer to ufc_form
         ufc_form = cpp.fem.make_ufc_form(ufc_form[0])
 
         # For every argument in form extract its function space
-        function_spaces = [func.function_space()._cpp_object for func in form.arguments()]
+        function_spaces = [
+            func.function_space()._cpp_object for func in form.arguments()
+        ]
 
         # Prepare dolfin.Form and hold it as a member
         self._cpp_object = cpp.fem.Form(ufc_form, function_spaces)
@@ -63,7 +69,8 @@ class Form(ufl.Form):
         original_coefficients = form.coefficients()
         for i in range(self._cpp_object.num_coefficients()):
             j = self._cpp_object.original_coefficient_position(i)
-            self._cpp_object.set_coefficient(j, original_coefficients[i].cpp_object())
+            self._cpp_object.set_coefficient(
+                j, original_coefficients[i].cpp_object())
 
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
