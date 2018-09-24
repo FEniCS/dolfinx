@@ -89,15 +89,15 @@ def test_complex_assembly_solve():
     dolfin.cpp.la.PETScOptions.set("ksp_type", "preonly")
     dolfin.cpp.la.PETScOptions.set("pc_type", "lu")
     solver.set_from_options()
-    solution = dolfin.cpp.la.PETScVector()
+    x = dolfin.cpp.la.PETScVector()
     solver.set_operator(A)
-    solver.solve(solution, b)
+    solver.solve(x, b)
 
     # Reference Solution
-    ex = ufl.cos(2 * np.pi * x[0]) * ufl.cos(2 * np.pi * x[1])
+    ex = dolfin.Expression("cos(2*pi*x[0])*cos(2*pi*x[1])", degree=degree)
     u_ref = dolfin.interpolate(ex, V)
 
-    solutionnorm = solution.norm(dolfin.cpp.la.Norm.l2)
+    xnorm = x.norm(dolfin.cpp.la.Norm.l2)
     x_ref_norm = u_ref.vector().norm(dolfin.cpp.la.Norm.l2)
 
-    assert np.isclose(solutionnorm, x_ref_norm)
+    assert np.isclose(xnorm, x_ref_norm)
