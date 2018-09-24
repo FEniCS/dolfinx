@@ -15,6 +15,7 @@ from dolfin.fem.dirichletbc import DirichletBC
 from dolfin.fem.form import Form
 from dolfin.jit.jit import ffc_jit
 
+
 @functools.singledispatch
 def assemble(M: typing.Union[Form, cpp.fem.Form]
              ) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
