@@ -26,8 +26,8 @@ def test_complex_assembly():
     u = dolfin.function.argument.TrialFunction(V)
     v = dolfin.function.argument.TestFunction(V)
 
-    g = dolfin.function.constant.Constant(-2 + 3.0j)
-    j = dolfin.function.constant.Constant(1.0j)
+    g = -2 + 3.0j
+    j = 1.0j
 
     a_real = inner(u, v) * dx
     L1 = inner(g, v) * dx
@@ -39,7 +39,8 @@ def test_complex_assembly():
     A0_norm = assembler.assemble_matrix().norm(dolfin.cpp.la.Norm.frobenius)
 
     a_imag = j * inner(u, v) * dx
-    f = dolfin.Expression("j*sin(2*pi*x[0])", degree=2)
+    x = dolfin.SpatialCoordinate(mesh)
+    f = j * ufl.sin(2 * np.pi * x[0])
     L0 = inner(f, v) * dx
     assembler = dolfin.fem.assemble.Assembler(a_imag, L0)
     A1_norm = assembler.assemble_matrix().norm(dolfin.cpp.la.Norm.frobenius)
@@ -47,7 +48,7 @@ def test_complex_assembly():
     assert np.isclose(A0_norm, A1_norm)
 
     a_complex = (1 + j) * inner(u, v) * dx
-    f = dolfin.Expression("sin(2*pi*x[0])", degree=2)
+    f = ufl.sin(2 * np.pi * x[0])
     L2 = inner(f, v) * dx
     assembler = dolfin.fem.assemble.Assembler(a_complex, L2)
     A2_norm = assembler.assemble_matrix().norm(dolfin.cpp.la.Norm.frobenius)
@@ -70,13 +71,13 @@ def test_complex_assembly_solve():
 
     # Define source term
     A = 1 + 2 * (2 * np.pi)**2
-    f = dolfin.Expression(
-        "(1.+j)*A*cos(2*pi*x[0])*cos(2*pi*x[1])", degree=degree, A=A)
+    x = dolfin.SpatialCoordinate(mesh)
+    f = (1. + 1.0j) * A * ufl.cos(2 * np.pi * x[0]) * ufl.cos(2 * np.pi * x[1])
 
     # Variational problem
     u = dolfin.function.argument.TrialFunction(V)
     v = dolfin.function.argument.TestFunction(V)
-    C = dolfin.function.constant.Constant(1 + 1j)
+    C = 1 + 1j
     a = C * inner(grad(u), grad(v)) * dx + C * inner(u, v) * dx
     L = inner(f, v) * dx
 

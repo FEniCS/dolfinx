@@ -50,8 +50,9 @@ bc = DirichletBC(V, u0, boundary)
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = Constant(0.4)
-g = Expression("A*sin(5*x[0])", A=10.0, degree=2)
+f = 0.4
+x = SpatialCoordinate(mesh)
+g = 10.0 * sin(5 * x[0])
 a = inner(grad(u), grad(v))*dx
 L = f*v*dPP(1) + g*v*ds
 

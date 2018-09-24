@@ -146,7 +146,8 @@ operators). In summary, this reads
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Source(degree=1)
+    f_expr = Source(degree=1)
+    f = interpolate(f_expr, V)
     a = dot(grad(u), grad(v))*dx
     L = f*v*dx
 

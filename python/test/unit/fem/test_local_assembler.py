@@ -9,7 +9,7 @@
 import pytest
 import numpy
 from dolfin import (UnitIntervalMesh, UnitSquareMesh,
-                    Constant, Cell, TestFunction, TrialFunction, MPI, Cells, dx,
+                    Cell, TestFunction, TrialFunction, MPI, Cells, dx,
                     ds, dS, dot, Form, FunctionSpace, VectorFunctionSpace,
                     Expression, FacetNormal)
 from dolfin.fem.assembling import assemble_local
@@ -23,7 +23,7 @@ def test_local_assembler_1D():
     v = TestFunction(V)
     c = Cell(mesh, 0)
 
-    a_scalar = Constant(1) * dx(domain=mesh)
+    a_scalar = 1 * dx(domain=mesh)
     a_vector = v * dx
     a_matrix = u * v * dx
 

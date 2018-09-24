@@ -31,6 +31,7 @@ class CoordinateMapping;
 namespace function
 {
 class FunctionSpace;
+class Function;
 }
 
 namespace mesh
@@ -116,20 +117,20 @@ public:
   ///
   /// @param[in]  i (std::size_t)
   ///         The given number.
-  /// @param[in]    coefficient (_GenericFunction_)
+  /// @param[in]    coefficient (_Function_)
   ///         The coefficient.
   void set_coefficients(
-      std::map<std::size_t, std::shared_ptr<const function::GenericFunction>>
+      std::map<std::size_t, std::shared_ptr<const function::Function>>
           coefficients);
 
   /// Set coefficient with given name (shared pointer version)
   ///
   /// @param[in]    name (std::string)
   ///         The name.
-  /// @param[in]    coefficient (_GenericFunction_)
+  /// @param[in]    coefficient (_Function_)
   ///         The coefficient.
   void set_coefficients(
-      std::map<std::string, std::shared_ptr<const function::GenericFunction>>
+      std::map<std::string, std::shared_ptr<const function::Function>>
           coefficients);
 
   /// Return original coefficient position for each coefficient (0

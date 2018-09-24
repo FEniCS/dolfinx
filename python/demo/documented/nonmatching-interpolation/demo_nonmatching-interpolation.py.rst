@@ -32,7 +32,8 @@ Lagrange elements, and on the finer mesh cubic Lagrange elements ::
 
 We interpolate the function :math:`\sin(10x) \sin(10y)` ::
 
-  v = Expression("sin(10.0*x[0])*sin(10.0*x[1])", degree=5)
+  x = SpatialCoordinate(mesh)
+  v = sin(10.0 * x[0]) * sin(10.0 * x[1])
 
 into the ``P3`` finite element space ::
 

@@ -6,7 +6,7 @@
 
 #include "FormCoefficients.h"
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/function/GenericFunction.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/log/log.h>
 #include <memory>
 #include <string>
@@ -40,14 +40,14 @@ FormCoefficients::FormCoefficients(
 std::size_t FormCoefficients::size() const { return _coefficients.size(); }
 //-----------------------------------------------------------------------------
 void FormCoefficients::set(
-    std::size_t i, std::shared_ptr<const function::GenericFunction> coefficient)
+    std::size_t i, std::shared_ptr<const function::Function> coefficient)
 {
   assert(i < _coefficients.size());
   _coefficients[i] = coefficient;
 
-  // FIXME: if GenericFunction has an element, check it matches
+  // FIXME: if Function has an element, check it matches
 
-  // Check value_rank and value_size of GenericFunction match those of
+  // Check value_rank and value_size of Function match those of
   // FiniteElement i.
 
   const std::size_t r = coefficient->value_rank();
@@ -79,7 +79,7 @@ void FormCoefficients::set(
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const function::GenericFunction>
+std::shared_ptr<const function::Function>
 FormCoefficients::get(std::size_t i) const
 {
   assert(i < _coefficients.size());

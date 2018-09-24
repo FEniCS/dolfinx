@@ -158,8 +158,9 @@ the linear form ``L`` (using UFL operators). In summary, this reads ::
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
-    g = Expression("sin(5*x[0])", degree=2)
+    x = SpatialCoordinate(mesh)
+    f = 10.0 * exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+    g = sin(5 * x[0])
     a = inner(grad(u), grad(v))*dx
     L = inner(f, v)*dx + inner(g, v)*ds
 

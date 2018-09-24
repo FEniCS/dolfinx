@@ -24,8 +24,8 @@ def test_krylov_solver_lu():
     V = FunctionSpace(mesh, "Lagrange", 1)
     u, v = TrialFunction(V), TestFunction(V)
 
-    a = Constant(1.0) * inner(u, v) * dx
-    L = inner(Constant(1.0), v) * dx
+    a = 1.0 * inner(u, v) * dx
+    L = inner(1.0, v) * dx
     assembler = fem.assemble.Assembler(a, L)
     A = assembler.assemble_matrix()
     b = assembler.assemble_vector()
@@ -64,8 +64,8 @@ def test_krylov_reuse_pc_lu():
     V = FunctionSpace(mesh, "Lagrange", 1)
     u, v = TrialFunction(V), TestFunction(V)
 
-    a = Constant(1.0) * u * v * dx
-    L = Constant(1.0) * v * dx
+    a = 1.0 * u * v * dx
+    L = 1.0 * v * dx
     assembler = fem.assemble.Assembler(a, L)
     A = assembler.assemble_matrix()
     b = assembler.assemble_vector()
@@ -81,7 +81,7 @@ def test_krylov_reuse_pc_lu():
     solver.solve(x, b)
     assert round(x.norm(cpp.la.Norm.l2) - norm, 10) == 0
 
-    assembler = fem.assemble.Assembler(Constant(0.5) * u * v * dx, L)
+    assembler = fem.assemble.Assembler(0.5 * u * v * dx, L)
     assembler.assemble(A)
     x = PETScVector(mesh.mpi_comm())
     solver.solve(x, b)
@@ -131,13 +131,13 @@ def test_krylov_samg_solver_elasticity():
         # Define problem
         mesh = UnitSquareMesh(MPI.comm_world, N, N)
         V = VectorFunctionSpace(mesh, 'Lagrange', 1)
-        bc = DirichletBC(V, Constant((0.0, 0.0)),
+        bc = DirichletBC(V, (0.0, 0.0),
                          lambda x, on_boundary: on_boundary)
         u = TrialFunction(V)
         v = TestFunction(V)
 
         # Forms
-        a, L = inner(sigma(u), grad(v)) * dx, dot(Constant((1.0, 1.0)), v) * dx
+        a, L = inner(sigma(u), grad(v)) * dx, dot((1.0, 1.0), v) * dx
 
         # Assemble linear algebra objects
         A, b = assemble_system(a, L, bc)
@@ -199,7 +199,7 @@ def test_krylov_reuse_pc():
     v = TestFunction(V)
 
     # Forms
-    a, L = inner(grad(u), grad(v)) * dx, dot(Constant(1.0), v) * dx
+    a, L = inner(grad(u), grad(v)) * dx, dot(1.0, v) * dx
 
     A, P = PETScMatrix(), PETScMatrix()
     b = PETScVector()

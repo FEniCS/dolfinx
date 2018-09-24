@@ -30,8 +30,8 @@ u, du, v = Function(V), TrialFunction(V), TestFunction(V)
 
 # Elasticity parameters
 E, nu = 10.0, 0.3
-mu = Constant(E/(2.0*(1.0+nu)))
-lmbda = Constant(E*nu/((1.0+nu)*(1.0-2.0*nu)))
+mu = E/(2.0*(1.0+nu))
+lmbda = E*nu/((1.0+nu)*(1.0-2.0*nu))
 
 # Compressible neo-Hookean model
 I = Identity(mesh.geometry.dim)
@@ -42,7 +42,7 @@ J  = det(F)
 psi = (mu/2)*(Ic-2)-mu*ln(J)+(lmbda/2)*(ln(J))**2
 
 # Surface force
-f = Constant((-0.08, 0.0))
+f = (-0.08, 0.0)
 
 # The displacement u must be such that the current configuration
 # doesn't escape the box [xmin, xmax] x [ymin, ymax]

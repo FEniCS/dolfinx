@@ -24,13 +24,13 @@ velocity = Function(V);
 File("../dolfin_fine_velocity.xml.gz") >> velocity
 
 # Initialise source function and previous solution function
-f  = Constant(0.0)
+f  = 0.0
 u0 = Function(Q)
 
 # Parameters
 T = 5.0
 dt = 0.1
-t = Constant(0.0)
+t = 0.0
 c = 0.00005
 
 # Test and trial functions

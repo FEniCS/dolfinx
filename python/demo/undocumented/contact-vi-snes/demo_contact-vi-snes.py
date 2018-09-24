@@ -22,7 +22,7 @@ V = VectorFunctionSpace(mesh, "Lagrange", 1)
 du = TrialFunction(V)            # Incremental displacement
 v  = TestFunction(V)             # Test function
 u  = Function(V)                 # Displacement from previous iteration
-B  = Constant((0.0, -0.05))      # Body force per unit volume
+B  = (0.0, -0.05)                # Body force per unit volume
 
 # Kinematics
 I = Identity(len(u))  # Identity tensor
@@ -35,7 +35,7 @@ J  = det(F)
 
 # Elasticity parameters
 E, nu = 10.0, 0.3
-mu, lmbda = Constant(E/(2*(1 + nu))), Constant(E*nu/((1 + nu)*(1 - 2*nu)))
+mu, lmbda = E/(2*(1 + nu)), E*nu/((1 + nu)*(1 - 2*nu))
 
 # Stored strain energy density (compressible neo-Hookean model)
 psi = (mu/2)*(Ic - 2) - mu*ln(J) + (lmbda/2)*(ln(J))**2

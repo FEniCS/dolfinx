@@ -47,7 +47,7 @@ def compute(nsteps, coordinate_degree, element_degree, gdim):
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Constant(1.0)
+    f = 1.0
     a = inner(grad(u), grad(v))*dx(degree=3)
     L = f*v*dx(degree=3)
 

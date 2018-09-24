@@ -61,8 +61,8 @@ v = TestFunction(V)
 u = TrialFunction(V)
 
 # Define functions for boundary condiitons
-dbdt = Constant((0.0, 0.0, 1.0))
-zero = Constant((0.0, 0.0, 0.0))
+dbdt = (0.0, 0.0, 1.0)
+zero = (0.0, 0.0, 0.0)
 
 # Magnetic field (to be computed)
 T = Function(V)

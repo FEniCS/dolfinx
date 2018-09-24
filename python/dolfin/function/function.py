@@ -322,10 +322,7 @@ class Function(ufl.Coefficient):
             self._cpp_object.interpolate(u)
 
     def compute_point_values(self, mesh=None):
-        if mesh is not None:
-            return self._cpp_object.compute_point_values(mesh)
-        else:
-            return self._cpp_object.compute_point_values()
+        return self._cpp_object.compute_point_values(self.function_space().mesh())
 
     def set_allow_extrapolation(self, value):
         self._cpp_object.set_allow_extrapolation(value)

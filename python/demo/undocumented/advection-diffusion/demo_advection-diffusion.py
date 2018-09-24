@@ -31,7 +31,7 @@ xdmf_velocity = XDMFFile(MPI.comm_world, "dolfin_fine_velocity.xdmf")
 velocity = xdmf_velocity.read_checkpoint(V, "velocity")
 
 # Initialise source function and previous solution function
-f  = Constant(0.0)
+f = 0.0
 u0 = Function(Q)
 
 # Parameters

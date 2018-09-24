@@ -36,7 +36,8 @@ W = FunctionSpace(mesh, MixedElement((RT1, DG0, R)))
 (sigma, u, r) = TrialFunctions(W)
 (tau, v, t) = TestFunctions(W)
 
-g = Expression("sin(0.5*pi*x[2])", degree=2)
+x = SpatialCoordinate(mesh)
+g = sin(0.5 * pi * x[2])
 
 # Define forms
 a = (inner(sigma, tau) + div(sigma)*v + div(tau)*u + r*v + t*u)*dx

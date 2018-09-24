@@ -71,7 +71,7 @@ def test_compute_point_values(V, W, mesh):
     v_ones = numpy.ones_like(v_values, dtype=numpy.float64)
     assert all(numpy.isclose(v_values, v_ones))
 
-    u_values2 = u.compute_point_values()
+    u_values2 = u.compute_point_values(mesh)
 
     assert all(u_values == u_values2)
 
@@ -122,7 +122,7 @@ def test_assign(V, W):
                       float(expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test self assignment
-        expr = 3 * u - Constant(5) * u2 + u1 - 5 * u
+        expr = 3 * u - 5 * u2 + u1 - 5 * u
         expr_scalar = 3 - 5 * 4. + 3. - 5
         u.assign(expr)
         assert (round(u.vector().get_local().sum() -

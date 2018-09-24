@@ -244,23 +244,15 @@ an argument to :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`.
 .. index:: TestFunction, TrialFunction, Constant
 
 Trial and test functions, and the most recent approximate displacement
-``u`` are defined on the finite element space ``V``, and two objects
-of type :py:class:`Constant <dolfin.functions.constant.Constant>` are
-declared for the body force (``B``) and traction (``T``) terms::
+``u`` are defined on the finite element space ``V``, with body force
+(``B``) and traction (``T``) terms::
 
     # Define functions
     du = TrialFunction(V)            # Incremental displacement
     v  = TestFunction(V)             # Test function
     u  = Function(V)                 # Displacement from previous iteration
-    B  = Constant((0.0, -0.5, 0.0))  # Body force per unit volume
-    T  = Constant((0.1,  0.0, 0.0))  # Traction force on the boundary
-
-In place of :py:class:`Constant <dolfin.functions.constant.Constant>`,
-it is also possible to use ``as_vector``, e.g.  ``B = as_vector( [0.0,
--0.5, 0.0] )``. The advantage of Constant is that its values can be
-changed without requiring re-generation and re-compilation of C++
-code. On the other hand, using ``as_vector`` can eliminate some
-function calls during assembly.
+    B  = (0.0, -0.5, 0.0)  # Body force per unit volume
+    T  = (0.1,  0.0, 0.0)  # Traction force on the boundary
 
 With the functions defined, the kinematic quantities involved in the model
 are defined using UFL syntax::
@@ -280,7 +272,7 @@ and the total potential energy are defined, again using UFL syntax::
 
     # Elasticity parameters
     E, nu = 10.0, 0.3
-    mu, lmbda = Constant(E/(2*(1 + nu))), Constant(E*nu/((1 + nu)*(1 - 2*nu)))
+    mu, lmbda = E/(2*(1 + nu)), E*nu/((1 + nu)*(1 - 2*nu))
 
     # Stored strain energy density (compressible neo-Hookean model)
     psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
@@ -288,10 +280,7 @@ and the total potential energy are defined, again using UFL syntax::
     # Total potential energy
     Pi = psi*dx - dot(B, u)*dx - dot(T, u)*ds
 
-Just as for the body force and traction vectors, :py:class:`Constant
-<dolfin.functions.constant.Constant>` has been used for the model
-parameters ``mu`` and ``lmbda`` to avoid re-generation of C++ code
-when changing model parameters. Note that ``lambda`` is a reserved
+Note that ``lambda`` is a reserved
 keyword in Python, hence the misspelling ``lmbda``.
 
 .. index:: directional derivative; derivative, taking variations; derivative, automatic differentiation; derivative
