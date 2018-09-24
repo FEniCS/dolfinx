@@ -244,10 +244,13 @@ void fem(py::module& m)
   py::enum_<dolfin::fem::BlockType>(
       m, "BlockType",
       "Enum for matrix/vector assembly type for nested problems")
-      .value("monolithic", dolfin::fem::BlockType::monolithic,
-             "Use monolithic linear algebra data structures for block forms")
-      .value("nested", dolfin::fem::BlockType::nested,
-             "Use nested linear algebra data structures for block forms");
+      //   .value("monolithic", dolfin::fem::BlockType::monolithic,
+      //          "Use monolithic linear algebra data structures for block
+      //          forms")
+      //   .value("nested", dolfin::fem::BlockType::nested,
+      //          "Use nested linear algebra data structures for block forms");
+      .value("monolithic", dolfin::fem::BlockType::monolithic)
+      .value("nested", dolfin::fem::BlockType::nested);
 
   // dolfin::fem::assemble
   m.def("assemble",
