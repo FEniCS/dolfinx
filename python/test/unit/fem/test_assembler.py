@@ -12,9 +12,21 @@ import pytest
 from petsc4py import PETSc
 
 import dolfin
-import dolfin.fem.assemble
 import ufl
 from ufl import dx, inner
+
+
+def test_assemble_functional():
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
+
+    M = dolfin.Constant(1.0) * dx(domain=mesh)
+    value = dolfin.fem.assemble(M)
+    assert value == pytest.approx(1.0, 1e-12)
+
+    f = dolfin.function.expression.Expression("x[0]", degree=1)
+    M = f * dx(domain=mesh)
+    value = dolfin.fem.assemble(M)
+    assert value == pytest.approx(0.5, 1e-12)
 
 
 def test_basic_assembly():
@@ -24,17 +36,16 @@ def test_basic_assembly():
 
     a = dolfin.Constant(1.0) * inner(u, v) * dx
     L = inner(dolfin.Constant(1.0), v) * dx
-    assembler = dolfin.fem.assemble.Assembler(a, L)
 
     # Initial assembly
-    A = assembler.assemble_matrix()
-    b = assembler.assemble_vector()
+    A = dolfin.fem.assemble(a)
+    b = dolfin.fem.assemble(L)
     assert isinstance(A, dolfin.cpp.la.PETScMatrix)
     assert isinstance(b, dolfin.cpp.la.PETScVector)
 
     # Second assembly
-    A = assembler.assemble(A)
-    b = assembler.assemble(b)
+    A = dolfin.fem.assemble(A, a)
+    b = dolfin.fem.assemble(b, L)
     assert isinstance(A, dolfin.cpp.la.PETScMatrix)
     assert isinstance(b, dolfin.cpp.la.PETScVector)
 
@@ -78,26 +89,23 @@ def test_matrix_assembly_block():
     L0 = zero * inner(f, v) * dx
     L1 = inner(g, q) * dx
 
-    # Create assembler
-    assembler = dolfin.fem.assemble.Assembler([[a00, a01], [a10, a11]],
-                                              [L0, L1], [bc])
+    a_block = [[a00, a01], [a10, a11]]
+    L_block = [L0, L1]
 
     # Monolithic blocked
-    A0 = assembler.assemble_matrix(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    b0 = assembler.assemble_vector(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    A0 = dolfin.fem.assemble_matrix(a_block, [bc],
+                                    dolfin.cpp.fem.BlockType.monolithic)
+    b0 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
+                                    dolfin.cpp.fem.BlockType.monolithic)
     assert A0.mat().getType() != "nest"
     Anorm0 = A0.mat().norm()
     bnorm0 = b0.vec().norm()
 
     # Nested (MatNest)
-    A1 = assembler.assemble_matrix(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
-    b1 = assembler.assemble_vector(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.nested)
-    assert A1.mat().getType() == "nest"
-
+    A1 = dolfin.fem.assemble_matrix(a_block, [bc],
+                                    dolfin.cpp.fem.BlockType.nested)
+    b1 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
+                                    dolfin.cpp.fem.BlockType.nested)
     bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
     assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
 
@@ -134,12 +142,10 @@ def test_matrix_assembly_block():
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    assembler = dolfin.fem.assemble.Assembler([[a]], [L], [bc])
-
-    A2 = assembler.assemble_matrix(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
-    b2 = assembler.assemble_vector(
-        mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
+    A2 = dolfin.fem.assemble_matrix([[a]], [bc],
+                                    dolfin.cpp.fem.BlockType.monolithic)
+    b2 = dolfin.fem.assemble_vector([L], [[a]], [bc],
+                                    dolfin.cpp.fem.BlockType.monolithic)
     assert A2.mat().getType() != "nest"
 
     Anorm2 = A2.mat().norm()
@@ -189,8 +195,8 @@ def xtest_assembly_solve_block():
         # print("Norm:", its, rnorm)
 
     # Create assembler
-    assembler = dolfin.fem.assemble.Assembler([[a00, a01], [a10, a11]],
-                                              [L0, L1], [bc0, bc1])
+    assembler = dolfin.fem.Assembler([[a00, a01], [a10, a11]], [L0, L1],
+                                     [bc0, bc1])
 
     # Monolithic blocked
     A0, b0 = assembler.assemble(

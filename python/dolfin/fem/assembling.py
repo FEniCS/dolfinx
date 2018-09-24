@@ -16,9 +16,9 @@ rely on the dolfin::Form class which is not used on the Python side.
 
 """
 
-import ufl
+import dolfin
 import dolfin.cpp as cpp
-import dolfin.fem as fem
+import ufl
 
 __all__ = ["assemble_local", "SystemAssembler"]
 
@@ -38,9 +38,8 @@ def _create_cpp_form(form, form_compiler_parameters=None):
                 "Ignoring form_compiler_parameters when passed a dolfin Form!")
         return form
     elif isinstance(form, ufl.Form):
-        form = fem.Form(
-            form,
-            form_compiler_parameters=form_compiler_parameters)
+        form = dolfin.fem.Form(
+            form, form_compiler_parameters=form_compiler_parameters)
         return form._cpp_object
     else:
         raise TypeError("Invalid form type %s" % (type(form), ))

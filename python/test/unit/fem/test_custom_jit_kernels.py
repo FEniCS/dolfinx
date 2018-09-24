@@ -10,6 +10,7 @@ import numba
 import numpy as np
 from petsc4py import PETSc
 
+import dolfin
 from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
                     list_timings)
 
@@ -61,9 +62,8 @@ def test_numba_assembly():
     L = cpp.fem.Form([V._cpp_object])
     L.set_cell_tabulate(0, tabulate_tensor_b.address)
 
-    assembler = cpp.fem.Assembler([[a]], [L], [])
-    A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
-    b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
+    A = dolfin.cpp.fem.assemble(a)
+    b = dolfin.cpp.fem.assemble(L)
 
     Anorm = A.norm(cpp.la.Norm.frobenius)
     bnorm = b.norm(cpp.la.Norm.l2)
