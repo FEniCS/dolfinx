@@ -40,7 +40,7 @@ def test_complex_assembly():
     a_imag = j * inner(u, v) * dx
     f = dolfin.Expression("j*sin(2*pi*x[0])", degree=2)
     L0 = inner(f, v) * dx
-    A1_norm = dolfin.fem.assemble(a_image).norm(dolfin.cpp.la.Norm.frobenius)
+    A1_norm = dolfin.fem.assemble(a_imag).norm(dolfin.cpp.la.Norm.frobenius)
     assert np.isclose(A0_norm, A1_norm)
     b1_norm = dolfin.fem.assemble(L0).norm(dolfin.cpp.la.Norm.l2)
 
