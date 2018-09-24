@@ -140,21 +140,6 @@ ARG SLEPC4PY_VERSION=3.9.0
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
-# Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
-# RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
-#     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
-#     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
-#     pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
-
-# Install dolfinx (real types)
-# RUN git clone https://github.com/fenics/dolfinx.git && \
-#     cd dolfinx && \
-#     mkdir build && \
-#     cd build && \
-#     cmake ../cpp && \
-#     make install && \
-#     rm -rf /tmp/*
-
 
 FROM base as complex
 LABEL description="FEniCS test environment with PETSc complex mode"
@@ -206,11 +191,44 @@ ARG SLEPC4PY_VERSION=3.9.0
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
+
+FROM real as dolfin-real
+LABEL description="DOLFIN-X in real mode"
+
+WORKDIR /tmp
+
+# Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
+RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
+    pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+
 # Install dolfinx
-# RUN git clone https://github.com/fenics/dolfinx.git && \
-#     cd dolfinx && \
-#     mkdir build && \
-#     cd build && \
-#     cmake ../cpp && \
-#     make install && \
-#     rm -rf /tmp/*
+RUN git clone https://github.com/fenics/dolfinx.git && \
+    cd dolfinx && \
+    mkdir build && \
+    cd build && \
+    cmake ../cpp && \
+    make install && \
+    rm -rf /tmp/*
+
+
+FROM complex as dolfin-complex
+LABEL description="DOLFIN-X in complex mode"
+
+WORKDIR /tmp
+
+# Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
+RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
+    pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+
+# Install dolfinx
+RUN git clone https://github.com/fenics/dolfinx.git && \
+    cd dolfinx && \
+    mkdir build && \
+    cd build && \
+    cmake ../cpp && \
+    make install && \
+    rm -rf /tmp/*
