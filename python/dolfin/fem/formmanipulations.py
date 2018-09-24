@@ -7,9 +7,7 @@
 
 import ufl
 
-from dolfin.function.functionspace import FunctionSpace
-from dolfin.function.function import Function
-from dolfin.function.argument import Argument
+from dolfin import function
 
 
 def adjoint(form, reordered_arguments=None):
@@ -28,10 +26,12 @@ def adjoint(form, reordered_arguments=None):
 
     # Define new Argument(s) in the same spaces (NB: Order does not
     # matter anymore here because number is absolute)
-    v_1 = Argument(arguments[1].function_space(), arguments[0].number(),
-                   arguments[0].part())
-    v_0 = Argument(arguments[0].function_space(), arguments[1].number(),
-                   arguments[1].part())
+    v_1 = function.Argument(
+        arguments[1].function_space(), arguments[0].number(),
+        arguments[0].part())
+    v_0 = function.Argument(
+        arguments[0].function_space(), arguments[1].number(),
+        arguments[1].part())
 
     # Call ufl.adjoint with swapped arguments as new arguments
     return ufl.adjoint(form, reordered_arguments=(v_1, v_0))
@@ -62,10 +62,10 @@ def derivative(form, u, du=None, coefficient_derivatives=None):
             raise RuntimeError("Cannot automatically create new Argument using parts, please supply one")
         part = None
 
-        if isinstance(u, Function):
+        if isinstance(u, function.Function):
             V = u.function_space()
-            du = Argument(V, number, part)
-        elif isinstance(u, (list, tuple)) and all(isinstance(w, Function) for w in u):
+            du = function.Argument(V, number, part)
+        elif isinstance(u, (list, tuple)) and all(isinstance(w, function.Function) for w in u):
             raise RuntimeError("Take derivative w.r.t. a single Coefficient on a mixed space instead.")
         else:
             raise RuntimeError("Computing derivative of form w.r.t. '{}'. Supply Function as a Coefficient".format(u))
@@ -90,7 +90,7 @@ def increase_order(V):
     mesh = V.mesh()
     element = ufl.algorithms.elementtransformations.increase_order(V.ufl_element())
     constrained_domain = V.dofmap().constrained_domain
-    return FunctionSpace(mesh, element, constrained_domain=constrained_domain)
+    return function.FunctionSpace(mesh, element, constrained_domain=constrained_domain)
 
 
 def change_regularity(V, family):
@@ -102,7 +102,7 @@ def change_regularity(V, family):
     mesh = V.mesh()
     element = ufl.algorithms.elementtransformations.change_regularity(V.ufl_element(), family)
     constrained_domain = V.dofmap().constrained_domain
-    return FunctionSpace(mesh, element, constrained_domain=constrained_domain)
+    return function.FunctionSpace(mesh, element, constrained_domain=constrained_domain)
 
 
 def tear(V):

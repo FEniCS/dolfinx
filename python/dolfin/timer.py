@@ -6,6 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import functools
+
 from dolfin import cpp
 
 __all__ = ["Timer", "timed"]

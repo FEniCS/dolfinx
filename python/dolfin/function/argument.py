@@ -10,10 +10,8 @@
 """
 
 import ufl
-from .functionspace import FunctionSpace
 
-__all__ = ["TestFunction", "TrialFunction", "Argument",
-           "TestFunctions", "TrialFunctions"]
+from dolfin import function
 
 # --- Subclassing of ufl.{Basis, Trial, Test}Function ---
 
@@ -35,7 +33,7 @@ class Argument(ufl.Argument):
     def __init__(self, V, number, part=None):
 
         # Check argument
-        if not isinstance(V, FunctionSpace):
+        if not isinstance(V, function.FunctionSpace):
             if isinstance(V, (ufl.FiniteElementBase, ufl.FunctionSpace)):
                 raise TypeError(_ufl_dolfin_difference_message)
             else:

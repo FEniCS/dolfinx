@@ -7,15 +7,9 @@
 """Some special functions"""
 
 import ufl
-import dolfin.cpp as cpp
-from dolfin.function.expression import BaseExpression
 
-__all__ = [
-    "MeshCoordinates", "FacetArea", "FacetNormal", "CellVolume",
-    "SpatialCoordinate", "CellNormal", "CellDiameter", "Circumradius",
-    "MinCellEdgeLength", "MaxCellEdgeLength", "MinFacetEdgeLength",
-    "MaxFacetEdgeLength"
-]
+from dolfin import cpp
+from dolfin import function
 
 
 def _mesh2domain(mesh):
@@ -28,7 +22,7 @@ def _mesh2domain(mesh):
     return mesh.ufl_domain()
 
 
-class MeshCoordinates(BaseExpression):
+class MeshCoordinates(function.BaseExpression):
     def __init__(self, mesh):
         """Create function that evaluates to the mesh coordinates at each
         vertex.
@@ -45,7 +39,7 @@ class MeshCoordinates(BaseExpression):
         super().__init__(element=ufl_element, domain=mesh.ufl_domain())
 
 
-class FacetArea(BaseExpression):
+class FacetArea(function.BaseExpression):
     def __init__(self, mesh):
         """Create function that evaluates to the facet area/length on each
         facet.

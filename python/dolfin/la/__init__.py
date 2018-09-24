@@ -7,8 +7,13 @@
 
 import numpy as np
 from numpy import intc, int64
-import dolfin.cpp as cpp
+from dolfin import cpp
 
+from dolfin.la.solver import solve
+
+__all__ = [
+    "solve"
+]
 
 # Import pybind11 objects into dolfin.la
 from dolfin.cpp.la import VectorSpaceBasis  # noqa

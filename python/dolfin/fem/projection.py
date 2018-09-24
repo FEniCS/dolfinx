@@ -14,13 +14,9 @@ finite element space.
 import ufl
 
 from dolfin import cpp
-from dolfin.function.argument import TestFunction, TrialFunction
-from dolfin.function.function import Function
-from dolfin.fem.assembling import assemble_system
-from dolfin.function.functionspace import (FunctionSpace, VectorFunctionSpace,
-                                           TensorFunctionSpace)
-from dolfin.la.solver import solve
-from dolfin.function.expression import Expression
+from dolfin import function
+from dolfin import fem
+from dolfin import la
 
 
 def project(v,
@@ -72,9 +68,9 @@ def project(v,
     if V is None:
         # Create function space based on Expression element if trying
         # to project an Expression
-        if isinstance(v, Expression):
+        if isinstance(v, function.Expression):
             if mesh is not None and isinstance(mesh, cpp.mesh.Mesh):
-                V = FunctionSpace(mesh, v.ufl_element())
+                V = function.FunctionSpace(mesh, v.ufl_element())
             # else:
             #     cpp.dolfin_error("projection.py",
             #                      "perform projection",
@@ -91,19 +87,19 @@ def project(v,
     dx = ufl.dx(mesh)
 
     # Define variational problem for projection
-    w = TestFunction(V)
-    Pv = TrialFunction(V)
+    w = function.TestFunction(V)
+    Pv = function.TrialFunction(V)
     a = ufl.inner(w, Pv) * dx
     L = ufl.inner(w, v) * dx
 
     # Assemble linear system
-    A, b = assemble_system(
+    A, b = fem.assemble_system(
         a, L, bcs=bcs, form_compiler_parameters=form_compiler_parameters)
 
     # Solve linear system for projection
     if function is None:
-        function = Function(V)
-    solve(A, function.vector(), b, solver_type, preconditioner_type)
+        function = function.Function(V)
+    la.solve(A, function.vector(), b, solver_type, preconditioner_type)
 
     return function
 
@@ -127,7 +123,7 @@ def _extract_function_space(expression, mesh):
         # Extract functions
         functions = ufl.algorithms.extract_coefficients(expression)
         for f in functions:
-            if isinstance(f, Function):
+            if isinstance(f, function.Function):
                 mesh = f.function_space().mesh()
                 if mesh is not None:
                     break
@@ -139,11 +135,11 @@ def _extract_function_space(expression, mesh):
     # Create function space
     shape = expression.ufl_shape
     if shape == ():
-        V = FunctionSpace(mesh, "Lagrange", 1)
+        V = function.FunctionSpace(mesh, "Lagrange", 1)
     elif len(shape) == 1:
-        V = VectorFunctionSpace(mesh, "Lagrange", 1, dim=shape[0])
+        V = function.VectorFunctionSpace(mesh, "Lagrange", 1, dim=shape[0])
     elif len(shape) == 2:
-        V = TensorFunctionSpace(mesh, "Lagrange", 1, shape=shape)
+        V = function.TensorFunctionSpace(mesh, "Lagrange", 1, shape=shape)
     else:
         raise RuntimeError("Unhandled rank, shape is {}.".format((shape, )))
 
