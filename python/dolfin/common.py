@@ -184,6 +184,8 @@ if has_mpi4py():
 
 
 class MPI:
+    """MPI parallel communication wrapper
+    """
 
     comm_world = cpp.MPI.comm_world
     comm_self = cpp.MPI.comm_self
