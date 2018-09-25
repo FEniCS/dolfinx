@@ -21,8 +21,8 @@ import typing
 import ufl
 
 from dolfin import cpp
-from dolfin import fem
-from dolfin import jit
+from dolfin.fem.form import Form
+from dolfin.fem.dirichletbc import DirichletBC
 
 
 def _create_cpp_form(form, form_compiler_parameters=None):
@@ -40,7 +40,7 @@ def _create_cpp_form(form, form_compiler_parameters=None):
                 "Ignoring form_compiler_parameters when passed a dolfin Form!")
         return form
     elif isinstance(form, ufl.Form):
-        form = fem.Form(
+        form = Form(
             form, form_compiler_parameters=form_compiler_parameters)
         return form._cpp_object
     else:
@@ -210,7 +210,7 @@ class SystemAssembler(cpp.fem.SystemAssembler):
 
 
 @functools.singledispatch
-def assemble(M: typing.Union[fem.Form, cpp.fem.Form]
+def assemble(M: typing.Union[Form, cpp.fem.Form]
              ) -> typing.Union[float, cpp.la.PETScMatrix, cpp.la.PETScVector]:
     """Assemble a form over mesh"""
     M_cpp = _create_cpp_form(M)
@@ -221,7 +221,7 @@ def assemble(M: typing.Union[fem.Form, cpp.fem.Form]
 def _assemble_vector(b: cpp.la.PETScVector,
                      L,
                      a=[],
-                     bcs: typing.List[fem.DirichletBC] = [],
+                     bcs: typing.List[DirichletBC] = [],
                      scale: float = 1.0) -> cpp.la.PETScVector:
     """Re-assemble linear form into a vector, with modification for Dirichlet
     boundary conditions
@@ -254,7 +254,7 @@ def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[]) -> cpp.la.PETScMatrix:
 
 def assemble_vector(L,
                     a,
-                    bcs: typing.List[fem.DirichletBC],
+                    bcs: typing.List[DirichletBC],
                     block_type: cpp.fem.BlockType,
                     scale: float = 1.0) -> cpp.la.PETScVector:
     """Assemble linear form into vector"""
@@ -264,39 +264,13 @@ def assemble_vector(L,
                                            scale)
 
 
-def assemble_matrix(a, bcs: typing.List[fem.DirichletBC],
+def assemble_matrix(a, bcs: typing.List[DirichletBC],
                     block_type) -> cpp.la.PETScMatrix:
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     return cpp.fem.assemble_blocked_matrix(a_cpp, bcs, block_type)
 
 
-def set_bc(b: cpp.la.PETScVector, L, bcs: typing.List[fem.DirichletBC]) -> None:
+def set_bc(b: cpp.la.PETScVector, L, bcs: typing.List[DirichletBC]) -> None:
     """Insert boundary condition values into vector"""
     cpp.fem.set_bc(b, L, bcs)
-
-
-def create_coordinate_map(o):
-    """Return a compiled UFC coordinate_mapping object"""
-
-    try:
-        # Create a compiled coordinate map from an object with the
-        # ufl_mesh attribute
-        cmap_ptr = jit.ffc_jit(o.ufl_domain())
-    except AttributeError:
-        # FIXME: It would be good to avoid the type check, but ffc_jit
-        # supports other objects so we could get, e.g., a compiled
-        # finite element
-        if isinstance(o, ufl.domain.Mesh):
-            cmap_ptr = jit.ffc_jit(o)
-        else:
-            raise TypeError(
-                "Cannot create coordinate map from an object of type: {}".
-                format(type(o)))
-    except Exception:
-        print("Failed to create compiled coordinate map")
-        raise
-
-    # Wrap compiled coordinate map and return
-    ufc_cmap = cpp.fem.make_ufc_coordinate_mapping(cmap_ptr)
-    return cpp.fem.CoordinateMapping(ufc_cmap)
