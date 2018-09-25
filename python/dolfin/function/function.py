@@ -11,6 +11,7 @@ import ufl
 from ufl.classes import ComponentTensor, Sum, Product, Division
 from ufl.utils.indexflattening import shape_to_strides, flatten_multiindex
 
+from dolfin import common
 from dolfin import cpp
 from dolfin import la
 from dolfin import function
@@ -286,7 +287,7 @@ class Function(ufl.Coefficient):
                             "length %d" % dim)
 
         value_size = ufl.product(self.ufl_element().value_shape())
-        if cpp.common.has_petsc_complex():
+        if common.has_petsc_complex():
             values = np.empty((1, value_size), dtype=np.complex128)
         else:
             values = np.empty((1, value_size))
