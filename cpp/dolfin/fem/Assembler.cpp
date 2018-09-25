@@ -75,6 +75,20 @@ la::PETScMatrix assemble_matrix(const Form& a)
   // throw std::runtime_error("Short-hand matrix assembly implemented yet.");
   // return A;
 }
+//-----------------------------------------------------------------------------
+void ident(
+    la::PETScMatrix& A,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    PetscScalar diag)
+{
+  // FIXME: make this process-wise to avoid extra communication step
+  // MatZeroRowsLocal(A.mat(), rows.size(), rows.data(), diag, NULL, NULL);
+  for (Eigen::Index i = 0; i < rows.size(); ++i)
+  {
+    const PetscInt row = rows[i];
+    A.add_local(&diag, 1, &row, 1, &row);
+  }
+}
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -359,7 +373,7 @@ void fem::assemble(la::PETScMatrix& A,
             const Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
                 = Assembler::get_local_bc_rows(*a[i][j]->function_space(0),
                                                bcs);
-            Assembler::ident(mat, rows);
+            ident(mat, rows, 1.0);
           }
 
           MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
@@ -401,7 +415,7 @@ void fem::assemble(la::PETScMatrix& A,
     {
       const Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
           = Assembler::get_local_bc_rows(*a[0][0]->function_space(0), bcs);
-      Assembler::ident(A, rows);
+      ident(A, rows, 1.0);
     }
   }
 
@@ -490,20 +504,6 @@ void Assembler::assemble_local(
 
   // Restore array
   VecRestoreArray(b, &b_array);
-}
-//-----------------------------------------------------------------------------
-void Assembler::ident(
-    la::PETScMatrix& A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-    PetscScalar diag)
-{
-  // FIXME: make this process-wise to avoid extra communication step
-  // MatZeroRowsLocal(A.mat(), rows.size(), rows.data(), diag, NULL, NULL);
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
-  {
-    const PetscInt row = rows[i];
-    A.add_local(&diag, 1, &row, 1, &row);
-  }
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> Assembler::get_local_bc_rows(

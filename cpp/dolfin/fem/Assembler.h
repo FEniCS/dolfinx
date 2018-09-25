@@ -69,12 +69,12 @@ la::PETScMatrix assemble(const std::vector<std::vector<const Form*>> a,
 void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-//----------------------------------------------------------------------------
-
 // FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETScVector
 void set_bc(la::PETScVector& b, const Form& L,
             std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
+//----------------------------------------------------------------------------
 
 // FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETSc Vec
@@ -123,12 +123,12 @@ public:
                  const std::vector<std::shared_ptr<const Form>> a,
                  const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // Add '1' to diagonal for Dirichlet rows. Rows must be local to the
-  // process.
-  static void
-  ident(la::PETScMatrix& A,
-        const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-        PetscScalar diag = 1.0);
+  // // Add '1' to diagonal for Dirichlet rows. Rows must be local to the
+  // // process.
+  // static void
+  // ident(la::PETScMatrix& A,
+  //       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+  //       PetscScalar diag = 1.0);
 
   // Get dof indices that have a boundary condition applied. Indices
   // are local and ghost indices are not included.
