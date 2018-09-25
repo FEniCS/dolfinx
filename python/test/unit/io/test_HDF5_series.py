@@ -10,7 +10,7 @@ from dolfin import (UnitSquareMesh, MPI, FunctionSpace, Function, Expression,
 import dolfin.cpp as cpp
 from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_if_complex,
                                xfail_with_serial_hdf5_in_parallel)
-if has_hdf5():
+if has_hdf5:
     from dolfin.io import HDF5File
 assert(tempdir)
 

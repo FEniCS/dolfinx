@@ -45,9 +45,9 @@ def mesh_factory(tdim, n):
 
 
 def invalid_config(encoding):
-    return (not has_hdf5() and encoding == XDMFFile.Encoding.HDF5) \
+    return (not has_hdf5 and encoding == XDMFFile.Encoding.HDF5) \
         or (encoding == XDMFFile.Encoding.ASCII and MPI.size(MPI.comm_world) > 1) \
-        or (not has_hdf5_parallel() and MPI.size(MPI.comm_world) > 1)
+        or (not has_hdf5_parallel and MPI.size(MPI.comm_world) > 1)
 
 
 def invalid_fe(fe_family, fe_degree):
@@ -166,7 +166,7 @@ def test_save_1d_scalar(tempdir, encoding):
     # FIXME: This randomly hangs in parallel
     V = FunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex() else 0)
+    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
 
     with XDMFFile(mesh.mpi_comm(), filename2, encoding=encoding) as file:
         file.write(u)
@@ -192,7 +192,7 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
     u_in = Function(V)
     u_out = Function(V)
 
-    if has_petsc_complex():
+    if has_petsc_complex:
         u_out.interpolate(Expression("x[0] + j*x[0]", degree=1))
     else:
         u_out.interpolate(Expression("x[0]", degree=1))
@@ -227,7 +227,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
     u_in = Function(V)
     u_out = Function(V)
 
-    if has_petsc_complex():
+    if has_petsc_complex:
         if mesh.geometry.dim == 1:
             u_out.interpolate(Expression(("x[0] + j*x[0]", ), degree=1))
         elif mesh.geometry.dim == 2:
@@ -296,7 +296,7 @@ def test_save_2d_scalar(tempdir, encoding):
     # FIXME: This randomly hangs in parallel
     V = FunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex() else 0)
+    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
@@ -310,7 +310,7 @@ def test_save_3d_scalar(tempdir, encoding):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     V = FunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex() else 0)
+    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
@@ -324,7 +324,7 @@ def test_save_2d_vector(tempdir, encoding):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     V = VectorFunctionSpace(mesh, "Lagrange", 2)
     u = Function(V)
-    c = Constant((1.0 + (1j if has_petsc_complex() else 0), 2.0))
+    c = Constant((1.0 + (1j if has_petsc_complex else 0), 2.0))
     u.interpolate(c)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -338,7 +338,7 @@ def test_save_3d_vector(tempdir, encoding):
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 1))
-    A = 1.0 + (1j if has_petsc_complex() else 0)
+    A = 1.0 + (1j if has_petsc_complex else 0)
     c = Constant((1.0 + A, 2.0 + 2 * A, 3.0 + 3 * A))
     u.interpolate(c)
 
@@ -355,13 +355,13 @@ def test_save_3d_vector_series(tempdir, encoding):
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        u.vector()[:] = 1.0 + (1j if has_petsc_complex() else 0)
+        u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
         file.write(u, 0.1)
 
-        u.vector()[:] = 2.0 + (2j if has_petsc_complex() else 0)
+        u.vector()[:] = 2.0 + (2j if has_petsc_complex else 0)
         file.write(u, 0.2)
 
-        u.vector()[:] = 3.0 + (3j if has_petsc_complex() else 0)
+        u.vector()[:] = 3.0 + (3j if has_petsc_complex else 0)
         file.write(u, 0.3)
 
 
@@ -372,7 +372,7 @@ def test_save_2d_tensor(tempdir, encoding):
     filename = os.path.join(tempdir, "tensor.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex() else 0)
+    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
@@ -385,7 +385,7 @@ def test_save_3d_tensor(tempdir, encoding):
     filename = os.path.join(tempdir, "u3t.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex() else 0)
+    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)

@@ -9,70 +9,21 @@ import functools
 
 from dolfin import cpp
 
-
-class Variable:
-    """Common class for DOLFIN variables
-    """
-    def __init__(self):
-        self._cpp_object = cpp.common.Variable()
-        self.parameters = self._cpp_object.parameters
-
-    def rename(self, new_name: str):
-        self._cpp_object.rename(new_name)
-
-    def name(self):
-        return self._cpp_object.name()
-
-    def id(self):
-        return self._cpp_object.id()
-
-
-def has_debug():
-    return cpp.common.has_debug()
-
-
-def has_hdf5():
-    return cpp.common.has_hdf5()
-
-
-def has_hdf5_parallel():
-    return cpp.common.has_hdf5_parallel()
-
-
-def has_mpi4py():
-    return cpp.common.has_mpi4py()
-
-
-def has_parmetis():
-    return cpp.common.has_parmetis()
-
-
-def has_scotch():
-    return cpp.common.has_scotch()
-
-
-def has_petsc_complex():
-    return cpp.common.has_petsc_complex()
-
-
-def has_slepc():
-    return cpp.common.has_slepc()
-
-
-def has_petsc4py():
-    return cpp.common.has_petsc4py()
-
-
-def has_slepc4py():
-    return cpp.common.has_slepc4py()
-
-
-def git_commit_hash():
-    return cpp.common.git_commit_hash()
-
-
+# FIXME: replace possibly with numpy.finfo
 DOLFIN_EPS = cpp.common.DOLFIN_EPS
-DOLFIN_PI = cpp.common.DOLFIN_PI
+
+has_debug = cpp.common.has_debug()
+has_hdf5 = cpp.common.has_hdf5()
+has_hdf5_parallel = cpp.common.has_hdf5_parallel()
+has_mpi4py = cpp.common.has_mpi4py()
+has_parmetis = cpp.common.has_parmetis()
+has_scotch = cpp.common.has_scotch()
+has_petsc_complex = cpp.common.has_petsc_complex()
+has_slepc = cpp.common.has_slepc()
+has_petsc4py = cpp.common.has_petsc4py()
+has_slepc4py = cpp.common.has_slepc4py()
+
+git_commit_hash = cpp.common.git_commit_hash()
 
 TimingType = cpp.common.TimingType
 
@@ -171,7 +122,7 @@ def timed(task: str):
     return decorator
 
 
-if has_mpi4py():
+if has_mpi4py:
 
     class MPICommWrapper:
         """DOLFIN is compiled without support for mpi4py. This object

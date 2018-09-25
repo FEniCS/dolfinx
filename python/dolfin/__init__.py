@@ -33,10 +33,10 @@ from .cpp import __version__
 
 
 from dolfin.common import (
-    Variable, has_debug, has_hdf5, has_scotch, has_hdf5_parallel,
+    has_debug, has_hdf5, has_scotch, has_hdf5_parallel,
     has_mpi4py, has_petsc_complex, has_petsc4py, has_parmetis,
-    has_slepc, has_slepc4py, git_commit_hash, DOLFIN_EPS, DOLFIN_PI,
-    TimingType, timing, timings, list_timings)
+    has_slepc, has_slepc4py, git_commit_hash,
+    TimingType, timing, timings, list_timings, DOLFIN_EPS)
 
 from dolfin.common import MPI
 
@@ -46,7 +46,7 @@ from .cpp.fem import (FiniteElement, DofMap)
 from .cpp.geometry import BoundingBoxTree, Point
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
 
-if has_slepc():
+if has_slepc:
     from .cpp.la import SLEPcEigenSolver
 
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, CellType, Cell, Facet,
