@@ -22,7 +22,6 @@
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
-#include <dolfin/la/Scalar.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/VectorSpaceBasis.h>
 
@@ -122,20 +121,6 @@ void la(py::module& m)
       .def("insert_local_global",
            &dolfin::la::SparsityPattern::insert_local_global);
 
-  // dolfin::la::Scalar
-  py::class_<dolfin::la::Scalar, std::shared_ptr<dolfin::la::Scalar>>(m,
-                                                                      "Scalar")
-      .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfin::la::Scalar>(comm.get());
-      }))
-      .def("add", &dolfin::la::Scalar::add)
-      .def("apply", &dolfin::la::Scalar::apply)
-      .def("mpi_comm",
-           [](dolfin::la::Scalar& self) {
-             return MPICommWrapper(self.mpi_comm());
-           })
-      .def("value", &dolfin::la::Scalar::value);
-
   py::class_<dolfin::la::PETScOptions>(m, "PETScOptions")
       .def_static("set",
                   (void (*)(std::string)) & dolfin::la::PETScOptions::set)
@@ -165,8 +150,7 @@ void la(py::module& m)
       .def(py::init<const dolfin::common::IndexMap&>())
       .def(py::init(
           [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
-             const Eigen::Ref<
-                 const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+             const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
                  ghost_indices,
              int block_size) {
             return dolfin::la::PETScVector(comm.get(), range, ghost_indices,
