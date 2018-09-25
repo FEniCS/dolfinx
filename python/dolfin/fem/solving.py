@@ -13,19 +13,11 @@ as well as the solve function.
 """
 
 import ufl
-import dolfin.cpp as cpp
-from dolfin.cpp.la import PETScVector, PETScMatrix, \
-    PETScKrylovSolver, PETScOptions
-from dolfin.cpp.fem import SystemAssembler
-from dolfin.function.function import Function
-from dolfin.fem.form import Form
-# import dolfin.fem.formmanipulations as formmanipulations
-import dolfin.la.solver
 
-# __all__ = ["NonlinearVariationalProblem",
-#            "NonlinearVariationalSolver",
-#            "solve"]
-
+from dolfin import cpp
+from dolfin import la
+from dolfin import fem
+from dolfin import function
 
 # FIXME: The code is this file is outrageously convolute because one
 # function an do a number of unrelated operations, depending in the
@@ -176,7 +168,7 @@ def solve(*args, **kwargs):
             raise RuntimeError(
                 "Not expecting keyword arguments when solving linear algebra problem.")
 
-        return dolfin.la.solver.solve(*args)
+        return la.solve(*args)
 
 
 def _solve_varproblem(*args, **kwargs):
@@ -189,21 +181,21 @@ def _solve_varproblem(*args, **kwargs):
     # Solve linear variational problem
     if isinstance(eq.lhs, ufl.Form) and isinstance(eq.rhs, ufl.Form):
 
-        a = Form(eq.lhs, form_compiler_parameters=form_compiler_parameters)
-        L = Form(eq.rhs, form_compiler_parameters=form_compiler_parameters)
+        a = fem.Form(eq.lhs, form_compiler_parameters=form_compiler_parameters)
+        L = fem.Form(eq.rhs, form_compiler_parameters=form_compiler_parameters)
 
-        A = PETScMatrix()
-        b = PETScVector()
+        A = cpp.la.PETScMatrix()
+        b = cpp.la.PETScVector()
 
-        assembler = SystemAssembler(a._cpp_object, L._cpp_object, bcs)
+        assembler = cpp.fem.SystemAssembler(a._cpp_object, L._cpp_object, bcs)
         assembler.assemble(A, b)
 
         comm = L._cpp_object.mesh().mpi_comm()
-        solver = PETScKrylovSolver(comm)
+        solver = cpp.la.PETScKrylovSolver(comm)
 
         solver.set_options_prefix("dolfin_solve_")
         for k, v in petsc_options.items():
-            PETScOptions.set("dolfin_solve_" + k, v)
+            cpp.la.PETScOptions.set("dolfin_solve_" + k, v)
         solver.set_from_options()
 
         solver.set_operator(A)
@@ -306,7 +298,7 @@ def _extract_u(u):
     #
     # if isinstance(u, cpp.function.Function):
     #     return u
-    if isinstance(u, Function):
+    if isinstance(u, function.Function):
         return u
 
     raise RuntimeError("Expecting second argument to be a Function.")

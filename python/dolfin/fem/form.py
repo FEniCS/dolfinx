@@ -6,8 +6,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import ufl
-import dolfin.cpp as cpp
-from dolfin.jit.jit import dolfin_pc, ffc_jit
+
+from dolfin import cpp
+from dolfin import jit
 
 
 class Form(ufl.Form):
@@ -34,11 +35,11 @@ class Form(ufl.Form):
         # FIXME: move getting include paths to elsewhere
         if self.form_compiler_parameters is None:
             self.form_compiler_parameters = {
-                "external_include_dirs": dolfin_pc["include_dirs"]
+                "external_include_dirs": jit.dolfin_pc["include_dirs"]
             }
         else:
             # FIXME: add paths if dict entry already exists
-            self.form_compiler_parameters["external_include_dirs"] = dolfin_pc[
+            self.form_compiler_parameters["external_include_dirs"] = jit.dolfin_pc[
                 "include_dirs"]
 
         # Extract subdomain data from UFL form
@@ -48,7 +49,7 @@ class Form(ufl.Form):
         mesh = domain.ufl_cargo()
 
         # Compile UFL form with JIT
-        ufc_form = ffc_jit(
+        ufc_form = jit.ffc_jit(
             form,
             form_compiler_parameters=self.form_compiler_parameters,
             mpi_comm=mesh.mpi_comm())

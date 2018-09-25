@@ -9,10 +9,10 @@
 
 import types
 import ufl
-import dolfin.cpp as cpp
-from dolfin.function.constant import Constant
-from dolfin.function.functionspace import FunctionSpace
-from dolfin.fem.projection import project
+
+from dolfin import cpp
+from dolfin import function
+from dolfin import fem
 
 
 class AutoSubDomain(cpp.mesh.SubDomain):
@@ -64,7 +64,7 @@ class DirichletBC(cpp.fem.DirichletBC):
             return
 
         # Get FunctionSpace
-        if not isinstance(args[0], FunctionSpace):
+        if not isinstance(args[0], function.functionspace.FunctionSpace):
             raise RuntimeError("First argument must be of type FunctionSpace")
 
         # FIXME: correct the below comment
@@ -75,9 +75,9 @@ class DirichletBC(cpp.fem.DirichletBC):
             if not hasattr(args[1], "_cpp_object"):
                 if isinstance(args[1], ufl.classes.Expr):
                     # FIXME: This should really be interpolaton (project is expensive)
-                    expr = project(args[1], args[0])
+                    expr = fem.project(args[1], args[0])
                 else:
-                    expr = Constant(args[1])
+                    expr = function.function.Constant(args[1])
                 args = args[:1] + (expr,) + args[2:]
 
         # Get boundary condition field (the condition that is applied)
