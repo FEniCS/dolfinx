@@ -17,6 +17,5 @@ namespace dolfin
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/SLEPcEigenSolver.h>
-#include <dolfin/la/Scalar.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/VectorSpaceBasis.h>
