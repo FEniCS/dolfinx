@@ -38,7 +38,7 @@ from dolfin.common import (
     has_slepc, has_slepc4py, git_commit_hash,
     TimingType, timing, timings, list_timings, DOLFIN_EPS)
 
-from dolfin.common import MPI
+import dolfin.MPI
 
 from .cpp.function import (Expression, Constant)
 from .cpp.fem import (FiniteElement, DofMap)
