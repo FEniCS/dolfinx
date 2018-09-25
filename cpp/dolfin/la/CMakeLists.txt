@@ -5,7 +5,6 @@ set(HEADERS
   PETScOperator.h
   PETScOptions.h
   PETScVector.h
-  Scalar.h
   SLEPcEigenSolver.h
   SparsityPattern.h
   utils.h
