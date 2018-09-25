@@ -6,10 +6,10 @@
 # Garth N. Wells <gnw20@cam.ac.uk>
 # Jan Blechta <blechta@karlin.mff.cuni.cz>
 #
-# To build images:
+# To build development environment images:
 #
-#    docker build --target complex -t quay.io/fenicsproject/dolfinx:complex .
-#    docker build --target real -t quay.io/fenicsproject/dolfinx:latest .
+#    docker build --target dev-env-complex -t quay.io/fenicsproject/dolfinx:complex .
+#    docker build --target dev-env-real -t quay.io/fenicsproject/dolfinx:latest .
 #
 # To push images to quay.io:
 #
@@ -85,9 +85,9 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     rm -rf /tmp/*
 
 
-FROM base as real
+FROM base as dev-env-real
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
-LABEL description="FEniCS test environment with PETSc real mode"
+LABEL description="FEniCS development environment with PETSc real mode"
 
 WORKDIR /tmp
 
@@ -140,24 +140,9 @@ ARG SLEPC4PY_VERSION=3.9.0
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
-# Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
-# RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
-#     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
-#     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
-#     pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
 
-# Install dolfinx (real types)
-# RUN git clone https://github.com/fenics/dolfinx.git && \
-#     cd dolfinx && \
-#     mkdir build && \
-#     cd build && \
-#     cmake ../cpp && \
-#     make install && \
-#     rm -rf /tmp/*
-
-
-FROM base as complex
-LABEL description="FEniCS test environment with PETSc complex mode"
+FROM base as dev-env-complex
+LABEL description="FEniCS development environment with PETSc complex mode"
 
 WORKDIR /tmp
 
@@ -206,11 +191,59 @@ ARG SLEPC4PY_VERSION=3.9.0
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
+
+FROM dev-env-real as dolfin-real
+LABEL description="DOLFIN-X in real mode"
+
+WORKDIR /tmp
+
+# Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
+RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
+    pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+
 # Install dolfinx
-# RUN git clone https://github.com/fenics/dolfinx.git && \
-#     cd dolfinx && \
-#     mkdir build && \
-#     cd build && \
-#     cmake ../cpp && \
-#     make install && \
-#     rm -rf /tmp/*
+RUN git clone https://github.com/fenics/dolfinx.git && \
+    cd dolfinx && \
+    mkdir build && \
+    cd build && \
+    cmake -G Ninja ../cpp && \
+    ninja install && \
+    cd ../python && \
+    pip3 install . && \
+    rm -rf /tmp/*
+
+
+FROM dev-env-complex as dolfin-complex
+LABEL description="DOLFIN-X in complex mode"
+
+WORKDIR /tmp
+
+# Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
+RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
+    pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
+
+# Install dolfinx
+RUN git clone https://github.com/fenics/dolfinx.git && \
+    cd dolfinx && \
+    mkdir build && \
+    cd build && \
+    cmake -G Ninja ../cpp && \
+    ninja install && \
+    cd ../python && \
+    pip3 install . && \
+    rm -rf /tmp/*
+
+
+FROM dolfin-real as dolfin-notebook
+LABEL description="DOLFIN-X Jupyter Notebook"
+RUN pip3 install jupyter
+ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+
+FROM dolfin-complex as dolfin-complex-notebook
+LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
+RUN pip3 install jupyter
+ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
