@@ -251,11 +251,13 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
 
 FROM dolfin-real as dolfin-notebook
 LABEL description="DOLFIN-X Jupyter Notebook"
+WORKDIR /root
 RUN pip3 install jupyter
 ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
 
 
 FROM dolfin-complex as dolfin-complex-notebook
 LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
+WORKDIR /root
 RUN pip3 install jupyter
 ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
