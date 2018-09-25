@@ -7,9 +7,10 @@
 
 """Create a constant-valued function with given value."""
 
-import ufl
-import dolfin.cpp as cpp
 import numpy
+import ufl
+
+from dolfin import cpp
 
 
 class Constant(ufl.Coefficient):

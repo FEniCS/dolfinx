@@ -10,11 +10,10 @@ import numpy as np
 import ufl
 from ufl.classes import ComponentTensor, Sum, Product, Division
 from ufl.utils.indexflattening import shape_to_strides, flatten_multiindex
-import dolfin.cpp as cpp
-import dolfin.la as la
-from dolfin.function.functionspace import FunctionSpace
-from dolfin.function.expression import Expression
-from dolfin.function.constant import Constant
+
+from dolfin import cpp
+from dolfin import la
+from dolfin import function
 
 
 def _assign_error():
@@ -48,7 +47,7 @@ def _check_mul_and_division(e,
     if isinstance(e, Product):
         for i, op in enumerate(e.ufl_operands):
             if isinstance(op, ScalarValue) or \
-               (isinstance(op, Constant) and op.value_size() == 1):
+               (isinstance(op, function.Constant) and op.value_size() == 1):
                 scalar = op
                 expr = e.ufl_operands[1 - i]
                 break
@@ -59,7 +58,7 @@ def _check_mul_and_division(e,
     elif isinstance(e, Division):
         expr, scalar = e.ufl_operands
         if not (isinstance(scalar, ScalarValue)
-                or isinstance(scalar, Constant) and scalar.value_rank() == 1):
+                or isinstance(scalar, function.Constant) and scalar.value_rank() == 1):
             _assign_error()
         scalar_weight /= float(scalar)
     else:
@@ -114,7 +113,7 @@ def _check_and_extract_functions(e,
     linear_comb = linear_comb or []
 
     # First check u
-    if isinstance(e, Function):
+    if isinstance(e, function.Function):
         linear_comb.append((e, scalar_weight))
         return linear_comb
 
@@ -179,7 +178,7 @@ class Function(ufl.Coefficient):
     def __init__(self, *args, **kwargs):
         """Initialize Function."""
 
-        if isinstance(args[0], Function):
+        if isinstance(args[0], function.Function):
             other = args[0]
             if len(args) == 1:
                 # Copy constructor used to be here
@@ -209,7 +208,7 @@ class Function(ufl.Coefficient):
                 self,
                 self.function_space().ufl_function_space(),
                 count=self._cpp_object.id())
-        elif isinstance(args[0], FunctionSpace):
+        elif isinstance(args[0], function.FunctionSpace):
             V = args[0]
 
             # If initialising from a FunctionSpace
@@ -246,7 +245,7 @@ class Function(ufl.Coefficient):
 
     def function_space(self):
         "Return the FunctionSpace"
-        return FunctionSpace(self._cpp_object.function_space())
+        return function.FunctionSpace(self._cpp_object.function_space())
 
     def value_rank(self):
         return self._cpp_object.value_rank()
@@ -336,9 +335,12 @@ class Function(ufl.Coefficient):
     def copy(self, deepcopy=False):
         # See https://bitbucket.org/fenics-project/dolfin/issues/702
         if deepcopy:
-            return Function(self.function_space(),
-                            self._cpp_object.vector().copy())
-        return Function(self.function_space(), self._cpp_object.vector())
+            return function.Function(
+                self.function_space(),
+                self._cpp_object.vector().copy())
+        return function.Function(
+            self.function_space(),
+            self._cpp_object.vector())
 
     def vector(self):
         return self._cpp_object.vector()
@@ -359,7 +361,8 @@ class Function(ufl.Coefficient):
             if self == rhs:
                 return
             self._cpp_object._assign(rhs)
-        elif isinstance(rhs, (Constant, Function, Expression)):
+        elif isinstance(rhs, (function.Constant,
+                              function.Function, function.Expression)):
             # Avoid self assignment
             if self == rhs:
                 return
@@ -433,11 +436,13 @@ class Function(ufl.Coefficient):
 
     def root_node(self):
         u = self._cpp_object.root_node()
-        return Function(FunctionSpace(u.function_space()), u.vector())
+        return function.Function(
+            function.FunctionSpace(u.function_space()), u.vector())
 
     def leaf_node(self):
         u = self._cpp_object.leaf_node()
-        return Function(FunctionSpace(u.function_space()), u.vector())
+        return function.Function(
+            function.FunctionSpace(u.function_space()), u.vector())
 
     def cpp_object(self):
         return self._cpp_object
@@ -465,7 +470,7 @@ class Function(ufl.Coefficient):
 
         # Create and instantiate the Function
         if deepcopy:
-            return Function(
+            return function.Function(
                 self.function_space().sub(i),
                 self.cpp_object().sub(i),
                 name='%s-%d' % (str(self), i))

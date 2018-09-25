@@ -6,7 +6,13 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import ufl
-import dolfin.cpp as cpp
+
+from dolfin import cpp
+
+__all__ = [
+    "MeshFunction",
+    "MeshValueCollection"
+]
 
 _meshfunction_types = {"bool": cpp.mesh.MeshFunctionBool,
                        "size_t": cpp.mesh.MeshFunctionSizet,

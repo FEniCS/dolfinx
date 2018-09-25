@@ -5,14 +5,15 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import os
+
 import hashlib
 import dijitso
 import re
 
 from dolfin.cpp.log import log, LogLevel
-from . import get_pybind_include
-import dolfin.cpp as cpp
-from dolfin.jit.jit import dijitso_jit, dolfin_pc
+from dolfin import cpp
+from dolfin import jit
 
 
 def jit_generate(cpp_code, module_name, signature, parameters):
@@ -52,15 +53,15 @@ def compile_cpp_code(cpp_code, include_dirs=[], libs=[], lib_dirs=[],
     params['cache']['lib_loader'] = "import"
 
     # Include path and library info from DOLFIN (dolfin.pc)
-    params['build']['include_dirs'] = dolfin_pc["include_dirs"] + get_pybind_include() \
+    params['build']['include_dirs'] = jit.dolfin_pc["include_dirs"] + get_pybind_include() \
         + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
-    params['build']['libs'] = dolfin_pc["libraries"] + [pyversion]
-    params['build']['lib_dirs'] = dolfin_pc["library_dirs"] + [sysconfig.get_config_var("LIBDIR")]
+    params['build']['libs'] = jit.dolfin_pc["libraries"] + [pyversion]
+    params['build']['lib_dirs'] = jit.dolfin_pc["library_dirs"] + [sysconfig.get_config_var("LIBDIR")]
 
     params['build']['cxxflags'] += ('-fno-lto',)
 
     # Enable all macros from dolfin.pc
-    dmacros = ['-D' + dm for dm in dolfin_pc['define_macros']]
+    dmacros = ['-D' + dm for dm in jit.dolfin_pc['define_macros']]
 
     params['build']['cxxflags'] += tuple(dmacros)
 
@@ -74,7 +75,42 @@ def compile_cpp_code(cpp_code, include_dirs=[], libs=[], lib_dirs=[],
     module_hash = hashlib.md5(hash_str.encode('utf-8')).hexdigest()
     module_name = "dolfin_cpp_module_" + module_hash
 
-    module, signature = dijitso_jit(cpp_code, module_name, params,
-                                    generate=jit_generate)
+    module, signature = jit.dijitso_jit(
+        cpp_code, module_name, params, generate=jit_generate)
 
     return module
+
+
+def get_pybind_include():
+    """Find the pybind11 include path"""
+
+    # Look in PYBIND11_DIR
+    pybind_dir = os.getenv('PYBIND11_DIR', None)
+    if pybind_dir:
+        p = os.path.join(pybind_dir, "include")
+        if (_check_pybind_path(p)):
+            return [p]
+
+    # Try extracting from pybind11 module
+    try:
+        # Get include paths from module
+        import pybind11
+        return [pybind11.get_include(True), pybind11.get_include()]
+    except Exception:
+        pass
+
+    # Look in /usr/local/include and /usr/include
+    root = os.path.abspath(os.sep)
+    for p in (os.path.join(root, "usr", "local", "include"), os.path.join(root, "usr", "include")):
+        if (_check_pybind_path(p)):
+            return [p]
+
+    raise RuntimeError("Unable to locate pybind11 header files")
+
+
+def _check_pybind_path(root):
+    p = os.path.join(root, "pybind11", "pybind11.h")
+    if os.path.isfile(p):
+        return True
+    else:
+        return False

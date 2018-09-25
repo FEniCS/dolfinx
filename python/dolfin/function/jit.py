@@ -8,7 +8,8 @@
 """FIXME: Add description"""
 
 from dolfin.cpp.log import log, LogLevel
-from dolfin.jit.jit import compile_class, _math_header
+from dolfin import jit
+from dolfin.jit.jit import _math_header
 
 
 def jit_generate(class_data, module_name, signature, parameters):
@@ -160,5 +161,5 @@ def compile_expression(statements, properties):
     cpp_data = {'statements': statements, 'properties': properties,
                 'name': 'expression', 'jit_generate': jit_generate}
 
-    expression = compile_class(cpp_data)
+    expression = jit.compile_class(cpp_data)
     return expression
