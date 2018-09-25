@@ -9,11 +9,12 @@ import numpy
 import hashlib
 import dijitso
 import ffc
+from functools import wraps
+
 
 from dolfin import pkgconfig
 from dolfin import cpp
-from functools import wraps
-
+from dolfin import parameter
 
 # Get DOLFIN pkg-config data
 if pkgconfig.exists("dolfin"):
@@ -99,7 +100,7 @@ def ffc_jit(ufl_form, form_compiler_parameters=None):
 
     # Prepare form compiler parameters with overrides from dolfin and kwargs
     p = ffc.default_jit_parameters()
-    p.update(dict(cpp.parameter.parameters["form_compiler"]))
+    p.update(dict(parameter.parameters["form_compiler"]))
     p.update(form_compiler_parameters or {})
     return ffc.jit(ufl_form, parameters=p)
 
