@@ -13,6 +13,7 @@ import ufl
 from ufl.utils.indexflattening import (flatten_multiindex,
                                        shape_to_strides)
 
+from dolfin import common
 from dolfin import cpp
 from dolfin import function
 
@@ -98,7 +99,7 @@ class BaseExpression(ufl.Coefficient):
             assert len(shape) == len(component)
             value_size = ufl.product(shape)
             index = flatten_multiindex(component, shape_to_strides(shape))
-            if cpp.common.has_petsc_complex():
+            if common.has_petsc_complex:
                 dtype = numpy.complex128
             else:
                 dtype = numpy.float64
@@ -136,7 +137,7 @@ class BaseExpression(ufl.Coefficient):
 
         # If values (return argument) is passed, check the type and
         # length
-        if cpp.common.has_petsc_complex():
+        if common.has_petsc_complex:
             dtype = numpy.complex128
         else:
             dtype = numpy.float64

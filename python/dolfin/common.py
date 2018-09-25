@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017 Jan Blechta
+# Copyright (C) 2018 Michal Habera
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -9,10 +9,38 @@ import functools
 
 from dolfin import cpp
 
-__all__ = ["Timer", "timed"]
+# FIXME: replace possibly with numpy.finfo
+DOLFIN_EPS = cpp.common.DOLFIN_EPS
+
+has_debug = cpp.common.has_debug()
+has_hdf5 = cpp.common.has_hdf5()
+has_hdf5_parallel = cpp.common.has_hdf5_parallel()
+has_mpi4py = cpp.common.has_mpi4py()
+has_parmetis = cpp.common.has_parmetis()
+has_scotch = cpp.common.has_scotch()
+has_petsc_complex = cpp.common.has_petsc_complex()
+has_slepc = cpp.common.has_slepc()
+has_petsc4py = cpp.common.has_petsc4py()
+has_slepc4py = cpp.common.has_slepc4py()
+
+git_commit_hash = cpp.common.git_commit_hash()
+
+TimingType = cpp.common.TimingType
 
 
-class Timer(cpp.common.Timer):
+def timing(task: str):
+    return cpp.common.timing(task)
+
+
+def timings(timing_types: list):
+    return cpp.common.timings(timing_types)
+
+
+def list_timings(timing_types: list):
+    return cpp.common.list_timings(timing_types)
+
+
+class Timer:
     """A timer can be used for timing tasks. The basic usage is::
 
         with Timer(\"Some costly operation\"):
@@ -43,18 +71,35 @@ class Timer(cpp.common.Timer):
 
         list_timings([TimingType.wall, TimingType.user])
     """
+    def __init__(self, name: str = None):
+        if name is None:
+            self._cpp_object = cpp.common.Timer()
+        else:
+            self._cpp_object = cpp.common.Timer(name)
 
     def __enter__(self):
-        self.start()
+        self._cpp_object.start()
         return self
 
     def __exit__(self, *args):
-        self.stop()
+        self._cpp_object.stop()
+
+    def start(self):
+        self._cpp_object.start()
+
+    def stop(self):
+        return self._cpp_object.stop()
+
+    def resume(self):
+        self._cpp_object.resume()
+
+    def elapsed(self):
+        return self._cpp_object.elapsed()
 
 
-def timed(task):
+def timed(task: str):
     """
-Decorator for timing functions. Usage::
+    Decorator for timing functions. Usage::
 
     @timed(\"Do Foo\")
     def do_foo(*args, **kwargs):

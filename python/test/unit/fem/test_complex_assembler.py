@@ -13,7 +13,7 @@ import ufl
 from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
-    not dolfin.has_petsc_complex(), reason="Only works in complex mode.")
+    not dolfin.has_petsc_complex, reason="Only works in complex mode.")
 
 
 def test_complex_assembly():

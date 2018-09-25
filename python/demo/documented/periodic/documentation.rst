@@ -23,6 +23,8 @@ First, the :py:mod:`dolfin` module is imported
 
 .. code-block:: python
 
+    import numpy
+
     from dolfin import *
 
 A subclass of :py:class:`Expression <dolfin.cpp.function.Expression>`,
@@ -37,7 +39,7 @@ for a function at the given point ``x``.
         def eval(self, values, x):
             dx = x[0] - 0.5
             dy = x[1] - 0.5
-            values[0] = x[0]*sin(5.0*DOLFIN_PI*x[1]) \
+            values[0] = x[0]*sin(5.0*numpy.pi*x[1]) \
                         + 1.0*exp(-(dx*dx + dy*dy)/0.02)
 
 To define the boundaries, we create subclasses of the class

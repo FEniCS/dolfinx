@@ -9,9 +9,7 @@
 import random
 from time import sleep
 
-from dolfin import timing
-from dolfin.timer import Timer
-
+from dolfin import common
 
 # Seed random generator for determinism
 random.seed(0)
@@ -27,19 +25,19 @@ def test_context_manager_named():
     task = get_random_task_name()
 
     # Execute task in the context manager
-    t = Timer(task)
+    t = common.Timer(task)
     sleep(0.05)
     assert t.elapsed()[0] >= 0.05
     del t
 
     # Check timing
-    t = timing(task)
+    t = common.timing(task)
     assert t[0] == 1
     assert t[1] >= 0.05
 
 
 def test_context_manager_anonymous():
     """Test that anonymous Timer works as context manager"""
-    with Timer() as t:
+    with common.Timer() as t:
         sleep(0.05)
         assert t.elapsed()[0] >= 0.05
