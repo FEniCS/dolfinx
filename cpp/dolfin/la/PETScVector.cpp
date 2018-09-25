@@ -580,7 +580,11 @@ void PETScVector::gather(PETScVector& y,
 
   // Perform scatter
   VecScatter scatter;
+  #if PETSC_VERSION_LE(3, 10, 100)
   ierr = VecScatterCreate(_x, from, y.vec(), to, &scatter);
+  #else
+  ierr = VecScatterCreateWithData(_x, from, y.vec(), to, &scatter);
+  #endif
   CHECK_ERROR("VecScatterCreate");
   ierr = VecScatterBegin(scatter, _x, y.vec(), INSERT_VALUES, SCATTER_FORWARD);
   CHECK_ERROR("VecScatterBegin");
