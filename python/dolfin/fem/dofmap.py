@@ -5,8 +5,6 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from functools import singledispatch
-
 from dolfin import cpp
 
 
@@ -34,19 +32,24 @@ def make_ufc_coordinate_mapping(ufc_coordinate_mapping):
     return cpp.fem.make_ufc_coordinate_mapping(ufc_coordinate_mapping)
 
 
-
 class DofMap:
     """Degree-of-freedom map
 
     This class handles the mapping of degrees of freedom. It builds
-    a dof map based on a ufc_dofmap on a specific mesh. 
+    a dof map based on a ufc_dofmap on a specific mesh.
     """
 
-    def __init__(self, *args):
-        if isinstance(args[0], cpp.fem.DofMap):
-            self._cpp_object = args[0]
-        else:
-            self._cpp_object = cpp.fem.DofMap(args[0], args[1])
+    def __init__(self, cpp_dofmap=None):
+        self._cpp_object = cpp_dofmap
+
+    @classmethod
+    def fromcpp(cls, cpp_dofmap):
+        return cls(cpp_dofmap)
+
+    @classmethod
+    def fromufl(cls, ufc_dofmap, mesh):
+        cpp_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh)
+        return cls(cpp_dofmap)
 
     def global_dimension(self):
         return self._cpp_object.global_dimension()

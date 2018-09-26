@@ -25,8 +25,8 @@ from dolfin.fem.solving import solve
 __all__ = [
     "assemble_local", "assemble_system", "assemble", "assemble_vector",
     "assemble_matrix", "set_bc", "SystemAssembler", "create_coordinate_map",
-    "DirichletBC", "AutoSubDomain", "DofMap", "make_ufc_dofmap",
-    "make_ufc_coordinate_mapping", "make_ufc_finite_element",
+    "DirichletBC", "AutoSubDomain", "DofMap", "make_ufc_dofmap", "make_ufc_dofmap",
+    "make_ufc_coordinate_mapping", "make_ufc_finite_element", "make_ufc_form",
     "make_ufc_finite_element", "Form", "derivative", "adjoint",
     "increase_order", "tear", "interpolate", "project", "solve"
 ]
