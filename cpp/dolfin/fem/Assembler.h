@@ -97,18 +97,18 @@ public:
   /// the correct size. This local to a process. The vector is modified
   /// for b <- b - A x_bc, where x_bc contains prescribed values. BC
   /// values are not inserted into bc positions.
-  static void
-      assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-               const Form& L, const std::vector<std::shared_ptr<const Form>> a,
-               const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+  static void assemble_eigen(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+      const Form& L, const std::vector<std::shared_ptr<const Form>> a,
+      const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   /// Assemble linear form into a ghosted PETSc Vec. The vector is modified
   // for b <- b - A x_bc, where x_bc contains prescribed values, and BC
   // values set in bc positions.
   static void
-  assemble(Vec b, const Form& L,
-           const std::vector<std::shared_ptr<const Form>> a,
-           const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+  assemble_ghosted(Vec b, const Form& L,
+                   const std::vector<std::shared_ptr<const Form>> a,
+                   const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
   // Get IndexSets (IS) for stacked index maps
   static std::vector<IS>
@@ -127,8 +127,8 @@ public:
   // // process.
   // static void
   // ident(la::PETScMatrix& A,
-  //       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-  //       PetscScalar diag = 1.0);
+  //       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+  //       rows, PetscScalar diag = 1.0);
 
   // Get dof indices that have a boundary condition applied. Indices
   // are local and ghost indices are not included.
@@ -139,29 +139,12 @@ public:
   // Get sub-matrix
   static la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);
 
-  // Assemble matrix, with Dirichlet rows/columns zeroed. The matrix A
-  // must already be initialised. The matrix may be a proxy, i.e. a view
-  // into a larger matrix, and assembly is performed using local
-  // indices. Matrix is not finalised.
-  static void _assemble_matrix(la::PETScMatrix& A, const Form& a,
-                               const std::vector<std::int32_t>& bc_dofs0,
-                               const std::vector<std::int32_t>& bc_dofs1);
-
   // Modify RHS vector to account for boundary condition (b <- b - Ax,
   // where x holds prescribed boundary values)
   static void
       modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
                 const Form& a,
                 std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
-  // Bilinear and linear forms
-  std::vector<std::vector<std::shared_ptr<const Form>>> _a;
-  std::vector<std::shared_ptr<const Form>> _l;
-
-  // Dirichlet boundary conditions
-  std::vector<std::shared_ptr<const DirichletBC>> _bcs;
-
-  // std::array<std::vector<IS>, 2> _block_is;
 };
 } // namespace fem
 } // namespace dolfin
