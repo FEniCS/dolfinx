@@ -4,22 +4,20 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <petscis.h>
+
 #include "Assembler.h"
 #include "DirichletBC.h"
 #include "Form.h"
 #include "GenericDofMap.h"
-#include "SparsityPatternBuilder.h"
 #include "utils.h"
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <string>
-
-#include <petscis.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
