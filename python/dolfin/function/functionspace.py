@@ -8,6 +8,7 @@
 import ufl
 
 from dolfin import cpp
+from dolfin import fem
 from dolfin import jit
 
 
@@ -32,6 +33,8 @@ class FunctionSpace(ufl.FunctionSpace):
             else:
                 self._init_convenience(*args, **kwargs)
 
+        self._dofmap = fem.DofMap(self._cpp_object.dofmap())
+
     def _init_from_ufl(self, mesh, element, constrained_domain=None):
 
         # Initialize the ufl.FunctionSpace first to check for good
@@ -41,21 +44,23 @@ class FunctionSpace(ufl.FunctionSpace):
         # Compile dofmap and element
         ufc_element, ufc_dofmap = jit.ffc_jit(
             element, form_compiler_parameters=None, mpi_comm=mesh.mpi_comm())
-        ufc_element = cpp.fem.make_ufc_finite_element(ufc_element)
+        ufc_element = fem.make_ufc_finite_element(ufc_element)
 
         # Create DOLFIN element and dofmap
         dolfin_element = cpp.fem.FiniteElement(ufc_element)
-        ufc_dofmap = cpp.fem.make_ufc_dofmap(ufc_dofmap)
+        ufc_dofmap = fem.make_ufc_dofmap(ufc_dofmap)
         if constrained_domain is None:
-            dolfin_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh)
+            dolfin_dofmap = fem.DofMap(ufc_dofmap, mesh)
         else:
-            dolfin_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh,
-                                           constrained_domain)
+            raise NotImplementedError()
+            # FIXME: Implement
+            # dolfin_dofmap = fem.DofMap(ufc_dofmap, mesh,
+            #                            constrained_domain)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.function.FunctionSpace(mesh,
                                                       dolfin_element,
-                                                      dolfin_dofmap)
+                                                      dolfin_dofmap._cpp_object)
 
     def _init_from_cpp(self, cppV, **kwargs):
         """
@@ -164,7 +169,7 @@ class FunctionSpace(ufl.FunctionSpace):
         return self._cpp_object.element()
 
     def dofmap(self):
-        return self._cpp_object.dofmap()
+        return self._dofmap
 
     def mesh(self):
         return self._cpp_object.mesh()

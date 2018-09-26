@@ -37,7 +37,7 @@ def xtest_str(mesh, V):
     # Build sparse tensor layout (for assembly of matrix)
     sp = cpp.fem.SparsityPatternBuilder.build(
         mesh.mpi_comm(),
-        mesh, [dm, dm],
+        mesh, [dm._cpp_object, dm._cpp_object],
         True,
         False,
         False,
@@ -56,7 +56,7 @@ def test_insert_local(mesh, V):
 
     sp = cpp.fem.SparsityPatternBuilder.build(
         mesh.mpi_comm(),
-        mesh, [dm, dm],
+        mesh, [dm._cpp_object, dm._cpp_object],
         True,
         False,
         False,
