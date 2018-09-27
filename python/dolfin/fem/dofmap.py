@@ -49,7 +49,7 @@ class DofMap:
             Pointer to ufc_dofmap as returned by FFC JIT
         mesh: dolfin.cpp.mesh.Mesh
         """
-        ufc_dofmap = fem.make_ufc_dofmap(ufc_dofmap)
+        ufc_dofmap = fem.dofmap.make_ufc_dofmap(ufc_dofmap)
         cpp_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh)
         return cls(cpp_dofmap)
 
