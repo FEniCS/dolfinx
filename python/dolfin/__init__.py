@@ -40,8 +40,7 @@ from dolfin.common import (
 
 import dolfin.MPI
 
-from .cpp.function import (Expression, Constant)
-from .cpp.fem import (FiniteElement, DofMap)
+from dolfin.fem import DofMap
 
 from .cpp.geometry import BoundingBoxTree, Point
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
