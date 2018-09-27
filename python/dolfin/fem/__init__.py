@@ -12,9 +12,7 @@ from dolfin.fem.assembling import (assemble_local, assemble_system,
                                    SystemAssembler)
 from dolfin.fem.coordinatemapping import create_coordinate_map
 from dolfin.fem.dirichletbc import DirichletBC, AutoSubDomain
-from dolfin.fem.dofmap import (DofMap, make_ufc_dofmap,
-                               make_ufc_coordinate_mapping,
-                               make_ufc_finite_element, make_ufc_form)
+from dolfin.fem.dofmap import DofMap
 from dolfin.fem.form import Form
 from dolfin.fem.formmanipulations import (derivative, adjoint, increase_order,
                                           tear)
@@ -25,8 +23,6 @@ from dolfin.fem.solving import solve
 __all__ = [
     "assemble_local", "assemble_system", "assemble", "assemble_vector",
     "assemble_matrix", "set_bc", "SystemAssembler", "create_coordinate_map",
-    "DirichletBC", "AutoSubDomain", "DofMap", "make_ufc_dofmap", "make_ufc_dofmap",
-    "make_ufc_coordinate_mapping", "make_ufc_finite_element", "make_ufc_form",
-    "make_ufc_finite_element", "Form", "derivative", "adjoint",
+    "DirichletBC", "AutoSubDomain", "DofMap", "Form", "derivative", "adjoint",
     "increase_order", "tear", "interpolate", "project", "solve"
 ]

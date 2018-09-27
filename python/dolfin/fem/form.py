@@ -55,7 +55,7 @@ class Form(ufl.Form):
             form_compiler_parameters=self.form_compiler_parameters,
             mpi_comm=mesh.mpi_comm())
         # Cast compiled library to pointer to ufc_form
-        ufc_form = fem.make_ufc_form(ufc_form[0])
+        ufc_form = fem.dofmap.make_ufc_form(ufc_form[0])
 
         # For every argument in form extract its function space
         function_spaces = [
