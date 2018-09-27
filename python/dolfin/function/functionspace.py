@@ -35,7 +35,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         # Make DofMap of cpp.function.FunctionSpace a member
         # Is returned by corresponding member method
-        self._dofmap = fem.DofMap().fromcpp(self._cpp_object.dofmap())
+        self._dofmap = fem.DofMap(self._cpp_object.dofmap())
 
     def _init_from_ufl(self, mesh, element, constrained_domain=None):
 

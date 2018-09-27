@@ -44,16 +44,6 @@ class DofMap:
         self._cpp_object = cpp_dofmap
 
     @classmethod
-    def fromcpp(cls, cpp_dofmap):
-        """Initialize from C++ dofmap
-
-        Parameters
-        ----------
-        cpp_dofmap: dolfin.cpp.fem.DofMap
-        """
-        return cls(cpp_dofmap)
-
-    @classmethod
     def fromufc(cls, ufc_dofmap, mesh):
         """Initialize from UFC dofmap and mesh
 
