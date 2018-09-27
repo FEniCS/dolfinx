@@ -183,7 +183,7 @@ def compile_class(cpp_data):
 
     # Set properties to initial values
     # FIXME: maybe remove from here (do it in Expression instead)
-    for k, v in properties.items():
-        python_object.set_property(k, v)
+    for name, v in properties.items():
+        python_object.set_property(name, v)
 
     return python_object
