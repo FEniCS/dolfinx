@@ -10,26 +10,22 @@ from dolfin import fem
 
 
 def make_ufc_finite_element(ufc_finite_element):
-    """Returns ufc finite element from a pointer
-    """
+    """Returns ufc finite element from a pointer"""
     return cpp.fem.make_ufc_finite_element(ufc_finite_element)
 
 
 def make_ufc_dofmap(ufc_dofmap):
-    """Returns ufc dofmap from a pointer
-    """
+    """Returns ufc dofmap from a pointer"""
     return cpp.fem.make_ufc_dofmap(ufc_dofmap)
 
 
 def make_ufc_form(ufc_form):
-    """Returns ufc form from a pointer
-    """
+    """Returns ufc form from a pointer"""
     return cpp.fem.make_ufc_form(ufc_form)
 
 
 def make_ufc_coordinate_mapping(ufc_coordinate_mapping):
-    """Returns ufc coordinate mapping from a pointer
-    """
+    """Returns ufc coordinate mapping from a pointer"""
     return cpp.fem.make_ufc_coordinate_mapping(ufc_coordinate_mapping)
 
 
