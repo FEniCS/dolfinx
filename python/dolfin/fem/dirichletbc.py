@@ -4,15 +4,12 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
 """FIXME: add description"""
 
 import types
-import ufl
 
-from dolfin import cpp
-from dolfin import function
-from dolfin import fem
+import ufl
+from dolfin import cpp, fem, function
 
 
 class AutoSubDomain(cpp.mesh.SubDomain):
@@ -23,17 +20,17 @@ class AutoSubDomain(cpp.mesh.SubDomain):
 
         # Check that we get a function
         if not isinstance(inside_function, types.FunctionType):
-            raise RuntimeError("bcs.py",
-                               "auto-create subdomain",
-                               "Expecting a function (not %s)" %
-                               str(type(inside_function)))
+            raise RuntimeError(
+                "bcs.py", "auto-create subdomain",
+                "Expecting a function (not %s)" % str(type(inside_function)))
         self.inside_function = inside_function
 
         # Check the number of arguments
         if inside_function.__code__.co_argcount not in (1, 2):
-            raise RuntimeError("bcs.py",
-                               "auto-create subdomain",
-                               "Expecting a function of the form inside(x) or inside(x, on_boundary)")
+            raise RuntimeError(
+                "bcs.py", "auto-create subdomain",
+                "Expecting a function of the form inside(x) or inside(x, on_boundary)"
+            )
         self.num_args = inside_function.__code__.co_argcount
 
         super().__init__()
@@ -57,7 +54,8 @@ class DirichletBC(cpp.fem.DirichletBC):
         if len(args) == 1:
             if not isinstance(args[0], cpp.fem.DirichletBC):
                 raise RuntimeError(
-                    "Expecting a DirichleBC as only argument for copy constructor")
+                    "Expecting a DirichleBC as only argument for copy constructor"
+                )
 
             # Initialize base class
             cpp.fem.DirichletBC.__init__(self, args[0])
@@ -78,7 +76,7 @@ class DirichletBC(cpp.fem.DirichletBC):
                     expr = fem.project(args[1], args[0])
                 else:
                     expr = function.function.Constant(args[1])
-                args = args[:1] + (expr,) + args[2:]
+                args = args[:1] + (expr, ) + args[2:]
 
         # Get boundary condition field (the condition that is applied)
         if isinstance(args[1], float) or isinstance(args[1], int):
@@ -88,11 +86,12 @@ class DirichletBC(cpp.fem.DirichletBC):
         elif isinstance(args[1], cpp.function.GenericFunction):
             u = args[1]
         else:
-            raise RuntimeError("Second argument must be convertiable to a GenericFunction: ",
-                               args[1], type(args[1]))
-        args = args[:1] + (u,) + args[2:]
+            raise RuntimeError(
+                "Second argument must be convertiable to a GenericFunction: ",
+                args[1], type(args[1]))
+        args = args[:1] + (u, ) + args[2:]
 
-        args = (args[0]._cpp_object,) + args[1:]
+        args = (args[0]._cpp_object, ) + args[1:]
 
         # Case: Special sub domain 'inside' function provided as a
         # function
@@ -101,14 +100,14 @@ class DirichletBC(cpp.fem.DirichletBC):
             # function attached to AutoSubDomain get prematurely
             # destroyed. Maybe a pybind11 bug? Was the same with SWIG...
             self.sub_domain = AutoSubDomain(args[2])
-            args = args[:2] + (self.sub_domain,) + args[3:]
+            args = args[:2] + (self.sub_domain, ) + args[3:]
 
         # FIXME: for clarity, can the user provided function case be
         # handled here too?
         # Create SubDomain object
         if isinstance(args[2], cpp.mesh.SubDomain):
             self.sub_domain = args[2]
-            args = args[:2] + (self.sub_domain,) + args[3:]
+            args = args[:2] + (self.sub_domain, ) + args[3:]
         elif isinstance(args[2], cpp.mesh.MeshFunctionSizet):
             pass
         else:
@@ -118,12 +117,12 @@ class DirichletBC(cpp.fem.DirichletBC):
         if isinstance(args[-1], str):
             method = args[-1]
         else:
-            method = kwargs.pop(
-                "method", cpp.fem.DirichletBC.Method.topological)
-            args += (method,)
+            method = kwargs.pop("method",
+                                cpp.fem.DirichletBC.Method.topological)
+            args += (method, )
         check_midpoint = kwargs.pop("check_midpoint", None)
         if check_midpoint is not None:
-            args += (check_midpoint,)
+            args += (check_midpoint, )
 
         if (len(kwargs) > 0):
             raise RuntimeError("Invalid keyword arguments", kwargs)

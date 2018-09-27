@@ -7,14 +7,11 @@
 """Finite element functions"""
 
 import numpy as np
-import ufl
-from ufl.classes import ComponentTensor, Sum, Product, Division
-from ufl.utils.indexflattening import shape_to_strides, flatten_multiindex
 
-from dolfin import common
-from dolfin import cpp
-from dolfin import la
-from dolfin import function
+import ufl
+from dolfin import common, cpp, function, la
+from ufl.classes import ComponentTensor, Division, Product, Sum
+from ufl.utils.indexflattening import flatten_multiindex, shape_to_strides
 
 
 def _assign_error():
@@ -58,8 +55,8 @@ def _check_mul_and_division(e,
         scalar_weight *= float(scalar)
     elif isinstance(e, Division):
         expr, scalar = e.ufl_operands
-        if not (isinstance(scalar, ScalarValue)
-                or isinstance(scalar, function.Constant) and scalar.value_rank() == 1):
+        if not (isinstance(scalar, ScalarValue) or isinstance(
+                scalar, function.Constant) and scalar.value_rank() == 1):
             _assign_error()
         scalar_weight /= float(scalar)
     else:
@@ -336,12 +333,10 @@ class Function(ufl.Coefficient):
     def copy(self, deepcopy=False):
         # See https://bitbucket.org/fenics-project/dolfin/issues/702
         if deepcopy:
-            return function.Function(
-                self.function_space(),
-                self._cpp_object.vector().copy())
-        return function.Function(
-            self.function_space(),
-            self._cpp_object.vector())
+            return function.Function(self.function_space(),
+                                     self._cpp_object.vector().copy())
+        return function.Function(self.function_space(),
+                                 self._cpp_object.vector())
 
     def vector(self):
         return self._cpp_object.vector()
@@ -362,8 +357,7 @@ class Function(ufl.Coefficient):
             if self == rhs:
                 return
             self._cpp_object._assign(rhs)
-        elif isinstance(rhs, (function.Constant,
-                              function.Function, function.Expression)):
+        elif isinstance(rhs, (function.Constant, function.Function, function.Expression)):
             # Avoid self assignment
             if self == rhs:
                 return

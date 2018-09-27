@@ -97,4 +97,5 @@ from ufl import (
 from ufl.formoperators import action
 
 # Initialise PETSc
+from dolfin import cpp
 cpp.common.SubSystemsManager.init_petsc()

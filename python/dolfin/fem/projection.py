@@ -12,11 +12,7 @@ finite element space.
 """
 
 import ufl
-
-from dolfin import cpp
-from dolfin import function
-from dolfin import fem
-from dolfin import la
+from dolfin import cpp, fem, function, la
 
 
 def project(v,
