@@ -33,6 +33,8 @@ class FunctionSpace(ufl.FunctionSpace):
             else:
                 self._init_convenience(*args, **kwargs)
 
+        # Make DofMap of cpp.function.FunctionSpace a member
+        # Is returned by corresponding member method
         self._dofmap = fem.DofMap().fromcpp(self._cpp_object.dofmap())
 
     def _init_from_ufl(self, mesh, element, constrained_domain=None):
@@ -48,9 +50,8 @@ class FunctionSpace(ufl.FunctionSpace):
 
         # Create DOLFIN element and dofmap
         dolfin_element = cpp.fem.FiniteElement(ufc_element)
-        ufc_dofmap = fem.make_ufc_dofmap(ufc_dofmap)
         if constrained_domain is None:
-            dolfin_dofmap = fem.DofMap().fromufl(ufc_dofmap, mesh)
+            dolfin_dofmap = fem.DofMap().fromufc(ufc_dofmap, mesh)
         else:
             raise NotImplementedError()
             # FIXME: Implement

@@ -6,6 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from dolfin import cpp
+from dolfin import fem
 
 
 def make_ufc_finite_element(ufc_finite_element):
@@ -44,10 +45,25 @@ class DofMap:
 
     @classmethod
     def fromcpp(cls, cpp_dofmap):
+        """Initialize from C++ dofmap
+
+        Parameters
+        ----------
+        cpp_dofmap: dolfin.cpp.fem.DofMap
+        """
         return cls(cpp_dofmap)
 
     @classmethod
-    def fromufl(cls, ufc_dofmap, mesh):
+    def fromufc(cls, ufc_dofmap, mesh):
+        """Initialize from UFC dofmap and mesh
+
+        Parameters
+        ----------
+        ufc_dofmap
+            Pointer to ufc_dofmap as returned by FFC JIT
+        mesh: dolfin.cpp.mesh.Mesh
+        """
+        ufc_dofmap = fem.make_ufc_dofmap(ufc_dofmap)
         cpp_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh)
         return cls(cpp_dofmap)
 
@@ -66,22 +82,22 @@ class DofMap:
     def cell_dofs(self, cell_index: int):
         return self._cpp_object.cell_dofs(cell_index)
 
-    def dofs(self, mesh, entity_dim):
+    def dofs(self, mesh, entity_dim: int):
         return self._cpp_object.dofs(mesh, entity_dim)
 
-    def entity_dofs_all(self, mesh, entity_dim):
+    def entity_dofs_all(self, mesh, entity_dim: int):
         return self._cpp_object.entity_dofs(mesh, entity_dim)
 
-    def entity_dofs(self, mesh, entity_dim, entity_index):
+    def entity_dofs(self, mesh, entity_dim: int, entity_index: int):
         return self._cpp_object.entity_dofs(mesh, entity_dim, entity_index)
 
-    def num_entity_dofs(self, entity_dim):
+    def num_entity_dofs(self, entity_dim: int):
         return self._cpp_object.num_entity_dofs(entity_dim)
 
     def tabulate_local_to_global_dofs(self):
         return self._cpp_object.tabulate_local_to_global_dofs()
 
-    def tabulate_entity_dofs(self, entity_dim, cell_entity_index):
+    def tabulate_entity_dofs(self, entity_dim: int, cell_entity_index: int):
         return self._cpp_object.tabulate_entity_dofs(entity_dim,
                                                      cell_entity_index)
 
