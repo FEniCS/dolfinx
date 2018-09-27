@@ -7,7 +7,7 @@
 """Interface for UFL and DOLFN form arguments"""
 
 import ufl
-from dolfin import function
+from dolfin.function.functionspace import FunctionSpace
 
 # # TODO: Update this message to clarify dolfin.FunctionSpace vs
 # # ufl.FunctionSpace
@@ -22,10 +22,7 @@ from dolfin import function
 class Argument(ufl.Argument):
     """Representation of an argument to a form"""
 
-    def __init__(self,
-                 V: function.FunctionSpace,
-                 number: int,
-                 part: int = None):
+    def __init__(self, V: FunctionSpace, number: int, part: int = None):
         """Create a UFL/DOLFIN Argument"""
         ufl.Argument.__init__(self, V.ufl_function_space(), number, part)
         self._V = V
@@ -34,7 +31,7 @@ class Argument(ufl.Argument):
         """Return the FunctionSpace"""
         return self._V
 
-    def __eq__(self, other):
+    def __eq__(self, other: 'Argument'):
         """Extending UFL __eq__ here to distinguish test and trial functions
         in different function spaces with same ufl element.
 
@@ -47,17 +44,17 @@ class Argument(ufl.Argument):
         return ufl.Argument.__hash__(self)
 
 
-def TestFunction(V: function.FunctionSpace, part: int = None):
+def TestFunction(V: FunctionSpace, part: int = None):
     """Create a test function argument to a form"""
     return Argument(V, 0, part)
 
 
-def TrialFunction(V: function.FunctionSpace, part: int = None):
+def TrialFunction(V: FunctionSpace, part: int = None):
     """UFL value: Create a trial function argument to a form."""
     return Argument(V, 1, part)
 
 
-def Arguments(V: function.FunctionSpace, number: int):
+def Arguments(V: FunctionSpace, number: int):
     """Create an Argument in a mixed space, and return a tuple with the
     function components corresponding to the subelements.
 
@@ -65,7 +62,7 @@ def Arguments(V: function.FunctionSpace, number: int):
     return ufl.split(Argument(V, number))
 
 
-def TestFunctions(V: function.FunctionSpace):
+def TestFunctions(V: FunctionSpace):
     """Create a TestFunction in a mixed space, and return a
     tuple with the function components corresponding to the
     subelements.
@@ -74,7 +71,7 @@ def TestFunctions(V: function.FunctionSpace):
     return ufl.split(TestFunction(V))
 
 
-def TrialFunctions(V: function.FunctionSpace):
+def TrialFunctions(V: FunctionSpace):
     """Create a TrialFunction in a mixed space, and return a
     tuple with the function components corresponding to the
     subelements.
