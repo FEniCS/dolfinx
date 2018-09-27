@@ -4,7 +4,6 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
 """Simple interface for solving variational problems
 
 A small Python layer on top of the C++ VariationalProblem/Solver classes
@@ -13,11 +12,7 @@ as well as the solve function.
 """
 
 import ufl
-
-from dolfin import cpp
-from dolfin import la
-from dolfin import fem
-from dolfin import function
+from dolfin import cpp, fem, function, la
 
 # FIXME: The code is this file is outrageously convolute because one
 # function an do a number of unrelated operations, depending in the
@@ -155,7 +150,7 @@ def solve(*args, **kwargs):
 
     """
 
-    assert(len(args) > 0)
+    assert (len(args) > 0)
 
     # Call variational problem solver if we get an equation (but not a
     # tolerance)
@@ -166,7 +161,8 @@ def solve(*args, **kwargs):
     else:
         if kwargs:
             raise RuntimeError(
-                "Not expecting keyword arguments when solving linear algebra problem.")
+                "Not expecting keyword arguments when solving linear algebra problem."
+            )
 
         return la.solve(*args)
 
@@ -228,20 +224,24 @@ def _extract_args(*args, **kwargs):
     "Common extraction of arguments for _solve_varproblem[_adaptive]"
 
     # Check for use of valid kwargs
-    valid_kwargs = ["bcs", "J", "tol", "M",
-                    "form_compiler_parameters", "petsc_options"]
+    valid_kwargs = [
+        "bcs", "J", "tol", "M", "form_compiler_parameters", "petsc_options"
+    ]
     for kwarg in kwargs.keys():
         if kwarg not in valid_kwargs:
-            raise RuntimeError("Illegal keyword argument \'{}\'.".format(kwarg))
+            raise RuntimeError(
+                "Illegal keyword argument \'{}\'.".format(kwarg))
 
     # Extract equation
     if not len(args) >= 2:
         raise RuntimeError(
-            "Missing arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional")
+            "Missing arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional"
+        )
 
     if len(args) > 3:
         raise RuntimeError(
-            "Too many arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional")
+            "Too many arguments, expecting solve(lhs == rhs, u, bcs=bcs), where bcs is optional"
+        )
 
     # Extract equation
     eq = _extract_eq(args[0])
@@ -261,19 +261,22 @@ def _extract_args(*args, **kwargs):
     J = kwargs.get("J", None)
     if J is not None and not isinstance(J, ufl.Form):
         raise RuntimeError(
-            "Solve variational problem. Expecting Jacobian J to be a UFL Form.")
+            "Solve variational problem. Expecting Jacobian J to be a UFL Form."
+        )
 
     # Extract tolerance
     tol = kwargs.get("tol", None)
     if tol is not None and not (isinstance(tol, (float, int)) and tol >= 0.0):
         raise RuntimeError(
-            "Solve variational problem. Expecting tolerance tol to be a non-negative number.")
+            "Solve variational problem. Expecting tolerance tol to be a non-negative number."
+        )
 
     # Extract functional
     M = kwargs.get("M", None)
     if M is not None and not isinstance(M, ufl.Form):
         raise RuntimeError(
-            "Solve variational problem. Expecting goal functional M to be a UFL Form.")
+            "Solve variational problem. Expecting goal functional M to be a UFL Form."
+        )
 
     # Extract parameters
     form_compiler_parameters = kwargs.get("form_compiler_parameters", {})
@@ -286,7 +289,8 @@ def _extract_eq(eq):
     "Extract and check argument eq"
     if not isinstance(eq, ufl.classes.Equation):
         raise RuntimeError(
-            "Solve variational problem. Expecting first argument to be an Equation.")
+            "Solve variational problem. Expecting first argument to be an Equation."
+        )
 
     return eq
 
@@ -317,6 +321,7 @@ def _extract_bcs(bcs):
     for bc in bcs:
         if not isinstance(bc, cpp.fem.DirichletBC):
             raise RuntimeError(
-                "solve variational problem. Unable to extract boundary condition arguments")
+                "solve variational problem. Unable to extract boundary condition arguments"
+            )
 
     return bcs

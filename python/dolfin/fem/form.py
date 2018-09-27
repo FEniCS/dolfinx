@@ -6,10 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import ufl
-
-from dolfin import cpp
-from dolfin import fem
-from dolfin import jit
+from dolfin import cpp, fem, jit
 
 
 class Form(ufl.Form):
@@ -40,8 +37,8 @@ class Form(ufl.Form):
             }
         else:
             # FIXME: add paths if dict entry already exists
-            self.form_compiler_parameters["external_include_dirs"] = jit.dolfin_pc[
-                "include_dirs"]
+            self.form_compiler_parameters[
+                "external_include_dirs"] = jit.dolfin_pc["include_dirs"]
 
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()

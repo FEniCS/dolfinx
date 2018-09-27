@@ -4,18 +4,17 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
 """Create a constant-valued function with given value."""
 
-import numpy
-import ufl
+import typing
 
-from dolfin import cpp
-from dolfin import common
+import numpy
+
+import ufl
+from dolfin import common, cpp
 
 
 class Constant(ufl.Coefficient):
-
     def __init__(self, value, cell=None, name=None):
         """
         Create constant-valued function with given value.
@@ -66,11 +65,13 @@ class Constant(ufl.Coefficient):
             ufl_element = ufl.FiniteElement("Real", cell, 0)
             self._cpp_object = cpp.function.Constant(value_list[0])
         elif rank == 1:
-            ufl_element = ufl.VectorElement("Real", cell, 0, dim=len(value_list))
+            ufl_element = ufl.VectorElement(
+                "Real", cell, 0, dim=len(value_list))
             self._cpp_object = cpp.function.Constant(value_list)
         else:
             ufl_element = ufl.TensorElement("Real", cell, 0, shape=array.shape)
-            self._cpp_object = cpp.function.Constant(list(array.shape), value_list)
+            self._cpp_object = cpp.function.Constant(
+                list(array.shape), value_list)
 
         # Initialize base classes
         ufl_function_space = ufl.FunctionSpace(ufl_domain, ufl_element)

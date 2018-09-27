@@ -4,11 +4,10 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
 """FIXME: Add description"""
 
-from dolfin.cpp.log import log, LogLevel
 from dolfin import jit
+from dolfin.cpp.log import LogLevel, log
 from dolfin.jit.jit import _math_header
 
 
@@ -93,7 +92,8 @@ extern "C" DLL_EXPORT dolfin::function::Expression * create_{classname}()
     _get_props = """          if (name == "{key_name}") return {name};"""
     _set_props = """          if (name == "{key_name}") {{ {name} = _value; return; }}"""
 
-    log(LogLevel.TRACE, "Calling dijitso just-in-time (JIT) compiler for Expression.")
+    log(LogLevel.TRACE,
+        "Calling dijitso just-in-time (JIT) compiler for Expression.")
 
     statements = class_data["statements"]
     statement = ""
@@ -119,36 +119,41 @@ extern "C" DLL_EXPORT dolfin::function::Expression * create_{classname}()
             set_props += _set_props.format(key_name=k, name=k)
             get_props += _get_props.format(key_name=k, name=k)
         elif hasattr(value, "_cpp_object"):
-            members += "std::shared_ptr<dolfin::function::GenericFunction> generic_function_{key};\n".format(key=k)
-            set_generic_function += _set_props.format(key_name=k,
-                                                      name="generic_function_" + k)
-            get_generic_function += _get_props.format(key_name=k,
-                                                      name="generic_function_" + k)
+            members += "std::shared_ptr<dolfin::function::GenericFunction> generic_function_{key};\n".format(
+                key=k)
+            set_generic_function += _set_props.format(
+                key_name=k, name="generic_function_" + k)
+            get_generic_function += _get_props.format(
+                key_name=k, name="generic_function_" + k)
 
             value_size = value._cpp_object.value_size()
             if value_size == 1:
                 _setup_statement = """          PetscScalar {key};
-            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<PetscScalar, 1, 1>>(&{key}), x);\n""".format(key=k)
+            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<PetscScalar, 1, 1>>(&{key}), x);\n""".format(
+                    key=k)
             else:
                 _setup_statement = """          PetscScalar {key}[{value_size}];
 
-            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<PetscScalar, {value_size}, 1>>({key}), x);\n""".format(key=k, value_size=value_size)  # noqa:E501
+            generic_function_{key}->eval(Eigen::Map<Eigen::Matrix<PetscScalar, {value_size}, 1>>({key}), x);\n""".format(
+                    key=k, value_size=value_size)  # noqa:E501
             statement = _setup_statement + statement
 
     # Set the value_shape to pass to initialiser
-    value_shape = str(class_data['value_shape']).replace("(", "{").replace(")", "}")
+    value_shape = str(class_data['value_shape']).replace("(", "{").replace(
+        ")", "}")
 
     classname = signature
-    code_c = template_code.format(statement=statement,
-                                  classname=classname,
-                                  members=members,
-                                  value_shape=value_shape,
-                                  constructor=constructor,
-                                  set_props=set_props,
-                                  get_props=get_props,
-                                  get_generic_function=get_generic_function,
-                                  set_generic_function=set_generic_function,
-                                  math_header=_math_header)
+    code_c = template_code.format(
+        statement=statement,
+        classname=classname,
+        members=members,
+        value_shape=value_shape,
+        constructor=constructor,
+        set_props=set_props,
+        get_props=get_props,
+        get_generic_function=get_generic_function,
+        set_generic_function=set_generic_function,
+        math_header=_math_header)
 
     code_h = ""
     depends = []
@@ -158,8 +163,12 @@ extern "C" DLL_EXPORT dolfin::function::Expression * create_{classname}()
 
 def compile_expression(statements, properties):
 
-    cpp_data = {'statements': statements, 'properties': properties,
-                'name': 'expression', 'jit_generate': jit_generate}
+    cpp_data = {
+        'statements': statements,
+        'properties': properties,
+        'name': 'expression',
+        'jit_generate': jit_generate
+    }
 
     expression = jit.compile_class(cpp_data)
     return expression
