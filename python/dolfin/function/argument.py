@@ -6,8 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Interface for UFL and DOLFN form arguments"""
 
-import typing
-
 import ufl
 from dolfin import function
 

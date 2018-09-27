@@ -357,9 +357,7 @@ class Function(ufl.Coefficient):
             if self == rhs:
                 return
             self._cpp_object._assign(rhs)
-        elif isinstance(
-                rhs,
-            (function.Constant, function.Function, function.Expression)):
+        elif isinstance(rhs, (function.Constant, function.Function, function.Expression)):
             # Avoid self assignment
             if self == rhs:
                 return

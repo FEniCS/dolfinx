@@ -6,8 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Create a constant-valued function with given value."""
 
-import typing
-
 import numpy
 
 import ufl
