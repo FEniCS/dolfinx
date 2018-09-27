@@ -24,14 +24,18 @@ def test_gradient():
         V = FunctionSpace(mesh, "Lagrange", 1)
         W = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
 
-        G = DiscreteOperators.build_gradient(W, V)
+        G = DiscreteOperators.build_gradient(W._cpp_object, V._cpp_object)
         num_edges = mesh.num_entities_global(1)
         assert G.size()[0] == num_edges
         assert G.size()[1] == mesh.num_entities_global(0)
-        assert round(G.norm(dolfin.cpp.la.Norm.frobenius) - sqrt(2.0 * num_edges), 8) == 0.0
+        assert round(
+            G.norm(dolfin.cpp.la.Norm.frobenius) - sqrt(2.0 * num_edges),
+            8) == 0.0
 
-    meshes = [UnitSquareMesh(MPI.comm_world, 11, 6),
-              UnitCubeMesh(MPI.comm_world, 4, 3, 7)]
+    meshes = [
+        UnitSquareMesh(MPI.comm_world, 11, 6),
+        UnitCubeMesh(MPI.comm_world, 4, 3, 7)
+    ]
     for mesh in meshes:
         compute_discrete_gradient(mesh)
 
@@ -43,12 +47,12 @@ def test_incompatible_spaces():
     V = FunctionSpace(mesh, "Lagrange", 1)
     W = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
     with pytest.raises(RuntimeError):
-        DiscreteOperators.build_gradient(V, W)
+        DiscreteOperators.build_gradient(V._cpp_object, W._cpp_object)
     with pytest.raises(RuntimeError):
-        DiscreteOperators.build_gradient(V, V)
+        DiscreteOperators.build_gradient(V._cpp_object, V._cpp_object)
     with pytest.raises(RuntimeError):
-        DiscreteOperators.build_gradient(W, W)
+        DiscreteOperators.build_gradient(W._cpp_object, W._cpp_object)
 
     V = FunctionSpace(mesh, "Lagrange", 2)
     with pytest.raises(RuntimeError):
-        DiscreteOperators.build_gradient(W, V)
+        DiscreteOperators.build_gradient(W._cpp_object, V._cpp_object)

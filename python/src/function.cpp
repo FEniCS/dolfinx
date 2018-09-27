@@ -52,11 +52,11 @@ void function(py::module& m)
               const dolfin::mesh::Cell& cell) { self.eval(u, x, cell); },
            "Evaluate GenericFunction (cell version)")
       .def("eval",
-           (void (dolfin::function::GenericFunction::*)(
+           py::overload_cast<
                Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>>,
-               Eigen::Ref<const dolfin::EigenRowArrayXXd>) const)
-               & dolfin::function::GenericFunction::eval,
+               Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
+               &dolfin::function::GenericFunction::eval, py::const_),
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
       .def("compute_point_values",
            py::overload_cast<const dolfin::mesh::Mesh&>(

@@ -7,7 +7,6 @@
 #include <Eigen/Dense>
 #include <iostream>
 #include <memory>
-#include <pybind11/cast.h>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -233,13 +232,7 @@ void fem(py::module& m)
              return map;
            })
       .def("user_subdomain", &dolfin::fem::DirichletBC::user_sub_domain)
-      .def("set_value", &dolfin::fem::DirichletBC::set_value)
-      .def("set_value", [](dolfin::fem::DirichletBC& self, py::object value) {
-        auto _u = value.attr("_cpp_object")
-                      .cast<std::shared_ptr<
-                          const dolfin::function::GenericFunction>>();
-        self.set_value(_u);
-      });
+      .def("set_value", &dolfin::fem::DirichletBC::set_value);
 
   py::enum_<dolfin::fem::BlockType>(
       m, "BlockType",
@@ -341,14 +334,7 @@ void fem(py::module& m)
   // dolfin::fem::DiscreteOperators
   py::class_<dolfin::fem::DiscreteOperators>(m, "DiscreteOperators")
       .def_static("build_gradient",
-                  &dolfin::fem::DiscreteOperators::build_gradient)
-      .def_static("build_gradient", [](py::object V0, py::object V1) {
-        auto _V0
-            = V0.attr("_cpp_object").cast<dolfin::function::FunctionSpace*>();
-        auto _V1
-            = V1.attr("_cpp_object").cast<dolfin::function::FunctionSpace*>();
-        return dolfin::fem::DiscreteOperators::build_gradient(*_V0, *_V1);
-      });
+                  &dolfin::fem::DiscreteOperators::build_gradient);
 
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
@@ -395,23 +381,14 @@ void fem(py::module& m)
                    std::shared_ptr<dolfin::function::Function>,
                    std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
                    std::shared_ptr<const dolfin::fem::Form>>())
-      // FIXME: is there a better way to handle the casting
       .def("set_bounds",
-           (void (dolfin::fem::NonlinearVariationalProblem::*)(
-               std::shared_ptr<const dolfin::la::PETScVector>,
-               std::shared_ptr<const dolfin::la::PETScVector>))
-               & dolfin::fem::NonlinearVariationalProblem::set_bounds)
+           py::overload_cast<std::shared_ptr<const dolfin::la::PETScVector>,
+                             std::shared_ptr<const dolfin::la::PETScVector>>(
+               &dolfin::fem::NonlinearVariationalProblem::set_bounds))
       .def("set_bounds",
-           (void (dolfin::fem::NonlinearVariationalProblem::*)(
-               const dolfin::function::Function&,
-               const dolfin::function::Function&))
-               & dolfin::fem::NonlinearVariationalProblem::set_bounds)
-      .def("set_bounds", [](dolfin::fem::NonlinearVariationalProblem& self,
-                            py::object lb, py::object ub) {
-        auto& _lb = lb.attr("_cpp_object").cast<dolfin::function::Function&>();
-        auto& _ub = ub.attr("_cpp_object").cast<dolfin::function::Function&>();
-        self.set_bounds(_lb, _ub);
-      });
+           py::overload_cast<const dolfin::function::Function&,
+                             const dolfin::function::Function&>(
+               &dolfin::fem::NonlinearVariationalProblem::set_bounds));
 
   // dolfin::fem::PETScDMCollection
   py::class_<dolfin::fem::PETScDMCollection,
@@ -419,29 +396,8 @@ void fem(py::module& m)
       m, "PETScDMCollection")
       .def(py::init<std::vector<
                std::shared_ptr<const dolfin::function::FunctionSpace>>>())
-      .def(py::init([](py::list V) {
-        std::vector<std::shared_ptr<const dolfin::function::FunctionSpace>> _V;
-        for (auto space : V)
-        {
-          auto _space = space.attr("_cpp_object")
-                            .cast<std::shared_ptr<
-                                const dolfin::function::FunctionSpace>>();
-          _V.push_back(_space);
-        }
-        return dolfin::fem::PETScDMCollection(_V);
-      }))
       .def_static("create_transfer_matrix",
                   &dolfin::fem::PETScDMCollection::create_transfer_matrix)
-      .def_static(
-          "create_transfer_matrix",
-          [](py::object V_coarse, py::object V_fine) {
-            auto _V0 = V_coarse.attr("_cpp_object")
-                           .cast<dolfin::function::FunctionSpace*>();
-            auto _V1 = V_fine.attr("_cpp_object")
-                           .cast<dolfin::function::FunctionSpace*>();
-            return dolfin::fem::PETScDMCollection::create_transfer_matrix(*_V0,
-                                                                          *_V1);
-          })
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
 }
