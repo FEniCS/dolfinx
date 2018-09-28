@@ -110,9 +110,6 @@ public:
                    const std::vector<std::shared_ptr<const Form>> a,
                    const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // Get IndexSets (IS) for stacked index maps
-  static std::vector<IS>
-  compute_index_sets(std::vector<const common::IndexMap*> maps);
 
   // private:
   // Assemble linear form into a local PETSc Vec. The vector is modified

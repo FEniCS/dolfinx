@@ -351,8 +351,8 @@ void fem::assemble(la::PETScMatrix& A,
   // else if (block_matrix)
   if (is_matnest or block_matrix)
   {
-    std::vector<IS> is_row = Assembler::compute_index_sets(maps[0]);
-    std::vector<IS> is_col = Assembler::compute_index_sets(maps[1]);
+    std::vector<IS> is_row = la::compute_index_sets(maps[0]);
+    std::vector<IS> is_col = la::compute_index_sets(maps[1]);
 
     for (std::size_t i = 0; i < a.size(); ++i)
     {
@@ -617,29 +617,6 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> Assembler::get_local_bc_rows(
                                                               _rows.size());
 
   return rows;
-}
-//-----------------------------------------------------------------------------
-std::vector<IS>
-Assembler::compute_index_sets(std::vector<const common::IndexMap*> maps)
-{
-  std::vector<IS> is(maps.size());
-
-  std::size_t offset = 0;
-  for (std::size_t i = 0; i < maps.size(); ++i)
-  {
-    assert(maps[i]);
-    // if (MPI::rank(MPI_COMM_WORLD) == 1)
-    //   std::cout << "CCC: " << i << ", " << maps[i]->size_local() << ", "
-    //             << maps[i]->num_ghosts() << std::endl;
-    const int size = maps[i]->size_local() + maps[i]->num_ghosts();
-    std::vector<PetscInt> index(size);
-    std::iota(index.begin(), index.end(), offset);
-    ISCreateBlock(MPI_COMM_SELF, maps[i]->block_size(), index.size(),
-                  index.data(), PETSC_COPY_VALUES, &is[i]);
-    offset += size;
-  }
-
-  return is;
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix Assembler::get_sub_matrix(const la::PETScMatrix& A, int i,

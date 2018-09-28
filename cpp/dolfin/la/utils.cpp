@@ -5,10 +5,34 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <cassert>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/log/log.h>
 #include <petsc.h>
 
+//-----------------------------------------------------------------------------
+std::vector<IS> dolfin::la::compute_index_sets(
+    std::vector<const dolfin::common::IndexMap*> maps)
+{
+  std::vector<IS> is(maps.size());
+  std::size_t offset = 0;
+  for (std::size_t i = 0; i < maps.size(); ++i)
+  {
+    assert(maps[i]);
+    // if (MPI::rank(MPI_COMM_WORLD) == 1)
+    //   std::cout << "CCC: " << i << ", " << maps[i]->size_local() << ", "
+    //             << maps[i]->num_ghosts() << std::endl;
+    const int size = maps[i]->size_local() + maps[i]->num_ghosts();
+    std::vector<PetscInt> index(size);
+    std::iota(index.begin(), index.end(), offset);
+    ISCreateBlock(MPI_COMM_SELF, maps[i]->block_size(), index.size(),
+                  index.data(), PETSC_COPY_VALUES, &is[i]);
+    offset += size;
+  }
+
+  return is;
+}
 //-----------------------------------------------------------------------------
 void dolfin::la::petsc_error(int error_code, std::string filename,
                              std::string petsc_function)
