@@ -88,60 +88,39 @@ void set_bc(Vec b, const Form& L,
 void set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
             const Form& L, std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-/// Assembly of LHS and RHS Forms with DirichletBC boundary conditions
-/// applied
-class Assembler
-{
-public:
-  /// Assemble linear form into an Eigen vector. The Eigen vector must
-  /// the correct size. This local to a process. The vector is modified
-  /// for b <- b - A x_bc, where x_bc contains prescribed values. BC
-  /// values are not inserted into bc positions.
-  static void assemble_eigen(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-      const Form& L, const std::vector<std::shared_ptr<const Form>> a,
-      const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+/// Modify RHS vector to account for boundary condition (b <- b - Ax,
+/// where x holds prescribed boundary values)
+void modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+               const Form& a,
+               std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  /// Assemble linear form into a ghosted PETSc Vec. The vector is modified
-  // for b <- b - A x_bc, where x_bc contains prescribed values, and BC
-  // values set in bc positions.
-  static void
-  assemble_ghosted(Vec b, const Form& L,
-                   const std::vector<std::shared_ptr<const Form>> a,
-                   const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+/// Assemble linear form into an Eigen vector. The Eigen vector must
+/// the correct size. This local to a process. The vector is modified
+/// for b <- b - A x_bc, where x_bc contains prescribed values. BC
+/// values are not inserted into bc positions.
+void assemble_eigen(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                    const Form& L,
+                    const std::vector<std::shared_ptr<const Form>> a,
+                    const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
+/// Assemble linear form into a ghosted PETSc Vec. The vector is modified
+/// for b <- b - A x_bc, where x_bc contains prescribed values, and BC
+/// values set in bc positions.
+void assemble_ghosted(
+    Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // private:
-  // Assemble linear form into a local PETSc Vec. The vector is modified
-  // for b <- b - A x_bc, where x_bc contains prescribed values. BC
-  // values are not inserted into bc positions.
-  static void
-  assemble_local(Vec& b, const Form& L,
-                 const std::vector<std::shared_ptr<const Form>> a,
-                 const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+/// Assemble linear form into a local PETSc Vec. The vector is modified
+/// for b <- b - A x_bc, where x_bc contains prescribed values. BC
+/// values are not inserted into bc positions.
+void assemble_local(Vec& b, const Form& L,
+                    const std::vector<std::shared_ptr<const Form>> a,
+                    const std::vector<std::shared_ptr<const DirichletBC>> bcs);
 
-  // // Add '1' to diagonal for Dirichlet rows. Rows must be local to the
-  // // process.
-  // static void
-  // ident(la::PETScMatrix& A,
-  //       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-  //       rows, PetscScalar diag = 1.0);
-
-  // Get dof indices that have a boundary condition applied. Indices
-  // are local and ghost indices are not included.
-  static Eigen::Array<PetscInt, Eigen::Dynamic, 1>
-  get_local_bc_rows(const function::FunctionSpace& V,
-                    std::vector<std::shared_ptr<const DirichletBC>> bcs);
-
-  // Get sub-matrix
-  static la::PETScMatrix get_sub_matrix(const la::PETScMatrix& A, int i, int j);
-
-  // Modify RHS vector to account for boundary condition (b <- b - Ax,
-  // where x holds prescribed boundary values)
-  static void
-      modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-                const Form& a,
-                std::vector<std::shared_ptr<const DirichletBC>> bcs);
-};
+/// Get dof indices that have a boundary condition applied. Indices
+/// are local and ghost indices are not included.
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+get_local_bc_rows(const function::FunctionSpace& V,
+                  std::vector<std::shared_ptr<const DirichletBC>> bcs);
 } // namespace fem
 } // namespace dolfin

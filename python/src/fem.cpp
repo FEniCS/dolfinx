@@ -21,7 +21,7 @@
 
 #include "casters.h"
 #include <dolfin/common/types.h>
-#include <dolfin/fem/Assembler.h>
+#include <dolfin/fem/assembler.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>

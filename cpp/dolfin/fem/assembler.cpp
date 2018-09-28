@@ -6,10 +6,10 @@
 
 #include <petscis.h>
 
-#include "Assembler.h"
 #include "DirichletBC.h"
 #include "Form.h"
 #include "GenericDofMap.h"
+#include "assembler.h"
 #include "utils.h"
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -132,7 +132,7 @@ la::PETScVector assemble_vector(const Form& L)
     throw std::runtime_error("Form must be rank 1");
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
-  Assembler::assemble_ghosted(b.vec(), L, {}, {});
+  fem::assemble_ghosted(b.vec(), L, {}, {});
   return b;
 }
 //-----------------------------------------------------------------------------
@@ -217,7 +217,7 @@ void fem::assemble(
       // Get sub-vector and assemble
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
-      Assembler::assemble_ghosted(sub_b, *L[i], a[i], bcs);
+      fem::assemble_ghosted(sub_b, *L[i], a[i], bcs);
     }
   }
   else if (L.size() > 1)
@@ -255,7 +255,7 @@ void fem::assemble(
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec(map_size0
                                                           + map_size1);
       b_vec.setZero();
-      Assembler::assemble_eigen(b_vec, *L[i], a[i], bcs);
+      fem::assemble_eigen(b_vec, *L[i], a[i], bcs);
 
       // Copy data into PETSc Vector
       for (int j = 0; j < map_size0; ++j)
@@ -286,7 +286,7 @@ void fem::assemble(
     }
   }
   else
-    Assembler::assemble_ghosted(b.vec(), *L[0], a[0], bcs);
+    fem::assemble_ghosted(b.vec(), *L[0], a[0], bcs);
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix
@@ -442,8 +442,7 @@ void fem::assemble(la::PETScMatrix& A,
           if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
           {
             const Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
-                = Assembler::get_local_bc_rows(*a[i][j]->function_space(0),
-                                               bcs);
+                = fem::get_local_bc_rows(*a[i][j]->function_space(0), bcs);
             ident(mat, rows, 1.0);
           }
 
@@ -485,7 +484,7 @@ void fem::assemble(la::PETScMatrix& A,
     if (*a[0][0]->function_space(0) == *a[0][0]->function_space(1))
     {
       const Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
-          = Assembler::get_local_bc_rows(*a[0][0]->function_space(0), bcs);
+          = fem::get_local_bc_rows(*a[0][0]->function_space(0), bcs);
       ident(A, rows, 1.0);
     }
   }
@@ -539,13 +538,13 @@ void fem::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-void Assembler::assemble_ghosted(
+void fem::assemble_ghosted(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
-  assemble_local(b_local, L, a, bcs);
+  fem::assemble_local(b_local, L, a, bcs);
 
   // Restore ghosted form and update local (owned) entries that are
   // ghosts on other processes
@@ -557,7 +556,7 @@ void Assembler::assemble_ghosted(
   set_bc(b, L, bcs);
 }
 //-----------------------------------------------------------------------------
-void Assembler::assemble_local(
+void fem::assemble_local(
     Vec& b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
@@ -577,9 +576,9 @@ void Assembler::assemble_local(
   VecRestoreArray(b, &b_array);
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> Assembler::get_local_bc_rows(
-    const function::FunctionSpace& V,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+fem::get_local_bc_rows(const function::FunctionSpace& V,
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   assert(V.mesh());
   const mesh::Mesh& mesh = *V.mesh();
@@ -619,41 +618,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> Assembler::get_local_bc_rows(
   return rows;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix Assembler::get_sub_matrix(const la::PETScMatrix& A, int i,
-                                          int j)
-{
-  MatType mat_type;
-  MatGetType(A.mat(), &mat_type);
-  const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
-
-  Mat subA = nullptr;
-  if (is_matnest)
-    MatNestGetSubMat(A.mat(), i, j, &subA);
-  else
-  {
-    // // Monolithic
-    // auto map0 = _a[i][j]->function_space(0)->dofmap()->index_map();
-    // auto map1 = _a[i][j]->function_space(1)->dofmap()->index_map();
-    // auto map0_size = map0->size_local() + map0->num_ghosts();
-    // auto map1_size = map1->size_local() + map1->num_ghosts();
-    // std::vector<PetscInt> index0(map0_size), index1(map1_size);
-    // std::iota(index0.begin(), index0.end(), offset_row);
-    // std::iota(index1.begin(), index1.end(), offset_col);
-
-    // IS is0, is1;
-    // ISCreateBlock(MPI_COMM_SELF, map0->block_size(), index0.size(),
-    //               index0.data(), PETSC_COPY_VALUES, &is0);
-    // ISCreateBlock(MPI_COMM_SELF, map1->block_size(), index1.size(),
-    //               index1.data(), PETSC_COPY_VALUES, &is1);
-
-    // MatGetLocalSubMatrix(A.mat(), is0, is1, &subA);
-  }
-
-  return la::PETScMatrix(subA);
-}
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-void Assembler::assemble_eigen(
+void fem::assemble_eigen(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs)
@@ -701,12 +666,13 @@ void Assembler::assemble_eigen(
 
   // Modify for any bcs
   for (std::size_t i = 0; i < a.size(); ++i)
-    modify_bc(b, *a[i], bcs);
+    fem::modify_bc(b, *a[i], bcs);
 }
 //-----------------------------------------------------------------------------
-void Assembler::modify_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+//-----------------------------------------------------------------------------
+void fem::modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+                    const Form& a,
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
   assert(a.rank() == 2);
 
