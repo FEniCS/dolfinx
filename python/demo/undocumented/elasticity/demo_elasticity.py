@@ -53,8 +53,9 @@ def build_nullspace(V, x):
 # XDMFFile(MPI.comm_world, "../pulley.xdmf").read(mesh)
 
 # mesh = UnitCubeMesh(2, 2, 2)
-mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0), Point(2, 1, 1)], [
-                      12, 12, 12], CellType.Type.tetrahedron,
+mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0)._cpp_object,
+                                       Point(2, 1, 1)._cpp_object],
+                      [12, 12, 12], CellType.Type.tetrahedron,
                       dolfin.cpp.mesh.GhostMode.none)
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
