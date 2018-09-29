@@ -4,18 +4,15 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
 """FIXME: Add description"""
 
 import types
-import numpy
-import ufl
-from ufl.utils.indexflattening import (flatten_multiindex,
-                                       shape_to_strides)
 
-from dolfin import common
-from dolfin import cpp
-from dolfin import function
+import numpy
+
+import ufl
+from dolfin import common, cpp, function
+from ufl.utils.indexflattening import flatten_multiindex, shape_to_strides
 
 
 def _select_element(family, cell, degree, value_shape):
@@ -145,7 +142,8 @@ class BaseExpression(ufl.Coefficient):
         if values is not None:
             if not isinstance(values, numpy.ndarray):
                 raise TypeError("expected a NumPy array for 'values'")
-            if len(values) != value_size or not numpy.issubdtype(values.dtype, dtype):
+            if len(values) != value_size or not numpy.issubdtype(
+                    values.dtype, dtype):
                 raise TypeError("expected a NumPy array of length"
                                 " %d for return values." % value_size)
             values_provided = True
@@ -247,26 +245,30 @@ class UserExpression(BaseExpression):
             if hasattr(self, "value_shape"):
                 value_shape = self.value_shape()
             else:
-                print("User expression has not supplied value_shape method or an element. Assuming scalar element.")
+                print(
+                    "User expression has not supplied value_shape method or an element. Assuming scalar element."
+                )
                 value_shape = ()
 
-            element = _select_element(family=None, cell=cell, degree=degree,
-                                      value_shape=value_shape)
+            element = _select_element(
+                family=None, cell=cell, degree=degree, value_shape=value_shape)
         else:
             value_shape = element.value_shape()
 
         self._cpp_object = _InterfaceExpression(self, value_shape)
-        BaseExpression.__init__(self, cell=cell, element=element, domain=domain,
-                                name=name)
+        BaseExpression.__init__(
+            self, cell=cell, element=element, domain=domain, name=name)
 
 
 class ExpressionParameters(object):
     """Storage and setting/getting of User Parameters attached to Expression"""
+
     def __init__(self, cpp_object, params):
         self._params = params
         self._cpp_object = cpp_object
         if "user_parameters" in self._params:
-            raise RuntimeError("'user_parameters' is reserved. Do not use in Expression")
+            raise RuntimeError(
+                "'user_parameters' is reserved. Do not use in Expression")
         for k, v in self._params.items():
             self[k] = v
 
@@ -307,7 +309,9 @@ class CompiledExpression(BaseExpression):
         # mpi_comm = kwargs.pop("mpi_comm", None)
 
         if not isinstance(cpp_module, cpp.function.Expression):
-            raise RuntimeError("Must supply compiled C++ Expression module to CompiledExpression")
+            raise RuntimeError(
+                "Must supply compiled C++ Expression module to CompiledExpression"
+            )
         else:
             self._cpp_object = cpp_module
 
@@ -316,25 +320,27 @@ class CompiledExpression(BaseExpression):
                 if not isinstance(k, str):
                     raise KeyError("User Parameter key must be a string")
                 if not hasattr(self._cpp_object, k):
-                    raise AttributeError("Compiled module does not have attribute %s", k)
+                    raise AttributeError(
+                        "Compiled module does not have attribute %s", k)
                 setattr(self._cpp_object, k, val)
 
         if element and degree:
-            raise RuntimeError("Cannot specify an element and a degree for Expressions.")
+            raise RuntimeError(
+                "Cannot specify an element and a degree for Expressions.")
 
         # Deduce element type if not provided
         if element is None:
             if degree is None:
                 raise KeyError("Must supply element or degree")
-            value_shape = tuple(self.value_dimension(i)
-                                for i in range(self.value_rank()))
+            value_shape = tuple(
+                self.value_dimension(i) for i in range(self.value_rank()))
             if domain is not None and cell is None:
                 cell = domain.ufl_cell()
-            element = _select_element(family=None, cell=cell, degree=degree,
-                                      value_shape=value_shape)
+            element = _select_element(
+                family=None, cell=cell, degree=degree, value_shape=value_shape)
 
-        BaseExpression.__init__(self, cell=cell, element=element, domain=domain,
-                                name=name)
+        BaseExpression.__init__(
+            self, cell=cell, element=element, domain=domain, name=name)
 
     def __getattr__(self, name):
         if hasattr(self._cpp_object, name):
@@ -366,29 +372,33 @@ class Expression(BaseExpression):
         # mpi_comm = kwargs.pop("mpi_comm", None)
 
         if not isinstance(cpp_code, (str, tuple, list)):
-            raise RuntimeError("Must supply C++ code to Expression. You may want to use UserExpression")
+            raise RuntimeError(
+                "Must supply C++ code to Expression. You may want to use UserExpression"
+            )
         else:
             params = kwargs
             for k in params:
                 if not isinstance(k, str):
                     raise KeyError("User parameter key must be a string")
 
-            self._cpp_object = function.jit.compile_expression(cpp_code, params)
+            self._cpp_object = function.jit.compile_expression(
+                cpp_code, params)
             self._parameters = ExpressionParameters(self._cpp_object, params)
 
         if element and degree:
-            raise RuntimeError("Cannot specify an element and a degree for Expressions.")
+            raise RuntimeError(
+                "Cannot specify an element and a degree for Expressions.")
 
         # Deduce element type if not provided
         if element is None:
             if degree is None:
                 raise KeyError("Must supply element or degree")
-            value_shape = tuple(self.value_dimension(i)
-                                for i in range(self.value_rank()))
+            value_shape = tuple(
+                self.value_dimension(i) for i in range(self.value_rank()))
             if domain is not None and cell is None:
                 cell = domain.ufl_cell()
-            element = _select_element(family=None, cell=cell, degree=degree,
-                                      value_shape=value_shape)
+            element = _select_element(
+                family=None, cell=cell, degree=degree, value_shape=value_shape)
 
         # FIXME: The below is invasive and fragile. Fix multistage so
         #        this is not required.
@@ -397,8 +407,8 @@ class Expression(BaseExpression):
         self._user_parameters = kwargs
         self._cppcode = cpp_code
 
-        BaseExpression.__init__(self, cell=cell, element=element, domain=domain,
-                                name=name)
+        BaseExpression.__init__(
+            self, cell=cell, element=element, domain=domain, name=name)
 
     def __getattr__(self, name):
         "Pass attributes through to (JIT compiled) Expression object"

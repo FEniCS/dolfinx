@@ -52,11 +52,11 @@ void function(py::module& m)
               const dolfin::mesh::Cell& cell) { self.eval(u, x, cell); },
            "Evaluate GenericFunction (cell version)")
       .def("eval",
-           (void (dolfin::function::GenericFunction::*)(
+           py::overload_cast<
                Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>>,
-               Eigen::Ref<const dolfin::EigenRowArrayXXd>) const)
-               & dolfin::function::GenericFunction::eval,
+               Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
+               &dolfin::function::GenericFunction::eval, py::const_),
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
       .def("compute_point_values",
            py::overload_cast<const dolfin::mesh::Mesh&>(
@@ -135,28 +135,9 @@ void function(py::module& m)
            })
       .def("value_dimension", &dolfin::function::Expression::value_dimension)
       .def("get_property", &dolfin::function::Expression::get_property)
-      .def("set_property",
-           [](dolfin::function::Expression& self, std::string name,
-              py::object value) {
-             if (py::isinstance<dolfin::function::GenericFunction>(value))
-             {
-               auto _v = value.cast<
-                   std::shared_ptr<dolfin::function::GenericFunction>>();
-               self.set_generic_function(name, _v);
-             }
-             else if (py::hasattr(value, "_cpp_object"))
-             {
-               auto _v = value.attr("_cpp_object")
-                             .cast<std::shared_ptr<
-                                 dolfin::function::GenericFunction>>();
-               self.set_generic_function(name, _v);
-             }
-             else
-             {
-               PetscScalar _v = value.cast<PetscScalar>();
-               self.set_property(name, _v);
-             }
-           })
+      .def("set_property", &dolfin::function::Expression::set_property)
+      .def("set_generic_function",
+           &dolfin::function::Expression::set_generic_function)
       .def("get_generic_function",
            &dolfin::function::Expression::get_generic_function);
 
@@ -236,17 +217,7 @@ void function(py::module& m)
            })
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
-      .def("interpolate",
-           (void (dolfin::function::Function::*)(
-               const dolfin::function::GenericFunction&))
-               & dolfin::function::Function::interpolate,
-           "Interpolate the function u")
-      .def("interpolate",
-           [](dolfin::function::Function& instance, const py::object v) {
-             auto _v = v.attr("_cpp_object")
-                           .cast<dolfin::function::GenericFunction*>();
-             instance.interpolate(*_v);
-           },
+      .def("interpolate", &dolfin::function::Function::interpolate,
            "Interpolate the function u")
       // FIXME: A lot of error when using non-const version - misused
       // by Python interface?

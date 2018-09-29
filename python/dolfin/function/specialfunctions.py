@@ -7,9 +7,7 @@
 """Some special functions"""
 
 import ufl
-
-from dolfin import cpp
-from dolfin import function
+from dolfin import cpp, function
 
 
 def _mesh2domain(mesh):
@@ -17,8 +15,7 @@ def _mesh2domain(mesh):
 
     if isinstance(mesh, ufl.cell.AbstractCell):
         raise TypeError(
-            "Cannot construct geometry from a Cell. Pass the mesh instead."
-        )
+            "Cannot construct geometry from a Cell. Pass the mesh instead.")
     return mesh.ufl_domain()
 
 

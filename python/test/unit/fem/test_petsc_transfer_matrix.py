@@ -7,8 +7,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import (UnitCubeMesh, UnitSquareMesh, FunctionSpace, MPI, Expression, interpolate, Function,
-                    VectorElement, FiniteElement, MixedElement, VectorFunctionSpace)
+from dolfin import (UnitCubeMesh, UnitSquareMesh, FunctionSpace, MPI,
+                    Expression, interpolate, Function, VectorElement,
+                    FiniteElement, MixedElement, VectorFunctionSpace)
 from dolfin.cpp.fem import PETScDMCollection
 from dolfin.cpp.la import Norm
 
@@ -24,7 +25,8 @@ def test_scalar_p1():
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
+    mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
+                                                   Vf._cpp_object).mat()
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
@@ -48,7 +50,8 @@ def test_scalar_p1_scaled_mesh():
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
+    mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
+                                                   Vf._cpp_object).mat()
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
@@ -62,7 +65,8 @@ def test_scalar_p1_scaled_mesh():
 
     uc = interpolate(u, Vc)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
+    mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
+                                                   Vf._cpp_object).mat()
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
     diff = Vuc.vector()
@@ -82,7 +86,8 @@ def test_scalar_p2():
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
+    mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
+                                                   Vf._cpp_object).mat()
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
@@ -103,7 +108,8 @@ def test_vector_p1_2d():
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
+    mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
+                                                   Vf._cpp_object).mat()
 
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
@@ -124,7 +130,8 @@ def test_vector_p2_2d():
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
+    mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
+                                                   Vf._cpp_object).mat()
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
@@ -144,7 +151,8 @@ def test_vector_p1_3d():
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
-    mat = PETScDMCollection.create_transfer_matrix(Vc, Vf).mat()
+    mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
+                                                   Vf._cpp_object).mat()
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
@@ -166,7 +174,9 @@ def test_taylor_hood_cube():
     Zc = FunctionSpace(meshc, Ze)
     Zf = FunctionSpace(meshf, Ze)
 
-    z = Expression(("x[0]*x[1]", "x[1]*x[2]", "x[2]*x[0]", "x[0] + 3*x[1] + x[2]"), degree=2)
+    z = Expression(
+        ("x[0]*x[1]", "x[1]*x[2]", "x[2]*x[0]", "x[0] + 3*x[1] + x[2]"),
+        degree=2)
     zc = interpolate(z, Zc)
     zf = interpolate(z, Zf)
 
