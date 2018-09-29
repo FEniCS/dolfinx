@@ -38,14 +38,6 @@ from dolfin.common import (
     has_slepc, has_slepc4py, git_commit_hash,
     TimingType, timing, timings, list_timings, DOLFIN_EPS)
 
-import dolfin.parameter
-
-from .cpp.parameter import parameters
-
-# Add form compiler parameters to global parameter set
-if not parameters.has_parameter_set("form_compiler"):
-    parameters.add(dolfin.parameter.ffc_default_parameters())
-
 import dolfin.MPI
 
 from dolfin.fem import DofMap

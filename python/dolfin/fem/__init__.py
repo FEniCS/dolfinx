@@ -19,7 +19,6 @@ from dolfin.fem.formmanipulations import (derivative, adjoint, increase_order,
 from dolfin.fem.interpolation import interpolate
 from dolfin.fem.projection import project
 from dolfin.fem.solving import solve
-print("Imported dolfin.fem")
 
 __all__ = [
     "assemble_local", "assemble_system", "assemble", "assemble_vector",
