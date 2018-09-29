@@ -1,6 +1,6 @@
 
 import numpy
-from dolfin import MPI, Mesh, CellType, cpp, Point
+from dolfin import MPI, Mesh, CellType, cpp, Point, BoundingBoxTree
 from dolfin_utils.test import skip_in_parallel
 
 
@@ -18,7 +18,10 @@ def test_manifold_point_search():
                 numpy.array(cells, dtype=numpy.int32), [],
                 cpp.mesh.GhostMode.none)
 
-    bb = mesh.bounding_box_tree()
+    bb = BoundingBoxTree()
+    bb_cpp = mesh.bounding_box_tree()
+    bb._cpp_object = bb_cpp
+
     p = Point(0.5, 0.25, 0.75)
     assert bb.compute_first_entity_collision(p, mesh) == 0
 

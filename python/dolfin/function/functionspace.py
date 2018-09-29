@@ -56,14 +56,8 @@ class FunctionSpace(ufl.FunctionSpace):
             #                            constrained_domain)
 
         # Initialize the cpp.FunctionSpace
-<<<<<<< HEAD
-        self._cpp_object = cpp.function.FunctionSpace(mesh,
-                                                      dolfin_element,
-                                                      dolfin_dofmap._cpp_object)
-=======
         self._cpp_object = cpp.function.FunctionSpace(
             mesh, dolfin_element, dolfin_dofmap._cpp_object)
->>>>>>> master
 
     def _init_from_cpp(self, cppV, **kwargs):
         """

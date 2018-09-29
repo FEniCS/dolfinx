@@ -14,46 +14,48 @@ class BoundingBoxTree:
         if gdim is not None:
             self._cpp_object = cpp.geometry.BoundingBoxTree(gdim)
 
-    # def fromcpp(self, cpp_object):
-    #     self._cpp_object = cpp_object
-
     def build_points(self, points: list):
         """Build from cloud of points"""
-        self._cpp_object.build(points)
+        # Unpack to cpp points
+        points_cpp = (point._cpp_object for point in points)
+        self._cpp_object.build(points_cpp)
 
     def build_mesh(self, mesh, tdim: int):
         """Build from mesh entities of given topological dimension"""
         self._cpp_object.build(mesh, tdim)
 
-    def compute_collisions_points(self, point):
+    def compute_collisions_point(self, point: "Point"):
         """Compute collisions with the point"""
-        return self._cpp_object.compute_collisions(point)
+        return self._cpp_object.compute_collisions(point._cpp_object)
 
-    def compute_collisions_bb(self, bb):
+    def compute_collisions_bb(self, bb: "BoundingBoxTree"):
         """Compute collisions with the bounding box"""
-        return self._cpp_object.compute_collisions(bb)
+        return self._cpp_object.compute_collisions(bb._cpp_object)
 
-    def compute_entity_collisions_mesh(self, point, mesh):
+    def compute_entity_collisions_mesh(self, point: "Point", mesh):
         """Compute collisions between the point and entities of the mesh"""
-        return self._cpp_object.compute_entity_collisions(point, mesh)
+        return self._cpp_object.compute_entity_collisions(point._cpp_object,
+                                                          mesh)
 
-    def compute_entity_collisions_bb_mesh(self, bb, mesh1, mesh2):
+    def compute_entity_collisions_bb_mesh(self, bb: "BoundingBoxTree",
+                                          mesh1, mesh2):
         """Compute collisions between the bounding box and entities of meshes"""
-        return self._cpp_object.compute_entity_collisions(bb, mesh1, mesh2)
+        return self._cpp_object.compute_entity_collisions(bb._cpp_object,
+                                                          mesh1, mesh2)
 
-    def compute_first_collision(self, point):
+    def compute_first_collision(self, point: "Point"):
         """Compute first collision with the point"""
-        return self._cpp_object.compute_first_collision(point)
+        return self._cpp_object.compute_first_collision(point._cpp_object)
 
-    def compute_first_entity_collision(self, point, mesh):
+    def compute_first_entity_collision(self, point: "Point", mesh):
         """Compute fist collision between entities of mesh and the point"""
-        return self._cpp_object.compute_first_entity_collision(point, mesh)
+        return self._cpp_object.compute_first_entity_collision(point._cpp_object, mesh)
 
-    def compute_closest_entity(self, point, mesh):
+    def compute_closest_entity(self, point: "Point", mesh):
         """Compute closest entity of the mesh to the point"""
-        return self._cpp_object.compute_closest_entity(point, mesh)
+        return self._cpp_object.compute_closest_entity(point._cpp_object, mesh)
 
-    def str(self, point, mesh):
+    def str(self):
         """Print for debbuging"""
         return self._cpp_object.str()
 
@@ -65,29 +67,26 @@ class Point:
         """Initialise from coordinates"""
         self._cpp_object = cpp.geometry.Point(x, y, z)
 
-    # def fromcpp(self, cpp_object=None):
-    #     self._cpp_object = cpp_object
-
     def __getitem__(self, key):
         return self._cpp_object[key]
 
     def __setitem__(self, index, value):
         self._cpp_object[index] = value
 
-    def __add__(self, other: Point):
-        return self._cpp_object.__add__(other._cpp_object)
+    def __add__(self, other):
+        return self._cpp_object.__add__(getattr(other, "_cpp_object", other))
 
-    def __sub__(self, other: Point):
-        return self._cpp_object.__sub__(other._cpp_object)
+    def __sub__(self, other):
+        return self._cpp_object.__sub__(getattr(other, "_cpp_object", other))
 
-    def __eq__(self, other: Point):
-        return self._cpp_object.__eq__(other._cpp_object)
+    def __eq__(self, other):
+        return self._cpp_object.__eq__(getattr(other, "_cpp_object", other))
 
-    def __mul__(self, other: Point):
-        return self._cpp_object.__mul__(other._cpp_object)
+    def __mul__(self, other):
+        return self._cpp_object.__mul__(getattr(other, "_cpp_object", other))
 
-    def __div__(self, other: Point):
-        return self._cpp_object.__div__(other._cpp_object)
+    def __div__(self, other):
+        return self._cpp_object.__div__(getattr(other, "_cpp_object", other))
 
     def array(self):
         """Return as array"""
@@ -97,6 +96,6 @@ class Point:
         """Compute euclidean norm of a vector from origin to the Point"""
         return self._cpp_object.norm()
 
-    def distance(self, other: Point):
+    def distance(self, other: "Point"):
         """Compute euclidean distance to the point"""
-        return self._cpp_object.distance(other._cpp_object)
+        return self._cpp_object.distance(getattr(other, "_cpp_object", other))
