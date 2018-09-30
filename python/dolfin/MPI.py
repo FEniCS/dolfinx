@@ -8,7 +8,7 @@
 from dolfin import common
 from dolfin import cpp
 
-if common.has_mpi4py:
+if not common.has_mpi4py:
 
     class MPICommWrapper:
         """DOLFIN is compiled without support for mpi4py. This object
@@ -49,33 +49,33 @@ def finalized():
     return cpp.MPI.finalized()
 
 
-def barrier(comm: MPICommWrapper):
+def barrier(comm):
     return cpp.MPI.barrier(comm)
 
 
-def rank(comm: MPICommWrapper):
+def rank(comm):
     return cpp.MPI.rank(comm)
 
 
-def size(comm: MPICommWrapper):
+def size(comm):
     return cpp.MPI.size(comm)
 
 
-def local_range(comm: MPICommWrapper, N: int):
+def local_range(comm, N: int):
     return cpp.MPI.local_range(comm, N)
 
 
-def max(comm: MPICommWrapper, value: float):
+def max(comm, value: float):
     return cpp.MPI.max(comm, value)
 
 
-def min(comm: MPICommWrapper, value: float):
+def min(comm, value: float):
     return cpp.MPI.min(comm, value)
 
 
-def sum(comm: MPICommWrapper, value: float):
+def sum(comm, value: float):
     return cpp.MPI.sum(comm, value)
 
 
-def avg(comm: MPICommWrapper, value):
+def avg(comm, value):
     return cpp.MPI.avs(comm, value)
