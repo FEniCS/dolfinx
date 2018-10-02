@@ -74,14 +74,14 @@ def test_tabulate_all_coordinates(mesh_factory):
         for di in dofs_V:
             if di >= local_size_V:
                 continue
-            assert cell.contains(Point(all_coords_V[di]))
+            assert cell.contains(Point(all_coords_V[di])._cpp_object)
             checked_V[di] = True
 
         dofs_W = W_dofmap.cell_dofs(cell.index())
         for di in dofs_W:
             if di >= local_size_W:
                 continue
-            assert cell.contains(Point(all_coords_W[di]))
+            assert cell.contains(Point(all_coords_W[di])._cpp_object)
             checked_W[di] = True
 
     # Assert that all dofs have been checked by the above

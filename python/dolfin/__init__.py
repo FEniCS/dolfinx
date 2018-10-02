@@ -41,8 +41,8 @@ from dolfin.common import (
 import dolfin.MPI
 
 from dolfin.fem import DofMap
+from dolfin.geometry import BoundingBoxTree, Point
 
-from .cpp.geometry import BoundingBoxTree, Point
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
 
 if has_slepc:
