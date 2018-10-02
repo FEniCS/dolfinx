@@ -30,7 +30,7 @@
 # NOTE: This should set global arguments, but doesn't seem to work with
 # old docker-build
 # ARG PYBIND11_VERSION=2.2.4
-# ARG PETSC_VERSION=3.10
+# ARG PETSC_VERSION=3.10.1
 # ARG SLEPC_VERSION=3.10.0
 # ARG PETSC4PY_VERSION=3.10.0
 # ARG SLEPC4PY_VERSION=3.10.0
@@ -103,7 +103,7 @@ LABEL description="FEniCS development environment with PETSc real mode"
 WORKDIR /tmp
 
 # Install PETSc with real types. PETSc build system needs Python 2 :(.
-ARG PETSC_VERSION=3.10
+ARG PETSC_VERSION=3.10.1
 RUN apt-get -qq update && \
     apt-get -y install bison flex python && \
     wget -nc --quiet https://bitbucket.org/petsc/petsc/get/v${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
@@ -158,7 +158,7 @@ LABEL description="FEniCS development environment with PETSc complex mode"
 WORKDIR /tmp
 
 # Install PETSc with complex scalar types
-ARG PETSC_VERSION=3.10
+ARG PETSC_VERSION=3.10.1
 RUN apt-get -qq update && \
     apt-get -y install bison flex python && \
     wget -nc --quiet https://bitbucket.org/petsc/petsc/get/v${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
