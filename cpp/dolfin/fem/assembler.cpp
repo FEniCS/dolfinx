@@ -13,6 +13,7 @@
 #include "assemble_vector_impl.h"
 #include "assembler.h"
 #include "utils.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
@@ -61,7 +62,7 @@ la::PETScVector _assemble_vector(const Form& L)
     throw std::runtime_error("Form must be rank 1");
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
-  fem::assemble_ghosted(b.vec(), L, {}, {});
+  fem::assemble_ghosted(b.vec(), L, {}, {}, 1.0);
   return b;
 }
 //-----------------------------------------------------------------------------
@@ -190,7 +191,7 @@ void fem::assemble(
       // Get sub-vector and assemble
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
-      fem::assemble_ghosted(sub_b, *L[i], a[i], bcs);
+      fem::assemble_ghosted(sub_b, *L[i], a[i], bcs, scale);
     }
   }
   else if (L.size() > 1)
@@ -253,13 +254,13 @@ void fem::assemble(
       VecGetArray(b.vec(), &values);
       Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(
           values + offset, map_size0);
-      set_bc(vec, *L[i], bcs);
+      set_bc(vec, *L[i], bcs, scale);
       VecRestoreArray(b.vec(), &values);
       offset += map_size0;
     }
   }
   else
-    fem::assemble_ghosted(b.vec(), *L[0], a[0], bcs);
+    fem::assemble_ghosted(b.vec(), *L[0], a[0], bcs, scale);
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix
@@ -466,8 +467,9 @@ void fem::assemble(la::PETScMatrix& A,
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc(la::PETScVector& b, const Form& L,
-                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
+                 std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                 double scale)
 {
-  set_bc(b.vec(), L, bcs);
+  set_bc(b.vec(), L, bcs, scale);
 }
 //-----------------------------------------------------------------------------

@@ -21,7 +21,8 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 void fem::set_bc(Vec b, const Form& L,
-                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
+                 std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                 double scale)
 {
   PetscInt local_size;
   VecGetLocalSize(b, &local_size);
@@ -29,13 +30,14 @@ void fem::set_bc(Vec b, const Form& L,
   VecGetArray(b, &values);
   Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
                                                                local_size);
-  set_bc(vec, L, bcs);
+  set_bc(vec, L, bcs, scale);
   VecRestoreArray(b, &values);
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
                  const Form& L,
-                 std::vector<std::shared_ptr<const DirichletBC>> bcs)
+                 std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                 double scale)
 {
   // FIXME: optimise this function
 
@@ -53,7 +55,7 @@ void fem::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
       {
         // FIXME: this check is because DirichletBC::dofs include ghosts
         if (indices[j] < (PetscInt)b.size())
-          b[indices[j]] = values[j];
+          b[indices[j]] = scale * values[j];
       }
     }
   }
@@ -61,7 +63,7 @@ void fem::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
 //-----------------------------------------------------------------------------
 void fem::assemble_ghosted(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::shared_ptr<const DirichletBC>> bcs)
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
 {
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
@@ -74,7 +76,7 @@ void fem::assemble_ghosted(
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 
   // Set boundary values (local only)
-  set_bc(b, L, bcs);
+  set_bc(b, L, bcs, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_local(

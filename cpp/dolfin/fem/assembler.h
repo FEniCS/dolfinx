@@ -16,10 +16,6 @@
 
 namespace dolfin
 {
-namespace common
-{
-class IndexMap;
-} // namespace common
 namespace function
 {
 class FunctionSpace;
@@ -47,7 +43,8 @@ enum class BlockType
 boost::variant<double, la::PETScVector, la::PETScMatrix>
 assemble(const Form& a);
 
-/// Assemble blocked linear forms
+/// Assemble blocked linear forms. The vector is modified such that b <-
+/// b - A x_bc.
 la::PETScVector
 assemble(std::vector<const Form*> L,
          const std::vector<std::vector<std::shared_ptr<const Form>>> a,
@@ -72,7 +69,7 @@ void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
 // FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETScVector
 void set_bc(la::PETScVector& b, const Form& L,
-            std::vector<std::shared_ptr<const DirichletBC>> bcs);
+            std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale);
 
 } // namespace fem
 } // namespace dolfin
