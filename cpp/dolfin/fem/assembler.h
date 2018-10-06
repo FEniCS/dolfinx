@@ -10,6 +10,7 @@
 #include <boost/variant.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScVector.h>
 #include <memory>
 #include <petscvec.h>
 #include <vector>
@@ -20,15 +21,9 @@ namespace function
 {
 class FunctionSpace;
 } // namespace function
-namespace la
-{
-class PETScMatrix;
-class PETScVector;
-} // namespace la
 
 namespace fem
 {
-// Forward declarations
 class DirichletBC;
 class Form;
 
@@ -44,30 +39,37 @@ boost::variant<double, la::PETScVector, la::PETScMatrix>
 assemble(const Form& a);
 
 /// Assemble blocked linear forms. The vector is modified such that b <-
-/// b - A x_bc.
+/// b - A x_bc, and boundary condition values are inserted Dirichlet bcs
+/// position in vector (multiplied by 'scale').
 la::PETScVector
 assemble(std::vector<const Form*> L,
          const std::vector<std::vector<std::shared_ptr<const Form>>> a,
          std::vector<std::shared_ptr<const DirichletBC>> bcs,
          BlockType block_type, double scale = 1.0);
 
-/// Re-assemble blocked linear forms
+/// Re-assemble blocked linear forms. The vector is modified such that b
+/// <- b - A x_bc, and boundary condition values are inserted Dirichlet
+/// bcs position in vector (multiplied by 'scale').
 void assemble(la::PETScVector& b, std::vector<const Form*> L,
               const std::vector<std::vector<std::shared_ptr<const Form>>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double scale = 1.0);
 
-/// Assemble blocked bilinear forms into a matrix
+/// Assemble blocked bilinear forms into a matrix. Rows and columns
+/// associated with Dirichlet boundary conditions are zeroed, and
+/// 'diagonal' is placed on the diagonal of Dirichlet bcs.
 la::PETScMatrix assemble(const std::vector<std::vector<const Form*>> a,
                          std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                         BlockType block_type);
+                         BlockType block_type, double diagonal = 1.0);
 
 /// Re-assemble blocked bilinear forms into a matrix
 void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs);
+              std::vector<std::shared_ptr<const DirichletBC>> bcs,
+              double diagonal = 1.0);
 
 // FIXME: Consider if L is required
-/// Set bc values in owned (local) part of the PETScVector
+/// Set bc values in owned (local) part of the PETScVector, multiplied by
+/// 'scale'
 void set_bc(la::PETScVector& b, const Form& L,
             std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale);
 

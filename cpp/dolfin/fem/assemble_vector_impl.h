@@ -17,7 +17,6 @@ namespace dolfin
 
 namespace fem
 {
-// Forward declarations
 class DirichletBC;
 class Form;
 

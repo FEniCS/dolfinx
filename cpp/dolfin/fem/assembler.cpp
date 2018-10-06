@@ -20,7 +20,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <string>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -71,10 +70,6 @@ la::PETScMatrix _assemble_matrix(const Form& a)
   if (a.rank() != 2)
     throw std::runtime_error("Form must be rank 2");
   return fem::assemble({{&a}}, {}, fem::BlockType::monolithic);
-
-  // fem::init_matrix(a);
-  // throw std::runtime_error("Short-hand matrix assembly implemented yet.");
-  // return A;
 }
 //-----------------------------------------------------------------------------
 void _ident(
@@ -131,7 +126,6 @@ _get_local_bc_rows(const function::FunctionSpace& V,
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
       = Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(_rows.data(),
                                                               _rows.size());
-
   return rows;
 }
 } // namespace
@@ -266,7 +260,7 @@ void fem::assemble(
 la::PETScMatrix
 fem::assemble(const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              BlockType block_type)
+              BlockType block_type, double diagonal)
 {
   assert(!a.empty());
   const bool block_matrix = a.size() > 1 or a[0].size() > 1;
@@ -278,13 +272,14 @@ fem::assemble(const std::vector<std::vector<const Form*>> a,
   else
     A = fem::init_matrix(*a[0][0]);
 
-  assemble(A, a, bcs);
+  assemble(A, a, bcs, diagonal);
   return A;
 }
 //-----------------------------------------------------------------------------
 void fem::assemble(la::PETScMatrix& A,
                    const std::vector<std::vector<const Form*>> a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs)
+                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                   double diagonal)
 {
   // Check if matrix should be nested
   assert(!a.empty());
@@ -417,7 +412,7 @@ void fem::assemble(la::PETScMatrix& A,
           {
             const Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
                 = _get_local_bc_rows(*a[i][j]->function_space(0), bcs);
-            _ident(mat, rows, 1.0);
+            _ident(mat, rows, diagonal);
           }
 
           MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
@@ -459,7 +454,7 @@ void fem::assemble(la::PETScMatrix& A,
     {
       const Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
           = _get_local_bc_rows(*a[0][0]->function_space(0), bcs);
-      _ident(A, rows, 1.0);
+      _ident(A, rows, diagonal);
     }
   }
 

@@ -7,23 +7,10 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <boost/variant.hpp>
-#include <dolfin/common/types.h>
-#include <dolfin/la/PETScMatrix.h>
-#include <memory>
-#include <petscvec.h>
 #include <vector>
 
 namespace dolfin
 {
-namespace common
-{
-class IndexMap;
-} // namespace common
-namespace function
-{
-class FunctionSpace;
-} // namespace function
 namespace la
 {
 class PETScMatrix;
@@ -31,8 +18,6 @@ class PETScMatrix;
 
 namespace fem
 {
-// Forward declarations
-class DirichletBC;
 class Form;
 
 /// Assemble matrix, with Dirichlet rows/columns zeroed. The matrix A
