@@ -56,8 +56,8 @@ class DirichletBC(cpp.fem.DirichletBC):
         else:
             _domain = domain
 
-        if isinstance(domain, cpp.mesh.SubDomain):
-            if not check_midpoint:
+        if isinstance(_domain, cpp.mesh.SubDomain):
+            if check_midpoint is None:
                 check_midpoint = True
             super().__init__(_V, _value, _domain, method, check_midpoint)
         else:
