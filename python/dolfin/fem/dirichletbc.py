@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Support for representing Dirichlet boundary conditions that are enforced
-via modification of linear systems
+via modification of linear systems.
 
 """
 
@@ -13,39 +13,7 @@ import types
 import typing
 
 import ufl
-from dolfin import cpp, fem, function
-
-
-class AutoSubDomain(cpp.mesh.SubDomain):
-    "Wrapper class for creating a SubDomain from an inside() function."
-
-    def __init__(self, inside_function: types.FunctionType):
-        "Create SubDomain subclass for given inside() function"
-
-        # Check that we get a function
-        if not isinstance(inside_function, types.FunctionType):
-            raise RuntimeError(
-                "bcs.py", "auto-create subdomain",
-                "Expecting a function (not %s)" % str(type(inside_function)))
-        self.inside_function = inside_function
-
-        # Check the number of arguments
-        if inside_function.__code__.co_argcount not in (1, 2):
-            raise RuntimeError(
-                "bcs.py", "auto-create subdomain",
-                "Expecting a function of the form inside(x) or inside(x, on_boundary)"
-            )
-        self.num_args = inside_function.__code__.co_argcount
-
-        super().__init__()
-
-    def inside(self, x, on_boundary):
-        "Return true for points inside the subdomain"
-
-        if self.num_args == 1:
-            return self.inside_function(x)
-        else:
-            return self.inside_function(x, on_boundary)
+from dolfin import cpp, fem, function, mesh
 
 
 class DirichletBC(cpp.fem.DirichletBC):
@@ -59,8 +27,8 @@ class DirichletBC(cpp.fem.DirichletBC):
             method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.
             topological,
             check_midpoint: typing.Optional[bool] = None):
-        """Representation of Dirichlet boundary conditions which are imposed on
-        linear systems.
+        """Representation of Dirichlet boundary condition which is imposed on
+        a linear system.
 
         """
 
@@ -83,8 +51,9 @@ class DirichletBC(cpp.fem.DirichletBC):
 
         # Construct domain
         if isinstance(domain, types.FunctionType):
-            _domain = AutoSubDomain(domain)
-            self.sub_domain = _domain
+            # Keep reference to subdomain to avoid out-of-scope problem
+            self._sub_domain = mesh.create_subdomain(domain)
+            _domain = self._sub_domain
         else:
             _domain = domain
 

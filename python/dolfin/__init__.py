@@ -57,7 +57,7 @@ from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, CellType, Cell, Facet,
 from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
 
 from .fem.form import Form
-from .fem.dirichletbc import DirichletBC, AutoSubDomain
+from .fem.dirichletbc import DirichletBC
 from .fem.interpolation import interpolate
 from .fem.projection import project
 from .fem.solving import solve
