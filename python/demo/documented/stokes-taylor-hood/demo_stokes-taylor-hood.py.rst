@@ -115,12 +115,12 @@ equations. Now we can define boundary conditions::
     # No-slip boundary condition for velocity
     # x1 = 0, x1 = 1 and around the dolphin
     noslip = Constant((0, 0))
-    bc0 = DirichletBC(W.sub(0), noslip, sub_domains, 0)
+    bc0 = DirichletBC(W.sub(0), noslip, (sub_domains, 0))
 
     # Inflow boundary condition for velocity
     # x0 = 1
     inflow = Expression(("-sin(x[1]*pi)", "0.0"), degree=2)
-    bc1 = DirichletBC(W.sub(0), inflow, sub_domains, 1)
+    bc1 = DirichletBC(W.sub(0), inflow, (sub_domains, 1))
 
     # Collect boundary conditions
     bcs = [bc0, bc1]

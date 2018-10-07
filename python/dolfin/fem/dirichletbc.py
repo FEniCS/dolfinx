@@ -17,16 +17,15 @@ from dolfin import cpp, function, mesh
 
 
 class DirichletBC(cpp.fem.DirichletBC):
-    def __init__(
-            self,
-            V: typing.Union[function.FunctionSpace,
-                            cpp.function.FunctionSpace],
-            value: typing.Union[ufl.Coefficient, cpp.function.GenericFunction,
-                                list, tuple, float, int],
-            domain: typing.Union[cpp.mesh.SubDomain, types.FunctionType],
-            method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.
-            topological,
-            check_midpoint: typing.Optional[bool] = None):
+    def __init__(self,
+        V: typing.Union[function.FunctionSpace,
+                        cpp.function.FunctionSpace],
+        value: typing.Union[ufl.Coefficient, cpp.function.GenericFunction,
+                            list, tuple, float, int],
+        domain: typing.Union[cpp.mesh.SubDomain, types.FunctionType, typing.Tuple[mesh.MeshValueCollection, int]],
+        method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.
+        topological,
+        check_midpoint: typing.Optional[bool] = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.
 
@@ -57,7 +56,10 @@ class DirichletBC(cpp.fem.DirichletBC):
         else:
             _domain = domain
 
-        if not check_midpoint:
-            check_midpoint = True
-
-        super().__init__(_V, _value, _domain, method, check_midpoint)
+        if isinstance(domain, cpp.mesh.SubDomain):
+            if not check_midpoint:
+                check_midpoint = True
+            super().__init__(_V, _value, _domain, method, check_midpoint)
+        else:
+            assert check_midpoint is None
+            super().__init__(_V, _value, _domain, method)
