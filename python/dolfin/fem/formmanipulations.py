@@ -9,113 +9,73 @@ import ufl
 from dolfin import function
 
 
-def adjoint(form, reordered_arguments=None):
+def adjoint(form: ufl.Form, reordered_arguments=None) -> ufl.Form:
+    """Compute adjoint of a bilinear form by changing the ordering (count)
+    of the test and trial functions.
 
-    # Call UFL directly if new arguments are provided directly
+    The functions wraps ``ufl.adjoint``, and by default UFL will create new
+    ``Argument`` s. To specify the ``Argument`` s rather than creating new ones,
+    pass a tuple of ``Argument`` s as ``reordered_arguments``.
+    See the documentation for ``ufl.adjoint`` for more details.
+
+    """
+
     if reordered_arguments is not None:
         return ufl.adjoint(form, reordered_arguments=reordered_arguments)
 
     # Extract form arguments
     arguments = form.arguments()
+    if len(arguments) != 2:
+        raise RuntimeError(
+            "Cannot compute adjoint of form, form is not bilinear")
     if any(arg.part() is not None for arg in arguments):
-        raise RuntimeError("Compute adjoint of form, parts not supported")
+        raise RuntimeError(
+            "Cannot compute adjoint of form, parts not supported")
 
-    if not (len(arguments) == 2):
-        raise RuntimeError("Compute adjoint of form, form is not bilinear")
+    # Create new Arguments in the same spaces (NB: Order does not matter
+    # anymore here because number is absolute)
+    v1 = function.Argument(arguments[1].function_space(),
+                           arguments[0].number(), arguments[0].part())
+    v0 = function.Argument(arguments[0].function_space(),
+                           arguments[1].number(), arguments[1].part())
 
-    # Define new Argument(s) in the same spaces (NB: Order does not
-    # matter anymore here because number is absolute)
-    v_1 = function.Argument(arguments[1].function_space(),
-                            arguments[0].number(), arguments[0].part())
-    v_0 = function.Argument(arguments[0].function_space(),
-                            arguments[1].number(), arguments[1].part())
-
-    # Call ufl.adjoint with swapped arguments as new arguments
-    return ufl.adjoint(form, reordered_arguments=(v_1, v_0))
+    # Return form with swapped arguments as new arguments
+    return ufl.adjoint(form, reordered_arguments=(v1, v0))
 
 
-adjoint.__doc__ = ufl.adjoint.__doc__
-adjoint.__doc__ = """
-UFL form operator:
-    Given a combined bilinear form, compute the adjoint form by
-    changing the ordering (count) of the test and trial functions.
+def derivative(form: ufl.Form, u, du,
+               coefficient_derivatives=None) -> ufl.Form:
+    """Compute derivative of from about u (coefficient) in the direction
+    of du (Argument)
 
-    By default, new ``Argument`` objects will be created with
-    opposite ordering. However, if the adjoint form is to
-    be added to other forms later, their arguments must match.
-    In that case, the user must provide a tuple *reordered_arguments* = (u2,v2).
-"""
-
-
-def derivative(form, u, du=None, coefficient_derivatives=None):
-    if du is None:
-        # Get existing arguments from form and position the new one
-        # with the next argument number
-        form_arguments = form.arguments()
-
-        number = max([-1] + [arg.number() for arg in form_arguments]) + 1
-
-        if any(arg.part() is not None for arg in form_arguments):
-            raise RuntimeError(
-                "Cannot automatically create new Argument using parts, please supply one"
-            )
-        part = None
-
-        if isinstance(u, function.Function):
-            V = u.function_space()
-            du = function.Argument(V, number, part)
-        elif isinstance(u, (list, tuple)) and all(
-                isinstance(w, function.Function) for w in u):
-            raise RuntimeError(
-                "Take derivative w.r.t. a single Coefficient on a mixed space instead."
-            )
-        else:
-            raise RuntimeError(
-                "Computing derivative of form w.r.t. '{}'. Supply Function as a Coefficient".
-                format(u))
-
+    """
     return ufl.derivative(form, u, du, coefficient_derivatives)
 
 
-derivative.__doc__ = ufl.derivative.__doc__
-derivative.__doc__ += """
-
-    A tuple of Coefficients in place of a single Coefficient is not
-    supported in DOLFIN. Supply rather a Function on a mixed space in
-    place of a Coefficient.
-    """
-
-
-def increase_order(V):
-    """For a given function space, return the same space, but with a
-    higher polynomial degree
+def increase_order(V: function.FunctionSpace) -> function.FunctionSpace:
+    """For a given function space, return the same space, but with
+    polynomial degree increase by 1.
 
     """
-    mesh = V.mesh()
-    element = ufl.algorithms.elementtransformations.increase_order(
-        V.ufl_element())
-    constrained_domain = V.dofmap().constrained_domain
-    return function.FunctionSpace(
-        mesh, element, constrained_domain=constrained_domain)
+    e = ufl.algorithms.elementtransformations.increase_order(V.ufl_element())
+    return function.FunctionSpace(V.mesh(), e)
 
 
-def change_regularity(V, family):
+def change_regularity(V: function.FunctionSpace,
+                      family: str) -> function.FunctionSpace:
     """For a given function space, return the corresponding space with
     the finite elements specified by 'family'. Possible families are
     the families supported by the form compiler
 
     """
-    mesh = V.mesh()
-    element = ufl.algorithms.elementtransformations.change_regularity(
+    e = ufl.algorithms.elementtransformations.change_regularity(
         V.ufl_element(), family)
-    constrained_domain = V.dofmap().constrained_domain
-    return function.FunctionSpace(
-        mesh, element, constrained_domain=constrained_domain)
+    return function.FunctionSpace(V.mesh(), e)
 
 
-def tear(V):
-    """
-    For a given function space, return the corresponding discontinuous
+def tear(V: function.FunctionSpace) -> function.FunctionSpace:
+    """For a given function space, return the corresponding discontinuous
     space
+
     """
     return change_regularity(V, "DG")

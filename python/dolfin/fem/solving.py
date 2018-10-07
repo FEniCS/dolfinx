@@ -12,9 +12,9 @@ as well as the solve function.
 """
 
 import ufl
-from dolfin import cpp, fem, function, la
+from dolfin import cpp, fem, function
 
-# FIXME: The code is this file is outrageously convolute because one
+# FIXME: The code is this file is outrageously convoluted because one
 # function an do a number of unrelated operations, depending in the
 # arguments passed.
 
@@ -24,56 +24,12 @@ from dolfin import cpp, fem, function, la
 
 # Solve function handles both linear systems and variational problems
 def solve(*args, **kwargs):
-    """Solve linear system Ax = b or variational problem a == L or F == 0.
+    """Solve variational problem a == L or F == 0.
 
-    The DOLFIN solve() function can be used to solve either linear
-    systems or variational problems. The following list explains the
+    The following list explains the
     various ways in which the solve() function can be used.
 
-    *1. Solving linear systems*
-
-    A linear system Ax = b may be solved by calling solve(A, x, b),
-    where A is a matrix and x and b are vectors. Optional arguments
-    may be passed to specify the solver method and preconditioner.
-    Some examples are given below:
-
-    .. code-block:: python
-
-        solve(A, x, b)
-        solve(A, x, b, "lu")
-        solve(A, x, b, "gmres", "ilu")
-        solve(A, x, b, "cg", "hypre_amg")
-
-    Possible values for the solver method and preconditioner depend
-    on which linear algebra backend is used and how that has been
-    configured.
-
-    To list all available LU methods, run the following command:
-
-    .. code-block:: python
-
-        list_lu_solver_methods()
-
-    To list all available Krylov methods, run the following command:
-
-    .. code-block:: python
-
-        list_krylov_solver_methods()
-
-    To list all available preconditioners, run the following command:
-
-    .. code-block:: python
-
-        list_krylov_solver_preconditioners()
-
-    To list all available solver methods, including LU methods, Krylov
-    methods and, possibly, other methods, run the following command:
-
-    .. code-block:: python
-
-        list_linear_solver_methods()
-
-    *2. Solving linear variational problems*
+    *1. Solving linear variational problems*
 
     A linear variational problem a(u, v) = L(v) for all v may be
     solved by calling solve(a == L, u, ...), where a is a bilinear
@@ -97,7 +53,7 @@ def solve(*args, **kwargs):
 
         info(LinearVariationalSolver.default_parameters(), True)
 
-    *3. Solving nonlinear variational problems*
+    *2. Solving nonlinear variational problems*
 
     A nonlinear variational problem F(u; v) = 0 for all v may be
     solved by calling solve(F == 0, u, ...), where the residual F is a
@@ -151,20 +107,8 @@ def solve(*args, **kwargs):
     """
 
     assert (len(args) > 0)
-
-    # Call variational problem solver if we get an equation (but not a
-    # tolerance)
-    if isinstance(args[0], ufl.classes.Equation):
-        _solve_varproblem(*args, **kwargs)
-
-    # Default case, just call the wrapped C++ solve function
-    else:
-        if kwargs:
-            raise RuntimeError(
-                "Not expecting keyword arguments when solving linear algebra problem."
-            )
-
-        return la.solve(*args)
+    assert isinstance(args[0], ufl.classes.Equation)
+    return _solve_varproblem(*args, **kwargs)
 
 
 def _solve_varproblem(*args, **kwargs):
