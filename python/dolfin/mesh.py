@@ -1,28 +1,45 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import ufl
+import types
 
+import ufl
 from dolfin import cpp
 
-__all__ = [
-    "MeshFunction",
-    "MeshValueCollection"
-]
+__all__ = ["MeshFunction", "MeshValueCollection"]
 
-_meshfunction_types = {"bool": cpp.mesh.MeshFunctionBool,
-                       "size_t": cpp.mesh.MeshFunctionSizet,
-                       "int": cpp.mesh.MeshFunctionInt,
-                       "double": cpp.mesh.MeshFunctionDouble}
 
-_meshvaluecollection_types = {"bool": cpp.mesh.MeshValueCollection_bool,
-                              "size_t": cpp.mesh.MeshValueCollection_sizet,
-                              "int": cpp.mesh.MeshValueCollection_int,
-                              "double": cpp.mesh.MeshValueCollection_double}
+def create_subdomain(
+        inside_function: types.FunctionType) -> cpp.mesh.SubDomain:
+    """Create a SubDomain object from a user provided 'inside' function"""
+
+    class AutoSubDomain(cpp.mesh.SubDomain):
+        def inside(self, x, on_boundary):
+            if inside_function.__code__.co_argcount == 1:
+                return inside_function(x)
+            else:
+                return inside_function(x, on_boundary)
+
+    return AutoSubDomain()
+
+
+_meshfunction_types = {
+    "bool": cpp.mesh.MeshFunctionBool,
+    "size_t": cpp.mesh.MeshFunctionSizet,
+    "int": cpp.mesh.MeshFunctionInt,
+    "double": cpp.mesh.MeshFunctionDouble
+}
+
+_meshvaluecollection_types = {
+    "bool": cpp.mesh.MeshValueCollection_bool,
+    "size_t": cpp.mesh.MeshValueCollection_sizet,
+    "int": cpp.mesh.MeshValueCollection_int,
+    "double": cpp.mesh.MeshValueCollection_double
+}
 
 
 class MeshFunction(object):
@@ -48,8 +65,7 @@ class MeshValueCollection(object):
 
 
 def ufl_cell(self):
-    return ufl.Cell(self.cell_name(),
-                    geometric_dimension=self.geometry.dim)
+    return ufl.Cell(self.cell_name(), geometric_dimension=self.geometry.dim)
 
 
 def ufl_coordinate_element(self):
@@ -59,17 +75,16 @@ def ufl_coordinate_element(self):
     """
     cell = self.ufl_cell()
     degree = self.degree()
-    return ufl.VectorElement("Lagrange", cell, degree,
-                             dim=cell.geometric_dimension())
+    return ufl.VectorElement(
+        "Lagrange", cell, degree, dim=cell.geometric_dimension())
 
 
 def ufl_domain(self):
     """Returns the ufl domain corresponding to the mesh."""
     # Cache object to avoid recreating it a lot
     if not hasattr(self, "_ufl_domain"):
-        self._ufl_domain = ufl.Mesh(self.ufl_coordinate_element(),
-                                    ufl_id=self.ufl_id(),
-                                    cargo=self)
+        self._ufl_domain = ufl.Mesh(
+            self.ufl_coordinate_element(), ufl_id=self.ufl_id(), cargo=self)
     return self._ufl_domain
 
 

@@ -206,22 +206,21 @@ void fem(py::module& m)
       .value("geometric", dolfin::fem::DirichletBC::Method::geometric)
       .value("pointwise", dolfin::fem::DirichletBC::Method::pointwise);
 
-  dirichletbc.def(py::init<const dolfin::fem::DirichletBC&>())
+  dirichletbc
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::GenericFunction>,
                     std::shared_ptr<const dolfin::mesh::SubDomain>,
                     dolfin::fem::DirichletBC::Method, bool>(),
-           py::arg("V"), py::arg("g"), py::arg("sub_domain"),
-           py::arg("method") = dolfin::fem::DirichletBC::Method::topological,
-           py::arg("check_midpoint") = true)
-      .def(py::init<
-               std::shared_ptr<const dolfin::function::FunctionSpace>,
-               std::shared_ptr<const dolfin::function::GenericFunction>,
-               std::shared_ptr<const dolfin::mesh::MeshFunction<std::size_t>>,
-               std::size_t, dolfin::fem::DirichletBC::Method>(),
-           py::arg("V"), py::arg("g"), py::arg("sub_domains"),
-           py::arg("sub_domain"),
-           py::arg("method") = dolfin::fem::DirichletBC::Method::topological)
+           py::arg("V"), py::arg("g"), py::arg("sub_domain"), py::arg("method"),
+           py::arg("check_midpoint"))
+      .def(
+          py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
+                   std::shared_ptr<const dolfin::function::GenericFunction>,
+                   std::pair<std::shared_ptr<
+                                 const dolfin::mesh::MeshFunction<std::size_t>>,
+                             std::size_t>,
+                   dolfin::fem::DirichletBC::Method>(),
+          py::arg("V"), py::arg("g"), py::arg("sub_domain"), py::arg("method"))
       .def("function_space", &dolfin::fem::DirichletBC::function_space)
       .def("homogenize", &dolfin::fem::DirichletBC::homogenize)
       .def("method", &dolfin::fem::DirichletBC::method)

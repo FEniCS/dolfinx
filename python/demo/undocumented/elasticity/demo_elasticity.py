@@ -53,13 +53,12 @@ def build_nullspace(V, x):
 # XDMFFile(MPI.comm_world, "../pulley.xdmf").read(mesh)
 
 # mesh = UnitCubeMesh(2, 2, 2)
-mesh = BoxMesh.create(MPI.comm_world, [Point(0, 0, 0)._cpp_object,
-                                       Point(2, 1, 1)._cpp_object],
-                      [12, 12, 12], CellType.Type.tetrahedron,
-                      dolfin.cpp.mesh.GhostMode.none)
+mesh = BoxMesh.create(
+    MPI.comm_world, [Point(0, 0, 0)._cpp_object,
+                     Point(2, 1, 1)._cpp_object], [12, 12, 12],
+    CellType.Type.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
-
 
 # Function to mark inner surface of pulley
 # def inner_surface(x, on_boundary):
@@ -90,7 +89,8 @@ lmbda = E * nu / ((1.0 + nu) * (1.0 - 2.0 * nu))
 
 
 def sigma(v):
-    return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(grad(v))) * Identity(len(v))
+    return 2.0 * mu * sym(grad(v)) + lmbda * tr(sym(grad(v))) * Identity(
+        len(v))
 
 
 # Create function space
@@ -103,8 +103,7 @@ a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
 # Set up boundary condition on inner surface
-c = Constant((0.0, 0.0, 0.0))
-bc = DirichletBC(V, c, boundary)
+bc = DirichletBC(V, (0.0, 0.0, 0.0), boundary)
 
 # Assemble system, applying boundary conditions and preserving
 # symmetry)
@@ -156,7 +155,6 @@ file.write(u)
 unorm = u.vector().norm(dolfin.cpp.la.Norm.l2)
 if MPI.rank(mesh.mpi_comm()) == 0:
     print("Solution vector norm:", unorm)
-
 
 # Save colored mesh partitions in VTK format if running in parallel
 # if MPI.size(mesh.mpi_comm()) > 1:

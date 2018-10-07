@@ -48,11 +48,13 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::GenericFunction> g,
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>> sub_domains,
-    std::size_t sub_domain, Method method)
+    std::pair<std::shared_ptr<const mesh::MeshFunction<std::size_t>>,
+              std::size_t>
+        sub_domain,
+    Method method)
     : _function_space(V), _g(g), _method(method), _num_dofs(0),
-      _user_mesh_function(sub_domains), _user_sub_domain_marker(sub_domain),
-      _check_midpoint(true)
+      _user_mesh_function(sub_domain.first),
+      _user_sub_domain_marker(sub_domain.second), _check_midpoint(true)
 {
   check();
 }
