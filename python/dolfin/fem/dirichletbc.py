@@ -63,7 +63,7 @@ class DirichletBC(cpp.fem.DirichletBC):
         # Extract cpp function space
         try:
             _V = V._cpp_object
-        except:
+        except AttributeError:
             _V = V
 
         # Construct bc value
@@ -81,7 +81,10 @@ class DirichletBC(cpp.fem.DirichletBC):
         else:
             _domain = domain
 
-        super().__init__(_V, _value, _domain, method)
+        if check_midpoint:
+            super().__init__(_V, _value, _domain, method, check_midpoint)
+        else:
+            super().__init__(_V, _value, _domain, method)
 
 
 class DirichletBCXX(cpp.fem.DirichletBC):
