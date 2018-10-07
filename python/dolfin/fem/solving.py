@@ -12,7 +12,7 @@ as well as the solve function.
 """
 
 import ufl
-from dolfin import cpp, fem, function, la
+from dolfin import cpp, fem, function
 
 # FIXME: The code is this file is outrageously convoluted because one
 # function an do a number of unrelated operations, depending in the
