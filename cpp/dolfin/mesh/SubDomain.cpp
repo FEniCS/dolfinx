@@ -32,8 +32,7 @@ SubDomain::~SubDomain()
 EigenArrayXb SubDomain::inside(Eigen::Ref<const EigenRowArrayXXd> x,
                                bool on_boundary) const
 {
-  log::dolfin_error("SubDomain.cpp", "check whether point is inside subdomain",
-                    "Function inside() not implemented by user");
+  throw std::runtime_error("SubDomain::inside function not implemented by user");
   return EigenArrayXb();
 }
 //-----------------------------------------------------------------------------

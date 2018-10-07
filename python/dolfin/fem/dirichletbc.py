@@ -7,6 +7,7 @@
 """FIXME: add description"""
 
 import types
+import typing
 
 import ufl
 from dolfin import cpp, fem, function
@@ -15,7 +16,7 @@ from dolfin import cpp, fem, function
 class AutoSubDomain(cpp.mesh.SubDomain):
     "Wrapper class for creating a SubDomain from an inside() function."
 
-    def __init__(self, inside_function):
+    def __init__(self, inside_function: types.FunctionType):
         "Create SubDomain subclass for given inside() function"
 
         # Check that we get a function
@@ -45,6 +46,45 @@ class AutoSubDomain(cpp.mesh.SubDomain):
 
 
 class DirichletBC(cpp.fem.DirichletBC):
+    """Representation of Dirichlet boundary conditions which are imposed on
+    linear systems
+
+    """
+
+    def __init__(self,
+                 V: typing.Union[function.FunctionSpace,
+                                 cpp.function.FunctionSpace],
+                 value,
+                 domain: typing.Union[cpp.function.GenericFunction,
+                                      ufl.Coefficient, float, int],
+                 method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.
+                 Method.topological,
+                 check_midpoint: typing.Optional[bool] = None):
+        # Extract cpp function space
+        try:
+            _V = V._cpp_object
+        except:
+            _V = V
+
+        # Construct bc value
+        if isinstance(value, (float, int)):
+            _value = cpp.function.Constant(value)
+        elif isinstance(value, ufl.Coefficient):
+            _value = value.cpp_object()
+        elif isinstance(value, cpp.function.GenericFunction):
+            _value = value
+
+        # Construct domain
+        if isinstance(domain, types.FunctionType):
+            _domain = AutoSubDomain(domain)
+            self.sub_domain = _domain
+        else:
+            _domain = domain
+
+        super().__init__(_V, _value, _domain, method)
+
+
+class DirichletBCXX(cpp.fem.DirichletBC):
     def __init__(self, *args, **kwargs):
 
         # FIXME: the logic in this function is really messy and
