@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""FIXME: add description"""
+"""Support for representing Dirichlet boundary conditions that are enforced
+via modification of linear systems
+
+"""
 
 import types
 import typing
