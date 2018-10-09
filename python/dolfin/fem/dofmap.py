@@ -35,8 +35,8 @@ class DofMap:
     a dof map based on a ufc_dofmap on a specific mesh.
     """
 
-    def __init__(self, cpp_dofmap=None):
-        self._cpp_object = cpp_dofmap
+    def __init__(self, dofmap: cpp.fem.DofMap):
+        self._cpp_object = dofmap
 
     @classmethod
     def fromufc(cls, ufc_dofmap, mesh):

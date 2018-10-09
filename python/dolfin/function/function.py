@@ -243,7 +243,9 @@ class Function(ufl.Coefficient):
 
     def function_space(self):
         "Return the FunctionSpace"
-        return function.FunctionSpace(self._cpp_object.function_space())
+        # FIXME: straighten this out
+        return function.FunctionSpace(None, self.ufl_element(), -1,
+                                      self._cpp_object.function_space())
 
     def value_rank(self):
         return self._cpp_object.value_rank()
@@ -357,7 +359,9 @@ class Function(ufl.Coefficient):
             if self == rhs:
                 return
             self._cpp_object._assign(rhs)
-        elif isinstance(rhs, (function.Constant, function.Function, function.Expression)):
+        elif isinstance(
+                rhs,
+            (function.Constant, function.Function, function.Expression)):
             # Avoid self assignment
             if self == rhs:
                 return
