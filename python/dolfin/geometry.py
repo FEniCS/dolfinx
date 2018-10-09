@@ -34,14 +34,14 @@ class BoundingBoxTree:
 
     def compute_entity_collisions_mesh(self, point: "Point", mesh):
         """Compute collisions between the point and entities of the mesh"""
-        return self._cpp_object.compute_entity_collisions(point._cpp_object,
-                                                          mesh)
+        return self._cpp_object.compute_entity_collisions(
+            point._cpp_object, mesh)
 
-    def compute_entity_collisions_bb_mesh(self, bb: "BoundingBoxTree",
-                                          mesh1, mesh2):
+    def compute_entity_collisions_bb_mesh(self, bb: "BoundingBoxTree", mesh1,
+                                          mesh2):
         """Compute collisions between the bounding box and entities of meshes"""
-        return self._cpp_object.compute_entity_collisions(bb._cpp_object,
-                                                          mesh1, mesh2)
+        return self._cpp_object.compute_entity_collisions(
+            bb._cpp_object, mesh1, mesh2)
 
     def compute_first_collision(self, point: "Point"):
         """Compute first collision with the point"""
@@ -49,7 +49,8 @@ class BoundingBoxTree:
 
     def compute_first_entity_collision(self, point: "Point", mesh):
         """Compute fist collision between entities of mesh and the point"""
-        return self._cpp_object.compute_first_entity_collision(point._cpp_object, mesh)
+        return self._cpp_object.compute_first_entity_collision(
+            point._cpp_object, mesh)
 
     def compute_closest_entity(self, point: "Point", mesh):
         """Compute closest entity of the mesh to the point"""

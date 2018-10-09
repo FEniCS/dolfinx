@@ -5,23 +5,22 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import numpy
 import hashlib
-import dijitso
-import ffc
 from functools import wraps
 
+import numpy
 
-from dolfin import pkgconfig
-from dolfin import cpp
-from dolfin import parameter
+import dijitso
+import ffc
+from dolfin import cpp, parameter, pkgconfig
 
 # Get DOLFIN pkg-config data
 if pkgconfig.exists("dolfin"):
     dolfin_pc = pkgconfig.parse("dolfin")
 else:
     raise RuntimeError(
-        "Could not find DOLFIN pkg-config file. Please make sure appropriate paths are set.")
+        "Could not find DOLFIN pkg-config file. Please make sure appropriate paths are set."
+    )
 
 
 # Copied over from site-packages
@@ -41,6 +40,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
                 ....
 
     """
+
     @wraps(local_jit)
     def mpi_jit(*args, **kwargs):
 
@@ -113,10 +113,31 @@ def dijitso_jit(*args, **kwargs):
 
 _cpp_math_builtins = [
     # <cmath> functions: from http://www.cplusplus.com/reference/cmath/
-    "cos", "sin", "tan", "acos", "asin", "atan", "atan2",
-    "cosh", "sinh", "tanh", "exp", "frexp", "ldexp", "log", "log10", "modf",
-    "pow", "sqrt", "ceil", "fabs", "floor", "fmod",
-    "max", "min"]
+    "cos",
+    "sin",
+    "tan",
+    "acos",
+    "asin",
+    "atan",
+    "atan2",
+    "cosh",
+    "sinh",
+    "tanh",
+    "exp",
+    "frexp",
+    "ldexp",
+    "log",
+    "log10",
+    "modf",
+    "pow",
+    "sqrt",
+    "ceil",
+    "fabs",
+    "floor",
+    "fmod",
+    "max",
+    "min"
+]
 
 _math_header = """
 // cmath functions
@@ -164,7 +185,8 @@ def compile_class(cpp_data):
     property_str = ''
     for k, v in properties.items():
         property_str += str(k)
-        if hasattr(v, '_cpp_object') and isinstance(v._cpp_object, cpp.function.GenericFunction):
+        if hasattr(v, '_cpp_object') and isinstance(
+                v._cpp_object, cpp.function.GenericFunction):
             property_str += '*'
 
     hash_str = str(statements) + str(property_str) + cpp.__version__
@@ -172,10 +194,10 @@ def compile_class(cpp_data):
     module_name = "dolfin_" + name + "_" + module_hash
 
     try:
-        module, signature = dijitso_jit(cpp_data, module_name, params,
-                                        generate=cpp_data['jit_generate'])
-        submodule = dijitso.extract_factory_function(
-            module, "create_" + module_name)()
+        module, signature = dijitso_jit(
+            cpp_data, module_name, params, generate=cpp_data['jit_generate'])
+        submodule = dijitso.extract_factory_function(module,
+                                                     "create_" + module_name)()
     except Exception:
         raise RuntimeError("Unable to compile C++ code with dijitso")
 

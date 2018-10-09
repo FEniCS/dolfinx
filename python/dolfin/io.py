@@ -6,15 +6,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """IO module for input data, post-processing and checkpointing"""
 
-from dolfin import cpp
-from dolfin import fem
-from dolfin import function
+from dolfin import cpp, fem, function
 
-
-__all__ = [
-    "HDF5File",
-    "XDMFFile"
-]
+__all__ = ["HDF5File", "XDMFFile"]
 
 
 class HDF5File:
@@ -208,7 +202,8 @@ class XDMFFile:
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
-    def read_checkpoint(self, V, name: str, counter: int = -1) -> function.Function:
+    def read_checkpoint(self, V, name: str,
+                        counter: int = -1) -> function.Function:
         """Read finite element Function from checkpointing format
 
         Parameters
@@ -236,10 +231,7 @@ class XDMFFile:
         u_cpp = self._cpp_object.read_checkpoint(V_cpp, name, counter)
         return function.Function(V, u_cpp.vector())
 
-    def write_checkpoint(self,
-                         u,
-                         name: str,
-                         time_step: float = 0.0) -> None:
+    def write_checkpoint(self, u, name: str, time_step: float = 0.0) -> None:
         """Write finite element Function in checkpointing format
 
         """

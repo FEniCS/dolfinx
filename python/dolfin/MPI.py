@@ -5,8 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import common
-from dolfin import cpp
+from dolfin import common, cpp
 
 if not common.has_mpi4py:
 
@@ -15,6 +14,7 @@ if not common.has_mpi4py:
         can be passed into DOLFIN as an MPI communicator, but is not
         an mpi4py comm.
         """
+
         def underlying_comm(self):
             return cpp.MPICommWrapper.underlying_comm()
 

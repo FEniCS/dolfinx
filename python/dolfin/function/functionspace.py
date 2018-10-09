@@ -6,7 +6,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import ufl
-from dolfin import cpp, fem, jit
+from dolfin import cpp, jit
+from dolfin.fem import dofmap
 
 
 class FunctionSpace(ufl.FunctionSpace):
@@ -40,38 +41,39 @@ class FunctionSpace(ufl.FunctionSpace):
             ufl_element,
             form_compiler_parameters=None,
             mpi_comm=mesh.mpi_comm())
-        ufc_element = fem.dofmap.make_ufc_finite_element(ufc_element)
+        ufc_element = dofmap.make_ufc_finite_element(ufc_element)
         dolfin_element = cpp.fem.FiniteElement(ufc_element)
-        dolfin_dofmap = fem.DofMap.fromufc(ufc_dofmap, mesh)
+        dolfin_dofmap = dofmap.DofMap.fromufc(ufc_dofmap, mesh)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.function.FunctionSpace(
             mesh, dolfin_element, dolfin_dofmap._cpp_object)
 
     def dolfin_element(self):
-        "Return the DOLFIN element."
+        """Return the DOLFIN element."""
         return self._cpp_object.element()
 
     def num_sub_spaces(self):
-        "Return the number of sub spaces"
+        """Return the number of sub spaces."""
         return self.dolfin_element().num_sub_elements()
 
     def sub(self, i: int):
-        """Return the i-th sub space"""
+        """Return the i-th sub space."""
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
         return FunctionSpace(None, sub_element, -1, cppV_sub)
 
     def component(self):
+        """Return the component relative to the parent space."""
         return self._cpp_object.component()
 
     def contains(self, V):
-        "Check whether a function is in the FunctionSpace"
+        """Check whether a function is in the FunctionSpace."""
         return self._cpp_object.contains(V._cpp_object)
 
     def __contains__(self, u):
-        "Check whether a function is in the FunctionSpace"
+        """Check whether a function is in the FunctionSpace."""
         try:
             return u._in(self._cpp_object)
         except AttributeError:
@@ -83,7 +85,7 @@ class FunctionSpace(ufl.FunctionSpace):
                     format(e))
 
     def __eq__(self, other):
-        "Comparison for equality."
+        """Comparison for equality."""
         return ufl.FunctionSpace.__eq__(
             self, other) and self._cpp_object == other._cpp_object
 
@@ -107,10 +109,12 @@ class FunctionSpace(ufl.FunctionSpace):
     def element(self):
         return self._cpp_object.element()
 
-    def dofmap(self):
-        return fem.DofMap(self._cpp_object.dofmap())
+    def dofmap(self) -> dofmap.DofMap:
+        """Return the degree-of-freedom map associated with the function space."""
+        return dofmap.DofMap(self._cpp_object.dofmap())
 
     def mesh(self):
+        """Return the mesh on which the function space is defined."""
         return self._cpp_object.mesh()
 
     def set_x(self, basis, x, component):
@@ -118,10 +122,10 @@ class FunctionSpace(ufl.FunctionSpace):
 
     def collapse(self, collapsed_dofs: bool = False):
         """Collapse a subspace and return a new function space and a map from
-        new to old dofs
+        new to old dofs.
 
         *Arguments*
-            collapsed_dofs (bool)
+            collapsed_dofs
                 Return the map from new to old dofs
 
        *Returns*
@@ -137,10 +141,6 @@ class FunctionSpace(ufl.FunctionSpace):
             return V, dofs
         else:
             return V
-
-    def extract_sub_space(self, component):
-        V = self._cpp_object.extract_sub_space(component)
-        return FunctionSpace(V)
 
     def tabulate_dof_coordinates(self):
         return self._cpp_object.tabulate_dof_coordinates()

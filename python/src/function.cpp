@@ -28,9 +28,6 @@ namespace dolfin_wrappers
 
 void function(py::module& m)
 {
-  // ufc_shape
-  py::class_<ufc_shape>(m, "ufc_shape");
-
   // GenericFunction
   py::class_<dolfin::function::GenericFunction,
              std::shared_ptr<dolfin::function::GenericFunction>,
@@ -153,30 +150,11 @@ void function(py::module& m)
              auto v = self.values();
              return py::array_t<PetscScalar>(v.size(), v.data());
            })
-      /*
-      .def("_assign", [](dolfin::function::Constant& self, const
-      dolfin::function::Constant& other)
-      -> const dolfin::function::Constant&
-           {self = other;})
-      .def("_assign", [](dolfin::function::Constant& self, double value) ->
-      const
-      dolfin::function::Constant&
-           {self = value;})
-      */
       .def("assign",
            [](dolfin::function::Constant& self,
               const dolfin::function::Constant& other) { self = other; })
       .def("assign", [](dolfin::function::Constant& self,
                         PetscScalar value) { self = value; })
-      /*
-      .def("_assign", (const dolfin::function::Constant&
-      (dolfin::function::Constant::*)(const
-      dolfin::function::Constant&))
-                       &dolfin::function::Constant::operator=)
-      .def("_assign", (const dolfin::function::Constant&
-      (dolfin::function::Constant::*)(double))
-                       &dolfin::function::Constant::operator=)
-      */
       .def("str", &dolfin::function::Constant::str);
 
   // dolfin::FacetArea
@@ -202,10 +180,6 @@ void function(py::module& m)
            "Create a function on the given function space")
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>,
                     std::shared_ptr<dolfin::la::PETScVector>>())
-      //.def("_assign", (const dolfin::function::Function&
-      //(dolfin::function::Function::*)(const
-      // dolfin::function::Function&))
-      //     &dolfin::function::Function::operator=)
       .def("__call__",
            [](dolfin::function::Function& self,
               Eigen::Ref<const dolfin::EigenRowArrayXXd> x) {

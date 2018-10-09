@@ -71,6 +71,7 @@ class Timer:
 
         list_timings([TimingType.wall, TimingType.user])
     """
+
     def __init__(self, name: str = None):
         if name is None:
             self._cpp_object = cpp.common.Timer()
@@ -118,5 +119,7 @@ def timed(task: str):
         def wrapper(*args, **kwargs):
             with Timer(task):
                 return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
