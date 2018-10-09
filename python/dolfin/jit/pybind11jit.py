@@ -5,29 +5,31 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import os
-
 import hashlib
-import dijitso
+import os
 import re
 
-from dolfin.cpp.log import log, LogLevel
-from dolfin import cpp
-from dolfin import jit
+import dijitso
+from dolfin import cpp, jit
+from dolfin.cpp.log import LogLevel, log
 
 
 def jit_generate(cpp_code, module_name, signature, parameters):
 
-    log(LogLevel.TRACE, "Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
+    log(LogLevel.TRACE,
+        "Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
 
     # Split code on reserved word "SIGNATURE" which will be replaced
     # by the module signature
     # This must occur only once in the code
     split_cpp_code = re.split('SIGNATURE', cpp_code)
     if len(split_cpp_code) < 2:
-        raise RuntimeError("Cannot find keyword: SIGNATURE in pybind11 C++ code.")
+        raise RuntimeError(
+            "Cannot find keyword: SIGNATURE in pybind11 C++ code.")
     elif len(split_cpp_code) > 2:
-        raise RuntimeError("Found multiple instances of keyword: SIGNATURE in pybind11 C++ code.")
+        raise RuntimeError(
+            "Found multiple instances of keyword: SIGNATURE in pybind11 C++ code."
+        )
 
     code_c = split_cpp_code[0] + signature + split_cpp_code[1]
 
@@ -37,10 +39,14 @@ def jit_generate(cpp_code, module_name, signature, parameters):
     return code_h, code_c, depends
 
 
-def compile_cpp_code(cpp_code, include_dirs=[], libs=[], lib_dirs=[],
+def compile_cpp_code(cpp_code,
+                     include_dirs=[],
+                     libs=[],
+                     lib_dirs=[],
                      cxxflags=[]):
     """Compile a user C(++) string and expose as a Python object with
     pybind11.
+
     """
 
     # Set compiler/build options
@@ -56,9 +62,11 @@ def compile_cpp_code(cpp_code, include_dirs=[], libs=[], lib_dirs=[],
     params['build']['include_dirs'] = jit.dolfin_pc["include_dirs"] + get_pybind_include() \
         + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
     params['build']['libs'] = jit.dolfin_pc["libraries"] + [pyversion]
-    params['build']['lib_dirs'] = jit.dolfin_pc["library_dirs"] + [sysconfig.get_config_var("LIBDIR")]
+    params['build']['lib_dirs'] = jit.dolfin_pc["library_dirs"] + [
+        sysconfig.get_config_var("LIBDIR")
+    ]
 
-    params['build']['cxxflags'] += ('-fno-lto',)
+    params['build']['cxxflags'] += ('-fno-lto', )
 
     # Enable all macros from dolfin.pc
     dmacros = ['-D' + dm for dm in jit.dolfin_pc['define_macros']]
@@ -101,7 +109,8 @@ def get_pybind_include():
 
     # Look in /usr/local/include and /usr/include
     root = os.path.abspath(os.sep)
-    for p in (os.path.join(root, "usr", "local", "include"), os.path.join(root, "usr", "include")):
+    for p in (os.path.join(root, "usr", "local", "include"),
+              os.path.join(root, "usr", "include")):
         if (_check_pybind_path(p)):
             return [p]
 

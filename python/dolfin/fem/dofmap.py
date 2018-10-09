@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import cpp, fem
+from dolfin import cpp
 
 
 def make_ufc_finite_element(ufc_finite_element):
@@ -35,8 +35,8 @@ class DofMap:
     a dof map based on a ufc_dofmap on a specific mesh.
     """
 
-    def __init__(self, cpp_dofmap=None):
-        self._cpp_object = cpp_dofmap
+    def __init__(self, dofmap: cpp.fem.DofMap):
+        self._cpp_object = dofmap
 
     @classmethod
     def fromufc(cls, ufc_dofmap, mesh):
@@ -48,7 +48,7 @@ class DofMap:
             Pointer to ufc_dofmap as returned by FFC JIT
         mesh: dolfin.cpp.mesh.Mesh
         """
-        ufc_dofmap = fem.dofmap.make_ufc_dofmap(ufc_dofmap)
+        ufc_dofmap = make_ufc_dofmap(ufc_dofmap)
         cpp_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh)
         return cls(cpp_dofmap)
 

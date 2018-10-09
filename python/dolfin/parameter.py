@@ -4,13 +4,10 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
 """FIXME: document"""
 
+from dolfin import common, cpp
 from ffc import default_jit_parameters
-
-from dolfin import common
-from dolfin import cpp
 
 
 #  Extend cpp.Parameters with a __getitem__ method
@@ -60,8 +57,7 @@ def ffc_default_parameters():
     d = default_jit_parameters()
     p = cpp.parameter.Parameters("form_compiler")
 
-    typemap = {"quadrature_rule": "", "quadrature_degree": 0,
-               "precision": 0}
+    typemap = {"quadrature_rule": "", "quadrature_degree": 0, "precision": 0}
 
     # Add the rest
     for key, value in d.items():

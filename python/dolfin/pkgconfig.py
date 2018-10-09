@@ -4,24 +4,22 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-
-"""
-Tool for querying pkg-config files
+"""Tool for querying pkg-config files
 
 This module exists solely to extract the compilation and linking
 information saved in the **dolfin.pc** pkg-config file, needed for JIT
 compilation.
 """
 
-import subprocess
 import os
+import subprocess
 
 
 def _pkgconfig_query(s):
     pkg_config_exe = os.environ.get('PKG_CONFIG', None) or 'pkg-config'
     cmd = [pkg_config_exe] + s.split()
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+    proc = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = proc.communicate()
     rc = proc.returncode
     return (rc, out.rstrip().decode('utf-8'))
@@ -34,10 +32,12 @@ def exists(package):
 
 def parse(package):
     "Return a dict containing compile-time definitions"
-    parse_map = {'-D': 'define_macros',
-                 '-I': 'include_dirs',
-                 '-L': 'library_dirs',
-                 '-l': 'libraries'}
+    parse_map = {
+        '-D': 'define_macros',
+        '-I': 'include_dirs',
+        '-L': 'library_dirs',
+        '-l': 'libraries'
+    }
 
     result = {x: [] for x in parse_map.values()}
 
