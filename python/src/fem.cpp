@@ -21,7 +21,6 @@
 
 #include "casters.h"
 #include <dolfin/common/types.h>
-#include <dolfin/fem/Assembler.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
@@ -32,6 +31,7 @@
 #include <dolfin/fem/PETScDMCollection.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
+#include <dolfin/fem/assembler.h>
 #include <dolfin/fem/utils.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -274,24 +274,20 @@ void fem(py::module& m)
         py::overload_cast<
             const std::vector<std::vector<const dolfin::fem::Form*>>,
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            dolfin::fem::BlockType>(&dolfin::fem::assemble),
+            dolfin::fem::BlockType, double>(&dolfin::fem::assemble),
         py::arg("a"), py::arg("bcs"), py::arg("block_type"),
-        "Assemble bilinear forms over mesh into blocked "
-        "matrix");
-  m.def("reassemble_blocked_matrix",
-        py::overload_cast<
-            dolfin::la::PETScMatrix&,
-            const std::vector<std::vector<const dolfin::fem::Form*>>,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>(
-            &dolfin::fem::assemble),
-        py::arg("A"), py::arg("a"), py::arg("bcs"),
-        "Re-assemble bilinear forms over mesh into blocked matrix");
-
-  m.def("set_bc",
-        py::overload_cast<
-            dolfin::la::PETScVector&, const dolfin::fem::Form&,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>(
-            &dolfin::fem::set_bc),
+        py::arg("diagonal"),
+        "Assemble bilinear forms over mesh into blocked matrix");
+  m.def(
+      "reassemble_blocked_matrix",
+      py::overload_cast<
+          dolfin::la::PETScMatrix&,
+          const std::vector<std::vector<const dolfin::fem::Form*>>,
+          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
+          &dolfin::fem::assemble),
+      py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
+      "Re-assemble bilinear forms over mesh into blocked matrix");
+  m.def("set_bc", &dolfin::fem::set_bc,
         "Insert boundary condition values into vector");
 
   // dolfin::fem::AssemblerBase

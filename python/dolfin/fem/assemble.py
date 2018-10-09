@@ -45,7 +45,8 @@ def _assemble_vector(b: cpp.la.PETScVector,
 
 
 @assemble.register(cpp.la.PETScMatrix)
-def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[]) -> cpp.la.PETScMatrix:
+def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[],
+                     diagonal: float = 1.0) -> cpp.la.PETScMatrix:
     """Re-assemble bilinear form into a vector, with rows and columns with Dirichlet
     boundary conditions zeroed.
 
@@ -54,7 +55,7 @@ def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[]) -> cpp.la.PETScMatrix:
         a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     except TypeError:
         a_cpp = [[_create_cpp_form(a)]]
-    cpp.fem.reassemble_blocked_matrix(A, a_cpp, bcs)
+    cpp.fem.reassemble_blocked_matrix(A, a_cpp, bcs, diagonal)
     return A
 
 
@@ -70,13 +71,18 @@ def assemble_vector(L,
                                            scale)
 
 
-def assemble_matrix(a, bcs: typing.List[DirichletBC],
-                    block_type) -> cpp.la.PETScMatrix:
+def assemble_matrix(a,
+                    bcs: typing.List[DirichletBC],
+                    block_type,
+                    diagonal: float = 1.0) -> cpp.la.PETScMatrix:
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    return cpp.fem.assemble_blocked_matrix(a_cpp, bcs, block_type)
+    return cpp.fem.assemble_blocked_matrix(a_cpp, bcs, block_type, diagonal)
 
 
-def set_bc(b: cpp.la.PETScVector, L, bcs: typing.List[DirichletBC]) -> None:
+def set_bc(b: cpp.la.PETScVector,
+           L,
+           bcs: typing.List[DirichletBC],
+           scale: float = 1.0) -> None:
     """Insert boundary condition values into vector"""
-    cpp.fem.set_bc(b, L, bcs)
+    cpp.fem.set_bc(b, L, bcs, scale)

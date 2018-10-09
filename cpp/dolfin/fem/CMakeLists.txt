@@ -1,5 +1,7 @@
 set(HEADERS
-  Assembler.h
+  assembler.h
+  assemble_matrix_impl.h
+  assemble_vector_impl.h
   AssemblerBase.h
   CoordinateMapping.h
   DirichletBC.h
@@ -22,7 +24,9 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  Assembler.cpp
+  assembler.cpp
+  assemble_matrix_impl.cpp
+  assemble_vector_impl.cpp
   AssemblerBase.cpp
   DirichletBC.cpp
   DiscreteOperators.cpp

@@ -6,10 +6,16 @@
 
 #pragma once
 
+#include <petscis.h>
 #include <string>
+#include <vector>
 
 namespace dolfin
 {
+namespace common
+{
+class IndexMap;
+}
 namespace la
 {
 
@@ -21,6 +27,9 @@ enum class Norm
   linf,
   frobenius
 };
+
+/// Compute IndexSets (IS) for stacked index maps
+std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);
 
 /// Print error message for PETSc calls that return an error
 void petsc_error(int error_code, std::string filename,
