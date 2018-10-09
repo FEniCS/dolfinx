@@ -11,6 +11,8 @@ from dolfin.fem import dofmap
 
 
 class FunctionSpace(ufl.FunctionSpace):
+    """A space on which Functions (fields) can be defined."""
+
     def __init__(self, mesh, element, degree=None, cppV=None):
         """Create a finite element function space."""
 
