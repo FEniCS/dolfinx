@@ -1,17 +1,16 @@
-"""This file solves a simple reaction-diffusion problem and compares
-the norm of the solution vector with a known solution (obtained when
-running in serial). It is used for validating mesh partitioning and
-parallel assembly/solve."""
-
 # Copyright (C) 2009-2014 Anders Logg
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""This file solves a simple reaction-diffusion problem and compares
+the norm of the solution vector with a known solution (obtained when
+running in serial). It is used for validating mesh partitioning and
+parallel assembly/solve."""
 
-from dolfin import (MPI, TestFunction, TrialFunction, FunctionSpace,
-                    UnitSquareMesh, UnitCubeMesh, Expression,
-                    inner, grad, dx, ds, Function, solve, cpp)
+from dolfin import (MPI, Expression, Function, FunctionSpace, TestFunction,
+                    TrialFunction, UnitCubeMesh, UnitSquareMesh, cpp, ds, dx,
+                    grad, inner, solve)
 from dolfin.la import PETScOptions
 from dolfin_utils.test import gc_barrier
 
@@ -23,7 +22,7 @@ def compute_norm(mesh, degree):
     "Solve on given mesh file and degree of function space."
 
     # Create function space
-    V = FunctionSpace(mesh, "Lagrange", degree)
+    V = FunctionSpace(mesh, ("Lagrange", degree))
 
     # Define variational problem
     v = TestFunction(V)
@@ -35,8 +34,7 @@ def compute_norm(mesh, degree):
 
     # Compute solution
     w = Function(V)
-    solve(a == L, w, petsc_options={"ksp_type": "preonly",
-                                    "pc_type": "lu"})
+    solve(a == L, w, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
     #
     # A, b = fem.assembling.assemble_system(a, L)
     # solver = PETScKrylovSolver(MPI.comm_world)
@@ -91,31 +89,36 @@ def print_errors(errors):
                 print("missing reference")
             else:
                 print("*** ERROR", end=' ')
-                print("(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff))
+                print(
+                    "(norm = %.16g, reference = %.16g, relative diff = %.16g)"
+                    % (norm, ref, diff))
     MPI.barrier(MPI.comm_world)
 
 
 def test_computed_norms_against_references():
     # Reference values for norm of solution vector
-    reference = {("16x16 unit tri square", 1): 9.547454087328376,
-                 ("16x16 unit tri square", 2): 18.42366670418269,
-                 ("16x16 unit tri square", 3): 27.29583104732836,
-                 ("16x16 unit tri square", 4): 36.16867128121694,
-                 ("4x4x4 unit tet cube", 1): 12.23389289626038,
-                 ("4x4x4 unit tet cube", 2): 28.96491629163837,
-                 ("4x4x4 unit tet cube", 3): 49.97350551329799,
-                 ("4x4x4 unit tet cube", 4): 74.49938266409099,
-                 ("16x16 unit quad square", 1): 9.550848071820747,
-                 ("16x16 unit quad square", 2): 18.423668706176354,
-                 ("16x16 unit quad square", 3): 27.295831017251672,
-                 ("16x16 unit quad square", 4): 36.168671281610855,
-                 ("4x4x4 unit hex cube", 1): 12.151954087339782,
-                 ("4x4x4 unit hex cube", 2): 28.965646690046885,
-                 ("4x4x4 unit hex cube", 3): 49.97349423895635,
-                 ("4x4x4 unit hex cube", 4): 74.49938136593539}
+    reference = {
+        ("16x16 unit tri square", 1): 9.547454087328376,
+        ("16x16 unit tri square", 2): 18.42366670418269,
+        ("16x16 unit tri square", 3): 27.29583104732836,
+        ("16x16 unit tri square", 4): 36.16867128121694,
+        ("4x4x4 unit tet cube", 1): 12.23389289626038,
+        ("4x4x4 unit tet cube", 2): 28.96491629163837,
+        ("4x4x4 unit tet cube", 3): 49.97350551329799,
+        ("4x4x4 unit tet cube", 4): 74.49938266409099,
+        ("16x16 unit quad square", 1): 9.550848071820747,
+        ("16x16 unit quad square", 2): 18.423668706176354,
+        ("16x16 unit quad square", 3): 27.295831017251672,
+        ("16x16 unit quad square", 4): 36.168671281610855,
+        ("4x4x4 unit hex cube", 1): 12.151954087339782,
+        ("4x4x4 unit hex cube", 2): 28.965646690046885,
+        ("4x4x4 unit hex cube", 3): 49.97349423895635,
+        ("4x4x4 unit hex cube", 4): 74.49938136593539
+    }
 
     # Mesh files and degrees to check
-    meshes = [(UnitSquareMesh(MPI.comm_world, 16, 16), "16x16 unit tri square"),
+    meshes = [(UnitSquareMesh(MPI.comm_world, 16, 16),
+               "16x16 unit tri square"),
               (UnitCubeMesh(MPI.comm_world, 4, 4, 4), "4x4x4 unit tet cube")]
     # (UnitSquareMesh(MPI.comm_world, 16, 16, CellType.Type.quadrilateral), "16x16 unit quad square"),
     # (UnitCubeMesh(MPI.comm_world, 4, 4, 4, CellType.Type.hexahedron), "4x4x4 unit hex cube")]

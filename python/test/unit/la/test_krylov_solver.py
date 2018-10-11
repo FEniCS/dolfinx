@@ -21,7 +21,7 @@ from dolfin.la import (PETScKrylovSolver, PETScMatrix, PETScOptions,
 def test_krylov_solver_lu():
 
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
-    V = FunctionSpace(mesh, "Lagrange", 1)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
 
     a = Constant(1.0) * inner(u, v) * dx
@@ -60,7 +60,7 @@ def test_krylov_reuse_pc_lu():
             pytest.skip("PETSc version must be 3.5  of higher")
 
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
-    V = FunctionSpace(mesh, "Lagrange", 1)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
     u, v = TrialFunction(V), TestFunction(V)
 
     a = Constant(1.0) * u * v * dx
@@ -192,7 +192,7 @@ def test_krylov_reuse_pc():
 
     # Define problem
     mesh = UnitSquareMesh(MPI.comm_world, 8, 8)
-    V = FunctionSpace(mesh, 'Lagrange', 1)
+    V = FunctionSpace(mesh, ('Lagrange', 1))
     bc = DirichletBC(V, Constant(0.0), lambda x, on_boundary: on_boundary)
     u = TrialFunction(V)
     v = TestFunction(V)
