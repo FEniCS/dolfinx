@@ -139,7 +139,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
-        V = FunctionSpace(None, self.ufl_element(), None, cpp_space)
+        V = FunctionSpace(None, self.ufl_element(), cpp_space)
         if collapsed_dofs:
             return V, dofs
         else:

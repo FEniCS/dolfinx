@@ -244,7 +244,7 @@ class Function(ufl.Coefficient):
     def function_space(self):
         "Return the FunctionSpace"
         # FIXME: straighten this out
-        return function.FunctionSpace(None, self.ufl_element(), -1,
+        return function.FunctionSpace(None, self.ufl_element(),
                                       self._cpp_object.function_space())
 
     def value_rank(self):

@@ -15,4 +15,3 @@ def FunctionSpace(mesh, element, degree=None):
         return functionspace.FunctionSpace(mesh, (element, degree))
     else:
         return functionspace.FunctionSpace(mesh, element, degree)
-

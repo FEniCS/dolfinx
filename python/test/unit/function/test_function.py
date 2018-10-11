@@ -25,12 +25,12 @@ def mesh():
 
 @fixture
 def R(mesh):
-    return FunctionSpace(mesh, 'R', 0)
+    return FunctionSpace(mesh, ('R', 0))
 
 
 @fixture
 def V(mesh):
-    return FunctionSpace(mesh, 'CG', 1)
+    return FunctionSpace(mesh, ('CG', 1))
 
 
 @fixture
