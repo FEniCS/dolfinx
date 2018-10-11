@@ -35,7 +35,7 @@ def test_p4_scalar_vector():
         mesh = Mesh(MPI.comm_world, CellType.Type.tetrahedron, points, cells, [], GhostMode.none)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
 
-        Q = FunctionSpace(mesh, ("CG", 4))
+        Q = FunctionSpace(mesh, "CG", 4)
         F0 = interpolate(Expression("x[0]", degree=4), Q)
         F1 = interpolate(Expression("x[1]", degree=4), Q)
         F2 = interpolate(Expression("x[2]", degree=4), Q)
@@ -61,7 +61,7 @@ def test_p4_scalar_vector():
 def test_p4_parallel_2d():
     mesh = UnitSquareMesh(MPI.comm_world, 5, 8)
 
-    Q = FunctionSpace(mesh, ("CG", 4))
+    Q = FunctionSpace(mesh, "CG", 4)
 
     F = Function(Q)
     F.interpolate(Expression("x[0]", degree=4))
@@ -83,7 +83,7 @@ def test_p4_parallel_2d():
 def test_p4_parallel_3d():
     mesh = UnitCubeMesh(MPI.comm_world, 3, 5, 8)
 
-    Q = FunctionSpace(mesh, ("CG", 5))
+    Q = FunctionSpace(mesh, "CG", 5)
 
     F = Function(Q)
     F.interpolate(Expression("x[0]", degree=5))

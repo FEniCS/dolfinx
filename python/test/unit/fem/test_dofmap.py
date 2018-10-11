@@ -11,12 +11,11 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (DOLFIN_EPS, MPI, Cells, CellType, FiniteElement,
-                    FunctionSpace, MixedElement, Point, SubDomain,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorElement, VectorFunctionSpace)
-from dolfin_utils.test import (fixture, set_parameters_fixture,
-                               skip_in_parallel, skip_in_serial)
+from dolfin import (UnitSquareMesh, UnitIntervalMesh, UnitCubeMesh, MPI, CellType,
+                    VectorFunctionSpace,
+                    FunctionSpace, MixedElement, FiniteElement, VectorElement, Point,
+                    Cells, SubDomain, DOLFIN_EPS)
+from dolfin_utils.test import fixture, skip_in_serial, skip_in_parallel, set_parameters_fixture
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -49,7 +48,7 @@ reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
 def test_tabulate_all_coordinates(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
+    V = FunctionSpace(mesh, "Lagrange", 1)
     W0 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     W1 = VectorElement("Lagrange", mesh.ufl_cell(), 1)
     W = FunctionSpace(mesh, W0 * W1)
@@ -258,7 +257,7 @@ def test_entity_dofs(mesh):
 
     # Test that num entity dofs is correctly wrapped to
     # dolfin::DofMap
-    V = FunctionSpace(mesh, ("CG", 1))
+    V = FunctionSpace(mesh, "CG", 1)
     assert V.dofmap().num_entity_dofs(0) == 1
     assert V.dofmap().num_entity_dofs(1) == 0
     assert V.dofmap().num_entity_dofs(2) == 0
@@ -268,22 +267,22 @@ def test_entity_dofs(mesh):
     assert V.dofmap().num_entity_dofs(1) == 0
     assert V.dofmap().num_entity_dofs(2) == 0
 
-    V = FunctionSpace(mesh, ("CG", 2))
+    V = FunctionSpace(mesh, "CG", 2)
     assert V.dofmap().num_entity_dofs(0) == 1
     assert V.dofmap().num_entity_dofs(1) == 1
     assert V.dofmap().num_entity_dofs(2) == 0
 
-    V = FunctionSpace(mesh, ("CG", 3))
+    V = FunctionSpace(mesh, "CG", 3)
     assert V.dofmap().num_entity_dofs(0) == 1
     assert V.dofmap().num_entity_dofs(1) == 2
     assert V.dofmap().num_entity_dofs(2) == 1
 
-    V = FunctionSpace(mesh, ("DG", 0))
+    V = FunctionSpace(mesh, "DG", 0)
     assert V.dofmap().num_entity_dofs(0) == 0
     assert V.dofmap().num_entity_dofs(1) == 0
     assert V.dofmap().num_entity_dofs(2) == 1
 
-    V = FunctionSpace(mesh, ("DG", 1))
+    V = FunctionSpace(mesh, "DG", 1)
     assert V.dofmap().num_entity_dofs(0) == 0
     assert V.dofmap().num_entity_dofs(1) == 0
     assert V.dofmap().num_entity_dofs(2) == 3
@@ -473,56 +472,56 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
 
 @skip_in_parallel
 @pytest.mark.parametrize('space', [
-    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        ('P', 1))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('P', 1))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('P', 1))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           ('Q', 1))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             ('Q', 1))",
-    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        ('P', 2))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('P', 2))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('P', 2))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           ('Q', 2))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             ('Q', 2))",
-    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        ('P', 3))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('P', 3))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('P', 3))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           ('Q', 3))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             ('Q', 3))",
-    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        ('DP', 1))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('DP', 1))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('DP', 1))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           ('DQ', 1))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             ('DQ', 1))",
-    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        ('DP', 2))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('DP', 2))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('DP', 2))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           ('DQ', 2))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             ('DQ', 2))",
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('N1curl', 1))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('N1curl', 1))",
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'P', 1)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'P', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'P', 1)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           'Q', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             'Q', 1)",
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'P', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'P', 2)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'P', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           'Q', 2)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             'Q', 2)",
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'P', 3)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'P', 3)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'P', 3)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),           'Q', 3)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             'Q', 3)",
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'DP', 1)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'DP', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'DP', 1)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'DQ', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'DQ', 1)",
+    "FunctionSpace(UnitIntervalMesh(MPI.comm_world, 10),                                        'DP', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'DP', 2)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'DP', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'DQ', 2)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'DQ', 2)",
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'N1curl', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'N1curl', 1)",
     xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), ('N1curl', 1))"
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'N1curl', 1)"
     ),
     xfail_ffc(
-        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   ('N1curl', 1))"
+        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'N1curl', 1)"
     ),
     xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('N1curl', 2))"
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'N1curl', 2)"
     ),
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('N1curl', 2))",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'N1curl', 2)",
     xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), ('N1curl', 2))"
-    ),
-    xfail_ffc(
-        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   ('N1curl', 2))"
-    ),
-    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('RT', 1))",
-    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('RT', 1))",
-    xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), ('RT', 1)))"
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'N1curl', 2)"
     ),
     xfail_ffc(
-        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   ('RT', 1))"
+        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'N1curl', 2)"
+    ),
+    "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                'RT', 1)",
+    "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            'RT', 1)",
+    xfail_ffc(
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), 'RT', 1)"
+    ),
+    xfail_ffc(
+        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   'RT', 1)"
     ),
 ])
 def test_dofs_dim(space):
@@ -542,7 +541,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
     view into the data; in particular test lifetime of data
     owner"""
-    V = FunctionSpace(mesh, ("P", 1))
+    V = FunctionSpace(mesh, "P", 1)
     dofmap = V.dofmap()
     index_map = dofmap.index_map()
 
