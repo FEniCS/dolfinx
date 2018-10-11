@@ -13,7 +13,7 @@ from dolfin.fem import dofmap
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    def __init__(self, mesh, element, degree=None, cppV=None):
+    def __init__(self, mesh, element, cppV=None):
         """Create a finite element function space."""
 
         # FIXME: This includes some hacks to support construction of
@@ -33,7 +33,8 @@ class FunctionSpace(ufl.FunctionSpace):
         if isinstance(element, ufl.FiniteElementBase):
             ufl_element = element
         else:
-            family = element
+            family, degree = element[0], element[1]
+            family = element[0]
             ufl_element = ufl.FiniteElement(
                 family, mesh.ufl_cell(), degree, form_degree=None)
         ufl.FunctionSpace.__init__(self, mesh.ufl_domain(), ufl_element)
@@ -64,7 +65,7 @@ class FunctionSpace(ufl.FunctionSpace):
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
-        return FunctionSpace(None, sub_element, -1, cppV_sub)
+        return FunctionSpace(None, sub_element, cppV_sub)
 
     def component(self):
         """Return the component relative to the parent space."""

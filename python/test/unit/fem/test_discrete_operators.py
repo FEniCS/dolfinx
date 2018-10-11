@@ -21,8 +21,8 @@ def test_gradient():
     AMG preconditioners"""
 
     def compute_discrete_gradient(mesh):
-        V = FunctionSpace(mesh, "Lagrange", 1)
-        W = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
+        V = FunctionSpace(mesh, ("Lagrange", 1))
+        W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
 
         G = DiscreteOperators.build_gradient(W._cpp_object, V._cpp_object)
         num_edges = mesh.num_entities_global(1)
@@ -44,8 +44,8 @@ def test_incompatible_spaces():
     "Test that error is thrown when function spaces are not compatible"
 
     mesh = UnitSquareMesh(MPI.comm_world, 13, 7)
-    V = FunctionSpace(mesh, "Lagrange", 1)
-    W = FunctionSpace(mesh, "Nedelec 1st kind H(curl)", 1)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
     with pytest.raises(RuntimeError):
         DiscreteOperators.build_gradient(V._cpp_object, W._cpp_object)
     with pytest.raises(RuntimeError):
@@ -53,6 +53,6 @@ def test_incompatible_spaces():
     with pytest.raises(RuntimeError):
         DiscreteOperators.build_gradient(W._cpp_object, W._cpp_object)
 
-    V = FunctionSpace(mesh, "Lagrange", 2)
+    V = FunctionSpace(mesh, ("Lagrange", 2))
     with pytest.raises(RuntimeError):
         DiscreteOperators.build_gradient(W._cpp_object, V._cpp_object)
