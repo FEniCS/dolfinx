@@ -427,7 +427,7 @@ def test_mpi_dofmap_stats(mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
-    V = FunctionSpace(mesh, "CG", 1)
+    V = FunctionSpace(mesh, ("CG", 1))
     assert len(V.dofmap().shared_nodes()) > 0
     neighbours = V.dofmap().neighbours()
     for processes in V.dofmap().shared_nodes().values():
