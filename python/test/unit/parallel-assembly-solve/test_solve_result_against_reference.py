@@ -1,19 +1,17 @@
-"""This file solves a simple reaction-diffusion problem and compares
-the norm of the solution vector with a known solution (obtained when
-running in serial). It is used for validating mesh partitioning and
-parallel assembly/solve."""
-
 # Copyright (C) 2009-2014 Anders Logg
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""This file solves a simple reaction-diffusion problem and compares
+the norm of the solution vector with a known solution (obtained when
+running in serial). It is used for validating mesh partitioning and
+parallel assembly/solve."""
 
 import ufl
-
-from dolfin import (MPI, TestFunction, TrialFunction, FunctionSpace,
-                    UnitSquareMesh, UnitCubeMesh, inner, grad, dx, ds,
-                    Function, solve, cpp, SpatialCoordinate)
+from dolfin import (MPI, Function, FunctionSpace, SpatialCoordinate,
+                    TestFunction, TrialFunction, UnitCubeMesh, UnitSquareMesh,
+                    cpp, ds, dx, grad, inner, solve)
 from dolfin.la import PETScOptions
 from dolfin_utils.test import gc_barrier
 
@@ -25,7 +23,7 @@ def compute_norm(mesh, degree):
     "Solve on given mesh file and degree of function space."
 
     # Create function space
-    V = FunctionSpace(mesh, "Lagrange", degree)
+    V = FunctionSpace(mesh, ("Lagrange", degree))
 
     # Define variational problem
     v = TestFunction(V)
@@ -38,8 +36,7 @@ def compute_norm(mesh, degree):
 
     # Compute solution
     w = Function(V)
-    solve(a == L, w, petsc_options={"ksp_type": "preonly",
-                                    "pc_type": "lu"})
+    solve(a == L, w, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
     #
     # A, b = fem.assembling.assemble_system(a, L)
     # solver = PETScKrylovSolver(MPI.comm_world)
@@ -94,7 +91,9 @@ def print_errors(errors):
                 print("missing reference")
             else:
                 print("*** ERROR", end=' ')
-                print("(norm = %.16g, reference = %.16g, relative diff = %.16g)" % (norm, ref, diff))
+                print(
+                    "(norm = %.16g, reference = %.16g, relative diff = %.16g)"
+                    % (norm, ref, diff))
     MPI.barrier(MPI.comm_world)
 
 
@@ -106,7 +105,8 @@ def test_computed_norms_against_references():
                  ("4x4x4 unit tet cube", 2): 28.96492975422821}
 
     # Mesh files and degrees to check
-    meshes = [(UnitSquareMesh(MPI.comm_world, 16, 16), "16x16 unit tri square"),
+    meshes = [(UnitSquareMesh(MPI.comm_world, 16, 16),
+               "16x16 unit tri square"),
               (UnitCubeMesh(MPI.comm_world, 4, 4, 4), "4x4x4 unit tet cube")]
     # (UnitSquareMesh(MPI.comm_world, 16, 16, CellType.Type.quadrilateral), "16x16 unit quad square"),
     # (UnitCubeMesh(MPI.comm_world, 4, 4, 4, CellType.Type.hexahedron), "4x4x4 unit hex cube")]

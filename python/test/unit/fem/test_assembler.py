@@ -30,7 +30,7 @@ def test_assemble_functional():
 
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
-    V = dolfin.FunctionSpace(mesh, "Lagrange", 1)
+    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
     a = dolfin.Constant(1.0) * inner(u, v) * dx

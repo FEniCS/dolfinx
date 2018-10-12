@@ -25,22 +25,22 @@ def mesh():
 
 @fixture
 def R(mesh):
-    return FunctionSpace(mesh, 'R', 0)
+    return FunctionSpace(mesh, ('R', 0))
 
 
 @fixture
 def V(mesh):
-    return FunctionSpace(mesh, 'CG', 1)
+    return FunctionSpace(mesh, ('CG', 1))
 
 
 @fixture
 def W(mesh):
-    return VectorFunctionSpace(mesh, 'CG', 1)
+    return VectorFunctionSpace(mesh, ('CG', 1))
 
 
 @fixture
 def Q(mesh):
-    return TensorFunctionSpace(mesh, 'CG', 1)
+    return TensorFunctionSpace(mesh, ('CG', 1))
 
 
 def test_name_argument(W):

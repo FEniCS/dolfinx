@@ -22,6 +22,7 @@ Public user interface
    dolfin.parameter
    dolfin.pkgconfig
    dolfin.plotting
+   dolfin.legacy
 
 
 Low-level API

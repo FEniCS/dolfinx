@@ -92,7 +92,7 @@ divided into two triangles, we do as follows ::
     mesh = RectangleMesh.create(MPI.comm_world,
         [Point(0,0)._cpp_object, Point(1,1)._cpp_object], [32, 32],
         CellType.Type.triangle, dolfin.cpp.mesh.GhostMode.none)
-    V = FunctionSpace(mesh, "Lagrange", 1)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
 
     cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
     mesh.geometry.coord_mapping = cmap

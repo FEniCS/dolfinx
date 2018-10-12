@@ -1,13 +1,13 @@
-"Unit tests for SparsityPattern"
-
 # Copyright (C) 2017 Nathan Sime
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for SparsityPattern"""
 
 import numpy as np
-from dolfin import UnitSquareMesh, MPI, CellType, FunctionSpace, cpp
+
+from dolfin import MPI, CellType, FunctionSpace, UnitSquareMesh, cpp
 from dolfin_utils.test import fixture
 
 
@@ -26,7 +26,7 @@ def mesh():
 
 @fixture
 def V(mesh):
-    return FunctionSpace(mesh, "Lagrange", 1)
+    return FunctionSpace(mesh, ("Lagrange", 1))
 
 
 def xtest_str(mesh, V):
@@ -86,7 +86,8 @@ def xtest_insert_global(mesh, V):
     local_range = index_map.local_range()
 
     # Build sparse tensor layout
-    tl = cpp.la.TensorLayout(mesh.mpi_comm(), 0, cpp.la.TensorLayout.Sparsity.SPARSE)
+    tl = cpp.la.TensorLayout(mesh.mpi_comm(), 0,
+                             cpp.la.TensorLayout.Sparsity.SPARSE)
     tl.init([index_map, index_map], cpp.la.TensorLayout.Ghosts.UNGHOSTED)
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
@@ -133,7 +134,8 @@ def xtest_insert_local_global(mesh, V):
     local_range = index_map.local_range()
 
     # Build sparse tensor layout
-    tl = cpp.la.TensorLayout(mesh.mpi_comm(), 0, cpp.la.TensorLayout.Sparsity.SPARSE)
+    tl = cpp.la.TensorLayout(mesh.mpi_comm(), 0,
+                             cpp.la.TensorLayout.Sparsity.SPARSE)
     tl.init([index_map, index_map], cpp.la.TensorLayout.Ghosts.UNGHOSTED)
     sp = tl.sparsity_pattern()
     sp.init([index_map, index_map])
