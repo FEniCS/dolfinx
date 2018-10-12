@@ -12,7 +12,7 @@ from dolfin import cpp, jit
 from dolfin.fem import dofmap
 
 
-class ElementDef(typing.NamedTuple):
+class ElementMetaData(typing.NamedTuple):
     """Data for representing a finite element"""
     family: str
     degree: int
@@ -24,7 +24,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
     def __init__(self,
                  mesh: cpp.mesh.Mesh,
-                 element: typing.Union[ufl.FiniteElementBase, ElementDef],
+                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
                  cppV: typing.Optional[cpp.function.FunctionSpace] = None):
         """Create a finite element function space."""
 
@@ -41,7 +41,7 @@ class FunctionSpace(ufl.FunctionSpace):
         if isinstance(element, ufl.FiniteElementBase):
             super().__init__(mesh.ufl_domain(), element)
         else:
-            e = ElementDef(*element)
+            e = ElementMetaData(*element)
             ufl_element = ufl.FiniteElement(
                 e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
             super().__init__(mesh.ufl_domain(), ufl_element)
@@ -155,12 +155,12 @@ class FunctionSpace(ufl.FunctionSpace):
 
 
 def VectorFunctionSpace(mesh: cpp.mesh.Mesh,
-                        element: ElementDef,
+                        element: ElementMetaData,
                         dim=None,
                         restriction=None):
     """Create vector finite element (composition of scalar elements) function space."""
 
-    e = ElementDef(*element)
+    e = ElementMetaData(*element)
     ufl_element = ufl.VectorElement(
         e.family,
         mesh.ufl_cell(),
@@ -171,13 +171,13 @@ def VectorFunctionSpace(mesh: cpp.mesh.Mesh,
 
 
 def TensorFunctionSpace(mesh: cpp.mesh.Mesh,
-                        element: ElementDef,
+                        element: ElementMetaData,
                         shape=None,
                         symmetry: bool = None,
                         restriction=None):
     """Create tensor finite element (composition of scalar elements) function space."""
 
-    e = ElementDef(*element)
+    e = ElementMetaData(*element)
     ufl_element = ufl.TensorElement(e.family, mesh.ufl_cell(), e.degree, shape,
                                     symmetry)
     return FunctionSpace(mesh, ufl_element)
