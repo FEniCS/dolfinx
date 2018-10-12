@@ -170,7 +170,7 @@ texinfo_documents = [
 
 autodoc_default_flags = ['members', 'show-inheritance']
 autosummary_generate = True
-autoclass_content = "init"
+autoclass_content = "both"
 
 napoleon_google_docstring = False
 napoleon_use_admonition_for_notes = False

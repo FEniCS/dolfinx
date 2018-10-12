@@ -5,9 +5,19 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import collections
+import typing
+
 import ufl
 from dolfin import cpp, jit
 from dolfin.fem import dofmap
+
+
+class ElementDef(typing.NamedTuple):
+    """Data for representing a finite element"""
+    family: str
+    degree: int
+    form_degree: int = None
 
 
 class FunctionSpace(ufl.FunctionSpace):
@@ -16,32 +26,31 @@ class FunctionSpace(ufl.FunctionSpace):
     def __init__(self, mesh, element, cppV=None):
         """Create a finite element function space."""
 
-        # FIXME: This includes some hacks to support construction of
-        # function spaces with existing cpp FunctionSpace, which is
-        # typical when extracting subspaces.
-        #
-        # It would element if an element argument was a single object,
-        # e.g. a ufl.FiniteElement or a tuple(family degree)
-
+        # Create function space from a UFL element and existing cpp
+        # FunctionSpace
         if cppV:
+            assert mesh is None
             ufl_domain = cppV.mesh().ufl_domain()
-            ufl_element = element
-            ufl.FunctionSpace.__init__(self, ufl_domain, ufl_element)
+            super().__init__(ufl_domain, element)
             self._cpp_object = cppV
             return
 
-        if isinstance(element, ufl.FiniteElementBase):
-            ufl_element = element
-        else:
+        # Initialise the ufl.FunctionSpace
+        try:
+            # Assume element is a UFL element
+            super().__init__(mesh.ufl_domain(), element)
+        except Exception:
             family, degree = element[0], element[1]
             family = element[0]
             ufl_element = ufl.FiniteElement(
                 family, mesh.ufl_cell(), degree, form_degree=None)
-        ufl.FunctionSpace.__init__(self, mesh.ufl_domain(), ufl_element)
+            super().__init__(mesh.ufl_domain(), ufl_element)
+        except Exception:
+            raise RuntimeError("Failed to create a UFL FunctionSpace")
 
         # Compile dofmap and element and create DOLFIN objects
         ufc_element, ufc_dofmap = jit.ffc_jit(
-            ufl_element,
+            self.ufl_element(),
             form_compiler_parameters=None,
             mpi_comm=mesh.mpi_comm())
         ufc_element = dofmap.make_ufc_finite_element(ufc_element)
@@ -89,13 +98,11 @@ class FunctionSpace(ufl.FunctionSpace):
 
     def __eq__(self, other):
         """Comparison for equality."""
-        return ufl.FunctionSpace.__eq__(
-            self, other) and self._cpp_object == other._cpp_object
+        return super().__eq__(other) and self._cpp_object == other._cpp_object
 
     def __ne__(self, other):
         """Comparison for inequality."""
-        return ufl.FunctionSpace.__ne__(
-            self, other) or self._cpp_object != other._cpp_object
+        return super().__ne__(other) or self._cpp_object != other._cpp_object
 
     def ufl_cell(self):
         return self._cpp_object.mesh().ufl_cell()
