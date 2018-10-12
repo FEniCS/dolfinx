@@ -30,7 +30,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         # Create function space from a UFL element and existing cpp
         # FunctionSpace
-        if cppV:
+        if cppV is not None:
             assert mesh is None
             ufl_domain = cppV.mesh().ufl_domain()
             super().__init__(ufl_domain, element)
