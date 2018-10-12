@@ -5,7 +5,6 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import collections
 import typing
 
 import ufl
@@ -17,7 +16,7 @@ class ElementDef(typing.NamedTuple):
     """Data for representing a finite element"""
     family: str
     degree: int
-    form_degree: int = None
+    form_degree: typing.Optional[int] = None  # noqa
 
 
 class FunctionSpace(ufl.FunctionSpace):

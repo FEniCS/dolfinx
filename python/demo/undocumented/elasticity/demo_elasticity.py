@@ -94,7 +94,7 @@ def sigma(v):
 
 
 # Create function space
-V = VectorFunctionSpace(mesh, ("Lagrange", 1)
+V = VectorFunctionSpace(mesh, ("Lagrange", 1))
 
 # Define variational problem
 u = TrialFunction(V)
