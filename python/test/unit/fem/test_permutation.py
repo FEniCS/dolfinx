@@ -1,20 +1,21 @@
-"""Unit tests for the fem interface"""
-
 # Copyright (C) 2009-2018 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for the fem interface"""
 
-from dolfin import (Mesh, MPI, CellType, fem, FunctionSpace, FiniteElement,
-                    VectorElement, triangle, VectorFunctionSpace, interpolate,
-                    Expression, Function, UnitSquareMesh, UnitCubeMesh, Cells,
-                    VertexRange, Point)
-from dolfin.cpp.mesh import GhostMode
-from dolfin_utils.test import skip_in_parallel
-import numpy
 import itertools
 from random import random
+
+import numpy
+
+from dolfin import (MPI, Cells, CellType, Expression, FiniteElement, Function,
+                    FunctionSpace, Mesh, Point, UnitCubeMesh, UnitSquareMesh,
+                    VectorElement, VectorFunctionSpace, VertexRange, fem,
+                    interpolate, triangle)
+from dolfin.cpp.mesh import GhostMode
+from dolfin_utils.test import skip_in_parallel
 
 
 @skip_in_parallel
