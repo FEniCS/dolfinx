@@ -70,7 +70,7 @@ def test_complex_assembly_solve():
 
     # Define source term
     A = 1 + 2 * (2 * np.pi)**2
-    f = (1. + 1j) * A * ufl.cos(2 * np.pi * x[1])
+    f = (1. + 1j) * A * ufl.cos(2 * np.pi * x[0]) * ufl.cos(2 * np.pi * x[1])
 
     # Variational problem
     u = dolfin.function.argument.TrialFunction(V)
