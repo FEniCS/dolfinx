@@ -6,11 +6,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-
-from dolfin import (Mesh, MPI, CellType, fem, FunctionSpace,
-                    FiniteElement, VectorElement, triangle,
-                    VectorFunctionSpace, interpolate, Expression,
-                    Function, UnitSquareMesh, UnitCubeMesh, Cells, VertexRange, Point)
+from dolfin import (Mesh, MPI, CellType, fem, FunctionSpace, FiniteElement,
+                    VectorElement, triangle, VectorFunctionSpace, interpolate,
+                    Expression, Function, UnitSquareMesh, UnitCubeMesh, Cells,
+                    VertexRange, Point)
 from dolfin.cpp.mesh import GhostMode
 from dolfin_utils.test import skip_in_parallel
 import numpy
@@ -26,13 +25,13 @@ def test_p4_scalar_vector():
     for p in perms:
         print(p)
         cells = numpy.array([[0, 1, 2, 3], p], dtype=numpy.int64)
-        points = numpy.array([[0.0, 0.0, 0.0],
-                              [1.0, 0.0, 0.0],
-                              [0.0, 1.0, 0.0],
-                              [0.0, 0.0, 1.0],
-                              [1.0, 1.0, 1.0]], dtype=numpy.float64)
+        points = numpy.array(
+            [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0],
+             [0.0, 0.0, 1.0], [1.0, 1.0, 1.0]],
+            dtype=numpy.float64)
 
-        mesh = Mesh(MPI.comm_world, CellType.Type.tetrahedron, points, cells, [], GhostMode.none)
+        mesh = Mesh(MPI.comm_world, CellType.Type.tetrahedron, points, cells,
+                    [], GhostMode.none)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
 
         Q = FunctionSpace(mesh, ("CG", 4))
@@ -60,9 +59,7 @@ def test_p4_scalar_vector():
 
 def test_p4_parallel_2d():
     mesh = UnitSquareMesh(MPI.comm_world, 5, 8)
-
     Q = FunctionSpace(mesh, ("CG", 4))
-
     F = Function(Q)
     F.interpolate(Expression("x[0]", degree=4))
 
@@ -82,9 +79,7 @@ def test_p4_parallel_2d():
 
 def test_p4_parallel_3d():
     mesh = UnitCubeMesh(MPI.comm_world, 3, 5, 8)
-
     Q = FunctionSpace(mesh, ("CG", 5))
-
     F = Function(Q)
     F.interpolate(Expression("x[0]", degree=5))
 
@@ -105,11 +100,9 @@ def test_p4_parallel_3d():
 
 def test_mixed_parallel():
     mesh = UnitSquareMesh(MPI.comm_world, 5, 8)
-
     V = VectorElement("Lagrange", triangle, 4)
     Q = FiniteElement("Lagrange", triangle, 5)
     W = FunctionSpace(mesh, Q * V)
-
     F = Function(W)
     F.interpolate(Expression(("x[0]", "x[1]", "sin(x[0] + x[1])"), degree=5))
 

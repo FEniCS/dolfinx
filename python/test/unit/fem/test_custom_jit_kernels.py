@@ -75,7 +75,7 @@ def test_numba_assembly():
 
 def xtest_cffi_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
-    V = FunctionSpace(mesh, "Lagrange", 1)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
 
     if MPI.rank(mesh.mpi_comm()) == 0:
         from cffi import FFI

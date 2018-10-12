@@ -11,12 +11,11 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (DOLFIN_EPS, MPI, Cells, CellType, FiniteElement,
-                    FunctionSpace, MixedElement, Point, SubDomain,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorElement, VectorFunctionSpace)
-from dolfin_utils.test import (fixture, set_parameters_fixture,
-                               skip_in_parallel, skip_in_serial)
+from dolfin import (UnitSquareMesh, UnitIntervalMesh, UnitCubeMesh, MPI,
+                    CellType, VectorFunctionSpace, FunctionSpace, MixedElement,
+                    FiniteElement, VectorElement, Point, Cells, SubDomain,
+                    DOLFIN_EPS)
+from dolfin_utils.test import fixture, skip_in_serial, skip_in_parallel, set_parameters_fixture
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -251,7 +250,7 @@ def test_global_dof_builder(mesh_factory):
     W = FunctionSpace(mesh, MixedElement([Q, Q, R, Q]))
     W = FunctionSpace(mesh, V * R)
     W = FunctionSpace(mesh, R * V)
-    assert(W)
+    assert (W)
 
 
 def test_entity_dofs(mesh):
@@ -310,7 +309,7 @@ def test_entity_closure_dofs(mesh_factory):
     tdim = mesh.topology.dim
 
     for degree in (1, 2, 3):
-        V = FunctionSpace(mesh, "CG", degree)
+        V = FunctionSpace(mesh, ("CG", degree))
         for d in range(tdim + 1):
             covered = set()
             covered2 = set()
@@ -344,13 +343,13 @@ def test_entity_closure_dofs(mesh_factory):
 
 @pytest.mark.skip
 def test_clear_sub_map_data_scalar(mesh):
-    V = FunctionSpace(mesh, "CG", 2)
+    V = FunctionSpace(mesh, ("CG", 2))
     with pytest.raises(ValueError):
         V.sub(1)
 
-    V = VectorFunctionSpace(mesh, "CG", 2)
+    V = VectorFunctionSpace(mesh, ("CG", 2))
     V1 = V.sub(1)
-    assert(V1)
+    assert (V1)
 
     # Clean sub-map data
     V.dofmap().clear_sub_map_data()
@@ -375,10 +374,10 @@ def test_clear_sub_map_data_vector(mesh):
     W.dofmap().clear_sub_map_data()
     with pytest.raises(RuntimeError):
         W0 = W.sub(0)
-        assert(W0)
+        assert (W0)
     with pytest.raises(RuntimeError):
         W1 = W.sub(1)
-        assert(W1)
+        assert (W1)
 
 
 @pytest.mark.skip
@@ -402,7 +401,7 @@ def test_block_size(mesh):
             W = FunctionSpace(mesh, MixedElement(i * [P2]))
             assert W.dofmap().block_size() == i
 
-        V = VectorFunctionSpace(mesh, "Lagrange", 2)
+        V = VectorFunctionSpace(mesh, ("Lagrange", 2))
         assert V.dofmap().block_size() == mesh.geometry.dim
 
 
@@ -419,8 +418,8 @@ def test_block_size_real(mesh):
 @pytest.mark.parametrize(
     'mesh_factory',
     [(UnitIntervalMesh, (MPI.comm_world, 8)),
-     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
-     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
+     (UnitSquareMesh, (MPI.comm_world, 4, 4)), (UnitCubeMesh,
+                                                (MPI.comm_world, 2, 2, 2)),
      (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
      (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron))])
 def test_mpi_dofmap_stats(mesh_factory):
@@ -501,28 +500,28 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
     "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('N1curl', 1))",
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('N1curl', 1))",
     xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), ('N1curl', 1))"
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),       ('N1curl', 1))"
     ),
     xfail_ffc(
-        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   ('N1curl', 1))"
+        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('N1curl', 1))"
     ),
     xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('N1curl', 2))"
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),            ('N1curl', 2))"
     ),
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('N1curl', 2))",
     xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), ('N1curl', 2))"
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),       ('N1curl', 2))"
     ),
     xfail_ffc(
-        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   ('N1curl', 2))"
+        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('N1curl', 2))"
     ),
     "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('RT', 1))",
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('RT', 1))",
     xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral), ('RT', 1)))"
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),       ('RT', 1))"
     ),
     xfail_ffc(
-        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),   ('RT', 1))"
+        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('RT', 1))"
     ),
 ])
 def test_dofs_dim(space):
@@ -542,7 +541,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     """Test that local_to_global_unwoned() returns readonly
     view into the data; in particular test lifetime of data
     owner"""
-    V = FunctionSpace(mesh, ("P", 1))
+    V = FunctionSpace(mesh, "P", 1)
     dofmap = V.dofmap()
     index_map = dofmap.index_map()
 
