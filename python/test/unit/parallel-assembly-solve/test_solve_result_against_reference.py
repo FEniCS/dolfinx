@@ -12,9 +12,8 @@ parallel assembly/solve."""
 import ufl
 
 from dolfin import (MPI, TestFunction, TrialFunction, FunctionSpace,
-                    UnitSquareMesh, UnitCubeMesh, Expression,
-                    inner, grad, dx, ds, Function, solve, cpp,
-                    SpatialCoordinate)
+                    UnitSquareMesh, UnitCubeMesh, inner, grad, dx, ds,
+                    Function, solve, cpp, SpatialCoordinate)
 from dolfin.la import PETScOptions
 from dolfin_utils.test import gc_barrier
 
