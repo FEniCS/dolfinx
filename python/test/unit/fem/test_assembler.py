@@ -22,9 +22,8 @@ def test_assemble_functional():
     M = dolfin.Constant(1.0) * dx(domain=mesh)
     value = dolfin.fem.assemble(M)
     assert value == pytest.approx(1.0, 1e-12)
-
-    f = dolfin.function.expression.Expression("x[0]", degree=1)
-    M = f * dx(domain=mesh)
+    x = dolfin.SpatialCoordinate(mesh)
+    M = x[0] * dx(domain=mesh)
     value = dolfin.fem.assemble(M)
     assert value == pytest.approx(0.5, 1e-12)
 
