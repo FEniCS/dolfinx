@@ -263,7 +263,7 @@ def test_entity_dofs(mesh):
     assert V.dofmap().num_entity_dofs(1) == 0
     assert V.dofmap().num_entity_dofs(2) == 0
 
-    V = VectorFunctionSpace(mesh, "CG", 1)
+    V = VectorFunctionSpace(mesh, ("CG", 1))
     assert V.dofmap().num_entity_dofs(0) == 2
     assert V.dofmap().num_entity_dofs(1) == 0
     assert V.dofmap().num_entity_dofs(2) == 0
@@ -288,7 +288,7 @@ def test_entity_dofs(mesh):
     assert V.dofmap().num_entity_dofs(1) == 0
     assert V.dofmap().num_entity_dofs(2) == 3
 
-    V = VectorFunctionSpace(mesh, "CG", 1)
+    V = VectorFunctionSpace(mesh, ("CG", 1))
 
     # Note this numbering is dependent on FFC and can change This test
     # is here just to check that we get correct numbers mapped from

@@ -64,11 +64,11 @@ def mplot_mesh(ax, mesh, **kwargs):
 def create_cg1_function_space(mesh, sh):
     r = len(sh)
     if r == 0:
-        V = function.FunctionSpace(mesh, "CG", 1)
+        V = function.FunctionSpace(mesh, ("CG", 1))
     elif r == 1:
-        V = function.VectorFunctionSpace(mesh, "CG", 1, dim=sh[0])
+        V = function.VectorFunctionSpace(mesh, ("CG", 1), dim=sh[0])
     else:
-        V = function.TensorFunctionSpace(mesh, "CG", 1, shape=sh)
+        V = function.TensorFunctionSpace(mesh, ("CG", 1), shape=sh)
     return V
 
 

@@ -25,7 +25,7 @@ def V(mesh):
 
 @fixture
 def W(mesh):
-    return VectorFunctionSpace(mesh, 'CG', 1)
+    return VectorFunctionSpace(mesh, ('CG', 1))
 
 
 @fixture
@@ -143,7 +143,7 @@ def test_argument_equality(mesh, V, V2, W, W2):
     """
     mesh2 = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     V3 = FunctionSpace(mesh2, ('CG', 1))
-    W3 = VectorFunctionSpace(mesh2, 'CG', 1)
+    W3 = VectorFunctionSpace(mesh2, ('CG', 1))
 
     for TF in (TestFunction, TrialFunction):
         v = TF(V)

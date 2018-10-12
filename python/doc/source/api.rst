@@ -21,6 +21,7 @@ Public user interface
    dolfin.parameter
    dolfin.pkgconfig
    dolfin.plotting
+   dolfin.legacy
 
 
 pybind11 wrapped interface

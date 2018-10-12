@@ -46,7 +46,7 @@ def test_read_write_p2_function(tempdir):
                   encoding=XDMFFile.Encoding.HDF5) as xdmf:
         xdmf.write(F)
 
-    Q = VectorFunctionSpace(mesh, "Lagrange", 1)
+    Q = VectorFunctionSpace(mesh, ("Lagrange", 1))
     F = Function(Q)
     if has_petsc_complex:
         F.interpolate(Expression(("x[0] + j*x[0]", "x[1] + j*x[1]"), degree=1))

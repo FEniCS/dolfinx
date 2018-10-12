@@ -8,13 +8,12 @@ import os
 
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Constant, Edges, Expression, Facets,
-                    FiniteElement, Function, FunctionSpace, MeshEntities,
-                    MeshFunction, MeshValueCollection, TensorFunctionSpace,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorElement, VectorFunctionSpace, Vertices, cpp,
-                    has_hdf5, has_hdf5_parallel, has_petsc_complex,
-                    interpolate)
+from dolfin import (
+    MPI, Cells, CellType, Constant, Edges, Expression, Facets, FiniteElement,
+    Function, FunctionSpace, MeshEntities, MeshFunction, MeshValueCollection,
+    TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+    VectorElement, VectorFunctionSpace, Vertices, cpp, has_hdf5,
+    has_hdf5_parallel, has_petsc_complex, interpolate)
 from dolfin.io import XDMFFile
 from dolfin_utils.test import tempdir
 
@@ -329,7 +328,7 @@ def test_save_2d_vector(tempdir, encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u_2dv.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
-    V = VectorFunctionSpace(mesh, "Lagrange", 2)
+    V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
     c = Constant((1.0 + (1j if has_petsc_complex else 0), 2.0))
     u.interpolate(c)
@@ -344,7 +343,7 @@ def test_save_3d_vector(tempdir, encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
-    u = Function(VectorFunctionSpace(mesh, "Lagrange", 1))
+    u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
     A = 1.0 + (1j if has_petsc_complex else 0)
     c = Constant((1.0 + A, 2.0 + 2 * A, 3.0 + 3 * A))
     u.interpolate(c)
@@ -359,7 +358,7 @@ def test_save_3d_vector_series(tempdir, encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u_3D.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
-    u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
+    u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
@@ -378,7 +377,7 @@ def test_save_2d_tensor(tempdir, encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "tensor.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
-    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -391,7 +390,7 @@ def test_save_3d_tensor(tempdir, encoding):
         pytest.skip("XDMF unsupported in current configuration")
     filename = os.path.join(tempdir, "u3t.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
-    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:

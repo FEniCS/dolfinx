@@ -48,7 +48,7 @@ def test_p4_scalar_vector():
             assert numpy.isclose(pt[1], F1(pt)[0])
             assert numpy.isclose(pt[2], F2(pt)[0])
 
-        V = VectorFunctionSpace(mesh, "CG", 4)
+        V = VectorFunctionSpace(mesh, ("CG", 4))
         F = interpolate(Expression(("x[0]", "x[1]", "0.0"), degree=4), V)
         for pt in pts:
             result = F(pt)[0]
