@@ -36,17 +36,13 @@ class FunctionSpace(ufl.FunctionSpace):
             return
 
         # Initialise the ufl.FunctionSpace
-        try:
-            # Assume element is a UFL element
+        if isinstance(element, ufl.FiniteElementBase):
             super().__init__(mesh.ufl_domain(), element)
-        except Exception:
-            family, degree = element[0], element[1]
-            family = element[0]
+        else:
+            e = ElementDef(*element)
             ufl_element = ufl.FiniteElement(
-                family, mesh.ufl_cell(), degree, form_degree=None)
+                e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
             super().__init__(mesh.ufl_domain(), ufl_element)
-        except Exception:
-            raise RuntimeError("Failed to create a UFL FunctionSpace")
 
         # Compile dofmap and element and create DOLFIN objects
         ufc_element, ufc_dofmap = jit.ffc_jit(
