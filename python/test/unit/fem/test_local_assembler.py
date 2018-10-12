@@ -11,7 +11,7 @@ import numpy
 from dolfin import (UnitIntervalMesh, UnitSquareMesh,
                     Constant, Cell, TestFunction, TrialFunction, MPI, Cells, dx,
                     ds, dS, dot, Form, FunctionSpace, VectorFunctionSpace,
-                    Expression, FacetNormal)
+                    Expression, FacetNormal, SpatialCoordinate)
 from dolfin.fem.assembling import assemble_local
 
 
@@ -54,10 +54,9 @@ def test_local_assembler_on_facet_integrals():
     Vdgt = FunctionSpace(mesh, 'DGT', 1)
 
     v = TestFunction(Vdgt)
+    x = dolfin.SpatialCoordinate(mesh)
 
-    # Initialize DG function "w" in discontinuous pattern
-    w = Expression('(1.0 + pow(x[0], 2.2) + 1/(0.1 + pow(x[1], 3)))*300.0',
-                   element=Vdg.ufl_element())
+    w = (1.0 + x[0] ** 2.2 + 1. / (0.1 + x[1] ** 3)) * 300
 
     # Define form that tests that the correct + and - values are used
     L = w('-') * v('+') * dS

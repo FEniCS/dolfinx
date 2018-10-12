@@ -37,15 +37,17 @@ def test_complex_assembly():
     assert np.isclose(bnorm, b_norm_ref)
     A0_norm = dolfin.fem.assemble(a_real).norm(dolfin.cpp.la.Norm.frobenius)
 
+    x = dolfin.SpatialCoordinate(mesh)
+
     a_imag = j * inner(u, v) * dx
-    f = dolfin.Expression("j*sin(2*pi*x[0])", degree=2)
+    f = 1j * ufl.sin(2 * np.pi * x[0])
     L0 = inner(f, v) * dx
     A1_norm = dolfin.fem.assemble(a_imag).norm(dolfin.cpp.la.Norm.frobenius)
     assert np.isclose(A0_norm, A1_norm)
     b1_norm = dolfin.fem.assemble(L0).norm(dolfin.cpp.la.Norm.l2)
 
     a_complex = (1 + j) * inner(u, v) * dx
-    f = dolfin.Expression("sin(2*pi*x[0])", degree=2)
+    f = ufl.sin(2 * np.pi * x[0])
     L2 = inner(f, v) * dx
     A2_norm = dolfin.fem.assemble(a_complex).norm(dolfin.cpp.la.Norm.frobenius)
     assert np.isclose(A1_norm, A2_norm / np.sqrt(2))
@@ -64,10 +66,11 @@ def test_complex_assembly_solve():
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
     V = dolfin.function.functionspace.FunctionSpace(mesh, P)
 
+    x = dolfin.SpatialCoordinate(mesh)
+
     # Define source term
     A = 1 + 2 * (2 * np.pi)**2
-    f = dolfin.Expression(
-        "(1.+j)*A*cos(2*pi*x[0])*cos(2*pi*x[1])", degree=degree, A=A)
+    f = (1. + 1j) * A * ufl.cos(2 * np.pi * x[1])
 
     # Variational problem
     u = dolfin.function.argument.TrialFunction(V)
