@@ -108,7 +108,9 @@ First, the modules :py:mod:`random` :py:mod:`matplotlib`
 
     import random
     from dolfin import *
-
+    from dolfin.io import XDMFFile
+    from dolfin.fem.assemble import assemble
+    
 .. index:: Expression
 
 A class which will be used to represent the initial conditions is then
@@ -120,11 +122,11 @@ created::
             random.seed(2 + MPI.rank(MPI.comm_world))
             super().__init__(**kwargs)
         def eval(self, values, x):
-            values[0] = 0.63 + 0.02*(0.5 - random.random())
-            values[1] = 0.0
+            values[:, 0] = 0.63 + 0.02*(0.5 - random.random())
+            values[:, 1] = 0.0
         def value_shape(self):
             return (2,)
-
+    
 It is a subclass of :py:class:`Expression
 <dolfin.functions.expression.Expression>`. In the constructor
 (``__init__``), the random number generator is seeded. If the program
@@ -150,10 +152,10 @@ use in the Newton solver is now defined. It is a subclass of
             self.L = L
             self.a = a
         def F(self, b, x):
-            assemble(self.L, tensor=b)
+            assemble(b, self.L)
         def J(self, A, x):
-            assemble(self.a, tensor=A)
-
+            assemble(A, self.a)
+    
 The constructor (``__init__``) stores references to the bilinear
 (``a``) and linear (``L``) forms. These will used to compute the
 Jacobian matrix and the residual vector, respectively, for use in a
@@ -169,41 +171,23 @@ Next, various model parameters are defined::
     lmbda  = 1.0e-02  # surface parameter
     dt     = 5.0e-06  # time step
     theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
-
-.. index::
-   singe: form compiler options; (in Cahn-Hilliard demo)
-
-It is possible to pass arguments that control aspects of the generated
-code to the form compiler. The lines ::
-
-    # Form compiler options
-    parameters["form_compiler"]["optimize"]     = True
-    parameters["form_compiler"]["cpp_optimize"] = True
-
-tell the form to apply optimization strategies in the code generation
-phase and the use compiler optimization flags when compiling the
-generated C++ code. Using the option ``["optimize"] = True`` will
-generally result in faster code (sometimes orders of magnitude faster
-for certain operations, depending on the equation), but it may take
-considerably longer to generate the code and the generation phase may
-use considerably more memory).
-
+    
 A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 created, and on this mesh a :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` ``ME`` is built using
 a pair of linear Lagrangian elements. ::
 
     # Create mesh and build function space
-    mesh = UnitSquareMesh.create(96, 96, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.Type.quadrilateral)
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     ME = FunctionSpace(mesh, P1*P1)
-
+    
 Trial and test functions of the space ``ME`` are now defined::
 
     # Define trial and test functions
     du    = TrialFunction(ME)
     q, v  = TestFunctions(ME)
-
+    
 .. index:: split functions
 
 For the test functions, :py:func:`TestFunctions
@@ -219,12 +203,12 @@ sub-functions::
     # Define functions
     u   = Function(ME)  # current solution
     u0  = Function(ME)  # solution from previous converged step
-
+    
     # Split mixed functions
     dc, dmu = split(du)
     c,  mu  = split(u)
     c0, mu0 = split(u0)
-
+    
 The line ``c, mu = split(u)`` permits direct access to the components
 of a mixed function. Note that ``c`` and ``mu`` are references for
 components of ``u``, and not copies.
@@ -240,7 +224,7 @@ into a finite element space::
     u_init = InitialConditions(degree=1)
     u.interpolate(u_init)
     u0.interpolate(u_init)
-
+    
 The first line creates an object of type ``InitialConditions``.  The
 following two lines make ``u`` and ``u0`` interpolants of ``u_init``
 (since ``u`` and ``u0`` are finite element functions, they may not be
@@ -256,7 +240,7 @@ differentiation::
     c = variable(c)
     f    = 100*c**2*(1-c)**2
     dfdc = diff(f, c)
-
+    
 The first line declares that ``c`` is a variable that some function
 can be differentiated with respect to. The next line is the function
 :math:`f` defined in the problem statement, and the third line
@@ -267,14 +251,14 @@ It is convenient to introduce an expression for :math:`\mu_{n+\theta}`::
 
     # mu_(n+theta)
     mu_mid = (1.0-theta)*mu0 + theta*mu
-
+    
 which is then used in the definition of the variational forms::
 
     # Weak statement of the equations
     L0 = c*q*dx - c0*q*dx + dt*dot(grad(mu_mid), grad(q))*dx
     L1 = mu*v*dx - dfdc*v*dx - lmbda*dot(grad(c), grad(v))*dx
     L = L0 + L1
-
+    
 This is a statement of the time-discrete equations presented as part
 of the problem statement, using UFL syntax. The linear forms for the
 two equations can be summed into one form ``L``, and then the
@@ -283,7 +267,7 @@ form which represents the Jacobian matrix::
 
     # Compute directional derivative about u in the direction of du (Jacobian)
     a = derivative(L, u, du)
-
+    
 .. index::
    single: Newton solver; (in Cahn-Hilliard demo)
 
@@ -298,11 +282,11 @@ sub-class of :py:class:`NonlinearProblem
 
     # Create nonlinear problem and Newton solver
     problem = CahnHilliardEquation(a, L)
-    solver = NewtonSolver()
-    solver.parameters["linear_solver"] = "lu"
-    solver.parameters["convergence_criterion"] = "incremental"
-    solver.parameters["relative_tolerance"] = 1e-6
-
+    solver = NewtonSolver(MPI.comm_world)
+    # solver.parameters["linear_solver"] = "lu"
+    # solver.parameters["convergence_criterion"] = "incremental"
+    # solver.parameters["relative_tolerance"] = 1e-6
+    
 The string ``"lu"`` passed to the Newton solver indicated that an LU
 solver should be used.  The setting of
 ``parameters["convergence_criterion"] = "incremental"`` specifies that
@@ -316,17 +300,17 @@ the solver is advanced in time from :math:`t_{n}` to :math:`t_{n+1}` until
 a terminal time :math:`T` is reached::
 
     # Output file
-    file = File("output.pvd", "compressed")
-
+    file = XDMFFile(MPI.comm_world, "output.xdmf")
+    
     # Step in time
     t = 0.0
     T = 50*dt
     while (t < T):
         t += dt
-        u0.vector()[:] = u.vector()
+        u0.vector().vec()[:] = u.vector().vec()
         solver.solve(problem, u.vector())
-        file << (u.split()[0], t)
-
+        file.write(u.split()[0], t)
+    
 The string ``"compressed"`` indicates that the output data should be
 compressed to reduce the file size. Within the time stepping loop, the
 solution vector associated with ``u`` is copied to ``u0`` at the
