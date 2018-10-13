@@ -4,10 +4,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import numpy.random
-from dolfin import UnitSquareMesh, UnitCubeMesh, MPI, MeshFunction, Vertex
-from dolfin_utils.test import fixture, skip_in_parallel
+import pytest
+
+from dolfin import MPI, MeshFunction, UnitCubeMesh, UnitSquareMesh, Vertex
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @pytest.fixture(params=range(4))
@@ -34,8 +36,8 @@ def funcs(mesh):
     funcs = {}
     for tp in tps:
         for name in names:
-            funcs[(tp, name)] = eval(
-                "MeshFunction('%s', mesh, %d, 0)" % (tp, name))
+            funcs[(tp, name)] = eval("MeshFunction('%s', mesh, %d, 0)" %
+                                     (tp, name))
     return funcs
 
 

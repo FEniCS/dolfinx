@@ -5,14 +5,17 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
-from dolfin import (UnitSquareMesh, MPI, FunctionSpace, Function, Expression,
-                    has_hdf5)
+
 import dolfin.cpp as cpp
-from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_if_complex,
-                               xfail_with_serial_hdf5_in_parallel)
+from dolfin import (MPI, Expression, Function, FunctionSpace, UnitSquareMesh,
+                    has_hdf5)
+from dolfin_utils.test.fixtures import tempdir
+from dolfin_utils.test.skips import (skip_if_not_HDF5, xfail_if_complex,
+                                     xfail_with_serial_hdf5_in_parallel)
+
 if has_hdf5:
     from dolfin.io import HDF5File
-assert(tempdir)
+assert (tempdir)
 
 
 @xfail_if_complex

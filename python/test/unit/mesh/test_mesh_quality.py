@@ -4,10 +4,11 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from math import sqrt, pi
-from dolfin import (UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh, MeshQuality, MPI, Cells,
-                    RectangleMesh, Point, CellType, cpp)
-from dolfin_utils.test import skip_in_parallel
+from math import pi, sqrt
+
+from dolfin import (MPI, Cells, CellType, MeshQuality, Point, RectangleMesh,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 def test_radius_ratio_triangle():
@@ -65,10 +66,10 @@ def test_radius_ratio_min_radius_ratio_max():
     x[4] = mesh1d.geometry.points[3]
 
     # Create 2D mesh with one equilateral triangle
-    mesh2d = RectangleMesh.create(MPI.comm_world, [Point(0, 0)._cpp_object,
-                                                   Point(1, 1)._cpp_object],
-                                  [1, 1], CellType.Type.triangle,
-                                  cpp.mesh.GhostMode.none, 'left')
+    mesh2d = RectangleMesh.create(
+        MPI.comm_world, [Point(0, 0)._cpp_object,
+                         Point(1, 1)._cpp_object], [1, 1],
+        CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
     x = mesh2d.geometry.points
     x[3] += 0.5 * (sqrt(3.0) - 1.0)
 

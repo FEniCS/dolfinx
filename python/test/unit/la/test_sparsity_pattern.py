@@ -8,7 +8,7 @@
 import numpy as np
 
 from dolfin import MPI, CellType, FunctionSpace, UnitSquareMesh, cpp
-from dolfin_utils.test import fixture
+from dolfin_utils.test.fixtures import fixture
 
 
 def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):

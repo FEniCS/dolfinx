@@ -5,8 +5,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy as np
-from dolfin import SubDomain, UnitSquareMesh, DOLFIN_EPS, PeriodicBoundaryComputation, MPI
-from dolfin_utils.test import skip_in_parallel, fixture
+
+from dolfin import (DOLFIN_EPS, MPI, PeriodicBoundaryComputation, SubDomain,
+                    UnitSquareMesh)
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @fixture
@@ -29,17 +32,17 @@ def mesh():
 
 @skip_in_parallel
 def test_ComputePeriodicPairs(periodic_boundary, mesh):
-
     # Verify that correct number of periodic pairs are computed
-    vertices = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 0)
-    edges = PeriodicBoundaryComputation.compute_periodic_pairs(mesh, periodic_boundary, 1)
+    vertices = PeriodicBoundaryComputation.compute_periodic_pairs(
+        mesh, periodic_boundary, 0)
+    edges = PeriodicBoundaryComputation.compute_periodic_pairs(
+        mesh, periodic_boundary, 1)
     assert len(vertices) == 5
     assert len(edges) == 4
 
 
 @skip_in_parallel
 def test_MastersSlaves(periodic_boundary, mesh):
-
     # Verify that correct number of masters and slaves are marked
     mf = PeriodicBoundaryComputation.masters_slaves(mesh, periodic_boundary, 0)
     assert len(np.where(mf.array() == 1)[0]) == 5

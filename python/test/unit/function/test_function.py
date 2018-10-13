@@ -1,21 +1,22 @@
-"""Unit tests for the Function class"""
-
 # Copyright (C) 2011-2014 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for the Function class"""
 
-import pytest
-from dolfin import (UnitCubeMesh,
-                    FunctionSpace, VectorFunctionSpace, TensorFunctionSpace,
-                    Constant, MPI, Point, Function,
-                    UserExpression, interpolate, Expression, DOLFIN_EPS, Vertex, lt, cpp)
 from math import sqrt
-import numpy
-import ufl
 
-from dolfin_utils.test import skip_in_parallel, fixture, skip_if_complex
+import numpy
+import pytest
+
+import ufl
+from dolfin import (DOLFIN_EPS, MPI, Constant, Expression, Function,
+                    FunctionSpace, Point, TensorFunctionSpace, UnitCubeMesh,
+                    UserExpression, VectorFunctionSpace, Vertex, cpp,
+                    interpolate, lt)
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
 @fixture
