@@ -191,6 +191,11 @@ void function(py::module& m)
            })
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
+      .def("collapse",
+           [](dolfin::function::Function& self) {
+             return std::make_shared<dolfin::function::Function>(self);
+           },
+           "Collapse sub-function view.")
       .def("interpolate", &dolfin::function::Function::interpolate,
            "Interpolate the function u")
       // FIXME: A lot of error when using non-const version - misused

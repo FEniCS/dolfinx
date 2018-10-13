@@ -152,10 +152,7 @@ class Function(ufl.Coefficient):
 
         """
         return Function(
-            self,
-            self._V.sub(i),
-            self.vector(),
-            name='{}-{}'.format(str(self), i))
+            self._V.sub(i), self.vector(), name="{}-{}".format(str(self), i))
 
     def split(self):
         """Extract any sub functions.
@@ -169,3 +166,9 @@ class Function(ufl.Coefficient):
         if num_sub_spaces == 1:
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
+
+    def collapse(self):
+        u_collapsed = self._cpp_object.collapse()
+        V_collapsed = functionspace.FunctionSpace(None, self.ufl_element(),
+                                                  u_collapsed.function_space())
+        return Function(V_collapsed, u_collapsed.vector())
