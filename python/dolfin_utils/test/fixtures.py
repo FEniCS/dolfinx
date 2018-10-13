@@ -1,24 +1,25 @@
-"""Shared fixtures for unit tests involving dolfin."""
-
 # Copyright (C) 2014-2014 Martin Sandve Alnæs and Aslak Wigdahl Bergersen
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Shared fixtures for unit tests."""
 
-
-import pytest
+import gc
 import os
+import platform
 import shutil
 import tempfile
-import gc
-import platform
-import decorator
+from collections import defaultdict
 
-from dolfin.parameter import  parameters
+import decorator
+import pytest
+
 from dolfin import MPI
+from dolfin.parameter import parameters
 
 # --- Test fixtures (use as is or as examples): ---
+
 
 def fixture(func):
     """Decorator for creating module scope fixture.
@@ -94,50 +95,9 @@ def gc_barrier_fixture():
     yield
     gc_barrier()
 
+
 use_gc_barrier = pytest.mark.usefixtures("gc_barrier_fixture")
 
-
-@pytest.fixture(params=[False, True])
-def true_false_fixture(request):
-    "A fixture setting the values true and false."
-    gc_barrier()
-    return request.param
-
-
-@pytest.fixture(scope="module")
-def filedir(request):
-    "Return the directory of the test module."
-    gc_barrier()
-    d = os.path.dirname(os.path.abspath(request.module.__file__))
-    return d
-
-
-@pytest.fixture(scope="module")
-def rootdir(request):
-    """Return the root directory of the repository. Assumes run from
-    within repository filetree.
-
-    """
-    gc_barrier()
-    d = os.path.dirname(os.path.abspath(request.module.__file__))
-    t = ''
-    while t != "test":
-        d, t = os.path.split(d)
-    return d
-
-
-@pytest.fixture(scope="module")
-def datadir(request):
-    """Return the directory of the shared test data. Assumes run from
-    within repository filetree.
-
-    """
-    d = os.path.dirname(os.path.abspath(request.module.__file__))
-    t = os.path.join(d, "data")
-    while not os.path.isdir(t):
-        d, t = os.path.split(d)
-        t = os.path.join(d, "data")
-    return t
 
 
 def _create_tempdir(request):
@@ -147,8 +107,8 @@ def _create_tempdir(request):
 
     # Construct name test_foo_tempdir from name test_foo.py
     testfilename = os.path.basename(testfile)
-    outputname = testfilename.replace(".py",
-                                      "_tempdir_{}".format(worker_id(request)))
+    outputname = testfilename.replace(".py", "_tempdir_{}".format(
+        worker_id(request)))
 
     # Get function name test_something from test_foo.py
     function = request.function.__name__
@@ -190,7 +150,8 @@ def _create_tempdir(request):
     MPI.barrier(MPI.comm_world)
 
     return path
-from collections import defaultdict
+
+
 _create_tempdir._sequencenumber = defaultdict(int)
 _create_tempdir._basepaths = set()
 
@@ -274,24 +235,29 @@ def set_parameters_fixture(paramname, values, key=lambda x: x):
 
     """
     global parameters
+
     def _pushpop(request):
         gc_barrier()
         if '.' in paramname:
             names = paramname.split('.')
             if len(names) == 2:
-                prev = parameters[names[0]][names[1]]                # Remember original value
-                parameters[names[0]][names[1]] = key(request.param)  # Set value
-                yield request.param                                  # Let test run
-                parameters[names[0]][names[1]] = prev                # Reset value
+                prev = parameters[names[0]][names[
+                    1]]  # Remember original value
+                parameters[names[0]][names[1]] = key(
+                    request.param)  # Set value
+                yield request.param  # Let test run
+                parameters[names[0]][names[1]] = prev  # Reset value
             elif len(names) == 3:
-                prev = parameters[names[0]][names[1]][names[2]]                # Remember original value
-                parameters[names[0]][names[1]][names[2]] = key(request.param)  # Set value
-                yield request.param                                            # Let test run
-                parameters[names[0]][names[1]][names[2]] = prev                # Reset value
+                prev = parameters[names[0]][names[1]][names[
+                    2]]  # Remember original value
+                parameters[names[0]][names[1]][names[2]] = key(
+                    request.param)  # Set value
+                yield request.param  # Let test run
+                parameters[names[0]][names[1]][names[2]] = prev  # Reset value
         else:
-            prev = parameters[paramname]                # Remember original value
+            prev = parameters[paramname]  # Remember original value
             parameters[paramname] = key(request.param)  # Set value
-            yield request.param                         # Let test run
-            parameters[paramname] = prev                # Reset value
+            yield request.param  # Let test run
+            parameters[paramname] = prev  # Reset value
 
     return pytest.yield_fixture(scope="function", params=values)(_pushpop)
