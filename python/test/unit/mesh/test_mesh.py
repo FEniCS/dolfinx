@@ -17,7 +17,7 @@ from dolfin import (MPI, BoxMesh, Cell, Cells, CellType, MeshEntities,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, Vertex,
                     cpp)
 from dolfin.io import XDMFFile
-from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.fixtures import cd_tempdir, fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
 
