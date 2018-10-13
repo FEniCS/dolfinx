@@ -69,6 +69,9 @@ public:
   ///         The object to be copied.
   Function(const Function& v);
 
+  /// Move constructor
+  Function(Function&& v) = default;
+
   /// Destructor
   virtual ~Function() = default;
 
