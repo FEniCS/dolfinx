@@ -15,7 +15,7 @@ from dolfin import (MPI, Cells, CellType, Expression, FiniteElement, Function,
                     VectorElement, VectorFunctionSpace, VertexRange, fem,
                     interpolate, triangle)
 from dolfin.cpp.mesh import GhostMode
-from dolfin_utils.test import skip_in_parallel
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel

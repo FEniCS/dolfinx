@@ -1,20 +1,16 @@
-"""Unit tests for BoundingBoxTree"""
-
 # Copyright (C) 2013-2014 Anders Logg
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for BoundingBoxTree"""
 
-from dolfin import BoundingBoxTree
-from dolfin import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
-from dolfin import Point
-from dolfin import MeshEntity
-from dolfin import MPI
-from dolfin_utils.test import skip_in_parallel
-
+from dolfin import (MPI, BoundingBoxTree, MeshEntity, Point, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh)
+from dolfin_utils.test.skips import skip_in_parallel
 
 # --- compute_collisions with point ---
+
 
 @skip_in_parallel
 def test_compute_collisions_point_1d():
@@ -53,9 +49,11 @@ def test_compute_collisions_point_2d():
 @skip_in_parallel
 def test_compute_collisions_point_3d():
 
-    reference = {1: set([1364]),
-                 2: set([1967, 1968, 1970, 1972, 1974, 1976]),
-                 3: set([876, 877, 878, 879, 880, 881])}
+    reference = {
+        1: set([1364]),
+        2: set([1967, 1968, 1970, 1972, 1974, 1976]),
+        3: set([876, 877, 878, 879, 880, 881])
+    }
 
     p = Point(0.3, 0.3, 0.3)
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
@@ -70,16 +68,17 @@ def test_compute_collisions_point_3d():
         if dim != tdim - 1 and dim != tdim - 2:
             assert set(entities) == reference[dim]
 
+
 # --- compute_collisions with tree ---
 
 
 @skip_in_parallel
 def test_compute_collisions_tree_1d():
 
-    references = [[set([8, 9, 10, 11, 12, 13, 14, 15]),
-                   set([0, 1, 2, 3, 4, 5, 6, 7])],
-                  [set([14, 15]),
-                   set([0, 1])]]
+    references = [[
+        set([8, 9, 10, 11, 12, 13, 14, 15]),
+        set([0, 1, 2, 3, 4, 5, 6, 7])
+    ], [set([14, 15]), set([0, 1])]]
 
     points = [Point(0.52), Point(0.9)]
 
@@ -106,10 +105,10 @@ def test_compute_collisions_tree_1d():
 @skip_in_parallel
 def test_compute_collisions_tree_2d():
 
-    references = [[set([20, 21, 22, 23, 28, 29, 30, 31]),
-                   set([0, 1, 2, 3, 8, 9, 10, 11])],
-                  [set([6, 7]),
-                   set([24, 25])]]
+    references = [[
+        set([20, 21, 22, 23, 28, 29, 30, 31]),
+        set([0, 1, 2, 3, 8, 9, 10, 11])
+    ], [set([6, 7]), set([24, 25])]]
 
     points = [Point(0.52, 0.51), Point(0.9, -0.9)]
 
@@ -136,10 +135,13 @@ def test_compute_collisions_tree_2d():
 @skip_in_parallel
 def test_compute_collisions_tree_3d():
 
-    references = [[set([18, 19, 20, 21, 22, 23, 42, 43, 44, 45, 46, 47]),
-                   set([0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29])],
-                  [set([6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35]),
-                   set([12, 13, 14, 15, 16, 17, 36, 37, 38, 39, 40, 41])]]
+    references = [[
+        set([18, 19, 20, 21, 22, 23, 42, 43, 44, 45, 46, 47]),
+        set([0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29])
+    ], [
+        set([6, 7, 8, 9, 10, 11, 30, 31, 32, 33, 34, 35]),
+        set([12, 13, 14, 15, 16, 17, 36, 37, 38, 39, 40, 41])
+    ]]
 
     points = [Point(0.52, 0.51, 0.3), Point(0.9, -0.9, 0.3)]
 
@@ -161,6 +163,7 @@ def test_compute_collisions_tree_3d():
 
         assert set(entities_A) == references[i][0]
         assert set(entities_B) == references[i][1]
+
 
 # --- compute_entity_collisions with point ---
 
@@ -222,16 +225,17 @@ def test_compute_entity_collisions_3d():
     entities = tree.compute_entity_collisions_mesh(p, mesh)
     assert set(entities) == reference
 
+
 # --- compute_entity_collisions with tree ---
 
 
 @skip_in_parallel
 def test_compute_entity_collisions_tree_1d():
 
-    references = [[set([8, 9, 10, 11, 12, 13, 14, 15]),
-                   set([0, 1, 2, 3, 4, 5, 6, 7])],
-                  [set([14, 15]),
-                   set([0, 1])]]
+    references = [[
+        set([8, 9, 10, 11, 12, 13, 14, 15]),
+        set([0, 1, 2, 3, 4, 5, 6, 7])
+    ], [set([14, 15]), set([0, 1])]]
 
     points = [Point(0.52), Point(0.9)]
 
@@ -259,10 +263,10 @@ def test_compute_entity_collisions_tree_1d():
 @skip_in_parallel
 def test_compute_entity_collisions_tree_2d():
 
-    references = [[set([20, 21, 22, 23, 28, 29, 30, 31]),
-                   set([0, 1, 2, 3, 8, 9, 10, 11])],
-                  [set([6]),
-                   set([25])]]
+    references = [[
+        set([20, 21, 22, 23, 28, 29, 30, 31]),
+        set([0, 1, 2, 3, 8, 9, 10, 11])
+    ], [set([6]), set([25])]]
 
     points = [Point(0.52, 0.51), Point(0.9, -0.9)]
 
@@ -290,10 +294,11 @@ def test_compute_entity_collisions_tree_2d():
 @skip_in_parallel
 def test_compute_entity_collisions_tree_3d():
 
-    references = [[set([18, 19, 20, 21, 22, 23, 42, 43, 44, 45, 46, 47]),
-                   set([0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29])],
-                  [set([7, 8, 30, 31, 32]),
-                   set([15, 16, 17, 39, 41])]]
+    references = [[
+        set([18, 19, 20, 21, 22, 23, 42, 43, 44, 45, 46, 47]),
+        set([0, 1, 2, 3, 4, 5, 24, 25, 26, 27, 28, 29])
+    ], [set([7, 8, 30, 31, 32]),
+        set([15, 16, 17, 39, 41])]]
 
     points = [Point(0.52, 0.51, 0.3), Point(0.9, -0.9, 0.3)]
 
@@ -316,6 +321,7 @@ def test_compute_entity_collisions_tree_3d():
 
         assert set(entities_A) == references[i][0]
         assert set(entities_B) == references[i][1]
+
 
 # --- compute_first_collision with point ---
 
@@ -347,8 +353,7 @@ def test_compute_first_collision_2d():
 
     # FIXME: This test should not use facet indices as there are no guarantees
     # on how DOLFIN numbers facets
-    reference = {1: [226],
-                 2: [136, 137]}
+    reference = {1: [226], 2: [136, 137]}
 
     p = Point(0.3, 0.3)
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
@@ -377,9 +382,11 @@ def test_compute_first_collision_3d():
     # FIXME: This test should not use facet indices as there are no guarantees
     # on how DOLFIN numbers facets
 
-    reference = {1: [1364],
-                 2: [1967, 1968, 1970, 1972, 1974, 1976],
-                 3: [876, 877, 878, 879, 880, 881]}
+    reference = {
+        1: [1364],
+        2: [1967, 1968, 1970, 1972, 1974, 1976],
+        3: [876, 877, 878, 879, 880, 881]
+    }
 
     p = Point(0.3, 0.3, 0.3)
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
@@ -401,6 +408,7 @@ def test_compute_first_collision_3d():
 
     first = tree.compute_first_collision(p)
     assert first in reference[mesh.topology.dim]
+
 
 # --- compute_first_entity_collision with point ---
 
@@ -466,6 +474,7 @@ def test_compute_first_entity_collision_3d():
 
     first = tree.compute_first_entity_collision(p, mesh)
     assert first in reference
+
 
 # --- compute_closest_entity with point ---
 

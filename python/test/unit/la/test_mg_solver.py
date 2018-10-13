@@ -7,16 +7,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 
-from dolfin import (TestFunction, TrialFunction, dot, grad, dx,
-                    DirichletBC, UnitSquareMesh, UnitCubeMesh, inner, div, Expression,
-                    Constant, TestFunctions, TrialFunctions, DOLFIN_EPS, FunctionSpace,
-                    MixedElement, VectorElement, FiniteElement)
-from dolfin.la import PETScVector, PETScOptions, PETScKrylovSolver
+import pytest
+
+from dolfin import (DOLFIN_EPS, Constant, DirichletBC, Expression,
+                    FiniteElement, FunctionSpace, MixedElement, TestFunction,
+                    TestFunctions, TrialFunction, TrialFunctions, UnitCubeMesh,
+                    UnitSquareMesh, VectorElement, div, dot, dx, grad, inner)
 from dolfin.cpp.fem import PETScDMCollection
 from dolfin.fem.assembling import assemble_system
-
-import pytest
-from dolfin_utils.test import skip_if_not_petsc4py
+from dolfin.la import PETScKrylovSolver, PETScOptions, PETScVector
+from dolfin_utils.test.skips import skip_if_not_petsc4py
 
 
 @pytest.mark.skip  # See https://bitbucket.org/fenics-project/dolfin/issues/938

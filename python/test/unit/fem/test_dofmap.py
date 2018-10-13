@@ -15,8 +15,8 @@ from dolfin import (DOLFIN_EPS, MPI, Cells, CellType, FiniteElement,
                     FunctionSpace, MixedElement, Point, SubDomain,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     VectorElement, VectorFunctionSpace)
-from dolfin_utils.test import (fixture, set_parameters_fixture,
-                               skip_in_parallel, skip_in_serial)
+from dolfin_utils.test.fixtures import fixture, set_parameters_fixture
+from dolfin_utils.test.skips import skip_in_parallel, skip_in_serial
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -528,7 +528,7 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
     pytest.param(
         "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('RT', 1))",
         marks=pytest.mark.xfail)
-    ])
+])
 def test_dofs_dim(space):
     """Test function GenericDofMap::dofs(mesh, dim)"""
     V = eval(space)

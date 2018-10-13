@@ -7,16 +7,13 @@
 
 import gc
 import os
-import platform
 import shutil
-import tempfile
 from collections import defaultdict
 
 import decorator
 import pytest
 
 from dolfin import MPI
-from dolfin.parameter import parameters
 
 # --- Test fixtures (use as is or as examples): ---
 
@@ -45,7 +42,7 @@ def fixture(func):
         rv = func(*args, **kwargs)
 
         # Collect garbage of temporaries of the function
-        # and return collectivelly
+        # and return collectively
         gc.collect()
         MPI.barrier(MPI.comm_world)
 
@@ -97,7 +94,6 @@ def gc_barrier_fixture():
 
 
 use_gc_barrier = pytest.mark.usefixtures("gc_barrier_fixture")
-
 
 
 def _create_tempdir(request):

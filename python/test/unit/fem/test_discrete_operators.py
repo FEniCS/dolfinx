@@ -6,13 +6,14 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
-import dolfin
 from math import sqrt
-from dolfin import FunctionSpace, UnitSquareMesh, UnitCubeMesh, MPI
-from dolfin.cpp.fem import DiscreteOperators
 
-from dolfin_utils.test import skip_in_parallel
+import pytest
+
+import dolfin
+from dolfin import MPI, FunctionSpace, UnitCubeMesh, UnitSquareMesh
+from dolfin.cpp.fem import DiscreteOperators
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel
