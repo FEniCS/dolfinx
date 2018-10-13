@@ -16,7 +16,7 @@ import platform
 import decorator
 
 from dolfin.parameter import  parameters
-from dolfin import *
+from dolfin import MPI
 
 # --- Test fixtures (use as is or as examples): ---
 
@@ -71,12 +71,11 @@ def gc_barrier():
         MPI.barrier(MPI.comm_world)
 
 
-@pytest.fixture
 def worker_id(request):
     """Returns thread id when running with pytest-xdist in parallel."""
-    if hasattr(request.config, 'slaveinput'):
+    try:
         return request.config.slaveinput['slaveid']
-    else:
+    except AttributeError:
         return 'master'
 
 
