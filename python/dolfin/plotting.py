@@ -10,6 +10,7 @@ import warnings
 
 import numpy as np
 
+import dolfin
 from dolfin import cpp, fem, function
 
 __all__ = ["plot"]
@@ -381,8 +382,8 @@ def plot(object, *args, **kwargs):
         return
 
     # For dolfin.function.Function, extract cpp_object
-    if hasattr(object, "cpp_object"):
-        object = object.cpp_object()
+    if hasattr(object, "_cpp_object"):
+        object = object._cpp_object
 
     # Get mesh from explicit mesh kwarg, only positional arg, or via
     # object
