@@ -11,167 +11,8 @@ import typing
 import numpy as np
 
 import ufl
-from dolfin import common, cpp, function, la
+from dolfin import common, cpp, function
 from dolfin.function import functionspace
-from ufl.algebra import Division, Product, Sum
-from ufl.classes import (ComponentTensor, Division, Indexed, MultiIndex,
-                         Product, Sum)
-from ufl.constantvalue import ScalarValue
-from ufl.utils.indexflattening import flatten_multiindex, shape_to_strides
-
-
-def _assign_error():
-    raise RuntimeError(
-        "Expected only linear combinations of Functions in the same FunctionSpaces"
-    )
-
-
-def _check_mul_and_division(e,
-                            linear_comb,
-                            scalar_weight=1.0,
-                            multi_index=None):
-    """Utility func for checking division and multiplication of a Function
-    with scalars in linear combinations of Functions
-
-    """
-    # ops = e.ufl_operands
-
-    # FIXME: What should be checked!?
-    # martinal: This code has never done anything sensible,
-    #   but I don't know what it was supposed to do so I can't fix it.
-    # same_multi_index = lambda x, y: (x.ufl_free_indices == y.ufl_free_indices \
-    #                        and x.ufl_index_dimensions == y.ufl_index_dimensions)
-
-    assert isinstance(scalar_weight, float)
-
-    # Split passed expression into scalar and expr
-    if isinstance(e, Product):
-        for i, op in enumerate(e.ufl_operands):
-            if isinstance(op, ScalarValue) or \
-               (isinstance(op, function.Constant) and op.value_size() == 1):
-                scalar = op
-                expr = e.ufl_operands[1 - i]
-                break
-        else:
-            _assign_error()
-
-        scalar_weight *= float(scalar)
-    elif isinstance(e, Division):
-        expr, scalar = e.ufl_operands
-        if not (isinstance(scalar, ScalarValue) or isinstance(
-                scalar, function.Constant) and scalar.value_rank() == 1):
-            _assign_error()
-        scalar_weight /= float(scalar)
-    else:
-        _assign_error()
-
-    # If a CoefficientTensor is passed we expect the expr to be either a
-    # Function or another ComponentTensor, where the latter wil result
-    # in a recursive call
-    if multi_index is not None:
-        assert isinstance(multi_index, MultiIndex)
-        assert isinstance(expr, Indexed)
-
-        # Unpack Indexed and check equality with passed multi_index
-        expr, multi_index2 = expr.ufl_operands
-        assert isinstance(multi_index2, MultiIndex)
-        # if not same_multi_index(multi_index, multi_index2):
-        #    _assign_error()
-
-    if isinstance(expr, Function):
-        linear_comb.append((expr, scalar_weight))
-
-    elif isinstance(expr, (ComponentTensor, Product, Division, Sum)):
-        # If componentTensor we need to unpack the MultiIndices
-        if isinstance(expr, ComponentTensor):
-            expr, multi_index = expr.ufl_operands
-            # if not same_multi_index(multi_index, multi_index2):
-            #    _error()
-
-        if isinstance(expr, (Product, Division)):
-            linear_comb = _check_mul_and_division(expr, linear_comb,
-                                                  scalar_weight, multi_index)
-        elif isinstance(expr, Sum):
-            linear_comb = _check_and_extract_functions(
-                expr, linear_comb, scalar_weight, multi_index)
-        else:
-            _assign_error()
-    else:
-        _assign_error()
-
-    return linear_comb
-
-
-def _check_and_extract_functions(e,
-                                 linear_comb=None,
-                                 scalar_weight=1.0,
-                                 multi_index=None):
-    """Utility func for extracting Functions and scalars in linear
-    combinations of Functions
-
-    """
-    linear_comb = linear_comb or []
-
-    # First check u
-    if isinstance(e, function.Function):
-        linear_comb.append((e, scalar_weight))
-        return linear_comb
-
-    # Second check a*u*b, u/a/b, a*u/b where a and b are scalars
-    elif isinstance(e, (Product, Division)):
-        linear_comb = _check_mul_and_division(e, linear_comb, scalar_weight,
-                                              multi_index)
-        return linear_comb
-
-    # Third check a*u*b, u/a/b, a*u/b where a and b are scalars and u
-    # is a Tensor
-    elif isinstance(e, ComponentTensor):
-        e, multi_index = e.ufl_operands
-        linear_comb = _check_mul_and_division(e, linear_comb, scalar_weight,
-                                              multi_index)
-        return linear_comb
-
-    # If not Product or Division we expect Sum
-    elif isinstance(e, Sum):
-        for op in e.ufl_operands:
-            linear_comb = _check_and_extract_functions(
-                op, linear_comb, scalar_weight, multi_index)
-
-    else:
-        _assign_error()
-
-    return linear_comb
-
-
-def _check_and_contract_linear_comb(expr, self, multi_index):
-    """Utility func for checking and contracting linear combinations of
-    Functions
-
-    """
-    linear_comb = _check_and_extract_functions(expr, multi_index=multi_index)
-    funcs = []
-    weights = []
-    funcspace = None
-    for func, weight in linear_comb:
-        funcspace = funcspace or func.function_space()
-        if func not in funcspace:
-            _assign_error()
-        try:
-            # Check if the exact same Function is already present
-            ind = funcs.index(func)
-            weights[ind] += weight
-        except Exception:
-            funcs.append(func)
-            weights.append(weight)
-
-    # Check that rhs does not include self
-    for ind, func in enumerate(funcs):
-        if func == self:
-            # If so make a copy
-            funcs[ind] = self.copy(deepcopy=True)
-            break
-
-    return list(zip(funcs, weights))
 
 
 class Function(ufl.Coefficient):
@@ -199,7 +40,7 @@ class Function(ufl.Coefficient):
         # Store DOLFIN FunctionSpace object
         self._V = V
 
-    def function_space(self) -> function.FunctionSpace:
+    def function_space(self) -> function.functionspace.FunctionSpace:
         """Return the FunctionSpace"""
         return self._V
 
@@ -222,7 +63,8 @@ class Function(ufl.Coefficient):
             shape = self.ufl_shape
             assert len(shape) == len(component)
             value_size = ufl.product(shape)
-            index = flatten_multiindex(component, shape_to_strides(shape))
+            index = ufl.utils.indexflattening.flatten_multiindex(
+                component, ufl.utils.indexflattening.shape_to_strides(shape))
             values = np.zeros(value_size)
             # FIXME: use a function with a return value
             self(*x, values=values)
@@ -285,68 +127,6 @@ class Function(ufl.Coefficient):
     def vector(self):
         """Return the vector holding Function degrees-of-freedom."""
         return self._cpp_object.vector()
-
-    def assign(self, rhs):
-        """Assign either a Function or linear combination of Functions.
-
-        *Arguments*
-            rhs (_Function_)
-                A Function or a linear combination of Functions. If a linear
-                combination is passed all Functions need to be in the same
-                FunctionSpaces.
-
-        """
-
-        # FIXME: this is very complicated. Fix.
-
-        if isinstance(rhs, (cpp.function.Function, cpp.function.Expression)):
-            # Avoid self assignment
-            if self == rhs:
-                return
-            self._cpp_object._assign(rhs)
-        elif isinstance(
-                rhs,
-            (function.Constant, function.Function, function.Expression)):
-            # Avoid self assignment
-            if self == rhs:
-                return
-            self._cpp_object._assign(rhs._cpp_object)
-        elif isinstance(rhs, (Sum, Product, Division, ComponentTensor)):
-            if isinstance(rhs, ComponentTensor):
-                rhs, multi_index = rhs.ufl_operands
-            else:
-                multi_index = None
-            linear_comb = _check_and_contract_linear_comb(
-                rhs, self, multi_index)
-            assert (linear_comb)
-
-            # If the assigned Function lives in a different FunctionSpace
-            # we cannot operate on this function directly
-            same_func_space = linear_comb[0][0] in self.function_space()
-            func, weight = linear_comb.pop()
-
-            # Assign values from first func
-            if not same_func_space:
-                self._cpp_object._assign(func._cpp_object)
-                vector = self.vector()
-            else:
-                vector = self.vector()
-                vector[:] = func.vector()
-
-            # If first weight is not 1 scale
-            if weight != 1.0:
-                vector *= weight
-
-            # AXPY the other functions
-            for func, weight in linear_comb:
-                if weight == 0.0:
-                    continue
-                vector.axpy(weight, func.vector())
-
-        else:
-            raise RuntimeError(
-                "Expected a Function or linear combinations of Functions in the same FunctionSpace"
-            )
 
     def name(self) -> str:
         """Get the name of the Function."""
