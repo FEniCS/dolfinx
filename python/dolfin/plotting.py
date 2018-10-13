@@ -10,7 +10,6 @@ import warnings
 
 import numpy as np
 
-import dolfin
 from dolfin import cpp, fem, function
 
 __all__ = ["plot"]
