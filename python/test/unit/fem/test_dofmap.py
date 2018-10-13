@@ -41,10 +41,14 @@ reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
         (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
         # cell.contains(Point) does not work correctly
         # for quad/hex cells once it is fixed, this test will pass
-        xfail((UnitSquareMesh,
-               (MPI.comm_world, 4, 4, CellType.Type.quadrilateral))),
-        xfail((UnitCubeMesh,
-               (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)))
+        pytest.param(
+            (UnitSquareMesh,
+             (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
+            marks=pytest.mark.xfail),
+        pytest.param(
+            (UnitCubeMesh,
+             (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)),
+            marks=pytest.mark.xfail)
     ])
 def test_tabulate_all_coordinates(mesh_factory):
     func, args = mesh_factory
@@ -500,31 +504,31 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),             ('DQ', 2))",
     "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('N1curl', 1))",
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('N1curl', 1))",
-    xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),       ('N1curl', 1))"
-    ),
-    xfail_ffc(
-        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('N1curl', 1))"
-    ),
-    xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),            ('N1curl', 2))"
-    ),
+    pytest.param(
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),       ('N1curl', 1))",
+        marks=pytest.mark.xfail),
+    pytest.param(
+        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('N1curl', 1))",
+        marks=pytest.mark.xfail),
+    pytest.param(
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),            ('N1curl', 2))",
+        marks=pytest.mark.xfail),
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('N1curl', 2))",
-    xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),       ('N1curl', 2))"
-    ),
-    xfail_ffc(
-        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('N1curl', 2))"
-    ),
+    pytest.param(
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),       ('N1curl', 2))",
+        marks=pytest.mark.xfail),
+    pytest.param(
+        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('N1curl', 2))",
+        marks=pytest.mark.xfail),
     "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.triangle),                ('RT', 1))",
     "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.tetrahedron),            ('RT', 1))",
-    xfail_ffc(
-        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),       ('RT', 1))"
-    ),
-    xfail_ffc(
-        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('RT', 1))"
-    ),
-])
+    pytest.param(
+        "FunctionSpace(UnitSquareMesh(MPI.comm_world, 6, 6, CellType.Type.quadrilateral),       ('RT', 1))",
+        marks=pytest.mark.xfail),
+    pytest.param(
+        "FunctionSpace(UnitCubeMesh(MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron),         ('RT', 1))",
+        marks=pytest.mark.xfail)
+    ])
 def test_dofs_dim(space):
     """Test function GenericDofMap::dofs(mesh, dim)"""
     V = eval(space)
