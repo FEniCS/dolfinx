@@ -84,19 +84,20 @@ std::vector<PetscScalar> Constant::values() const
 void Constant::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
-                    Eigen::Ref<const EigenRowArrayXXd> x) const
+                    const Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   // Copy values
   for (unsigned int i = 0; i != values.rows(); ++i)
+  {
     std::copy(_values.begin(), _values.end(),
               values.data() + i * _values.size());
+  }
 }
 //-----------------------------------------------------------------------------
 std::string Constant::str(bool verbose) const
 {
   std::ostringstream oss;
   oss << "<Constant of dimension " << _values.size() << ">";
-
   if (verbose)
   {
     std::ostringstream ossv;

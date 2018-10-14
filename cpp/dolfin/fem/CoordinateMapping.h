@@ -23,7 +23,7 @@ namespace fem
 class CoordinateMapping
 {
 public:
-  /// Create coordinate mapping from UFC coordinate mappping (data may be
+  /// Create coordinate mapping from UFC coordinate mapping (data may be
   /// shared)
   /// @param cm (ufc::coordinate_mapping)
   ///  UFC coordinate mapping
@@ -96,7 +96,7 @@ public:
     // Number of points
     int num_points = x.rows();
 
-    // In checks
+    // in-argument checks
     assert(x.cols() == this->geometric_dimension());
     // assert(coordinate_dofs.rows() == space_dimension);
     assert(coordinate_dofs.cols() == this->geometric_dimension());

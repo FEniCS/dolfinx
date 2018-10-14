@@ -42,6 +42,7 @@ def test_p4_scalar_vector():
 
         pts = numpy.array([[0.4, 0.4, 0.1], [0.4, 0.1, 0.4], [0.1, 0.4, 0.4]])
 
+        print("f type", type(F0))
         for pt in pts:
             print(pt, F0(pt), F1(pt), F2(pt))
             assert numpy.isclose(pt[0], F0(pt)[0])
@@ -51,7 +52,7 @@ def test_p4_scalar_vector():
         V = VectorFunctionSpace(mesh, ("CG", 4))
         F = interpolate(Expression(("x[0]", "x[1]", "0.0"), degree=4), V)
         for pt in pts:
-            result = F(pt)[0]
+            result = F(pt)
             print(pt, result)
             assert numpy.isclose(pt[0], result[0])
             assert numpy.isclose(pt[1], result[1])
@@ -118,8 +119,7 @@ def test_mixed_parallel():
             p += v.point() * x[i]
         p = p.array()[:2]
 
-        val = F(p)[0]
-
-        assert numpy.isclose(val[0], p[0])
+        val = F(p)
+        assert numpy.allclose(val[0], p[0])
         assert numpy.isclose(val[1], p[1])
         assert numpy.isclose(val[2], numpy.sin(p[0] + p[1]))

@@ -151,7 +151,6 @@ def test_assign(V, W):
 
 
 def test_call(R, V, W, Q, mesh):
-    from numpy import all, allclose
     u0 = Function(R)
     u1 = Function(V)
     u2 = Function(W)
@@ -163,8 +162,7 @@ def test_call(R, V, W, Q, mesh):
         degree=1)
     e2 = Expression(
         (("x[0] + x[1] + x[2]", "x[0] - x[1] - x[2]", "x[0] + x[1] + x[2]"),
-         ("x[0]", "x[1]", "x[2]"),
-         ("-x[0]", "-x[1]", "-x[2]")),
+         ("x[0]", "x[1]", "x[2]"), ("-x[0]", "-x[1]", "-x[2]")),
         degree=1)
 
     u0.vector()[:] = 1.0
@@ -175,19 +173,27 @@ def test_call(R, V, W, Q, mesh):
     p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0).array()
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
 
-    assert round(u0(x0)[0] - u0(x0)[0], 7) == 0
-    assert round(u0(x0)[0] - u0(p0)[0], 7) == 0
-    assert round(u1(x0)[0] - u1(x0)[0], 7) == 0
-    assert round(u1(x0)[0] - u1(p0)[0], 7) == 0
-    assert round(u2(x0)[0][0] - u1(p0)[0], 7) == 0
+    assert numpy.allclose(u0(x0), u0(x0))
+    assert numpy.allclose(u0(x0), u0(p0))
+    assert numpy.allclose(u1(x0), u1(x0))
+    assert numpy.allclose(u1(x0), u1(p0))
 
-    assert all(u2(x0) == u2(x0))
-    assert all(u2(x0) == u2(p0))
-    assert allclose(u3(x0)[0][:3], u2(x0)[0], rtol=1e-15, atol=1e-15)
+    assert numpy.allclose(u2(x0)[0], u1(p0))
+    assert numpy.allclose(u2(x0)[1], u1(p0))
+    assert numpy.allclose(u2(x0)[2], u1(p0))
 
-    with pytest.raises(TypeError):
+    assert numpy.all(u2(x0) == u2(x0))
+    assert numpy.all(u2(x0) == u2(p0))
+    assert numpy.allclose(u3(x0)[:3], u2(x0), rtol=1e-15, atol=1e-15)
+
+    p0_list = [p for p in p0]
+    x0_list = [x for x in x0]
+    assert numpy.allclose(u0(x0_list), u0(x0_list))
+    assert numpy.allclose(u0(x0_list), u0(p0_list))
+
+    with pytest.raises(ValueError):
         u0([0, 0, 0, 0])
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         u0([0, 0])
 
 

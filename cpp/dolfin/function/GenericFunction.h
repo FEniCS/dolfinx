@@ -66,14 +66,14 @@ public:
   virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
-                    Eigen::Ref<const EigenRowArrayXXd> x,
+                    const Eigen::Ref<const EigenRowArrayXXd> x,
                     const mesh::Cell& cell) const;
 
   /// Evaluate at given point
   virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
-                    Eigen::Ref<const EigenRowArrayXXd> x) const;
+                    const Eigen::Ref<const EigenRowArrayXXd> x) const;
 
   /// Restrict function to local cell (compute expansion coefficients w)
   virtual void

@@ -45,14 +45,14 @@ void function(py::module& m)
               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
                   u,
-              Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
+              const Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
               const dolfin::mesh::Cell& cell) { self.eval(u, x, cell); },
            "Evaluate GenericFunction (cell version)")
       .def("eval",
            py::overload_cast<
                Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>>,
-               Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
+               const Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
                &dolfin::function::GenericFunction::eval, py::const_),
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
       .def("compute_point_values",
