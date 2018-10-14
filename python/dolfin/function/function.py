@@ -16,6 +16,12 @@ from dolfin.function import functionspace
 
 
 class Function(ufl.Coefficient):
+    """A finite element function that is represented by a function
+    space (domain, element and dofmap) and a vetor holding the
+    degrees-of-freedom
+
+    """
+
     def __init__(self,
                  V: functionspace.FunctionSpace,
                  x: typing.Optional[cpp.la.PETScVector] = None,
@@ -58,8 +64,6 @@ class Function(ufl.Coefficient):
         # FIXME: same as dolfin.expression.Expression version. Find
         # way to re-use.
         assert derivatives == ()  # TODO: Handle derivatives
-
-        print("YYYYYYYYYYYYYY*****", type(x), x.shape)
 
         if component:
             shape = self.ufl_shape
