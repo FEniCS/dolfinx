@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the Function class"""
 
-from math import sqrt
+import math
 
 import numpy
 import pytest
@@ -79,7 +79,6 @@ def test_compute_point_values(V, W, mesh):
 
 @pytest.mark.skip
 def test_assign(V, W):
-
     for V0, V1, vector_space in [(V, W, False), (W, V, True)]:
         u = Function(V0)
         u0 = Function(V0)
@@ -156,19 +155,19 @@ def test_call(R, V, W, Q, mesh):
     u2 = Function(W)
     u3 = Function(Q)
 
-    e0 = Expression("x[0] + x[1] + x[2]", degree=1)
-    e1 = Expression(
+    e1 = Expression("x[0] + x[1] + x[2]", degree=1)
+    e2 = Expression(
         ("x[0] + x[1] + x[2]", "x[0] - x[1] - x[2]", "x[0] + x[1] + x[2]"),
         degree=1)
-    e2 = Expression(
+    e3 = Expression(
         (("x[0] + x[1] + x[2]", "x[0] - x[1] - x[2]", "x[0] + x[1] + x[2]"),
          ("x[0]", "x[1]", "x[2]"), ("-x[0]", "-x[1]", "-x[2]")),
         degree=1)
 
     u0.vector()[:] = 1.0
-    u1.interpolate(e0)
-    u2.interpolate(e1)
-    u3.interpolate(e2)
+    u1.interpolate(e1)
+    u2.interpolate(e2)
+    u3.interpolate(e3)
 
     p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0).array()
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
@@ -177,13 +176,9 @@ def test_call(R, V, W, Q, mesh):
     assert numpy.allclose(u0(x0), u0(p0))
     assert numpy.allclose(u1(x0), u1(x0))
     assert numpy.allclose(u1(x0), u1(p0))
-
     assert numpy.allclose(u2(x0)[0], u1(p0))
-    assert numpy.allclose(u2(x0)[1], u1(p0))
-    assert numpy.allclose(u2(x0)[2], u1(p0))
 
-    assert numpy.all(u2(x0) == u2(x0))
-    assert numpy.all(u2(x0) == u2(p0))
+    assert numpy.allclose(u2(x0), u2(p0))
     assert numpy.allclose(u3(x0)[:3], u2(x0), rtol=1e-15, atol=1e-15)
 
     p0_list = [p for p in p0]
@@ -260,8 +255,9 @@ def test_near_evaluations(R, mesh):
     a_shift_x = Point(a[0] - offset, a[1], a[2]).array()
     assert round(u0(a)[0] - u0(a_shift_x)[0], 7) == 0
 
-    a_shift_xyz = Point(a[0] - offset / sqrt(3), a[1] - offset / sqrt(3),
-                        a[2] - offset / sqrt(3)).array()
+    a_shift_xyz = Point(a[0] - offset / math.sqrt(3),
+                        a[1] - offset / math.sqrt(3),
+                        a[2] - offset / math.sqrt(3)).array()
     assert round(u0(a)[0] - u0(a_shift_xyz)[0], 7) == 0
 
 
