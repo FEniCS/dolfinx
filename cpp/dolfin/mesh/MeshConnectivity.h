@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include <dolfin/log/log.h>
+#include <Eigen/Dense>
 #include <cassert>
+#include <dolfin/log/log.h>
 #include <vector>
 
 namespace dolfin
@@ -45,8 +46,8 @@ public:
   /// Move assignment
   MeshConnectivity& operator=(MeshConnectivity&& connectivity) = default;
 
-  /// Return true if the total number of connections is equal to zero
-  bool empty() const { return _connections.empty(); }
+  // /// Return true if the total number of connections is equal to zero
+  bool empty() const { return _connections.size() == 0; }
 
   /// Return total number of connections
   inline std::size_t size() const { return _connections.size(); }
@@ -92,7 +93,11 @@ public:
   // }
 
   /// Return contiguous array of connections for all entities
-  const std::vector<std::int32_t>& connections() const { return _connections; }
+  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+  connections() const
+  {
+    return _connections;
+  }
 
   /// Clear all data
   void clear();
@@ -115,12 +120,13 @@ public:
   {
     assert((entity + 1) < _index_to_position.size());
     assert(connections.size()
-                  == _index_to_position[entity + 1]
-                         - _index_to_position[entity]);
+           == _index_to_position[entity + 1] - _index_to_position[entity]);
 
     // Copy data
-    std::copy(connections.begin(), connections.end(),
-              _connections.begin() + _index_to_position[entity]);
+    // std::copy(connections.begin(), connections.end(),
+    //           _connections.begin() + _index_to_position[entity]);
+    std::copy(connections.data(), connections.data() + connections.size(),
+              _connections.data() + _index_to_position[entity]);
   }
 
   /// Set all connections for given entity
@@ -133,8 +139,10 @@ public:
     // Copy data
     const std::size_t num_connections
         = _index_to_position[entity + 1] - _index_to_position[entity];
+    // std::copy(connections, connections + num_connections,
+    //           _connections.begin() + _index_to_position[entity]);
     std::copy(connections, connections + num_connections,
-              _connections.begin() + _index_to_position[entity]);
+              _connections.data() + _index_to_position[entity]);
   }
 
   /// Set all connections for all entities (T is a '2D' container, e.g. a
@@ -157,18 +165,25 @@ public:
     _index_to_position[connections.size()] = size;
 
     // Initialize connections
-    _connections.reserve(size);
-    for (auto e = connections.begin(); e != connections.end(); ++e)
-      _connections.insert(_connections.end(), e->begin(), e->end());
+    // _connections.reserve(size);
+    // for (auto e = connections.begin(); e != connections.end(); ++e)
+    //   _connections.insert(_connections.end(), e->begin(), e->end());
 
-    _connections.shrink_to_fit();
+    // _connections.shrink_to_fit();
+
+    std::vector<std::int32_t> c;
+    c.reserve(size);
+    for (auto e = connections.begin(); e != connections.end(); ++e)
+      c.insert(c.end(), e->begin(), e->end());
+
+    _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>(c.size());
+    std::copy(c.begin(), c.end(), _connections.data());
   }
 
   /// Set global number of connections for all local entities
   void set_global_size(const std::vector<std::uint32_t>& num_global_connections)
   {
-    assert(num_global_connections.size()
-                  == _index_to_position.size() - 1);
+    assert(num_global_connections.size() == _index_to_position.size() - 1);
     _num_global_connections = num_global_connections;
   }
 
@@ -183,7 +198,8 @@ private:
   std::size_t _d0, _d1;
 
   // Connections for all entities stored as a contiguous array
-  std::vector<std::int32_t> _connections;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _connections;
+  // std::vector<std::int32_t> _connections;
 
   // Global number of connections for all entities (possibly not
   // computed)
@@ -192,5 +208,5 @@ private:
   // Position of first connection for each entity (using local index)
   std::vector<std::uint32_t> _index_to_position;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

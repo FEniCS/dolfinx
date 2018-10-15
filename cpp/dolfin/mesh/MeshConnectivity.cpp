@@ -21,7 +21,7 @@ MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1)
 //-----------------------------------------------------------------------------
 void MeshConnectivity::clear()
 {
-  std::vector<std::int32_t>().swap(_connections);
+  _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>();
   std::vector<std::uint32_t>().swap(_index_to_position);
 }
 //-----------------------------------------------------------------------------
@@ -35,8 +35,7 @@ void MeshConnectivity::init(std::size_t num_entities,
   const std::size_t size = num_entities * num_connections;
 
   // Allocate
-  _connections.resize(size);
-  std::fill(_connections.begin(), _connections.end(), 0);
+  _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
   _index_to_position.resize(num_entities + 1);
 
   // Initialize data
@@ -61,24 +60,24 @@ void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
   _index_to_position[num_entities] = size;
 
   // Initialize connections
-  _connections.resize(size);
-  std::fill(_connections.begin(), _connections.end(), 0);
+  _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(std::size_t entity, std::size_t connection,
                            std::size_t pos)
 {
   assert((entity + 1) < _index_to_position.size());
-  assert(pos
-                < _index_to_position[entity + 1] - _index_to_position[entity]);
+  assert(pos < _index_to_position[entity + 1] - _index_to_position[entity]);
   _connections[_index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
 std::size_t MeshConnectivity::hash() const
 {
   // Compute local hash key
-  boost::hash<std::vector<std::int32_t>> uhash;
-  return uhash(_connections);
+  // boost::hash<std::vector<std::int32_t>> uhash;
+  // return uhash(_connections);
+  return boost::hash_range(_connections.data(),
+                           _connections.data() + _connections.size());
 }
 //-----------------------------------------------------------------------------
 std::string MeshConnectivity::str(bool verbose) const
