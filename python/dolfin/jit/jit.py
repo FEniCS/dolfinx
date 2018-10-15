@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import functools
 import hashlib
-from functools import wraps
 
 import numpy
 
 import dijitso
+import dolfin.pkgconfig
 import ffc
-from dolfin import cpp, parameter, pkgconfig
+from dolfin import cpp, parameter
 
 # Get DOLFIN pkg-config data
-if pkgconfig.exists("dolfin"):
-    dolfin_pc = pkgconfig.parse("dolfin")
+if dolfin.pkgconfig.exists("dolfin"):
+    dolfin_pc = dolfin.pkgconfig.parse("dolfin")
 else:
     raise RuntimeError(
-        "Could not find DOLFIN pkg-config file. Please make sure appropriate paths are set."
+        "Could not find DOLFIN pkg-config file. Make sure appropriate paths are set."
     )
 
 
@@ -41,7 +42,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
     """
 
-    @wraps(local_jit)
+    @functools.wraps(local_jit)
     def mpi_jit(*args, **kwargs):
 
         # FIXME: should require mpi_comm to be explicit
