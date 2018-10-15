@@ -82,7 +82,7 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x) const override;
+            const Eigen::Ref<const EigenRowArrayXXd> x) const override;
 
   virtual std::string str(bool verbose) const override;
 

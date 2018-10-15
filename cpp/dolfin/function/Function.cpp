@@ -201,14 +201,14 @@ std::shared_ptr<const la::PETScVector> Function::vector() const
 void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
-                    Eigen::Ref<const EigenRowArrayXXd> x) const
+                    const Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   assert(_function_space);
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
-  for (unsigned int i = 0; i != x.rows(); ++i)
+  for (unsigned int i = 0; i < x.rows(); ++i)
   {
     const double* _x = x.row(i).data();
     const geometry::Point point(mesh.geometry().dim(), _x);
@@ -245,7 +245,7 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
 void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
-                    Eigen::Ref<const EigenRowArrayXXd> x,
+                    const Eigen::Ref<const EigenRowArrayXXd> x,
                     const mesh::Cell& cell) const
 {
   assert(_function_space);
@@ -271,11 +271,12 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
   cell.get_coordinate_dofs(coordinate_dofs);
 
-  // Restrict function to cell
+ // Restrict function to cell
   restrict(coefficients.data(), element, cell, coordinate_dofs);
 
   // Get coordinate mapping
-  auto cmap = mesh.geometry().coord_mapping;
+  std::shared_ptr<const fem::CoordinateMapping> cmap
+      = mesh.geometry().coord_mapping;
   if (!cmap)
   {
     throw std::runtime_error(
@@ -295,9 +296,6 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(num_points, tdim, gdim);
 
   EigenRowArrayXXd X(x.rows(), tdim);
-
-  // boost::multi_array<double, 3> basis_reference_values(
-  //     boost::extents[num_points][space_dimension][reference_value_size]);
   Eigen::Tensor<double, 3, Eigen::RowMajor> basis_reference_values(
       num_points, space_dimension, reference_value_size);
 
@@ -307,21 +305,14 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   // Compute reference coordinates X, and J, detJ and K
   cmap->compute_reference_geometry(X, J, detJ, K, x, coordinate_dofs);
 
-  // std::cout << "Physical x: " << std::endl;
-  // std::cout << x << std::endl;
-  // std::cout << "Reference X: " << std::endl;
-  // std::cout << X << std::endl;
-
-  // // Compute basis on reference element
+  // Compute basis on reference element
   element.evaluate_reference_basis(basis_reference_values, X);
 
-  // // Push basis forward to physical element
+  // Push basis forward to physical element
   element.transform_reference_basis(basis_values, basis_reference_values, X, J,
                                     detJ, K);
 
   // Compute expansion
-  // std::cout << "Num points, space dim, value_size: " << num_points << ", "
-  //           << space_dimension << ", " << value_size << std::endl;
   values.setZero();
   for (std::size_t p = 0; p < num_points; ++p)
   {
@@ -329,10 +320,6 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
     {
       for (std::size_t j = 0; j < value_size; ++j)
       {
-        // std::cout << "Loop: " << p << ", " << i << ", " << j << std::endl;
-        // std::cout << "  Coeff, Basis: " << coefficients[i] << ", "
-        //           << basis_values(p, i, j) << std::endl;
-
         // TODO: Find an Eigen shortcut fot this operation
         values.row(p)[j] += coefficients[i] * basis_values(p, i, j);
       }

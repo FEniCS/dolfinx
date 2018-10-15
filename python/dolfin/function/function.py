@@ -16,6 +16,12 @@ from dolfin.function import functionspace
 
 
 class Function(ufl.Coefficient):
+    """A finite element function that is represented by a function
+    space (domain, element and dofmap) and a vetor holding the
+    degrees-of-freedom
+
+    """
+
     def __init__(self,
                  V: functionspace.FunctionSpace,
                  x: typing.Optional[cpp.la.PETScVector] = None,
@@ -73,28 +79,24 @@ class Function(ufl.Coefficient):
             # Scalar evaluation
             return self(*x)
 
-    def __call__(self, *args):
-
-        # Assume all args are x argument
-        x = np.array(args)
-
-        dim = self.ufl_domain().geometric_dimension()
-        if x.shape[-1] != dim:
-            raise TypeError("expected the geometry argument to be of "
-                            "length %d" % dim)
+    def __call__(self, x: np.ndarray) -> np.ndarray:
+        """Evaluate Function at points x, where x has shape (num_points, gdim)"""
+        _x = np.asarray(x, dtype=np.float)
+        num_points = _x.shape[0] if len(_x.shape) > 1 else 1
+        _x = np.reshape(_x, (num_points, -1))
+        if _x.shape[1] != self.geometric_dimension():
+            raise ValueError("Wrong geometric dimension for coordinate(s).")
 
         value_size = ufl.product(self.ufl_element().value_shape())
         if common.has_petsc_complex:
-            values = np.empty((1, value_size), dtype=np.complex128)
+            values = np.empty((num_points, value_size), dtype=np.complex128)
         else:
-            values = np.empty((1, value_size))
+            values = np.empty((num_points, value_size))
 
-        # The actual evaluation
-        self._cpp_object.eval(values, x)
-
-        # If scalar return statement, return scalar value.
-        if value_size == 1:
-            return values[0]
+        # Call the evaluation
+        self._cpp_object.eval(values, _x)
+        if num_points == 1:
+            values = np.reshape(values, (-1, ))
 
         return values
 

@@ -24,7 +24,6 @@ def test_p4_scalar_vector():
     perms = itertools.permutations([1, 2, 3, 4])
 
     for p in perms:
-        print(p)
         cells = numpy.array([[0, 1, 2, 3], p], dtype=numpy.int64)
         points = numpy.array(
             [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0],
@@ -41,9 +40,7 @@ def test_p4_scalar_vector():
         F2 = interpolate(Expression("x[2]", degree=4), Q)
 
         pts = numpy.array([[0.4, 0.4, 0.1], [0.4, 0.1, 0.4], [0.1, 0.4, 0.4]])
-
         for pt in pts:
-            print(pt, F0(pt), F1(pt), F2(pt))
             assert numpy.isclose(pt[0], F0(pt)[0])
             assert numpy.isclose(pt[1], F1(pt)[0])
             assert numpy.isclose(pt[2], F2(pt)[0])
@@ -51,8 +48,7 @@ def test_p4_scalar_vector():
         V = VectorFunctionSpace(mesh, ("CG", 4))
         F = interpolate(Expression(("x[0]", "x[1]", "0.0"), degree=4), V)
         for pt in pts:
-            result = F(pt)[0]
-            print(pt, result)
+            result = F(pt)
             assert numpy.isclose(pt[0], result[0])
             assert numpy.isclose(pt[1], result[1])
             assert numpy.isclose(0.0, result[2])
@@ -118,8 +114,7 @@ def test_mixed_parallel():
             p += v.point() * x[i]
         p = p.array()[:2]
 
-        val = F(p)[0]
-
-        assert numpy.isclose(val[0], p[0])
+        val = F(p)
+        assert numpy.allclose(val[0], p[0])
         assert numpy.isclose(val[1], p[1])
         assert numpy.isclose(val[2], numpy.sin(p[0] + p[1]))
