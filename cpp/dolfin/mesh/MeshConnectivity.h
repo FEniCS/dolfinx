@@ -53,7 +53,7 @@ public:
   inline std::size_t size() const { return _connections.size(); }
 
   /// Return number of connections for given entity
-  std::size_t size(std::size_t entity) const
+  std::size_t size(std::int32_t entity) const
   {
     return (entity + 1) < _index_to_position.size()
                ? _index_to_position[entity + 1] - _index_to_position[entity]
@@ -61,9 +61,9 @@ public:
   }
 
   /// Return global number of connections for given entity
-  std::size_t size_global(std::size_t entity) const
+  std::size_t size_global(std::int32_t entity) const
   {
-    if (_num_global_connections.empty())
+    if (_num_global_connections.size() == 0)
       return size(entity);
     else
     {
@@ -73,7 +73,7 @@ public:
   }
 
   /// Return array of connections for given entity
-  const std::int32_t* operator()(std::size_t entity) const
+  const std::int32_t* operator()(std::int32_t entity) const
   {
     return (entity + 1) < _index_to_position.size()
                ? &_connections[_index_to_position[entity]]
@@ -113,25 +113,25 @@ public:
   /// Set given connection for given entity
   void set(std::size_t entity, std::size_t connection, std::size_t pos);
 
-  /// Set all connections for given entity. T is a contains,
+  /// Set all connections for given entity. T is a container,
   /// e.g. std::vector<std::size_t>
-  template <typename T>
-  void set(std::size_t entity, const T& connections)
-  {
-    assert((entity + 1) < _index_to_position.size());
-    assert(connections.size()
-           == _index_to_position[entity + 1] - _index_to_position[entity]);
+  // template <typename T>
+  // void set(std::int32_t entity, const T& connections)
+  // {
+  //   assert((entity + 1) < _index_to_position.size());
+  //   assert(connections.size()
+  //          == _index_to_position[entity + 1] - _index_to_position[entity]);
 
-    // Copy data
-    // std::copy(connections.begin(), connections.end(),
-    //           _connections.begin() + _index_to_position[entity]);
-    std::copy(connections.data(), connections.data() + connections.size(),
-              _connections.data() + _index_to_position[entity]);
-  }
+  //   // Copy data
+  //   // std::copy(connections.begin(), connections.end(),
+  //   //           _connections.begin() + _index_to_position[entity]);
+  //   std::copy(connections.data(), connections.data() + connections.size(),
+  //             _connections.data() + _index_to_position[entity]);
+  // }
 
   /// Set all connections for given entity
   template <typename T>
-  void set(std::size_t entity, T* connections)
+  void set(std::uint32_t entity, T* connections)
   {
     assert((entity + 1) < _index_to_position.size());
     assert(connections);
@@ -145,8 +145,8 @@ public:
               _connections.data() + _index_to_position[entity]);
   }
 
-  /// Set all connections for all entities (T is a '2D' container, e.g. a
-  /// std::vector<<std::vector<std::size_t>>,
+  /// Set all connections for all entities (T is a '2D' container, e.g.
+  /// a std::vector<<std::vector<std::size_t>>,
   /// std::vector<<std::set<std::size_t>>, etc)
   template <typename T>
   void set(const T& connections)
@@ -181,7 +181,8 @@ public:
   }
 
   /// Set global number of connections for all local entities
-  void set_global_size(const std::vector<std::uint32_t>& num_global_connections)
+  void set_global_size(const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
+                           num_global_connections)
   {
     assert(num_global_connections.size() == _index_to_position.size() - 1);
     _num_global_connections = num_global_connections;
@@ -203,10 +204,12 @@ private:
 
   // Global number of connections for all entities (possibly not
   // computed)
-  std::vector<std::uint32_t> _num_global_connections;
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _num_global_connections;
+  // std::vector<std::uint32_t> _num_global_connections;
 
   // Position of first connection for each entity (using local index)
-  std::vector<std::uint32_t> _index_to_position;
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _index_to_position;
+  // std::vector<std::uint32_t> _index_to_position;
 };
 } // namespace mesh
 } // namespace dolfin

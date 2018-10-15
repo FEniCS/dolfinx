@@ -16,6 +16,7 @@
 #include "dolfin/graph/Graph.h"
 #include "dolfin/graph/SCOTCH.h"
 #include "dolfin/log/log.h"
+#include <Eigen/Dense>
 #include <boost/multi_array.hpp>
 #include <complex>
 
@@ -1093,7 +1094,9 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 
   // Create vector to hold number of cells connected to each
   // facet. Initially copy over from local values.
-  std::vector<std::uint32_t> num_global_neighbors(mesh.num_facets());
+
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> num_global_neighbors(
+      mesh.num_facets());
 
   std::map<std::int32_t, std::set<std::uint32_t>>& shared_facets
       = mesh.topology().shared_entities(D - 1);

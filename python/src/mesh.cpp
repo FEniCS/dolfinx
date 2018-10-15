@@ -207,7 +207,7 @@ void mesh(py::module& m)
            py::return_value_policy::reference_internal)
       .def("size", py::overload_cast<>(&dolfin::mesh::MeshConnectivity::size,
                                        py::const_))
-      .def("size", py::overload_cast<std::size_t>(
+      .def("size", py::overload_cast<std::int32_t>(
                        &dolfin::mesh::MeshConnectivity::size, py::const_));
 
   // dolfin::mesh::MeshEntity class
