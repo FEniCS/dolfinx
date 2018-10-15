@@ -154,7 +154,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // Add cells. Only copies the first few entries on each row corresponding to
   // vertices.
   for (std::int32_t i = 0; i < num_cells; ++i)
-    _topology.connectivity(tdim, 0).set(i, coordinate_dofs.row(i).data());
+    _topology.connectivity(tdim, 0).set(i, coordinate_dofs.row(i));
 
   // Global cell indices - construct if none given
   if (global_cell_indices.empty())

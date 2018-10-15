@@ -407,7 +407,7 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
       assert(it != entity_to_index.end());
       entities.push_back(it->second);
     }
-    connectivity.set(e.index(), entities.data());
+    connectivity.set(e.index(), entities);
   }
 }
 //-----------------------------------------------------------------------------

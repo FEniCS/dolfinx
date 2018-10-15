@@ -26,7 +26,7 @@ void CoordinateDofs::init(std::size_t dim,
 
   _coord_dofs[dim].init(point_dofs.rows(), point_dofs.cols());
   for (std::uint32_t i = 0; i < point_dofs.rows(); ++i)
-    _coord_dofs[dim].set(i, point_dofs.row(i).data());
+    _coord_dofs[dim].set(i, point_dofs.row(i));
 
   _cell_permutation = cell_permutation;
 }

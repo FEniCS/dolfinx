@@ -64,7 +64,7 @@ public:
   std::size_t size_global(std::int32_t entity) const
   {
     if (_num_global_connections.size() == 0)
-      return size(entity);
+      return this->size(entity);
     else
     {
       assert(entity < _num_global_connections.size());
@@ -114,34 +114,18 @@ public:
   void set(std::size_t entity, std::size_t connection, std::size_t pos);
 
   /// Set all connections for given entity. T is a container,
-  /// e.g. std::vector<std::size_t>
-  // template <typename T>
-  // void set(std::int32_t entity, const T& connections)
-  // {
-  //   assert((entity + 1) < _index_to_position.size());
-  //   assert(connections.size()
-  //          == _index_to_position[entity + 1] - _index_to_position[entity]);
-
-  //   // Copy data
-  //   // std::copy(connections.begin(), connections.end(),
-  //   //           _connections.begin() + _index_to_position[entity]);
-  //   std::copy(connections.data(), connections.data() + connections.size(),
-  //             _connections.data() + _index_to_position[entity]);
-  // }
-
-  /// Set all connections for given entity
+  /// e.g. std::vector<std::size_t>, or a Eigen 1D array
   template <typename T>
-  void set(std::uint32_t entity, T* connections)
+  void set(std::int32_t entity, const T& connections)
   {
     assert((entity + 1) < _index_to_position.size());
-    assert(connections);
+    assert(connections.size()
+           == _index_to_position[entity + 1] - _index_to_position[entity]);
 
     // Copy data
-    const std::size_t num_connections
-        = _index_to_position[entity + 1] - _index_to_position[entity];
-    // std::copy(connections, connections + num_connections,
+    // std::copy(connections.data(), connections.data() + connections.size() ,
     //           _connections.begin() + _index_to_position[entity]);
-    std::copy(connections, connections + num_connections,
+    std::copy(connections.data(), connections.data() + connections.size(),
               _connections.data() + _index_to_position[entity]);
   }
 
@@ -200,16 +184,13 @@ private:
 
   // Connections for all entities stored as a contiguous array
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _connections;
-  // std::vector<std::int32_t> _connections;
 
   // Global number of connections for all entities (possibly not
   // computed)
   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _num_global_connections;
-  // std::vector<std::uint32_t> _num_global_connections;
 
   // Position of first connection for each entity (using local index)
   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _index_to_position;
-  // std::vector<std::uint32_t> _index_to_position;
 };
 } // namespace mesh
 } // namespace dolfin
