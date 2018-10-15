@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2017 Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2017-2018 Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """FIXME: Add description"""
 
-from dolfin import jit
+import dolfin
 from dolfin.cpp.log import LogLevel, log
-from dolfin.jit.jit import _math_header
 
 
 def jit_generate(class_data, module_name, signature, parameters):
@@ -153,7 +152,7 @@ extern "C" DLL_EXPORT dolfin::function::Expression * create_{classname}()
         get_props=get_props,
         get_generic_function=get_generic_function,
         set_generic_function=set_generic_function,
-        math_header=_math_header)
+        math_header=dolfin.jit.jit._math_header)
 
     code_h = ""
     depends = []
@@ -170,5 +169,5 @@ def compile_expression(statements, properties):
         'jit_generate': jit_generate
     }
 
-    expression = jit.compile_class(cpp_data)
+    expression = dolfin.jit.compile_class(cpp_data)
     return expression
