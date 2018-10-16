@@ -48,6 +48,12 @@ def test_basic_assembly():
     assert isinstance(A, dolfin.cpp.la.PETScMatrix)
     assert isinstance(b, dolfin.cpp.la.PETScVector)
 
+    # Function as coefficient
+    f = dolfin.Function(V)
+    a = f * inner(u, v) * dx
+    A = dolfin.fem.assemble(a)
+    assert isinstance(A, dolfin.cpp.la.PETScMatrix)
+
 
 def test_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
