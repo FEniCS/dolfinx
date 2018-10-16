@@ -394,7 +394,7 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
   }
 
   // Search for d1 entities of d0 in map, and recover index
-  std::vector<std::size_t> entities;
+  std::vector<std::int32_t> entities;
   boost::multi_array<std::int32_t, 2> keys;
   for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
   {
@@ -407,7 +407,9 @@ void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
       assert(it != entity_to_index.end());
       entities.push_back(it->second);
     }
-    connectivity.set(e.index(), entities);
+    Eigen::Map<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>> _e(
+        entities.data(), entities.size());
+    connectivity.set(e.index(), _e);
   }
 }
 //-----------------------------------------------------------------------------

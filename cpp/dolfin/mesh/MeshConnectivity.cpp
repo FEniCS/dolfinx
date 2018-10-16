@@ -67,16 +67,26 @@ void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
 void MeshConnectivity::set(std::size_t entity, std::size_t connection,
                            std::size_t pos)
 {
-  assert((Eigen::Index) (entity + 1) < _index_to_position.size());
+  assert((Eigen::Index)(entity + 1) < _index_to_position.size());
   assert(pos < _index_to_position[entity + 1] - _index_to_position[entity]);
   _connections[_index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
+void MeshConnectivity::set(
+    std::uint32_t entity,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
+        connections)
+{
+  assert((entity + 1) < _index_to_position.size());
+  assert(connections.size()
+         == _index_to_position[entity + 1] - _index_to_position[entity]);
+  std::copy(connections.data(), connections.data() + connections.size(),
+            _connections.data() + _index_to_position[entity]);
+}
+//-----------------------------------------------------------------------------
+
 std::size_t MeshConnectivity::hash() const
 {
-  // Compute local hash key
-  // boost::hash<std::vector<std::int32_t>> uhash;
-  // return uhash(_connections);
   return boost::hash_range(_connections.data(),
                            _connections.data() + _connections.size());
 }

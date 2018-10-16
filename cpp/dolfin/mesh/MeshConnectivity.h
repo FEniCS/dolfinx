@@ -64,7 +64,7 @@ public:
   std::size_t size_global(std::int32_t entity) const
   {
     if (_num_global_connections.size() == 0)
-      return this->size(entity);
+      return size(entity);
     else
     {
       assert(entity < _num_global_connections.size());
@@ -113,21 +113,10 @@ public:
   /// Set given connection for given entity
   void set(std::size_t entity, std::size_t connection, std::size_t pos);
 
-  /// Set all connections for given entity. T is a container,
-  /// e.g. std::vector<std::size_t>, or a Eigen 1D array
-  template <typename T>
-  void set(std::int32_t entity, const T& connections)
-  {
-    assert((entity + 1) < _index_to_position.size());
-    assert(connections.size()
-           == _index_to_position[entity + 1] - _index_to_position[entity]);
-
-    // Copy data
-    // std::copy(connections.data(), connections.data() + connections.size() ,
-    //           _connections.begin() + _index_to_position[entity]);
-    std::copy(connections.data(), connections.data() + connections.size(),
-              _connections.data() + _index_to_position[entity]);
-  }
+  /// Set all connections for given entity
+  void set(std::uint32_t entity,
+           const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
+               connections);
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a std::vector<<std::vector<std::size_t>>,
