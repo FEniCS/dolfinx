@@ -54,6 +54,7 @@ def test_basic_assembly():
     A = dolfin.fem.assemble(a)
     assert isinstance(A, dolfin.cpp.la.PETScMatrix)
 
+
 def test_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
