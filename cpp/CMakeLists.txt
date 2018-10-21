@@ -69,14 +69,12 @@ option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." 
 #option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
-#option(DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging (developers only; requires libcgal-dev and libcgal-qt5-dev)." OFF)
 
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
 add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects.")
 #add_feature_info(DOLFIN_ENABLE_CODE_COVERAGE DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage.")
 add_feature_info(DOLFIN_WITH_LIBRARY_VERSION DOLFIN_WITH_LIBRARY_VERSION "Build with library version information.")
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
-#add_feature_info(DOLFIN_ENABLE_GEOMETRY_DEBUGGING DOLFIN_ENABLE_GEOMETRY_DEBUGGING "Enable geometry debugging.")
 
 # Add shared library paths so shared libs in non-system paths are found
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
@@ -103,7 +101,6 @@ set(OPTIONAL_PACKAGES "")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
 list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
-list(APPEND OPTIONAL_PACKAGES "HDF5")
 
 # Add options
 foreach (OPTIONAL_PACKAGE ${OPTIONAL_PACKAGES})
@@ -215,16 +212,26 @@ set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   URL "https://www.mcs.anl.gov/petsc/"
   PURPOSE "PETSc linear algebra backend")
 
-#------------------------------------------------------------------------------
-# Run tests to find optional packages
-
 # Check for required package UFC
 find_package(UFC MODULE ${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR})
 set_package_properties(UFC PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Unified language for form-compilers (part of FFC)"
-  URL "https://bitbucket.org/fenics-project/ffc")
+  DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
+  URL "https://github.com/fenics/ffcx")
 
-# Check for PETSc and SLEPc
+  # Check for HDF5
+set(HDF5_PREFER_PARALLEL TRUE)
+find_package(HDF5 REQUIRED)
+if (NOT HDF5_IS_PARALLEL)
+  message(FATAL_ERROR "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR")
+endif()
+set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
+  DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
+  URL "https://www.hdfgroup.org/HDF5")
+
+#------------------------------------------------------------------------------
+# Run tests to find optional packages
+
+# Check for SLEPc
 set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_SLEPC)
   find_package(SLEPc 3.7)
@@ -248,39 +255,6 @@ if (DOLFIN_ENABLE_SCOTCH)
     DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
     URL "https://www.labri.fr/perso/pelegrin/scotch"
     PURPOSE "Enables parallel graph partitioning")
-endif()
-
-# Check for HDF5
-if (DOLFIN_ENABLE_HDF5)
-  if (NOT DEFINED ENV{HDF5_ROOT})
-    set(ENV{HDF5_ROOT} "$ENV{HDF5_DIR}")
-  endif()
-  set(HDF5_PREFER_PARALLEL TRUE)
-  find_package(HDF5 COMPONENTS C)
-  if (NOT HDF5_IS_PARALLEL)
-      set(HDF5_FOUND FALSE)
-      message(STATUS "Found serial HDF5 build, MPI HDF5 build required, try setting HDF5_DIR")
-  endif()
-  set_package_properties(HDF5 PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
-    URL "https://www.hdfgroup.org/HDF5")
-endif()
-
-# Check for geometry debugging
-if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING)
-  message(STATUS "Enabling geometry debugging")
-  find_package(CGAL REQUIRED)
-  find_package(GMP REQUIRED)
-  find_package(MPFR REQUIRED)
-  if (NOT CGAL_FOUND)
-    message(FATAL_ERROR "Unable to find package CGAL required for DOLFIN_ENABLE_GEOMETRY_DEBUGGING")
-  endif()
-  if (NOT GMP_FOUND)
-    message(FATAL_ERROR "Unable to find package GMP required for DOLFIN_ENABLE_GEOMETRY_DEBUGGING")
-  endif()
-  if (NOT MPFR_FOUND)
-    message(FATAL_ERROR "Unable to find package MPFR required for DOLFIN_ENABLE_GEOMETRY_DEBUGGING")
-  endif()
 endif()
 
 #------------------------------------------------------------------------------

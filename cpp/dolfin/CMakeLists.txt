@@ -105,7 +105,7 @@ compatibility with AVX user-compiled code and 64 for AVX-512 user-compiled \
 code. Set to 0 for ideal alignment according to -march. Note that if an architecture \
 flag (e.g. \"-march=skylake-avx512\") is set for DOLFIN, Eigen will use the \
 appropriate ideal alignment instead if it is stricter. Otherwise, the value \
-of this variable will be used by Eigen for the alignment of all data structures.\\ 
+of this variable will be used by Eigen for the alignment of all data structures.\\
 ")
 
 # Eigen3
@@ -128,17 +128,14 @@ target_link_libraries(dolfin PUBLIC MPI::MPI_CXX)
 target_link_libraries(dolfin PUBLIC PETSC::petsc)
 target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
 
+# HDF5
+target_compile_definitions(dolfin PUBLIC HAS_HDF5)
+target_compile_definitions(dolfin PUBLIC ${HDF5_DEFINITIONS})
+target_link_libraries(dolfin PUBLIC ${HDF5_C_LIBRARIES})
+target_include_directories(dolfin SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+
 #------------------------------------------------------------------------------
 # Optional packages
-
-# HDF5
-if (DOLFIN_ENABLE_HDF5 AND HDF5_FOUND)
-  #list(APPEND DOLFIN_LINK_FLAGS ${HDF5_LINK_FLAGS})
-  target_compile_definitions(dolfin PUBLIC HAS_HDF5)
-  target_compile_definitions(dolfin PUBLIC ${HDF5_DEFINITIONS})
-  target_link_libraries(dolfin PUBLIC ${HDF5_C_LIBRARIES})
-  target_include_directories(dolfin SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
-endif()
 
 # SLEPC
 if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
@@ -159,17 +156,6 @@ if (DOLFIN_ENABLE_PARMETIS AND PARMETIS_FOUND)
   target_compile_definitions(dolfin PUBLIC HAS_PARMETIS)
   target_link_libraries(dolfin PRIVATE ${PARMETIS_LIBRARIES})
   target_include_directories(dolfin SYSTEM PRIVATE ${PARMETIS_INCLUDE_DIRS})
-endif()
-
-
-if (DOLFIN_ENABLE_GEOMETRY_DEBUGGING AND GMP_FOUND AND MPFR_FOUND AND CGAL_FOUND)
-  message(STATUS "Appending link flags for geometry debugging")
-  target_compile_definitions(dolfin PUBLIC "-DDOLFIN_ENABLE_GEOMETRY_DEBUGGING")
-  target_include_directories(dolfin PRIVATE ${CGAL_INCLUDE_DIRS})
-  target_include_directories(dolfin PRIVATE ${GMP_INCLUDE_DIRS})
-  target_include_directories(dolfin PRIVATE ${MPFR_INCLUDE_DIRS})
-  target_link_libraries(dolfin PRIVATE ${GMP_LIBRARIES})
-  target_link_libraries(dolfin PRIVATE ${MPFR_LIBRARIES})
 endif()
 
 #------------------------------------------------------------------------------
