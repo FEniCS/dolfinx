@@ -43,8 +43,6 @@ void common(py::module& m)
 
   // From dolfin/common/defines.h
   m.def("has_debug", &dolfin::has_debug);
-  m.def("has_hdf5", &dolfin::has_hdf5);
-  m.def("has_hdf5_parallel", &dolfin::has_hdf5_parallel);
   m.def("has_mpi4py",
         []() {
 #ifdef HAS_PYBIND11_MPI4PY

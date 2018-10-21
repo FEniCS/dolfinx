@@ -13,7 +13,7 @@ from dolfin import (MPI, Cells, CellType, Constant, Edges, Expression, Facets,
                     MeshFunction, MeshValueCollection, TensorFunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     VectorElement, VectorFunctionSpace, Vertices, cpp,
-                    has_hdf5, has_hdf5_parallel, has_petsc_complex,
+                    has_petsc_complex,
                     interpolate)
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
@@ -46,13 +46,6 @@ def mesh_factory(tdim, n):
         return UnitSquareMesh(MPI.comm_world, n, n)
     elif tdim == 3:
         return UnitCubeMesh(MPI.comm_world, n, n, n)
-
-
-def invalid_config(encoding):
-    return (not has_hdf5 and encoding == XDMFFile.Encoding.HDF5) \
-        or (encoding == XDMFFile.Encoding.ASCII and MPI.size(MPI.comm_world) > 1) \
-        or (not has_hdf5_parallel and MPI.size(MPI.comm_world) > 1)
-
 
 def invalid_fe(fe_family, fe_degree):
     return (fe_family == "CG" and fe_degree == 0)

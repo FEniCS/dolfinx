@@ -7,14 +7,11 @@
 import os
 
 import dolfin.cpp as cpp
-from dolfin import (MPI, Expression, Function, FunctionSpace, UnitSquareMesh,
-                    has_hdf5)
+from dolfin import (MPI, Expression, Function, FunctionSpace, UnitSquareMesh)
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import (skip_if_not_HDF5, xfail_if_complex,
                                      xfail_with_serial_hdf5_in_parallel)
-
-if has_hdf5:
-    from dolfin.io import HDF5File
+from dolfin.io import HDF5File
 assert (tempdir)
 
 
