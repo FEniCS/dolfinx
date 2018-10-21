@@ -70,12 +70,6 @@ void XDMFFile::close()
 void XDMFFile::write(const mesh::Mesh& mesh)
 {
   // Check that encoding
-  if (_encoding == Encoding::HDF5 and !())
-  {
-    throw std::runtime_error("Cannot write XDMF in HDF5 encoding. (DOLFIN not "
-                             "compied with HDF5 support)");
-  }
-
   if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
   {
     throw std::runtime_error(
