@@ -82,19 +82,6 @@ add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tes
 option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath." ON)
 add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_PATH "Add paths to linker search and installed rpath.")
 
-# Hande RPATH on OSX when not installing to a system directory, see
-# https://groups.google.com/d/msg/fenics-dev/KSCrob4M_1M/zsJwdN-SCAAJ
-# and https://cmake.org/Wiki/CMake_RPATH_handling#Always_full_RPATH.
-if (APPLE)
-  # The RPATH to be used when installing, but only if it's not a
-  # system directory
-  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-  IF("${isSystemDir}" STREQUAL "-1")
-     SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  ENDIF("${isSystemDir}" STREQUAL "-1")
-endif()
-
 #------------------------------------------------------------------------------
 # Enable or disable optional packages
 
@@ -311,7 +298,6 @@ endif()
 
 # Set DOLFIN install sub-directories
 include(GNUInstallDirs)
-# set(DOLFIN_BIN_DIR "${CMAKE_INSTALL_BINDIR}" CACHE PATH "Binary installation directory.")
 set(DOLFIN_LIB_DIR "${CMAKE_INSTALL_LIBDIR}" CACHE PATH "Library installation directory.")
 set(DOLFIN_INCLUDE_DIR "${CMAKE_INSTALL_INCLUDEDIR}" CACHE PATH "C/C++ header installation directory.")
 set(DOLFIN_PKGCONFIG_DIR "${CMAKE_INSTALL_LIBDIR}/pkgconfig" CACHE PATH "pkg-config file installation directory.")
