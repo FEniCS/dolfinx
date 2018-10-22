@@ -28,8 +28,8 @@ namespace mesh
 class MeshConnectivity
 {
 public:
-  /// Create empty connectivity between given dimensions (d0 -- d1)
-  MeshConnectivity(std::size_t d0, std::size_t d1);
+  /// Create empty connectivity
+  MeshConnectivity();
 
   /// Copy constructor
   MeshConnectivity(const MeshConnectivity& connectivity) = default;
@@ -168,9 +168,6 @@ public:
   std::string str(bool verbose) const;
 
 private:
-  // Dimensions (only used for pretty-printing)
-  std::size_t _d0, _d1;
-
   // Connections for all entities stored as a contiguous array
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _connections;
 

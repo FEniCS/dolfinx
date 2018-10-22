@@ -10,12 +10,9 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-CoordinateDofs::CoordinateDofs(std::uint32_t tdim)
+CoordinateDofs::CoordinateDofs(std::uint32_t tdim) : _coord_dofs(tdim)
 {
-  // Create mappings from entities to points for all topological dimensions
-  // but only fill in cell_dofs for now
-  for (unsigned int i = 0; i <= tdim; ++i)
-    _coord_dofs.push_back(MeshConnectivity(i, 0));
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 void CoordinateDofs::init(std::size_t dim,

@@ -13,8 +13,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1)
-    : _d0(d0), _d1(d1)
+MeshConnectivity::MeshConnectivity()
 {
   // Do nothing
 }
@@ -111,8 +110,7 @@ std::string MeshConnectivity::str(bool verbose) const
   }
   else
   {
-    s << "<MeshConnectivity " << _d0 << " -- " << _d1 << " of size "
-      << _connections.size() << ">";
+    s << "<MeshConnectivity of size " << _connections.size() << ">";
   }
 
   return s.str();
