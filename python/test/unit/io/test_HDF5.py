@@ -24,6 +24,7 @@ def test_parallel(tempdir):
     assert (hdf5)
 
 
+@xfail_if_complex
 def test_save_vector(tempdir):
     filename = os.path.join(tempdir, "x.h5")
     x = PETScVector(MPI.comm_world, [0, 305], [], 1)
@@ -32,6 +33,7 @@ def test_save_vector(tempdir):
         vector_file.write(x, "/my_vector")
 
 
+@xfail_if_complex
 def test_save_and_read_vector(tempdir):
     filename = os.path.join(tempdir, "vector.h5")
 
