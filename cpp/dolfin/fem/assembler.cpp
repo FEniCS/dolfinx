@@ -285,6 +285,10 @@ void fem::assemble(la::PETScMatrix& A,
   assert(!a.empty());
   const bool block_matrix = a.size() > 1 or a[0].size() > 1;
 
+  // FIXME: should zeroing be an option?
+  // Zero matrix
+  A.zero();
+
   MatType mat_type;
   MatGetType(A.mat(), &mat_type);
   const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
