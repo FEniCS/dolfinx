@@ -69,10 +69,10 @@ def FacetNormal(mesh: cpp.mesh.Mesh) -> ufl.FacetNormal:
 
 
 def CellDiameter(mesh: cpp.mesh.Mesh) -> ufl.CellDiameter:
-    """Return function cell diameter for given mesh.
+    r"""Return function cell diameter for given mesh.
 
     Note that diameter of cell :math:`K` is defined as
-    :math:`\sup_{\mathbf{x,y}\in K} |\mathbf{x-y}|`.
+    :math:`\sup_{\mathbf{x, y} \in K} |\mathbf{x - y}|`.
 
     *Example of usage*
 

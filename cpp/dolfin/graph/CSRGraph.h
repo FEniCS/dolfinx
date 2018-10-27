@@ -189,5 +189,5 @@ private:
   // MPI communicator attached to graph
   dolfin::MPI::Comm _mpi_comm;
 };
-}
-}
+} // namespace graph
+} // namespace dolfin

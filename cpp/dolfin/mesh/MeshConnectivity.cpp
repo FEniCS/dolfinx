@@ -13,16 +13,15 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshConnectivity::MeshConnectivity(std::size_t d0, std::size_t d1)
-    : _d0(d0), _d1(d1)
+MeshConnectivity::MeshConnectivity()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::clear()
 {
-  std::vector<std::int32_t>().swap(_connections);
-  std::vector<std::uint32_t>().swap(_index_to_position);
+  _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>();
+  _index_to_position = Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>();
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::init(std::size_t num_entities,
@@ -35,12 +34,12 @@ void MeshConnectivity::init(std::size_t num_entities,
   const std::size_t size = num_entities * num_connections;
 
   // Allocate
-  _connections.resize(size);
-  std::fill(_connections.begin(), _connections.end(), 0);
-  _index_to_position.resize(num_entities + 1);
+  _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
+  _index_to_position
+      = Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_entities + 1);
 
   // Initialize data
-  for (std::size_t e = 0; e < _index_to_position.size(); e++)
+  for (Eigen::Index e = 0; e < _index_to_position.size(); e++)
     _index_to_position[e] = e * num_connections;
 }
 //-----------------------------------------------------------------------------
@@ -61,24 +60,34 @@ void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
   _index_to_position[num_entities] = size;
 
   // Initialize connections
-  _connections.resize(size);
-  std::fill(_connections.begin(), _connections.end(), 0);
+  _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(std::size_t entity, std::size_t connection,
                            std::size_t pos)
 {
-  assert((entity + 1) < _index_to_position.size());
-  assert(pos
-                < _index_to_position[entity + 1] - _index_to_position[entity]);
+  assert((Eigen::Index)(entity + 1) < _index_to_position.size());
+  assert(pos < _index_to_position[entity + 1] - _index_to_position[entity]);
   _connections[_index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
+void MeshConnectivity::set(
+    std::uint32_t entity,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
+        connections)
+{
+  assert((entity + 1) < _index_to_position.size());
+  assert(connections.size()
+         == _index_to_position[entity + 1] - _index_to_position[entity]);
+  std::copy(connections.data(), connections.data() + connections.size(),
+            _connections.data() + _index_to_position[entity]);
+}
+//-----------------------------------------------------------------------------
+
 std::size_t MeshConnectivity::hash() const
 {
-  // Compute local hash key
-  boost::hash<std::vector<std::int32_t>> uhash;
-  return uhash(_connections);
+  return boost::hash_range(_connections.data(),
+                           _connections.data() + _connections.size());
 }
 //-----------------------------------------------------------------------------
 std::string MeshConnectivity::str(bool verbose) const
@@ -88,7 +97,7 @@ std::string MeshConnectivity::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    for (std::size_t e = 0; e < _index_to_position.size() - 1; e++)
+    for (Eigen::Index e = 0; e < _index_to_position.size() - 1; e++)
     {
       s << "  " << e << ":";
       for (std::size_t i = _index_to_position[e]; i < _index_to_position[e + 1];
@@ -101,8 +110,7 @@ std::string MeshConnectivity::str(bool verbose) const
   }
   else
   {
-    s << "<MeshConnectivity " << _d0 << " -- " << _d1 << " of size "
-      << _connections.size() << ">";
+    s << "<MeshConnectivity of size " << _connections.size() << ">";
   }
 
   return s.str();
