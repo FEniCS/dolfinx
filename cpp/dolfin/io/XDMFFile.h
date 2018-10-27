@@ -12,13 +12,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-
-#ifdef HAS_HDF5
 #include <hdf5.h>
-#else
-typedef int hid_t;
-#endif
-
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/mesh/CellType.h>
@@ -63,9 +57,7 @@ class MeshPartitioning;
 
 namespace io
 {
-#ifdef HAS_HDF5
 class HDF5File;
-#endif
 
 /// Read and write mesh::Mesh, function::Function, mesh::MeshFunction and other
 /// objects in XDMF
@@ -99,11 +91,7 @@ public:
   };
 
 /// Default encoding type
-#ifdef HAS_HDF5
-  static const Encoding default_encoding = Encoding::HDF5;
-#else
-  static const Encoding default_encoding = Encoding::ASCII;
-#endif
+static const Encoding default_encoding = Encoding::HDF5;
 
   /// Constructor
   XDMFFile(MPI_Comm comm, const std::string filename,
@@ -564,10 +552,8 @@ private:
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 
-#ifdef HAS_HDF5
   // HDF5 data file
   std::unique_ptr<HDF5File> _hdf5_file;
-#endif
 
   // Cached filename
   const std::string _filename;

@@ -22,16 +22,15 @@ def test_assemble_functional():
     M = dolfin.Constant(1.0) * dx(domain=mesh)
     value = dolfin.fem.assemble(M)
     assert value == pytest.approx(1.0, 1e-12)
-
-    f = dolfin.function.expression.Expression("x[0]", degree=1)
-    M = f * dx(domain=mesh)
+    x = dolfin.SpatialCoordinate(mesh)
+    M = x[0] * dx(domain=mesh)
     value = dolfin.fem.assemble(M)
     assert value == pytest.approx(0.5, 1e-12)
 
 
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
-    V = dolfin.FunctionSpace(mesh, "Lagrange", 1)
+    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
     a = dolfin.Constant(1.0) * inner(u, v) * dx
@@ -48,6 +47,12 @@ def test_basic_assembly():
     b = dolfin.fem.assemble(b, L)
     assert isinstance(A, dolfin.cpp.la.PETScMatrix)
     assert isinstance(b, dolfin.cpp.la.PETScVector)
+
+    # Function as coefficient
+    f = dolfin.Function(V)
+    a = f * inner(u, v) * dx
+    A = dolfin.fem.assemble(a)
+    assert isinstance(A, dolfin.cpp.la.PETScMatrix)
 
 
 def test_matrix_assembly_block():

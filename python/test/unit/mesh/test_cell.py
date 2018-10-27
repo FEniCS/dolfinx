@@ -4,12 +4,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import numpy
+import pytest
 
-from dolfin import (UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    MPI, Cell, Mesh, CellType, Point, cpp)
-from dolfin_utils.test import skip_in_parallel, skip_in_release
+from dolfin import (MPI, Cell, CellType, Mesh, Point, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh, cpp)
+from dolfin_utils.test.skips import skip_in_parallel, skip_in_release
 
 
 @skip_in_parallel
@@ -28,7 +28,8 @@ def test_distance_triangle():
     mesh = UnitSquareMesh(MPI.comm_self, 1, 1)
     cell = Cell(mesh, 1)
 
-    assert round(cell.distance(Point(-1.0, -1.0)._cpp_object) - numpy.sqrt(2), 7) == 0
+    assert round(
+        cell.distance(Point(-1.0, -1.0)._cpp_object) - numpy.sqrt(2), 7) == 0
     assert round(cell.distance(Point(-1.0, 0.5)._cpp_object) - 1, 7) == 0
     assert round(cell.distance(Point(0.5, 0.5)._cpp_object) - 0.0, 7) == 0
 
@@ -39,7 +40,9 @@ def test_distance_tetrahedron():
     mesh = UnitCubeMesh(MPI.comm_self, 1, 1, 1)
     cell = Cell(mesh, 5)
 
-    assert round(cell.distance(Point(-1.0, -1.0, -1.0)._cpp_object) - numpy.sqrt(3), 7) == 0
+    assert round(
+        cell.distance(Point(-1.0, -1.0, -1.0)._cpp_object) - numpy.sqrt(3),
+        7) == 0
     assert round(cell.distance(Point(-1.0, 0.5, 0.5)._cpp_object) - 1, 7) == 0
     assert round(cell.distance(Point(0.5, 0.5, 0.5)._cpp_object) - 0.0, 7) == 0
 
@@ -71,8 +74,10 @@ def test_volume_quadrilateralR2():
     assert cell.volume() == 1.0
 
 
-@pytest.mark.parametrize('coordinates', [[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]],
-                                         [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
+@pytest.mark.parametrize(
+    'coordinates',
+    [[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]],
+     [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(coordinates):
 
     mesh = Mesh(MPI.comm_world, CellType.Type.quadrilateral,
@@ -86,22 +91,23 @@ def test_volume_quadrilateralR3(coordinates):
     assert cell.volume() == 1.0
 
 
-@pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30,
-                                     1e5, 1e10, 1e15, 1e20, 1e30])
+@pytest.mark.parametrize(
+    'scaling',
+    [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30, 1e5, 1e10, 1e15, 1e20, 1e30])
 def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
     with pytest.raises(RuntimeError) as error:
         # Unit square cell scaled down by 'scaling' and the first
         # vertex is distorted so that the vertices are clearly non
         # coplanar
-        mesh = Mesh(MPI.comm_world, CellType.Type.quadrilateral,
-                    numpy.array([[scaling, 0.5 * scaling, 0.6 * scaling],
-                                 [0.0, scaling, 0.0],
-                                 [0.0, 0.0, scaling],
-                                 [0.0, scaling, scaling]],
-                                dtype=numpy.float64),
-                    numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
-                    cpp.mesh.GhostMode.none)
+        mesh = Mesh(
+            MPI.comm_world, CellType.Type.quadrilateral,
+            numpy.array(
+                [[scaling, 0.5 * scaling, 0.6 * scaling], [0.0, scaling, 0.0],
+                 [0.0, 0.0, scaling], [0.0, scaling, scaling]],
+                dtype=numpy.float64),
+            numpy.array([[0, 1, 2, 3]],
+                        dtype=numpy.int32), [], cpp.mesh.GhostMode.none)
 
         mesh.init()
         cell = Cell(mesh, 0)
@@ -120,9 +126,10 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
         # vertex is distorted so that the vertices are clearly non
         # coplanar
         mesh = Mesh(MPI.comm_world, CellType.Type.quadrilateral,
-                    numpy.array([[1.0, 0.5, 0.6], [0.0, scaling, 0.0],
-                                 [0.0, 0.0, scaling], [0.0, 1.0, 1.0]],
-                                dtype=numpy.float64),
+                    numpy.array(
+                        [[1.0, 0.5, 0.6], [0.0, scaling, 0.0],
+                         [0.0, 0.0, scaling], [0.0, 1.0, 1.0]],
+                        dtype=numpy.float64),
                     numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
                     cpp.mesh.GhostMode.none)
         mesh.init()

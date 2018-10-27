@@ -10,17 +10,8 @@ import ufl
 from dolfin import cpp, function
 
 
-def _mesh2domain(mesh):
-    "Deprecation mechanism for symbolic geometry."
-
-    if isinstance(mesh, ufl.cell.AbstractCell):
-        raise TypeError(
-            "Cannot construct geometry from a Cell. Pass the mesh instead.")
-    return mesh.ufl_domain()
-
-
 class MeshCoordinates(function.BaseExpression):
-    def __init__(self, mesh):
+    def __init__(self, mesh: cpp.mesh.Mesh):
         """Create function that evaluates to the mesh coordinates at each
         vertex.
 
@@ -37,13 +28,9 @@ class MeshCoordinates(function.BaseExpression):
 
 
 class FacetArea(function.BaseExpression):
-    def __init__(self, mesh):
+    def __init__(self, mesh: cpp.mesh.Mesh):
         """Create function that evaluates to the facet area/length on each
         facet.
-
-        *Arguments*
-            mesh
-                a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
         *Example of usage*
 
@@ -66,14 +53,8 @@ class FacetArea(function.BaseExpression):
             domain=mesh.ufl_domain(), element=ufl_element, name="FacetArea")
 
 
-# Simple definition of FacetNormal via UFL
-def FacetNormal(mesh):
+def FacetNormal(mesh: cpp.mesh.Mesh) -> ufl.FacetNormal:
     """Return symbolic facet normal for given mesh.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
-
 
     *Example of usage*
 
@@ -84,19 +65,14 @@ def FacetNormal(mesh):
 
     """
 
-    return ufl.FacetNormal(_mesh2domain(mesh))
+    return ufl.FacetNormal(mesh.ufl_domain())
 
 
-# Simple definition of CellDiameter via UFL
-def CellDiameter(mesh):
+def CellDiameter(mesh: cpp.mesh.Mesh) -> ufl.CellDiameter:
     """Return function cell diameter for given mesh.
 
     Note that diameter of cell :math:`K` is defined as
     :math:`\sup_{\mathbf{x,y}\in K} |\mathbf{x-y}|`.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
     *Example of usage*
 
@@ -107,16 +83,11 @@ def CellDiameter(mesh):
 
     """
 
-    return ufl.CellDiameter(_mesh2domain(mesh))
+    return ufl.CellDiameter(mesh.ufl_domain())
 
 
-# Simple definition of CellVolume via UFL
-def CellVolume(mesh):
+def CellVolume(mesh: cpp.mesh.Mesh) -> ufl.CellVolume:
     """Return symbolic cell volume for given mesh.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
     *Example of usage*
 
@@ -127,16 +98,11 @@ def CellVolume(mesh):
 
     """
 
-    return ufl.CellVolume(_mesh2domain(mesh))
+    return ufl.CellVolume(mesh.ufl_domain())
 
 
-# Simple definition of SpatialCoordinate via UFL
-def SpatialCoordinate(mesh):
+def SpatialCoordinate(mesh: cpp.mesh.Mesh) -> ufl.SpatialCoordinate:
     """Return symbolic physical coordinates for given mesh.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
     *Example of usage*
 
@@ -147,16 +113,11 @@ def SpatialCoordinate(mesh):
 
     """
 
-    return ufl.SpatialCoordinate(_mesh2domain(mesh))
+    return ufl.SpatialCoordinate(mesh.ufl_domain())
 
 
-# Simple definition of CellNormal via UFL
-def CellNormal(mesh):
+def CellNormal(mesh: cpp.mesh.Mesh) -> ufl.CellNormal:
     """Return symbolic cell normal for given manifold mesh.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
     *Example of usage*
 
@@ -167,16 +128,11 @@ def CellNormal(mesh):
 
     """
 
-    return ufl.CellNormal(_mesh2domain(mesh))
+    return ufl.CellNormal(mesh.ufl_domain())
 
 
-# Simple definition of Circumradius via UFL
-def Circumradius(mesh):
+def Circumradius(mesh: cpp.mesh.Mesh) -> ufl.Circumradius:
     """Return symbolic cell circumradius for given mesh.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
     *Example of usage*
 
@@ -187,17 +143,12 @@ def Circumradius(mesh):
 
     """
 
-    return ufl.Circumradius(_mesh2domain(mesh))
+    return ufl.Circumradius(mesh.ufl_domain())
 
 
-# Simple definition of MinCellEdgeLength via UFL
-def MinCellEdgeLength(mesh):
+def MinCellEdgeLength(mesh: cpp.mesh.Mesh) -> ufl.MinCellEdgeLength:
     """Return symbolic minimum cell edge length of a cell
     for given mesh.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
     *Example of usage*
 
@@ -208,17 +159,12 @@ def MinCellEdgeLength(mesh):
 
     """
 
-    return ufl.MinCellEdgeLength(_mesh2domain(mesh))
+    return ufl.MinCellEdgeLength(mesh.ufl_domain())
 
 
-# Simple definition of MaxCellEdgeLength via UFL
-def MaxCellEdgeLength(mesh):
+def MaxCellEdgeLength(mesh: cpp.mesh.Mesh) -> ufl.MaxCellEdgeLength:
     """Return symbolic maximum cell edge length of a cell
     for given mesh.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
     *Example of usage*
 
@@ -229,17 +175,12 @@ def MaxCellEdgeLength(mesh):
 
     """
 
-    return ufl.MaxCellEdgeLength(_mesh2domain(mesh))
+    return ufl.MaxCellEdgeLength(mesh.ufl_domain())
 
 
-# Simple definition of MinFacetEdgeLength via UFL
-def MinFacetEdgeLength(mesh):
+def MinFacetEdgeLength(mesh: cpp.mesh.Mesh) -> ufl.MinFacetEdgeLength:
     """Return symbolic minimum facet edge length of a cell
     for given mesh.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
     *Example of usage*
 
@@ -250,17 +191,12 @@ def MinFacetEdgeLength(mesh):
 
     """
 
-    return ufl.MinFacetEdgeLength(_mesh2domain(mesh))
+    return ufl.MinFacetEdgeLength(mesh.ufl_domain())
 
 
-# Simple definition of MaxFacetEdgeLength via UFL
-def MaxFacetEdgeLength(mesh):
+def MaxFacetEdgeLength(mesh: cpp.mesh.Mesh) -> ufl.MaxFacetEdgeLength:
     """Return symbolic maximum facet edge length of a cell
     for given mesh.
-
-    *Arguments*
-        mesh
-            a :py:class:`Mesh <dolfin.cpp.Mesh>`.
 
     *Example of usage*
 
@@ -271,4 +207,4 @@ def MaxFacetEdgeLength(mesh):
 
     """
 
-    return ufl.MaxFacetEdgeLength(_mesh2domain(mesh))
+    return ufl.MaxFacetEdgeLength(mesh.ufl_domain())

@@ -131,11 +131,11 @@ def _extract_function_space(expression, mesh):
     # Create function space
     shape = expression.ufl_shape
     if shape == ():
-        V = function.FunctionSpace(mesh, "Lagrange", 1)
+        V = function.FunctionSpace(mesh, ("Lagrange", 1))
     elif len(shape) == 1:
-        V = function.VectorFunctionSpace(mesh, "Lagrange", 1, dim=shape[0])
+        V = function.VectorFunctionSpace(mesh, ("Lagrange", 1), dim=shape[0])
     elif len(shape) == 2:
-        V = function.TensorFunctionSpace(mesh, "Lagrange", 1, shape=shape)
+        V = function.TensorFunctionSpace(mesh, ("Lagrange", 1), shape=shape)
     else:
         raise RuntimeError("Unhandled rank, shape is {}.".format((shape, )))
 

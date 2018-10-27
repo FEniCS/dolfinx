@@ -4,13 +4,16 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
-from dolfin import (MPI, VTKFile, Function, FunctionSpace,
-                    VectorFunctionSpace, TensorFunctionSpace,
-                    MeshFunction, UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 import os
-from dolfin_utils.test import skip_in_parallel, fixture, tempdir
-assert(tempdir)
+
+import pytest
+
+from dolfin import (MPI, Function, FunctionSpace, MeshFunction,
+                    TensorFunctionSpace, UnitCubeMesh, UnitIntervalMesh,
+                    UnitSquareMesh, VectorFunctionSpace, VTKFile)
+from dolfin_utils.test import fixture, skip_in_parallel, tempdir
+
+assert (tempdir)
 
 
 # VTK file options
@@ -34,8 +37,8 @@ def tempfile(tempdir, request):
     return os.path.join(tempdir, request.function.__name__)
 
 
-def test_save_1d_meshfunctions(tempfile,
-                               mesh_function_types, file_options, type_conv):
+def test_save_1d_meshfunctions(tempfile, mesh_function_types, file_options,
+                               type_conv):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     for d in range(mesh.topology.dim + 1):
         for t in mesh_function_types:
@@ -48,8 +51,8 @@ def test_save_1d_meshfunctions(tempfile,
                 VTKFile(tempfile + "mf.pvd", file_option).write(mf)
 
 
-def test_save_2d_meshfunctions(tempfile,
-                               mesh_function_types, file_options, type_conv):
+def test_save_2d_meshfunctions(tempfile, mesh_function_types, file_options,
+                               type_conv):
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
     for d in range(mesh.topology.dim + 1):
         for t in mesh_function_types:
@@ -62,8 +65,8 @@ def test_save_2d_meshfunctions(tempfile,
                 VTKFile(tempfile + "mf.pvd", file_option).write(mf)
 
 
-def test_save_3d_meshfunctions(tempfile,
-                               mesh_function_types, file_options, type_conv):
+def test_save_3d_meshfunctions(tempfile, mesh_function_types, file_options,
+                               type_conv):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     for d in range(mesh.topology.dim + 1):
         for t in mesh_function_types:
@@ -181,7 +184,7 @@ def test_save_3d_vector(tempfile, file_options):
 @skip_in_parallel
 def test_save_1d_tensor(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
-    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector()[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     for file_option in file_options:
@@ -190,7 +193,7 @@ def test_save_1d_tensor(tempfile, file_options):
 
 def test_save_2d_tensor(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
-    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector()[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd", "ascii")
@@ -202,7 +205,7 @@ def test_save_2d_tensor(tempfile, file_options):
 
 def test_save_3d_tensor(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
-    u = Function(TensorFunctionSpace(mesh, "Lagrange", 2))
+    u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
     u.vector()[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd", "ascii")

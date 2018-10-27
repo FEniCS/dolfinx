@@ -1,18 +1,17 @@
-"""Unit tests for the JIT compiler"""
-
 # Copyright (C) 2011 Anders Logg
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for the JIT compiler"""
 
 import pytest
+
 import dolfin
 from dolfin import MPI, compile_cpp_code
 from dolfin.la import PETScVector
-from dolfin_utils.test import (skip_if_not_SLEPc,
-                               skip_in_serial, skip_if_not_petsc4py)
-
+from dolfin_utils.test.skips import (skip_if_not_petsc4py, skip_if_not_SLEPc,
+                                     skip_in_serial)
 
 # @pytest.mark.skip
 # def test_nasty_jit_caching_bug():
@@ -92,7 +91,7 @@ def test_petsc():
     }
     '''
     module = compile_cpp_code(create_matrix_code)
-    assert(module)
+    assert (module)
 
 
 @pytest.mark.skip
@@ -259,10 +258,10 @@ def test_mpi_dependent_jiting():
 
     elif rank == 1:
         e = Expression("5", mpi_comm=group_comm_1, degree=0)
-        assert(e)
+        assert (e)
         domain = CompiledSubDomain(
             "on_boundary", mpi_comm=group_comm_1, degree=0)
-        assert(domain)
+        assert (domain)
 
     else:
         mesh = UnitSquareMesh(group_comm_2, 2, 2)

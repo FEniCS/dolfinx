@@ -13,8 +13,6 @@ from dolfin import cpp
 DOLFIN_EPS = cpp.common.DOLFIN_EPS
 
 has_debug = cpp.common.has_debug()
-has_hdf5 = cpp.common.has_hdf5()
-has_hdf5_parallel = cpp.common.has_hdf5_parallel()
 has_mpi4py = cpp.common.has_mpi4py()
 has_parmetis = cpp.common.has_parmetis()
 has_scotch = cpp.common.has_scotch()

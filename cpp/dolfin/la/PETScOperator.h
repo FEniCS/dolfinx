@@ -37,7 +37,7 @@ public:
   PETScOperator(PETScOperator&& A);
 
   /// Destructor
-  ~PETScOperator();
+  virtual ~PETScOperator();
 
   /// Assignment operator (deleted)
   PETScOperator& operator=(const PETScOperator& A) = delete;

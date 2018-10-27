@@ -4,15 +4,14 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import Mesh, MPI, CellType, cpp
-from dolfin_utils.test import skip_in_parallel
 import numpy
+
+from dolfin import MPI, CellType, Mesh, cpp
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel
 def test_triangle_mesh():
-
-    # Create mesh object
     mesh = Mesh(MPI.comm_world, CellType.Type.triangle,
                 numpy.array([[0.0, 0.0],
                              [1.0, 0.0],

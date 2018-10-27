@@ -163,9 +163,9 @@ a deep copy for further computations on the coefficient vectors::
     solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
           "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
 
-    # Split the mixed solution using deepcopy
-    # (needed for further computation on coefficient vector)
-    (u, p) = w.split(True)
+    # Split the mixed solution and collapse
+    u = w.sub(0).collapse()
+    p = w.sub(1).collapse()
 
 We can calculate the :math:`L^2` norms of u and p as follows::
 

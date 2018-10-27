@@ -5,19 +5,20 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import sys
+from math import sqrt
 
 import numpy
 import pytest
 
 import dolfin
 import FIAT
-from math import sqrt
-from dolfin import (MPI, RectangleMesh, BoxMesh, UnitIntervalMesh,
-                    UnitSquareMesh, UnitCubeMesh, CellType, Vertex,
-                    Point, Cell, Cells, MeshFunction,
-                    MeshEntity, MeshEntities, cpp)
+from dolfin import (MPI, BoxMesh, Cell, Cells, CellType, MeshEntities,
+                    MeshEntity, MeshFunction, Point, RectangleMesh,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, Vertex,
+                    cpp)
 from dolfin.io import XDMFFile
-from dolfin_utils.test import cd_tempdir, fixture, skip_in_parallel  # noqa
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @fixture
@@ -32,7 +33,8 @@ def mesh1d():
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
     mesh2d = RectangleMesh.create(
-        MPI.comm_world, [Point(0, 0)._cpp_object, Point(1, 1)._cpp_object], [1, 1],
+        MPI.comm_world, [Point(0, 0)._cpp_object,
+                         Point(1, 1)._cpp_object], [1, 1],
         CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
     mesh2d.geometry.points[3] += 0.5 * (sqrt(3.0) - 1.0)
     return mesh2d
@@ -78,7 +80,8 @@ def square():
 @fixture
 def rectangle():
     return RectangleMesh.create(
-        MPI.comm_world, [Point(0, 0)._cpp_object, Point(2, 2)._cpp_object], [5, 5],
+        MPI.comm_world, [Point(0, 0)._cpp_object,
+                         Point(2, 2)._cpp_object], [5, 5],
         CellType.Type.triangle, cpp.mesh.GhostMode.none)
 
 
@@ -89,10 +92,11 @@ def cube():
 
 @fixture
 def box():
-    return BoxMesh.create(MPI.comm_world,
-                          [Point(0, 0, 0)._cpp_object, Point(2, 2, 2)._cpp_object],
-                          [2, 2, 5], CellType.Type.tetrahedron,
-                          cpp.mesh.GhostMode.none)
+    return BoxMesh.create(
+        MPI.comm_world,
+        [Point(0, 0, 0)._cpp_object,
+         Point(2, 2, 2)._cpp_object], [2, 2, 5], CellType.Type.tetrahedron,
+        cpp.mesh.GhostMode.none)
 
 
 @fixture
@@ -115,7 +119,6 @@ def test_UFLCell(interval, square, rectangle, cube, box):
 
 
 def test_UFLDomain(interval, square, rectangle, cube, box):
-
     def _check_ufl_domain(mesh):
         domain = mesh.ufl_domain()
         assert mesh.geometry.dim == domain.geometric_dimension()
@@ -132,7 +135,8 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
 
 # pygmsh is problematic in parallel because it uses subprocess to call
 # gmsh. To be robust, it would need to call MPI 'spawn'.
-@pytest.mark.skip(reason="pymsh calling gmsh fails in container (related to file creation)")
+@pytest.mark.skip(
+    reason="pymsh calling gmsh fails in container (related to file creation)")
 @skip_in_parallel
 def test_mesh_construction_pygmsh():
 
@@ -175,7 +179,8 @@ def test_mesh_construction_pygmsh():
         print("Generate mesh")
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-        points, cells, _, _, _ = pygmsh.generate_mesh(geom, extra_gmsh_arguments=['-order', '2'])
+        points, cells, _, _, _ = pygmsh.generate_mesh(
+            geom, extra_gmsh_arguments=['-order', '2'])
         print("End Generate mesh", cells.keys())
     else:
         points = numpy.zeros([0, 3])
@@ -255,8 +260,8 @@ def test_Assign(mesh, f):
     assert f[v] == 10
 
 
-@skip_in_parallel  # noqa
-def test_Write(cd_tempdir, f):
+@skip_in_parallel
+def test_Write(f):
     """Construct and save a simple meshfunction."""
     f = f
     f[0] = 1

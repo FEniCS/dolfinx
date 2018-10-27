@@ -88,7 +88,7 @@ def build_broken_elastic_nullspace(V):
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_orthogonal(mesh, degree):
     """Test that null spaces orthogonalisation"""
-    V = VectorFunctionSpace(mesh, 'Lagrange', degree)
+    V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     null_space = build_elastic_nullspace(V)
     assert not null_space.is_orthogonal()
     assert not null_space.is_orthonormal()
@@ -109,7 +109,7 @@ def test_nullspace_orthogonal(mesh, degree):
 ])
 @pytest.mark.parametrize("degree", [1, 2])
 def test_nullspace_check(mesh, degree):
-    V = VectorFunctionSpace(mesh, 'Lagrange', degree)
+    V = VectorFunctionSpace(mesh, ('Lagrange', degree))
     u, v = TrialFunction(V), TestFunction(V)
 
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)

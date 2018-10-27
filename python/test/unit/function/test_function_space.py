@@ -1,16 +1,17 @@
-"""Unit tests for the FunctionSpace class"""
-
 # Copyright (C) 2011 Johan Hake
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for the FunctionSpace class"""
 
 import pytest
-from dolfin import (UnitCubeMesh, FunctionSpace, VectorFunctionSpace, VectorElement, FiniteElement,
-                    Function, TestFunction, TrialFunction, grad, triangle, MPI)
+
+from dolfin import (MPI, FiniteElement, Function, FunctionSpace, TestFunction,
+                    TrialFunction, UnitCubeMesh, VectorElement,
+                    VectorFunctionSpace, grad, triangle)
+from dolfin_utils.test.fixtures import fixture
 from ufl.log import UFLException
-from dolfin_utils.test import fixture
 
 
 @fixture
@@ -20,12 +21,12 @@ def mesh():
 
 @fixture
 def V(mesh):
-    return FunctionSpace(mesh, 'CG', 1)
+    return FunctionSpace(mesh, ('CG', 1))
 
 
 @fixture
 def W(mesh):
-    return VectorFunctionSpace(mesh, 'CG', 1)
+    return VectorFunctionSpace(mesh, ('CG', 1))
 
 
 @fixture
@@ -142,8 +143,8 @@ def test_argument_equality(mesh, V, V2, W, W2):
 
     """
     mesh2 = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
-    V3 = FunctionSpace(mesh2, 'CG', 1)
-    W3 = VectorFunctionSpace(mesh2, 'CG', 1)
+    V3 = FunctionSpace(mesh2, ('CG', 1))
+    W3 = VectorFunctionSpace(mesh2, ('CG', 1))
 
     for TF in (TestFunction, TrialFunction):
         v = TF(V)

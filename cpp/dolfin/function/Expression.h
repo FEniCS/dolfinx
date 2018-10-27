@@ -73,7 +73,7 @@ public:
   virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
-                    Eigen::Ref<const EigenRowArrayXXd> x,
+                    const Eigen::Ref<const EigenRowArrayXXd> x,
                     const dolfin::mesh::Cell& cell) const override;
 
   /// Evaluate at given point.
@@ -85,7 +85,7 @@ public:
   virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
-                    Eigen::Ref<const EigenRowArrayXXd> x) const override;
+                    const Eigen::Ref<const EigenRowArrayXXd> x) const override;
 
   /// Return value rank.
   ///

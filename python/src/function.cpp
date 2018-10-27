@@ -45,14 +45,14 @@ void function(py::module& m)
               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                       Eigen::Dynamic, Eigen::RowMajor>>
                   u,
-              Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
+              const Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
               const dolfin::mesh::Cell& cell) { self.eval(u, x, cell); },
            "Evaluate GenericFunction (cell version)")
       .def("eval",
            py::overload_cast<
                Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>>,
-               Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
+               const Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
                &dolfin::function::GenericFunction::eval, py::const_),
            py::arg("values"), py::arg("x"), "Evaluate GenericFunction")
       .def("compute_point_values",
@@ -121,15 +121,6 @@ void function(py::module& m)
       "An Expression is a function (field) that can appear as "
       "a coefficient in a form")
       .def(py::init<std::vector<std::size_t>>())
-      .def("__call__",
-           [](const dolfin::function::Expression& self,
-              Eigen::Ref<const dolfin::EigenRowArrayXXd> x) {
-             Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>
-                 f(x.rows(), self.value_size());
-             self.eval(f, x);
-             return f;
-           })
       .def("value_dimension", &dolfin::function::Expression::value_dimension)
       .def("get_property", &dolfin::function::Expression::get_property)
       .def("set_property", &dolfin::function::Expression::set_property)
@@ -180,17 +171,13 @@ void function(py::module& m)
            "Create a function on the given function space")
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>,
                     std::shared_ptr<dolfin::la::PETScVector>>())
-      .def("__call__",
-           [](dolfin::function::Function& self,
-              Eigen::Ref<const dolfin::EigenRowArrayXXd> x) {
-             Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>
-                 values(x.rows(), self.value_size());
-             self.eval(values, x);
-             return values;
-           })
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
+      .def("collapse",
+           [](dolfin::function::Function& self) {
+             return std::make_shared<dolfin::function::Function>(self);
+           },
+           "Collapse sub-function view.")
       .def("interpolate", &dolfin::function::Function::interpolate,
            "Interpolate the function u")
       // FIXME: A lot of error when using non-const version - misused

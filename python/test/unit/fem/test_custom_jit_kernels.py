@@ -54,7 +54,7 @@ def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
 
 def test_numba_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
-    V = FunctionSpace(mesh, "Lagrange", 1)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
     a.set_cell_tabulate(0, tabulate_tensor_A.address)
@@ -75,7 +75,7 @@ def test_numba_assembly():
 
 def xtest_cffi_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
-    V = FunctionSpace(mesh, "Lagrange", 1)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
 
     if MPI.rank(mesh.mpi_comm()) == 0:
         from cffi import FFI

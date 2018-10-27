@@ -5,24 +5,22 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import os
-from dolfin import (UnitSquareMesh, MPI, FunctionSpace, Function, Expression,
-                    has_hdf5)
+
 import dolfin.cpp as cpp
-from dolfin_utils.test import (skip_if_not_HDF5, tempdir, xfail_if_complex,
-                               xfail_with_serial_hdf5_in_parallel)
-if has_hdf5:
-    from dolfin.io import HDF5File
-assert(tempdir)
+from dolfin import MPI, Expression, Function, FunctionSpace, UnitSquareMesh
+from dolfin.io import HDF5File
+from dolfin_utils.test.fixtures import tempdir
+from dolfin_utils.test.skips import xfail_if_complex
+
+assert (tempdir)
 
 
 @xfail_if_complex
-@skip_if_not_HDF5
-@xfail_with_serial_hdf5_in_parallel
 def test_save_and_read_function_timeseries(tempdir):
     filename = os.path.join(tempdir, "function.h5")
 
     mesh = UnitSquareMesh(MPI.comm_world, 10, 10)
-    Q = FunctionSpace(mesh, "CG", 3)
+    Q = FunctionSpace(mesh, ("CG", 3))
     F0 = Function(Q)
     F1 = Function(Q)
     E = Expression("t*x[0]", t=0.0, degree=1)

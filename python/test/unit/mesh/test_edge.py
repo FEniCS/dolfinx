@@ -5,8 +5,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import UnitSquareMesh, UnitCubeMesh, MPI, Edges
-from dolfin_utils.test import fixture, skip_in_parallel
+
+from dolfin import MPI, Edges, UnitCubeMesh, UnitSquareMesh
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @fixture

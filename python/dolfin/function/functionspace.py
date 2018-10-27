@@ -5,42 +5,50 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import typing
+
 import ufl
 from dolfin import cpp, jit
 from dolfin.fem import dofmap
 
 
+class ElementMetaData(typing.NamedTuple):
+    """Data for representing a finite element"""
+    family: str
+    degree: int
+    form_degree: typing.Optional[int] = None  # noqa
+
+
 class FunctionSpace(ufl.FunctionSpace):
     """A space on which Functions (fields) can be defined."""
 
-    def __init__(self, mesh, element, degree=None, cppV=None):
+    def __init__(self,
+                 mesh: cpp.mesh.Mesh,
+                 element: typing.Union[ufl.FiniteElementBase, ElementMetaData],
+                 cppV: typing.Optional[cpp.function.FunctionSpace] = None):
         """Create a finite element function space."""
 
-        # FIXME: This includes some hacks to support construction of
-        # function spaces with existing cpp FunctionSpace, which is
-        # typical when extracting subspaces.
-        #
-        # It would element if an element argument was a single object,
-        # e.g. a ufl.FiniteElement or a tuple(family degree)
-
-        if cppV:
+        # Create function space from a UFL element and existing cpp
+        # FunctionSpace
+        if cppV is not None:
+            assert mesh is None
             ufl_domain = cppV.mesh().ufl_domain()
-            ufl_element = element
-            ufl.FunctionSpace.__init__(self, ufl_domain, ufl_element)
+            super().__init__(ufl_domain, element)
             self._cpp_object = cppV
             return
 
+        # Initialise the ufl.FunctionSpace
         if isinstance(element, ufl.FiniteElementBase):
-            ufl_element = element
+            super().__init__(mesh.ufl_domain(), element)
         else:
-            family = element
+            e = ElementMetaData(*element)
             ufl_element = ufl.FiniteElement(
-                family, mesh.ufl_cell(), degree, form_degree=None)
-        ufl.FunctionSpace.__init__(self, mesh.ufl_domain(), ufl_element)
+                e.family, mesh.ufl_cell(), e.degree, form_degree=e.form_degree)
+            super().__init__(mesh.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
         ufc_element, ufc_dofmap = jit.ffc_jit(
-            ufl_element,
+            self.ufl_element(),
             form_compiler_parameters=None,
             mpi_comm=mesh.mpi_comm())
         ufc_element = dofmap.make_ufc_finite_element(ufc_element)
@@ -64,7 +72,7 @@ class FunctionSpace(ufl.FunctionSpace):
         assert self.ufl_element().num_sub_elements() > i
         sub_element = self.ufl_element().sub_elements()[i]
         cppV_sub = self._cpp_object.sub([i])
-        return FunctionSpace(None, sub_element, -1, cppV_sub)
+        return FunctionSpace(None, sub_element, cppV_sub)
 
     def component(self):
         """Return the component relative to the parent space."""
@@ -88,13 +96,11 @@ class FunctionSpace(ufl.FunctionSpace):
 
     def __eq__(self, other):
         """Comparison for equality."""
-        return ufl.FunctionSpace.__eq__(
-            self, other) and self._cpp_object == other._cpp_object
+        return super().__eq__(other) and self._cpp_object == other._cpp_object
 
     def __ne__(self, other):
         """Comparison for inequality."""
-        return ufl.FunctionSpace.__ne__(
-            self, other) or self._cpp_object != other._cpp_object
+        return super().__ne__(other) or self._cpp_object != other._cpp_object
 
     def ufl_cell(self):
         return self._cpp_object.mesh().ufl_cell()
@@ -138,7 +144,7 @@ class FunctionSpace(ufl.FunctionSpace):
 
         """
         cpp_space, dofs = self._cpp_object.collapse()
-        V = FunctionSpace(None, self.ufl_element(), None, cpp_space)
+        V = FunctionSpace(None, self.ufl_element(), cpp_space)
         if collapsed_dofs:
             return V, dofs
         else:
@@ -149,26 +155,29 @@ class FunctionSpace(ufl.FunctionSpace):
 
 
 def VectorFunctionSpace(mesh: cpp.mesh.Mesh,
-                        family: str,
-                        degree: int,
+                        element: ElementMetaData,
                         dim=None,
-                        form_degree=None,
                         restriction=None):
-    """Create vector finite element function space."""
+    """Create vector finite element (composition of scalar elements) function space."""
 
-    element = ufl.VectorElement(
-        family, mesh.ufl_cell(), degree, form_degree=form_degree, dim=dim)
-    return FunctionSpace(mesh, element)
+    e = ElementMetaData(*element)
+    ufl_element = ufl.VectorElement(
+        e.family,
+        mesh.ufl_cell(),
+        e.degree,
+        form_degree=e.form_degree,
+        dim=dim)
+    return FunctionSpace(mesh, ufl_element)
 
 
 def TensorFunctionSpace(mesh: cpp.mesh.Mesh,
-                        family: str,
-                        degree: int,
+                        element: ElementMetaData,
                         shape=None,
-                        symmetry=None,
+                        symmetry: bool = None,
                         restriction=None):
-    """Create tensor finite element function space."""
+    """Create tensor finite element (composition of scalar elements) function space."""
 
-    element = ufl.TensorElement(family, mesh.ufl_cell(), degree, shape,
-                                symmetry)
-    return FunctionSpace(mesh, element)
+    e = ElementMetaData(*element)
+    ufl_element = ufl.TensorElement(e.family, mesh.ufl_cell(), e.degree, shape,
+                                    symmetry)
+    return FunctionSpace(mesh, ufl_element)
