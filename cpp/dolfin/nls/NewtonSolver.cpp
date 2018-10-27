@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2008 Garth N. Wells
+// Copyright (C) 2005-2018 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -41,6 +41,14 @@ dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
 {
   // Set default parameters
   parameters = default_parameters();
+
+  // Create linear solver if not already created. Default to LU.
+  _solver = std::make_shared<la::PETScKrylovSolver>(comm);
+  _solver->set_options_prefix("nls_solve_");
+  la::PETScOptions::set("nls_solve_ksp_type", "preonly");
+  la::PETScOptions::set("nls_solve_pc_type", "lu");
+  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  _solver->set_from_options();
 }
 //-----------------------------------------------------------------------------
 dolfin::nls::NewtonSolver::~NewtonSolver()
@@ -58,25 +66,11 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   if (parameters["relaxation_parameter"].is_set())
     set_relaxation_parameter(parameters["relaxation_parameter"]);
 
-  // Create linear solver if not already created. Default to LU.
-  if (!_solver)
-  {
-    _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm());
-    _solver->set_options_prefix("nls_solve_");
-    la::PETScOptions::set("nls_solve_ksp_type", "preonly");
-    la::PETScOptions::set("nls_solve_pc_type", "lu");
-    la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type" "mumps");
-    _solver->set_from_options();
-  }
-
-  // _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm());
-  assert(_solver);
-
   // Reset iteration counts
   _newton_iteration = 0;
   _krylov_iterations = 0;
 
-  // Compute F(u) (assembled intp _b)
+  // Compute F(u) (assembled into _b)
   la::PETScMatrix* A = nullptr;
   la::PETScMatrix* P = nullptr;
   la::PETScVector* b = nullptr;
@@ -85,8 +79,6 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   b = nonlinear_problem.F(x);
   // assert(A);
   assert(b);
-
-  // std::cout << "Initial x: " << x.norm(la::Norm::l2) << std::endl;
 
   // Check convergence
   bool newton_converged = false;
@@ -115,13 +107,11 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     // P = nonlinear_problem.J_pc(x);
     P = nullptr;
 
-    // std::cout << "Testing (J): " << A->norm(la::Norm::frobenius) <<
-    // std::endl;
-
     if (!_dx)
-      _dx = std::make_shared<la::PETScVector>(A->init_vector(1));
+      _dx = std::make_unique<la::PETScVector>(A->init_vector(1));
 
     // Set operators
+    assert(_solver);
     if (P)
       _solver->set_operators(*A, *P);
     else
@@ -234,10 +224,10 @@ bool dolfin::nls::NewtonSolver::converged(
   // Output iteration number and residual
   if (report && _mpi_comm.rank() == 0)
   {
-    log::info(
-        "Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol "
-        "= %.3e)",
-        newton_iteration, _residual, atol, relative_residual, rtol);
+    log::info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = "
+              "%.3e (tol "
+              "= %.3e)",
+              newton_iteration, _residual, atol, relative_residual, rtol);
   }
 
   // Return true if convergence criterion is met

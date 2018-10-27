@@ -161,7 +161,7 @@ private:
   std::shared_ptr<la::PETScKrylovSolver> _solver;
 
   // Solution vector
-  std::shared_ptr<la::PETScVector> _dx;
+  std::unique_ptr<la::PETScVector> _dx;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;

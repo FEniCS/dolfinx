@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2008 Garth N. Wells
+// Copyright (C) 2005-2018 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -47,22 +47,15 @@ public:
 
   /// Compute F at current point x
   virtual la::PETScVector* F(const la::PETScVector& x) = 0;
-  // virtual void F(la::PETScVector& b, const la::PETScVector& x) = 0;
 
   /// Compute J = F' at current point x
   virtual la::PETScMatrix* J(const la::PETScVector& x) = 0;
-  // virtual void J(la::PETScMatrix& A, const la::PETScVector& x) = 0;
 
-  // /// Compute J_pc used to precondition J. Not implementing this
-  // /// or leaving P empty results in system matrix A being used
-  // /// to construct preconditioner.
-  // ///
-  // /// Note that if nonempty P is not assembled on first call
-  // /// then a solver implementation may throw away P and not
-  // /// call this routine ever again.
+  /// Compute J_pc used to precondition J. Not implementing this
+  /// or leaving P empty results in system matrix A being used
+  /// to construct preconditioner.
   virtual la::PETScMatrix* J_pc(const la::PETScVector& x)
   {
-    // Do nothing if not supplied by the user
     return nullptr;
   }
 };

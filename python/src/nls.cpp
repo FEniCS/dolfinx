@@ -77,7 +77,7 @@ void nls(py::module& m)
   {
   public:
     using dolfin::nls::NewtonSolver::converged;
-    using dolfin::nls::NewtonSolver::solver_setup;
+    // using dolfin::nls::NewtonSolver::solver_setup;
     using dolfin::nls::NewtonSolver::update_solution;
   };
 
@@ -90,7 +90,6 @@ void nls(py::module& m)
       }))
       .def("solve", &dolfin::nls::NewtonSolver::solve)
       .def("converged", &PyPublicNewtonSolver::converged)
-      .def("solver_setup", &PyPublicNewtonSolver::solver_setup)
       .def("update_solution", &PyPublicNewtonSolver::update_solution);
 
   // dolfin::NonlinearProblem 'trampoline' for overloading from
