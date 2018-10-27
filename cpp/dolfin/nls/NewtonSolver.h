@@ -124,25 +124,6 @@ protected:
                          const NonlinearProblem& nonlinear_problem,
                          std::size_t iteration);
 
-  /// Setup solver to be used with system matrix A and preconditioner
-  /// matrix P. It may be overloaded to get finer control over linear
-  /// solver setup, various linesearch tricks, etc. Note that minimal
-  /// implementation should call *set_operators* method of the linear
-  /// solver.
-  ///
-  /// @param A (_std::shared_ptr<const PETScMatrix>_)
-  ///         System Jacobian matrix.
-  /// @param J (_std::shared_ptr<const PETSccMatrix>_)
-  ///         System preconditioner matrix.
-  /// @param nonlinear_problem (_NonlinearProblem_)
-  ///         The nonlinear problem.
-  /// @param iteration (std::size_t)
-  ///         Newton iteration number.
-  virtual void solver_setup(const la::PETScMatrix* A,
-                            const la::PETScMatrix* P,
-                            const NonlinearProblem& nonlinear_problem,
-                            std::size_t iteration);
-
   /// Update solution vector by computed Newton step. Default
   /// update is given by formula::
   ///
@@ -179,17 +160,8 @@ private:
   // Solver
   std::shared_ptr<la::PETScKrylovSolver> _solver;
 
-  // Jacobian matrix
-  // std::shared_ptr<la::PETScMatrix> _matA;
-
-  // // Preconditioner matrix
-  // std::shared_ptr<la::PETScMatrix> _matP;
-
   // Solution vector
   std::shared_ptr<la::PETScVector> _dx;
-
-  // Residual vector
-  // std::shared_ptr<la::PETScVector> _b;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;

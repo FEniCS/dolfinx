@@ -53,19 +53,19 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                  la::PETScVector& x)
 {
   // Extract parameters
-  //const std::string convergence_criterion = parameters["convergence_criterion"];
-  const std::string convergence_criterion = "incremental";
+  const std::string convergence_criterion = parameters["convergence_criterion"];
   const std::size_t maxiter = parameters["maximum_iterations"];
   if (parameters["relaxation_parameter"].is_set())
     set_relaxation_parameter(parameters["relaxation_parameter"]);
 
-  // Create linear solver if not already created
+  // Create linear solver if not already created. Default to LU.
   if (!_solver)
   {
     _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm());
     _solver->set_options_prefix("nls_solve_");
     la::PETScOptions::set("nls_solve_ksp_type", "preonly");
     la::PETScOptions::set("nls_solve_pc_type", "lu");
+    la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type" "mumps");
     _solver->set_from_options();
   }
 
@@ -115,21 +115,22 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     // P = nonlinear_problem.J_pc(x);
     P = nullptr;
 
-    //std::cout << "Testing (J): " << A->norm(la::Norm::frobenius) << std::endl;
+    // std::cout << "Testing (J): " << A->norm(la::Norm::frobenius) <<
+    // std::endl;
 
     if (!_dx)
       _dx = std::make_shared<la::PETScVector>(A->init_vector(1));
 
-    // Setup (linear) solver (including set operators)
-    solver_setup(A, P, nonlinear_problem, _newton_iteration);
+    // Set operators
+    if (P)
+      _solver->set_operators(*A, *P);
+    else
+      _solver->set_operator(*A);
 
     // Perform linear solve and update total number of Krylov
     // iterations
-    // if (!_dx->empty())
     _dx->set(0.0);
     _krylov_iterations += _solver->solve(*_dx, *b);
-    // std::cout << "Testing (dx, b): " << _dx->norm(la::Norm::l2) << ", "
-    //           << b->norm(la::Norm::l2) << std::endl;
 
     // Update solution
     update_solution(x, *_dx, _relaxation_parameter, nonlinear_problem,
@@ -244,21 +245,6 @@ bool dolfin::nls::NewtonSolver::converged(
     return true;
   else
     return false;
-}
-//-----------------------------------------------------------------------------
-void dolfin::nls::NewtonSolver::solver_setup(
-    const la::PETScMatrix* A, const la::PETScMatrix* P,
-    const NonlinearProblem& nonlinear_problem, std::size_t interation)
-{
-  _solver->set_operator(*A);
-  // // Update Jacobian in linear solver (and preconditioner if given)
-  // if (!P)
-  // {
-  //   _solver->set_operator(*A);
-  //   log::log(TRACE, "NewtonSolver: using Jacobian as preconditioner matrix");
-  // }
-  // else
-  //   _solver->set_operators(*A, *P);
 }
 //-----------------------------------------------------------------------------
 void dolfin::nls::NewtonSolver::update_solution(

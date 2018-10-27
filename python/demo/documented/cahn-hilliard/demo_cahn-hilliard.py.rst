@@ -146,27 +146,27 @@ use in the Newton solver is now defined. It is a subclass of
 :py:class:`NonlinearProblem <dolfin.cpp.NonlinearProblem>`. ::
 
     # Class for interfacing with the Newton solver
-   class CahnHilliardEquation(NonlinearProblem):
-       def __init__(self, a, L):
-           NonlinearProblem.__init__(self)
-           self.L = L
-           self.a = a
-           self._F = None
-           self._J = None
+    class CahnHilliardEquation(NonlinearProblem):
+        def __init__(self, a, L):
+            NonlinearProblem.__init__(self)
+            self.L = L
+            self.a = a
+            self._F = None
+            self._J = None
 
-       def F(self, x):
-           if self._F is None:
-               self._F = assemble(self.L)
-           else:
-               self._F = assemble(self._F, self.L)
-           return self._F
+        def F(self, x):
+            if self._F is None:
+                self._F = assemble(self.L)
+            else:
+                self._F = assemble(self._F, self.L)
+            return self._F
 
-       def J(self, x):
-           if self._J is None:
-               self._J = assemble(self.a)
-           else:
-               self._J = assemble(self._J, self.a)
-           return self._J
+        def J(self, x):
+            if self._J is None:
+                self._J = assemble(self.a)
+            else:
+                self._J = assemble(self._J, self.a)
+            return self._J
 
 The constructor (``__init__``) stores references to the bilinear
 (``a``) and linear (``L``) forms. These will used to compute the
@@ -296,8 +296,8 @@ sub-class of :py:class:`NonlinearProblem
     problem = CahnHilliardEquation(a, L)
     solver = NewtonSolver(MPI.comm_world)
     # solver.parameters["linear_solver"] = "lu"
-    # solver.parameters["convergence_criterion"] = "incremental"
-    # solver.parameters["relative_tolerance"] = 1e-6
+    solver.parameters["convergence_criterion"] = "incremental"
+    solver.parameters["relative_tolerance"] = 1e-6
 
 The string ``"lu"`` passed to the Newton solver indicated that an LU
 solver should be used.  The setting of
@@ -321,7 +321,7 @@ a terminal time :math:`T` is reached::
         t += dt
         u0.vector().vec()[:] = u.vector().vec()
         solver.solve(problem, u.vector())
-        file.write(u.split()[0], t)
+        # file.write(u.split()[0], t)
 
 The string ``"compressed"`` indicates that the output data should be
 compressed to reduce the file size. Within the time stepping loop, the
