@@ -10,7 +10,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-CoordinateDofs::CoordinateDofs(std::uint32_t tdim) : _coord_dofs(tdim)
+CoordinateDofs::CoordinateDofs(std::uint32_t tdim) : _coord_dofs(tdim + 1)
 {
   // Do nothing
 }
