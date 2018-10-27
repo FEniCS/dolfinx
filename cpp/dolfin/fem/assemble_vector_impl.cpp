@@ -65,6 +65,10 @@ void fem::assemble_ghosted(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
 {
+  // FIXME: should zeroing be an option?
+  // Zero vector
+  VecSet(b, 0.0);
+
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
   fem::assemble_local(b_local, L, a, bcs);

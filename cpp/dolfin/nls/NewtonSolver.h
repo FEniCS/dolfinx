@@ -19,7 +19,7 @@ namespace la
 class PETScMatrix;
 class PETScVector;
 class PETScKrylovSolver;
-}
+} // namespace la
 
 namespace nls
 {
@@ -138,8 +138,8 @@ protected:
   ///         The nonlinear problem.
   /// @param iteration (std::size_t)
   ///         Newton iteration number.
-  virtual void solver_setup(std::shared_ptr<const la::PETScMatrix> A,
-                            std::shared_ptr<const la::PETScMatrix> P,
+  virtual void solver_setup(const la::PETScMatrix* A,
+                            const la::PETScMatrix* P,
                             const NonlinearProblem& nonlinear_problem,
                             std::size_t iteration);
 
@@ -180,19 +180,19 @@ private:
   std::shared_ptr<la::PETScKrylovSolver> _solver;
 
   // Jacobian matrix
-  std::shared_ptr<la::PETScMatrix> _matA;
+  // std::shared_ptr<la::PETScMatrix> _matA;
 
-  // Preconditioner matrix
-  std::shared_ptr<la::PETScMatrix> _matP;
+  // // Preconditioner matrix
+  // std::shared_ptr<la::PETScMatrix> _matP;
 
   // Solution vector
   std::shared_ptr<la::PETScVector> _dx;
 
   // Residual vector
-  std::shared_ptr<la::PETScVector> _b;
+  // std::shared_ptr<la::PETScVector> _b;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 };
-}
-}
+} // namespace nls
+} // namespace dolfin

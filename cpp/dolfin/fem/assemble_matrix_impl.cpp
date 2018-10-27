@@ -17,6 +17,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <petscmat.h>
 #include <string>
 
 using namespace dolfin;
@@ -27,6 +28,10 @@ void fem::assemble_matrix(la::PETScMatrix& A, const Form& a,
                           const std::vector<std::int32_t>& bc_dofs0,
                           const std::vector<std::int32_t>& bc_dofs1)
 {
+  // FIXME: should zeroing be an option?
+  // Zero matrix
+  A.zero();
+
   assert(!A.empty());
 
   assert(a.mesh());
