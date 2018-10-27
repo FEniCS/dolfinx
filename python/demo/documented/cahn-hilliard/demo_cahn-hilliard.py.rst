@@ -321,7 +321,7 @@ a terminal time :math:`T` is reached::
         t += dt
         u0.vector().vec()[:] = u.vector().vec()
         solver.solve(problem, u.vector())
-        # file.write(u.split()[0], t)
+        file.write(u.sub(0), t)
 
 The string ``"compressed"`` indicates that the output data should be
 compressed to reduce the file size. Within the time stepping loop, the
