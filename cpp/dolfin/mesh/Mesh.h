@@ -162,7 +162,8 @@ public:
   /// @return std::vector<std::uint32_t>&
   ///         Connectivity for all cells.
   ///
-  const std::vector<std::int32_t>& cells() const
+  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+  cells() const
   {
     return _topology.connectivity(_topology.dim(), 0).connections();
   }

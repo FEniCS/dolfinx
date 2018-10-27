@@ -16,21 +16,13 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(std::size_t dim)
-    : common::Variable("topology")
+    : common::Variable("topology"), _num_entities(dim + 1, 0),
+      _ghost_offset_index(dim + 1, 0), _global_num_entities(dim + 1, 0),
+      _global_indices(dim + 1),
+      _connectivity(dim + 1, std::vector<MeshConnectivity>(dim + 1))
+
 {
-  // Initialize number of mesh entities
-  _num_entities = std::vector<std::int32_t>(dim + 1, 0);
-  _global_num_entities = std::vector<std::int64_t>(dim + 1, 0);
-  _ghost_offset_index = std::vector<std::size_t>(dim + 1, 0);
-
-  // Initialize storage for global indices
-  _global_indices.resize(dim + 1);
-
-  // Initialize mesh connectivity
-  _connectivity.resize(dim + 1);
-  for (std::size_t d0 = 0; d0 <= dim; d0++)
-    for (std::size_t d1 = 0; d1 <= dim; d1++)
-      _connectivity[d0].push_back(MeshConnectivity(d0, d1));
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::uint32_t MeshTopology::dim() const { return _num_entities.size() - 1; }

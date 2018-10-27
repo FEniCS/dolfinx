@@ -6,13 +6,12 @@
 
 #pragma once
 
+#include "MeshConnectivity.h"
 #include <cstdint>
+#include <dolfin/common/Variable.h>
 #include <map>
 #include <set>
 #include <vector>
-
-#include "MeshConnectivity.h"
-#include <dolfin/common/Variable.h>
 
 namespace dolfin
 {
@@ -187,5 +186,5 @@ private:
   // Connectivity for pairs of topological dimensions
   std::vector<std::vector<MeshConnectivity>> _connectivity;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

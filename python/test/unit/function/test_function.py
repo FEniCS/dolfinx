@@ -104,29 +104,29 @@ def test_assign(V, W):
         expr = 3 * u - 4 * u1 - 0.1 * 4 * u * 4 + u2 + 3 * u0 / 3. / 0.5
         expr_scalar = 3 - 4 * 3 - 0.1 * 4 * 4 + 4. + 3 * 2. / 3. / 0.5
         uu.assign(expr)
-        assert (round(uu.vector().get_local().sum() -
-                      float(expr_scalar * uu.vector().size()), 7) == 0)
+        assert (round(uu.vector().get_local().sum()
+                      - float(expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test expression scaling
         expr = 3 * expr
         expr_scalar *= 3
         uu.assign(expr)
-        assert (round(uu.vector().get_local().sum() -
-                      float(expr_scalar * uu.vector().size()), 7) == 0)
+        assert (round(uu.vector().get_local().sum()
+                      - float(expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test expression scaling
         expr = expr / 4.5
         expr_scalar /= 4.5
         uu.assign(expr)
-        assert (round(uu.vector().get_local().sum() -
-                      float(expr_scalar * uu.vector().size()), 7) == 0)
+        assert (round(uu.vector().get_local().sum()
+                      - float(expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test self assignment
         expr = 3 * u - Constant(5) * u2 + u1 - 5 * u
         expr_scalar = 3 - 5 * 4. + 3. - 5
         u.assign(expr)
-        assert (round(u.vector().get_local().sum() -
-                      float(expr_scalar * u.vector().size()), 7) == 0)
+        assert (round(u.vector().get_local().sum()
+                      - float(expr_scalar * u.vector().size()), 7) == 0)
 
         # Test zero assignment
         u.assign(-u2 / 2 + 2 * u1 - u1 / 0.5 + u2 * 0.5)
