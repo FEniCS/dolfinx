@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <tuple>
-
 namespace dolfin
 {
 
@@ -27,21 +25,15 @@ class NonlinearProblem
 {
 public:
   /// Constructor
-  NonlinearProblem() {}
+  NonlinearProblem() = default;
 
   /// Destructor
   virtual ~NonlinearProblem() {}
 
   /// Function called by Newton solver before requesting F, J or J_pc.
-  /// This can be used to compute F, J and J_pc together. Preconditioner
-  /// matrix P can be left empty so that A is used instead
-  virtual std::tuple<la::PETScMatrix*, la::PETScMatrix*, la::PETScVector*>
-  form(const la::PETScVector& x)
-  // virtual void form(la::PETScMatrix& A, la::PETScMatrix* P, la::PETScVector&
-  // b,
-  //                   const la::PETScVector& x)
+  /// This can be used to compute F, J and J_pc together.
+  virtual void form(const la::PETScVector& x)
   {
-    return std::make_tuple(nullptr, nullptr, nullptr);
     // Do nothing if not supplied by the user
   }
 
@@ -54,10 +46,7 @@ public:
   /// Compute J_pc used to precondition J. Not implementing this
   /// or leaving P empty results in system matrix A being used
   /// to construct preconditioner.
-  virtual la::PETScMatrix* J_pc(const la::PETScVector& x)
-  {
-    return nullptr;
-  }
+  virtual la::PETScMatrix* P(const la::PETScVector& x) { return nullptr; }
 };
 } // namespace nls
 } // namespace dolfin

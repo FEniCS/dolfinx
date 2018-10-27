@@ -75,9 +75,8 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   la::PETScMatrix* P = nullptr;
   la::PETScVector* b = nullptr;
 
-  std::tie(A, P, b) = nonlinear_problem.form(x);
+  nonlinear_problem.form(x);
   b = nonlinear_problem.F(x);
-  // assert(A);
   assert(b);
 
   // Check convergence
@@ -104,8 +103,8 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   {
     // Compute Jacobian
     A = nonlinear_problem.J(x);
-    // P = nonlinear_problem.J_pc(x);
-    P = nullptr;
+    assert(A);
+    P = nonlinear_problem.P(x);
 
     if (!_dx)
       _dx = std::make_unique<la::PETScVector>(A->init_vector(1));
@@ -117,8 +116,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     else
       _solver->set_operator(*A);
 
-    // Perform linear solve and update total number of Krylov
-    // iterations
+    // Perform linear solve and update total number of Krylov iterations
     _dx->set(0.0);
     _krylov_iterations += _solver->solve(*_dx, *b);
 
@@ -127,13 +125,13 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                     _newton_iteration);
 
     // Increment iteration count
-    _newton_iteration++;
+    ++_newton_iteration;
 
     // FIXME: This step is not needed if residual is based on dx and
     //        this has converged.
     // FIXME: But, this function call may update internal variable, etc.
     // Compute F
-    // std::tie(A, P, b) = nonlinear_problem.form(x);
+    nonlinear_problem.form(x);
     b = nonlinear_problem.F(x);
 
     // Test for convergence
@@ -147,13 +145,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
           = converged(*_dx, nonlinear_problem, _newton_iteration - 1);
     }
     else
-    {
-      log::dolfin_error(
-          "NewtonSolver.cpp", "check for convergence",
-          "The convergence criterion %s is unknown, known criteria "
-          "are 'residual' or 'incremental'",
-          convergence_criterion.c_str());
-    }
+      throw std::runtime_error("Unknown convergence criterion string.");
   }
 
   if (newton_converged)

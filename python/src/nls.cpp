@@ -118,19 +118,9 @@ void nls(py::module& m)
           "Tried to call pure virtual function dolfin::NonlinearProblem::F");
     }
 
-    using nls_rtype
-        = std::tuple<dolfin::la::PETScMatrix*, dolfin::la::PETScMatrix*,
-                     dolfin::la::PETScVector*>;
-    nls_rtype form(const dolfin::la::PETScVector& x) override
+    void form(const dolfin::la::PETScVector& x) override
     {
-      PYBIND11_OVERLOAD_INT(nls_rtype, dolfin::nls::NonlinearProblem, "form",
-                            &x);
-      // return dolfin::nls::NonlinearProblem::form(x);
-      // PYBIND11_OVERLOAD_INT(
-      //     std::tuple<dolfin::la::PETScMatrix*, dolfin::la::PETScMatrix*,
-      //     dolfin::la::PETScVector*>, dolfin::nls::NonlinearProblem,
-      // "form",
-      //     x);
+      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NonlinearProblem, "form", &x);
       return dolfin::nls::NonlinearProblem::form(x);
     }
   };
@@ -142,6 +132,7 @@ void nls(py::module& m)
       .def(py::init<>())
       .def("F", &dolfin::nls::NonlinearProblem::F)
       .def("J", &dolfin::nls::NonlinearProblem::J)
+      .def("P", &dolfin::nls::NonlinearProblem::P)
       .def("form", &dolfin::nls::NonlinearProblem::form);
 
   // // dolfin::OptimizationProblem 'trampoline' for overloading from
