@@ -17,6 +17,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <petscmat.h>
 #include <string>
 
 using namespace dolfin;

@@ -44,29 +44,31 @@ void nls(py::module& m)
                                                   iteration);
     }
 
-    void solver_setup(std::shared_ptr<const dolfin::la::PETScMatrix> A,
-                      std::shared_ptr<const dolfin::la::PETScMatrix> P,
-                      const dolfin::nls::NonlinearProblem& nonlinear_problem,
-                      std::size_t iteration)
-    {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NewtonSolver, "solver_setup", A,
-                            P, &nonlinear_problem, iteration);
-      return dolfin::nls::NewtonSolver::solver_setup(A, P, nonlinear_problem,
-                                                     iteration);
-    }
+    // void solver_setup(std::shared_ptr<const dolfin::la::PETScMatrix> A,
+    //                   std::shared_ptr<const dolfin::la::PETScMatrix> P,
+    //                   const dolfin::nls::NonlinearProblem& nonlinear_problem,
+    //                   std::size_t iteration)
+    // {
+    //   PYBIND11_OVERLOAD_INT(void, dolfin::nls::NewtonSolver, "solver_setup",
+    //   A,
+    //                         P, &nonlinear_problem, iteration);
+    //   return dolfin::nls::NewtonSolver::solver_setup(A, P, nonlinear_problem,
+    //                                                  iteration);
+    // }
 
-    void update_solution(dolfin::la::PETScVector& x,
-                         const dolfin::la::PETScVector& dx,
-                         double relaxation_parameter,
-                         const dolfin::nls::NonlinearProblem& nonlinear_problem,
-                         std::size_t iteration)
-    {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NewtonSolver, "update_solution",
-                            &x, &dx, relaxation_parameter, nonlinear_problem,
-                            iteration);
-      return dolfin::nls::NewtonSolver::update_solution(
-          x, dx, relaxation_parameter, nonlinear_problem, iteration);
-    }
+    // void update_solution(dolfin::la::PETScVector& x,
+    //                      const dolfin::la::PETScVector& dx,
+    //                      double relaxation_parameter,
+    //                      const dolfin::nls::NonlinearProblem&
+    //                      nonlinear_problem, std::size_t iteration)
+    // {
+    //   PYBIND11_OVERLOAD_INT(void, dolfin::nls::NewtonSolver,
+    //   "update_solution",
+    //                         &x, &dx, relaxation_parameter, nonlinear_problem,
+    //                         iteration);
+    //   return dolfin::nls::NewtonSolver::update_solution(
+    //       x, dx, relaxation_parameter, nonlinear_problem, iteration);
+    // }
   };
 
   // Class used to expose protected dolfin::NewtonSolver members
@@ -75,7 +77,7 @@ void nls(py::module& m)
   {
   public:
     using dolfin::nls::NewtonSolver::converged;
-    using dolfin::nls::NewtonSolver::solver_setup;
+    // using dolfin::nls::NewtonSolver::solver_setup;
     using dolfin::nls::NewtonSolver::update_solution;
   };
 
@@ -88,7 +90,6 @@ void nls(py::module& m)
       }))
       .def("solve", &dolfin::nls::NewtonSolver::solve)
       .def("converged", &PyPublicNewtonSolver::converged)
-      .def("solver_setup", &PyPublicNewtonSolver::solver_setup)
       .def("update_solution", &PyPublicNewtonSolver::update_solution);
 
   // dolfin::NonlinearProblem 'trampoline' for overloading from
@@ -101,29 +102,26 @@ void nls(py::module& m)
     // the return value policy), so the below is non-standard.  See
     // https://github.com/pybind/pybind11/issues/250.
 
-    void J(dolfin::la::PETScMatrix& A,
-           const dolfin::la::PETScVector& x) override
+    dolfin::la::PETScMatrix* J(const dolfin::la::PETScVector& x) override
     {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NonlinearProblem, "J", &A, &x);
+      PYBIND11_OVERLOAD_INT(dolfin::la::PETScMatrix*,
+                            dolfin::nls::NonlinearProblem, "J", &x);
       py::pybind11_fail(
-          "Tried to call pure virtual function dolfin::OptimisationProblem::J");
+          "Tried to call pure virtual function dolfin::NonlinerProblem::J");
     }
 
-    void F(dolfin::la::PETScVector& b,
-           const dolfin::la::PETScVector& x) override
+    dolfin::la::PETScVector* F(const dolfin::la::PETScVector& x) override
     {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NonlinearProblem, "F", &b, &x);
+      PYBIND11_OVERLOAD_INT(dolfin::la::PETScVector*,
+                            dolfin::nls::NonlinearProblem, "F", &x);
       py::pybind11_fail(
-          "Tried to call pure virtual function dolfin::OptimisationProblem::F");
+          "Tried to call pure virtual function dolfin::NonlinearProblem::F");
     }
 
-    void form(dolfin::la::PETScMatrix& A, dolfin::la::PETScMatrix& P,
-              dolfin::la::PETScVector& b,
-              const dolfin::la::PETScVector& x) override
+    void form(const dolfin::la::PETScVector& x) override
     {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NonlinearProblem, "form", &A, &P,
-                            &b, &x);
-      return dolfin::nls::NonlinearProblem::form(A, P, b, x);
+      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NonlinearProblem, "form", &x);
+      return dolfin::nls::NonlinearProblem::form(x);
     }
   };
 
@@ -134,55 +132,55 @@ void nls(py::module& m)
       .def(py::init<>())
       .def("F", &dolfin::nls::NonlinearProblem::F)
       .def("J", &dolfin::nls::NonlinearProblem::J)
-      .def("form",
-           (void (dolfin::nls::NonlinearProblem::*)(
-               dolfin::la::PETScMatrix&, dolfin::la::PETScMatrix&,
-               dolfin::la::PETScVector&, const dolfin::la::PETScVector&))
-               & dolfin::nls::NonlinearProblem::form);
+      .def("P", &dolfin::nls::NonlinearProblem::P)
+      .def("form", &dolfin::nls::NonlinearProblem::form);
 
-  // dolfin::OptimizationProblem 'trampoline' for overloading from
-  // Python
-  class PyOptimisationProblem : public dolfin::nls::OptimisationProblem
-  {
-    using dolfin::nls::OptimisationProblem::OptimisationProblem;
+  // // dolfin::OptimizationProblem 'trampoline' for overloading from
+  // // Python
+  // class PyOptimisationProblem : public dolfin::nls::OptimisationProblem
+  // {
+  //   using dolfin::nls::OptimisationProblem::OptimisationProblem;
 
-    // pybdind11 has some issues when passing by reference (due to
-    // the return value policy), so the below is non-standard.  See
-    // https://github.com/pybind/pybind11/issues/250.
+  //   // pybdind11 has some issues when passing by reference (due to
+  //   // the return value policy), so the below is non-standard.  See
+  //   // https://github.com/pybind/pybind11/issues/250.
 
-    double f(const dolfin::la::PETScVector& x) override
-    {
-      PYBIND11_OVERLOAD_INT(double, dolfin::nls::OptimisationProblem, "f", &x);
-      py::pybind11_fail(
-          "Tried to call pure virtual function dolfin::OptimisationProblem::f");
-    }
+  //   double f(const dolfin::la::PETScVector& x) override
+  //   {
+  //     PYBIND11_OVERLOAD_INT(double, dolfin::nls::OptimisationProblem, "f",
+  //     &x); py::pybind11_fail(
+  //         "Tried to call pure virtual function
+  //         dolfin::OptimisationProblem::f");
+  //   }
 
-    void F(dolfin::la::PETScVector& b,
-           const dolfin::la::PETScVector& x) override
-    {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::OptimisationProblem, "F", &b,
-                            &x);
-      py::pybind11_fail(
-          "Tried to call pure virtual function dolfin::OptimisationProblem::F");
-    }
+  //   void F(dolfin::la::PETScVector& b,
+  //          const dolfin::la::PETScVector& x) override
+  //   {
+  //     PYBIND11_OVERLOAD_INT(void, dolfin::nls::OptimisationProblem, "F", &b,
+  //                           &x);
+  //     py::pybind11_fail(
+  //         "Tried to call pure virtual function
+  //         dolfin::OptimisationProblem::F");
+  //   }
 
-    void J(dolfin::la::PETScMatrix& A,
-           const dolfin::la::PETScVector& x) override
-    {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::OptimisationProblem, "J", &A,
-                            &x);
-      py::pybind11_fail(
-          "Tried to call pure virtual function dolfin::OptimisationProblem::J");
-    }
-  };
+  //   void J(dolfin::la::PETScMatrix& A,
+  //          const dolfin::la::PETScVector& x) override
+  //   {
+  //     PYBIND11_OVERLOAD_INT(void, dolfin::nls::OptimisationProblem, "J", &A,
+  //                           &x);
+  //     py::pybind11_fail(
+  //         "Tried to call pure virtual function
+  //         dolfin::OptimisationProblem::J");
+  //   }
+  // };
 
-  // dolfin::OptimizationProblem
-  py::class_<dolfin::nls::OptimisationProblem,
-             std::shared_ptr<dolfin::nls::OptimisationProblem>,
-             PyOptimisationProblem>(m, "OptimisationProblem")
-      .def(py::init<>())
-      .def("f", &dolfin::nls::OptimisationProblem::f)
-      .def("F", &dolfin::nls::OptimisationProblem::F)
-      .def("J", &dolfin::nls::OptimisationProblem::J);
+  // // dolfin::OptimizationProblem
+  // py::class_<dolfin::nls::OptimisationProblem,
+  //            std::shared_ptr<dolfin::nls::OptimisationProblem>,
+  //            PyOptimisationProblem>(m, "OptimisationProblem")
+  //     .def(py::init<>())
+  //     .def("f", &dolfin::nls::OptimisationProblem::f)
+  //     .def("F", &dolfin::nls::OptimisationProblem::F)
+  //     .def("J", &dolfin::nls::OptimisationProblem::J);
 }
-}
+} // namespace dolfin_wrappers

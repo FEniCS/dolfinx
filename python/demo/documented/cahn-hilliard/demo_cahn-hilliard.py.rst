@@ -108,6 +108,8 @@ First, the modules :py:mod:`random` :py:mod:`matplotlib`
 
     import random
     from dolfin import *
+    from dolfin.io import XDMFFile
+    from dolfin.fem.assemble import assemble
 
 .. index:: Expression
 
@@ -120,8 +122,8 @@ created::
             random.seed(2 + MPI.rank(MPI.comm_world))
             super().__init__(**kwargs)
         def eval(self, values, x):
-            values[0] = 0.63 + 0.02*(0.5 - random.random())
-            values[1] = 0.0
+            values[:, 0] = 0.63 + 0.02*(0.5 - random.random())
+            values[:, 1] = 0.0
         def value_shape(self):
             return (2,)
 
@@ -149,10 +151,22 @@ use in the Newton solver is now defined. It is a subclass of
             NonlinearProblem.__init__(self)
             self.L = L
             self.a = a
-        def F(self, b, x):
-            assemble(self.L, tensor=b)
-        def J(self, A, x):
-            assemble(self.a, tensor=A)
+            self._F = None
+            self._J = None
+
+        def F(self, x):
+            if self._F is None:
+                self._F = assemble(self.L)
+            else:
+                self._F = assemble(self._F, self.L)
+            return self._F
+
+        def J(self, x):
+            if self._J is None:
+                self._J = assemble(self.a)
+            else:
+                self._J = assemble(self._J, self.a)
+            return self._J
 
 The constructor (``__init__``) stores references to the bilinear
 (``a``) and linear (``L``) forms. These will used to compute the
@@ -170,31 +184,13 @@ Next, various model parameters are defined::
     dt     = 5.0e-06  # time step
     theta  = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0.5 -> Crank-Nicolson
 
-.. index::
-   singe: form compiler options; (in Cahn-Hilliard demo)
-
-It is possible to pass arguments that control aspects of the generated
-code to the form compiler. The lines ::
-
-    # Form compiler options
-    parameters["form_compiler"]["optimize"]     = True
-    parameters["form_compiler"]["cpp_optimize"] = True
-
-tell the form to apply optimization strategies in the code generation
-phase and the use compiler optimization flags when compiling the
-generated C++ code. Using the option ``["optimize"] = True`` will
-generally result in faster code (sometimes orders of magnitude faster
-for certain operations, depending on the equation), but it may take
-considerably longer to generate the code and the generation phase may
-use considerably more memory).
-
 A unit square mesh with 97 (= 96 + 1) vertices in each direction is
 created, and on this mesh a :py:class:`FunctionSpace
 <dolfin.functions.functionspace.FunctionSpace>` ``ME`` is built using
 a pair of linear Lagrangian elements. ::
 
     # Create mesh and build function space
-    mesh = UnitSquareMesh.create(96, 96, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.Type.quadrilateral)
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     ME = FunctionSpace(mesh, P1*P1)
 
@@ -298,8 +294,8 @@ sub-class of :py:class:`NonlinearProblem
 
     # Create nonlinear problem and Newton solver
     problem = CahnHilliardEquation(a, L)
-    solver = NewtonSolver()
-    solver.parameters["linear_solver"] = "lu"
+    solver = NewtonSolver(MPI.comm_world)
+    # solver.parameters["linear_solver"] = "lu"
     solver.parameters["convergence_criterion"] = "incremental"
     solver.parameters["relative_tolerance"] = 1e-6
 
@@ -316,16 +312,16 @@ the solver is advanced in time from :math:`t_{n}` to :math:`t_{n+1}` until
 a terminal time :math:`T` is reached::
 
     # Output file
-    file = File("output.pvd", "compressed")
+    file = XDMFFile(MPI.comm_world, "output.xdmf")
 
     # Step in time
     t = 0.0
     T = 50*dt
     while (t < T):
         t += dt
-        u0.vector()[:] = u.vector()
+        u0.vector().vec()[:] = u.vector().vec()
         solver.solve(problem, u.vector())
-        file << (u.split()[0], t)
+        file.write(u.sub(0), t)
 
 The string ``"compressed"`` indicates that the output data should be
 compressed to reduce the file size. Within the time stepping loop, the

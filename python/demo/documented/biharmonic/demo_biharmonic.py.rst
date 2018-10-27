@@ -99,55 +99,56 @@ This demo is implemented in the :download:`demo_biharmonic.py` file.
 
 First, the necessary modules are imported::
 
+    import os, matplotlib
+    if 'DISPLAY' not in os.environ:
+        matplotlib.use('agg')
+    
     import matplotlib.pyplot as plt
     from dolfin import *
     from dolfin.io import XDMFFile
-
-Next, some parameters for the form compiler are set::
-
-    # Optimization options for the form compiler
-    parameters["form_compiler"]["cpp_optimize"] = True
-    parameters["form_compiler"]["optimize"] = True
-
+    from dolfin.parameter import parameters
+    import numpy as np
+    
 A mesh is created, and a quadratic finite element function space::
-
-    # Make mesh ghosted for evaluation of DG terms
-    parameters["ghost_mode"] = "shared_facet"
 
     # Create mesh and define function space
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
     V = FunctionSpace(mesh, "CG", 2)
-
+    
 A subclass of :py:class:`SubDomain <dolfin.cpp.SubDomain>`,
 ``DirichletBoundary`` is created for later defining the boundary of
 the domain::
 
     # Define Dirichlet boundary
     class DirichletBoundary(SubDomain):
+    
         def inside(self, x, on_boundary):
-            return on_boundary
-
+            result = np.empty(x.shape[0], dtype=bool)
+            result.fill(on_boundary)
+            return result
+    
 A subclass of :py:class:`Expression
 <dolfin.functions.expression.Expression>`, ``Source`` is created for
 the source term :math:`f`::
 
     class Source(UserExpression):
         def eval(self, values, x):
-            values[0] = 4.0*pi**4*sin(pi*x[0])*sin(pi*x[1])
-
+            values[:, 0] = 4.0*pi**4*np.sin(pi*x[:, 0])*np.sin(pi*x[:, 1])
+    
 The Dirichlet boundary condition is created::
 
     # Define boundary condition
     u0 = Constant(0.0)
-    bc = DirichletBC(V, u0, DirichletBoundary())
-
+    boundary = DirichletBoundary()
+    bc = DirichletBC(V, u0, boundary)
+    
 On the finite element space ``V``, trial and test functions are
 created::
 
     # Define trial and test functions
     u = TrialFunction(V)
     v = TestFunction(V)
-
+    
 A function for the cell size :math:`h` is created, as is a function
 for the average size of cells that share a facet (``h_avg``).  The UFL
 syntax ``('+')`` and ``('-')`` restricts a function to the ``('+')``
@@ -162,10 +163,10 @@ can be changed without needing to regenerate code. ::
     h_avg = (h('+') + h('-'))/2.0
     n = FacetNormal(mesh)
     f = Source(degree=2)
-
+    
     # Penalty parameter
     alpha = Constant(8.0)
-
+    
 The bilinear and linear forms are defined::
 
     # Define bilinear form
@@ -173,24 +174,26 @@ The bilinear and linear forms are defined::
       - inner(avg(div(grad(u))), jump(grad(v), n))*dS \
       - inner(jump(grad(u), n), avg(div(grad(v))))*dS \
       + alpha/h_avg*inner(jump(grad(u),n), jump(grad(v),n))*dS
-
+    
     # Define linear form
     L = f*v*dx
-
+    
 A :py:class:`Function <dolfin.functions.function.Function>` is created
 to store the solution and the variational problem is solved::
 
     # Solve variational problem
     u = Function(V)
     solve(a == L, u, bc)
-
+    
 The computed solution is written to a file in VTK format and plotted to
 the screen. ::
 
     # Save solution to file
     with XDMFFile(mesh.mpi_comm(), "biharmonic.xdmf") as file:
         file.write(u)
-
+    
     # Plot solution
+    from dolfin.plotting import plot
     plot(u)
     plt.show()
+    plt.savefig("plot.pdf")

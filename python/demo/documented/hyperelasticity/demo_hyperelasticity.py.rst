@@ -162,16 +162,24 @@ file.
 
 First, the required modules are imported::
 
+    import os, matplotlib
+    if 'DISPLAY' not in os.environ:
+        matplotlib.use('agg')
+    
     import matplotlib.pyplot as plt
+    import numpy as np
     from dolfin import *
-
+    from dolfin.parameter import parameters
+    from dolfin.io import XDMFFile
+    from dolfin.plotting import plot
+    
 The behavior of the form compiler FFC can be adjusted by prescribing
 various parameters. Here, we want to use the UFLACS backend of FFC::
 
     # Optimization options for the form compiler
     parameters["form_compiler"]["cpp_optimize"] = True
     parameters["form_compiler"]["representation"] = "uflacs"
-
+    
 The first line tells the form compiler to use C++ compiler optimizations when
 compiling the generated code. The remainder is a dictionary of options which
 will be passed to the form compiler. It lists the optimizations strategies
@@ -187,9 +195,9 @@ continuous piecewise linear vector polynomials (a Lagrange vector
 element space)::
 
     # Create mesh and define function space
-    mesh = UnitCubeMesh(24, 16, 16)
+    mesh = UnitCubeMesh(MPI.comm_world, 24, 16, 16)
     V = VectorFunctionSpace(mesh, "Lagrange", 1)
-
+    
 Note that :py:class:`VectorFunctionSpace
 <dolfin.functions.functionspace.VectorFunctionSpace>` creates a
 function space of vector fields. The dimension of the vector field
@@ -202,9 +210,17 @@ The portions of the boundary on which Dirichlet boundary conditions
 will be applied are now defined::
 
     # Mark boundary subdomians
-    left =  CompiledSubDomain("near(x[0], side) && on_boundary", side = 0.0)
-    right = CompiledSubDomain("near(x[0], side) && on_boundary", side = 1.0)
-
+    class BoundaryMarker(SubDomain):
+        def __init__(self, side):
+            self.side = side
+            super().__init__()
+    
+        def inside(self, x, on_boundary):
+            return np.isclose(x[:, 0], side) and on_boundary
+    
+    left = BoundaryMarker(0.0)
+    right = BoundaryMarker(1.0)
+    
 The boundary subdomain ``left`` corresponds to the part of the
 boundary on which :math:`x=0` and the boundary subdomain ``right``
 corresponds to the part of the boundary on which :math:`x=1`. Note
@@ -224,7 +240,7 @@ The Dirichlet boundary values are defined using compiled expressions::
                     "scale*(y0 + (x[1] - y0)*cos(theta) - (x[2] - z0)*sin(theta) - x[1])",
                     "scale*(z0 + (x[1] - y0)*sin(theta) + (x[2] - z0)*cos(theta) - x[2])"),
                     scale = 0.5, y0 = 0.5, z0 = 0.5, theta = pi/3, degree=2)
-
+    
 Note the use of setting named parameters in the :py:class:`Expression
 <dolfin.functions.expression.Expression>` for ``r``.
 
@@ -236,7 +252,7 @@ Dirichlet boundary::
     bcl = DirichletBC(V, c, left)
     bcr = DirichletBC(V, r, right)
     bcs = [bcl, bcr]
-
+    
 The Dirichlet (essential) boundary conditions are constraints on the
 function space :math:`V`. The function space is therefore required as
 an argument to :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`.
@@ -254,7 +270,7 @@ declared for the body force (``B``) and traction (``T``) terms::
     u  = Function(V)                 # Displacement from previous iteration
     B  = Constant((0.0, -0.5, 0.0))  # Body force per unit volume
     T  = Constant((0.1,  0.0, 0.0))  # Traction force on the boundary
-
+    
 In place of :py:class:`Constant <dolfin.functions.constant.Constant>`,
 it is also possible to use ``as_vector``, e.g.  ``B = as_vector( [0.0,
 -0.5, 0.0] )``. The advantage of Constant is that its values can be
@@ -270,24 +286,24 @@ are defined using UFL syntax::
     I = Identity(d)             # Identity tensor
     F = I + grad(u)             # Deformation gradient
     C = F.T*F                   # Right Cauchy-Green tensor
-
+    
     # Invariants of deformation tensors
     Ic = tr(C)
     J  = det(F)
-
+    
 Next, the material parameters are set and the strain energy density
 and the total potential energy are defined, again using UFL syntax::
 
     # Elasticity parameters
     E, nu = 10.0, 0.3
     mu, lmbda = Constant(E/(2*(1 + nu))), Constant(E*nu/((1 + nu)*(1 - 2*nu)))
-
+    
     # Stored strain energy density (compressible neo-Hookean model)
     psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
-
+    
     # Total potential energy
     Pi = psi*dx - dot(B, u)*dx - dot(T, u)*ds
-
+    
 Just as for the body force and traction vectors, :py:class:`Constant
 <dolfin.functions.constant.Constant>` has been used for the model
 parameters ``mu`` and ``lmbda`` to avoid re-generation of C++ code
@@ -301,24 +317,25 @@ Directional derivatives are now computed of :math:`\Pi` and :math:`L`
 
     # Compute first variation of Pi (directional derivative about u in the direction of v)
     F = derivative(Pi, u, v)
-
+    
     # Compute Jacobian of F
     J = derivative(F, u, du)
-
+    
 The complete variational problem can now be solved by a single call to
 :py:func:`solve <dolfin.fem.solving.solve>`::
 
     # Solve variational problem
     solve(F == 0, u, bcs, J=J)
-
+    
 Finally, the solution ``u`` is saved to a file named
 ``displacement.pvd`` in VTK format, and the deformed mesh is plotted
 to the screen::
 
     # Save solution in VTK format
-    file = File("displacement.pvd");
-    file << u;
-
+    with XDMFFile(mesh.mpi_comm(), "u.xdmf") as ufile_xdmf:
+        ufile_xdmf.write(u)
+    
     # Plot solution
     plot(u)
     plt.show()
+    plt.savefig("plot.pdf")

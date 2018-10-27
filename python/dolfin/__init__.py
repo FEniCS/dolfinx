@@ -54,7 +54,7 @@ from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, CellType, Cell, Facet,
                        FaceRange, EdgeRange, VertexRange, EntityRange,
                        SubDomain, MeshQuality, PeriodicBoundaryComputation)
 
-from .cpp.nls import (NonlinearProblem, NewtonSolver, OptimisationProblem)
+from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC

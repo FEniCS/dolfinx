@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2008 Garth N. Wells
+// Copyright (C) 2005-2018 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -11,6 +11,7 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>
 #include <string>
@@ -36,12 +37,18 @@ parameter::Parameters dolfin::nls::NewtonSolver::default_parameters()
 dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
     : common::Variable("Newton solver"), _newton_iteration(0),
       _krylov_iterations(0), _relaxation_parameter(1.0), _residual(0.0),
-      _residual0(0.0), _matA(new la::PETScMatrix()),
-      _matP(new la::PETScMatrix()), _dx(new la::PETScVector()),
-      _b(new la::PETScVector()), _mpi_comm(comm)
+      _residual0(0.0), _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
+
+  // Create linear solver if not already created. Default to LU.
+  _solver = std::make_shared<la::PETScKrylovSolver>(comm);
+  _solver->set_options_prefix("nls_solve_");
+  la::PETScOptions::set("nls_solve_ksp_type", "preonly");
+  la::PETScOptions::set("nls_solve_pc_type", "lu");
+  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  _solver->set_from_options();
 }
 //-----------------------------------------------------------------------------
 dolfin::nls::NewtonSolver::~NewtonSolver()
@@ -53,36 +60,29 @@ std::pair<std::size_t, bool>
 dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                  la::PETScVector& x)
 {
-  assert(_matA);
-  assert(_b);
-  assert(_dx);
-
   // Extract parameters
   const std::string convergence_criterion = parameters["convergence_criterion"];
   const std::size_t maxiter = parameters["maximum_iterations"];
   if (parameters["relaxation_parameter"].is_set())
     set_relaxation_parameter(parameters["relaxation_parameter"]);
 
-  // Create linear solver if not already created
-  if (!_solver)
-    _solver = std::make_shared<la::PETScKrylovSolver>(x.mpi_comm());
-  assert(_solver);
-
-  // Set parameters for linear solver
-  // _solver->update_parameters(parameters(_solver->parameter_type()));
-
   // Reset iteration counts
   _newton_iteration = 0;
   _krylov_iterations = 0;
 
-  // Compute F(u)
-  nonlinear_problem.form(*_matA, *_matP, *_b, x);
-  nonlinear_problem.F(*_b, x);
+  // Compute F(u) (assembled into _b)
+  la::PETScMatrix* A = nullptr;
+  la::PETScMatrix* P = nullptr;
+  la::PETScVector* b = nullptr;
+
+  nonlinear_problem.form(x);
+  b = nonlinear_problem.F(x);
+  assert(b);
 
   // Check convergence
   bool newton_converged = false;
   if (convergence_criterion == "residual")
-    newton_converged = converged(*_b, nonlinear_problem, 0);
+    newton_converged = converged(*b, nonlinear_problem, 0);
   else if (convergence_criterion == "incremental")
   {
     // We need to do at least one Newton step with the ||dx||-stopping
@@ -102,35 +102,41 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   while (!newton_converged && _newton_iteration < maxiter)
   {
     // Compute Jacobian
-    nonlinear_problem.J(*_matA, x);
-    nonlinear_problem.J_pc(*_matP, x);
+    A = nonlinear_problem.J(x);
+    assert(A);
+    P = nonlinear_problem.P(x);
 
-    // Setup (linear) solver (including set operators)
-    solver_setup(_matA, _matP, nonlinear_problem, _newton_iteration);
+    if (!_dx)
+      _dx = std::make_unique<la::PETScVector>(A->init_vector(1));
 
-    // Perform linear solve and update total number of Krylov
-    // iterations
-    if (!_dx->empty())
-      _dx->set(0.0);
-    _krylov_iterations += _solver->solve(*_dx, *_b);
+    // Set operators
+    assert(_solver);
+    if (P)
+      _solver->set_operators(*A, *P);
+    else
+      _solver->set_operator(*A);
+
+    // Perform linear solve and update total number of Krylov iterations
+    _dx->set(0.0);
+    _krylov_iterations += _solver->solve(*_dx, *b);
 
     // Update solution
     update_solution(x, *_dx, _relaxation_parameter, nonlinear_problem,
                     _newton_iteration);
 
     // Increment iteration count
-    _newton_iteration++;
+    ++_newton_iteration;
 
     // FIXME: This step is not needed if residual is based on dx and
     //        this has converged.
     // FIXME: But, this function call may update internal variable, etc.
     // Compute F
-    nonlinear_problem.form(*_matA, *_matP, *_b, x);
-    nonlinear_problem.F(*_b, x);
+    nonlinear_problem.form(x);
+    b = nonlinear_problem.F(x);
 
     // Test for convergence
     if (convergence_criterion == "residual")
-      newton_converged = converged(*_b, nonlinear_problem, _newton_iteration);
+      newton_converged = converged(*b, nonlinear_problem, _newton_iteration);
     else if (convergence_criterion == "incremental")
     {
       // Subtract 1 to make sure that the initial residual0 is
@@ -139,13 +145,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
           = converged(*_dx, nonlinear_problem, _newton_iteration - 1);
     }
     else
-    {
-      log::dolfin_error(
-          "NewtonSolver.cpp", "check for convergence",
-          "The convergence criterion %s is unknown, known criteria "
-          "are 'residual' or 'incremental'",
-          convergence_criterion.c_str());
-    }
+      throw std::runtime_error("Unknown convergence criterion string.");
   }
 
   if (newton_converged)
@@ -216,10 +216,10 @@ bool dolfin::nls::NewtonSolver::converged(
   // Output iteration number and residual
   if (report && _mpi_comm.rank() == 0)
   {
-    log::info(
-        "Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = %.3e (tol "
-        "= %.3e)",
-        newton_iteration, _residual, atol, relative_residual, rtol);
+    log::info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = "
+              "%.3e (tol "
+              "= %.3e)",
+              newton_iteration, _residual, atol, relative_residual, rtol);
   }
 
   // Return true if convergence criterion is met
@@ -227,21 +227,6 @@ bool dolfin::nls::NewtonSolver::converged(
     return true;
   else
     return false;
-}
-//-----------------------------------------------------------------------------
-void dolfin::nls::NewtonSolver::solver_setup(
-    std::shared_ptr<const la::PETScMatrix> A,
-    std::shared_ptr<const la::PETScMatrix> P,
-    const NonlinearProblem& nonlinear_problem, std::size_t interation)
-{
-  // Update Jacobian in linear solver (and preconditioner if given)
-  if (_matP->empty())
-  {
-    _solver->set_operator(*A);
-    log::log(TRACE, "NewtonSolver: using Jacobian as preconditioner matrix");
-  }
-  else
-    _solver->set_operators(*A, *P);
 }
 //-----------------------------------------------------------------------------
 void dolfin::nls::NewtonSolver::update_solution(
