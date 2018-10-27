@@ -47,7 +47,9 @@ dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
   _solver->set_options_prefix("nls_solve_");
   la::PETScOptions::set("nls_solve_ksp_type", "preonly");
   la::PETScOptions::set("nls_solve_pc_type", "lu");
-  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  // la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  // la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+  // la::PETScOptions::set("nls_solve_ksp_view");
   _solver->set_from_options();
 }
 //-----------------------------------------------------------------------------
@@ -61,8 +63,11 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                  la::PETScVector& x)
 {
   // Extract parameters
-  const std::string convergence_criterion = parameters["convergence_criterion"];
+  // const std::string convergence_criterion =
+  // parameters["convergence_criterion"];
+  const std::string convergence_criterion = "incremental";
   const std::size_t maxiter = parameters["maximum_iterations"];
+  // const std::size_t maxiter = 1;
   if (parameters["relaxation_parameter"].is_set())
     set_relaxation_parameter(parameters["relaxation_parameter"]);
 
@@ -75,9 +80,12 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   la::PETScMatrix* P = nullptr;
   la::PETScVector* b = nullptr;
 
+  x.update_ghosts();
   nonlinear_problem.form(x);
   b = nonlinear_problem.F(x);
   assert(b);
+  // double b_norm0 = b->norm(la::Norm::l2);
+  // std::cout << "b0 norm: " << b_norm0 << std::endl;
 
   // Check convergence
   bool newton_converged = false;
@@ -102,9 +110,15 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   while (!newton_converged && _newton_iteration < maxiter)
   {
     // Compute Jacobian
+    // double x_norm0 = x.norm(la::Norm::l2);
+    // std::cout << "x0 norm: " << x_norm0 << std::endl;
+
     A = nonlinear_problem.J(x);
     assert(A);
     P = nonlinear_problem.P(x);
+
+    // double A_norm = A->norm(la::Norm::frobenius);
+    // std::cout << "A norm: " << A_norm << std::endl;
 
     if (!_dx)
       _dx = std::make_unique<la::PETScVector>(A->init_vector(1));
@@ -117,12 +131,17 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
       _solver->set_operator(*A);
 
     // Perform linear solve and update total number of Krylov iterations
-    _dx->set(0.0);
+    //_dx->set(0.0);
     _krylov_iterations += _solver->solve(*_dx, *b);
+    //_dx->apply();
+
+    // double dx_norm = _dx->norm(la::Norm::l2);
+    // std::cout << "dx norm: " << dx_norm << std::endl;
 
     // Update solution
     update_solution(x, *_dx, _relaxation_parameter, nonlinear_problem,
                     _newton_iteration);
+    x.update_ghosts();
 
     // Increment iteration count
     ++_newton_iteration;
@@ -131,8 +150,16 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     //        this has converged.
     // FIXME: But, this function call may update internal variable, etc.
     // Compute F
+
+    // x.update_ghosts();
+    // VecView(x.vec(), PETSC_VIEWER_STDOUT_WORLD);
+    // double x_norm1 = x.norm(la::Norm::l2);
+    // std::cout << "x1 norm: " << x_norm1 << std::endl;
     nonlinear_problem.form(x);
     b = nonlinear_problem.F(x);
+
+    // double b_norm1 = b->norm(la::Norm::l2);
+    // std::cout << "b1 norm: " << b_norm1 << std::endl;
 
     // Test for convergence
     if (convergence_criterion == "residual")
@@ -159,7 +186,9 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   }
   else
   {
-    const bool error_on_nonconvergence = parameters["error_on_nonconvergence"];
+    // const bool error_on_nonconvergence =
+    // parameters["error_on_nonconvergence"];
+    const bool error_on_nonconvergence = false;
     if (error_on_nonconvergence)
     {
       if (_newton_iteration == maxiter)
@@ -200,7 +229,8 @@ bool dolfin::nls::NewtonSolver::converged(
     const la::PETScVector& r, const NonlinearProblem& nonlinear_problem,
     std::size_t newton_iteration)
 {
-  const double rtol = parameters["relative_tolerance"];
+  //const double rtol = parameters["relative_tolerance"];
+  const double rtol = 1.0e-6;
   const double atol = parameters["absolute_tolerance"];
   const bool report = parameters["report"];
 

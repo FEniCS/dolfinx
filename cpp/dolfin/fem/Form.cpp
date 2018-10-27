@@ -270,6 +270,7 @@ void Form::tabulate_tensor(
   {
     if (enabled_coefficients[i])
     {
+      // FIXME: Do not create a shared_ptr inside what is a hot loop
       std::shared_ptr<const function::GenericFunction> coefficient
           = _coefficients.get(i);
       const FiniteElement& element = _coefficients.element(i);

@@ -65,17 +65,18 @@ void fem::assemble_ghosted(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
 {
-  // FIXME: should zeroing be an option?
-  // Zero vector
-  VecSet(b, 0.0);
 
   Vec b_local;
   VecGhostGetLocalForm(b, &b_local);
+  // FIXME: should zeroing be an option?
+  // Zero vector
+  // VecSet(b_local, 0.0);
   fem::assemble_local(b_local, L, a, bcs);
 
   // Restore ghosted form and update local (owned) entries that are
   // ghosts on other processes
   VecGhostRestoreLocalForm(b, &b_local);
+
   VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 
@@ -95,6 +96,8 @@ void fem::assemble_local(
   PetscScalar* b_array;
   VecGetArray(b, &b_array);
   Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(b_array, size);
+
+  bvec.setZero();
 
   //  Assemble and then modify for Dirichlet bcs  (b  <- b - A x_(bc))
   assemble_eigen(bvec, L, a, bcs);
