@@ -23,8 +23,8 @@ namespace fem
 {
 class FiniteElement;
 
-/// Storage for the coefficients of a Form consisting of GenericFunctions and
-/// the Elements they are defined on
+/// Storage for the coefficients of a Form consisting of
+/// GenericFunctions and the Elements they are defined on
 class FormCoefficients
 {
 public:
@@ -43,7 +43,7 @@ public:
            std::shared_ptr<const function::GenericFunction> coefficient);
 
   /// Get the GenericFunction coefficient i
-  std::shared_ptr<const function::GenericFunction> get(std::size_t i) const;
+  const function::GenericFunction* get(std::size_t i) const;
 
   /// Get the element for coefficient i
   const fem::FiniteElement& element(std::size_t i) const;

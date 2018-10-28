@@ -43,7 +43,7 @@ UFC::UFC(const Form& a) : dolfin_form(a)
   std::vector<std::size_t> n = {0};
   for (std::size_t i = 0; i < num_coeffs; ++i)
   {
-    const auto& element = a.coeffs().element(i);
+    const fem::FiniteElement& element = a.coeffs().element(i);
     n.push_back(n.back() + element.space_dimension());
   }
 
@@ -71,8 +71,8 @@ void UFC::update(
   {
     if (!enabled_coefficients[i])
       continue;
-    const auto coefficient = coefficients.get(i);
-    const auto& element = coefficients.element(i);
+    const function::GenericFunction* coefficient = coefficients.get(i);
+    const fem::FiniteElement& element = coefficients.element(i);
     coefficient->restrict(w_pointer[i], element, c, coordinate_dofs);
   }
 }
@@ -91,8 +91,8 @@ void UFC::update(
   {
     if (!enabled_coefficients[i])
       continue;
-    const auto coefficient = coefficients.get(i);
-    const auto& element = coefficients.element(i);
+    const function::GenericFunction* coefficient = coefficients.get(i);
+    const fem::FiniteElement& element = coefficients.element(i);
     const std::size_t offset = element.space_dimension();
     coefficient->restrict(macro_w_pointer[i], element, c0, coordinate_dofs0);
     coefficient->restrict(macro_w_pointer[i] + offset, element, c1,

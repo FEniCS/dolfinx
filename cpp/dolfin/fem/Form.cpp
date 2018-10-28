@@ -179,7 +179,6 @@ std::size_t Form::max_element_tensor_size() const
 //-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
 {
-  assert(mesh);
   _mesh = mesh;
 }
 //-----------------------------------------------------------------------------
@@ -253,8 +252,8 @@ void Form::set_vertex_domains(
 }
 //-----------------------------------------------------------------------------
 void Form::tabulate_tensor(
-    PetscScalar* A, mesh::Cell cell,
-    Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
+    PetscScalar* A, const mesh::Cell& cell,
+    const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
 {
   // Switch integral based on domain from dx MeshFunction
   std::uint32_t idx = 0;
@@ -270,9 +269,7 @@ void Form::tabulate_tensor(
   {
     if (enabled_coefficients[i])
     {
-      // FIXME: Do not create a shared_ptr inside what is a hot loop
-      std::shared_ptr<const function::GenericFunction> coefficient
-          = _coefficients.get(i);
+      const function::GenericFunction* coefficient = _coefficients.get(i);
       const FiniteElement& element = _coefficients.element(i);
       coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
     }
@@ -289,10 +286,9 @@ void Form::init_coeff_scratch_space()
 {
   const std::size_t num_coeffs = _coefficients.size();
 
-  // Calculate space needed for each coefficient's values
-  // and create a vector of offsets from zero.
-  // Allowing double space here, so that the same scratch
-  // space can be also used for "macro" elements (two
+  // Calculate space needed for each coefficient's values and create a
+  // vector of offsets from zero. Allowing double space here, so that
+  // the same scratch space can be also used for "macro" elements (two
   // neighbouring cells) for interior facet integrals.
   std::vector<std::uint32_t> n = {0};
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
@@ -300,9 +296,10 @@ void Form::init_coeff_scratch_space()
     const FiniteElement& element = _coefficients.element(i);
     n.push_back(n.back() + element.space_dimension() * 2);
   }
-  // Allocate memory capable of storing all coefficient values
-  // in a contiguous block
+  // Allocate memory capable of storing all coefficient values in a
+  // contiguous block
   _w.resize(n.back());
+
   // Create pointers into _w for each coefficient
   _wpointer.resize(num_coeffs);
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
