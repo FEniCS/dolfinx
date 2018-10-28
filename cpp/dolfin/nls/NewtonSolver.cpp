@@ -6,7 +6,6 @@
 
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
-#include <cmath>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/la/PETScKrylovSolver.h>
@@ -19,7 +18,7 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-parameter::Parameters dolfin::nls::NewtonSolver::default_parameters()
+parameter::Parameters nls::NewtonSolver::default_parameters()
 {
   parameter::Parameters p("newton_solver");
 
@@ -34,7 +33,7 @@ parameter::Parameters dolfin::nls::NewtonSolver::default_parameters()
   return p;
 }
 //-----------------------------------------------------------------------------
-dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
+nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
     : common::Variable("Newton solver"), _krylov_iterations(0),
       _relaxation_parameter(1.0), _residual(0.0), _residual0(0.0),
       _mpi_comm(comm)
@@ -53,7 +52,7 @@ dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
   _solver->set_from_options();
 }
 //-----------------------------------------------------------------------------
-dolfin::nls::NewtonSolver::~NewtonSolver()
+nls::NewtonSolver::~NewtonSolver()
 {
   // Do nothing
 }
@@ -73,16 +72,13 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   _krylov_iterations = 0;
 
   // Compute F(u) (assembled into _b)
-  la::PETScMatrix* A = nullptr;
-  la::PETScMatrix* P = nullptr;
+  la::PETScMatrix *A(nullptr), *P(nullptr);
   la::PETScVector* b = nullptr;
 
   x.update_ghosts();
   nonlinear_problem.form(x);
   b = nonlinear_problem.F(x);
   assert(b);
-  // double b_norm0 = b->norm(la::Norm::l2);
-  // std::cout << "b0 norm: " << b_norm0 << std::endl;
 
   // Check convergence
   bool newton_converged = false;
@@ -104,22 +100,17 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   }
 
   // Start iterations
-  while (!newton_converged && newton_iteration < maxiter)
+  while (!newton_converged and newton_iteration < maxiter)
   {
     // Compute Jacobian
-    // double x_norm0 = x.norm(la::Norm::l2);
-    // std::cout << "x0 norm: " << x_norm0 << std::endl;
-
     A = nonlinear_problem.J(x);
     assert(A);
     P = nonlinear_problem.P(x);
 
-    // double A_norm = A->norm(la::Norm::frobenius);
-    // std::cout << "A norm: " << A_norm << std::endl;
-
     if (!_dx)
       _dx = std::make_unique<la::PETScVector>(A->init_vector(1));
 
+    // FIXME: check that this is efficient if A and/or P are unchanged
     // Set operators
     assert(_solver);
     if (P)
@@ -128,12 +119,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
       _solver->set_operator(*A);
 
     // Perform linear solve and update total number of Krylov iterations
-    //_dx->set(0.0);
     _krylov_iterations += _solver->solve(*_dx, *b);
-    //_dx->apply();
-
-    // double dx_norm = _dx->norm(la::Norm::l2);
-    // std::cout << "dx norm: " << dx_norm << std::endl;
 
     // Update solution
     update_solution(x, *_dx, _relaxation_parameter, nonlinear_problem,
@@ -147,16 +133,8 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     //        this has converged.
     // FIXME: But, this function call may update internal variable, etc.
     // Compute F
-
-    // x.update_ghosts();
-    // VecView(x.vec(), PETSC_VIEWER_STDOUT_WORLD);
-    // double x_norm1 = x.norm(la::Norm::l2);
-    // std::cout << "x1 norm: " << x_norm1 << std::endl;
     nonlinear_problem.form(x);
     b = nonlinear_problem.F(x);
-
-    // double b_norm1 = b->norm(la::Norm::l2);
-    // std::cout << "b1 norm: " << b_norm1 << std::endl;
 
     // Test for convergence
     if (convergence_criterion == "residual")
@@ -203,23 +181,25 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   return std::make_pair(newton_iteration, newton_converged);
 }
 //-----------------------------------------------------------------------------
-int dolfin::nls::NewtonSolver::krylov_iterations() const
+int nls::NewtonSolver::krylov_iterations() const { return _krylov_iterations; }
+//-----------------------------------------------------------------------------
+double nls::NewtonSolver::residual() const { return _residual; }
+//-----------------------------------------------------------------------------
+double nls::NewtonSolver::residual0() const { return _residual0; }
+//-----------------------------------------------------------------------------
+void nls::NewtonSolver::set_relaxation_parameter(double relaxation_parameter)
 {
-  return _krylov_iterations;
+  _relaxation_parameter = relaxation_parameter;
 }
 //-----------------------------------------------------------------------------
-double dolfin::nls::NewtonSolver::residual() const { return _residual; }
-//-----------------------------------------------------------------------------
-double dolfin::nls::NewtonSolver::residual0() const { return _residual0; }
-//-----------------------------------------------------------------------------
-double dolfin::nls::NewtonSolver::relative_residual() const
+double nls::NewtonSolver::get_relaxation_parameter() const
 {
-  return _residual / _residual0;
+  return _relaxation_parameter;
 }
 //-----------------------------------------------------------------------------
-bool dolfin::nls::NewtonSolver::converged(
-    const la::PETScVector& r, const NonlinearProblem& nonlinear_problem,
-    std::size_t newton_iteration)
+bool nls::NewtonSolver::converged(const la::PETScVector& r,
+                                  const NonlinearProblem& nonlinear_problem,
+                                  std::size_t newton_iteration)
 {
   const double rtol = parameters["relative_tolerance"];
   const double atol = parameters["absolute_tolerance"];
@@ -244,13 +224,13 @@ bool dolfin::nls::NewtonSolver::converged(
   }
 
   // Return true if convergence criterion is met
-  if (relative_residual < rtol || _residual < atol)
+  if (relative_residual < rtol or _residual < atol)
     return true;
   else
     return false;
 }
 //-----------------------------------------------------------------------------
-void dolfin::nls::NewtonSolver::update_solution(
+void nls::NewtonSolver::update_solution(
     la::PETScVector& x, const la::PETScVector& dx, double relaxation_parameter,
     const NonlinearProblem& nonlinear_problem, std::size_t interation)
 {

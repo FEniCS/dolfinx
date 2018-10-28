@@ -16,9 +16,9 @@ namespace dolfin
 
 namespace la
 {
+class PETScKrylovSolver;
 class PETScMatrix;
 class PETScVector;
-class PETScKrylovSolver;
 } // namespace la
 
 namespace nls
@@ -72,12 +72,6 @@ public:
   ///         Initial residual.
   double residual0() const;
 
-  /// Return current relative residual
-  ///
-  /// @returns double
-  ///       Current relative residual.
-  double relative_residual() const;
-
   /// Default parameter values
   ///
   /// @returns _Parameters_
@@ -90,16 +84,13 @@ public:
   ///
   /// @param relaxation_parameter (double)
   ///         Relaxation parameter value.
-  void set_relaxation_parameter(double relaxation_parameter)
-  {
-    _relaxation_parameter = relaxation_parameter;
-  }
+  void set_relaxation_parameter(double relaxation_parameter);
 
   /// Get relaxation parameter
   ///
   /// @returns    double
   ///         Relaxation parameter value.
-  double get_relaxation_parameter() { return _relaxation_parameter; }
+  double get_relaxation_parameter() const;
 
 protected:
   /// Convergence test. It may be overloaded using virtual inheritance and
