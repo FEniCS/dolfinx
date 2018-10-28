@@ -264,8 +264,8 @@ It is convenient to introduce an expression for :math:`\mu_{n+\theta}`::
 which is then used in the definition of the variational forms::
 
     # Weak statement of the equations
-    L0 = c*q*dx - c0*q*dx + dt*inner(grad(mu_mid), grad(q))*dx
-    L1 = mu*v*dx - dfdc*v*dx - lmbda*inner(grad(c), grad(v))*dx
+    L0 = inner(c, q)*dx - inner(c0, q)*dx + dt*inner(grad(mu_mid), grad(q))*dx
+    L1 = inner(mu, v)*dx - inner(dfdc, v)*dx - lmbda*inner(grad(c), grad(v))*dx
     L = L0 + L1
 
 This is a statement of the time-discrete equations presented as part of
