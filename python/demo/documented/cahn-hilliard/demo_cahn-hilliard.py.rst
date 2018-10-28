@@ -235,7 +235,6 @@ into a finite element space::
     # Create intial conditions and interpolate
     u_init = InitialConditions(degree=1)
     u.interpolate(u_init)
-    u0.interpolate(u_init)
 
 The first line creates an object of type ``InitialConditions``.  The
 following two lines make ``u`` and ``u0`` interpolants of ``u_init``
@@ -317,10 +316,12 @@ a terminal time :math:`T` is reached::
     # Step in time
     t = 0.0
     T = 50*dt
+    u.vector().vec().copy(result=u0.vector().vec())
+    u0.vector().update_ghosts()
     while (t < T):
         t += dt
-        u0.vector().vec()[:] = u.vector().vec()
         solver.solve(problem, u.vector())
+        u.vector().vec().copy(result=u0.vector().vec())
         file.write(u.sub(0), t)
 
 The string ``"compressed"`` indicates that the output data should be
