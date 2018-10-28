@@ -16,9 +16,9 @@ namespace dolfin
 
 namespace la
 {
+class PETScKrylovSolver;
 class PETScMatrix;
 class PETScVector;
-class PETScKrylovSolver;
 } // namespace la
 
 namespace nls
@@ -50,21 +50,15 @@ public:
   /// @returns    std::pair<std::size_t, bool>
   ///         Pair of number of Newton iterations, and whether
   ///         iteration converged)
-  std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
-                                     la::PETScVector& x);
-
-  /// Return current Newton iteration number
-  ///
-  /// @returns     std::size_t
-  ///         The iteration number.
-  std::size_t iteration() const;
+  std::pair<int, bool> solve(NonlinearProblem& nonlinear_function,
+                             la::PETScVector& x);
 
   /// Return number of Krylov iterations elapsed since
   /// solve started
   ///
   /// @returns    std::size_t
   ///         The number of iterations.
-  std::size_t krylov_iterations() const;
+  int krylov_iterations() const;
 
   /// Return current residual
   ///
@@ -78,12 +72,6 @@ public:
   ///         Initial residual.
   double residual0() const;
 
-  /// Return current relative residual
-  ///
-  /// @returns double
-  ///       Current relative residual.
-  double relative_residual() const;
-
   /// Default parameter values
   ///
   /// @returns _Parameters_
@@ -96,16 +84,13 @@ public:
   ///
   /// @param relaxation_parameter (double)
   ///         Relaxation parameter value.
-  void set_relaxation_parameter(double relaxation_parameter)
-  {
-    _relaxation_parameter = relaxation_parameter;
-  }
+  void set_relaxation_parameter(double relaxation_parameter);
 
   /// Get relaxation parameter
   ///
   /// @returns    double
   ///         Relaxation parameter value.
-  double get_relaxation_parameter() { return _relaxation_parameter; }
+  double get_relaxation_parameter() const;
 
 protected:
   /// Convergence test. It may be overloaded using virtual inheritance and
@@ -145,11 +130,8 @@ protected:
                                std::size_t iteration);
 
 private:
-  // Current number of Newton iterations
-  std::size_t _newton_iteration;
-
   // Accumulated number of Krylov iterations since solve began
-  std::size_t _krylov_iterations;
+  int _krylov_iterations;
 
   // Relaxation parameter
   double _relaxation_parameter;

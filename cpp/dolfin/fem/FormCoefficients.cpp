@@ -35,6 +35,7 @@ FormCoefficients::FormCoefficients(
     : _elements(coefficient_elements),
       _coefficients(coefficient_elements.size())
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::size_t FormCoefficients::size() const { return _coefficients.size(); }
@@ -50,23 +51,23 @@ void FormCoefficients::set(
   // Check value_rank and value_size of GenericFunction match those of
   // FiniteElement i.
 
-  const std::size_t r = coefficient->value_rank();
-  const std::size_t fe_r = _elements[i].value_rank();
-  if (fe_r != r)
+  const std::size_t value_rank = coefficient->value_rank();
+  const std::size_t value_rank_fe = _elements[i].value_rank();
+  if (value_rank_fe != value_rank)
   {
     log::dolfin_error(
         "FormCoefficients.h", "set coefficient",
         "Invalid value rank for coefficient %d (got %d but expecting %d). "
         "You might have forgotten to specify the value rank correctly in an "
         "Expression subclass",
-        i, r, fe_r);
+        i, value_rank, value_rank_fe);
   }
 
-  for (std::size_t j = 0; j < r; ++j)
+  for (std::size_t j = 0; j < value_rank; ++j)
   {
     const std::size_t dim = coefficient->value_dimension(j);
-    const std::size_t fe_dim = _elements[i].value_dimension(j);
-    if (dim != fe_dim)
+    const std::size_t dim_fe = _elements[i].value_dimension(j);
+    if (dim != dim_fe)
     {
       log::dolfin_error(
           "FormCoefficients.h", "set coefficient",
@@ -74,16 +75,15 @@ void FormCoefficients::set(
           "but expecting %d). "
           "You might have forgotten to specify the value dimension "
           "correctly in an Expression subclass ",
-          j, i, dim, fe_dim);
+          j, i, dim, dim_fe);
     }
   }
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const function::GenericFunction>
-FormCoefficients::get(std::size_t i) const
+const function::GenericFunction* FormCoefficients::get(std::size_t i) const
 {
   assert(i < _coefficients.size());
-  return _coefficients[i];
+  return _coefficients[i].get();
 }
 //-----------------------------------------------------------------------------
 const fem::FiniteElement& FormCoefficients::element(std::size_t i) const

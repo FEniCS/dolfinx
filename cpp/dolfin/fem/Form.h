@@ -268,9 +268,9 @@ public:
   /// @param coordinate_dofs
   ///    Coordinates of the cell
   ///
-  void
-  tabulate_tensor(PetscScalar* A, mesh::Cell cell,
-                  Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
+  void tabulate_tensor(
+      PetscScalar* A, const mesh::Cell& cell,
+      const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
 
 private:
   // Integrals associated with the Form
