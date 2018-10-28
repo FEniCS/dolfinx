@@ -53,12 +53,6 @@ public:
   std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
                                      la::PETScVector& x);
 
-  /// Return current Newton iteration number
-  ///
-  /// @returns     std::size_t
-  ///         The iteration number.
-  std::size_t iteration() const;
-
   /// Return number of Krylov iterations elapsed since
   /// solve started
   ///

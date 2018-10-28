@@ -47,9 +47,9 @@ dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
   _solver->set_options_prefix("nls_solve_");
   la::PETScOptions::set("nls_solve_ksp_type", "preonly");
   la::PETScOptions::set("nls_solve_pc_type", "lu");
-  // la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
-  // la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
-  // la::PETScOptions::set("nls_solve_ksp_view");
+#if PETSC_HAVE_MUMPS
+  la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
+#endif
   _solver->set_from_options();
 }
 //-----------------------------------------------------------------------------
@@ -63,16 +63,13 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                  la::PETScVector& x)
 {
   // Extract parameters
-  // const std::string convergence_criterion =
-  // parameters["convergence_criterion"];
-  const std::string convergence_criterion = "incremental";
+  const std::string convergence_criterion = parameters["convergence_criterion"];
   const std::size_t maxiter = parameters["maximum_iterations"];
-  // const std::size_t maxiter = 1;
   if (parameters["relaxation_parameter"].is_set())
     set_relaxation_parameter(parameters["relaxation_parameter"]);
 
   // Reset iteration counts
-  _newton_iteration = 0;
+  int _newton_iteration = 0;
   _krylov_iterations = 0;
 
   // Compute F(u) (assembled into _b)
@@ -206,11 +203,6 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   return std::make_pair(_newton_iteration, newton_converged);
 }
 //-----------------------------------------------------------------------------
-std::size_t dolfin::nls::NewtonSolver::iteration() const
-{
-  return _newton_iteration;
-}
-//-----------------------------------------------------------------------------
 std::size_t dolfin::nls::NewtonSolver::krylov_iterations() const
 {
   return _krylov_iterations;
@@ -229,8 +221,7 @@ bool dolfin::nls::NewtonSolver::converged(
     const la::PETScVector& r, const NonlinearProblem& nonlinear_problem,
     std::size_t newton_iteration)
 {
-  //const double rtol = parameters["relative_tolerance"];
-  const double rtol = 1.0e-6;
+  const double rtol = parameters["relative_tolerance"];
   const double atol = parameters["absolute_tolerance"];
   const bool report = parameters["report"];
 
