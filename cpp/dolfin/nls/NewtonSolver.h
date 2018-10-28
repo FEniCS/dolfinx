@@ -50,15 +50,15 @@ public:
   /// @returns    std::pair<std::size_t, bool>
   ///         Pair of number of Newton iterations, and whether
   ///         iteration converged)
-  std::pair<std::size_t, bool> solve(NonlinearProblem& nonlinear_function,
-                                     la::PETScVector& x);
+  std::pair<int, bool> solve(NonlinearProblem& nonlinear_function,
+                             la::PETScVector& x);
 
   /// Return number of Krylov iterations elapsed since
   /// solve started
   ///
   /// @returns    std::size_t
   ///         The number of iterations.
-  std::size_t krylov_iterations() const;
+  int krylov_iterations() const;
 
   /// Return current residual
   ///
@@ -139,11 +139,8 @@ protected:
                                std::size_t iteration);
 
 private:
-  // Current number of Newton iterations
-  std::size_t _newton_iteration;
-
   // Accumulated number of Krylov iterations since solve began
-  std::size_t _krylov_iterations;
+  int _krylov_iterations;
 
   // Relaxation parameter
   double _relaxation_parameter;

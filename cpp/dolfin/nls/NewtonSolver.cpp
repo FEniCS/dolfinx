@@ -35,9 +35,9 @@ parameter::Parameters dolfin::nls::NewtonSolver::default_parameters()
 }
 //-----------------------------------------------------------------------------
 dolfin::nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : common::Variable("Newton solver"), _newton_iteration(0),
-      _krylov_iterations(0), _relaxation_parameter(1.0), _residual(0.0),
-      _residual0(0.0), _mpi_comm(comm)
+    : common::Variable("Newton solver"), _krylov_iterations(0),
+      _relaxation_parameter(1.0), _residual(0.0), _residual0(0.0),
+      _mpi_comm(comm)
 {
   // Set default parameters
   parameters = default_parameters();
@@ -58,18 +58,18 @@ dolfin::nls::NewtonSolver::~NewtonSolver()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::pair<std::size_t, bool>
+std::pair<int, bool>
 dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
                                  la::PETScVector& x)
 {
   // Extract parameters
   const std::string convergence_criterion = parameters["convergence_criterion"];
-  const std::size_t maxiter = parameters["maximum_iterations"];
+  const int maxiter = parameters["maximum_iterations"];
   if (parameters["relaxation_parameter"].is_set())
     set_relaxation_parameter(parameters["relaxation_parameter"]);
 
   // Reset iteration counts
-  int _newton_iteration = 0;
+  int newton_iteration = 0;
   _krylov_iterations = 0;
 
   // Compute F(u) (assembled into _b)
@@ -104,7 +104,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   }
 
   // Start iterations
-  while (!newton_converged && _newton_iteration < maxiter)
+  while (!newton_converged && newton_iteration < maxiter)
   {
     // Compute Jacobian
     // double x_norm0 = x.norm(la::Norm::l2);
@@ -137,11 +137,11 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
     // Update solution
     update_solution(x, *_dx, _relaxation_parameter, nonlinear_problem,
-                    _newton_iteration);
+                    newton_iteration);
     x.update_ghosts();
 
     // Increment iteration count
-    ++_newton_iteration;
+    ++newton_iteration;
 
     // FIXME: This step is not needed if residual is based on dx and
     //        this has converged.
@@ -160,13 +160,13 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
     // Test for convergence
     if (convergence_criterion == "residual")
-      newton_converged = converged(*b, nonlinear_problem, _newton_iteration);
+      newton_converged = converged(*b, nonlinear_problem, newton_iteration);
     else if (convergence_criterion == "incremental")
     {
       // Subtract 1 to make sure that the initial residual0 is
       // properly set.
       newton_converged
-          = converged(*_dx, nonlinear_problem, _newton_iteration - 1);
+          = converged(*_dx, nonlinear_problem, newton_iteration - 1);
     }
     else
       throw std::runtime_error("Unknown convergence criterion string.");
@@ -178,7 +178,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     {
       log::info("Newton solver finished in %d iterations and %d linear solver "
                 "iterations.",
-                _newton_iteration, _krylov_iterations);
+                newton_iteration, _krylov_iterations);
     }
   }
   else
@@ -188,7 +188,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     const bool error_on_nonconvergence = false;
     if (error_on_nonconvergence)
     {
-      if (_newton_iteration == maxiter)
+      if (newton_iteration == maxiter)
       {
         throw std::runtime_error("Newton solver did not converge because "
                                  "maximum number of iterations reached");
@@ -200,10 +200,10 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
       log::warning("Newton solver did not converge.");
   }
 
-  return std::make_pair(_newton_iteration, newton_converged);
+  return std::make_pair(newton_iteration, newton_converged);
 }
 //-----------------------------------------------------------------------------
-std::size_t dolfin::nls::NewtonSolver::krylov_iterations() const
+int dolfin::nls::NewtonSolver::krylov_iterations() const
 {
   return _krylov_iterations;
 }
