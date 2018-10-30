@@ -19,7 +19,7 @@ from ufl import dx, inner
 def test_assemble_functional():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
 
-    M = dolfin.Constant(1.0) * dx(domain=mesh)
+    M = 1.0 * dx(domain=mesh)
     value = dolfin.fem.assemble(M)
     assert value == pytest.approx(1.0, 1e-12)
     x = dolfin.SpatialCoordinate(mesh)
@@ -33,8 +33,8 @@ def test_basic_assembly():
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
-    a = dolfin.Constant(1.0) * inner(u, v) * dx
-    L = inner(dolfin.Constant(1.0), v) * dx
+    a = 1.0 * inner(u, v) * dx
+    L = inner(1.0, v) * dx
 
     # Initial assembly
     A = dolfin.fem.assemble(a)
@@ -73,7 +73,8 @@ def test_matrix_assembly_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
-    u_bc = dolfin.function.constant.Constant(50.0)
+    u_bc = dolfin.function.Function(V1)
+    u_bc.vector().set(50.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
@@ -81,9 +82,9 @@ def test_matrix_assembly_block():
         V0), dolfin.function.argument.TrialFunction(V1)
     v, q = dolfin.function.argument.TestFunction(
         V0), dolfin.function.argument.TestFunction(V1)
-    f = dolfin.function.constant.Constant(1.0)
-    g = dolfin.function.constant.Constant(-3.0)
-    zero = dolfin.function.constant.Constant(0.0)
+    f = 1.0
+    g = -3.0
+    zero = dolfin.Function(V0)
 
     a00 = inner(u, v) * dx
     a01 = inner(p, v) * dx
@@ -174,8 +175,12 @@ def xtest_assembly_solve_block():
     def boundary(x):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
-    u_bc0 = dolfin.function.constant.Constant(50.0)
-    u_bc1 = dolfin.function.constant.Constant(20.0)
+    u_bc0 = dolfin.function.Function(V0)
+    u_bc0.vector().set(50.0)
+
+    u_bc1 = dolfin.function.Function(V1)
+    u_bc1.vector().set(20.0)
+
     bc0 = dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary)
     bc1 = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)
 
@@ -184,9 +189,9 @@ def xtest_assembly_solve_block():
         V0), dolfin.function.argument.TrialFunction(V1)
     v, q = dolfin.function.argument.TestFunction(
         V0), dolfin.function.argument.TestFunction(V1)
-    f = dolfin.function.constant.Constant(1.0)
-    g = dolfin.function.constant.Constant(-3.0)
-    zero = dolfin.function.constant.Constant(0.0)
+    f = 1.0
+    g = -3.0
+    zero = 0.0
 
     a00 = inner(u, v) * dx
     a01 = zero * inner(p, v) * dx
@@ -247,9 +252,17 @@ def xtest_assembly_solve_block():
     a = inner(u0, v0) * dx + inner(u1, v1) * dx
     L = inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
-    u_bc = dolfin.function.constant.Constant((50.0, 20.0))
-    bc = dolfin.fem.dirichletbc.DirichletBC(W, u_bc, boundary)
-    assembler = dolfin.fem.assembler.Assembler([[a]], [L], [bc])
+    u1_bc = dolfin.function.Function(P0)
+    u1_bc.vector().set(50.0)
+
+    u2_bc = dolfin.function.Function(P1)
+    u2_bc.vector().set(20.0)
+
+    bcs = []
+    bcs.append(dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u1_bc, boundary))
+    bcs.append(dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u2_bc, boundary))
+
+    assembler = dolfin.fem.assembler.Assembler([[a]], [L], bcs)
 
     A2, b2 = assembler.assemble(
         mat_type=dolfin.cpp.fem.Assembler.BlockType.monolithic)
@@ -272,7 +285,7 @@ def xtest_assembly_solve_block():
     assert x2norm == pytest.approx(x0norm, 1.0e-10)
 
     # Old assembler (reference)
-    A3, b3 = dolfin.fem.assembling.assemble_system(a, L, [bc])
+    A3, b3 = dolfin.fem.assembling.assemble_system(a, L, bcs)
     x3 = dolfin.cpp.la.PETScVector(b3)
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())

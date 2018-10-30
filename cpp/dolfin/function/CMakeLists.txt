@@ -1,5 +1,4 @@
 set(HEADERS
-  Constant.h
   dolfin_function.h
   Expression.h
   Function.h
@@ -9,7 +8,6 @@ set(HEADERS
   PARENT_SCOPE)
 
 set(SOURCES
-  Constant.cpp
   Expression.cpp
   Function.cpp
   FunctionSpace.cpp

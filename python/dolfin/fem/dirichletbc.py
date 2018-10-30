@@ -44,11 +44,11 @@ class DirichletBC(cpp.fem.DirichletBC):
 
         # Construct bc value
         if isinstance(value, ufl.Coefficient):
-            _value = value.cpp_object()
+            _value = value._cpp_object
         elif isinstance(value, cpp.function.GenericFunction):
             _value = value
         else:
-            _value = cpp.function.Constant(value)
+            raise NotImplementedError
 
         # Construct domain
         if isinstance(domain, types.FunctionType):

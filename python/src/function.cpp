@@ -6,7 +6,6 @@
 
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/function/Constant.h>
 #include <dolfin/function/Expression.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -128,25 +127,6 @@ void function(py::module& m)
            &dolfin::function::Expression::set_generic_function)
       .def("get_generic_function",
            &dolfin::function::Expression::get_generic_function);
-
-  // dolfin::function::Constant
-  py::class_<dolfin::function::Constant,
-             std::shared_ptr<dolfin::function::Constant>,
-             dolfin::function::Expression>(m, "Constant")
-      .def(py::init<PetscScalar>())
-      .def(py::init<std::vector<PetscScalar>>())
-      .def(py::init<std::vector<std::size_t>, std::vector<PetscScalar>>())
-      .def("values",
-           [](const dolfin::function::Constant& self) {
-             auto v = self.values();
-             return py::array_t<PetscScalar>(v.size(), v.data());
-           })
-      .def("assign",
-           [](dolfin::function::Constant& self,
-              const dolfin::function::Constant& other) { self = other; })
-      .def("assign", [](dolfin::function::Constant& self,
-                        PetscScalar value) { self = value; })
-      .def("str", &dolfin::function::Constant::str);
 
   // dolfin::FacetArea
   py::class_<dolfin::function::FacetArea,

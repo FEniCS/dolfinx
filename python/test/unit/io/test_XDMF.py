@@ -9,7 +9,7 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Constant, Edges, Expression, Facets,
+from dolfin import (MPI, Cells, CellType, Edges, Expression, Facets,
                     FiniteElement, Function, FunctionSpace, MeshEntities,
                     MeshFunction, MeshValueCollection, TensorFunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
@@ -285,8 +285,7 @@ def test_save_2d_vector(tempdir, encoding):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     V = VectorFunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
-    c = Constant((1.0 + (1j if has_petsc_complex else 0), 2.0))
-    u.interpolate(c)
+    u.vector().set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
 
@@ -296,9 +295,7 @@ def test_save_3d_vector(tempdir, encoding):
     filename = os.path.join(tempdir, "u_3Dv.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 1)))
-    A = 1.0 + (1j if has_petsc_complex else 0)
-    c = Constant((1.0 + A, 2.0 + 2 * A, 3.0 + 3 * A))
-    u.interpolate(c)
+    u.vector().set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
 
