@@ -21,8 +21,7 @@ class DirichletBC(cpp.fem.DirichletBC):
             self,
             V: typing.Union[function.FunctionSpace,
                             cpp.function.FunctionSpace],
-            value: typing.Union[ufl.Coefficient, cpp.function.GenericFunction,
-                                list, tuple, float, int],
+            value: typing.Union[ufl.Coefficient, cpp.function.GenericFunction],
             domain: typing.Union[cpp.mesh.SubDomain, types.FunctionType,
                                  typing.Tuple[mesh.MeshValueCollection, int]],
             method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.

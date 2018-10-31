@@ -135,14 +135,11 @@ Now, the Dirichlet boundary condition can be created using the class
 arguments: the function space the boundary condition applies to, the
 value of the boundary condition, and the part of the boundary on which
 the condition applies.  In our example, the function space is
-:math:`V`. The value of the boundary condition :math:`(0.0)` can be
-represented using a :py:class:`Constant
-<dolfin.functions.constant.Constant>` and the Dirichlet boundary is
-defined immediately above. The definition of the Dirichlet boundary
+:math:`V`. The definition of the Dirichlet boundary
 condition then looks as follows::
 
     # Define boundary condition
-    u0 = Constant(0.0)
+    u0 = Expression("0.0", degree=1)
     bc = DirichletBC(V, u0, boundary)
 
 Before we define the conductivity matrix, we create a string

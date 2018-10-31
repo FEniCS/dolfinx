@@ -102,8 +102,9 @@ v = TestFunction(V)
 a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
+u0 = Function(V)
 # Set up boundary condition on inner surface
-bc = DirichletBC(V, (0.0, 0.0, 0.0), boundary)
+bc = DirichletBC(V, u0, boundary)
 
 # Assemble system, applying boundary conditions and preserving
 # symmetry)
