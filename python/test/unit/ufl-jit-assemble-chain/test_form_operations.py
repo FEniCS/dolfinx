@@ -7,7 +7,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import (RectangleMesh, MPI, Point, CellType, FunctionSpace, Constant,
+from dolfin import (RectangleMesh, MPI, Point, CellType, FunctionSpace,
                     TestFunction, TrialFunction, inner, grad, dx, system, lhs, rhs)
 
 
@@ -18,8 +18,8 @@ def test_lhs_rhs_simple():
 
     mesh = RectangleMesh.create(MPI.comm_world, [Point(0, 0), Point(2, 1)], [3, 5], CellType.Type.triangle)
     V = FunctionSpace(mesh, "CG", 1)
-    f = Constant(2.0)
-    g = Constant(3.0)
+    f = 2.0
+    g = 3.0
     v = TestFunction(V)
     u = TrialFunction(V)
 

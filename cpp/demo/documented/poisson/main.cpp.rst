@@ -180,7 +180,7 @@ takes three arguments: the function space the boundary condition
 applies to, the value of the boundary condition, and the part of the
 boundary on which the condition applies. In our example, the function
 space is ``V``, the value of the boundary condition (0.0) can
-represented using a :cpp:class:`Constant`, and the Dirichlet boundary
+represented using a :cpp:class:`Function`, and the Dirichlet boundary
 is defined by the class :cpp:class:`DirichletBoundary` listed
 above. The definition of the Dirichlet boundary condition then looks
 as follows:
@@ -188,7 +188,7 @@ as follows:
 .. code-block:: cpp
 
      // Define boundary condition
-     auto u0 = std::make_shared<function::Constant>(0.0);
+     auto u0 = std::make_shared<function::Function>(V);
      auto boundary = std::make_shared<DirichletBoundary>();
      std::vector<std::shared_ptr<const fem:: DirichletBC>> bc
       = {std::make_shared<fem::DirichletBC>(V, u0, boundary)};

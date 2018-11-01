@@ -237,9 +237,6 @@ public:
   ///         The value.
   void set_value(std::shared_ptr<const function::GenericFunction> g);
 
-  /// Set value to 0.0
-  void homogenize();
-
   /// Return method used for computing Dirichlet dofs
   ///
   /// @return std::string

@@ -138,7 +138,7 @@ the source term :math:`f`::
 The Dirichlet boundary condition is created::
 
     # Define boundary condition
-    u0 = Constant(0.0)
+    u0 = Function(V)
     boundary = DirichletBoundary()
     bc = DirichletBC(V, u0, boundary)
     
@@ -154,9 +154,7 @@ for the average size of cells that share a facet (``h_avg``).  The UFL
 syntax ``('+')`` and ``('-')`` restricts a function to the ``('+')``
 and ``('-')`` sides of a facet, respectively. The unit outward normal
 to cell boundaries (``n``) is created, as is the source term ``f`` and
-the penalty parameter ``alpha``. The penalty parameters is made a
-:py:class:`Constant <dolfin.functions.constant.Constant>` so that it
-can be changed without needing to regenerate code. ::
+the penalty parameter ``alpha``. ::
 
     # Define normal component, mesh size and right-hand side
     h = CellDiameter(mesh)
@@ -165,7 +163,7 @@ can be changed without needing to regenerate code. ::
     f = Source(degree=2)
     
     # Penalty parameter
-    alpha = Constant(8.0)
+    alpha = 8.0
     
 The bilinear and linear forms are defined::
 

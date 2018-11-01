@@ -94,6 +94,8 @@ this. We therefore start by checking that either "PETSc" or "Tpetra"
 subspace method which is suitable for symmetric indefinite problems.
 If not available, costly QMR method is choosen. ::
 
+    import ufl
+
     from dolfin import *
     from dolfin.io import XDMFFile
 
@@ -122,7 +124,7 @@ Next, we define the boundary conditions. ::
         return x[1] > 1.0 - DOLFIN_EPS or x[1] < DOLFIN_EPS
 
     # No-slip boundary condition for velocity
-    noslip = Constant((0.0, 0.0, 0.0))
+    noslip = Expression(("0.0", "0.0", "0.0"), degree=1)
     bc0 = DirichletBC(W.sub(0), noslip, top_bottom)
 
     # Inflow boundary condition for velocity
@@ -138,7 +140,7 @@ formulation of the Stokes equations are defined as follows: ::
     # Define variational problem
     (u, p) = TrialFunctions(W)
     (v, q) = TestFunctions(W)
-    f = Constant((0.0, 0.0, 0.0))
+    f = ufl.as_vector((0.0, 0.0, 0.0))
     a = inner(grad(u), grad(v))*dx + div(v)*p*dx + q*div(u)*dx
     L = inner(f, v)*dx
 

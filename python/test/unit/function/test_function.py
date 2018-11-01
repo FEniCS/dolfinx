@@ -11,12 +11,12 @@ import numpy
 import pytest
 
 import ufl
-from dolfin import (DOLFIN_EPS, MPI, Constant, Expression, Function,
+from dolfin import (DOLFIN_EPS, MPI, Expression, Function,
                     FunctionSpace, Point, TensorFunctionSpace, UnitCubeMesh,
                     UserExpression, VectorFunctionSpace, Vertex, cpp,
                     interpolate, lt)
 from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @fixture
@@ -122,7 +122,7 @@ def test_assign(V, W):
                       - float(expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test self assignment
-        expr = 3 * u - Constant(5) * u2 + u1 - 5 * u
+        expr = 3 * u - 5.0 * u2 + u1 - 5 * u
         expr_scalar = 3 - 5 * 4. + 3. - 5
         u.assign(expr)
         assert (round(u.vector().get_local().sum()
@@ -190,12 +190,6 @@ def test_call(R, V, W, Q, mesh):
         u0([0, 0, 0, 0])
     with pytest.raises(ValueError):
         u0([0, 0])
-
-
-@skip_if_complex
-def test_constant_float_conversion():
-    c = Constant(3.45)
-    assert float(c.values()[0]) == 3.45
 
 
 def test_scalar_conditions(R):

@@ -234,7 +234,7 @@ all the DOFs associated to boundary points to zero. ::
 
   #
       nedelec_V   = FunctionSpace(mesh, "N1curl", 1)
-      nedelec_bcs = [DirichletBC(nedelec_V, Constant((0.0, 0.0)), DomainBoundary())]
+      nedelec_bcs = [DirichletBC(nedelec_V, Expression(("0.0", "0.0"), degree=1), DomainBoundary())]
       nedelec_eig = eigenvalues(nedelec_V, nedelec_bcs)
 
 Then we do the same for the vector Lagrange elements.  Since the

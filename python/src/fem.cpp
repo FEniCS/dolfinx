@@ -222,7 +222,6 @@ void fem(py::module& m)
                    dolfin::fem::DirichletBC::Method>(),
           py::arg("V"), py::arg("g"), py::arg("sub_domain"), py::arg("method"))
       .def("function_space", &dolfin::fem::DirichletBC::function_space)
-      .def("homogenize", &dolfin::fem::DirichletBC::homogenize)
       .def("method", &dolfin::fem::DirichletBC::method)
       .def("get_boundary_values",
            [](const dolfin::fem::DirichletBC& instance) {

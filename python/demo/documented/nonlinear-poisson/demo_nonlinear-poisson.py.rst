@@ -148,11 +148,12 @@ arguments: the function space the boundary condition applies to, the
 value of the boundary condition, and the part of the boundary on which
 the condition applies. In our example, the function space is V, the
 value of the boundary condition (1.0) can be represented using a
-Constant and the Dirichlet boundary is defined above. The definition
+Function and the Dirichlet boundary is defined above. The definition
 of the Dirichlet boundary condition then looks as follows::
 
     # Define boundary condition
-    g = Constant(1.0)
+    g = Function(V)
+    g.vector().set(1.0)
     bc = DirichletBC(V, g, DirichletBoundary())
 
 Next, we want to express the variational problem. First, we need to

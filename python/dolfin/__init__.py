@@ -68,7 +68,6 @@ from .function.functionspace import (FunctionSpace, VectorFunctionSpace,
 from .function.function import Function
 from .function.argument import (TestFunction, TrialFunction, TestFunctions,
                                 TrialFunctions)
-from .function.constant import Constant
 from .function.specialfunctions import (
     MeshCoordinates, FacetArea, FacetNormal, CellVolume, SpatialCoordinate,
     CellNormal, CellDiameter, Circumradius, MinCellEdgeLength,

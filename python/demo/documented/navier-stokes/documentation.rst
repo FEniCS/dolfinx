@@ -19,6 +19,7 @@ This demo is implemented in the :download:`demo_navier-stokes.py` file.
 First, the :py:mod:`dolfin` module is imported:
 
 .. code-block:: python
+    import ufl
 
     from dolfin import *
 
@@ -111,13 +112,8 @@ below:
     p1 = Function(Q)
 
     # Define coefficients
-    k = Constant(dt)
-    f = Constant((0, 0))
-
-Note that one may use the time step ``dt`` directly in the
-form. However, by using the :py:class:`Constant
-<dolfin.functions.constant.Constant>` class, we may freely change the
-size of the time step without triggering regeneration of code.
+    k = dt
+    f = ufl.as_vector((0, 0))
 
 The next step is now to define the variational problems for the three
 steps of Chorin's method. We do this by defining a pair of bilinear

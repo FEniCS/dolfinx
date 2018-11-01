@@ -9,7 +9,7 @@
 import pytest
 
 import ufl
-from dolfin import (MPI, Constant, Point, TestFunction, TrialFunction,
+from dolfin import (MPI, Point, TestFunction, TrialFunction, Function,
                     UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, fem, la)
 from dolfin.cpp.generation import BoxMesh
 from dolfin.cpp.mesh import CellType, GhostMode
@@ -123,8 +123,8 @@ def test_nullspace_check(mesh, degree):
             grad(w)) * ufl.Identity(gdim)
 
     a = inner(sigma(u, mesh.geometry.dim), grad(v)) * dx
-    zero = mesh.geometry.dim * (0.0, )
-    L = inner(Constant(zero), v) * dx
+    zero = Function(V)
+    L = inner(zero, v) * dx
 
     # Assemble matrix and create compatible vector
     A, L = assembling.assemble_system(a, L, [])

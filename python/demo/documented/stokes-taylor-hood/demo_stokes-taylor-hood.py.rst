@@ -83,6 +83,8 @@ representing functions over mesh entities (such as over cells or over
 facets). Mesh and mesh functions can be read from file in the
 following way::
 
+    import ufl
+
     import dolfin
     from dolfin import *
     from dolfin.io import XDMFFile
@@ -114,7 +116,7 @@ equations. Now we can define boundary conditions::
 
     # No-slip boundary condition for velocity
     # x1 = 0, x1 = 1 and around the dolphin
-    noslip = Constant((0, 0))
+    noslip = Expression(("0", "0"), degree=1)
     bc0 = DirichletBC(W.sub(0), noslip, (sub_domains, 0))
 
     # Inflow boundary condition for velocity
@@ -142,7 +144,7 @@ formulation of the Stokes equations are defined as follows::
     # Define variational problem
     (u, p) = TrialFunctions(W)
     (v, q) = TestFunctions(W)
-    f = Constant((0, 0))
+    f = Function(W.sub(0).collapse())
     a = (inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q))*dx
     L = inner(f, v)*dx
 

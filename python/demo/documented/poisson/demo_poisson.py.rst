@@ -126,12 +126,13 @@ arguments: the function space the boundary condition applies to, the
 value of the boundary condition, and the part of the boundary on which
 the condition applies. In our example, the function space is ``V``,
 the value of the boundary condition (0.0) can represented using a
-:py:class:`Constant <dolfin.functions.constant.Constant>` and the
+:py:class:`Function <dolfin.functions.Function>` and the
 Dirichlet boundary is defined immediately above. The definition of the
 Dirichlet boundary condition then looks as follows: ::
 
     # Define boundary condition
-    u0 = Constant(0.0)
+    u0 = Function(V)
+    u0.vector().set(0.0)
     bc = DirichletBC(V, u0, boundary)
 
 Next, we want to express the variational problem.  First, we need to

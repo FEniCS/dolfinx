@@ -7,7 +7,6 @@
 
 from dolfin.function.argument import (TestFunction, TrialFunction, Argument,
                                       TestFunctions, TrialFunctions)
-from dolfin.function.constant import Constant
 from dolfin.function.expression import (BaseExpression, CompiledExpression,
                                         Expression)
 from dolfin.function.function import Function
@@ -21,7 +20,7 @@ from dolfin.function.specialfunctions import (
 
 __all__ = [
     "TestFunction", "TrialFunction", "Argument", "TestFunctions",
-    "TrialFunctions", "Constant", "BaseExpression", "CompiledExpression",
+    "TrialFunctions", "BaseExpression", "CompiledExpression",
     "Expression", "Function", "FunctionSpace", "VectorFunctionSpace",
     "TensorFunctionSpace", "compile_expression", "jit_generate",
     "MeshCoordinates", "FacetArea", "CellDiameter", "CellNormal", "CellVolume",
