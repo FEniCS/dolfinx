@@ -7,13 +7,18 @@
 
 import numpy as np
 from numpy import intc, int64
-from dolfin import cpp
+from dolfin import cpp, common
 
 from dolfin.la.solver import solve
 
 __all__ = [
     "solve"
 ]
+
+if common.has_slepc:
+    from dolfin.la.slepc import SLEPcEigenSolver  # noqa
+    __all__.append("SLEPcEigenSolver")
+
 
 # Import pybind11 objects into dolfin.la
 from dolfin.cpp.la import VectorSpaceBasis  # noqa

@@ -45,9 +45,6 @@ from dolfin.geometry import BoundingBoxTree, Point
 
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
 
-if has_slepc:
-    from .cpp.la import SLEPcEigenSolver
-
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, CellType, Cell, Facet,
                        Face, Edge, Vertex, MeshEntity, Cells, Facets, Faces,
                        Edges, Vertices, MeshEntities, CellRange, FacetRange,
