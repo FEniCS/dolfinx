@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "Expression.h"
 #include "Function.h"
 #include "FunctionSpace.h"
 #include <algorithm>
@@ -334,6 +335,15 @@ void Function::interpolate(const GenericFunction& v)
 
   // Interpolate
   _function_space->interpolate(*_vector, v);
+}
+//-----------------------------------------------------------------------------
+void Function::interpolate(const Expression& expr)
+{
+  assert(_vector);
+  assert(_function_space);
+
+  // Interpolate
+  _function_space->interpolate(*_vector, expr);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const

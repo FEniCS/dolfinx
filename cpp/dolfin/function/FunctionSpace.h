@@ -37,6 +37,7 @@ class Mesh;
 
 namespace function
 {
+class Expression;
 class Function;
 class GenericFunction;
 
@@ -145,6 +146,16 @@ public:
   void interpolate(la::PETScVector& expansion_coefficients,
                    const GenericFunction& v) const;
 
+  /// Interpolate expression into function space, returning the
+  /// vector of expansion coefficients
+  ///
+  /// @param   expansion_coefficients (_la::PETScVector_)
+  ///         The expansion coefficients.
+  /// @param   expr (_Expression_)
+  ///         The expression to be interpolated.
+  void interpolate(la::PETScVector& expansion_coefficients,
+                   const Expression& expr) const;
+
   /// Extract subspace for component
   ///
   /// @param    component (std::vector<std::size_t>)
@@ -247,6 +258,10 @@ private:
   // General interpolation from any GenericFunction on any mesh
   void interpolate_from_any(la::PETScVector& expansion_coefficients,
                             const GenericFunction& v) const;
+
+  // General interpolation from any Expression on any mesh
+  void interpolate_from_any(la::PETScVector& expansion_coefficients,
+                            const Expression& expr) const;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;

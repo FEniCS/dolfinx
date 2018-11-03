@@ -6,10 +6,14 @@
 
 #pragma once
 
-#include "GenericFunction.h"
-#include <Eigen/Dense>
 #include <petscsys.h>
+#include <memory>
 #include <vector>
+
+#include <Eigen/Dense>
+
+#include <dolfin/common/types.h>
+
 
 namespace dolfin
 {
@@ -26,22 +30,9 @@ class Mesh;
 
 namespace function
 {
+class FunctionSpace;
 
-/// This class represents a user-defined expression. Expressions can
-/// be used as coefficients in variational forms or interpolated
-/// into finite element spaces.
-///
-/// An expression is defined by overloading the eval() method. Users
-/// may choose to overload either a simple version of eval(), in the
-/// case of expressions only depending on the coordinate x, or an
-/// optional version for expressions depending on x and mesh data
-/// like cell indices or facet normals.
-///
-/// The geometric dimension (the size of x) and the value rank and
-/// dimensions of an expression must supplied as arguments to the
-/// constructor.
-
-class Expression : public GenericFunction
+class Expression
 {
 
 public:
@@ -60,8 +51,6 @@ public:
   /// Destructor
   virtual ~Expression();
 
-  //--- Implementation of GenericFunction interface ---
-
   /// Evaluate at given point in given cell
   ///
   /// @param    values (Eigen::Ref<Eigen::VectorXd>)
@@ -74,7 +63,7 @@ public:
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
                     const Eigen::Ref<const EigenRowArrayXXd> x,
-                    const dolfin::mesh::Cell& cell) const override;
+                    const dolfin::mesh::Cell& cell) const;
 
   /// Evaluate at given point.
   ///
@@ -85,13 +74,13 @@ public:
   virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x) const override;
+                    const Eigen::Ref<const EigenRowArrayXXd> x) const;
 
   /// Return value rank.
   ///
   /// @return std::size_t
   ///         The value rank.
-  virtual std::size_t value_rank() const override;
+  virtual std::size_t value_rank() const;
 
   /// Return value dimension for given axis.
   ///
@@ -100,13 +89,13 @@ public:
   ///
   /// @return std::size_t
   ///         The value dimension (for the given axis).
-  virtual std::size_t value_dimension(std::size_t i) const override;
+  virtual std::size_t value_dimension(std::size_t i) const;
 
   /// Return value shape
   ///
   /// @return std::vector<std::size_t>
   ///         The value shape.
-  virtual std::vector<std::size_t> value_shape() const override;
+  virtual std::vector<std::size_t> value_shape() const;
 
   /// Property setter for type "double"
   /// Used in pybind11 Python interface to attach a value to a python attribute
@@ -117,18 +106,6 @@ public:
   /// Used in pybind11 Python interface to get the value of a python attribute
   ///
   virtual PetscScalar get_property(std::string name) const;
-
-  /// Property setter for type "GenericFunction"
-  /// Used in pybind11 Python interface to attach a value to a python attribute
-  ///
-  virtual void set_generic_function(std::string name,
-                                    std::shared_ptr<GenericFunction> f);
-
-  /// Property getter for type "GenericFunction"
-  /// Used in pybind11 Python interface to get the value of a python attribute
-  ///
-  virtual std::shared_ptr<GenericFunction>
-  get_generic_function(std::string name) const;
 
   /// Restrict function to local cell (compute expansion coefficients w).
   ///
@@ -143,7 +120,7 @@ public:
   virtual void restrict(
       PetscScalar* w, const fem::FiniteElement& element,
       const mesh::Cell& dolfin_cell,
-      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const override;
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Compute values at all mesh vertices.
   ///
@@ -153,14 +130,14 @@ public:
   ///         The values at all vertices.
   virtual Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>
-  compute_point_values(const mesh::Mesh& mesh) const override;
+  compute_point_values(const mesh::Mesh& mesh) const;
 
   /// Return shared pointer to function space (NULL)
   /// Expression does not have a FunctionSpace
   ///
   /// @return FunctionSpace
   ///         Return the shared pointer.
-  virtual std::shared_ptr<const FunctionSpace> function_space() const override;
+  virtual std::shared_ptr<const FunctionSpace> function_space() const;
 
 private:
   // Value shape

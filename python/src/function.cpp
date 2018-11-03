@@ -114,33 +114,24 @@ void function(py::module& m)
 
   // dolfin:Expression
   py::class_<dolfin::function::Expression, PyExpression,
-             std::shared_ptr<dolfin::function::Expression>,
-             dolfin::function::GenericFunction>(
-      m, "Expression",
-      "An Expression is a function (field) that can appear as "
-      "a coefficient in a form")
+             std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
       .def(py::init<std::vector<std::size_t>>())
       .def("value_dimension", &dolfin::function::Expression::value_dimension)
       .def("get_property", &dolfin::function::Expression::get_property)
       .def("set_property", &dolfin::function::Expression::set_property)
-      .def("set_generic_function",
-           &dolfin::function::Expression::set_generic_function)
-      .def("get_generic_function",
-           &dolfin::function::Expression::get_generic_function);
-
-  // dolfin::FacetArea
-  py::class_<dolfin::function::FacetArea,
-             std::shared_ptr<dolfin::function::FacetArea>,
-             dolfin::function::Expression, dolfin::function::GenericFunction>(
-      m, "FacetArea")
-      .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>>());
-
-  // dolfin::mesh::MeshCoordinates
-  py::class_<dolfin::function::MeshCoordinates,
-             std::shared_ptr<dolfin::function::MeshCoordinates>,
-             dolfin::function::Expression, dolfin::function::GenericFunction>(
-      m, "MeshCoordinates")
-      .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>>());
+      .def("eval",
+           py::overload_cast<
+               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                       Eigen::Dynamic, Eigen::RowMajor>>,
+               Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
+               &dolfin::function::Expression::eval, py::const_))
+      .def("eval",
+           py::overload_cast<
+               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                       Eigen::Dynamic, Eigen::RowMajor>>,
+               Eigen::Ref<const dolfin::EigenRowArrayXXd>,
+               const dolfin::mesh::Cell&>(&dolfin::function::Expression::eval,
+                                          py::const_));
 
   // dolfin::function::Function
   py::class_<dolfin::function::Function,
@@ -158,8 +149,12 @@ void function(py::module& m)
              return std::make_shared<dolfin::function::Function>(self);
            },
            "Collapse sub-function view.")
-      .def("interpolate", &dolfin::function::Function::interpolate,
-           "Interpolate the function u")
+      .def("interpolate",
+           py::overload_cast<const dolfin::function::GenericFunction&>(
+               &dolfin::function::Function::interpolate), py::arg("u"))
+      .def("interpolate",
+           py::overload_cast<const dolfin::function::Expression&>(
+               &dolfin::function::Function::interpolate), py::arg("expr"))
       // FIXME: A lot of error when using non-const version - misused
       // by Python interface?
       .def("vector",

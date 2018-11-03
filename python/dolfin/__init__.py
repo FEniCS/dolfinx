@@ -69,10 +69,10 @@ from .function.function import Function
 from .function.argument import (TestFunction, TrialFunction, TestFunctions,
                                 TrialFunctions)
 from .function.specialfunctions import (
-    MeshCoordinates, FacetArea, FacetNormal, CellVolume, SpatialCoordinate,
+    FacetNormal, CellVolume, SpatialCoordinate,
     CellNormal, CellDiameter, Circumradius, MinCellEdgeLength,
     MaxCellEdgeLength, MinFacetEdgeLength, MaxFacetEdgeLength)
-from .function.expression import Expression, UserExpression, CompiledExpression
+from .function.expression import Expression
 
 from .generation import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 

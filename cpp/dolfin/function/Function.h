@@ -28,6 +28,7 @@ class Mesh;
 
 namespace function
 {
+class Expression;
 class FunctionSpace;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -127,6 +128,12 @@ public:
   /// @param    v (GenericFunction)
   ///         The function to be interpolated.
   void interpolate(const GenericFunction& v);
+
+  /// Interpolate expression (on possibly non-matching meshes)
+  ///
+  /// @param    expr (Expression)
+  ///         The expression to be interpolated.
+  void interpolate(const Expression& expr);
 
   //--- Implementation of GenericFunction interface ---
 
