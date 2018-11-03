@@ -25,6 +25,7 @@ def test_save_and_read_function_timeseries(tempdir):
     F1 = Function(Q)
 
     t = 0.0
+
     def expr_eval(values, x, cell):
         values[:, 0] = t * x[:, 0]
 

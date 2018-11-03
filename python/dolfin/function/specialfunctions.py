@@ -7,7 +7,8 @@
 """Some special functions"""
 
 import ufl
-from dolfin import cpp, function
+
+from dolfin import cpp
 
 
 def FacetNormal(mesh: cpp.mesh.Mesh) -> ufl.FacetNormal:

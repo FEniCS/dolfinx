@@ -257,6 +257,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
     u_in = [None] * len(times)
 
     p = 0.0
+
     def expr_eval(values, x, cell):
         values[:, 0] = x[:, 0] * p
 
