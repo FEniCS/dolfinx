@@ -168,7 +168,11 @@ def test_save_and_read_function(tempdir):
     Q = FunctionSpace(mesh, ("CG", 3))
     F0 = Function(Q)
     F1 = Function(Q)
-    E = Expression("x[0]", degree=1)
+
+    def expr_eval(values, x, cell):
+        values[:, 0] = x[:, 0]
+
+    E = Expression(expr_eval)
     F0.interpolate(E)
 
     # Save to HDF5 File

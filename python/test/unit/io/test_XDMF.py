@@ -163,9 +163,13 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
     u_out = Function(V)
 
     if has_petsc_complex:
-        u_out.interpolate(Expression("x[0] + j*x[0]", degree=1))
+        def expr_eval(values, x, cell):
+            values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
+        u_out.interpolate(Expression(expr_eval))
     else:
-        u_out.interpolate(Expression("x[0]", degree=1))
+        def expr_eval(values, x, cell):
+            values[:, 0] = x[:, 0]
+        u_out.interpolate(Expression(expr_eval))
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write_checkpoint(u_out, "u_out", 0)
@@ -196,21 +200,40 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
 
     if has_petsc_complex:
         if mesh.geometry.dim == 1:
-            u_out.interpolate(Expression(("x[0] + j*x[0]", ), degree=1))
+            def expr_eval(values, x, cell):
+                values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
+            u_out.interpolate(Expression(expr_eval, shape=(1,)))
+
         elif mesh.geometry.dim == 2:
-            u_out.interpolate(
-                Expression(("j*x[0]*x[1]", "x[0] + j*x[0]"), degree=2))
+            def expr_eval(values, x, cell):
+                values[:, 0] = 1.0j * x[:, 0] * x[:, 1]
+                values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
+            u_out.interpolate(Expression(expr_eval, shape=(2,)))
+
         elif mesh.geometry.dim == 3:
-            u_out.interpolate(
-                Expression(("j*x[0]*x[1]", "x[0] + j*x[0]", "x[2]"), degree=2))
+            def expr_eval(values, x, cell):
+                values[:, 0] = x[:, 0] * x[:, 1]
+                values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
+                values[:, 2] = x[:, 2]
+            u_out.interpolate(Expression(expr_eval, shape=(3,)))
     else:
         if mesh.geometry.dim == 1:
-            u_out.interpolate(Expression(("x[0]", ), degree=1))
+            def expr_eval(values, x, cell):
+                values[:, 0] = x[:, 0]
+            u_out.interpolate(Expression(expr_eval, shape=(1,)))
+
         elif mesh.geometry.dim == 2:
-            u_out.interpolate(Expression(("x[0]*x[1]", "x[0]"), degree=2))
+            def expr_eval(values, x, cell):
+                values[:, 0] = x[:, 0] * x[:, 1]
+                values[:, 1] = x[:, 0]
+            u_out.interpolate(Expression(expr_eval, shape=(2,)))
+
         elif mesh.geometry.dim == 3:
-            u_out.interpolate(
-                Expression(("x[0]*x[1]", "x[0]", "x[2]"), degree=2))
+            def expr_eval(values, x, cell):
+                values[:, 0] = x[:, 0] * x[:, 1]
+                values[:, 1] = x[:, 0]
+                values[:, 2] = x[:, 2]
+            u_out.interpolate(Expression(expr_eval, shape=(3,)))
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write_checkpoint(u_out, "u_out", 0)
@@ -233,9 +256,13 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
     u_out = [None] * len(times)
     u_in = [None] * len(times)
 
+    p = 0.0
+    def expr_eval(values, x, cell):
+        values[:, 0] = x[:, 0] * p
+
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         for i, p in enumerate(times):
-            u_out[i] = interpolate(Expression("x[0]*p", p=p, degree=1), V)
+            u_out[i] = interpolate(Expression(expr_eval), V)
             file.write_checkpoint(u_out[i], "u_out", p)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
