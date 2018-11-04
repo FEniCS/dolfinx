@@ -160,8 +160,3 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
   return vertex_values;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const FunctionSpace> Expression::function_space() const
-{
-  return std::shared_ptr<const FunctionSpace>();
-}
-//-----------------------------------------------------------------------------

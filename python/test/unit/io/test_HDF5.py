@@ -169,7 +169,7 @@ def test_save_and_read_function(tempdir):
     F0 = Function(Q)
     F1 = Function(Q)
 
-    def expr_eval(values, x, cell):
+    def expr_eval(values, x, cell=None):
         values[:, 0] = x[:, 0]
 
     E = Expression(expr_eval)

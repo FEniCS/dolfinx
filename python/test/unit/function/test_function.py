@@ -135,7 +135,7 @@ def test_assign(V, W):
         # Test errounious assignments
         uu = Function(V1)
 
-        def expr_eval(values, x, cell):
+        def expr_eval(values, x, cell=None):
             values[:, 0] = 1.0
 
         f = Expression(expr_eval)
@@ -160,19 +160,19 @@ def test_call(R, V, W, Q, mesh):
     u2 = Function(W)
     u3 = Function(Q)
 
-    def expr_eval1(values, x, cell):
+    def expr_eval1(values, x, cell=None):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
 
     e1 = Expression(expr_eval1)
 
-    def expr_eval2(values, x, cell):
+    def expr_eval2(values, x, cell=None):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
 
     e2 = Expression(expr_eval2, shape=(3,))
 
-    def expr_eval3(values, x, cell):
+    def expr_eval3(values, x, cell=None):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
@@ -239,7 +239,7 @@ def test_scalar_conditions(R):
 
 
 def test_interpolation_mismatch_rank0(W):
-    def expr_eval(values, x, cell):
+    def expr_eval(values, x, cell=None):
         values[:, 0] = 1.0
 
     f = Expression(expr_eval, shape=())
@@ -248,7 +248,7 @@ def test_interpolation_mismatch_rank0(W):
 
 
 def test_interpolation_mismatch_rank1(W):
-    def expr_eval(values, x, cell):
+    def expr_eval(values, x, cell=None):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
 
@@ -258,7 +258,7 @@ def test_interpolation_mismatch_rank1(W):
 
 
 def test_interpolation_rank0(V):
-    def expr_eval(values, x, cell):
+    def expr_eval(values, x, cell=None):
         values[:, 0] = 1.0
 
     f = Expression(expr_eval, shape=())
@@ -287,7 +287,7 @@ def test_near_evaluations(R, mesh):
 
 
 def test_interpolation_rank1(W):
-    def expr_eval(values, x, cell):
+    def expr_eval(values, x, cell=None):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
         values[:, 2] = 1.0
@@ -302,10 +302,10 @@ def test_interpolation_rank1(W):
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
 
-    def expr_eval0(values, x, cell):
+    def expr_eval0(values, x, cell=None):
         values[:, 0] = 1.0
 
-    def expr_eval1(values, x, cell):
+    def expr_eval1(values, x, cell=None):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
         values[:, 2] = 1.0

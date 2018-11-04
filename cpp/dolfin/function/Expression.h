@@ -132,13 +132,6 @@ public:
                        Eigen::RowMajor>
   compute_point_values(const mesh::Mesh& mesh) const;
 
-  /// Return shared pointer to function space (NULL)
-  /// Expression does not have a FunctionSpace
-  ///
-  /// @return FunctionSpace
-  ///         Return the shared pointer.
-  virtual std::shared_ptr<const FunctionSpace> function_space() const;
-
 private:
   // Value shape
   std::vector<std::size_t> _value_shape;

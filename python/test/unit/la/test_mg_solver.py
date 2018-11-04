@@ -116,7 +116,7 @@ def xtest_mg_solver_stokes():
     bc0 = DirichletBC(W.sub(0), noslip, top_bottom)
 
     # Inflow boundary condition for velocity
-    def inflow_eval(values, x, cell):
+    def inflow_eval(values, x, cell=None):
         values[:, 0] = - numpy.sin(x[:, 1] * numpy.pi)
         values[:, 1] = 0.0
         values[:, 2] = 0.0

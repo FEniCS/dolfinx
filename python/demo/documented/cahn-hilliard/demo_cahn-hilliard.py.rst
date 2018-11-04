@@ -203,7 +203,7 @@ components of ``u``, and not copies.
 Initial conditions are created by using the evaluate method
 then interpolated into a finite element space::
 
-    def init_cond(values, x, cell):
+    def init_cond(values, x, cell=None):
         values[:, 0] = 0.63 + 0.02*(0.5 - random.random())
         values[:, 1] = 0.0
 

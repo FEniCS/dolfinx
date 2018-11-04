@@ -125,7 +125,7 @@ void function(py::module& m)
                                        Eigen::Dynamic, Eigen::RowMajor>>,
                Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
                &dolfin::function::Expression::eval, py::const_))
-      .def("eval",
+      .def("eval_cell",
            py::overload_cast<
                Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>>,
