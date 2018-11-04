@@ -14,7 +14,7 @@ class Expression(cpp.function.Expression):
         """Initialise Expression
 
         Initialises Expression from evaluate function and value shape.
-        
+
         Parameters
         ---------
         eval_func:
