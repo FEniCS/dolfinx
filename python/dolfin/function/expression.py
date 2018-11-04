@@ -13,7 +13,8 @@ from dolfin import cpp
 
 class Expression(cpp.function.Expression):
 
-    def __init__(self, eval_func: Callable[numpy.array, numpy.array, cpp.mesh.Cell], shape: tuple=()):
+    def __init__(self, eval_func: Callable[numpy.array, numpy.array, cpp.mesh.Cell],
+                 shape: tuple = ()):
         """Initialise Expression
 
         Initialises Expression from callable function and value shape.
