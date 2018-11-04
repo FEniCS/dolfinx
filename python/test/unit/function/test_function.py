@@ -134,7 +134,12 @@ def test_assign(V, W):
 
         # Test errounious assignments
         uu = Function(V1)
-        f = Expression("1.0", degree=0)
+
+        def expr_eval(values, x, cell):
+            values[:, 0] = 1.0
+
+        f = Expression(expr_eval)
+
         with pytest.raises(RuntimeError):
             uu.assign(1.0)
         with pytest.raises(RuntimeError):

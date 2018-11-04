@@ -7,13 +7,15 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 
+import numpy
 import pytest
 import ufl
 
 from dolfin import (DOLFIN_EPS, DirichletBC, Expression, Function,
                     FiniteElement, FunctionSpace, MixedElement, TestFunction,
                     TestFunctions, TrialFunction, TrialFunctions, UnitCubeMesh,
-                    UnitSquareMesh, VectorElement, div, dot, dx, grad, inner)
+                    UnitSquareMesh, VectorElement, div, dot, dx, grad, inner,
+                    interpolate)
 from dolfin.cpp.fem import PETScDMCollection
 from dolfin.fem.assembling import assemble_system
 from dolfin.la import PETScKrylovSolver, PETScOptions, PETScVector
@@ -114,7 +116,12 @@ def xtest_mg_solver_stokes():
     bc0 = DirichletBC(W.sub(0), noslip, top_bottom)
 
     # Inflow boundary condition for velocity
-    inflow = Expression(("-sin(x[1]*pi)", "0.0", "0.0"), degree=2)
+    def inflow_eval(values, x, cell):
+        values[:, 0] = - numpy.sin(x[:, 1] * numpy.pi)
+        values[:, 1] = 0.0
+        values[:, 2] = 0.0
+
+    inflow = interpolate(Expression(inflow_eval, shape=(3,)), W.sub(0).collapse())
     bc1 = DirichletBC(W.sub(0), inflow, right)
 
     # Collect boundary conditions
