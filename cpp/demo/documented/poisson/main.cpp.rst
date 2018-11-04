@@ -215,8 +215,8 @@ to the linear form.
     auto f_expr = Source();
     auto g_expr = dUdN();
 
-    std::shared_ptr<function::Function> f = std::make_shared<function::Function>(V);
-    std::shared_ptr<function::Function> g = std::make_shared<function::Function>(V);
+    auto f = std::make_shared<function::Function>(V);
+    auto g = std::make_shared<function::Function>(V);
 
     // Attach 'coordinate mapping' to mesh
     auto cmap = a->coordinate_mapping();

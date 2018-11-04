@@ -154,7 +154,8 @@ void FunctionSpace::interpolate_from_any(
     expr.restrict(cell_coefficients.data(), *_element, cell, coordinate_dofs);
 
     // Tabulate dofs
-    auto cell_dofs = _dofmap->cell_dofs(cell.index());
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
+        = _dofmap->cell_dofs(cell.index());
 
     // Copy dofs to vector
     expansion_coefficients.set_local(cell_coefficients.data(),

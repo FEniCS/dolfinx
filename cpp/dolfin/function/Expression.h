@@ -6,14 +6,11 @@
 
 #pragma once
 
-#include <petscsys.h>
-#include <memory>
-#include <vector>
-
 #include <Eigen/Dense>
-
 #include <dolfin/common/types.h>
-
+#include <memory>
+#include <petscsys.h>
+#include <vector>
 
 namespace dolfin
 {
@@ -117,10 +114,10 @@ public:
   ///         The cell.
   /// @param  coordinate_dofs (double*)
   ///         The coordinates
-  virtual void restrict(
-      PetscScalar* w, const fem::FiniteElement& element,
-      const mesh::Cell& dolfin_cell,
-      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
+  virtual void
+  restrict(PetscScalar* w, const fem::FiniteElement& element,
+           const mesh::Cell& dolfin_cell,
+           const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Compute values at all mesh vertices.
   ///
