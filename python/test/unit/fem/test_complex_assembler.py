@@ -94,7 +94,7 @@ def test_complex_assembly_solve():
 
     # Reference Solution
     def ref_eval(values, x, cell):
-        values[:, 0] = np.cos(2*np.pi*x[:, 0]) * np.cos(2*np.pi*x[:, 1])
+        values[:, 0] = np.cos(2 * np.pi * x[:, 0]) * np.cos(2 * np.pi * x[:, 1])
     u_ref = dolfin.interpolate(dolfin.Expression(ref_eval), V)
 
     xnorm = x.norm(dolfin.cpp.la.Norm.l2)
