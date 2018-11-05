@@ -59,6 +59,7 @@ steps:
   workingDirectory: cpp/build
 
 - bash: |
+    export PETSC_DIR=/usr/local/petsc
     sudo python3 setup.py install
   displayName: Python build and install
   workingDirectory: python
