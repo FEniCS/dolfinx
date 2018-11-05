@@ -6,14 +6,16 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from typing import Callable
+
 import numpy
 
 from dolfin import cpp
 
 
 class Expression(cpp.function.Expression):
-
-    def __init__(self, eval_func: Callable[[numpy.array, numpy.array, cpp.mesh.Cell], None],
+    def __init__(self,
+                 eval_func: Callable[[numpy.array, numpy.array, cpp.mesh.
+                                      Cell], None],
                  shape: tuple = ()):
         """Initialise Expression
 
@@ -36,9 +38,9 @@ class Expression(cpp.function.Expression):
             Value shape
         """
         # Without this, undefined behaviour might happen due pybind docs
-        cpp.function.Expression.__init__(self, shape)
-        self.shape = shape
         self.eval_func = eval_func
+        self.shape = shape
+        super().__init__(shape)
 
     def eval_cell(self, values, x, cell):
         """Evaluate expression at point `x` in `cell` and assign
