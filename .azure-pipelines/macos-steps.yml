@@ -22,6 +22,16 @@ steps:
   displayName: Extract PETSc install
 
 - bash: |
+    wget -nc --quiet https://github.com/pybind/pybind11/archive/v2.2.4.tar.gz
+    tar -xf v2.2.4.tar.gz
+    cd pybind11-2.2.4
+    mkdir build
+    cd build
+    cmake -DPYBIND11_TEST=False ..
+    sudo make install
+  displayName: pybind11 install
+
+- bash: |
     brew update
     brew install pkg-config eigen open-mpi boost python3 bison flex
     brew install hdf5 --with-mpi
