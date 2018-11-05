@@ -39,10 +39,16 @@ steps:
     mkdir -p cpp/build
     cd cpp/build
     export PETSC_DIR=/usr/local/petsc
-    cmake -DCMAKE_INSTALL_PREFIX=$HOME/FEniCS ..
-  displayName: CMake
+    cmake ..
+  displayName: Configure with CMake
 
 - bash: |
     make -j4
-  displayName: Build
+    sudo make install
+  displayName: C++ build and install
   workingDirectory: cpp/build
+
+- bash: |
+    sudo python3 setup.py install
+  displayName: Python build and install
+  workingDirectory: python
