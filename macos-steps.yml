@@ -9,7 +9,7 @@ steps:
   inputs:
     buildType: specific
     project: fenics
-    pipeline: fenics-steering-council.petsc-fork
+    pipeline: PETSc-fork
     buildVersionToDownload: latest
     downloadType: single
     artifactName: petsc_tarball
