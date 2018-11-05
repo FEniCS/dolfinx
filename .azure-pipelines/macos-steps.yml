@@ -1,0 +1,54 @@
+
+steps:
+- checkout: self
+  clean: true
+  fetchDepth: 5
+  submodules: true
+
+- task: DownloadBuildArtifacts@0
+  inputs:
+    buildType: specific
+    project: fenics
+    pipeline: PETSc-fork
+    buildVersionToDownload: latest
+    downloadType: single
+    artifactName: petsc_tarball
+  displayName: Download PETSc install for MacOS
+
+- bash: |
+    echo $SYSTEM_ARTIFACTSDIRECTORY
+    cd /
+    sudo tar xf $SYSTEM_ARTIFACTSDIRECTORY/petsc_tarball/petsc-install-macos.tar.gz
+  displayName: Extract PETSc install
+
+- bash: |
+    brew update
+    brew install pkg-config eigen open-mpi boost python3 bison flex
+    brew install hdf5 --with-mpi
+  displayName: Install Homebrew packages
+
+- bash: |
+    pip3 -q install cffi decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+    pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
+    pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
+    pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
+    pip3 install git+https://github.com/FEniCS/ffcx --no-deps --upgrade
+  displayName: Install Python3 dependencies
+
+- bash: |
+    mkdir -p cpp/build
+    cd cpp/build
+    export PETSC_DIR=/usr/local/petsc
+    cmake ..
+  displayName: Configure with CMake
+
+- bash: |
+    make -j4
+    sudo make install
+  displayName: C++ build and install
+  workingDirectory: cpp/build
+
+- bash: |
+    sudo python3 setup.py install
+  displayName: Python build and install
+  workingDirectory: python
