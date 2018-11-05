@@ -1,16 +1,26 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
+resources:
+  containers:
+  - container: dolfinx
+    image: 'quay.io/fenicsproject/dolfinx:latest'
 
-pool:
-  vmImage: 'Ubuntu 16.04'
+jobs:
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+- job: Ubuntu
+  displayName: Ubuntu CI Test
 
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+  pool:
+    vmImage: 'Ubuntu 16.04'
+
+  container: dolfinx
+
+  steps:
+  - template: ./ubuntu-steps.yml
+
+- job: MacOS
+  displayName: MacOS CI Test
+
+  pool:
+    vmImage: xcode9-macos10.13
+
+  steps:
+  - template: ./macos-steps.yml

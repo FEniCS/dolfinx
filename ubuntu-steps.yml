@@ -1,0 +1,35 @@
+
+steps:
+- checkout: self
+  clean: true
+  fetchDepth: 5
+  submodules: true
+
+- bash: |
+    apt-get -qq update
+    apt-get -y install libfreetype6-dev
+    pip3 -q install cffi decorator flake8 matplotlib numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme --upgrade
+    pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
+    pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
+    pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
+    pip3 install git+https://github.com/FEniCS/ffcx --no-deps --upgrade
+    rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
+  displayName: Install dependencies
+
+- bash: |
+    cd cpp && mkdir build && cd build && cmake -DCMAKE_INSTALL_PREFIX=$HOME/FEniCS ..
+    make -j 4
+    make install
+  displayName: Configure and build C++
+
+- bash: |
+    source $HOME/FEniCS/share/dolfin/dolfin.conf
+    cd python
+    python3 setup.py install --prefix=$HOME/.local
+  displayName: Build and install Python interface
+
+- bash: |
+    source $HOME/FEniCS/share/dolfin/dolfin.conf
+    cd python/test/unit
+    python3 -m pytest .
+  displayName: Python unit tests
