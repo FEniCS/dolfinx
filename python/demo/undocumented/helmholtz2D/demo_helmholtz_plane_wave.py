@@ -1,10 +1,3 @@
-from dolfin import UnitSquareMesh, MPI, FacetNormal, Expression, \
-    FunctionSpace, TrialFunction, TestFunction, dot, inner, dx, ds, \
-    grad, Function, solve, interpolate
-from dolfin.fem.assembling import assemble
-from dolfin.io import XDMFFile
-import numpy as np
-
 ''' Test Helmholtz problem for which the exact solution is a plane wave
 propagating at angle theta to the postive x-axis.
 Chosen for comparison with results from Ihlenburg's book
@@ -15,6 +8,17 @@ Chosen for comparison with results from Ihlenburg's book
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+
+from dolfin import UnitSquareMesh, MPI, FacetNormal, Expression, \
+    FunctionSpace, TrialFunction, TestFunction, dot, inner, dx, ds, \
+    grad, Function, solve, interpolate, has_petsc_complex
+from dolfin.fem.assemble import assemble
+from dolfin.io import XDMFFile
+import numpy as np
+
+if not has_petsc_complex:
+    print('This demo only works with PETSc-complex')
+    exit()
 
 # Wavenumber
 k0 = 20
@@ -37,7 +41,7 @@ ui = Expression(
 )
 
 # Test and trial function space
-V = FunctionSpace(mesh, "Lagrange", deg)
+V = FunctionSpace(mesh, ("Lagrange", deg))
 
 # Define variational problem
 u = TrialFunction(V)
@@ -60,7 +64,7 @@ with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
 This demonstrates the error bounds given in Ihlenburg.
 Pollution errors are evident for high wavenumbers.'''
 # Function space for exact solution - need it to be higher than deg
-V_exact = FunctionSpace(mesh, "Lagrange", deg + 3)
+V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 # "exact" solution
 u_exact = interpolate(ui, V_exact)
 # best approximation from V
