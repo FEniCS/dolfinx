@@ -64,7 +64,7 @@ with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
 This demonstrates the error bounds given in Ihlenburg.
 Pollution errors are evident for high wavenumbers.'''
 # Function space for exact solution - need it to be higher than deg
-V_exact = FunctionSpace(mesh, "Lagrange", deg + 3)
+V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 # "exact" solution
 u_exact = interpolate(ui, V_exact)
 # best approximation from V
