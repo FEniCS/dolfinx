@@ -19,8 +19,6 @@ steps:
     echo $SYSTEM_ARTIFACTSDIRECTORY
     cd /
     sudo tar xf $SYSTEM_ARTIFACTSDIRECTORY/petsc_tarball/petsc-install-macos.tar.gz
-    export PETSC_DIR=/usr/local/petsc
-    pip3 install petsc4py
   displayName: Extract PETSc install
 
 - bash: |
@@ -37,6 +35,8 @@ steps:
     brew update
     brew install pkg-config eigen open-mpi boost python3 bison flex
     brew install hdf5 --with-mpi
+    export PETSC_DIR=/usr/local/petsc
+    pip3 install petsc4py
   displayName: Install Homebrew packages
 
 - bash: |
