@@ -41,7 +41,7 @@ ui = Expression(
 )
 
 # Test and trial function space
-V = FunctionSpace(mesh, "Lagrange", deg)
+V = FunctionSpace(mesh, ("Lagrange", deg))
 
 # Define variational problem
 u = TrialFunction(V)
