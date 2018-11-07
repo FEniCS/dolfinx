@@ -104,14 +104,22 @@ public:
   /// @param x
   ///        Pointer to a row major C-style 2D array of `double`.
   ///        The array has shape=(number of points, geometrical dimension)
-  ///        and represents array of points in physical space at which the Expression
-  ///        is being evaluated.
+  ///        and represents array of points in physical space at which the
+  ///        Expression is being evaluated.
   /// @param cell_idx
   ///        Pointer to a 1D C-style array of `int`. It is an array
   ///        of indices of cells where points are evaluated. Value -1 represents
   ///        cell-independent eval function
+  /// @param num_points
+  ///        Number of points where expression is evaluated
+  /// @param value_size
+  ///        Size of expression value
+  /// @param gdim
+  ///        Geometrical dimension of physical point where expression
+  ///        is evaluated
   std::function<void(PetscScalar* values, const double* x,
-                     const int32_t* cell_idx)>
+                     const int32_t* cell_idx, int num_points, int value_size,
+                     int gdim)>
       eval;
 
 private:

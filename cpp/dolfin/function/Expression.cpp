@@ -90,7 +90,8 @@ void Expression::restrict(
   std::vector<int32_t> cell_idx = {cell.index()};
 
   // Evaluate all points in one call
-  eval(eval_values.data(), eval_points.data(), cell_idx.data());
+  eval(eval_values.data(), eval_points.data(), cell_idx.data(), ndofs,
+       value_size, gdim);
 
   // FIXME: *do not* use UFC directly
   // Apply a mapping to the reference element.
@@ -106,6 +107,7 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
   const std::size_t size = std::accumulate(
       std::begin(_value_shape), std::end(_value_shape), 1, std::multiplies<>());
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> local_vertex_values(size);
+  const std::size_t gdim = mesh.geometry().dim();
 
   // Resize vertex_values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -124,7 +126,8 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
       const Eigen::Ref<const Eigen::VectorXd> x = vertex.x();
 
       // Evaluate at vertex
-      eval(local_vertex_values.data(), x.data(), cell_idx.data());
+      eval(local_vertex_values.data(), x.data(), cell_idx.data(), 1, size,
+           gdim);
 
       // Copy to array
       vertex_values.row(vertex.index()) = local_vertex_values;
