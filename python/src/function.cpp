@@ -87,51 +87,17 @@ void function(py::module& m)
         "typically "
         "returned by a just-in-time compiler");
 
-  // dolfin::function::Expression trampoline (used for overloading virtual
-  // function from Python)
-  class PyExpression : public dolfin::function::Expression
-  {
-    using dolfin::function::Expression::Expression;
-
-    void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-                  values,
-              Eigen::Ref<const dolfin::EigenRowArrayXXd> x) const override
-    {
-      PYBIND11_OVERLOAD(void, dolfin::function::Expression, eval, values, x);
-    }
-
-    void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-                  values,
-              Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
-              const dolfin::mesh::Cell& cell) const override
-    {
-      PYBIND11_OVERLOAD_NAME(void, dolfin::function::Expression, "eval_cell",
-                             eval, values, x, cell);
-    }
-  };
-
   // dolfin:Expression
-  py::class_<dolfin::function::Expression, PyExpression,
+  py::class_<dolfin::function::Expression,
              std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
       .def(py::init<std::vector<std::size_t>>())
       .def("value_dimension", &dolfin::function::Expression::value_dimension)
-      .def("get_property", &dolfin::function::Expression::get_property)
-      .def("set_property", &dolfin::function::Expression::set_property)
-      .def("eval",
-           py::overload_cast<
-               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                       Eigen::Dynamic, Eigen::RowMajor>>,
-               Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
-               &dolfin::function::Expression::eval, py::const_))
-      .def("eval_cell",
-           py::overload_cast<
-               Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                       Eigen::Dynamic, Eigen::RowMajor>>,
-               Eigen::Ref<const dolfin::EigenRowArrayXXd>,
-               const dolfin::mesh::Cell&>(&dolfin::function::Expression::eval,
-                                          py::const_));
+      .def("set_eval",
+           [](dolfin::function::Expression& self, std::size_t addr) {
+             auto eval_ptr = (void (*)(PetscScalar* values, const double* x,
+                     const int32_t* cell_idx))addr;
+             self.eval = eval_ptr;
+           });
 
   // dolfin::function::Function
   py::class_<dolfin::function::Function,

@@ -48,31 +48,6 @@ public:
   /// Destructor
   virtual ~Expression();
 
-  /// Evaluate at given point in given cell
-  ///
-  /// @param    values (Eigen::Ref<Eigen::VectorXd>)
-  ///         The values at the point.
-  /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
-  ///         The coordinates of the point.
-  /// @param    cell (mesh::Cell)
-  ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x,
-                    const dolfin::mesh::Cell& cell) const;
-
-  /// Evaluate at given point.
-  ///
-  /// @param values (Eigen::Ref<Eigen::VectorXd>)
-  ///         The values at the point.
-  /// @param x (Eigen::Ref<const Eigen::VectorXd>)
-  ///         The coordinates of the point.
-  virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x) const;
-
   /// Return value rank.
   ///
   /// @return std::size_t
@@ -93,16 +68,6 @@ public:
   /// @return std::vector<std::size_t>
   ///         The value shape.
   virtual std::vector<std::size_t> value_shape() const;
-
-  /// Property setter for type "double"
-  /// Used in pybind11 Python interface to attach a value to a python attribute
-  ///
-  virtual void set_property(std::string name, PetscScalar value);
-
-  /// Property getter for type "double"
-  /// Used in pybind11 Python interface to get the value of a python attribute
-  ///
-  virtual PetscScalar get_property(std::string name) const;
 
   /// Restrict function to local cell (compute expansion coefficients w).
   ///
@@ -128,6 +93,26 @@ public:
   virtual Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>
   compute_point_values(const mesh::Mesh& mesh) const;
+
+  /// Evaluate method
+  ///
+  /// Signature of the method accepts:
+  /// @param values
+  ///        Pointer to row major 2D C-style array of `PetscScalar`.
+  ///        The array has shape=(number of points, value size) and has to
+  ///        be filled with custom values in the function body.
+  /// @param x
+  ///        Pointer to a row major C-style 2D array of `double`.
+  ///        The array has shape=(number of points, geometrical dimension)
+  ///        and represents array of points in physical space at which the Expression
+  ///        is being evaluated.
+  /// @param cell_idx
+  ///        Pointer to a 1D C-style array of `int`. It is an array
+  ///        of indices of cells where points are evaluated. Value -1 represents
+  ///        cell-independent eval function
+  std::function<void(PetscScalar* values, const double* x,
+                     const int32_t* cell_idx)>
+      eval;
 
 private:
   // Value shape

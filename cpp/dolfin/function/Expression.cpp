@@ -34,25 +34,6 @@ Expression::~Expression()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                              Eigen::Dynamic, Eigen::RowMajor>>
-                          values,
-                      const Eigen::Ref<const EigenRowArrayXXd> x,
-                      const mesh::Cell& cell) const
-{
-  throw std::runtime_error(
-      "Missing Expression::eval(values, x, cell) (must be overloaded)");
-}
-//-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                              Eigen::Dynamic, Eigen::RowMajor>>
-                          values,
-                      const Eigen::Ref<const EigenRowArrayXXd> x) const
-{
-  throw std::runtime_error(
-      "Missing Expression::eval(values, x) (must be overloaded)");
-}
-//-----------------------------------------------------------------------------
 std::size_t Expression::value_rank() const { return _value_shape.size(); }
 //-----------------------------------------------------------------------------
 std::size_t Expression::value_dimension(std::size_t i) const
@@ -70,19 +51,6 @@ std::size_t Expression::value_dimension(std::size_t i) const
 std::vector<std::size_t> Expression::value_shape() const
 {
   return _value_shape;
-}
-//-----------------------------------------------------------------------------
-void Expression::set_property(std::string name, PetscScalar value)
-{
-  throw std::runtime_error(
-      "Expression::set_property should be overloaded in the derived class");
-}
-//-----------------------------------------------------------------------------
-PetscScalar Expression::get_property(std::string name) const
-{
-  throw std::runtime_error(
-      "Expression::get_property should be overloaded in the derived class");
-  return 0.0;
 }
 //-----------------------------------------------------------------------------
 void Expression::restrict(
@@ -118,8 +86,11 @@ void Expression::restrict(
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       eval_values(ndofs, value_size);
 
+  // Prepare array of cell indices
+  std::vector<int32_t> cell_idx = {cell.index()};
+
   // Evaluate all points in one call
-  eval(eval_values, eval_points, cell);
+  eval(eval_values.data(), eval_points.data(), cell_idx.data());
 
   // FIXME: *do not* use UFC directly
   // Apply a mapping to the reference element.
@@ -143,6 +114,9 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
+    // Prepare array of cell indices
+    std::vector<int32_t> cell_idx = {cell.index()};
+
     // Iterate over cell vertices
     for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {
@@ -150,7 +124,7 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
       const Eigen::Ref<const Eigen::VectorXd> x = vertex.x();
 
       // Evaluate at vertex
-      eval(local_vertex_values, x);
+      eval(local_vertex_values.data(), x.data(), cell_idx.data());
 
       // Copy to array
       vertex_values.row(vertex.index()) = local_vertex_values;
