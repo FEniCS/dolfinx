@@ -119,7 +119,7 @@ public:
   ///        is evaluated
   std::function<void(PetscScalar* values, const double* x,
                      const int32_t* cell_idx, int num_points, int value_size,
-                     int gdim)>
+                     int gdim, int num_cells)>
       eval;
 
 private:

@@ -91,7 +91,7 @@ void Expression::restrict(
 
   // Evaluate all points in one call
   eval(eval_values.data(), eval_points.data(), cell_idx.data(), ndofs,
-       value_size, gdim);
+       value_size, gdim, 1);
 
   // FIXME: *do not* use UFC directly
   // Apply a mapping to the reference element.
@@ -127,7 +127,7 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
 
       // Evaluate at vertex
       eval(local_vertex_values.data(), x.data(), cell_idx.data(), 1, size,
-           gdim);
+           gdim, 1);
 
       // Copy to array
       vertex_values.row(vertex.index()) = local_vertex_values;
