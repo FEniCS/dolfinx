@@ -14,6 +14,7 @@ from dolfin import (MPI, Cells, CellType, Expression, FiniteElement, Function,
                     FunctionSpace, Mesh, Point, UnitCubeMesh, UnitSquareMesh,
                     VectorElement, VectorFunctionSpace, VertexRange, fem,
                     interpolate, triangle)
+from dolfin import function
 from dolfin.cpp.mesh import GhostMode
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -36,13 +37,16 @@ def test_p4_scalar_vector():
 
         Q = FunctionSpace(mesh, ("CG", 4))
 
-        def x0(values, x, cell=None):
+        @function.expression.numba_eval
+        def x0(values, x, cell_idx):
             values[:, 0] = x[:, 0]
 
-        def x1(values, x, cell=None):
+        @function.expression.numba_eval
+        def x1(values, x, cell_idx):
             values[:, 0] = x[:, 1]
 
-        def x2(values, x, cell=None):
+        @function.expression.numba_eval
+        def x2(values, x, cell_idx):
             values[:, 0] = x[:, 2]
 
         F0 = interpolate(Expression(x0), Q)
@@ -57,7 +61,8 @@ def test_p4_scalar_vector():
 
         V = VectorFunctionSpace(mesh, ("CG", 4))
 
-        def x0x10(values, x, cell=None):
+        @function.expression.numba_eval
+        def x0x10(values, x, cell_idx):
             values[:, 0] = x[:, 0]
             values[:, 1] = x[:, 1]
             values[:, 2] = 0.0
@@ -75,7 +80,8 @@ def test_p4_parallel_2d():
     Q = FunctionSpace(mesh, ("CG", 4))
     F = Function(Q)
 
-    def x0(values, x, cell=None):
+    @function.expression.numba_eval
+    def x0(values, x, cell_idx):
         values[:, 0] = x[:, 0]
 
     F.interpolate(Expression(x0))
@@ -99,7 +105,8 @@ def test_p4_parallel_3d():
     Q = FunctionSpace(mesh, ("CG", 5))
     F = Function(Q)
 
-    def x0(values, x, cell=None):
+    @function.expression.numba_eval
+    def x0(values, x, cell_idx):
         values[:, 0] = x[:, 0]
 
     F.interpolate(Expression(x0))
@@ -126,7 +133,8 @@ def test_mixed_parallel():
     W = FunctionSpace(mesh, Q * V)
     F = Function(W)
 
-    def expr_eval(values, x, cell=None):
+    @function.expression.numba_eval
+    def expr_eval(values, x, cell_idx):
         values[:, 0] = x[:, 0]
         values[:, 1] = x[:, 1]
         values[:, 2] = numpy.sin(x[:, 0] + x[:, 1])

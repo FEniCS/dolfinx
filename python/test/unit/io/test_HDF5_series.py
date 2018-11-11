@@ -8,6 +8,7 @@ import os
 
 import dolfin.cpp as cpp
 from dolfin import MPI, Expression, Function, FunctionSpace, UnitSquareMesh
+from dolfin import function
 from dolfin.io import HDF5File
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import xfail_if_complex
@@ -26,7 +27,8 @@ def test_save_and_read_function_timeseries(tempdir):
 
     t = 0.0
 
-    def expr_eval(values, x, cell=None):
+    @function.expression.numba_eval
+    def expr_eval(values, x, cell_idx):
         values[:, 0] = t * x[:, 0]
 
     E = Expression(expr_eval)

@@ -97,39 +97,39 @@ Then follows the definition of the coefficient functions (for
 
 .. code-block:: cpp
 
-   // Source term (right-hand side)
-   class Source : public function::Expression
-   {
-   public:
-     Source() : function::Expression({}) {}
+  void source_eval(PetscScalar* values, const double* x, const int64_t* cell_idx,
+                  const int num_points, const int value_size, const int gdim,
+                  const int num_cells)
+  {
+    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        eig_values(values, num_points, value_size);
+    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        eig_x(x, num_points, gdim);
 
-     void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>> values,
-        Eigen::Ref<const EigenRowArrayXXd> x, const dolfin::mesh::Cell& cell) const
-     {
-     for (unsigned int i = 0; i != x.rows(); ++i)
-       {
-         double dx = x(i, 0) - 0.5;
-         double dy = x(i, 1) - 0.5;
-         values(i, 0) = 10*exp(-(dx*dx + dy*dy) / 0.02);
-       }
-     }
-   };
+    for (int i = 0; i != eig_x.rows(); ++i)
+    {
+      double dx = eig_x(i, 0) - 0.5;
+      double dy = eig_x(i, 1) - 0.5;
+      eig_values(i, 0) = 10 * exp(-(dx * dx + dy * dy) / 0.02);
+    }
+  }
 
-   // Normal derivative (Neumann boundary condition)
-   class dUdN : public function::Expression
-   {
-   public:
-     dUdN() : function::Expression({}) {}
+  void dudn_eval(PetscScalar* values, const double* x, const int64_t* cell_idx,
+                const int num_points, const int value_size, const int gdim,
+                const int num_cells)
+  {
+    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        eig_values(values, num_points, value_size);
+    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        eig_x(x, num_points, gdim);
 
-     void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>> values,
-              Eigen::Ref<const EigenRowArrayXXd> x, const dolfin::mesh::Cell& cell) const
-     {
-       for (unsigned int i = 0; i != x.rows(); ++i)
-           values(i, 0) = sin(5*x(i, 0));
-     }
-   };
+    for (unsigned int i = 0; i != eig_x.rows(); ++i)
+      eig_values(i, 0) = sin(5 * eig_x(i, 0));
+  }
 
 The ``DirichletBoundary`` is derived from the :cpp:class:`SubDomain`
 class and defines the part of the boundary to which the Dirichlet
@@ -212,8 +212,15 @@ to the linear form.
     auto L = std::make_shared<fem::Form>(
         std::shared_ptr<ufc_form>(form_L->form()),
         std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
-    auto f_expr = Source();
-    auto g_expr = dUdN();
+
+    auto f_expr = function::Expression({});
+    f_expr.eval = source_eval;
+
+    auto g_expr = function::Expression({});
+    g_expr.eval = dudn_eval;
+
+    auto f = std::make_shared<function::Function>(V);
+    auto g = std::make_shared<function::Function>(V);
 
     auto f = std::make_shared<function::Function>(V);
     auto g = std::make_shared<function::Function>(V);

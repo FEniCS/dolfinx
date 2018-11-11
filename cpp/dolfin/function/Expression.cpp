@@ -87,7 +87,7 @@ void Expression::restrict(
       eval_values(ndofs, value_size);
 
   // Prepare array of cell indices
-  std::vector<int32_t> cell_idx = {cell.index()};
+  std::vector<int64_t> cell_idx = {cell.index()};
 
   // Evaluate all points in one call
   eval(eval_values.data(), eval_points.data(), cell_idx.data(), ndofs,
@@ -117,7 +117,7 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Prepare array of cell indices
-    std::vector<int32_t> cell_idx = {cell.index()};
+    std::vector<int64_t> cell_idx = {cell.index()};
 
     // Iterate over cell vertices
     for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))

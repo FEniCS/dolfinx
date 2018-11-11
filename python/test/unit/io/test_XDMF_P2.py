@@ -8,6 +8,7 @@ import os
 
 from dolfin import (MPI, Expression, Function, FunctionSpace,
                     VectorFunctionSpace, cpp, fem, has_petsc_complex)
+from dolfin import function
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 
@@ -41,11 +42,13 @@ def test_read_write_p2_function(tempdir):
 
     F = Function(Q)
     if has_petsc_complex:
-        def expr_eval(values, x, cell=None):
+        @function.expression.numba_eval
+        def expr_eval(values, x, cell_idx):
             values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
         F.interpolate(Expression(expr_eval))
     else:
-        def expr_eval(values, x, cell=None):
+        @function.expression.numba_eval
+        def expr_eval(values, x, cell_idx):
             values[:, 0] = x[:, 0]
         F.interpolate(Expression(expr_eval))
 
@@ -58,12 +61,14 @@ def test_read_write_p2_function(tempdir):
     Q = VectorFunctionSpace(mesh, ("Lagrange", 1))
     F = Function(Q)
     if has_petsc_complex:
-        def expr_eval(values, x, cell=None):
+        @function.expression.numba_eval
+        def expr_eval(values, x, cell_idx):
             values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
             values[:, 1] = x[:, 1] + 1.0j * x[:, 1]
         F.interpolate(Expression(expr_eval, shape=(2,)))
     else:
-        def expr_eval(values, x, cell=None):
+        @function.expression.numba_eval
+        def expr_eval(values, x, cell_idx):
             values[:, 0] = x[:, 0]
             values[:, 1] = x[:, 1]
         F.interpolate(Expression(expr_eval, shape=(2,)))

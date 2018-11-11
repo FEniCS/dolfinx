@@ -95,7 +95,7 @@ void function(py::module& m)
       .def("set_eval",
            [](dolfin::function::Expression& self, std::size_t addr) {
              auto eval_ptr = (void (*)(PetscScalar * values, const double* x,
-                                       const int32_t* cell_idx, int num_points,
+                                       const int64_t* cell_idx, int num_points,
                                        int value_size, int gdim, int num_cells)) addr;
              self.eval = eval_ptr;
            });

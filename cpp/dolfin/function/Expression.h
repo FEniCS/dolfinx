@@ -117,8 +117,10 @@ public:
   /// @param gdim
   ///        Geometrical dimension of physical point where expression
   ///        is evaluated
+  /// @param num_cells
+  ///        Number of cells
   std::function<void(PetscScalar* values, const double* x,
-                     const int32_t* cell_idx, int num_points, int value_size,
+                     const int64_t* cell_idx, int num_points, int value_size,
                      int gdim, int num_cells)>
       eval;
 
