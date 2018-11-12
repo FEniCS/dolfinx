@@ -92,44 +92,43 @@ equation.  For convenience we also include the DOLFIN namespace.
    using namespace dolfin;
 
 Then follows the definition of the coefficient functions (for
-:math:`f` and :math:`g`), which are derived from the
-:cpp:class:`Expression` class in DOLFIN
+:math:`f` and :math:`g`)
 
 .. code-block:: cpp
 
-  void source_eval(PetscScalar* values, const double* x, const int64_t* cell_idx,
-                  const int num_points, const int value_size, const int gdim,
-                  const int num_cells)
-  {
-    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                            Eigen::RowMajor>>
-        eig_values(values, num_points, value_size);
-    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        eig_x(x, num_points, gdim);
+   void source_eval(PetscScalar* values, const double* x, const int64_t* cell_idx,
+                   const int num_points, const int value_size, const int gdim,
+                   const int num_cells)
+   {
+     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                             Eigen::RowMajor>>
+         eig_values(values, num_points, value_size);
+     Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                   Eigen::RowMajor>>
+         eig_x(x, num_points, gdim);
 
-    for (int i = 0; i != eig_x.rows(); ++i)
-    {
-      double dx = eig_x(i, 0) - 0.5;
-      double dy = eig_x(i, 1) - 0.5;
-      eig_values(i, 0) = 10 * exp(-(dx * dx + dy * dy) / 0.02);
-    }
-  }
+     for (int i = 0; i != eig_x.rows(); ++i)
+     {
+       double dx = eig_x(i, 0) - 0.5;
+       double dy = eig_x(i, 1) - 0.5;
+       eig_values(i, 0) = 10 * exp(-(dx * dx + dy * dy) / 0.02);
+     }
+   }
 
-  void dudn_eval(PetscScalar* values, const double* x, const int64_t* cell_idx,
-                const int num_points, const int value_size, const int gdim,
-                const int num_cells)
-  {
-    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                            Eigen::RowMajor>>
-        eig_values(values, num_points, value_size);
-    Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>>
-        eig_x(x, num_points, gdim);
+   void dudn_eval(PetscScalar* values, const double* x, const int64_t* cell_idx,
+                 const int num_points, const int value_size, const int gdim,
+                 const int num_cells)
+   {
+     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                             Eigen::RowMajor>>
+         eig_values(values, num_points, value_size);
+     Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                   Eigen::RowMajor>>
+         eig_x(x, num_points, gdim);
 
-    for (unsigned int i = 0; i != eig_x.rows(); ++i)
-      eig_values(i, 0) = sin(5 * eig_x(i, 0));
-  }
+     for (unsigned int i = 0; i != eig_x.rows(); ++i)
+       eig_values(i, 0) = sin(5 * eig_x(i, 0));
+   }
 
 The ``DirichletBoundary`` is derived from the :cpp:class:`SubDomain`
 class and defines the part of the boundary to which the Dirichlet
