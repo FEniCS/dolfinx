@@ -34,7 +34,7 @@ def numba_eval(func):
 
     @numba.cfunc(c_signature, nopython=True)
     def eval(values, x, cell_idx, num_points, value_size, gdim, num_cells):
-        np_values = numba.carray(values, (num_points, value_size), dtype=numba.types.double)
+        np_values = numba.carray(values, (num_points, value_size), dtype=numba.typeof(PETSc.ScalarType()))
         np_x = numba.carray(x, (num_points, gdim), dtype=numba.types.double)
         np_cell_idx = numba.carray(cell_idx, (num_cells,), dtype=numba.types.int32)
 
