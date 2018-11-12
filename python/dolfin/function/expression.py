@@ -23,8 +23,9 @@ def numba_eval(func):
     -------
     Address of JITed method.
     """
+    scalar_type = numba.typeof(PETSc.ScalarType())
     c_signature = numba.types.void(
-        numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
+        numba.types.CPointer(scalar_type),
         numba.types.CPointer(numba.types.double),
         numba.types.CPointer(numba.types.int32),
         numba.types.intc, numba.types.intc, numba.types.intc,
@@ -34,7 +35,7 @@ def numba_eval(func):
 
     @numba.cfunc(c_signature, nopython=True)
     def eval(values, x, cell_idx, num_points, value_size, gdim, num_cells):
-        np_values = numba.carray(values, (num_points, value_size), dtype=numba.typeof(PETSc.ScalarType()))
+        np_values = numba.carray(values, (num_points, value_size), dtype=scalar_type)
         np_x = numba.carray(x, (num_points, gdim), dtype=numba.types.double)
         np_cell_idx = numba.carray(cell_idx, (num_cells,), dtype=numba.types.int32)
 
