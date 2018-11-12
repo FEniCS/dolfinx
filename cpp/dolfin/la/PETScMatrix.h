@@ -16,10 +16,9 @@
 namespace dolfin
 {
 
-class PETScVector;
-
 namespace la
 {
+class PETScVector;
 class SparsityPattern;
 class VectorSpaceBasis;
 
