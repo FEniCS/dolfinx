@@ -221,9 +221,6 @@ to the linear form.
     auto f = std::make_shared<function::Function>(V);
     auto g = std::make_shared<function::Function>(V);
 
-    auto f = std::make_shared<function::Function>(V);
-    auto g = std::make_shared<function::Function>(V);
-
     // Attach 'coordinate mapping' to mesh
     auto cmap = a->coordinate_mapping();
     mesh->geometry().coord_mapping = cmap;
