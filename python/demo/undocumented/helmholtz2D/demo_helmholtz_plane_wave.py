@@ -69,7 +69,7 @@ V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 # "exact" solution
 u_exact = interpolate(Expression(ui_eval), V_exact)
 # best approximation from V
-u_BA = project(Expression(ui_eval), V)
+u_BA = project(u_exact, V)
 
 # H1 errors
 diff = u - u_exact
