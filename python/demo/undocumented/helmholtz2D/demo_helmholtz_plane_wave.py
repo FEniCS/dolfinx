@@ -11,7 +11,7 @@ Chosen for comparison with results from Ihlenburg's book
 
 from dolfin import UnitSquareMesh, MPI, FacetNormal, Expression, \
     FunctionSpace, TrialFunction, TestFunction, dot, inner, dx, ds, \
-    grad, Function, solve, interpolate, has_petsc_complex
+    grad, Function, solve, interpolate, has_petsc_complex, project
 from dolfin import function
 from dolfin.fem.assemble import assemble
 from dolfin.io import XDMFFile
@@ -60,3 +60,29 @@ solve(a == L, u, [])
 with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
               encoding=XDMFFile.Encoding.HDF5) as file:
     file.write(u)
+
+''' Calculate L2 and H1 errors of FEM solution and best approximation.
+This demonstrates the error bounds given in Ihlenburg.
+Pollution errors are evident for high wavenumbers.'''
+# Function space for exact solution - need it to be higher than deg
+V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
+# "exact" solution
+u_exact = interpolate(Expression(ui_eval), V_exact)
+# best approximation from V
+u_BA = project(Expression(ui_eval), V)
+
+# H1 errors
+diff = u - u_exact
+diff_BA = u_BA - u_exact
+H1_diff = np.sqrt(assemble(inner(grad(diff), grad(diff)) * dx))
+H1_BA = np.sqrt(assemble(inner(grad(diff_BA), grad(diff_BA)) * dx))
+H1_exact = np.sqrt(assemble(inner(grad(u_exact), grad(u_exact)) * dx))
+print('Relative H1 error of best approximation:', H1_BA / H1_exact)
+print('Relative H1 error of FEM solution:', H1_diff / H1_exact)
+
+# L2 errors
+L2_diff = np.sqrt(assemble(inner(diff, diff) * dx))
+L2_BA = np.sqrt(assemble(inner(diff_BA, diff_BA) * dx))
+L2_exact = np.sqrt(assemble(inner(u_exact, u_exact) * dx))
+print('Relative L2 error  of best approximation:', L2_BA / L2_exact)
+print('Relative L2 error of FEM solution:', L2_diff / L2_exact)
