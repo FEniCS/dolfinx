@@ -66,13 +66,15 @@ This demonstrates the error bounds given in Ihlenburg.
 Pollution errors are evident for high wavenumbers.'''
 # Function space for exact solution - need it to be higher than deg
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
+# Interpolate solution to finer space
+u_finer = interpolate(u, V_exact)
 # "exact" solution
-u_exact = interpolate(ui, V_exact)
-# best approximation from V
-u_BA = interpolate(ui, V)
+u_exact = interpolate(Expression(ui_eval), V_exact)
+# best approximation from V, interpolated to finer space
+u_BA = interpolate(ui, V_exact)
 
 # H1 errors
-diff = u - u_exact
+diff = u_finer - u_exact
 diff_BA = u_BA - u_exact
 H1_diff = np.sqrt(assemble(inner(grad(diff), grad(diff)) * dx))
 H1_BA = np.sqrt(assemble(inner(grad(diff_BA), grad(diff_BA)) * dx))
