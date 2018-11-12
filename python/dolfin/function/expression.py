@@ -5,12 +5,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from typing import Callable
-
-import numpy
 import numba
 from petsc4py import PETSc
-
 
 from dolfin import cpp
 

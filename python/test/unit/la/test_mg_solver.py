@@ -16,6 +16,7 @@ from dolfin import (DOLFIN_EPS, DirichletBC, Expression, Function,
                     TestFunctions, TrialFunction, TrialFunctions, UnitCubeMesh,
                     UnitSquareMesh, VectorElement, div, dot, dx, grad, inner,
                     interpolate)
+from dolfin import function
 from dolfin.cpp.fem import PETScDMCollection
 from dolfin.fem.assembling import assemble_system
 from dolfin.la import PETScKrylovSolver, PETScOptions, PETScVector

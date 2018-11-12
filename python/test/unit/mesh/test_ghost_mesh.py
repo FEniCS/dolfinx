@@ -97,7 +97,7 @@ def test_ghost_connectivities(mode):
             reference[facet_mp].append(cell_mp)
 
     # Loop through ghosted mesh and check connectivities
-    allowable_cell_indices = [cell.index() for cell in Cells(meshG, cpp.mesh.MeshRangeType.ALL)]
+    allowable_cell_indices = [c.index() for c in Cells(meshG, cpp.mesh.MeshRangeType.ALL)]
     for facet in Facets(meshG, cpp.mesh.MeshRangeType.REGULAR):
         fidx = facet.index()
         facet_mp = tuple(facet.midpoint()[:])
