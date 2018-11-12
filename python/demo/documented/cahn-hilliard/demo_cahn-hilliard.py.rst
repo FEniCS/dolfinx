@@ -108,6 +108,7 @@ First, the modules :py:mod:`random` :py:mod:`matplotlib`
 
     import random
     from dolfin import *
+    from dolfin import function
     from dolfin.io import XDMFFile
     from dolfin.fem.assemble import assemble
 
@@ -203,7 +204,8 @@ components of ``u``, and not copies.
 Initial conditions are created by using the evaluate method
 then interpolated into a finite element space::
 
-    def init_cond(values, x, cell=None):
+    @function.expression.numba_eval
+    def init_cond(values, x, cell):
         values[:, 0] = 0.63 + 0.02*(0.5 - random.random())
         values[:, 1] = 0.0
 
