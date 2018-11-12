@@ -60,31 +60,3 @@ solve(a == L, u, [])
 with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
               encoding=XDMFFile.Encoding.HDF5) as file:
     file.write(u)
-
-''' Calculate L2 and H1 errors of FEM solution and best approximation.
-This demonstrates the error bounds given in Ihlenburg.
-Pollution errors are evident for high wavenumbers.'''
-# Function space for exact solution - need it to be higher than deg
-V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
-# Interpolate solution to finer space
-u_finer = interpolate(u, V_exact)
-# "exact" solution
-u_exact = interpolate(Expression(ui_eval), V_exact)
-# best approximation from V, interpolated to finer space
-u_BA = interpolate(ui, V_exact)
-
-# H1 errors
-diff = u_finer - u_exact
-diff_BA = u_BA - u_exact
-H1_diff = np.sqrt(assemble(inner(grad(diff), grad(diff)) * dx))
-H1_BA = np.sqrt(assemble(inner(grad(diff_BA), grad(diff_BA)) * dx))
-H1_exact = np.sqrt(assemble(inner(grad(u_exact), grad(u_exact)) * dx))
-print('Relative H1 error of best approximation:', H1_BA / H1_exact)
-print('Relative H1 error of FEM solution:', H1_diff / H1_exact)
-
-# L2 errors
-L2_diff = np.sqrt(assemble(inner(diff, diff) * dx))
-L2_BA = np.sqrt(assemble(inner(diff_BA, diff_BA) * dx))
-L2_exact = np.sqrt(assemble(inner(u_exact, u_exact) * dx))
-print('Relative L2 error  of best approximation:', L2_BA / L2_exact)
-print('Relative L2 error of FEM solution:', L2_diff / L2_exact)
