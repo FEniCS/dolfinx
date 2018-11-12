@@ -87,8 +87,8 @@ def project(v,
     # Define variational problem for projection
     w = function.TestFunction(V)
     Pv = function.TrialFunction(V)
-    a = ufl.dot(w, Pv) * dx
-    L = ufl.dot(w, v) * dx
+    a = ufl.inner(Pv, w) * dx
+    L = ufl.inner(v, w) * dx
 
     # Assemble linear system
     A, b = fem.assemble_system(
