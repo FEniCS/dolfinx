@@ -112,43 +112,6 @@ def dijitso_jit(*args, **kwargs):
     return dijitso.jit(*args, **kwargs)
 
 
-_cpp_math_builtins = [
-    # <cmath> functions: from http://www.cplusplus.com/reference/cmath/
-    "cos",
-    "sin",
-    "tan",
-    "acos",
-    "asin",
-    "atan",
-    "atan2",
-    "cosh",
-    "sinh",
-    "tanh",
-    "exp",
-    "frexp",
-    "ldexp",
-    "log",
-    "log10",
-    "modf",
-    "pow",
-    "sqrt",
-    "ceil",
-    "fabs",
-    "floor",
-    "fmod",
-    "max",
-    "min"
-]
-
-_math_header = """
-// cmath functions
-%s
-
-const double pi = DOLFIN_PI;
-const PetscComplex j = PETSC_i;
-""" % "\n".join("using std::%s;" % mf for mf in _cpp_math_builtins)
-
-
 def compile_class(cpp_data):
     """Compile a user C(++) string or set of statements to a Python object
 
