@@ -19,7 +19,6 @@ RESTRICT_REQUIREMENTS = ">=2018.2.0.dev0,<2018.3"
 REQUIREMENTS = [
     "numpy",
     "numba",
-    "mpi4py",
     "fenics-ffc{}".format(RESTRICT_REQUIREMENTS),
     "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
     "fenics-dijitso{}".format(RESTRICT_REQUIREMENTS),
