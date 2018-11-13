@@ -7,50 +7,8 @@
 """Some special functions"""
 
 import ufl
-from dolfin import cpp, function
 
-
-class MeshCoordinates(function.BaseExpression):
-    def __init__(self, mesh: cpp.mesh.Mesh):
-        """Create function that evaluates to the mesh coordinates at each
-        vertex.
-
-        """
-
-        # Initialize C++ part
-        self._cpp_object = cpp.function.MeshCoordinates(mesh)
-
-        # Initialize UFL part
-        ufl_element = mesh.ufl_domain().ufl_coordinate_element()
-        if ufl_element.family() != "Lagrange" or ufl_element.degree() != 1:
-            raise RuntimeError("MeshCoordinates only supports affine meshes")
-        super().__init__(element=ufl_element, domain=mesh.ufl_domain())
-
-
-class FacetArea(function.BaseExpression):
-    def __init__(self, mesh: cpp.mesh.Mesh):
-        """Create function that evaluates to the facet area/length on each
-        facet.
-
-        *Example of usage*
-
-            .. code-block:: python
-
-                mesh = UnitSquare(4,4)
-                fa = FacetArea(mesh)
-
-        """
-
-        # Initialize C++ part
-        self._cpp_object = cpp.function.FacetArea(mesh)
-
-        # Initialize UFL part
-        # NB! This is defined as a piecewise constant function for
-        # each cell, not for each facet!
-        ufl_element = ufl.FiniteElement("Discontinuous Lagrange",
-                                        mesh.ufl_cell(), 0)
-        super().__init__(
-            domain=mesh.ufl_domain(), element=ufl_element, name="FacetArea")
+from dolfin import cpp
 
 
 def FacetNormal(mesh: cpp.mesh.Mesh) -> ufl.FacetNormal:

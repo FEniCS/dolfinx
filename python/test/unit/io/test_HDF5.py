@@ -10,6 +10,7 @@ import dolfin
 from dolfin import (MPI, Cell, Expression, Function, FunctionSpace,
                     MeshEntities, MeshEntity, MeshFunction,
                     MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
+from dolfin import function
 from dolfin.io import HDF5File
 from dolfin.la import PETScVector
 from dolfin_utils.test.fixtures import tempdir
@@ -168,7 +169,12 @@ def test_save_and_read_function(tempdir):
     Q = FunctionSpace(mesh, ("CG", 3))
     F0 = Function(Q)
     F1 = Function(Q)
-    E = Expression("x[0]", degree=1)
+
+    @function.expression.numba_eval
+    def expr_eval(values, x, cell_idx):
+        values[:, 0] = x[:, 0]
+
+    E = Expression(expr_eval)
     F0.interpolate(E)
 
     # Save to HDF5 File

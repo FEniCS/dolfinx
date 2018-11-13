@@ -108,35 +108,9 @@ First, the modules :py:mod:`random` :py:mod:`matplotlib`
 
     import random
     from dolfin import *
+    from dolfin import function
     from dolfin.io import XDMFFile
     from dolfin.fem.assemble import assemble
-
-.. index:: Expression
-
-A class which will be used to represent the initial conditions is then
-created::
-
-    # Class representing the intial conditions
-    class InitialConditions(UserExpression):
-        def __init__(self, **kwargs):
-            random.seed(2 + MPI.rank(MPI.comm_world))
-            super().__init__(**kwargs)
-        def eval(self, values, x):
-            values[:, 0] = 0.63 + 0.02*(0.5 - random.random())
-            values[:, 1] = 0.0
-        def value_shape(self):
-            return (2,)
-
-It is a subclass of :py:class:`Expression
-<dolfin.functions.expression.Expression>`. In the constructor
-(``__init__``), the random number generator is seeded. If the program
-is run in parallel, the random number generator is seeded using the
-rank (process number) to ensure a different sequence of numbers on
-each process.  The function ``eval`` returns values for a function of
-dimension two.  For the first component of the function, a randomized
-value is returned.  The method ``value_shape`` declares that the
-:py:class:`Expression <dolfin.functions.expression.Expression>` is
-vector valued with dimension two.
 
 .. index::
    single: NonlinearProblem; (in Cahn-Hilliard demo)
@@ -227,12 +201,16 @@ components of ``u``, and not copies.
 .. index::
    single: interpolating functions; (in Cahn-Hilliard demo)
 
-Initial conditions are created by using the class defined at the
-beginning of the demo and then interpolating the initial conditions into
-a finite element space::
+Initial conditions are created by using the evaluate method
+then interpolated into a finite element space::
+
+    @function.expression.numba_eval
+    def init_cond(values, x, cell):
+        values[:, 0] = 0.63 + 0.02*(0.5 - random.random())
+        values[:, 1] = 0.0
 
     # Create intial conditions and interpolate
-    u_init = InitialConditions(degree=1)
+    u_init = Expression(init_cond, shape=(2,))
     u.interpolate(u_init)
 
 The first line creates an object of type ``InitialConditions``.  The

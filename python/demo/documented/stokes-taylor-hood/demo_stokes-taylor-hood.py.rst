@@ -83,10 +83,12 @@ representing functions over mesh entities (such as over cells or over
 facets). Mesh and mesh functions can be read from file in the
 following way::
 
+    import numpy
     import ufl
 
     import dolfin
     from dolfin import *
+    from dolfin import function
     from dolfin.io import XDMFFile
 
     # Load mesh and subdomains
@@ -116,12 +118,26 @@ equations. Now we can define boundary conditions::
 
     # No-slip boundary condition for velocity
     # x1 = 0, x1 = 1 and around the dolphin
-    noslip = Expression(("0", "0"), degree=1)
+
+    @function.expression.numba_eval
+    def noslip_eval(values, x, cell):
+        values[:, 0] = 0.0
+        values[:, 1] = 0.0
+
+    noslip_expr = Expression(noslip_eval, shape=(2,))
+    noslip = interpolate(noslip_expr, W.sub(0).collapse())
     bc0 = DirichletBC(W.sub(0), noslip, (sub_domains, 0))
 
     # Inflow boundary condition for velocity
     # x0 = 1
-    inflow = Expression(("-sin(x[1]*pi)", "0.0"), degree=2)
+
+    @function.expression.numba_eval
+    def inflow_eval(values, x, cell):
+        values[:, 0] = - numpy.sin(x[:, 1] * numpy.pi)
+        values[:, 1] = 0.0
+
+    inflow_expr = Expression(inflow_eval, shape=(2,))
+    inflow = interpolate(inflow_expr, W.sub(0).collapse())
     bc1 = DirichletBC(W.sub(0), inflow, (sub_domains, 1))
 
     # Collect boundary conditions

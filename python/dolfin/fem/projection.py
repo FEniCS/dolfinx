@@ -19,7 +19,7 @@ def project(v,
             V=None,
             bcs=None,
             mesh=None,
-            function=None,
+            funct=None,
             solver_type="lu",
             preconditioner_type="default",
             form_compiler_parameters=None):
@@ -38,6 +38,8 @@ def project(v,
             <dolfin.functions.functionspace.FunctionSpace>`
         mesh
             Optional argument :py:class:`mesh <dolfin.cpp.Mesh>`.
+        funct
+            Target function where result is stored.
         solver_type
             see :py:func:`solve <dolfin.fem.solving.solve>` for options.
         preconditioner_type
@@ -85,19 +87,19 @@ def project(v,
     # Define variational problem for projection
     w = function.TestFunction(V)
     Pv = function.TrialFunction(V)
-    a = ufl.inner(w, Pv) * dx
-    L = ufl.inner(w, v) * dx
+    a = ufl.inner(Pv, w) * dx
+    L = ufl.inner(v, w) * dx
 
     # Assemble linear system
     A, b = fem.assemble_system(
         a, L, bcs=bcs, form_compiler_parameters=form_compiler_parameters)
 
     # Solve linear system for projection
-    if function is None:
-        function = function.Function(V)
-    la.solve(A, function.vector(), b, solver_type, preconditioner_type)
+    if funct is None:
+        funct = function.Function(V)
+    la.solve(A, funct.vector(), b, solver_type, preconditioner_type)
 
-    return function
+    return funct
 
 
 def _extract_function_space(expression, mesh):

@@ -92,44 +92,43 @@ equation.  For convenience we also include the DOLFIN namespace.
    using namespace dolfin;
 
 Then follows the definition of the coefficient functions (for
-:math:`f` and :math:`g`), which are derived from the
-:cpp:class:`Expression` class in DOLFIN
+:math:`f` and :math:`g`)
 
 .. code-block:: cpp
 
-   // Source term (right-hand side)
-   class Source : public function::Expression
+   void source_eval(PetscScalar* values, const double* x, const int64_t* cell_idx,
+                   const int num_points, const int value_size, const int gdim,
+                   const int num_cells)
    {
-   public:
-     Source() : function::Expression({}) {}
+     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                             Eigen::RowMajor>>
+         eig_values(values, num_points, value_size);
+     Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                   Eigen::RowMajor>>
+         eig_x(x, num_points, gdim);
 
-     void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>> values,
-        Eigen::Ref<const EigenRowArrayXXd> x) const
+     for (int i = 0; i != eig_x.rows(); ++i)
      {
-     for (unsigned int i = 0; i != x.rows(); ++i)
-       {
-         double dx = x(i, 0) - 0.5;
-         double dy = x(i, 1) - 0.5;
-         values(i, 0) = 10*exp(-(dx*dx + dy*dy) / 0.02);
-       }
+       double dx = eig_x(i, 0) - 0.5;
+       double dy = eig_x(i, 1) - 0.5;
+       eig_values(i, 0) = 10 * exp(-(dx * dx + dy * dy) / 0.02);
      }
-   };
+   }
 
-   // Normal derivative (Neumann boundary condition)
-   class dUdN : public function::Expression
+   void dudn_eval(PetscScalar* values, const double* x, const int64_t* cell_idx,
+                 const int num_points, const int value_size, const int gdim,
+                 const int num_cells)
    {
-   public:
-     dUdN() : function::Expression({}) {}
+     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                             Eigen::RowMajor>>
+         eig_values(values, num_points, value_size);
+     Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic,
+                                   Eigen::RowMajor>>
+         eig_x(x, num_points, gdim);
 
-     void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>> values,
-              Eigen::Ref<const EigenRowArrayXXd> x) const
-     {
-       for (unsigned int i = 0; i != x.rows(); ++i)
-           values(i, 0) = sin(5*x(i, 0));
-     }
-   };
+     for (unsigned int i = 0; i != eig_x.rows(); ++i)
+       eig_values(i, 0) = sin(5 * eig_x(i, 0));
+   }
 
 The ``DirichletBoundary`` is derived from the :cpp:class:`SubDomain`
 class and defines the part of the boundary to which the Dirichlet
@@ -212,18 +211,27 @@ to the linear form.
     auto L = std::make_shared<fem::Form>(
         std::shared_ptr<ufc_form>(form_L->form()),
         std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
-     auto f = std::make_shared<Source>();
-     auto g = std::make_shared<dUdN>();
-     //L->f = f;
-     //L->g = g;
+
+    auto f_expr = function::Expression({});
+    f_expr.eval = source_eval;
+
+    auto g_expr = function::Expression({});
+    g_expr.eval = dudn_eval;
+
+    auto f = std::make_shared<function::Function>(V);
+    auto g = std::make_shared<function::Function>(V);
+
+    // Attach 'coordinate mapping' to mesh
+    auto cmap = a->coordinate_mapping();
+    mesh->geometry().coord_mapping = cmap;
+
+    f->interpolate(f_expr);
+    g->interpolate(g_expr);
 
     L->set_coefficient_index_to_name_map(form_L->coefficient_number_map);
     L->set_coefficient_name_to_index_map(form_L->coefficient_name_map);
     L->set_coefficients({ {"f", f}, {"g", g} });
 
-    // Attach 'coordinate mapping' to mesh
-    auto cmap = a->coordinate_mapping();
-    mesh->geometry().coord_mapping = cmap;
 
 Now, we have specified the variational forms and can consider the
 solution of the variational problem. First, we need to define a

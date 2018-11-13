@@ -14,6 +14,7 @@ from dolfin import (MPI, Cells, CellType, Expression, FiniteElement, Function,
                     FunctionSpace, Mesh, Point, UnitCubeMesh, UnitSquareMesh,
                     VectorElement, VectorFunctionSpace, VertexRange, fem,
                     interpolate, triangle)
+from dolfin import function
 from dolfin.cpp.mesh import GhostMode
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -35,9 +36,22 @@ def test_p4_scalar_vector():
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
 
         Q = FunctionSpace(mesh, ("CG", 4))
-        F0 = interpolate(Expression("x[0]", degree=4), Q)
-        F1 = interpolate(Expression("x[1]", degree=4), Q)
-        F2 = interpolate(Expression("x[2]", degree=4), Q)
+
+        @function.expression.numba_eval
+        def x0(values, x, cell_idx):
+            values[:, 0] = x[:, 0]
+
+        @function.expression.numba_eval
+        def x1(values, x, cell_idx):
+            values[:, 0] = x[:, 1]
+
+        @function.expression.numba_eval
+        def x2(values, x, cell_idx):
+            values[:, 0] = x[:, 2]
+
+        F0 = interpolate(Expression(x0), Q)
+        F1 = interpolate(Expression(x1), Q)
+        F2 = interpolate(Expression(x2), Q)
 
         pts = numpy.array([[0.4, 0.4, 0.1], [0.4, 0.1, 0.4], [0.1, 0.4, 0.4]])
         for pt in pts:
@@ -46,7 +60,14 @@ def test_p4_scalar_vector():
             assert numpy.isclose(pt[2], F2(pt)[0])
 
         V = VectorFunctionSpace(mesh, ("CG", 4))
-        F = interpolate(Expression(("x[0]", "x[1]", "0.0"), degree=4), V)
+
+        @function.expression.numba_eval
+        def x0x10(values, x, cell_idx):
+            values[:, 0] = x[:, 0]
+            values[:, 1] = x[:, 1]
+            values[:, 2] = 0.0
+
+        F = interpolate(Expression(x0x10, shape=(3,)), V)
         for pt in pts:
             result = F(pt)
             assert numpy.isclose(pt[0], result[0])
@@ -58,7 +79,12 @@ def test_p4_parallel_2d():
     mesh = UnitSquareMesh(MPI.comm_world, 5, 8)
     Q = FunctionSpace(mesh, ("CG", 4))
     F = Function(Q)
-    F.interpolate(Expression("x[0]", degree=4))
+
+    @function.expression.numba_eval
+    def x0(values, x, cell_idx):
+        values[:, 0] = x[:, 0]
+
+    F.interpolate(Expression(x0))
 
     # Generate random points in this mesh partition (one per cell)
     x = numpy.zeros(3)
@@ -78,7 +104,12 @@ def test_p4_parallel_3d():
     mesh = UnitCubeMesh(MPI.comm_world, 3, 5, 8)
     Q = FunctionSpace(mesh, ("CG", 5))
     F = Function(Q)
-    F.interpolate(Expression("x[0]", degree=5))
+
+    @function.expression.numba_eval
+    def x0(values, x, cell_idx):
+        values[:, 0] = x[:, 0]
+
+    F.interpolate(Expression(x0))
 
     # Generate random points in this mesh partition (one per cell)
     x = numpy.zeros(4)
@@ -101,7 +132,14 @@ def test_mixed_parallel():
     Q = FiniteElement("Lagrange", triangle, 5)
     W = FunctionSpace(mesh, Q * V)
     F = Function(W)
-    F.interpolate(Expression(("x[0]", "x[1]", "sin(x[0] + x[1])"), degree=5))
+
+    @function.expression.numba_eval
+    def expr_eval(values, x, cell_idx):
+        values[:, 0] = x[:, 0]
+        values[:, 1] = x[:, 1]
+        values[:, 2] = numpy.sin(x[:, 0] + x[:, 1])
+
+    F.interpolate(Expression(expr_eval, shape=(3,)))
 
     # Generate random points in this mesh partition (one per cell)
     x = numpy.zeros(3)

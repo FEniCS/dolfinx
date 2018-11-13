@@ -6,8 +6,9 @@
 
 #pragma once
 
-#include "GenericFunction.h"
 #include <Eigen/Dense>
+#include <dolfin/common/types.h>
+#include <memory>
 #include <petscsys.h>
 #include <vector>
 
@@ -26,22 +27,9 @@ class Mesh;
 
 namespace function
 {
+class FunctionSpace;
 
-/// This class represents a user-defined expression. Expressions can
-/// be used as coefficients in variational forms or interpolated
-/// into finite element spaces.
-///
-/// An expression is defined by overloading the eval() method. Users
-/// may choose to overload either a simple version of eval(), in the
-/// case of expressions only depending on the coordinate x, or an
-/// optional version for expressions depending on x and mesh data
-/// like cell indices or facet normals.
-///
-/// The geometric dimension (the size of x) and the value rank and
-/// dimensions of an expression must supplied as arguments to the
-/// constructor.
-
-class Expression : public GenericFunction
+class Expression
 {
 
 public:
@@ -60,38 +48,11 @@ public:
   /// Destructor
   virtual ~Expression();
 
-  //--- Implementation of GenericFunction interface ---
-
-  /// Evaluate at given point in given cell
-  ///
-  /// @param    values (Eigen::Ref<Eigen::VectorXd>)
-  ///         The values at the point.
-  /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
-  ///         The coordinates of the point.
-  /// @param    cell (mesh::Cell)
-  ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x,
-                    const dolfin::mesh::Cell& cell) const override;
-
-  /// Evaluate at given point.
-  ///
-  /// @param values (Eigen::Ref<Eigen::VectorXd>)
-  ///         The values at the point.
-  /// @param x (Eigen::Ref<const Eigen::VectorXd>)
-  ///         The coordinates of the point.
-  virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x) const override;
-
   /// Return value rank.
   ///
   /// @return std::size_t
   ///         The value rank.
-  virtual std::size_t value_rank() const override;
+  virtual std::size_t value_rank() const;
 
   /// Return value dimension for given axis.
   ///
@@ -100,35 +61,13 @@ public:
   ///
   /// @return std::size_t
   ///         The value dimension (for the given axis).
-  virtual std::size_t value_dimension(std::size_t i) const override;
+  virtual std::size_t value_dimension(std::size_t i) const;
 
   /// Return value shape
   ///
   /// @return std::vector<std::size_t>
   ///         The value shape.
-  virtual std::vector<std::size_t> value_shape() const override;
-
-  /// Property setter for type "double"
-  /// Used in pybind11 Python interface to attach a value to a python attribute
-  ///
-  virtual void set_property(std::string name, PetscScalar value);
-
-  /// Property getter for type "double"
-  /// Used in pybind11 Python interface to get the value of a python attribute
-  ///
-  virtual PetscScalar get_property(std::string name) const;
-
-  /// Property setter for type "GenericFunction"
-  /// Used in pybind11 Python interface to attach a value to a python attribute
-  ///
-  virtual void set_generic_function(std::string name,
-                                    std::shared_ptr<GenericFunction> f);
-
-  /// Property getter for type "GenericFunction"
-  /// Used in pybind11 Python interface to get the value of a python attribute
-  ///
-  virtual std::shared_ptr<GenericFunction>
-  get_generic_function(std::string name) const;
+  virtual std::vector<std::size_t> value_shape() const;
 
   /// Restrict function to local cell (compute expansion coefficients w).
   ///
@@ -140,10 +79,10 @@ public:
   ///         The cell.
   /// @param  coordinate_dofs (double*)
   ///         The coordinates
-  virtual void restrict(
-      PetscScalar* w, const fem::FiniteElement& element,
-      const mesh::Cell& dolfin_cell,
-      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const override;
+  virtual void
+  restrict(PetscScalar* w, const fem::FiniteElement& element,
+           const mesh::Cell& dolfin_cell,
+           const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Compute values at all mesh vertices.
   ///
@@ -153,14 +92,37 @@ public:
   ///         The values at all vertices.
   virtual Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                        Eigen::RowMajor>
-  compute_point_values(const mesh::Mesh& mesh) const override;
+  compute_point_values(const mesh::Mesh& mesh) const;
 
-  /// Return shared pointer to function space (NULL)
-  /// Expression does not have a FunctionSpace
+  /// Evaluate method
   ///
-  /// @return FunctionSpace
-  ///         Return the shared pointer.
-  virtual std::shared_ptr<const FunctionSpace> function_space() const override;
+  /// Signature of the method accepts:
+  /// @param values
+  ///        Pointer to row major 2D C-style array of `PetscScalar`.
+  ///        The array has shape=(number of points, value size) and has to
+  ///        be filled with custom values in the function body.
+  /// @param x
+  ///        Pointer to a row major C-style 2D array of `double`.
+  ///        The array has shape=(number of points, geometrical dimension)
+  ///        and represents array of points in physical space at which the
+  ///        Expression is being evaluated.
+  /// @param cell_idx
+  ///        Pointer to a 1D C-style array of `int`. It is an array
+  ///        of indices of cells where points are evaluated. Value -1 represents
+  ///        cell-independent eval function
+  /// @param num_points
+  ///        Number of points where expression is evaluated
+  /// @param value_size
+  ///        Size of expression value
+  /// @param gdim
+  ///        Geometrical dimension of physical point where expression
+  ///        is evaluated
+  /// @param num_cells
+  ///        Number of cells
+  std::function<void(PetscScalar* values, const double* x,
+                     const int64_t* cell_idx, int num_points, int value_size,
+                     int gdim, int num_cells)>
+      eval;
 
 private:
   // Value shape

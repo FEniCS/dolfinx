@@ -11,7 +11,8 @@ Chosen for comparison with results from Ihlenburg's book
 
 from dolfin import UnitSquareMesh, MPI, FacetNormal, Expression, \
     FunctionSpace, TrialFunction, TestFunction, dot, inner, dx, ds, \
-    grad, Function, solve, interpolate, has_petsc_complex
+    grad, Function, solve, interpolate, has_petsc_complex, project
+from dolfin import function
 from dolfin.fem.assemble import assemble
 from dolfin.io import XDMFFile
 import numpy as np
@@ -32,16 +33,16 @@ n = FacetNormal(mesh)
 
 # Incident plane wave
 theta = np.pi / 8
-ui = Expression(
-    'exp(j*k0*(cos(theta)*x[0] + sin(theta)*x[1]))',
-    k0=k0,
-    theta=theta,
-    degree=deg + 3,
-    domain=mesh.ufl_domain()
-)
+
+@function.expression.numba_eval
+def ui_eval(values, x, cell_idx):
+    values[:, 0] = np.exp(1.0j * k0 * (np.cos(theta) * x[:, 0] + np.sin(theta) * x[:, 1]))
 
 # Test and trial function space
 V = FunctionSpace(mesh, ("Lagrange", deg))
+
+# Prepare Expression as FE function
+ui = interpolate(Expression(ui_eval), V)
 
 # Define variational problem
 u = TrialFunction(V)
@@ -66,9 +67,9 @@ Pollution errors are evident for high wavenumbers.'''
 # Function space for exact solution - need it to be higher than deg
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 # "exact" solution
-u_exact = interpolate(ui, V_exact)
+u_exact = interpolate(Expression(ui_eval), V_exact)
 # best approximation from V
-u_BA = interpolate(ui, V)
+u_BA = project(u_exact, V)
 
 # H1 errors
 diff = u - u_exact

@@ -12,7 +12,6 @@ This demo illustrates how to:
 
 * Solve a linear partial differential equation
 * Create and apply Dirichlet boundary conditions
-* Define Expressions
 * Define a FunctionSpace
 * Create a SubDomain
 
@@ -77,6 +76,8 @@ Poisson equation step-by-step.
 First, the :py:mod:`dolfin` module is imported: ::
 
     import numpy as np
+    import ufl
+
     import dolfin
     from dolfin import *
     from dolfin.io import XDMFFile
@@ -146,12 +147,7 @@ and a :py:class:`TestFunction
 
 Further, the source :math:`f` and the boundary normal derivative
 :math:`g` are involved in the variational forms, and hence we must
-specify these. Both :math:`f` and :math:`g` are given by simple
-mathematical formulas, and can be easily declared using the
-:py:class:`Expression <dolfin.functions.expression.Expression>` class.
-Note that the strings defining ``f`` and ``g`` use C++ syntax since,
-for efficiency, DOLFIN will generate and compile C++ code for these
-expressions at run-time.
+specify these.
 
 With these ingredients, we can write down the bilinear form ``a`` and
 the linear form ``L`` (using UFL operators). In summary, this reads ::
@@ -159,8 +155,9 @@ the linear form ``L`` (using UFL operators). In summary, this reads ::
     # Define variational problem
     u = TrialFunction(V)
     v = TestFunction(V)
-    f = Expression("10*exp(-(pow(x[0] - 0.5, 2) + pow(x[1] - 0.5, 2)) / 0.02)", degree=2)
-    g = Expression("sin(5*x[0])", degree=2)
+    x = SpatialCoordinate(mesh)
+    f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+    g = ufl.sin(5*x[0])
     a = inner(grad(u), grad(v))*dx
     L = inner(f, v)*dx + inner(g, v)*ds
 

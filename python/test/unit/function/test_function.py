@@ -13,8 +13,9 @@ import pytest
 import ufl
 from dolfin import (DOLFIN_EPS, MPI, Expression, Function,
                     FunctionSpace, Point, TensorFunctionSpace, UnitCubeMesh,
-                    UserExpression, VectorFunctionSpace, Vertex, cpp,
+                    VectorFunctionSpace, Vertex, cpp,
                     interpolate, lt)
+from dolfin import function
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -134,7 +135,13 @@ def test_assign(V, W):
 
         # Test errounious assignments
         uu = Function(V1)
-        f = Expression("1.0", degree=0)
+
+        @function.expression.numba_eval
+        def expr_eval(values, x, cell_idx):
+            values[:, 0] = 1.0
+
+        f = Expression(expr_eval)
+
         with pytest.raises(RuntimeError):
             uu.assign(1.0)
         with pytest.raises(RuntimeError):
@@ -155,14 +162,33 @@ def test_call(R, V, W, Q, mesh):
     u2 = Function(W)
     u3 = Function(Q)
 
-    e1 = Expression("x[0] + x[1] + x[2]", degree=1)
-    e2 = Expression(
-        ("x[0] + x[1] + x[2]", "x[0] - x[1] - x[2]", "x[0] + x[1] + x[2]"),
-        degree=1)
-    e3 = Expression(
-        (("x[0] + x[1] + x[2]", "x[0] - x[1] - x[2]", "x[0] + x[1] + x[2]"),
-         ("x[0]", "x[1]", "x[2]"), ("-x[0]", "-x[1]", "-x[2]")),
-        degree=1)
+    @function.expression.numba_eval
+    def expr_eval1(values, x, cell_idx):
+        values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
+
+    e1 = Expression(expr_eval1)
+
+    @function.expression.numba_eval
+    def expr_eval2(values, x, cell_idx):
+        values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
+        values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
+        values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
+
+    e2 = Expression(expr_eval2, shape=(3,))
+
+    @function.expression.numba_eval
+    def expr_eval3(values, x, cell_idx):
+        values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
+        values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
+        values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
+        values[:, 3] = x[:, 0]
+        values[:, 4] = x[:, 1]
+        values[:, 5] = x[:, 2]
+        values[:, 6] = - x[:, 0]
+        values[:, 7] = - x[:, 1]
+        values[:, 8] = - x[:, 2]
+
+    e3 = Expression(expr_eval3, shape=(3, 3))
 
     u0.vector()[:] = 1.0
     u1.interpolate(e1)
@@ -218,19 +244,35 @@ def test_scalar_conditions(R):
 
 
 def test_interpolation_mismatch_rank0(W):
-    f = Expression("1.0", degree=0)
+
+    @function.expression.numba_eval
+    def expr_eval(values, x, cell_idx):
+        values[:, 0] = 1.0
+
+    f = Expression(expr_eval, shape=())
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
 
 def test_interpolation_mismatch_rank1(W):
-    f = Expression(("1.0", "1.0"), degree=0)
+
+    @function.expression.numba_eval
+    def expr_eval(values, x, cell_idx):
+        values[:, 0] = 1.0
+        values[:, 1] = 1.0
+
+    f = Expression(expr_eval, shape=(2,))
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
 
-def test_interpolation_jit_rank0(V):
-    f = Expression("1.0", degree=0)
+def test_interpolation_rank0(V):
+
+    @function.expression.numba_eval
+    def expr_eval(values, x, cell_idx):
+        values[:, 0] = 1.0
+
+    f = Expression(expr_eval, shape=())
     w = interpolate(f, V)
     x = w.vector()
     assert MPI.max(MPI.comm_world, abs(x.get_local()).max()) == 1
@@ -255,8 +297,14 @@ def test_near_evaluations(R, mesh):
     assert round(u0(a)[0] - u0(a_shift_xyz)[0], 7) == 0
 
 
-def test_interpolation_jit_rank1(W):
-    f = Expression(("1.0", "1.0", "1.0"), degree=0)
+def test_interpolation_rank1(W):
+    @function.expression.numba_eval
+    def expr_eval(values, x, cell_idx):
+        values[:, 0] = 1.0
+        values[:, 1] = 1.0
+        values[:, 2] = 1.0
+
+    f = Expression(expr_eval, shape=(3,))
     w = interpolate(f, W)
     x = w.vector()
     assert abs(x.get_local()).max() == 1
@@ -265,27 +313,25 @@ def test_interpolation_jit_rank1(W):
 
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
-    class F0(UserExpression):
-        def eval(self, values, x):
-            values[:, 0] = 1.0
 
-    class F1(UserExpression):
-        def eval(self, values, x):
-            values[:, 0] = 1.0
-            values[:, 1] = 1.0
-            values[:, 2] = 1.0
+    @function.expression.numba_eval
+    def expr_eval0(values, x, cell_idx):
+        values[:, 0] = 1.0
 
-        def value_shape(self):
-            return (3, )
+    @function.expression.numba_eval
+    def expr_eval1(values, x, cell_idx):
+        values[:, 0] = 1.0
+        values[:, 1] = 1.0
+        values[:, 2] = 1.0
 
     # Scalar interpolation
-    f0 = F0(degree=0)
+    f0 = Expression(expr_eval0, shape=())
     f = Function(V)
     f = interpolate(f0, V)
     assert round(f.vector().norm(cpp.la.Norm.l1) - mesh.num_vertices(), 7) == 0
 
     # Vector interpolation
-    f1 = F1(degree=0)
+    f1 = Expression(expr_eval1, shape=(3,))
     f = Function(W)
     f.interpolate(f1)
     assert round(f.vector().norm(cpp.la.Norm.l1) - 3 * mesh.num_vertices(),
