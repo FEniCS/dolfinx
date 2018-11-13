@@ -6,9 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import functools
-import hashlib
-
-import numpy
 
 import dijitso
 import dolfin.pkgconfig
