@@ -12,7 +12,7 @@ from petsc4py import PETSc
 from dolfin import cpp
 
 
-def numba_eval(numba_jit_options: dict = {"nopython": True, "cache": True},
+def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True},
                numba_cfunc_options: dict = {"nopython": True, "cache": True}):
     """Decorator to create Numba JIT-compiled evaluate function.
 
@@ -36,7 +36,7 @@ def numba_eval(numba_jit_options: dict = {"nopython": True, "cache": True},
 
     Example
     -------
-    >>> @function.expression.numba_eval()
+    >>> @function.expression.numba_eval
     >>> def expr(values, x, cell_idx):
     >>>    values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
     >>>    values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
@@ -69,7 +69,11 @@ def numba_eval(numba_jit_options: dict = {"nopython": True, "cache": True},
 
         return eval.address
 
-    return decorator
+    if len(args) == 1 and callable(args[0]):
+        # Allows decoration without arguments.
+        return decorator(args[0])
+    else:
+        return decorator
 
 
 class Expression(cpp.function.Expression):
