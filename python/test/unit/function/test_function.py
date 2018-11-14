@@ -311,7 +311,7 @@ def test_interpolation_rank1(W):
 
 
 def test_numba_expression_python(W):
-    @function.expression.numba_eval(numba_jit_options={"nopython": False}, 
+    @function.expression.numba_eval(numba_jit_options={"nopython": False},
                                     numba_cfunc_options={"nopython": False})
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
@@ -322,7 +322,7 @@ def test_numba_expression_python(W):
     w = interpolate(f, W)
     x = w.vector()
     assert abs(x.get_local()).max() == 1
-    assert abs(x.get_local()).min() == 1  
+    assert abs(x.get_local()).min() == 1
 
 
 @skip_in_parallel
