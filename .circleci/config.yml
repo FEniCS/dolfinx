@@ -117,7 +117,6 @@ jobs:
       - image: quay.io/fenicsproject/dolfinx:latest
     environment:
       MPLBACKEND: "agg"
-      DOLFIN_NOPLOT: 1
       DEBIAN_FRONTEND: "noninteractive"
     steps:
       - checkout
@@ -146,7 +145,6 @@ jobs:
       - image: quay.io/fenicsproject/dolfinx:complex
     environment:
       MPLBACKEND: "agg"
-      DOLFIN_NOPLOT: 1
       DEBIAN_FRONTEND: "noninteractive"
     steps:
       - checkout

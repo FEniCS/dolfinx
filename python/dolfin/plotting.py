@@ -100,8 +100,11 @@ def mplot_function(ax, f, **kwargs):
 
     if fvec.size() == mesh.num_cells():
         # DG0 cellwise function
-        C = fvec.get_local(
-        )  # NB! Assuming here dof ordering matching cell numbering
+        C = fvec.get_local()
+        if (C.dtype.type is np.complex128):
+            warnings.warn("Plotting real part of complex data")
+            C = np.real(C)
+        # NB! Assuming here dof ordering matching cell numbering
         if gdim == 2 and tdim == 2:
             return ax.tripcolor(mesh2triang(mesh), C, **kwargs)
         elif gdim == 3 and tdim == 2:  # surface in 3d
@@ -133,6 +136,10 @@ def mplot_function(ax, f, **kwargs):
         # Scalar function, interpolated to vertices
         # TODO: Handle DG1?
         C = f.compute_point_values(mesh)
+        if (C.dtype.type is np.complex128):
+            warnings.warn("Plotting real part of complex data")
+            C = np.real(C)
+
         if gdim == 2 and tdim == 2:
             mode = kwargs.pop("mode", "contourf")
             if mode == "contourf":
