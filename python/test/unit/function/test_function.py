@@ -310,6 +310,7 @@ def test_interpolation_rank1(W):
     assert abs(x.get_local()).max() == 1
     assert abs(x.get_local()).min() == 1
 
+
 @pytest.mark.xfail(raises=numba.errors.TypingError)
 def test_numba_expression_pure_object_mode(W):
     # Currently numba decoration only works with jits and cfuncs that
