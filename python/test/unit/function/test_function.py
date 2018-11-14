@@ -311,8 +311,8 @@ def test_interpolation_rank1(W):
 
 
 def test_numba_expression_pure_object_mode(W):
-    @function.expression.numba_eval(numba_jit_options={"forceobj" : False},
-                                    numba_cfunc_options={"forceobj" : False})
+    @function.expression.numba_eval(numba_jit_options={"forceobj": False},
+                                    numba_cfunc_options={"forceobj": False})
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
