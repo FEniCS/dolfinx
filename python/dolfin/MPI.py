@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import common, cpp
+from dolfin import cpp
 
 comm_world = cpp.MPI.comm_world
 comm_self = cpp.MPI.comm_self
