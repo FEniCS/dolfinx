@@ -16,7 +16,7 @@ namespace dolfin
 
 namespace function
 {
-class GenericFunction;
+class Function;
 }
 
 namespace fem
@@ -24,7 +24,7 @@ namespace fem
 class FiniteElement;
 
 /// Storage for the coefficients of a Form consisting of
-/// GenericFunctions and the Elements they are defined on
+/// Functions and the Elements they are defined on
 class FormCoefficients
 {
 public:
@@ -38,12 +38,12 @@ public:
   /// Get number of coefficients
   std::size_t size() const;
 
-  /// Set a coefficient to be a GenericFunction
+  /// Set a coefficient to be a Function
   void set(std::size_t i,
-           std::shared_ptr<const function::GenericFunction> coefficient);
+           std::shared_ptr<const function::Function> coefficient);
 
-  /// Get the GenericFunction coefficient i
-  const function::GenericFunction* get(std::size_t i) const;
+  /// Get the Function coefficient i
+  const function::Function* get(std::size_t i) const;
 
   /// Get the element for coefficient i
   const fem::FiniteElement& element(std::size_t i) const;
@@ -55,8 +55,8 @@ private:
   // Finite elements for coefficients
   std::vector<fem::FiniteElement> _elements;
 
-  // GenericFunctions for the coefficients
-  std::vector<std::shared_ptr<const function::GenericFunction>> _coefficients;
+  // Functions for the coefficients
+  std::vector<std::shared_ptr<const function::Function>> _coefficients;
 
   // Copy of 'original positions' in UFL form
   std::vector<std::size_t> _original_pos;

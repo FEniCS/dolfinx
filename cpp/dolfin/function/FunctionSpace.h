@@ -39,7 +39,6 @@ namespace function
 {
 class Expression;
 class Function;
-class GenericFunction;
 
 /// This class represents a finite element function space defined by
 /// a mesh, a finite element, and a local-to-global mapping of the
@@ -141,10 +140,10 @@ public:
   ///
   /// @param   expansion_coefficients (_la::PETScVector_)
   ///         The expansion coefficients.
-  /// @param    v (_GenericFunction_)
+  /// @param    v (_Function_)
   ///         The function to be interpolated.
   void interpolate(la::PETScVector& expansion_coefficients,
-                   const GenericFunction& v) const;
+                   const Function& v) const;
 
   /// Interpolate expression into function space, returning the
   /// vector of expansion coefficients
@@ -255,9 +254,9 @@ public:
   void print_dofmap() const;
 
 private:
-  // General interpolation from any GenericFunction on any mesh
+  // General interpolation from any Function on any mesh
   void interpolate_from_any(la::PETScVector& expansion_coefficients,
-                            const GenericFunction& v) const;
+                            const Function& v) const;
 
   // General interpolation from any Expression on any mesh
   void interpolate_from_any(la::PETScVector& expansion_coefficients,

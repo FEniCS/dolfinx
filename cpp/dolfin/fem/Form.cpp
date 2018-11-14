@@ -135,7 +135,7 @@ void Form::set_coefficient_name_to_index_map(
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(
-    std::map<std::size_t, std::shared_ptr<const function::GenericFunction>>
+    std::map<std::size_t, std::shared_ptr<const function::Function>>
         coefficients)
 
 {
@@ -144,7 +144,7 @@ void Form::set_coefficients(
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(
-    std::map<std::string, std::shared_ptr<const function::GenericFunction>>
+    std::map<std::string, std::shared_ptr<const function::Function>>
         coefficients)
 {
   for (auto c : coefficients)
@@ -269,7 +269,7 @@ void Form::tabulate_tensor(
   {
     if (enabled_coefficients[i])
     {
-      const function::GenericFunction* coefficient = _coefficients.get(i);
+      const function::Function* coefficient = _coefficients.get(i);
       const FiniteElement& element = _coefficients.element(i);
       coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
     }
