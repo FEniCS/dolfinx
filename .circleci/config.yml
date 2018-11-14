@@ -227,10 +227,10 @@ workflows:
     triggers:
       - schedule:
           cron: "0 0 * * *"
+      - filters:
+          branches:
+            only:
+              - master
     jobs:
       - build-and-push-docker-images:
           context: quay.io
-          filters:
-            branches:
-              only:
-                - master
