@@ -179,7 +179,31 @@ jobs:
       - run:
           name: Push C++ API doc to fenicsproject.org
           command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
-
+  
+  build-and-push-docker-images:
+    docker:
+      - image: docker:stable
+    steps:
+      - setup_remote_docker
+      - checkout
+      - run:
+          name: Build dev-env-real Docker image tag dev-env-real
+          command: docker build --target dev-env-real -t quay.io/fenicsproject/dolfinx:dev-env-real .
+      - run:
+          name: Build dev-env-complex Docker image tag dev-env-complex
+          command: docker build --target dev-env-complex -t quay.io/fenicsproject/dolfinx:dev-env-complex .
+      - run:
+          name: Build real Docker image tags latest, real
+          command: docker build --target real -t quay.io/fenicsproject/dolfinx:latest . && docker tag quay.io/fenicsproject/dolfinx:latest quay.io/fenicsproject/dolfinx:real
+      - run:
+          name: Build complex Docker image tag complex
+          command: docker build --target complex -t quay.io/fenicsproject/dolfinx:complex .
+      - run:
+          name: Build real notebook Docker image tag notebook
+          command: docker build --target notebook -t quay.io/fenicsproject/dolfinx:notebook 
+      - run:
+          name: Build complex notebook Docker image tag notebook-complex
+          command: docker build --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex 
 
 workflows:
   version: 2
@@ -194,13 +218,13 @@ workflows:
             branches:
               only:
                 - master
-  # nightly:
-  #   triggers:
-  #     - schedule:
-  #         cron: "0 5 * * *"
-  #         filters:
-  #           branches:
-  #             only:
-  #               - master
-  #   jobs:
-  #     - build-complex
+   nightly:
+     triggers:
+       - schedule:
+           cron: "0 5 * * *"
+           filters:
+             branches:
+               only:
+                 - jhale/build-docker-images-on-circle-ci
+     jobs:
+       - build-and-push-docker-images 
