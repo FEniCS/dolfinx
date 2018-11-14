@@ -10,8 +10,6 @@
 #include <dolfin/common/SubSystemsManager.h>
 #include <pybind11/pybind11.h>
 
-// Macro for casting between dolfin and mpi4py MPI communicators
-#ifdef HAS_PYBIND11_MPI4PY
 #include <mpi4py/mpi4py.h>
 
 // Import mpi4py on demand
@@ -62,5 +60,3 @@ public:
 };
 }
 }
-
-#endif // HAS_PYBIND11_MPI4PY

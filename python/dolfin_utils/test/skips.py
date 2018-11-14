@@ -9,12 +9,9 @@
 import pytest
 
 from dolfin import MPI
-from dolfin.common import (has_debug,
-                           has_petsc4py, has_petsc_complex, has_slepc)
+from dolfin.common import (has_debug, has_petsc_complex, has_slepc)
 
 # Skips with dependencies
-skip_if_not_petsc4py = pytest.mark.skipif(
-    not has_petsc4py, reason="Skipping unit test(s) depending on petsc4py.")
 skip_if_not_SLEPc = pytest.mark.skipif(
     not has_slepc, reason="Skipping unit test(s) depending on SLEPc.")
 

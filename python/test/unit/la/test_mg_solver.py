@@ -20,11 +20,8 @@ from dolfin import function
 from dolfin.cpp.fem import PETScDMCollection
 from dolfin.fem.assembling import assemble_system
 from dolfin.la import PETScKrylovSolver, PETScOptions, PETScVector
-from dolfin_utils.test.skips import skip_if_not_petsc4py
-
 
 @pytest.mark.skip  # See https://bitbucket.org/fenics-project/dolfin/issues/938
-@skip_if_not_petsc4py
 def test_mg_solver_laplace():
 
     # Create meshes and function spaces
@@ -85,7 +82,6 @@ def test_mg_solver_laplace():
         opts.delValue(key)
 
 
-@skip_if_not_petsc4py
 def xtest_mg_solver_stokes():
 
     mesh0 = UnitCubeMesh(2, 2, 2)

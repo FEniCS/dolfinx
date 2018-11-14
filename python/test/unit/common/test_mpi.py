@@ -7,24 +7,17 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import dolfin
+from mpi4py import MPI
 
 
 def test_mpi_comm_wrapper():
     """
     Test MPICommWrapper <-> mpi4py.MPI.Comm conversion
     """
-    if dolfin.has_mpi4py:
-        from mpi4py import MPI
-        w1 = MPI.COMM_WORLD
-    else:
-        w1 = dolfin.MPI.comm_world
+    w1 = MPI.COMM_WORLD
 
     m = dolfin.UnitSquareMesh(w1, 4, 4)
     w2 = m.mpi_comm()
 
-    if dolfin.has_mpi4py:
-        assert isinstance(w1, MPI.Comm)
-        assert isinstance(w2, MPI.Comm)
-    else:
-        assert isinstance(w1, dolfin.cpp.MPICommWrapper)
-        assert isinstance(w2, dolfin.cpp.MPICommWrapper)
+    assert isinstance(w1, MPI.Comm)
+    assert isinstance(w2, MPI.Comm)
