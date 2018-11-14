@@ -136,7 +136,7 @@ def test_assign(V, W):
         # Test errounious assignments
         uu = Function(V1)
 
-        @function.expression.numba_eval
+        @function.expression.numba_eval()
         def expr_eval(values, x, cell_idx):
             values[:, 0] = 1.0
 
@@ -162,13 +162,13 @@ def test_call(R, V, W, Q, mesh):
     u2 = Function(W)
     u3 = Function(Q)
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval1(values, x, cell_idx):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
 
     e1 = Expression(expr_eval1)
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval2(values, x, cell_idx):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
@@ -176,7 +176,7 @@ def test_call(R, V, W, Q, mesh):
 
     e2 = Expression(expr_eval2, shape=(3,))
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval3(values, x, cell_idx):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
@@ -245,7 +245,7 @@ def test_scalar_conditions(R):
 
 def test_interpolation_mismatch_rank0(W):
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
 
@@ -256,7 +256,7 @@ def test_interpolation_mismatch_rank0(W):
 
 def test_interpolation_mismatch_rank1(W):
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
@@ -267,8 +267,7 @@ def test_interpolation_mismatch_rank1(W):
 
 
 def test_interpolation_rank0(V):
-
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
 
@@ -298,7 +297,7 @@ def test_near_evaluations(R, mesh):
 
 
 def test_interpolation_rank1(W):
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
@@ -311,21 +310,35 @@ def test_interpolation_rank1(W):
     assert abs(x.get_local()).min() == 1
 
 
+def test_numba_expression_python(W):
+    @function.expression.numba_eval(numba_jit_options={"nopython": False}, 
+                                    numba_cfunc_options={"nopython": False})
+    def expr_eval(values, x, cell_idx):
+        values[:, 0] = 1.0
+        values[:, 1] = 1.0
+        values[:, 2] = 1.0
+
+    f = Expression(expr_eval, shape=(3,))
+    w = interpolate(f, W)
+    x = w.vector()
+    assert abs(x.get_local()).max() == 1
+    assert abs(x.get_local()).min() == 1  
+
+
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
-
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval0(values, x, cell_idx):
         values[:, 0] = 1.0
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval1(values, x, cell_idx):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
         values[:, 2] = 1.0
 
     # Scalar interpolation
-    f0 = Expression(expr_eval0, shape=())
+    f0 = Expression(expr_eval0)
     f = Function(V)
     f = interpolate(f0, V)
     assert round(f.vector().norm(cpp.la.Norm.l1) - mesh.num_vertices(), 7) == 0
