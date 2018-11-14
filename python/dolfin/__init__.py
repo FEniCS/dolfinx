@@ -33,10 +33,9 @@ from .cpp import __version__
 
 
 from dolfin.common import (
-    has_debug, has_scotch,
-    has_mpi4py, has_petsc_complex, has_petsc4py, has_parmetis,
-    has_slepc, has_slepc4py, git_commit_hash,
-    TimingType, timing, timings, list_timings, DOLFIN_EPS)
+    has_debug, has_scotch, has_petsc_complex, has_parmetis, 
+    has_slepc, has_slepc4py, git_commit_hash, TimingType, 
+    timing, timings, list_timings, DOLFIN_EPS)
 
 import dolfin.MPI
 

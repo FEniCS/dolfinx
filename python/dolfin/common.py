@@ -13,12 +13,10 @@ from dolfin import cpp
 DOLFIN_EPS = cpp.common.DOLFIN_EPS
 
 has_debug = cpp.common.has_debug()
-has_mpi4py = cpp.common.has_mpi4py()
 has_parmetis = cpp.common.has_parmetis()
 has_scotch = cpp.common.has_scotch()
 has_petsc_complex = cpp.common.has_petsc_complex()
 has_slepc = cpp.common.has_slepc()
-has_petsc4py = cpp.common.has_petsc4py()
 has_slepc4py = cpp.common.has_slepc4py()
 
 git_commit_hash = cpp.common.git_commit_hash()

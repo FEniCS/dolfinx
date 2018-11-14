@@ -240,7 +240,7 @@ void VTKFile::results_write(const function::Function& u,
     write_point_data(u, mesh, vtu_filename);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write_point_data(const function::GenericFunction& u,
+void VTKFile::write_point_data(const function::Function& u,
                                const mesh::Mesh& mesh,
                                std::string vtu_filename) const
 {
