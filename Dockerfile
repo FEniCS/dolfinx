@@ -1,39 +1,24 @@
-# Dockerfile to build the FEniCS-X development libraries
+# Dockerfile describing development environments and builds of FEniCSx
 #
 # Authors: Jack S. Hale <jack.hale@uni.lu> Lizao Li
 # <lzlarryli@gmail.com> Garth N. Wells <gnw20@cam.ac.uk> Jan Blechta
 # <blechta@karlin.mff.cuni.cz>
 #
+# All layers are built nightly on CircleCI and pushed to quay.io.
+#
 # To build development environment images:
 #
-#    docker build --target dev-env-complex -t quay.io/fenicsproject/dolfinx:complex .
-#    docker build --target dev-env-real -t quay.io/fenicsproject/dolfinx:latest .
-#
-# To push images to quay.io:
-#
-#    docker login quay.io
-#    docker push quay.io/fenicsproject/dolfinx:complex
-#    docker push quay.io/fenicsproject/dolfinx:latest
-#
-# To build an image for running Jupyter:
-#
-#    docker build --target dolfin-notebook -t dolfinx-nb .
+#    docker build --target dev-env-complex -t quay.io/fenicsproject/dolfinx:dev-env-complex .
+#    docker build --target dev-env-real -t quay.io/fenicsproject/dolfinx:dev-env-real .
 #
 # To run a notebook:
 #
-#    docker run -p 8888:8888 dolfinx-nb
+#    docker run -p 8888:8888 quay.io/fenicsproject/dolfinx:notebook
 #
 # To run and share the current host directory with the container:
 #
-#    docker run -p 8888:8888 -v "$PWD":/tmp dolfinx-nb
+#    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
 #
-# NOTE: This should set global arguments, but doesn't seem to work with
-# old docker-build
-# ARG PYBIND11_VERSION=2.2.4
-# ARG PETSC_VERSION=3.10.2
-# ARG SLEPC_VERSION=3.10.1
-# ARG PETSC4PY_VERSION=3.10.0
-# ARG SLEPC4PY_VERSION=3.10.0
 
 FROM ubuntu:18.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
