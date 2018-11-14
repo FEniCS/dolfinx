@@ -310,9 +310,9 @@ def test_interpolation_rank1(W):
     assert abs(x.get_local()).min() == 1
 
 
-def test_numba_expression_python(W):
-    @function.expression.numba_eval(numba_jit_options={"nopython": False},
-                                    numba_cfunc_options={"nopython": False})
+def test_numba_expression_pure_object_mode(W):
+    @function.expression.numba_eval(numba_jit_options={"forceobj" : False},
+                                    numba_cfunc_options={"forceobj" : False})
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
