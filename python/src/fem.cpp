@@ -35,7 +35,6 @@
 #include <dolfin/fem/utils.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/GenericFunction.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/SparsityPattern.h>
@@ -208,14 +207,14 @@ void fem(py::module& m)
 
   dirichletbc
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-                    std::shared_ptr<const dolfin::function::GenericFunction>,
+                    std::shared_ptr<const dolfin::function::Function>,
                     std::shared_ptr<const dolfin::mesh::SubDomain>,
                     dolfin::fem::DirichletBC::Method, bool>(),
            py::arg("V"), py::arg("g"), py::arg("sub_domain"), py::arg("method"),
            py::arg("check_midpoint"))
       .def(
           py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-                   std::shared_ptr<const dolfin::function::GenericFunction>,
+                   std::shared_ptr<const dolfin::function::Function>,
                    std::pair<std::shared_ptr<
                                  const dolfin::mesh::MeshFunction<std::size_t>>,
                              std::size_t>,
@@ -345,7 +344,7 @@ void fem(py::module& m)
            &dolfin::fem::Form::original_coefficient_position)
       .def("set_coefficient",
            [](dolfin::fem::Form& self, std::size_t i,
-              std::shared_ptr<const dolfin::function::GenericFunction> f) {
+              std::shared_ptr<const dolfin::function::Function> f) {
              self.coeffs().set(i, f);
            })
       .def("set_mesh", &dolfin::fem::Form::set_mesh)

@@ -21,7 +21,6 @@ namespace dolfin
 namespace function
 {
 class Function;
-class GenericFunction;
 }
 
 namespace mesh
@@ -95,7 +94,7 @@ private:
 
   void results_write(const function::Function& u, std::string file) const;
 
-  void write_point_data(const function::GenericFunction& u,
+  void write_point_data(const function::Function& u,
                         const mesh::Mesh& mesh, std::string file) const;
 
   void pvd_file_write(std::size_t step, double time, std::string file);

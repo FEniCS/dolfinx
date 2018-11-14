@@ -71,7 +71,7 @@ void UFC::update(
   {
     if (!enabled_coefficients[i])
       continue;
-    const function::GenericFunction* coefficient = coefficients.get(i);
+    const function::Function* coefficient = coefficients.get(i);
     const fem::FiniteElement& element = coefficients.element(i);
     coefficient->restrict(w_pointer[i], element, c, coordinate_dofs);
   }
@@ -91,7 +91,7 @@ void UFC::update(
   {
     if (!enabled_coefficients[i])
       continue;
-    const function::GenericFunction* coefficient = coefficients.get(i);
+    const function::Function* coefficient = coefficients.get(i);
     const fem::FiniteElement& element = coefficients.element(i);
     const std::size_t offset = element.space_dimension();
     coefficient->restrict(macro_w_pointer[i], element, c0, coordinate_dofs0);

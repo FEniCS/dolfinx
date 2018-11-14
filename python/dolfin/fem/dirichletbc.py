@@ -21,7 +21,7 @@ class DirichletBC(cpp.fem.DirichletBC):
             self,
             V: typing.Union[function.FunctionSpace,
                             cpp.function.FunctionSpace],
-            value: typing.Union[ufl.Coefficient, cpp.function.GenericFunction],
+            value: typing.Union[ufl.Coefficient, cpp.function.Function],
             domain: typing.Union[cpp.mesh.SubDomain, types.FunctionType,
                                  typing.Tuple[mesh.MeshValueCollection, int]],
             method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.
@@ -44,7 +44,7 @@ class DirichletBC(cpp.fem.DirichletBC):
         # Construct bc value
         if isinstance(value, ufl.Coefficient):
             _value = value._cpp_object
-        elif isinstance(value, cpp.function.GenericFunction):
+        elif isinstance(value, cpp.function.Function):
             _value = value
         else:
             raise NotImplementedError

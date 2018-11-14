@@ -20,7 +20,7 @@ namespace dolfin
 
 namespace function
 {
-class GenericFunction;
+class Function;
 class FunctionSpace;
 } // namespace function
 
@@ -116,7 +116,7 @@ public:
   ///
   /// @param[in] V (FunctionSpace)
   ///         The function space
-  /// @param[in] g (GenericFunction)
+  /// @param[in] g (Function)
   ///         The value
   /// @param[in] sub_domain (mesh::SubDomain)
   ///         The subdomain
@@ -125,7 +125,7 @@ public:
   ///         the method to identify dofs
   /// @param[in] check_midpoint (bool)
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::GenericFunction> g,
+              std::shared_ptr<const function::Function> g,
               std::shared_ptr<const mesh::SubDomain> sub_domain,
               Method method = Method::topological, bool check_midpoint = true);
 
@@ -133,7 +133,7 @@ public:
   ///
   /// @param[in] V (FunctionSpace)
   ///         The function space.
-  /// @param[in] g (GenericFunction)
+  /// @param[in] g (Function)
   ///         The value.
   /// @param[in] sub_domains (std::pair<mesh::MeshFunction<std::size_t>, std::size_t)
   ///         Subdomain marker
@@ -141,7 +141,7 @@ public:
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::GenericFunction> g,
+              std::shared_ptr<const function::Function> g,
               std::pair<std::shared_ptr<const mesh::MeshFunction<std::size_t>>,
                         std::size_t>
                   sub_domain,
@@ -152,7 +152,7 @@ public:
   ///
   /// @param[in] V (FunctionSpace)
   ///         The function space.
-  /// @param[in] g (GenericFunction)
+  /// @param[in] g (Function)
   ///         The value.
   /// @param[in] markers (std::vector<std:size_t>&)
   ///         Subdomain markers (facet index local to process)
@@ -160,7 +160,7 @@ public:
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::GenericFunction> g,
+              std::shared_ptr<const function::Function> g,
               const std::vector<std::size_t>& markers,
               Method method = Method::topological);
 
@@ -221,9 +221,9 @@ public:
 
   /// Return boundary value g
   ///
-  /// @return GenericFunction
+  /// @return Function
   ///         The boundary values.
-  std::shared_ptr<const function::GenericFunction> value() const;
+  std::shared_ptr<const function::Function> value() const;
 
   /// Return shared pointer to subdomain
   ///
@@ -235,7 +235,7 @@ public:
   ///
   /// @param[in] g (GenericFucntion)
   ///         The value.
-  void set_value(std::shared_ptr<const function::GenericFunction> g);
+  void set_value(std::shared_ptr<const function::Function> g);
 
   /// Return method used for computing Dirichlet dofs
   ///
@@ -295,7 +295,7 @@ private:
   std::shared_ptr<const function::FunctionSpace> _function_space;
 
   // The function
-  std::shared_ptr<const function::GenericFunction> _g;
+  std::shared_ptr<const function::Function> _g;
 
   // Search method
   Method _method;
