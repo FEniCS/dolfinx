@@ -21,6 +21,7 @@ from dolfin.cpp.fem import PETScDMCollection
 from dolfin.fem.assembling import assemble_system
 from dolfin.la import PETScKrylovSolver, PETScOptions, PETScVector
 
+
 @pytest.mark.skip  # See https://bitbucket.org/fenics-project/dolfin/issues/938
 def test_mg_solver_laplace():
 

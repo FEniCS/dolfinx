@@ -63,6 +63,7 @@ def test_mpi_pybind11():
 
     assert isinstance(w2, MPI.Comm)
 
+
 def test_petsc():
     create_matrix_code = r'''
     #include <pybind11/pybind11.h>
