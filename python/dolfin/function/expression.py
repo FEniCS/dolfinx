@@ -11,6 +11,7 @@ from petsc4py import PETSc
 
 from dolfin import cpp
 
+
 def numba_eval(numba_jit_options: dict = {"nopython": True, "cache": True},
                numba_cfunc_options: dict = {"nopython": True, "cache": True}):
     """Decorator to create Numba JIT-compiled evaluate function.
@@ -29,7 +30,7 @@ def numba_eval(numba_jit_options: dict = {"nopython": True, "cache": True},
     -------
     A decorator that takes an evaluation function ``func`` and returns the
     C address of the Numba JIT-ed method.
-    
+
     func: Callable(None, (numpy.array, numpy.array, numpy.array))
         Python function accepting parameters: values, x, cell_index.
 
@@ -41,7 +42,7 @@ def numba_eval(numba_jit_options: dict = {"nopython": True, "cache": True},
     >>>    values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
     >>>    values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
     >>> mesh = UnitCubeMesh(MPI.comm_world, 3, 3, 3)
-    >>> W = VectorFunctionSpace(mesh, ('CG', 1)) 
+    >>> W = VectorFunctionSpace(mesh, ('CG', 1))
     >>> e = Expression(expr, shape=(3,))
     >>> u = Function(W)
     >>> u.interpolate(e)
@@ -65,9 +66,9 @@ def numba_eval(numba_jit_options: dict = {"nopython": True, "cache": True},
             np_cell_idx = numba.carray(cell_idx, (num_cells,), dtype=numba.types.int32)
 
             jitted_func(np_values, np_x, np_cell_idx)
-        
+
         return eval.address
-    
+
     return decorator
 
 
