@@ -218,13 +218,15 @@ workflows:
             branches:
               only:
                 - master
-   nightly:
-     triggers:
-       - schedule:
-           cron: "0 5 * * *"
-           filters:
-             branches:
-               only:
-                 - jhale/build-docker-images-on-circle-ci
-     jobs:
-       - build-and-push-docker-images 
+  
+  version: 2
+  nightly:
+    jobs:
+      - build-and-push-docker-images 
+    triggers:
+      - schedule:
+          cron: "0 5 * * *"
+          filters:
+            branches:
+              only:
+                - jhale/build-docker-images-on-circle-ci
