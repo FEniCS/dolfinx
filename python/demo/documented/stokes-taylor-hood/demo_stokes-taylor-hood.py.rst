@@ -119,7 +119,7 @@ equations. Now we can define boundary conditions::
     # No-slip boundary condition for velocity
     # x1 = 0, x1 = 1 and around the dolphin
 
-    @function.expression.numba_eval()
+    @function.expression.numba_eval
     def noslip_eval(values, x, cell):
         values[:, 0] = 0.0
         values[:, 1] = 0.0
@@ -131,7 +131,7 @@ equations. Now we can define boundary conditions::
     # Inflow boundary condition for velocity
     # x0 = 1
 
-    @function.expression.numba_eval()
+    @function.expression.numba_eval
     def inflow_eval(values, x, cell):
         values[:, 0] = - numpy.sin(x[:, 1] * numpy.pi)
         values[:, 1] = 0.0
