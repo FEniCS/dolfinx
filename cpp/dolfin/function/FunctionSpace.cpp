@@ -7,7 +7,6 @@
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include "Function.h"
-#include "GenericFunction.h"
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -102,7 +101,7 @@ std::int64_t FunctionSpace::dim() const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
-    la::PETScVector& expansion_coefficients, const GenericFunction& v) const
+    la::PETScVector& expansion_coefficients, const Function& v) const
 {
   assert(_mesh);
 
@@ -165,7 +164,7 @@ void FunctionSpace::interpolate_from_any(
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
-                                const GenericFunction& v) const
+                                const Function& v) const
 {
   assert(_mesh);
   assert(_element);

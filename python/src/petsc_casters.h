@@ -16,7 +16,6 @@
 #include <petscvec.h>
 
 // pybind11 casters for PETSc/petsc4py objects
-#ifdef HAS_PYBIND11_PETSC4PY
 #include <petsc4py/petsc4py.h>
 
 // Import petsc4py on demand
@@ -55,33 +54,6 @@
                                                                                \
     operator TYPE() { return value; }                                          \
   }
-#else
-#define PETSC_CASTER_MACRO(TYPE, NAME)                                         \
-  template <>                                                                  \
-  class type_caster<_p_##TYPE>                                                 \
-  {                                                                            \
-  public:                                                                      \
-    PYBIND11_TYPE_CASTER(TYPE, _(#NAME));                                      \
-    bool load(handle src, bool)                                                \
-    {                                                                          \
-      throw std::runtime_error("DOLFIN has not been configured with "          \
-                               "petsc4py. Accessing underlying PETSc object "  \
-                               "requires petsc4py");                           \
-      return false;                                                            \
-    }                                                                          \
-                                                                               \
-    static handle cast(TYPE src, pybind11::return_value_policy policy,         \
-                       handle parent)                                          \
-    {                                                                          \
-      throw std::runtime_error("DOLFIN has not been configured with "          \
-                               "petsc4py. Accessing underlying PETSc object "  \
-                               "requires petsc4py");                           \
-      return handle();                                                         \
-    }                                                                          \
-                                                                               \
-    operator TYPE() { return value; }                                          \
-  }
-#endif
 
 namespace pybind11
 {

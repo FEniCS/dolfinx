@@ -17,7 +17,6 @@
 #include <dolfin/common/ArrayView.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/GenericFunction.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/log/log.h>

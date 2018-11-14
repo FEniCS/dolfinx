@@ -5,19 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import common, cpp
-
-if not common.has_mpi4py:
-
-    class MPICommWrapper:
-        """DOLFIN is compiled without support for mpi4py. This object
-        can be passed into DOLFIN as an MPI communicator, but is not
-        an mpi4py comm.
-        """
-
-        def underlying_comm(self):
-            return cpp.MPICommWrapper.underlying_comm()
-
+from dolfin import cpp
 
 comm_world = cpp.MPI.comm_world
 comm_self = cpp.MPI.comm_self

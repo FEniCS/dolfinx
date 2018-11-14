@@ -4,12 +4,13 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "Expression.h"
 #include "Function.h"
+#include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/Variable.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -33,7 +34,8 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-Function::Function(std::shared_ptr<const FunctionSpace> V) : _function_space(V)
+Function::Function(std::shared_ptr<const FunctionSpace> V)
+    : common::Variable("u"), _function_space(V)
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -272,7 +274,7 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
   cell.get_coordinate_dofs(coordinate_dofs);
 
- // Restrict function to cell
+  // Restrict function to cell
   restrict(coefficients.data(), element, cell, coordinate_dofs);
 
   // Get coordinate mapping
@@ -328,7 +330,7 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const GenericFunction& v)
+void Function::interpolate(const Function& v)
 {
   assert(_vector);
   assert(_function_space);
@@ -487,5 +489,13 @@ void Function::init_vector()
   _vector = std::make_shared<la::PETScVector>(*index_map);
   assert(_vector);
   _vector->set(0.0);
+}
+//-----------------------------------------------------------------------------
+std::size_t Function::value_size() const
+{
+  std::size_t size = 1;
+  for (std::size_t i = 0; i < value_rank(); ++i)
+    size *= value_dimension(i);
+  return size;
 }
 //-----------------------------------------------------------------------------

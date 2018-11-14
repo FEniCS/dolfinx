@@ -16,7 +16,7 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/GenericFunction.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -35,7 +35,7 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-                         std::shared_ptr<const function::GenericFunction> g,
+                         std::shared_ptr<const function::Function> g,
                          std::shared_ptr<const mesh::SubDomain> sub_domain,
                          Method method, bool check_midpoint)
     : _function_space(V), _g(g), _method(method), _user_sub_domain(sub_domain),
@@ -46,7 +46,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
-    std::shared_ptr<const function::GenericFunction> g,
+    std::shared_ptr<const function::Function> g,
     std::pair<std::shared_ptr<const mesh::MeshFunction<std::size_t>>,
               std::size_t>
         sub_domain,
@@ -59,7 +59,7 @@ DirichletBC::DirichletBC(
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-                         std::shared_ptr<const function::GenericFunction> g,
+                         std::shared_ptr<const function::Function> g,
                          const std::vector<std::size_t>& markers, Method method)
     : _function_space(V), _g(g), _method(method), _num_dofs(0),
       _facets(markers), _user_sub_domain_marker(0), _check_midpoint(true)
@@ -183,7 +183,7 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
 //-----------------------------------------------------------------------------
 const std::vector<std::size_t>& DirichletBC::markers() const { return _facets; }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const function::GenericFunction> DirichletBC::value() const
+std::shared_ptr<const function::Function> DirichletBC::value() const
 {
   return _g;
 }
@@ -193,7 +193,7 @@ std::shared_ptr<const mesh::SubDomain> DirichletBC::user_sub_domain() const
   return _user_sub_domain;
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::set_value(std::shared_ptr<const function::GenericFunction> g)
+void DirichletBC::set_value(std::shared_ptr<const function::Function> g)
 {
   _g = g;
 }
