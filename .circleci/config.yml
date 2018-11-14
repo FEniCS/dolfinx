@@ -187,8 +187,11 @@ jobs:
       - setup_remote_docker
       - checkout
       - run:
-          name: Build dev-env-real Docker image tag dev-env-real
-          command: docker build --target dev-env-real -t quay.io/fenicsproject/dolfinx:dev-env-real .
+          name: Login to quay.io
+          command: docker login -u ${QUAYIO_USERNAME} -p ${QUAYIO_PASSWORD} 
+      - run:
+          name: Build and push dev-env-real Docker image tag dev-env-real
+          command: docker build --target dev-env-real -t quay.io/fenicsproject/dolfinx:dev-env-real . && docker push quay.io/fenicsproject/dolfinx:dev-env-real
       - run:
           name: Build dev-env-complex Docker image tag dev-env-complex
           command: docker build --target dev-env-complex -t quay.io/fenicsproject/dolfinx:dev-env-complex .
@@ -206,26 +209,24 @@ jobs:
           command: docker build --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex 
 
 workflows:
-  version: 2
-  build-and-pushdoc:
-    jobs:
-      - build-real
-      - build-complex
-      - pushdoc:
-          requires:
-            - build-real
-          filters:
-            branches:
-              only:
-                - master
+#  version: 2
+#  build-and-pushdoc:
+#    jobs:
+#      - build-real
+#      - build-complex
+#      - pushdoc:
+#          requires:
+#            - build-real
+#          filters:
+#            branches:
+#              only:
+#                - master
   
   version: 2
   nightly:
     jobs:
-      - build-and-push-docker-images 
-    triggers:
-      - schedule:
-          cron: "0 5 * * *"
+      - build-and-push-docker-images:
+          context: quay.io
           filters:
             branches:
               only:
