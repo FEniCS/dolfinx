@@ -170,7 +170,7 @@ def test_save_and_read_function(tempdir):
     F0 = Function(Q)
     F1 = Function(Q)
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval(values, x, cell_idx):
         values[:, 0] = x[:, 0]
 

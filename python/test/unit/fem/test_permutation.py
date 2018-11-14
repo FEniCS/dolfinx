@@ -37,15 +37,15 @@ def test_p4_scalar_vector():
 
         Q = FunctionSpace(mesh, ("CG", 4))
 
-        @function.expression.numba_eval
+        @function.expression.numba_eval()
         def x0(values, x, cell_idx):
             values[:, 0] = x[:, 0]
 
-        @function.expression.numba_eval
+        @function.expression.numba_eval()
         def x1(values, x, cell_idx):
             values[:, 0] = x[:, 1]
 
-        @function.expression.numba_eval
+        @function.expression.numba_eval()
         def x2(values, x, cell_idx):
             values[:, 0] = x[:, 2]
 
@@ -61,7 +61,7 @@ def test_p4_scalar_vector():
 
         V = VectorFunctionSpace(mesh, ("CG", 4))
 
-        @function.expression.numba_eval
+        @function.expression.numba_eval()
         def x0x10(values, x, cell_idx):
             values[:, 0] = x[:, 0]
             values[:, 1] = x[:, 1]
@@ -80,7 +80,7 @@ def test_p4_parallel_2d():
     Q = FunctionSpace(mesh, ("CG", 4))
     F = Function(Q)
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def x0(values, x, cell_idx):
         values[:, 0] = x[:, 0]
 
@@ -105,7 +105,7 @@ def test_p4_parallel_3d():
     Q = FunctionSpace(mesh, ("CG", 5))
     F = Function(Q)
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def x0(values, x, cell_idx):
         values[:, 0] = x[:, 0]
 
@@ -133,7 +133,7 @@ def test_mixed_parallel():
     W = FunctionSpace(mesh, Q * V)
     F = Function(W)
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval(values, x, cell_idx):
         values[:, 0] = x[:, 0]
         values[:, 1] = x[:, 1]

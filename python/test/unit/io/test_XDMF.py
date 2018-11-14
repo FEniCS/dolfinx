@@ -164,12 +164,12 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
     u_out = Function(V)
 
     if has_petsc_complex:
-        @function.expression.numba_eval
+        @function.expression.numba_eval()
         def expr_eval(values, x, cell_idx):
             values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
         u_out.interpolate(Expression(expr_eval))
     else:
-        @function.expression.numba_eval
+        @function.expression.numba_eval()
         def expr_eval(values, x, cell_idx):
             values[:, 0] = x[:, 0]
         u_out.interpolate(Expression(expr_eval))
@@ -203,20 +203,20 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
 
     if has_petsc_complex:
         if mesh.geometry.dim == 1:
-            @function.expression.numba_eval
+            @function.expression.numba_eval()
             def expr_eval(values, x, cell_idx):
                 values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
             u_out.interpolate(Expression(expr_eval, shape=(1,)))
 
         elif mesh.geometry.dim == 2:
-            @function.expression.numba_eval
+            @function.expression.numba_eval()
             def expr_eval(values, x, cell_idx):
                 values[:, 0] = 1.0j * x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
             u_out.interpolate(Expression(expr_eval, shape=(2,)))
 
         elif mesh.geometry.dim == 3:
-            @function.expression.numba_eval
+            @function.expression.numba_eval()
             def expr_eval(values, x, cell_idx):
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
@@ -224,20 +224,20 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
             u_out.interpolate(Expression(expr_eval, shape=(3,)))
     else:
         if mesh.geometry.dim == 1:
-            @function.expression.numba_eval
+            @function.expression.numba_eval()
             def expr_eval(values, x, cell_idx):
                 values[:, 0] = x[:, 0]
             u_out.interpolate(Expression(expr_eval, shape=(1,)))
 
         elif mesh.geometry.dim == 2:
-            @function.expression.numba_eval
+            @function.expression.numba_eval()
             def expr_eval(values, x, cell_idx):
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0]
             u_out.interpolate(Expression(expr_eval, shape=(2,)))
 
         elif mesh.geometry.dim == 3:
-            @function.expression.numba_eval
+            @function.expression.numba_eval()
             def expr_eval(values, x, cell_idx):
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0]
@@ -267,7 +267,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     p = 0.0
 
-    @function.expression.numba_eval
+    @function.expression.numba_eval()
     def expr_eval(values, x, cell_idx):
         values[:, 0] = x[:, 0] * p
 
