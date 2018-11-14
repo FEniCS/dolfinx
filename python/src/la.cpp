@@ -283,7 +283,7 @@ void la(py::module& m)
                         & dolfin::la::SLEPcEigenSolver::solve)
       .def("solve", (void (dolfin::la::SLEPcEigenSolver::*)(std::int64_t))
                         & dolfin::la::SLEPcEigenSolver::solve)
-      .def("get_eigenvalue", &dolfin::la::SLEPcEigenSolver::get_eigenpair)
+      .def("get_eigenvalue", &dolfin::la::SLEPcEigenSolver::get_eigenvalue)
       .def("get_eigenpair",
            [](dolfin::la::SLEPcEigenSolver& self, std::size_t i) {
              PetscScalar lr, lc;
