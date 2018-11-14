@@ -203,7 +203,7 @@ RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
 
-FROM dev-env-real as dolfin-real
+FROM dev-env-real as real
 LABEL description="DOLFIN-X in real mode"
 
 WORKDIR /tmp
@@ -226,7 +226,7 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     rm -rf /tmp/*
 
 
-FROM dev-env-complex as dolfin-complex
+FROM dev-env-complex as complex
 LABEL description="DOLFIN-X in complex mode"
 
 WORKDIR /tmp
@@ -249,14 +249,14 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     rm -rf /tmp/*
 
 
-FROM dolfin-real as dolfin-notebook
+FROM real as notebook
 LABEL description="DOLFIN-X Jupyter Notebook"
 WORKDIR /root
 RUN pip3 install jupyter
 ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
 
 
-FROM dolfin-complex as dolfin-complex-notebook
+FROM complex as notebook-complex
 LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
 WORKDIR /root
 RUN pip3 install jupyter
