@@ -6,16 +6,12 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import functools
-import hashlib
-
-import numpy
 
 import dijitso
 import dolfin.pkgconfig
 import ffc
 from dolfin import cpp, parameter
 
-# Get DOLFIN pkg-config data
 if dolfin.pkgconfig.exists("dolfin"):
     dolfin_pc = dolfin.pkgconfig.parse("dolfin")
 else:
@@ -24,7 +20,6 @@ else:
     )
 
 
-# Copied over from site-packages
 def mpi_jit_decorator(local_jit, *args, **kwargs):
     """A decorator for jit compilation
 
@@ -95,118 +90,16 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     return mpi_jit
 
 
-# Wrap FFC JIT compilation with decorator
 @mpi_jit_decorator
 def ffc_jit(ufl_form, form_compiler_parameters=None):
-
-    # Prepare form compiler parameters with overrides from dolfin and kwargs
+    # Prepare form compiler parameters with overrides from dolfin and
+    # kwargs
     p = ffc.default_jit_parameters()
     p.update(dict(parameter.parameters["form_compiler"]))
     p.update(form_compiler_parameters or {})
     return ffc.jit(ufl_form, parameters=p)
 
 
-# Wrap dijitso JIT compilation with decorator
 @mpi_jit_decorator
 def dijitso_jit(*args, **kwargs):
     return dijitso.jit(*args, **kwargs)
-
-
-_cpp_math_builtins = [
-    # <cmath> functions: from http://www.cplusplus.com/reference/cmath/
-    "cos",
-    "sin",
-    "tan",
-    "acos",
-    "asin",
-    "atan",
-    "atan2",
-    "cosh",
-    "sinh",
-    "tanh",
-    "exp",
-    "frexp",
-    "ldexp",
-    "log",
-    "log10",
-    "modf",
-    "pow",
-    "sqrt",
-    "ceil",
-    "fabs",
-    "floor",
-    "fmod",
-    "max",
-    "min"
-]
-
-_math_header = """
-// cmath functions
-%s
-
-const double pi = DOLFIN_PI;
-const PetscComplex j = PETSC_i;
-""" % "\n".join("using std::%s;" % mf for mf in _cpp_math_builtins)
-
-
-def compile_class(cpp_data):
-    """Compile a user C(++) string or set of statements to a Python object
-
-    cpp_data is a dict containing:
-      "name": must be "expression"
-      "statements": must be a string, or list/tuple of strings
-      "properties": a dict of float properties
-      "jit_generate": callable (generates cpp code with this dict as input)
-
-    """
-
-    # Set compiler/build options
-    params = dijitso.params.default_params()
-    params['build']['include_dirs'] = dolfin_pc["include_dirs"]
-    params['build']['libs'] = dolfin_pc["libraries"]
-    params['build']['lib_dirs'] = dolfin_pc["library_dirs"]
-
-    name = cpp_data['name']
-    if name not in ('expression'):
-        raise ValueError("DOLFIN JIT only for Expression")
-    statements = cpp_data['statements']
-    properties = cpp_data['properties']
-
-    if not isinstance(statements, (str, tuple, list)):
-        raise RuntimeError(
-            "Expression must be a string, or a list or tuple of strings")
-
-    # Flatten tuple of tuples (2D array) and get value_shape
-    statement_array = numpy.array(statements)
-    cpp_data['statements'] = tuple(statement_array.flatten())
-    cpp_data['value_shape'] = statement_array.shape
-
-    # Make a string representing the properties (and distinguish float/GenericFunction)
-    # by adding '*' for GenericFunction
-    property_str = ''
-    for k, v in properties.items():
-        property_str += str(k)
-        if hasattr(v, '_cpp_object') and isinstance(
-                v._cpp_object, cpp.function.GenericFunction):
-            property_str += '*'
-
-    hash_str = str(statements) + str(property_str) + cpp.__version__
-    module_hash = hashlib.md5(hash_str.encode('utf-8')).hexdigest()
-    module_name = "dolfin_" + name + "_" + module_hash
-
-    try:
-        module, signature = dijitso_jit(
-            cpp_data, module_name, params, generate=cpp_data['jit_generate'])
-        submodule = dijitso.extract_factory_function(module,
-                                                     "create_" + module_name)()
-    except Exception:
-        raise RuntimeError("Unable to compile C++ code with dijitso")
-
-    python_object = cpp.function.make_dolfin_expression(submodule)
-
-    # Set properties to initial values
-    # FIXME: maybe remove from here (do it in Expression instead)
-    for name, v in properties.items():
-        python_object.set_property(name, v)
-
-    return python_object

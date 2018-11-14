@@ -145,7 +145,7 @@ void la(py::module& m)
 
   // dolfin::la::PETScVector
   py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>>(
-      m, "PETScVector", "PETScVector object")
+      m, "PETScVector", py::dynamic_attr(), "PETScVector object")
       .def(py::init<>())
       .def(py::init<const dolfin::common::IndexMap&>())
       .def(py::init(
@@ -221,7 +221,7 @@ void la(py::module& m)
 
   // dolfin::la::PETScMatrix
   py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
-             dolfin::la::PETScOperator>(m, "PETScMatrix", "PETScMatrix object")
+             dolfin::la::PETScOperator>(m, "PETScMatrix", py::dynamic_attr(), "PETScMatrix object")
       .def(py::init<>())
       .def(py::init<Mat>())
       .def(py::init(
@@ -283,7 +283,7 @@ void la(py::module& m)
                         & dolfin::la::SLEPcEigenSolver::solve)
       .def("solve", (void (dolfin::la::SLEPcEigenSolver::*)(std::int64_t))
                         & dolfin::la::SLEPcEigenSolver::solve)
-      .def("get_eigenvalue", &dolfin::la::SLEPcEigenSolver::get_eigenpair)
+      .def("get_eigenvalue", &dolfin::la::SLEPcEigenSolver::get_eigenvalue)
       .def("get_eigenpair",
            [](dolfin::la::SLEPcEigenSolver& self, std::size_t i) {
              PetscScalar lr, lc;

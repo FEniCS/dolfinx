@@ -18,6 +18,7 @@ RESTRICT_REQUIREMENTS = ">=2018.2.0.dev0,<2018.3"
 
 REQUIREMENTS = [
     "numpy",
+    "numba",
     "fenics-ffc{}".format(RESTRICT_REQUIREMENTS),
     "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
     "fenics-dijitso{}".format(RESTRICT_REQUIREMENTS),
@@ -86,9 +87,7 @@ setup(name='fenics-dolfin',
                 "dolfin.function",
                 "dolfin.fem",
                 "dolfin.la",
-                "dolfin.jit",
                 "dolfin_utils.test"],
-      package_dir={'dolfin' : 'dolfin', 'dolfin_test' : 'dolfin_test'},
       ext_modules=[CMakeExtension('dolfin.cpp')],
       cmdclass=dict(build_ext=CMakeBuild),
       install_requires=REQUIREMENTS,
