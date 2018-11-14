@@ -9,6 +9,7 @@ import math
 
 import numpy
 import pytest
+import numba
 
 import ufl
 from dolfin import (DOLFIN_EPS, MPI, Expression, Function,
@@ -309,8 +310,10 @@ def test_interpolation_rank1(W):
     assert abs(x.get_local()).max() == 1
     assert abs(x.get_local()).min() == 1
 
-
+@pytest.mark.xfail(raises=numba.errors.TypingError)
 def test_numba_expression_pure_object_mode(W):
+    # Currently numba decoration only works with jits and cfuncs that
+    # can be built in nopython mode.
     @function.expression.numba_eval(numba_jit_options={"forceobj": False},
                                     numba_cfunc_options={"forceobj": False})
     def expr_eval(values, x, cell_idx):
