@@ -20,6 +20,7 @@
 #    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
 #
 
+ARG BUILD_THREADS=1
 ARG PYBIND11_VERSION=2.2.4
 ARG PETSC_VERSION=3.10.2
 ARG SLEPC_VERSION=3.10.1
@@ -30,6 +31,7 @@ FROM ubuntu:18.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="Base image for real and complex FEniCS test environments"
 
+ARG BUILD_THREADS
 ARG PYBIND11_VERSION
 
 WORKDIR /tmp
@@ -58,6 +60,7 @@ RUN apt-get -qq update && \
     libboost-thread-dev \
     libboost-timer-dev \
     libeigen3-dev \
+    libfreetype6-dev \
     libhdf5-openmpi-dev \
     liblapack-dev \
     libopenmpi-dev \
@@ -66,16 +69,17 @@ RUN apt-get -qq update && \
     openmpi-bin \
     pkg-config \
     python3-dev \
+    python3-numpy \
     python3-pip \
+    python3-scipy \
     python3-setuptools \
     valgrind \
     wget \
-    bash-completion && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir mpi4py numpy scipy numba
+RUN pip3 install --no-cache-dir cffi decorator flake8 matplotlib mpi4py numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
@@ -93,6 +97,7 @@ FROM base as dev-env-real
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS development environment with PETSc real mode"
 
+ARG BUILD_THREADS
 ARG PETSC_VERSION
 ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
@@ -123,7 +128,7 @@ RUN apt-get -qq update && \
     --download-superlu \
     --with-scalar-type=real \
     --prefix=/usr/local/petsc && \
-    make && \
+    make -j${BUILD_THREADS} && \
     make install && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -136,7 +141,7 @@ RUN wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
     ./configure --prefix=/usr/local/slepc && \
-    make && \
+    make -j${BUILD_THREADS} && \
     make install && \
     rm -rf /tmp/*
 ENV SLEPC_DIR=/usr/local/slepc
@@ -150,6 +155,7 @@ RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
 FROM base as dev-env-complex
 LABEL description="FEniCS development environment with PETSc complex mode"
 
+ARG BUILD_THREADS
 ARG PETSC_VERSION
 ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
@@ -178,7 +184,7 @@ RUN apt-get -qq update && \
     --download-superlu \
     --with-scalar-type=complex \
     --prefix=/usr/local/petsc && \
-    make && \
+    make -j${BUILD_THREADS} && \
     make install && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -189,7 +195,7 @@ RUN wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
     ./configure --prefix=/usr/local/slepc && \
-    make && \
+    make -j${BUILD_THREADS} && \
     make install && \
     rm -rf /tmp/*
 ENV SLEPC_DIR=/usr/local/slepc
@@ -203,6 +209,8 @@ RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
 FROM dev-env-real as real
 LABEL description="DOLFIN-X in real mode"
 
+ARG BUILD_THREADS
+
 WORKDIR /tmp
 
 # Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
@@ -217,7 +225,7 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     mkdir build && \
     cd build && \
     cmake -G Ninja ../cpp && \
-    ninja install && \
+    ninja -j${BUILD_THREADS} install && \
     cd ../python && \
     pip3 install . && \
     rm -rf /tmp/*
@@ -227,6 +235,8 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
 FROM dev-env-complex as complex
 LABEL description="DOLFIN-X in complex mode"
 
+ARG BUILD_THREADS
+
 WORKDIR /tmp
 
 # Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
@@ -241,7 +251,7 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     mkdir build && \
     cd build && \
     cmake -G Ninja ../cpp && \
-    ninja install && \
+    ninja -j${BUILD_THREADS} install && \
     cd ../python && \
     pip3 install . && \
     rm -rf /tmp/*
