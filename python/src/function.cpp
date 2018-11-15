@@ -30,14 +30,13 @@ void function(py::module& m)
 
   // Create dolfin::function::Expression from a JIT pointer
   m.def("make_dolfin_expression",
-        [](std::uintptr_t e) {
+        [](std::uintptr_t addr) {
           dolfin::function::Expression* p
-              = reinterpret_cast<dolfin::function::Expression*>(e);
+              = reinterpret_cast<dolfin::function::Expression*>(addr);
           return std::shared_ptr<const dolfin::function::Expression>(p);
         },
         "Create a dolfin::function::Expression object from a pointer integer, "
-        "typically "
-        "returned by a just-in-time compiler");
+        "typically returned by a just-in-time compiler");
 
   // dolfin:Expression
   py::class_<dolfin::function::Expression,
@@ -45,10 +44,11 @@ void function(py::module& m)
       .def(py::init<std::vector<std::size_t>>())
       .def("value_dimension", &dolfin::function::Expression::value_dimension)
       .def("set_eval",
-           [](dolfin::function::Expression& self, std::size_t addr) {
-             auto eval_ptr = (void (*)(
-                 PetscScalar * values, const double* x, const int64_t* cell_idx,
-                 int num_points, int value_size, int gdim, int num_cells)) addr;
+          [](dolfin::function::Expression& self, std::uintptr_t addr) {
+             auto eval_ptr = (void (*)(PetscScalar* values, const double* x,
+               const int64_t* cell_idx, int num_points, int value_size, 
+               int gdim, int num_cells)) addr;
+             
              self.eval = eval_ptr;
            });
 

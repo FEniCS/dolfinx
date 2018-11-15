@@ -9,6 +9,7 @@ import math
 
 import numpy
 import pytest
+import numba
 
 import ufl
 from dolfin import (DOLFIN_EPS, MPI, Expression, Function,
@@ -267,7 +268,6 @@ def test_interpolation_mismatch_rank1(W):
 
 
 def test_interpolation_rank0(V):
-
     @function.expression.numba_eval
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
@@ -311,9 +311,24 @@ def test_interpolation_rank1(W):
     assert abs(x.get_local()).min() == 1
 
 
+@pytest.mark.xfail(raises=numba.errors.TypingError)
+def test_numba_expression_jit_objmode_fails(W):
+    # numba cfunc cannot call into objmode jit function
+    @function.expression.numba_eval(numba_jit_options={"forceobj": True})
+    def expr_eval(values, x, cell_idx):
+        values[0] = 1.0
+
+
+@pytest.mark.xfail(raises=NotImplementedError)
+def test_numba_expression_cfunc_objmode_fails(W):
+    # numba does not support cfuncs built in objmode
+    @function.expression.numba_eval(numba_cfunc_options={"forceobj": True})
+    def expr_eval(values, x, cell_idx):
+        values[0] = 1.0
+
+
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
-
     @function.expression.numba_eval
     def expr_eval0(values, x, cell_idx):
         values[:, 0] = 1.0
@@ -325,7 +340,7 @@ def test_interpolation_old(V, W, mesh):
         values[:, 2] = 1.0
 
     # Scalar interpolation
-    f0 = Expression(expr_eval0, shape=())
+    f0 = Expression(expr_eval0)
     f = Function(V)
     f = interpolate(f0, V)
     assert round(f.vector().norm(cpp.la.Norm.l1) - mesh.num_vertices(), 7) == 0

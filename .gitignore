@@ -14,6 +14,8 @@
 *.dll
 *.exe
 *.dylib
+*.nbi
+*.nbc
 dolfin/libdolfin.so*
 
 # FFC generated code in library
