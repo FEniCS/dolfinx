@@ -226,11 +226,11 @@ workflows:
   nightly:
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "0 10 * * *"
           filters:
             branches:
               only:
-                - master
+                - jhale/build-docker-images-on-circle-ci
     jobs:
       - build-and-push-docker-images:
           context: quay.io
