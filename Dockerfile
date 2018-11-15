@@ -74,7 +74,7 @@ RUN apt-get -qq update && \
     python3-scipy \
     python3-setuptools \
     valgrind \
-    wget \
+    wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
