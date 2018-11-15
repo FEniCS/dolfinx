@@ -215,10 +215,10 @@ workflows:
                 - master
   
   version: 2
-  nightly:
+  biweekly:
     triggers:
       - schedule:
-          cron: "0 0 * * *"
+          cron: "0 0 * * 0,3"
           filters:
             branches:
               only:
