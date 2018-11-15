@@ -312,21 +312,19 @@ def test_interpolation_rank1(W):
 
 
 @pytest.mark.xfail(raises=numba.errors.TypingError)
-def test_numba_expression_pure_object_mode(W):
-    # Currently numba decoration only works with jits and cfuncs that
-    # can be built in nopython mode.
-    @function.expression.numba_eval(numba_jit_options={"forceobj": False},
-                                    numba_cfunc_options={"forceobj": False})
+def test_numba_expression_jit_objmode_fails(W):
+    # numba cfunc cannot call into objmode jit function
+    @function.expression.numba_eval(numba_jit_options={"forceobj": True})
     def expr_eval(values, x, cell_idx):
-        values[:, 0] = 1.0
-        values[:, 1] = 1.0
-        values[:, 2] = 1.0
+        values[0] = 1.0
 
-    f = Expression(expr_eval, shape=(3,))
-    w = interpolate(f, W)
-    x = w.vector()
-    assert abs(x.get_local()).max() == 1
-    assert abs(x.get_local()).min() == 1
+
+@pytest.mark.xfail(raises=NotImplementedError)
+def test_numba_expression_cfunc_objmode_fails(W):
+    # numba does not support cfuncs built in objmode
+    @function.expression.numba_eval(numba_cfunc_options={"forceobj": True})
+    def expr_eval(values, x, cell_idx):
+        values[0] = 1.0
 
 
 @skip_in_parallel

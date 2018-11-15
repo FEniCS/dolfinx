@@ -16,23 +16,22 @@ def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True
                numba_cfunc_options: dict = {"nopython": True, "cache": True}):
     """Decorator to create Numba JIT-compiled evaluate function.
 
+    A decorator that takes an evaluation function ``func`` and returns the
+    C address of the Numba JIT-ed method. The call signature of ``func``
+    should be:
+
+    func: Callable(None, (numpy.array, numpy.array, numpy.array))
+        Python function accepting parameters: values, x, cell_index.
+
     For more information on ``numba_jit_options`` and ``numba_cfunc_options``
     read the Numba documentation.
 
     Parameters
     ----------
     numba_jit_options: dict, optional
-        Options passed to ``numba.jit``.
+        Options passed to ``numba.jit``. ``nopython`` must be ``True``.
     numba_cfunc_options: dict, optional
-        Options passed to ``numba.cfunc``.
-
-    Returns
-    -------
-    A decorator that takes an evaluation function ``func`` and returns the
-    C address of the Numba JIT-ed method.
-
-    func: Callable(None, (numpy.array, numpy.array, numpy.array))
-        Python function accepting parameters: values, x, cell_index.
+        Options passed to ``numba.cfunc``. ``nopython`` must be ``True``.
 
     Example
     -------
@@ -106,10 +105,10 @@ class Expression(cpp.function.Expression):
                (num_cells).  It is an array of indices of cells where the points
                are evaluated. Value -1 represents a cell-independent evaluation.
                function,
-            4. `num_points`, int, Number of points,
-            5. `value_size`, int, Number of values,
-            6. `gdim`, int, Geometric dimension of coordinates,
-            7. `num_cells`, int, Number of cells.
+            4. ``num_points``, ``int``, Number of points,
+            5. ``value_size``, ``int``, Number of values,
+            6. ``gdim``, ``int``, Geometric dimension of coordinates,
+            7. ``num_cells``, ``int``, Number of cells.
         shape: tuple
             Value shape.
         """
