@@ -184,8 +184,8 @@ jobs:
     docker:
       - image: docker:18.05.0-git
     steps:
-      - setup_remote_docker
-        version: 18.05.0-ce
+      - setup_remote_docker:
+          version: 18.05.0-ce
       - checkout
       - run:
           name: Login to quay.io
