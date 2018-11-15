@@ -185,6 +185,7 @@ jobs:
       - image: docker:stable
     steps:
       - setup_remote_docker
+        - 18.05.0-ce
       - checkout
       - run:
           name: Login to quay.io

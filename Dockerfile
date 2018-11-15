@@ -20,15 +20,17 @@
 #    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
 #
 
+ARG PYBIND11_VERSION=2.2.4
+ARG PETSC_VERSION=3.10.2
+ARG SLEPC_VERSION=3.10.1
+ARG PETSC4PY_VERSION=3.10.0
+ARG SLEPC4PY_VERSION=3.10.0
+
 FROM ubuntu:18.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="Base image for real and complex FEniCS test environments"
 
-ENV PYBIND11_VERSION=2.2.4
-ENV PETSC_VERSION=3.10.2
-ENV SLEPC_VERSION=3.10.1
-ENV PETSC4PY_VERSION=3.10.0
-ENV SLEPC4PY_VERSION=3.10.0
+ARG PYBIND11_VERSION
 
 WORKDIR /tmp
 
@@ -85,9 +87,16 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     make install && \
     rm -rf /tmp/*
 
+########################################
+
 FROM base as dev-env-real
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS development environment with PETSc real mode"
+
+ARG PETSC_VERSION
+ARG PETSC4PY_VERSION
+ARG SLEPC_VERSION
+ARG SLEPC4PY_VERSION
 
 WORKDIR /tmp
 
@@ -136,9 +145,15 @@ ENV SLEPC_DIR=/usr/local/slepc
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
+########################################
 
 FROM base as dev-env-complex
 LABEL description="FEniCS development environment with PETSc complex mode"
+
+ARG PETSC_VERSION
+ARG PETSC4PY_VERSION
+ARG SLEPC_VERSION
+ARG SLEPC4PY_VERSION
 
 WORKDIR /tmp
 
@@ -183,6 +198,7 @@ ENV SLEPC_DIR=/usr/local/slepc
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
+########################################
 
 FROM dev-env-real as real
 LABEL description="DOLFIN-X in real mode"
@@ -206,6 +222,7 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     pip3 install . && \
     rm -rf /tmp/*
 
+########################################
 
 FROM dev-env-complex as complex
 LABEL description="DOLFIN-X in complex mode"
@@ -229,6 +246,7 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     pip3 install . && \
     rm -rf /tmp/*
 
+########################################
 
 FROM real as notebook
 LABEL description="DOLFIN-X Jupyter Notebook"
@@ -236,6 +254,7 @@ WORKDIR /root
 RUN pip3 install jupyter
 ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
 
+########################################
 
 FROM complex as notebook-complex
 LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
