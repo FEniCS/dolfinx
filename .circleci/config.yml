@@ -182,10 +182,10 @@ jobs:
   
   build-and-push-docker-images:
     docker:
-      - image: docker:stable
+      - image: docker:18.05.0-git
     steps:
       - setup_remote_docker
-        - 18.05.0-ce
+        - version: 18.05.0-ce
       - checkout
       - run:
           name: Login to quay.io
