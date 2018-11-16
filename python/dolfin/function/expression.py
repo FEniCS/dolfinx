@@ -4,6 +4,7 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+import typing
 from typing import Callable
 
 import numba
@@ -78,12 +79,12 @@ def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True
 
 class Expression:
     def __init__(self,
-                 eval_func: numba.ccallback.CFunc = None,
+                 eval_func: typing.Union[numba.ccallback.CFunc, int],
                  shape: tuple = ()):
         """Initialise Expression
 
-        Initialises Expression from Numba callback of compiled C function
-        and value shape.
+        Initialises Expression from Numba callback of compiled C function or
+        integer address of C function and value shape.
 
         The majority of users should use this class in conjunction with the
         ``function.expression.numba_eval`` decorator that creates the Numba
@@ -91,7 +92,7 @@ class Expression:
 
         Parameters
         ---------
-        eval_func: numba.ccallback.CFunc
+        eval_func: numba.ccallback.CFunc, int
             The C function must accept the following arguments:
             ``(values_p, x_p, cells_p, num_points, value_size, gdim, num_cells)``
             1. ``values_p`` is a pointer to a row-major array of
@@ -116,18 +117,7 @@ class Expression:
         self._cpp_object = cpp.function.Expression(shape)
 
         self.shape = shape
+        self.eval_func = eval_func
 
-        # If user provided a Numba C callback then take address and
-        # set to the underlying cpp class
-        if eval_func is not None:
-            self._eval_address = eval_func.address
-            self._cpp_object.set_eval(self._eval_address)
-
-    @property
-    def eval_address(self): # noqa
-        return self._eval_address
-
-    @eval_address.setter
-    def eval_address(self, value: int):
-        self._cpp_object.set_eval(value)
-        self._eval_address = value
+        eval_address = getattr(self.eval_func, "address", self.eval_func)
+        self._cpp_object.set_eval(eval_address)

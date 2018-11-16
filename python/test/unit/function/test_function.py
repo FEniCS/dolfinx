@@ -360,10 +360,7 @@ def test_numba_expression_address(V):
         values[:, :] = 1.0
 
     # Handle C func address by hand
-    f1 = Expression()
-    f1.eval_address = expr_eval.address
-
-    assert(isinstance(f1.eval_address, int))
+    f1 = Expression(expr_eval.address)
 
     f = Function(V)
     f.interpolate(f1)
