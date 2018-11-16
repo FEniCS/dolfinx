@@ -106,7 +106,6 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
   const std::size_t size = std::accumulate(
       std::begin(_value_shape), std::end(_value_shape), 1, std::multiplies<>());
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> local_vertex_values(size);
-  const std::size_t gdim = mesh.geometry().dim();
 
   // Resize vertex_values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
