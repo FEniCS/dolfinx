@@ -44,18 +44,19 @@ void function(py::module& m)
       .def(py::init<std::vector<std::size_t>>())
       .def("value_dimension", &dolfin::function::Expression::value_dimension)
       .def("set_eval",
-          [](dolfin::function::Expression& self, std::uintptr_t addr) {
-             auto eval_ptr = (void (*)(PetscScalar* values, const double* x,
-               const int64_t* cell_idx, int num_points, int value_size, 
-               int gdim, int num_cells)) addr;
-             
-             self.eval = eval_ptr;
+           [](dolfin::function::Expression& self, std::uintptr_t addr) {
+             auto eval_ptr = (void (*)(
+                 PetscScalar * values, const double* x, const int64_t* cell_idx,
+                 int num_points, int value_size, int gdim, int num_cells)) addr;
+
+             self.eval_ptr = eval_ptr;
            });
 
   // dolfin::function::Function
   py::class_<dolfin::function::Function,
-             std::shared_ptr<dolfin::function::Function>, dolfin::common::Variable>(
-      m, "Function", "A finite element function")
+             std::shared_ptr<dolfin::function::Function>,
+             dolfin::common::Variable>(m, "Function",
+                                       "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>,
@@ -82,8 +83,7 @@ void function(py::module& m)
                dolfin::function::Function::*)() const)
                & dolfin::function::Function::vector,
            "Return the vector associated with the finite element Function")
-      .def("value_dimension",
-           &dolfin::function::Function::value_dimension)
+      .def("value_dimension", &dolfin::function::Function::value_dimension)
       .def("value_size", &dolfin::function::Function::value_size)
       .def("value_rank", &dolfin::function::Function::value_rank)
       .def_property_readonly("value_shape",
@@ -105,8 +105,7 @@ void function(py::module& m)
            py::arg("values"), py::arg("x"), "Evaluate Function")
       .def("compute_point_values",
            py::overload_cast<const dolfin::mesh::Mesh&>(
-               &dolfin::function::Function::compute_point_values,
-               py::const_),
+               &dolfin::function::Function::compute_point_values, py::const_),
            "Compute values at all mesh points")
       .def("compute_point_values",
            [](dolfin::function::Function& self) {
@@ -122,8 +121,7 @@ void function(py::module& m)
            },
            "Compute values at all mesh points by using the mesh "
            "function.function_space().mesh()")
-      .def("function_space",
-           &dolfin::function::Function::function_space);
+      .def("function_space", &dolfin::function::Function::function_space);
 
   // FIXME: why is this floating here?
   m.def("interpolate",

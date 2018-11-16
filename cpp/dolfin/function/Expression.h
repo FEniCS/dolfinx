@@ -94,6 +94,20 @@ public:
                        Eigen::RowMajor>
   compute_point_values(const mesh::Mesh& mesh) const;
 
+  /// Evaluate at given point in given cell
+  ///
+  /// @param    values (Eigen::Ref<Eigen::VectorXd>)
+  ///         The values at the point.
+  /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
+  ///         The coordinates of the point.
+  /// @param    cell (mesh::Cell)
+  ///         The cell which contains the given point.
+  virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>>
+                        values,
+                    const Eigen::Ref<const EigenRowArrayXXd> x,
+                    const dolfin::mesh::Cell& cell) const;
+
   /// Evaluate method
   ///
   /// Signature of the method accepts:
@@ -122,7 +136,7 @@ public:
   std::function<void(PetscScalar* values, const double* x,
                      const int64_t* cell_idx, int num_points, int value_size,
                      int gdim, int num_cells)>
-      eval;
+      eval_ptr;
 
 private:
   // Value shape

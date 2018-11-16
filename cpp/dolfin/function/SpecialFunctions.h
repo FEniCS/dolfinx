@@ -33,7 +33,8 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x, const mesh::Cell& cell) const;
+            const Eigen::Ref<const EigenRowArrayXXd> x,
+            const mesh::Cell& cell) const;
 
 private:
   // The mesh
@@ -52,7 +53,8 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x, const mesh::Cell& cell) const;
+            const Eigen::Ref<const EigenRowArrayXXd> x,
+            const mesh::Cell& cell) const;
 
 private:
   // The mesh
