@@ -49,7 +49,7 @@ void function(py::module& m)
                  PetscScalar * values, const double* x, const int64_t* cell_idx,
                  int num_points, int value_size, int gdim, int num_cells)) addr;
 
-             self.eval_ptr = eval_ptr;
+             self._eval_ptr = eval_ptr;
            });
 
   // dolfin::function::Function

@@ -23,6 +23,16 @@ Expression::Expression(std::vector<std::size_t> value_shape)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+Expression::Expression(
+    std::function<void(PetscScalar* values, const double* x,
+                       const int64_t* cell_idx, int num_points, int value_size,
+                       int gdim, int num_cells)>
+        eval_ptr,
+    std::vector<std::size_t> value_shape)
+    : _eval_ptr(eval_ptr), _value_shape(value_shape)
+{
+}
+//-----------------------------------------------------------------------------
 Expression::Expression(const Expression& expression)
     : _value_shape(expression._value_shape)
 {
@@ -141,7 +151,8 @@ void Expression::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                       const mesh::Cell& cell) const
 {
   const int64_t cell_idx = cell.index();
-  eval_ptr(values.data(), x.data(), &cell_idx, x.rows(), values.cols(),
-           x.cols(), 1);
+  assert(_eval_ptr);
+  _eval_ptr(values.data(), x.data(), &cell_idx, x.rows(), values.cols(),
+            x.cols(), 1);
 }
 //-----------------------------------------------------------------------------
