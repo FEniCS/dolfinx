@@ -43,9 +43,8 @@ public:
   ///
   /// @param value_shape (std::vector<std::size_t>)
   ///         Shape of expression.
-  Expression(std::function<void(PetscScalar* values, const double* x,
-                                const int64_t* cell_idx, int num_points,
-                                int value_size, int gdim, int num_cells)>
+  Expression(std::function<void(PetscScalar*, const double*, const int64_t*,
+                                int, int, int, int)>
                  eval_ptr,
              std::vector<std::size_t> value_shape);
 
