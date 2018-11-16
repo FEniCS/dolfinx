@@ -7,6 +7,7 @@
 from typing import Callable
 
 import numba
+import numba.ccallback
 from petsc4py import PETSc
 
 from dolfin import cpp
@@ -66,7 +67,7 @@ def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True
 
             jitted_func(np_values, np_x, np_cell_idx)
 
-        return eval.address
+        return eval
 
     if len(args) == 1 and callable(args[0]):
         # Allows decoration without arguments.
@@ -75,23 +76,23 @@ def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True
         return decorator
 
 
-class Expression(cpp.function.Expression):
+class Expression:
     def __init__(self,
-                 eval_func: int,
+                 eval_func: numba.ccallback.CFunc = None,
                  shape: tuple = ()):
         """Initialise Expression
 
-        Initialises Expression from address of a C function and value shape.
+        Initialises Expression from Numba callback of compiled C function
+        and value shape.
 
         The majority of users should use this class in conjunction with the
-        ``function.expression.numba_eval`` decorator that creates Numba
+        ``function.expression.numba_eval`` decorator that creates the Numba
         JIT-compiled evaluation functions.
 
         Parameters
         ---------
-        eval_func:
-            Address of a compiled function.
-            The function must accept the following arguments:
+        eval_func: numba.ccallback.CFunc
+            The C function must accept the following arguments:
             ``(values_p, x_p, cells_p, num_points, value_size, gdim, num_cells)``
             1. ``values_p`` is a pointer to a row-major array of
                ``PetscScalar`` of shape ``(num_points, value_size)``.
@@ -112,7 +113,21 @@ class Expression(cpp.function.Expression):
         shape: tuple
             Value shape.
         """
-        # Without this, undefined behaviour might happen, see pybind11 docs.
-        super().__init__(shape)
+        self._cpp_object = cpp.function.Expression(shape)
+
         self.shape = shape
-        self.set_eval(eval_func)
+
+        # If user provided a Numba C callback then take address and
+        # set to the underlying cpp class
+        if eval_func is not None:
+            self._eval_address = eval_func.address
+            self._cpp_object.set_eval(self._eval_address)
+
+    @property
+    def eval_address(self): # noqa
+        return self._eval_address
+
+    @eval_address.setter
+    def eval_address(self, value: int):
+        self._cpp_object.set_eval(value)
+        self._eval_address = value
