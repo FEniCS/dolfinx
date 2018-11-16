@@ -91,6 +91,8 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     make install && \
     rm -rf /tmp/*
 
+WORKDIR /root
+
 ########################################
 
 FROM base as dev-env-real
@@ -150,6 +152,8 @@ ENV SLEPC_DIR=/usr/local/slepc
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
+WORKDIR /root
+
 ########################################
 
 FROM base as dev-env-complex
@@ -204,6 +208,8 @@ ENV SLEPC_DIR=/usr/local/slepc
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
 
+WORKDIR /root
+
 ########################################
 
 FROM dev-env-real as real
@@ -230,6 +236,8 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     pip3 install . && \
     rm -rf /tmp/*
 
+WORKDIR /root
+
 ########################################
 
 FROM dev-env-complex as complex
@@ -255,6 +263,8 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     cd ../python && \
     pip3 install . && \
     rm -rf /tmp/*
+
+WORKDIR /root
 
 ########################################
 
