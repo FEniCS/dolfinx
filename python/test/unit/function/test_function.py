@@ -361,8 +361,15 @@ def test_numba_expression_address(V):
 
     # Handle C func address by hand
     f1 = Expression(expr_eval.address)
-
     f = Function(V)
-    f.interpolate(f1)
 
+    f.interpolate(f1)
     assert(f.vector().get_local() == 1.0).all()
+
+    @function.expression.numba_eval
+    def expr_eval2(values, x, cell_idx):
+        values[:, :] = 2.0
+
+    f1.eval_func = expr_eval2.address
+    f.interpolate(f1)
+    assert(f.vector().get_local() == 2.0).all()
