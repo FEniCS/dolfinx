@@ -271,13 +271,23 @@ WORKDIR /root
 FROM real as notebook
 LABEL description="DOLFIN-X Jupyter Notebook"
 WORKDIR /root
-RUN pip3 install jupyter
-ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+
+ARG TINI_VERSION=v0.18.0 
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini && \
+    pip3 install jupyter
+
+ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
 
 ########################################
 
 FROM complex as notebook-complex
 LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
+
+ARG TINI_VERSION=v0.18.0 
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini && \
+    pip3 install jupyter
+
 WORKDIR /root
-RUN pip3 install jupyter
-ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
