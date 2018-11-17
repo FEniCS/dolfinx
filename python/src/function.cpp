@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <cstdint>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Expression.h>
@@ -43,12 +44,11 @@ void function(py::module& m)
              std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
       .def(py::init([](std::uintptr_t addr,
                        std::vector<std::size_t> value_size) {
-        std::function<void(PetscScalar*, const double*, const int64_t*, int,
-                           int, int, int)>
-            eval_ptr
-            = reinterpret_cast<void (*)(PetscScalar*, const double*,
-                                        const int64_t*, int, int, int, int)>(
-                addr);
+        std::function<void(PetscScalar*, const double*, const std::int64_t*,
+                           int, int, int, int)>
+            eval_ptr = reinterpret_cast<void (*)(PetscScalar*, const double*,
+                                                 const std::int64_t*, int, int,
+                                                 int, int)>(addr);
         return std::make_shared<dolfin::function::Expression>(eval_ptr,
                                                               value_size);
       }))
