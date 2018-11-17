@@ -31,6 +31,7 @@ Expression::Expression(
     std::vector<std::size_t> value_shape)
     : _eval_ptr(eval_ptr), _value_shape(value_shape)
 {
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::size_t Expression::value_rank() const { return _value_shape.size(); }
