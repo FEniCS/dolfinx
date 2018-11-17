@@ -114,7 +114,6 @@ class Expression:
         shape: tuple
             Value shape.
         """
-        self.shape = shape
         self._eval_func = eval_func
 
         eval_address = getattr(eval_func, "address", eval_func)
