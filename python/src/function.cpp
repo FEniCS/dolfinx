@@ -49,7 +49,6 @@ void function(py::module& m)
             return std::make_shared<dolfin::function::Expression>(eval_ptr,
                                                                   value_size);
           }))
-      .def(py::init<std::vector<std::size_t>>())
       .def("value_dimension", &dolfin::function::Expression::value_dimension);
 
   // dolfin::function::Function
