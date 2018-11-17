@@ -41,15 +41,17 @@ void function(py::module& m)
   // dolfin:Expression
   py::class_<dolfin::function::Expression,
              std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
-      .def(py::init(
-          [](std::uintptr_t addr, std::vector<std::size_t> value_size) {
-            std::function<void(PetscScalar*, const double*, const int64_t*, int,
-                               int, int, int)>
-                eval_ptr = (void (*)(PetscScalar*, const double*,
-                                     const int64_t*, int, int, int, int))addr;
-            return std::make_shared<dolfin::function::Expression>(eval_ptr,
-                                                                  value_size);
-          }))
+      .def(py::init([](std::uintptr_t addr,
+                       std::vector<std::size_t> value_size) {
+        std::function<void(PetscScalar*, const double*, const int64_t*, int,
+                           int, int, int)>
+            eval_ptr
+            = reinterpret_cast<void (*)(PetscScalar*, const double*,
+                                        const int64_t*, int, int, int, int)>(
+                addr);
+        return std::make_shared<dolfin::function::Expression>(eval_ptr,
+                                                              value_size);
+      }))
       .def("value_dimension", &dolfin::function::Expression::value_dimension);
 
   // dolfin::function::Function
