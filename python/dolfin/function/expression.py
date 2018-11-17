@@ -112,7 +112,4 @@ class Expression(cpp.function.Expression):
         shape: tuple
             Value shape.
         """
-        # Without this, undefined behaviour might happen, see pybind11 docs.
-        super().__init__(shape)
-        self.shape = shape
-        self.set_eval(eval_func)
+        super().__init__(eval_func, shape)
