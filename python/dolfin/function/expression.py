@@ -114,6 +114,7 @@ class Expression:
         shape: tuple
             Value shape.
         """
+        # Hold reference to eval function to avoid premature garbage collection
         self._eval_func = eval_func
 
         try:
