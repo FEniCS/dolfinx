@@ -34,7 +34,7 @@ public:
                                     Eigen::RowMajor>>
                 values,
             const Eigen::Ref<const EigenRowArrayXXd> x,
-            const mesh::Cell& cell) const;
+            const mesh::Cell& cell) const override;
 
 private:
   // The mesh
@@ -54,7 +54,7 @@ public:
                                     Eigen::RowMajor>>
                 values,
             const Eigen::Ref<const EigenRowArrayXXd> x,
-            const mesh::Cell& cell) const;
+            const mesh::Cell& cell) const override;
 
 private:
   // The mesh

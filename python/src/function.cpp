@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <cstdint>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Expression.h>
@@ -41,16 +42,17 @@ void function(py::module& m)
   // dolfin:Expression
   py::class_<dolfin::function::Expression,
              std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
-      .def(py::init<std::vector<std::size_t>>())
-      .def("value_dimension", &dolfin::function::Expression::value_dimension)
-      .def("set_eval",
-           [](dolfin::function::Expression& self, std::uintptr_t addr) {
-             auto eval_ptr = (void (*)(
-                 PetscScalar * values, const double* x, const int64_t* cell_idx,
-                 int num_points, int value_size, int gdim, int num_cells)) addr;
-
-             self._eval_ptr = eval_ptr;
-           });
+      .def(py::init([](std::uintptr_t addr,
+                       std::vector<std::size_t> value_size) {
+        std::function<void(PetscScalar*, const double*, const std::int64_t*,
+                           int, int, int, int)>
+            eval_ptr = reinterpret_cast<void (*)(PetscScalar*, const double*,
+                                                 const std::int64_t*, int, int,
+                                                 int, int)>(addr);
+        return std::make_shared<dolfin::function::Expression>(eval_ptr,
+                                                              value_size);
+      }))
+      .def("value_dimension", &dolfin::function::Expression::value_dimension);
 
   // dolfin::function::Function
   py::class_<dolfin::function::Function,

@@ -52,10 +52,10 @@ public:
   ///
   /// @param expression (Expression)
   ///         Object to be copied.
-  Expression(const Expression& expression);
+  Expression(const Expression& expression) = default;
 
   /// Destructor
-  virtual ~Expression();
+  virtual ~Expression() = default;
 
   /// Return value rank.
   ///
@@ -117,7 +117,7 @@ public:
                     const Eigen::Ref<const EigenRowArrayXXd> x,
                     const dolfin::mesh::Cell& cell) const;
 
-  // private:
+  private:
   // Evaluate method
   //
   // Signature of the method accepts:
@@ -148,7 +148,6 @@ public:
                      int gdim, int num_cells)>
       _eval_ptr;
 
-private:
   // Value shape
   std::vector<std::size_t> _value_shape;
 };

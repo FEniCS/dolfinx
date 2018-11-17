@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011 Anders Logg
+// Copyright (C) 2009-2018 Michal Habera, Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -30,16 +30,6 @@ Expression::Expression(
         eval_ptr,
     std::vector<std::size_t> value_shape)
     : _eval_ptr(eval_ptr), _value_shape(value_shape)
-{
-}
-//-----------------------------------------------------------------------------
-Expression::Expression(const Expression& expression)
-    : _value_shape(expression._value_shape)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Expression::~Expression()
 {
   // Do nothing
 }
@@ -88,16 +78,15 @@ void Expression::restrict(
   }
   const fem::CoordinateMapping& cmap = *cell.mesh().geometry().coord_mapping;
 
+  // FIXME: Avoid dynamic memory allocation
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       eval_points(ndofs, gdim);
   cmap.compute_physical_coordinates(eval_points, X, coordinate_dofs);
 
+  // FIXME: Avoid dynamic memory allocation
   // Storage for evaluation values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       eval_values(ndofs, value_size);
-
-  // Prepare array of cell indices
-  std::vector<int64_t> cell_idx = {cell.index()};
 
   // Evaluate all points in one call
   eval(eval_values, eval_points, cell);
@@ -124,9 +113,6 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    // Prepare array of cell indices
-    std::vector<int64_t> cell_idx = {cell.index()};
-
     // Iterate over cell vertices
     for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
     {

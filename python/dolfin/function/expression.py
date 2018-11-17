@@ -114,20 +114,8 @@ class Expression:
         shape: tuple
             Value shape.
         """
-        self._cpp_object = cpp.function.Expression(shape)
-
         self.shape = shape
         self._eval_func = eval_func
 
         eval_address = getattr(eval_func, "address", eval_func)
-        self._cpp_object.set_eval(eval_address)
-
-    @property
-    def eval_func(self):
-        return self._eval_func
-
-    @eval_func.setter
-    def eval_func(self, value):
-        self._eval_func = value
-        eval_address = getattr(value, "address", value)
-        self._cpp_object.set_eval(eval_address)
+        self._cpp_object = cpp.function.Expression(eval_address, shape)
