@@ -116,5 +116,9 @@ class Expression:
         """
         self._eval_func = eval_func
 
-        eval_address = getattr(eval_func, "address", eval_func)
+        try:
+            eval_address = eval_func.address
+        except AttributeError:
+            eval_address = eval_func
+
         self._cpp_object = cpp.function.Expression(eval_address, shape)
