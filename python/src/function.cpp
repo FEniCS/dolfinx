@@ -43,9 +43,8 @@ void function(py::module& m)
              std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
       .def(py::init(
           [](std::uintptr_t addr, std::vector<std::size_t> value_size) {
-            auto eval_ptr = (void (*)(
-                PetscScalar * values, const double* x, const int64_t* cell_idx,
-                int num_points, int value_size, int gdim, int num_cells)) addr;
+            auto eval_ptr = (void (*)(PetscScalar*, const double*,
+                                      const int64_t*, int, int, int, int))addr;
             return std::make_shared<dolfin::function::Expression>(eval_ptr,
                                                                   value_size);
           }))
