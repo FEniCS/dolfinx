@@ -52,10 +52,10 @@ public:
   ///
   /// @param expression (Expression)
   ///         Object to be copied.
-  Expression(const Expression& expression);
+  Expression(const Expression& expression) = default;
 
   /// Destructor
-  virtual ~Expression();
+  virtual ~Expression() = default;
 
   /// Return value rank.
   ///
