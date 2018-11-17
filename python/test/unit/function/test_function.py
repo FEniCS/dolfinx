@@ -351,3 +351,17 @@ def test_interpolation_old(V, W, mesh):
     f.interpolate(f1)
     assert round(f.vector().norm(cpp.la.Norm.l1) - 3 * mesh.num_vertices(),
                  7) == 0
+
+
+def test_numba_expression_address(V):
+
+    @function.expression.numba_eval
+    def expr_eval(values, x, cell_idx):
+        values[:, :] = 1.0
+
+    # Handle C func address by hand
+    f1 = Expression(expr_eval.address)
+    f = Function(V)
+
+    f.interpolate(f1)
+    assert(f.vector().get_local() == 1.0).all()

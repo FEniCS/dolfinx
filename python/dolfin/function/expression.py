@@ -4,9 +4,11 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+import typing
 from typing import Callable
 
 import numba
+import numba.ccallback
 from petsc4py import PETSc
 
 from dolfin import cpp
@@ -66,7 +68,7 @@ def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True
 
             jitted_func(np_values, np_x, np_cell_idx)
 
-        return eval.address
+        return eval
 
     if len(args) == 1 and callable(args[0]):
         # Allows decoration without arguments.
@@ -75,23 +77,23 @@ def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True
         return decorator
 
 
-class Expression(cpp.function.Expression):
+class Expression:
     def __init__(self,
-                 eval_func: int,
+                 eval_func: typing.Union[numba.ccallback.CFunc, int],
                  shape: tuple = ()):
         """Initialise Expression
 
-        Initialises Expression from address of a C function and value shape.
+        Initialises Expression from Numba callback of compiled C function or
+        integer address of C function and value shape.
 
         The majority of users should use this class in conjunction with the
-        ``function.expression.numba_eval`` decorator that creates Numba
+        ``function.expression.numba_eval`` decorator that creates the Numba
         JIT-compiled evaluation functions.
 
         Parameters
         ---------
-        eval_func:
-            Address of a compiled function.
-            The function must accept the following arguments:
+        eval_func: numba.ccallback.CFunc, int
+            The C function must accept the following arguments:
             ``(values_p, x_p, cells_p, num_points, value_size, gdim, num_cells)``
             1. ``values_p`` is a pointer to a row-major array of
                ``PetscScalar`` of shape ``(num_points, value_size)``.
@@ -112,4 +114,12 @@ class Expression(cpp.function.Expression):
         shape: tuple
             Value shape.
         """
-        super().__init__(eval_func, shape)
+        # Hold reference to eval function to avoid premature garbage collection
+        self._eval_func = eval_func
+
+        try:
+            eval_address = eval_func.address
+        except AttributeError:
+            eval_address = eval_func
+
+        self._cpp_object = cpp.function.Expression(eval_address, shape)
