@@ -7,16 +7,15 @@
 
 import math
 
+import numba
 import numpy
 import pytest
-import numba
 
 import ufl
-from dolfin import (DOLFIN_EPS, MPI, Expression, Function,
-                    FunctionSpace, Point, TensorFunctionSpace, UnitCubeMesh,
-                    VectorFunctionSpace, Vertex, cpp,
-                    interpolate, lt)
-from dolfin import function
+from dolfin import (DOLFIN_EPS, MPI, Expression, Function, FunctionSpace,
+                    Point, TensorFunctionSpace, UnitCubeMesh,
+                    VectorFunctionSpace, Vertex, cpp, function, interpolate,
+                    lt)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -106,35 +105,39 @@ def test_assign(V, W):
         expr = 3 * u - 4 * u1 - 0.1 * 4 * u * 4 + u2 + 3 * u0 / 3. / 0.5
         expr_scalar = 3 - 4 * 3 - 0.1 * 4 * 4 + 4. + 3 * 2. / 3. / 0.5
         uu.assign(expr)
-        assert (round(uu.vector().get_local().sum()
-                      - float(expr_scalar * uu.vector().size()), 7) == 0)
+        assert (round(
+            uu.vector().get_local().sum() - float(
+                expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test expression scaling
         expr = 3 * expr
         expr_scalar *= 3
         uu.assign(expr)
-        assert (round(uu.vector().get_local().sum()
-                      - float(expr_scalar * uu.vector().size()), 7) == 0)
+        assert (round(
+            uu.vector().get_local().sum() - float(
+                expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test expression scaling
         expr = expr / 4.5
         expr_scalar /= 4.5
         uu.assign(expr)
-        assert (round(uu.vector().get_local().sum()
-                      - float(expr_scalar * uu.vector().size()), 7) == 0)
+        assert (round(
+            uu.vector().get_local().sum() - float(
+                expr_scalar * uu.vector().size()), 7) == 0)
 
         # Test self assignment
         expr = 3 * u - 5.0 * u2 + u1 - 5 * u
         expr_scalar = 3 - 5 * 4. + 3. - 5
         u.assign(expr)
-        assert (round(u.vector().get_local().sum()
-                      - float(expr_scalar * u.vector().size()), 7) == 0)
+        assert (round(
+            u.vector().get_local().sum() - float(
+                expr_scalar * u.vector().size()), 7) == 0)
 
         # Test zero assignment
         u.assign(-u2 / 2 + 2 * u1 - u1 / 0.5 + u2 * 0.5)
         assert round(u.vector().get_local().sum() - 0.0, 7) == 0
 
-        # Test errounious assignments
+        # Test erroneous assignments
         uu = Function(V1)
 
         @function.expression.numba_eval
@@ -175,7 +178,7 @@ def test_call(R, V, W, Q, mesh):
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
 
-    e2 = Expression(expr_eval2, shape=(3,))
+    e2 = Expression(expr_eval2, shape=(3, ))
 
     @function.expression.numba_eval
     def expr_eval3(values, x, cell_idx):
@@ -185,9 +188,9 @@ def test_call(R, V, W, Q, mesh):
         values[:, 3] = x[:, 0]
         values[:, 4] = x[:, 1]
         values[:, 5] = x[:, 2]
-        values[:, 6] = - x[:, 0]
-        values[:, 7] = - x[:, 1]
-        values[:, 8] = - x[:, 2]
+        values[:, 6] = -x[:, 0]
+        values[:, 7] = -x[:, 1]
+        values[:, 8] = -x[:, 2]
 
     e3 = Expression(expr_eval3, shape=(3, 3))
 
@@ -245,7 +248,6 @@ def test_scalar_conditions(R):
 
 
 def test_interpolation_mismatch_rank0(W):
-
     @function.expression.numba_eval
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
@@ -256,13 +258,12 @@ def test_interpolation_mismatch_rank0(W):
 
 
 def test_interpolation_mismatch_rank1(W):
-
     @function.expression.numba_eval
     def expr_eval(values, x, cell_idx):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
 
-    f = Expression(expr_eval, shape=(2,))
+    f = Expression(expr_eval, shape=(2, ))
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
@@ -304,7 +305,7 @@ def test_interpolation_rank1(W):
         values[:, 1] = 1.0
         values[:, 2] = 1.0
 
-    f = Expression(expr_eval, shape=(3,))
+    f = Expression(expr_eval, shape=(3, ))
     w = interpolate(f, W)
     x = w.vector()
     assert abs(x.get_local()).max() == 1
@@ -346,7 +347,7 @@ def test_interpolation_old(V, W, mesh):
     assert round(f.vector().norm(cpp.la.Norm.l1) - mesh.num_vertices(), 7) == 0
 
     # Vector interpolation
-    f1 = Expression(expr_eval1, shape=(3,))
+    f1 = Expression(expr_eval1, shape=(3, ))
     f = Function(W)
     f.interpolate(f1)
     assert round(f.vector().norm(cpp.la.Norm.l1) - 3 * mesh.num_vertices(),
@@ -354,7 +355,6 @@ def test_interpolation_old(V, W, mesh):
 
 
 def test_numba_expression_address(V):
-
     @function.expression.numba_eval
     def expr_eval(values, x, cell_idx):
         values[:, :] = 1.0
@@ -364,4 +364,4 @@ def test_numba_expression_address(V):
     f = Function(V)
 
     f.interpolate(f1)
-    assert(f.vector().get_local() == 1.0).all()
+    assert (f.vector().get_local() == 1.0).all()

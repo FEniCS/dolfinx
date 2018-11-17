@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2018 Michal Habera, Jack S. Hale
+# Copyright (C) 2018 Michal Habera and Jack S. Hale
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+
 import typing
-from typing import Callable
 
 import numba
 import numba.ccallback
@@ -14,15 +14,22 @@ from petsc4py import PETSc
 from dolfin import cpp
 
 
-def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True},
-               numba_cfunc_options: dict = {"nopython": True, "cache": True}):
+def numba_eval(*args,
+               numba_jit_options: dict = {
+                   "nopython": True,
+                   "cache": True
+               },
+               numba_cfunc_options: dict = {
+                   "nopython": True,
+                   "cache": True
+               }):
     """Decorator to create Numba JIT-compiled evaluate function.
 
-    A decorator that takes an evaluation function ``func`` and returns the
-    C address of the Numba JIT-ed method. The call signature of ``func``
+    A decorator that takes an evaluation function ``f`` and returns the
+    C address of the Numba JIT-ed method. The call signature of ``f``
     should be:
 
-    func: Callable(None, (numpy.array, numpy.array, numpy.array))
+    f: Callable(None, (numpy.array, numpy.array, numpy.array))
         Python function accepting parameters: values, x, cell_index.
 
     For more information on ``numba_jit_options`` and ``numba_cfunc_options``
@@ -48,30 +55,35 @@ def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True
     >>> u = Function(W)
     >>> u.interpolate(e)
     """
-    # Decomaker pattern see PEP 318.
-    def decorator(func: Callable):
+
+    # Decomaker pattern see PEP 318
+    def decorator(f: typing.Callable):
         scalar_type = numba.typeof(PETSc.ScalarType())
         c_signature = numba.types.void(
             numba.types.CPointer(scalar_type),
             numba.types.CPointer(numba.types.double),
-            numba.types.CPointer(numba.types.int32),
-            numba.types.intc, numba.types.intc, numba.types.intc,
-            numba.types.intc)
+            numba.types.CPointer(numba.types.int32), numba.types.intc,
+            numba.types.intc, numba.types.intc, numba.types.intc)
 
-        jitted_func = numba.jit(**numba_jit_options)(func)
+        # Compile the user function
+        f_jit = numba.jit(**numba_jit_options)(f)
 
+        # Wrap the user function in a function with a C interface
         @numba.cfunc(c_signature, **numba_cfunc_options)
         def eval(values, x, cell_idx, num_points, value_size, gdim, num_cells):
-            np_values = numba.carray(values, (num_points, value_size), dtype=scalar_type)
-            np_x = numba.carray(x, (num_points, gdim), dtype=numba.types.double)
-            np_cell_idx = numba.carray(cell_idx, (num_cells,), dtype=numba.types.int32)
+            np_values = numba.carray(
+                values, (num_points, value_size), dtype=scalar_type)
+            np_x = numba.carray(
+                x, (num_points, gdim), dtype=numba.types.double)
+            np_cell_idx = numba.carray(
+                cell_idx, (num_cells, ), dtype=numba.types.int32)
 
-            jitted_func(np_values, np_x, np_cell_idx)
+            f_jit(np_values, np_x, np_cell_idx)
 
         return eval
 
     if len(args) == 1 and callable(args[0]):
-        # Allows decoration without arguments.
+        # Allows decoration without arguments
         return decorator(args[0])
     else:
         return decorator
@@ -79,7 +91,7 @@ def numba_eval(*args, numba_jit_options: dict = {"nopython": True, "cache": True
 
 class Expression:
     def __init__(self,
-                 eval_func: typing.Union[numba.ccallback.CFunc, int],
+                 f: typing.Union[numba.ccallback.CFunc, int],
                  shape: tuple = ()):
         """Initialise Expression
 
@@ -92,7 +104,7 @@ class Expression:
 
         Parameters
         ---------
-        eval_func: numba.ccallback.CFunc, int
+        f: numba.ccallback.CFunc, int
             The C function must accept the following arguments:
             ``(values_p, x_p, cells_p, num_points, value_size, gdim, num_cells)``
             1. ``values_p`` is a pointer to a row-major array of
@@ -114,12 +126,11 @@ class Expression:
         shape: tuple
             Value shape.
         """
-        # Hold reference to eval function to avoid premature garbage collection
-        self._eval_func = eval_func
 
         try:
-            eval_address = eval_func.address
+            self._cpp_object = cpp.function.Expression(f.address, shape)
+            # Hold reference to eval function to avoid premature garbage
+            # collection
+            self._f = f
         except AttributeError:
-            eval_address = eval_func
-
-        self._cpp_object = cpp.function.Expression(eval_address, shape)
+            self._cpp_object = cpp.function.Expression(f, shape)

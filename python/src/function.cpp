@@ -16,6 +16,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
 #include <pybind11/eigen.h>
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
@@ -46,12 +47,16 @@ void function(py::module& m)
                        std::vector<std::size_t> value_size) {
         std::function<void(PetscScalar*, const double*, const std::int64_t*,
                            int, int, int, int)>
-            eval_ptr = reinterpret_cast<void (*)(PetscScalar*, const double*,
-                                                 const std::int64_t*, int, int,
-                                                 int, int)>(addr);
-        return std::make_shared<dolfin::function::Expression>(eval_ptr,
-                                                              value_size);
+            f = reinterpret_cast<void (*)(PetscScalar*, const double*,
+                                          const std::int64_t*, int, int, int,
+                                          int)>(addr);
+        return std::make_unique<dolfin::function::Expression>(f, value_size);
       }))
+      .def(
+          py::init<std::function<void(PetscScalar*, const double*,
+                                      const std::int64_t*, int, int, int, int)>,
+                   std::vector<std::size_t>>())
+      .def("eval", &dolfin::function::Expression::eval)
       .def("value_dimension", &dolfin::function::Expression::value_dimension);
 
   // dolfin::function::Function
