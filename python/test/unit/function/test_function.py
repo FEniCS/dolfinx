@@ -368,6 +368,7 @@ def test_numba_expression_address(V):
     f.interpolate(f1)
     assert (f.vector().get_local() == 1.0).all()
 
+
 @skip_if_complex
 def test_cffi_expression(V):
 
