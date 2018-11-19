@@ -4,22 +4,32 @@
 using namespace dolfin;
 
 // Sub domain for clamp at left end
-// class Left : public SubDomain
-// {
-//   bool inside(const Array<double>& x, bool on_boundary) const
-//   {
-//     return (std::abs(x[0]) < DOLFIN_EPS) && on_boundary;
-//   }
-// };
+class Left : public mesh::SubDomain
+{
+  EigenArrayXb inside(Eigen::Ref<const EigenRowArrayXXd> x,
+                      bool on_boundary) const
+  {
+    EigenArrayXb flags(x.rows());
+    for (int i = 0; i < x.rows(); ++i)
+      flags[i] = (std::abs(x(i, 0)) < DOLFIN_EPS) and on_boundary;
 
-// // Sub domain for rotation at right end
-// class Right : public SubDomain
-// {
-//   bool inside(const Array<double>& x, bool on_boundary) const
-//   {
-//     return (std::abs(x[0] - 1.0) < DOLFIN_EPS) && on_boundary;
-//   }
-// };
+    return flags;
+  }
+};
+
+// Sub domain for rotation at right end
+class Right : public mesh::SubDomain
+{
+  EigenArrayXb inside(Eigen::Ref<const EigenRowArrayXXd> x,
+                      bool on_boundary) const
+  {
+    EigenArrayXb flags(x.rows());
+    for (int i = 0; i < x.rows(); ++i)
+      flags[i] = (std::abs(x(i, 0) - 1.0) < DOLFIN_EPS) and on_boundary;
+
+    return flags;
+  }
+};
 
 // Dirichlet boundary condition for clamp at left end
 class Clamp : public function::Expression
@@ -81,6 +91,48 @@ public:
 //
 // .. code-block:: cpp
 
+class HyperElasticProblem : public nls::NonlinearProblem
+{
+public:
+  HyperElasticProblem(std::shared_ptr<function::Function> u,
+                      std::shared_ptr<fem::Form> L,
+                      std::shared_ptr<fem::Form> J,
+                      std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
+      : _u(u), _l(L), _j(J), _bcs(bcs)
+  {
+    // Do nothing
+  }
+
+  /// Destructor
+  virtual ~HyperElasticProblem() = default;
+
+  /// Compute F at current point x
+  virtual la::PETScVector* F(const la::PETScVector& x)
+  {
+    // TODO
+    return b.get();
+  }
+
+  /// Compute J = F' at current point x
+  virtual la::PETScMatrix* J(const la::PETScVector& x)
+  {
+    // TODO
+    return A.get();
+  }
+
+private:
+  std::shared_ptr<function::Function> _u;
+  std::shared_ptr<fem::Form> _j;
+  std::shared_ptr<fem::Form> _l;
+  std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;
+
+  std::unique_ptr<la::PETScVector> b;
+  std::unique_ptr<la::PETScMatrix> A;
+
+  // A, b
+  // _u, _l, _j, _bcs
+};
+
 int main()
 {
 
@@ -102,28 +154,33 @@ int main()
 
   auto space
       = std::unique_ptr<dolfin_function_space>(HyperElasticityFunctionSpace());
-  // auto V = std::make_shared<function::FunctionSpace>(
-  //     mesh,
-  //     std::make_shared<fem::FiniteElement>(
-  //         std::shared_ptr<ufc_finite_element>(space->element())),
-  //     std::make_shared<fem::DofMap>(
-  //         std::shared_ptr<ufc_dofmap>(space->dofmap()), *mesh));
+  auto V = std::make_shared<function::FunctionSpace>(
+      mesh,
+      std::make_shared<fem::FiniteElement>(
+          std::shared_ptr<ufc_finite_element>(space->element())),
+      std::make_shared<fem::DofMap>(
+          std::shared_ptr<ufc_dofmap>(space->dofmap()), *mesh));
 
-  // auto mesh = std::make_shared<UnitCubeMesh>(24, 16, 16);
-  // auto V = std::make_shared<HyperElasticity::FunctionSpace>(mesh);
+  // Define Dirichlet boundaries
+  auto left = std::make_shared<Left>();
+  auto right = std::make_shared<Right>();
 
-  //   // Define Dirichlet boundaries
-  //   auto left = std::make_shared<Left>();
-  //   auto right = std::make_shared<Right>();
+  // Define Dirichlet boundary functions
+  auto c = std::make_shared<Clamp>();
+  auto r = std::make_shared<Rotation>();
 
-  //   // Define Dirichlet boundary functions
-  //   auto c = std::make_shared<Clamp>();
-  //   auto r = std::make_shared<Rotation>();
+  // Create Dirichlet boundary conditions
+  auto u0 = std::make_shared<function::Function>(V);
+  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
+      = {std::make_shared<fem::DirichletBC>(V, u0, left),
+         std::make_shared<fem::DirichletBC>(V, u0, right)};
 
-  //   // Create Dirichlet boundary conditions
-  //   DirichletBC bcl(V, c, left);
-  //   DirichletBC bcr(V, r, right);
-  //   std::vector<const DirichletBC*> bcs = {{&bcl, &bcr}};
+  // Define solution function
+  auto u = std::make_shared<function::Function>(V);
+
+  // fem::DirichletBC bcl(V, c, left);
+  // fem::DirichletBC bcr(V, r, right);
+  // std::vector<const DirichletBC*> bcs = {{&bcl, &bcr}};
 
   // // The two boundary conditions are collected in the container ``bcs``.
   // //

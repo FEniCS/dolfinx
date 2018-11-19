@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 3.5)
 #find_package(DOLFIN PATHS ${CMAKE_BINARY_DIR} REQUIRED)
 
 # Documented demos
+add_subdirectory(documented/hyperelasticity)
 add_subdirectory(documented/poisson)
 
 # Undocumented demos
