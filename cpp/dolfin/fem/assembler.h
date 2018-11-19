@@ -72,7 +72,7 @@ void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
 // FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETScVector, multiplied by
 /// 'scale'
-void set_bc(la::PETScVector& b, const Form& L,
+void set_bc(la::PETScVector& b,
             std::vector<std::shared_ptr<const DirichletBC>> bcs,
             const la::PETScVector* x0, double scale = 1.0);
 

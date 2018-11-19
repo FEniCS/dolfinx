@@ -83,9 +83,8 @@ def assemble_matrix(a,
 
 
 def set_bc(b: cpp.la.PETScVector,
-           L,
            bcs: typing.List[DirichletBC],
            x0: typing.Optional[cpp.la.PETScVector] = None,
            scale: float = 1.0) -> None:
     """Insert boundary condition values into vector"""
-    cpp.fem.set_bc(b, L, bcs, x0, scale)
+    cpp.fem.set_bc(b, bcs, x0, scale)

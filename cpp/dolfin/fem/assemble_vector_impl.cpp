@@ -20,9 +20,9 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void fem::impl::set_bc(Vec b, const Form& L,
-                 std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                 const Vec x0, double scale)
+void fem::impl::set_bc(Vec b,
+                       std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                       const Vec x0, double scale)
 {
   PetscInt local_size;
   VecGetLocalSize(b, &local_size);
@@ -36,34 +36,34 @@ void fem::impl::set_bc(Vec b, const Form& L,
     VecGetArray(x0, &values_x0);
     Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(values_x0,
                                                                     local_size);
-    set_bc(vec, L, bcs, vec_x0, scale);
+    set_bc(vec, bcs, vec_x0, scale);
     VecRestoreArray(x0, &values_x0);
   }
   else
   {
     Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr, 0);
-    set_bc(vec, L, bcs, vec_x0, scale);
+    set_bc(vec, bcs, vec_x0, scale);
   }
 
   VecRestoreArray(b, &values);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::set_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
   // FIXME: optimise this function
 
-  auto V = L.function_space(0);
+  // auto V = L.function_space(0);
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values;
   for (std::size_t i = 0; i < bcs.size(); ++i)
   {
     assert(bcs[i]);
     assert(bcs[i]->function_space());
-    if (V->contains(*bcs[i]->function_space()))
+    // if (V->contains(*bcs[i]->function_space()))
     {
       std::tie(indices, values) = bcs[i]->bcs();
       for (Eigen::Index j = 0; j < indices.size(); ++j)
@@ -105,7 +105,14 @@ void fem::impl::assemble_ghosted(
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 
   // Set boundary values (local only)
-  set_bc(b, L, bcs, x0, scale);
+  std::vector<std::shared_ptr<const DirichletBC>> _bcs;
+  for (auto bc : bcs)
+  {
+    if (L.function_space(0)->contains(*bc->function_space()))
+      _bcs.push_back(bc);
+  }
+
+  set_bc(b, _bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_local(

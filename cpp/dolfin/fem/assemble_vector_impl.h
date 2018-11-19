@@ -25,8 +25,7 @@ namespace impl
 
 // FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETSc Vec
-void set_bc(Vec b, const Form& L,
-            std::vector<std::shared_ptr<const DirichletBC>> bcs, Vec x0,
+void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs, Vec x0,
             double scale);
 
 // FIXME: Consider if L is required
@@ -34,7 +33,7 @@ void set_bc(Vec b, const Form& L,
 // value). Does not set ghosts. Size of b must be same as owned
 // length.
 void set_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale);

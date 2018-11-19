@@ -192,6 +192,8 @@ void fem::assemble(
         fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
       else
         fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, nullptr, scale);
+
+      // FIXME: free sub-vector here (dereference)?
     }
   }
   else if (L.size() > 1)
@@ -259,7 +261,15 @@ void fem::assemble(
           values + offset, map_size0);
       Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
                                                                       0);
-      impl::set_bc(vec, *L[i], bcs, vec_x0, scale);
+
+      std::vector<std::shared_ptr<const DirichletBC>> _bcs;
+      for (auto bc : bcs)
+      {
+        if (L[i]->function_space(0)->contains(*bc->function_space()))
+          _bcs.push_back(bc);
+      }
+
+      impl::set_bc(vec, _bcs, vec_x0, scale);
       VecRestoreArray(b.vec(), &values);
       offset += map_size0;
     }
@@ -481,13 +491,13 @@ void fem::assemble(la::PETScMatrix& A,
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(la::PETScVector& b, const Form& L,
+void fem::set_bc(la::PETScVector& b,
                  std::vector<std::shared_ptr<const DirichletBC>> bcs,
                  const la::PETScVector* x0, double scale)
 {
   if (x0)
-    impl::set_bc(b.vec(), L, bcs, x0->vec(), scale);
+    impl::set_bc(b.vec(), bcs, x0->vec(), scale);
   else
-    impl::set_bc(b.vec(), L, bcs, nullptr, scale);
+    impl::set_bc(b.vec(), bcs, nullptr, scale);
 }
 //-----------------------------------------------------------------------------
