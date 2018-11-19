@@ -153,7 +153,7 @@ RUN apt-get -qq update && \
     ./configure --prefix=/usr/local/slepc && \
     make -j${BUILD_THREADS} && \
     make install && \
-    rm -rf /tmp/*
+    rm -rf /tmp/* && \
     apt-get -y purge bison flex python && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -213,7 +213,7 @@ RUN apt-get -qq update && \
     ./configure --prefix=/usr/local/slepc && \
     make -j${BUILD_THREADS} && \
     make install && \
-    rm -rf /tmp/*
+    rm -rf /tmp/* && \
     apt-get -y purge bison flex python && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
