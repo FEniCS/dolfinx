@@ -1,10 +1,11 @@
-# Dockerfile describing development environments and builds of FEniCSx
+# Dockerfile describing development environments and builds of FEniCS-X
 #
 # Authors: Jack S. Hale <jack.hale@uni.lu> Lizao Li
 # <lzlarryli@gmail.com> Garth N. Wells <gnw20@cam.ac.uk> Jan Blechta
 # <blechta@karlin.mff.cuni.cz>
 #
-# All layers are built nightly on CircleCI and pushed to quay.io.
+# All layers are built bi-weekly on CircleCI and pushed to
+# https://quay.io/repository/fenicsproject/dolfinx
 #
 # To build development environment images:
 #
@@ -20,18 +21,20 @@
 #    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
 #
 
-ARG BUILD_THREADS=1
 ARG PYBIND11_VERSION=2.2.4
 ARG PETSC_VERSION=3.10.2
 ARG SLEPC_VERSION=3.10.1
 ARG PETSC4PY_VERSION=3.10.0
 ARG SLEPC4PY_VERSION=3.10.0
 
+ARG BUILD_THREADS=1
+ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
+ARG PETSC_SLEPC_DEBUGGING="yes"
+
 FROM ubuntu:18.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="Base image for real and complex FEniCS test environments"
 
-ARG BUILD_THREADS
 ARG PYBIND11_VERSION
 
 WORKDIR /tmp
@@ -40,46 +43,52 @@ WORKDIR /tmp
 ENV OPENBLAS_NUM_THREADS=1 \
     OPENBLAS_VERBOSE=0
 
-# Install dependencies available via apt-get
+# Install dependencies available via apt-get.
+# First set of packages are required to build and run FEniCS.
+# Second set of packages are recommended and/or required to build documentation or tests. 
 RUN apt-get -qq update && \
     apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    cmake \
-    doxygen \
-    g++ \
-    gfortran \
-    git \
-    gmsh \
-    graphviz \
-    libboost-dev \
-    libboost-filesystem-dev \
-    libboost-iostreams-dev \
-    libboost-math-dev \
-    libboost-program-options-dev \
-    libboost-system-dev \
-    libboost-thread-dev \
-    libboost-timer-dev \
-    libeigen3-dev \
-    libfreetype6-dev \
-    libhdf5-openmpi-dev \
-    liblapack-dev \
-    libopenmpi-dev \
-    libopenblas-dev \
-    ninja-build \
-    openmpi-bin \
-    pkg-config \
-    python3-dev \
-    python3-numpy \
-    python3-pip \
-    python3-scipy \
-    python3-setuptools \
-    valgrind \
-    wget && \
+        cmake \
+        g++ \
+        gfortran \
+        libboost-dev \
+        libboost-filesystem-dev \
+        libboost-iostreams-dev \
+        libboost-math-dev \
+        libboost-program-options-dev \
+        libboost-system-dev \
+        libboost-thread-dev \
+        libboost-timer-dev \
+        libeigen3-dev \
+        libhdf5-openmpi-dev \
+        liblapack-dev \
+        libopenmpi-dev \
+        libopenblas-dev \
+        ninja-build \
+        openmpi-bin \
+        pkg-config \
+        python3-dev \
+        python3-matplotlib \
+        python3-numpy \
+        python3-pip \
+        python3-scipy \
+        python3-setuptools && \
+    apt-get -y install \
+        doxygen \
+        git \
+        gmsh \
+        graphviz \
+        valgrind \
+        wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir cffi decorator flake8 matplotlib mpi4py numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
+# First set of packages are required to build and run FEniCS.
+# Second set of packages are recommended and/or required to build documentation or run tests. 
+RUN pip3 install --no-cache-dir mpi4py numba && \
+    pip3 install --no-cache-dir cffi decorator flake8 pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
@@ -99,11 +108,14 @@ FROM base as dev-env-real
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS development environment with PETSc real mode"
 
-ARG BUILD_THREADS
 ARG PETSC_VERSION
 ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
+
+ARG BUILD_THREADS
+ARG PETSC_SLEPC_OPTFLAGS
+ARG PETSC_SLEPC_DEBUGGING
 
 WORKDIR /tmp
 
@@ -114,10 +126,10 @@ RUN apt-get -qq update && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
     ./configure \
-    --COPTFLAGS="-O2 -g" \
-    --CXXOPTFLAGS="-O2 -g" \
-    --FOPTFLAGS="-O2 -g" \
-    --with-debugging=yes \
+    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --download-blacs \
     --download-hypre \
@@ -159,11 +171,14 @@ WORKDIR /root
 FROM base as dev-env-complex
 LABEL description="FEniCS development environment with PETSc complex mode"
 
-ARG BUILD_THREADS
 ARG PETSC_VERSION
 ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
+
+ARG BUILD_THREADS
+ARG PETSC_SLEPC_OPTFLAGS
+ARG PETSC_SLEPC_DEBUGGING
 
 WORKDIR /tmp
 
@@ -174,10 +189,10 @@ RUN apt-get -qq update && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
     ./configure \
-    --COPTFLAGS="-O2 -g" \
-    --CXXOPTFLAGS="-O2 -g" \
-    --FOPTFLAGS="-O2 -g" \
-    --with-debugging=yes \
+    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
     --with-fortran-bindings=no \
     --download-blacs \
     --download-metis \
