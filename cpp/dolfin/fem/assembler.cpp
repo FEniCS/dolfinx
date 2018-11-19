@@ -61,7 +61,7 @@ la::PETScVector _assemble_vector(const Form& L)
     throw std::runtime_error("Form must be rank 1");
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
-  fem::assemble_ghosted(b.vec(), L, {}, {}, 1.0);
+  fem::assemble_ghosted(b.vec(), L, {}, {}, nullptr, 1.0);
   return b;
 }
 //-----------------------------------------------------------------------------
@@ -151,7 +151,7 @@ la::PETScVector
 fem::assemble(std::vector<const Form*> L,
               const std::vector<std::vector<std::shared_ptr<const Form>>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              BlockType block_type, double scale)
+              const la::PETScVector* x0, BlockType block_type, double scale)
 {
   assert(!L.empty());
 
@@ -164,14 +164,15 @@ fem::assemble(std::vector<const Form*> L,
   else
     b = la::PETScVector(*L[0]->function_space(0)->dofmap()->index_map());
 
-  assemble(b, L, a, bcs, scale);
+  assemble(b, L, a, bcs, x0, scale);
   return b;
 }
 //-----------------------------------------------------------------------------
 void fem::assemble(
     la::PETScVector& b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const la::PETScVector* x0, double scale)
 {
   assert(!L.empty());
 
@@ -185,7 +186,10 @@ void fem::assemble(
       // Get sub-vector and assemble
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
-      fem::assemble_ghosted(sub_b, *L[i], a[i], bcs, scale);
+      if (x0)
+        fem::assemble_ghosted(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
+      else
+        fem::assemble_ghosted(sub_b, *L[i], a[i], bcs, nullptr, scale);
     }
   }
   else if (L.size() > 1)
@@ -248,13 +252,19 @@ void fem::assemble(
       VecGetArray(b.vec(), &values);
       Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(
           values + offset, map_size0);
-      set_bc(vec, *L[i], bcs, scale);
+      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr, 0);
+      set_bc(vec, *L[i], bcs, vec_x0, scale);
       VecRestoreArray(b.vec(), &values);
       offset += map_size0;
     }
   }
   else
-    fem::assemble_ghosted(b.vec(), *L[0], a[0], bcs, scale);
+  {
+    if (x0)
+      fem::assemble_ghosted(b.vec(), *L[0], a[0], bcs, x0->vec(), scale);
+    else
+      fem::assemble_ghosted(b.vec(), *L[0], a[0], bcs, nullptr, scale);
+  }
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix
@@ -467,8 +477,11 @@ void fem::assemble(la::PETScMatrix& A,
 //-----------------------------------------------------------------------------
 void fem::set_bc(la::PETScVector& b, const Form& L,
                  std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                 double scale)
+                 const la::PETScVector* x0, double scale)
 {
-  set_bc(b.vec(), L, bcs, scale);
+  if (x0)
+    set_bc(b.vec(), L, bcs, x0->vec(), scale);
+  else
+    set_bc(b.vec(), L, bcs, nullptr, scale);
 }
 //-----------------------------------------------------------------------------

@@ -111,12 +111,17 @@ public:
   {
     if (!b)
     {
+      std::cout << "First computation of b." << std::endl;
       b = std::make_unique<la::PETScVector>(
-          assemble({_l.get()}, {{}}, _bcs, fem::BlockType::monolithic));
+          assemble({_l.get()}, {{}}, _bcs, &x, fem::BlockType::monolithic));
+      std::cout << "Post first computation of b." << std::endl;
     }
     else
-      assemble(*b, {_l.get()}, {{}}, _bcs);
-
+    {
+      std::cout << "Second computation of b." << std::endl;
+      assemble(*b, {_l.get()}, {{}}, _bcs, &x);
+      std::cout << "Post second computation of b." << std::endl;
+    }
     return b.get();
   }
 
@@ -147,8 +152,9 @@ private:
   // _u, _l, _j, _bcs
 };
 
-int main()
+int main(int argc, char* argv[])
 {
+  common::SubSystemsManager::init_petsc(argc, argv);
 
   // Inside the ``main`` function, we begin by defining a tetrahedral mesh
   // of the domain and the function space on this mesh. Here, we choose to
@@ -179,16 +185,6 @@ int main()
   auto left = std::make_shared<Left>();
   auto right = std::make_shared<Right>();
 
-  // Define Dirichlet boundary functions
-  auto c = std::make_shared<Clamp>();
-  auto r = std::make_shared<Rotation>();
-
-  // Create Dirichlet boundary conditions
-  auto u0 = std::make_shared<function::Function>(V);
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
-      = {std::make_shared<fem::DirichletBC>(V, u0, left),
-         std::make_shared<fem::DirichletBC>(V, u0, right)};
-
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
 
@@ -202,8 +198,34 @@ int main()
       std::shared_ptr<ufc_form>(form_L->form()),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
 
+  // Attach 'coordinate mapping' to mesh
+  auto cmap = a->coordinate_mapping();
+  mesh->geometry().coord_mapping = cmap;
+
+  Rotation rotation;
+  Clamp clamp;
+
+  auto u_rotation = std::make_shared<function::Function>(V);
+  u_rotation->interpolate(rotation);
+  auto u_clamp = std::make_shared<function::Function>(V);
+  u_clamp->interpolate(clamp);
+
+  L->set_coefficient_index_to_name_map(form_L->coefficient_number_map);
+  L->set_coefficient_name_to_index_map(form_L->coefficient_name_map);
+  L->set_coefficients({{"u", u}});
+  a->set_coefficient_index_to_name_map(form_a->coefficient_number_map);
+  a->set_coefficient_name_to_index_map(form_a->coefficient_name_map);
+  a->set_coefficients({{"u", u}});
+
+  // Create Dirichlet boundary conditions
+  auto u0 = std::make_shared<function::Function>(V);
+  std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
+      = {std::make_shared<fem::DirichletBC>(V, u_clamp, left),
+         std::make_shared<fem::DirichletBC>(V, u_rotation, right)};
 
   HyperElasticProblem problem(u, L, a, bcs);
+  nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
+  newton_solver.solve(problem, *u->vector());
 
   // fem::DirichletBC bcl(V, c, left);
   // fem::DirichletBC bcr(V, r, right);

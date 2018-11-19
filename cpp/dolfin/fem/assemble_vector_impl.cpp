@@ -22,7 +22,7 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 void fem::set_bc(Vec b, const Form& L,
                  std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                 double scale)
+                 const Vec x0, double scale)
 {
   PetscInt local_size;
   VecGetLocalSize(b, &local_size);
@@ -30,16 +30,32 @@ void fem::set_bc(Vec b, const Form& L,
   VecGetArray(b, &values);
   Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
                                                                local_size);
-  set_bc(vec, L, bcs, scale);
+  if (x0)
+  {
+    PetscScalar* values_x0;
+    VecGetArray(x0, &values_x0);
+    Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(values_x0,
+                                                                    local_size);
+    set_bc(vec, L, bcs, vec_x0, scale);
+    VecRestoreArray(x0, &values_x0);
+  }
+  else
+  {
+    Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr, 0);
+    set_bc(vec, L, bcs, vec_x0, scale);
+  }
+
   VecRestoreArray(b, &values);
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-                 const Form& L,
-                 std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                 double scale)
+void fem::set_bc(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale)
 {
   // FIXME: optimise this function
+  std::cout << "Test size: " << x0.size() << std::endl;
 
   auto V = L.function_space(0);
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices;
@@ -55,7 +71,12 @@ void fem::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
       {
         // FIXME: this check is because DirichletBC::dofs include ghosts
         if (indices[j] < (PetscInt)b.size())
-          b[indices[j]] = scale * values[j];
+        {
+          if (x0.size() == 0)
+            b[indices[j]] = scale * values[j];
+          else
+            b[indices[j]] = x0[indices[j]] - values[j];
+        }
       }
     }
   }
@@ -63,7 +84,8 @@ void fem::set_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
 //-----------------------------------------------------------------------------
 void fem::assemble_ghosted(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs, Vec x0,
+    double scale)
 {
 
   Vec b_local;
@@ -81,7 +103,7 @@ void fem::assemble_ghosted(
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 
   // Set boundary values (local only)
-  set_bc(b, L, bcs, scale);
+  set_bc(b, L, bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_local(
