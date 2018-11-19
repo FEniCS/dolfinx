@@ -61,7 +61,7 @@ la::PETScVector _assemble_vector(const Form& L)
     throw std::runtime_error("Form must be rank 1");
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
-  fem::assemble_ghosted(b.vec(), L, {}, {}, nullptr, 1.0);
+  fem::impl::assemble_ghosted(b.vec(), L, {}, {}, nullptr, 1.0);
   return b;
 }
 //-----------------------------------------------------------------------------
@@ -189,9 +189,9 @@ void fem::assemble(
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
       if (x0)
-        fem::assemble_ghosted(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
+        fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
       else
-        fem::assemble_ghosted(sub_b, *L[i], a[i], bcs, nullptr, scale);
+        fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, nullptr, scale);
     }
   }
   else if (L.size() > 1)
@@ -230,7 +230,7 @@ void fem::assemble(
                                                           + map_size1);
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0_vec(0);
       b_vec.setZero();
-      fem::assemble_eigen(b_vec, *L[i], a[i], bcs, x0_vec);
+      fem::impl::assemble_eigen(b_vec, *L[i], a[i], bcs, x0_vec);
 
       // FIXME: Sort out for x0 \ne nullptr case
 
@@ -259,7 +259,7 @@ void fem::assemble(
           values + offset, map_size0);
       Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
                                                                       0);
-      set_bc(vec, *L[i], bcs, vec_x0, scale);
+      impl::set_bc(vec, *L[i], bcs, vec_x0, scale);
       VecRestoreArray(b.vec(), &values);
       offset += map_size0;
     }
@@ -267,9 +267,9 @@ void fem::assemble(
   else
   {
     if (x0)
-      fem::assemble_ghosted(b.vec(), *L[0], a[0], bcs, x0->vec(), scale);
+      fem::impl::assemble_ghosted(b.vec(), *L[0], a[0], bcs, x0->vec(), scale);
     else
-      fem::assemble_ghosted(b.vec(), *L[0], a[0], bcs, nullptr, scale);
+      fem::impl::assemble_ghosted(b.vec(), *L[0], a[0], bcs, nullptr, scale);
   }
 }
 //-----------------------------------------------------------------------------
@@ -486,8 +486,8 @@ void fem::set_bc(la::PETScVector& b, const Form& L,
                  const la::PETScVector* x0, double scale)
 {
   if (x0)
-    set_bc(b.vec(), L, bcs, x0->vec(), scale);
+    impl::set_bc(b.vec(), L, bcs, x0->vec(), scale);
   else
-    set_bc(b.vec(), L, bcs, nullptr, scale);
+    impl::set_bc(b.vec(), L, bcs, nullptr, scale);
 }
 //-----------------------------------------------------------------------------

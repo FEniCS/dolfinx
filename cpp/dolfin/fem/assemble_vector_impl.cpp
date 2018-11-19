@@ -20,7 +20,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void fem::set_bc(Vec b, const Form& L,
+void fem::impl::set_bc(Vec b, const Form& L,
                  std::vector<std::shared_ptr<const DirichletBC>> bcs,
                  const Vec x0, double scale)
 {
@@ -48,14 +48,13 @@ void fem::set_bc(Vec b, const Form& L,
   VecRestoreArray(b, &values);
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(
+void fem::impl::set_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
   // FIXME: optimise this function
-  std::cout << "Test size: " << x0.size() << std::endl;
 
   auto V = L.function_space(0);
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices;
@@ -82,7 +81,7 @@ void fem::set_bc(
   }
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_ghosted(
+void fem::impl::assemble_ghosted(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs, Vec x0,
     double scale)
@@ -96,7 +95,7 @@ void fem::assemble_ghosted(
   // FIXME: should zeroing be an option?
   // Zero vector
   // VecSet(b_local, 0.0);
-  fem::assemble_local(b_local, L, a, bcs, x0_local);
+  fem::impl::assemble_local(b_local, L, a, bcs, x0_local);
 
   // Restore ghosted form and update local (owned) entries that are
   // ghosts on other processes
@@ -109,7 +108,7 @@ void fem::assemble_ghosted(
   set_bc(b, L, bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_local(
+void fem::impl::assemble_local(
     Vec& b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0)
 {
@@ -149,7 +148,7 @@ void fem::assemble_local(
   // if (x0)
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_eigen(
+void fem::impl::assemble_eigen(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
@@ -198,10 +197,10 @@ void fem::assemble_eigen(
 
   // Modify for any bcs
   for (std::size_t i = 0; i < a.size(); ++i)
-    fem::modify_bc(b, *a[i], bcs, x0);
+    fem::impl::modify_bc(b, *a[i], bcs, x0);
 }
 //-----------------------------------------------------------------------------
-void fem::modify_bc(
+void fem::impl::modify_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0)

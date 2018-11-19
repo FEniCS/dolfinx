@@ -20,6 +20,9 @@ namespace fem
 class DirichletBC;
 class Form;
 
+namespace impl
+{
+
 // FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETSc Vec
 void set_bc(Vec b, const Form& L,
@@ -69,5 +72,6 @@ void assemble_local(Vec& b, const Form& L,
                     const std::vector<std::shared_ptr<const Form>> a,
                     const std::vector<std::shared_ptr<const DirichletBC>> bcs,
                     const Vec x0);
+} // namespace impl
 } // namespace fem
 } // namespace dolfin
