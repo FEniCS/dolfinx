@@ -181,6 +181,8 @@ void fem::assemble(
   bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
   if (is_vecnest)
   {
+    // FIXME: Sort out for x0 \ne nullptr case
+
     for (std::size_t i = 0; i < L.size(); ++i)
     {
       // Get sub-vector and assemble
@@ -226,8 +228,11 @@ void fem::assemble(
       // Assemble
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec(map_size0
                                                           + map_size1);
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0_vec(0);
       b_vec.setZero();
-      fem::assemble_eigen(b_vec, *L[i], a[i], bcs);
+      fem::assemble_eigen(b_vec, *L[i], a[i], bcs, x0_vec);
+
+      // FIXME: Sort out for x0 \ne nullptr case
 
       // Copy data into PETSc Vector
       for (int j = 0; j < map_size0; ++j)
@@ -252,7 +257,8 @@ void fem::assemble(
       VecGetArray(b.vec(), &values);
       Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(
           values + offset, map_size0);
-      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr, 0);
+      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
+                                                                      0);
       set_bc(vec, *L[i], bcs, vec_x0, scale);
       VecRestoreArray(b.vec(), &values);
       offset += map_size0;

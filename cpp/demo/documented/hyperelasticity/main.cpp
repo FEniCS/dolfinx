@@ -64,7 +64,7 @@ public:
             Eigen::Ref<const EigenRowArrayXXd> x,
             const dolfin::mesh::Cell& cell) const
   {
-    const double scale = 0.5;
+    const double scale = 0.005;
 
     // Center of rotation
     const double y0 = 0.5;
@@ -113,12 +113,12 @@ public:
     {
       std::cout << "First computation of b." << std::endl;
       b = std::make_unique<la::PETScVector>(
-          assemble({_l.get()}, {{}}, _bcs, &x, fem::BlockType::monolithic));
+          assemble({_l.get()}, {{_j}}, _bcs, &x, fem::BlockType::monolithic));
       std::cout << "Post first computation of b." << std::endl;
     }
     else
     {
-      std::cout << "Second computation of b." << std::endl;
+      std::cout << "Second+ computation of b." << std::endl;
       assemble(*b, {_l.get()}, {{}}, _bcs, &x);
       std::cout << "Post second computation of b." << std::endl;
     }

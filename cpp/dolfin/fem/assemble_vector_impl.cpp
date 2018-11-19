@@ -88,12 +88,15 @@ void fem::assemble_ghosted(
     double scale)
 {
 
-  Vec b_local;
+  Vec b_local(nullptr), x0_local(nullptr);
   VecGhostGetLocalForm(b, &b_local);
+  if (x0)
+    VecGhostGetLocalForm(x0, &x0_local);
+
   // FIXME: should zeroing be an option?
   // Zero vector
   // VecSet(b_local, 0.0);
-  fem::assemble_local(b_local, L, a, bcs);
+  fem::assemble_local(b_local, L, a, bcs, x0_local);
 
   // Restore ghosted form and update local (owned) entries that are
   // ghosts on other processes
@@ -108,7 +111,7 @@ void fem::assemble_ghosted(
 //-----------------------------------------------------------------------------
 void fem::assemble_local(
     Vec& b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::shared_ptr<const DirichletBC>> bcs)
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0)
 {
   // FIXME: check that b is a local PETSc Vec
 
@@ -118,20 +121,39 @@ void fem::assemble_local(
   PetscScalar* b_array;
   VecGetArray(b, &b_array);
   Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(b_array, size);
-
   bvec.setZero();
 
-  //  Assemble and then modify for Dirichlet bcs  (b  <- b - A x_(bc))
-  assemble_eigen(bvec, L, a, bcs);
+  PetscScalar* x0_array;
+  if (x0)
+  {
+    PetscInt size_x0 = 0;
+    VecGetSize(x0, &size_x0);
+    VecGetArray(x0, &x0_array);
+    Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+        x0_array, size_x0);
+    assemble_eigen(bvec, L, a, bcs, x0vec);
+    VecRestoreArray(x0, &x0_array);
+  }
+  else
+  {
+    Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+        nullptr, 0);
+    assemble_eigen(bvec, L, a, bcs, x0vec);
+  }
+
+  // //  Assemble and then modify for Dirichlet bcs  (b  <- b - A x_(bc))
+  // assemble_eigen(bvec, L, a, bcs, x0vec);
 
   // Restore array
   VecRestoreArray(b, &b_array);
+  // if (x0)
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_eigen(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0)
 {
   // if (b.empty())
   //  init(b, L);
@@ -176,12 +198,13 @@ void fem::assemble_eigen(
 
   // Modify for any bcs
   for (std::size_t i = 0; i < a.size(); ++i)
-    fem::modify_bc(b, *a[i], bcs);
+    fem::modify_bc(b, *a[i], bcs, x0);
 }
 //-----------------------------------------------------------------------------
-void fem::modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& a,
-                    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+void fem::modify_bc(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0)
 {
   assert(a.rank() == 2);
 
@@ -276,7 +299,10 @@ void fem::modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
       auto bc = boundary_values.find(jj);
       if (bc != boundary_values.end())
       {
-        be -= Ae.col(j) * bc->second;
+        if (x0.rows() > 0)
+          be -= Ae.col(j) * (x0[jj] - bc->second);
+        else
+          be -= Ae.col(j) * bc->second;
       }
     }
 

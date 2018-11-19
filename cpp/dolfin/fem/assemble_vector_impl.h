@@ -38,19 +38,21 @@ void set_bc(
 
 /// Modify RHS vector to account for boundary condition (b <- b - Ax,
 /// where x holds prescribed boundary values)
-void modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-               const Form& a,
-               std::vector<std::shared_ptr<const DirichletBC>> bcs);
+void modify_bc(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0);
 
 /// Assemble linear form into an Eigen vector. The Eigen vector must
 /// the correct size. This local to a process. The vector is modified
 /// for b <- b - A x_bc, where x_bc contains prescribed values. BC
 /// values are not inserted into bc positions.
 // FIXME: Clarify docstring regarding ghosts
-void assemble_eigen(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L,
-                    const std::vector<std::shared_ptr<const Form>> a,
-                    const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+void assemble_eigen(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0);
 
 /// Assemble linear form into a ghosted PETSc Vec. The vector is modified
 /// for b <- b - A x_bc, where x_bc contains prescribed values, and BC
@@ -65,6 +67,7 @@ void assemble_ghosted(Vec b, const Form& L,
 /// values are not inserted into bc positions.
 void assemble_local(Vec& b, const Form& L,
                     const std::vector<std::shared_ptr<const Form>> a,
-                    const std::vector<std::shared_ptr<const DirichletBC>> bcs);
+                    const std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                    const Vec x0);
 } // namespace fem
 } // namespace dolfin
