@@ -48,8 +48,8 @@ ENV OPENBLAS_NUM_THREADS=1 \
 # Second set of packages are recommended and/or required to build documentation or tests. 
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
-    apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
-    apt-get -yq install \
+    apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
+    apt-get -y install \
         cmake \
         g++ \
         gfortran \
@@ -75,7 +75,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         python3-pip \
         python3-scipy \
         python3-setuptools && \
-    apt-get -yq install \
+    apt-get -y install \
         doxygen \
         git \
         gmsh \
@@ -127,22 +127,22 @@ RUN apt-get -qq update && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
     ./configure \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-    --with-fortran-bindings=no \
-    --download-blacs \
-    --download-hypre \
-    --download-metis \
-    --download-mumps \
-    --download-ptscotch \
-    --download-scalapack \
-    --download-spai \
-    --download-suitesparse \
-    --download-superlu \
-    --with-scalar-type=real \
-    --prefix=/usr/local/petsc && \
+        --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --with-debugging=${PETSC_SLEPC_DEBUGGING} \
+        --with-fortran-bindings=no \
+        --download-blacs \
+        --download-hypre \
+        --download-metis \
+        --download-mumps \
+        --download-ptscotch \
+        --download-scalapack \
+        --download-spai \
+        --download-suitesparse \
+        --download-superlu \
+        --with-scalar-type=real \
+        --prefix=/usr/local/petsc && \
     make -j${BUILD_THREADS} && \
     make install && \
     export PETSC_DIR=/usr/local/petsc && \
@@ -153,9 +153,10 @@ RUN apt-get -qq update && \
     ./configure --prefix=/usr/local/slepc && \
     make -j${BUILD_THREADS} && \
     make install && \
-    rm -rf /tmp/* && \
     apt-get -y purge bison flex python && \
+    apt-get -y autoremove && \
     apt-get clean && \
+    rm -rf /tmp/* && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
@@ -189,20 +190,20 @@ RUN apt-get -qq update && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
     ./configure \
-    --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
-    --with-debugging=${PETSC_SLEPC_DEBUGGING} \
-    --with-fortran-bindings=no \
-    --download-blacs \
-    --download-metis \
-    --download-mumps \
-    --download-ptscotch \
-    --download-scalapack \
-    --download-suitesparse \
-    --download-superlu \
-    --with-scalar-type=complex \
-    --prefix=/usr/local/petsc && \
+        --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --with-debugging=${PETSC_SLEPC_DEBUGGING} \
+        --with-fortran-bindings=no \
+        --download-blacs \
+        --download-metis \
+        --download-mumps \
+        --download-ptscotch \
+        --download-scalapack \
+        --download-suitesparse \
+        --download-superlu \
+        --with-scalar-type=complex \
+        --prefix=/usr/local/petsc && \
     make -j${BUILD_THREADS} && \
     make install && \
     export PETSC_DIR=/usr/local/petsc && \
@@ -213,9 +214,10 @@ RUN apt-get -qq update && \
     ./configure --prefix=/usr/local/slepc && \
     make -j${BUILD_THREADS} && \
     make install && \
-    rm -rf /tmp/* && \
     apt-get -y purge bison flex python && \
+    apt-get -y autoremove && \
     apt-get clean && \
+    rm -rf /tmp/* && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
