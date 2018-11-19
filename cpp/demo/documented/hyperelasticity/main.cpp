@@ -109,14 +109,28 @@ public:
   /// Compute F at current point x
   virtual la::PETScVector* F(const la::PETScVector& x)
   {
-    // TODO
+    if (!b)
+    {
+      b = std::make_unique<la::PETScVector>(
+          assemble({_l.get()}, {{}}, _bcs, fem::BlockType::monolithic));
+    }
+    else
+      assemble(*b, {_l.get()}, {{}}, _bcs);
+
     return b.get();
   }
 
   /// Compute J = F' at current point x
   virtual la::PETScMatrix* J(const la::PETScVector& x)
   {
-    // TODO
+    if (!A)
+    {
+      A = std::make_unique<la::PETScMatrix>(
+          assemble({{_j.get()}}, _bcs, fem::BlockType::monolithic));
+    }
+    else
+      assemble(*A, {{_j.get()}}, _bcs);
+
     return A.get();
   }
 
@@ -171,20 +185,35 @@ int main()
 
   // Create Dirichlet boundary conditions
   auto u0 = std::make_shared<function::Function>(V);
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
+  std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
       = {std::make_shared<fem::DirichletBC>(V, u0, left),
          std::make_shared<fem::DirichletBC>(V, u0, right)};
 
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
 
+  auto form_L = std::unique_ptr<dolfin_form>(HyperElasticityLinearForm());
+  auto form_a = std::unique_ptr<dolfin_form>(HyperElasticityBilinearForm());
+  auto a = std::make_shared<fem::Form>(
+      std::shared_ptr<ufc_form>(form_a->form()),
+      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
+                                                                            V});
+  auto L = std::make_shared<fem::Form>(
+      std::shared_ptr<ufc_form>(form_L->form()),
+      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
+
+
+  HyperElasticProblem problem(u, L, a, bcs);
+
   // fem::DirichletBC bcl(V, c, left);
   // fem::DirichletBC bcr(V, r, right);
   // std::vector<const DirichletBC*> bcs = {{&bcl, &bcr}};
 
-  // // The two boundary conditions are collected in the container ``bcs``.
+  // // The two boundary conditions are collected in the container
+  // ``bcs``.
   // //
-  // // We use two instances of the class :cpp:class:`Constant` to define the
+  // // We use two instances of the class :cpp:class:`Constant` to define
+  // the
   // // source ``B`` and the traction ``T``.
   // //
   // // .. code-block:: cpp
@@ -194,7 +223,8 @@ int main()
   //   auto T = std::make_shared<Constant>(0.1,  0.0, 0.0);
 
   // // The solution for the displacement will be an instance of the class
-  // // :cpp:class:`Function`, living in the function space ``V``; we define
+  // // :cpp:class:`Function`, living in the function space ``V``; we
+  // define
   // // it here:
   // //
   // // .. code-block:: cpp
@@ -210,11 +240,14 @@ int main()
   //   const double E  = 10.0;
   //   const double nu = 0.3;
   //   auto mu = std::make_shared<Constant>(E/(2*(1 + nu)));
-  //   auto lambda = std::make_shared<Constant>(E*nu/((1 + nu)*(1 - 2*nu)));
+  //   auto lambda = std::make_shared<Constant>(E*nu/((1 + nu)*(1 -
+  //   2*nu)));
 
-  // // Now, we can initialize the bilinear and linear forms (``a``, ``L``)
+  // // Now, we can initialize the bilinear and linear forms (``a``,
+  // ``L``)
   // // using the previously defined :cpp:class:`FunctionSpace` ``V``. We
-  // // attach the material parameters and previously initialized functions to
+  // // attach the material parameters and previously initialized
+  // functions to
   // // the forms.
   // //
   // // .. code-block:: cpp
