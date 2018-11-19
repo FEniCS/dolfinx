@@ -227,6 +227,10 @@ int main(int argc, char* argv[])
   nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
   newton_solver.solve(problem, *u->vector());
 
+  // Save solution in VTK format
+  io::VTKFile file("u.pvd");
+  file.write(*u);
+
   // fem::DirichletBC bcl(V, c, left);
   // fem::DirichletBC bcr(V, r, right);
   // std::vector<const DirichletBC*> bcs = {{&bcl, &bcr}};
