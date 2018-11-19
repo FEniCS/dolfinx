@@ -26,8 +26,8 @@ traction ``T`` and the displacement solution itself ``u``::
 
     # Functions
     u = Coefficient(element)        # Displacement from previous iteration
-    B = Coefficient(element)        # Body force per unit volume
-    T = Coefficient(element)        # Traction force on the boundary
+    # B = Coefficient(element)        # Body force per unit volume
+    # T = Coefficient(element)        # Traction force on the boundary
 
 Now, we can define the kinematic quantities involved in the model::
 
@@ -46,8 +46,12 @@ energy, it only remains to specify constants for the elasticity
 parameters::
 
     # Elasticity parameters
-    mu    = Constant(tetrahedron)
-    lmbda = Constant(tetrahedron)
+    # mu    = Constant(tetrahedron)
+    # lmbda = Constant(tetrahedron)
+    E  = 10.0
+    nu = 0.3
+    mu = E/(2*(1 + nu))
+    lmbda = E*nu/((1 + nu)*(1 - 2*nu))
 
 Both the first variation of the potential energy, and the Jacobian of
 the variation, can be automatically computed by a call to
@@ -57,7 +61,7 @@ the variation, can be automatically computed by a call to
     psi = (mu/2)*(Ic - 3) - mu*ln(J) + (lmbda/2)*(ln(J))**2
 
     # Total potential energy
-    Pi = psi*dx - inner(B, u)*dx - inner(T, u)*ds
+    Pi = psi*dx # - inner(B, u)*dx - inner(T, u)*ds
 
     # First variation of Pi (directional derivative about u in the direction of v)
     F = derivative(Pi, u, v)
