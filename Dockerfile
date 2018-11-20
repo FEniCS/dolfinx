@@ -1,10 +1,11 @@
-# Dockerfile describing development environments and builds of FEniCSx
+# Dockerfile describing development environments and builds of FEniCS-X
 #
 # Authors: Jack S. Hale <jack.hale@uni.lu> Lizao Li
 # <lzlarryli@gmail.com> Garth N. Wells <gnw20@cam.ac.uk> Jan Blechta
 # <blechta@karlin.mff.cuni.cz>
 #
-# All layers are built nightly on CircleCI and pushed to quay.io.
+# All layers are built bi-weekly on CircleCI and pushed to
+# https://quay.io/repository/fenicsproject/dolfinx
 #
 # To build development environment images:
 #
@@ -20,18 +21,21 @@
 #    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
 #
 
-ARG BUILD_THREADS=1
 ARG PYBIND11_VERSION=2.2.4
 ARG PETSC_VERSION=3.10.2
 ARG SLEPC_VERSION=3.10.1
 ARG PETSC4PY_VERSION=3.10.0
 ARG SLEPC4PY_VERSION=3.10.0
+ARG TINI_VERSION=v0.18.0 
+
+ARG MAKEFLAGS
+ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
+ARG PETSC_SLEPC_DEBUGGING="yes"
 
 FROM ubuntu:18.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="Base image for real and complex FEniCS test environments"
 
-ARG BUILD_THREADS
 ARG PYBIND11_VERSION
 
 WORKDIR /tmp
@@ -40,46 +44,53 @@ WORKDIR /tmp
 ENV OPENBLAS_NUM_THREADS=1 \
     OPENBLAS_VERBOSE=0
 
-# Install dependencies available via apt-get
-RUN apt-get -qq update && \
-    apt-get -y --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
+# Install dependencies available via apt-get.
+# First set of packages are required to build and run FEniCS.
+# Second set of packages are recommended and/or required to build documentation or tests. 
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get -qq update && \
+    apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
     apt-get -y install \
-    cmake \
-    doxygen \
-    g++ \
-    gfortran \
-    git \
-    gmsh \
-    graphviz \
-    libboost-dev \
-    libboost-filesystem-dev \
-    libboost-iostreams-dev \
-    libboost-math-dev \
-    libboost-program-options-dev \
-    libboost-system-dev \
-    libboost-thread-dev \
-    libboost-timer-dev \
-    libeigen3-dev \
-    libfreetype6-dev \
-    libhdf5-openmpi-dev \
-    liblapack-dev \
-    libopenmpi-dev \
-    libopenblas-dev \
-    ninja-build \
-    openmpi-bin \
-    pkg-config \
-    python3-dev \
-    python3-numpy \
-    python3-pip \
-    python3-scipy \
-    python3-setuptools \
-    valgrind \
-    wget && \
+        cmake \
+        g++ \
+        gfortran \
+        libboost-dev \
+        libboost-filesystem-dev \
+        libboost-iostreams-dev \
+        libboost-math-dev \
+        libboost-program-options-dev \
+        libboost-system-dev \
+        libboost-thread-dev \
+        libboost-timer-dev \
+        libeigen3-dev \
+        libhdf5-openmpi-dev \
+        liblapack-dev \
+        libopenmpi-dev \
+        libopenblas-dev \
+        ninja-build \
+        openmpi-bin \
+        pkg-config \
+        python3-dev \
+        python3-matplotlib \
+        python3-numpy \
+        python3-pip \
+        python3-scipy \
+        python3-setuptools && \
+    apt-get -y install \
+        doxygen \
+        git \
+        gmsh \
+        graphviz \
+        valgrind \
+        wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python packages (via pip)
-RUN pip3 install --no-cache-dir cffi decorator flake8 matplotlib mpi4py numba pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
+# First set of packages are required to build and run FEniCS.
+# Second set of packages are recommended and/or required to build documentation or run tests. 
+RUN pip3 install --no-cache-dir mpi4py numba && \
+    pip3 install --no-cache-dir cffi decorator flake8 pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
@@ -91,125 +102,139 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     make install && \
     rm -rf /tmp/*
 
+WORKDIR /root
+
 ########################################
 
 FROM base as dev-env-real
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="FEniCS development environment with PETSc real mode"
 
-ARG BUILD_THREADS
 ARG PETSC_VERSION
 ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
+ARG MAKEFLAGS
+ARG PETSC_SLEPC_OPTFLAGS
+ARG PETSC_SLEPC_DEBUGGING
+
 WORKDIR /tmp
 
-# Install PETSc with real types. PETSc build system needs Python 2 :(.
+# Install PETSc and SLEPc with real types.
 RUN apt-get -qq update && \
     apt-get -y install bison flex python && \
     wget -nc --quiet https://bitbucket.org/petsc/petsc/get/v${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
     ./configure \
-    --COPTFLAGS="-O2 -g" \
-    --CXXOPTFLAGS="-O2 -g" \
-    --FOPTFLAGS="-O2 -g" \
-    --with-debugging=yes \
-    --with-fortran-bindings=no \
-    --download-blacs \
-    --download-hypre \
-    --download-metis \
-    --download-mumps \
-    --download-ptscotch \
-    --download-scalapack \
-    --download-spai \
-    --download-suitesparse \
-    --download-superlu \
-    --with-scalar-type=real \
-    --prefix=/usr/local/petsc && \
-    make -j${BUILD_THREADS} && \
+        --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --with-debugging=${PETSC_SLEPC_DEBUGGING} \
+        --with-fortran-bindings=no \
+        --download-blacs \
+        --download-hypre \
+        --download-metis \
+        --download-mumps \
+        --download-ptscotch \
+        --download-scalapack \
+        --download-spai \
+        --download-suitesparse \
+        --download-superlu \
+        --with-scalar-type=real \
+        --prefix=/usr/local/petsc && \
+    make ${MAKEFLAGS} && \
     make install && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-ENV PETSC_DIR=/usr/local/petsc
-
-# NOTE: Issues building SLEPc from source tarball generated by
-#       Bitbucket. Website tarballs work fine, however.
-# Install SLEPc from source with real types
-RUN wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
+    export PETSC_DIR=/usr/local/petsc && \
+    cd /tmp && \
+    wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
     ./configure --prefix=/usr/local/slepc && \
-    make -j${BUILD_THREADS} && \
+    make ${MAKEFLAGS} && \
     make install && \
-    rm -rf /tmp/*
-ENV SLEPC_DIR=/usr/local/slepc
+    apt-get -y purge bison flex python && \
+    apt-get -y autoremove && \
+    apt-get clean && \
+    rm -rf /tmp/* && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 
 # Install petsc4py and slepc4py
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
+
+WORKDIR /root
 
 ########################################
 
 FROM base as dev-env-complex
 LABEL description="FEniCS development environment with PETSc complex mode"
 
-ARG BUILD_THREADS
 ARG PETSC_VERSION
 ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
+ARG MAKEFLAGS
+ARG PETSC_SLEPC_OPTFLAGS
+ARG PETSC_SLEPC_DEBUGGING
+
 WORKDIR /tmp
 
-# Install PETSc with complex scalar types
+# Install PETSc and SLEPc with complex scalar types
 RUN apt-get -qq update && \
     apt-get -y install bison flex python && \
     wget -nc --quiet https://bitbucket.org/petsc/petsc/get/v${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
     ./configure \
-    --COPTFLAGS="-O2 -g" \
-    --CXXOPTFLAGS="-O2 -g" \
-    --FOPTFLAGS="-O2 -g" \
-    --with-debugging=yes \
-    --with-fortran-bindings=no \
-    --download-blacs \
-    --download-metis \
-    --download-mumps \
-    --download-ptscotch \
-    --download-scalapack \
-    --download-suitesparse \
-    --download-superlu \
-    --with-scalar-type=complex \
-    --prefix=/usr/local/petsc && \
-    make -j${BUILD_THREADS} && \
+        --COPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --CXXOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --FOPTFLAGS=${PETSC_SLEPC_OPTFLAGS} \
+        --with-debugging=${PETSC_SLEPC_DEBUGGING} \
+        --with-fortran-bindings=no \
+        --download-blacs \
+        --download-metis \
+        --download-mumps \
+        --download-ptscotch \
+        --download-scalapack \
+        --download-suitesparse \
+        --download-superlu \
+        --with-scalar-type=complex \
+        --prefix=/usr/local/petsc && \
+    make ${MAKEFLAGS} && \
     make install && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-ENV PETSC_DIR=/usr/local/petsc
-
-# Install SLEPc with real and complex scalar types
-RUN wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
+    export PETSC_DIR=/usr/local/petsc && \
+    cd /tmp && \
+    wget -nc --quiet http://slepc.upv.es/download/distrib/slepc-${SLEPC_VERSION}.tar.gz -O slepc-${SLEPC_VERSION}.tar.gz && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
     ./configure --prefix=/usr/local/slepc && \
-    make -j${BUILD_THREADS} && \
+    make ${MAKEFLAGS} && \
     make install && \
-    rm -rf /tmp/*
-ENV SLEPC_DIR=/usr/local/slepc
+    apt-get -y purge bison flex python && \
+    apt-get -y autoremove && \
+    apt-get clean && \
+    rm -rf /tmp/* && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+ENV PETSC_DIR=/usr/local/petsc SLEPC_DIR=/usr/local/slepc
 
 # Install complex petsc4py and slepc4py
 RUN pip3 install --no-cache-dir petsc4py==${PETSC4PY_VERSION} && \
     pip3 install --no-cache-dir slepc4py==${SLEPC4PY_VERSION}
+
+WORKDIR /root
 
 ########################################
 
 FROM dev-env-real as real
 LABEL description="DOLFIN-X in real mode"
 
-ARG BUILD_THREADS
+ARG MAKEFLAGS 
 
 WORKDIR /tmp
 
@@ -225,17 +250,19 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     mkdir build && \
     cd build && \
     cmake -G Ninja ../cpp && \
-    ninja -j${BUILD_THREADS} install && \
+    ninja ${MAKEFLAGS} install && \
     cd ../python && \
     pip3 install . && \
     rm -rf /tmp/*
+
+WORKDIR /root
 
 ########################################
 
 FROM dev-env-complex as complex
 LABEL description="DOLFIN-X in complex mode"
 
-ARG BUILD_THREADS
+ARG MAKEFLAGS
 
 WORKDIR /tmp
 
@@ -251,23 +278,35 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     mkdir build && \
     cd build && \
     cmake -G Ninja ../cpp && \
-    ninja -j${BUILD_THREADS} install && \
+    ninja ${MAKEFLAGS} install && \
     cd ../python && \
     pip3 install . && \
     rm -rf /tmp/*
+
+WORKDIR /root
 
 ########################################
 
 FROM real as notebook
 LABEL description="DOLFIN-X Jupyter Notebook"
 WORKDIR /root
-RUN pip3 install jupyter
-ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+
+ARG TINI_VERSION
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini && \
+    pip3 install jupyter
+
+ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
 
 ########################################
 
 FROM complex as notebook-complex
 LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
+
+ARG TINI_VERSION 
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini && \
+    pip3 install jupyter
+
 WORKDIR /root
-RUN pip3 install jupyter
-ENTRYPOINT ["jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
