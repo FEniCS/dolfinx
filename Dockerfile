@@ -26,6 +26,7 @@ ARG PETSC_VERSION=3.10.2
 ARG SLEPC_VERSION=3.10.1
 ARG PETSC4PY_VERSION=3.10.0
 ARG SLEPC4PY_VERSION=3.10.0
+ARG TINI_VERSION=v0.18.0 
 
 ARG BUILD_THREADS=1
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
@@ -290,7 +291,7 @@ FROM real as notebook
 LABEL description="DOLFIN-X Jupyter Notebook"
 WORKDIR /root
 
-ARG TINI_VERSION=v0.18.0 
+ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
     pip3 install jupyter
@@ -302,7 +303,7 @@ ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-brows
 FROM complex as notebook-complex
 LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
 
-ARG TINI_VERSION=v0.18.0 
+ARG TINI_VERSION 
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
     pip3 install jupyter
