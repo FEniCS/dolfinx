@@ -183,22 +183,22 @@ jobs:
           command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
       - run:
           name: Build and push dev-env-real Docker image tag dev-env-real
-          command: docker build --build-arg BUILD_THREADS=2 --target dev-env-real -t quay.io/fenicsproject/dolfinx:dev-env-real . && docker push quay.io/fenicsproject/dolfinx:dev-env-real
+          command: docker build --build-arg MAKEFLAGS='-j3' --target dev-env-real -t quay.io/fenicsproject/dolfinx:dev-env-real . && docker push quay.io/fenicsproject/dolfinx:dev-env-real
       - run:
           name: Build dev-env-complex Docker image tag dev-env-complex
-          command: docker build --build-arg BUILD_THREADS=2 --target dev-env-complex -t quay.io/fenicsproject/dolfinx:dev-env-complex . && docker push quay.io/fenicsproject/dolfinx:dev-env-complex
+          command: docker build --build-arg MAKEFLAGS='-j3' --target dev-env-complex -t quay.io/fenicsproject/dolfinx:dev-env-complex . && docker push quay.io/fenicsproject/dolfinx:dev-env-complex
       - run:
           name: Build real Docker image tags latest, real
-          command: docker build --build-arg BUILD_THREADS=2 --target real -t quay.io/fenicsproject/dolfinx:latest . && docker tag quay.io/fenicsproject/dolfinx:latest quay.io/fenicsproject/dolfinx:real && docker push quay.io/fenicsproject/dolfinx:latest && docker push quay.io/fenicsproject/dolfinx:real
+          command: docker build --build-arg MAKEFLAGS='-j3' --target real -t quay.io/fenicsproject/dolfinx:latest . && docker tag quay.io/fenicsproject/dolfinx:latest quay.io/fenicsproject/dolfinx:real && docker push quay.io/fenicsproject/dolfinx:latest && docker push quay.io/fenicsproject/dolfinx:real
       - run:
           name: Build complex Docker image tag complex
-          command: docker build --build-arg BUILD_THREADS=2 --target complex -t quay.io/fenicsproject/dolfinx:complex . && docker push quay.io/fenicsproject/dolfinx:complex 
+          command: docker build --build-arg MAKEFLAGS='-j3' --target complex -t quay.io/fenicsproject/dolfinx:complex . && docker push quay.io/fenicsproject/dolfinx:complex 
       - run:
           name: Build real notebook Docker image tag notebook
-          command: docker build --build-arg BUILD_THREADS=2 --target notebook -t quay.io/fenicsproject/dolfinx:notebook . && docker push quay.io/fenicsproject/dolfinx:notebook 
+          command: docker build --build-arg MAKEFLAGS='-j3' --target notebook -t quay.io/fenicsproject/dolfinx:notebook . && docker push quay.io/fenicsproject/dolfinx:notebook 
       - run:
           name: Build complex notebook Docker image tag notebook-complex
-          command: docker build --build-arg BUILD_THREADS=2 --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex . && docker push quay.io/fenicsproject/dolfinx:notebook-complex 
+          command: docker build --build-arg MAKEFLAGS='-j3' --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex . && docker push quay.io/fenicsproject/dolfinx:notebook-complex 
 
 workflows:
   version: 2

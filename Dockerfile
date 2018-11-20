@@ -28,7 +28,7 @@ ARG PETSC4PY_VERSION=3.10.0
 ARG SLEPC4PY_VERSION=3.10.0
 ARG TINI_VERSION=v0.18.0 
 
-ARG BUILD_THREADS=1
+ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
 ARG PETSC_SLEPC_DEBUGGING="yes"
 
@@ -115,7 +115,7 @@ ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
-ARG BUILD_THREADS
+ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS
 ARG PETSC_SLEPC_DEBUGGING
 
@@ -144,7 +144,7 @@ RUN apt-get -qq update && \
         --download-superlu \
         --with-scalar-type=real \
         --prefix=/usr/local/petsc && \
-    make -j${BUILD_THREADS} && \
+    make ${MAKEFLAGS} && \
     make install && \
     export PETSC_DIR=/usr/local/petsc && \
     cd /tmp && \
@@ -152,7 +152,7 @@ RUN apt-get -qq update && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
     ./configure --prefix=/usr/local/slepc && \
-    make -j${BUILD_THREADS} && \
+    make ${MAKEFLAGS} && \
     make install && \
     apt-get -y purge bison flex python && \
     apt-get -y autoremove && \
@@ -178,7 +178,7 @@ ARG PETSC4PY_VERSION
 ARG SLEPC_VERSION
 ARG SLEPC4PY_VERSION
 
-ARG BUILD_THREADS
+ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS
 ARG PETSC_SLEPC_DEBUGGING
 
@@ -205,7 +205,7 @@ RUN apt-get -qq update && \
         --download-superlu \
         --with-scalar-type=complex \
         --prefix=/usr/local/petsc && \
-    make -j${BUILD_THREADS} && \
+    make ${MAKEFLAGS} && \
     make install && \
     export PETSC_DIR=/usr/local/petsc && \
     cd /tmp && \
@@ -213,7 +213,7 @@ RUN apt-get -qq update && \
     mkdir -p slepc-src && tar -xf slepc-${SLEPC_VERSION}.tar.gz -C slepc-src --strip-components 1 && \
     cd slepc-src && \
     ./configure --prefix=/usr/local/slepc && \
-    make -j${BUILD_THREADS} && \
+    make ${MAKEFLAGS} && \
     make install && \
     apt-get -y purge bison flex python && \
     apt-get -y autoremove && \
@@ -234,7 +234,7 @@ WORKDIR /root
 FROM dev-env-real as real
 LABEL description="DOLFIN-X in real mode"
 
-ARG BUILD_THREADS
+ARG MAKEFLAGS 
 
 WORKDIR /tmp
 
@@ -250,7 +250,7 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     mkdir build && \
     cd build && \
     cmake -G Ninja ../cpp && \
-    ninja -j${BUILD_THREADS} install && \
+    ninja ${MAKEFLAGS} install && \
     cd ../python && \
     pip3 install . && \
     rm -rf /tmp/*
@@ -262,7 +262,7 @@ WORKDIR /root
 FROM dev-env-complex as complex
 LABEL description="DOLFIN-X in complex mode"
 
-ARG BUILD_THREADS
+ARG MAKEFLAGS
 
 WORKDIR /tmp
 
@@ -278,7 +278,7 @@ RUN git clone https://github.com/fenics/dolfinx.git && \
     mkdir build && \
     cd build && \
     cmake -G Ninja ../cpp && \
-    ninja -j${BUILD_THREADS} install && \
+    ninja ${MAKEFLAGS} install && \
     cd ../python && \
     pip3 install . && \
     rm -rf /tmp/*
