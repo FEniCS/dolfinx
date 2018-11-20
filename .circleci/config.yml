@@ -214,7 +214,6 @@ workflows:
               only:
                 - master
   
-  version: 2
   biweekly:
     triggers:
       - schedule:
