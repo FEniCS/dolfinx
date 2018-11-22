@@ -298,8 +298,8 @@ void Form::init_coeff_scratch_space()
   _w.resize(n.back());
 
   // Create pointers into _w for each coefficient
-  _wpointer.resize(num_coeffs);
-  for (std::uint32_t i = 0; i < num_coeffs; ++i)
+  _wpointer.resize(n.size());
+  for (std::uint32_t i = 0; i < n.size(); ++i)
     _wpointer[i] = _w.data() + n[i];
 }
 //-----------------------------------------------------------------------------
