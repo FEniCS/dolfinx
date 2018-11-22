@@ -50,9 +50,9 @@ UFC::UFC(const Form& a) : dolfin_form(a)
   _w.resize(n.back());
   _macro_w.resize(2 * n.back());
 
-  w_pointer.resize(num_coeffs);
-  macro_w_pointer.resize(num_coeffs);
-  for (std::size_t i = 0; i < num_coeffs; ++i)
+  w_pointer.resize(n.size());
+  macro_w_pointer.resize(n.size());
+  for (std::size_t i = 0; i < n.size(); ++i)
   {
     w_pointer[i] = _w.data() + n[i];
     macro_w_pointer[i] = _macro_w.data() + 2 * n[i];
