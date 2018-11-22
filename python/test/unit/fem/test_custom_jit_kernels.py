@@ -50,6 +50,7 @@ def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
     b[:] = Ae / 6.0
 
+
 def test_numba_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
