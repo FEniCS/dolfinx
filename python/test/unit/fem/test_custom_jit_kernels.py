@@ -16,8 +16,7 @@ from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(
-        numba.types.CPointer(numba.typeof(PETSc.ScalarType()))),
+    numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.types.double), numba.types.intc)
 
 
@@ -51,7 +50,6 @@ def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
     b[:] = Ae / 6.0
 
-
 def test_numba_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
@@ -83,7 +81,7 @@ def xtest_cffi_assembly():
         ffibuilder.set_source("_cffi_kernelA", r"""
         #include <math.h>
         #include <stdalign.h>
-        void tabulate_tensor_poissonA(double* restrict A, const double* const* w,
+        void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* restrict coordinate_dofs,
                                     int cell_orientation)
         {
@@ -130,7 +128,7 @@ def xtest_cffi_assembly():
         A[8] = 0.5 * sp[17];
         }
 
-        void tabulate_tensor_poissonL(double* restrict A, const double* const* w,
+        void tabulate_tensor_poissonL(double* restrict A, const double* w,
                                      const double* restrict coordinate_dofs,
                                      int cell_orientation)
         {
@@ -156,10 +154,10 @@ def xtest_cffi_assembly():
         }
         """)
         ffibuilder.cdef("""
-        void tabulate_tensor_poissonA(double* restrict A, const double* const* w,
+        void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* restrict coordinate_dofs,
                                     int cell_orientation);
-        void tabulate_tensor_poissonL(double* restrict A, const double* const* w,
+        void tabulate_tensor_poissonL(double* restrict A, const double* w,
                                     const double* restrict coordinate_dofs,
                                     int cell_orientation);
         """)
