@@ -71,6 +71,8 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
     : _coefficients({}), _function_spaces(function_spaces)
 {
+  init_coeff_scratch_space();
+
   // Set _mesh from function::FunctionSpace and check they are the same
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
