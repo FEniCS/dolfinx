@@ -177,10 +177,7 @@ std::size_t Form::max_element_tensor_size() const
   return num_entries;
 }
 //-----------------------------------------------------------------------------
-void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
-{
-  _mesh = mesh;
-}
+void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh) { _mesh = mesh; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> Form::mesh() const
 {
@@ -276,10 +273,10 @@ void Form::tabulate_tensor(
   }
 
   // Compute cell matrix
-  const std::function<void(PetscScalar*, const PetscScalar* const*,
-                           const double*, int)>& tab_fn
+  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                           int)>& tab_fn
       = _integrals.cell_tabulate_tensor(idx);
-  tab_fn(A, _wpointer.data(), coordinate_dofs.data(), 1);
+  tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
 void Form::init_coeff_scratch_space()
