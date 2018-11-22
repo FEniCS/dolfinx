@@ -293,7 +293,7 @@ void Form::init_coeff_scratch_space()
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
   {
     const FiniteElement& element = _coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension() * 2);
+    n.push_back(n.back() + element.space_dimension());
   }
   // Allocate memory capable of storing all coefficient values in a
   // contiguous block
