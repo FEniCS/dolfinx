@@ -24,12 +24,6 @@ from dolfin.fem.form import Form
 def _create_cpp_form(form, form_compiler_parameters=None):
     # First check if we got a cpp.Form
     if isinstance(form, cpp.fem.Form):
-
-        # Check that jit compilation has already happened
-        if not hasattr(form, "_compiled_form"):
-            raise TypeError(
-                "Expected a dolfin form to have a _compiled_form attribute.")
-
         # Warn that we don't use the parameters if we get any
         if form_compiler_parameters is not None:
             cpp.warning(
