@@ -71,6 +71,8 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
     : _coefficients({}), _function_spaces(function_spaces)
 {
+  init_coeff_scratch_space();
+
   // Set _mesh from function::FunctionSpace and check they are the same
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
@@ -177,10 +179,7 @@ std::size_t Form::max_element_tensor_size() const
   return num_entries;
 }
 //-----------------------------------------------------------------------------
-void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
-{
-  _mesh = mesh;
-}
+void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh) { _mesh = mesh; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> Form::mesh() const
 {
@@ -276,10 +275,10 @@ void Form::tabulate_tensor(
   }
 
   // Compute cell matrix
-  const std::function<void(PetscScalar*, const PetscScalar* const*,
-                           const double*, int)>& tab_fn
+  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                           int)>& tab_fn
       = _integrals.cell_tabulate_tensor(idx);
-  tab_fn(A, _wpointer.data(), coordinate_dofs.data(), 1);
+  tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
 void Form::init_coeff_scratch_space()
@@ -294,15 +293,15 @@ void Form::init_coeff_scratch_space()
   for (std::uint32_t i = 0; i < num_coeffs; ++i)
   {
     const FiniteElement& element = _coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension() * 2);
+    n.push_back(n.back() + element.space_dimension());
   }
   // Allocate memory capable of storing all coefficient values in a
   // contiguous block
   _w.resize(n.back());
 
   // Create pointers into _w for each coefficient
-  _wpointer.resize(num_coeffs);
-  for (std::uint32_t i = 0; i < num_coeffs; ++i)
+  _wpointer.resize(n.size());
+  for (std::uint32_t i = 0; i < n.size(); ++i)
     _wpointer[i] = _w.data() + n[i];
 }
 //-----------------------------------------------------------------------------
