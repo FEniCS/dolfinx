@@ -4,7 +4,7 @@ install-python-components: &install-python-components
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
-            pip3 install git+https://github.com/FEniCS/ffcx@chris/flatten-coeff-dofs --upgrade
+            pip3 install git+https://github.com/FEniCS/ffcx --upgrade
             rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
 flake8-python-code: &flake8-python-code
@@ -170,7 +170,7 @@ jobs:
       - run:
           name: Push C++ API doc to fenicsproject.org
           command: cd /tmp/cpp/doc/html && scp -r * docs@fenicsproject.org:/var/www/vhosts/fenicsproject.org/docs/dolfinx/dev/cpp/
-
+  
   build-and-push-docker-images:
     docker:
       - image: docker:18.05.0-git
@@ -192,13 +192,13 @@ jobs:
           command: docker build --build-arg MAKEFLAGS='-j3' --target real -t quay.io/fenicsproject/dolfinx:latest . && docker tag quay.io/fenicsproject/dolfinx:latest quay.io/fenicsproject/dolfinx:real && docker push quay.io/fenicsproject/dolfinx:latest && docker push quay.io/fenicsproject/dolfinx:real
       - run:
           name: Build complex Docker image tag complex
-          command: docker build --build-arg MAKEFLAGS='-j3' --target complex -t quay.io/fenicsproject/dolfinx:complex . && docker push quay.io/fenicsproject/dolfinx:complex
+          command: docker build --build-arg MAKEFLAGS='-j3' --target complex -t quay.io/fenicsproject/dolfinx:complex . && docker push quay.io/fenicsproject/dolfinx:complex 
       - run:
           name: Build real notebook Docker image tag notebook
-          command: docker build --build-arg MAKEFLAGS='-j3' --target notebook -t quay.io/fenicsproject/dolfinx:notebook . && docker push quay.io/fenicsproject/dolfinx:notebook
+          command: docker build --build-arg MAKEFLAGS='-j3' --target notebook -t quay.io/fenicsproject/dolfinx:notebook . && docker push quay.io/fenicsproject/dolfinx:notebook 
       - run:
           name: Build complex notebook Docker image tag notebook-complex
-          command: docker build --build-arg MAKEFLAGS='-j3' --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex . && docker push quay.io/fenicsproject/dolfinx:notebook-complex
+          command: docker build --build-arg MAKEFLAGS='-j3' --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex . && docker push quay.io/fenicsproject/dolfinx:notebook-complex 
 
 workflows:
   version: 2
@@ -213,7 +213,7 @@ workflows:
             branches:
               only:
                 - master
-
+  
   biweekly:
     triggers:
       - schedule:
