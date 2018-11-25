@@ -108,7 +108,7 @@ void LocalAssembler::assemble_cell(
 
   // Tabulate cell tensor directly into A. This overwrites any
   // previous values
-  integral->tabulate_tensor(A.data(), ufc.w(), coordinate_dofs.data(), 1);
+  integral->tabulate_tensor(A.data(), ufc.w()[0], coordinate_dofs.data(), 1);
 }
 //------------------------------------------------------------------------------
 void LocalAssembler::assemble_exterior_facet(
@@ -146,7 +146,7 @@ void LocalAssembler::assemble_exterior_facet(
   // Tabulate exterior facet tensor. Here we cannot tabulate directly
   // into A since this will overwrite any previously assembled dx, ds
   // or dS forms
-  integral->tabulate_tensor(ufc.A.data(), ufc.w(), coordinate_dofs.data(),
+  integral->tabulate_tensor(ufc.A.data(), ufc.w()[0], coordinate_dofs.data(),
                             local_facet, 1);
 
   // Stuff a_ufc.A into A
@@ -251,7 +251,7 @@ void LocalAssembler::assemble_interior_facet(
              integral->enabled_coefficients);
 
   // Tabulate interior facet tensor on macro element
-  integral->tabulate_tensor(ufc.macro_A.data(), ufc.macro_w(),
+  integral->tabulate_tensor(ufc.macro_A.data(), ufc.macro_w()[0],
                             coordinate_dofs0.data(), coordinate_dofs1.data(),
                             local_facet0, local_facet1, 1, 1);
 

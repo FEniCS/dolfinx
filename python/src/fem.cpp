@@ -356,9 +356,8 @@ void fem(py::module& m)
       .def("set_vertex_domains", &dolfin::fem::Form::set_vertex_domains)
       .def("set_cell_tabulate",
            [](dolfin::fem::Form& self, unsigned int i, std::size_t addr) {
-             auto tabulate_tensor_ptr
-                 = (void (*)(PetscScalar*, const PetscScalar* const*,
-                             const double*, int))addr;
+             auto tabulate_tensor_ptr = (void (*)(
+                 PetscScalar*, const PetscScalar*, const double*, int))addr;
              self.integrals().set_cell_tabulate_tensor(i, tabulate_tensor_ptr);
            })
       .def("rank", &dolfin::fem::Form::rank)

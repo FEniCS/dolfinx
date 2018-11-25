@@ -7,6 +7,8 @@
 
 import math
 
+import cffi
+import importlib
 import numba
 import numpy
 import pytest
@@ -17,7 +19,7 @@ from dolfin import (DOLFIN_EPS, MPI, Expression, Function, FunctionSpace,
                     VectorFunctionSpace, Vertex, cpp, function, interpolate,
                     lt)
 from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfin_utils.test.skips import skip_in_parallel, skip_if_complex
 
 
 @fixture
@@ -365,3 +367,52 @@ def test_numba_expression_address(V):
 
     f.interpolate(f1)
     assert (f.vector().get_local() == 1.0).all()
+
+
+@skip_if_complex
+def test_cffi_expression(V):
+
+    code_h = """
+    void eval(double* values, const double* x, const int64_t* cell_idx,
+            int num_points, int value_size, int gdim, int num_cells);
+    """
+
+    code_c = """
+    void eval(double* values, const double* x, const int64_t* cell_idx,
+            int num_points, int value_size, int gdim, int num_cells)
+    {
+        for (int i = 0; i < num_points; ++i)
+        {
+            values[i*value_size + 0] = x[i*gdim + 0] + x[i*gdim + 1];
+        }
+    }
+    """
+    module = "_expr_eval"
+
+    # Build the kernel
+    ffi = cffi.FFI()
+    ffi.set_source(module, code_c)
+    ffi.cdef(code_h)
+    ffi.compile()
+
+    # Import the compiled kernel
+    kernel_mod = importlib.import_module(module)
+    ffi, lib = kernel_mod.ffi, kernel_mod.lib
+
+    # Get pointer to the compiled function
+    eval_ptr = ffi.cast("uintptr_t", ffi.addressof(lib, "eval"))
+
+    # Handle C func address by hand
+    ex1 = Expression(int(eval_ptr))
+    f1 = Function(V)
+    f1.interpolate(ex1)
+
+    @function.expression.numba_eval
+    def expr_eval2(values, x, cell_idx):
+        values[:, 0] = x[:, 0] + x[:, 1]
+
+    ex2 = Expression(expr_eval2)
+    f2 = Function(V)
+    f2.interpolate(ex2)
+
+    assert (f1.vector().get_local() == f2.vector().get_local()).all()
