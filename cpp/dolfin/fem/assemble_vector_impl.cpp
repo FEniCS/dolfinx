@@ -205,13 +205,31 @@ void fem::impl::assemble_eigen(
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }
-
-  // // Modify for any essential bcs
-  // for (std::size_t i = 0; i < a.size(); ++i)
-  //   fem::impl::modify_bc(b, *a[i], bcs, x0);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0(0);
+  fem::impl::_modify_bc(b, a, bcs, x0);
+}
+//-----------------------------------------------------------------------------
+void fem::impl::modify_bc(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0)
+{
+  if (b.size() != x0.size())
+  {
+    throw std::runtime_error(
+        "Vector size mismatch in modification for boundary conditions.");
+  }
+
+  fem::impl::_modify_bc(b, a, bcs, x0);
+}
+//-----------------------------------------------------------------------------
+void fem::impl::_modify_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0)

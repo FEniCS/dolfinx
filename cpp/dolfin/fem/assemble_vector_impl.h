@@ -35,15 +35,28 @@ void set_bc(
     const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale);
 
-/// Modify RHS vector to account for boundary condition (b <- b - Ax,
-/// where x holds prescribed boundary values)
+/// Modify RHS vector to account for boundary condition b <- b - Ax_bc
+void modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+               const Form& a,
+               std::vector<std::shared_ptr<const DirichletBC>> bcs);
+
+/// Modify RHS vector to account for boundary condition such that b <- b
+/// - A (x0 - x_bc)
 void modify_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0);
 
-/// Assemble linear form into an Eigen vector. This local to a process.
-/// The Eigen vector must be passed in with the correct size.
+/// Implementation of bc application
+void _modify_bc(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0);
+
+/// Assemble linear form into an Eigen vector. Assembly is performed
+/// over the portion of the mesh belonging to the process. No
+/// communication is performed. The Eigen vector must be passed in with
+/// the correct size.
 // FIXME: Clarify docstring regarding ghosts
 void assemble_eigen(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
                     const Form& L);
