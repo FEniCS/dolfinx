@@ -23,15 +23,12 @@ class Form;
 namespace impl
 {
 
-// FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETSc Vec
 void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs, Vec x0,
             double scale);
 
-// FIXME: Consider if L is required
 // Hack for setting bcs (set entries of b to be equal to boundary
-// value). Does not set ghosts. Size of b must be same as owned
-// length.
+// value). Does not set ghosts. Size of b must be same as owned length.
 void set_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
@@ -45,20 +42,15 @@ void modify_bc(
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0);
 
-/// Assemble linear form into an Eigen vector. The Eigen vector must
-/// the correct size. This local to a process. The vector is modified
-/// for b <- b - A x_bc, where x_bc contains prescribed values. BC
-/// values are not inserted into bc positions.
+/// Assemble linear form into an Eigen vector. This local to a process.
+/// The Eigen vector must be passed in with the correct size.
 // FIXME: Clarify docstring regarding ghosts
-void assemble_eigen(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
-    const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0);
+void assemble_eigen(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                    const Form& L);
 
-/// Assemble linear form into a ghosted PETSc Vec. The vector is modified
-/// for b <- b - A x_bc, where x_bc contains prescribed values, and BC
-/// values set in bc positions.
+/// Assemble linear form into a ghosted PETSc Vec. The vector is
+/// modified for b <- b - A x_bc, where x_bc contains prescribed values,
+/// and BC values set in bc positions.
 void assemble_ghosted(Vec b, const Form& L,
                       const std::vector<std::shared_ptr<const Form>> a,
                       const std::vector<std::shared_ptr<const DirichletBC>> bcs,

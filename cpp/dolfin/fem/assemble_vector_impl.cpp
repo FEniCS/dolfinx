@@ -137,14 +137,23 @@ void fem::impl::assemble_local(
     VecGetArray(x0, &x0_array);
     Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
         x0_array, size_x0);
-    assemble_eigen(bvec, L, a, bcs, x0vec);
+    assemble_eigen(bvec, L);
+
+    // Modify for any essential bcs
+    for (std::size_t i = 0; i < a.size(); ++i)
+      fem::impl::modify_bc(bvec, *a[i], bcs, x0vec);
+
     VecRestoreArray(x0, &x0_array);
   }
   else
   {
     Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
         nullptr, 0);
-    assemble_eigen(bvec, L, a, bcs, x0vec);
+    assemble_eigen(bvec, L);
+
+    // Modify for any essential bcs
+    for (std::size_t i = 0; i < a.size(); ++i)
+      fem::impl::modify_bc(bvec, *a[i], bcs, x0vec);
   }
 
   // //  Assemble and then modify for Dirichlet bcs  (b  <- b - A x_(bc))
@@ -156,14 +165,8 @@ void fem::impl::assemble_local(
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_eigen(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
-    const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0)
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
-  // if (b.empty())
-  //  init(b, L);
-
   // Get mesh from form
   assert(L.mesh());
   const mesh::Mesh& mesh = *L.mesh();
@@ -172,14 +175,16 @@ void fem::impl::assemble_eigen(
   mesh.init(tdim);
 
   // Collect pointers to dof maps
-  auto dofmap = L.function_space(0)->dofmap();
+  assert(L.function_space(0));
+  assert(L.function_space(0)->dofmap());
+  const fem::GenericDofMap& dofmap = *L.function_space(0)->dofmap();
 
-  // Data structures used in assembly
+  // Creat data structures used in assembly
   EigenRowArrayXXd coordinate_dofs;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
@@ -188,23 +193,22 @@ void fem::impl::assemble_eigen(
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get dof maps for cell
-    auto dmap = dofmap->cell_dofs(cell.index());
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap
+        = dofmap.cell_dofs(cell.index());
 
     // Size data structure for assembly
     be.resize(dmap.size());
     be.setZero();
 
-    // Compute cell matrix
+    // Compute local cell vector and add to global vector
     L.tabulate_tensor(be.data(), cell, coordinate_dofs);
-
-    // Add to vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }
 
-  // Modify for any bcs
-  for (std::size_t i = 0; i < a.size(); ++i)
-    fem::impl::modify_bc(b, *a[i], bcs, x0);
+  // // Modify for any essential bcs
+  // for (std::size_t i = 0; i < a.size(); ++i)
+  //   fem::impl::modify_bc(b, *a[i], bcs, x0);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
@@ -235,26 +239,29 @@ void fem::impl::modify_bc(
     }
   }
 
-  // std::array<const function::FunctionSpace*, 2> spaces
-  //    = {{a.function_space(0).get(), a.function_space(1).get()}};
+  // Get dofmap for columns and rows of a
+  assert(a.function_space(0));
+  assert(a.function_space(0)->dofmap());
+  assert(a.function_space(1));
+  assert(a.function_space(1)->dofmap());
+  const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
+  const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
 
-  // Get dofmap for columns a a[i]
-  auto dofmap0 = a.function_space(0)->dofmap();
-  auto dofmap1 = a.function_space(1)->dofmap();
-
+  // Data structures used in bc application
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
   EigenRowArrayXXd coordinate_dofs;
 
   // Iterate over all cells
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
     // Get dof maps for cell
-    auto dmap1 = dofmap1->cell_dofs(cell.index());
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
+        = dofmap1.cell_dofs(cell.index());
 
     // Check if bc is applied to cell
     bool has_bc = false;
@@ -275,7 +282,8 @@ void fem::impl::modify_bc(
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Size data structure for assembly
-    auto dmap0 = dofmap0->cell_dofs(cell.index());
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
+        = dofmap0.cell_dofs(cell.index());
     Ae.resize(dmap0.size(), dmap1.size());
     Ae.setZero();
     a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);

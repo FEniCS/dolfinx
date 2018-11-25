@@ -232,7 +232,11 @@ void fem::assemble(
                                                           + map_size1);
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0_vec(0);
       b_vec.setZero();
-      fem::impl::assemble_eigen(b_vec, *L[i], a[i], bcs, x0_vec);
+      fem::impl::assemble_eigen(b_vec, *L[i]);
+
+      // Modify for any essential bcs
+      for (std::size_t j = 0; j < a[i].size(); ++j)
+        fem::impl::modify_bc(b_vec, *a[i][j], bcs, x0_vec);
 
       // FIXME: Sort out for x0 \ne nullptr case
 
