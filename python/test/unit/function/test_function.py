@@ -387,7 +387,7 @@ def test_cffi_expression(V):
         }
     }
     """
-    module = "_expr_eval" + str(MPI.rank())
+    module = "_expr_eval" + str(MPI.rank(MPI.comm_world))
 
     # Build the kernel
     ffi = cffi.FFI()
