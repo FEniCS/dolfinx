@@ -62,6 +62,8 @@ la::PETScVector _assemble_vector(const Form& L)
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
   fem::impl::assemble_ghosted(b.vec(), L, {}, {}, nullptr, 1.0);
+  fem::impl::set_bc(b.vec(), {}, nullptr, 1.0);
+
   return b;
 }
 //-----------------------------------------------------------------------------
@@ -189,9 +191,15 @@ void fem::assemble(
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
       if (x0)
+      {
         fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
+        fem::impl::set_bc(sub_b, bcs, x0->vec(), 1.0);
+      }
       else
+      {
         fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, nullptr, scale);
+        fem::impl::set_bc(sub_b, bcs, nullptr, 1.0);
+      }
 
       // FIXME: free sub-vector here (dereference)?
     }
