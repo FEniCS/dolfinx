@@ -62,7 +62,6 @@ la::PETScVector _assemble_vector(const Form& L)
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
   fem::impl::assemble_ghosted(b.vec(), L, {}, {}, nullptr, 1.0);
-  fem::impl::set_bc(b.vec(), {}, nullptr, 1.0);
 
   return b;
 }

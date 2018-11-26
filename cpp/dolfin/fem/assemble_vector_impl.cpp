@@ -40,20 +40,24 @@ void fem::impl::set_bc(Vec b,
                        std::vector<std::shared_ptr<const DirichletBC>> bcs,
                        const Vec x0, double scale)
 {
-  PetscInt local_size;
-  VecGetLocalSize(b, &local_size);
-  PetscScalar* values;
-  VecGetArray(b, &values);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
-                                                               local_size);
-  PetscScalar* values_x0;
+  assert(b);
+  assert(x0);
+  PetscInt local_size_b, local_size_x0;
+  VecGetLocalSize(b, &local_size_b);
+  VecGetLocalSize(x0, &local_size_x0);
+  if (local_size_b != local_size_x0)
+    throw std::runtime_error("Size mismtach between b and x0 vectors.");
+  PetscScalar *values_b, *values_x0;
+  VecGetArray(b, &values_b);
   VecGetArray(x0, &values_x0);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(values_x0,
-                                                                  local_size);
-  set_bc(vec, bcs, vec_x0, scale);
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_b(values_b,
+                                                                 local_size_b);
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
+      values_x0, local_size_x0);
+  set_bc(vec_b, bcs, vec_x0, scale);
 
   VecRestoreArray(x0, &values_x0);
-  VecRestoreArray(b, &values);
+  VecRestoreArray(b, &values_b);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::set_bc(
