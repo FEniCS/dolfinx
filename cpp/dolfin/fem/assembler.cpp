@@ -187,18 +187,25 @@ void fem::assemble(
 
     for (std::size_t i = 0; i < L.size(); ++i)
     {
+      std::vector<std::shared_ptr<const DirichletBC>> _bcs;
+      for (std::shared_ptr<const DirichletBC> bc : bcs)
+      {
+        if (L[i]->function_space(0)->contains(*bc->function_space()))
+          _bcs.push_back(bc);
+      }
+
       // Get sub-vector and assemble
       Vec sub_b;
       VecNestGetSubVec(b.vec(), i, &sub_b);
       if (x0)
       {
         fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
-        fem::impl::set_bc(sub_b, bcs, x0->vec(), 1.0);
+        fem::impl::set_bc(sub_b, _bcs, x0->vec(), 1.0);
       }
       else
       {
         fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, nullptr, scale);
-        fem::impl::set_bc(sub_b, bcs, nullptr, 1.0);
+        fem::impl::set_bc(sub_b, _bcs, 1.0);
       }
 
       // FIXME: free sub-vector here (dereference)?
@@ -281,6 +288,7 @@ void fem::assemble(
       }
 
       impl::set_bc(vec, _bcs, vec_x0, scale);
+
       VecRestoreArray(b.vec(), &values);
       offset += map_size0;
     }
@@ -288,9 +296,15 @@ void fem::assemble(
   else
   {
     if (x0)
+    {
       fem::impl::assemble_ghosted(b.vec(), *L[0], a[0], bcs, x0->vec(), scale);
+      impl::set_bc(b.vec(), bcs, x0->vec(), scale);
+    }
     else
+    {
       fem::impl::assemble_ghosted(b.vec(), *L[0], a[0], bcs, nullptr, scale);
+      impl::set_bc(b.vec(), bcs, scale);
+    }
   }
 }
 //-----------------------------------------------------------------------------
