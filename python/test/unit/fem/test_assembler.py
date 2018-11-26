@@ -39,10 +39,8 @@ def test_basic_assembly():
     # Initial assembly
     A = dolfin.fem.assemble(a)
     b = dolfin.fem.assemble(L)
-    return
     assert isinstance(A, dolfin.cpp.la.PETScMatrix)
     assert isinstance(b, dolfin.cpp.la.PETScVector)
-
 
     # Second assembly
     A = dolfin.fem.assemble(A, a)
