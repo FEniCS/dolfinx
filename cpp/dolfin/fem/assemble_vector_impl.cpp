@@ -147,13 +147,9 @@ void fem::impl::assemble_local(
   }
   else
   {
-    Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
-        nullptr, 0);
     assemble_eigen(bvec, L);
-
-    // Modify for any essential bcs
     for (std::size_t i = 0; i < a.size(); ++i)
-      fem::impl::modify_bc(bvec, *a[i], bcs, x0vec);
+      fem::impl::modify_bc(bvec, *a[i], bcs);
   }
 
   // //  Assemble and then modify for Dirichlet bcs  (b  <- b - A x_(bc))
