@@ -34,26 +34,28 @@ enum class BlockType
   nested
 };
 
-/// Assemble form
+/// Assemble variational form
 boost::variant<double, la::PETScVector, la::PETScMatrix>
 assemble(const Form& a);
 
-/// Assemble blocked linear forms. The vector is modified such that b <-
-/// b - A x_bc, and boundary condition values are inserted Dirichlet bcs
-/// position in vector (multiplied by 'scale').
+/// Assemble blocked linear forms. The vector is modified such that
+///  (i) b <- b - A x_bc, and
+/// (ii) boundary condition values are inserted Dirichlet bcs position
+///      in vector (multiplied by 'scale').
 la::PETScVector
 assemble(std::vector<const Form*> L,
          const std::vector<std::vector<std::shared_ptr<const Form>>> a,
          std::vector<std::shared_ptr<const DirichletBC>> bcs,
-         BlockType block_type, double scale = 1.0);
+         const la::PETScVector* x0, BlockType block_type, double scale = 1.0);
 
-/// Re-assemble blocked linear forms. The vector is modified such that b
-/// <- b - A x_bc, and boundary condition values are inserted Dirichlet
-/// bcs position in vector (multiplied by 'scale').
+/// Re-assemble blocked linear forms. The vector is modified such that:
+///  (i) b <- b - A x_bc, and
+/// (ii) boundary condition values are inserted Dirichlet bcs position
+///      in vector (multiplied by 'scale').
 void assemble(la::PETScVector& b, std::vector<const Form*> L,
               const std::vector<std::vector<std::shared_ptr<const Form>>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double scale = 1.0);
+              const la::PETScVector* x0, double scale = 1.0);
 
 /// Assemble blocked bilinear forms into a matrix. Rows and columns
 /// associated with Dirichlet boundary conditions are zeroed, and
@@ -70,8 +72,9 @@ void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
 // FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETScVector, multiplied by
 /// 'scale'
-void set_bc(la::PETScVector& b, const Form& L,
-            std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale);
+void set_bc(la::PETScVector& b,
+            std::vector<std::shared_ptr<const DirichletBC>> bcs,
+            const la::PETScVector* x0, double scale = 1.0);
 
 } // namespace fem
 } // namespace dolfin

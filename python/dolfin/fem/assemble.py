@@ -28,6 +28,7 @@ def _assemble_vector(b: cpp.la.PETScVector,
                      L,
                      a=[],
                      bcs: typing.List[DirichletBC] = [],
+                     x0: typing.Optional[cpp.la.PETScVector] = None,
                      scale: float = 1.0) -> cpp.la.PETScVector:
     """Re-assemble linear form into a vector, with modification for Dirichlet
     boundary conditions
@@ -40,7 +41,7 @@ def _assemble_vector(b: cpp.la.PETScVector,
         L_cpp = [_create_cpp_form(L)]
         a_cpp = [[_create_cpp_form(form) for form in a]]
 
-    cpp.fem.reassemble_blocked_vector(b, L_cpp, a_cpp, bcs, scale)
+    cpp.fem.reassemble_blocked_vector(b, L_cpp, a_cpp, bcs, x0, scale)
     return b
 
 
@@ -63,11 +64,12 @@ def assemble_vector(L,
                     a,
                     bcs: typing.List[DirichletBC],
                     block_type: cpp.fem.BlockType,
+                    x0: typing.Optional[cpp.la.PETScVector] = None,
                     scale: float = 1.0) -> cpp.la.PETScVector:
     """Assemble linear form into vector"""
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    return cpp.fem.assemble_blocked_vector(L_cpp, a_cpp, bcs, block_type,
+    return cpp.fem.assemble_blocked_vector(L_cpp, a_cpp, bcs, x0, block_type,
                                            scale)
 
 
@@ -81,8 +83,8 @@ def assemble_matrix(a,
 
 
 def set_bc(b: cpp.la.PETScVector,
-           L,
            bcs: typing.List[DirichletBC],
+           x0: typing.Optional[cpp.la.PETScVector] = None,
            scale: float = 1.0) -> None:
     """Insert boundary condition values into vector"""
-    cpp.fem.set_bc(b, L, bcs, scale)
+    cpp.fem.set_bc(b, bcs, x0, scale)
