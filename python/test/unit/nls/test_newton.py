@@ -10,6 +10,7 @@ import numpy as np
 import dolfin
 import dolfin.fem as fem
 import dolfin.function as function
+import ufl
 from ufl import derivative, dx, grad, inner
 
 
@@ -65,7 +66,7 @@ def test_linear_pde():
     # Create Newton solver and solve
     solver = dolfin.cpp.nls.NewtonSolver(dolfin.MPI.comm_world)
     n, converged = solver.solve(problem, u.vector())
-    assert converged is True
+    assert converged
     assert n == 1
 
 
@@ -78,7 +79,8 @@ def test_nonlinear_pde():
             V = u.function_space()
             du = function.TrialFunction(V)
             v = function.TestFunction(V)
-            self.L = inner(10.0, v) * dx - u*u*inner(grad(u), grad(v)) * dx
+            self.L = inner(2.0, v) * dx - ufl.sqrt(u * u) * inner(
+                grad(u), grad(v)) * dx - inner(u, v) * dx
             self.a = derivative(self.L, u, du)
 
             def boundary(x):
@@ -86,7 +88,7 @@ def test_nonlinear_pde():
                 return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 
             u_bc = function.Function(V)
-            u_bc.vector().set(0.0)
+            u_bc.vector().set(1.0)
             self.bc = fem.DirichletBC(V, u_bc, boundary)
 
             self._F, self._J = None, None
@@ -98,9 +100,7 @@ def test_nonlinear_pde():
                     [self.L], [[self.a]], [self.bc],
                     dolfin.cpp.fem.BlockType.monolithic, x)
             else:
-                x.vec().view()
                 self._F = fem.assemble(self._F, self.L, [self.a], [self.bc], x)
-                self._F.vec().view()
             return self._F
 
         def J(self, x):
@@ -118,11 +118,11 @@ def test_nonlinear_pde():
 
     # Create solution function and nonlinear problem
     u = dolfin.function.Function(V)
+    u.vector().set(0.9)
     problem = PoissonEquation(u)
 
     # Create Newton solver and solve
     solver = dolfin.cpp.nls.NewtonSolver(dolfin.MPI.comm_world)
     n, converged = solver.solve(problem, u.vector())
-    print(n, converged)
-    # assert converged is True
-    # assert n == 1
+    assert converged
+    assert n < 6
