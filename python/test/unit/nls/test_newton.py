@@ -113,7 +113,7 @@ def test_nonlinear_pde():
             return self._J
 
     # Create mesh and function space
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = dolfin.function.FunctionSpace(mesh, ("Lagrange", 1))
 
     # Create solution function and nonlinear problem
