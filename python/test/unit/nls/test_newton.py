@@ -32,7 +32,7 @@ def test_linear_pde():
 
             u_bc = function.Function(V)
             u_bc.vector().set(1.0)
-            u_bc.update_ghosts()
+            u_bc.vector().update_ghosts()
             self.bc = fem.DirichletBC(V, u_bc, boundary)
 
             self._F, self._J = None, None
