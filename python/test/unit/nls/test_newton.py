@@ -66,12 +66,15 @@ class NonlinearPDE_SNESProblem():
         """Assemble residual vector."""
         _F = dolfin.cpp.la.PETScVector(F)
         _x = dolfin.cpp.la.PETScVector(x)
+        _x.update_ghosts()
         x.copy(self.u.vector().vec())
+        self.u.vector().update_ghosts()
         fem.assemble(_F, self.L, [self.a], [self.bc], _x)
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
         _J = dolfin.cpp.la.PETScMatrix(J)
+        _x = dolfin.cpp.la.PETScVector(x)
         fem.assemble(_J, self.a, [self.bc])
 
 
