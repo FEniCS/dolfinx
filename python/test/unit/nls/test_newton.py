@@ -32,6 +32,7 @@ def test_linear_pde():
 
             u_bc = function.Function(V)
             u_bc.vector().set(1.0)
+            u_bc.update_ghosts()
             self.bc = fem.DirichletBC(V, u_bc, boundary)
 
             self._F, self._J = None, None
@@ -79,8 +80,8 @@ def test_nonlinear_pde():
             V = u.function_space()
             du = function.TrialFunction(V)
             v = function.TestFunction(V)
-            self.L = inner(2.0, v) * dx - ufl.sqrt(u * u) * inner(
-                grad(u), grad(v)) * dx - inner(u, v) * dx
+            self.L = inner(2.0, v) * dx - ufl.sqrt(
+                u * u) * inner(grad(u), grad(v)) * dx - inner(u, v) * dx
             self.a = derivative(self.L, u, du)
 
             def boundary(x):
@@ -89,9 +90,13 @@ def test_nonlinear_pde():
 
             u_bc = function.Function(V)
             u_bc.vector().set(1.0)
+            u_bc.vector().update_ghosts()
             self.bc = fem.DirichletBC(V, u_bc, boundary)
 
             self._F, self._J = None, None
+
+        def form(self, x):
+            pass
 
         def F(self, x):
             """Assemble residual vector."""
