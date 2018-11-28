@@ -88,6 +88,9 @@ void fem(py::module& m)
         },
         "Create a ufc_coordinate_mapping object from a pointer.");
 
+  m.def("init_matrix", &dolfin::fem::init_matrix,
+        "Initialise sparse matrix for a bilinear form.");
+
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
              std::shared_ptr<dolfin::fem::FiniteElement>>(
@@ -264,8 +267,8 @@ void fem(py::module& m)
                 std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
             const dolfin::la::PETScVector*, double>(&dolfin::fem::assemble),
-        py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"),
-        py::arg("x0"), py::arg("scale") = 1.0,
+        py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("x0"),
+        py::arg("scale") = 1.0,
         "Re-assemble linear forms over mesh into blocked vector");
 
   m.def("assemble_blocked_matrix",

@@ -112,7 +112,7 @@ void fem::impl::assemble_ghosted(
 
   // FIXME: should zeroing be an option?
   // Zero vector
-  // VecSet(b_local, 0.0);
+  VecSet(b_local, 0.0);
 
   // Assemble over local mesh. modifying b for Dirichlet conditions
   fem::impl::_assemble_local(b_local, L, a, bcs, x0_local);
@@ -213,6 +213,8 @@ void fem::impl::assemble_eigen(
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }
+  // std::cout << "Test" << std::endl;
+  // std::cout << b << std::endl;
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
