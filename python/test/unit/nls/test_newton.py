@@ -27,7 +27,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
         self._F, self._J = None, None
 
     def form(self, x):
-        pass
+        x.update_ghosts()
 
     def F(self, x):
         """Assemble residual vector."""
@@ -98,7 +98,6 @@ def test_nonlinear_pde():
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
-
 
     # Create Newton solver and solve
     u.vector().set(0.9)

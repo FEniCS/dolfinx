@@ -128,6 +128,9 @@ use in the Newton solver is now defined. It is a subclass of
             self._F = None
             self._J = None
 
+        def form(self, x):
+            x.update_ghosts()
+
         def F(self, x):
             if self._F is None:
                 self._F = assemble(self.L)
@@ -163,7 +166,7 @@ created, and on this mesh a
 ``ME`` is built using a pair of linear Lagrangian elements. ::
 
     # Create mesh and build function space
-    mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.Type.triangle)
     P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     ME = FunctionSpace(mesh, P1*P1)
 
