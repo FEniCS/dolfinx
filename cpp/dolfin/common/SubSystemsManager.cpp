@@ -18,7 +18,6 @@
 #include "SubSystemsManager.h"
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
-#include <dolfin/parameter/GlobalParameters.h>
 
 using namespace dolfin::common;
 

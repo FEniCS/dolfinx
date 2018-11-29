@@ -24,7 +24,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <unordered_map>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>

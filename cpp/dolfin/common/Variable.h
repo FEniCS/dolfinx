@@ -7,7 +7,6 @@
 #pragma once
 
 #include <cstddef>
-#include <dolfin/parameter/Parameters.h>
 #include <string>
 
 namespace dolfin
@@ -53,9 +52,6 @@ public:
 
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const;
-
-  /// Parameters
-  parameter::Parameters parameters;
 
 private:
   // Name

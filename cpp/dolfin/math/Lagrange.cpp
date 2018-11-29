@@ -7,6 +7,8 @@
 #include "Lagrange.h"
 #include <cmath>
 #include <dolfin/common/constants.h>
+#include <dolfin/log/log.h>
+#include <sstream>
 
 using namespace dolfin;
 
@@ -136,13 +138,13 @@ void dolfin::math::Lagrange::init()
         if (std::abs(points[i] - points[j]) < DOLFIN_EPS)
         {
           log::dolfin_error("Lagrange.cpp", "create Lagrange polynomial",
-                       "Nodal points are not distinct");
+                            "Nodal points are not distinct");
         }
         product *= points[i] - points[j];
       }
     }
 
-    //if (std::abs(product) < DOLFIN_EPS)
+    // if (std::abs(product) < DOLFIN_EPS)
     //  instability_detected();
 
     constants[i] = 1.0 / product;

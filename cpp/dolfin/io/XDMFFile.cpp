@@ -30,7 +30,6 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <iomanip>
 #include <memory>
 #include <set>

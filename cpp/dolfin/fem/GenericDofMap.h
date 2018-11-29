@@ -10,6 +10,7 @@
 #include <dolfin/common/Variable.h>
 #include <memory>
 #include <petscsys.h>
+#include <set>
 #include <unordered_map>
 #include <utility>
 #include <vector>

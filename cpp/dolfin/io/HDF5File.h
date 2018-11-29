@@ -268,7 +268,8 @@ void HDF5File::write_data(const std::string dataset_name,
   std::array<std::int64_t, 2> range = {{offset, offset + num_local_items}};
 
   // Write data to HDF5 file
-  const bool chunking = parameters["chunking"];
+  //const bool chunking = parameters["chunking"];
+  const bool chunking = false;
   // Ensure dataset starts with '/'
   std::string dset_name(dataset_name);
   if (dset_name[0] != '/')
