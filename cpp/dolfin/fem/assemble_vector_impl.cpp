@@ -47,16 +47,17 @@ void fem::impl::set_bc(Vec b,
   VecGetLocalSize(x0, &local_size_x0);
   if (local_size_b != local_size_x0)
     throw std::runtime_error("Size mismtach between b and x0 vectors.");
-  PetscScalar *values_b, *values_x0;
+  PetscScalar* values_b;
+  PetscScalar const* values_x0;
   VecGetArray(b, &values_b);
-  VecGetArray(x0, &values_x0);
+  VecGetArrayRead(x0, &values_x0);
   Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_b(values_b,
                                                                  local_size_b);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
+  const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
       values_x0, local_size_x0);
   set_bc(vec_b, bcs, vec_x0, scale);
 
-  VecRestoreArray(x0, &values_x0);
+  VecRestoreArrayRead(x0, &values_x0);
   VecRestoreArray(b, &values_b);
 }
 //-----------------------------------------------------------------------------
@@ -143,7 +144,8 @@ void fem::impl::_assemble_local(
   VecGetSize(b, &size_b);
   PetscScalar* array_b;
   VecGetArray(b, &array_b);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(array_b, size_b);
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(array_b,
+                                                                size_b);
   bvec.setZero();
 
   // Assemble
@@ -154,13 +156,13 @@ void fem::impl::_assemble_local(
   {
     PetscInt size_x0 = 0;
     VecGetSize(x0, &size_x0);
-    PetscScalar* array_x0;
-    VecGetArray(x0, &array_x0);
-    Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+    PetscScalar const* array_x0;
+    VecGetArrayRead(x0, &array_x0);
+    const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
         array_x0, size_x0);
     for (std::size_t i = 0; i < a.size(); ++i)
       fem::impl::modify_bc(bvec, *a[i], bcs, x0vec);
-    VecRestoreArray(x0, &array_x0);
+    VecRestoreArrayRead(x0, &array_x0);
   }
   else
   {
