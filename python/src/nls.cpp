@@ -86,7 +86,7 @@ void nls(py::module& m)
              std::shared_ptr<dolfin::nls::NewtonSolver>, PyNewtonSolver,
              dolfin::common::Variable>(m, "NewtonSolver")
       .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfin::nls::NewtonSolver>(comm.get());
+        return std::make_unique<PyNewtonSolver>(comm.get());
       }))
       .def("solve", &dolfin::nls::NewtonSolver::solve)
       .def("converged", &PyPublicNewtonSolver::converged)

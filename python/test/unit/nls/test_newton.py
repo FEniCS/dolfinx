@@ -197,3 +197,15 @@ def test_nonlinear_pde_snes():
     snes.solve(None, u.vector().vec())
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6
+    # print(snes.getIterationNumber())
+    # print(snes.getFunctionNorm())
+
+
+def test_newton_solver_inheritance():
+    base = dolfin.cpp.nls.NewtonSolver(dolfin.MPI.comm_world)
+    assert isinstance(base, dolfin.cpp.nls.NewtonSolver)
+
+    class DerivedNewtonSolver(dolfin.cpp.nls.NewtonSolver):
+        pass
+    derived = DerivedNewtonSolver(dolfin.MPI.comm_world)
+    assert isinstance(derived, DerivedNewtonSolver)
