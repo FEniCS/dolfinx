@@ -9,7 +9,7 @@
 
 #include "PETScOperator.h"
 #include "utils.h"
-#include <dolfin/common/types.h>
+#include <array>
 #include <petscmat.h>
 #include <string>
 
@@ -86,24 +86,20 @@ public:
   std::string str(bool verbose) const;
 
   /// Set block of values using global indices
-  void set(const PetscScalar* block, std::size_t m,
-           const PetscInt* rows, std::size_t n,
-           const PetscInt* cols);
+  void set(const PetscScalar* block, std::size_t m, const PetscInt* rows,
+           std::size_t n, const PetscInt* cols);
 
   /// Set block of values using local indices
-  void set_local(const PetscScalar* block, std::size_t m,
-                 const PetscInt* rows, std::size_t n,
-                 const PetscInt* cols);
+  void set_local(const PetscScalar* block, std::size_t m, const PetscInt* rows,
+                 std::size_t n, const PetscInt* cols);
 
   /// Add block of values using global indices
-  void add(const PetscScalar* block, std::size_t m,
-           const PetscInt* rows, std::size_t n,
-           const PetscInt* cols);
+  void add(const PetscScalar* block, std::size_t m, const PetscInt* rows,
+           std::size_t n, const PetscInt* cols);
 
   /// Add block of values using local indices
-  void add_local(const PetscScalar* block, std::size_t m,
-                 const PetscInt* rows, std::size_t n,
-                 const PetscInt* cols);
+  void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows,
+                 std::size_t n, const PetscInt* cols);
 
   /// Return norm of matrix
   double norm(la::Norm norm_type) const;

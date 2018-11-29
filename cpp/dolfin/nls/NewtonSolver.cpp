@@ -75,7 +75,6 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   la::PETScMatrix *A(nullptr), *P(nullptr);
   la::PETScVector* b = nullptr;
 
-  x.update_ghosts();
   nonlinear_problem.form(x);
   b = nonlinear_problem.F(x);
   assert(b);
@@ -124,14 +123,13 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     // Update solution
     update_solution(x, *_dx, _relaxation_parameter, nonlinear_problem,
                     newton_iteration);
-    x.update_ghosts();
 
     // Increment iteration count
     ++newton_iteration;
 
     // FIXME: This step is not needed if residual is based on dx and
     //        this has converged.
-    // FIXME: But, this function call may update internal variable, etc.
+    // FIXME: But, this function call may update internal variables, etc.
     // Compute F
     nonlinear_problem.form(x);
     b = nonlinear_problem.F(x);

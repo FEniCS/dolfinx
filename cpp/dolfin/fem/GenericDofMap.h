@@ -8,9 +8,8 @@
 
 #include <Eigen/Dense>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
 #include <memory>
+#include <petscsys.h>
 #include <unordered_map>
 #include <utility>
 #include <vector>

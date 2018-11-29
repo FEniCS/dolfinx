@@ -11,9 +11,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstring>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/log/log.h>
 #include <numeric>
 
 using namespace dolfin;
@@ -248,8 +248,8 @@ void PETScVector::get_local(PetscScalar* block, std::size_t m,
   ierr = VecGhostGetLocalForm(_x, &xg);
   CHECK_ERROR("VecGhostGetLocalForm");
 
-  // Use array access if no ghost points, otherwise use VecGetValues
-  // on local ghosted form of vector
+  // Use array access if no ghost points, otherwise use VecGetValues on
+  // local ghosted form of vector
   if (!xg)
   {
     // Get pointer to PETSc vector data
@@ -399,14 +399,7 @@ void PETScVector::mult(const PETScVector& v)
   CHECK_ERROR("VecPointwiseMult");
 }
 //-----------------------------------------------------------------------------
-bool PETScVector::empty() const
-{
-  return _x == nullptr ? true : false;
-  // if (!_x)
-  //   return true;
-  // else
-  //   return this->size() == 0;
-}
+bool PETScVector::empty() const { return _x == nullptr ? true : false; }
 //-----------------------------------------------------------------------------
 PetscScalar PETScVector::dot(const PETScVector& y) const
 {
@@ -545,8 +538,8 @@ void PETScVector::gather(PETScVector& y,
   // Check that passed vector is local
   if (MPI::size(y.mpi_comm()) != 1)
   {
-    log::dolfin_error("PETScVector.cpp", "gather vector entries",
-                      "Gather vector must be a local vector (MPI_COMM_SELF)");
+    throw std::runtime_error(
+        "PETSc gather vector must be a local vector (MPI_COMM_SELF).");
   }
 
   // Initialize vector if empty
@@ -556,17 +549,16 @@ void PETScVector::gather(PETScVector& y,
   // Check that passed vector has correct size
   if (y.size() != n)
   {
-    log::dolfin_error("PETScVector.cpp", "gather vector entries",
-                      "Gather vector must be empty or of correct size "
-                      "(same as provided indices)");
+    throw std::runtime_error(
+        "PETSc gather vector must be empty or of correct size "
+        "(same as provided indices)");
   }
 
   // Prepare data for index sets (global indices)
   std::vector<PetscInt> global_indices(indices.begin(), indices.end());
 
-  // PETSc will bail out if it receives a NULL pointer even though m
-  // == 0.  Can't return from function since function calls are
-  // collective.
+  // PETSc will bail out if it receives a NULL pointer even though m ==
+  // 0.  Can't return from function since function calls are collective.
   if (n == 0)
     global_indices.resize(1);
 
@@ -580,11 +572,11 @@ void PETScVector::gather(PETScVector& y,
 
   // Perform scatter
   VecScatter scatter;
-  #if PETSC_VERSION_LE(3, 10, 100)
+#if PETSC_VERSION_LE(3, 10, 100)
   ierr = VecScatterCreate(_x, from, y.vec(), to, &scatter);
-  #else
+#else
   ierr = VecScatterCreateWithData(_x, from, y.vec(), to, &scatter);
-  #endif
+#endif
   CHECK_ERROR("VecScatterCreate");
   ierr = VecScatterBegin(scatter, _x, y.vec(), INSERT_VALUES, SCATTER_FORWARD);
   CHECK_ERROR("VecScatterBegin");

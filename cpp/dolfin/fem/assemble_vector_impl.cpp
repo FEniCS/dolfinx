@@ -47,16 +47,17 @@ void fem::impl::set_bc(Vec b,
   VecGetLocalSize(x0, &local_size_x0);
   if (local_size_b != local_size_x0)
     throw std::runtime_error("Size mismtach between b and x0 vectors.");
-  PetscScalar *values_b, *values_x0;
+  PetscScalar* values_b;
+  PetscScalar const* values_x0;
   VecGetArray(b, &values_b);
-  VecGetArray(x0, &values_x0);
+  VecGetArrayRead(x0, &values_x0);
   Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_b(values_b,
                                                                  local_size_b);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
+  const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
       values_x0, local_size_x0);
   set_bc(vec_b, bcs, vec_x0, scale);
 
-  VecRestoreArray(x0, &values_x0);
+  VecRestoreArrayRead(x0, &values_x0);
   VecRestoreArray(b, &values_b);
 }
 //-----------------------------------------------------------------------------
@@ -112,7 +113,7 @@ void fem::impl::assemble_ghosted(
 
   // FIXME: should zeroing be an option?
   // Zero vector
-  // VecSet(b_local, 0.0);
+  VecSet(b_local, 0.0);
 
   // Assemble over local mesh. modifying b for Dirichlet conditions
   fem::impl::_assemble_local(b_local, L, a, bcs, x0_local);
@@ -130,9 +131,6 @@ void fem::impl::assemble_ghosted(
     if (L.function_space(0)->contains(*bc->function_space()))
       _bcs.push_back(bc);
   }
-
-  // Set essential bc components
-  // set_bc(b, _bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::_assemble_local(
@@ -142,26 +140,29 @@ void fem::impl::_assemble_local(
   // FIXME: check that b is a local PETSc Vec
 
   // Wrap local PETSc Vec as an Eigen vector
-  PetscInt size = 0;
-  VecGetSize(b, &size);
-  PetscScalar* b_array;
-  VecGetArray(b, &b_array);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(b_array, size);
+  PetscInt size_b = 0;
+  VecGetSize(b, &size_b);
+  PetscScalar* array_b;
+  VecGetArray(b, &array_b);
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(array_b,
+                                                                size_b);
   bvec.setZero();
 
+  // Assemble
   assemble_eigen(bvec, L);
 
+  // Modify for essential bcs
   if (x0)
   {
     PetscInt size_x0 = 0;
     VecGetSize(x0, &size_x0);
-    PetscScalar* x0_array;
-    VecGetArray(x0, &x0_array);
-    Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
-        x0_array, size_x0);
+    PetscScalar const* array_x0;
+    VecGetArrayRead(x0, &array_x0);
+    const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+        array_x0, size_x0);
     for (std::size_t i = 0; i < a.size(); ++i)
       fem::impl::modify_bc(bvec, *a[i], bcs, x0vec);
-    VecRestoreArray(x0, &x0_array);
+    VecRestoreArrayRead(x0, &array_x0);
   }
   else
   {
@@ -170,7 +171,7 @@ void fem::impl::_assemble_local(
   }
 
   // Restore array
-  VecRestoreArray(b, &b_array);
+  VecRestoreArray(b, &array_b);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_eigen(
@@ -214,6 +215,8 @@ void fem::impl::assemble_eigen(
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }
+  // std::cout << "Test" << std::endl;
+  // std::cout << b << std::endl;
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(

@@ -7,10 +7,10 @@
 #pragma once
 
 #include "GenericDofMap.h"
+#include "petscsys.h"
 #include <Eigen/Dense>
 #include <array>
 #include <cstdlib>
-#include <dolfin/common/types.h>
 #include <memory>
 #include <set>
 #include <unordered_map>
@@ -43,10 +43,10 @@ namespace fem
 
 /// Degree-of-freedom map
 
-/// This class handles the mapping of degrees of freedom. It builds
-/// a dof map based on a ufc_ofmap on a specific mesh. It will
-/// reorder the dofs when running in parallel. Sub-dofmaps, both
-/// views and copies, are supported.
+/// This class handles the mapping of degrees of freedom. It builds a
+/// dof map based on a ufc_dofmap on a specific mesh. It will reorder
+/// the dofs when running in parallel. Sub-dofmaps, both views and
+/// copies, are supported.
 
 class DofMap : public GenericDofMap
 {

@@ -1,18 +1,16 @@
-// Copyright (C) 2017 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2018 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <Eigen/Dense>
-#include <iostream>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
-
 #include <string>
 
 #ifdef HAS_PYBIND11_PETSC4PY
@@ -20,6 +18,7 @@
 #endif
 
 #include "casters.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/DirichletBC.h>
@@ -88,6 +87,9 @@ void fem(py::module& m)
         },
         "Create a ufc_coordinate_mapping object from a pointer.");
 
+  m.def("init_matrix", &dolfin::fem::init_matrix,
+        "Initialise sparse matrix for a bilinear form.");
+
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
              std::shared_ptr<dolfin::fem::FiniteElement>>(
@@ -96,29 +98,6 @@ void fem(py::module& m)
       .def("num_sub_elements", &dolfin::fem::FiniteElement::num_sub_elements)
       .def("dof_reference_coordinates",
            &dolfin::fem::FiniteElement::dof_reference_coordinates)
-      // TODO: Update for change to Eigen::Tensor
-      //   .def("tabulate_dof_coordinates",
-      //        [](const dolfin::fem::FiniteElement &self,
-      //           const dolfin::mesh::Cell &cell) {
-      //          // Get cell vertex coordinates
-      //          std::vector<double> coordinate_dofs;
-      //          cell.get_coordinate_dofs(coordinate_dofs);
-
-      //          // Tabulate the coordinates
-      //          boost::multi_array<double, 2> _dof_coords;
-      //          self.tabulate_dof_coordinates(_dof_coords, coordinate_dofs,
-      //          cell);
-
-      //          // Copy data and return
-      //          typedef Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-      //                               Eigen::RowMajor>
-      //              EigenArray;
-      //          EigenArray dof_coords = Eigen::Map<EigenArray>(
-      //              _dof_coords.data(), _dof_coords.shape()[0],
-      //              _dof_coords.shape()[1]);
-      //          return dof_coords;
-      //        },
-      //        "Tabulate coordinates of dofs on cell")
       .def("space_dimension", &dolfin::fem::FiniteElement::space_dimension)
       .def("topological_dimension",
            &dolfin::fem::FiniteElement::topological_dimension)
@@ -264,8 +243,8 @@ void fem(py::module& m)
                 std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
             const dolfin::la::PETScVector*, double>(&dolfin::fem::assemble),
-        py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"),
-        py::arg("x0"), py::arg("scale") = 1.0,
+        py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("x0"),
+        py::arg("scale") = 1.0,
         "Re-assemble linear forms over mesh into blocked vector");
 
   m.def("assemble_blocked_matrix",
