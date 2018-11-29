@@ -113,13 +113,13 @@ public:
     {
       std::cout << "First computation of b." << std::endl;
       b = std::make_unique<la::PETScVector>(
-          assemble({_l.get()}, {{_j}}, _bcs, &x, fem::BlockType::monolithic));
+          assemble({_l.get()}, {{_j}}, _bcs, &x, fem::BlockType::monolithic, -1.0));
       std::cout << "Post first computation of b." << std::endl;
     }
     else
     {
       std::cout << "Second+ computation of b." << std::endl;
-      assemble(*b, {_l.get()}, {{}}, _bcs, &x);
+      assemble(*b, {_l.get()}, {{}}, _bcs, &x, -1.0);
       std::cout << "Post second computation of b." << std::endl;
     }
     return b.get();

@@ -87,7 +87,7 @@ void fem::impl::set_bc(
           if (x0.size() == 0)
             b[indices[j]] = scale * values[j];
           else
-            b[indices[j]] = x0[indices[j]] - values[j];
+            b[indices[j]] = scale * (values[j] - x0[indices[j]]);
         }
       }
     }
@@ -116,26 +116,19 @@ void fem::impl::assemble_ghosted(
   VecSet(b_local, 0.0);
 
   // Assemble over local mesh. modifying b for Dirichlet conditions
-  fem::impl::_assemble_local(b_local, L, a, bcs, x0_local);
+  fem::impl::_assemble_local(b_local, L, a, bcs, x0_local, scale);
 
   // Restore ghosted form and update local (owned) entries that are
   // ghosts on other processes
   VecGhostRestoreLocalForm(b, &b_local);
   VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
-
-  // Set boundary values (local only)
-  std::vector<std::shared_ptr<const DirichletBC>> _bcs;
-  for (std::shared_ptr<const DirichletBC> bc : bcs)
-  {
-    if (L.function_space(0)->contains(*bc->function_space()))
-      _bcs.push_back(bc);
-  }
 }
 //-----------------------------------------------------------------------------
 void fem::impl::_assemble_local(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0)
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale)
 {
   // FIXME: check that b is a local PETSc Vec
 
@@ -161,13 +154,13 @@ void fem::impl::_assemble_local(
     const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
         array_x0, size_x0);
     for (std::size_t i = 0; i < a.size(); ++i)
-      fem::impl::modify_bc(bvec, *a[i], bcs, x0vec);
+      fem::impl::modify_bc(bvec, *a[i], bcs, x0vec, scale);
     VecRestoreArrayRead(x0, &array_x0);
   }
   else
   {
     for (std::size_t i = 0; i < a.size(); ++i)
-      fem::impl::modify_bc(bvec, *a[i], bcs);
+      fem::impl::modify_bc(bvec, *a[i], bcs, scale);
   }
 
   // Restore array
@@ -215,22 +208,21 @@ void fem::impl::assemble_eigen(
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }
-  // std::cout << "Test" << std::endl;
-  // std::cout << b << std::endl;
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs)
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
 {
   const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0(0);
-  fem::impl::_modify_bc(b, a, bcs, x0);
+  fem::impl::_modify_bc(b, a, bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0)
+    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale)
 {
   if (b.size() != x0.size())
   {
@@ -238,13 +230,14 @@ void fem::impl::modify_bc(
         "Vector size mismatch in modification for boundary conditions.");
   }
 
-  fem::impl::_modify_bc(b, a, bcs, x0);
+  fem::impl::_modify_bc(b, a, bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::_modify_bc(
     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0)
+    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale)
 {
   assert(a.rank() == 2);
 
@@ -344,9 +337,9 @@ void fem::impl::_modify_bc(
       if (bc != boundary_values.end())
       {
         if (x0.rows() > 0)
-          be -= Ae.col(j) * (x0[jj] - bc->second);
+          be -= Ae.col(j) * scale * (bc->second - x0[jj]);
         else
-          be -= Ae.col(j) * bc->second;
+          be -= Ae.col(j) * scale * bc->second;
       }
     }
 
