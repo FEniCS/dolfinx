@@ -8,6 +8,7 @@
 import hashlib
 import os
 import re
+import sys
 
 import dijitso
 from dolfin import cpp, jit
@@ -58,15 +59,25 @@ def compile_cpp_code(cpp_code,
     params['cache']['lib_basename'] = ""
     params['cache']['lib_loader'] = "import"
 
+    libpython = []
+    if sysconfig.get_config_var("Py_ENABLE_SHARED"):
+        # only link libpython if Python itself is dynamically linked.
+        # libpython must not be linked if Python itself is statically linked,
+        # and probably doesn't ever need to be linked here.
+        libpython = [pyversion]
+
     # Include path and library info from DOLFIN (dolfin.pc)
     params['build']['include_dirs'] = jit.dolfin_pc["include_dirs"] + get_pybind_include() \
         + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
-    params['build']['libs'] = jit.dolfin_pc["libraries"] + [pyversion]
+    params['build']['libs'] = jit.dolfin_pc["libraries"] + libpython
     params['build']['lib_dirs'] = jit.dolfin_pc["library_dirs"] + [
         sysconfig.get_config_var("LIBDIR")
     ]
 
     params['build']['cxxflags'] += ('-fno-lto', )
+    if sys.platform == 'darwin':
+        # TODO: this should be default in dijitso
+        params['build']['cxxflags'] += ('-undefined', 'dynamic_lookup')
 
     # Enable all macros from dolfin.pc
     dmacros = ['-D' + dm for dm in jit.dolfin_pc['define_macros']]
