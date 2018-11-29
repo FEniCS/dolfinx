@@ -105,15 +105,22 @@ def test_linear_pde():
     assert converged
     assert n == 1
 
+    # Increment boundary condition and solve again
+    u_bc.vector().set(2.0)
+    u_bc.vector().update_ghosts()
+    n, converged = solver.solve(problem, u.vector())
+    assert converged
+    assert n == 1
+
 
 def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 15)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 5)
     V = dolfin.function.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.function.Function(V)
     v = function.TestFunction(V)
-    F = inner(2.0, v) * dx - ufl.sqrt(u * u) * inner(
+    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
     def boundary(x):
@@ -136,6 +143,13 @@ def test_nonlinear_pde():
     assert converged
     assert n < 6
 
+    # Modify boundary condition and solve again
+    u_bc.vector().set(0.5)
+    u_bc.vector().update_ghosts()
+    n, converged = solver.solve(problem, u.vector())
+    assert converged
+    assert n < 6
+
 
 def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
@@ -144,7 +158,7 @@ def test_nonlinear_pde_snes():
     V = dolfin.function.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.function.Function(V)
     v = function.TestFunction(V)
-    F = inner(2.0, v) * dx - ufl.sqrt(u * u) * inner(
+    F = inner(5.0, v) * dx - ufl.sqrt(u * u) * inner(
         grad(u), grad(v)) * dx - inner(u, v) * dx
 
     def boundary(x):
@@ -175,8 +189,12 @@ def test_nonlinear_pde_snes():
 
     snes.getKSP().setTolerances(rtol=1.0e-9)
     snes.solve(None, u.vector().vec())
-
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6
-    # print(snes.getIterationNumber())
-    # print(snes.getFunctionNorm())
+
+    # Modify boundary condition and solve again
+    u_bc.vector().set(0.5)
+    u_bc.vector().update_ghosts()
+    snes.solve(None, u.vector().vec())
+    assert snes.getConvergedReason() > 0
+    assert snes.getIterationNumber() < 6
