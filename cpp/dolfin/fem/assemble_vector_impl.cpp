@@ -87,7 +87,7 @@ void fem::impl::set_bc(
           if (x0.size() == 0)
             b[indices[j]] = scale * values[j];
           else
-            b[indices[j]] = x0[indices[j]] - values[j];
+            b[indices[j]] = scale * (x0[indices[j]] - values[j]);
         }
       }
     }
@@ -123,14 +123,6 @@ void fem::impl::assemble_ghosted(
   VecGhostRestoreLocalForm(b, &b_local);
   VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
-
-  // Set boundary values (local only)
-  std::vector<std::shared_ptr<const DirichletBC>> _bcs;
-  for (std::shared_ptr<const DirichletBC> bc : bcs)
-  {
-    if (L.function_space(0)->contains(*bc->function_space()))
-      _bcs.push_back(bc);
-  }
 }
 //-----------------------------------------------------------------------------
 void fem::impl::_assemble_local(
@@ -215,8 +207,6 @@ void fem::impl::assemble_eigen(
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }
-  // std::cout << "Test" << std::endl;
-  // std::cout << b << std::endl;
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(

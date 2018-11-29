@@ -26,11 +26,9 @@ namespace impl
 /// Assemble linear form into a ghosted PETSc Vec. The vector is
 /// modified such that:
 ///
-/// 1. If x0 is null b <- b - A x_bc, and b = scale*x_bc where x_bc
-///    contains prescribed values; or
+/// 1. If x0 is null b <- b - A x_bc; or
 ///
-/// 2. If x0 is not null b <- b - A (x0 - x_bc), and b = scale*(x0 -
-///    x_bc) where x_bc contains.
+/// 2. If x0 is not null b <- b - A (x0 - x_bc).
 ///
 /// Essential bc dofs are *not* set.
 ///
