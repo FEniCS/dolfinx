@@ -74,7 +74,7 @@ class NonlinearPDE_SNESProblem():
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
         _J = dolfin.cpp.la.PETScMatrix(J)
-        _x = dolfin.cpp.la.PETScVector(x)
+        # _x = dolfin.cpp.la.PETScVector(x)
         fem.assemble(_J, self.a, [self.bc])
 
 
@@ -178,5 +178,5 @@ def test_nonlinear_pde_snes():
 
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6
-    print(snes.getIterationNumber())
-    print(snes.getFunctionNorm())
+    # print(snes.getIterationNumber())
+    # print(snes.getFunctionNorm())
