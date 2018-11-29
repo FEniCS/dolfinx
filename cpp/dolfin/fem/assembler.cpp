@@ -249,7 +249,7 @@ void fem::assemble(
 
       // Modify for any essential bcs
       for (std::size_t j = 0; j < a[i].size(); ++j)
-        fem::impl::modify_bc(b_vec, *a[i][j], bcs);
+        fem::impl::modify_bc(b_vec, *a[i][j], bcs, scale);
 
       // FIXME: Sort out for x0 \ne nullptr case
 
