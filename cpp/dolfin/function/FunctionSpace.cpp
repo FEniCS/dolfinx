@@ -4,9 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "Expression.h"
 #include "FunctionSpace.h"
+#include "Expression.h"
 #include "Function.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -217,7 +218,9 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   // Check that function ranks match
   if (_element->value_rank() != expr.value_rank())
   {
-    throw std::runtime_error("Rank of Expression " + std::to_string(expr.value_rank()) + " doesn't match the target space.");
+    throw std::runtime_error("Rank of Expression "
+                             + std::to_string(expr.value_rank())
+                             + " doesn't match the target space.");
   }
 
   // Check that function dims match
@@ -225,7 +228,8 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   {
     if (_element->value_dimension(i) != expr.value_dimension(i))
     {
-      throw std::runtime_error("Dimensions of Expression doesn't match the target space.");
+      throw std::runtime_error(
+          "Dimensions of Expression doesn't match the target space.");
     }
   }
 

@@ -8,15 +8,14 @@
 
 #include <Eigen/Dense>
 #include <cstddef>
+#include <dolfin/common/Variable.h>
+#include <dolfin/fem/FiniteElement.h>
+#include <dolfin/mesh/Cell.h>
 #include <map>
 #include <memory>
 #include <petscsys.h>
 #include <unordered_map>
 #include <vector>
-
-#include <dolfin/common/Variable.h>
-#include <dolfin/fem/FiniteElement.h>
-#include <dolfin/mesh/Cell.h>
 
 namespace dolfin
 {

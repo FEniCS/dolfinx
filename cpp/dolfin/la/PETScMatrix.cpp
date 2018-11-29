@@ -10,6 +10,7 @@
 #include "SparsityPattern.h"
 #include "VectorSpaceBasis.h"
 #include "utils.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
@@ -190,8 +191,7 @@ std::array<std::int64_t, 2> PETScMatrix::local_range(std::size_t dim) const
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const PetscScalar* block, std::size_t m,
-                      const PetscInt* rows, std::size_t n,
-                      const PetscInt* cols)
+                      const PetscInt* rows, std::size_t n, const PetscInt* cols)
 {
   assert(_matA);
   PetscErrorCode ierr
@@ -212,8 +212,7 @@ void PETScMatrix::set_local(const PetscScalar* block, std::size_t m,
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::add(const PetscScalar* block, std::size_t m,
-                      const PetscInt* rows, std::size_t n,
-                      const PetscInt* cols)
+                      const PetscInt* rows, std::size_t n, const PetscInt* cols)
 {
   assert(_matA);
   PetscErrorCode ierr

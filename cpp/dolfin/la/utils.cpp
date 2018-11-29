@@ -56,8 +56,9 @@ void dolfin::la::petsc_error(int error_code, std::string filename,
   dolfin::log::log(TRACE, std::string(78, '-'));
 
   // Raise exception with standard error message
-  dolfin::log::dolfin_error(
-      filename, "successfully call PETSc function '" + petsc_function + "'",
-      "PETSc error code is: %d (%s)", error_code, desc);
+  throw std::runtime_error("Failed to successfully call PETSc function '"
+                           + petsc_function + "'. PETSc error code is: "
+                           + std ::to_string(error_code) + ", "
+                           + std::string(desc));
 }
 //-----------------------------------------------------------------------------
