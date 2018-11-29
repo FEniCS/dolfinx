@@ -4,20 +4,17 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <petscis.h>
-
+#include "assemble_matrix_impl.h"
 #include "DirichletBC.h"
 #include "Form.h"
 #include "GenericDofMap.h"
-#include "assemble_matrix_impl.h"
 #include "utils.h"
-#include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <petscmat.h>
+#include <petscsys.h>
 #include <string>
 
 using namespace dolfin;
@@ -47,7 +44,8 @@ void fem::assemble_matrix(la::PETScMatrix& A, const Form& a,
   const fem::GenericDofMap& map1 = *V1.dofmap();
 
   // Data structures used in assembly
-  EigenRowArrayXXd coordinate_dofs;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
 
