@@ -35,9 +35,9 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
         if self._F is None:
             self._F = fem.assemble_vector([self.L], [[self.a]], [self.bc],
                                           dolfin.cpp.fem.BlockType.monolithic,
-                                          x)
+                                          x, -1.0)
         else:
-            self._F = fem.assemble(self._F, self.L, [self.a], [self.bc], x)
+            self._F = fem.assemble(self._F, self.L, [self.a], [self.bc], x, -1.0)
         return self._F
 
     def J(self, x):
@@ -69,12 +69,11 @@ class NonlinearPDE_SNESProblem():
         _x.update_ghosts()
         x.copy(self.u.vector().vec())
         self.u.vector().update_ghosts()
-        fem.assemble(_F, self.L, [self.a], [self.bc], _x)
+        fem.assemble(_F, self.L, [self.a], [self.bc], _x, -1.0)
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
         _J = dolfin.cpp.la.PETScMatrix(J)
-        # _x = dolfin.cpp.la.PETScVector(x)
         fem.assemble(_J, self.a, [self.bc])
 
 
