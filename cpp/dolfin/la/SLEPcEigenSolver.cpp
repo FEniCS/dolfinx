@@ -25,7 +25,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm)
   EPSCreate(comm, &_eps);
 
   // Set default parameter values
-  parameters = default_parameters();
+  // parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(EPS eps) : _eps(eps)
@@ -47,7 +47,7 @@ SLEPcEigenSolver::SLEPcEigenSolver(EPS eps) : _eps(eps)
   }
 
   // Set default parameter values
-  parameters = default_parameters();
+  //parameters = default_parameters();
 }
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::~SLEPcEigenSolver()
@@ -98,26 +98,26 @@ void SLEPcEigenSolver::solve(std::int64_t n)
   EPSSetDimensions(_eps, n, PETSC_DECIDE, PETSC_DECIDE);
 
   // Set parameters set on SLEPcEigenSolver object
-  read_parameters();
+  //read_parameters();
 
   // Set any options from the PETSc database
   EPSSetFromOptions(_eps);
 
   // FIXME: need to be able to turn the monitor off
-  if (parameters["verbose"].is_set())
-  {
-    if (parameters["verbose"])
-    {
-      PetscViewerAndFormat* vf;
-      PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,
-                                 PETSC_VIEWER_DEFAULT, &vf);
-      EPSMonitorSet(_eps,
-                    (PetscErrorCode(*)(EPS, PetscInt, PetscInt, PetscScalar*,
-                                       PetscScalar*, PetscReal*, PetscInt,
-                                       void*))EPSMonitorAll,
-                    vf, (PetscErrorCode(*)(void**))PetscViewerAndFormatDestroy);
-    }
-  }
+  // if (parameters["verbose"].is_set())
+  // {
+  //   if (parameters["verbose"])
+  //   {
+  //     PetscViewerAndFormat* vf;
+  //     PetscViewerAndFormatCreate(PETSC_VIEWER_STDOUT_WORLD,
+  //                                PETSC_VIEWER_DEFAULT, &vf);
+  //     EPSMonitorSet(_eps,
+  //                   (PetscErrorCode(*)(EPS, PetscInt, PetscInt, PetscScalar*,
+  //                                      PetscScalar*, PetscReal*, PetscInt,
+  //                                      void*))EPSMonitorAll,
+  //                   vf, (PetscErrorCode(*)(void**))PetscViewerAndFormatDestroy);
+  //   }
+  // }
 
   // Solve eigenvalue problem
   EPSSolve(_eps);
@@ -274,44 +274,44 @@ void SLEPcEigenSolver::set_from_options() const
     petsc_error(ierr, __FILE__, "EPSSetFromOptions");
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::read_parameters()
-{
-  if (parameters["problem_type"].is_set())
-    set_problem_type(parameters["problem_type"]);
+// void SLEPcEigenSolver::read_parameters()
+// {
+//   if (parameters["problem_type"].is_set())
+//     set_problem_type(parameters["problem_type"]);
 
-  if (parameters["spectrum"].is_set())
-    set_spectrum(parameters["spectrum"]);
+//   if (parameters["spectrum"].is_set())
+//     set_spectrum(parameters["spectrum"]);
 
-  if (parameters["solver"].is_set())
-    set_solver(parameters["solver"]);
+//   if (parameters["solver"].is_set())
+//     set_solver(parameters["solver"]);
 
-  if (parameters["tolerance"].is_set()
-      or parameters["maximum_iterations"].is_set())
-  {
-    const double tol = parameters["tolerance"].is_set()
-                           ? (double)parameters["tolerance"]
-                           : PETSC_DEFAULT;
-    const int max_it = parameters["maximum_iterations"].is_set()
-                           ? (int)parameters["maximum_iterations"]
-                           : PETSC_DEFAULT;
+//   if (parameters["tolerance"].is_set()
+//       or parameters["maximum_iterations"].is_set())
+//   {
+//     const double tol = parameters["tolerance"].is_set()
+//                            ? (double)parameters["tolerance"]
+//                            : PETSC_DEFAULT;
+//     const int max_it = parameters["maximum_iterations"].is_set()
+//                            ? (int)parameters["maximum_iterations"]
+//                            : PETSC_DEFAULT;
 
-    set_tolerance(tol, max_it);
-  }
+//     set_tolerance(tol, max_it);
+//   }
 
-  if (parameters["spectral_transform"].is_set())
-  {
-    if (parameters["spectral_shift"].is_set())
-    {
-      set_spectral_transform(parameters["spectral_transform"],
-                             parameters["spectral_shift"]);
-    }
-    else
-    {
-      throw std::runtime_error("For an spectral transform, the spectral shift "
-                               "parameter must be set");
-    }
-  }
-}
+//   if (parameters["spectral_transform"].is_set())
+//   {
+//     if (parameters["spectral_shift"].is_set())
+//     {
+//       set_spectral_transform(parameters["spectral_transform"],
+//                              parameters["spectral_shift"]);
+//     }
+//     else
+//     {
+//       throw std::runtime_error("For an spectral transform, the spectral shift "
+//                                "parameter must be set");
+//     }
+//   }
+// }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_problem_type(std::string type)
 {
@@ -379,29 +379,29 @@ void SLEPcEigenSolver::set_spectrum(std::string spectrum)
   else if (spectrum == "target magnitude")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_MAGNITUDE);
-    if (parameters["spectral_shift"].is_set())
-    {
-      PetscScalar shift = (double)parameters["spectral_shift"];
-      EPSSetTarget(_eps, shift);
-    }
+    // if (parameters["spectral_shift"].is_set())
+    // {
+    //   PetscScalar shift = (double)parameters["spectral_shift"];
+    //   EPSSetTarget(_eps, shift);
+    // }
   }
   else if (spectrum == "target real")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_REAL);
-    if (parameters["spectral_shift"].is_set())
-    {
-      PetscScalar shift = (double)parameters["spectral_shift"];
-      EPSSetTarget(_eps, shift);
-    }
+    // if (parameters["spectral_shift"].is_set())
+    // {
+    //   PetscScalar shift = (double)parameters["spectral_shift"];
+    //   EPSSetTarget(_eps, shift);
+    // }
   }
   else if (spectrum == "target imaginary")
   {
     EPSSetWhichEigenpairs(_eps, EPS_TARGET_IMAGINARY);
-    if (parameters["spectral_shift"].is_set())
-    {
-      PetscScalar shift = (double)parameters["spectral_shift"];
-      EPSSetTarget(_eps, shift);
-    }
+    // if (parameters["spectral_shift"].is_set())
+    // {
+    //   PetscScalar shift = (double)parameters["spectral_shift"];
+    //   EPSSetTarget(_eps, shift);
+    // }
   }
   else
   {

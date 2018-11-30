@@ -164,24 +164,24 @@ public:
   MPI_Comm mpi_comm() const;
 
   /// Default parameter values
-  static parameter::Parameters default_parameters()
-  {
-    parameter::Parameters p("slepc_eigenvalue_solver");
-    p.add<std::string>("problem_type");
-    p.add<std::string>("spectrum");
-    p.add<std::string>("solver");
-    p.add<double>("tolerance");
-    p.add<int>("maximum_iterations");
-    p.add<std::string>("spectral_transform");
-    p.add<double>("spectral_shift");
-    p.add<bool>("verbose");
+  // static parameter::Parameters default_parameters()
+  // {
+  //   parameter::Parameters p("slepc_eigenvalue_solver");
+  //   p.add<std::string>("problem_type");
+  //   p.add<std::string>("spectrum");
+  //   p.add<std::string>("solver");
+  //   p.add<double>("tolerance");
+  //   p.add<int>("maximum_iterations");
+  //   p.add<std::string>("spectral_transform");
+  //   p.add<double>("spectral_shift");
+  //   p.add<bool>("verbose");
 
-    return p;
-  }
+  //   return p;
+  // }
 
 private:
-  /// Callback for changes in parameter values
-  void read_parameters();
+  // /// Callback for changes in parameter values
+  // void read_parameters();
 
   // Set problem type (used for SLEPc internals)
   void set_problem_type(std::string type);
