@@ -141,7 +141,7 @@ void HDF5File::write(const la::PETScVector& x, const std::string dataset_name)
   // Write data to file
   const auto local_range = x.local_range();
   // const bool chunking = parameters["chunking"];
-  const bool chunking = true;
+  const bool chunking = false;
   const std::vector<std::int64_t> global_size(1, x.size());
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, local_data.data(),
