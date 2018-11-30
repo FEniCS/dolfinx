@@ -7,15 +7,15 @@
 #pragma once
 
 #include <cstdint>
+#include <dolfin/common/MPI.h>
+#include <dolfin/common/Variable.h>
+#include <dolfin/mesh/CellType.h>
+#include <hdf5.h>
 #include <memory>
 #include <petscsys.h>
 #include <string>
 #include <utility>
 #include <vector>
-#include <hdf5.h>
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
-#include <dolfin/mesh/CellType.h>
 
 namespace boost
 {
@@ -90,8 +90,8 @@ public:
     ASCII
   };
 
-/// Default encoding type
-static const Encoding default_encoding = Encoding::HDF5;
+  /// Default encoding type
+  static const Encoding default_encoding = Encoding::HDF5;
 
   /// Constructor
   XDMFFile(MPI_Comm comm, const std::string filename,
@@ -397,12 +397,20 @@ static const Encoding default_encoding = Encoding::HDF5;
   read_mvc_double(std::shared_ptr<const mesh::Mesh> mesh,
                   std::string name = "") const;
 
+  // Rewrite the mesh at every time step in a time series. Should be
+  // turned off if the mesh remains constant.
+  bool rewrite_function_mesh = true;
+
+  // function::Functions share the same mesh for the same time step. The
+  // files produced are smaller and work better in Paraview
+  bool functions_share_mesh = false;
+
+  // FIXME: This is only relevant to HDF5
+  // Flush datasets to disk at each timestep. Allows inspection of the
+  // HDF5 file whilst running, at some performance cost.
+  bool flush_output = false;
+
 private:
-
-  bool rewrite_function_mesh;
-  bool functions_share_mesh;
-  bool flush_output;
-
   // Generic MVC writer
   template <typename T>
   void write_mesh_value_collection(const mesh::MeshValueCollection<T>& mvc);

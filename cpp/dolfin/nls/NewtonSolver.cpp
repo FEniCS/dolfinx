@@ -74,7 +74,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   }
 
   // Start iterations
-  while (!newton_converged and newton_iteration < maximum_iterations)
+  while (!newton_converged and newton_iteration < max_it)
   {
     // Compute Jacobian
     A = nonlinear_problem.J(x);
@@ -136,7 +136,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   {
     if (error_on_nonconvergence)
     {
-      if (newton_iteration == maximum_iterations)
+      if (newton_iteration == max_it)
       {
         throw std::runtime_error("Newton solver did not converge because "
                                  "maximum number of iterations reached");
@@ -161,10 +161,6 @@ bool nls::NewtonSolver::converged(const la::PETScVector& r,
                                   const NonlinearProblem& nonlinear_problem,
                                   std::size_t newton_iteration)
 {
-  const double rtol = relative_tolerance;
-  const double atol = absolute_tolerance;
-  // const bool report = report;
-
   _residual = r.norm(la::Norm::l2);
 
   // If this is the first iteration step, set initial residual

@@ -44,18 +44,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding)
     : _mpi_comm(comm), _filename(filename), _counter(0),
       _xml_doc(new pugi::xml_document), _encoding(encoding)
 {
-  // Rewrite the mesh at every time step in a time series. Should be
-  // turned off if the mesh remains constant.
-  rewrite_function_mesh = true;
-
-  // function::Functions share the same mesh for the same time step. The files
-  // produced are smaller and work better in Paraview
-  functions_share_mesh = false;
-
-  // FIXME: This is only relevant to HDF5
-  // Flush datasets to disk at each timestep. Allows inspection of the
-  // HDF5 file whilst running, at some performance cost.
-  flush_output = false;
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 XDMFFile::~XDMFFile() { close(); }
@@ -496,7 +485,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
   }
 
   // Only add mesh grid node at this time step if no other function has
-  // previously added it (and parameters["functions_share_mesh"] == true)
+  // previously added it (and functions_share_mesh == true)
   if (!mesh_node)
   {
     // Add the mesh grid node to to the time series grid node

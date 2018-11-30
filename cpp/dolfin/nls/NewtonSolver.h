@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2008 Garth N. Wells
+// Copyright (C) 2005-2018 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -73,15 +73,15 @@ public:
   double residual0() const;
 
   /// Maximum number of iterations
-  int maximum_iterations = 50;
+  int max_it = 50;
 
   /// Relative tolerance
-  double relative_tolerance = 1e-9;
+  double rtol = 1e-9;
 
   /// Absolute tolerance
-  double absolute_tolerance = 1e-10;
+  double atol = 1e-10;
 
-  // FIXME: change to enum
+  // FIXME: change to string to enum
   /// Convergence criterion
   std::string convergence_criterion = "residual";
 
@@ -91,7 +91,7 @@ public:
   /// Throw error if solver fails to converge
   bool error_on_nonconvergence = true;
 
-  // Relaxation paramters
+  /// Relaxation parameter
   double relaxation_parameter = 1.0;
 
 protected:
