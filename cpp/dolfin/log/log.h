@@ -15,10 +15,6 @@ namespace common
 {
 class Variable;
 }
-namespace parameter
-{
-class Parameters;
-}
 
 namespace log
 {
@@ -33,9 +29,6 @@ namespace log
 
 /// Print message
 void info(std::string msg, ...);
-
-/// Print parameter (using output of str() method)
-void info(const parameter::Parameters& parameters, bool verbose = false);
 
 /// Print variable (using output of str() method)
 void info(const common::Variable& variable, bool verbose = false);

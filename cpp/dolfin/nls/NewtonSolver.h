@@ -72,12 +72,6 @@ public:
   ///         Initial residual.
   double residual0() const;
 
-  /// Default parameter values
-  ///
-  /// @returns _Parameters_
-  ///         Parameter values.
-  static parameter::Parameters default_parameters();
-
   /// Set relaxation parameter. Default value 1.0 means full
   /// Newton method, value smaller than 1.0 relaxes the method
   /// by shrinking effective Newton step size by the given factor.
@@ -147,6 +141,15 @@ private:
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
+
+  int maximum_iterations = 50;
+  double relative_tolerance = 1e-9;
+  double absolute_tolerance = 1e-10;
+  std::string convergence_criterion = "residual";
+  bool report = true;
+  bool error_on_nonconvergence = true;
+  double relaxation_parameter = 1.0;
+
 };
 } // namespace nls
 } // namespace dolfin

@@ -398,6 +398,11 @@ static const Encoding default_encoding = Encoding::HDF5;
                   std::string name = "") const;
 
 private:
+
+  bool rewrite_function_mesh;
+  bool functions_share_mesh;
+  bool flush_output;
+
   // Generic MVC writer
   template <typename T>
   void write_mesh_value_collection(const mesh::MeshValueCollection<T>& mvc);

@@ -24,7 +24,6 @@
 #include <dolfin/graph/ParMETIS.h>
 #include <dolfin/graph/SCOTCH.h>
 #include <dolfin/log/log.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <iterator>
 #include <map>
 #include <memory>
@@ -44,7 +43,8 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
 {
 
   // Get mesh partitioner
-  const std::string partitioner = parameter::parameters["mesh_partitioner"];
+  const std::string partitioner = "SCOTCH";
+  //const std::string partitioner = parameter::parameters["mesh_partitioner"];
   // Compute the cell partition
   PartitionData mp = partition_cells(comm, type, cells, partitioner);
 
@@ -159,24 +159,24 @@ mesh::Mesh MeshPartitioning::build(
   }
 
 #ifdef HAS_SCOTCH
-  if (parameter::parameters["reorder_cells_gps"])
-  {
-    // Allocate objects to hold re-ordering
-    std::map<std::int32_t, std::set<std::uint32_t>> reordered_shared_cells;
-    EigenRowArrayXXi64 reordered_cell_vertices;
-    std::vector<std::int64_t> reordered_global_cell_indices;
+  // if (parameter::parameters["reorder_cells_gps"])
+  // {
+  //   // Allocate objects to hold re-ordering
+  //   std::map<std::int32_t, std::set<std::uint32_t>> reordered_shared_cells;
+  //   EigenRowArrayXXi64 reordered_cell_vertices;
+  //   std::vector<std::int64_t> reordered_global_cell_indices;
 
-    // Re-order cells
-    std::tie(reordered_shared_cells, reordered_cell_vertices,
-             reordered_global_cell_indices)
-        = reorder_cells_gps(comm, num_regular_cells, *cell_type, shared_cells,
-                            new_cell_vertices, new_global_cell_indices);
+  //   // Re-order cells
+  //   std::tie(reordered_shared_cells, reordered_cell_vertices,
+  //            reordered_global_cell_indices)
+  //       = reorder_cells_gps(comm, num_regular_cells, *cell_type, shared_cells,
+  //                           new_cell_vertices, new_global_cell_indices);
 
-    // Update to re-ordered indices
-    std::swap(shared_cells, reordered_shared_cells);
-    new_cell_vertices = reordered_cell_vertices;
-    std::swap(new_global_cell_indices, reordered_global_cell_indices);
-  }
+  //   // Update to re-ordered indices
+  //   std::swap(shared_cells, reordered_shared_cells);
+  //   new_cell_vertices = reordered_cell_vertices;
+  //   std::swap(new_global_cell_indices, reordered_global_cell_indices);
+  // }
 #endif
 
   timer.stop();

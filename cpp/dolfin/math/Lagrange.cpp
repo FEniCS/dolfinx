@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Lagrange.h"
+#include <cassert>
 #include <cmath>
 #include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
