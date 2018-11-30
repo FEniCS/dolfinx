@@ -10,7 +10,7 @@ import functools
 import dijitso
 import dolfin.pkgconfig
 import ffc
-from dolfin import cpp, parameter
+from dolfin import cpp
 
 if dolfin.pkgconfig.exists("dolfin"):
     dolfin_pc = dolfin.pkgconfig.parse("dolfin")
@@ -95,8 +95,8 @@ def ffc_jit(ufl_form, form_compiler_parameters=None):
     # Prepare form compiler parameters with overrides from dolfin and
     # kwargs
     p = ffc.default_jit_parameters()
-    #p.update(dict(parameter.parameters["form_compiler"]))
-    #p.update(form_compiler_parameters or {})
+    # p.update(dict(parameter.parameters["form_compiler"]))
+    p.update(form_compiler_parameters or {})
     return ffc.jit(ufl_form, parameters=p)
 
 

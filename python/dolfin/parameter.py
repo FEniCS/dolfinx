@@ -6,8 +6,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """FIXME: document"""
 
-from dolfin import common
-import ffc
+# from dolfin import common
+# import ffc
 
 
 # def ffc_default_parameters():
