@@ -72,19 +72,27 @@ public:
   ///         Initial residual.
   double residual0() const;
 
-  /// Set relaxation parameter. Default value 1.0 means full
-  /// Newton method, value smaller than 1.0 relaxes the method
-  /// by shrinking effective Newton step size by the given factor.
-  ///
-  /// @param relaxation_parameter (double)
-  ///         Relaxation parameter value.
-  void set_relaxation_parameter(double relaxation_parameter);
+  /// Maximum number of iterations
+  int maximum_iterations = 50;
 
-  /// Get relaxation parameter
-  ///
-  /// @returns    double
-  ///         Relaxation parameter value.
-  double get_relaxation_parameter() const;
+  /// Relative tolerance
+  double relative_tolerance = 1e-9;
+
+  /// Absolute tolerance
+  double absolute_tolerance = 1e-10;
+
+  // FIXME: change to enum
+  /// Convergence criterion
+  std::string convergence_criterion = "residual";
+
+  /// Monitor convergence
+  bool report = true;
+
+  /// Throw error if solver fails to converge
+  bool error_on_nonconvergence = true;
+
+  // Relaxation paramters
+  double relaxation_parameter = 1.0;
 
 protected:
   /// Convergence test. It may be overloaded using virtual inheritance and
@@ -127,9 +135,6 @@ private:
   // Accumulated number of Krylov iterations since solve began
   int _krylov_iterations;
 
-  // Relaxation parameter
-  double _relaxation_parameter;
-
   // Most recent residual and initial residual
   double _residual, _residual0;
 
@@ -141,15 +146,6 @@ private:
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
-
-  int maximum_iterations = 50;
-  double relative_tolerance = 1e-9;
-  double absolute_tolerance = 1e-10;
-  std::string convergence_criterion = "residual";
-  bool report = true;
-  bool error_on_nonconvergence = true;
-  double relaxation_parameter = 1.0;
-
 };
 } // namespace nls
 } // namespace dolfin

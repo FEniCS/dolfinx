@@ -89,7 +89,18 @@ void nls(py::module& m)
       }))
       .def("solve", &dolfin::nls::NewtonSolver::solve)
       .def("converged", &PyPublicNewtonSolver::converged)
-      .def("update_solution", &PyPublicNewtonSolver::update_solution);
+      .def("update_solution", &PyPublicNewtonSolver::update_solution)
+      .def_readwrite("rtol", &dolfin::nls::NewtonSolver::relative_tolerance)
+      .def_readwrite("convergence_criterion", &dolfin::nls::NewtonSolver::convergence_criterion);
+  // .def_property("foo",
+  //               [](const dolfin::nls::NewtonSolver& self) {
+  //                 return self.relative_tolerance;
+  //               },
+  //               [](dolfin::nls::NewtonSolver& self, double rtol) {
+  //                 self.relative_tolerance = rtol;
+  //               });
+  //.def_property("convergence_criterion",
+  //&dolfin::nls::NewtonSolver::convergence_criterion);
 
   // dolfin::NonlinearProblem 'trampoline' for overloading from
   // Python

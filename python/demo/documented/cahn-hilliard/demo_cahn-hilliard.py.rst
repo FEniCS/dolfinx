@@ -274,8 +274,8 @@ instantiate objects of both ``CahnHilliardEquation`` and
     problem = CahnHilliardEquation(a, L)
     solver = NewtonSolver(MPI.comm_world)
     # solver.parameters["linear_solver"] = "lu"
-    solver.parameters["convergence_criterion"] = "incremental"
-    solver.parameters["relative_tolerance"] = 1e-6
+    solver.convergence_criterion = "incremental"
+    solver.rtol = 1e-6
 
 The string ``"lu"`` passed to the Newton solver indicated that an LU
 solver should be used.  The setting of
