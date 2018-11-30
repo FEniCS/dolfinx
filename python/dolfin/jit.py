@@ -10,7 +10,7 @@ import functools
 import dijitso
 import dolfin.pkgconfig
 import ffc
-from dolfin import cpp
+from dolfin import common, cpp
 
 if dolfin.pkgconfig.exists("dolfin"):
     dolfin_pc = dolfin.pkgconfig.parse("dolfin")
@@ -96,6 +96,7 @@ def ffc_jit(ufl_form, form_compiler_parameters=None):
     # kwargs
     p = ffc.default_jit_parameters()
     # p.update(dict(parameter.parameters["form_compiler"]))
+    p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters or {})
     return ffc.jit(ufl_form, parameters=p)
 
