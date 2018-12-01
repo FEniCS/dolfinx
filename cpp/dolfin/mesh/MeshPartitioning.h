@@ -14,6 +14,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/log/log.h>
 #include <map>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -73,7 +74,8 @@ public:
                          const Eigen::Ref<const EigenRowArrayXXd>& points,
                          const Eigen::Ref<const EigenRowArrayXXi64>& cells,
                          const std::vector<std::int64_t>& global_cell_indices,
-                         const mesh::GhostMode ghost_mode);
+                         const mesh::GhostMode ghost_mode,
+                         std::string graph_partitioner = "SCOTCH");
 
   /// Redistribute points to the processes that need them.
   /// @param mpi_comm

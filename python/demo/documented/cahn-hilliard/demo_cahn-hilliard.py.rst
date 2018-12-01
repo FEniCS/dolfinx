@@ -273,17 +273,14 @@ instantiate objects of both ``CahnHilliardEquation`` and
     # Create nonlinear problem and Newton solver
     problem = CahnHilliardEquation(a, L)
     solver = NewtonSolver(MPI.comm_world)
-    # solver.parameters["linear_solver"] = "lu"
     solver.convergence_criterion = "incremental"
     solver.rtol = 1e-6
 
-The string ``"lu"`` passed to the Newton solver indicated that an LU
-solver should be used.  The setting of
-``parameters["convergence_criterion"] = "incremental"`` specifies that
-the Newton solver should compute a norm of the solution increment to
-check for convergence (the other possibility is to use ``"residual"``,
-or to provide a user-defined check). The tolerance for convergence is
-specified by ``parameters["relative_tolerance"] = 1e-6``.
+The setting of ``convergence_criterion`` to ``"incremental"`` specifies
+that the Newton solver should compute a norm of the solution increment
+to check for convergence (the other possibility is to use
+``"residual"``, or to provide a user-defined check). The tolerance for
+convergence is specified by ``rtol``.
 
 To run the solver and save the output to a VTK file for later
 visualization, the solver is advanced in time from :math:`t_{n}` to
