@@ -254,14 +254,20 @@ private:
   // Compute boundary values for facet (topological approach)
   void compute_bc_topological(Map& boundary_values, LocalData& data) const;
 
+  // Compute boundary value dofs (topological approach)
+  void compute_bc_dofs_topological() const;
+
   // Compute boundary values for facet (geometrical approach)
   void compute_bc_geometric(Map& boundary_values, LocalData& data) const;
 
-  // Compute boundary values for facet (pointwise approach)
+  // Compute boundary values dofs (geometrical approach)
+  void compute_bc_dofs_geometric() const;
+
+ // Compute boundary values for facet (pointwise approach)
   void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
 
   // Check if the point is in the same plane as the given facet
-  bool on_facet(const Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>>,
+  bool on_facet(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>,
                 const mesh::Facet& facet) const;
 
   // The function space (possibly a sub function space)
@@ -279,8 +285,8 @@ private:
   // Boundary facets, stored by facet index (local to process)
   std::vector<std::size_t> _facets;
 
-  // Cells attached to boundary, stored by cell index with map to
-  // local dof number
+  // Cells attached to boundary, stored by cell index with map to local
+  // dof number
   mutable std::map<std::size_t, std::vector<std::size_t>> _cells_to_localdofs;
 
   // Local data for application of boundary conditions

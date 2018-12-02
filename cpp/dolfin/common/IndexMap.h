@@ -78,7 +78,7 @@ public:
       return _ghosts[i - local_size];
   }
 
-  /// Owners of ghost entries
+  /// Owner rank of each ghost entry
   const EigenArrayXi32& ghost_owners() const;
 
   /// Get process that owns index (global block index)

@@ -432,6 +432,77 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
+void DirichletBC::compute_bc_dofs_topological() const
+{
+  // // Special case
+  // if (_facets.empty())
+  // {
+  //   if (MPI::size(mesh.mpi_comm()) == 1)
+  //     log::warning("Found no facets matching domain for boundary
+  //     condition.");
+  //   return;
+  // }
+
+  // Get mesh
+  assert(_function_space);
+  assert(_function_space->mesh());
+  const mesh::Mesh& mesh = *_function_space->mesh();
+  const std::size_t tdim = mesh.topology().dim();
+
+  // Get dofmap
+  assert(_function_space->dofmap());
+  const GenericDofMap& dofmap = *_function_space->dofmap();
+
+  // Initialise facet-cell connectivity
+  mesh.init(tdim);
+  mesh.init(tdim - 1, tdim);
+
+  // Coordinate dofs
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
+
+  // Allocate space
+  const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(tdim - 1);
+
+  // Build vector local dofs for each cell facet
+  const mesh::CellType& cell_type = mesh.type();
+  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> facet_dofs;
+  for (std::size_t i = 0; i < cell_type.num_entities(tdim - 1); ++i)
+    facet_dofs.push_back(dofmap.tabulate_entity_closure_dofs(tdim - 1, i));
+
+  // Iterate over marked facets
+  std::vector<PetscInt> bc_dofs;
+  for (std::size_t f = 0; f < _facets.size(); ++f)
+  {
+    // Create facet and attached cell
+    const mesh::Facet facet(mesh, _facets[f]);
+    assert(facet.num_entities(tdim) > 0);
+    const std::size_t cell_index = facet.entities(tdim)[0];
+    const mesh::Cell cell(mesh, cell_index);
+
+    // Get cell dofmap
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
+        = dofmap.cell_dofs(cell.index());
+
+    // Loop over facet dofs
+    const size_t facet_local_index = cell.index(facet);
+    for (std::size_t i = 0; i < num_facet_dofs; i++)
+    {
+      const std::size_t dof_index = cell_dofs[facet_dofs[facet_local_index][i]];
+      bc_dofs.push_back(dof_index);
+    }
+  }
+
+  // FIXME: Send to other (neigbouring) processes, maybe just for shared
+  // dofs?
+
+  std::set<PetscInt> sorted_dofs(bc_dofs.begin(), bc_dofs.end());
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(sorted_dofs.size());
+  std::size_t i = 0;
+  for (PetscInt d : sorted_dofs)
+    dofs[i++] = d;
+}
+//-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_geometric(Map& boundary_values,
                                        LocalData& data) const
 {
@@ -474,7 +545,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
                        : dofmap.ownership_range());
 
   // Topological and geometric dimensions
-  const std::size_t D = mesh.topology().dim();
+  const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
   // Allocate space using cached size
@@ -499,7 +570,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
     const mesh::Facet facet(mesh, _facets[f]);
 
     // Create cell (get first attached cell)
-    const mesh::Cell cell(mesh, facet.entities(D)[0]);
+    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     // const std::size_t local_facet = cell.index(facet);
@@ -567,6 +638,122 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 
   // Store num of bc dofs for better performance next time
   _num_dofs = boundary_values.size();
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::compute_bc_dofs_geometric() const
+{
+  assert(_function_space);
+  assert(_function_space->element());
+  assert(_g);
+
+  // Get mesh
+  assert(_function_space->mesh());
+  const mesh::Mesh& mesh = *_function_space->mesh();
+
+  // Extract the list of facets where the BC *might* be applied
+  // init_facets(mesh.mpi_comm());
+
+  // Special case
+  if (_facets.empty())
+  {
+    if (MPI::size(mesh.mpi_comm()) == 1)
+      log::warning("Found no facets matching domain for boundary condition.");
+    return;
+  }
+
+  // Get dofmap
+  assert(_function_space->dofmap());
+  const GenericDofMap& dofmap = *_function_space->dofmap();
+
+  // Get finite element
+  assert(_function_space->element());
+  const FiniteElement& element = *_function_space->element();
+
+  // Initialize facets, needed for geometric search
+  log::log(TRACE,
+           "Computing facets, needed for geometric application of boundary "
+           "conditions.");
+  mesh.init(mesh.topology().dim() - 1);
+
+  // Speed up the computations by only visiting (most) dofs once
+  common::RangedIndexSet already_visited(
+      dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
+                       : dofmap.ownership_range());
+
+  // Topological and geometric dimensions
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t gdim = mesh.geometry().dim();
+
+  // Get dof coordinates on reference element
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
+      = element.dof_reference_coordinates();
+
+  // Get coordinate mapping
+  if (!mesh.geometry().coord_mapping)
+  {
+    throw std::runtime_error(
+        "CoordinateMapping has not been attached to mesh.");
+  }
+  const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
+
+  // Create vertex coordinate holder
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
+
+  // Coordinates for dofs
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x;
+
+  // Iterate over facets
+  std::vector<PetscInt> bc_dofs;
+  for (std::size_t f = 0; f < _facets.size(); ++f)
+  {
+    // Create facet and attached cell (get first attached cell)
+    const mesh::Facet facet(mesh, _facets[f]);
+    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+
+    // Loop over vertices associated with the facet
+    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(facet))
+    {
+      // Loop the cells associated with the vertex
+      for (auto& c : mesh::EntityRange<mesh::Cell>(vertex))
+      {
+        coordinate_dofs.resize(cell.num_vertices(), gdim);
+        c.get_coordinate_dofs(coordinate_dofs);
+
+        // Tabulate dof coordinates on physical element
+        cmap.compute_physical_coordinates(x, X, coordinate_dofs);
+
+        // Get cell dofmap
+        auto cell_dofs = dofmap.cell_dofs(c.index());
+
+        // Loop over all cell dofs
+        for (int i = 0; i < cell_dofs.size(); ++i)
+        {
+          // Check if the dof coordinate is on current facet
+          if (!on_facet(x.row(i), facet))
+            continue;
+
+          // Skip already checked dofs
+          if (already_visited.in_range(cell_dofs[i])
+              and !already_visited.insert(cell_dofs[i]))
+          {
+            continue;
+          }
+
+          bc_dofs.push_back(cell_dofs[i]);
+        }
+      }
+    }
+  }
+
+  // FIXME: Send to other (neigbouring) processes, maybe just for shared
+  // dofs?
+
+  std::set<PetscInt> sorted_dofs(bc_dofs.begin(), bc_dofs.end());
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(sorted_dofs.size());
+  std::size_t i = 0;
+  for (PetscInt d : sorted_dofs)
+    dofs[i++] = d;
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_pointwise(Map& boundary_values,
@@ -715,12 +902,13 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 }
 //-----------------------------------------------------------------------------
 bool DirichletBC::on_facet(
-    const Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> coordinates,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>> coordinates,
     const mesh::Facet& facet) const
 {
-  // Check if the coordinates are on the same line as the line segment
   if (facet.dim() == 1)
   {
+    // Check if the coordinates are on the same line as the line segment
+
     // Create points
     geometry::Point p(coordinates[0], coordinates[1]);
     const geometry::Point v0
@@ -740,10 +928,11 @@ bool DirichletBC::on_facet(
     else
       return false;
   }
-  // Check if the coordinates are in the same plane as the triangular
-  // facet
   else if (facet.dim() == 2)
   {
+    // Check if the coordinates are in the same plane as the triangular
+    // facet
+
     // Create points
     const geometry::Point p(coordinates[0], coordinates[1], coordinates[2]);
     const geometry::Point v0
@@ -760,8 +949,8 @@ bool DirichletBC::on_facet(
     const geometry::Point vp1 = v1 - p;
     const geometry::Point vp2 = v2 - p;
 
-    // Check if the sum of the area of the sub triangles is equal to
-    // the total area of the facet
+    // Check if the sum of the area of the sub triangles is equal to the
+    // total area of the facet
     if (std::abs(v01.cross(v02).norm() - vp0.cross(vp1).norm()
                  - vp1.cross(vp2).norm() - vp2.cross(vp0).norm())
         < DOLFIN_EPS)
