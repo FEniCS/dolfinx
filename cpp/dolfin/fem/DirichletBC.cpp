@@ -75,7 +75,10 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
-  _dofs = gather(mesh->mpi_comm(), *V->dofmap(), dofs_local);
+  std::set<PetscInt> dofs_remote
+      = gather(mesh->mpi_comm(), *V->dofmap(), dofs_local);
+  std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
+                 dofs_remote.end(), std::back_inserter(_dofs));
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
@@ -114,7 +117,10 @@ DirichletBC::DirichletBC(
   else
     throw std::runtime_error("BC method not yet supported");
 
-  _dofs = gather(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
+  std::set<PetscInt> dofs_remote
+      = gather(mesh.mpi_comm(), *V->dofmap(), dofs_local);
+  std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
+                 dofs_remote.end(), std::back_inserter(_dofs));
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -135,7 +141,10 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
-  _dofs = gather(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
+  std::set<PetscInt> dofs_remote
+      = gather(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
+  std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
+                 dofs_remote.end(), std::back_inserter(_dofs));
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::gather(Map& boundary_values) const
@@ -235,12 +244,14 @@ void DirichletBC::gather(Map& boundary_values) const
   }
 
   boundary_values.insert(_vec.begin(), _vec.end());
+
+  assert(boundary_values.size() == _dofs.size());
 }
 //-----------------------------------------------------------------------------
 template <class T>
-std::vector<PetscInt> DirichletBC::gather(MPI_Comm mpi_comm,
-                                          const GenericDofMap& dofmap,
-                                          const T& dofs)
+std::set<PetscInt> DirichletBC::gather(MPI_Comm mpi_comm,
+                                       const GenericDofMap& dofmap,
+                                       const T& dofs)
 {
   std::size_t comm_size = MPI::size(mpi_comm);
 
@@ -284,21 +295,18 @@ std::vector<PetscInt> DirichletBC::gather(MPI_Comm mpi_comm,
   // boundary_values.reserve(num_dofs);
 
   // Add the received boundary values to the local boundary values
-  std::vector<PetscInt> _vec(received_bvc.size());
-  for (std::size_t i = 0; i < _vec.size(); ++i)
+  std::set<PetscInt> _vec;
+  for (PetscInt index_global : received_bvc)
   {
-    // Global dof index
-    _vec[i] = received_bvc[i];
-
     // Convert to local (process) dof index
-    if (_vec[i] >= n0 and _vec[i] < n1)
+    if (index_global >= n0 and index_global < n1)
     {
       // Case 0: dof is owned by this process
-      _vec[i] = received_bvc[i] - n0;
+      _vec.insert(index_global - n0);
     }
     else
     {
-      const std::imaxdiv_t div = std::imaxdiv(_vec[i], bs);
+      const std::imaxdiv_t div = std::imaxdiv(index_global, bs);
       const std::size_t node = div.quot;
       const int component = div.rem;
 
@@ -317,7 +325,7 @@ std::vector<PetscInt> DirichletBC::gather(MPI_Comm mpi_comm,
       else
       {
         std::size_t pos = std::distance(local_to_global.data(), it);
-        _vec[i] = owned_size + bs * pos + component;
+        _vec.insert(owned_size + bs * pos + component);
       }
     }
   }
@@ -374,6 +382,10 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DirichletBC::dof_indices() const
   for (auto& bc : boundary_values)
     dofs[i++] = bc.first;
 
+  // std::cout << "Check sizes: " << boundary_values.size() << ", " << _dofs.size()
+  //           << std::endl;
+  assert(boundary_values.size() == _dofs.size());
+
   return dofs;
 }
 //-----------------------------------------------------------------------------
@@ -400,6 +412,8 @@ DirichletBC::bcs() const
     indices[i] = bc.first;
     values[i++] = bc.second;
   }
+
+  assert(boundary_values.size() == _dofs.size());
 
   return std::make_pair(std::move(indices), std::move(values));
 }

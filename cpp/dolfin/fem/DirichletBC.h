@@ -204,8 +204,8 @@ public:
   void gather(Map& boundary_values) const;
 
   template <class T>
-  static std::vector<PetscInt>
-  gather(MPI_Comm mpi_comm, const GenericDofMap& dofmap, const T& dofs);
+  static std::set<PetscInt> gather(MPI_Comm mpi_comm,
+                                   const GenericDofMap& dofmap, const T& dofs);
 
   /// Return boundary markers
   ///
