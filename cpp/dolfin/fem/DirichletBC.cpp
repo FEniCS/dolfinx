@@ -200,8 +200,8 @@ void DirichletBC::gather(Map& boundary_values) const
   const std::int64_t owned_size = n1 - n0;
 
   // Reserve space
-  const std::size_t num_dofs = boundary_values.size() + received_bvc0.size();
-  boundary_values.reserve(num_dofs);
+  // const std::size_t num_dofs = boundary_values.size() + received_bvc0.size();
+  //boundary_values.reserve(num_dofs);
 
   // Add the received boundary values to the local boundary values
   std::vector<std::pair<std::int64_t, PetscScalar>> _vec(received_bvc0.size());
@@ -377,6 +377,31 @@ std::pair<Eigen::Array<PetscInt, Eigen::Dynamic, 1>,
           Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
 DirichletBC::bcs() const
 {
+  assert(_function_space);
+  assert(_g);
+  assert(_g->vector());
+  assert(_g->vector()->vec());
+
+  // Unwrap PETSc Vec
+  Vec x_local;
+  VecGhostGetLocalForm(_g->vector()->vec(), &x_local);
+  assert(x_local);
+  PetscScalar const* x_values;
+  VecGetArrayRead(x_local, &x_values);
+
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices(_dofs.size());
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values(_dofs.size());
+  for (std::size_t i = 0; i < _dofs.size(); ++i)
+  {
+    indices[i] = _dofs[i];
+    values[i] = *(x_values + indices[i]);
+  }
+
+  // VecRestoreArrayRead(x_local, &x_values);
+  // VecGhostRestoreLocalForm(_g->vector()->vec(), &x_local);
+
+  // return std::make_pair(std::move(indices), std::move(values));
+
   // FIXME: Optimise this operation, and consider caching
   Map boundary_values;
   get_boundary_values(boundary_values);
@@ -388,18 +413,31 @@ DirichletBC::bcs() const
       and this->method() != DirichletBC::Method::pointwise)
     this->gather(boundary_values);
 
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices(boundary_values.size());
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values(boundary_values.size());
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _indices(boundary_values.size());
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> _values(boundary_values.size());
   std::size_t i = 0;
   for (auto& bc : boundary_values)
   {
-    indices[i] = bc.first;
-    values[i++] = bc.second;
+    _indices[i] = bc.first;
+    _values[i++] = bc.second;
   }
 
   assert(boundary_values.size() == _dofs.size());
 
-  return std::make_pair(std::move(indices), std::move(values));
+  std::cout << "Check 0 " << std::endl;
+  for (std::size_t i = 0; i < _dofs.size(); ++i)
+  {
+    std::cout << indices[i] << ", " << _indices[i] << std::endl;
+  }
+  std::cout << "Check 1 " << std::endl;
+  for (std::size_t i = 0; i < _dofs.size(); ++i)
+  {
+    std::cout << values[i] << ", " << _values[i] << std::endl;
+  }
+  // std::cout << _indices << std::endl;
+  // std::cout << indices << std::endl;
+
+  return std::make_pair(std::move(_indices), std::move(_values));
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::check_data() const
@@ -501,8 +539,8 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 
   // Allocate space
   const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(D - 1);
-  boundary_values.reserve(boundary_values.size()
-                          + _facets.size() * num_facet_dofs);
+  // boundary_values.reserve(boundary_values.size()
+  //                         + _facets.size() * num_facet_dofs);
 
   // Build local dofs for each facet
   const mesh::CellType& cell_type = mesh.type();
@@ -663,8 +701,8 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   const std::size_t gdim = mesh.geometry().dim();
 
   // Allocate space using cached size
-  if (_num_dofs > 0)
-    boundary_values.reserve(boundary_values.size() + _num_dofs);
+  // if (_num_dofs > 0)
+  //   boundary_values.reserve(boundary_values.size() + _num_dofs);
 
   // Get dof coordinates on reference element
   const EigenRowArrayXXd& X = element.dof_reference_coordinates();

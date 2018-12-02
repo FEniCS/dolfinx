@@ -16,7 +16,7 @@ import ufl
 from ufl import dx, inner
 
 
-def test_assemble_functional():
+def xtest_assemble_functional():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
 
     M = 1.0 * dx(domain=mesh)
@@ -28,7 +28,7 @@ def test_assemble_functional():
     assert value == pytest.approx(0.5, 1e-12)
 
 
-def test_basic_assembly():
+def xtest_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
@@ -75,6 +75,7 @@ def test_matrix_assembly_block():
 
     u_bc = dolfin.function.Function(V1)
     u_bc.vector().set(50.0)
+    u_bc.vector().update_ghosts()
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
@@ -138,6 +139,9 @@ def test_matrix_assembly_block():
     except AttributeError:
         print("Recent petsc4py(-dev) required to get MatNest sub-matrix.")
 
+
+    print("---------------------------------------------")
+
     # Monolithic version
     E = P0 * P1
     W = dolfin.function.functionspace.FunctionSpace(mesh, E)
@@ -148,6 +152,8 @@ def test_matrix_assembly_block():
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
+    u_bc.vector().vec().view()
+
     A2 = dolfin.fem.assemble_matrix([[a]], [bc],
                                     dolfin.cpp.fem.BlockType.monolithic)
     b2 = dolfin.fem.assemble_vector([L], [[a]], [bc],

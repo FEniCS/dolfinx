@@ -102,7 +102,8 @@ class DirichletBC : public common::Variable
 
 public:
   /// map type used by DirichletBC
-  typedef std::unordered_map<std::size_t, PetscScalar> Map;
+  // typedef std::unordered_map<std::size_t, PetscScalar> Map;
+  typedef std::map<std::size_t, PetscScalar> Map;
 
   /// Method of boundary condition application
   enum class Method
