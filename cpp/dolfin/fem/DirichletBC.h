@@ -139,12 +139,11 @@ public:
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::Function> g,
-              std::pair<std::weak_ptr<const mesh::MeshFunction<std::size_t>>,
-                        std::size_t>
-                  sub_domain,
-              Method method = Method::topological);
+  DirichletBC(
+      std::shared_ptr<const function::FunctionSpace> V,
+      std::shared_ptr<const function::Function> g,
+      std::pair<const mesh::MeshFunction<std::size_t>*, std::size_t> sub_domain,
+      Method method = Method::topological);
 
   /// Create boundary condition for subdomain by boundary markers
   /// (cells, local facet numbers)

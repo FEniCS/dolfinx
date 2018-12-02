@@ -78,8 +78,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::Function> g,
-    std::pair<std::weak_ptr<const mesh::MeshFunction<std::size_t>>, std::size_t>
-        sub_domain,
+    std::pair<const mesh::MeshFunction<std::size_t>*, std::size_t> sub_domain,
     Method method)
     : _function_space(V), _g(g), _method(method), _num_dofs(0)
 {
@@ -95,12 +94,12 @@ DirichletBC::DirichletBC(
   mesh.init(D - 1, D);
 
   // Build set of boundary facets
-  assert(!sub_domain.first.expired());
-  auto domain = sub_domain.first.lock();
+  assert(sub_domain.first);
+  const mesh::MeshFunction<std::size_t>& domain = *sub_domain.first;
   const std::size_t index = sub_domain.second;
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
-    if ((*domain)[facet] == index)
+    if (domain[facet] == index)
       _facets.push_back(facet.index());
   }
 
