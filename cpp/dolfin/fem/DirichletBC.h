@@ -255,20 +255,25 @@ private:
   void compute_bc_topological(Map& boundary_values, LocalData& data) const;
 
   // Compute boundary value dofs (topological approach)
-  void compute_bc_dofs_topological() const;
+  static Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+  compute_bc_dofs_topological(const function::FunctionSpace& V,
+                              const std::vector<std::size_t>& facets);
 
   // Compute boundary values for facet (geometrical approach)
   void compute_bc_geometric(Map& boundary_values, LocalData& data) const;
 
   // Compute boundary values dofs (geometrical approach)
-  void compute_bc_dofs_geometric() const;
+  static Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+  compute_bc_dofs_geometric(const function::FunctionSpace& V,
+                            const std::vector<std::size_t>& facets);
 
- // Compute boundary values for facet (pointwise approach)
+  // Compute boundary values for facet (pointwise approach)
   void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
 
   // Check if the point is in the same plane as the given facet
-  bool on_facet(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>,
-                const mesh::Facet& facet) const;
+  static bool
+  on_facet(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>,
+           const mesh::Facet& facet);
 
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
@@ -307,6 +312,7 @@ private:
   //  New
   Eigen::Array<bool, Eigen::Dynamic, 1> _dof_cells;
   Eigen::Array<bool, Eigen::Dynamic, 1> _dof_facets;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs;
 };
 } // namespace fem
 } // namespace dolfin

@@ -66,6 +66,13 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     if (domain[facet] == 0)
       _facets.push_back(facet.index());
   }
+
+  if (method == Method::topological)
+    _dofs = compute_bc_dofs_topological(*V, _facets);
+  else if (method == Method::geometric)
+    _dofs = compute_bc_dofs_geometric(*V, _facets);
+  else
+    throw std::runtime_error("BC method not yet supported");
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
@@ -96,6 +103,13 @@ DirichletBC::DirichletBC(
     if ((*domain)[facet] == index)
       _facets.push_back(facet.index());
   }
+
+  if (method == Method::topological)
+    _dofs = compute_bc_dofs_topological(*V, _facets);
+  else if (method == Method::geometric)
+    _dofs = compute_bc_dofs_geometric(*V, _facets);
+  else
+    throw std::runtime_error("BC method not yet supported");
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -106,6 +120,14 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       _facets(facet_indices)
 {
   check_data();
+
+  assert(V);
+  if (method == Method::topological)
+    _dofs = compute_bc_dofs_topological(*V, _facets);
+  else if (method == Method::geometric)
+    _dofs = compute_bc_dofs_geometric(*V, _facets);
+  else
+    throw std::runtime_error("BC method not yet supported");
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::gather(Map& boundary_values) const
@@ -432,7 +454,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::compute_bc_dofs_topological() const
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+DirichletBC::compute_bc_dofs_topological(const function::FunctionSpace& V,
+                                         const std::vector<std::size_t>& facets)
 {
   // // Special case
   // if (_facets.empty())
@@ -444,14 +468,13 @@ void DirichletBC::compute_bc_dofs_topological() const
   // }
 
   // Get mesh
-  assert(_function_space);
-  assert(_function_space->mesh());
-  const mesh::Mesh& mesh = *_function_space->mesh();
+  assert(V.mesh());
+  const mesh::Mesh& mesh = *V.mesh();
   const std::size_t tdim = mesh.topology().dim();
 
   // Get dofmap
-  assert(_function_space->dofmap());
-  const GenericDofMap& dofmap = *_function_space->dofmap();
+  assert(V.dofmap());
+  const GenericDofMap& dofmap = *V.dofmap();
 
   // Initialise facet-cell connectivity
   mesh.init(tdim);
@@ -472,10 +495,10 @@ void DirichletBC::compute_bc_dofs_topological() const
 
   // Iterate over marked facets
   std::vector<PetscInt> bc_dofs;
-  for (std::size_t f = 0; f < _facets.size(); ++f)
+  for (std::size_t f = 0; f < facets.size(); ++f)
   {
     // Create facet and attached cell
-    const mesh::Facet facet(mesh, _facets[f]);
+    const mesh::Facet facet(mesh, facets[f]);
     assert(facet.num_entities(tdim) > 0);
     const std::size_t cell_index = facet.entities(tdim)[0];
     const mesh::Cell cell(mesh, cell_index);
@@ -501,6 +524,8 @@ void DirichletBC::compute_bc_dofs_topological() const
   std::size_t i = 0;
   for (PetscInt d : sorted_dofs)
     dofs[i++] = d;
+
+  return dofs;
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_geometric(Map& boundary_values,
@@ -640,34 +665,35 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::compute_bc_dofs_geometric() const
+Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
+                                       const std::vector<std::size_t>& facets)
 {
-  assert(_function_space);
-  assert(_function_space->element());
-  assert(_g);
+  assert(V.element());
 
   // Get mesh
-  assert(_function_space->mesh());
-  const mesh::Mesh& mesh = *_function_space->mesh();
+  assert(V.mesh());
+  const mesh::Mesh& mesh = *V.mesh();
 
   // Extract the list of facets where the BC *might* be applied
   // init_facets(mesh.mpi_comm());
 
   // Special case
-  if (_facets.empty())
-  {
-    if (MPI::size(mesh.mpi_comm()) == 1)
-      log::warning("Found no facets matching domain for boundary condition.");
-    return;
-  }
+  // if (_facets.empty())
+  // {
+  //   if (MPI::size(mesh.mpi_comm()) == 1)
+  //     log::warning("Found no facets matching domain for boundary
+  //     condition.");
+  //   return;
+  // }
 
   // Get dofmap
-  assert(_function_space->dofmap());
-  const GenericDofMap& dofmap = *_function_space->dofmap();
+  assert(V.dofmap());
+  const GenericDofMap& dofmap = *V.dofmap();
 
   // Get finite element
-  assert(_function_space->element());
-  const FiniteElement& element = *_function_space->element();
+  assert(V.element());
+  const FiniteElement& element = *V.element();
 
   // Initialize facets, needed for geometric search
   log::log(TRACE,
@@ -705,10 +731,10 @@ void DirichletBC::compute_bc_dofs_geometric() const
 
   // Iterate over facets
   std::vector<PetscInt> bc_dofs;
-  for (std::size_t f = 0; f < _facets.size(); ++f)
+  for (std::size_t f = 0; f < facets.size(); ++f)
   {
     // Create facet and attached cell (get first attached cell)
-    const mesh::Facet facet(mesh, _facets[f]);
+    const mesh::Facet facet(mesh, facets[f]);
     const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
     // Loop over vertices associated with the facet
@@ -754,6 +780,8 @@ void DirichletBC::compute_bc_dofs_geometric() const
   std::size_t i = 0;
   for (PetscInt d : sorted_dofs)
     dofs[i++] = d;
+
+  return dofs;
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_pointwise(Map& boundary_values,
@@ -903,7 +931,7 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 //-----------------------------------------------------------------------------
 bool DirichletBC::on_facet(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>> coordinates,
-    const mesh::Facet& facet) const
+    const mesh::Facet& facet)
 {
   if (facet.dim() == 1)
   {
