@@ -189,7 +189,7 @@ as follows:
 
      // Define boundary condition
      auto u0 = std::make_shared<function::Function>(V);
-     auto boundary = std::make_shared<DirichletBoundary>();
+     DirichletBoundary boundary;;
      std::vector<std::shared_ptr<const fem:: DirichletBC>> bc
       = {std::make_shared<fem::DirichletBC>(V, u0, boundary)};
 
