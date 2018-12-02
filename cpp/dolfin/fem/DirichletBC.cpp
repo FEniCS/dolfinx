@@ -67,12 +67,15 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       _facets.push_back(facet.index());
   }
 
+  std::set<PetscInt> dofs_local;
   if (method == Method::topological)
-    _dofs = compute_bc_dofs_topological(*V, _facets);
+    dofs_local = compute_bc_dofs_topological(*V, _facets);
   else if (method == Method::geometric)
-    _dofs = compute_bc_dofs_geometric(*V, _facets);
+    dofs_local = compute_bc_dofs_geometric(*V, _facets);
   else
     throw std::runtime_error("BC method not yet supported");
+
+  _dofs = gather(mesh->mpi_comm(), *V->dofmap(), dofs_local);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
@@ -103,12 +106,15 @@ DirichletBC::DirichletBC(
       _facets.push_back(facet.index());
   }
 
+  std::set<PetscInt> dofs_local;
   if (method == Method::topological)
-    _dofs = compute_bc_dofs_topological(*V, _facets);
+    dofs_local = compute_bc_dofs_topological(*V, _facets);
   else if (method == Method::geometric)
-    _dofs = compute_bc_dofs_geometric(*V, _facets);
+    dofs_local = compute_bc_dofs_geometric(*V, _facets);
   else
     throw std::runtime_error("BC method not yet supported");
+
+  _dofs = gather(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -121,12 +127,15 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   check_data();
 
   assert(V);
+  std::set<PetscInt> dofs_local;
   if (method == Method::topological)
-    _dofs = compute_bc_dofs_topological(*V, _facets);
+    dofs_local = compute_bc_dofs_topological(*V, _facets);
   else if (method == Method::geometric)
-    _dofs = compute_bc_dofs_geometric(*V, _facets);
+    dofs_local = compute_bc_dofs_geometric(*V, _facets);
   else
     throw std::runtime_error("BC method not yet supported");
+
+  _dofs = gather(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::gather(Map& boundary_values) const
@@ -226,6 +235,95 @@ void DirichletBC::gather(Map& boundary_values) const
   }
 
   boundary_values.insert(_vec.begin(), _vec.end());
+}
+//-----------------------------------------------------------------------------
+template <class T>
+std::vector<PetscInt> DirichletBC::gather(MPI_Comm mpi_comm,
+                                          const GenericDofMap& dofmap,
+                                          const T& dofs)
+{
+  std::size_t comm_size = MPI::size(mpi_comm);
+
+  const auto& shared_nodes = dofmap.shared_nodes();
+  const int bs = dofmap.block_size();
+  assert(dofmap.index_map());
+
+  // Create list of boundary values to send to each processor
+  std::vector<std::vector<PetscInt>> proc_map(comm_size);
+  for (PetscInt dof : dofs)
+  {
+    // If the boundary value is attached to a shared dof, add it to the
+    // list of boundary values for each of the processors that share it
+    const std::div_t div = std::div(dof, bs);
+    const int component = div.rem;
+    const int node_index = div.quot;
+
+    auto shared_node = shared_nodes.find(node_index);
+    if (shared_node != shared_nodes.end())
+    {
+      for (auto proc = shared_node->second.begin();
+           proc != shared_node->second.end(); ++proc)
+      {
+        const std::size_t global_node
+            = dofmap.index_map()->local_to_global(node_index);
+        proc_map[*proc].push_back(bs * global_node + component);
+      }
+    }
+  }
+
+  // Distribute the lists between neighbours
+  std::vector<PetscInt> received_bvc;
+  MPI::all_to_all(mpi_comm, proc_map, received_bvc);
+
+  const std::int64_t n0 = dofmap.ownership_range()[0];
+  const std::int64_t n1 = dofmap.ownership_range()[1];
+  const std::int64_t owned_size = n1 - n0;
+
+  // Reserve space
+  // const std::size_t num_dofs = boundary_values.size() + received_bvc0.size();
+  // boundary_values.reserve(num_dofs);
+
+  // Add the received boundary values to the local boundary values
+  std::vector<PetscInt> _vec(received_bvc.size());
+  for (std::size_t i = 0; i < _vec.size(); ++i)
+  {
+    // Global dof index
+    _vec[i] = received_bvc[i];
+
+    // Convert to local (process) dof index
+    if (_vec[i] >= n0 and _vec[i] < n1)
+    {
+      // Case 0: dof is owned by this process
+      _vec[i] = received_bvc[i] - n0;
+    }
+    else
+    {
+      const std::imaxdiv_t div = std::imaxdiv(_vec[i], bs);
+      const std::size_t node = div.quot;
+      const int component = div.rem;
+
+      // Get local-to-global for ghost blocks
+      const auto& local_to_global = dofmap.index_map()->ghosts();
+
+      // Case 1: dof is not owned by this process
+      auto it
+          = std::find(local_to_global.data(),
+                      local_to_global.data() + local_to_global.size(), node);
+      if (it == (local_to_global.data() + local_to_global.size()))
+      {
+        throw std::runtime_error(
+            "Cannot find dof in local_to_global_unowned array");
+      }
+      else
+      {
+        std::size_t pos = std::distance(local_to_global.data(), it);
+        _vec[i] = owned_size + bs * pos + component;
+      }
+    }
+  }
+
+  // boundary_values.insert(_vec.begin(), _vec.end());
+  return _vec;
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::get_boundary_values(Map& boundary_values) const
@@ -453,7 +551,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+std::set<PetscInt>
 DirichletBC::compute_bc_dofs_topological(const function::FunctionSpace& V,
                                          const std::vector<std::size_t>& facets)
 {
@@ -518,13 +616,7 @@ DirichletBC::compute_bc_dofs_topological(const function::FunctionSpace& V,
   // FIXME: Send to other (neigbouring) processes, maybe just for shared
   // dofs?
 
-  std::set<PetscInt> sorted_dofs(bc_dofs.begin(), bc_dofs.end());
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(sorted_dofs.size());
-  std::size_t i = 0;
-  for (PetscInt d : sorted_dofs)
-    dofs[i++] = d;
-
-  return dofs;
+  return std::set<PetscInt>(bc_dofs.begin(), bc_dofs.end());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_geometric(Map& boundary_values,
@@ -664,7 +756,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+std::set<PetscInt>
 DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
                                        const std::vector<std::size_t>& facets)
 {
@@ -774,13 +866,7 @@ DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
   // FIXME: Send to other (neigbouring) processes, maybe just for shared
   // dofs?
 
-  std::set<PetscInt> sorted_dofs(bc_dofs.begin(), bc_dofs.end());
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(sorted_dofs.size());
-  std::size_t i = 0;
-  for (PetscInt d : sorted_dofs)
-    dofs[i++] = d;
-
-  return dofs;
+  return std::set<PetscInt>(bc_dofs.begin(), bc_dofs.end());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_pointwise(Map& boundary_values,

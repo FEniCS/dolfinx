@@ -33,6 +33,7 @@ class SubDomain;
 
 namespace fem
 {
+class GenericDofMap;
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
 
@@ -102,6 +103,7 @@ class DirichletBC : public common::Variable
 public:
   /// map type used by DirichletBC
   typedef std::unordered_map<std::size_t, PetscScalar> Map;
+
   /// Method of boundary condition application
   enum class Method
   {
@@ -201,6 +203,10 @@ public:
   ///         Map from dof to boundary value.
   void gather(Map& boundary_values) const;
 
+  template <class T>
+  static std::vector<PetscInt>
+  gather(MPI_Comm mpi_comm, const GenericDofMap& dofmap, const T& dofs);
+
   /// Return boundary markers
   ///
   /// @return std::vector<std::size_t>&
@@ -254,7 +260,7 @@ private:
   void compute_bc_topological(Map& boundary_values, LocalData& data) const;
 
   // Compute boundary value dofs (topological approach)
-  static Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+  static std::set<PetscInt>
   compute_bc_dofs_topological(const function::FunctionSpace& V,
                               const std::vector<std::size_t>& facets);
 
@@ -262,7 +268,7 @@ private:
   void compute_bc_geometric(Map& boundary_values, LocalData& data) const;
 
   // Compute boundary values dofs (geometrical approach)
-  static Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+  static std::set<PetscInt>
   compute_bc_dofs_geometric(const function::FunctionSpace& V,
                             const std::vector<std::size_t>& facets);
 
@@ -311,7 +317,8 @@ private:
   //  New
   Eigen::Array<bool, Eigen::Dynamic, 1> _dof_cells;
   Eigen::Array<bool, Eigen::Dynamic, 1> _dof_facets;
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs;
+  // Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs;
+  std::vector<PetscInt> _dofs;
 };
 } // namespace fem
 } // namespace dolfin
