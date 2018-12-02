@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -7,11 +7,10 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/types.h>
 #include <map>
 #include <memory>
+#include <petscsys.h>
 #include <unordered_map>
 #include <utility>
 
@@ -262,7 +261,8 @@ private:
   void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
 
   // Check if the point is in the same plane as the given facet
-  bool on_facet(const Eigen::Ref<EigenArrayXd>, const mesh::Facet& facet) const;
+  bool on_facet(const Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>>,
+                const mesh::Facet& facet) const;
 
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
@@ -294,7 +294,8 @@ private:
     std::vector<PetscScalar> w;
 
     // Coordinates for dofs
-    EigenRowArrayXXd coordinates;
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        coordinates;
   };
 
   //  New

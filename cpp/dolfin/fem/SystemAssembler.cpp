@@ -336,7 +336,8 @@ void SystemAssembler::cell_wise_assembly(
   la::PETScVector* b = tensors.second;
 
   // Iterate over all cells
-  EigenRowArrayXXd coordinate_dofs;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
@@ -557,7 +558,9 @@ void SystemAssembler::facet_wise_assembly(
   la::PETScVector* b = tensors.second;
 
   // Iterate over facets
-  std::array<EigenRowArrayXXd, 2> coordinate_dofs;
+  std::array<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>, 2>
+      coordinate_dofs;
 
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
@@ -851,7 +854,8 @@ void SystemAssembler::facet_wise_assembly(
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_exterior_facet_tensor(
     std::array<std::vector<PetscScalar>, 2>& Ae, std::array<UFC*, 2>& ufc,
-    EigenRowArrayXXd& coordinate_dofs,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
     const mesh::Facet& facet,
@@ -907,7 +911,10 @@ void SystemAssembler::compute_exterior_facet_tensor(
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_interior_facet_tensor(
-    std::array<UFC*, 2>& ufc, std::array<EigenRowArrayXXd, 2>& coordinate_dofs,
+    std::array<UFC*, 2>& ufc,
+    std::array<
+        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+        2>& coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet,
     const std::array<mesh::Cell, 2>& cell,

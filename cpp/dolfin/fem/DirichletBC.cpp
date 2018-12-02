@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -27,7 +27,6 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <map>
-#include <string>
 #include <utility>
 
 using namespace dolfin;
@@ -244,7 +243,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DirichletBC::dof_indices() const
   Map boundary_values;
   get_boundary_values(boundary_values);
 
-  // FIXMEL Eliminate comm
+  // FIXME: Eliminate comm
   assert(_function_space->mesh());
   MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
   if (MPI::size(mpi_comm) > 1
@@ -267,7 +266,7 @@ DirichletBC::bcs() const
   Map boundary_values;
   get_boundary_values(boundary_values);
 
-  // FIXMEL Eliminate comm
+  // FIXME: Eliminate comm
   assert(_function_space->mesh());
   MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
   if (MPI::size(mpi_comm) > 1
@@ -359,9 +358,6 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
-  // Extract the list of facets where the BC should be applied
-  // init_facets(mesh.mpi_comm());
-
   // Special case
   if (_facets.empty())
   {
@@ -383,7 +379,8 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   mesh.init(D - 1, D);
 
   // Coordinate dofs
-  EigenRowArrayXXd coordinate_dofs;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
 
   // Allocate space
   const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(D - 1);
@@ -717,8 +714,9 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   // _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
-bool DirichletBC::on_facet(const Eigen::Ref<EigenArrayXd> coordinates,
-                           const mesh::Facet& facet) const
+bool DirichletBC::on_facet(
+    const Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> coordinates,
+    const mesh::Facet& facet) const
 {
   // Check if the coordinates are on the same line as the line segment
   if (facet.dim() == 1)
