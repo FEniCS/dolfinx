@@ -76,9 +76,7 @@ DirichletBC::DirichletBC(
               std::size_t>
         sub_domain,
     Method method)
-    : _function_space(V), _g(g), _method(method), _num_dofs(0),
-      _user_mesh_function(sub_domain.first),
-      _user_sub_domain_marker(sub_domain.second)
+    : _function_space(V), _g(g), _method(method), _num_dofs(0)
 {
   check_data();
 
@@ -107,7 +105,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          const std::vector<std::size_t>& facet_indices,
                          Method method)
     : _function_space(V), _g(g), _method(method), _num_dofs(0),
-      _facets(facet_indices), _user_sub_domain_marker(0)
+      _facets(facet_indices)
 {
   check_data();
 }
@@ -331,92 +329,30 @@ void DirichletBC::check_data() const
   }
 
   // Check user supplied mesh::MeshFunction
-  if (_user_mesh_function)
-  {
-    // Check that mesh::Meshfunction is initialised
-    if (!_user_mesh_function->mesh())
-      throw std::runtime_error("User mesh::MeshFunction is not initialized");
-
-    // Check that mesh::Meshfunction is a mesh::FacetFunction
-    const std::size_t tdim = _user_mesh_function->mesh()->topology().dim();
-    if (_user_mesh_function->dim() != tdim - 1)
-    {
-      throw std::runtime_error("User mesh::MeshFunction is not a facet "
-                               "mesh::MeshFunction (dimension is wrong)");
-    }
-
-    // Check that mesh::Meshfunction and function::FunctionSpace meshes match
-    assert(_function_space->mesh());
-    if (_user_mesh_function->mesh()->id() != _function_space->mesh()->id())
-    {
-      throw std::runtime_error("User mesh::MeshFunction and "
-                               "function::FunctionSpace meshes are different");
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::init_facets(const MPI_Comm mpi_comm) const
-{
-  common::Timer timer("DirichletBC init facets");
-
-  if (MPI::max(mpi_comm, _facets.size()) > 0)
-    return;
-
-  // if (_user_sub_domain)
+  // if (_user_mesh_function)
   // {
-  //   // init_from_sub_domain(_user_sub_domain);
+  //   // Check that mesh::Meshfunction is initialised
+  //   if (!_user_mesh_function->mesh())
+  //     throw std::runtime_error("User mesh::MeshFunction is not initialized");
+
+  //   // Check that mesh::Meshfunction is a mesh::FacetFunction
+  //   const std::size_t tdim = _user_mesh_function->mesh()->topology().dim();
+  //   if (_user_mesh_function->dim() != tdim - 1)
+  //   {
+  //     throw std::runtime_error("User mesh::MeshFunction is not a facet "
+  //                              "mesh::MeshFunction (dimension is wrong)");
+  //   }
+
+  //   // Check that mesh::Meshfunction and function::FunctionSpace meshes match
+  //   assert(_function_space->mesh());
+  //   if (_user_mesh_function->mesh()->id() != _function_space->mesh()->id())
+  //   {
+  //     throw std::runtime_error("User mesh::MeshFunction and "
+  //                              "function::FunctionSpace meshes are
+  //                              different");
+  //   }
   // }
-  // else if (_user_mesh_function)
-  //   init_from_mesh_function(*_user_mesh_function, _user_sub_domain_marker);
 }
-//-----------------------------------------------------------------------------
-// void DirichletBC::init_from_sub_domain(
-//     std::shared_ptr<const mesh::SubDomain> sub_domain) const
-// {
-//   assert(_facets.empty());
-
-//   // FIXME: This can be made more efficient, we should be able to
-//   // FIXME: extract the facets without first creating a mesh::MeshFunction on
-//   // FIXME: the entire mesh and then extracting the subset. This is done
-//   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
-
-//   assert(_function_space->mesh());
-//   std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
-//   assert(mesh);
-
-//   // Create mesh function for sub domain markers on facets and mark
-//   // all facet as subdomain 1
-//   const std::size_t dim = mesh->topology().dim();
-//   _function_space->mesh()->init(dim - 1);
-//   mesh::MeshFunction<std::size_t> sub_domains(mesh, dim - 1, 1);
-
-//   // Mark the sub domain as sub domain 0
-//   sub_domain->mark(sub_domains, (std::size_t)0, _check_midpoint);
-
-//   // Initialize from mesh function
-//   init_from_mesh_function(sub_domains, 0);
-// }
-//-----------------------------------------------------------------------------
-// void DirichletBC::init_from_mesh_function(
-//     const mesh::MeshFunction<std::size_t>& sub_domains,
-//     std::size_t sub_domain) const
-// {
-//   // Get mesh
-//   assert(_function_space->mesh());
-//   const mesh::Mesh& mesh = *_function_space->mesh();
-
-//   // Make sure we have the facet - cell connectivity
-//   const std::size_t D = mesh.topology().dim();
-//   mesh.init(D - 1, D);
-
-//   // Build set of boundary facets
-//   assert(_facets.empty());
-//   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
-//   {
-//     if (sub_domains[facet] == sub_domain)
-//       _facets.push_back(facet.index());
-//   }
-// }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_topological(Map& boundary_values,
                                          LocalData& data) const
@@ -429,7 +365,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Extract the list of facets where the BC should be applied
-  init_facets(mesh.mpi_comm());
+  // init_facets(mesh.mpi_comm());
 
   // Special case
   if (_facets.empty())
@@ -516,7 +452,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Extract the list of facets where the BC *might* be applied
-  init_facets(mesh.mpi_comm());
+  // init_facets(mesh.mpi_comm());
 
   // Special case
   if (_facets.empty())

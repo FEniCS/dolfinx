@@ -268,18 +268,6 @@ private:
   // Check input data to constructor
   void check_data() const;
 
-  // Initialize facets (from sub domain, mesh, etc)
-  void init_facets(const MPI_Comm mpi_comm) const;
-
-  // Initialize sub domain markers from sub domain
-  // void
-  // init_from_sub_domain(std::shared_ptr<const mesh::SubDomain> sub_domain) const;
-
-  // Initialize sub domain markers from mesh::MeshFunction
-  // void
-  // init_from_mesh_function(const mesh::MeshFunction<std::size_t>& sub_domains,
-  //                         std::size_t sub_domain) const;
-
   // Compute boundary values for facet (topological approach)
   void compute_bc_topological(Map& boundary_values, LocalData& data) const;
 
@@ -313,9 +301,6 @@ private:
   // Cells attached to boundary, stored by cell index with map to
   // local dof number
   mutable std::map<std::size_t, std::vector<std::size_t>> _cells_to_localdofs;
-
-  // User defined mesh function
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> _user_mesh_function;
 
   // User defined sub domain marker for mesh or mesh function
   std::size_t _user_sub_domain_marker;
