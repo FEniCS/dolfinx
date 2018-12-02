@@ -112,8 +112,8 @@ public:
     if (!b)
     {
       std::cout << "First computation of b." << std::endl;
-      b = std::make_unique<la::PETScVector>(
-          assemble({_l.get()}, {{_j}}, _bcs, &x, fem::BlockType::monolithic, -1.0));
+      b = std::make_unique<la::PETScVector>(assemble(
+          {_l.get()}, {{_j}}, _bcs, &x, fem::BlockType::monolithic, -1.0));
       std::cout << "Post first computation of b." << std::endl;
     }
     else
@@ -182,8 +182,8 @@ int main(int argc, char* argv[])
           std::shared_ptr<ufc_dofmap>(space->dofmap()), *mesh));
 
   // Define Dirichlet boundaries
-  auto left = std::make_shared<Left>();
-  auto right = std::make_shared<Right>();
+  Left left;
+  Right right;
 
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
