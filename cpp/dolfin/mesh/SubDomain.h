@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
-#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshGeometry.h>
 #include <map>

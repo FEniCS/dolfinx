@@ -36,17 +36,17 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
-                         std::shared_ptr<const mesh::SubDomain> sub_domain,
-                         Method method, bool check_midpoint)
-    : _function_space(V), _g(g), _method(method), _user_sub_domain(sub_domain),
-      _num_dofs(0)
+                         const mesh::SubDomain& sub_domain, Method method,
+                         bool check_midpoint)
+    : _function_space(V), _g(g), _method(method), _num_dofs(0)
 {
   check_data();
 
   // FIXME: This can be made more efficient, we should be able to
-  // FIXME: extract the facets without first creating a mesh::MeshFunction on
-  // FIXME: the entire mesh and then extracting the subset. This is done
-  // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
+  //        extract the facets without first creating a
+  //        mesh::MeshFunction on the entire mesh and then extracting
+  //        the subset. This is done mainly for convenience (we may
+  //        reuse mark() in SubDomain).
 
   assert(V);
   std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
@@ -59,7 +59,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   mesh::MeshFunction<std::size_t> domain(mesh, dim - 1, 1);
 
   // Mark the sub domain as sub domain 0
-  sub_domain->mark(domain, (std::size_t)0, check_midpoint);
+  sub_domain.mark(domain, (std::size_t)0, check_midpoint);
 
   // Build set of boundary facets
   for (auto& facet : mesh::MeshRange<mesh::Facet>(*mesh))
@@ -72,8 +72,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 DirichletBC::DirichletBC(
     std::shared_ptr<const function::FunctionSpace> V,
     std::shared_ptr<const function::Function> g,
-    std::pair<std::shared_ptr<const mesh::MeshFunction<std::size_t>>,
-              std::size_t>
+    std::pair<std::weak_ptr<const mesh::MeshFunction<std::size_t>>, std::size_t>
         sub_domain,
     Method method)
     : _function_space(V), _g(g), _method(method), _num_dofs(0)
@@ -90,12 +89,12 @@ DirichletBC::DirichletBC(
   mesh.init(D - 1, D);
 
   // Build set of boundary facets
-  assert(sub_domain.first);
-  const mesh::MeshFunction<std::size_t>& domain = *sub_domain.first;
+  assert(!sub_domain.first.expired());
+  auto domain = sub_domain.first.lock();
   const std::size_t index = sub_domain.second;
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
-    if (domain[facet] == index)
+    if ((*domain)[facet] == index)
       _facets.push_back(facet.index());
   }
 }
@@ -226,19 +225,15 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
 //-----------------------------------------------------------------------------
 const std::vector<std::size_t>& DirichletBC::markers() const { return _facets; }
 //-----------------------------------------------------------------------------
+std::shared_ptr<const function::FunctionSpace>
+DirichletBC::function_space() const
+{
+  return _function_space;
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<const function::Function> DirichletBC::value() const
 {
   return _g;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::SubDomain> DirichletBC::user_sub_domain() const
-{
-  return _user_sub_domain;
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::set_value(std::shared_ptr<const function::Function> g)
-{
-  _g = g;
 }
 //-----------------------------------------------------------------------------
 DirichletBC::Method DirichletBC::method() const { return _method; }
@@ -580,142 +575,146 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 void DirichletBC::compute_bc_pointwise(Map& boundary_values,
                                        LocalData& data) const
 {
-  if (!_user_sub_domain)
-    throw std::runtime_error("A SubDomain is required for pointwise search");
+  throw std::runtime_error(
+      "DirichletBC::compute_bc_pointwise has not yet been updated.");
+  // if (!_user_sub_domain)
+  //   throw std::runtime_error("A SubDomain is required for pointwise search");
 
-  assert(_g);
+  // assert(_g);
 
-  // Get mesh, dofmap and element
-  assert(_function_space);
-  assert(_function_space->dofmap());
-  assert(_function_space->element());
-  assert(_function_space->mesh());
-  const GenericDofMap& dofmap = *_function_space->dofmap();
-  const FiniteElement& element = *_function_space->element();
-  const mesh::Mesh& mesh = *_function_space->mesh();
-  const std::size_t gdim = mesh.geometry().dim();
+  // // Get mesh, dofmap and element
+  // assert(_function_space);
+  // assert(_function_space->dofmap());
+  // assert(_function_space->element());
+  // assert(_function_space->mesh());
+  // const GenericDofMap& dofmap = *_function_space->dofmap();
+  // const FiniteElement& element = *_function_space->element();
+  // const mesh::Mesh& mesh = *_function_space->mesh();
+  // const std::size_t gdim = mesh.geometry().dim();
 
-  // Speed up the computations by only visiting (most) dofs once
-  common::RangedIndexSet already_visited(
-      dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
-                       : dofmap.ownership_range());
+  // // Speed up the computations by only visiting (most) dofs once
+  // common::RangedIndexSet already_visited(
+  //     dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
+  //                      : dofmap.ownership_range());
 
-  // Allocate space using cached size
-  if (_num_dofs > 0)
-    boundary_values.reserve(boundary_values.size() + _num_dofs);
+  // // Allocate space using cached size
+  // if (_num_dofs > 0)
+  //   boundary_values.reserve(boundary_values.size() + _num_dofs);
 
-  // Get dof coordinates on reference element
-  const EigenRowArrayXXd& X = element.dof_reference_coordinates();
+  // // Get dof coordinates on reference element
+  // const EigenRowArrayXXd& X = element.dof_reference_coordinates();
 
-  // Get coordinate mapping
-  if (!mesh.geometry().coord_mapping)
-  {
-    throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
-  }
-  const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
+  // // Get coordinate mapping
+  // if (!mesh.geometry().coord_mapping)
+  // {
+  //   throw std::runtime_error(
+  //       "CoordinateMapping has not been attached to mesh.");
+  // }
+  // const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
 
-  // Iterate over cells
-  EigenRowArrayXXd coordinate_dofs;
-  if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
-  {
-    // First time around all cells must be iterated over.  Create map
-    // from cells attached to boundary to local dofs.
-    for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
-    {
-      // Get dof coordinates
-      coordinate_dofs.resize(cell.num_vertices(), gdim);
-      cell.get_coordinate_dofs(coordinate_dofs);
+  // // Iterate over cells
+  // EigenRowArrayXXd coordinate_dofs;
+  // if (MPI::max(mesh.mpi_comm(), _cells_to_localdofs.size()) == 0)
+  // {
+  //   // First time around all cells must be iterated over.  Create map
+  //   // from cells attached to boundary to local dofs.
+  //   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  //   {
+  //     // Get dof coordinates
+  //     coordinate_dofs.resize(cell.num_vertices(), gdim);
+  //     cell.get_coordinate_dofs(coordinate_dofs);
 
-      // Tabulate coordinates of dofs on cell
-      cmap.compute_physical_coordinates(data.coordinates, X, coordinate_dofs);
+  //     // Tabulate coordinates of dofs on cell
+  //     cmap.compute_physical_coordinates(data.coordinates, X,
+  //     coordinate_dofs);
 
-      // Tabulate dofs on cell
-      auto cell_dofs = dofmap.cell_dofs(cell.index());
+  //     // Tabulate dofs on cell
+  //     auto cell_dofs = dofmap.cell_dofs(cell.index());
 
-      // Interpolate function only once and only on cells where
-      // necessary
-      bool already_interpolated = false;
+  //     // Interpolate function only once and only on cells where
+  //     // necessary
+  //     bool already_interpolated = false;
 
-      // Loop all dofs on cell
-      std::vector<std::size_t> dofs;
-      for (std::size_t i = 0; i < dofmap.num_element_dofs(cell.index()); ++i)
-      {
-        const std::size_t global_dof = cell_dofs[i];
+  //     // Loop all dofs on cell
+  //     std::vector<std::size_t> dofs;
+  //     for (std::size_t i = 0; i < dofmap.num_element_dofs(cell.index()); ++i)
+  //     {
+  //       const std::size_t global_dof = cell_dofs[i];
 
-        // Skip already checked dofs
-        if (already_visited.in_range(global_dof)
-            && !already_visited.insert(global_dof))
-        {
-          continue;
-        }
+  //       // Skip already checked dofs
+  //       if (already_visited.in_range(global_dof)
+  //           && !already_visited.insert(global_dof))
+  //       {
+  //         continue;
+  //       }
 
-        // Check if the coordinates are part of the sub domain (calls
-        // user-defined 'inside' function)
-        if (!_user_sub_domain->inside(data.coordinates.row(i), false)[0])
-          continue;
+  //       // Check if the coordinates are part of the sub domain (calls
+  //       // user-defined 'inside' function)
+  //       if (!_user_sub_domain->inside(data.coordinates.row(i), false)[0])
+  //         continue;
 
-        if (!already_interpolated)
-        {
-          already_interpolated = true;
+  //       if (!already_interpolated)
+  //       {
+  //         already_interpolated = true;
 
-          // Restrict coefficient to cell
-          _g->restrict(data.w.data(), *_function_space->element(), cell,
-                       coordinate_dofs);
+  //         // Restrict coefficient to cell
+  //         _g->restrict(data.w.data(), *_function_space->element(), cell,
+  //                      coordinate_dofs);
 
-          // Put cell index in storage for next time function is
-          // called
-          _cells_to_localdofs.insert(std::make_pair(cell.index(), dofs));
-        }
+  //         // Put cell index in storage for next time function is
+  //         // called
+  //         _cells_to_localdofs.insert(std::make_pair(cell.index(), dofs));
+  //       }
 
-        // Add local dof to map
-        _cells_to_localdofs[cell.index()].push_back(i);
+  //       // Add local dof to map
+  //       _cells_to_localdofs[cell.index()].push_back(i);
 
-        // Set boundary value
-        const PetscScalar value = data.w[i];
-        boundary_values[global_dof] = value;
-      }
-    }
-  }
-  else
-  {
-    // Loop over cells that contain dofs on boundary
-    std::map<std::size_t, std::vector<std::size_t>>::const_iterator it;
-    for (it = _cells_to_localdofs.begin(); it != _cells_to_localdofs.end();
-         ++it)
-    {
-      // Get cell
-      const mesh::Cell cell(mesh, it->first);
+  //       // Set boundary value
+  //       const PetscScalar value = data.w[i];
+  //       boundary_values[global_dof] = value;
+  //     }
+  //   }
+  // }
+  // else
+  // {
+  //   // Loop over cells that contain dofs on boundary
+  //   std::map<std::size_t, std::vector<std::size_t>>::const_iterator it;
+  //   for (it = _cells_to_localdofs.begin(); it != _cells_to_localdofs.end();
+  //        ++it)
+  //   {
+  //     // Get cell
+  //     const mesh::Cell cell(mesh, it->first);
 
-      // Get dof coordinates
-      coordinate_dofs.resize(cell.num_vertices(), gdim);
-      cell.get_coordinate_dofs(coordinate_dofs);
+  //     // Get dof coordinates
+  //     coordinate_dofs.resize(cell.num_vertices(), gdim);
+  //     cell.get_coordinate_dofs(coordinate_dofs);
 
-      // Tabulate coordinates of dofs on cell
-      cmap.compute_physical_coordinates(data.coordinates, X, coordinate_dofs);
+  //     // Tabulate coordinates of dofs on cell
+  //     cmap.compute_physical_coordinates(data.coordinates, X,
+  //     coordinate_dofs);
 
-      // Restrict coefficient to cell
-      _g->restrict(data.w.data(), *_function_space->element(), cell,
-                   coordinate_dofs);
+  //     // Restrict coefficient to cell
+  //     _g->restrict(data.w.data(), *_function_space->element(), cell,
+  //                  coordinate_dofs);
 
-      // Tabulate dofs on cell
-      auto cell_dofs = dofmap.cell_dofs(cell.index());
+  //     // Tabulate dofs on cell
+  //     auto cell_dofs = dofmap.cell_dofs(cell.index());
 
-      // Loop dofs on boundary of cell
-      for (std::size_t i = 0; i < it->second.size(); ++i)
-      {
-        const std::size_t local_dof = it->second[i];
-        const std::size_t global_dof = cell_dofs[local_dof];
+  //     // Loop dofs on boundary of cell
+  //     for (std::size_t i = 0; i < it->second.size(); ++i)
+  //     {
+  //       const std::size_t local_dof = it->second[i];
+  //       const std::size_t global_dof = cell_dofs[local_dof];
 
-        // Set boundary value
-        const PetscScalar value = data.w[local_dof];
-        boundary_values[global_dof] = value;
-      }
-    }
-  }
+  //       // Set boundary value
+  //       const PetscScalar value = data.w[local_dof];
+  //       boundary_values[global_dof] = value;
+  //     }
+  //   }
+  // }
 
-  // Store num of bc dofs for better performance next time
-  _num_dofs = boundary_values.size();
+  // // Store num of bc dofs for better performance next time
+  // _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
 bool DirichletBC::on_facet(const Eigen::Ref<EigenArrayXd> coordinates,

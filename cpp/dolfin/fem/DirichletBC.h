@@ -103,7 +103,6 @@ class DirichletBC : public common::Variable
 public:
   /// map type used by DirichletBC
   typedef std::unordered_map<std::size_t, PetscScalar> Map;
-
   /// Method of boundary condition application
   enum class Method
   {
@@ -126,7 +125,7 @@ public:
   /// @param[in] check_midpoint (bool)
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
-              std::shared_ptr<const mesh::SubDomain> sub_domain,
+              const mesh::SubDomain& sub_domain,
               Method method = Method::topological, bool check_midpoint = true);
 
   /// Create boundary condition for subdomain specified by index
@@ -143,7 +142,7 @@ public:
   ///         method to identify dofs.
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
-              std::pair<std::shared_ptr<const mesh::MeshFunction<std::size_t>>,
+              std::pair<std::weak_ptr<const mesh::MeshFunction<std::size_t>>,
                         std::size_t>
                   sub_domain,
               Method method = Method::topological);
@@ -215,28 +214,13 @@ public:
   ///
   /// @return FunctionSpace
   ///         The function space to which boundary conditions are applied.
-  std::shared_ptr<const function::FunctionSpace> function_space() const
-  {
-    return _function_space;
-  }
+  std::shared_ptr<const function::FunctionSpace> function_space() const;
 
   /// Return boundary value g
   ///
   /// @return Function
   ///         The boundary values.
   std::shared_ptr<const function::Function> value() const;
-
-  /// Return shared pointer to subdomain
-  ///
-  /// @return mesh::SubDomain
-  ///         Shared pointer to subdomain.
-  std::shared_ptr<const mesh::SubDomain> user_sub_domain() const;
-
-  /// Set value g for boundary condition, domain remains unchanged
-  ///
-  /// @param[in] g (GenericFucntion)
-  ///         The value.
-  void set_value(std::shared_ptr<const function::Function> g);
 
   /// Return method used for computing Dirichlet dofs
   ///
@@ -289,21 +273,15 @@ private:
   // Search method
   Method _method;
 
-  // User defined sub domain
-  std::shared_ptr<const mesh::SubDomain> _user_sub_domain;
-
   // Cached number of bc dofs, used for memory allocation on second use
   mutable std::size_t _num_dofs;
 
   // Boundary facets, stored by facet index (local to process)
-  mutable std::vector<std::size_t> _facets;
+  std::vector<std::size_t> _facets;
 
   // Cells attached to boundary, stored by cell index with map to
   // local dof number
   mutable std::map<std::size_t, std::vector<std::size_t>> _cells_to_localdofs;
-
-  // User defined sub domain marker for mesh or mesh function
-  std::size_t _user_sub_domain_marker;
 
   // Local data for application of boundary conditions
   class LocalData
