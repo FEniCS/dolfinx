@@ -135,7 +135,8 @@ public:
   ///         The function space.
   /// @param[in] g (Function)
   ///         The value.
-  /// @param[in] sub_domains (std::pair<mesh::MeshFunction<std::size_t>, std::size_t)
+  /// @param[in] sub_domains (std::pair<mesh::MeshFunction<std::size_t>,
+  /// std::size_t)
   ///         Subdomain marker
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
@@ -161,7 +162,7 @@ public:
   ///         method to identify dofs.
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
-              const std::vector<std::size_t>& markers,
+              const std::vector<std::size_t>& facet_indices,
               Method method = Method::topological);
 
   /// Copy constructor. Either cached DOF data are copied.
@@ -265,19 +266,19 @@ private:
   class LocalData;
 
   // Check input data to constructor
-  void check() const;
+  void check_data() const;
 
   // Initialize facets (from sub domain, mesh, etc)
   void init_facets(const MPI_Comm mpi_comm) const;
 
   // Initialize sub domain markers from sub domain
-  void
-  init_from_sub_domain(std::shared_ptr<const mesh::SubDomain> sub_domain) const;
+  // void
+  // init_from_sub_domain(std::shared_ptr<const mesh::SubDomain> sub_domain) const;
 
   // Initialize sub domain markers from mesh::MeshFunction
-  void
-  init_from_mesh_function(const mesh::MeshFunction<std::size_t>& sub_domains,
-                          std::size_t sub_domain) const;
+  // void
+  // init_from_mesh_function(const mesh::MeshFunction<std::size_t>& sub_domains,
+  //                         std::size_t sub_domain) const;
 
   // Compute boundary values for facet (topological approach)
   void compute_bc_topological(Map& boundary_values, LocalData& data) const;
@@ -319,9 +320,6 @@ private:
   // User defined sub domain marker for mesh or mesh function
   std::size_t _user_sub_domain_marker;
 
-  // Flag for whether midpoints should be checked
-  bool _check_midpoint;
-
   // Local data for application of boundary conditions
   class LocalData
   {
@@ -335,6 +333,10 @@ private:
     // Coordinates for dofs
     EigenRowArrayXXd coordinates;
   };
+
+  //  New
+  Eigen::Array<bool, Eigen::Dynamic, 1> _dof_cells;
+  Eigen::Array<bool, Eigen::Dynamic, 1> _dof_facets;
 };
 } // namespace fem
 } // namespace dolfin

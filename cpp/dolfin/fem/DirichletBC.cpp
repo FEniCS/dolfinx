@@ -15,8 +15,8 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/constants.h>
 #include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/Function.h>
+#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -39,9 +39,34 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const mesh::SubDomain> sub_domain,
                          Method method, bool check_midpoint)
     : _function_space(V), _g(g), _method(method), _user_sub_domain(sub_domain),
-      _num_dofs(0), _check_midpoint(check_midpoint)
+      _num_dofs(0)
 {
-  check();
+  check_data();
+
+  // FIXME: This can be made more efficient, we should be able to
+  // FIXME: extract the facets without first creating a mesh::MeshFunction on
+  // FIXME: the entire mesh and then extracting the subset. This is done
+  // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
+
+  assert(V);
+  std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
+  assert(mesh);
+
+  // Create mesh function for sub domain markers on facets and mark
+  // all facet as subdomain 1
+  const std::size_t dim = mesh->topology().dim();
+  _function_space->mesh()->init(dim - 1);
+  mesh::MeshFunction<std::size_t> domain(mesh, dim - 1, 1);
+
+  // Mark the sub domain as sub domain 0
+  sub_domain->mark(domain, (std::size_t)0, check_midpoint);
+
+  // Build set of boundary facets
+  for (auto& facet : mesh::MeshRange<mesh::Facet>(*mesh))
+  {
+    if (domain[facet] == 0)
+      _facets.push_back(facet.index());
+  }
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(
@@ -53,18 +78,38 @@ DirichletBC::DirichletBC(
     Method method)
     : _function_space(V), _g(g), _method(method), _num_dofs(0),
       _user_mesh_function(sub_domain.first),
-      _user_sub_domain_marker(sub_domain.second), _check_midpoint(true)
+      _user_sub_domain_marker(sub_domain.second)
 {
-  check();
+  check_data();
+
+  // Get mesh
+  assert(V);
+  assert(V->mesh());
+  const mesh::Mesh& mesh = *V->mesh();
+
+  // Initialise facet - cell connectivity
+  const std::size_t D = mesh.topology().dim();
+  mesh.init(D - 1, D);
+
+  // Build set of boundary facets
+  assert(sub_domain.first);
+  const mesh::MeshFunction<std::size_t>& domain = *sub_domain.first;
+  const std::size_t index = sub_domain.second;
+  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  {
+    if (domain[facet] == index)
+      _facets.push_back(facet.index());
+  }
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
-                         const std::vector<std::size_t>& markers, Method method)
+                         const std::vector<std::size_t>& facet_indices,
+                         Method method)
     : _function_space(V), _g(g), _method(method), _num_dofs(0),
-      _facets(markers), _user_sub_domain_marker(0), _check_midpoint(true)
+      _facets(facet_indices), _user_sub_domain_marker(0)
 {
-  check();
+  check_data();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::gather(Map& boundary_values) const
@@ -248,7 +293,7 @@ DirichletBC::bcs() const
   return std::make_pair(std::move(indices), std::move(values));
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::check() const
+void DirichletBC::check_data() const
 {
   assert(_g);
   assert(_function_space->element());
@@ -317,59 +362,61 @@ void DirichletBC::init_facets(const MPI_Comm mpi_comm) const
   if (MPI::max(mpi_comm, _facets.size()) > 0)
     return;
 
-  if (_user_sub_domain)
-    init_from_sub_domain(_user_sub_domain);
-  else if (_user_mesh_function)
-    init_from_mesh_function(*_user_mesh_function, _user_sub_domain_marker);
+  // if (_user_sub_domain)
+  // {
+  //   // init_from_sub_domain(_user_sub_domain);
+  // }
+  // else if (_user_mesh_function)
+  //   init_from_mesh_function(*_user_mesh_function, _user_sub_domain_marker);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_sub_domain(
-    std::shared_ptr<const mesh::SubDomain> sub_domain) const
-{
-  assert(_facets.empty());
+// void DirichletBC::init_from_sub_domain(
+//     std::shared_ptr<const mesh::SubDomain> sub_domain) const
+// {
+//   assert(_facets.empty());
 
-  // FIXME: This can be made more efficient, we should be able to
-  // FIXME: extract the facets without first creating a mesh::MeshFunction on
-  // FIXME: the entire mesh and then extracting the subset. This is done
-  // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
+//   // FIXME: This can be made more efficient, we should be able to
+//   // FIXME: extract the facets without first creating a mesh::MeshFunction on
+//   // FIXME: the entire mesh and then extracting the subset. This is done
+//   // FIXME: mainly for convenience (we may reuse mark() in SubDomain).
 
-  assert(_function_space->mesh());
-  std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
-  assert(mesh);
+//   assert(_function_space->mesh());
+//   std::shared_ptr<const mesh::Mesh> mesh = _function_space->mesh();
+//   assert(mesh);
 
-  // Create mesh function for sub domain markers on facets and mark
-  // all facet as subdomain 1
-  const std::size_t dim = mesh->topology().dim();
-  _function_space->mesh()->init(dim - 1);
-  mesh::MeshFunction<std::size_t> sub_domains(mesh, dim - 1, 1);
+//   // Create mesh function for sub domain markers on facets and mark
+//   // all facet as subdomain 1
+//   const std::size_t dim = mesh->topology().dim();
+//   _function_space->mesh()->init(dim - 1);
+//   mesh::MeshFunction<std::size_t> sub_domains(mesh, dim - 1, 1);
 
-  // Mark the sub domain as sub domain 0
-  sub_domain->mark(sub_domains, (std::size_t)0, _check_midpoint);
+//   // Mark the sub domain as sub domain 0
+//   sub_domain->mark(sub_domains, (std::size_t)0, _check_midpoint);
 
-  // Initialize from mesh function
-  init_from_mesh_function(sub_domains, 0);
-}
+//   // Initialize from mesh function
+//   init_from_mesh_function(sub_domains, 0);
+// }
 //-----------------------------------------------------------------------------
-void DirichletBC::init_from_mesh_function(
-    const mesh::MeshFunction<std::size_t>& sub_domains,
-    std::size_t sub_domain) const
-{
-  // Get mesh
-  assert(_function_space->mesh());
-  const mesh::Mesh& mesh = *_function_space->mesh();
+// void DirichletBC::init_from_mesh_function(
+//     const mesh::MeshFunction<std::size_t>& sub_domains,
+//     std::size_t sub_domain) const
+// {
+//   // Get mesh
+//   assert(_function_space->mesh());
+//   const mesh::Mesh& mesh = *_function_space->mesh();
 
-  // Make sure we have the facet - cell connectivity
-  const std::size_t D = mesh.topology().dim();
-  mesh.init(D - 1, D);
+//   // Make sure we have the facet - cell connectivity
+//   const std::size_t D = mesh.topology().dim();
+//   mesh.init(D - 1, D);
 
-  // Build set of boundary facets
-  assert(_facets.empty());
-  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
-  {
-    if (sub_domains[facet] == sub_domain)
-      _facets.push_back(facet.index());
-  }
-}
+//   // Build set of boundary facets
+//   assert(_facets.empty());
+//   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
+//   {
+//     if (sub_domains[facet] == sub_domain)
+//       _facets.push_back(facet.index());
+//   }
+// }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_topological(Map& boundary_values,
                                          LocalData& data) const
