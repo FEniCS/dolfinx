@@ -10,7 +10,7 @@ import functools
 import dijitso
 import dolfin.pkgconfig
 import ffc
-from dolfin import cpp, parameter
+from dolfin import common, cpp
 
 if dolfin.pkgconfig.exists("dolfin"):
     dolfin_pc = dolfin.pkgconfig.parse("dolfin")
@@ -61,24 +61,25 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
                 error_msg = str(e)
 
         # TODO: This would have lower overhead if using the dijitso.jit
-        # features to inject a waiting callback instead of waiting out here.
-        # That approach allows all processes to first look in the cache,
-        # introducing a barrier only on cache miss.
-        # There's also a sketch in dijitso of how to make only one
-        # process per physical cache directory do the compilation.
+        # features to inject a waiting callback instead of waiting out
+        # here. That approach allows all processes to first look in the
+        # cache, introducing a barrier only on cache miss. There's also
+        # a sketch in dijitso of how to make only one process per
+        # physical cache directory do the compilation.
 
         # Wait for the compiling process to finish and get status
-        # TODO: Would be better to broadcast the status from root but this works.
+        # TODO: Would be better to broadcast the status from root but
+        # this works.
         global_status = cpp.MPI.max(mpi_comm, status)
 
         if global_status == 0:
-            # Success, call jit on all other processes
-            # (this should just read the cache)
+            # Success, call jit on all other processes (this should just
+            # read the cache)
             if not root:
                 output = local_jit(*args, **kwargs)
         else:
-            # Fail simultaneously on all processes,
-            # to allow catching the error without deadlock
+            # Fail simultaneously on all processes, to allow catching
+            # the error without deadlock
             if not root:
                 error_msg = "Compilation failed on root node."
             cpp.dolfin_error("jit.py",
@@ -92,10 +93,9 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
 @mpi_jit_decorator
 def ffc_jit(ufl_form, form_compiler_parameters=None):
-    # Prepare form compiler parameters with overrides from dolfin and
-    # kwargs
+    # Prepare form compiler parameters with overrides from dolfin
     p = ffc.default_jit_parameters()
-    p.update(dict(parameter.parameters["form_compiler"]))
+    p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters or {})
     return ffc.jit(ufl_form, parameters=p)
 

@@ -15,7 +15,7 @@ from dolfin import (DOLFIN_EPS, MPI, Cells, CellType, FiniteElement,
                     FunctionSpace, MixedElement, Point, SubDomain,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     VectorElement, VectorFunctionSpace)
-from dolfin_utils.test.fixtures import fixture, set_parameters_fixture
+from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel, skip_in_serial
 
 xfail = pytest.mark.xfail(strict=True)
@@ -24,9 +24,6 @@ xfail = pytest.mark.xfail(strict=True)
 @fixture
 def mesh():
     return UnitSquareMesh(MPI.comm_world, 4, 4)
-
-
-reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
 
 
 @pytest.mark.skip
@@ -41,14 +38,12 @@ reorder_dofs = set_parameters_fixture("reorder_dofs_serial", [True, False])
         (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
         # cell.contains(Point) does not work correctly
         # for quad/hex cells once it is fixed, this test will pass
-        pytest.param(
-            (UnitSquareMesh,
-             (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
-            marks=pytest.mark.xfail),
-        pytest.param(
-            (UnitCubeMesh,
-             (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)),
-            marks=pytest.mark.xfail)
+        pytest.param((UnitSquareMesh,
+                      (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
+                     marks=pytest.mark.xfail),
+        pytest.param((UnitCubeMesh,
+                      (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)),
+                     marks=pytest.mark.xfail)
     ])
 def test_tabulate_all_coordinates(mesh_factory):
     func, args = mesh_factory
@@ -64,8 +59,10 @@ def test_tabulate_all_coordinates(mesh_factory):
 
     all_coords_V = V.tabulate_dof_coordinates()
     all_coords_W = W.tabulate_dof_coordinates()
-    local_size_V = V_dofmap.ownership_range()[1] - V_dofmap.ownership_range()[0]
-    local_size_W = W_dofmap.ownership_range()[1] - W_dofmap.ownership_range()[0]
+    local_size_V = V_dofmap.ownership_range()[1] - V_dofmap.ownership_range(
+    )[0]
+    local_size_W = W_dofmap.ownership_range()[1] - W_dofmap.ownership_range(
+    )[0]
 
     all_coords_V = all_coords_V.reshape(local_size_V, D)
     all_coords_W = all_coords_W.reshape(local_size_W, D)
@@ -423,8 +420,8 @@ def test_block_size_real(mesh):
 @pytest.mark.parametrize(
     'mesh_factory',
     [(UnitIntervalMesh, (MPI.comm_world, 8)),
-     (UnitSquareMesh, (MPI.comm_world, 4, 4)), (UnitCubeMesh,
-                                                (MPI.comm_world, 2, 2, 2)),
+     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
+     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
      (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
      (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron))])
 def test_mpi_dofmap_stats(mesh_factory):

@@ -11,7 +11,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/constants.h>
-#include <dolfin/parameter/Parameters.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -63,16 +62,6 @@ void dolfin::log::info(const common::Variable& variable, bool verbose)
   if (!LogManager::logger().is_active())
     return; // optimization
   log::info(variable.str(verbose));
-}
-//-----------------------------------------------------------------------------
-void dolfin::log::info(const dolfin::parameter::Parameters& parameters, bool verbose)
-{
-  // Need separate function for Parameters since we can't make Parameters
-  // a subclass of Variable (gives cyclic dependencies)
-
-  if (!LogManager::logger().is_active())
-    return; // optimization
-  log::info(parameters.str(verbose));
 }
 //-----------------------------------------------------------------------------
 void dolfin::log::info_stream(std::ostream& out, std::string msg)

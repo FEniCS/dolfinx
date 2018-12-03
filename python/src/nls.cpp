@@ -10,7 +10,6 @@
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/nls/NonlinearProblem.h>
 #include <dolfin/nls/OptimisationProblem.h>
-#include <dolfin/parameter/Parameters.h>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
@@ -90,7 +89,12 @@ void nls(py::module& m)
       }))
       .def("solve", &dolfin::nls::NewtonSolver::solve)
       .def("converged", &PyPublicNewtonSolver::converged)
-      .def("update_solution", &PyPublicNewtonSolver::update_solution);
+      .def("update_solution", &PyPublicNewtonSolver::update_solution)
+      .def_readwrite("atol", &dolfin::nls::NewtonSolver::atol)
+      .def_readwrite("rtol", &dolfin::nls::NewtonSolver::rtol)
+      .def_readwrite("max_it", &dolfin::nls::NewtonSolver::max_it)
+      .def_readwrite("convergence_criterion",
+                     &dolfin::nls::NewtonSolver::convergence_criterion);
 
   // dolfin::NonlinearProblem 'trampoline' for overloading from
   // Python

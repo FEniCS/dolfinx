@@ -63,11 +63,6 @@ def test_ghost_3d(mode):
     assert mesh.num_entities_global(0) == 27
     assert mesh.num_entities_global(3) == num_cells
 
-    # parameters["reorder_cells_gps"] = True
-    # mesh = UnitCubeMesh(MPI.comm_world, N, N, N, ghost_mode=mode)
-    # if MPI.size(mesh.mpi_comm()) > 1:
-    #     assert MPI.sum(mesh.mpi_comm(), mesh.num_cells()) > num_cells\
-
 
 @pytest.mark.parametrize("mode", [cpp.mesh.GhostMode.none,
                                   pytest.param(cpp.mesh.GhostMode.shared_vertex,

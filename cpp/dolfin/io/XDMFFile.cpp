@@ -30,7 +30,6 @@
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <iomanip>
 #include <memory>
 #include <set>
@@ -45,18 +44,7 @@ XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding)
     : _mpi_comm(comm), _filename(filename), _counter(0),
       _xml_doc(new pugi::xml_document), _encoding(encoding)
 {
-  // Rewrite the mesh at every time step in a time series. Should be
-  // turned off if the mesh remains constant.
-  parameters.add("rewrite_function_mesh", true);
-
-  // function::Functions share the same mesh for the same time step. The files
-  // produced are smaller and work better in Paraview
-  parameters.add("functions_share_mesh", false);
-
-  // FIXME: This is only relevant to HDF5
-  // Flush datasets to disk at each timestep. Allows inspection of the
-  // HDF5 file whilst running, at some performance cost.
-  parameters.add("flush_output", false);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 XDMFFile::~XDMFFile() { close(); }
@@ -279,7 +267,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   }
 
   // Close the HDF5 file if in "flush" mode
-  if (_encoding == Encoding::HDF5 and parameters["flush_output"])
+  if (_encoding == Encoding::HDF5 and flush_output)
   {
     log::log(PROGRESS, "Writing function in \"flush_output\" mode. HDF5 "
                        "file will be flushed (closed).");
@@ -440,7 +428,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
     if (_counter == 0)
       _hdf5_file = std::make_unique<HDF5File>(
           mesh.mpi_comm(), get_hdf5_filename(_filename), "w");
-    else if (parameters["flush_output"])
+    else if (flush_output)
     {
       // Append to existing HDF5 file
       assert(!_hdf5_file);
@@ -464,7 +452,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
 
   // Should functions share mesh or not? By default they do not
   std::string tg_name = "TimeSeries_" + u.name();
-  if (parameters["functions_share_mesh"])
+  if (functions_share_mesh)
     tg_name = "TimeSeries";
 
   // Look for existing time series grid node with Name == tg_name
@@ -497,11 +485,11 @@ void XDMFFile::write(const function::Function& u, double time_step)
   }
 
   // Only add mesh grid node at this time step if no other function has
-  // previously added it (and parameters["functions_share_mesh"] == true)
+  // previously added it (and functions_share_mesh == true)
   if (!mesh_node)
   {
     // Add the mesh grid node to to the time series grid node
-    if (new_timegrid or parameters["rewrite_function_mesh"])
+    if (new_timegrid or rewrite_function_mesh)
     {
       add_mesh(_mpi_comm.comm(), timegrid_node, h5_id, mesh,
                "/Mesh/" + std::to_string(_counter));
@@ -601,7 +589,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
     _xml_doc->save_file(_filename.c_str(), "  ");
 
   // Close the HDF5 file if in "flush" mode
-  if (_encoding == Encoding::HDF5 and parameters["flush_output"])
+  if (_encoding == Encoding::HDF5 and flush_output)
   {
     assert(_hdf5_file);
     _hdf5_file.reset();

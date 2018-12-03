@@ -26,7 +26,6 @@ void la(py::module& m);
 void math(py::module& m);
 void mesh(py::module& m);
 void nls(py::module& m);
-void parameter(py::module& m);
 void refinement(py::module& m);
 } // namespace dolfin_wrappers
 
@@ -87,10 +86,6 @@ PYBIND11_MODULE(cpp, m)
   // Create nls submodule
   py::module nls = m.def_submodule("nls", "Nonlinear solver module");
   dolfin_wrappers::nls(nls);
-
-  // Create parameter submodule
-  py::module parameter = m.def_submodule("parameter", "Parameter module");
-  dolfin_wrappers::parameter(parameter);
 
   // Create refinement submodule
   py::module refinement = m.def_submodule("refinement", "Refinement module");

@@ -6,7 +6,6 @@
 
 #include "Timer.h"
 #include <dolfin/log/LogManager.h>
-#include <dolfin/parameter/GlobalParameters.h>
 
 using namespace dolfin;
 using namespace dolfin::common;

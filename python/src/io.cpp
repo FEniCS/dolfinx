@@ -131,6 +131,7 @@ void io(py::module& m)
            py::arg("u"), py::arg("name"), py::arg("t"))
       .def("set_mpi_atomicity", &dolfin::io::HDF5File::set_mpi_atomicity)
       .def("get_mpi_atomicity", &dolfin::io::HDF5File::get_mpi_atomicity)
+      .def_readwrite("chunking", &dolfin::io::HDF5File::chunking)
       // others
       .def("has_dataset", &dolfin::io::HDF5File::has_dataset);
 
@@ -146,7 +147,12 @@ void io(py::module& m)
                                                            encoding);
            }),
            py::arg("comm"), py::arg("filename"), py::arg("encoding"))
-      .def("close", &dolfin::io::XDMFFile::close);
+      .def("close", &dolfin::io::XDMFFile::close)
+      .def_readwrite("functions_share_mesh",
+                     &dolfin::io::XDMFFile::functions_share_mesh)
+      .def_readwrite("flush_output", &dolfin::io::XDMFFile::flush_output)
+      .def_readwrite("rewrite_function_mesh",
+                     &dolfin::io::XDMFFile::rewrite_function_mesh);
 
   // dolfin::io::XDMFFile::Encoding enums
   py::enum_<dolfin::io::XDMFFile::Encoding>(xdmf_file, "Encoding")

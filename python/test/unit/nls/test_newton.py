@@ -37,7 +37,8 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
                                           dolfin.cpp.fem.BlockType.monolithic,
                                           x, -1.0)
         else:
-            self._F = fem.assemble(self._F, self.L, [self.a], [self.bc], x, -1.0)
+            self._F = fem.assemble(self._F, self.L, [self.a], [self.bc], x,
+                                   -1.0)
         return self._F
 
     def J(self, x):
@@ -207,5 +208,6 @@ def test_newton_solver_inheritance():
 
     class DerivedNewtonSolver(dolfin.cpp.nls.NewtonSolver):
         pass
+
     derived = DerivedNewtonSolver(dolfin.MPI.comm_world)
     assert isinstance(derived, DerivedNewtonSolver)
