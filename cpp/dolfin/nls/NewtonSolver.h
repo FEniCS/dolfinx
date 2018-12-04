@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2008 Garth N. Wells
+// Copyright (C) 2005-2018 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -72,25 +72,27 @@ public:
   ///         Initial residual.
   double residual0() const;
 
-  /// Default parameter values
-  ///
-  /// @returns _Parameters_
-  ///         Parameter values.
-  static parameter::Parameters default_parameters();
+  /// Maximum number of iterations
+  int max_it = 50;
 
-  /// Set relaxation parameter. Default value 1.0 means full
-  /// Newton method, value smaller than 1.0 relaxes the method
-  /// by shrinking effective Newton step size by the given factor.
-  ///
-  /// @param relaxation_parameter (double)
-  ///         Relaxation parameter value.
-  void set_relaxation_parameter(double relaxation_parameter);
+  /// Relative tolerance
+  double rtol = 1e-9;
 
-  /// Get relaxation parameter
-  ///
-  /// @returns    double
-  ///         Relaxation parameter value.
-  double get_relaxation_parameter() const;
+  /// Absolute tolerance
+  double atol = 1e-10;
+
+  // FIXME: change to string to enum
+  /// Convergence criterion
+  std::string convergence_criterion = "residual";
+
+  /// Monitor convergence
+  bool report = true;
+
+  /// Throw error if solver fails to converge
+  bool error_on_nonconvergence = true;
+
+  /// Relaxation parameter
+  double relaxation_parameter = 1.0;
 
 protected:
   /// Convergence test. It may be overloaded using virtual inheritance and
@@ -132,9 +134,6 @@ protected:
 private:
   // Accumulated number of Krylov iterations since solve began
   int _krylov_iterations;
-
-  // Relaxation parameter
-  double _relaxation_parameter;
 
   // Most recent residual and initial residual
   double _residual, _residual0;

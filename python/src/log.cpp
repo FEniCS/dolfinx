@@ -44,9 +44,6 @@ void log(py::module& m)
     dolfin::log::info(v, verbose);
   });
   m.def("info", [](std::string s) { dolfin::log::info(s); });
-  m.def("info", [](const dolfin::parameter::Parameters& p, bool verbose) {
-    dolfin::log::info(p, verbose);
-  });
   m.def("info", [](const dolfin::mesh::Mesh& mesh,
                    bool verbose) { dolfin::log::info(mesh, verbose); },
         py::arg("mesh"), py::arg("verbose") = false);

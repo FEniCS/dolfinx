@@ -12,20 +12,6 @@ from dolfin import MPI, compile_cpp_code
 from dolfin.la import PETScVector
 from dolfin_utils.test.skips import (skip_if_not_SLEPc, skip_in_serial)
 
-# @pytest.mark.skip
-# def test_nasty_jit_caching_bug():
-#     # This may result in something like "matrices are not aligned"
-#     # from FIAT if the JIT caching does not recognize that the two
-#     # forms are different
-#     default_parameters = parameters["form_compiler"]["representation"]
-#     for representation in ["quadrature"]:
-#         parameters["form_compiler"]["representation"] = representation
-#         M1 = assemble(Constant(1.0) * dx(UnitSquareMesh(4, 4)))
-#         M2 = assemble(Constant(1.0) * dx(UnitCubeMesh(4, 4, 4)))
-#         assert round(M1 - 1.0, 7) == 0
-#         assert round(M2 - 1.0, 7) == 0
-#     parameters["form_compiler"]["representation"] = default_parameters
-
 
 def test_mpi_pybind11():
     """

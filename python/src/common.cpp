@@ -38,8 +38,7 @@ void common(py::module& m)
                                                         "Variable base class")
       .def("id", &dolfin::common::Variable::id)
       .def("name", &dolfin::common::Variable::name)
-      .def("rename", &dolfin::common::Variable::rename)
-      .def_readwrite("parameters", &dolfin::common::Variable::parameters);
+      .def("rename", &dolfin::common::Variable::rename);
 
   // From dolfin/common/defines.h
   m.def("has_debug", &dolfin::has_debug);

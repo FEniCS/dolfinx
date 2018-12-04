@@ -19,7 +19,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/parameter/GlobalParameters.h>
 #include <memory>
 #include <random>
 #include <ufc.h>
@@ -872,8 +871,9 @@ DofMapBuilder::compute_node_reordering(
   }
 
   // Reorder nodes
-  const std::string ordering_library
-      = dolfin::parameter::parameters["dof_ordering_library"];
+  // const std::string ordering_library
+  //     = dolfin::parameter::parameters["dof_ordering_library"];
+  const std::string ordering_library = "SCOTCH";
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
     node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);

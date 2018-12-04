@@ -6,7 +6,6 @@
 
 #include "Variable.h"
 #include "UniqueIdGenerator.h"
-#include <dolfin/parameter/Parameters.h>
 #include <sstream>
 
 using namespace dolfin;
@@ -37,7 +36,6 @@ Variable::Variable(const Variable& variable)
 const Variable& Variable::operator=(const Variable& variable)
 {
   // Assign everything but unique_id
-  parameters = variable.parameters;
   _name = variable._name;
 
   return *this;
