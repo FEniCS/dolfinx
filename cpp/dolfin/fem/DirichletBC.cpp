@@ -47,6 +47,21 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   //        the subset. This is done mainly for convenience (we may
   //        reuse mark() in SubDomain).
 
+  if (V->contains(*g->function_space()))
+    std::cout << "Spaces contained" << std::endl;
+  else
+    std::cout << "Spaces not contained" << std::endl;
+
+  if (V->has_element(*g->function_space()->element()))
+    std::cout << "Same element" << std::endl;
+  else
+    std::cout << "Different element" << std::endl;
+
+  if (V->mesh() == g->function_space()->mesh())
+    std::cout << "Same mesh" << std::endl;
+  else
+    std::cout << "Different mesh" << std::endl;
+
   assert(V);
   std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
   assert(mesh);
@@ -90,6 +105,21 @@ DirichletBC::DirichletBC(
 {
   check_data();
 
+  if (V->contains(*g->function_space()))
+    std::cout << "Spaces contained" << std::endl;
+  else
+    std::cout << "Spaces not contained" << std::endl;
+
+  if (V->has_element(*g->function_space()->element()))
+    std::cout << "Same element" << std::endl;
+  else
+    std::cout << "Different element" << std::endl;
+
+  if (V->mesh() == g->function_space()->mesh())
+    std::cout << "Same mesh" << std::endl;
+  else
+    std::cout << "Different mesh" << std::endl;
+
   // Get mesh
   assert(V);
   assert(V->mesh());
@@ -131,6 +161,22 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       _facets(facet_indices)
 {
   check_data();
+
+  if (V->contains(*g->function_space()))
+    std::cout << "Spaces contained" << std::endl;
+  else
+    std::cout << "Spaces not contained" << std::endl;
+
+  if (V->has_element(*g->function_space()->element()))
+    std::cout << "Same element" << std::endl;
+  else
+    std::cout << "Different element" << std::endl;
+
+  if (V->mesh() == g->function_space()->mesh())
+    std::cout << "Same mesh" << std::endl;
+  else
+    std::cout << "Different mesh" << std::endl;
+
 
   assert(V);
   std::set<PetscInt> dofs_local;
@@ -201,7 +247,7 @@ void DirichletBC::gather(Map& boundary_values) const
 
   // Reserve space
   // const std::size_t num_dofs = boundary_values.size() + received_bvc0.size();
-  //boundary_values.reserve(num_dofs);
+  // boundary_values.reserve(num_dofs);
 
   // Add the received boundary values to the local boundary values
   std::vector<std::pair<std::int64_t, PetscScalar>> _vec(received_bvc0.size());

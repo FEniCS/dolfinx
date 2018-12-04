@@ -152,7 +152,6 @@ def test_matrix_assembly_block():
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-    u_bc.vector().vec().view()
 
     A2 = dolfin.fem.assemble_matrix([[a]], [bc],
                                     dolfin.cpp.fem.BlockType.monolithic)
