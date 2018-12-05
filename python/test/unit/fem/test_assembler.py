@@ -139,7 +139,6 @@ def test_matrix_assembly_block():
     except AttributeError:
         print("Recent petsc4py(-dev) required to get MatNest sub-matrix.")
 
-
     print("---------------------------------------------")
 
     # Monolithic version

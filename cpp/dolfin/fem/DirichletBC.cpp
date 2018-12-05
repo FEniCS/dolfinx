@@ -37,8 +37,31 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
                          const mesh::SubDomain& sub_domain, Method method,
                          bool check_midpoint)
-    : _function_space(V), _g(g), _method(method), _num_dofs(0)
+    : _function_space(V), _g(g), _method(method)
 {
+  assert(V);
+  assert(g);
+  assert(g->function_space());
+  if (V == g->function_space())
+    std::cout << "Spaces are the same" << std::endl;
+  else
+  {
+    assert(V->mesh());
+    assert(g->function_space()->mesh());
+    if (V->mesh() != g->function_space()->mesh())
+    {
+      throw std::runtime_error("Boundary condition function and constrained "
+                               "function do not share mesh.");
+    }
+
+    assert(g->function_space()->element());
+    if (!V->has_element(*g->function_space()->element()))
+    {
+      throw std::runtime_error("Boundary condition function and constrained "
+                               "function do not have same element.");
+    }
+  }
+
   check_data();
 
   // FIXME: This can be made more efficient, we should be able to
@@ -47,22 +70,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   //        the subset. This is done mainly for convenience (we may
   //        reuse mark() in SubDomain).
 
-  if (V->contains(*g->function_space()))
-    std::cout << "Spaces contained" << std::endl;
-  else
-    std::cout << "Spaces not contained" << std::endl;
-
-  if (V->has_element(*g->function_space()->element()))
-    std::cout << "Same element" << std::endl;
-  else
-    std::cout << "Different element" << std::endl;
-
-  if (V->mesh() == g->function_space()->mesh())
-    std::cout << "Same mesh" << std::endl;
-  else
-    std::cout << "Different mesh" << std::endl;
-
-  assert(V);
   std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
   assert(mesh);
 
@@ -84,9 +91,9 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   std::set<PetscInt> dofs_local;
   if (method == Method::topological)
-    dofs_local = compute_bc_dofs_topological(*V, _facets);
+    dofs_local = compute_bc_dofs_topological(*V, nullptr, _facets);
   else if (method == Method::geometric)
-    dofs_local = compute_bc_dofs_geometric(*V, _facets);
+    dofs_local = compute_bc_dofs_geometric(*V, nullptr, _facets);
   else
     throw std::runtime_error("BC method not yet supported");
 
@@ -100,9 +107,31 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
                          const std::vector<std::size_t>& facet_indices,
                          Method method)
-    : _function_space(V), _g(g), _method(method), _num_dofs(0),
-      _facets(facet_indices)
+    : _function_space(V), _g(g), _method(method), _facets(facet_indices)
 {
+  assert(V);
+  assert(g);
+  assert(g->function_space());
+  if (V == g->function_space())
+    std::cout << "Spaces are the same" << std::endl;
+  else
+  {
+    assert(V->mesh());
+    assert(g->function_space()->mesh());
+    if (V->mesh() != g->function_space()->mesh())
+    {
+      throw std::runtime_error("Boundary condition function and constrained "
+                               "function do not share mesh.");
+    }
+
+    assert(g->function_space()->element());
+    if (!V->has_element(*g->function_space()->element()))
+    {
+      throw std::runtime_error("Boundary condition function and constrained "
+                               "function do not have same element.");
+    }
+  }
+
   check_data();
 
   if (V->contains(*g->function_space()))
@@ -123,9 +152,9 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   assert(V);
   std::set<PetscInt> dofs_local;
   if (method == Method::topological)
-    dofs_local = compute_bc_dofs_topological(*V, _facets);
+    dofs_local = compute_bc_dofs_topological(*V, nullptr, _facets);
   else if (method == Method::geometric)
-    dofs_local = compute_bc_dofs_geometric(*V, _facets);
+    dofs_local = compute_bc_dofs_geometric(*V, nullptr, _facets);
   else
     throw std::runtime_error("BC method not yet supported");
 
@@ -577,6 +606,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 //-----------------------------------------------------------------------------
 std::set<PetscInt>
 DirichletBC::compute_bc_dofs_topological(const function::FunctionSpace& V,
+                                         const function::FunctionSpace* Vg,
                                          const std::vector<std::size_t>& facets)
 {
   // // Special case
@@ -688,10 +718,6 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t gdim = mesh.geometry().dim();
 
-  // Allocate space using cached size
-  // if (_num_dofs > 0)
-  //   boundary_values.reserve(boundary_values.size() + _num_dofs);
-
   // Get dof coordinates on reference element
   const EigenRowArrayXXd& X = element.dof_reference_coordinates();
 
@@ -775,13 +801,11 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
       }
     }
   }
-
-  // Store num of bc dofs for better performance next time
-  _num_dofs = boundary_values.size();
 }
 //-----------------------------------------------------------------------------
 std::set<PetscInt>
 DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
+                                       const function::FunctionSpace* Vg,
                                        const std::vector<std::size_t>& facets)
 {
   assert(V.element());
@@ -790,21 +814,16 @@ DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
   assert(V.mesh());
   const mesh::Mesh& mesh = *V.mesh();
 
-  // Extract the list of facets where the BC *might* be applied
-  // init_facets(mesh.mpi_comm());
-
-  // Special case
-  // if (_facets.empty())
-  // {
-  //   if (MPI::size(mesh.mpi_comm()) == 1)
-  //     log::warning("Found no facets matching domain for boundary
-  //     condition.");
-  //   return;
-  // }
-
   // Get dofmap
   assert(V.dofmap());
   const GenericDofMap& dofmap = *V.dofmap();
+
+  const GenericDofMap* dofmap_g = &dofmap;
+  if (Vg)
+  {
+    assert(Vg->dofmap());
+    dofmap_g = Vg->dofmap().get();
+  }
 
   // Get finite element
   assert(V.element());
@@ -846,6 +865,7 @@ DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
 
   // Iterate over facets
   std::vector<PetscInt> bc_dofs;
+  std::vector<PetscInt> bc_dofs_g;
   for (std::size_t f = 0; f < facets.size(); ++f)
   {
     // Create facet and attached cell (get first attached cell)
@@ -866,6 +886,7 @@ DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
 
         // Get cell dofmap
         auto cell_dofs = dofmap.cell_dofs(c.index());
+        auto cell_dofs_g = dofmap_g->cell_dofs(c.index());
 
         // Loop over all cell dofs
         for (int i = 0; i < cell_dofs.size(); ++i)
@@ -882,6 +903,7 @@ DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
           }
 
           bc_dofs.push_back(cell_dofs[i]);
+          bc_dofs_g.push_back(cell_dofs_g[i]);
         }
       }
     }

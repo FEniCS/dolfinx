@@ -247,6 +247,7 @@ private:
   // Compute boundary value dofs (topological approach)
   static std::set<PetscInt>
   compute_bc_dofs_topological(const function::FunctionSpace& V,
+                              const function::FunctionSpace* Vg,
                               const std::vector<std::size_t>& facets);
 
   // Compute boundary values for facet (geometrical approach)
@@ -255,6 +256,7 @@ private:
   // Compute boundary values dofs (geometrical approach)
   static std::set<PetscInt>
   compute_bc_dofs_geometric(const function::FunctionSpace& V,
+                            const function::FunctionSpace* Vg,
                             const std::vector<std::size_t>& facets);
 
   // Compute boundary values for facet (pointwise approach)
@@ -273,9 +275,6 @@ private:
 
   // Search method
   Method _method;
-
-  // Cached number of bc dofs, used for memory allocation on second use
-  mutable std::size_t _num_dofs;
 
   // Boundary facets, stored by facet index (local to process)
   std::vector<std::size_t> _facets;
