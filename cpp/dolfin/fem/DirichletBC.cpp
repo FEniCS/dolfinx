@@ -105,7 +105,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
-                         const std::vector<std::size_t>& facet_indices,
+                         const std::vector<std::int32_t>& facet_indices,
                          Method method)
     : _function_space(V), _g(g), _method(method), _facets(facet_indices)
 {
@@ -366,7 +366,7 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
     compute_bc_pointwise(boundary_values, data);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::size_t>& DirichletBC::markers() const { return _facets; }
+const std::vector<std::int32_t>& DirichletBC::markers() const { return _facets; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace>
 DirichletBC::function_space() const
@@ -607,7 +607,7 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
 std::set<PetscInt>
 DirichletBC::compute_bc_dofs_topological(const function::FunctionSpace& V,
                                          const function::FunctionSpace* Vg,
-                                         const std::vector<std::size_t>& facets)
+                                         const std::vector<std::int32_t>& facets)
 {
   // // Special case
   // if (_facets.empty())
@@ -806,7 +806,7 @@ void DirichletBC::compute_bc_geometric(Map& boundary_values,
 std::set<PetscInt>
 DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
                                        const function::FunctionSpace* Vg,
-                                       const std::vector<std::size_t>& facets)
+                                       const std::vector<std::int32_t>& facets)
 {
   assert(V.element());
 

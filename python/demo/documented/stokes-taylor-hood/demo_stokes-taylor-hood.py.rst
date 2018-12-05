@@ -124,9 +124,14 @@ equations. Now we can define boundary conditions::
         values[:, 0] = 0.0
         values[:, 1] = 0.0
 
+    mf = sub_domains.array()
+    mf0 = numpy.where(mf == 0)
+    mf1 = numpy.where(mf == 1)
+
     noslip_expr = Expression(noslip_eval, shape=(2,))
     noslip = interpolate(noslip_expr, W.sub(0).collapse())
-    bc0 = DirichletBC(W.sub(0), noslip, (sub_domains, 0))
+    # bc0 = DirichletBC(W.sub(0), noslip, (sub_domains, 0))
+    bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
     # Inflow boundary condition for velocity
     # x0 = 1
@@ -138,7 +143,8 @@ equations. Now we can define boundary conditions::
 
     inflow_expr = Expression(inflow_eval, shape=(2,))
     inflow = interpolate(inflow_expr, W.sub(0).collapse())
-    bc1 = DirichletBC(W.sub(0), inflow, (sub_domains, 1))
+    # bc1 = DirichletBC(W.sub(0), inflow, (sub_domains, 1))
+    bc1 = DirichletBC(W.sub(0), inflow, mf1[0])
 
     # Collect boundary conditions
     bcs = [bc0, bc1]

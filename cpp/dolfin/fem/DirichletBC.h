@@ -146,7 +146,7 @@ public:
   ///         method to identify dofs.
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
-              const std::vector<std::size_t>& facet_indices,
+              const std::vector<std::int32_t>& facet_indices,
               Method method = Method::topological);
 
   /// Copy constructor. Either cached DOF data are copied.
@@ -197,7 +197,7 @@ public:
   /// @return std::vector<std::size_t>&
   ///         Boundary markers (facets stored as pairs of cells and
   ///         local facet numbers).
-  const std::vector<std::size_t>& markers() const;
+  const std::vector<std::int32_t>& markers() const;
 
   /// Return function space V
   ///
@@ -248,7 +248,7 @@ private:
   static std::set<PetscInt>
   compute_bc_dofs_topological(const function::FunctionSpace& V,
                               const function::FunctionSpace* Vg,
-                              const std::vector<std::size_t>& facets);
+                              const std::vector<std::int32_t>& facets);
 
   // Compute boundary values for facet (geometrical approach)
   void compute_bc_geometric(Map& boundary_values, LocalData& data) const;
@@ -257,7 +257,7 @@ private:
   static std::set<PetscInt>
   compute_bc_dofs_geometric(const function::FunctionSpace& V,
                             const function::FunctionSpace* Vg,
-                            const std::vector<std::size_t>& facets);
+                            const std::vector<std::int32_t>& facets);
 
   // Compute boundary values for facet (pointwise approach)
   void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
@@ -277,7 +277,7 @@ private:
   Method _method;
 
   // Boundary facets, stored by facet index (local to process)
-  std::vector<std::size_t> _facets;
+  std::vector<std::int32_t> _facets;
 
   // Cells attached to boundary, stored by cell index with map to local
   // dof number
