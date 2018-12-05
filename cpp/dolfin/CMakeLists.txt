@@ -138,7 +138,7 @@ target_include_directories(dolfin SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
 # Optional packages
 
 # SLEPC
-if (DOLFIN_ENABLE_PETSC AND DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
+if (DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   target_compile_definitions(dolfin PUBLIC HAS_SLEPC)
   target_link_libraries(dolfin PUBLIC SLEPC::slepc)
   target_link_libraries(dolfin PRIVATE SLEPC::slepc_static)
