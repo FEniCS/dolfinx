@@ -193,10 +193,9 @@ void fem(py::module& m)
            py::arg("check_midpoint"))
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
-                    std::pair<const dolfin::mesh::MeshFunction<std::size_t>*,
-                              std::size_t>,
+                    const std::vector<std::size_t>&,
                     dolfin::fem::DirichletBC::Method>(),
-           py::arg("V"), py::arg("g"), py::arg("sub_domain"), py::arg("method"))
+           py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
       .def("function_space", &dolfin::fem::DirichletBC::function_space)
       .def("method", &dolfin::fem::DirichletBC::method)
       .def("get_boundary_values", [](const dolfin::fem::DirichletBC& instance) {

@@ -132,26 +132,8 @@ public:
               const mesh::SubDomain& sub_domain,
               Method method = Method::topological, bool check_midpoint = true);
 
-  /// Create boundary condition for subdomain specified by index
-  ///
-  /// @param[in] V (FunctionSpace)
-  ///         The function space.
-  /// @param[in] g (Function)
-  ///         The value.
-  /// @param[in] sub_domains (std::pair<mesh::MeshFunction<std::size_t>,
-  /// std::size_t)
-  ///         Subdomain marker
-  /// @param[in] method (std::string)
-  ///         Optional argument: A string specifying the
-  ///         method to identify dofs.
-  DirichletBC(
-      std::shared_ptr<const function::FunctionSpace> V,
-      std::shared_ptr<const function::Function> g,
-      std::pair<const mesh::MeshFunction<std::size_t>*, std::size_t> sub_domain,
-      Method method = Method::topological);
-
-  /// Create boundary condition for subdomain by boundary markers
-  /// (cells, local facet numbers)
+  /// Create boundary condition for subdomain by boundary markers (facet
+  /// numbers)
   ///
   /// @param[in] V (FunctionSpace)
   ///         The function space.

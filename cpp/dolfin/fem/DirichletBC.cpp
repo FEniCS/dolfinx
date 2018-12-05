@@ -96,63 +96,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                  dofs_remote.end(), std::back_inserter(_dofs));
 }
 //-----------------------------------------------------------------------------
-DirichletBC::DirichletBC(
-    std::shared_ptr<const function::FunctionSpace> V,
-    std::shared_ptr<const function::Function> g,
-    std::pair<const mesh::MeshFunction<std::size_t>*, std::size_t> sub_domain,
-    Method method)
-    : _function_space(V), _g(g), _method(method), _num_dofs(0)
-{
-  check_data();
-
-  if (V->contains(*g->function_space()))
-    std::cout << "Spaces contained" << std::endl;
-  else
-    std::cout << "Spaces not contained" << std::endl;
-
-  if (V->has_element(*g->function_space()->element()))
-    std::cout << "Same element" << std::endl;
-  else
-    std::cout << "Different element" << std::endl;
-
-  if (V->mesh() == g->function_space()->mesh())
-    std::cout << "Same mesh" << std::endl;
-  else
-    std::cout << "Different mesh" << std::endl;
-
-  // Get mesh
-  assert(V);
-  assert(V->mesh());
-  const mesh::Mesh& mesh = *V->mesh();
-
-  // Initialise facet - cell connectivity
-  const std::size_t D = mesh.topology().dim();
-  mesh.init(D - 1, D);
-
-  // Build set of boundary facets
-  assert(sub_domain.first);
-  const mesh::MeshFunction<std::size_t>& domain = *sub_domain.first;
-  const std::size_t index = sub_domain.second;
-  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
-  {
-    if (domain[facet] == index)
-      _facets.push_back(facet.index());
-  }
-
-  std::set<PetscInt> dofs_local;
-  if (method == Method::topological)
-    dofs_local = compute_bc_dofs_topological(*V, _facets);
-  else if (method == Method::geometric)
-    dofs_local = compute_bc_dofs_geometric(*V, _facets);
-  else
-    throw std::runtime_error("BC method not yet supported");
-
-  std::set<PetscInt> dofs_remote
-      = gather(mesh.mpi_comm(), *V->dofmap(), dofs_local);
-  std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
-                 dofs_remote.end(), std::back_inserter(_dofs));
-}
-//-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
                          const std::vector<std::size_t>& facet_indices,
@@ -176,7 +119,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     std::cout << "Same mesh" << std::endl;
   else
     std::cout << "Different mesh" << std::endl;
-
 
   assert(V);
   std::set<PetscInt> dofs_local;
