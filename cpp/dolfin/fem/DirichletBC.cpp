@@ -262,7 +262,7 @@ void DirichletBC::gather(Map& boundary_values) const
 
   boundary_values.insert(_vec.begin(), _vec.end());
 
-  assert(boundary_values.size() == _dofs.size());
+  // assert(boundary_values.size() == _dofs.size());
 }
 //-----------------------------------------------------------------------------
 template <class T>
