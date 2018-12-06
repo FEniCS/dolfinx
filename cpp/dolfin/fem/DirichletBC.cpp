@@ -134,23 +134,9 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   check_data();
 
-  if (V->contains(*g->function_space()))
-    std::cout << "Spaces contained" << std::endl;
-  else
-    std::cout << "Spaces not contained" << std::endl;
-
-  if (V->has_element(*g->function_space()->element()))
-    std::cout << "Same element" << std::endl;
-  else
-    std::cout << "Different element" << std::endl;
-
-  if (V->mesh() == g->function_space()->mesh())
-    std::cout << "Same mesh" << std::endl;
-  else
-    std::cout << "Different mesh" << std::endl;
-
   assert(V);
   std::set<PetscInt> dofs_local;
+  std::cout << "Num facets: " << _facets.size() << "----" << std::endl;
   if (method == Method::topological)
     dofs_local = compute_bc_dofs_topological(*V, nullptr, _facets);
   else if (method == Method::geometric)
@@ -158,6 +144,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
+  std::cout << "Local dofs size: " << dofs_local.size() << std::endl;
   std::set<PetscInt> dofs_remote
       = gather(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
   std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
@@ -262,6 +249,8 @@ void DirichletBC::gather(Map& boundary_values) const
 
   boundary_values.insert(_vec.begin(), _vec.end());
 
+  std::cout << "Size check: " << MPI::rank(MPI_COMM_WORLD) << ": "
+            << boundary_values.size() << " , " << _dofs.size() << std::endl;
   // assert(boundary_values.size() == _dofs.size());
 }
 //-----------------------------------------------------------------------------
@@ -366,7 +355,10 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
     compute_bc_pointwise(boundary_values, data);
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& DirichletBC::markers() const { return _facets; }
+const std::vector<std::int32_t>& DirichletBC::markers() const
+{
+  return _facets;
+}
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace>
 DirichletBC::function_space() const
@@ -604,10 +596,9 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-std::set<PetscInt>
-DirichletBC::compute_bc_dofs_topological(const function::FunctionSpace& V,
-                                         const function::FunctionSpace* Vg,
-                                         const std::vector<std::int32_t>& facets)
+std::set<PetscInt> DirichletBC::compute_bc_dofs_topological(
+    const function::FunctionSpace& V, const function::FunctionSpace* Vg,
+    const std::vector<std::int32_t>& facets)
 {
   // // Special case
   // if (_facets.empty())

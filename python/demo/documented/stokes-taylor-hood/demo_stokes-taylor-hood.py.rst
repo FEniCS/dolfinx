@@ -90,6 +90,7 @@ following way::
     from dolfin import *
     from dolfin import function
     from dolfin.io import XDMFFile
+    import dolfin.cpp as cpp
 
     # Load mesh and subdomains
     xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
@@ -214,10 +215,10 @@ Finally, we can save and plot the solutions::
     import matplotlib.pyplot as plt
     from dolfin.plotting import plot
     plt.figure()
-    plot(u, title="velocity")
+    #plot(u, title="velocity")
 
-    plt.figure()
-    plot(p, title="pressure")
+    #plt.figure()
+    plot(p, title="pressure" + str(MPI.rank(mesh.mpi_comm())))
 
     # Display plots
     plt.show()
