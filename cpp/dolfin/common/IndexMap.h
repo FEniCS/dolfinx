@@ -87,6 +87,11 @@ public:
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
 
+  /// Scatter/gather data between processes
+  /// local_data contains data with length owned+ghost
+  /// The ghost data is filled in with the owned values from other processes
+  void scatter(std::vector<double>& local_data);
+
 private:
   // MPI Communicator
   // dolfin::MPI::Comm _mpi_comm;
