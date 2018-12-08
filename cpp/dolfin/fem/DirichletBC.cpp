@@ -98,7 +98,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     throw std::runtime_error("BC method not yet supported");
 
   std::set<PetscInt> dofs_remote
-      = gather(mesh->mpi_comm(), *V->dofmap(), dofs_local);
+      = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
   std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
                  dofs_remote.end(), std::back_inserter(_dofs));
 }
@@ -136,7 +136,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   assert(V);
   std::set<PetscInt> dofs_local;
-  std::cout << "Num facets: " << _facets.size() << "----" << std::endl;
+  // std::cout << "Num facets: " << _facets.size() << "----" << std::endl;
   if (method == Method::topological)
     dofs_local = compute_bc_dofs_topological(*V, nullptr, _facets);
   else if (method == Method::geometric)
@@ -144,9 +144,10 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
-  std::cout << "Local dofs size: " << dofs_local.size() << std::endl;
+  // std::cout << "Local dofs size: " << MPI::rank(MPI_COMM_WORLD) << ", "
+  //           << dofs_local.size() << std::endl;
   std::set<PetscInt> dofs_remote
-      = gather(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
+      = gather_new(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
   std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
                  dofs_remote.end(), std::back_inserter(_dofs));
 }
@@ -154,6 +155,11 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 void DirichletBC::gather(Map& boundary_values) const
 {
   common::Timer timer("DirichletBC gather");
+
+  const int size_bv0 = boundary_values.size();
+
+  std::cout << "   Size pre-check: " << MPI::rank(MPI_COMM_WORLD) << ": "
+            << boundary_values.size() << " , " << _dofs.size() << std::endl;
 
   assert(_function_space->mesh());
   MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
@@ -249,15 +255,27 @@ void DirichletBC::gather(Map& boundary_values) const
 
   boundary_values.insert(_vec.begin(), _vec.end());
 
-  std::cout << "Size check: " << MPI::rank(MPI_COMM_WORLD) << ": "
-            << boundary_values.size() << " , " << _dofs.size() << std::endl;
+  const int size_bv1 = boundary_values.size();
+
+  // for (auto x : _vec)
+  // {
+  //   auto f = std::find(_dofs.begin(), _dofs.end(), x.first);
+  //   if (f != _dofs.end())
+  //     boundary_values.insert(x);
+  // }
+
+  std::cout << "   B:Size check: " << MPI::rank(MPI_COMM_WORLD) << ": "
+            << size_bv1 << ", " << size_bv1 - size_bv0 << " , " << _dofs.size()
+            << std::endl;
+  // std::cout << "   C:Size check: " << MPI::rank(MPI_COMM_WORLD) << ": "
+  //           << boundary_values.size() << std::endl;
   // assert(boundary_values.size() == _dofs.size());
 }
 //-----------------------------------------------------------------------------
 template <class T>
-std::set<PetscInt> DirichletBC::gather(MPI_Comm mpi_comm,
-                                       const GenericDofMap& dofmap,
-                                       const T& dofs)
+std::set<PetscInt> DirichletBC::gather_new(MPI_Comm mpi_comm,
+                                           const GenericDofMap& dofmap,
+                                           const T& dofs)
 {
   std::size_t comm_size = MPI::size(mpi_comm);
 
@@ -296,10 +314,6 @@ std::set<PetscInt> DirichletBC::gather(MPI_Comm mpi_comm,
   const std::int64_t n1 = dofmap.ownership_range()[1];
   const std::int64_t owned_size = n1 - n0;
 
-  // Reserve space
-  // const std::size_t num_dofs = boundary_values.size() + received_bvc0.size();
-  // boundary_values.reserve(num_dofs);
-
   // Add the received boundary values to the local boundary values
   std::set<PetscInt> _vec;
   for (PetscInt index_global : received_bvc)
@@ -336,7 +350,6 @@ std::set<PetscInt> DirichletBC::gather(MPI_Comm mpi_comm,
     }
   }
 
-  // boundary_values.insert(_vec.begin(), _vec.end());
   return _vec;
 }
 //-----------------------------------------------------------------------------
@@ -346,6 +359,10 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
   assert(_function_space);
   LocalData data(*_function_space);
 
+  // std::cout << "A** Get boundary values: " << MPI::rank(MPI_COMM_WORLD) << ",
+  // "
+  //           << boundary_values.size() << std::endl;
+
   // Compute dofs and values
   if (_method == Method::topological)
     compute_bc_topological(boundary_values, data);
@@ -353,6 +370,10 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
     compute_bc_geometric(boundary_values, data);
   else if (_method == Method::pointwise)
     compute_bc_pointwise(boundary_values, data);
+
+  // std::cout << "P** Num boundary values: " << MPI::rank(MPI_COMM_WORLD) << ",
+  // "
+  //           << boundary_values.size() << std::endl;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& DirichletBC::markers() const

@@ -189,8 +189,8 @@ public:
   void gather(Map& boundary_values) const;
 
   template <class T>
-  static std::set<PetscInt> gather(MPI_Comm mpi_comm,
-                                   const GenericDofMap& dofmap, const T& dofs);
+  static std::set<PetscInt>
+  gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap, const T& dofs);
 
   /// Return boundary markers
   ///
@@ -299,10 +299,19 @@ private:
   };
 
   //  New
-  Eigen::Array<bool, Eigen::Dynamic, 1> _dof_cells;
-  Eigen::Array<bool, Eigen::Dynamic, 1> _dof_facets;
+  // Eigen::Array<bool, Eigen::Dynamic, 1> _dof_cells;
+  // Eigen::Array<bool, Eigen::Dynamic, 1> _dof_facets;
   // Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs;
+
+  // Dof indices in _function_space to which bcs are applied
   std::vector<PetscInt> _dofs;
+
+  // Dof indices in _g space which supply bc values
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs_g;
+
+  // Dof indices in _g space which supply bc values
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> _g_values;
+
 };
 } // namespace fem
 } // namespace dolfin
