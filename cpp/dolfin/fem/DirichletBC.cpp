@@ -89,16 +89,19 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       _facets.push_back(facet.index());
   }
 
-  std::set<PetscInt> dofs_local;
+  std::set<std::array<PetscInt, 2>> dofs_local;
   if (method == Method::topological)
     dofs_local = compute_bc_dofs_topological(*V, nullptr, _facets);
   else if (method == Method::geometric)
-    dofs_local = compute_bc_dofs_geometric(*V, nullptr, _facets);
+  {
+    // dofs_local = compute_bc_dofs_geometric(*V, nullptr, _facets);
+  }
   else
     throw std::runtime_error("BC method not yet supported");
 
-  std::set<PetscInt> dofs_remote
-      = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
+  std::set<std::array<PetscInt, 2>> dofs_remote;
+  // std::set<PetscInt> dofs_remote
+  //     = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
   std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
                  dofs_remote.end(), std::back_inserter(_dofs));
 }
@@ -135,19 +138,22 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   check_data();
 
   assert(V);
-  std::set<PetscInt> dofs_local;
+  std::set<std::array<PetscInt, 2>> dofs_local;
   // std::cout << "Num facets: " << _facets.size() << "----" << std::endl;
   if (method == Method::topological)
     dofs_local = compute_bc_dofs_topological(*V, nullptr, _facets);
   else if (method == Method::geometric)
-    dofs_local = compute_bc_dofs_geometric(*V, nullptr, _facets);
+  {
+    // dofs_local = compute_bc_dofs_geometric(*V, nullptr, _facets);
+  }
   else
     throw std::runtime_error("BC method not yet supported");
 
   // std::cout << "Local dofs size: " << MPI::rank(MPI_COMM_WORLD) << ", "
   //           << dofs_local.size() << std::endl;
-  std::set<PetscInt> dofs_remote
-      = gather_new(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
+  std::set<std::array<PetscInt, 2>> dofs_remote;
+  // std::set<PetscInt> dofs_remote
+  //     = gather_new(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
   std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
                  dofs_remote.end(), std::back_inserter(_dofs));
 }
@@ -398,8 +404,8 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DirichletBC::dof_indices() const
 {
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(_dofs.size());
   std::size_t i = 0;
-  for (PetscInt d : _dofs)
-    dofs[i++] = d;
+  for (auto d : _dofs)
+    dofs[i++] = d[0];
   return dofs;
 }
 //-----------------------------------------------------------------------------
@@ -423,7 +429,7 @@ DirichletBC::bcs() const
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values(_dofs.size());
   for (std::size_t i = 0; i < _dofs.size(); ++i)
   {
-    indices[i] = _dofs[i];
+    indices[i] = _dofs[i][0];
     values[i] = *(x_values + indices[i]);
   }
 
@@ -452,7 +458,7 @@ DirichletBC::bcs() const
     _values[i++] = bc.second;
   }
 
-  assert(boundary_values.size() == _dofs.size());
+  // assert(boundary_values.size() == _dofs.size());
 
   std::cout << "Check 0 " << std::endl;
   for (std::size_t i = 0; i < _dofs.size(); ++i)
@@ -617,19 +623,10 @@ void DirichletBC::compute_bc_topological(Map& boundary_values,
   }
 }
 //-----------------------------------------------------------------------------
-std::set<PetscInt> DirichletBC::compute_bc_dofs_topological(
+std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
     const function::FunctionSpace& V, const function::FunctionSpace* Vg,
     const std::vector<std::int32_t>& facets)
 {
-  // // Special case
-  // if (_facets.empty())
-  // {
-  //   if (MPI::size(mesh.mpi_comm()) == 1)
-  //     log::warning("Found no facets matching domain for boundary
-  //     condition.");
-  //   return;
-  // }
-
   // Get mesh
   assert(V.mesh());
   const mesh::Mesh& mesh = *V.mesh();
@@ -638,6 +635,12 @@ std::set<PetscInt> DirichletBC::compute_bc_dofs_topological(
   // Get dofmap
   assert(V.dofmap());
   const GenericDofMap& dofmap = *V.dofmap();
+  const GenericDofMap* dofmap_g = &dofmap;
+  if (Vg)
+  {
+    assert(Vg->dofmap());
+    dofmap_g = Vg->dofmap().get();
+  }
 
   // Initialise facet-cell connectivity
   mesh.init(tdim);
@@ -657,7 +660,7 @@ std::set<PetscInt> DirichletBC::compute_bc_dofs_topological(
     facet_dofs.push_back(dofmap.tabulate_entity_closure_dofs(tdim - 1, i));
 
   // Iterate over marked facets
-  std::vector<PetscInt> bc_dofs;
+  std::vector<std::array<PetscInt, 2>> bc_dofs;
   for (std::size_t f = 0; f < facets.size(); ++f)
   {
     // Create facet and attached cell
@@ -669,20 +672,21 @@ std::set<PetscInt> DirichletBC::compute_bc_dofs_topological(
     // Get cell dofmap
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
         = dofmap.cell_dofs(cell.index());
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+        cell_dofs_g = dofmap_g->cell_dofs(cell.index());
 
     // Loop over facet dofs
     const size_t facet_local_index = cell.index(facet);
     for (std::size_t i = 0; i < num_facet_dofs; i++)
     {
-      const std::size_t dof_index = cell_dofs[facet_dofs[facet_local_index][i]];
-      bc_dofs.push_back(dof_index);
+      const std::size_t index = facet_dofs[facet_local_index][i];
+      const PetscInt dof_index = cell_dofs[index];
+      const PetscInt dof_index_g = cell_dofs_g[index];
+      bc_dofs.push_back({dof_index, dof_index_g});
     }
   }
 
-  // FIXME: Send to other (neigbouring) processes, maybe just for shared
-  // dofs?
-
-  return std::set<PetscInt>(bc_dofs.begin(), bc_dofs.end());
+  return std::set<std::array<PetscInt, 2>>(bc_dofs.begin(), bc_dofs.end());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::compute_bc_geometric(Map& boundary_values,
@@ -933,7 +937,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
   throw std::runtime_error(
       "DirichletBC::compute_bc_pointwise has not yet been updated.");
   // if (!_user_sub_domain)
-  //   throw std::runtime_error("A SubDomain is required for pointwise search");
+  //   throw std::runtime_error("A SubDomain is required for pointwise
+  //   search");
 
   // assert(_g);
 
@@ -992,7 +997,8 @@ void DirichletBC::compute_bc_pointwise(Map& boundary_values,
 
   //     // Loop all dofs on cell
   //     std::vector<std::size_t> dofs;
-  //     for (std::size_t i = 0; i < dofmap.num_element_dofs(cell.index()); ++i)
+  //     for (std::size_t i = 0; i < dofmap.num_element_dofs(cell.index());
+  //     ++i)
   //     {
   //       const std::size_t global_dof = cell_dofs[i];
 

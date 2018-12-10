@@ -245,7 +245,7 @@ private:
   void compute_bc_topological(Map& boundary_values, LocalData& data) const;
 
   // Compute boundary value dofs (topological approach)
-  static std::set<PetscInt>
+  static std::set<std::array<PetscInt, 2>>
   compute_bc_dofs_topological(const function::FunctionSpace& V,
                               const function::FunctionSpace* Vg,
                               const std::vector<std::int32_t>& facets);
@@ -304,14 +304,13 @@ private:
   // Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs;
 
   // Dof indices in _function_space to which bcs are applied
-  std::vector<PetscInt> _dofs;
+  std::vector<std::array<PetscInt, 2>> _dofs;
 
   // Dof indices in _g space which supply bc values
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs_g;
 
   // Dof indices in _g space which supply bc values
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> _g_values;
-
 };
 } // namespace fem
 } // namespace dolfin
