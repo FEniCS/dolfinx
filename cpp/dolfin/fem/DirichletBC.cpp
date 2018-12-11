@@ -99,10 +99,12 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
-  std::set<PetscInt> dofs_remote
-      = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
+  // std::set<PetscInt> dofs_remote
+  //     = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
   // std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
   //                dofs_remote.end(), std::back_inserter(_dofs));
+  _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
+                                               dofs_local.end());
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -151,10 +153,12 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   // std::cout << "Local dofs size: " << MPI::rank(MPI_COMM_WORLD) << ", "
   //           << dofs_local.size() << std::endl;
   // std::set<std::array<PetscInt, 2>> dofs_remote;
-  std::set<PetscInt> dofs_remote
-      = gather_new(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
+  // std::set<PetscInt> dofs_remote
+  //     = gather_new(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
   // std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
   //                dofs_remote.end(), std::back_inserter(_dofs));
+  _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
+                                               dofs_local.end());
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::gather(Map& boundary_values) const
