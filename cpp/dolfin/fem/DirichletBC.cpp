@@ -99,11 +99,10 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
-  std::set<std::array<PetscInt, 2>> dofs_remote;
-  // std::set<PetscInt> dofs_remote
-  //     = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
-  std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
-                 dofs_remote.end(), std::back_inserter(_dofs));
+  std::set<PetscInt> dofs_remote
+      = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
+  // std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
+  //                dofs_remote.end(), std::back_inserter(_dofs));
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -151,11 +150,11 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   // std::cout << "Local dofs size: " << MPI::rank(MPI_COMM_WORLD) << ", "
   //           << dofs_local.size() << std::endl;
-  std::set<std::array<PetscInt, 2>> dofs_remote;
-  // std::set<PetscInt> dofs_remote
-  //     = gather_new(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
-  std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
-                 dofs_remote.end(), std::back_inserter(_dofs));
+  // std::set<std::array<PetscInt, 2>> dofs_remote;
+  std::set<PetscInt> dofs_remote
+      = gather_new(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
+  // std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
+  //                dofs_remote.end(), std::back_inserter(_dofs));
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::gather(Map& boundary_values) const
@@ -291,11 +290,11 @@ std::set<PetscInt> DirichletBC::gather_new(MPI_Comm mpi_comm,
 
   // Create list of boundary values to send to each processor
   std::vector<std::vector<PetscInt>> proc_map(comm_size);
-  for (PetscInt dof : dofs)
+  for (auto dof : dofs)
   {
     // If the boundary value is attached to a shared dof, add it to the
     // list of boundary values for each of the processors that share it
-    const std::div_t div = std::div(dof, bs);
+    const std::div_t div = std::div(dof[0], bs);
     const int component = div.rem;
     const int node_index = div.quot;
 
@@ -325,10 +324,11 @@ std::set<PetscInt> DirichletBC::gather_new(MPI_Comm mpi_comm,
   for (PetscInt index_global : received_bvc)
   {
     // Convert to local (process) dof index
+    int local_index = -1;
     if (index_global >= n0 and index_global < n1)
     {
       // Case 0: dof is owned by this process
-      _vec.insert(index_global - n0);
+      local_index = index_global - n0;
     }
     else
     {
@@ -351,9 +351,12 @@ std::set<PetscInt> DirichletBC::gather_new(MPI_Comm mpi_comm,
       else
       {
         std::size_t pos = std::distance(local_to_global.data(), it);
-        _vec.insert(owned_size + bs * pos + component);
+        local_index = owned_size + bs * pos + component;
       }
     }
+
+    assert(local_index >= 0);
+    _vec.insert(local_index);
   }
 
   return _vec;
