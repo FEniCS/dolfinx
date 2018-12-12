@@ -109,6 +109,12 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   const std::map<PetscInt, PetscInt> shared_dofs
       = shared_bc_to_g(*V, *g->function_space());
+  for (auto dof_remote : dofs_remote)
+  {
+    auto it = shared_dofs.find(dof_remote);
+    if (it == shared_dofs.end())
+      throw std::runtime_error("Oops, can't find dof (A).");
+  }
 
   _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
                                                dofs_local.end());
@@ -168,6 +174,12 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   const std::map<PetscInt, PetscInt> shared_dofs
       = shared_bc_to_g(*V, *g->function_space());
+  for (auto dof_remote : dofs_remote)
+  {
+    auto it = shared_dofs.find(dof_remote);
+    if (it == shared_dofs.end())
+      throw std::runtime_error("Oops, can't find dof (B).");
+  }
 
   // std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
   //                dofs_remote.end(), std::back_inserter(_dofs));
