@@ -238,6 +238,11 @@ public:
 private:
   class LocalData;
 
+  // Build map of shared dofs in V to dofs in Vg
+  static std::map<PetscInt, PetscInt>
+  shared_bc_to_g(const function::FunctionSpace& V,
+                 const function::FunctionSpace& Vg);
+
   // Check input data to constructor
   void check_data() const;
 
