@@ -234,7 +234,6 @@ public:
   /// all_reduce(MPI_Comm, Table&, MPI_Op)
   static MPI_Op MPI_AVG();
 
-private:
   // Return MPI data type
   template <typename T>
   struct dependent_false : std::false_type
