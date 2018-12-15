@@ -114,7 +114,9 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     auto it = shared_dofs.find(dof_remote);
     if (it == shared_dofs.end())
       throw std::runtime_error("Oops, can't find dof (A).");
-    dofs_local.insert({it->first, it->second});
+    // auto it_map = dofs_local.insert({it->first, it->second});
+    // if (it_map.second)
+    //   std::cout << "Inserted off-process dof (A)" << std::endl;
   }
 
   _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
@@ -180,7 +182,9 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     auto it = shared_dofs.find(dof_remote);
     if (it == shared_dofs.end())
       throw std::runtime_error("Oops, can't find dof (B).");
-    dofs_local.insert({it->first, it->second});
+    // auto it_map = dofs_local.insert({it->first, it->second});
+    // if (it_map.second)
+    //   std::cout << "Inserted off-process dof (B)" << std::endl;
   }
 
   // std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
@@ -495,16 +499,16 @@ DirichletBC::bcs() const
 
   // assert(boundary_values.size() == _dofs.size());
 
-  std::cout << "Check 0 " << std::endl;
-  for (std::size_t i = 0; i < _dofs.size(); ++i)
-  {
-    std::cout << indices[i] << ", " << _indices[i] << std::endl;
-  }
-  std::cout << "Check 1 " << std::endl;
-  for (std::size_t i = 0; i < _dofs.size(); ++i)
-  {
-    std::cout << values[i] << ", " << _values[i] << std::endl;
-  }
+  // std::cout << "Check 0 " << std::endl;
+  // for (std::size_t i = 0; i < _dofs.size(); ++i)
+  // {
+  //   std::cout << indices[i] << ", " << _indices[i] << std::endl;
+  // }
+  // std::cout << "Check 1 " << std::endl;
+  // for (std::size_t i = 0; i < _dofs.size(); ++i)
+  // {
+  //   std::cout << values[i] << ", " << _values[i] << std::endl;
+  // }
   // std::cout << _indices << std::endl;
   // std::cout << indices << std::endl;
 
