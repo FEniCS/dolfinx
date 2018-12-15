@@ -187,6 +187,7 @@ as follows:
 
 .. code-block:: cpp
 
+     // FIXME: zero function and make sure ghosts are udpated
      // Define boundary condition
      auto u0 = std::make_shared<function::Function>(V);
      auto boundary = std::make_shared<DirichletBoundary>();
