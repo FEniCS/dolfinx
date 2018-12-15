@@ -111,12 +111,13 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       = shared_bc_to_g(*V, *g->function_space());
   for (auto dof_remote : dofs_remote)
   {
+    std::cout << "Checking remote (A)" << std::endl;
     auto it = shared_dofs.find(dof_remote);
     if (it == shared_dofs.end())
       throw std::runtime_error("Oops, can't find dof (A).");
-    // auto it_map = dofs_local.insert({it->first, it->second});
-    // if (it_map.second)
-    //   std::cout << "Inserted off-process dof (A)" << std::endl;
+    auto it_map = dofs_local.insert({it->first, it->second});
+    if (it_map.second)
+      std::cout << "Inserted off-process dof (A)" << std::endl;
   }
 
   _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
@@ -179,12 +180,13 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       = shared_bc_to_g(*V, *g->function_space());
   for (auto dof_remote : dofs_remote)
   {
+    std::cout << "Checking remote (B)" << std::endl;
     auto it = shared_dofs.find(dof_remote);
     if (it == shared_dofs.end())
       throw std::runtime_error("Oops, can't find dof (B).");
-    // auto it_map = dofs_local.insert({it->first, it->second});
-    // if (it_map.second)
-    //   std::cout << "Inserted off-process dof (B)" << std::endl;
+    auto it_map = dofs_local.insert({it->first, it->second});
+    if (it_map.second)
+      std::cout << "Inserted off-process dof (B)" << std::endl;
   }
 
   // std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
