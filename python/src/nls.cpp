@@ -122,7 +122,7 @@ void nls(py::module& m)
           "Tried to call pure virtual function dolfin::NonlinearProblem::F");
     }
 
-    void form(const dolfin::la::PETScVector& x) override
+    void form(dolfin::la::PETScVector& x) override
     {
       PYBIND11_OVERLOAD_INT(void, dolfin::nls::NonlinearProblem, "form", &x);
       return dolfin::nls::NonlinearProblem::form(x);
