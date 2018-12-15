@@ -32,7 +32,9 @@ public:
 
   /// Function called by Newton solver before requesting F, J or J_pc.
   /// This can be used to compute F, J and J_pc together.
-  virtual void form(const la::PETScVector& x)
+  /// Note: the vector x is not const as this function is commonly used
+  /// to update ghost entries before assembly.
+  virtual void form(la::PETScVector& x)
   {
     // Do nothing if not supplied by the user
   }

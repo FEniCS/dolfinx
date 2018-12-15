@@ -106,27 +106,24 @@ public:
   /// Destructor
   virtual ~HyperElasticProblem() = default;
 
+  void form(la::PETScVector& x) final { x.update_ghosts(); }
+
   /// Compute F at current point x
-  virtual la::PETScVector* F(const la::PETScVector& x)
+  la::PETScVector* F(const la::PETScVector& x) final
   {
     if (!b)
     {
-      std::cout << "First computation of b." << std::endl;
       b = std::make_unique<la::PETScVector>(assemble(
           {_l.get()}, {{_j}}, _bcs, &x, fem::BlockType::monolithic, -1.0));
-      std::cout << "Post first computation of b." << std::endl;
     }
     else
-    {
-      std::cout << "Second+ computation of b." << std::endl;
       assemble(*b, {_l.get()}, {{}}, _bcs, &x, -1.0);
-      std::cout << "Post second computation of b." << std::endl;
-    }
+
     return b.get();
   }
 
   /// Compute J = F' at current point x
-  virtual la::PETScMatrix* J(const la::PETScVector& x)
+  la::PETScMatrix* J(const la::PETScVector& x) final
   {
     if (!A)
     {
