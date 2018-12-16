@@ -224,14 +224,10 @@ public:
   bcs() const;
 
 private:
-
   // Build map of shared dofs in V to dofs in Vg
   static std::map<PetscInt, PetscInt>
   shared_bc_to_g(const function::FunctionSpace& V,
                  const function::FunctionSpace& Vg);
-
-  // Check input data to constructor
-  void check_data() const;
 
   // Compute boundary value dofs (topological approach)
   static std::set<std::array<PetscInt, 2>>
@@ -270,7 +266,8 @@ private:
 
   // Cells attached to boundary, stored by cell index with map to local
   // dof number
-  // mutable std::map<std::size_t, std::vector<std::size_t>> _cells_to_localdofs;
+  // mutable std::map<std::size_t, std::vector<std::size_t>>
+  // _cells_to_localdofs;
 
   //  New
   // Eigen::Array<bool, Eigen::Dynamic, 1> _dof_cells;

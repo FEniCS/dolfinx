@@ -62,8 +62,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     }
   }
 
-  check_data();
-
   // FIXME: This can be made more efficient, we should be able to
   //        extract the facets without first creating a
   //        mesh::MeshFunction on the entire mesh and then extracting
@@ -153,8 +151,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                                "function do not have same element.");
     }
   }
-
-  check_data();
 
   assert(V);
   std::set<std::array<PetscInt, 2>> dofs_local;
@@ -471,70 +467,6 @@ DirichletBC::shared_bc_to_g(const function::FunctionSpace& V,
     }
   }
   return std::map<PetscInt, PetscInt>(dofs.begin(), dofs.end());
-}
-//-----------------------------------------------------------------------------
-void DirichletBC::check_data() const
-{
-  assert(_g);
-  assert(_function_space->element());
-  const FiniteElement& element = *_function_space->element();
-
-  // Check for common errors, message below might be cryptic
-  if (_g->value_rank() == 0 && element.value_rank() == 1)
-  {
-    throw std::runtime_error("Expecting a vector-valued boundary value but "
-                             "given function is scalar");
-  }
-
-  if (_g->value_rank() == 1 && element.value_rank() == 0)
-  {
-    throw std::runtime_error("Expecting a scalar boundary value but given "
-                             "function is vector-valued");
-  }
-
-  // Check that value shape of boundary value
-  if (_g->value_rank() != element.value_rank())
-  {
-    throw std::runtime_error("Illegal value rank "
-                             + std::to_string(_g->value_rank()) + ", expecting "
-                             + std::to_string(element.value_rank()));
-  }
-
-  for (std::size_t i = 0; i < _g->value_rank(); i++)
-  {
-    if (_g->value_dimension(i) != element.value_dimension(i))
-    {
-      throw std::runtime_error(
-          "Illegal value dimension " + std::to_string(_g->value_dimension(i))
-          + ", expecting " + std::to_string(element.value_dimension(i)));
-    }
-  }
-
-  // Check user supplied mesh::MeshFunction
-  // if (_user_mesh_function)
-  // {
-  //   // Check that mesh::Meshfunction is initialised
-  //   if (!_user_mesh_function->mesh())
-  //     throw std::runtime_error("User mesh::MeshFunction is not
-  //     initialized");
-
-  //   // Check that mesh::Meshfunction is a mesh::FacetFunction
-  //   const std::size_t tdim = _user_mesh_function->mesh()->topology().dim();
-  //   if (_user_mesh_function->dim() != tdim - 1)
-  //   {
-  //     throw std::runtime_error("User mesh::MeshFunction is not a facet "
-  //                              "mesh::MeshFunction (dimension is wrong)");
-  //   }
-
-  //   // Check that mesh::Meshfunction and function::FunctionSpace meshes
-  //   match assert(_function_space->mesh()); if
-  //   (_user_mesh_function->mesh()->id() != _function_space->mesh()->id())
-  //   {
-  //     throw std::runtime_error("User mesh::MeshFunction and "
-  //                              "function::FunctionSpace meshes are
-  //                              different");
-  //   }
-  // }
 }
 //-----------------------------------------------------------------------------
 std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
