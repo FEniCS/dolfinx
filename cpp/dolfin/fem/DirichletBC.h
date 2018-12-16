@@ -170,23 +170,11 @@ public:
   /// Move assignment operator
   DirichletBC& operator=(DirichletBC&& bc) = default;
 
-  /// Get Dirichlet dofs and values. If a method other than 'pointwise' is
-  /// used in parallel, the map may not be complete for local vertices since
-  /// a vertex can have a bc applied, but the partition might not have a
-  /// facet on the boundary. To ensure all local boundary dofs are marked,
-  /// it is necessary to call gather() on the returned boundary values.
+  /// Get Dirichlet dofs and values.
   ///
   /// @param[in,out] boundary_values (Map&)
   ///         Map from dof to boundary value.
   void get_boundary_values(Map& boundary_values) const;
-
-  /// Get boundary values from neighbour processes. If a method other than
-  /// "pointwise" is used, this is necessary to ensure all boundary dofs are
-  /// marked on all processes.
-  ///
-  /// @param[in,out] boundary_values (Map&)
-  ///         Map from dof to boundary value.
-  // void gather(Map& boundary_values) const;
 
   template <class T>
   static std::set<PetscInt>
@@ -236,7 +224,6 @@ public:
   bcs() const;
 
 private:
-  class LocalData;
 
   // Build map of shared dofs in V to dofs in Vg
   static std::map<PetscInt, PetscInt>
@@ -246,9 +233,6 @@ private:
   // Check input data to constructor
   void check_data() const;
 
-  // Compute boundary values for facet (topological approach)
-  void compute_bc_topological(Map& boundary_values, LocalData& data) const;
-
   // Compute boundary value dofs (topological approach)
   static std::set<std::array<PetscInt, 2>>
   compute_bc_dofs_topological(const function::FunctionSpace& V,
@@ -256,7 +240,7 @@ private:
                               const std::vector<std::int32_t>& facets);
 
   // Compute boundary values for facet (geometrical approach)
-  void compute_bc_geometric(Map& boundary_values, LocalData& data) const;
+  // void compute_bc_geometric(Map& boundary_values, LocalData& data) const;
 
   // Compute boundary values dofs (geometrical approach)
   static std::set<PetscInt>
@@ -265,7 +249,7 @@ private:
                             const std::vector<std::int32_t>& facets);
 
   // Compute boundary values for facet (pointwise approach)
-  void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
+  // void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
 
   // Check if the point is in the same plane as the given facet
   static bool
@@ -286,22 +270,7 @@ private:
 
   // Cells attached to boundary, stored by cell index with map to local
   // dof number
-  mutable std::map<std::size_t, std::vector<std::size_t>> _cells_to_localdofs;
-
-  // Local data for application of boundary conditions
-  class LocalData
-  {
-  public:
-    // Constructor
-    LocalData(const function::FunctionSpace& V);
-
-    // Coefficients
-    std::vector<PetscScalar> w;
-
-    // Coordinates for dofs
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        coordinates;
-  };
+  // mutable std::map<std::size_t, std::vector<std::size_t>> _cells_to_localdofs;
 
   //  New
   // Eigen::Array<bool, Eigen::Dynamic, 1> _dof_cells;
@@ -312,10 +281,10 @@ private:
   std::vector<std::array<PetscInt, 2>> _dofs;
 
   // Dof indices in _g space which supply bc values
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs_g;
+  // Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs_g;
 
   // Dof indices in _g space which supply bc values
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> _g_values;
+  // Eigen::Array<PetscScalar, Eigen::Dynamic, 1> _g_values;
 };
 } // namespace fem
 } // namespace dolfin
