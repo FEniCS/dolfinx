@@ -97,6 +97,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   }
   else if (method == Method::geometric)
   {
+    throw std::runtime_error("BC method not yet supported");
     // dofs_local = compute_bc_dofs_geometric(*V, nullptr, _facets);
   }
   else
@@ -165,6 +166,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   }
   else if (method == Method::geometric)
   {
+    throw std::runtime_error("BC method not yet supported");
     // dofs_local = compute_bc_dofs_geometric(*V, nullptr, _facets);
   }
   else
