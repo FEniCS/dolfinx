@@ -81,6 +81,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   sub_domain.mark(domain, (std::size_t)0, check_midpoint);
 
   // Build set of boundary facets
+  std::vector<std::int32_t> _facets;
   for (auto& facet : mesh::MeshRange<mesh::Facet>(*mesh))
   {
     if (domain[facet] == 0)
@@ -127,7 +128,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
                          const std::vector<std::int32_t>& facet_indices,
                          Method method)
-    : _function_space(V), _g(g), _method(method), _facets(facet_indices)
+    : _function_space(V), _g(g), _method(method)
 {
   assert(V);
   assert(g);
@@ -157,8 +158,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   // std::cout << "Num facets: " << _facets.size() << "----" << std::endl;
   if (method == Method::topological)
   {
-    dofs_local
-        = compute_bc_dofs_topological(*V, g->function_space().get(), _facets);
+    dofs_local = compute_bc_dofs_topological(*V, g->function_space().get(),
+                                             facet_indices);
   }
   else if (method == Method::geometric)
   {
@@ -323,11 +324,6 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
   // Restore PETSc array
   VecRestoreArrayRead(g_local, &g_array);
   VecGhostRestoreLocalForm(g_vec, &g_local);
-}
-//-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& DirichletBC::markers() const
-{
-  return _facets;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace>

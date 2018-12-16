@@ -180,13 +180,6 @@ public:
   static std::set<PetscInt>
   gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap, const T& dofs);
 
-  /// Return boundary markers
-  ///
-  /// @return std::vector<std::size_t>&
-  ///         Boundary markers (facets stored as pairs of cells and
-  ///         local facet numbers).
-  const std::vector<std::int32_t>& markers() const;
-
   /// Return function space V
   ///
   /// @return FunctionSpace
@@ -262,7 +255,7 @@ private:
   Method _method;
 
   // Boundary facets, stored by facet index (local to process)
-  std::vector<std::int32_t> _facets;
+  // std::vector<std::int32_t> _facets;
 
   // Cells attached to boundary, stored by cell index with map to local
   // dof number
