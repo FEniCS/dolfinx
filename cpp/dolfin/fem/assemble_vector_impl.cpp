@@ -254,11 +254,11 @@ void fem::impl::_modify_bc(
     if (a.function_space(1)->contains(*bcs[i]->function_space()))
     {
       bcs[i]->get_boundary_values(boundary_values);
-      if (MPI::size(mesh.mpi_comm()) > 1
-          and bcs[i]->method() != DirichletBC::Method::pointwise)
-      {
-        bcs[i]->gather(boundary_values);
-      }
+      // if (MPI::size(mesh.mpi_comm()) > 1
+      //     and bcs[i]->method() != DirichletBC::Method::pointwise)
+      // {
+      //   bcs[i]->gather(boundary_values);
+      // }
     }
   }
 

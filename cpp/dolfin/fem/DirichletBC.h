@@ -186,7 +186,7 @@ public:
   ///
   /// @param[in,out] boundary_values (Map&)
   ///         Map from dof to boundary value.
-  void gather(Map& boundary_values) const;
+  // void gather(Map& boundary_values) const;
 
   template <class T>
   static std::set<PetscInt>

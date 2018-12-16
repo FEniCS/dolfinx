@@ -93,8 +93,8 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1>
 _get_local_bc_rows(const function::FunctionSpace& V,
                    std::vector<std::shared_ptr<const DirichletBC>> bcs)
 {
-  assert(V.mesh());
-  const mesh::Mesh& mesh = *V.mesh();
+  // assert(V.mesh());
+  // const mesh::Mesh& mesh = *V.mesh();
 
   DirichletBC::Map boundary_values;
   for (std::size_t i = 0; i < bcs.size(); ++i)
@@ -106,11 +106,11 @@ _get_local_bc_rows(const function::FunctionSpace& V,
       // FIXME: find way to avoid gather, or perform with a single
       // gather
       bcs[i]->get_boundary_values(boundary_values);
-      if (MPI::size(mesh.mpi_comm()) > 1
-          and bcs[i]->method() != DirichletBC::Method::pointwise)
-      {
-        bcs[i]->gather(boundary_values);
-      }
+      // if (MPI::size(mesh.mpi_comm()) > 1
+      //     and bcs[i]->method() != DirichletBC::Method::pointwise)
+      // {
+      //   bcs[i]->gather(boundary_values);
+      // }
     }
   }
 

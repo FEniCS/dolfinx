@@ -197,125 +197,127 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                                                dofs_local.end());
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::gather(Map& boundary_values) const
-{
-  common::Timer timer("DirichletBC gather");
+// void DirichletBC::gather(Map& boundary_values) const
+// {
+//   common::Timer timer("DirichletBC gather");
 
-  const int size_bv0 = boundary_values.size();
+//   const int size_bv0 = boundary_values.size();
 
-  std::cout << "   Size pre-check: " << MPI::rank(MPI_COMM_WORLD) << ": "
-            << boundary_values.size() << " , " << _dofs.size() << std::endl;
+//   std::cout << "   Size pre-check: " << MPI::rank(MPI_COMM_WORLD) << ": "
+//             << boundary_values.size() << " , " << _dofs.size() << std::endl;
 
-  assert(_function_space->mesh());
-  MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
-  std::size_t comm_size = MPI::size(mpi_comm);
+//   assert(_function_space->mesh());
+//   MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
+//   std::size_t comm_size = MPI::size(mpi_comm);
 
-  // Get dofmap
-  assert(_function_space->dofmap());
-  const GenericDofMap& dofmap = *_function_space->dofmap();
-  const auto& shared_nodes = dofmap.shared_nodes();
-  const int bs = dofmap.block_size();
-  assert(dofmap.index_map());
+//   // Get dofmap
+//   assert(_function_space->dofmap());
+//   const GenericDofMap& dofmap = *_function_space->dofmap();
+//   const auto& shared_nodes = dofmap.shared_nodes();
+//   const int bs = dofmap.block_size();
+//   assert(dofmap.index_map());
 
-  // Create list of boundary values to send to each processor
-  std::vector<std::vector<std::size_t>> proc_map0(comm_size);
-  std::vector<std::vector<PetscScalar>> proc_map1(comm_size);
-  for (Map::const_iterator bv = boundary_values.begin();
-       bv != boundary_values.end(); ++bv)
-  {
-    // If the boundary value is attached to a shared dof, add it to the
-    // list of boundary values for each of the processors that share it
-    const std::div_t div = std::div(bv->first, bs);
-    const int component = div.rem;
-    const int node_index = div.quot;
+//   // Create list of boundary values to send to each processor
+//   std::vector<std::vector<std::size_t>> proc_map0(comm_size);
+//   std::vector<std::vector<PetscScalar>> proc_map1(comm_size);
+//   for (Map::const_iterator bv = boundary_values.begin();
+//        bv != boundary_values.end(); ++bv)
+//   {
+//     // If the boundary value is attached to a shared dof, add it to the
+//     // list of boundary values for each of the processors that share it
+//     const std::div_t div = std::div(bv->first, bs);
+//     const int component = div.rem;
+//     const int node_index = div.quot;
 
-    auto shared_node = shared_nodes.find(node_index);
-    if (shared_node != shared_nodes.end())
-    {
-      for (auto proc = shared_node->second.begin();
-           proc != shared_node->second.end(); ++proc)
-      {
-        const std::size_t global_node
-            = dofmap.index_map()->local_to_global(node_index);
-        proc_map0[*proc].push_back(bs * global_node + component);
-        proc_map1[*proc].push_back(bv->second);
-      }
-    }
-  }
+//     auto shared_node = shared_nodes.find(node_index);
+//     if (shared_node != shared_nodes.end())
+//     {
+//       for (auto proc = shared_node->second.begin();
+//            proc != shared_node->second.end(); ++proc)
+//       {
+//         const std::size_t global_node
+//             = dofmap.index_map()->local_to_global(node_index);
+//         proc_map0[*proc].push_back(bs * global_node + component);
+//         proc_map1[*proc].push_back(bv->second);
+//       }
+//     }
+//   }
 
-  // Distribute the lists between neighbours
-  std::vector<std::size_t> received_bvc0;
-  std::vector<PetscScalar> received_bvc1;
-  MPI::all_to_all(mpi_comm, proc_map0, received_bvc0);
-  MPI::all_to_all(mpi_comm, proc_map1, received_bvc1);
-  assert(received_bvc0.size() == received_bvc1.size());
+//   // Distribute the lists between neighbours
+//   std::vector<std::size_t> received_bvc0;
+//   std::vector<PetscScalar> received_bvc1;
+//   MPI::all_to_all(mpi_comm, proc_map0, received_bvc0);
+//   MPI::all_to_all(mpi_comm, proc_map1, received_bvc1);
+//   assert(received_bvc0.size() == received_bvc1.size());
 
-  const std::int64_t n0 = dofmap.ownership_range()[0];
-  const std::int64_t n1 = dofmap.ownership_range()[1];
-  const std::int64_t owned_size = n1 - n0;
+//   const std::int64_t n0 = dofmap.ownership_range()[0];
+//   const std::int64_t n1 = dofmap.ownership_range()[1];
+//   const std::int64_t owned_size = n1 - n0;
 
-  // Reserve space
-  // const std::size_t num_dofs = boundary_values.size() + received_bvc0.size();
-  // boundary_values.reserve(num_dofs);
+//   // Reserve space
+//   // const std::size_t num_dofs = boundary_values.size() +
+//   received_bvc0.size();
+//   // boundary_values.reserve(num_dofs);
 
-  // Add the received boundary values to the local boundary values
-  std::vector<std::pair<std::int64_t, PetscScalar>> _vec(received_bvc0.size());
-  for (std::size_t i = 0; i < _vec.size(); ++i)
-  {
-    // Global dof index
-    _vec[i].first = received_bvc0[i];
+//   // Add the received boundary values to the local boundary values
+//   std::vector<std::pair<std::int64_t, PetscScalar>>
+//   _vec(received_bvc0.size()); for (std::size_t i = 0; i < _vec.size(); ++i)
+//   {
+//     // Global dof index
+//     _vec[i].first = received_bvc0[i];
 
-    // Convert to local (process) dof index
-    if (_vec[i].first >= n0 && _vec[i].first < n1)
-    {
-      // Case 0: dof is owned by this process
-      _vec[i].first = received_bvc0[i] - n0;
-    }
-    else
-    {
-      const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
-      const std::size_t node = div.quot;
-      const int component = div.rem;
+//     // Convert to local (process) dof index
+//     if (_vec[i].first >= n0 && _vec[i].first < n1)
+//     {
+//       // Case 0: dof is owned by this process
+//       _vec[i].first = received_bvc0[i] - n0;
+//     }
+//     else
+//     {
+//       const std::imaxdiv_t div = std::imaxdiv(_vec[i].first, bs);
+//       const std::size_t node = div.quot;
+//       const int component = div.rem;
 
-      // Get local-to-global for ghost blocks
-      const auto& local_to_global = dofmap.index_map()->ghosts();
+//       // Get local-to-global for ghost blocks
+//       const auto& local_to_global = dofmap.index_map()->ghosts();
 
-      // Case 1: dof is not owned by this process
-      auto it
-          = std::find(local_to_global.data(),
-                      local_to_global.data() + local_to_global.size(), node);
-      if (it == (local_to_global.data() + local_to_global.size()))
-      {
-        throw std::runtime_error(
-            "Cannot find dof in local_to_global_unowned array");
-      }
-      else
-      {
-        std::size_t pos = std::distance(local_to_global.data(), it);
-        _vec[i].first = owned_size + bs * pos + component;
-      }
-    }
-    _vec[i].second = received_bvc1[i];
-  }
+//       // Case 1: dof is not owned by this process
+//       auto it
+//           = std::find(local_to_global.data(),
+//                       local_to_global.data() + local_to_global.size(), node);
+//       if (it == (local_to_global.data() + local_to_global.size()))
+//       {
+//         throw std::runtime_error(
+//             "Cannot find dof in local_to_global_unowned array");
+//       }
+//       else
+//       {
+//         std::size_t pos = std::distance(local_to_global.data(), it);
+//         _vec[i].first = owned_size + bs * pos + component;
+//       }
+//     }
+//     _vec[i].second = received_bvc1[i];
+//   }
 
-  boundary_values.insert(_vec.begin(), _vec.end());
+//   boundary_values.insert(_vec.begin(), _vec.end());
 
-  const int size_bv1 = boundary_values.size();
+//   const int size_bv1 = boundary_values.size();
 
-  // for (auto x : _vec)
-  // {
-  //   auto f = std::find(_dofs.begin(), _dofs.end(), x.first);
-  //   if (f != _dofs.end())
-  //     boundary_values.insert(x);
-  // }
+//   // for (auto x : _vec)
+//   // {
+//   //   auto f = std::find(_dofs.begin(), _dofs.end(), x.first);
+//   //   if (f != _dofs.end())
+//   //     boundary_values.insert(x);
+//   // }
 
-  std::cout << "   B:Size check: " << MPI::rank(MPI_COMM_WORLD) << ": "
-            << size_bv1 << ", " << size_bv1 - size_bv0 << " , " << _dofs.size()
-            << std::endl;
-  // std::cout << "   C:Size check: " << MPI::rank(MPI_COMM_WORLD) << ": "
-  //           << boundary_values.size() << std::endl;
-  // assert(boundary_values.size() == _dofs.size());
-}
+//   std::cout << "   B:Size check: " << MPI::rank(MPI_COMM_WORLD) << ": "
+//             << size_bv1 << ", " << size_bv1 - size_bv0 << " , " <<
+//             _dofs.size()
+//             << std::endl;
+//   // std::cout << "   C:Size check: " << MPI::rank(MPI_COMM_WORLD) << ": "
+//   //           << boundary_values.size() << std::endl;
+//   // assert(boundary_values.size() == _dofs.size());
+// }
 //-----------------------------------------------------------------------------
 template <class T>
 std::set<PetscInt> DirichletBC::gather_new(MPI_Comm mpi_comm,
@@ -404,25 +406,49 @@ std::set<PetscInt> DirichletBC::gather_new(MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 void DirichletBC::get_boundary_values(Map& boundary_values) const
 {
-  // Create local data
-  assert(_function_space);
-  LocalData data(*_function_space);
+  // // Create local data
+  // assert(_function_space);
+  // LocalData data(*_function_space);
 
-  // std::cout << "A** Get boundary values: " << MPI::rank(MPI_COMM_WORLD) << ",
-  // "
-  //           << boundary_values.size() << std::endl;
+  // // Compute dofs and values
+  // if (_method == Method::topological)
+  //   compute_bc_topological(boundary_values, data);
+  // else if (_method == Method::geometric)
+  //   compute_bc_geometric(boundary_values, data);
+  // else if (_method == Method::pointwise)
+  //   compute_bc_pointwise(boundary_values, data);
 
-  // Compute dofs and values
-  if (_method == Method::topological)
-    compute_bc_topological(boundary_values, data);
-  else if (_method == Method::geometric)
-    compute_bc_geometric(boundary_values, data);
-  else if (_method == Method::pointwise)
-    compute_bc_pointwise(boundary_values, data);
+  // Unwrap bc vector
+  assert(_g);
+  assert(_g->vector());
+  assert(_g->vector()->vec());
+  const Vec g_vec = _g->vector()->vec();
 
-  // std::cout << "P** Num boundary values: " << MPI::rank(MPI_COMM_WORLD) << ",
-  // "
-  //           << boundary_values.size() << std::endl;
+  // Get local form
+  Vec g_local(nullptr);
+  VecGhostGetLocalForm(g_vec, &g_local);
+
+  // Get size
+  PetscInt g_size = 0;
+  VecGetSize(g_local, &g_size);
+
+  // Get array
+  PetscScalar const* g_array;
+  VecGetArrayRead(g_vec, &g_array);
+
+  const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> g(
+      g_array, g_size);
+  for (auto dof : _dofs)
+  {
+    const PetscInt index_u = dof[0];
+    const PetscInt index_g = dof[1];
+    const PetscScalar value = g[index_g];
+    boundary_values.insert({index_u, value});
+  }
+
+  // Restore PETSc array
+  VecRestoreArrayRead(g_local, &g_array);
+  VecGhostRestoreLocalForm(g_vec, &g_local);
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>& DirichletBC::markers() const
@@ -486,11 +512,13 @@ DirichletBC::bcs() const
   get_boundary_values(boundary_values);
 
   // FIXME: Eliminate comm
-  assert(_function_space->mesh());
-  MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
-  if (MPI::size(mpi_comm) > 1
-      and this->method() != DirichletBC::Method::pointwise)
-    this->gather(boundary_values);
+  // assert(_function_space->mesh());
+  // MPI_Comm mpi_comm = _function_space->mesh()->mpi_comm();
+  // if (MPI::size(mpi_comm) > 1
+  //     and this->method() != DirichletBC::Method::pointwise)
+  // {
+  //   this->gather(boundary_values);
+  // }
 
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _indices(boundary_values.size());
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> _values(boundary_values.size());
