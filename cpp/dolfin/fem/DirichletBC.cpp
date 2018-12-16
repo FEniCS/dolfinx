@@ -281,18 +281,6 @@ std::set<PetscInt> DirichletBC::gather_new(MPI_Comm mpi_comm,
 //-----------------------------------------------------------------------------
 void DirichletBC::get_boundary_values(Map& boundary_values) const
 {
-  // // Create local data
-  // assert(_function_space);
-  // LocalData data(*_function_space);
-
-  // // Compute dofs and values
-  // if (_method == Method::topological)
-  //   compute_bc_topological(boundary_values, data);
-  // else if (_method == Method::geometric)
-  //   compute_bc_geometric(boundary_values, data);
-  // else if (_method == Method::pointwise)
-  //   compute_bc_pointwise(boundary_values, data);
-
   // Unwrap bc vector
   assert(_g);
   assert(_g->vector());
@@ -314,12 +302,7 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
   const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> g(
       g_array, g_size);
   for (auto dof : _dofs)
-  {
-    const PetscInt index_u = dof[0];
-    const PetscInt index_g = dof[1];
-    const PetscScalar value = g[index_g];
-    boundary_values.insert({index_u, value});
-  }
+    boundary_values.insert({dof[0], g[dof[1]]});
 
   // Restore PETSc array
   VecRestoreArrayRead(g_local, &g_array);
