@@ -115,6 +115,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     auto it = shared_dofs.find(dof_remote);
     if (it == shared_dofs.end())
       throw std::runtime_error("Oops, can't find dof (A).");
+
     auto it_map = dofs_local.insert({it->first, it->second});
     if (it_map.second)
       std::cout << "Inserted off-process dof (A)" << std::endl;
@@ -420,10 +421,13 @@ void DirichletBC::set(
   // assert(x.rows() == g.rows());
 
   // FIXME: This one excludes ghosts. Need to straighten out
-  for (Eigen::Index i = 0; i < x.rows(); ++i)
-    x[_dofs[i][0]] = g[_dofs[i][1]];
-  // for (auto& dof : _dofs)
-  //   x[dof[0]] = g[dof[1]];
+  // for (Eigen::Index i = 0; i < x.rows(); ++i)
+  //   x[_dofs[i][0]] = g[_dofs[i][1]];
+  for (auto& dof : _dofs)
+  {
+    if (dof[0] < x.rows())
+      x[dof[0]] = g[dof[1]];
+  }
 
   // Restore PETSc array
   VecRestoreArrayRead(g_local, &g_array);
@@ -456,10 +460,13 @@ void DirichletBC::set(
   // assert(x.rows() == g.rows());
 
   // FIXME: This one excludes ghosts. Need to straighten out
-  for (Eigen::Index i = 0; i < x.rows(); ++i)
-    x[_dofs[i][0]] = scale * (x0[_dofs[i][0]] - g[_dofs[i][1]]);
-  // for (auto& dof : _dofs)
-  //   x[dof[0]] = scale * (x0[dof[0]] - g[dof[1]]);
+  // for (Eigen::Index i = 0; i < x.rows(); ++i)
+  //   x[_dofs[i][0]] = scale * (x0[_dofs[i][0]] - g[_dofs[i][1]]);
+  for (auto& dof : _dofs)
+  {
+    if (dof[0] < x.rows())
+      x[dof[0]] = scale * (x0[dof[0]] - g[dof[1]]);
+  }
 
   // Restore PETSc array
   VecRestoreArrayRead(g_local, &g_array);
