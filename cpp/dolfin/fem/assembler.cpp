@@ -282,11 +282,14 @@ void fem::assemble(
       std::vector<std::shared_ptr<const DirichletBC>> _bcs;
       for (auto bc : bcs)
       {
+        // if (L[i]->function_space(0)->contains(*bc->function_space()))
+        //   _bcs.push_back(bc);
         if (L[i]->function_space(0)->contains(*bc->function_space()))
-          _bcs.push_back(bc);
+        {
+          bc->set(vec, vec_x0, scale);
+        }
       }
-
-      impl::set_bc(vec, _bcs, vec_x0, scale);
+      // impl::set_bc(vec, _bcs, vec_x0, scale);
 
       VecRestoreArray(b.vec(), &values);
       offset += map_size0;
