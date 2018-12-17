@@ -72,38 +72,38 @@ void fem::impl::set_bc(Vec b,
   VecRestoreArray(b, &values_b);
 }
 //-----------------------------------------------------------------------------
-// void fem::impl::set_bc(
-//     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-//     std::vector<std::shared_ptr<const DirichletBC>> bcs,
-//     const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
-//     double scale)
-// {
-//   // FIXME: optimise this function
+void fem::impl::set_bc(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale)
+{
+  // FIXME: optimise this function
 
-//   // auto V = L.function_space(0);
-//   Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices;
-//   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values;
-//   for (std::size_t i = 0; i < bcs.size(); ++i)
-//   {
-//     assert(bcs[i]);
-//     assert(bcs[i]->function_space());
-//     // if (V->contains(*bcs[i]->function_space()))
-//     {
-//       std::tie(indices, values) = bcs[i]->bcs();
-//       for (Eigen::Index j = 0; j < indices.size(); ++j)
-//       {
-//         // FIXME: this check is because DirichletBC::dofs include ghosts
-//         if (indices[j] < (PetscInt)b.size())
-//         {
-//           if (x0.size() == 0)
-//             b[indices[j]] = scale * values[j];
-//           else
-//             b[indices[j]] = scale * (values[j] - x0[indices[j]]);
-//         }
-//       }
-//     }
-//   }
-// }
+  // auto V = L.function_space(0);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices;
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values;
+  for (std::size_t i = 0; i < bcs.size(); ++i)
+  {
+    assert(bcs[i]);
+    assert(bcs[i]->function_space());
+    // if (V->contains(*bcs[i]->function_space()))
+    {
+      std::tie(indices, values) = bcs[i]->bcs();
+      for (Eigen::Index j = 0; j < indices.size(); ++j)
+      {
+        // FIXME: this check is because DirichletBC::dofs include ghosts
+        if (indices[j] < (PetscInt)b.size())
+        {
+          if (x0.size() == 0)
+            b[indices[j]] = scale * values[j];
+          else
+            b[indices[j]] = scale * (values[j] - x0[indices[j]]);
+        }
+      }
+    }
+  }
+}
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_ghosted(
     Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,

@@ -440,7 +440,7 @@ void DirichletBC::set(
     double scale) const
 {
   // assert(x.rows() == (Eigen::Index)_dofs.size());
-  assert(x.rows() == x0.rows());
+  // assert(x.rows() == x0.rows());
 
   assert(_g);
   assert(_g->vector());

@@ -286,7 +286,7 @@ void fem::assemble(
         //   _bcs.push_back(bc);
         if (L[i]->function_space(0)->contains(*bc->function_space()))
         {
-          bc->set(vec, vec_x0, scale);
+          bc->set(vec, scale);
         }
       }
       // impl::set_bc(vec, _bcs, vec_x0, scale);
