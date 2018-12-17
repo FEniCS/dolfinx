@@ -30,7 +30,7 @@ void fem::impl::set_bc(Vec b,
   VecGetArray(b, &values);
   assert(values);
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(values,
-                                                               local_size);
+                                                                local_size);
   for (auto bc : bcs)
   {
     assert(bc);

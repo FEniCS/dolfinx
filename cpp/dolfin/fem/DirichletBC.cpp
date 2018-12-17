@@ -465,7 +465,7 @@ void DirichletBC::set(
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
-      x[dof[0]] = scale * (x0[dof[0]] - g[dof[1]]);
+      x[dof[0]] = scale * (g[dof[1]] - x0[dof[0]]);
   }
 
   // Restore PETSc array

@@ -72,13 +72,13 @@ void
               Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
               double scale);
 
-// /// Set bc entries in b. Does not set ghosts and size of b must be same
-// /// as owned length.
-// ///
-// /// - If length of x0 is zero, then b = scale* x_bc (bc dofs only)
-// ///
-// /// - If length of x0 is equal to length of b, then b <- scale*(x0 -
-// ///   x_bc) (bc dofs only)
+/// Set bc entries in b. Does not set ghosts and size of b must be same
+/// as owned length.
+///
+/// - If length of x0 is zero, then b = scale* x_bc (bc dofs only)
+///
+/// - If length of x0 is equal to length of b, then b <- scale*(x0 -
+///   x_bc) (bc dofs only)
 // void set_bc(
 //     Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
 //     std::vector<std::shared_ptr<const DirichletBC>> bcs,
