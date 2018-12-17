@@ -32,12 +32,167 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
+namespace
+{
+//-----------------------------------------------------------------------------
+template <class T>
+std::set<PetscInt> gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap,
+                              const T& dofs)
+{
+  std::size_t comm_size = MPI::size(mpi_comm);
+
+  const auto& shared_nodes = dofmap.shared_nodes();
+  const int bs = dofmap.block_size();
+  assert(dofmap.index_map());
+
+  // Create list of boundary values to send to each processor
+  std::vector<std::vector<PetscInt>> proc_map(comm_size);
+  for (auto dof : dofs)
+  {
+    // If the boundary value is attached to a shared dof, add it to the
+    // list of boundary values for each of the processors that share it
+    const std::div_t div = std::div(dof[0], bs);
+    const int component = div.rem;
+    const int node_index = div.quot;
+
+    auto shared_node = shared_nodes.find(node_index);
+    if (shared_node != shared_nodes.end())
+    {
+      for (auto proc = shared_node->second.begin();
+           proc != shared_node->second.end(); ++proc)
+      {
+        const std::size_t global_node
+            = dofmap.index_map()->local_to_global(node_index);
+        proc_map[*proc].push_back(bs * global_node + component);
+      }
+    }
+  }
+
+  // Distribute the lists between neighbours
+  std::vector<PetscInt> received_bvc;
+  MPI::all_to_all(mpi_comm, proc_map, received_bvc);
+
+  const std::int64_t n0 = dofmap.ownership_range()[0];
+  const std::int64_t n1 = dofmap.ownership_range()[1];
+  const std::int64_t owned_size = n1 - n0;
+
+  // Add the received boundary values to the local boundary values
+  std::set<PetscInt> _vec;
+  for (PetscInt index_global : received_bvc)
+  {
+    // Convert to local (process) dof index
+    int local_index = -1;
+    if (index_global >= n0 and index_global < n1)
+    {
+      // Case 0: dof is owned by this process
+      local_index = index_global - n0;
+    }
+    else
+    {
+      const std::imaxdiv_t div = std::imaxdiv(index_global, bs);
+      const std::size_t node = div.quot;
+      const int component = div.rem;
+
+      // Get local-to-global for ghost blocks
+      const auto& local_to_global = dofmap.index_map()->ghosts();
+
+      // Case 1: dof is not owned by this process
+      auto it
+          = std::find(local_to_global.data(),
+                      local_to_global.data() + local_to_global.size(), node);
+      if (it == (local_to_global.data() + local_to_global.size()))
+      {
+        throw std::runtime_error(
+            "Cannot find dof in local_to_global_unowned array");
+      }
+      else
+      {
+        std::size_t pos = std::distance(local_to_global.data(), it);
+        local_index = owned_size + bs * pos + component;
+      }
+    }
+
+    assert(local_index >= 0);
+    _vec.insert(local_index);
+  }
+
+  return _vec;
+}
+//-----------------------------------------------------------------------------
+bool on_facet(
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>> coordinates,
+    const mesh::Facet& facet)
+{
+  if (facet.dim() == 1)
+  {
+    // Check if the coordinates are on the same line as the line segment
+
+    // Create points
+    geometry::Point p(coordinates[0], coordinates[1]);
+    const geometry::Point v0
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
+    const geometry::Point v1
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
+
+    // Create vectors
+    const geometry::Point v01 = v1 - v0;
+    const geometry::Point vp0 = v0 - p;
+    const geometry::Point vp1 = v1 - p;
+
+    // Check if the length of the sum of the two line segments vp0 and
+    // vp1 is equal to the total length of the facet
+    if (std::abs(v01.norm() - vp0.norm() - vp1.norm()) < DOLFIN_EPS)
+      return true;
+    else
+      return false;
+  }
+  else if (facet.dim() == 2)
+  {
+    // Check if the coordinates are in the same plane as the triangular
+    // facet
+
+    // Create points
+    const geometry::Point p(coordinates[0], coordinates[1], coordinates[2]);
+    const geometry::Point v0
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
+    const geometry::Point v1
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
+    const geometry::Point v2
+        = mesh::Vertex(facet.mesh(), facet.entities(0)[2]).point();
+
+    // Create vectors
+    const geometry::Point v01 = v1 - v0;
+    const geometry::Point v02 = v2 - v0;
+    const geometry::Point vp0 = v0 - p;
+    const geometry::Point vp1 = v1 - p;
+    const geometry::Point vp2 = v2 - p;
+
+    // Check if the sum of the area of the sub triangles is equal to the
+    // total area of the facet
+    if (std::abs(v01.cross(v02).norm() - vp0.cross(vp1).norm()
+                 - vp1.cross(vp2).norm() - vp2.cross(vp0).norm())
+        < DOLFIN_EPS)
+    {
+      return true;
+    }
+    else
+      return false;
+  }
+
+  throw std::runtime_error("Determine if given point is on facet. Not "
+                           "implemented for given facet dimension");
+
+  return false;
+}
+//-----------------------------------------------------------------------------
+} // namespace
+
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
                          const mesh::SubDomain& sub_domain, Method method,
                          bool check_midpoint)
-    : _function_space(V), _g(g), _method(method)
+    : _function_space(V), _g(g)
 {
   assert(V);
   assert(g);
@@ -134,7 +289,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
                          const std::vector<std::int32_t>& facet_indices,
                          Method method)
-    : _function_space(V), _g(g), _method(method)
+    : _function_space(V), _g(g)
 {
   assert(V);
   assert(g);
@@ -204,91 +359,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     _dof_indices[i++] = dof[0];
 }
 //-----------------------------------------------------------------------------
-template <class T>
-std::set<PetscInt> DirichletBC::gather_new(MPI_Comm mpi_comm,
-                                           const GenericDofMap& dofmap,
-                                           const T& dofs)
-{
-  std::size_t comm_size = MPI::size(mpi_comm);
-
-  const auto& shared_nodes = dofmap.shared_nodes();
-  const int bs = dofmap.block_size();
-  assert(dofmap.index_map());
-
-  // Create list of boundary values to send to each processor
-  std::vector<std::vector<PetscInt>> proc_map(comm_size);
-  for (auto dof : dofs)
-  {
-    // If the boundary value is attached to a shared dof, add it to the
-    // list of boundary values for each of the processors that share it
-    const std::div_t div = std::div(dof[0], bs);
-    const int component = div.rem;
-    const int node_index = div.quot;
-
-    auto shared_node = shared_nodes.find(node_index);
-    if (shared_node != shared_nodes.end())
-    {
-      for (auto proc = shared_node->second.begin();
-           proc != shared_node->second.end(); ++proc)
-      {
-        const std::size_t global_node
-            = dofmap.index_map()->local_to_global(node_index);
-        proc_map[*proc].push_back(bs * global_node + component);
-      }
-    }
-  }
-
-  // Distribute the lists between neighbours
-  std::vector<PetscInt> received_bvc;
-  MPI::all_to_all(mpi_comm, proc_map, received_bvc);
-
-  const std::int64_t n0 = dofmap.ownership_range()[0];
-  const std::int64_t n1 = dofmap.ownership_range()[1];
-  const std::int64_t owned_size = n1 - n0;
-
-  // Add the received boundary values to the local boundary values
-  std::set<PetscInt> _vec;
-  for (PetscInt index_global : received_bvc)
-  {
-    // Convert to local (process) dof index
-    int local_index = -1;
-    if (index_global >= n0 and index_global < n1)
-    {
-      // Case 0: dof is owned by this process
-      local_index = index_global - n0;
-    }
-    else
-    {
-      const std::imaxdiv_t div = std::imaxdiv(index_global, bs);
-      const std::size_t node = div.quot;
-      const int component = div.rem;
-
-      // Get local-to-global for ghost blocks
-      const auto& local_to_global = dofmap.index_map()->ghosts();
-
-      // Case 1: dof is not owned by this process
-      auto it
-          = std::find(local_to_global.data(),
-                      local_to_global.data() + local_to_global.size(), node);
-      if (it == (local_to_global.data() + local_to_global.size()))
-      {
-        throw std::runtime_error(
-            "Cannot find dof in local_to_global_unowned array");
-      }
-      else
-      {
-        std::size_t pos = std::distance(local_to_global.data(), it);
-        local_index = owned_size + bs * pos + component;
-      }
-    }
-
-    assert(local_index >= 0);
-    _vec.insert(local_index);
-  }
-
-  return _vec;
-}
-//-----------------------------------------------------------------------------
 void DirichletBC::get_boundary_values(Map& boundary_values) const
 {
   // Unwrap bc vector
@@ -330,72 +400,10 @@ std::shared_ptr<const function::Function> DirichletBC::value() const
   return _g;
 }
 //-----------------------------------------------------------------------------
-DirichletBC::Method DirichletBC::method() const { return _method; }
-//-----------------------------------------------------------------------------
 const Eigen::Array<PetscInt, Eigen::Dynamic, 1>&
 DirichletBC::dof_indices() const
 {
   return _dof_indices;
-}
-//-----------------------------------------------------------------------------
-std::pair<Eigen::Array<PetscInt, Eigen::Dynamic, 1>,
-          Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
-DirichletBC::bcs() const
-{
-  assert(_function_space);
-  assert(_g);
-  assert(_g->vector());
-  assert(_g->vector()->vec());
-
-  // Unwrap PETSc Vec
-  Vec x_local;
-  VecGhostGetLocalForm(_g->vector()->vec(), &x_local);
-  assert(x_local);
-  PetscScalar const* x_values;
-  VecGetArrayRead(x_local, &x_values);
-
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices(_dofs.size());
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values(_dofs.size());
-  for (std::size_t i = 0; i < _dofs.size(); ++i)
-  {
-    indices[i] = _dofs[i][0];
-    values[i] = *(x_values + indices[i]);
-  }
-
-  // VecRestoreArrayRead(x_local, &x_values);
-  // VecGhostRestoreLocalForm(_g->vector()->vec(), &x_local);
-
-  // return std::make_pair(std::move(indices), std::move(values));
-
-  // FIXME: Optimise this operation, and consider caching
-  Map boundary_values;
-  get_boundary_values(boundary_values);
-
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _indices(boundary_values.size());
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> _values(boundary_values.size());
-  std::size_t i = 0;
-  for (auto& bc : boundary_values)
-  {
-    _indices[i] = bc.first;
-    _values[i++] = bc.second;
-  }
-
-  // assert(boundary_values.size() == _dofs.size());
-
-  // std::cout << "Check 0 " << std::endl;
-  // for (std::size_t i = 0; i < _dofs.size(); ++i)
-  // {
-  //   std::cout << indices[i] << ", " << _indices[i] << std::endl;
-  // }
-  // std::cout << "Check 1 " << std::endl;
-  // for (std::size_t i = 0; i < _dofs.size(); ++i)
-  // {
-  //   std::cout << values[i] << ", " << _values[i] << std::endl;
-  // }
-  // std::cout << _indices << std::endl;
-  // std::cout << indices << std::endl;
-
-  return std::make_pair(std::move(_indices), std::move(_values));
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::set(
@@ -421,8 +429,6 @@ void DirichletBC::set(
   // assert(x.rows() == g.rows());
 
   // FIXME: This one excludes ghosts. Need to straighten out
-  // for (Eigen::Index i = 0; i < x.rows(); ++i)
-  //   x[_dofs[i][0]] = g[_dofs[i][1]];
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
@@ -460,8 +466,6 @@ void DirichletBC::set(
   // assert(x.rows() == g.rows());
 
   // FIXME: This one excludes ghosts. Need to straighten out
-  // for (Eigen::Index i = 0; i < x.rows(); ++i)
-  //   x[_dofs[i][0]] = scale * (x0[_dofs[i][0]] - g[_dofs[i][1]]);
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
@@ -983,70 +987,4 @@ DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
 //   // Store num of bc dofs for better performance next time
 //   _num_dofs = boundary_values.size();
 // }
-//-----------------------------------------------------------------------------
-bool DirichletBC::on_facet(
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>> coordinates,
-    const mesh::Facet& facet)
-{
-  if (facet.dim() == 1)
-  {
-    // Check if the coordinates are on the same line as the line segment
-
-    // Create points
-    geometry::Point p(coordinates[0], coordinates[1]);
-    const geometry::Point v0
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    const geometry::Point v1
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
-
-    // Create vectors
-    const geometry::Point v01 = v1 - v0;
-    const geometry::Point vp0 = v0 - p;
-    const geometry::Point vp1 = v1 - p;
-
-    // Check if the length of the sum of the two line segments vp0 and
-    // vp1 is equal to the total length of the facet
-    if (std::abs(v01.norm() - vp0.norm() - vp1.norm()) < DOLFIN_EPS)
-      return true;
-    else
-      return false;
-  }
-  else if (facet.dim() == 2)
-  {
-    // Check if the coordinates are in the same plane as the triangular
-    // facet
-
-    // Create points
-    const geometry::Point p(coordinates[0], coordinates[1], coordinates[2]);
-    const geometry::Point v0
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    const geometry::Point v1
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
-    const geometry::Point v2
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[2]).point();
-
-    // Create vectors
-    const geometry::Point v01 = v1 - v0;
-    const geometry::Point v02 = v2 - v0;
-    const geometry::Point vp0 = v0 - p;
-    const geometry::Point vp1 = v1 - p;
-    const geometry::Point vp2 = v2 - p;
-
-    // Check if the sum of the area of the sub triangles is equal to the
-    // total area of the facet
-    if (std::abs(v01.cross(v02).norm() - vp0.cross(vp1).norm()
-                 - vp1.cross(vp2).norm() - vp2.cross(vp0).norm())
-        < DOLFIN_EPS)
-    {
-      return true;
-    }
-    else
-      return false;
-  }
-
-  throw std::runtime_error("Determine if given point is on facet. Not "
-                           "implemented for given facet dimension");
-
-  return false;
-}
 //-----------------------------------------------------------------------------

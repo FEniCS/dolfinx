@@ -38,7 +38,6 @@ namespace fem
 class GenericDofMap;
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
-
 ///
 ///     u = g on G,
 ///
@@ -58,10 +57,6 @@ class GenericDofMap;
 /// will then be searched for and marked *only* on the first call to
 /// apply. This means that the mesh could be moved after the first
 /// apply and the boundary markers would still remain intact.
-///
-/// Alternatively, the boundary may be specified by a _mesh::MeshFunction_
-/// over facets labeling all mesh facets together with a number that
-/// specifies which facets should be included in the boundary.
 ///
 /// The 'method' variable may be used to specify the type of method
 /// used to identify degrees of freedom on the boundary. Available
@@ -92,12 +87,6 @@ class GenericDofMap;
 /// sphere or cylinder), in which case it is important *not* to
 /// check the midpoint which will be located in the interior of a
 /// domain defined relative to a radius.
-///
-/// Note that there may be caching employed in BC computation for
-/// performance reasons. In particular, applicable DOFs are cached
-/// by some methods on a first apply(). This means that changing a
-/// supplied object (defining boundary subdomain) after first use may
-/// have no effect. But this is implementation and method specific.
 
 class DirichletBC : public common::Variable
 {
@@ -188,14 +177,6 @@ public:
   ///         The boundary values.
   std::shared_ptr<const function::Function> value() const;
 
-  // FIXME: Remove?
-  /// Return method used for computing Dirichlet dofs
-  ///
-  /// @return std::string
-  ///         Method used for computing Dirichlet dofs ("topological",
-  ///         "geometric" or "pointwise").
-  Method method() const;
-
   // FIXME: Add option to include/exclude ghosts?
   /// Return array of indices to which with dofs are applied. Indices
   /// are local to the process and include ghosts.
@@ -203,14 +184,6 @@ public:
   /// @return Eigen::Array<PetscInt, Eigen::Dynamic, 1>&
   ///         Dof indices with boundary condition applied.
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_indices() const;
-
-  // FIXME: What about ghost indices?
-  // FIXME: Consider return a reference and caching this data
-  /// Return array of indices and dof values. Indices are local to the
-  /// process
-  std::pair<Eigen::Array<PetscInt, Eigen::Dynamic, 1>,
-            Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
-  bcs() const;
 
   /// Set bc entries in x to x = scale*x_bc
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
@@ -223,10 +196,6 @@ public:
       double scale = 1.0) const;
 
 private:
-  template <class T>
-  static std::set<PetscInt>
-  gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap, const T& dofs);
-
   // Build map of shared dofs in V to dofs in Vg
   static std::map<PetscInt, PetscInt>
   shared_bc_to_g(const function::FunctionSpace& V,
@@ -238,9 +207,6 @@ private:
                               const function::FunctionSpace* Vg,
                               const std::vector<std::int32_t>& facets);
 
-  // Compute boundary values for facet (geometrical approach)
-  // void compute_bc_geometric(Map& boundary_values, LocalData& data) const;
-
   // Compute boundary values dofs (geometrical approach)
   static std::set<PetscInt>
   compute_bc_dofs_geometric(const function::FunctionSpace& V,
@@ -250,44 +216,17 @@ private:
   // Compute boundary values for facet (pointwise approach)
   // void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
 
-  // Check if the point is in the same plane as the given facet
-  static bool
-  on_facet(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>,
-           const mesh::Facet& facet);
-
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
 
   // The function
   std::shared_ptr<const function::Function> _g;
 
-  // Search method
-  Method _method;
-
-  // Boundary facets, stored by facet index (local to process)
-  // std::vector<std::int32_t> _facets;
-
-  // Cells attached to boundary, stored by cell index with map to local
-  // dof number
-  // mutable std::map<std::size_t, std::vector<std::size_t>>
-  // _cells_to_localdofs;
-
-  //  New
-  // Eigen::Array<bool, Eigen::Dynamic, 1> _dof_cells;
-  // Eigen::Array<bool, Eigen::Dynamic, 1> _dof_facets;
-  // Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs;
-
   // Dof indices in _function_space and g space to which bcs are applied
   std::vector<std::array<PetscInt, 2>> _dofs;
 
   // Indices in _function_space to which bcs are applied
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dof_indices;
-
-  // Dof indices in _g space which supply bc values
-  // Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs_g;
-
-  // Dof indices in _g space which supply bc values
-  // Eigen::Array<PetscScalar, Eigen::Dynamic, 1> _g_values;
 };
 } // namespace fem
 } // namespace dolfin
