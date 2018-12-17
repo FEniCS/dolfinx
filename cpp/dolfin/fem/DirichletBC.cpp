@@ -401,7 +401,7 @@ void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     double scale) const
 {
-  assert(x.rows() == (Eigen::Index)_dofs.size());
+  // assert(x.rows() == (Eigen::Index)_dofs.size());
   assert(_g);
   assert(_g->vector());
   assert(_g->vector()->vec());
@@ -417,10 +417,13 @@ void DirichletBC::set(
   VecGetArrayRead(g_vec, &g_array);
   const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
       g_array, g_size);
-  assert(x.rows() == g.rows());
+  // assert(x.rows() == g.rows());
 
-  for (auto& dof : _dofs)
-    x[dof[0]] = g[dof[1]];
+  // FIXME: This one excludes ghosts. Need to straighten out
+  for (Eigen::Index i = 0; i < x.rows(); ++i)
+    x[_dofs[i][0]] = g[_dofs[i][1]];
+  // for (auto& dof : _dofs)
+  //   x[dof[0]] = g[dof[1]];
 
   // Restore PETSc array
   VecRestoreArrayRead(g_local, &g_array);
@@ -432,7 +435,7 @@ void DirichletBC::set(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale) const
 {
-  assert(x.rows() == (Eigen::Index)_dofs.size());
+  // assert(x.rows() == (Eigen::Index)_dofs.size());
   assert(x.rows() == x0.rows());
 
   assert(_g);
@@ -450,10 +453,13 @@ void DirichletBC::set(
   VecGetArrayRead(g_vec, &g_array);
   const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
       g_array, g_size);
-  assert(x.rows() == g.rows());
+  // assert(x.rows() == g.rows());
 
-  for (auto& dof : _dofs)
-    x[dof[0]] = scale * (x0[dof[0]] - g[dof[1]]);
+  // FIXME: This one excludes ghosts. Need to straighten out
+  for (Eigen::Index i = 0; i < x.rows(); ++i)
+    x[_dofs[i][0]] = scale * (x0[_dofs[i][0]] - g[_dofs[i][1]]);
+  // for (auto& dof : _dofs)
+  //   x[dof[0]] = scale * (x0[dof[0]] - g[dof[1]]);
 
   // Restore PETSc array
   VecRestoreArrayRead(g_local, &g_array);
