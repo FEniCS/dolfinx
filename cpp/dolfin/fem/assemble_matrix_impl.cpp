@@ -9,6 +9,7 @@
 #include "Form.h"
 #include "GenericDofMap.h"
 #include "utils.h"
+#include <Eigen/Sparse>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/mesh/Cell.h>
@@ -21,9 +22,15 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(la::PETScMatrix& A, const Form& a,
-                          const std::vector<std::int32_t>& bc_dofs0,
-                          const std::vector<std::int32_t>& bc_dofs1)
+// void fem::assemble_matrix(la::PETScMatrix& A, const Form& a,
+//                           const std::vector<std::int32_t>& bc_dofs0,
+//                           const std::vector<std::int32_t>& bc_dofs1)
+void fem::assemble_matrix(
+    la::PETScMatrix& A, const Form& a,
+    const Eigen::Ref<const Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor>>
+        bc_dofs0,
+    const Eigen::Ref<const Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor>>
+        bc_dofs1)
 {
   assert(!A.empty());
 
@@ -72,18 +79,32 @@ void fem::assemble_matrix(la::PETScMatrix& A, const Form& a,
     // Dirichlet conditions
     // Note: could use negative dof indices to have PETSc do this
     // Zero rows/columns for Dirichlet bcs
-    for (int i = 0; i < Ae.rows(); ++i)
+    // for (int i = 0; i < Ae.rows(); ++i)
+    // {
+    //   const std::size_t ii = dmap0[i];
+    //   if (std::find(bc_dofs0.begin(), bc_dofs0.end(), ii) != bc_dofs0.end())
+    //     Ae.row(i).setZero();
+    // }
+    // // Loop over columns
+    // for (int j = 0; j < Ae.cols(); ++j)
+    // {
+    //   const std::size_t jj = dmap1[j];
+    //   if (std::find(bc_dofs1.begin(), bc_dofs1.end(), jj) != bc_dofs1.end())
+    //     Ae.col(j).setZero();
+    // }
+
+    for (Eigen::Ref<const Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor>>::
+             InnerIterator it(bc_dofs0, cell.index());
+         it; ++it)
     {
-      const std::size_t ii = dmap0[i];
-      if (std::find(bc_dofs0.begin(), bc_dofs0.end(), ii) != bc_dofs0.end())
-        Ae.row(i).setZero();
+      Ae.row(it.col()).setZero();
     }
-    // Loop over columns
-    for (int j = 0; j < Ae.cols(); ++j)
+
+    for (Eigen::Ref<const Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor>>::
+             InnerIterator it(bc_dofs1, cell.index());
+         it; ++it)
     {
-      const std::size_t jj = dmap1[j];
-      if (std::find(bc_dofs1.begin(), bc_dofs1.end(), jj) != bc_dofs1.end())
-        Ae.col(j).setZero();
+      Ae.col(it.col()).setZero();
     }
 
     A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),

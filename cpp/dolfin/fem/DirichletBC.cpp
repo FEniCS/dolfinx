@@ -406,6 +406,40 @@ DirichletBC::dof_indices() const
   return _dof_indices;
 }
 //-----------------------------------------------------------------------------
+Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> DirichletBC::dofs() const
+{
+  const mesh::Mesh& mesh = *_function_space->mesh();
+  const fem::FiniteElement& element = *_function_space->element();
+  const fem::GenericDofMap& dofmap = *_function_space->dofmap();
+
+  Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> A(
+      mesh.num_cells(), element.space_dimension());
+
+  // Iterate over all cells
+  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  {
+    // Check that cell is not a ghost
+    assert(!cell.is_ghost());
+
+    // Get dof maps for cell
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap
+        = dofmap.cell_dofs(cell.index());
+
+    // Check if each dof has bc applied
+    for (Eigen::Index i = 0; i < dmap.rows(); ++i)
+    {
+      bool found = std::binary_search(_dof_indices.data(),
+                                      _dof_indices.data() + _dof_indices.rows(),
+                                      dmap[i]);
+      if (found)
+        A.insert(cell.index(), i) = 1.0;
+    }
+  }
+
+  A.makeCompressed();
+  return A;
+}
+//-----------------------------------------------------------------------------
 void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     double scale) const
@@ -556,10 +590,6 @@ std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
   // Initialise facet-cell connectivity
   mesh.init(tdim);
   mesh.init(tdim - 1, tdim);
-
-  // Coordinate dofs
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
 
   // Allocate space
   const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(tdim - 1);

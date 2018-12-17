@@ -7,6 +7,7 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <Eigen/SparseCore>
 #include <dolfin/common/Variable.h>
 #include <map>
 #include <memory>
@@ -184,6 +185,8 @@ public:
   /// @return Eigen::Array<PetscInt, Eigen::Dynamic, 1>&
   ///         Dof indices with boundary condition applied.
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_indices() const;
+
+  Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> dofs() const;
 
   /// Set bc entries in x to x = scale*x_bc
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
