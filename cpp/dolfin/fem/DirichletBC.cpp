@@ -122,6 +122,11 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
                                                dofs_local.end());
+
+  _dof_indices = Eigen::Array<PetscInt, Eigen::Dynamic, 1>(_dofs.size());
+  std::size_t i = 0;
+  for (const auto& dof : _dofs)
+    _dof_indices[i++] = dof[0];
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -192,6 +197,10 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   //                dofs_remote.end(), std::back_inserter(_dofs));
   _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
                                                dofs_local.end());
+  _dof_indices = Eigen::Array<PetscInt, Eigen::Dynamic, 1>(_dofs.size());
+  std::size_t i = 0;
+  for (const auto& dof : _dofs)
+    _dof_indices[i++] = dof[0];
 }
 //-----------------------------------------------------------------------------
 template <class T>
@@ -322,13 +331,10 @@ std::shared_ptr<const function::Function> DirichletBC::value() const
 //-----------------------------------------------------------------------------
 DirichletBC::Method DirichletBC::method() const { return _method; }
 //-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, 1> DirichletBC::dof_indices() const
+const Eigen::Array<PetscInt, Eigen::Dynamic, 1>&
+DirichletBC::dof_indices() const
 {
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(_dofs.size());
-  std::size_t i = 0;
-  for (auto d : _dofs)
-    dofs[i++] = d[0];
-  return dofs;
+  return _dof_indices;
 }
 //-----------------------------------------------------------------------------
 std::pair<Eigen::Array<PetscInt, Eigen::Dynamic, 1>,
@@ -389,6 +395,69 @@ DirichletBC::bcs() const
   // std::cout << indices << std::endl;
 
   return std::make_pair(std::move(_indices), std::move(_values));
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::set(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+    double scale) const
+{
+  assert(x.rows() == (Eigen::Index)_dofs.size());
+  assert(_g);
+  assert(_g->vector());
+  assert(_g->vector()->vec());
+
+  // Unwrap PETSc bc vector (_g)
+  const Vec g_vec = _g->vector()->vec();
+  Vec g_local = nullptr;
+  VecGhostGetLocalForm(g_vec, &g_local);
+  assert(g_local);
+  PetscInt g_size = 0;
+  VecGetSize(g_local, &g_size);
+  PetscScalar const* g_array;
+  VecGetArrayRead(g_vec, &g_array);
+  const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
+      g_array, g_size);
+  assert(x.rows() == g.rows());
+
+  for (auto& dof : _dofs)
+    x[dof[0]] = g[dof[1]];
+
+  // Restore PETSc array
+  VecRestoreArrayRead(g_local, &g_array);
+  VecGhostRestoreLocalForm(g_vec, &g_local);
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::set(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale) const
+{
+  assert(x.rows() == (Eigen::Index)_dofs.size());
+  assert(x.rows() == x0.rows());
+
+  assert(_g);
+  assert(_g->vector());
+  assert(_g->vector()->vec());
+
+  // Unwrap PETSc bc vector (_g)
+  const Vec g_vec = _g->vector()->vec();
+  Vec g_local = nullptr;
+  VecGhostGetLocalForm(g_vec, &g_local);
+  assert(g_local);
+  PetscInt g_size = 0;
+  VecGetSize(g_local, &g_size);
+  PetscScalar const* g_array;
+  VecGetArrayRead(g_vec, &g_array);
+  const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
+      g_array, g_size);
+  assert(x.rows() == g.rows());
+
+  for (auto& dof : _dofs)
+    x[dof[0]] = scale * (x0[dof[0]] - g[dof[1]]);
+
+  // Restore PETSc array
+  VecRestoreArrayRead(g_local, &g_array);
+  VecGhostRestoreLocalForm(g_vec, &g_local);
 }
 //-----------------------------------------------------------------------------
 std::map<PetscInt, PetscInt>

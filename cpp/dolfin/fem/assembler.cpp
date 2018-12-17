@@ -446,14 +446,14 @@ void fem::assemble(la::PETScMatrix& A,
             assert(bcs[k]->function_space());
             if (a[i][j]->function_space(0)->contains(*bcs[k]->function_space()))
             {
-              Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd
+              const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& bcd
                   = bcs[k]->dof_indices();
               bc_dofs0.insert(bc_dofs0.end(), bcd.data(),
                               bcd.data() + bcd.size());
             }
             if (a[i][j]->function_space(1)->contains(*bcs[k]->function_space()))
             {
-              Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd1
+              const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& bcd1
                   = bcs[k]->dof_indices();
               bc_dofs1.insert(bc_dofs1.end(), bcd1.data(),
                               bcd1.data() + bcd1.size());
@@ -493,12 +493,14 @@ void fem::assemble(la::PETScMatrix& A,
       assert(bcs[k]->function_space());
       if (a[0][0]->function_space(0)->contains(*bcs[k]->function_space()))
       {
-        Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd0 = bcs[k]->dof_indices();
+        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& bcd0
+            = bcs[k]->dof_indices();
         bc_dofs0.insert(bc_dofs0.end(), bcd0.data(), bcd0.data() + bcd0.size());
       }
       if (a[0][0]->function_space(1)->contains(*bcs[k]->function_space()))
       {
-        Eigen::Array<PetscInt, Eigen::Dynamic, 1> bcd1 = bcs[k]->dof_indices();
+        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& bcd1
+            = bcs[k]->dof_indices();
         bc_dofs1.insert(bc_dofs1.end(), bcd1.data(), bcd1.data() + bcd1.size());
       }
     }

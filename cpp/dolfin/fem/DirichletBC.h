@@ -176,10 +176,6 @@ public:
   ///         Map from dof to boundary value.
   void get_boundary_values(Map& boundary_values) const;
 
-  template <class T>
-  static std::set<PetscInt>
-  gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap, const T& dofs);
-
   /// Return function space V
   ///
   /// @return FunctionSpace
@@ -192,6 +188,7 @@ public:
   ///         The boundary values.
   std::shared_ptr<const function::Function> value() const;
 
+  // FIXME: Remove?
   /// Return method used for computing Dirichlet dofs
   ///
   /// @return std::string
@@ -199,14 +196,13 @@ public:
   ///         "geometric" or "pointwise").
   Method method() const;
 
-  // FIXME: What about ghost indices?
-  // FIXME: Consider return a reference and caching this data
-  /// Return array of indices with dofs applied. Indices are local to the
-  /// process
+  // FIXME: Add option to include/exclude ghosts?
+  /// Return array of indices to which with dofs are applied. Indices
+  /// are local to the process and include ghosts.
   ///
-  /// @return Eigen::Array<PetscInt, Eigen::Dynamic, 1>
+  /// @return Eigen::Array<PetscInt, Eigen::Dynamic, 1>&
   ///         Dof indices with boundary condition applied.
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dof_indices() const;
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_indices() const;
 
   // FIXME: What about ghost indices?
   // FIXME: Consider return a reference and caching this data
@@ -216,7 +212,21 @@ public:
             Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
   bcs() const;
 
+  /// Set bc entries in x to x = scale*x_bc
+  void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+           double scale = 1.0) const;
+
+  /// Set bc entries in x to x = scale*(x0 - x_bc)
+  void set(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+      const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+      double scale = 1.0) const;
+
 private:
+  template <class T>
+  static std::set<PetscInt>
+  gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap, const T& dofs);
+
   // Build map of shared dofs in V to dofs in Vg
   static std::map<PetscInt, PetscInt>
   shared_bc_to_g(const function::FunctionSpace& V,
@@ -267,8 +277,11 @@ private:
   // Eigen::Array<bool, Eigen::Dynamic, 1> _dof_facets;
   // Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs;
 
-  // Dof indices in _function_space to which bcs are applied
+  // Dof indices in _function_space and g space to which bcs are applied
   std::vector<std::array<PetscInt, 2>> _dofs;
+
+  // Indices in _function_space to which bcs are applied
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dof_indices;
 
   // Dof indices in _g space which supply bc values
   // Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofs_g;
