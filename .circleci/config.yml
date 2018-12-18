@@ -147,8 +147,8 @@ jobs:
       - run: *configure-cpp
       - run: *build-install-cpp
       - run: *unit-tests-cpp
-      - run: *demos-cpp
-      - run: *demos-cpp-mpi
+      - run: *regression-tests-cpp
+      - run: *regression-tests-cpp-mpi
       - run: *build-python-interface
       - run: *build-documentation-python
       - run: *unit-tests-python
@@ -175,8 +175,8 @@ jobs:
       - run: *configure-cpp
       - run: *build-install-cpp
       - run: *unit-tests-cpp
-      - run: *demos-cpp-complex
-      - run: *demos-cpp-complex-mpi
+      - run: *regression-tests-cpp
+      - run: *regression-tests-cpp-mpi
       - run: *build-python-interface
       - run: *build-documentation-python
       - run: *unit-tests-python
