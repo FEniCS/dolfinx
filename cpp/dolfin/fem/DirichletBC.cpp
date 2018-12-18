@@ -406,14 +406,17 @@ DirichletBC::dof_indices() const
   return _dof_indices;
 }
 //-----------------------------------------------------------------------------
-Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> DirichletBC::dofs() const
+Eigen::SparseMatrix<PetscInt, Eigen::RowMajor> DirichletBC::dofs() const
 {
   const mesh::Mesh& mesh = *_function_space->mesh();
   const fem::FiniteElement& element = *_function_space->element();
   const fem::GenericDofMap& dofmap = *_function_space->dofmap();
 
-  Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> A(
-      mesh.num_cells(), element.space_dimension());
+  std::cout << "Dofmap range: " << dofmap.ownership_range()[0] << ", "
+            << dofmap.ownership_range()[1] << std::endl;
+
+  Eigen::SparseMatrix<PetscInt, Eigen::RowMajor> A(mesh.num_cells(),
+                                                   element.space_dimension());
 
   // Iterate over all cells
   for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -426,13 +429,19 @@ Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor> DirichletBC::dofs() const
         = dofmap.cell_dofs(cell.index());
 
     // Check if each dof has bc applied
+    std::cout << "New comp dofmap: " << std::endl;
+    std::cout << dmap << std::endl;
     for (Eigen::Index i = 0; i < dmap.rows(); ++i)
     {
       bool found = std::binary_search(_dof_indices.data(),
-                                      _dof_indices.data() + _dof_indices.rows(),
+                                      _dof_indices.data() + _dof_indices.size(),
                                       dmap[i]);
       if (found)
-        A.insert(cell.index(), i) = 1.0;
+      {
+        std::cout << "Inserting cell, local, global: " << cell.index() << ", "
+                  << i << ", " << dmap[i] << std::endl;
+        A.insert(cell.index(), i) = dmap[i];
+      }
     }
   }
 
@@ -624,6 +633,9 @@ std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
       const PetscInt dof_index = cell_dofs[index];
       const PetscInt dof_index_g = cell_dofs_g[index];
       bc_dofs.push_back({dof_index, dof_index_g});
+
+      std::cout << "Old adding bc (cell, local, global): " << cell.index()
+                << ", " << index << ", " << dof_index << std::endl;
     }
   }
 

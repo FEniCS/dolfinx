@@ -28,10 +28,12 @@ class Form;
 /// Matrix is not finalised.
 void assemble_matrix(
     la::PETScMatrix& A, const Form& a,
-    const Eigen::Ref<const Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor>>
+    const std::vector<Eigen::SparseMatrix<PetscInt, Eigen::RowMajor>>&
         bc_dofs0,
-    const Eigen::Ref<const Eigen::SparseMatrix<PetscScalar, Eigen::RowMajor>>
-        bc_dofs1);
+    const std::vector<Eigen::SparseMatrix<PetscInt, Eigen::RowMajor>>&
+        bc_dofs1,
+    const std::vector<std::int32_t>& bc_dofs0_old,
+    const std::vector<std::int32_t>& bc_dofs1_old);
 
 //  const std::vector<std::int32_t>& bc_dofs0,
 //  const std::vector<std::int32_t>& bc_dofs1);
