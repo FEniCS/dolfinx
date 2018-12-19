@@ -31,7 +31,6 @@ class SubDomain;
 
 namespace fem
 {
-class GenericDofMap;
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
 ///
@@ -45,7 +44,7 @@ class GenericDofMap;
 /// boundary.
 ///
 /// The boundary indicators may be specified in a number of different
-/// ways.
+/// ways:
 ///
 /// 1. Providing a_SubDomain_ object, using the inside() function to
 ///    specify on which facets the boundary conditions should be
@@ -57,16 +56,21 @@ class GenericDofMap;
 ///
 /// The 'method' variable may be used to specify the type of method used
 /// to identify degrees of freedom on the boundary. Available methods
-/// are: topological approach (default), geometric approach, and
-/// pointwise approach. The topological approach is faster, but will
-/// only identify degrees of freedom that are located on a facet that is
-/// entirely on the boundary. In particular, the topological approach
-/// will not identify degrees of freedom for discontinuous elements
-/// (which are all internal to the cell). A remedy for this is to use
-/// the geometric approach. In the geometric approach, each dof on each
-/// facet that matches the boundary condition will be checked. To apply
-/// pointwise boundary conditions e.g. pointloads, one will have to use
-/// the pointwise approach. The three possibilities are "topological",
+/// are:
+///
+/// 1. topological approach (default);
+/// 2. geometric approach; and
+/// 3. pointwise approach.
+///
+/// The topological approach is faster, but will only identify degrees
+/// of freedom that are located on a facet that is entirely on the
+/// boundary. In particular, the topological approach will not identify
+/// degrees of freedom for discontinuous elements (which are all
+/// internal to the cell). A remedy for this is to use the geometric
+/// approach. In the geometric approach, each dof on each facet that
+/// matches the boundary condition will be checked. To apply pointwise
+/// boundary conditions e.g. pointloads, one will have to use the
+/// pointwise approach. The three possibilities are "topological",
 /// "geometric" and "pointwise".
 ///
 /// Note: when using "pointwise", the boolean argument `on_boundary` in
@@ -172,7 +176,8 @@ public:
   ///         The boundary values.
   std::shared_ptr<const function::Function> value() const;
 
-  // dof indices. Must be sorted
+  /// Get array of dof indices to which a Dirichlet BC is applied. The
+  /// array is sorted.
   const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   dof_indices() const;
 
@@ -186,7 +191,8 @@ public:
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
       double scale = 1.0) const;
 
-  // tmp
+  /// Set markers[i] = true if dof i has a boundary condition applied.
+  /// Value of markers[i] is not changed otherwise.
   void mark_dofs(std::vector<bool>& markers) const;
 
 private:
@@ -220,7 +226,7 @@ private:
   // u[dofs[i][0]] = g[dofs[i][1]]
   std::vector<std::array<PetscInt, 2>> _dofs;
 
-  // Indices in _function_space to which bcs are applied
+  // Indices in _function_space to which bcs are applied. Must be sorted.
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dof_indices;
 };
 } // namespace fem
