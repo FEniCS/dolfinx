@@ -423,7 +423,7 @@ void fem::assemble(la::PETScMatrix& A,
               assert(bc);
               if (a[i][j]->function_space(0)->contains(*bc->function_space()))
               {
-                // FIXME: could be simpler if DirichlerBC::dof_indices had
+                // FIXME: could be simpler if DirichletBC::dof_indices had
                 // options to return owned dofs only
                 const Eigen::Ref<
                     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
@@ -490,7 +490,7 @@ void fem::assemble(la::PETScMatrix& A,
         assert(bc);
         if (a[0][0]->function_space(0)->contains(*bc->function_space()))
         {
-          // FIXME: could be simpler if DirichlerBC::dof_indices had
+          // FIXME: could be simpler if DirichletBC::dof_indices had
           // options to return owned dofs only
           const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs
               = bc->dof_indices();
