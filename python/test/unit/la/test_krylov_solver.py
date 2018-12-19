@@ -131,7 +131,7 @@ def test_krylov_samg_solver_elasticity():
 
         # Define problem
         mesh = UnitSquareMesh(MPI.comm_world, N, N)
-        V = VectorFunctionSpace(mesh, ('Lagrange', 1)
+        V = VectorFunctionSpace(mesh, 'Lagrange', 1)
         bc0 = Function(V)
         bc = DirichletBC(V.sub(0), bc0,
                          lambda x, on_boundary: on_boundary)
@@ -143,10 +143,6 @@ def test_krylov_samg_solver_elasticity():
 
         # Assemble linear algebra objects
         A, b = assemble_system(a, L, bc)
-
-        bs = A.mat().block_size
-        print("!!!!!!!!!!!!", bs)
-        return
 
         # Create solution function
         u = Function(V)
