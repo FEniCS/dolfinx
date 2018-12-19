@@ -193,6 +193,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
       entity_to_dofs[dofs_per_entity * entity.index() + local_dof] = global_dof;
     }
   }
+
   return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------
@@ -222,16 +223,5 @@ void GenericDofMap::ufc_tabulate_dofs(
     }
     offset += entity_dofs[d][0].size() * num_global_entities[d];
   }
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-GenericDofMap::copy() const
-{
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dmap(
-      num_cells(), max_element_dofs());
-  for (Eigen::Index i = 0; i < dmap.rows(); ++i)
-    dmap.row(i) = cell_dofs(i);
-
-  return dmap;
 }
 //-----------------------------------------------------------------------------

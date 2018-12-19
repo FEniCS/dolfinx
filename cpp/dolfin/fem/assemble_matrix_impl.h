@@ -22,21 +22,11 @@ namespace fem
 {
 class Form;
 
-/// Assemble matrix, with Dirichlet rows/columns zeroed. The matrix A
-/// must already be initialised. The matrix may be a proxy, i.e. a view
-/// into a larger matrix, and assembly is performed using local indices.
-/// Matrix is not finalised.
-void assemble_matrix(
-    la::PETScMatrix& A, const Form& a,
-    const Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>& dmap0x,
-    const Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>& dmap1x,
-    const std::vector<std::int32_t>& bc_dofs0_old,
-    const std::vector<std::int32_t>& bc_dofs1_old);
-
-//  const std::vector<std::int32_t>& bc_dofs0,
-//  const std::vector<std::int32_t>& bc_dofs1);
+// FIXME: Add comment of zero Dirichlet rows/cols
+/// The matrix A must already be initialised. The matrix may be a proxy,
+/// i.e. a view into a larger matrix, and assembly is performed using
+/// local indices. Matrix is not finalised.
+void assemble_matrix(la::PETScMatrix& A, const Form& a);
 
 } // namespace fem
 } // namespace dolfin

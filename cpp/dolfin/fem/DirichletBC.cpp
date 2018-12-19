@@ -521,41 +521,6 @@ void DirichletBC::set(
   VecGhostRestoreLocalForm(g_vec, &g_local);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::dofmap(Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic,
-                                      Eigen::RowMajor>& dofmap) const
-{
-  std::shared_ptr<const common::IndexMap> index_map
-      = _function_space->dofmap()->index_map();
-
-  const std::int32_t process_size
-      = index_map->size_local() + index_map->num_ghosts();
-
-  std::vector<PetscInt> process_dofs(process_size);
-  std::iota(process_dofs.begin(), process_dofs.end(), 0);
-  for (Eigen::Index i = 0; i < _dof_indices.size(); ++i)
-  {
-    assert(_dof_indices[i] < (PetscInt)process_dofs.size());
-    assert(process_dofs[_dof_indices[i]] == _dof_indices[i]);
-    process_dofs[_dof_indices[i]] = -_dof_indices[i] - 1;
-  }
-  // virtual Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-  // cell_dofs(std::size_t cell_index) const = 0;
-
-  // const mesh::Mesh& mesh = *_function_space->mesh();
-  for (Eigen::Index i = 0; i < dofmap.rows(); ++i)
-  {
-    for (Eigen::Index j = 0; j < dofmap.row(i).cols(); ++j)
-    {
-      const PetscInt index = dofmap(i, j);
-      assert(index < (PetscInt)process_dofs.size());
-      if (process_dofs[index] < 0 and index >= 0)
-        dofmap(i, j) = -dofmap(i, j) - 1;
-    }
-  }
-
-  // return dmap_new;
-}
-//-----------------------------------------------------------------------------
 void DirichletBC::l2g_dofs(
     Eigen::Ref<Eigen::Array<PetscInt, Eigen::Dynamic, 1>> l2g) const
 {

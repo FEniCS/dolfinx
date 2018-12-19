@@ -458,40 +458,14 @@ void fem::assemble(la::PETScMatrix& A,
           ISLocalToGlobalMappingRestoreIndices(l2g0, &val0);
           ISLocalToGlobalMappingRestoreIndices(l2g1, &val1);
 
-          // TMP: copy dofmap
-          Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>
-              dmap0 = a[i][j]->function_space(0)->dofmap()->copy();
-          Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic,
-                       Eigen::RowMajor>
-              dmap1 = a[i][j]->function_space(1)->dofmap()->copy();
-          std::vector<std::int32_t> bc_dofs0_old, bc_dofs1_old;
-          std::vector<Eigen::SparseMatrix<PetscInt, Eigen::RowMajor>> bc_dofs0,
-              bc_dofs1;
           for (std::size_t k = 0; k < bcs.size(); ++k)
           {
             assert(bcs[k]);
             assert(bcs[k]->function_space());
             if (a[i][j]->function_space(0)->contains(*bcs[k]->function_space()))
-            {
               bcs[k]->l2g_dofs(l2g0_new);
-              bcs[k]->dofmap(dmap0);
-              bc_dofs0.push_back(bcs[k]->dofs());
-              const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& bcd
-                  = bcs[k]->dof_indices();
-              bc_dofs0_old.insert(bc_dofs0_old.end(), bcd.data(),
-                                  bcd.data() + bcd.size());
-            }
             if (a[i][j]->function_space(1)->contains(*bcs[k]->function_space()))
-            {
               bcs[k]->l2g_dofs(l2g1_new);
-              bcs[k]->dofmap(dmap1);
-              bc_dofs1.push_back(bcs[k]->dofs());
-              const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& bcd1
-                  = bcs[k]->dof_indices();
-              bc_dofs1_old.insert(bc_dofs1_old.end(), bcd1.data(),
-                                  bcd1.data() + bcd1.size());
-            }
           }
 
           // Create l2gIS
@@ -503,16 +477,12 @@ void fem::assemble(la::PETScMatrix& A,
                                        l2g1_new.data(), PETSC_COPY_VALUES,
                                        &l2g1_mod);
 
-          // ISLocalToGlobalMappingView(l2g0_mod, PETSC_VIEWER_STDOUT_SELF);
-          // ISLocalToGlobalMappingView(l2g1_mod, PETSC_VIEWER_STDOUT_SELF);
-
           PetscObjectReference((PetscObject)l2g0);
           PetscObjectReference((PetscObject)l2g1);
           MatSetLocalToGlobalMapping(subA, l2g0_mod, l2g1_mod);
 
           la::PETScMatrix mat(subA);
-          assemble_matrix(mat, *a[i][j], dmap0, dmap1, bc_dofs0_old,
-                          bc_dofs1_old);
+          assemble_matrix(mat, *a[i][j]);
 
           std::cout << "Set back map" << std::endl;
           MatSetLocalToGlobalMapping(subA, l2g0, l2g1);
@@ -565,37 +535,14 @@ void fem::assemble(la::PETScMatrix& A,
     ISLocalToGlobalMappingRestoreIndices(l2g0, &val0);
     ISLocalToGlobalMappingRestoreIndices(l2g1, &val1);
 
-    Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        dmap0 = a[0][0]->function_space(0)->dofmap()->copy();
-    Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-        dmap1 = a[0][0]->function_space(1)->dofmap()->copy();
-    std::vector<std::int32_t> bc_dofs0_old, bc_dofs1_old;
-    std::vector<Eigen::SparseMatrix<PetscInt, Eigen::RowMajor>> bc_dofs0,
-        bc_dofs1;
     for (std::size_t k = 0; k < bcs.size(); ++k)
     {
       assert(bcs[k]);
       assert(bcs[k]->function_space());
       if (a[0][0]->function_space(0)->contains(*bcs[k]->function_space()))
-      {
         bcs[k]->l2g_dofs(l2g0_new);
-        bcs[k]->dofmap(dmap0);
-        bc_dofs0.push_back(bcs[k]->dofs());
-        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& bcd0
-            = bcs[k]->dof_indices();
-        bc_dofs0_old.insert(bc_dofs0_old.end(), bcd0.data(),
-                            bcd0.data() + bcd0.size());
-      }
       if (a[0][0]->function_space(1)->contains(*bcs[k]->function_space()))
-      {
         bcs[k]->l2g_dofs(l2g1_new);
-        bcs[k]->dofmap(dmap1);
-        bc_dofs1.push_back(bcs[k]->dofs());
-        const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& bcd1
-            = bcs[k]->dof_indices();
-        bc_dofs1_old.insert(bc_dofs1_old.end(), bcd1.data(),
-                            bcd1.data() + bcd1.size());
-      }
     }
 
     // Create l2gIS
@@ -608,7 +555,7 @@ void fem::assemble(la::PETScMatrix& A,
     PetscObjectReference((PetscObject)l2g1);
     MatSetLocalToGlobalMapping(A.mat(), l2g0_mod, l2g1_mod);
 
-    assemble_matrix(A, *a[0][0], dmap0, dmap1, bc_dofs0_old, bc_dofs1_old);
+    assemble_matrix(A, *a[0][0]);
 
     MatSetLocalToGlobalMapping(A.mat(), l2g0, l2g1);
     ISLocalToGlobalMappingDestroy(&l2g0);

@@ -199,10 +199,6 @@ public:
       double scale = 1.0) const;
 
   // tmp
-  void dofmap(Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic,
-                           Eigen::RowMajor>& dofmap) const;
-
-  // tmp
   void l2g_dofs(
       Eigen::Ref<Eigen::Array<PetscInt, Eigen::Dynamic, 1>> indices) const;
 
