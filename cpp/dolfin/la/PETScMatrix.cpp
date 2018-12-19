@@ -51,7 +51,8 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   const std::size_t n = bs1 * index_maps[1]->size_local();
 
   // Find common block size across rows/columns
-  const int bs = (bs0 == bs1 ? bs0 : 1);
+  // const int bs = (bs0 == bs1 ? bs0 : 1);
+  const int bs = 1;
 
   // Set matrix size
   ierr = MatSetSizes(_matA, m, n, M, N);

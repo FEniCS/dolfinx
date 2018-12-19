@@ -34,7 +34,6 @@ void fem::assemble_matrix(Mat A, const Form& a)
   assert(A);
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
-
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim);
 
@@ -77,7 +76,7 @@ void fem::assemble_matrix(Mat A, const Form& a)
                              dmap1.data(), Ae.data(), ADD_VALUES);
 #ifdef DEBUG
     if (ierr != 0)
-      la::petsc_error(ierr, __FILE__, "MatSetValues");
+      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 #endif
   }
 }

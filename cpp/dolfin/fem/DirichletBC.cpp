@@ -406,50 +406,6 @@ DirichletBC::dof_indices() const
   return _dof_indices;
 }
 //-----------------------------------------------------------------------------
-Eigen::SparseMatrix<PetscInt, Eigen::RowMajor> DirichletBC::dofs() const
-{
-  const mesh::Mesh& mesh = *_function_space->mesh();
-  const fem::FiniteElement& element = *_function_space->element();
-  const fem::GenericDofMap& dofmap = *_function_space->dofmap();
-
-  // std::cout << "Dofmap range: " << dofmap.ownership_range()[0] << ", "
-  //           << dofmap.ownership_range()[1] << std::endl;
-
-  Eigen::SparseMatrix<PetscInt, Eigen::RowMajor> A(mesh.num_cells(),
-                                                   element.space_dimension());
-
-  // Iterate over all cells
-  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
-  {
-    // Check that cell is not a ghost
-    assert(!cell.is_ghost());
-
-    // Get dof maps for cell
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap
-        = dofmap.cell_dofs(cell.index());
-
-    // Check if each dof has bc applied
-    // std::cout << "New comp dofmap: " << std::endl;
-    // std::cout << dmap << std::endl;
-    for (Eigen::Index i = 0; i < dmap.rows(); ++i)
-    {
-      bool found = std::binary_search(_dof_indices.data(),
-                                      _dof_indices.data() + _dof_indices.size(),
-                                      dmap[i]);
-      if (found)
-      {
-        // std::cout << "Inserting cell, local, global: " << cell.index() << ",
-        // "
-        //           << i << ", " << dmap[i] << std::endl;
-        A.insert(cell.index(), i) = dmap[i];
-      }
-    }
-  }
-
-  A.makeCompressed();
-  return A;
-}
-//-----------------------------------------------------------------------------
 void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     double scale) const

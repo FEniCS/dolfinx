@@ -553,7 +553,12 @@ void fem::assemble(la::PETScMatrix& A,
                                  l2g1_new.data(), PETSC_COPY_VALUES, &l2g1_mod);
     PetscObjectReference((PetscObject)l2g0);
     PetscObjectReference((PetscObject)l2g1);
-    MatSetLocalToGlobalMapping(A.mat(), l2g0_mod, l2g1_mod);
+
+    std::cout << "set local to global" << std::endl;
+    PetscErrorCode ierr
+        = MatSetLocalToGlobalMapping(A.mat(), l2g0_mod, l2g1_mod);
+    assert(ierr == 0);
+    std::cout << "post set local to global" << std::endl;
 
     assemble_matrix(A, *a[0][0]);
 
