@@ -23,13 +23,16 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(la::PETScMatrix& A, const Form& a)
+void fem::assemble_matrix(la::PETScMatrix& A, const Form& a,
+                          const std::vector<bool>& bc0,
+                          const std::vector<bool>& bc1)
 {
   assert(A.mat());
-  assemble_matrix(A.mat(), a);
+  assemble_matrix(A.mat(), a, bc0, bc1);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(Mat A, const Form& a)
+void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
+                          const std::vector<bool>& bc1)
 {
   assert(A);
   assert(a.mesh());
@@ -70,8 +73,24 @@ void fem::assemble_matrix(Mat A, const Form& a)
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
         = map1.cell_dofs(cell_index);
 
+    // Tabulate tensor
     Ae.setZero(dmap0.size(), dmap1.size());
     a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
+
+    // Zero rows/columns for essential bcs
+    for (Eigen::Index i = 0; i < Ae.rows(); ++i)
+    {
+      const PetscInt ii = dmap0[i];
+      if (bc0[ii])
+        Ae.row(i).setZero();
+    }
+    for (Eigen::Index j = 0; j < Ae.cols(); ++j)
+    {
+      const PetscInt jj = dmap1[j];
+      if (bc1[jj])
+        Ae.col(j).setZero();
+    }
+
     ierr = MatSetValuesLocal(A, dmap0.size(), dmap0.data(), dmap1.size(),
                              dmap1.data(), Ae.data(), ADD_VALUES);
 #ifdef DEBUG

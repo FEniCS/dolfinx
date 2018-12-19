@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/common/Variable.h>
 #include <memory>
 #include <petscsys.h>
 #include <set>
@@ -39,7 +38,7 @@ namespace fem
 
 /// This class provides a generic interface for dof maps
 
-class GenericDofMap : public common::Variable
+class GenericDofMap
 {
 public:
   /// True if dof map is a view into another map (is a sub-dofmap)

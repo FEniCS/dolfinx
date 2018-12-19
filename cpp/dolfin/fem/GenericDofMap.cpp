@@ -1,3 +1,8 @@
+// Copyright (C) 2010-2015 Anders Logg and Garth N. Wells
+//
+// This file is part of DOLFIN (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "GenericDofMap.h"
 #include <dolfin/common/IndexMap.h>

@@ -477,14 +477,12 @@ void DirichletBC::set(
   VecGhostRestoreLocalForm(g_vec, &g_local);
 }
 //-----------------------------------------------------------------------------
-void DirichletBC::l2g_dofs(
-    Eigen::Ref<Eigen::Array<PetscInt, Eigen::Dynamic, 1>> l2g) const
+void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 {
   for (Eigen::Index i = 0; i < _dof_indices.size(); ++i)
   {
-    assert(_dof_indices[i] < (PetscInt)l2g.size());
-    if (l2g[_dof_indices[i]] >= 0)
-      l2g[_dof_indices[i]] = -l2g[_dof_indices[i]] - 1;
+    assert(_dof_indices[i] < (PetscInt) markers.size());
+    markers[_dof_indices[i]] = true;
   }
 }
 //-----------------------------------------------------------------------------

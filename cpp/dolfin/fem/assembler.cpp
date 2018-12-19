@@ -435,63 +435,25 @@ void fem::assemble(la::PETScMatrix& A,
           Mat subA;
           MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
 
-          // Get local-to-global map matrix
-          ISLocalToGlobalMapping l2g0, l2g1;
-          MatGetLocalToGlobalMapping(subA, &l2g0, &l2g1);
-
-          // Copy local-to-global map into array
-          PetscInt n0, n1;
-          ISLocalToGlobalMappingGetSize(l2g0, &n0);
-          ISLocalToGlobalMappingGetSize(l2g1, &n1);
-          PetscInt const* val0;
-          PetscInt const* val1;
-          ISLocalToGlobalMappingGetIndices(l2g0, &val0);
-          ISLocalToGlobalMappingGetIndices(l2g1, &val1);
-          Eigen::Array<PetscInt, Eigen::Dynamic, 1> l2g0_new
-              = Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
-                  val0, n0);
-          Eigen::Array<PetscInt, Eigen::Dynamic, 1> l2g1_new
-              = Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
-                  val1, n1);
-          Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> _l2g1(
-              val1, n1);
-          ISLocalToGlobalMappingRestoreIndices(l2g0, &val0);
-          ISLocalToGlobalMappingRestoreIndices(l2g1, &val1);
-
+          auto map0 = a[i][j]->function_space(0)->dofmap()->index_map();
+          auto map1 = a[i][j]->function_space(1)->dofmap()->index_map();
+          std::int32_t process_dim0
+              = map0->block_size() * (map0->size_local() + map0->num_ghosts());
+          std::int32_t process_dim1
+              = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+          std::vector<bool> dof_marker0(process_dim0, false),
+              dof_marker1(process_dim1, false);
           for (std::size_t k = 0; k < bcs.size(); ++k)
           {
             assert(bcs[k]);
             assert(bcs[k]->function_space());
             if (a[i][j]->function_space(0)->contains(*bcs[k]->function_space()))
-              bcs[k]->l2g_dofs(l2g0_new);
+              bcs[k]->mark_dofs(dof_marker0);
             if (a[i][j]->function_space(1)->contains(*bcs[k]->function_space()))
-              bcs[k]->l2g_dofs(l2g1_new);
+              bcs[k]->mark_dofs(dof_marker1);
           }
 
-          // Create l2gIS
-          ISLocalToGlobalMapping l2g0_mod, l2g1_mod;
-          ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, l2g0_new.size(),
-                                       l2g0_new.data(), PETSC_COPY_VALUES,
-                                       &l2g0_mod);
-          ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, l2g1_new.size(),
-                                       l2g1_new.data(), PETSC_COPY_VALUES,
-                                       &l2g1_mod);
-
-          PetscObjectReference((PetscObject)l2g0);
-          PetscObjectReference((PetscObject)l2g1);
-          MatSetLocalToGlobalMapping(subA, l2g0_mod, l2g1_mod);
-
-          assemble_matrix(subA, *a[i][j]);
-
-          std::cout << "Set back map" << std::endl;
-          MatSetLocalToGlobalMapping(subA, l2g0, l2g1);
-          ISLocalToGlobalMappingDestroy(&l2g0);
-          ISLocalToGlobalMappingDestroy(&l2g1);
-
-          std::cout << "Post Set back map" << std::endl;
-
-          ISLocalToGlobalMappingDestroy(&l2g0_mod);
-          ISLocalToGlobalMappingDestroy(&l2g1_mod);
+          assemble_matrix(subA, *a[i][j], dof_marker0, dof_marker1);
 
           if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
           {
@@ -518,55 +480,25 @@ void fem::assemble(la::PETScMatrix& A,
   }
   else
   {
-    ISLocalToGlobalMapping l2g0, l2g1;
-    MatGetLocalToGlobalMapping(A.mat(), &l2g0, &l2g1);
-    PetscInt n0, n1;
-    ISLocalToGlobalMappingGetSize(l2g0, &n0);
-    ISLocalToGlobalMappingGetSize(l2g1, &n1);
-
-    PetscInt const* val0;
-    PetscInt const* val1;
-    ISLocalToGlobalMappingGetIndices(l2g0, &val0);
-    ISLocalToGlobalMappingGetIndices(l2g1, &val1);
-    Eigen::Array<PetscInt, Eigen::Dynamic, 1> l2g0_new
-        = Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(val0, n0);
-    Eigen::Array<PetscInt, Eigen::Dynamic, 1> l2g1_new
-        = Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(val1, n1);
-    ISLocalToGlobalMappingRestoreIndices(l2g0, &val0);
-    ISLocalToGlobalMappingRestoreIndices(l2g1, &val1);
-
+    auto map0 = a[0][0]->function_space(0)->dofmap()->index_map();
+    auto map1 = a[0][0]->function_space(1)->dofmap()->index_map();
+    std::int32_t process_dim0
+        = map0->block_size() * (map0->size_local() + map0->num_ghosts());
+    std::int32_t process_dim1
+        = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+    std::vector<bool> dof_marker0(process_dim0, false),
+        dof_marker1(process_dim1, false);
     for (std::size_t k = 0; k < bcs.size(); ++k)
     {
       assert(bcs[k]);
       assert(bcs[k]->function_space());
       if (a[0][0]->function_space(0)->contains(*bcs[k]->function_space()))
-        bcs[k]->l2g_dofs(l2g0_new);
+        bcs[k]->mark_dofs(dof_marker0);
       if (a[0][0]->function_space(1)->contains(*bcs[k]->function_space()))
-        bcs[k]->l2g_dofs(l2g1_new);
+        bcs[k]->mark_dofs(dof_marker1);
     }
 
-    // Create l2gIS
-    ISLocalToGlobalMapping l2g0_mod, l2g1_mod;
-    ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, l2g0_new.size(),
-                                 l2g0_new.data(), PETSC_COPY_VALUES, &l2g0_mod);
-    ISLocalToGlobalMappingCreate(MPI_COMM_SELF, 1, l2g1_new.size(),
-                                 l2g1_new.data(), PETSC_COPY_VALUES, &l2g1_mod);
-    PetscObjectReference((PetscObject)l2g0);
-    PetscObjectReference((PetscObject)l2g1);
-
-    std::cout << "set local to global" << std::endl;
-    PetscErrorCode ierr
-        = MatSetLocalToGlobalMapping(A.mat(), l2g0_mod, l2g1_mod);
-    assert(ierr == 0);
-    std::cout << "post set local to global" << std::endl;
-
-    assemble_matrix(A, *a[0][0]);
-
-    MatSetLocalToGlobalMapping(A.mat(), l2g0, l2g1);
-    ISLocalToGlobalMappingDestroy(&l2g0);
-    ISLocalToGlobalMappingDestroy(&l2g1);
-    ISLocalToGlobalMappingDestroy(&l2g0_mod);
-    ISLocalToGlobalMappingDestroy(&l2g1_mod);
+    assemble_matrix(A, *a[0][0], dof_marker0, dof_marker1);
 
     if (*a[0][0]->function_space(0) == *a[0][0]->function_space(1))
     {

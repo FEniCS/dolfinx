@@ -110,6 +110,8 @@ bc = DirichletBC(V, u0, boundary)
 # symmetry)
 A, b = assemble_system(a, L, bc)
 
+print("!!!!!!", A.mat().block_size)
+
 # Create solution function
 u = Function(V)
 

@@ -7,8 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <Eigen/SparseCore>
-#include <dolfin/common/Variable.h>
 #include <map>
 #include <memory>
 #include <petscsys.h>
@@ -28,9 +26,6 @@ class FunctionSpace;
 
 namespace mesh
 {
-class Facet;
-template <typename T>
-class MeshFunction;
 class SubDomain;
 } // namespace mesh
 
@@ -89,7 +84,7 @@ class GenericDofMap;
 /// check the midpoint which will be located in the interior of a
 /// domain defined relative to a radius.
 
-class DirichletBC : public common::Variable
+class DirichletBC
 {
 
 public:
@@ -197,8 +192,7 @@ public:
       double scale = 1.0) const;
 
   // tmp
-  void l2g_dofs(
-      Eigen::Ref<Eigen::Array<PetscInt, Eigen::Dynamic, 1>> indices) const;
+  void mark_dofs(std::vector<bool>& markers) const;
 
 private:
   // Build map of shared dofs in V to dofs in Vg
