@@ -21,6 +21,9 @@
 import os
 import ffc
 
+from petsc4py import PETSc
+complex_mode = 'complex' in str(type(PETSc.ScalarType()))
+
 
 # Forms for which we don't want to generate functions for evaluating
 # the basis
@@ -47,6 +50,8 @@ for subdir in subdirs:
             if f in skip_basis:
                 args.append("-fno-evaluate_basis")
                 args.append("-fno-evaluate_basis_derivatives")
+            if complex_mode:
+                args.append("-fscalar_type 'double complex'")
 
             args.append(f)
 
