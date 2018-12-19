@@ -400,11 +400,11 @@ std::shared_ptr<const function::Function> DirichletBC::value() const
   return _g;
 }
 //-----------------------------------------------------------------------------
-// const Eigen::Array<PetscInt, Eigen::Dynamic, 1>&
-// DirichletBC::dof_indices() const
-// {
-//   return _dof_indices;
-// }
+const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+DirichletBC::dof_indices() const
+{
+  return _dof_indices;
+}
 //-----------------------------------------------------------------------------
 void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
@@ -481,7 +481,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 {
   for (Eigen::Index i = 0; i < _dof_indices.size(); ++i)
   {
-    assert(_dof_indices[i] < (PetscInt) markers.size());
+    assert(_dof_indices[i] < (PetscInt)markers.size());
     markers[_dof_indices[i]] = true;
   }
 }

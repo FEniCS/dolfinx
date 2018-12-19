@@ -73,61 +73,16 @@ la::PETScMatrix _assemble_matrix(const Form& a)
   return fem::assemble({{&a}}, {}, fem::BlockType::monolithic);
 }
 //-----------------------------------------------------------------------------
-void _ident(
+void set_diagonal_local(
     la::PETScMatrix& A,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
     PetscScalar diag)
 {
-  // FIXME: make this process-wise to avoid extra communication step
-  // MatZeroRowsLocal(A.mat(), rows.size(), rows.data(), diag, NULL, NULL);
   for (Eigen::Index i = 0; i < rows.size(); ++i)
   {
     const PetscInt row = rows[i];
     A.add_local(&diag, 1, &row, 1, &row);
   }
-}
-//-----------------------------------------------------------------------------
-// Get dof indices that have a boundary condition applied. Indices are
-// local and ghost indices are not included.
-Eigen::Array<PetscInt, Eigen::Dynamic, 1>
-_get_local_bc_rows(const function::FunctionSpace& V,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs)
-{
-  // assert(V.mesh());
-  // const mesh::Mesh& mesh = *V.mesh();
-
-  DirichletBC::Map boundary_values;
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-  {
-    assert(bcs[i]);
-    assert(bcs[i]->function_space());
-    if (V.contains(*bcs[i]->function_space()))
-    {
-      // FIXME: find way to avoid gather, or perform with a single
-      // gather
-      bcs[i]->get_boundary_values(boundary_values);
-      // if (MPI::size(mesh.mpi_comm()) > 1
-      //     and bcs[i]->method() != DirichletBC::Method::pointwise)
-      // {
-      //   bcs[i]->gather(boundary_values);
-      // }
-    }
-  }
-
-  auto map = V.dofmap()->index_map();
-  int local_size = map->block_size() * map->size_local();
-  std::vector<PetscInt> _rows;
-  for (auto bc : boundary_values)
-  {
-    PetscInt row = bc.first;
-    if (row < local_size)
-      _rows.push_back(row);
-  }
-
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
-      = Eigen::Map<Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(_rows.data(),
-                                                              _rows.size());
-  return rows;
 }
 } // namespace
 
@@ -441,16 +396,21 @@ void fem::assemble(la::PETScMatrix& A,
               = map0->block_size() * (map0->size_local() + map0->num_ghosts());
           std::int32_t process_dim1
               = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-          std::vector<bool> dof_marker0(process_dim0, false),
-              dof_marker1(process_dim1, false);
+          std::vector<bool> dof_marker0, dof_marker1;
           for (std::size_t k = 0; k < bcs.size(); ++k)
           {
             assert(bcs[k]);
             assert(bcs[k]->function_space());
             if (a[i][j]->function_space(0)->contains(*bcs[k]->function_space()))
+            {
+              dof_marker0.resize(process_dim0, false);
               bcs[k]->mark_dofs(dof_marker0);
+            }
             if (a[i][j]->function_space(1)->contains(*bcs[k]->function_space()))
+            {
+              dof_marker1.resize(process_dim1, false);
               bcs[k]->mark_dofs(dof_marker1);
+            }
           }
 
           assemble_matrix(subA, *a[i][j], dof_marker0, dof_marker1);
@@ -458,9 +418,27 @@ void fem::assemble(la::PETScMatrix& A,
           if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
           {
             la::PETScMatrix mat(subA);
-            const Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
-                = _get_local_bc_rows(*a[i][j]->function_space(0), bcs);
-            _ident(mat, rows, diagonal);
+            for (const auto& bc : bcs)
+            {
+              assert(bc);
+              if (a[i][j]->function_space(0)->contains(*bc->function_space()))
+              {
+                // FIXME: could be simpler if DirichlerBC::dof_indices had
+                // options to return owned dofs only
+                const Eigen::Ref<
+                    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+                    dofs = bc->dof_indices();
+                const int owned_size = map0->block_size() * map0->size_local();
+                auto it = std::lower_bound(
+                    dofs.data(), dofs.data() + dofs.rows(), owned_size);
+                const Eigen::Index pos = std::distance(dofs.data(), it);
+                assert(pos <= dofs.size() and pos >= 0);
+                const Eigen::Map<
+                    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+                    dofs_owned(dofs.data(), pos);
+                set_diagonal_local(mat, dofs_owned, diagonal);
+              }
+            }
           }
 
           MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
@@ -486,25 +464,46 @@ void fem::assemble(la::PETScMatrix& A,
         = map0->block_size() * (map0->size_local() + map0->num_ghosts());
     std::int32_t process_dim1
         = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-    std::vector<bool> dof_marker0(process_dim0, false),
-        dof_marker1(process_dim1, false);
+    std::vector<bool> dof_marker0, dof_marker1;
     for (std::size_t k = 0; k < bcs.size(); ++k)
     {
       assert(bcs[k]);
       assert(bcs[k]->function_space());
       if (a[0][0]->function_space(0)->contains(*bcs[k]->function_space()))
+      {
+        dof_marker0.resize(process_dim0, false);
         bcs[k]->mark_dofs(dof_marker0);
+      }
       if (a[0][0]->function_space(1)->contains(*bcs[k]->function_space()))
+      {
+        dof_marker1.resize(process_dim1, false);
         bcs[k]->mark_dofs(dof_marker1);
+      }
     }
 
     assemble_matrix(A, *a[0][0], dof_marker0, dof_marker1);
 
     if (*a[0][0]->function_space(0) == *a[0][0]->function_space(1))
     {
-      const Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
-          = _get_local_bc_rows(*a[0][0]->function_space(0), bcs);
-      _ident(A, rows, diagonal);
+      for (const auto& bc : bcs)
+      {
+        assert(bc);
+        if (a[0][0]->function_space(0)->contains(*bc->function_space()))
+        {
+          // FIXME: could be simpler if DirichlerBC::dof_indices had
+          // options to return owned dofs only
+          const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs
+              = bc->dof_indices();
+          const int owned_size = map0->block_size() * map0->size_local();
+          auto it = std::lower_bound(dofs.data(), dofs.data() + dofs.rows(),
+                                     owned_size);
+          const Eigen::Index pos = std::distance(dofs.data(), it);
+          assert(pos <= dofs.size() and pos >= 0);
+          const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+              dofs_owned(dofs.data(), pos);
+          set_diagonal_local(A, dofs_owned, diagonal);
+        }
+      }
     }
   }
 

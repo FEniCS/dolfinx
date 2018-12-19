@@ -173,6 +173,10 @@ public:
   ///         The boundary values.
   std::shared_ptr<const function::Function> value() const;
 
+  // dof indices. Must be sorted
+  const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+  dof_indices() const;
+
   /// Set bc entries in x to scale*x_bc
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
            double scale = 1.0) const;
