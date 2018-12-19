@@ -37,8 +37,6 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
   assert(A);
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
-  const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim);
 
   // Function spaces and dofmaps for each axis
   assert(a.function_space(0));
@@ -78,17 +76,21 @@ void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
     a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
 
     // Zero rows/columns for essential bcs
-    for (Eigen::Index i = 0; i < Ae.rows(); ++i)
+    if (!bc0.empty())
     {
-      const PetscInt ii = dmap0[i];
-      if (bc0[ii])
-        Ae.row(i).setZero();
+      for (Eigen::Index i = 0; i < Ae.rows(); ++i)
+      {
+        if (bc0[dmap0[i]])
+          Ae.row(i).setZero();
+      }
     }
-    for (Eigen::Index j = 0; j < Ae.cols(); ++j)
+    if (!bc1.empty())
     {
-      const PetscInt jj = dmap1[j];
-      if (bc1[jj])
-        Ae.col(j).setZero();
+      for (Eigen::Index j = 0; j < Ae.cols(); ++j)
+      {
+        if (bc1[dmap1[j]])
+          Ae.col(j).setZero();
+      }
     }
 
     ierr = MatSetValuesLocal(A, dmap0.size(), dmap0.data(), dmap1.size(),

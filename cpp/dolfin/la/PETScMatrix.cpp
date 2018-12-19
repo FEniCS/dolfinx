@@ -158,8 +158,6 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   ierr = MatSetOption(_matA, MAT_KEEP_NONZERO_PATTERN, PETSC_TRUE);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetOption");
-
-  // MatSetBlockSize(_matA, bs_ref);
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)

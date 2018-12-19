@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Dense>
-#include <Eigen/SparseCore>
 #include <petscmat.h>
 #include <petscsys.h>
 #include <vector>
@@ -23,7 +21,7 @@ namespace fem
 {
 class Form;
 
-// FIXME: Add comment of zero Dirichlet rows/cols
+// FIXME: Add comment on zero Dirichlet rows/cols
 /// The matrix A must already be initialised. The matrix may be a proxy,
 /// i.e. a view into a larger matrix, and assembly is performed using
 /// local indices. Matrix is not finalised.
@@ -31,7 +29,7 @@ void assemble_matrix(la::PETScMatrix& A, const Form& a,
                      const std::vector<bool>& bc0,
                      const std::vector<bool>& bc1);
 
-// FIXME: Add comment of zero Dirichlet rows/cols
+// FIXME: Add comment on zero Dirichlet rows/cols
 /// The matrix A must already be initialised. The matrix may be a proxy,
 /// i.e. a view into a larger matrix, and assembly is performed using
 /// local indices. Matrix is not finalised.
