@@ -446,14 +446,10 @@ if (PYTHONINTERP_FOUND)
   add_custom_target(copy_data_test_demo
     COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-endif()
 
-# Add target "demos" for building the demos
-if (PYTHONINTERP_FOUND)
+  # Add target "demos" for building the demos
   add_custom_target(demos
-    COMMAND ${MAKE_PROGRAM}
-    DEPENDS copy_data_test_demo demos_source
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
+    DEPENDS copy_data_test_demo demos_source demo_poisson demo_hyperelasticity)
 endif()
 
 #------------------------------------------------------------------------------
