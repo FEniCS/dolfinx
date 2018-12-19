@@ -37,52 +37,51 @@ class GenericDofMap;
 ///
 ///     u = g on G,
 ///
-/// where u is the solution to be computed, g is a function
-/// and G is a sub domain of the mesh.
+/// where u is the solution to be computed, g is a function and G is a
+/// sub domain of the mesh.
 ///
 /// A DirichletBC is specified by the function g, the function space
 /// (trial space) and boundary indicators on (a subset of) the mesh
 /// boundary.
 ///
-/// The boundary indicators may be specified in a number of
-/// different ways.
+/// The boundary indicators may be specified in a number of different
+/// ways.
 ///
-/// The simplest approach is to specify the boundary by a _SubDomain_
-/// object, using the inside() function to specify on which facets
-/// the boundary conditions should be applied. The boundary facets
-/// will then be searched for and marked *only* on the first call to
-/// apply. This means that the mesh could be moved after the first
-/// apply and the boundary markers would still remain intact.
+/// 1. Providing a_SubDomain_ object, using the inside() function to
+///    specify on which facets the boundary conditions should be
+///    applied.
+/// 2. Providing list of facets (by index, local to a process).
 ///
-/// The 'method' variable may be used to specify the type of method
-/// used to identify degrees of freedom on the boundary. Available
-/// methods are: topological approach (default), geometric approach,
-/// and pointwise approach. The topological approach is faster, but
-/// will only identify degrees of freedom that are located on a
-/// facet that is entirely on the boundary. In particular, the
-/// topological approach will not identify degrees of freedom for
-/// discontinuous elements (which are all internal to the cell). A
-/// remedy for this is to use the geometric approach. In the
-/// geometric approach, each dof on each facet that matches the
-/// boundary condition will be checked. To apply pointwise boundary
-/// conditions e.g. pointloads, one will have to use the pointwise
-/// approach. The three possibilities are "topological", "geometric"
-/// and "pointwise".
+/// The degrees-of-freedom to which boundary conditions are applied are
+/// computed at construction and cannot be changed afterwards.
 ///
-/// Note: when using "pointwise", the boolean argument `on_boundary`
-/// in SubDomain::inside will always be false.
+/// The 'method' variable may be used to specify the type of method used
+/// to identify degrees of freedom on the boundary. Available methods
+/// are: topological approach (default), geometric approach, and
+/// pointwise approach. The topological approach is faster, but will
+/// only identify degrees of freedom that are located on a facet that is
+/// entirely on the boundary. In particular, the topological approach
+/// will not identify degrees of freedom for discontinuous elements
+/// (which are all internal to the cell). A remedy for this is to use
+/// the geometric approach. In the geometric approach, each dof on each
+/// facet that matches the boundary condition will be checked. To apply
+/// pointwise boundary conditions e.g. pointloads, one will have to use
+/// the pointwise approach. The three possibilities are "topological",
+/// "geometric" and "pointwise".
 ///
-/// The 'check_midpoint' variable can be used to decide whether or
-/// not the midpoint of each facet should be checked when a
-/// user-defined _SubDomain_ is used to define the domain of the
-/// boundary condition. By default, midpoints are always checked.
-/// Note that this variable may be of importance close to corners,
-/// in which case it is sometimes important to check the midpoint to
-/// avoid including facets "on the diagonal close" to a corner. This
-/// variable is also of importance for curved boundaries (like on a
-/// sphere or cylinder), in which case it is important *not* to
-/// check the midpoint which will be located in the interior of a
-/// domain defined relative to a radius.
+/// Note: when using "pointwise", the boolean argument `on_boundary` in
+/// SubDomain::inside will always be false.
+///
+/// The 'check_midpoint' variable can be used to decide whether or not
+/// the midpoint of each facet should be checked when a user-defined
+/// _SubDomain_ is used to define the domain of the boundary condition.
+/// By default, midpoints are always checked. Note that this variable
+/// may be of importance close to corners, in which case it is sometimes
+/// important to check the midpoint to avoid including facets "on the
+/// diagonal close" to a corner. This variable is also of importance for
+/// curved boundaries (like on a sphere or cylinder), in which case it
+/// is important *not* to check the midpoint which will be located in
+/// the interior of a domain defined relative to a radius.
 
 class DirichletBC
 {
