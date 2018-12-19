@@ -8,6 +8,7 @@
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
+#include <petscmat.h>
 #include <petscsys.h>
 #include <vector>
 
@@ -27,6 +28,12 @@ class Form;
 /// i.e. a view into a larger matrix, and assembly is performed using
 /// local indices. Matrix is not finalised.
 void assemble_matrix(la::PETScMatrix& A, const Form& a);
+
+// FIXME: Add comment of zero Dirichlet rows/cols
+/// The matrix A must already be initialised. The matrix may be a proxy,
+/// i.e. a view into a larger matrix, and assembly is performed using
+/// local indices. Matrix is not finalised.
+void assemble_matrix(Mat A, const Form& a);
 
 } // namespace fem
 } // namespace dolfin

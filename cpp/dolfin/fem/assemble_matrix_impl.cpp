@@ -12,6 +12,7 @@
 #include <Eigen/Sparse>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -24,7 +25,13 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 void fem::assemble_matrix(la::PETScMatrix& A, const Form& a)
 {
-  assert(!A.empty());
+  assert(A.mat());
+  assemble_matrix(A.mat(), a);
+}
+//-----------------------------------------------------------------------------
+void fem::assemble_matrix(Mat A, const Form& a)
+{
+  assert(A);
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
@@ -48,6 +55,7 @@ void fem::assemble_matrix(la::PETScMatrix& A, const Form& a)
       Ae;
 
   // Iterate over all cells
+  PetscErrorCode ierr;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
@@ -63,11 +71,14 @@ void fem::assemble_matrix(la::PETScMatrix& A, const Form& a)
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
         = map1.cell_dofs(cell_index);
 
-    Ae.resize(dmap0.size(), dmap1.size());
-    Ae.setZero();
+    Ae.setZero(dmap0.size(), dmap1.size());
     a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
-    A.add_local(Ae.data(), dmap0.size(), dmap0.data(), dmap1.size(),
-                dmap1.data());
+    ierr = MatSetValuesLocal(A, dmap0.size(), dmap0.data(), dmap1.size(),
+                             dmap1.data(), Ae.data(), ADD_VALUES);
+#ifdef DEBUG
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValues");
+#endif
   }
 }
 //-----------------------------------------------------------------------------

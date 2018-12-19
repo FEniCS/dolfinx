@@ -481,8 +481,7 @@ void fem::assemble(la::PETScMatrix& A,
           PetscObjectReference((PetscObject)l2g1);
           MatSetLocalToGlobalMapping(subA, l2g0_mod, l2g1_mod);
 
-          la::PETScMatrix mat(subA);
-          assemble_matrix(mat, *a[i][j]);
+          assemble_matrix(subA, *a[i][j]);
 
           std::cout << "Set back map" << std::endl;
           MatSetLocalToGlobalMapping(subA, l2g0, l2g1);
@@ -496,6 +495,7 @@ void fem::assemble(la::PETScMatrix& A,
 
           if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
           {
+            la::PETScMatrix mat(subA);
             const Eigen::Array<PetscInt, Eigen::Dynamic, 1> rows
                 = _get_local_bc_rows(*a[i][j]->function_space(0), bcs);
             _ident(mat, rows, diagonal);
