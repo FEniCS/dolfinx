@@ -36,7 +36,7 @@ regression-tests-cpp: &regression-tests-cpp
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
-  command: cd build && ninja -j2 demos && ctest -R demo -R mpi
+  command: cd build && ninja -j2 demos && ctest --verbose -R demo -R mpi
 
 demos-cpp: &demos-cpp
   name: Build and run demos (C++)
