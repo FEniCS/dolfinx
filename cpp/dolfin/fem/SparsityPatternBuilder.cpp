@@ -200,13 +200,11 @@ la::SparsityPattern SparsityPatternBuilder::build(
         bs * (diagonal_range - primary_range[0]));
     std::iota(indices.begin(), indices.end(), bs * primary_range[0]);
 
-    // const std::array<common::ArrayView<const PetscInt>, 2> diags
-    //     = {{common::ArrayView<const PetscInt>(indices.size(),
-    //                                                     indices.data()),
-    //         common::ArrayView<const PetscInt>(indices.size(),
-    //                                                     indices.data())}};
-    Eigen::Map<const EigenArrayXpetscint> rows(indices.data(), indices.size());
-    pattern.insert_global(rows, rows);
+    for (PetscInt j: indices)
+    {
+        Eigen::Map<const EigenArrayXpetscint> rows(&j, 1);
+        pattern.insert_global(rows, rows);
+    }
   }
 
   // Finalize sparsity pattern (communicate off-process terms)
