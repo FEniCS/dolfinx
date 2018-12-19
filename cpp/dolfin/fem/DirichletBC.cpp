@@ -412,8 +412,8 @@ Eigen::SparseMatrix<PetscInt, Eigen::RowMajor> DirichletBC::dofs() const
   const fem::FiniteElement& element = *_function_space->element();
   const fem::GenericDofMap& dofmap = *_function_space->dofmap();
 
-  std::cout << "Dofmap range: " << dofmap.ownership_range()[0] << ", "
-            << dofmap.ownership_range()[1] << std::endl;
+  // std::cout << "Dofmap range: " << dofmap.ownership_range()[0] << ", "
+  //           << dofmap.ownership_range()[1] << std::endl;
 
   Eigen::SparseMatrix<PetscInt, Eigen::RowMajor> A(mesh.num_cells(),
                                                    element.space_dimension());
@@ -429,8 +429,8 @@ Eigen::SparseMatrix<PetscInt, Eigen::RowMajor> DirichletBC::dofs() const
         = dofmap.cell_dofs(cell.index());
 
     // Check if each dof has bc applied
-    std::cout << "New comp dofmap: " << std::endl;
-    std::cout << dmap << std::endl;
+    // std::cout << "New comp dofmap: " << std::endl;
+    // std::cout << dmap << std::endl;
     for (Eigen::Index i = 0; i < dmap.rows(); ++i)
     {
       bool found = std::binary_search(_dof_indices.data(),
@@ -438,8 +438,9 @@ Eigen::SparseMatrix<PetscInt, Eigen::RowMajor> DirichletBC::dofs() const
                                       dmap[i]);
       if (found)
       {
-        std::cout << "Inserting cell, local, global: " << cell.index() << ", "
-                  << i << ", " << dmap[i] << std::endl;
+        // std::cout << "Inserting cell, local, global: " << cell.index() << ",
+        // "
+        //           << i << ", " << dmap[i] << std::endl;
         A.insert(cell.index(), i) = dmap[i];
       }
     }
@@ -518,6 +519,52 @@ void DirichletBC::set(
   // Restore PETSc array
   VecRestoreArrayRead(g_local, &g_array);
   VecGhostRestoreLocalForm(g_vec, &g_local);
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::dofmap(Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic,
+                                      Eigen::RowMajor>& dofmap) const
+{
+  std::shared_ptr<const common::IndexMap> index_map
+      = _function_space->dofmap()->index_map();
+
+  const std::int32_t process_size
+      = index_map->size_local() + index_map->num_ghosts();
+
+  std::vector<PetscInt> process_dofs(process_size);
+  std::iota(process_dofs.begin(), process_dofs.end(), 0);
+  for (Eigen::Index i = 0; i < _dof_indices.size(); ++i)
+  {
+    assert(_dof_indices[i] < (PetscInt)process_dofs.size());
+    assert(process_dofs[_dof_indices[i]] == _dof_indices[i]);
+    process_dofs[_dof_indices[i]] = -_dof_indices[i] - 1;
+  }
+  // virtual Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+  // cell_dofs(std::size_t cell_index) const = 0;
+
+  // const mesh::Mesh& mesh = *_function_space->mesh();
+  for (Eigen::Index i = 0; i < dofmap.rows(); ++i)
+  {
+    for (Eigen::Index j = 0; j < dofmap.row(i).cols(); ++j)
+    {
+      const PetscInt index = dofmap(i, j);
+      assert(index < (PetscInt)process_dofs.size());
+      if (process_dofs[index] < 0 and index >= 0)
+        dofmap(i, j) = -dofmap(i, j) - 1;
+    }
+  }
+
+  // return dmap_new;
+}
+//-----------------------------------------------------------------------------
+void DirichletBC::l2g_dofs(
+    Eigen::Ref<Eigen::Array<PetscInt, Eigen::Dynamic, 1>> l2g) const
+{
+  for (Eigen::Index i = 0; i < _dof_indices.size(); ++i)
+  {
+    assert(_dof_indices[i] < (PetscInt)l2g.size());
+    if (l2g[_dof_indices[i]] >= 0)
+      l2g[_dof_indices[i]] = -l2g[_dof_indices[i]] - 1;
+  }
 }
 //-----------------------------------------------------------------------------
 std::map<PetscInt, PetscInt>
@@ -634,8 +681,8 @@ std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
       const PetscInt dof_index_g = cell_dofs_g[index];
       bc_dofs.push_back({dof_index, dof_index_g});
 
-      std::cout << "Old adding bc (cell, local, global): " << cell.index()
-                << ", " << index << ", " << dof_index << std::endl;
+      // std::cout << "Old adding bc (cell, local, global): " << cell.index()
+      //           << ", " << index << ", " << dof_index << std::endl;
     }
   }
 

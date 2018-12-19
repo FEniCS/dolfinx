@@ -100,45 +100,48 @@ def test_matrix_assembly_block():
     L_block = [L0, L1]
 
     # Monolithic blocked
-    # A0 = dolfin.fem.assemble_matrix(a_block, [bc],
-    #                                 dolfin.cpp.fem.BlockType.monolithic)
-    # b0 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
-    #                                 dolfin.cpp.fem.BlockType.monolithic)
-    # assert A0.mat().getType() != "nest"
-    # Anorm0 = A0.mat().norm()
-    # bnorm0 = b0.vec().norm()
+    A0 = dolfin.fem.assemble_matrix(a_block, [bc],
+                                    dolfin.cpp.fem.BlockType.monolithic)
+    b0 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
+                                    dolfin.cpp.fem.BlockType.monolithic)
+    assert A0.mat().getType() != "nest"
+    Anorm0 = A0.mat().norm()
+    bnorm0 = b0.vec().norm()
+
+    print("Norm A0:", Anorm0)
 
     # Nested (MatNest)
-    # A1 = dolfin.fem.assemble_matrix(a_block, [bc],
-    #                                 dolfin.cpp.fem.BlockType.nested)
-    # b1 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
-    #                                 dolfin.cpp.fem.BlockType.nested)
-    # bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
-    # assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
+    A1 = dolfin.fem.assemble_matrix(a_block, [bc],
+                                    dolfin.cpp.fem.BlockType.nested)
+    b1 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
+                                    dolfin.cpp.fem.BlockType.nested)
+    bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
+    assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
 
-    # try:
-    #     Anorm1 = 0.0
-    #     nrows, ncols = A1.mat().getNestSize()
-    #     for row in range(nrows):
-    #         for col in range(ncols):
-    #             A_sub = A1.mat().getNestSubMatrix(row, col)
-    #             norm = A_sub.norm()
-    #             Anorm1 += norm * norm
-    #             # A_sub.view()
+    try:
+        Anorm1 = 0.0
+        nrows, ncols = A1.mat().getNestSize()
+        for row in range(nrows):
+            for col in range(ncols):
+                A_sub = A1.mat().getNestSubMatrix(row, col)
+                norm = A_sub.norm()
+                Anorm1 += norm * norm
+                # A_sub.view()
 
-    #     # is_rows, is_cols = A1.mat().getNestLocalISs()
-    #     # for is0 in is_rows:
-    #     #     for is1 in is_cols:
-    #     #         A_sub = A1.mat().getLocalSubMatrix(is0, is1)
-    #     #         norm = A_sub.norm()
-    #     #         Anorm1 += norm * norm
+        # is_rows, is_cols = A1.mat().getNestLocalISs()
+        # for is0 in is_rows:
+        #     for is1 in is_cols:
+        #         A_sub = A1.mat().getLocalSubMatrix(is0, is1)
+        #         norm = A_sub.norm()
+        #         Anorm1 += norm * norm
 
-    #     Anorm1 = math.sqrt(Anorm1)
-    #     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
+        Anorm1 = math.sqrt(Anorm1)
+        assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
 
-    # except AttributeError:
-    #     print("Recent petsc4py(-dev) required to get MatNest sub-matrix.")
+    except AttributeError:
+        print("Recent petsc4py(-dev) required to get MatNest sub-matrix.")
 
+    #return
     # print("---------------------------------------------")
 
     # Monolithic version
@@ -155,14 +158,16 @@ def test_matrix_assembly_block():
     A2 = dolfin.fem.assemble_matrix([[a]], [bc],
                                     dolfin.cpp.fem.BlockType.monolithic)
     # A2.mat().view()
-    # b2 = dolfin.fem.assemble_vector([L], [[a]], [bc],
-    #                                 dolfin.cpp.fem.BlockType.monolithic)
-    # assert A2.mat().getType() != "nest"
+    b2 = dolfin.fem.assemble_vector([L], [[a]], [bc],
+                                    dolfin.cpp.fem.BlockType.monolithic)
+    assert A2.mat().getType() != "nest"
 
-    # Anorm2 = A2.mat().norm()
-    # bnorm2 = b2.vec().norm()
-    # assert Anorm0 == pytest.approx(Anorm2, 1.0e-9)
-    # assert bnorm0 == pytest.approx(bnorm2, 1.0e-9)
+    Anorm2 = A2.mat().norm()
+    print("Norm A0:", Anorm0)
+    print("Norm A2:", Anorm2)
+    bnorm2 = b2.vec().norm()
+    assert Anorm0 == pytest.approx(Anorm2, 1.0e-9)
+    assert bnorm0 == pytest.approx(bnorm2, 1.0e-9)
 
 
 def xtest_assembly_solve_block():

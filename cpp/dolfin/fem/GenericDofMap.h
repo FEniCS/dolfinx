@@ -143,6 +143,13 @@ public:
       int64_t* dofs,
       const std::vector<std::vector<std::vector<int>>>& entity_dofs,
       const int64_t* num_global_entities, const int64_t** entity_indices);
+
+  // Tmp
+  virtual std::int32_t num_cells() const = 0;
+
+  // Tmp
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  copy() const;
 };
 } // namespace fem
 } // namespace dolfin

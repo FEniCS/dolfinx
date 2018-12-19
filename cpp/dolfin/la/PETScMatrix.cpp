@@ -59,8 +59,10 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
     petsc_error(ierr, __FILE__, "MatSetSizes");
 
   // Get number of nonzeros for each row from sparsity pattern
-  EigenArrayXi32 nnz_diag = sparsity_pattern.num_nonzeros_diagonal();
-  EigenArrayXi32 nnz_offdiag = sparsity_pattern.num_nonzeros_off_diagonal();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_diag
+      = sparsity_pattern.num_nonzeros_diagonal();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> nnz_offdiag
+      = sparsity_pattern.num_nonzeros_off_diagonal();
 
   // Apply PETSc options from the options database to the matrix (this
   // includes changing the matrix type to one specified by the user)
@@ -112,22 +114,22 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   // FIXME: In many cases the rows and columns could shared a common
   // local-to-global map
 
-  // Create pointers to PETSc IndexSet for local-to-global map
-  ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
-
   // Create PETSc local-to-global map/index set
-  ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs, map0.size(), map0.data(),
-                               PETSC_COPY_VALUES, &petsc_local_to_global0);
+  ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
+  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs, map0.size(),
+                                      map0.data(), PETSC_COPY_VALUES,
+                                      &petsc_local_to_global0);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
-  ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs, map1.size(), map1.data(),
-                               PETSC_COPY_VALUES, &petsc_local_to_global1);
+  ierr = ISLocalToGlobalMappingCreate(MPI_COMM_SELF, bs, map1.size(),
+                                      map1.data(), PETSC_COPY_VALUES,
+                                      &petsc_local_to_global1);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingCreate");
 
   // Set matrix local-to-global maps
-  MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
-                             petsc_local_to_global1);
+  ierr = MatSetLocalToGlobalMapping(_matA, petsc_local_to_global0,
+                                    petsc_local_to_global1);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetLocalToGlobalMapping");
 
@@ -139,10 +141,10 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
     petsc_error(ierr, __FILE__, "MatISSetPreallocation");
 
   // Clean up local-to-global maps
-  ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
+  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global0);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
-  ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
+  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global1);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "ISLocalToGlobalMappingDestroy");
 

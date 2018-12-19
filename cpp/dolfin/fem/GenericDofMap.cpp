@@ -224,3 +224,14 @@ void GenericDofMap::ufc_tabulate_dofs(
   }
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+GenericDofMap::copy() const
+{
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> dmap(
+      num_cells(), max_element_dofs());
+  for (Eigen::Index i = 0; i < dmap.rows(); ++i)
+    dmap.row(i) = cell_dofs(i);
+
+  return dmap;
+}
+//-----------------------------------------------------------------------------

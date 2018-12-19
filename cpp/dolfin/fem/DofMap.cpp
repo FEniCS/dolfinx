@@ -42,7 +42,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
   // FIXME: large objects could be shared (using std::shared_ptr)
   // between parent and view
 
-  // FIXME: the index map block size will be wrong here.
+  // FIXME: the index map block size will be wrong here???
 
   // Convenience reference to parent UFC dofmap
   const std::int64_t parent_offset
