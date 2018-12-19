@@ -195,7 +195,6 @@ void fem(py::module& m)
                     dolfin::fem::DirichletBC::Method>(),
            py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
       .def("function_space", &dolfin::fem::DirichletBC::function_space)
-      .def("dof_indices", &dolfin::fem::DirichletBC::dof_indices)
       .def("get_boundary_values", [](const dolfin::fem::DirichletBC& instance) {
         dolfin::fem::DirichletBC::Map map;
         instance.get_boundary_values(map);

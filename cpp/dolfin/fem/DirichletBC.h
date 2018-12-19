@@ -173,19 +173,11 @@ public:
   ///         The boundary values.
   std::shared_ptr<const function::Function> value() const;
 
-  // FIXME: Add option to include/exclude ghosts?
-  /// Return array of indices to which with dofs are applied. Indices
-  /// are local to the process and include ghosts.
-  ///
-  /// @return Eigen::Array<PetscInt, Eigen::Dynamic, 1>&
-  ///         Dof indices with boundary condition applied.
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dof_indices() const;
-
-  /// Set bc entries in x to x = scale*x_bc
+  /// Set bc entries in x to scale*x_bc
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
            double scale = 1.0) const;
 
-  /// Set bc entries in x to x = scale*(x0 - x_bc)
+  /// Set bc entries in x to scale*(x0 - x_bc)
   void set(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
@@ -221,7 +213,8 @@ private:
   // The function
   std::shared_ptr<const function::Function> _g;
 
-  // Dof indices in _function_space and g space to which bcs are applied
+  // Dof indices in _function_space and g space to which bcs are applied, i.e.
+  // u[dofs[i][0]] = g[dofs[i][1]]
   std::vector<std::array<PetscInt, 2>> _dofs;
 
   // Indices in _function_space to which bcs are applied
