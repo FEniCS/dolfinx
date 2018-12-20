@@ -88,8 +88,8 @@ void fem::impl::assemble_ghosted(Vec b, const Form& L)
   // Restore ghosted form and update local (owned) entries that are
   // ghosts on other processes
   VecGhostRestoreLocalForm(b, &b_local);
-  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
+  // VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
+  // VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
