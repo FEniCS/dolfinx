@@ -14,7 +14,6 @@
 #include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/geometry/BoundingBoxTree.h>

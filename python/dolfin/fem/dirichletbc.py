@@ -19,13 +19,11 @@ from dolfin import cpp, function, mesh
 class DirichletBC(cpp.fem.DirichletBC):
     def __init__(
             self,
-            V: typing.Union[function.FunctionSpace,
-                            cpp.function.FunctionSpace],
+            V: typing.Union[function.FunctionSpace, cpp.function.
+                            FunctionSpace],
             value: typing.Union[ufl.Coefficient, cpp.function.Function],
-            domain: typing.Union[cpp.mesh.SubDomain, types.FunctionType,
-                                 typing.Tuple[mesh.MeshValueCollection, int]],
-            method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.
-            topological,
+            domain: typing.Union[cpp.mesh.SubDomain, types.FunctionType, typing.List[int]],
+            method: cpp.fem.DirichletBC.Method = cpp.fem.DirichletBC.Method.topological,
             check_midpoint: typing.Optional[bool] = None):
         """Representation of Dirichlet boundary condition which is imposed on
         a linear system.

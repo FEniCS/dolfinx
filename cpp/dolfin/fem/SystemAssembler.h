@@ -136,7 +136,8 @@ private:
   // contribution
   static void compute_exterior_facet_tensor(
       std::array<std::vector<PetscScalar>, 2>& Ae, std::array<UFC*, 2>& ufc,
-      EigenRowArrayXXd& coordinate_dofs,
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+          coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
       const mesh::Facet& facet,
@@ -149,7 +150,9 @@ private:
   // contribution
   static void compute_interior_facet_tensor(
       std::array<UFC*, 2>& ufc,
-      std::array<EigenRowArrayXXd, 2>& coordinate_dofs,
+      std::array<
+          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+          2>& coordinate_dofs,
       const std::array<bool, 2>& tensor_required_cell,
       const std::array<bool, 2>& tensor_required_facet,
       const std::array<mesh::Cell, 2>& cell,
@@ -170,11 +173,10 @@ private:
       const std::array<std::vector<common::ArrayView<const PetscInt>>, 2>&
           cell_dofs);
 
-  static void
-  apply_bc(PetscScalar* A, PetscScalar* b,
-           const std::vector<DirichletBC::Map>& boundary_values,
-           const common::ArrayView<const PetscInt>& global_dofs0,
-           const common::ArrayView<const PetscInt>& global_dofs1);
+  static void apply_bc(PetscScalar* A, PetscScalar* b,
+                       const std::vector<DirichletBC::Map>& boundary_values,
+                       const common::ArrayView<const PetscInt>& global_dofs0,
+                       const common::ArrayView<const PetscInt>& global_dofs1);
 
   // Return true if cell has an Dirichlet/essential boundary
   // condition applied

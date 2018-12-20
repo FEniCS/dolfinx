@@ -106,9 +106,8 @@ void fem(py::module& m)
 
   // dolfin::fem::GenericDofMap
   py::class_<dolfin::fem::GenericDofMap,
-             std::shared_ptr<dolfin::fem::GenericDofMap>,
-             dolfin::common::Variable>(m, "GenericDofMap",
-                                       "DOLFIN DofMap object")
+             std::shared_ptr<dolfin::fem::GenericDofMap>>(
+      m, "GenericDofMap", "DOLFIN DofMap object")
       .def("global_dimension", &dolfin::fem::GenericDofMap::global_dimension,
            "The dimension of the global finite element function space")
       .def("index_map", &dolfin::fem::GenericDofMap::index_map)
@@ -172,8 +171,7 @@ void fem(py::module& m)
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,
-             std::shared_ptr<dolfin::fem::DirichletBC>,
-             dolfin::common::Variable>
+             std::shared_ptr<dolfin::fem::DirichletBC>>
       dirichletbc(
           m, "DirichletBC",
           "Object for representing Dirichlet (essential) boundary conditions");
@@ -187,28 +185,21 @@ void fem(py::module& m)
   dirichletbc
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
-                    std::shared_ptr<const dolfin::mesh::SubDomain>,
+                    const dolfin::mesh::SubDomain&,
                     dolfin::fem::DirichletBC::Method, bool>(),
            py::arg("V"), py::arg("g"), py::arg("sub_domain"), py::arg("method"),
            py::arg("check_midpoint"))
-      .def(
-          py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
-                   std::shared_ptr<const dolfin::function::Function>,
-                   std::pair<std::shared_ptr<
-                                 const dolfin::mesh::MeshFunction<std::size_t>>,
-                             std::size_t>,
-                   dolfin::fem::DirichletBC::Method>(),
-          py::arg("V"), py::arg("g"), py::arg("sub_domain"), py::arg("method"))
+      .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
+                    std::shared_ptr<const dolfin::function::Function>,
+                    const std::vector<std::int32_t>&,
+                    dolfin::fem::DirichletBC::Method>(),
+           py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
       .def("function_space", &dolfin::fem::DirichletBC::function_space)
-      .def("method", &dolfin::fem::DirichletBC::method)
-      .def("get_boundary_values",
-           [](const dolfin::fem::DirichletBC& instance) {
-             dolfin::fem::DirichletBC::Map map;
-             instance.get_boundary_values(map);
-             return map;
-           })
-      .def("user_subdomain", &dolfin::fem::DirichletBC::user_sub_domain)
-      .def("set_value", &dolfin::fem::DirichletBC::set_value);
+      .def("get_boundary_values", [](const dolfin::fem::DirichletBC& instance) {
+        dolfin::fem::DirichletBC::Map map;
+        instance.get_boundary_values(map);
+        return map;
+      });
 
   py::enum_<dolfin::fem::BlockType>(
       m, "BlockType",

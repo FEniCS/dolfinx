@@ -120,8 +120,8 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   common::Timer timer("Assemble system");
 
   // Get mesh
-  assert(_a->mesh());
-  const mesh::Mesh& mesh = *(_a->mesh());
+  // assert(_a->mesh());
+  // const mesh::Mesh& mesh = *(_a->mesh());
 
   // Get cell domains
   std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains
@@ -200,11 +200,6 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
       log::log(TRACE,
                "System assembler: boundary condition %d applies to axis 0", i);
       _bcs[i]->get_boundary_values(boundary_values[0]);
-      if (MPI::size(mesh.mpi_comm()) > 1
-          && _bcs[i]->method() != DirichletBC::Method::pointwise)
-      {
-        _bcs[i]->gather(boundary_values[0]);
-      }
     }
 
     // Fetch bc on axis1
@@ -213,11 +208,6 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
       log::log(TRACE,
                "System assembler: boundary condition %d applies to axis 1", i);
       _bcs[i]->get_boundary_values(boundary_values[1]);
-      if (MPI::size(mesh.mpi_comm()) > 1
-          && _bcs[i]->method() != DirichletBC::Method::pointwise)
-      {
-        _bcs[i]->gather(boundary_values[1]);
-      }
     }
 
     if (!axis0 && !axis1)
@@ -336,7 +326,8 @@ void SystemAssembler::cell_wise_assembly(
   la::PETScVector* b = tensors.second;
 
   // Iterate over all cells
-  EigenRowArrayXXd coordinate_dofs;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
@@ -557,7 +548,9 @@ void SystemAssembler::facet_wise_assembly(
   la::PETScVector* b = tensors.second;
 
   // Iterate over facets
-  std::array<EigenRowArrayXXd, 2> coordinate_dofs;
+  std::array<
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>, 2>
+      coordinate_dofs;
 
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
@@ -851,7 +844,8 @@ void SystemAssembler::facet_wise_assembly(
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_exterior_facet_tensor(
     std::array<std::vector<PetscScalar>, 2>& Ae, std::array<UFC*, 2>& ufc,
-    EigenRowArrayXXd& coordinate_dofs,
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet, const mesh::Cell& cell,
     const mesh::Facet& facet,
@@ -907,7 +901,10 @@ void SystemAssembler::compute_exterior_facet_tensor(
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::compute_interior_facet_tensor(
-    std::array<UFC*, 2>& ufc, std::array<EigenRowArrayXXd, 2>& coordinate_dofs,
+    std::array<UFC*, 2>& ufc,
+    std::array<
+        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+        2>& coordinate_dofs,
     const std::array<bool, 2>& tensor_required_cell,
     const std::array<bool, 2>& tensor_required_facet,
     const std::array<mesh::Cell, 2>& cell,

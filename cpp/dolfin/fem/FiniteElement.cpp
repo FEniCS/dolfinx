@@ -86,9 +86,8 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
     return sub_element;
 
   // Otherwise, recursively extract the sub sub system
-  std::vector<std::size_t> sub_component;
-  for (std::size_t i = 1; i < component.size(); i++)
-    sub_component.push_back(component[i]);
+  const std::vector<std::size_t> sub_component(component.begin() + 1,
+                                               component.end());
 
   return extract_sub_element(*sub_element, sub_component);
 }

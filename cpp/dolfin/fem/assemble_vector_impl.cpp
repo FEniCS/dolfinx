@@ -26,12 +26,16 @@ void fem::impl::set_bc(Vec b,
 {
   PetscInt local_size;
   VecGetLocalSize(b, &local_size);
-  PetscScalar* values;
+  PetscScalar* values = nullptr;
   VecGetArray(b, &values);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(values,
-                                                               local_size);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr, 0);
-  set_bc(vec, bcs, vec_x0, scale);
+  assert(values);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(values,
+                                                                local_size);
+  for (auto bc : bcs)
+  {
+    assert(bc);
+    bc->set(vec, scale);
+  }
 
   VecRestoreArray(b, &values);
 }
@@ -45,6 +49,7 @@ void fem::impl::set_bc(Vec b,
   PetscInt local_size_b, local_size_x0;
   VecGetLocalSize(b, &local_size_b);
   VecGetLocalSize(x0, &local_size_x0);
+
   if (local_size_b != local_size_x0)
     throw std::runtime_error("Size mismtach between b and x0 vectors.");
   PetscScalar* values_b;
@@ -55,43 +60,14 @@ void fem::impl::set_bc(Vec b,
                                                                  local_size_b);
   const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
       values_x0, local_size_x0);
-  set_bc(vec_b, bcs, vec_x0, scale);
+  for (auto bc : bcs)
+  {
+    assert(bc);
+    bc->set(vec_b, vec_x0, scale);
+  }
 
   VecRestoreArrayRead(x0, &values_x0);
   VecRestoreArray(b, &values_b);
-}
-//-----------------------------------------------------------------------------
-void fem::impl::set_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
-    double scale)
-{
-  // FIXME: optimise this function
-
-  // auto V = L.function_space(0);
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> indices;
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> values;
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-  {
-    assert(bcs[i]);
-    assert(bcs[i]->function_space());
-    // if (V->contains(*bcs[i]->function_space()))
-    {
-      std::tie(indices, values) = bcs[i]->bcs();
-      for (Eigen::Index j = 0; j < indices.size(); ++j)
-      {
-        // FIXME: this check is because DirichletBC::dofs include ghosts
-        if (indices[j] < (PetscInt)b.size())
-        {
-          if (x0.size() == 0)
-            b[indices[j]] = scale * values[j];
-          else
-            b[indices[j]] = scale * (values[j] - x0[indices[j]]);
-        }
-      }
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_ghosted(
@@ -252,14 +228,7 @@ void fem::impl::_modify_bc(
     assert(bcs[i]);
     assert(bcs[i]->function_space());
     if (a.function_space(1)->contains(*bcs[i]->function_space()))
-    {
       bcs[i]->get_boundary_values(boundary_values);
-      if (MPI::size(mesh.mpi_comm()) > 1
-          and bcs[i]->method() != DirichletBC::Method::pointwise)
-      {
-        bcs[i]->gather(boundary_values);
-      }
-    }
   }
 
   // Get dofmap for columns and rows of a
