@@ -23,19 +23,6 @@ class Form;
 namespace impl
 {
 
-/// Assemble linear form into a ghosted PETSc Vec. The vector is
-/// modified such that:
-///
-/// 1. If x0 is null b <- b - scale*A x_bc; or
-///
-/// 2. If x0 is not null b <- b - scale * A (x_bc - x0).
-///
-/// Essential bc dofs entries are *not* set.
-///
-/// This function essentially unwraps the pointer to the PETSc Vec data
-/// and calls the Eigen-based functions for assembly.
-void assemble_ghosted(Vec b, const Form& L);
-
 void modify_bc(Vec b, const Form& L,
                const std::vector<std::shared_ptr<const Form>> a,
                const std::vector<std::shared_ptr<const DirichletBC>> bcs,
@@ -81,12 +68,6 @@ void _modify_bc(
     Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale);
 
-// Assemble linear form into a local PETSc Vec. The vector b is modified
-// to account for essential (Dirichlet) boundary conditions.
-//
-// The implementation of this function unwraps the PETSc Vec as a plain
-// pointer, and call the Eigen-based assembly interface.
-void _assemble_local(Vec b, const Form& L);
 } // namespace impl
 } // namespace fem
 } // namespace dolfin
