@@ -37,13 +37,14 @@ void modify_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
 
 /// Set bc values in owned (local) part of the PETSc Vec to scale*x_bc
 /// value
-void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
-            double scale);
+void set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+            std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale);
 
 /// Set bc values in owned (local) part of the PETSc Vec to scale*(x0 -
 /// x_bc)
-void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
-            const Vec x0, double scale);
+void set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+            std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+            double scale);
 
 /// Assemble linear form into an Eigen vector. Assembly is performed
 /// over the portion of the mesh belonging to the process. No

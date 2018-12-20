@@ -20,54 +20,39 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void fem::impl::set_bc(Vec b,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                       double scale)
+void fem::impl::set_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
 {
-  PetscInt local_size;
-  VecGetLocalSize(b, &local_size);
-  PetscScalar* values = nullptr;
-  VecGetArray(b, &values);
-  assert(values);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(values,
-                                                                local_size);
   for (auto bc : bcs)
   {
     assert(bc);
-    bc->set(vec, scale);
+    bc->set(b, scale);
   }
-
-  VecRestoreArray(b, &values);
 }
 //-----------------------------------------------------------------------------
-void fem::impl::set_bc(Vec b,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                       const Vec x0, double scale)
+void fem::impl::set_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale)
 {
-  assert(b);
   assert(x0);
-  PetscInt local_size_b, local_size_x0;
-  VecGetLocalSize(b, &local_size_b);
+  PetscInt local_size_x0;
   VecGetLocalSize(x0, &local_size_x0);
 
-  if (local_size_b != local_size_x0)
+  if (b.size() != local_size_x0)
     throw std::runtime_error("Size mismtach between b and x0 vectors.");
-  PetscScalar* values_b;
   PetscScalar const* values_x0;
-  VecGetArray(b, &values_b);
   VecGetArrayRead(x0, &values_x0);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_b(values_b,
-                                                                 local_size_b);
   const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
       values_x0, local_size_x0);
   for (auto bc : bcs)
   {
     assert(bc);
-    bc->set(vec_b, vec_x0, scale);
+    bc->set(b, vec_x0, scale);
   }
 
   VecRestoreArrayRead(x0, &values_x0);
-  VecRestoreArray(b, &values_b);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(

@@ -203,10 +203,17 @@ void fem::assemble(
       VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
 
+      VecGhostGetLocalForm(sub_b, &b_local);
+      VecGetArray(b_local, &array);
+      bvec = Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array,
+                                                                       size);
       if (x0)
-        fem::impl::set_bc(sub_b, _bcs, x0->vec(), 1.0);
+        fem::impl::set_bc(bvec, _bcs, x0->vec(), 1.0);
       else
-        fem::impl::set_bc(sub_b, _bcs, 1.0);
+        fem::impl::set_bc(bvec, _bcs, 1.0);
+
+      VecRestoreArray(b_local, &array);
+      VecGhostRestoreLocalForm(sub_b, &b_local);
 
       // FIXME: free sub-vector here (dereference)?
     }
@@ -326,10 +333,18 @@ void fem::assemble(
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
+    VecGhostGetLocalForm(b.vec(), &b_local);
+    VecGetArray(b_local, &array);
+    bvec = Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array,
+                                                                     size);
+
     if (x0)
-      impl::set_bc(b.vec(), bcs, x0->vec(), scale);
+      impl::set_bc(bvec, bcs, x0->vec(), scale);
     else
-      impl::set_bc(b.vec(), bcs, scale);
+      impl::set_bc(bvec, bcs, scale);
+
+    VecRestoreArray(b_local, &array);
+    VecGhostRestoreLocalForm(b.vec(), &b_local);
   }
 }
 //-----------------------------------------------------------------------------
@@ -587,9 +602,22 @@ void fem::set_bc(la::PETScVector& b,
                  std::vector<std::shared_ptr<const DirichletBC>> bcs,
                  const la::PETScVector* x0, double scale)
 {
+  Vec b_local = nullptr;
+  VecGhostGetLocalForm(b.vec(), &b_local);
+  if (!b_local)
+    throw std::runtime_error("Expected ghosted PETSc Vec.");
+  PetscInt size = 0;
+  VecGetSize(b_local, &size);
+  PetscScalar* array;
+  VecGetArray(b_local, &array);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
   if (x0)
-    impl::set_bc(b.vec(), bcs, x0->vec(), scale);
+    impl::set_bc(bvec, bcs, x0->vec(), scale);
   else
-    impl::set_bc(b.vec(), bcs, nullptr, scale);
+  {
+    impl::set_bc(bvec, bcs, nullptr, scale);
+  }
+  VecRestoreArray(b_local, &array);
+  VecGhostRestoreLocalForm(b.vec(), &b_local);
 }
 //-----------------------------------------------------------------------------
