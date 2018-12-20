@@ -78,9 +78,6 @@ la::PETScVector _assemble_vector(const Form& L)
 
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b.vec(), &b_local);
-
-  fem::impl::modify_bc(b.vec(), L, {}, {}, nullptr, 1.0);
-
   VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
@@ -189,21 +186,16 @@ void fem::assemble(
       VecRestoreArray(b_local, &array);
       VecGhostRestoreLocalForm(sub_b, &b_local);
       if (x0)
-      {
         fem::impl::modify_bc(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
-        VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
-        VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
-
-        fem::impl::set_bc(sub_b, _bcs, x0->vec(), 1.0);
-      }
       else
-      {
         fem::impl::modify_bc(sub_b, *L[i], a[i], bcs, nullptr, scale);
-        VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
-        VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
 
+      if (x0)
+        fem::impl::set_bc(sub_b, _bcs, x0->vec(), 1.0);
+      else
         fem::impl::set_bc(sub_b, _bcs, 1.0);
-      }
 
       // FIXME: free sub-vector here (dereference)?
     }
@@ -305,21 +297,16 @@ void fem::assemble(
     VecGhostRestoreLocalForm(b.vec(), &b_local);
 
     if (x0)
-    {
       fem::impl::modify_bc(b.vec(), *L[0], a[0], bcs, x0->vec(), scale);
-      VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-      VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-
-      impl::set_bc(b.vec(), bcs, x0->vec(), scale);
-    }
     else
-    {
       fem::impl::modify_bc(b.vec(), *L[0], a[0], bcs, nullptr, scale);
-      VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-      VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
+    if (x0)
+      impl::set_bc(b.vec(), bcs, x0->vec(), scale);
+    else
       impl::set_bc(b.vec(), bcs, scale);
-    }
   }
 }
 //-----------------------------------------------------------------------------
