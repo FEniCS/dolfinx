@@ -23,8 +23,8 @@ class Form;
 namespace impl
 {
 
-void modify_bc(Vec b, const Form& L,
-               const std::vector<std::shared_ptr<const Form>> a,
+void modify_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+               const Form& L, const std::vector<std::shared_ptr<const Form>> a,
                const std::vector<std::shared_ptr<const DirichletBC>> bcs,
                const Vec x0, double scale);
 

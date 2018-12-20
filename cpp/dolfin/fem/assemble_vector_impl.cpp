@@ -71,29 +71,19 @@ void fem::impl::set_bc(Vec b,
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
-    Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs, Vec x0,
     double scale)
 {
   // Get local form of PETSc ghosted Vec
-  Vec b_local(nullptr), x0_local(nullptr);
-  VecGhostGetLocalForm(b, &b_local);
-  if (!b_local)
-    throw std::runtime_error("Expected ghosted PETSc Vec.");
+  Vec x0_local(nullptr);
   if (x0)
   {
     VecGhostGetLocalForm(x0, &x0_local);
     if (!x0_local)
       throw std::runtime_error("Expected ghosted PETSc Vec.");
   }
-
-  // Wrap local PETSc Vec as an Eigen vector
-  PetscInt size_b = 0;
-  VecGetSize(b_local, &size_b);
-  PetscScalar* array_b;
-  VecGetArray(b_local, &array_b);
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> bvec(array_b,
-                                                                size_b);
 
   // Modify for essential bcs
   if (x0)
@@ -105,21 +95,14 @@ void fem::impl::modify_bc(
     const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
         array_x0, size_x0);
     for (std::size_t i = 0; i < a.size(); ++i)
-      fem::impl::modify_bc(bvec, *a[i], bcs, x0vec, scale);
+      fem::impl::modify_bc(b, *a[i], bcs, x0vec, scale);
     VecRestoreArrayRead(x0_local, &array_x0);
   }
   else
   {
     for (std::size_t i = 0; i < a.size(); ++i)
-      fem::impl::modify_bc(bvec, *a[i], bcs, scale);
+      fem::impl::modify_bc(b, *a[i], bcs, scale);
   }
-
-  // Restore array
-  VecRestoreArray(b_local, &array_b);
-
-  // Restore ghosted form and update local (owned) entries that are
-  // ghosts on other processes
-  VecGhostRestoreLocalForm(b, &b_local);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble(
