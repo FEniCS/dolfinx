@@ -90,7 +90,6 @@ following way::
     from dolfin import *
     from dolfin import function
     from dolfin.io import XDMFFile
-    import dolfin.cpp as cpp
 
     # Load mesh and subdomains
     xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
@@ -125,13 +124,13 @@ equations. Now we can define boundary conditions::
         values[:, 0] = 0.0
         values[:, 1] = 0.0
 
+    # Extract subdomain facet arrays
     mf = sub_domains.array()
     mf0 = numpy.where(mf == 0)
     mf1 = numpy.where(mf == 1)
 
     noslip_expr = Expression(noslip_eval, shape=(2,))
     noslip = interpolate(noslip_expr, W.sub(0).collapse())
-    # bc0 = DirichletBC(W.sub(0), noslip, (sub_domains, 0))
     bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
     # Inflow boundary condition for velocity
@@ -144,7 +143,6 @@ equations. Now we can define boundary conditions::
 
     inflow_expr = Expression(inflow_eval, shape=(2,))
     inflow = interpolate(inflow_expr, W.sub(0).collapse())
-    # bc1 = DirichletBC(W.sub(0), inflow, (sub_domains, 1))
     bc1 = DirichletBC(W.sub(0), inflow, mf1[0])
 
     # Collect boundary conditions
@@ -215,7 +213,7 @@ Finally, we can save and plot the solutions::
     import matplotlib.pyplot as plt
     from dolfin.plotting import plot
     plt.figure()
-    #plot(u, title="velocity")
+    plot(u, title="velocity")
 
     #plt.figure()
     plot(p, title="pressure" + str(MPI.rank(mesh.mpi_comm())))

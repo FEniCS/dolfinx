@@ -109,8 +109,7 @@ bc = DirichletBC(V, u0, boundary)
 # Assemble system, applying boundary conditions and preserving
 # symmetry)
 A, b = assemble_system(a, L, bc)
-
-print("!!!!!!", A.mat().block_size)
+assert A.mat().block_size == 3
 
 # Create solution function
 u = Function(V)
