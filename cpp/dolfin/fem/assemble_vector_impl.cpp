@@ -121,7 +121,7 @@ void fem::impl::modify_bc(
   if (x0)
   {
     PetscInt size_x0 = 0;
-    VecGetSize(x0, &size_x0);
+    VecGetSize(x0_local, &size_x0);
     PetscScalar const* array_x0;
     VecGetArrayRead(x0_local, &array_x0);
     const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
