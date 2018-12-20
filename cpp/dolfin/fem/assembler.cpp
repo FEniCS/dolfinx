@@ -61,7 +61,8 @@ la::PETScVector _assemble_vector(const Form& L)
     throw std::runtime_error("Form must be rank 1");
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
-  fem::impl::assemble_ghosted(b.vec(), L, {}, {}, nullptr, 1.0);
+  fem::impl::assemble_ghosted(b.vec(), L);
+  fem::impl::modify_bc(b.vec(), L, {}, {}, nullptr, 1.0);
 
   return b;
 }
@@ -153,12 +154,14 @@ void fem::assemble(
       VecNestGetSubVec(b.vec(), i, &sub_b);
       if (x0)
       {
-        fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
+        fem::impl::assemble_ghosted(sub_b, *L[i]);
+        fem::impl::modify_bc(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
         fem::impl::set_bc(sub_b, _bcs, x0->vec(), 1.0);
       }
       else
       {
-        fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, nullptr, scale);
+        fem::impl::assemble_ghosted(sub_b, *L[i]);
+        fem::impl::modify_bc(sub_b, *L[i], a[i], bcs, nullptr, scale);
         fem::impl::set_bc(sub_b, _bcs, 1.0);
       }
 
@@ -249,12 +252,14 @@ void fem::assemble(
   {
     if (x0)
     {
-      fem::impl::assemble_ghosted(b.vec(), *L[0], a[0], bcs, x0->vec(), scale);
+      fem::impl::assemble_ghosted(b.vec(), *L[0]);
+      fem::impl::modify_bc(b.vec(), *L[0], a[0], bcs, x0->vec(), scale);
       impl::set_bc(b.vec(), bcs, x0->vec(), scale);
     }
     else
     {
-      fem::impl::assemble_ghosted(b.vec(), *L[0], a[0], bcs, nullptr, scale);
+      fem::impl::assemble_ghosted(b.vec(), *L[0]);
+      fem::impl::modify_bc(b.vec(), *L[0], a[0], bcs, nullptr, scale);
       impl::set_bc(b.vec(), bcs, scale);
     }
   }

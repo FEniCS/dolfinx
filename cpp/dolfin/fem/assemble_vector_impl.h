@@ -34,10 +34,12 @@ namespace impl
 ///
 /// This function essentially unwraps the pointer to the PETSc Vec data
 /// and calls the Eigen-based functions for assembly.
-void assemble_ghosted(Vec b, const Form& L,
-                      const std::vector<std::shared_ptr<const Form>> a,
-                      const std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                      const Vec x0, double scale);
+void assemble_ghosted(Vec b, const Form& L);
+
+void modify_bc(Vec b, const Form& L,
+               const std::vector<std::shared_ptr<const Form>> a,
+               const std::vector<std::shared_ptr<const DirichletBC>> bcs,
+               const Vec x0, double scale);
 
 /// Set bc values in owned (local) part of the PETSc Vec to scale*x_bc
 /// value
@@ -84,10 +86,7 @@ void _modify_bc(
 //
 // The implementation of this function unwraps the PETSc Vec as a plain
 // pointer, and call the Eigen-based assembly interface.
-void _assemble_local(Vec b, const Form& L,
-                     const std::vector<std::shared_ptr<const Form>> a,
-                     const std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                     const Vec x0, double scale);
+void _assemble_local(Vec b, const Form& L);
 } // namespace impl
 } // namespace fem
 } // namespace dolfin
