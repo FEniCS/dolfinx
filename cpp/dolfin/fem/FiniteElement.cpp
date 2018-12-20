@@ -19,7 +19,10 @@ FiniteElement::FiniteElement(std::shared_ptr<const ufc_finite_element> element)
   // Store dof coordinates on reference element
   assert(_ufc_element);
   _refX.resize(this->space_dimension(), this->topological_dimension());
-  _ufc_element->tabulate_reference_dof_coordinates(_refX.data());
+  int ret = _ufc_element->tabulate_reference_dof_coordinates(_refX.data());
+  if (ret == -1)
+    throw std::runtime_error("Generated code returned error "
+                             "in tabulate_reference_dof_coordinates");
 }
 //-----------------------------------------------------------------------------
 std::unique_ptr<FiniteElement>
