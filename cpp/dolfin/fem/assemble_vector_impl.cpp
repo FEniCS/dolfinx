@@ -44,26 +44,6 @@ void fem::impl::set_bc(
   }
 }
 //-----------------------------------------------------------------------------
-void fem::impl::modify_bc_old(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
-    const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
-    double scale)
-{
-  for (std::size_t i = 0; i < a.size(); ++i)
-    fem::impl::modify_bc(b, *a[i], bcs, x0, scale);
-}
-//-----------------------------------------------------------------------------
-void fem::impl::modify_bc_old(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
-    const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
-{
-  for (std::size_t i = 0; i < a.size(); ++i)
-    fem::impl::modify_bc(b, *a[i], bcs, scale);
-}
-//-----------------------------------------------------------------------------
 void fem::impl::assemble(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {

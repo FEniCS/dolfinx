@@ -23,18 +23,6 @@ class Form;
 namespace impl
 {
 
-void modify_bc_old(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
-    const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
-    double scale);
-
-void modify_bc_old(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-               const Form& L, const std::vector<std::shared_ptr<const Form>> a,
-               const std::vector<std::shared_ptr<const DirichletBC>> bcs,
-               double scale);
-
 /// Set bc values in owned (local) part of the PETSc Vec to scale*x_bc
 /// value
 void set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
@@ -64,12 +52,11 @@ void modify_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
 
 /// Modify RHS vector to account for boundary condition such that b <- b
 /// - scale*A (x_bc - x0)
-void
-    modify_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-              const Form& a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
-              double scale);
+void modify_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale);
 
 // Implementation of bc application
 void _modify_bc(
