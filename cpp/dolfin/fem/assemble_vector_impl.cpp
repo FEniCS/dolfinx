@@ -73,36 +73,21 @@ void fem::impl::set_bc(Vec b,
 void fem::impl::modify_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     const std::vector<std::shared_ptr<const Form>> a,
-    const std::vector<std::shared_ptr<const DirichletBC>> bcs, Vec x0,
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
-  // Get local form of PETSc ghosted Vec
-  Vec x0_local(nullptr);
-  if (x0)
-  {
-    VecGhostGetLocalForm(x0, &x0_local);
-    if (!x0_local)
-      throw std::runtime_error("Expected ghosted PETSc Vec.");
-  }
-
-  // Modify for essential bcs
-  if (x0)
-  {
-    PetscInt size_x0 = 0;
-    VecGetSize(x0_local, &size_x0);
-    PetscScalar const* array_x0;
-    VecGetArrayRead(x0_local, &array_x0);
-    const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0vec(
-        array_x0, size_x0);
-    for (std::size_t i = 0; i < a.size(); ++i)
-      fem::impl::modify_bc(b, *a[i], bcs, x0vec, scale);
-    VecRestoreArrayRead(x0_local, &array_x0);
-  }
-  else
-  {
-    for (std::size_t i = 0; i < a.size(); ++i)
-      fem::impl::modify_bc(b, *a[i], bcs, scale);
-  }
+  for (std::size_t i = 0; i < a.size(); ++i)
+    fem::impl::modify_bc(b, *a[i], bcs, x0, scale);
+}
+//-----------------------------------------------------------------------------
+void fem::impl::modify_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
+{
+  for (std::size_t i = 0; i < a.size(); ++i)
+    fem::impl::modify_bc(b, *a[i], bcs, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble(

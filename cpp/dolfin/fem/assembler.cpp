@@ -184,9 +184,20 @@ void fem::assemble(
       bvec.setZero();
       fem::impl::assemble(bvec, *L[i]);
       if (x0)
-        fem::impl::modify_bc(bvec, *L[i], a[i], bcs, x0->vec(), scale);
+      {
+        Vec x0_local = nullptr;
+        VecGhostGetLocalForm(x0->vec(), &x0_local);
+        PetscInt size_x0 = 0;
+        VecGetSize(x0_local, &size_x0);
+        PetscScalar const* array_x0;
+        VecGetArrayRead(x0_local, &array_x0);
+        const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+            x0vec(array_x0, size_x0);
+        fem::impl::modify_bc(bvec, *L[i], a[i], bcs, x0vec, scale);
+        VecRestoreArrayRead(x0_local, &array_x0);
+      }
       else
-        fem::impl::modify_bc(bvec, *L[i], a[i], bcs, nullptr, scale);
+        fem::impl::modify_bc(bvec, *L[i], a[i], bcs, scale);
       VecRestoreArray(b_local, &array);
       VecGhostRestoreLocalForm(sub_b, &b_local);
       VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
@@ -294,9 +305,22 @@ void fem::assemble(
     bvec.setZero();
     fem::impl::assemble(bvec, *L[0]);
     if (x0)
-      fem::impl::modify_bc(bvec, *L[0], a[0], bcs, x0->vec(), scale);
+    {
+      Vec x0_local = nullptr;
+      VecGhostGetLocalForm(x0->vec(), &x0_local);
+      PetscInt size_x0 = 0;
+      VecGetSize(x0_local, &size_x0);
+      PetscScalar const* array_x0;
+      VecGetArrayRead(x0_local, &array_x0);
+      const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          x0vec(array_x0, size_x0);
+
+      fem::impl::modify_bc(bvec, *L[0], a[0], bcs, x0vec, scale);
+
+      VecRestoreArrayRead(x0_local, &array_x0);
+    }
     else
-      fem::impl::modify_bc(bvec, *L[0], a[0], bcs, nullptr, scale);
+      fem::impl::modify_bc(bvec, *L[0], a[0], bcs, scale);
     VecRestoreArray(b_local, &array);
     VecGhostRestoreLocalForm(b.vec(), &b_local);
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);

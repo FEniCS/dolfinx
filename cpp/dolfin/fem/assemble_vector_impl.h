@@ -23,10 +23,17 @@ class Form;
 namespace impl
 {
 
+void modify_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    const std::vector<std::shared_ptr<const Form>> a,
+    const std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale);
+
 void modify_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
                const Form& L, const std::vector<std::shared_ptr<const Form>> a,
                const std::vector<std::shared_ptr<const DirichletBC>> bcs,
-               const Vec x0, double scale);
+               double scale);
 
 /// Set bc values in owned (local) part of the PETSc Vec to scale*x_bc
 /// value
