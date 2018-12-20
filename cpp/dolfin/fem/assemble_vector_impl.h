@@ -43,8 +43,8 @@ void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
 /// communication is performed. The Eigen vector must be passed in with
 /// the correct size.
 // FIXME: Clarify docstring regarding ghosts
-void assemble_eigen(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L);
+void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+              const Form& L);
 
 /// Modify RHS vector to account for boundary condition b <- b - scale*Ax_bc
 void modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,

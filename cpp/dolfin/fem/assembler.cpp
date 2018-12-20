@@ -74,12 +74,15 @@ la::PETScVector _assemble_vector(const Form& L)
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
 
   bvec.setZero();
-  fem::impl::assemble_eigen(bvec, L);
+  fem::impl::assemble(bvec, L);
 
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b.vec(), &b_local);
 
   fem::impl::modify_bc(b.vec(), L, {}, {}, nullptr, 1.0);
+
+  VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
   return b;
 }
@@ -182,17 +185,23 @@ void fem::assemble(
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array,
                                                                      size);
       bvec.setZero();
-      fem::impl::assemble_eigen(bvec, *L[i]);
+      fem::impl::assemble(bvec, *L[i]);
       VecRestoreArray(b_local, &array);
       VecGhostRestoreLocalForm(sub_b, &b_local);
       if (x0)
       {
         fem::impl::modify_bc(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
+        VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
+        VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
+
         fem::impl::set_bc(sub_b, _bcs, x0->vec(), 1.0);
       }
       else
       {
         fem::impl::modify_bc(sub_b, *L[i], a[i], bcs, nullptr, scale);
+        VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
+        VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
+
         fem::impl::set_bc(sub_b, _bcs, 1.0);
       }
 
@@ -234,7 +243,7 @@ void fem::assemble(
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec(map_size0
                                                           + map_size1);
       b_vec.setZero();
-      fem::impl::assemble_eigen(b_vec, *L[i]);
+      fem::impl::assemble(b_vec, *L[i]);
 
       // Modify for any essential bcs
       for (std::size_t j = 0; j < a[i].size(); ++j)
@@ -291,18 +300,24 @@ void fem::assemble(
     VecGetArray(b_local, &array);
     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
     bvec.setZero();
-    fem::impl::assemble_eigen(bvec, *L[0]);
+    fem::impl::assemble(bvec, *L[0]);
     VecRestoreArray(b_local, &array);
     VecGhostRestoreLocalForm(b.vec(), &b_local);
 
     if (x0)
     {
       fem::impl::modify_bc(b.vec(), *L[0], a[0], bcs, x0->vec(), scale);
+      VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+
       impl::set_bc(b.vec(), bcs, x0->vec(), scale);
     }
     else
     {
       fem::impl::modify_bc(b.vec(), *L[0], a[0], bcs, nullptr, scale);
+      VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+
       impl::set_bc(b.vec(), bcs, scale);
     }
   }

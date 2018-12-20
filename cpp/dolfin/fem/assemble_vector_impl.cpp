@@ -120,11 +120,9 @@ void fem::impl::modify_bc(
   // Restore ghosted form and update local (owned) entries that are
   // ghosts on other processes
   VecGhostRestoreLocalForm(b, &b_local);
-  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 }
 //-----------------------------------------------------------------------------
-void fem::impl::assemble_eigen(
+void fem::impl::assemble(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
   // Get mesh from form
