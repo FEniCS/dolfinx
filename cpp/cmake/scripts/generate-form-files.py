@@ -51,7 +51,7 @@ for subdir in subdirs:
                 args.append("-fno-evaluate_basis")
                 args.append("-fno-evaluate_basis_derivatives")
             if complex_mode:
-                args.append(["-f", "scalar_type", "double complex"])
+                args += ["-f", "scalar_type", "double complex"]
 
             args.append(f)
 
