@@ -197,10 +197,10 @@ void fem::assemble(
         new (&x0vec)
             Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
                 array_x0, size_x0);
-        fem::impl::modify_bc(bvec, *L[i], a[i], bcs, x0vec, scale);
+        fem::impl::modify_bc_old(bvec, *L[i], a[i], bcs, x0vec, scale);
       }
       else
-        fem::impl::modify_bc(bvec, *L[i], a[i], bcs, scale);
+        fem::impl::modify_bc_old(bvec, *L[i], a[i], bcs, scale);
 
       VecRestoreArray(b_local, &array);
       VecGhostRestoreLocalForm(sub_b, &b_local);
@@ -289,9 +289,9 @@ void fem::assemble(
 
       PetscScalar* values;
       VecGetArray(b.vec(), &values);
-      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(
+      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
           values + offset, map_size0);
-      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
+      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
                                                                       0);
 
       std::vector<std::shared_ptr<const DirichletBC>> _bcs;
@@ -332,10 +332,11 @@ void fem::assemble(
       new (&x0vec)
           Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
               array_x0, size_x0);
-      fem::impl::modify_bc(bvec, *L[0], a[0], bcs, x0vec, scale);
+      fem::impl::modify_bc_old(bvec, *L[0], a[0], bcs, x0vec, scale);
     }
     else
-      fem::impl::modify_bc(bvec, *L[0], a[0], bcs, scale);
+      fem::impl::modify_bc_old(bvec, *L[0], a[0], bcs, scale);
+
     VecRestoreArray(b_local, &array);
     VecGhostRestoreLocalForm(b.vec(), &b_local);
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);

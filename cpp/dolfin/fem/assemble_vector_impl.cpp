@@ -44,7 +44,7 @@ void fem::impl::set_bc(
   }
 }
 //-----------------------------------------------------------------------------
-void fem::impl::modify_bc(
+void fem::impl::modify_bc_old(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs,
@@ -55,7 +55,7 @@ void fem::impl::modify_bc(
     fem::impl::modify_bc(b, *a[i], bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
-void fem::impl::modify_bc(
+void fem::impl::modify_bc_old(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     const std::vector<std::shared_ptr<const Form>> a,
     const std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
@@ -80,7 +80,8 @@ void fem::impl::assemble(
   const fem::GenericDofMap& dofmap = *L.function_space(0)->dofmap();
 
   // Creat data structures used in assembly
-  EigenRowArrayXXd coordinate_dofs;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
@@ -97,8 +98,7 @@ void fem::impl::assemble(
         = dofmap.cell_dofs(cell.index());
 
     // Size data structure for assembly
-    be.resize(dmap.size());
-    be.setZero();
+    be.setZero(dmap.size());
 
     // Compute local cell vector and add to global vector
     L.tabulate_tensor(be.data(), cell, coordinate_dofs);
@@ -108,7 +108,7 @@ void fem::impl::assemble(
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
 {
   const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0(0);
@@ -116,9 +116,9 @@ void fem::impl::modify_bc(
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
   if (b.size() != x0.size())
@@ -131,9 +131,9 @@ void fem::impl::modify_bc(
 }
 //-----------------------------------------------------------------------------
 void fem::impl::_modify_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
   assert(a.rank() == 2);
@@ -164,7 +164,8 @@ void fem::impl::_modify_bc(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
-  EigenRowArrayXXd coordinate_dofs;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
 
   // Iterate over all cells
   for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -197,28 +198,11 @@ void fem::impl::_modify_bc(
     // Size data structure for assembly
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
         = dofmap0.cell_dofs(cell.index());
-    Ae.resize(dmap0.size(), dmap1.size());
-    Ae.setZero();
+    Ae.setZero(dmap0.size(), dmap1.size());
     a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
 
-    // FIXME: Is this required?
-    // Zero Dirichlet rows in Ae
-    /*
-    if (spaces[0] == spaces[1])
-    {
-      for (int i = 0; i < dmap0.size(); ++i)
-      {
-        const std::size_t ii = dmap0[i];
-        auto bc = boundary_values.find(ii);
-        if (bc != boundary_values.end())
-          Ae.row(i).setZero();
-      }
-    }
-    */
-
     // Size data structure for assembly
-    be.resize(dmap0.size());
-    be.setZero();
+    be.setZero(dmap0.size());
 
     for (int j = 0; j < dmap1.size(); ++j)
     {
