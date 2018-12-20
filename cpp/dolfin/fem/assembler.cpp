@@ -183,21 +183,25 @@ void fem::assemble(
                                                                      size);
       bvec.setZero();
       fem::impl::assemble(bvec, *L[i]);
+
+      Vec x0_local = nullptr;
+      PetscScalar const* array_x0;
+      Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+          nullptr, 0);
       if (x0)
       {
-        Vec x0_local = nullptr;
         VecGhostGetLocalForm(x0->vec(), &x0_local);
         PetscInt size_x0 = 0;
         VecGetSize(x0_local, &size_x0);
-        PetscScalar const* array_x0;
         VecGetArrayRead(x0_local, &array_x0);
-        const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-            x0vec(array_x0, size_x0);
+        new (&x0vec)
+            Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
+                array_x0, size_x0);
         fem::impl::modify_bc(bvec, *L[i], a[i], bcs, x0vec, scale);
-        VecRestoreArrayRead(x0_local, &array_x0);
       }
       else
         fem::impl::modify_bc(bvec, *L[i], a[i], bcs, scale);
+
       VecRestoreArray(b_local, &array);
       VecGhostRestoreLocalForm(sub_b, &b_local);
       VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
@@ -205,10 +209,13 @@ void fem::assemble(
 
       VecGhostGetLocalForm(sub_b, &b_local);
       VecGetArray(b_local, &array);
-      bvec = Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array,
-                                                                       size);
+      bvec = Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
+          array, size);
       if (x0)
-        fem::impl::set_bc(bvec, _bcs, x0->vec(), 1.0);
+      {
+        fem::impl::set_bc(bvec, _bcs, x0vec, 1.0);
+        VecRestoreArrayRead(x0_local, &array_x0);
+      }
       else
         fem::impl::set_bc(bvec, _bcs, 1.0);
 
@@ -311,20 +318,21 @@ void fem::assemble(
     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
     bvec.setZero();
     fem::impl::assemble(bvec, *L[0]);
+
+    Vec x0_local = nullptr;
+    PetscScalar const* array_x0;
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+        nullptr, 0);
     if (x0)
     {
-      Vec x0_local = nullptr;
       VecGhostGetLocalForm(x0->vec(), &x0_local);
       PetscInt size_x0 = 0;
       VecGetSize(x0_local, &size_x0);
-      PetscScalar const* array_x0;
       VecGetArrayRead(x0_local, &array_x0);
-      const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-          x0vec(array_x0, size_x0);
-
+      new (&x0vec)
+          Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
+              array_x0, size_x0);
       fem::impl::modify_bc(bvec, *L[0], a[0], bcs, x0vec, scale);
-
-      VecRestoreArrayRead(x0_local, &array_x0);
     }
     else
       fem::impl::modify_bc(bvec, *L[0], a[0], bcs, scale);
@@ -339,7 +347,10 @@ void fem::assemble(
                                                                      size);
 
     if (x0)
-      impl::set_bc(bvec, bcs, x0->vec(), scale);
+    {
+      impl::set_bc(bvec, bcs, x0vec, scale);
+      VecRestoreArrayRead(x0_local, &array_x0);
+    }
     else
       impl::set_bc(bvec, bcs, scale);
 
@@ -612,10 +623,23 @@ void fem::set_bc(la::PETScVector& b,
   VecGetArray(b_local, &array);
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
   if (x0)
-    impl::set_bc(bvec, bcs, x0->vec(), scale);
+  {
+    Vec x0_local = nullptr;
+    PetscScalar const* array_x0;
+    VecGhostGetLocalForm(x0->vec(), &x0_local);
+    PetscInt size_x0 = 0;
+    VecGetSize(x0_local, &size_x0);
+    VecGetArrayRead(x0_local, &array_x0);
+    const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+        array_x0, size_x0);
+
+    impl::set_bc(bvec, bcs, x0vec, scale);
+
+    VecRestoreArrayRead(x0_local, &array_x0);
+  }
   else
   {
-    impl::set_bc(bvec, bcs, nullptr, scale);
+    impl::set_bc(bvec, bcs, scale);
   }
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b.vec(), &b_local);

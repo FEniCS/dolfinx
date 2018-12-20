@@ -4,12 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <petscis.h>
-
+#include "assemble_vector_impl.h"
 #include "DirichletBC.h"
 #include "Form.h"
 #include "GenericDofMap.h"
-#include "assemble_vector_impl.h"
 #include <dolfin/common/types.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Cell.h>
@@ -33,26 +31,17 @@ void fem::impl::set_bc(
 //-----------------------------------------------------------------------------
 void fem::impl::set_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
-  assert(x0);
-  PetscInt local_size_x0;
-  VecGetLocalSize(x0, &local_size_x0);
-
-  if (b.size() != local_size_x0)
+  if (b.size() != x0.size())
     throw std::runtime_error("Size mismtach between b and x0 vectors.");
-  PetscScalar const* values_x0;
-  VecGetArrayRead(x0, &values_x0);
-  const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(
-      values_x0, local_size_x0);
   for (auto bc : bcs)
   {
     assert(bc);
-    bc->set(b, vec_x0, scale);
+    bc->set(b, x0, scale);
   }
-
-  VecRestoreArrayRead(x0, &values_x0);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
