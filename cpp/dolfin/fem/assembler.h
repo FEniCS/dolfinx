@@ -67,6 +67,17 @@ void assemble(la::PETScVector& b, const Form& L,
               std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
               const la::PETScVector* x0, double scale = 1.0);
 
+/// Re-assemble linear forms. The vector is modified such that:
+///  (i) b <- b - A x_bc, and
+/// (ii) boundary condition values are inserted Dirichlet bcs position
+///      in vector (multiplied by 'scale').
+void assemble(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    const std::vector<std::shared_ptr<const Form>> a,
+    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale = 1.0);
+
 /// Assemble blocked bilinear forms into a matrix. Rows and columns
 /// associated with Dirichlet boundary conditions are zeroed, and
 /// 'diagonal' is placed on the diagonal of Dirichlet bcs.

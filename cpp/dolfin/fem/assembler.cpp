@@ -220,31 +220,15 @@ void fem::assemble(
         offset1 += L[j]->function_space(0)->dofmap()->index_map()->num_ghosts();
       }
 
-      // Assemble
-      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec(map_size0
-                                                          + map_size1);
-      b_vec.setZero();
-      fem::impl::assemble(b_vec, *L[i]);
-
-      // Modify for any essential bcs
-      for (std::size_t j = 0; j < a[i].size(); ++j)
-      {
-        auto V1 = a[i][j]->function_space(1);
-        auto map1 = V1->dofmap()->index_map();
-        const std::size_t col_range
-            = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-        std::vector<bool> bc_markers1(col_range, false);
-        Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
-            = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
-        for (std::shared_ptr<const DirichletBC>& bc : bcs1[i][j])
-        {
-          bc->mark_dofs(bc_markers1);
-          bc->dof_values(bc_values1);
-        }
-        fem::impl::modify_bc(b_vec, *a[i][j], bc_values1, bc_markers1, scale);
-      }
-
       // FIXME: Sort out for x0 \ne nullptr case
+
+      // Assemble and modify
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
+          = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
+                                                                + map_size1);
+      Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+          nullptr, 0);
+      assemble(b_vec, *L[i], a[i], bcs1[i], x0vec, scale);
 
       // Copy data into PETSc Vector
       for (int j = 0; j < map_size0; ++j)
@@ -255,10 +239,10 @@ void fem::assemble(
 
     VecRestoreArray(b_local, &values);
     VecGhostRestoreLocalForm(b.vec(), &b_local);
-
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
+    // Set bcs
     std::size_t offset = 0;
     for (std::size_t i = 0; i < L.size(); ++i)
     {
@@ -296,8 +280,8 @@ void fem::assemble(
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     const la::PETScVector* x0, double scale)
 {
-  // Wrap b as Eigen vector
-  Vec b_local = nullptr;
+  // Wrap b and x0 as Eigen vector
+  Vec b_local(nullptr), x0_local(nullptr);
   VecGhostGetLocalForm(b.vec(), &b_local);
   if (!b_local)
     throw std::runtime_error("Expected ghosted PETSc Vec.");
@@ -306,13 +290,6 @@ void fem::assemble(
   PetscScalar* array;
   VecGetArray(b_local, &array);
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
-
-  // Assemble
-  bvec.setZero();
-  fem::impl::assemble(bvec, L);
-
-  // Modify for Dirichlet bcs (lifting)
-  Vec x0_local = nullptr;
   PetscScalar const* array_x0;
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(nullptr,
                                                                         0);
@@ -327,28 +304,10 @@ void fem::assemble(
             array_x0, size_x0);
   }
 
-  for (std::size_t j = 0; j < a.size(); ++j)
-  {
-    auto V1 = a[j]->function_space(1);
-    auto map1 = V1->dofmap()->index_map();
-    const std::size_t col_range
-        = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-    std::vector<bool> bc_markers1(col_range, false);
-    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
-        = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
-    for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
-    {
-      bc->mark_dofs(bc_markers1);
-      bc->dof_values(bc_values1);
-    }
+  // Assemble and modify
+  assemble(bvec, L, a, bcs1, x0vec, scale);
 
-    if (x0)
-      fem::impl::modify_bc(bvec, *a[j], bc_values1, bc_markers1, x0vec, scale);
-    else
-      fem::impl::modify_bc(bvec, *a[j], bc_values1, bc_markers1, scale);
-  }
-
-  // Restore array and accumulate from ghosts
+  // Restore b array and accumulate from ghosts
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b.vec(), &b_local);
   VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
@@ -371,6 +330,40 @@ void fem::assemble(
     impl::set_bc(bvec, bcs0, scale);
   VecRestoreArray(b_local, &array);
   VecGhostRestoreLocalForm(b.vec(), &b_local);
+}
+//-----------------------------------------------------------------------------
+void fem::assemble(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    const std::vector<std::shared_ptr<const Form>> a,
+    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale)
+{
+  // Assemble
+  b.setZero();
+  fem::impl::assemble(b, L);
+
+  // Modify for Dirichlet bcs (lifting)
+  for (std::size_t j = 0; j < a.size(); ++j)
+  {
+    auto V1 = a[j]->function_space(1);
+    auto map1 = V1->dofmap()->index_map();
+    const std::size_t col_range
+        = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+    std::vector<bool> bc_markers1(col_range, false);
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
+        = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
+    for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
+    {
+      bc->mark_dofs(bc_markers1);
+      bc->dof_values(bc_values1);
+    }
+
+    if (x0.data())
+      fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, x0, scale);
+    else
+      fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, scale);
+  }
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix
