@@ -225,9 +225,14 @@ void fem::assemble(
           const std::size_t col_range
               = map1->block_size() * (map1->size_local() + map1->num_ghosts());
           std::vector<bool> bc_markers1(col_range, false);
+          Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
+              = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
           for (std::shared_ptr<const DirichletBC>& bc : bcs1[i][j])
+          {
             bc->mark_dofs(bc_markers1);
-          fem::impl::modify_bc(bvec, *a[i][j], bcs1[i][j], bc_markers1, x0vec,
+            bc->dof_values(bc_values1);
+          }
+          fem::impl::modify_bc(bvec, *a[i][j], bc_values1, bc_markers1, x0vec,
                                scale);
         }
       }
@@ -240,9 +245,14 @@ void fem::assemble(
           const std::size_t col_range
               = map1->block_size() * (map1->size_local() + map1->num_ghosts());
           std::vector<bool> bc_markers1(col_range, false);
+          Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
+              = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
           for (std::shared_ptr<const DirichletBC>& bc : bcs1[i][j])
+          {
             bc->mark_dofs(bc_markers1);
-          fem::impl::modify_bc(bvec, *a[i][j], bcs1[i][j], bc_markers1, scale);
+            bc->dof_values(bc_values1);
+          }
+          fem::impl::modify_bc(bvec, *a[i][j], bc_values1, bc_markers1, scale);
         }
       }
 
@@ -314,9 +324,14 @@ void fem::assemble(
         const std::size_t col_range
             = map1->block_size() * (map1->size_local() + map1->num_ghosts());
         std::vector<bool> bc_markers1(col_range, false);
+        Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
+            = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
         for (std::shared_ptr<const DirichletBC>& bc : bcs1[i][j])
+        {
           bc->mark_dofs(bc_markers1);
-        fem::impl::modify_bc(b_vec, *a[i][j], bcs1[i][j], bc_markers1, scale);
+          bc->dof_values(bc_values1);
+        }
+        fem::impl::modify_bc(b_vec, *a[i][j], bc_values1, bc_markers1, scale);
       }
 
       // FIXME: Sort out for x0 \ne nullptr case
@@ -392,9 +407,14 @@ void fem::assemble(
         const std::size_t col_range
             = map1->block_size() * (map1->size_local() + map1->num_ghosts());
         std::vector<bool> bc_markers1(col_range, false);
+        Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
+            = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
         for (std::shared_ptr<const DirichletBC>& bc : bcs1[0][j])
+        {
           bc->mark_dofs(bc_markers1);
-        fem::impl::modify_bc(bvec, *a[0][j], bcs1[0][j], bc_markers1, x0vec,
+          bc->dof_values(bc_values1);
+        }
+        fem::impl::modify_bc(bvec, *a[0][j], bc_values1, bc_markers1, x0vec,
                              scale);
       }
     }
@@ -407,9 +427,14 @@ void fem::assemble(
         const std::size_t col_range
             = map1->block_size() * (map1->size_local() + map1->num_ghosts());
         std::vector<bool> bc_markers1(col_range, false);
+        Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
+            = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
         for (std::shared_ptr<const DirichletBC>& bc : bcs1[0][j])
+        {
           bc->mark_dofs(bc_markers1);
-        fem::impl::modify_bc(bvec, *a[0][j], bcs1[0][j], bc_markers1, scale);
+          bc->dof_values(bc_values1);
+        }
+        fem::impl::modify_bc(bvec, *a[0][j], bc_values1, bc_markers1, scale);
       }
     }
 

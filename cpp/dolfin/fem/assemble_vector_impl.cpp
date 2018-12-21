@@ -13,6 +13,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <petscsys.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -22,29 +23,17 @@ namespace
 // Implementation of bc application
 void _modify_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
-  if (bcs.empty())
-    return;
-
   assert(a.rank() == 2);
 
   // Get mesh from form
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
-
-  // Get bcs
-  DirichletBC::Map boundary_values;
-  for (std::size_t i = 0; i < bcs.size(); ++i)
-  {
-    assert(bcs[i]);
-    assert(bcs[i]->function_space());
-    assert(a.function_space(1)->contains(*bcs[i]->function_space()));
-    bcs[i]->get_boundary_values(boundary_values);
-  }
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
@@ -101,12 +90,11 @@ void _modify_bc(
       const PetscInt jj = dmap1[j];
       if (bc_markers1[jj])
       {
-        auto bc = boundary_values.find(jj);
-        assert(bc != boundary_values.end());
+        const PetscScalar bc = bc_values1[jj];
         if (x0.rows() > 0)
-          be -= Ae.col(j) * scale * (bc->second - x0[jj]);
+          be -= Ae.col(j) * scale * (bc - x0[jj]);
         else
-          be -= Ae.col(j) * scale * bc->second;
+          be -= Ae.col(j) * scale * bc;
       }
     }
 
@@ -162,16 +150,18 @@ void fem::impl::assemble(
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        bc_values1,
     const std::vector<bool>& bc_markers1, double scale)
 {
   const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0(0);
-  _modify_bc(b, a, bcs, bc_markers1, x0, scale);
+  _modify_bc(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        bc_values1,
     const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
@@ -182,7 +172,7 @@ void fem::impl::modify_bc(
         "Vector size mismatch in modification for boundary conditions.");
   }
 
-  _modify_bc(b, a, bcs, bc_markers1, x0, scale);
+  _modify_bc(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::set_bc(
