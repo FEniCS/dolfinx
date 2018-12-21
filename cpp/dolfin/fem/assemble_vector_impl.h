@@ -23,24 +23,7 @@ class Form;
 namespace impl
 {
 
-/// Set bc values in owned (local) part of the PETSc Vec to scale*x_bc
-/// value
-void set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-            std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale);
-
-/// Set bc values in owned (local) part of the PETSc Vec to scale*(x0 -
-/// x_bc)
-void set_bc(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
-    double scale);
-
-/// Assemble linear form into an Eigen vector. Assembly is performed
-/// over the portion of the mesh belonging to the process. No
-/// communication is performed. The Eigen vector must be passed in with
-/// the correct size.
-// FIXME: Clarify docstring regarding ghosts
+/// Assemble linear form into an Eigen vector
 void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
               const Form& L);
 
@@ -48,21 +31,30 @@ void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
 void modify_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
                const Form& a,
                std::vector<std::shared_ptr<const DirichletBC>> bcs,
-               double scale);
+               const std::vector<bool>& bc_markers1, double scale);
 
 /// Modify RHS vector to account for boundary condition such that b <- b
 /// - scale*A (x_bc - x0)
 void modify_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const std::vector<bool>& bc_markers1,
     Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale);
 
-// Implementation of bc application
-void _modify_bc(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+// FIXME: clarify what happens with ghosts
+/// Set bc values in owned (local) part of the PETSc Vec to scale*x_bc
+/// value
+void set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+            std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale);
+
+// FIXME: clarify what happens with ghosts
+/// Set bc values in owned (local) part of the PETSc Vec to scale*(x0 -
+/// x_bc)
+void set_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale);
 
 } // namespace impl
