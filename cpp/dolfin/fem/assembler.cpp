@@ -61,7 +61,25 @@ la::PETScVector _assemble_vector(const Form& L)
     throw std::runtime_error("Form must be rank 1");
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
-  fem::impl::assemble_ghosted(b.vec(), L, {}, {}, nullptr, 1.0);
+
+  // Unwrap PETSc Vec
+  Vec b_local = nullptr;
+  VecGhostGetLocalForm(b.vec(), &b_local);
+  if (!b_local)
+    throw std::runtime_error("Expected ghosted PETSc Vec.");
+  PetscInt size = 0;
+  VecGetSize(b_local, &size);
+  PetscScalar* array;
+  VecGetArray(b_local, &array);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
+
+  bvec.setZero();
+  fem::impl::assemble(bvec, L);
+
+  VecRestoreArray(b_local, &array);
+  VecGhostRestoreLocalForm(b.vec(), &b_local);
+  VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
   return b;
 }
@@ -148,19 +166,65 @@ void fem::assemble(
           _bcs.push_back(bc);
       }
 
-      // Get sub-vector and assemble
-      Vec sub_b;
+      // Get sub-vector
+      Vec sub_b = nullptr;
       VecNestGetSubVec(b.vec(), i, &sub_b);
+
+      // Assemble
+      Vec b_local = nullptr;
+      VecGhostGetLocalForm(sub_b, &b_local);
+      if (!b_local)
+        throw std::runtime_error("Expected ghosted PETSc Vec.");
+      PetscInt size = 0;
+      VecGetSize(b_local, &size);
+      PetscScalar* array;
+      VecGetArray(b_local, &array);
+      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array,
+                                                                     size);
+      bvec.setZero();
+      fem::impl::assemble(bvec, *L[i]);
+
+      Vec x0_local = nullptr;
+      PetscScalar const* array_x0;
+      Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+          nullptr, 0);
       if (x0)
       {
-        fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, x0->vec(), scale);
-        fem::impl::set_bc(sub_b, _bcs, x0->vec(), 1.0);
+        VecGhostGetLocalForm(x0->vec(), &x0_local);
+        PetscInt size_x0 = 0;
+        VecGetSize(x0_local, &size_x0);
+        VecGetArrayRead(x0_local, &array_x0);
+        new (&x0vec)
+            Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
+                array_x0, size_x0);
+        for (std::size_t j = 0; j < a[0].size(); ++j)
+          fem::impl::modify_bc(bvec, *a[i][j], bcs, x0vec, scale);
       }
       else
       {
-        fem::impl::assemble_ghosted(sub_b, *L[i], a[i], bcs, nullptr, scale);
-        fem::impl::set_bc(sub_b, _bcs, 1.0);
+        for (std::size_t j = 0; j < a[0].size(); ++j)
+          fem::impl::modify_bc(bvec, *a[i][j], bcs, scale);
       }
+
+      VecRestoreArray(b_local, &array);
+      VecGhostRestoreLocalForm(sub_b, &b_local);
+      VecGhostUpdateBegin(sub_b, ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateEnd(sub_b, ADD_VALUES, SCATTER_REVERSE);
+
+      VecGhostGetLocalForm(sub_b, &b_local);
+      VecGetArray(b_local, &array);
+      bvec = Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
+          array, size);
+      if (x0)
+      {
+        fem::impl::set_bc(bvec, _bcs, x0vec, 1.0);
+        VecRestoreArrayRead(x0_local, &array_x0);
+      }
+      else
+        fem::impl::set_bc(bvec, _bcs, 1.0);
+
+      VecRestoreArray(b_local, &array);
+      VecGhostRestoreLocalForm(sub_b, &b_local);
 
       // FIXME: free sub-vector here (dereference)?
     }
@@ -200,7 +264,7 @@ void fem::assemble(
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec(map_size0
                                                           + map_size1);
       b_vec.setZero();
-      fem::impl::assemble_eigen(b_vec, *L[i]);
+      fem::impl::assemble(b_vec, *L[i]);
 
       // Modify for any essential bcs
       for (std::size_t j = 0; j < a[i].size(); ++j)
@@ -229,10 +293,10 @@ void fem::assemble(
 
       PetscScalar* values;
       VecGetArray(b.vec(), &values);
-      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec(
+      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
           values + offset, map_size0);
-      Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
-                                                                      0);
+      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
+                                                                       0);
 
       std::vector<std::shared_ptr<const DirichletBC>> _bcs;
       for (auto bc : bcs)
@@ -247,16 +311,60 @@ void fem::assemble(
   }
   else
   {
+    Vec b_local = nullptr;
+    VecGhostGetLocalForm(b.vec(), &b_local);
+    if (!b_local)
+      throw std::runtime_error("Expected ghosted PETSc Vec.");
+    PetscInt size = 0;
+    VecGetSize(b_local, &size);
+    PetscScalar* array;
+    VecGetArray(b_local, &array);
+    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
+    bvec.setZero();
+    fem::impl::assemble(bvec, *L[0]);
+
+    Vec x0_local = nullptr;
+    PetscScalar const* array_x0;
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+        nullptr, 0);
     if (x0)
     {
-      fem::impl::assemble_ghosted(b.vec(), *L[0], a[0], bcs, x0->vec(), scale);
-      impl::set_bc(b.vec(), bcs, x0->vec(), scale);
+      VecGhostGetLocalForm(x0->vec(), &x0_local);
+      PetscInt size_x0 = 0;
+      VecGetSize(x0_local, &size_x0);
+      VecGetArrayRead(x0_local, &array_x0);
+      new (&x0vec)
+          Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
+              array_x0, size_x0);
+      for (std::size_t j = 0; j < a[0].size(); ++j)
+        fem::impl::modify_bc(bvec, *a[0][j], bcs, x0vec, scale);
     }
     else
     {
-      fem::impl::assemble_ghosted(b.vec(), *L[0], a[0], bcs, nullptr, scale);
-      impl::set_bc(b.vec(), bcs, scale);
+      for (std::size_t j = 0; j < a[0].size(); ++j)
+        fem::impl::modify_bc(bvec, *a[0][j], bcs, scale);
     }
+
+    VecRestoreArray(b_local, &array);
+    VecGhostRestoreLocalForm(b.vec(), &b_local);
+    VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+
+    VecGhostGetLocalForm(b.vec(), &b_local);
+    VecGetArray(b_local, &array);
+    bvec = Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array,
+                                                                     size);
+
+    if (x0)
+    {
+      impl::set_bc(bvec, bcs, x0vec, scale);
+      VecRestoreArrayRead(x0_local, &array_x0);
+    }
+    else
+      impl::set_bc(bvec, bcs, scale);
+
+    VecRestoreArray(b_local, &array);
+    VecGhostRestoreLocalForm(b.vec(), &b_local);
   }
 }
 //-----------------------------------------------------------------------------
@@ -514,9 +622,35 @@ void fem::set_bc(la::PETScVector& b,
                  std::vector<std::shared_ptr<const DirichletBC>> bcs,
                  const la::PETScVector* x0, double scale)
 {
+  Vec b_local = nullptr;
+  VecGhostGetLocalForm(b.vec(), &b_local);
+  if (!b_local)
+    throw std::runtime_error("Expected ghosted PETSc Vec.");
+  PetscInt size = 0;
+  VecGetSize(b_local, &size);
+  PetscScalar* array;
+  VecGetArray(b_local, &array);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
   if (x0)
-    impl::set_bc(b.vec(), bcs, x0->vec(), scale);
+  {
+    Vec x0_local = nullptr;
+    PetscScalar const* array_x0;
+    VecGhostGetLocalForm(x0->vec(), &x0_local);
+    PetscInt size_x0 = 0;
+    VecGetSize(x0_local, &size_x0);
+    VecGetArrayRead(x0_local, &array_x0);
+    const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+        array_x0, size_x0);
+
+    impl::set_bc(bvec, bcs, x0vec, scale);
+
+    VecRestoreArrayRead(x0_local, &array_x0);
+  }
   else
-    impl::set_bc(b.vec(), bcs, nullptr, scale);
+  {
+    impl::set_bc(bvec, bcs, scale);
+  }
+  VecRestoreArray(b_local, &array);
+  VecGhostRestoreLocalForm(b.vec(), &b_local);
 }
 //-----------------------------------------------------------------------------
