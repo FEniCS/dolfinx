@@ -27,6 +27,9 @@ void _modify_bc(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
+  if (bcs.empty())
+    return;
+
   assert(a.rank() == 2);
 
   // Get mesh from form
@@ -70,9 +73,9 @@ void _modify_bc(
 
     // Check if bc is applied to cell
     bool has_bc = false;
-    for (int i = 0; i < dmap1.size(); ++i)
+    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
     {
-      if (bc_markers1[dmap1[i]])
+      if (bc_markers1[dmap1[j]])
       {
         has_bc = true;
         break;
@@ -93,12 +96,13 @@ void _modify_bc(
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
-    for (int j = 0; j < dmap1.size(); ++j)
+    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
     {
-      const std::size_t jj = dmap1[j];
-      auto bc = boundary_values.find(jj);
-      if (bc != boundary_values.end())
+      const PetscInt jj = dmap1[j];
+      if (bc_markers1[jj])
       {
+        auto bc = boundary_values.find(jj);
+        assert(bc != boundary_values.end());
         if (x0.rows() > 0)
           be -= Ae.col(j) * scale * (bc->second - x0[jj]);
         else
