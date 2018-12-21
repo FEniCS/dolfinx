@@ -90,7 +90,6 @@ void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double diagonal = 1.0);
 
-// FIXME: Consider if L is required
 /// Set bc values in owned (local) part of the PETScVector, multiplied by
 /// 'scale'
 void set_bc(la::PETScVector& b,
