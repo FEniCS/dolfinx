@@ -122,8 +122,11 @@ public:
   {
     assert(_ufc_element);
     std::size_t num_points = X.rows();
-    _ufc_element->evaluate_reference_basis(reference_values.data(), num_points,
-                                           X.data());
+    int ret = _ufc_element->evaluate_reference_basis(reference_values.data(),
+                                                     num_points, X.data());
+    if (ret == -1)
+      throw std::runtime_error("Generated code returned error "
+                               "in evaluate_reference_basis");
   }
 
   /// Push basis functions forward to physical element
@@ -137,9 +140,12 @@ public:
   {
     assert(_ufc_element);
     std::size_t num_points = X.rows();
-    _ufc_element->transform_reference_basis_derivatives(
+    int ret = _ufc_element->transform_reference_basis_derivatives(
         values.data(), 0, num_points, reference_values.data(), X.data(),
         J.data(), detJ.data(), K.data(), 1);
+    if (ret == -1)
+      throw std::runtime_error("Generated code returned error "
+                               "in transform_reference_basis_derivatives");
   }
 
   /// Push basis function (derivatives) forward to physical element
@@ -153,9 +159,12 @@ public:
   {
     assert(_ufc_element);
     std::size_t num_points = X.rows();
-    _ufc_element->transform_reference_basis_derivatives(
+    int ret = _ufc_element->transform_reference_basis_derivatives(
         values.data(), order, num_points, reference_values.data(), X.data(),
         J.data(), detJ.data(), K.data(), 1);
+    if (ret == -1)
+      throw std::runtime_error("Generated code returned error "
+                               "in transform_reference_basis_derivatives");
   }
 
   /// Tabulate the reference coordinates of all dofs on an element
