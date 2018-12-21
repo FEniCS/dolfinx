@@ -486,6 +486,33 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
   }
 }
 //-----------------------------------------------------------------------------
+void DirichletBC::dof_values(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const
+{
+  assert(_g);
+  assert(_g->vector());
+  assert(_g->vector()->vec());
+
+  // Unwrap PETSc bc vector (_g)
+  const Vec g_vec = _g->vector()->vec();
+  Vec g_local = nullptr;
+  VecGhostGetLocalForm(g_vec, &g_local);
+  assert(g_local);
+  PetscInt g_size = 0;
+  VecGetSize(g_local, &g_size);
+  PetscScalar const* g_array;
+  VecGetArrayRead(g_vec, &g_array);
+  const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
+      g_array, g_size);
+
+  for (auto& dof : _dofs)
+    values[dof[0]] = g[dof[1]];
+
+  // Restore PETSc array (_g)
+  VecRestoreArrayRead(g_local, &g_array);
+  VecGhostRestoreLocalForm(g_vec, &g_local);
+}
+//-----------------------------------------------------------------------------
 std::map<PetscInt, PetscInt>
 DirichletBC::shared_bc_to_g(const function::FunctionSpace& V,
                             const function::FunctionSpace& Vg)

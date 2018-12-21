@@ -151,6 +151,12 @@ void fem::assemble(
 {
   assert(!L.empty());
 
+  std::vector<std::shared_ptr<const DirichletBC>> bcs0;
+  for (std::size_t i = 0; i < L.size(); ++i)
+    for (std::shared_ptr<const DirichletBC> bc : bcs)
+      if (L[i]->function_space(0)->contains(*bc->function_space()))
+        bcs0.push_back(bc);
+
   std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>>
       bcs1(a.size());
   for (std::size_t i = 0; i < a.size(); ++i)
@@ -159,10 +165,8 @@ void fem::assemble(
     {
       bcs1[i].resize(a[j].size());
       for (std::shared_ptr<const DirichletBC> bc : bcs)
-      {
         if (a[i][j]->function_space(1)->contains(*bc->function_space()))
           bcs1[i][j].push_back(bc);
-      }
     }
   }
 
@@ -214,8 +218,6 @@ void fem::assemble(
         new (&x0vec)
             Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
                 array_x0, size_x0);
-        // for (std::size_t j = 0; j < a[i].size(); ++j)
-        //   fem::impl::modify_bc(bvec, *a[i][j], bcs, x0vec, scale);
         for (std::size_t j = 0; j < a[i].size(); ++j)
         {
           auto V1 = a[i][j]->function_space(1);
@@ -242,8 +244,6 @@ void fem::assemble(
             bc->mark_dofs(bc_markers1);
           fem::impl::modify_bc(bvec, *a[i][j], bcs1[i][j], bc_markers1, scale);
         }
-        // for (std::size_t j = 0; j < a[i].size(); ++j)
-        //   fem::impl::modify_bc(bvec, *a[i][j], bcs, scale);
       }
 
       VecRestoreArray(b_local, &array);
@@ -318,8 +318,6 @@ void fem::assemble(
           bc->mark_dofs(bc_markers1);
         fem::impl::modify_bc(b_vec, *a[i][j], bcs1[i][j], bc_markers1, scale);
       }
-      // for (std::size_t j = 0; j < a[i].size(); ++j)
-      //   fem::impl::modify_bc(b_vec, *a[i][j], bcs, scale);
 
       // FIXME: Sort out for x0 \ne nullptr case
 
@@ -399,8 +397,6 @@ void fem::assemble(
         fem::impl::modify_bc(bvec, *a[0][j], bcs1[0][j], bc_markers1, x0vec,
                              scale);
       }
-      // for (std::size_t j = 0; j < a[0].size(); ++j)
-      //   fem::impl::modify_bc(bvec, *a[0][j], bcs, x0vec, scale);
     }
     else
     {
@@ -415,8 +411,6 @@ void fem::assemble(
           bc->mark_dofs(bc_markers1);
         fem::impl::modify_bc(bvec, *a[0][j], bcs1[0][j], bc_markers1, scale);
       }
-      // for (std::size_t j = 0; j < a[0].size(); ++j)
-      //   fem::impl::modify_bc(bvec, *a[0][j], bcs, scale);
     }
 
     VecRestoreArray(b_local, &array);
@@ -431,11 +425,11 @@ void fem::assemble(
 
     if (x0)
     {
-      impl::set_bc(bvec, bcs, x0vec, scale);
+      impl::set_bc(bvec, bcs0, x0vec, scale);
       VecRestoreArrayRead(x0_local, &array_x0);
     }
     else
-      impl::set_bc(bvec, bcs, scale);
+      impl::set_bc(bvec, bcs0, scale);
 
     VecRestoreArray(b_local, &array);
     VecGhostRestoreLocalForm(b.vec(), &b_local);
