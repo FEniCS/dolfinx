@@ -211,9 +211,9 @@ void fem::assemble(
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
           = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
                                                                 + map_size1);
-      Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(
-          nullptr, 0);
-      assemble(b_vec, *L[i], a[i], bcs1[i], x0vec, scale);
+      // Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(
+      //     nullptr, 0);
+      assemble_eigen(b_vec, *L[i], a[i], bcs1[i], {}, scale);
 
       // Compute offsets for block i
       int offset0(0), offset1(0);
@@ -300,7 +300,10 @@ void fem::assemble(
   }
 
   // Assemble and modify
-  assemble(bvec, L, a, bcs1, x0vec, scale);
+  if (x0)
+    assemble_eigen(bvec, L, a, bcs1, {x0vec}, scale);
+  else
+    assemble_eigen(bvec, L, a, bcs1, {}, scale);
 
   // Restore b array and accumulate from ghosts
   VecRestoreArray(b_local, &array);
@@ -309,11 +312,11 @@ void fem::assemble(
   VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(
+void fem::assemble_eigen(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>> x0,
     double scale)
 {
   // Assemble
@@ -336,8 +339,8 @@ void fem::assemble(
       bc->dof_values(bc_values1);
     }
 
-    if (x0.data())
-      fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, x0, scale);
+    if (!x0.empty())
+      fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
     else
       fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, scale);
   }
