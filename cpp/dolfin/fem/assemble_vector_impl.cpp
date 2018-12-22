@@ -175,29 +175,3 @@ void fem::impl::modify_bc(
   _modify_bc(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
-void fem::impl::set_bc(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
-{
-  for (auto bc : bcs)
-  {
-    assert(bc);
-    bc->set(b, scale);
-  }
-}
-//-----------------------------------------------------------------------------
-void fem::impl::set_bc(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
-    double scale)
-{
-  if (b.size() != x0.size())
-    throw std::runtime_error("Size mismatch between b and x0 vectors.");
-  for (auto bc : bcs)
-  {
-    assert(bc);
-    bc->set(b, x0, scale);
-  }
-}
-//-----------------------------------------------------------------------------

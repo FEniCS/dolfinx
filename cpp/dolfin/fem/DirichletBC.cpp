@@ -426,7 +426,6 @@ void DirichletBC::set(
   VecGetArrayRead(g_vec, &g_array);
   const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
       g_array, g_size);
-  // assert(x.rows() == g.rows());
 
   // FIXME: This one excludes ghosts. Need to straighten out
   for (auto& dof : _dofs)
@@ -435,7 +434,7 @@ void DirichletBC::set(
       x[dof[0]] = g[dof[1]];
   }
 
-  // Restore PETSc array
+  // Restore PETSc array for g
   VecRestoreArrayRead(g_local, &g_array);
   VecGhostRestoreLocalForm(g_vec, &g_local);
 }
@@ -463,7 +462,6 @@ void DirichletBC::set(
   VecGetArrayRead(g_vec, &g_array);
   const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
       g_array, g_size);
-  // assert(x.rows() == g.rows());
 
   // FIXME: This one excludes ghosts. Need to straighten out
   for (auto& dof : _dofs)
@@ -472,7 +470,7 @@ void DirichletBC::set(
       x[dof[0]] = scale * (g[dof[1]] - x0[dof[0]]);
   }
 
-  // Restore PETSc array
+  // Restore PETSc array for g
   VecRestoreArrayRead(g_local, &g_array);
   VecGhostRestoreLocalForm(g_vec, &g_local);
 }

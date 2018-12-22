@@ -650,8 +650,8 @@ void fem::set_bc_petsc(Vec b,
   VecGetSize(b_local, &b_size);
   PetscScalar* b_array;
   VecGetArray(b_local, &b_array);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(b_array,
-                                                                 b_size);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(b_array,
+                                                                  b_size);
   if (x0)
   {
     Vec x0_local = nullptr;
@@ -663,13 +663,25 @@ void fem::set_bc_petsc(Vec b,
     const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         x0_vec(x0_array, x0_size);
 
-    impl::set_bc(bvec, bcs, x0_vec, scale);
+    if (b_vec.size() != x0_vec.size())
+      throw std::runtime_error("Size mismatch between b and x0 vectors.");
+    for (auto bc : bcs)
+    {
+      assert(bc);
+      bc->set(b_vec, x0_vec, scale);
+    }
 
     VecRestoreArrayRead(x0_local, &x0_array);
     VecGhostRestoreLocalForm(x0, &x0_local);
   }
   else
-    impl::set_bc(bvec, bcs, scale);
+  {
+    for (auto bc : bcs)
+    {
+      assert(bc);
+      bc->set(b_vec, scale);
+    }
+  }
 
   VecRestoreArray(b_local, &b_array);
   VecGhostRestoreLocalForm(b, &b_local);
