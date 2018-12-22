@@ -58,23 +58,25 @@ namespace fem
 /// to identify degrees of freedom on the boundary. Available methods
 /// are:
 ///
-/// 1. topological approach (default);
-/// 2. geometric approach; and
+/// 1. topological approach (default)
+///
+///    Fastest, but will only identify degrees of freedom that are
+///    located on a facet that is entirely on the / boundary. In
+///    particular, the topological approach will not identify degrees of
+///    freedom for discontinuous elements (which are all internal to the
+///    cell).
+///
+/// 2. geometric approach
+///
+///    Each dof on each facet that matches the boundary condition will
+///    be checked.
+///
 /// 3. pointwise approach.
 ///
-/// The topological approach is faster, but will only identify degrees
-/// of freedom that are located on a facet that is entirely on the
-/// boundary. In particular, the topological approach will not identify
-/// degrees of freedom for discontinuous elements (which are all
-/// internal to the cell). A remedy for this is to use the geometric
-/// approach. In the geometric approach, each dof on each facet that
-/// matches the boundary condition will be checked. To apply pointwise
-/// boundary conditions e.g. pointloads, one will have to use the
-/// pointwise approach. The three possibilities are "topological",
-/// "geometric" and "pointwise".
+///    For pointwise boundary conditions e.g. pointloads..
 ///
-/// Note: when using "pointwise", the boolean argument `on_boundary` in
-/// SubDomain::inside will always be false.
+///    Note: when using "pointwise", the boolean argument `on_boundary`
+///    in SubDomain::inside will always be false.
 ///
 /// The 'check_midpoint' variable can be used to decide whether or not
 /// the midpoint of each facet should be checked when a user-defined
@@ -162,6 +164,7 @@ public:
   ///
   /// @param[in,out] boundary_values (Map&)
   ///         Map from dof to boundary value.
+  // [[deprecated("Used in deprecated SystemAssembler")]]
   void get_boundary_values(Map& boundary_values) const;
 
   /// Return function space V
@@ -176,24 +179,35 @@ public:
   ///         The boundary values.
   std::shared_ptr<const function::Function> value() const;
 
+  // FIXME: clarify  w.r.t ghosts
+  // FIXME: clarify length of returned array
   /// Get array of dof indices to which a Dirichlet BC is applied. The
   /// array is sorted.
   const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   dof_indices() const;
 
+  // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*x_bc
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
            double scale = 1.0) const;
 
+  // FIXME: clarify w.r.t ghosts
   /// Set bc entries in x to scale*(x0 - x_bc)
   void set(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
       double scale = 1.0) const;
 
+  // FIXME: clarify w.r.t ghosts
   /// Set markers[i] = true if dof i has a boundary condition applied.
   /// Value of markers[i] is not changed otherwise.
   void mark_dofs(std::vector<bool>& markers) const;
+
+  // FIXME: clarify  w.r.t ghosts
+  /// Set boundary condition value for entres with an applied boundary
+  /// condition. Other entries are not modified.
+  void dof_values(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const;
 
 private:
   // Build map of shared dofs in V to dofs in Vg
@@ -222,8 +236,9 @@ private:
   // The function
   std::shared_ptr<const function::Function> _g;
 
-  // Dof indices in _function_space and g space to which bcs are applied, i.e.
-  // u[dofs[i][0]] = g[dofs[i][1]]
+  // Vector the tuple (dof index in _function_space, dof index in g
+  // space) to which bcs are applied, i.e. u[dofs[i][0]] = g[dofs[i][1]]
+  // where u is in _function_space.
   std::vector<std::array<PetscInt, 2>> _dofs;
 
   // Indices in _function_space to which bcs are applied. Must be sorted.

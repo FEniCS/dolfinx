@@ -13,36 +13,97 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <petscsys.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
 
-//-----------------------------------------------------------------------------
-void fem::impl::set_bc(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
+namespace
 {
-  for (auto bc : bcs)
-  {
-    assert(bc);
-    bc->set(b, scale);
-  }
-}
-//-----------------------------------------------------------------------------
-void fem::impl::set_bc(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+// Implementation of bc application
+void _modify_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        bc_values1,
+    const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
-  if (b.size() != x0.size())
-    throw std::runtime_error("Size mismtach between b and x0 vectors.");
-  for (auto bc : bcs)
+  assert(a.rank() == 2);
+
+  // Get mesh from form
+  assert(a.mesh());
+  const mesh::Mesh& mesh = *a.mesh();
+
+  // Get dofmap for columns and rows of a
+  assert(a.function_space(0));
+  assert(a.function_space(0)->dofmap());
+  assert(a.function_space(1));
+  assert(a.function_space(1)->dofmap());
+  const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
+  const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
+
+  // Data structures used in bc application
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      Ae;
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
+
+  // Iterate over all cells
+  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    assert(bc);
-    bc->set(b, x0, scale);
+    // Check that cell is not a ghost
+    assert(!cell.is_ghost());
+
+    // Get dof maps for cell
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
+        = dofmap1.cell_dofs(cell.index());
+
+    // Check if bc is applied to cell
+    bool has_bc = false;
+    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    {
+      if (bc_markers1[dmap1[j]])
+      {
+        has_bc = true;
+        break;
+      }
+    }
+
+    if (!has_bc)
+      continue;
+
+    // Get cell vertex coordinates
+    cell.get_coordinate_dofs(coordinate_dofs);
+
+    // Size data structure for assembly
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
+        = dofmap0.cell_dofs(cell.index());
+    Ae.setZero(dmap0.size(), dmap1.size());
+    a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
+
+    // Size data structure for assembly
+    be.setZero(dmap0.size());
+    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    {
+      const PetscInt jj = dmap1[j];
+      if (bc_markers1[jj])
+      {
+        const PetscScalar bc = bc_values1[jj];
+        if (x0.rows() > 0)
+          be -= Ae.col(j) * scale * (bc - x0[jj]);
+        else
+          be -= Ae.col(j) * scale * bc;
+      }
+    }
+
+    for (Eigen::Index k = 0; k < dmap0.size(); ++k)
+      b[dmap0[k]] += be[k];
   }
 }
+} // namespace
+
 //-----------------------------------------------------------------------------
 void fem::impl::assemble(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
@@ -89,15 +150,19 @@ void fem::impl::assemble(
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        bc_values1,
+    const std::vector<bool>& bc_markers1, double scale)
 {
   const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0(0);
-  fem::impl::_modify_bc(b, a, bcs, x0, scale);
+  _modify_bc(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::modify_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        bc_values1,
+    const std::vector<bool>& bc_markers1,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
@@ -107,98 +172,32 @@ void fem::impl::modify_bc(
         "Vector size mismatch in modification for boundary conditions.");
   }
 
-  fem::impl::_modify_bc(b, a, bcs, x0, scale);
+  _modify_bc(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
-void fem::impl::_modify_bc(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+void fem::impl::set_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale)
+{
+  for (auto bc : bcs)
+  {
+    assert(bc);
+    bc->set(b, scale);
+  }
+}
+//-----------------------------------------------------------------------------
+void fem::impl::set_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale)
 {
-  assert(a.rank() == 2);
-
-  // Get mesh from form
-  assert(a.mesh());
-  const mesh::Mesh& mesh = *a.mesh();
-
-  // Get bcs
-  DirichletBC::Map boundary_values;
-  for (std::size_t i = 0; i < bcs.size(); ++i)
+  if (b.size() != x0.size())
+    throw std::runtime_error("Size mismatch between b and x0 vectors.");
+  for (auto bc : bcs)
   {
-    assert(bcs[i]);
-    assert(bcs[i]->function_space());
-    if (a.function_space(1)->contains(*bcs[i]->function_space()))
-      bcs[i]->get_boundary_values(boundary_values);
-  }
-
-  // Get dofmap for columns and rows of a
-  assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap());
-  assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap());
-  const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
-
-  // Data structures used in bc application
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      Ae;
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
-
-  // Iterate over all cells
-  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
-  {
-    // Check that cell is not a ghost
-    assert(!cell.is_ghost());
-
-    // Get dof maps for cell
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
-        = dofmap1.cell_dofs(cell.index());
-
-    // Check if bc is applied to cell
-    bool has_bc = false;
-    for (int i = 0; i < dmap1.size(); ++i)
-    {
-      const std::size_t ii = dmap1[i];
-      if (boundary_values.find(ii) != boundary_values.end())
-      {
-        has_bc = true;
-        break;
-      }
-    }
-
-    if (!has_bc)
-      continue;
-
-    // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
-
-    // Size data structure for assembly
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
-        = dofmap0.cell_dofs(cell.index());
-    Ae.setZero(dmap0.size(), dmap1.size());
-    a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
-
-    // Size data structure for assembly
-    be.setZero(dmap0.size());
-
-    for (int j = 0; j < dmap1.size(); ++j)
-    {
-      const std::size_t jj = dmap1[j];
-      auto bc = boundary_values.find(jj);
-      if (bc != boundary_values.end())
-      {
-        if (x0.rows() > 0)
-          be -= Ae.col(j) * scale * (bc->second - x0[jj]);
-        else
-          be -= Ae.col(j) * scale * bc->second;
-      }
-    }
-
-    for (Eigen::Index k = 0; k < dmap0.size(); ++k)
-      b[dmap0[k]] += be[k];
+    assert(bc);
+    bc->set(b, x0, scale);
   }
 }
 //-----------------------------------------------------------------------------
