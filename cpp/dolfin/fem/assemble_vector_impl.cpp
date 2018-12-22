@@ -193,7 +193,7 @@ void fem::impl::set_bc(
     double scale)
 {
   if (b.size() != x0.size())
-    throw std::runtime_error("Size mismtach between b and x0 vectors.");
+    throw std::runtime_error("Size mismatch between b and x0 vectors.");
   for (auto bc : bcs)
   {
     assert(bc);
