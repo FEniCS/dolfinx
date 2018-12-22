@@ -275,8 +275,8 @@ void fem::assemble(
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     const la::PETScVector* x0, double scale)
 {
-  // Wrap b and x0 as Eigen vector
-  Vec b_local(nullptr), x0_local(nullptr);
+  // Wrap b as Eigen vector
+  Vec b_local = nullptr;
   VecGhostGetLocalForm(b.vec(), &b_local);
   if (!b_local)
     throw std::runtime_error("Expected ghosted PETSc Vec.");
@@ -285,23 +285,50 @@ void fem::assemble(
   PetscScalar* array;
   VecGetArray(b_local, &array);
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> bvec(array, size);
-  PetscScalar const* array_x0;
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0vec(nullptr,
-                                                                        0);
+
   if (x0)
   {
-    VecGhostGetLocalForm(x0->vec(), &x0_local);
-    PetscInt size_x0 = 0;
-    VecGetSize(x0_local, &size_x0);
-    VecGetArrayRead(x0_local, &array_x0);
-    new (&x0vec)
-        Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
-            array_x0, size_x0);
-  }
+    // Wrap the x0 vector(s)
+    std::vector<Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+        _x0;
+    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+        _x0_ref;
+    Vec* x0_sub = nullptr;
+    PetscInt n = 1;
+    Vec x = x0->vec();
+    if (a.size() > 1)
+    {
+      // FIXME: Add some checks
+      throw std::runtime_error("Not implemented yet.");
+      VecNestGetSubVecs(x0->vec(), &n, &x0_sub);
+    }
+    else
+      x0_sub = &x;
 
-  // Assemble and modify
-  if (x0)
-    assemble_eigen(bvec, L, a, bcs1, {x0vec}, scale);
+    std::vector<Vec> x0_local(n, nullptr);
+    std::vector<PetscScalar const*> x0_array(n, nullptr);
+    for (PetscInt j = 0; j < n; ++j)
+    {
+      VecGhostGetLocalForm(x0_sub[j], &(x0_local[j]));
+      PetscInt x0_size = 0;
+      VecGetSize(x0_local[j], &x0_size);
+      VecGetArrayRead(x0_local[j], &x0_array[j]);
+      _x0.push_back(
+          Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
+              x0_array[j], x0_size));
+      _x0_ref.push_back(_x0.back());
+    }
+
+    // Assemble and modify for bcs
+    assemble_eigen(bvec, L, a, bcs1, _x0_ref, scale);
+
+    // Restore the x0 vectors
+    for (PetscInt j = 0; j < n; ++j)
+    {
+      VecRestoreArrayRead(x0_local[j], &x0_array[j]);
+      VecGhostRestoreLocalForm(x0_sub[j], &x0_local[j]);
+    }
+  }
   else
     assemble_eigen(bvec, L, a, bcs1, {}, scale);
 
@@ -316,7 +343,8 @@ void fem::assemble_eigen(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>> x0,
+    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+        x0,
     double scale)
 {
   // Assemble
