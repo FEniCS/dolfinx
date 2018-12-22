@@ -41,6 +41,9 @@ namespace fem
 class GenericDofMap
 {
 public:
+  /// Destructor
+  virtual ~GenericDofMap() = default;
+
   /// True if dof map is a view into another map (is a sub-dofmap)
   virtual bool is_view() const = 0;
 
