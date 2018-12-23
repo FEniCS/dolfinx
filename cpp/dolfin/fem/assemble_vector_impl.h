@@ -44,21 +44,6 @@ void modify_bc(
     Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale);
 
-// FIXME: clarify what happens with ghosts
-/// Set bc values in owned (local) part of the PETSc Vec to scale*x_bc
-/// value
-void set_bc(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-            std::vector<std::shared_ptr<const DirichletBC>> bcs, double scale);
-
-// FIXME: clarify what happens with ghosts
-/// Set bc values in owned (local) part of the PETSc Vec to scale*(x0 -
-/// x_bc)
-void set_bc(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
-    double scale);
-
 } // namespace impl
 } // namespace fem
 } // namespace dolfin

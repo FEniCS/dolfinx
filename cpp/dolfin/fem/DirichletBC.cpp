@@ -361,32 +361,13 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 //-----------------------------------------------------------------------------
 void DirichletBC::get_boundary_values(Map& boundary_values) const
 {
-  // Unwrap bc vector
   assert(_g);
   assert(_g->vector());
   assert(_g->vector()->vec());
-  const Vec g_vec = _g->vector()->vec();
-
-  // Get local form
-  Vec g_local(nullptr);
-  VecGhostGetLocalForm(g_vec, &g_local);
-
-  // Get size
-  PetscInt g_size = 0;
-  VecGetSize(g_local, &g_size);
-
-  // Get array
-  PetscScalar const* g_array;
-  VecGetArrayRead(g_vec, &g_array);
-
-  const Eigen::Map<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> g(
-      g_array, g_size);
+  la::VecReadWrapper g(_g->vector()->vec());
   for (auto dof : _dofs)
-    boundary_values.insert({dof[0], g[dof[1]]});
-
-  // Restore PETSc array
-  VecRestoreArrayRead(g_local, &g_array);
-  VecGhostRestoreLocalForm(g_vec, &g_local);
+    boundary_values.insert({dof[0], g.x[dof[1]]});
+  g.restore();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace>
@@ -410,34 +391,18 @@ void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     double scale) const
 {
-  // assert(x.rows() == (Eigen::Index)_dofs.size());
   assert(_g);
   assert(_g->vector());
   assert(_g->vector()->vec());
 
-  // Unwrap PETSc bc vector (_g)
-  const Vec g_vec = _g->vector()->vec();
-  Vec g_local = nullptr;
-  VecGhostGetLocalForm(g_vec, &g_local);
-  assert(g_local);
-  PetscInt g_size = 0;
-  VecGetSize(g_local, &g_size);
-  PetscScalar const* g_array;
-  VecGetArrayRead(g_vec, &g_array);
-  const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
-      g_array, g_size);
-  // assert(x.rows() == g.rows());
-
-  // FIXME: This one excludes ghosts. Need to straighten out
+  // FIXME: This one excludes ghosts. Need to straighten out.
+  la::VecReadWrapper g(_g->vector()->vec());
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
-      x[dof[0]] = g[dof[1]];
+      x[dof[0]] = g.x[dof[1]];
   }
-
-  // Restore PETSc array
-  VecRestoreArrayRead(g_local, &g_array);
-  VecGhostRestoreLocalForm(g_vec, &g_local);
+  g.restore();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::set(
@@ -445,36 +410,18 @@ void DirichletBC::set(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale) const
 {
-  // assert(x.rows() == (Eigen::Index)_dofs.size());
-  // assert(x.rows() == x0.rows());
-
   assert(_g);
   assert(_g->vector());
   assert(_g->vector()->vec());
 
-  // Unwrap PETSc bc vector (_g)
-  const Vec g_vec = _g->vector()->vec();
-  Vec g_local = nullptr;
-  VecGhostGetLocalForm(g_vec, &g_local);
-  assert(g_local);
-  PetscInt g_size = 0;
-  VecGetSize(g_local, &g_size);
-  PetscScalar const* g_array;
-  VecGetArrayRead(g_vec, &g_array);
-  const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
-      g_array, g_size);
-  // assert(x.rows() == g.rows());
-
-  // FIXME: This one excludes ghosts. Need to straighten out
+  // FIXME: This one excludes ghosts. Need to straighten out.
+  la::VecReadWrapper g(_g->vector()->vec());
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
-      x[dof[0]] = scale * (g[dof[1]] - x0[dof[0]]);
+      x[dof[0]] = scale * (g.x[dof[1]] - x0[dof[0]]);
   }
-
-  // Restore PETSc array
-  VecRestoreArrayRead(g_local, &g_array);
-  VecGhostRestoreLocalForm(g_vec, &g_local);
+  g.restore();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::mark_dofs(std::vector<bool>& markers) const
@@ -494,23 +441,10 @@ void DirichletBC::dof_values(
   assert(_g->vector()->vec());
 
   // Unwrap PETSc bc vector (_g)
-  const Vec g_vec = _g->vector()->vec();
-  Vec g_local = nullptr;
-  VecGhostGetLocalForm(g_vec, &g_local);
-  assert(g_local);
-  PetscInt g_size = 0;
-  VecGetSize(g_local, &g_size);
-  PetscScalar const* g_array;
-  VecGetArrayRead(g_vec, &g_array);
-  const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
-      g_array, g_size);
-
+  la::VecReadWrapper g(_g->vector()->vec());
   for (auto& dof : _dofs)
-    values[dof[0]] = g[dof[1]];
-
-  // Restore PETSc array (_g)
-  VecRestoreArrayRead(g_local, &g_array);
-  VecGhostRestoreLocalForm(g_vec, &g_local);
+    values[dof[0]] = g.x[dof[1]];
+  g.restore();
 }
 //-----------------------------------------------------------------------------
 std::map<PetscInt, PetscInt>
