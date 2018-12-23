@@ -268,13 +268,6 @@ void fem::assemble_petsc(
     la::VecWrapper _b(b);
     if (x0)
     {
-      // Wrap the x0 vector(s)
-      std::vector<
-          Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-          _x0;
-      std::vector<
-          Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-          _x0_ref;
       Vec const* x0_sub = nullptr;
       PetscInt n = 1;
       if (a.size() > 1)
@@ -288,6 +281,13 @@ void fem::assemble_petsc(
       else
         x0_sub = &x0;
 
+      // Wrap the x0 vector(s)
+      std::vector<
+          Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+          _x0;
+      std::vector<
+          Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+          _x0_ref;
       std::vector<Vec> x0_local(n, nullptr);
       std::vector<PetscScalar const*> x0_array(n, nullptr);
       for (PetscInt j = 0; j < n; ++j)
@@ -621,26 +621,14 @@ void fem::set_bc_petsc(Vec b,
   la::VecWrapper _b(b);
   if (x0)
   {
-    Vec x0_local = nullptr;
-    PetscScalar const* x0_array;
-    VecGhostGetLocalForm(x0, &x0_local);
-    PetscInt x0_size = 0;
-    VecGetSize(x0_local, &x0_size);
-    VecGetArrayRead(x0_local, &x0_array);
-    const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-        x0_vec(x0_array, x0_size);
-
-    if (_b.x.size() != x0_vec.size())
+    la::VecReadWrapper _x0(x0);
+    if (_b.x.size() != _x0.x.size())
       throw std::runtime_error("Size mismatch between b and x0 vectors.");
-
     for (auto bc : bcs)
     {
       assert(bc);
-      bc->set(_b.x, x0_vec, scale);
+      bc->set(_b.x, _x0.x, scale);
     }
-
-    VecRestoreArrayRead(x0_local, &x0_array);
-    VecGhostRestoreLocalForm(x0, &x0_local);
   }
   else
   {

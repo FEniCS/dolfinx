@@ -78,8 +78,11 @@ dolfin::la::VecWrapper::VecWrapper(Vec y, bool ghosted) : x(nullptr, 0), _y(y)
 //-----------------------------------------------------------------------------
 dolfin::la::VecWrapper::~VecWrapper()
 {
+  assert(_y_local);
   VecRestoreArray(_y_local, &array);
+
   PetscBool is_ghost_local_form;
+  assert(_y);
   VecGhostIsLocalForm(_y, _y_local, &is_ghost_local_form);
   if (is_ghost_local_form == PETSC_TRUE)
     VecGhostRestoreLocalForm(_y, &_y_local);
@@ -104,8 +107,11 @@ dolfin::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
 //-----------------------------------------------------------------------------
 dolfin::la::VecReadWrapper::~VecReadWrapper()
 {
+  assert(_y_local);
   VecRestoreArrayRead(_y_local, &array);
+
   PetscBool is_ghost_local_form;
+  assert(_y);
   VecGhostIsLocalForm(_y, _y_local, &is_ghost_local_form);
   if (is_ghost_local_form == PETSC_TRUE)
     VecGhostRestoreLocalForm(_y, &_y_local);
