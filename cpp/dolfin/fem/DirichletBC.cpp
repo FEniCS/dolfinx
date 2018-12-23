@@ -410,7 +410,6 @@ void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     double scale) const
 {
-  // assert(x.rows() == (Eigen::Index)_dofs.size());
   assert(_g);
   assert(_g->vector());
   assert(_g->vector()->vec());
@@ -427,7 +426,7 @@ void DirichletBC::set(
   const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
       g_array, g_size);
 
-  // FIXME: This one excludes ghosts. Need to straighten out
+  // FIXME: This one excludes ghosts. Need to straighten out.
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
@@ -444,9 +443,6 @@ void DirichletBC::set(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale) const
 {
-  // assert(x.rows() == (Eigen::Index)_dofs.size());
-  // assert(x.rows() == x0.rows());
-
   assert(_g);
   assert(_g->vector());
   assert(_g->vector()->vec());
@@ -463,7 +459,7 @@ void DirichletBC::set(
   const Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> g(
       g_array, g_size);
 
-  // FIXME: This one excludes ghosts. Need to straighten out
+  // FIXME: This one excludes ghosts. Need to straighten out.
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())

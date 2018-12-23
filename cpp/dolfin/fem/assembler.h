@@ -136,6 +136,7 @@ void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
 
 // FIXME: clarify x0
 // FIXME: clarify what happens with ghosts
+// FIXME: sort out case when x0 is nested, i.e. len(b) \ne len(x0)
 
 /// Set bc values in owned (local) part of the PETScVector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
