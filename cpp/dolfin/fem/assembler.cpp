@@ -61,11 +61,10 @@ la::PETScVector _assemble_vector(const Form& L)
     throw std::runtime_error("Form must be rank 1");
   la::PETScVector b
       = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
-  {
-    la::VecWrapper _b(b.vec());
-    _b.x.setZero();
-    fem::impl::assemble(_b.x, L);
-  }
+  la::VecWrapper _b(b.vec());
+  _b.x.setZero();
+  fem::impl::assemble(_b.x, L);
+  _b.restore();
 
   VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
@@ -188,42 +187,39 @@ void fem::assemble(
   else if (L.size() > 1)
   {
     // Get local representation of b vector and unwrap
+    la::VecWrapper _b(b.vec());
+    for (std::size_t i = 0; i < L.size(); ++i)
     {
-      la::VecWrapper _b(b.vec());
-      for (std::size_t i = 0; i < L.size(); ++i)
+      // FIXME: Sort out for x0 \ne nullptr case
+
+      // Get size for block i
+      auto map = L[i]->function_space(0)->dofmap()->index_map();
+      const int map_size0 = map->size_local();
+      const int map_size1 = map->num_ghosts();
+
+      // Assemble and modify for bcs (lifting)
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
+          = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
+                                                                + map_size1);
+      assemble_eigen(b_vec, *L[i], a[i], bcs1[i], {}, scale);
+
+      // Compute offsets for block i
+      int offset0(0), offset1(0);
+      for (auto& _L : L)
+        offset1 += _L->function_space(0)->dofmap()->index_map()->size_local();
+      for (std::size_t j = 0; j < i; ++j)
       {
-        // FIXME: Sort out for x0 \ne nullptr case
-
-        // Get size for block i
-        auto map = L[i]->function_space(0)->dofmap()->index_map();
-        const int map_size0 = map->size_local();
-        const int map_size1 = map->num_ghosts();
-
-        // Assemble and modify for bcs (lifting)
-        Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
-            = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
-                                                                  + map_size1);
-        assemble_eigen(b_vec, *L[i], a[i], bcs1[i], {}, scale);
-
-        // Compute offsets for block i
-        int offset0(0), offset1(0);
-        for (auto& _L : L)
-          offset1 += _L->function_space(0)->dofmap()->index_map()->size_local();
-        for (std::size_t j = 0; j < i; ++j)
-        {
-          offset0
-              += L[j]->function_space(0)->dofmap()->index_map()->size_local();
-          offset1
-              += L[j]->function_space(0)->dofmap()->index_map()->num_ghosts();
-        }
-
-        // Copy data into PETSc b Vec
-        for (int j = 0; j < map_size0; ++j)
-          _b.x[offset0 + j] = b_vec[j];
-        for (int j = 0; j < map_size1; ++j)
-          _b.x[offset1 + j] = b_vec[map_size0 + j];
+        offset0 += L[j]->function_space(0)->dofmap()->index_map()->size_local();
+        offset1 += L[j]->function_space(0)->dofmap()->index_map()->num_ghosts();
       }
+
+      // Copy data into PETSc b Vec
+      for (int j = 0; j < map_size0; ++j)
+        _b.x[offset0 + j] = b_vec[j];
+      for (int j = 0; j < map_size1; ++j)
+        _b.x[offset1 + j] = b_vec[map_size0 + j];
     }
+    _b.restore();
 
     // Update b ghosts
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
@@ -264,61 +260,48 @@ void fem::assemble_petsc(
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     const Vec x0, double scale)
 {
+  la::VecWrapper _b(b);
+  if (x0)
   {
-    la::VecWrapper _b(b);
-    if (x0)
+    // Vec const* x0_sub = nullptr;
+    std::vector<la::VecReadWrapper> _x0;
+    if (a.size() > 1)
     {
-      Vec const* x0_sub = nullptr;
+      // FIXME: Add some checks
+      throw std::runtime_error("Not implemented yet.");
       PetscInt n = 1;
-      if (a.size() > 1)
-      {
-        // FIXME: Add some checks
-        throw std::runtime_error("Not implemented yet.");
-        Vec* _x0_sub = nullptr;
-        VecNestGetSubVecs(x0, &n, &_x0_sub);
-        x0_sub = _x0_sub;
-      }
-      else
-        x0_sub = &x0;
-
-      // Wrap the x0 vector(s)
-      std::vector<
-          Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-          _x0;
-      std::vector<
-          Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-          _x0_ref;
-      std::vector<Vec> x0_local(n, nullptr);
-      std::vector<PetscScalar const*> x0_array(n, nullptr);
-      for (PetscInt j = 0; j < n; ++j)
-      {
-        VecGhostGetLocalForm(x0_sub[j], &(x0_local[j]));
-        PetscInt x0_size = 0;
-        VecGetSize(x0_local[j], &x0_size);
-        VecGetArrayRead(x0_local[j], &x0_array[j]);
-        _x0.push_back(
-            Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(
-                x0_array[j], x0_size));
-        _x0_ref.push_back(_x0.back());
-      }
-
-      // Assemble and modify for bcs
-      assemble_eigen(_b.x, L, a, bcs1, _x0_ref, scale);
-
-      // Restore the x0 vectors
-      for (PetscInt j = 0; j < n; ++j)
-      {
-        VecRestoreArrayRead(x0_local[j], &x0_array[j]);
-        VecGhostRestoreLocalForm(x0_sub[j], &x0_local[j]);
-      }
+      Vec* _x0_sub = nullptr;
+      VecNestGetSubVecs(x0, &n, &_x0_sub);
+      // x0_sub = _x0_sub;
+      for (PetscInt i = 0; i < n; ++i)
+        _x0.push_back(la::VecReadWrapper(_x0_sub[i]));
     }
     else
-      assemble_eigen(_b.x, L, a, bcs1, {}, scale);
+      _x0.push_back(la::VecReadWrapper(x0));
+
+    // Wrap the x0 vector(s)
+    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+        _x0_ref;
+    for (std::size_t j = 0; j < _x0.size(); ++j)
+      _x0_ref.push_back(_x0[j].x);
+
+    // Assemble and modify for bcs
+    assemble_eigen(_b.x, L, a, bcs1, _x0_ref, scale);
+
+    // Restore the x0 vectors
+    for (auto& x : _x0)
+      x.restore();
   }
+  else
+    assemble_eigen(_b.x, L, a, bcs1, {}, scale);
+
+  _b.restore();
 
   // FIXME: shift this to higher level?
   VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
+
+  std::cout << "Finihed assembly " << std::endl;
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_eigen(
@@ -638,5 +621,7 @@ void fem::set_bc_petsc(Vec b,
       bc->set(_b.x, scale);
     }
   }
+
+  _b.restore();
 }
 //-----------------------------------------------------------------------------

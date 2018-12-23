@@ -367,6 +367,7 @@ void DirichletBC::get_boundary_values(Map& boundary_values) const
   la::VecReadWrapper g(_g->vector()->vec());
   for (auto dof : _dofs)
     boundary_values.insert({dof[0], g.x[dof[1]]});
+  g.restore();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace>
@@ -394,15 +395,14 @@ void DirichletBC::set(
   assert(_g->vector());
   assert(_g->vector()->vec());
 
-  // Unwrap PETSc bc vector (_g)
-  la::VecReadWrapper g(_g->vector()->vec());
-
   // FIXME: This one excludes ghosts. Need to straighten out.
+  la::VecReadWrapper g(_g->vector()->vec());
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
       x[dof[0]] = g.x[dof[1]];
   }
+  g.restore();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::set(
@@ -414,15 +414,14 @@ void DirichletBC::set(
   assert(_g->vector());
   assert(_g->vector()->vec());
 
-  // Unwrap PETSc bc vector (_g)
-  la::VecReadWrapper g(_g->vector()->vec());
-
   // FIXME: This one excludes ghosts. Need to straighten out.
+  la::VecReadWrapper g(_g->vector()->vec());
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
       x[dof[0]] = scale * (g.x[dof[1]] - x0[dof[0]]);
   }
+  g.restore();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::mark_dofs(std::vector<bool>& markers) const
@@ -445,6 +444,7 @@ void DirichletBC::dof_values(
   la::VecReadWrapper g(_g->vector()->vec());
   for (auto& dof : _dofs)
     values[dof[0]] = g.x[dof[1]];
+  g.restore();
 }
 //-----------------------------------------------------------------------------
 std::map<PetscInt, PetscInt>
