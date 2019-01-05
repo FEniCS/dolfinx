@@ -63,7 +63,7 @@ unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   command: |
     cd python/test/unit
-    python3 -m pytest -n 3 .
+    python3 -m pytest -n3 .
 
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
@@ -83,7 +83,7 @@ demos-python-mpi: &demos-python-mpi
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest -m mpi test.py --mpioptions="--allow-run-as-root" --num-proc=3
+    python3 -m pytest -n2 -m mpi test.py --mpi-options="--allow-run-as-root" --num-proc=3
 
 version: 2
 
