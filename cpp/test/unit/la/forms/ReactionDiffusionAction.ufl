@@ -20,4 +20,4 @@
 V = FiniteElement("Lagrange", triangle, 1)
 u = Coefficient(V)
 v = TestFunction(V)
-a = dot(grad(u), grad(v))*dx + inner(u, v)*dx
+a = inner(grad(u), grad(v))*dx + inner(u, v)*dx
