@@ -76,14 +76,14 @@ demos-python: &demos-python
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest -n3 -m serial test.py
+    python3 -m pytest -n3 -v -m serial test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest -n2 -m mpi test.py --mpi-options="--allow-run-as-root" --num-proc=3
+    python3 -m pytest -n2 -v -m mpi test.py --mpi-options="--allow-run-as-root" --num-proc=3
 
 version: 2
 
