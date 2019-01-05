@@ -171,10 +171,10 @@ jobs:
 
   build-and-push-docker-images:
     docker:
-      - image: docker:18.05.0-git
+      - image: docker:18.09.1-git
     steps:
       - setup_remote_docker:
-          version: 18.05.0-ce
+          version: 18.09.1-ce
       - checkout
       - run:
           name: Login to quay.io
