@@ -83,7 +83,7 @@ demos-python-mpi: &demos-python-mpi
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest -m mpi test.py --mpiexec="mpirun --allow-run-as-root" --num-proc=3
+    python3 -m pytest -m mpi test.py --mpioptions="--allow-run-as-root" --num-proc=3
 
 version: 2
 
