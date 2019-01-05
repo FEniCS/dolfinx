@@ -437,20 +437,9 @@ enable_testing()
 # Add target "unittests", but do not add to default target
 add_subdirectory(test/unit EXCLUDE_FROM_ALL)
 
-# Add demo but do not add to default target
+# Add demos but do not add to default target
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
-
-# Add target "copy_data_test_demo"
-if (PYTHONINTERP_FOUND)
-  add_custom_target(copy_data_test_demo
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py
-    ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-  # Add target "demos" for building the demos
-  # add_custom_target(demos
-  #   DEPENDS copy_data_test_demo demos_source demo_poisson demo_hyperelasticity)
-endif()
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target

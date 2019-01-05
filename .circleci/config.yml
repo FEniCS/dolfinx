@@ -27,8 +27,11 @@ build-install-cpp: &build-install-cpp
   command: cd build && ninja -j3 install
 
 unit-tests-cpp: &unit-tests-cpp
-  name: Build and run unit tests (C++, serial)
-  command: cd build && ninja -j3 unittests && ctest -R unittests
+  name: Build and run C++ unit tests (serial)
+  command: |
+    cd build
+    ninja -j3 unittests
+    ctest -R unittests
 
 regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
@@ -43,52 +46,6 @@ regression-tests-cpp-mpi: &regression-tests-cpp-mpi
     cd build
     ninja -j3 demos
     ctest --verbose -R demo -R mpi
-
-demos-cpp: &demos-cpp
-  name: Build and run demos (C++)
-  command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    ./demo_poisson
-    cd ../hyperelasticity
-    python3 -m ffc -l dolfin HyperElasticity.ufl
-    cmake -G Ninja .
-    ninja
-    ./demo_hyperelasticity
-
-demos-cpp-mpi: &demos-cpp-mpi
-  name: Build and run demos (C++, MPI)
-  command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    mpirun --allow-run-as-root -n 3 ./demo_poisson
-    cd ../hyperelasticity
-    python3 -m ffc -l dolfin HyperElasticity.ufl
-    cmake -G Ninja .
-    ninja
-    mpirun --allow-run-as-root -n 3 ./demo_hyperelasticity
-
-demos-cpp-complex: &demos-cpp-complex
-  name: Build and run demos (C++)
-  command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin -f 'scalar_type' 'double complex' Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    ./demo_poisson
-
-demos-cpp-complex-mpi: &demos-cpp-complex-mpi
-  name: Build and run demos (C++, MPI)
-  command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin -f 'scalar_type' 'double complex' Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    mpirun --allow-run-as-root -n 3 ./demo_poisson
 
 build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
@@ -152,11 +109,14 @@ jobs:
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
+
       - run: *unit-tests-cpp
       - run: *regression-tests-cpp
       - run: *regression-tests-cpp-mpi
+
       - run: *build-python-interface
       - run: *build-documentation-python
+
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
       - run: *demos-python
@@ -180,9 +140,11 @@ jobs:
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
+
       - run: *unit-tests-cpp
       - run: *regression-tests-cpp
       - run: *regression-tests-cpp-mpi
+
       - run: *build-python-interface
       - run: *build-documentation-python
       - run: *unit-tests-python

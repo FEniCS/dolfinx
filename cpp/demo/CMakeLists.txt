@@ -19,7 +19,7 @@ if (PETSC_SCALAR_COMPLEX)
   # Add here
 endif()
 
-# FIXME: do this programatically
+# FIXME: do this programatically. Can we get a list of all targets?
 if (NOT PETSC_SCALAR_COMPLEX)
   add_custom_target(demos DEPENDS demo_poisson demo_hyperelasticity)
 else()
