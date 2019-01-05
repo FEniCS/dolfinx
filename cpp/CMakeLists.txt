@@ -193,7 +193,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-find_package(PETSc 3.7)
+find_package(PETSc 3.9)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
@@ -221,7 +221,7 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
 # Check for SLEPc
 set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_SLEPC)
-  find_package(SLEPc 3.7)
+  find_package(SLEPc 3.9)
   set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
     URL "http://slepc.upv.es/")

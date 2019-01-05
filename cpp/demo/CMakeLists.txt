@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.9)
 project(dolfin-demos)
 
 # Find DOLFIN config file (not used here, but check that the demo will
@@ -6,8 +6,15 @@ project(dolfin-demos)
 find_package(DOLFIN REQUIRED)
 # include(${DOLFIN_USE_FILE})
 
-# Documented demos
-add_subdirectory(documented/hyperelasticity)
+# Demos that run in real and complex modes
 add_subdirectory(documented/poisson)
 
-# Undocumented demos
+# Demos that run only in complex mode
+if (NOT PETSC_SCALAR_COMPLEX)
+  add_subdirectory(documented/hyperelasticity)
+endif()
+
+# Demos that run only in complex mode
+if (PETSC_SCALAR_COMPLEX)
+  # Add here
+endif()
