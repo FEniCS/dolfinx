@@ -37,10 +37,7 @@ def test_demos(path, name):
 @pytest.mark.mpi
 @pytest.mark.parametrize("path,name", demos)
 def test_demos_mpi(num_proc, mpiexec, mpioptions, path, name):
-    if mpioptions:
-        cmd = [mpiexec, mpioptions, "-np", str(num_proc), sys.executable, name]
-    else:
-        cmd = [mpiexec, "-np", str(num_proc), sys.executable, name]
+    cmd = [mpiexec, mpioptions, "-np", str(num_proc), sys.executable, name]
     print(cmd)
     ret = subprocess.run(cmd,
                          cwd=str(path),
