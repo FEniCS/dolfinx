@@ -15,14 +15,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with DOLFIN. If not, see <http:#www.gnu.org/licenses/>.
 #
-# First added:  2012-08-21
-# Last changed: 2012-08-21
-#
 # Bilinear and linear forms for a simple reaction-diffusion problem
 
 V = FiniteElement("Lagrange", triangle, 1)
 u = TrialFunction(V)
 v = TestFunction(V)
 f = Coefficient(V)
-a = dot(grad(u), grad(v))*dx + u*v*dx
-L = f*v*dx
+a = inner(grad(u), grad(v))*dx + inner(u, v)*dx
+L = inner(f, v)*dx

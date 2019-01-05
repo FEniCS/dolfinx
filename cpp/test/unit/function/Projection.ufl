@@ -29,5 +29,5 @@ v = TestFunction(element)
 u = TrialFunction(element)
 f = Coefficient(element)
 
-a = v*u*dx
-L = v*f*dx
+a = inner(u, v)*dx
+L = inner(f, v)*dx

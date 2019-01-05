@@ -63,7 +63,7 @@ endif()
 %(target_libraries)s
 
 # Test targets
-set(test_parameters -np 3 "./${PROJECT_NAME}")
+set(test_parameters --allow-run-as-root -np 3 "./${PROJECT_NAME}")
 add_test(NAME ${PROJECT_NAME}_mpi COMMAND "mpirun" ${test_parameters})
 add_test(NAME ${PROJECT_NAME}_serial COMMAND ${PROJECT_NAME})
 """

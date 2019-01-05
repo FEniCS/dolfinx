@@ -193,7 +193,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-find_package(PETSc 3.7)
+find_package(PETSc 3.9)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
@@ -221,7 +221,7 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
 # Check for SLEPc
 set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_SLEPC)
-  find_package(SLEPc 3.7)
+  find_package(SLEPc 3.9)
   set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
     URL "http://slepc.upv.es/")
@@ -437,24 +437,9 @@ enable_testing()
 # Add target "unittests", but do not add to default target
 add_subdirectory(test/unit EXCLUDE_FROM_ALL)
 
-# Add demo but do not add to default target
+# Add demos but do not add to default target
 set(CMAKE_MODULE_PATH "${DOLFIN_CMAKE_DIR}/modules")
 add_subdirectory(demo EXCLUDE_FROM_ALL)
-
-# Add target "copy_data_test_demo"
-if (PYTHONINTERP_FOUND)
-  add_custom_target(copy_data_test_demo
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-endif()
-
-# Add target "demos" for building the demos
-if (PYTHONINTERP_FOUND)
-  add_custom_target(demos
-    COMMAND ${MAKE_PROGRAM}
-    DEPENDS copy_data_test_demo demos_source
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/demo")
-endif()
 
 #------------------------------------------------------------------------------
 # Add "make uninstall" target
