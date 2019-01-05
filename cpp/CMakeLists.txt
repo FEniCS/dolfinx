@@ -444,12 +444,12 @@ add_subdirectory(demo EXCLUDE_FROM_ALL)
 # Add target "copy_data_test_demo"
 if (PYTHONINTERP_FOUND)
   add_custom_target(copy_data_test_demo
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py ${CMAKE_CURRENT_BINARY_DIR}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/copy-test-demo-data.py
+    ${CMAKE_CURRENT_BINARY_DIR} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
   # Add target "demos" for building the demos
-  add_custom_target(demos
-    DEPENDS copy_data_test_demo demos_source demo_poisson demo_hyperelasticity)
+  # add_custom_target(demos
+  #   DEPENDS copy_data_test_demo demos_source demo_poisson demo_hyperelasticity)
 endif()
 
 #------------------------------------------------------------------------------

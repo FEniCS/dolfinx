@@ -9,7 +9,7 @@ find_package(DOLFIN REQUIRED)
 # Demos that run in real and complex modes
 add_subdirectory(documented/poisson)
 
-# Demos that run only in complex mode
+# Demos that run only in real mode
 if (NOT PETSC_SCALAR_COMPLEX)
   add_subdirectory(documented/hyperelasticity)
 endif()
@@ -17,4 +17,11 @@ endif()
 # Demos that run only in complex mode
 if (PETSC_SCALAR_COMPLEX)
   # Add here
+endif()
+
+# FIXME: do this programatically
+if (NOT PETSC_SCALAR_COMPLEX)
+  add_custom_target(demos DEPENDS demo_poisson demo_hyperelasticity)
+else()
+  add_custom_target(demos DEPENDS demo_poisson)
 endif()

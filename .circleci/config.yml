@@ -32,11 +32,17 @@ unit-tests-cpp: &unit-tests-cpp
 
 regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
-  command: cd build && ninja -j2 demos && ctest -j2 -R demo -R serial
+  command: |
+    cd build
+    # ninja -j2 demos
+    ctest -j2 -R demo -R serial
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
-  command: cd build && ninja -j2 demos && ctest --verbose -R demo -R mpi
+  command: |
+    cd build
+    # ninja -j2 demos
+    ctest --verbose -R demo -R mpi
 
 demos-cpp: &demos-cpp
   name: Build and run demos (C++)
