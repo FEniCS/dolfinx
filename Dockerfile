@@ -22,11 +22,11 @@
 #
 
 ARG PYBIND11_VERSION=2.2.4
-ARG PETSC_VERSION=3.10.2
+ARG PETSC_VERSION=3.10.3
 ARG SLEPC_VERSION=3.10.1
 ARG PETSC4PY_VERSION=3.10.0
 ARG SLEPC4PY_VERSION=3.10.0
-ARG TINI_VERSION=v0.18.0 
+ARG TINI_VERSION=v0.18.0
 
 ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
@@ -46,7 +46,7 @@ ENV OPENBLAS_NUM_THREADS=1 \
 
 # Install dependencies available via apt-get.
 # First set of packages are required to build and run FEniCS.
-# Second set of packages are recommended and/or required to build documentation or tests. 
+# Second set of packages are recommended and/or required to build documentation or tests.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -88,7 +88,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Install Python packages (via pip)
 # First set of packages are required to build and run FEniCS.
-# Second set of packages are recommended and/or required to build documentation or run tests. 
+# Second set of packages are recommended and/or required to build documentation or run tests.
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi decorator flake8 pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
 
@@ -234,7 +234,7 @@ WORKDIR /root
 FROM dev-env-real as real
 LABEL description="DOLFIN-X in real mode"
 
-ARG MAKEFLAGS 
+ARG MAKEFLAGS
 
 WORKDIR /tmp
 
@@ -303,7 +303,7 @@ ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-brows
 FROM complex as notebook-complex
 LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
 
-ARG TINI_VERSION 
+ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
     pip3 install jupyter
