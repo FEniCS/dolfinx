@@ -34,14 +34,14 @@ regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
   command: |
     cd build
-    # ninja -j2 demos
-    ctest -j2 -R demo -R serial
+    ninja -j3 demos
+    ctest -j3 -R demo -R serial
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
   command: |
     cd build
-    # ninja -j2 demos
+    ninja -j3 demos
     ctest --verbose -R demo -R mpi
 
 demos-cpp: &demos-cpp
