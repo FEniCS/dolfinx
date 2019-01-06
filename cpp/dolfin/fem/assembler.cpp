@@ -385,7 +385,7 @@ void fem::assemble(la::PETScMatrix& A,
   {
     // Extracts sub-matrix by index sets
     std::vector<IS> is_row, is_col;
-    if (block_matrix)
+    if (!use_nest_extract or block_matrix)
     {
       is_row = la::compute_index_sets(maps[0]);
       is_col = la::compute_index_sets(maps[1]);
@@ -398,7 +398,7 @@ void fem::assemble(la::PETScMatrix& A,
         if (a[i][j])
         {
           Mat subA;
-          if (block_matrix)
+          if (!use_nest_extract or block_matrix)
             MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
           else
             MatNestGetSubMat(A.mat(), i, j, &subA);
@@ -454,7 +454,7 @@ void fem::assemble(la::PETScMatrix& A,
             }
           }
 
-          if (block_matrix)
+          if (!use_nest_extract or block_matrix)
             MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
         }
         else
