@@ -371,7 +371,8 @@ void fem::assemble(la::PETScMatrix& A,
 
   MatType mat_type;
   MatGetType(A.mat(), &mat_type);
-  const bool is_matnest = strcmp(mat_type, MATNEST) == 0 ? true : false;
+  const bool is_matnest
+      = (strcmp(mat_type, MATNEST) == 0) and use_nest_extract ? true : false;
 
   // Collect index sets
   std::vector<std::vector<const common::IndexMap*>> maps(2);
@@ -381,11 +382,11 @@ void fem::assemble(la::PETScMatrix& A,
     maps[1].push_back(a[0][i]->function_space(1)->dofmap()->index_map().get());
 
   // Assemble matrix
-  if (is_matnest or block_matrix)
+  if (block_matrix)
   {
     // Extracts sub-matrix by index sets
     std::vector<IS> is_row, is_col;
-    if (!use_nest_extract or block_matrix)
+    if (!is_matnest)
     {
       is_row = la::compute_index_sets(maps[0]);
       is_col = la::compute_index_sets(maps[1]);
@@ -398,11 +399,12 @@ void fem::assemble(la::PETScMatrix& A,
         if (a[i][j])
         {
           Mat subA;
-          if (!use_nest_extract or block_matrix)
+          if (!is_matnest)
             MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
           else
             MatNestGetSubMat(A.mat(), i, j, &subA);
 
+          // FIXME: re-factor to use the below single form assembly
           auto map0 = a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = a[i][j]->function_space(1)->dofmap()->index_map();
           std::int32_t process_dim0
@@ -454,7 +456,7 @@ void fem::assemble(la::PETScMatrix& A,
             }
           }
 
-          if (!use_nest_extract or block_matrix)
+          if (!is_matnest)
             MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
         }
         else
