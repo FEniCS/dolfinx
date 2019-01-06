@@ -263,7 +263,6 @@ void fem::assemble_petsc(
   la::VecWrapper _b(b);
   if (x0)
   {
-    // Vec const* x0_sub = nullptr;
     std::vector<la::VecReadWrapper> _x0;
     if (a.size() > 1)
     {
@@ -272,7 +271,6 @@ void fem::assemble_petsc(
       PetscInt n = 1;
       Vec* _x0_sub = nullptr;
       VecNestGetSubVecs(x0, &n, &_x0_sub);
-      // x0_sub = _x0_sub;
       for (PetscInt i = 0; i < n; ++i)
         _x0.push_back(la::VecReadWrapper(_x0_sub[i]));
     }
@@ -361,7 +359,7 @@ fem::assemble(const std::vector<std::vector<const Form*>> a,
 void fem::assemble(la::PETScMatrix& A,
                    const std::vector<std::vector<const Form*>> a,
                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double diagonal)
+                   double diagonal, bool use_nest_extract)
 {
   // Check if matrix should be nested
   assert(!a.empty());
@@ -383,91 +381,27 @@ void fem::assemble(la::PETScMatrix& A,
     maps[1].push_back(a[0][i]->function_space(1)->dofmap()->index_map().get());
 
   // Assemble matrix
-  // if (is_matnest)
-  // {
-  //   for (std::size_t i = 0; i < _a.size(); ++i)
-  //   {
-  //     for (std::size_t j = 0; j < _a[i].size(); ++j)
-  //     {
-  //       if (_a[i][j])
-  //       {
-  //        la::PETScMatrix Asub = get_sub_matrix(A, i, j);
-  //         this->assemble(Asub, *_a[i][j], bcs);
-  //         if (*_a[i][j]->function_space(0) == *_a[i][j]->function_space(1))
-  //           ident(Asub, *_a[i][j]->function_space(0), _bcs);
-  //       }
-  //       else
-  //       {
-  //         throw std::runtime_error("Null block not supported/tested yet.");
-  //       }
-  //     }
-  //   }
-  // }
-  // else if (block_matrix)
   if (is_matnest or block_matrix)
   {
-    std::vector<IS> is_row = la::compute_index_sets(maps[0]);
-    std::vector<IS> is_col = la::compute_index_sets(maps[1]);
+    // Extracts sub-matrix by index sets
+    std::vector<IS> is_row, is_col;
+    if (block_matrix)
+    {
+      is_row = la::compute_index_sets(maps[0]);
+      is_col = la::compute_index_sets(maps[1]);
+    }
+
     for (std::size_t i = 0; i < a.size(); ++i)
     {
       for (std::size_t j = 0; j < a[i].size(); ++j)
       {
         if (a[i][j])
         {
-          // if (is_matnest)
-          // {
-          //   IS is_rows[2], is_cols[2];
-          //   IS is_rowsl[2], is_colsl[2];
-          //   MatNestGetLocalISs(A.mat(), is_rowsl, is_colsl);
-          //   MatNestGetISs(A.mat(), is_rows, is_cols);
-          //   // MPI_Comm mpi_comm = MPI_COMM_NULL;
-          //   // PetscObjectGetComm((PetscObject)is_cols[1], &mpi_comm);
-          //   // std::cout << "Test size: " << MPI::size(mpi_comm) <<
-          //   std::endl; if (i == 1 and j == 0)
-          //   {
-          //     if (MPI::rank(MPI_COMM_WORLD) == 1)
-          //     {
-          //       std::cout << "DOLFIN l2g" << std::endl;
-          //       auto index_map
-          //           = _a[i][j]->function_space(0)->dofmap()->index_map();
-          //       std::cout << "  Range: " << index_map->local_range()[0] << ",
-          //       "
-          //                 << index_map->local_range()[1] << std::endl;
-          //       auto ghosts = index_map->ghosts();
-          //       std::cout << ghosts << std::endl;
-          //     }
-
-          //     // if (MPI::rank(MPI_COMM_WORLD) == 1)
-          //     // {
-          //     //   ISView(is_rowsl[i], PETSC_VIEWER_STDOUT_SELF);
-          //     //   ISView(is_row[i], PETSC_VIEWER_STDOUT_SELF);
-          //     //   std::cout << "----------------------" << std::endl;
-          //     // }
-          //     // ISView(is_rows[i], PETSC_VIEWER_STDOUT_WORLD);
-
-          //     Mat subA;
-          //     MatNestGetSubMat(A.mat(), i, j, &subA);
-          //     // std::cout << "Mat (0) address: " << &subA << std::endl;
-          //     // la::PETScMatrix Atest(subA);
-          //     // auto orange = Atest.local_range(0);
-          //     // if (MPI::rank(MPI_COMM_WORLD) == 1)
-          //     //   std::cout << "orange: " << orange[0] << ", " << orange[1]
-          //     //             << std::endl;
-
-          //     // ISLocalToGlobalMapping l2g0, l2g1;
-          //     // MatGetLocalToGlobalMapping(subA, &l2g0, &l2g1);
-          //     // if (MPI::rank(MPI_COMM_WORLD) == 1)
-          //     //   ISLocalToGlobalMappingView(l2g0,
-          //     PETSC_VIEWER_STDOUT_SELF);
-          //     // MPI_Comm mpi_comm = MPI_COMM_NULL;
-          //     // PetscObjectGetComm((PetscObject)l2g0, &mpi_comm);
-          //     // std::cout << "Test size: " << MPI::size(mpi_comm) <<
-          //     std::endl;
-          //   }
-          // }
-
           Mat subA;
-          MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
+          if (block_matrix)
+            MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
+          else
+            MatNestGetSubMat(A.mat(), i, j, &subA);
 
           auto map0 = a[i][j]->function_space(0)->dofmap()->index_map();
           auto map1 = a[i][j]->function_space(1)->dofmap()->index_map();
@@ -520,7 +454,8 @@ void fem::assemble(la::PETScMatrix& A,
             }
           }
 
-          MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
+          if (block_matrix)
+            MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
         }
         else
         {

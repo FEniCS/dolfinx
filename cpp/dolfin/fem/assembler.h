@@ -128,7 +128,7 @@ la::PETScMatrix assemble(const std::vector<std::vector<const Form*>> a,
 /// Re-assemble blocked bilinear forms into a matrix
 void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double diagonal = 1.0);
+              double diagonal = 1.0, bool use_nest_extract = true);
 
 // -- Setting bcs ------------------------------------------------------------
 
