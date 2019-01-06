@@ -63,7 +63,7 @@ unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   command: |
     cd python/test/unit
-    python3 -m pytest -n 3 .
+    python3 -m pytest -n3 .
 
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
@@ -76,22 +76,14 @@ demos-python: &demos-python
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 documented/poisson/demo_poisson.py
-    python3 documented/cahn-hilliard/demo_cahn-hilliard.py
-    python3 undocumented/elasticity/demo_elasticity.py
-    python3 undocumented/helmholtz2D/demo_helmholtz_plane_wave.py
-    cd documented/stokes-taylor-hood
-    python3 demo_stokes-taylor-hood.py
+    python3 -m pytest -n3 -v -m serial test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
   command: |
     cd python/demo
-    mpirun --allow-run-as-root -np 3 python3 documented/poisson/demo_poisson.py
-    mpirun --allow-run-as-root -np 3 python3 documented/cahn-hilliard/demo_cahn-hilliard.py
-    mpirun --allow-run-as-root -np 3 python3 undocumented/elasticity/demo_elasticity.py
-    cd documented/stokes-taylor-hood
-    mpirun --allow-run-as-root -np 3 python3 demo_stokes-taylor-hood.py
+    python3 ./generate-demo-files.py
+    python3 -m pytest -n2 -v -m mpi test.py --mpi-options="--allow-run-as-root" --num-proc=3
 
 version: 2
 
