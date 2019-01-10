@@ -22,9 +22,8 @@ from dolfin.fem.form import Form
 
 
 def _create_cpp_form(form, form_compiler_parameters=None):
-    # First check if we got a cpp.Form
+    """Create a C++ Form from a UFL form"""
     if isinstance(form, cpp.fem.Form):
-        # Warn that we don't use the parameters if we get any
         if form_compiler_parameters is not None:
             cpp.warning(
                 "Ignoring form_compiler_parameters when passed a dolfin Form!")
@@ -32,8 +31,10 @@ def _create_cpp_form(form, form_compiler_parameters=None):
     elif isinstance(form, ufl.Form):
         form = Form(form, form_compiler_parameters=form_compiler_parameters)
         return form._cpp_object
+    elif form is None:
+        return None
     else:
-        raise TypeError("Invalid form type %s" % (type(form), ))
+        raise TypeError("Invalid form type: {}".format(type(form)))
 
 
 def assemble_local(form, cell, form_compiler_parameters=None):

@@ -115,6 +115,16 @@ fem::assemble(std::vector<const Form*> L,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               const la::PETScVector* x0, BlockType block_type, double scale)
 {
+  for (auto row : a)
+  {
+    for (auto block : row)
+    {
+      if (!block)
+        throw std::runtime_error(
+            "Null blocks in bilinear form not supported yet.");
+    }
+  }
+
   assert(!L.empty());
 
   la::PETScVector b;
@@ -136,6 +146,16 @@ void fem::assemble(
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const la::PETScVector* x0, double scale)
 {
+  for (auto row : a)
+  {
+    for (auto block : row)
+    {
+      if (!block)
+        throw std::runtime_error(
+            "Null blocks in bilinear form not supported yet.");
+    }
+  }
+
   assert(!L.empty());
   const Vec _x0 = x0 ? x0->vec() : nullptr;
 
@@ -342,6 +362,16 @@ fem::assemble(const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               BlockType block_type, double diagonal)
 {
+  for (auto row : a)
+  {
+    for (auto block : row)
+    {
+      if (!block)
+        throw std::runtime_error(
+            "Null blocks in bilinear form not supported yet.");
+    }
+  }
+
   assert(!a.empty());
   const bool block_matrix = a.size() > 1 or a[0].size() > 1;
   la::PETScMatrix A;
@@ -361,6 +391,8 @@ void fem::assemble(la::PETScMatrix& A,
                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
                    double diagonal, bool use_nest_extract)
 {
+  std::cout << "Testing 1: " << std::endl;
+
   // Check if matrix should be nested
   assert(!a.empty());
   const bool block_matrix = a.size() > 1 or a[0].size() > 1;
