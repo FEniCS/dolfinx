@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Garth N. Wells
+# Copyright (C) 2018-2019 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -306,6 +306,7 @@ def test_assembly_taylor_hood():
     """Assemble Stokes problem with Taylor-Hood elements."""
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31)
+    # mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
     P2 = dolfin.VectorFunctionSpace(mesh, ("Lagrange", 2))
     P1 = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
 
@@ -314,7 +315,7 @@ def test_assembly_taylor_hood():
 
     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
     a01 = - ufl.inner(p, ufl.div(v)) * dx
-    a10 = + ufl.inner(ufl.div(u), q) * dx
+    a10 = ufl.inner(ufl.div(u), q) * dx
     a11 = None
 
     # f = dolfin.Function(P2)
@@ -325,7 +326,8 @@ def test_assembly_taylor_hood():
     A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
                                     dolfin.cpp.fem.BlockType.monolithic)
     A0norm = A0.mat().norm()
-    print("A0 norm:", A0.mat().norm())
+    # print("A0 (mono) norm:", A0.mat().norm())
+    # A0.mat().view()
 
     # Assemble blocks into nested matrix
     A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
@@ -336,11 +338,12 @@ def test_assembly_taylor_hood():
         for col in range(ncols):
             A_sub = A1.mat().getNestSubMatrix(row, col)
             if A_sub:
+                # A_sub.view()
                 norm = A_sub.norm()
                 A1norm += norm * norm
     A1norm = math.sqrt(A1norm)
-#    assert A0norm == pytest.approx(A1norm, 1.0e-12)
-    print("A1 norm:", A1norm)
+    assert A0norm == pytest.approx(A1norm, 1.0e-12)
+    # print("A1 (MatNest) norm:", A1norm)
 
     # Monolithic form
     P2 = dolfin.VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -350,8 +353,13 @@ def test_assembly_taylor_hood():
     (u, p) = dolfin.TrialFunctions(W)
     (v, q) = dolfin.TestFunctions(W)
     # f = dolfin.Function(W.sub(0).collapse())
-    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx - ufl.inner(p, ufl.div(v)) * dx + ufl.inner(ufl.div(u), q) * dx
+    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx - ufl.inner(p,
+                                                             ufl.div(v)) * dx + ufl.inner(ufl.div(u), q) * dx
+    a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
+    a01 = - ufl.inner(p, ufl.div(v)) * dx
+    a10 = ufl.inner(ufl.div(u), q) * dx
+    a = a00 + a01 + a10
 
     A2 = dolfin.fem.assemble_matrix([[a]], [], dolfin.cpp.fem.BlockType.monolithic)
-    print("A2 norm:", A2.mat().norm())
-    #assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
+    # print("A2 (full) norm:", A2.mat().norm())
+    assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)

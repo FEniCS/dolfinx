@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2018 Johan Hake, Jan Blechta and Garth N. Wells
+// Copyright (C) 2013-2019 Johan Hake, Jan Blechta and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -21,11 +21,12 @@ std::vector<IS> dolfin::la::compute_index_sets(
   {
     assert(maps[i]);
     const int size = maps[i]->size_local() + maps[i]->num_ghosts();
+    const int bs = maps[i]->block_size();
     std::vector<PetscInt> index(size);
     std::iota(index.begin(), index.end(), offset);
-    ISCreateBlock(MPI_COMM_SELF, maps[i]->block_size(), index.size(),
-                  index.data(), PETSC_COPY_VALUES, &is[i]);
-    offset += size;
+    ISCreateBlock(MPI_COMM_SELF, bs, index.size(), index.data(),
+                  PETSC_COPY_VALUES, &is[i]);
+    offset += bs*size;
   }
 
   return is;
