@@ -99,27 +99,6 @@ la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
 la::PETScMatrix
 fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
 {
-  // FIXME: handle null blocks
-  // Temp: testing
-  bool null_block = false;
-  for (auto row : a)
-  {
-    for (auto block : row)
-    {
-      if (!block)
-      {
-        null_block = true;
-        break;
-      }
-    }
-  }
-
-  // if (null_block)
-  // {
-  //   throw std::runtime_error("Init of matrix will null blocks not supported "
-  //                            "yet for monolithic case.");
-  // }
-
   // FIXME: this assumes that a00 is not null
   const mesh::Mesh& mesh = *a[0][0]->mesh();
 
@@ -165,17 +144,8 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
     }
   }
 
-  std::cout << "Merge sparsity patterns" << std::endl;
-
   // Create merged sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), p);
-
-  std::cout << "Post sparsity patterns" << std::endl;
-  if (null_block)
-  {
-    throw std::runtime_error("Init of matrix will null blocks not supported "
-                             "yet for monolithic case.");
-  }
 
   // Initialise matrix
   la::PETScMatrix A(mesh.mpi_comm(), pattern);

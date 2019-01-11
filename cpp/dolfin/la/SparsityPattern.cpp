@@ -70,7 +70,19 @@ SparsityPattern::SparsityPattern(
     assert(patterns[row][0]);
     assert(patterns[row][0]->_index_maps[0]);
     std::size_t row_size = patterns[row][0]->_index_maps[0]->size_local();
+    std::cout << "Row index: " << row << std::endl;
+
+    // FIXME: Issue somewhere here when block size > 1
     assert(row_size == patterns[row][0]->_diagonal.size());
+    // if (!patterns[row][0]->_diagonal.empty())
+    // {
+    //   if (row_size != patterns[row][0]->_diagonal.size())
+    //   {
+    //     throw std::runtime_error("Mismtach between SparsityPattern size "
+    //                              "(diagonal) and row range map.");
+    //   }
+    // }
+
     this->_diagonal.resize(this->_diagonal.size() + row_size);
     if (distributed)
     {
