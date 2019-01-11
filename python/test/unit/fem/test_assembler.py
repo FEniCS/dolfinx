@@ -317,9 +317,9 @@ def test_assembly_taylor_hood():
     a10 = + ufl.inner(ufl.div(u), q) * dx
     a11 = None
 
-    f = dolfin.Function(P2)
-    L0 = ufl.inner(f, v) * dx
-    L1 = None
+    # f = dolfin.Function(P2)
+    # L0 = ufl.inner(f, v) * dx
+    # L1 = None
 
     # Assemble blocks into monolithic matrix
     A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
@@ -347,9 +347,8 @@ def test_assembly_taylor_hood():
     W = dolfin.FunctionSpace(mesh, TH)
     (u, p) = dolfin.TrialFunctions(W)
     (v, q) = dolfin.TestFunctions(W)
-    f = dolfin.Function(W.sub(0).collapse())
+    # f = dolfin.Function(W.sub(0).collapse())
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx - ufl.inner(p, ufl.div(v)) * dx + ufl.inner(ufl.div(u), q) * dx
 
     A2 = dolfin.fem.assemble_matrix([[a]], [], dolfin.cpp.fem.BlockType.monolithic)
     assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
-
