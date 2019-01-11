@@ -22,11 +22,14 @@ std::vector<IS> dolfin::la::compute_index_sets(
     assert(maps[i]);
     const int size = maps[i]->size_local() + maps[i]->num_ghosts();
     const int bs = maps[i]->block_size();
-    std::vector<PetscInt> index(size);
+    std::vector<PetscInt> index(bs * size);
     std::iota(index.begin(), index.end(), offset);
-    ISCreateBlock(MPI_COMM_SELF, bs, index.size(), index.data(),
+    ISCreateBlock(MPI_COMM_SELF, 1, index.size(), index.data(),
                   PETSC_COPY_VALUES, &is[i]);
+    // ISCreateBlock(MPI_COMM_SELF, bs, index.size(), index.data(),
+    //               PETSC_COPY_VALUES, &is[i]);
     offset += bs*size;
+    // offset += size;
   }
 
   return is;

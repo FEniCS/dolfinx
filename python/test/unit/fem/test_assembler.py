@@ -306,7 +306,7 @@ def test_assembly_taylor_hood():
     """Assemble Stokes problem with Taylor-Hood elements."""
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31)
-    # mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
+    # mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
     P2 = dolfin.VectorFunctionSpace(mesh, ("Lagrange", 2))
     P1 = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
 
@@ -334,16 +334,15 @@ def test_assembly_taylor_hood():
                 norm = A_sub.norm()
                 A0norm += norm * norm
     A0norm = math.sqrt(A0norm)
-    print("A0 (MatNest) norm:", A0norm)
+    # print("A0 (MatNest) norm:", A0norm)
 
-    if dolfin.MPI.size(mesh.mpi_comm()) == 1:
-        # Assemble blocks into monolithic matrix
-        A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
-                                        dolfin.cpp.fem.BlockType.monolithic)
-        A1norm = A1.mat().norm()
-        assert A1norm == pytest.approx(A0norm, 1.0e-12)
-        # print("A0 (mono) norm:", A0.mat().norm())
-        # A0.mat().view()
+    # Assemble blocks into monolithic matrix
+    A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
+                                    dolfin.cpp.fem.BlockType.monolithic)
+    A1norm = A1.mat().norm()
+    assert A1norm == pytest.approx(A0norm, 1.0e-12)
+    # print("A1 (mono) norm:", A1.mat().norm())
+    # A0.mat().view()
 
     # Monolithic form
     P2 = dolfin.VectorElement("Lagrange", mesh.ufl_cell(), 2)
