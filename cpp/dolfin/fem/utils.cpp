@@ -172,7 +172,7 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
     const int bs0 = map->block_size();
     for (std::size_t k = 0; k < size; ++k)
     {
-      auto index_k = map->local_to_global(k);
+      std::size_t index_k = map->local_to_global(k);
       for (int block = 0; block < bs0; ++block)
       {
         std::size_t index
@@ -181,6 +181,7 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
       }
     }
   }
+
   for (std::size_t i = 0; i < a[0].size(); ++i)
   {
     auto map = a[0][i]->function_space(1)->dofmap()->index_map();
@@ -188,7 +189,7 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
     const int bs1 = map->block_size();
     for (std::size_t k = 0; k < size; ++k)
     {
-      auto index_k = map->local_to_global(k);
+      std::size_t index_k = map->local_to_global(k);
       for (int block = 0; block < bs1; ++block)
       {
         std::size_t index
@@ -349,12 +350,14 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
 //-----------------------------------------------------------------------------
 std::size_t
 dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
-                              const unsigned int field, const unsigned int n)
+                              const unsigned int field,
+                              const unsigned int index)
 {
   // FIXME: handle/check block size > 1
 
   // Get process that owns global index
-  int owner = maps[field]->owner(n);
+  const int bs  = maps[field]->block_size();
+  int owner = maps[field]->owner(index/bs);
 
   // Offset from lower rank processes
   std::size_t offset = 0;
@@ -374,6 +377,6 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
               * maps[i]->block_size();
   }
 
-  return n + offset;
+  return index + offset;
 }
 //-----------------------------------------------------------------------------
