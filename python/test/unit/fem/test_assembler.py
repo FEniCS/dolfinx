@@ -314,7 +314,7 @@ def test_assembly_taylor_hood():
     v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
 
     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
-    a01 = - ufl.inner(p, ufl.div(v)) * dx
+    a01 = -ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
     a11 = None
 
@@ -355,7 +355,7 @@ def test_assembly_taylor_hood():
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx - ufl.inner(p,
                                                              ufl.div(v)) * dx + ufl.inner(ufl.div(u), q) * dx
     a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
-    a01 = - ufl.inner(p, ufl.div(v)) * dx
+    a01 = -ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
     a = a00 + a01 + a10
 
