@@ -332,6 +332,9 @@ def test_assembly_taylor_hood():
     A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
                                     dolfin.cpp.fem.BlockType.nested)
 
+    # A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
+    #                                 dolfin.cpp.fem.BlockType.monolithic)
+
     # b0 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], bcs,
     #                                 dolfin.cpp.fem.BlockType.monolithic)
     # A0norm = A0.mat().norm()

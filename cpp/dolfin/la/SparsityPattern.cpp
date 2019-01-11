@@ -33,13 +33,13 @@ SparsityPattern::SparsityPattern(
 {
   // FIXME: - Add range/bound checks for each block
   //        - Check for compatible block sizes for each block
-  //        - Support null blocks (insist on null block having
-  //        common::IndexMaps)
+  //        - Support null blocks (maybe insist on null block having
+  //          common::IndexMaps?)
 
   const bool distributed = MPI::size(comm) > 1;
 
-  std::size_t row_global_offset = 0;
-  std::size_t row_local_size = 0;
+  // Get row ranges using column 0
+  std::size_t row_global_offset(0), row_local_size(0);
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
     assert(patterns[row][0]);
@@ -49,8 +49,8 @@ SparsityPattern::SparsityPattern(
     row_local_size += (local_range[1] - local_range[0]);
   }
 
-  std::size_t col_process_offset = 0;
-  std::size_t col_local_size = 0;
+  // Get column ranges using row 0
+  std::size_t col_process_offset(0), col_local_size(0);
   std::vector<const common::IndexMap*> cmaps;
   for (std::size_t col = 0; col < patterns[0].size(); ++col)
   {
@@ -62,18 +62,12 @@ SparsityPattern::SparsityPattern(
     col_local_size += (local_range[1] - local_range[0]);
   }
 
-  // if (MPI::rank(MPI_COMM_WORLD) == 0)
-  //   std::cout << "Col offset and locale size: " << col_process_offset << ", "
-  //             << col_local_size << std::endl;
-
   // Iterate over block rows
   std::size_t row_local_offset = 0;
-  // std::size_t col_global_offset = 0;
   for (std::size_t row = 0; row < patterns.size(); ++row)
   {
     // Increase storage for nodes
     assert(patterns[row][0]);
-    // std::cout << "Row: " << row << std::endl;
     assert(patterns[row][0]->_index_maps[0]);
     std::size_t row_size = patterns[row][0]->_index_maps[0]->size_local();
     assert(row_size == patterns[row][0]->_diagonal.size());
@@ -169,10 +163,9 @@ void SparsityPattern::insert_global(
   };
 
   // The 1 is already global and stays the same
-  const auto col_map = [](const PetscInt j_index,
-                          const common::IndexMap& index_map1) -> PetscInt {
-    return j_index;
-  };
+  const auto col_map
+      = [](const PetscInt j_index,
+           const common::IndexMap& index_map1) -> PetscInt { return j_index; };
 
   insert_entries(rows, cols, row_map, col_map);
 }
@@ -182,10 +175,9 @@ void SparsityPattern::insert_local(
     const Eigen::Ref<const EigenArrayXpetscint> cols)
 {
   // The primary_dim is local and stays the same
-  const auto row_map = [](const PetscInt i_index,
-                          const common::IndexMap& index_map0) -> PetscInt {
-    return i_index;
-  };
+  const auto row_map
+      = [](const PetscInt i_index,
+           const common::IndexMap& index_map0) -> PetscInt { return i_index; };
 
   // The 1 must be mapped to global entries
   const auto col_map = [](const PetscInt j_index,
@@ -194,7 +186,7 @@ void SparsityPattern::insert_local(
     const std::div_t div = std::div(j_index, bs);
     const int component = div.rem;
     const int index = div.quot;
-    return bs*index_map1.local_to_global(index) + component;
+    return bs * index_map1.local_to_global(index) + component;
   };
 
   insert_entries(rows, cols, row_map, col_map);
@@ -204,15 +196,13 @@ void SparsityPattern::insert_local_global(
     const Eigen::Ref<const EigenArrayXpetscint> rows,
     const Eigen::Ref<const EigenArrayXpetscint> cols)
 {
-  const auto row_map = [](const PetscInt i_index,
-                          const common::IndexMap& index_map0) -> PetscInt {
-    return i_index;
-  };
+  const auto row_map
+      = [](const PetscInt i_index,
+           const common::IndexMap& index_map0) -> PetscInt { return i_index; };
 
-  const auto col_map = [](const PetscInt j_index,
-                          const common::IndexMap& index_map1) -> PetscInt {
-    return j_index;
-  };
+  const auto col_map
+      = [](const PetscInt j_index,
+           const common::IndexMap& index_map1) -> PetscInt { return j_index; };
 
   insert_entries(rows, cols, row_map, col_map);
 }
@@ -415,8 +405,8 @@ EigenArrayXi32 SparsityPattern::num_nonzeros_off_diagonal() const
     const std::size_t local_size0 = bs0 * _index_maps[0]->size_local();
 
     std::size_t bs1 = _index_maps[1]->block_size();
-    const std::size_t ncols = bs1 * (_index_maps[1]->size_global()
-                              - _index_maps[1]->size_local());
+    const std::size_t ncols
+        = bs1 * (_index_maps[1]->size_global() - _index_maps[1]->size_local());
     for (const auto row : _full_rows)
     {
       if (row < local_size0)

@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <array>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -99,12 +100,38 @@ la::PETScMatrix
 fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
 {
   // FIXME: handle null blocks
+  // Temp: testing
+  bool null_block = false;
+  for (auto row : a)
+  {
+    for (auto block : row)
+    {
+      if (!block)
+      {
+        null_block = true;
+        break;
+      }
+    }
+  }
 
-  // std::cout << "Initialising block matrix" << std::endl;
+  // if (null_block)
+  // {
+  //   throw std::runtime_error("Init of matrix will null blocks not supported "
+  //                            "yet for monolithic case.");
+  // }
 
-  // Block shape
-  // const auto shape = boost::extents[a.size()][a[0].size()];
+  // FIXME: this assumes that a00 is not null
+  const mesh::Mesh& mesh = *a[0][0]->mesh();
 
+  // FIXME: assume no null block in first row or column
+  // Extract and check row/column ranges
+  std::vector<std::shared_ptr<const common::IndexMap>> rmaps, cmaps;
+  for (std::size_t row = 0; row < a.size(); ++row)
+    rmaps.push_back(a[row][0]->function_space(0)->dofmap()->index_map());
+  for (std::size_t col = 0; col < a[0].size(); ++col)
+    cmaps.push_back(a[0][col]->function_space(1)->dofmap()->index_map());
+
+  // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
       a.size());
   std::vector<std::vector<const la::SparsityPattern*>> p(
@@ -113,34 +140,45 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
   {
     for (std::size_t col = 0; col < a[row].size(); ++col)
     {
-      // std::cout << "  Initialising block: " << row << ", " << col <<
-      // std::endl;
-      auto map0 = a[row][col]->function_space(0)->dofmap()->index_map();
-      auto map1 = a[row][col]->function_space(1)->dofmap()->index_map();
+      if (a[row][col])
+      {
+        // Build sparsity pattern for block
+        std::array<const GenericDofMap*, 2> dofmaps
+            = {{a[row][col]->function_space(0)->dofmap().get(),
+                a[row][col]->function_space(1)->dofmap().get()}};
+        auto sp = std::make_unique<la::SparsityPattern>(
+            SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps, true,
+                                          false, false, false, false));
+        patterns[row].push_back(std::move(sp));
+      }
+      else
+      {
+        // FIXME: create sparsity pattern that has just a row/col range
+        const std::array<std::shared_ptr<const common::IndexMap>, 2> maps
+            = {rmaps[row], cmaps[col]};
+        auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), maps);
+        patterns[row].push_back(std::move(sp));
+      }
 
-      // std::cout << "  Push Initialising block: " << std::endl;
-      std::array<std::shared_ptr<const common::IndexMap>, 2> maps
-          = {{map0, map1}};
-
-      // Build sparsity pattern
-      std::array<const GenericDofMap*, 2> dofmaps
-          = {{a[row][col]->function_space(0)->dofmap().get(),
-              a[row][col]->function_space(1)->dofmap().get()}};
-      const mesh::Mesh& mesh = *a[row][col]->mesh();
-      auto sp = std::make_unique<la::SparsityPattern>(
-          SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps, true,
-                                        false, false, false, false));
-      patterns[row].push_back(std::move(sp));
       p[row][col] = patterns[row][col].get();
       assert(p[row][col]);
     }
   }
 
+  std::cout << "Merge sparsity patterns" << std::endl;
+
   // Create merged sparsity pattern
-  la::SparsityPattern pattern(a[0][0]->mesh()->mpi_comm(), p);
+  la::SparsityPattern pattern(mesh.mpi_comm(), p);
+
+  std::cout << "Post sparsity patterns" << std::endl;
+  if (null_block)
+  {
+    throw std::runtime_error("Init of matrix will null blocks not supported "
+                             "yet for monolithic case.");
+  }
 
   // Initialise matrix
-  la::PETScMatrix A(a[0][0]->mesh()->mpi_comm(), pattern);
+  la::PETScMatrix A(mesh.mpi_comm(), pattern);
 
   // Build list of row and column index maps (over each block)
   std::array<std::vector<const common::IndexMap*>, 2> index_maps;
