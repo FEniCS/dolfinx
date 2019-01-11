@@ -362,13 +362,17 @@ fem::assemble(const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               BlockType block_type, double diagonal)
 {
+  // Temp: testing
+  bool null_block = false;
   for (auto row : a)
   {
     for (auto block : row)
     {
       if (!block)
-        throw std::runtime_error(
-            "Null blocks in bilinear form not supported yet.");
+      {
+        null_block = true;
+        break;
+      }
     }
   }
 
@@ -378,7 +382,14 @@ fem::assemble(const std::vector<std::vector<const Form*>> a,
   if (block_type == BlockType::nested)
     A = fem::init_nest_matrix(a);
   else if (block_matrix and block_type == BlockType::monolithic)
+  {
+    if (null_block)
+    {
+      throw std::runtime_error("Init of matrix will null blocks not supported "
+                               "yet for monolithic case.");
+    }
     A = fem::init_monolithic_matrix(a);
+  }
   else
     A = fem::init_matrix(*a[0][0]);
 
@@ -391,8 +402,6 @@ void fem::assemble(la::PETScMatrix& A,
                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
                    double diagonal, bool use_nest_extract)
 {
-  std::cout << "Testing 1: " << std::endl;
-
   // Check if matrix should be nested
   assert(!a.empty());
   const bool block_matrix = a.size() > 1 or a[0].size() > 1;
@@ -462,6 +471,7 @@ void fem::assemble(la::PETScMatrix& A,
 
           assemble_matrix(subA, *a[i][j], dof_marker0, dof_marker1);
 
+          // Set diagonal for boundary conditions
           if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
           {
             la::PETScMatrix mat(subA);
@@ -495,7 +505,7 @@ void fem::assemble(la::PETScMatrix& A,
         {
           // FIXME: Figure out how to check that matrix block is null
           // Null block, do nothing
-          throw std::runtime_error("Null block not supported/tested yet.");
+          // throw std::runtime_error("Null block not supported/tested yet.");
         }
       }
     }

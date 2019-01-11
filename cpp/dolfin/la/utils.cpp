@@ -20,9 +20,6 @@ std::vector<IS> dolfin::la::compute_index_sets(
   for (std::size_t i = 0; i < maps.size(); ++i)
   {
     assert(maps[i]);
-    // if (MPI::rank(MPI_COMM_WORLD) == 1)
-    //   std::cout << "CCC: " << i << ", " << maps[i]->size_local() << ", "
-    //             << maps[i]->num_ghosts() << std::endl;
     const int size = maps[i]->size_local() + maps[i]->num_ghosts();
     std::vector<PetscInt> index(size);
     std::iota(index.begin(), index.end(), offset);

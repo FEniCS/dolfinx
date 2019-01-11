@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2018 Johan Hake, Jan Blechta and Garth N. Wells
+// Copyright (C) 2013-2019 Johan Hake, Jan Blechta and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -27,7 +27,17 @@ using namespace dolfin;
 la::PETScMatrix
 fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
 {
-  // FIXME: check that a is square
+  // Check that array of forms is not empty and is square
+  if (a.empty())
+    throw std::runtime_error("Cannot created nested matrix without forms.");
+  for (const auto& a_row : a)
+  {
+    if (a_row.size() != a[0].size())
+    {
+      throw std::runtime_error(
+          "Array for forms must be rectangular to initialised nested matrix.");
+    }
+  }
 
   // Block shape
   const auto shape = boost::extents[a.size()][a[0].size()];
@@ -42,9 +52,6 @@ fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
       if (a[i][j])
       {
         mats[i][j] = std::make_shared<la::PETScMatrix>(init_matrix(*a[i][j]));
-        // std::cout << "  init mat" << std::endl;
-        // init(*mats[i][j], *a[i][j]);
-        // std::cout << "  post init mat" << std::endl;
         petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
@@ -59,6 +66,7 @@ fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
   MatNestSetSubMats(_A, petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
                     NULL, petsc_mats.data());
   MatSetUp(_A);
+
   return la::PETScMatrix(_A);
 }
 //-----------------------------------------------------------------------------
@@ -71,7 +79,8 @@ la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
   {
     if (L[i])
     {
-      const common::IndexMap& index_map = *L[i]->function_space(0)->dofmap()->index_map();
+      const common::IndexMap& index_map
+          = *L[i]->function_space(0)->dofmap()->index_map();
       vecs[i] = std::make_shared<la::PETScVector>(index_map);
       petsc_vecs[i] = vecs[i]->vec();
     }
