@@ -45,8 +45,9 @@ SparsityPattern::SparsityPattern(
     assert(patterns[row][0]);
     assert(patterns[row][0]->_index_maps[0]);
     auto local_range = patterns[row][0]->_index_maps[0]->local_range();
-    row_global_offset += local_range[0];
-    row_local_size += (local_range[1] - local_range[0]);
+    const int bs0 = patterns[row][0]->_index_maps[0]->block_size();
+    row_global_offset += bs0 * local_range[0];
+    row_local_size += bs0 * (local_range[1] - local_range[0]);
   }
 
   // Get column ranges using row 0
@@ -58,8 +59,9 @@ SparsityPattern::SparsityPattern(
     assert(patterns[0][col]->_index_maps[1]);
     cmaps.push_back(patterns[0][col]->_index_maps[1].get());
     auto local_range = patterns[0][col]->_index_maps[1]->local_range();
-    col_process_offset += local_range[0];
-    col_local_size += (local_range[1] - local_range[0]);
+    const int bs1 = patterns[0][col]->_index_maps[1]->block_size();
+    col_process_offset += bs1 * local_range[0];
+    col_local_size += bs1 * (local_range[1] - local_range[0]);
   }
 
   // Iterate over block rows
@@ -70,10 +72,10 @@ SparsityPattern::SparsityPattern(
     assert(patterns[row][0]);
     assert(patterns[row][0]->_index_maps[0]);
     std::size_t row_size = patterns[row][0]->_index_maps[0]->size_local();
-    std::cout << "Row index: " << row << std::endl;
+    const int bs0 = patterns[row][0]->_index_maps[0]->block_size();
 
     // FIXME: Issue somewhere here when block size > 1
-    assert(row_size == patterns[row][0]->_diagonal.size());
+    assert(bs0 * row_size == patterns[row][0]->_diagonal.size());
     // if (!patterns[row][0]->_diagonal.empty())
     // {
     //   if (row_size != patterns[row][0]->_diagonal.size())
@@ -83,11 +85,11 @@ SparsityPattern::SparsityPattern(
     //   }
     // }
 
-    this->_diagonal.resize(this->_diagonal.size() + row_size);
+    this->_diagonal.resize(this->_diagonal.size() + bs0 * row_size);
     if (distributed)
     {
-      assert(row_size == patterns[row][0]->_off_diagonal.size());
-      this->_off_diagonal.resize(this->_off_diagonal.size() + row_size);
+      assert(bs0 * row_size == patterns[row][0]->_off_diagonal.size());
+      this->_off_diagonal.resize(this->_off_diagonal.size() + bs0 * row_size);
     }
 
     // Iterate over block columns of current block row
@@ -142,11 +144,11 @@ SparsityPattern::SparsityPattern(
       }
 
       // Increment global column offset
-      col_global_offset += p->_index_maps[1]->size_local();
+      col_global_offset += p->_index_maps[1]->size_local()*p->_index_maps[1]->block_size();
     }
 
     // Increment local row offset
-    row_local_offset += row_size;
+    row_local_offset += bs0*row_size;
   }
 
   // FIXME: Need to add unowned entries?

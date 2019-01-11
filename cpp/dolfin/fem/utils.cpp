@@ -169,22 +169,32 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
   {
     auto map = a[i][0]->function_space(0)->dofmap()->index_map();
     std::size_t size = map->size_local() + map->num_ghosts();
+    const int bs0 = map->block_size();
     for (std::size_t k = 0; k < size; ++k)
     {
       auto index_k = map->local_to_global(k);
-      std::size_t index = get_global_index(index_maps[0], i, index_k);
-      _maps[0].push_back(index);
+      for (int block = 0; block < bs0; ++block)
+      {
+        std::size_t index
+            = get_global_index(index_maps[0], i, index_k * bs0 + block);
+        _maps[0].push_back(index);
+      }
     }
   }
   for (std::size_t i = 0; i < a[0].size(); ++i)
   {
     auto map = a[0][i]->function_space(1)->dofmap()->index_map();
     std::size_t size = map->size_local() + map->num_ghosts();
+    const int bs1 = map->block_size();
     for (std::size_t k = 0; k < size; ++k)
     {
       auto index_k = map->local_to_global(k);
-      std::size_t index = get_global_index(index_maps[1], i, index_k);
-      _maps[1].push_back(index);
+      for (int block = 0; block < bs1; ++block)
+      {
+        std::size_t index
+            = get_global_index(index_maps[1], i, index_k * bs1 + block);
+        _maps[1].push_back(index);
+      }
     }
   }
 
@@ -341,6 +351,8 @@ std::size_t
 dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
                               const unsigned int field, const unsigned int n)
 {
+  // FIXME: handle/check block size > 1
+
   // Get process that owns global index
   int owner = maps[field]->owner(n);
 
@@ -351,13 +363,16 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
       if (j != field)
-        offset += maps[j]->_all_ranges[owner];
+        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size();
     }
   }
 
   // Local (process) offset
   for (unsigned int i = 0; i < field; ++i)
-    offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner]);
+  {
+    offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner])
+              * maps[i]->block_size();
+  }
 
   return n + offset;
 }

@@ -517,7 +517,7 @@ DofMapBuilder::extract_ufc_sub_dofmap_new(
 std::size_t DofMapBuilder::compute_blocksize(const ufc_dofmap& ufc_dofmap,
                                              std::size_t tdim)
 {
-  return 1;
+  // return 1;
   bool has_block_structure = false;
   if (ufc_dofmap.num_sub_dofmaps > 1)
   {
