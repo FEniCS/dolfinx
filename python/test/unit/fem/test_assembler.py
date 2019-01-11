@@ -322,28 +322,28 @@ def test_assembly_taylor_hood():
     # L0 = ufl.inner(f, v) * dx
     # L1 = None
 
-    # Assemble blocks into monolithic matrix
-    A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
-                                    dolfin.cpp.fem.BlockType.monolithic)
-    A0norm = A0.mat().norm()
-    # print("A0 (mono) norm:", A0.mat().norm())
-    # A0.mat().view()
-
     # Assemble blocks into nested matrix
-    A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
+    A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
                                     dolfin.cpp.fem.BlockType.nested)
-    A1norm = 0.0
-    nrows, ncols = A1.mat().getNestSize()
+    A0norm = 0.0
+    nrows, ncols = A0.mat().getNestSize()
     for row in range(nrows):
         for col in range(ncols):
-            A_sub = A1.mat().getNestSubMatrix(row, col)
+            A_sub = A0.mat().getNestSubMatrix(row, col)
             if A_sub:
-                # A_sub.view()
                 norm = A_sub.norm()
-                A1norm += norm * norm
-    A1norm = math.sqrt(A1norm)
-    assert A0norm == pytest.approx(A1norm, 1.0e-12)
-    # print("A1 (MatNest) norm:", A1norm)
+                A0norm += norm * norm
+    A0norm = math.sqrt(A0norm)
+    print("A0 (MatNest) norm:", A0norm)
+
+    if dolfin.MPI.size(mesh.mpi_comm()) == 1:
+        # Assemble blocks into monolithic matrix
+        A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
+                                        dolfin.cpp.fem.BlockType.monolithic)
+        A1norm = A1.mat().norm()
+        assert A1norm == pytest.approx(A0norm, 1.0e-12)
+        # print("A0 (mono) norm:", A0.mat().norm())
+        # A0.mat().view()
 
     # Monolithic form
     P2 = dolfin.VectorElement("Lagrange", mesh.ufl_cell(), 2)
