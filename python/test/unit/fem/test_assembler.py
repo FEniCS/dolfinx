@@ -302,11 +302,12 @@ def test_assembly_solve_block():
     assert x3norm == pytest.approx(x0norm, 1.0e-10)
 
 
-def test_assembly_taylor_hood():
+@pytest.mark.parametrize("mesh", [
+    dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31),
+    dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)])
+def test_assembly_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements."""
 
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31)
-    # mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
     P2 = dolfin.VectorFunctionSpace(mesh, ("Lagrange", 2))
     P1 = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
 
