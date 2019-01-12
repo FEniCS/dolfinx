@@ -130,6 +130,11 @@ void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double diagonal = 1.0, bool use_nest_extract = true);
 
+/// Re-assemble bilinear forms into a matrix
+void assemble(la::PETScMatrix& A, const Form& a,
+              std::vector<std::shared_ptr<const DirichletBC>> bcs,
+              double diagonal = 1.0);
+
 // -- Setting bcs ------------------------------------------------------------
 
 // FIXME: Move these function elsewhere?
