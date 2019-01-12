@@ -311,6 +311,20 @@ def test_assembly_taylor_hood(mesh):
     P2 = dolfin.VectorFunctionSpace(mesh, ("Lagrange", 2))
     P1 = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
 
+    # Define boundary (x = 0)
+    def boundary0(x):
+        """Define boundary x = 0"""
+        return x[:, 0] < 10 * numpy.finfo(float).eps
+
+    def boundary1(x):
+        """Define boundary x = 1"""
+        return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
+
+    u0 = dolfin.Function(P2)
+    u0.vector().set(0.0)
+    bc0 = dolfin.DirichletBC(P2, u0, boundary0)
+    bc1 = dolfin.DirichletBC(P2, u0, boundary1)
+
     u, p = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
     v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
 
@@ -324,7 +338,7 @@ def test_assembly_taylor_hood(mesh):
     # L1 = None
 
     # Assemble blocks into nested matrix
-    A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
+    A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
     A0norm = 0.0
     nrows, ncols = A0.mat().getNestSize()
@@ -338,7 +352,7 @@ def test_assembly_taylor_hood(mesh):
     # print("A0 (MatNest) norm:", A0norm)
 
     # Assemble blocks into monolithic matrix
-    A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [],
+    A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.monolithic)
     A1norm = A1.mat().norm()
     assert A1norm == pytest.approx(A0norm, 1.0e-12)
@@ -360,6 +374,9 @@ def test_assembly_taylor_hood(mesh):
     a10 = ufl.inner(ufl.div(u), q) * dx
     a = a00 + a01 + a10
 
-    A2 = dolfin.fem.assemble_matrix([[a]], [], dolfin.cpp.fem.BlockType.monolithic)
+    bc0 = dolfin.DirichletBC(W.sub(0), u0, boundary0)
+    bc1 = dolfin.DirichletBC(W.sub(0), u0, boundary1)
+
+    A2 = dolfin.fem.assemble_matrix([[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     # print("A2 (full) norm:", A2.mat().norm())
     assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
