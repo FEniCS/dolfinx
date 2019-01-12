@@ -80,16 +80,29 @@ la::PETScMatrix _assemble_matrix(const Form& a)
 }
 //-----------------------------------------------------------------------------
 void set_diagonal_local(
+    Mat A,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    PetscScalar diag)
+{
+  assert(A);
+  for (Eigen::Index i = 0; i < rows.size(); ++i)
+  {
+    const PetscInt row = rows[i];
+    PetscErrorCode ierr
+        = MatSetValuesLocal(A, 1, &row, 1, &row, &diag, ADD_VALUES);
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+  }
+}
+//-----------------------------------------------------------------------------
+void set_diagonal_local(
     la::PETScMatrix& A,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
     PetscScalar diag)
 {
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
-  {
-    const PetscInt row = rows[i];
-    A.add_local(&diag, 1, &row, 1, &row);
-  }
+  set_diagonal_local(A.mat(), rows, diag);
 }
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -393,66 +406,62 @@ void fem::assemble(la::PETScMatrix& A,
       = (strcmp(mat_type, MATNEST) == 0) and use_nest_extract ? true : false;
 
   // Assemble matrix
-  if (block_matrix)
+  std::vector<IS> is_row, is_col;
+  if (block_matrix and !is_matnest)
   {
-    std::vector<IS> is_row, is_col;
-    if (!is_matnest)
-    {
-      // Prepare data structures for extracting sub-matrices by index
-      // sets
-      std::vector<std::vector<const common::IndexMap*>> maps(2);
-      for (std::size_t i = 0; i < a.size(); ++i)
-        maps[0].push_back(
-            a[i][0]->function_space(0)->dofmap()->index_map().get());
-      for (std::size_t i = 0; i < a[0].size(); ++i)
-        maps[1].push_back(
-            a[0][i]->function_space(1)->dofmap()->index_map().get());
-      is_row = la::compute_index_sets(maps[0]);
-      is_col = la::compute_index_sets(maps[1]);
-    }
-
-    // Loop over each form and assembly
+    // Prepare data structures for extracting sub-matrices by index
+    // sets
+    std::vector<std::vector<const common::IndexMap*>> maps(2);
     for (std::size_t i = 0; i < a.size(); ++i)
     {
-      for (std::size_t j = 0; j < a[i].size(); ++j)
+      maps[0].push_back(
+          a[i][0]->function_space(0)->dofmap()->index_map().get());
+    }
+    for (std::size_t i = 0; i < a[0].size(); ++i)
+    {
+      maps[1].push_back(
+          a[0][i]->function_space(1)->dofmap()->index_map().get());
+    }
+    is_row = la::compute_index_sets(maps[0]);
+    is_col = la::compute_index_sets(maps[1]);
+  }
+
+  // Loop over each form and assemble
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+    {
+      if (a[i][j])
       {
-        if (a[i][j])
-        {
-          Mat subA;
-          if (!is_matnest)
-            MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
-          else
-            MatNestGetSubMat(A.mat(), i, j, &subA);
-          la::PETScMatrix _A(subA);
-          assemble(_A, *a[i][j], bcs, diagonal);
-          if (!is_matnest)
-            MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
-        }
+        Mat subA;
+        if (block_matrix and !is_matnest)
+          MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
+        else if (is_matnest)
+          MatNestGetSubMat(A.mat(), i, j, &subA);
         else
-        {
-          // Null block, do nothing
-        }
+          subA = A.mat();
+
+        assemble(subA, *a[i][j], bcs, diagonal);
+        if (!is_matnest)
+          MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
+      }
+      else
+      {
+        // Null block, do nothing
       }
     }
+  }
 
-    // Clean up index sets
-    for (std::size_t i = 0; i < is_row.size(); ++i)
-      ISDestroy(&is_row[i]);
-    for (std::size_t i = 0; i < is_col.size(); ++i)
-      ISDestroy(&is_col[i]);
-  }
-  else
-  {
-    // FIXME: merge this case into the above loop over forms?
-    // Assemble single form
-    assert(a[0][0]);
-    assemble(A, *a[0][0], bcs, diagonal);
-  }
+  // Clean up index sets
+  for (std::size_t i = 0; i < is_row.size(); ++i)
+    ISDestroy(&is_row[i]);
+  for (std::size_t i = 0; i < is_col.size(); ++i)
+    ISDestroy(&is_col[i]);
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(la::PETScMatrix& A, const Form& a,
+void fem::assemble(Mat A, const Form& a,
                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
                    double diagonal)
 {
@@ -481,7 +490,7 @@ void fem::assemble(la::PETScMatrix& A, const Form& a,
   }
 
   // Assemble
-  assemble_matrix(A.mat(), a, dof_marker0, dof_marker1);
+  assemble_matrix(A, a, dof_marker0, dof_marker1);
 
   // Set diagonal for boundary conditions
   if (*a.function_space(0) == *a.function_space(1))
