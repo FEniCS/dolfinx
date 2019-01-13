@@ -31,17 +31,16 @@ namespace geometry
 class BoundingBoxTree
 {
 public:
-  // FIXME: Remove this constructor
   /// Constructor
   BoundingBoxTree(std::size_t gdim);
 
-  /// Constructor
-  BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim);
-
-  /// Constructor
-  BoundingBoxTree(const std::vector<Point>& points, std::size_t gdim);
-
   ~BoundingBoxTree() = default;
+
+  /// Build bounding box tree for mesh entities of given dimension
+  void build(const mesh::Mesh& mesh, std::size_t tdim);
+
+  /// Build bounding box tree for point cloud
+  void build(const std::vector<Point>& points);
 
   /// Compute all collisions between bounding boxes and _Point_
   std::vector<unsigned int> compute_collisions(const Point& point) const;
@@ -111,8 +110,8 @@ private:
     unsigned int child_1;
   };
 
-  // // Clear existing data if any
-  // void clear();
+  // Clear existing data if any
+  void clear();
 
   //--- Recursive build functions ---
 
