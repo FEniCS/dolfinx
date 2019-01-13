@@ -22,19 +22,26 @@
 using namespace dolfin;
 using namespace dolfin::geometry;
 
-//-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(std::size_t gdim) : _tdim(0), _gdim(gdim)
+namespace
 {
-  // Do nothing
+// Check whether bounding box is a leaf node
+bool is_leaf(const BoundingBoxTree::BBox& bbox, unsigned int node)
+{
+  // Leaf nodes are marked by setting child_0 equal to the node itself
+  return bbox[0] == node;
 }
-//-----------------------------------------------------------------------------
-// BoundingBoxTree::BoundingBoxTree(
-//     const std::vector<double>& leaf_bboxes,
-//     const std::vector<unsigned int>::iterator& begin,
-//     const std::vector<unsigned int>::iterator& end, std::size_t gdim)
-// {
 
-// }
+} // namespace
+
+//-----------------------------------------------------------------------------
+BoundingBoxTree::BoundingBoxTree(
+    const std::vector<double>& leaf_bboxes,
+    const std::vector<unsigned int>::iterator& begin,
+    const std::vector<unsigned int>::iterator& end, std::size_t gdim)
+    : _tdim(0), _gdim(gdim)
+{
+  _build_from_leaf(leaf_bboxes, begin, end);
+}
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
     : _tdim(tdim), _gdim(mesh.topology().dim())
@@ -74,6 +81,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
            "Computed bounding box tree with %d nodes for %d entities.",
            num_bboxes(), num_leaves);
 
+  // Build tree for each process
   const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
   if (mpi_size > 1)
   {
@@ -84,11 +92,8 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
     MPI::all_gather(mesh.mpi_comm(), send_bbox, recv_bbox);
     std::vector<unsigned int> global_leaves(mpi_size);
     std::iota(global_leaves.begin(), global_leaves.end(), 0);
-
-    _global_tree.reset(new BoundingBoxTree(_gdim));
-    _global_tree->_build_from_leaf(recv_bbox, global_leaves.begin(),
-                                   global_leaves.end());
-
+    _global_tree.reset(new BoundingBoxTree(recv_bbox, global_leaves.begin(),
+                                           global_leaves.end(), _gdim));
     log::info("Computed global bounding box tree with %d boxes.",
               _global_tree->num_bboxes());
   }
@@ -101,8 +106,7 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points,
   // Create leaf partition (to be sorted)
   const unsigned int num_leaves = points.size();
   std::vector<unsigned int> leaf_partition(num_leaves);
-  for (unsigned int i = 0; i < num_leaves; ++i)
-    leaf_partition[i] = i;
+  std::iota(leaf_partition.begin(), leaf_partition.end(), 0);
 
   // Recursively build the bounding box tree from the leaves
   _build_from_point(points, leaf_partition.begin(), leaf_partition.end());
@@ -116,7 +120,7 @@ BoundingBoxTree::compute_collisions(const Point& point) const
 {
   // Call recursive find function
   std::vector<unsigned int> entities;
-  _compute_collisions(*this, point, num_bboxes() - 1, entities, NULL);
+  _compute_collisions_point(*this, point, num_bboxes() - 1, entities, NULL);
 
   return entities;
 }
@@ -133,8 +137,8 @@ BoundingBoxTree::compute_collisions(const BoundingBoxTree& tree) const
   std::vector<unsigned int> entities_B;
 
   // Call recursive find function
-  _compute_collisions(A, B, A.num_bboxes() - 1, B.num_bboxes() - 1, entities_A,
-                      entities_B, 0, 0);
+  _compute_collisions_tree(A, B, A.num_bboxes() - 1, B.num_bboxes() - 1,
+                           entities_A, entities_B, 0, 0);
 
   return std::make_pair(entities_A, entities_B);
 }
@@ -153,7 +157,7 @@ BoundingBoxTree::compute_entity_collisions(const Point& point,
 
   // Call recursive find function to compute bounding box candidates
   std::vector<unsigned int> entities;
-  _compute_collisions(*this, point, num_bboxes() - 1, entities, &mesh);
+  _compute_collisions_point(*this, point, num_bboxes() - 1, entities, &mesh);
 
   return entities;
 }
@@ -185,8 +189,8 @@ BoundingBoxTree::compute_entity_collisions(const BoundingBoxTree& tree,
   std::vector<unsigned int> entities_B;
 
   // Call recursive find function
-  _compute_collisions(A, B, A.num_bboxes() - 1, B.num_bboxes() - 1, entities_A,
-                      entities_B, &mesh_A, &mesh_B);
+  _compute_collisions_tree(A, B, A.num_bboxes() - 1, B.num_bboxes() - 1,
+                           entities_A, entities_B, &mesh_A, &mesh_B);
 
   return std::make_pair(entities_A, entities_B);
 }
@@ -295,8 +299,8 @@ unsigned int BoundingBoxTree::_build_from_leaf(
     const double* b = leaf_bboxes.data() + 2 * _gdim * entity_index;
 
     // Store bounding box data
-    bbox.child_0 = num_bboxes(); // child_0 == node denotes a leaf
-    bbox.child_1 = entity_index; // index of entity contained in leaf
+    bbox[0] = num_bboxes(); // child_0 == node denotes a leaf
+    bbox[1] = entity_index; // index of entity contained in leaf
     return add_bbox(bbox, b);
   }
 
@@ -310,8 +314,8 @@ unsigned int BoundingBoxTree::_build_from_leaf(
   sort_bboxes(axis, leaf_bboxes, begin, middle, end, _gdim);
 
   // Split bounding boxes into two groups and call recursively
-  bbox.child_0 = _build_from_leaf(leaf_bboxes, begin, middle);
-  bbox.child_1 = _build_from_leaf(leaf_bboxes, middle, end);
+  bbox[0] = _build_from_leaf(leaf_bboxes, begin, middle);
+  bbox[1] = _build_from_leaf(leaf_bboxes, middle, end);
 
   // Store bounding box data. Note that root box will be added last.
   return add_bbox(bbox, b);
@@ -332,8 +336,8 @@ unsigned int BoundingBoxTree::_build_from_point(
   {
     // Store bounding box data
     const unsigned int point_index = *begin;
-    bbox.child_0 = num_bboxes(); // child_0 == node denotes a leaf
-    bbox.child_1 = point_index;  // index of entity contained in leaf
+    bbox[0] = num_bboxes(); // child_0 == node denotes a leaf
+    bbox[1] = point_index;  // index of entity contained in leaf
     return add_point(bbox, points[point_index]);
   }
 
@@ -347,17 +351,16 @@ unsigned int BoundingBoxTree::_build_from_point(
   sort_points(axis, points, begin, middle, end);
 
   // Split bounding boxes into two groups and call recursively
-  bbox.child_0 = _build_from_point(points, begin, middle);
-  bbox.child_1 = _build_from_point(points, middle, end);
+  bbox[0] = _build_from_point(points, begin, middle);
+  bbox[1] = _build_from_point(points, middle, end);
 
   // Store bounding box data. Note that root box will be added last.
   return add_bbox(bbox, b);
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::_compute_collisions(const BoundingBoxTree& tree,
-                                          const Point& point, unsigned int node,
-                                          std::vector<unsigned int>& entities,
-                                          const mesh::Mesh* mesh)
+void BoundingBoxTree::_compute_collisions_point(
+    const BoundingBoxTree& tree, const Point& point, unsigned int node,
+    std::vector<unsigned int>& entities, const mesh::Mesh* mesh)
 {
   // Get bounding box for current node
   const BBox& bbox = tree._bboxes[node];
@@ -367,10 +370,10 @@ void BoundingBoxTree::_compute_collisions(const BoundingBoxTree& tree,
     return;
 
   // If box is a leaf (which we know contains the point), then add it
-  else if (tree.is_leaf(bbox, node))
+  else if (is_leaf(bbox, node))
   {
     // child_1 denotes entity for leaves
-    const unsigned int entity_index = bbox.child_1;
+    const unsigned int entity_index = bbox[1];
 
     // If we have a mesh, check that the candidate is really a collision
     if (mesh)
@@ -389,12 +392,12 @@ void BoundingBoxTree::_compute_collisions(const BoundingBoxTree& tree,
   // Check both children
   else
   {
-    _compute_collisions(tree, point, bbox.child_0, entities, mesh);
-    _compute_collisions(tree, point, bbox.child_1, entities, mesh);
+    _compute_collisions_point(tree, point, bbox[0], entities, mesh);
+    _compute_collisions_point(tree, point, bbox[1], entities, mesh);
   }
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::_compute_collisions(
+void BoundingBoxTree::_compute_collisions_tree(
     const BoundingBoxTree& A, const BoundingBoxTree& B, unsigned int node_A,
     unsigned int node_B, std::vector<unsigned int>& entities_A,
     std::vector<unsigned int>& entities_B, const mesh::Mesh* mesh_A,
@@ -409,15 +412,15 @@ void BoundingBoxTree::_compute_collisions(
     return;
 
   // Check whether we've reached a leaf in A or B
-  const bool is_leaf_A = A.is_leaf(bbox_A, node_A);
-  const bool is_leaf_B = B.is_leaf(bbox_B, node_B);
+  const bool is_leaf_A = is_leaf(bbox_A, node_A);
+  const bool is_leaf_B = is_leaf(bbox_B, node_B);
 
   // If both boxes are leaves (which we know collide), then add them
   if (is_leaf_A && is_leaf_B)
   {
     // child_1 denotes entity for leaves
-    const unsigned int entity_index_A = bbox_A.child_1;
-    const unsigned int entity_index_B = bbox_B.child_1;
+    const unsigned int entity_index_A = bbox_A[1];
+    const unsigned int entity_index_B = bbox_B[1];
 
     // If we have a mesh, check that the candidate is really a collision
     if (mesh_A)
@@ -443,19 +446,19 @@ void BoundingBoxTree::_compute_collisions(
   // If we reached the leaf in A, then descend B
   else if (is_leaf_A)
   {
-    _compute_collisions(A, B, node_A, bbox_B.child_0, entities_A, entities_B,
-                        mesh_A, mesh_B);
-    _compute_collisions(A, B, node_A, bbox_B.child_1, entities_A, entities_B,
-                        mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[0], entities_A, entities_B,
+                             mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[1], entities_A, entities_B,
+                             mesh_A, mesh_B);
   }
 
   // If we reached the leaf in B, then descend A
   else if (is_leaf_B)
   {
-    _compute_collisions(A, B, bbox_A.child_0, node_B, entities_A, entities_B,
-                        mesh_A, mesh_B);
-    _compute_collisions(A, B, bbox_A.child_1, node_B, entities_A, entities_B,
-                        mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, bbox_A[0], node_B, entities_A, entities_B,
+                             mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, bbox_A[1], node_B, entities_A, entities_B,
+                             mesh_A, mesh_B);
   }
 
   // At this point, we know neither is a leaf so descend the largest
@@ -464,17 +467,17 @@ void BoundingBoxTree::_compute_collisions(
   // the most boxes left to traverse) has the largest node number.
   else if (node_A > node_B)
   {
-    _compute_collisions(A, B, bbox_A.child_0, node_B, entities_A, entities_B,
-                        mesh_A, mesh_B);
-    _compute_collisions(A, B, bbox_A.child_1, node_B, entities_A, entities_B,
-                        mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, bbox_A[0], node_B, entities_A, entities_B,
+                             mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, bbox_A[1], node_B, entities_A, entities_B,
+                             mesh_A, mesh_B);
   }
   else
   {
-    _compute_collisions(A, B, node_A, bbox_B.child_0, entities_A, entities_B,
-                        mesh_A, mesh_B);
-    _compute_collisions(A, B, node_A, bbox_B.child_1, entities_A, entities_B,
-                        mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[0], entities_A, entities_B,
+                             mesh_A, mesh_B);
+    _compute_collisions_tree(A, B, node_A, bbox_B[1], entities_A, entities_B,
+                             mesh_A, mesh_B);
   }
 
   // Note that cases above can be collected in fewer cases but this
@@ -496,18 +499,18 @@ BoundingBoxTree::_compute_first_collision(const BoundingBoxTree& tree,
     return not_found;
 
   // If box is a leaf (which we know contains the point), then return it
-  else if (tree.is_leaf(bbox, node))
-    return bbox.child_1; // child_1 denotes entity for leaves
+  else if (is_leaf(bbox, node))
+    return bbox[1]; // child_1 denotes entity for leaves
 
   // Check both children
   else
   {
-    unsigned int c0 = _compute_first_collision(tree, point, bbox.child_0);
+    unsigned int c0 = _compute_first_collision(tree, point, bbox[0]);
     if (c0 != not_found)
       return c0;
 
     // Check second child
-    unsigned int c1 = _compute_first_collision(tree, point, bbox.child_1);
+    unsigned int c1 = _compute_first_collision(tree, point, bbox[1]);
     if (c1 != not_found)
       return c1;
   }
@@ -531,11 +534,11 @@ unsigned int BoundingBoxTree::_compute_first_entity_collision(
     return not_found;
 
   // If box is a leaf (which we know contains the point), then check entity
-  else if (tree.is_leaf(bbox, node))
+  else if (is_leaf(bbox, node))
   {
     // Get entity (child_1 denotes entity index for leaves)
     assert(tree._tdim == mesh.topology().dim());
-    const unsigned int entity_index = bbox.child_1;
+    const unsigned int entity_index = bbox[1];
     mesh::Cell cell(mesh, entity_index);
 
     // Check entity
@@ -547,12 +550,12 @@ unsigned int BoundingBoxTree::_compute_first_entity_collision(
   else
   {
     const unsigned int c0
-        = _compute_first_entity_collision(tree, point, bbox.child_0, mesh);
+        = _compute_first_entity_collision(tree, point, bbox[0], mesh);
     if (c0 != not_found)
       return c0;
 
     const unsigned int c1
-        = _compute_first_entity_collision(tree, point, bbox.child_1, mesh);
+        = _compute_first_entity_collision(tree, point, bbox[1], mesh);
     if (c1 != not_found)
       return c1;
   }
@@ -575,11 +578,11 @@ void BoundingBoxTree::_compute_closest_entity(
     return;
 
   // If box is leaf (which we know is inside radius), then shrink radius
-  else if (tree.is_leaf(bbox, node))
+  else if (is_leaf(bbox, node))
   {
     // Get entity (child_1 denotes entity index for leaves)
     assert(tree._tdim == mesh.topology().dim());
-    const unsigned int entity_index = bbox.child_1;
+    const unsigned int entity_index = bbox[1];
     mesh::Cell cell(mesh, entity_index);
 
     // If entity is closer than best result so far, then return it
@@ -594,10 +597,8 @@ void BoundingBoxTree::_compute_closest_entity(
   // Check both children
   else
   {
-    _compute_closest_entity(tree, point, bbox.child_0, mesh, closest_entity,
-                            R2);
-    _compute_closest_entity(tree, point, bbox.child_1, mesh, closest_entity,
-                            R2);
+    _compute_closest_entity(tree, point, bbox[0], mesh, closest_entity, R2);
+    _compute_closest_entity(tree, point, bbox[1], mesh, closest_entity, R2);
   }
 }
 //-----------------------------------------------------------------------------
@@ -611,13 +612,13 @@ void BoundingBoxTree::_compute_closest_point(const BoundingBoxTree& tree,
   const BBox& bbox = tree._bboxes[node];
 
   // If box is leaf, then compute distance and shrink radius
-  if (tree.is_leaf(bbox, node))
+  if (is_leaf(bbox, node))
   {
     const double r2
         = tree.compute_squared_distance_point(point.coordinates(), node);
     if (r2 < R2)
     {
-      closest_point = bbox.child_1;
+      closest_point = bbox[1];
       R2 = r2;
     }
   }
@@ -630,8 +631,8 @@ void BoundingBoxTree::_compute_closest_point(const BoundingBoxTree& tree,
       return;
 
     // Check both children
-    _compute_closest_point(tree, point, bbox.child_0, closest_point, R2);
-    _compute_closest_point(tree, point, bbox.child_1, closest_point, R2);
+    _compute_closest_point(tree, point, bbox[0], closest_point, R2);
+    _compute_closest_point(tree, point, bbox[1], closest_point, R2);
   }
 }
 //-----------------------------------------------------------------------------
@@ -717,14 +718,14 @@ void BoundingBoxTree::tree_print(std::stringstream& s, unsigned int i)
     s << _bbox_coordinates[j] << " ";
   s << "]\n";
 
-  if (_bboxes[i].child_0 == i)
-    s << "leaf containing entity (" << _bboxes[i].child_1 << ")";
+  if (_bboxes[i][0] == i)
+    s << "leaf containing entity (" << _bboxes[i][1] << ")";
   else
   {
     s << "{";
-    tree_print(s, _bboxes[i].child_0);
+    tree_print(s, _bboxes[i][0]);
     s << ", \n";
-    tree_print(s, _bboxes[i].child_1);
+    tree_print(s, _bboxes[i][1]);
     s << "}\n";
   }
 }

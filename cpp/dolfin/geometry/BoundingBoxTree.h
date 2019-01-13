@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <array>
 #include <dolfin/geometry/Point.h>
 #include <limits>
 #include <memory>
@@ -31,13 +32,10 @@ namespace geometry
 class BoundingBoxTree
 {
 private:
-  // FIXME: Remove this
-  /// Constructor
-  BoundingBoxTree(std::size_t gdim);
-  // BoundingBoxTree(const std::vector<double>& leaf_bboxes,
-  //                 const std::vector<unsigned int>::iterator& begin,
-  //                 const std::vector<unsigned int>::iterator& end,
-  //                 std::size_t gdim);
+  BoundingBoxTree(const std::vector<double>& leaf_bboxes,
+                  const std::vector<unsigned int>::iterator& begin,
+                  const std::vector<unsigned int>::iterator& end,
+                  std::size_t gdim);
 
 public:
   /// Constructor
@@ -113,18 +111,18 @@ public:
   /// Print out for debugging
   std::string str(bool verbose = false);
 
-private:
   // Bounding box data structure. Leaf nodes are indicated by setting child_0
   // equal to the node itself. For leaf nodes, child_1 is set to the
   // index of the entity contained in the leaf bounding box.
-  struct BBox
-  {
-    // Child 0
-    unsigned int child_0;
-    // Child 1
-    unsigned int child_1;
-  };
-
+  using BBox = std::array<unsigned int, 2>;
+  // struct BBox
+  // {
+  //   // Child 0
+  //   unsigned int child_0;
+  //   // Child 1
+  //   unsigned int child_1;
+  // };
+private:
   //--- Recursive build functions ---
 
   // Build bounding box tree for entities (recursive)
@@ -145,19 +143,19 @@ private:
   // some of them need to deal with more than one tree.
 
   // Compute collisions with point (recursive)
-  static void _compute_collisions(const BoundingBoxTree& tree,
-                                  const Point& point, unsigned int node,
-                                  std::vector<unsigned int>& entities,
-                                  const mesh::Mesh* mesh);
+  static void _compute_collisions_point(const BoundingBoxTree& tree,
+                                        const Point& point, unsigned int node,
+                                        std::vector<unsigned int>& entities,
+                                        const mesh::Mesh* mesh);
 
   // Compute collisions with tree (recursive)
-  static void _compute_collisions(const BoundingBoxTree& A,
-                                  const BoundingBoxTree& B, unsigned int node_A,
-                                  unsigned int node_B,
-                                  std::vector<unsigned int>& entities_A,
-                                  std::vector<unsigned int>& entities_B,
-                                  const mesh::Mesh* mesh_A,
-                                  const mesh::Mesh* mesh_B);
+  static void _compute_collisions_tree(const BoundingBoxTree& A,
+                                       const BoundingBoxTree& B,
+                                       unsigned int node_A, unsigned int node_B,
+                                       std::vector<unsigned int>& entities_A,
+                                       std::vector<unsigned int>& entities_B,
+                                       const mesh::Mesh* mesh_A,
+                                       const mesh::Mesh* mesh_B);
 
   // Compute first collision (recursive)
   static unsigned int _compute_first_collision(const BoundingBoxTree& tree,
@@ -222,13 +220,6 @@ private:
       _bbox_coordinates.push_back(x[i]);
 
     return _bboxes.size() - 1;
-  }
-
-  // Check whether bounding box is a leaf node
-  static bool is_leaf(const BBox& bbox, unsigned int node)
-  {
-    // Leaf nodes are marked by setting child_0 equal to the node itself
-    return bbox.child_0 == node;
   }
 
   // Return bounding box coordinates for node
