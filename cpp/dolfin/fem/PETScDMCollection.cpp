@@ -222,7 +222,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 
   // Get coarse mesh and dimension of the domain
   assert(coarse_space.mesh());
-  const mesh::Mesh meshc = *coarse_space.mesh();
+  const mesh::Mesh& meshc = *coarse_space.mesh();
   std::size_t gdim = meshc.geometry().dim();
   std::size_t tdim = meshc.topology().dim();
 
@@ -231,7 +231,8 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   const unsigned int mpi_size = MPI::size(mpi_comm);
 
   // Initialise bounding box tree and dofmaps
-  std::shared_ptr<geometry::BoundingBoxTree> treec = meshc.bounding_box_tree();
+  geometry::BoundingBoxTree treec(meshc.geometry().dim());
+  treec.build(meshc, meshc.topology().dim());
   std::shared_ptr<const fem::GenericDofMap> coarsemap = coarse_space.dofmap();
   std::shared_ptr<const fem::GenericDofMap> finemap = fine_space.dofmap();
 
@@ -332,7 +333,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
     geometry::Point curr_point(gdim, _x.data());
 
     // Compute which processes' BBoxes contain the fine point
-    found_ranks = treec->compute_process_collisions(curr_point);
+    found_ranks = treec.compute_process_collisions(curr_point);
 
     if (found_ranks.empty())
     {
@@ -373,7 +374,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
     {
       const geometry::Point curr_point(gdim, &recv_found[p][i * gdim]);
       send_ids[p].push_back(
-          treec->compute_first_entity_collision(curr_point, meshc));
+          treec.compute_first_entity_collision(curr_point, meshc));
     }
   }
   std::vector<std::vector<unsigned int>> recv_ids(mpi_size);
@@ -639,8 +640,8 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
 //-----------------------------------------------------------------------------
 void PETScDMCollection::find_exterior_points(
     MPI_Comm mpi_comm, const mesh::Mesh& meshc,
-    std::shared_ptr<const geometry::BoundingBoxTree> treec, int dim,
-    int data_size, const std::vector<double>& send_points,
+    const geometry::BoundingBoxTree& treec, int dim, int data_size,
+    const std::vector<double>& send_points,
     const std::vector<int>& send_indices, std::vector<int>& indices,
     std::vector<std::size_t>& cell_ids, std::vector<double>& points)
 {
@@ -675,7 +676,7 @@ void PETScDMCollection::find_exterior_points(
     {
       const geometry::Point curr_point(dim, &p[i * dim]);
       std::pair<unsigned int, double> find_point
-          = treec->compute_closest_entity(curr_point, meshc);
+          = treec.compute_closest_entity(curr_point, meshc);
       send_distance.push_back(find_point.second);
       ids.push_back(find_point.first);
     }
