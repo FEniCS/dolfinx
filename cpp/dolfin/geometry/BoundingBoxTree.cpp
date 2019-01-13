@@ -28,7 +28,8 @@ BoundingBoxTree::BoundingBoxTree(std::size_t gdim) : _tdim(0), _gdim(gdim)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build(const mesh::Mesh& mesh, std::size_t tdim)
+BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
+    : _tdim(tdim), _gdim(mesh.topology().dim())
 {
   // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
@@ -37,9 +38,6 @@ void BoundingBoxTree::build(const mesh::Mesh& mesh, std::size_t tdim)
                       "Dimension must be a number between 1 and %d",
                       mesh.topology().dim());
   }
-
-  // Clear existing data if any
-  clear();
 
   // Store topological dimension (only used for checking that entity
   // collisions can only be computed with cells)
@@ -89,11 +87,10 @@ void BoundingBoxTree::build(const mesh::Mesh& mesh, std::size_t tdim)
   }
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::build(const std::vector<Point>& points)
+BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points,
+                                 std::size_t gdim)
+    : _tdim(0), _gdim(gdim)
 {
-  // Clear existing data if any
-  clear();
-
   // Create leaf partition (to be sorted)
   const unsigned int num_leaves = points.size();
   std::vector<unsigned int> leaf_partition(num_leaves);
@@ -272,14 +269,6 @@ BoundingBoxTree::compute_closest_point(const Point& point) const
 }
 //-----------------------------------------------------------------------------
 // Implementation of private functions
-//-----------------------------------------------------------------------------
-void BoundingBoxTree::clear()
-{
-  _tdim = 0;
-  _bboxes.clear();
-  _bbox_coordinates.clear();
-  _point_search_tree.reset();
-}
 //-----------------------------------------------------------------------------
 unsigned int
 BoundingBoxTree::_build(const std::vector<double>& leaf_bboxes,
@@ -651,12 +640,9 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
     points.push_back(cell.midpoint());
 
-  // Select implementation
-  _point_search_tree = std::make_shared<BoundingBoxTree>(mesh.geometry().dim());
-
   // Build tree
-  assert(_point_search_tree);
-  _point_search_tree->build(points);
+  _point_search_tree
+      = std::make_shared<BoundingBoxTree>(points, mesh.geometry().dim());
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox_of_entity(double* b,
