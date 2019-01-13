@@ -28,6 +28,14 @@ BoundingBoxTree::BoundingBoxTree(std::size_t gdim) : _tdim(0), _gdim(gdim)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+// BoundingBoxTree::BoundingBoxTree(
+//     const std::vector<double>& leaf_bboxes,
+//     const std::vector<unsigned int>::iterator& begin,
+//     const std::vector<unsigned int>::iterator& end, std::size_t gdim)
+// {
+
+// }
+//-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
     : _tdim(tdim), _gdim(mesh.topology().dim())
 {
@@ -57,11 +65,10 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
 
   // Create leaf partition (to be sorted)
   std::vector<unsigned int> leaf_partition(num_leaves);
-  for (unsigned int i = 0; i < num_leaves; ++i)
-    leaf_partition[i] = i;
+  std::iota(leaf_partition.begin(), leaf_partition.end(), 0);
 
   // Recursively build the bounding box tree from the leaves
-  _build(leaf_bboxes, leaf_partition.begin(), leaf_partition.end());
+  _build_from_leaf(leaf_bboxes, leaf_partition.begin(), leaf_partition.end());
 
   log::log(PROGRESS,
            "Computed bounding box tree with %d nodes for %d entities.",
@@ -76,11 +83,11 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
     std::vector<double> recv_bbox;
     MPI::all_gather(mesh.mpi_comm(), send_bbox, recv_bbox);
     std::vector<unsigned int> global_leaves(mpi_size);
-    for (std::size_t i = 0; i != mpi_size; ++i)
-      global_leaves[i] = i;
+    std::iota(global_leaves.begin(), global_leaves.end(), 0);
 
     _global_tree.reset(new BoundingBoxTree(_gdim));
-    _global_tree->_build(recv_bbox, global_leaves.begin(), global_leaves.end());
+    _global_tree->_build_from_leaf(recv_bbox, global_leaves.begin(),
+                                   global_leaves.end());
 
     log::info("Computed global bounding box tree with %d boxes.",
               _global_tree->num_bboxes());
@@ -98,7 +105,7 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points,
     leaf_partition[i] = i;
 
   // Recursively build the bounding box tree from the leaves
-  _build(points, leaf_partition.begin(), leaf_partition.end());
+  _build_from_point(points, leaf_partition.begin(), leaf_partition.end());
 
   log::info("Computed bounding box tree with %d nodes for %d points.",
             num_bboxes(), num_leaves);
@@ -270,10 +277,10 @@ BoundingBoxTree::compute_closest_point(const Point& point) const
 //-----------------------------------------------------------------------------
 // Implementation of private functions
 //-----------------------------------------------------------------------------
-unsigned int
-BoundingBoxTree::_build(const std::vector<double>& leaf_bboxes,
-                        const std::vector<unsigned int>::iterator& begin,
-                        const std::vector<unsigned int>::iterator& end)
+unsigned int BoundingBoxTree::_build_from_leaf(
+    const std::vector<double>& leaf_bboxes,
+    const std::vector<unsigned int>::iterator& begin,
+    const std::vector<unsigned int>::iterator& end)
 {
   assert(begin < end);
 
@@ -303,17 +310,17 @@ BoundingBoxTree::_build(const std::vector<double>& leaf_bboxes,
   sort_bboxes(axis, leaf_bboxes, begin, middle, end, _gdim);
 
   // Split bounding boxes into two groups and call recursively
-  bbox.child_0 = _build(leaf_bboxes, begin, middle);
-  bbox.child_1 = _build(leaf_bboxes, middle, end);
+  bbox.child_0 = _build_from_leaf(leaf_bboxes, begin, middle);
+  bbox.child_1 = _build_from_leaf(leaf_bboxes, middle, end);
 
   // Store bounding box data. Note that root box will be added last.
   return add_bbox(bbox, b);
 }
 //-----------------------------------------------------------------------------
-unsigned int
-BoundingBoxTree::_build(const std::vector<Point>& points,
-                        const std::vector<unsigned int>::iterator& begin,
-                        const std::vector<unsigned int>::iterator& end)
+unsigned int BoundingBoxTree::_build_from_point(
+    const std::vector<Point>& points,
+    const std::vector<unsigned int>::iterator& begin,
+    const std::vector<unsigned int>::iterator& end)
 {
   assert(begin < end);
 
@@ -340,8 +347,8 @@ BoundingBoxTree::_build(const std::vector<Point>& points,
   sort_points(axis, points, begin, middle, end);
 
   // Split bounding boxes into two groups and call recursively
-  bbox.child_0 = _build(points, begin, middle);
-  bbox.child_1 = _build(points, middle, end);
+  bbox.child_0 = _build_from_point(points, begin, middle);
+  bbox.child_1 = _build_from_point(points, middle, end);
 
   // Store bounding box data. Note that root box will be added last.
   return add_bbox(bbox, b);
@@ -633,6 +640,7 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   // Don't build search tree if it already exists
   if (_point_search_tree)
     return;
+
   log::info("Building point search tree to accelerate distance queries.");
 
   // Create list of midpoints for all cells
@@ -642,7 +650,7 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
 
   // Build tree
   _point_search_tree
-      = std::make_shared<BoundingBoxTree>(points, mesh.geometry().dim());
+      = std::make_unique<BoundingBoxTree>(points, mesh.geometry().dim());
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox_of_entity(double* b,

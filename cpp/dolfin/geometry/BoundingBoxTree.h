@@ -34,6 +34,10 @@ private:
   // FIXME: Remove this
   /// Constructor
   BoundingBoxTree(std::size_t gdim);
+  // BoundingBoxTree(const std::vector<double>& leaf_bboxes,
+  //                 const std::vector<unsigned int>::iterator& begin,
+  //                 const std::vector<unsigned int>::iterator& end,
+  //                 std::size_t gdim);
 
 public:
   /// Constructor
@@ -52,12 +56,6 @@ public:
   BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
 
   ~BoundingBoxTree() = default;
-
-  /// Build bounding box tree for mesh entities of given dimension
-  // void build(const mesh::Mesh& mesh, std::size_t tdim);
-
-  // /// Build bounding box tree for point cloud
-  // void build(const std::vector<Point>& points);
 
   /// Compute all collisions between bounding boxes and _Point_
   std::vector<unsigned int> compute_collisions(const Point& point) const;
@@ -127,20 +125,19 @@ private:
     unsigned int child_1;
   };
 
-  // Clear existing data if any
-  // void clear();
-
   //--- Recursive build functions ---
 
   // Build bounding box tree for entities (recursive)
-  unsigned int _build(const std::vector<double>& leaf_bboxes,
-                      const std::vector<unsigned int>::iterator& begin,
-                      const std::vector<unsigned int>::iterator& end);
+  unsigned int
+  _build_from_leaf(const std::vector<double>& leaf_bboxes,
+                   const std::vector<unsigned int>::iterator& begin,
+                   const std::vector<unsigned int>::iterator& end);
 
   // Build bounding box tree for points (recursive)
-  unsigned int _build(const std::vector<Point>& points,
-                      const std::vector<unsigned int>::iterator& begin,
-                      const std::vector<unsigned int>::iterator& end);
+  unsigned int
+  _build_from_point(const std::vector<Point>& points,
+                    const std::vector<unsigned int>::iterator& begin,
+                    const std::vector<unsigned int>::iterator& end);
 
   //--- Recursive search functions ---
 
@@ -294,10 +291,11 @@ private:
   std::vector<double> _bbox_coordinates;
 
   // Point search tree used to accelerate distance queries
-  mutable std::shared_ptr<BoundingBoxTree> _point_search_tree;
+  mutable std::unique_ptr<BoundingBoxTree> _point_search_tree;
 
-  // Global tree for mesh ownership of each process (same on all processes)
-  std::shared_ptr<BoundingBoxTree> _global_tree;
+  // Global tree for mesh ownership of each process (same on all
+  // processes)
+  std::unique_ptr<BoundingBoxTree> _global_tree;
 };
 } // namespace geometry
 } // namespace dolfin
