@@ -173,29 +173,30 @@ private:
   void build_point_search_tree(const mesh::Mesh& mesh) const;
 
   // Compute bounding box of mesh entity
-  static void compute_bbox_of_entity(double* b, const mesh::MeshEntity& entity,
-                                     std::size_t gdim);
+  void compute_bbox_of_entity(double* b, const mesh::MeshEntity& entity) const;
 
   // Sort points along given axis
-  static void sort_points(std::size_t axis, const std::vector<Point>& points,
-                          const std::vector<unsigned int>::iterator& begin,
-                          const std::vector<unsigned int>::iterator& middle,
-                          const std::vector<unsigned int>::iterator& end);
+  void sort_points(std::size_t axis, const std::vector<Point>& points,
+                   const std::vector<unsigned int>::iterator& begin,
+                   const std::vector<unsigned int>::iterator& middle,
+                   const std::vector<unsigned int>::iterator& end);
 
   // Add bounding box and coordinates
-  unsigned int add_bbox(const BBox& bbox, const double* b)
+  inline unsigned int add_bbox(const BBox& bbox, const double* b)
   {
     // Add bounding box
     _bboxes.push_back(bbox);
 
     // Add bounding box coordinates
+    //    for (std::size_t i = 0; i < 2 * _gdim; ++i)
+    //      _bbox_coordinates.push_back(b[i]);
     _bbox_coordinates.insert(_bbox_coordinates.end(), b, b + 2 * _gdim);
 
     return _bboxes.size() - 1;
   }
 
   // Return number of bounding boxes
-  unsigned int num_bboxes() const { return _bboxes.size(); }
+  inline unsigned int num_bboxes() const { return _bboxes.size(); }
 
   // Add bounding box and point coordinates
   inline unsigned int add_point(const BBox& bbox, const Point& point)
@@ -214,7 +215,7 @@ private:
   }
 
   // Check whether bounding box is a leaf node
-  static bool is_leaf(const BBox& bbox, unsigned int node)
+  inline bool is_leaf(const BBox& bbox, unsigned int node) const
   {
     // Leaf nodes are marked by setting child_0 equal to the node itself
     return bbox.child_0 == node;
@@ -243,16 +244,16 @@ private:
                                         unsigned int node) const;
 
   // Compute bounding box of bounding boxes
-  static void compute_bbox_of_bboxes(
-      double* bbox, std::size_t& axis, const std::vector<double>& leaf_bboxes,
-      const std::vector<unsigned int>::iterator& begin,
-      const std::vector<unsigned int>::iterator& end, std::size_t gdim);
+  void compute_bbox_of_bboxes(double* bbox, std::size_t& axis,
+                              const std::vector<double>& leaf_bboxes,
+                              const std::vector<unsigned int>::iterator& begin,
+                              const std::vector<unsigned int>::iterator& end);
 
   // Compute bounding box of points
-  static void compute_bbox_of_points(
-      double* bbox, std::size_t& axis, const std::vector<Point>& points,
-      const std::vector<unsigned int>::iterator& begin,
-      const std::vector<unsigned int>::iterator& end, std::size_t gdim);
+  void compute_bbox_of_points(double* bbox, std::size_t& axis,
+                              const std::vector<Point>& points,
+                              const std::vector<unsigned int>::iterator& begin,
+                              const std::vector<unsigned int>::iterator& end);
 
   // Sort leaf bounding boxes along given axis
   void sort_bboxes(std::size_t axis, const std::vector<double>& leaf_bboxes,

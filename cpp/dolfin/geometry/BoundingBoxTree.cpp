@@ -52,10 +52,7 @@ void BoundingBoxTree::build(const mesh::Mesh& mesh, std::size_t tdim)
   const unsigned int num_leaves = mesh.num_entities(tdim);
   std::vector<double> leaf_bboxes(2 * _gdim * num_leaves);
   for (auto& it : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
-  {
-    compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it,
-                           _gdim);
-  }
+    compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it);
 
   // Create leaf partition (to be sorted)
   std::vector<unsigned int> leaf_partition(num_leaves);
@@ -307,7 +304,7 @@ BoundingBoxTree::_build(const std::vector<double>& leaf_bboxes,
   // Compute bounding box of all bounding boxes
   double b[MAX_DIM];
   std::size_t axis;
-  compute_bbox_of_bboxes(b, axis, leaf_bboxes, begin, end, _gdim);
+  compute_bbox_of_bboxes(b, axis, leaf_bboxes, begin, end);
 
   // Sort bounding boxes along longest axis
   std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
@@ -344,7 +341,7 @@ BoundingBoxTree::_build(const std::vector<Point>& points,
   // Compute bounding box of all points
   double b[MAX_DIM];
   std::size_t axis;
-  compute_bbox_of_points(b, axis, points, begin, end, _gdim);
+  compute_bbox_of_points(b, axis, points, begin, end);
 
   // Sort bounding boxes along longest axis
   std::vector<unsigned int>::iterator middle = begin + (end - begin) / 2;
@@ -659,13 +656,12 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   _point_search_tree->build(points);
 }
 //-----------------------------------------------------------------------------
-void BoundingBoxTree::compute_bbox_of_entity(double* b,
-                                             const mesh::MeshEntity& entity,
-                                             std::size_t gdim)
+void BoundingBoxTree::compute_bbox_of_entity(
+    double* b, const mesh::MeshEntity& entity) const
 {
   // Get bounding box coordinates
   double* xmin = b;
-  double* xmax = b + gdim;
+  double* xmax = b + _gdim;
 
   // Get mesh entity data
   const mesh::MeshGeometry& geometry = entity.mesh().geometry();
@@ -675,7 +671,7 @@ void BoundingBoxTree::compute_bbox_of_entity(double* b,
 
   // Get coordinates for first vertex
   const Eigen::Ref<const EigenVectorXd> x = geometry.x(vertices[0]);
-  for (std::size_t j = 0; j < gdim; ++j)
+  for (std::size_t j = 0; j < _gdim; ++j)
     xmin[j] = xmax[j] = x[j];
 
   // Compute min and max over remaining vertices
@@ -683,7 +679,7 @@ void BoundingBoxTree::compute_bbox_of_entity(double* b,
   {
     // const double* x = geometry.x(vertices[i]);
     const Eigen::Ref<const EigenVectorXd> x = geometry.x(vertices[i]);
-    for (std::size_t j = 0; j < gdim; ++j)
+    for (std::size_t j = 0; j < _gdim; ++j)
     {
       xmin[j] = std::min(xmin[j], x[j]);
       xmax[j] = std::max(xmax[j], x[j]);
@@ -755,35 +751,35 @@ void BoundingBoxTree::sort_bboxes(
 void BoundingBoxTree::compute_bbox_of_points(
     double* bbox, std::size_t& axis, const std::vector<Point>& points,
     const std::vector<unsigned int>::iterator& begin,
-    const std::vector<unsigned int>::iterator& end, std::size_t gdim)
+    const std::vector<unsigned int>::iterator& end)
 {
   // Get coordinates for first point
   auto it = begin;
   const double* p = points[*it].coordinates();
-  for (unsigned int i = 0; i != gdim; ++i)
+  for (unsigned int i = 0; i != _gdim; ++i)
   {
     bbox[i] = p[i];
-    bbox[i + gdim] = p[i];
+    bbox[i + _gdim] = p[i];
   }
 
   // Compute min and max over remaining points
   for (; it != end; ++it)
   {
     const double* p = points[*it].coordinates();
-    for (unsigned int i = 0; i != gdim; ++i)
+    for (unsigned int i = 0; i != _gdim; ++i)
     {
       bbox[i] = std::min(p[i], bbox[i]);
-      bbox[i + gdim] = std::max(p[i], bbox[i + gdim]);
+      bbox[i + _gdim] = std::max(p[i], bbox[i + _gdim]);
     }
   }
 
   // Compute longest axis
   axis = 0;
-  double max_axis = bbox[gdim] - bbox[0];
-  for (unsigned int i = 1; i != gdim; ++i)
-    if ((bbox[gdim + i] - bbox[i]) > max_axis)
+  double max_axis = bbox[_gdim] - bbox[0];
+  for (unsigned int i = 1; i != _gdim; ++i)
+    if ((bbox[_gdim + i] - bbox[i]) > max_axis)
     {
-      max_axis = bbox[gdim + i] - bbox[i];
+      max_axis = bbox[_gdim + i] - bbox[i];
       axis = i;
     }
 }
@@ -791,30 +787,30 @@ void BoundingBoxTree::compute_bbox_of_points(
 void BoundingBoxTree::compute_bbox_of_bboxes(
     double* bbox, std::size_t& axis, const std::vector<double>& leaf_bboxes,
     const std::vector<unsigned int>::iterator& begin,
-    const std::vector<unsigned int>::iterator& end, std::size_t gdim)
+    const std::vector<unsigned int>::iterator& end)
 {
   // Get coordinates for first box
   auto it = begin;
-  const double* b = leaf_bboxes.data() + 2 * gdim * (*it);
-  std::copy(b, b + 2 * gdim, bbox);
+  const double* b = leaf_bboxes.data() + 2 * _gdim * (*it);
+  std::copy(b, b + 2 * _gdim, bbox);
 
   // Compute min and max over remaining boxes
   for (; it != end; ++it)
   {
-    const double* b = leaf_bboxes.data() + 2 * gdim * (*it);
+    const double* b = leaf_bboxes.data() + 2 * _gdim * (*it);
 
-    for (unsigned int i = 0; i != gdim; ++i)
+    for (unsigned int i = 0; i != _gdim; ++i)
       bbox[i] = std::min(bbox[i], b[i]);
-    for (unsigned int i = gdim; i != 2 * gdim; ++i)
+    for (unsigned int i = _gdim; i != 2 * _gdim; ++i)
       bbox[i] = std::max(bbox[i], b[i]);
   }
 
   // Compute longest axis
   axis = 0;
-  if (gdim == 1)
+  if (_gdim == 1)
     return;
 
-  if (gdim == 2)
+  if (_gdim == 2)
   {
     const double x = bbox[2] - bbox[0];
     const double y = bbox[3] - bbox[1];
