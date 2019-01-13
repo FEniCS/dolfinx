@@ -95,14 +95,6 @@ void set_diagonal_local(
   }
 }
 //-----------------------------------------------------------------------------
-void set_diagonal_local(
-    la::PETScMatrix& A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-    PetscScalar diag)
-{
-  set_diagonal_local(A.mat(), rows, diag);
-}
-//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -442,7 +434,7 @@ void fem::assemble(la::PETScMatrix& A,
           subA = A.mat();
 
         assemble_petsc(subA, *a[i][j], bcs, diagonal);
-        if (!is_matnest)
+        if (block_matrix and !is_matnest)
           MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
       }
       else
