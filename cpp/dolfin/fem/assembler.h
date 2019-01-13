@@ -35,7 +35,7 @@ enum class BlockType
 };
 
 /// Assemble variational form
-boost::variant<double, la::PETScVector, la::PETScMatrix>
+boost::variant<PetscScalar, la::PETScVector, la::PETScMatrix>
 assemble(const Form& a);
 
 // -- Vectors ----------------------------------------------------------------

@@ -26,7 +26,7 @@ using namespace dolfin::fem;
 
 namespace
 {
-double _assemble_scalar(const fem::Form& M)
+PetscScalar _assemble_scalar(const fem::Form& M)
 {
   if (M.rank() != 0)
     throw std::runtime_error("Form must be rank 0");
@@ -52,7 +52,7 @@ double _assemble_scalar(const fem::Form& M)
     value += cell_value;
   }
 
-  return MPI::sum(mesh.mpi_comm(), PetscRealPart(value));
+  return MPI::sum(mesh.mpi_comm(), value);
 }
 //-----------------------------------------------------------------------------
 la::PETScVector _assemble_vector(const Form& L)
@@ -106,7 +106,7 @@ void set_diagonal_local(
 } // namespace
 
 //-----------------------------------------------------------------------------
-boost::variant<double, la::PETScVector, la::PETScMatrix>
+boost::variant<PetscScalar, la::PETScVector, la::PETScMatrix>
 fem::assemble(const Form& a)
 {
   if (a.rank() == 0)
