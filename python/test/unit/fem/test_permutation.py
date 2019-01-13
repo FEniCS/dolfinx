@@ -33,7 +33,6 @@ def test_p4_scalar_vector():
         mesh = Mesh(MPI.comm_world, CellType.Type.tetrahedron, points, cells,
                     [], GhostMode.none)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
-
         Q = FunctionSpace(mesh, ("CG", 4))
 
         @function.expression.numba_eval
@@ -140,6 +139,9 @@ def test_mixed_parallel():
     W = FunctionSpace(mesh, Q * V)
     F = Function(W)
 
+    tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
+    tree.build(mesh, mesh.topology.dim)
+
     @function.expression.numba_eval
     def expr_eval(values, x, cell_idx):
         values[:, 0] = x[:, 0]
@@ -159,8 +161,6 @@ def test_mixed_parallel():
             p += v.point() * x[i]
         p = p.array()[:2]
 
-        tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
-        tree.build(mesh, mesh.topology.dim)
         val = F(p, tree)
         assert numpy.allclose(val[0], p[0])
         assert numpy.isclose(val[1], p[1])
