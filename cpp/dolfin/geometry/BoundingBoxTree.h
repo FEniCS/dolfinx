@@ -30,17 +30,26 @@ namespace geometry
 
 class BoundingBoxTree
 {
-public:
-
+private:
   // FIXME: Remove this
   /// Constructor
   BoundingBoxTree(std::size_t gdim);
 
+public:
   /// Constructor
   BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim);
 
   /// Constructor
   BoundingBoxTree(const std::vector<Point>& points, std::size_t gdim);
+
+  /// Move constructor
+  BoundingBoxTree(BoundingBoxTree&& tree) = default;
+
+  /// Copy constructor
+  BoundingBoxTree(const BoundingBoxTree& tree) = default;
+
+  /// Move assignment
+  BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
 
   ~BoundingBoxTree() = default;
 
@@ -191,14 +200,11 @@ private:
                           const std::vector<unsigned int>::iterator& end);
 
   // Add bounding box and coordinates
-  inline unsigned int add_bbox(const BBox& bbox, const double* b)
+  unsigned int add_bbox(const BBox& bbox, const double* b)
   {
-    // Add bounding box
+    // Add bounding box and coordinates
     _bboxes.push_back(bbox);
-
-    // Add bounding box coordinates
     _bbox_coordinates.insert(_bbox_coordinates.end(), b, b + 2 * _gdim);
-
     return _bboxes.size() - 1;
   }
 
@@ -206,7 +212,7 @@ private:
   unsigned int num_bboxes() const { return _bboxes.size(); }
 
   // Add bounding box and point coordinates
-  inline unsigned int add_point(const BBox& bbox, const Point& point)
+  unsigned int add_point(const BBox& bbox, const Point& point)
   {
     // Add bounding box
     _bboxes.push_back(bbox);

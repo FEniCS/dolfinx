@@ -79,7 +79,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
     for (std::size_t i = 0; i != mpi_size; ++i)
       global_leaves[i] = i;
 
-    _global_tree = std::make_shared<BoundingBoxTree>(_gdim);
+    _global_tree.reset(new BoundingBoxTree(_gdim));
     _global_tree->_build(recv_bbox, global_leaves.begin(), global_leaves.end());
 
     log::info("Computed global bounding box tree with %d boxes.",
