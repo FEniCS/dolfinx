@@ -8,7 +8,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/function/Expression.h>
-#include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/CoordinateDofs.h>
@@ -149,7 +148,6 @@ void mesh(py::module& m)
                 comm.get(), type, geometry, topology, global_cell_indices,
                 ghost_mode);
           }))
-      .def("bounding_box_tree", &dolfin::mesh::Mesh::bounding_box_tree)
       .def("cells",
            [](const dolfin::mesh::Mesh& self) {
              const std::uint32_t tdim = self.topology().dim();
