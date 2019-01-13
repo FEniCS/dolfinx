@@ -62,7 +62,7 @@ class BoundingBoxTree:
 
 
 class Point:
-    """Point represents a point in 3D euclidean space"""
+    """Point represents a point in 3D Euclidean space"""
 
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0):
         """Initialise from coordinates"""

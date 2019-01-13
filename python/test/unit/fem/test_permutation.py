@@ -12,9 +12,8 @@ import numpy
 
 from dolfin import (MPI, Cells, CellType, Expression, FiniteElement, Function,
                     FunctionSpace, Mesh, Point, UnitCubeMesh, UnitSquareMesh,
-                    VectorElement, VectorFunctionSpace, VertexRange, fem,
-                    interpolate, triangle)
-from dolfin import function
+                    VectorElement, VectorFunctionSpace, VertexRange, cpp, fem,
+                    function, interpolate, triangle)
 from dolfin.cpp.mesh import GhostMode
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -53,11 +52,13 @@ def test_p4_scalar_vector():
         F1 = interpolate(Expression(x1), Q)
         F2 = interpolate(Expression(x2), Q)
 
+        tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
+        tree.build(mesh, mesh.topology.dim)
         pts = numpy.array([[0.4, 0.4, 0.1], [0.4, 0.1, 0.4], [0.1, 0.4, 0.4]])
         for pt in pts:
-            assert numpy.isclose(pt[0], F0(pt)[0])
-            assert numpy.isclose(pt[1], F1(pt)[0])
-            assert numpy.isclose(pt[2], F2(pt)[0])
+            assert numpy.isclose(pt[0], F0(pt, tree)[0])
+            assert numpy.isclose(pt[1], F1(pt, tree)[0])
+            assert numpy.isclose(pt[2], F2(pt, tree)[0])
 
         V = VectorFunctionSpace(mesh, ("CG", 4))
 
@@ -68,8 +69,10 @@ def test_p4_scalar_vector():
             values[:, 2] = 0.0
 
         F = interpolate(Expression(x0x10, shape=(3,)), V)
+        tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
+        tree.build(mesh, mesh.topology.dim)
         for pt in pts:
-            result = F(pt)
+            result = F(pt, tree)
             assert numpy.isclose(pt[0], result[0])
             assert numpy.isclose(pt[1], result[1])
             assert numpy.isclose(0.0, result[2])
@@ -88,6 +91,8 @@ def test_p4_parallel_2d():
 
     # Generate random points in this mesh partition (one per cell)
     x = numpy.zeros(3)
+    tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
+    tree.build(mesh, mesh.topology.dim)
     for c in Cells(mesh):
         x[0] = random()
         x[1] = random() * (1 - x[0])
@@ -97,7 +102,7 @@ def test_p4_parallel_2d():
             p += v.point() * x[i]
         p = p.array()[:2]
 
-        assert numpy.isclose(F(p)[0], p[0])
+        assert numpy.isclose(F(p, tree)[0], p[0])
 
 
 def test_p4_parallel_3d():
@@ -113,6 +118,8 @@ def test_p4_parallel_3d():
 
     # Generate random points in this mesh partition (one per cell)
     x = numpy.zeros(4)
+    tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
+    tree.build(mesh, mesh.topology.dim)
     for c in Cells(mesh):
         x[0] = random()
         x[1] = random() * (1 - x[0])
@@ -123,7 +130,7 @@ def test_p4_parallel_3d():
             p += v.point() * x[i]
         p = p.array()
 
-        assert numpy.isclose(F(p)[0], p[0])
+        assert numpy.isclose(F(p, tree)[0], p[0])
 
 
 def test_mixed_parallel():
@@ -152,7 +159,9 @@ def test_mixed_parallel():
             p += v.point() * x[i]
         p = p.array()[:2]
 
-        val = F(p)
+        tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
+        tree.build(mesh, mesh.topology.dim)
+        val = F(p, tree)
         assert numpy.allclose(val[0], p[0])
         assert numpy.isclose(val[1], p[1])
         assert numpy.isclose(val[2], numpy.sin(p[0] + p[1]))
