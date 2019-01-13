@@ -95,14 +95,6 @@ void set_diagonal_local(
   }
 }
 //-----------------------------------------------------------------------------
-void set_diagonal_local(
-    la::PETScMatrix& A,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-    PetscScalar diag)
-{
-  set_diagonal_local(A.mat(), rows, diag);
-}
-//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
