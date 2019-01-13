@@ -26,7 +26,7 @@ using namespace dolfin::fem;
 
 namespace
 {
-double _assemble_scalar(const fem::Form& M)
+PetscScalar _assemble_scalar(const fem::Form& M)
 {
   if (M.rank() != 0)
     throw std::runtime_error("Form must be rank 0");
@@ -52,7 +52,7 @@ double _assemble_scalar(const fem::Form& M)
     value += cell_value;
   }
 
-  return MPI::sum(mesh.mpi_comm(), PetscRealPart(value));
+  return MPI::sum(mesh.mpi_comm(), value);
 }
 //-----------------------------------------------------------------------------
 la::PETScVector _assemble_vector(const Form& L)
@@ -80,20 +80,33 @@ la::PETScMatrix _assemble_matrix(const Form& a)
 }
 //-----------------------------------------------------------------------------
 void set_diagonal_local(
+    Mat A,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    PetscScalar diag)
+{
+  assert(A);
+  for (Eigen::Index i = 0; i < rows.size(); ++i)
+  {
+    const PetscInt row = rows[i];
+    PetscErrorCode ierr
+        = MatSetValuesLocal(A, 1, &row, 1, &row, &diag, ADD_VALUES);
+    if (ierr != 0)
+      la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");
+  }
+}
+//-----------------------------------------------------------------------------
+void set_diagonal_local(
     la::PETScMatrix& A,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
     PetscScalar diag)
 {
-  for (Eigen::Index i = 0; i < rows.size(); ++i)
-  {
-    const PetscInt row = rows[i];
-    A.add_local(&diag, 1, &row, 1, &row);
-  }
+  set_diagonal_local(A.mat(), rows, diag);
 }
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
-boost::variant<double, la::PETScVector, la::PETScMatrix>
+boost::variant<PetscScalar, la::PETScVector, la::PETScMatrix>
 fem::assemble(const Form& a)
 {
   if (a.rank() == 0)
@@ -115,6 +128,16 @@ fem::assemble(std::vector<const Form*> L,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               const la::PETScVector* x0, BlockType block_type, double scale)
 {
+  for (auto row : a)
+  {
+    for (auto block : row)
+    {
+      if (!block)
+        throw std::runtime_error(
+            "Null blocks in bilinear form not supported yet.");
+    }
+  }
+
   assert(!L.empty());
 
   la::PETScVector b;
@@ -136,6 +159,16 @@ void fem::assemble(
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const la::PETScVector* x0, double scale)
 {
+  for (auto row : a)
+  {
+    for (auto block : row)
+    {
+      if (!block)
+        throw std::runtime_error(
+            "Null blocks in bilinear form not supported yet.");
+    }
+  }
+
   assert(!L.empty());
   const Vec _x0 = x0 ? x0->vec() : nullptr;
 
@@ -298,8 +331,6 @@ void fem::assemble_petsc(
   // FIXME: shift this to higher level?
   VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
   VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
-
-  std::cout << "Finihed assembly " << std::endl;
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_eigen(
@@ -374,156 +405,121 @@ void fem::assemble(la::PETScMatrix& A,
   const bool is_matnest
       = (strcmp(mat_type, MATNEST) == 0) and use_nest_extract ? true : false;
 
-  // Collect index sets
-  std::vector<std::vector<const common::IndexMap*>> maps(2);
-  for (std::size_t i = 0; i < a.size(); ++i)
-    maps[0].push_back(a[i][0]->function_space(0)->dofmap()->index_map().get());
-  for (std::size_t i = 0; i < a[0].size(); ++i)
-    maps[1].push_back(a[0][i]->function_space(1)->dofmap()->index_map().get());
-
   // Assemble matrix
-  if (block_matrix)
+  std::vector<IS> is_row, is_col;
+  if (block_matrix and !is_matnest)
   {
-    // Extracts sub-matrix by index sets
-    std::vector<IS> is_row, is_col;
-    if (!is_matnest)
-    {
-      is_row = la::compute_index_sets(maps[0]);
-      is_col = la::compute_index_sets(maps[1]);
-    }
-
+    // Prepare data structures for extracting sub-matrices by index
+    // sets
+    std::vector<std::vector<const common::IndexMap*>> maps(2);
     for (std::size_t i = 0; i < a.size(); ++i)
     {
-      for (std::size_t j = 0; j < a[i].size(); ++j)
-      {
-        if (a[i][j])
-        {
-          Mat subA;
-          if (!is_matnest)
-            MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
-          else
-            MatNestGetSubMat(A.mat(), i, j, &subA);
-
-          // FIXME: re-factor to use the below single form assembly
-          auto map0 = a[i][j]->function_space(0)->dofmap()->index_map();
-          auto map1 = a[i][j]->function_space(1)->dofmap()->index_map();
-          std::int32_t process_dim0
-              = map0->block_size() * (map0->size_local() + map0->num_ghosts());
-          std::int32_t process_dim1
-              = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-          std::vector<bool> dof_marker0, dof_marker1;
-          for (std::size_t k = 0; k < bcs.size(); ++k)
-          {
-            assert(bcs[k]);
-            assert(bcs[k]->function_space());
-            if (a[i][j]->function_space(0)->contains(*bcs[k]->function_space()))
-            {
-              dof_marker0.resize(process_dim0, false);
-              bcs[k]->mark_dofs(dof_marker0);
-            }
-            if (a[i][j]->function_space(1)->contains(*bcs[k]->function_space()))
-            {
-              dof_marker1.resize(process_dim1, false);
-              bcs[k]->mark_dofs(dof_marker1);
-            }
-          }
-
-          assemble_matrix(subA, *a[i][j], dof_marker0, dof_marker1);
-
-          if (*a[i][j]->function_space(0) == *a[i][j]->function_space(1))
-          {
-            la::PETScMatrix mat(subA);
-            for (const auto& bc : bcs)
-            {
-              assert(bc);
-              if (a[i][j]->function_space(0)->contains(*bc->function_space()))
-              {
-                // FIXME: could be simpler if DirichletBC::dof_indices had
-                // options to return owned dofs only
-                const Eigen::Ref<
-                    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-                    dofs = bc->dof_indices();
-                const int owned_size = map0->block_size() * map0->size_local();
-                auto it = std::lower_bound(
-                    dofs.data(), dofs.data() + dofs.rows(), owned_size);
-                const Eigen::Index pos = std::distance(dofs.data(), it);
-                assert(pos <= dofs.size() and pos >= 0);
-                const Eigen::Map<
-                    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-                    dofs_owned(dofs.data(), pos);
-                set_diagonal_local(mat, dofs_owned, diagonal);
-              }
-            }
-          }
-
-          if (!is_matnest)
-            MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
-        }
-        else
-        {
-          // FIXME: Figure out how to check that matrix block is null
-          // Null block, do nothing
-          throw std::runtime_error("Null block not supported/tested yet.");
-        }
-      }
+      maps[0].push_back(
+          a[i][0]->function_space(0)->dofmap()->index_map().get());
     }
-    for (std::size_t i = 0; i < is_row.size(); ++i)
-      ISDestroy(&is_row[i]);
-    for (std::size_t i = 0; i < is_col.size(); ++i)
-      ISDestroy(&is_col[i]);
+    for (std::size_t i = 0; i < a[0].size(); ++i)
+    {
+      maps[1].push_back(
+          a[0][i]->function_space(1)->dofmap()->index_map().get());
+    }
+    is_row = la::compute_index_sets(maps[0]);
+    is_col = la::compute_index_sets(maps[1]);
   }
-  else
+
+  // Loop over each form and assemble
+  for (std::size_t i = 0; i < a.size(); ++i)
   {
-    auto map0 = a[0][0]->function_space(0)->dofmap()->index_map();
-    auto map1 = a[0][0]->function_space(1)->dofmap()->index_map();
-    std::int32_t process_dim0
-        = map0->block_size() * (map0->size_local() + map0->num_ghosts());
-    std::int32_t process_dim1
-        = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-    std::vector<bool> dof_marker0, dof_marker1;
-    for (std::size_t k = 0; k < bcs.size(); ++k)
+    for (std::size_t j = 0; j < a[i].size(); ++j)
     {
-      assert(bcs[k]);
-      assert(bcs[k]->function_space());
-      if (a[0][0]->function_space(0)->contains(*bcs[k]->function_space()))
+      if (a[i][j])
       {
-        dof_marker0.resize(process_dim0, false);
-        bcs[k]->mark_dofs(dof_marker0);
-      }
-      if (a[0][0]->function_space(1)->contains(*bcs[k]->function_space()))
-      {
-        dof_marker1.resize(process_dim1, false);
-        bcs[k]->mark_dofs(dof_marker1);
-      }
-    }
+        Mat subA;
+        if (block_matrix and !is_matnest)
+          MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
+        else if (is_matnest)
+          MatNestGetSubMat(A.mat(), i, j, &subA);
+        else
+          subA = A.mat();
 
-    assemble_matrix(A, *a[0][0], dof_marker0, dof_marker1);
-
-    if (*a[0][0]->function_space(0) == *a[0][0]->function_space(1))
-    {
-      for (const auto& bc : bcs)
+        assemble_petsc(subA, *a[i][j], bcs, diagonal);
+        if (!is_matnest)
+          MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
+      }
+      else
       {
-        assert(bc);
-        if (a[0][0]->function_space(0)->contains(*bc->function_space()))
-        {
-          // FIXME: could be simpler if DirichletBC::dof_indices had
-          // options to return owned dofs only
-          const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs
-              = bc->dof_indices();
-          const int owned_size = map0->block_size() * map0->size_local();
-          auto it = std::lower_bound(dofs.data(), dofs.data() + dofs.rows(),
-                                     owned_size);
-          const Eigen::Index pos = std::distance(dofs.data(), it);
-          assert(pos <= dofs.size() and pos >= 0);
-          const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-              dofs_owned(dofs.data(), pos);
-          set_diagonal_local(A, dofs_owned, diagonal);
-        }
+        // Null block, do nothing
       }
     }
   }
+
+  // Clean up index sets
+  for (std::size_t i = 0; i < is_row.size(); ++i)
+    ISDestroy(&is_row[i]);
+  for (std::size_t i = 0; i < is_col.size(); ++i)
+    ISDestroy(&is_col[i]);
 
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
+}
+//-----------------------------------------------------------------------------
+void fem::assemble_petsc(Mat A, const Form& a,
+                         std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                         double diagonal)
+{
+  // Index maps for dof ranges
+  auto map0 = a.function_space(0)->dofmap()->index_map();
+  auto map1 = a.function_space(1)->dofmap()->index_map();
+
+  // Build dof markers
+  std::vector<bool> dof_marker0, dof_marker1;
+  std::int32_t dim0
+      = map0->block_size() * (map0->size_local() + map0->num_ghosts());
+  std::int32_t dim1
+      = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+  for (std::size_t k = 0; k < bcs.size(); ++k)
+  {
+    assert(bcs[k]);
+    assert(bcs[k]->function_space());
+    if (a.function_space(0)->contains(*bcs[k]->function_space()))
+    {
+      dof_marker0.resize(dim0, false);
+      bcs[k]->mark_dofs(dof_marker0);
+    }
+    if (a.function_space(1)->contains(*bcs[k]->function_space()))
+    {
+      dof_marker1.resize(dim1, false);
+      bcs[k]->mark_dofs(dof_marker1);
+    }
+  }
+
+  // Assemble
+  impl::assemble_matrix(A, a, dof_marker0, dof_marker1);
+
+  // Set diagonal for boundary conditions
+  if (*a.function_space(0) == *a.function_space(1))
+  {
+    for (const auto& bc : bcs)
+    {
+      assert(bc);
+      if (a.function_space(0)->contains(*bc->function_space()))
+      {
+        // FIXME: could be simpler if DirichletBC::dof_indices had
+        // options to return owned dofs only
+        const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs
+            = bc->dof_indices();
+        const int owned_size = map0->block_size() * map0->size_local();
+        auto it = std::lower_bound(dofs.data(), dofs.data() + dofs.rows(),
+                                   owned_size);
+        const Eigen::Index pos = std::distance(dofs.data(), it);
+        assert(pos <= dofs.size() and pos >= 0);
+        const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+            dofs_owned(dofs.data(), pos);
+        set_diagonal_local(A, dofs_owned, diagonal);
+      }
+    }
+  }
+
+  // Do not finalise assembly - matrix may be a proxy/sub-matrix with
+  // finalisation done elsewhere.
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc(la::PETScVector& b,

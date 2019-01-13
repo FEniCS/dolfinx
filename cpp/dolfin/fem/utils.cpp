@@ -1,10 +1,11 @@
-// Copyright (C) 2013-2018 Johan Hake, Jan Blechta and Garth N. Wells
+// Copyright (C) 2013-2019 Johan Hake, Jan Blechta and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <array>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -27,7 +28,17 @@ using namespace dolfin;
 la::PETScMatrix
 fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
 {
-  // FIXME: check that a is square
+  // Check that array of forms is not empty and is square
+  if (a.empty())
+    throw std::runtime_error("Cannot created nested matrix without forms.");
+  for (const auto& a_row : a)
+  {
+    if (a_row.size() != a[0].size())
+    {
+      throw std::runtime_error(
+          "Array for forms must be rectangular to initialised nested matrix.");
+    }
+  }
 
   // Block shape
   const auto shape = boost::extents[a.size()][a[0].size()];
@@ -42,9 +53,6 @@ fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
       if (a[i][j])
       {
         mats[i][j] = std::make_shared<la::PETScMatrix>(init_matrix(*a[i][j]));
-        // std::cout << "  init mat" << std::endl;
-        // init(*mats[i][j], *a[i][j]);
-        // std::cout << "  post init mat" << std::endl;
         petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
@@ -59,6 +67,7 @@ fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
   MatNestSetSubMats(_A, petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
                     NULL, petsc_mats.data());
   MatSetUp(_A);
+
   return la::PETScMatrix(_A);
 }
 //-----------------------------------------------------------------------------
@@ -71,7 +80,8 @@ la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
   {
     if (L[i])
     {
-      const common::IndexMap& index_map = *L[i]->function_space(0)->dofmap()->index_map();
+      const common::IndexMap& index_map
+          = *L[i]->function_space(0)->dofmap()->index_map();
       vecs[i] = std::make_shared<la::PETScVector>(index_map);
       petsc_vecs[i] = vecs[i]->vec();
     }
@@ -89,13 +99,18 @@ la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
 la::PETScMatrix
 fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
 {
-  // FIXME: handle null blocks
+  // FIXME: this assumes that a00 is not null
+  const mesh::Mesh& mesh = *a[0][0]->mesh();
 
-  // std::cout << "Initialising block matrix" << std::endl;
+  // FIXME: assume no null block in first row or column
+  // Extract and check row/column ranges
+  std::vector<std::shared_ptr<const common::IndexMap>> rmaps, cmaps;
+  for (std::size_t row = 0; row < a.size(); ++row)
+    rmaps.push_back(a[row][0]->function_space(0)->dofmap()->index_map());
+  for (std::size_t col = 0; col < a[0].size(); ++col)
+    cmaps.push_back(a[0][col]->function_space(1)->dofmap()->index_map());
 
-  // Block shape
-  // const auto shape = boost::extents[a.size()][a[0].size()];
-
+  // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
       a.size());
   std::vector<std::vector<const la::SparsityPattern*>> p(
@@ -104,34 +119,36 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
   {
     for (std::size_t col = 0; col < a[row].size(); ++col)
     {
-      // std::cout << "  Initialising block: " << row << ", " << col <<
-      // std::endl;
-      auto map0 = a[row][col]->function_space(0)->dofmap()->index_map();
-      auto map1 = a[row][col]->function_space(1)->dofmap()->index_map();
+      if (a[row][col])
+      {
+        // Build sparsity pattern for block
+        std::array<const GenericDofMap*, 2> dofmaps
+            = {{a[row][col]->function_space(0)->dofmap().get(),
+                a[row][col]->function_space(1)->dofmap().get()}};
+        auto sp = std::make_unique<la::SparsityPattern>(
+            SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps, true,
+                                          false, false, false, false));
+        patterns[row].push_back(std::move(sp));
+      }
+      else
+      {
+        // FIXME: create sparsity pattern that has just a row/col range
+        const std::array<std::shared_ptr<const common::IndexMap>, 2> maps
+            = {rmaps[row], cmaps[col]};
+        auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), maps);
+        patterns[row].push_back(std::move(sp));
+      }
 
-      // std::cout << "  Push Initialising block: " << std::endl;
-      std::array<std::shared_ptr<const common::IndexMap>, 2> maps
-          = {{map0, map1}};
-
-      // Build sparsity pattern
-      std::array<const GenericDofMap*, 2> dofmaps
-          = {{a[row][col]->function_space(0)->dofmap().get(),
-              a[row][col]->function_space(1)->dofmap().get()}};
-      const mesh::Mesh& mesh = *a[row][col]->mesh();
-      auto sp = std::make_unique<la::SparsityPattern>(
-          SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps, true,
-                                        false, false, false, false));
-      patterns[row].push_back(std::move(sp));
       p[row][col] = patterns[row][col].get();
       assert(p[row][col]);
     }
   }
 
   // Create merged sparsity pattern
-  la::SparsityPattern pattern(a[0][0]->mesh()->mpi_comm(), p);
+  la::SparsityPattern pattern(mesh.mpi_comm(), p);
 
   // Initialise matrix
-  la::PETScMatrix A(a[0][0]->mesh()->mpi_comm(), pattern);
+  la::PETScMatrix A(mesh.mpi_comm(), pattern);
 
   // Build list of row and column index maps (over each block)
   std::array<std::vector<const common::IndexMap*>, 2> index_maps;
@@ -152,22 +169,33 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
   {
     auto map = a[i][0]->function_space(0)->dofmap()->index_map();
     std::size_t size = map->size_local() + map->num_ghosts();
+    const int bs0 = map->block_size();
     for (std::size_t k = 0; k < size; ++k)
     {
-      auto index_k = map->local_to_global(k);
-      std::size_t index = get_global_index(index_maps[0], i, index_k);
-      _maps[0].push_back(index);
+      std::size_t index_k = map->local_to_global(k);
+      for (int block = 0; block < bs0; ++block)
+      {
+        std::size_t index
+            = get_global_index(index_maps[0], i, index_k * bs0 + block);
+        _maps[0].push_back(index);
+      }
     }
   }
+
   for (std::size_t i = 0; i < a[0].size(); ++i)
   {
     auto map = a[0][i]->function_space(1)->dofmap()->index_map();
     std::size_t size = map->size_local() + map->num_ghosts();
+    const int bs1 = map->block_size();
     for (std::size_t k = 0; k < size; ++k)
     {
-      auto index_k = map->local_to_global(k);
-      std::size_t index = get_global_index(index_maps[1], i, index_k);
-      _maps[1].push_back(index);
+      std::size_t index_k = map->local_to_global(k);
+      for (int block = 0; block < bs1; ++block)
+      {
+        std::size_t index
+            = get_global_index(index_maps[1], i, index_k * bs1 + block);
+        _maps[1].push_back(index);
+      }
     }
   }
 
@@ -322,10 +350,14 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
 //-----------------------------------------------------------------------------
 std::size_t
 dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
-                              const unsigned int field, const unsigned int n)
+                              const unsigned int field,
+                              const unsigned int index)
 {
+  // FIXME: handle/check block size > 1
+
   // Get process that owns global index
-  int owner = maps[field]->owner(n);
+  const int bs  = maps[field]->block_size();
+  int owner = maps[field]->owner(index/bs);
 
   // Offset from lower rank processes
   std::size_t offset = 0;
@@ -334,14 +366,17 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
       if (j != field)
-        offset += maps[j]->_all_ranges[owner];
+        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size();
     }
   }
 
   // Local (process) offset
   for (unsigned int i = 0; i < field; ++i)
-    offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner]);
+  {
+    offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner])
+              * maps[i]->block_size();
+  }
 
-  return n + offset;
+  return index + offset;
 }
 //-----------------------------------------------------------------------------

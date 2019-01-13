@@ -12,15 +12,14 @@ using namespace dolfin;
 using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
+IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::size_t>& ghosts,
                    std::size_t block_size)
     : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts.size()),
       _block_size(block_size)
 {
   // Calculate offsets
-  MPI::all_gather(_mpi_comm, local_size, _all_ranges);
-  // MPI::all_gather(_mpi_comm.comm(), local_size, _all_ranges);
+  MPI::all_gather(_mpi_comm, (std::int64_t) local_size, _all_ranges);
 
   // const std::size_t mpi_size = _mpi_comm.size();
   const std::size_t mpi_size = dolfin::MPI::size(_mpi_comm);
@@ -60,7 +59,7 @@ const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-int IndexMap::owner(std::size_t global_index) const
+int IndexMap::owner(std::int64_t global_index) const
 {
   return std::upper_bound(_all_ranges.begin(), _all_ranges.end(), global_index)
          - _all_ranges.begin() - 1;
