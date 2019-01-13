@@ -5,34 +5,21 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "assemble_matrix_impl.h"
-#include "DirichletBC.h"
 #include "Form.h"
 #include "GenericDofMap.h"
-#include "utils.h"
-#include <Eigen/Sparse>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscsys.h>
-#include <string>
 
 using namespace dolfin;
-using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-void fem::assemble_matrix(la::PETScMatrix& A, const Form& a,
-                          const std::vector<bool>& bc0,
-                          const std::vector<bool>& bc1)
-{
-  assert(A.mat());
-  assemble_matrix(A.mat(), a, bc0, bc1);
-}
-//-----------------------------------------------------------------------------
-void fem::assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
-                          const std::vector<bool>& bc1)
+void fem::impl::assemble_matrix(Mat A, const Form& a,
+                                const std::vector<bool>& bc0,
+                                const std::vector<bool>& bc1)
 {
   assert(A);
   assert(a.mesh());

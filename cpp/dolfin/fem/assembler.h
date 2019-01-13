@@ -132,9 +132,9 @@ void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
 
 /// Assemble bilinear form into a matrix. Matrix must be initialised.
 /// Does not finalise matrix.
-void assemble(Mat A, const Form& a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double diagonal);
+void assemble_petsc(Mat A, const Form& a,
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                    double diagonal);
 
 // -- Setting bcs ------------------------------------------------------------
 

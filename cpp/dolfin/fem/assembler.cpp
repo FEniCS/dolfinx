@@ -441,7 +441,7 @@ void fem::assemble(la::PETScMatrix& A,
         else
           subA = A.mat();
 
-        assemble(subA, *a[i][j], bcs, diagonal);
+        assemble_petsc(subA, *a[i][j], bcs, diagonal);
         if (!is_matnest)
           MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
       }
@@ -461,41 +461,43 @@ void fem::assemble(la::PETScMatrix& A,
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(Mat A, const Form& a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double diagonal)
+void fem::assemble_petsc(Mat A, const Form& a,
+                         std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                         double diagonal)
 {
-  // Build dof markers
+  // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map();
   auto map1 = a.function_space(1)->dofmap()->index_map();
-  std::int32_t process_dim0
-      = map0->block_size() * (map0->size_local() + map0->num_ghosts());
-  std::int32_t process_dim1
-      = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+
+
+  // Build dof markers
   std::vector<bool> dof_marker0, dof_marker1;
+  std::int32_t dim0
+      = map0->block_size() * (map0->size_local() + map0->num_ghosts());
+  std::int32_t dim1
+      = map1->block_size() * (map1->size_local() + map1->num_ghosts());
   for (std::size_t k = 0; k < bcs.size(); ++k)
   {
     assert(bcs[k]);
     assert(bcs[k]->function_space());
     if (a.function_space(0)->contains(*bcs[k]->function_space()))
     {
-      dof_marker0.resize(process_dim0, false);
+      dof_marker0.resize(dim0, false);
       bcs[k]->mark_dofs(dof_marker0);
     }
     if (a.function_space(1)->contains(*bcs[k]->function_space()))
     {
-      dof_marker1.resize(process_dim1, false);
+      dof_marker1.resize(dim1, false);
       bcs[k]->mark_dofs(dof_marker1);
     }
   }
 
   // Assemble
-  assemble_matrix(A, a, dof_marker0, dof_marker1);
+  impl::assemble_matrix(A, a, dof_marker0, dof_marker1);
 
   // Set diagonal for boundary conditions
   if (*a.function_space(0) == *a.function_space(1))
   {
-    // la::PETScMatrix mat(subA);
     for (const auto& bc : bcs)
     {
       assert(bc);
@@ -517,7 +519,8 @@ void fem::assemble(Mat A, const Form& a,
     }
   }
 
-  // Do not finalise assembly - matrix may be a proxy/sub-matrix.
+  // Do not finalise assembly - matrix may be a proxy/sub-matrix with
+  // finalisation done elsewhere.
 }
 //-----------------------------------------------------------------------------
 void fem::set_bc(la::PETScVector& b,
