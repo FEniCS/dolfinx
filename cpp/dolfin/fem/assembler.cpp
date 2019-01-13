@@ -434,7 +434,7 @@ void fem::assemble(la::PETScMatrix& A,
           subA = A.mat();
 
         assemble_petsc(subA, *a[i][j], bcs, diagonal);
-        if (!is_matnest)
+        if (block_matrix and !is_matnest)
           MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
       }
       else
