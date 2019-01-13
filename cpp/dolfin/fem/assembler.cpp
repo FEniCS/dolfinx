@@ -469,7 +469,6 @@ void fem::assemble_petsc(Mat A, const Form& a,
   auto map0 = a.function_space(0)->dofmap()->index_map();
   auto map1 = a.function_space(1)->dofmap()->index_map();
 
-
   // Build dof markers
   std::vector<bool> dof_marker0, dof_marker1;
   std::int32_t dim0
