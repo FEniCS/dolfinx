@@ -15,7 +15,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
@@ -308,18 +307,6 @@ void Mesh::clean()
         _topology.clear(d0, d1);
     }
   }
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<geometry::BoundingBoxTree> Mesh::bounding_box_tree() const
-{
-  // Allocate and build tree if necessary
-  if (!_tree)
-  {
-    _tree.reset(new geometry::BoundingBoxTree(geometry().dim()));
-    _tree->build(*this, topology().dim());
-  }
-
-  return _tree;
 }
 //-----------------------------------------------------------------------------
 double Mesh::hmin() const

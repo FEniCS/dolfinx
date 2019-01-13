@@ -11,6 +11,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SpecialFunctions.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -107,9 +108,11 @@ void function(py::module& m)
            py::overload_cast<
                Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>>,
-               const Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
+               const Eigen::Ref<const dolfin::EigenRowArrayXXd>,
+               const dolfin::geometry::BoundingBoxTree&>(
                &dolfin::function::Function::eval, py::const_),
-           py::arg("values"), py::arg("x"), "Evaluate Function")
+           py::arg("values"), py::arg("x"), py::arg("bb_tree"),
+           "Evaluate Function")
       .def("compute_point_values",
            py::overload_cast<const dolfin::mesh::Mesh&>(
                &dolfin::function::Function::compute_point_values, py::const_),

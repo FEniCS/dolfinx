@@ -204,24 +204,27 @@ def test_call(R, V, W, Q, mesh):
     p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0).array()
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
 
-    assert numpy.allclose(u0(x0), u0(x0))
-    assert numpy.allclose(u0(x0), u0(p0))
-    assert numpy.allclose(u1(x0), u1(x0))
-    assert numpy.allclose(u1(x0), u1(p0))
-    assert numpy.allclose(u2(x0)[0], u1(p0))
+    tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
+    tree.build(mesh, mesh.topology.dim)
 
-    assert numpy.allclose(u2(x0), u2(p0))
-    assert numpy.allclose(u3(x0)[:3], u2(x0), rtol=1e-15, atol=1e-15)
+    assert numpy.allclose(u0(x0, tree), u0(x0, tree))
+    assert numpy.allclose(u0(x0, tree), u0(p0, tree))
+    assert numpy.allclose(u1(x0, tree), u1(x0, tree))
+    assert numpy.allclose(u1(x0, tree), u1(p0, tree))
+    assert numpy.allclose(u2(x0, tree)[0], u1(p0, tree))
+
+    assert numpy.allclose(u2(x0, tree), u2(p0, tree))
+    assert numpy.allclose(u3(x0, tree)[:3], u2(x0, tree), rtol=1e-15, atol=1e-15)
 
     p0_list = [p for p in p0]
     x0_list = [x for x in x0]
-    assert numpy.allclose(u0(x0_list), u0(x0_list))
-    assert numpy.allclose(u0(x0_list), u0(p0_list))
+    assert numpy.allclose(u0(x0_list, tree), u0(x0_list, tree))
+    assert numpy.allclose(u0(x0_list, tree), u0(p0_list, tree))
 
     with pytest.raises(ValueError):
-        u0([0, 0, 0, 0])
+        u0([0, 0, 0, 0], tree)
     with pytest.raises(ValueError):
-        u0([0, 0])
+        u0([0, 0], tree)
 
 
 def test_scalar_conditions(R):
@@ -286,18 +289,20 @@ def test_interpolation_rank0(V):
 def test_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
 
+    bb_tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
+    bb_tree.build(mesh, mesh.topology.dim)
     u0 = Function(R)
     u0.vector()[:] = 1.0
     a = Vertex(mesh, 0).point().array()
     offset = 0.99 * DOLFIN_EPS
 
     a_shift_x = Point(a[0] - offset, a[1], a[2]).array()
-    assert round(u0(a)[0] - u0(a_shift_x)[0], 7) == 0
+    assert round(u0(a, bb_tree)[0] - u0(a_shift_x, bb_tree)[0], 7) == 0
 
     a_shift_xyz = Point(a[0] - offset / math.sqrt(3),
                         a[1] - offset / math.sqrt(3),
                         a[2] - offset / math.sqrt(3)).array()
-    assert round(u0(a)[0] - u0(a_shift_xyz)[0], 7) == 0
+    assert round(u0(a, bb_tree)[0] - u0(a_shift_xyz, bb_tree)[0], 7) == 0
 
 
 def test_interpolation_rank1(W):

@@ -7,8 +7,8 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/common/types.h>
 #include <dolfin/common/Variable.h>
+#include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <memory>
 #include <petscsys.h>
@@ -16,11 +16,15 @@
 
 namespace dolfin
 {
+
+namespace geometry
+{
+class BoundingBoxTree;
+}
 namespace la
 {
 class PETScVector;
 }
-
 namespace mesh
 {
 class Cell;
@@ -159,11 +163,14 @@ public:
   ///         The coordinates of the point.
   /// @param    cell (mesh::Cell)
   ///         The cell which contains the given point.
-  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                values,
-            const Eigen::Ref<const EigenRowArrayXXd> x,
-            const mesh::Cell& cell) const;
+  void
+  eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+           values,
+       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                           Eigen::Dynamic, Eigen::RowMajor>>
+           x,
+       const mesh::Cell& cell) const;
 
   /// Evaluate function at given coordinates
   ///
@@ -171,10 +178,14 @@ public:
   ///         The values.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd> x)
   ///         The coordinates.
-  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                values,
-            const Eigen::Ref<const EigenRowArrayXXd> x) const;
+  void
+  eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+           values,
+       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                           Eigen::Dynamic, Eigen::RowMajor>>
+           x,
+       const geometry::BoundingBoxTree& bb_tree) const;
 
   /// Restrict function to local cell (compute expansion coefficients w)
   ///
