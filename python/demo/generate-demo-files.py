@@ -30,18 +30,18 @@ for subdir in subdirs:
     for root, dirs, files in os.walk(subdir):
 
         # Check for .py.rst files
-        rstfiles = [f for f in files if len(f) > 7 and f[-7:] == ".py.rst"]
+        rstfiles = [f for f in files if len(f) > 7 and f[-7:] == ".py"]
         if len(rstfiles) == 0:
             continue
 
         # Compile files
         os.chdir(root)
-        print("Converting rst files in in {} ...".format(root))
+        print("Converting py files in in {} ...".format(root))
         for f in rstfiles:
             command = sys.executable + " " + parser + " " + os.path.abspath(f)
             #print("  " + command)
             ret = os.system(command)
             if not ret == 0:
-                raise RuntimeError("Unable to convert rst file to a .py ({})".format(f))
+                raise RuntimeError("Unable to convert .py file to a .py.rst ({})".format(f))
 
         os.chdir(topdir)
