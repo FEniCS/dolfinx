@@ -1,4 +1,4 @@
-// Copyright (C) 2017-2018 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -246,15 +246,15 @@ void fem(py::module& m)
         py::arg("a"), py::arg("bcs"), py::arg("block_type"),
         py::arg("diagonal"),
         "Assemble bilinear forms over mesh into blocked matrix");
-  m.def(
-      "reassemble_blocked_matrix",
-      py::overload_cast<
-          dolfin::la::PETScMatrix&,
-          const std::vector<std::vector<const dolfin::fem::Form*>>,
-          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
-          &dolfin::fem::assemble),
-      py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
-      "Re-assemble bilinear forms over mesh into blocked matrix");
+  m.def("reassemble_blocked_matrix",
+        py::overload_cast<
+            dolfin::la::PETScMatrix&,
+            const std::vector<std::vector<const dolfin::fem::Form*>>,
+            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
+            double, bool>(&dolfin::fem::assemble),
+        py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
+        py::arg("use_nest_extract") = true,
+        "Re-assemble bilinear forms over mesh into blocked matrix");
   m.def("set_bc", &dolfin::fem::set_bc,
         "Insert boundary condition values into vector");
 

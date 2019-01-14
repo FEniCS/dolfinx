@@ -22,11 +22,6 @@
 namespace dolfin
 {
 
-namespace geometry
-{
-class BoundingBoxTree;
-}
-
 namespace function
 {
 class Function;
@@ -162,8 +157,7 @@ public:
   /// @return std::vector<std::uint32_t>&
   ///         Connectivity for all cells.
   ///
-  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-  cells() const
+  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cells() const
   {
     return _topology.connectivity(_topology.dim(), 0).connections();
   }
@@ -204,17 +198,6 @@ public:
   /// @return MeshGeometry
   ///         The geometry object associated with the mesh.
   const MeshGeometry& geometry() const { return _geometry; }
-
-  /// Get bounding box tree for mesh. The bounding box tree is
-  /// initialized and built upon the first call to this
-  /// function. The bounding box tree can be used to compute
-  /// collisions between the mesh and other objects. It is the
-  /// responsibility of the caller to use (and possibly rebuild) the
-  /// tree. It is stored as a (mutable) member of the mesh to enable
-  /// sharing of the bounding box tree data structure.
-  ///
-  /// @return std::shared_ptr<BoundingBoxTree>
-  std::shared_ptr<geometry::BoundingBoxTree> bounding_box_tree() const;
 
   /// Get mesh cell type.
   ///
@@ -346,11 +329,6 @@ private:
   // FXIME: This shouldn't be here
   // Mesh geometric degree (in Lagrange basis) describing coordinate dofs
   std::uint32_t _degree;
-
-  // Bounding box tree used to compute collisions between the mesh
-  // and other objects. The tree is initialized to a zero pointer
-  // and is allocated and built when bounding_box_tree() is called.
-  mutable std::shared_ptr<geometry::BoundingBoxTree> _tree;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;

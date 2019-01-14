@@ -35,7 +35,7 @@ enum class BlockType
 };
 
 /// Assemble variational form
-boost::variant<double, la::PETScVector, la::PETScMatrix>
+boost::variant<PetscScalar, la::PETScVector, la::PETScMatrix>
 assemble(const Form& a);
 
 // -- Vectors ----------------------------------------------------------------
@@ -128,7 +128,13 @@ la::PETScMatrix assemble(const std::vector<std::vector<const Form*>> a,
 /// Re-assemble blocked bilinear forms into a matrix
 void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double diagonal = 1.0);
+              double diagonal = 1.0, bool use_nest_extract = true);
+
+/// Assemble bilinear form into a matrix. Matrix must be initialised.
+/// Does not finalise matrix.
+void assemble_petsc(Mat A, const Form& a,
+                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                    double diagonal);
 
 // -- Setting bcs ------------------------------------------------------------
 

@@ -138,8 +138,8 @@ public:
 
 private:
   std::shared_ptr<function::Function> _u;
-  std::shared_ptr<fem::Form> _j;
   std::shared_ptr<fem::Form> _l;
+  std::shared_ptr<fem::Form> _j;
   std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;
 
   std::unique_ptr<la::PETScVector> b;

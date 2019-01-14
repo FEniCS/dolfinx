@@ -5,15 +5,17 @@
 #  PETSC_INCLUDE_DIRS      - include directories for PETSc
 #  PETSC_LIBRARY_DIRS      - library directories for PETSc
 #  PETSC_LIBRARIES         - libraries for PETSc
-#  PETSC_STATIC_LIBRARIES  - libraries for PETSc (static linking, undefined if not required)
+#  PETSC_STATIC_LIBRARIES  - libraries for PETSc (static linking,
+#                            undefined if not required)
 #  PETSC_VERSION           - version for PETSc
 #  PETSC_VERSION_MAJOR     - First number in PETSC_VERSION
 #  PETSC_VERSION_MINOR     - Second number in PETSC_VERSION
 #  PETSC_VERSION_SUBMINOR  - Third number in PETSC_VERSION
 #  PETSC_INT_SIZE          - sizeof(PetscInt)
+#  PETSC_SCALAR_COMPLEX    - PETSc is complied with complex scalar type
 #
 #=============================================================================
-# Copyright (C) 2010-2016 Garth N. Wells, Anders Logg and Johannes Ring
+# Copyright (C) 2010-2019 Garth N. Wells, Anders Logg and Johannes Ring
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -186,12 +188,16 @@ int main()
   endif()
 endif()
 
-# Check sizeof(PetscInt)
+# Check sizeof(PetscInt) and check scalar type
 if (PETSC_INCLUDE_DIRS)
-  include(CheckTypeSize)
   set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${PETSC_INCLUDE_DIRS})
   set(CMAKE_EXTRA_INCLUDE_FILES petscsys.h)
+
+  include(CheckTypeSize)
   check_type_size("PetscInt" PETSC_INT_SIZE)
+
+  include(CheckSymbolExists)
+  check_symbol_exists(PETSC_USE_COMPLEX petscsys.h PETSC_SCALAR_COMPLEX)
 
   unset(CMAKE_EXTRA_INCLUDE_FILES)
   unset(CMAKE_REQUIRED_INCLUDES)

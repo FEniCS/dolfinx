@@ -27,62 +27,25 @@ build-install-cpp: &build-install-cpp
   command: cd build && ninja -j3 install
 
 unit-tests-cpp: &unit-tests-cpp
-  name: Build and run unit tests (C++, serial)
-  command: cd build && ninja -j3 unittests && ctest -R unittests
+  name: Build and run C++ unit tests (serial)
+  command: |
+    cd build
+    ninja -j3 unittests
+    ctest -R unittests
 
 regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
-  command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
+  command: |
+    cd build
+    ninja -j3 demos
+    ctest -j3 -R demo -R serial
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
-  command: cd build && make -j2 demos && ctest -R demo -R mpi
-
-demos-cpp: &demos-cpp
-  name: Build and run demos (C++)
   command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    ./demo_poisson
-    cd ../hyperelasticity
-    python3 -m ffc -l dolfin HyperElasticity.ufl
-    cmake -G Ninja .
-    ninja
-    ./demo_hyperelasticity
-
-demos-cpp-mpi: &demos-cpp-mpi
-  name: Build and run demos (C++, MPI)
-  command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    mpirun --allow-run-as-root -n 3 ./demo_poisson
-    cd ../hyperelasticity
-    python3 -m ffc -l dolfin HyperElasticity.ufl
-    cmake -G Ninja .
-    ninja
-    mpirun --allow-run-as-root -n 3 ./demo_hyperelasticity
-
-demos-cpp-complex: &demos-cpp-complex
-  name: Build and run demos (C++)
-  command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin -f 'scalar_type' 'double complex' Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    ./demo_poisson
-
-demos-cpp-complex-mpi: &demos-cpp-complex-mpi
-  name: Build and run demos (C++, MPI)
-  command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin -f 'scalar_type' 'double complex' Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    mpirun --allow-run-as-root -n 3 ./demo_poisson
+    cd build
+    ninja -j3 demos
+    ctest --verbose -R demo -R mpi
 
 build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
@@ -100,7 +63,7 @@ unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   command: |
     cd python/test/unit
-    python3 -m pytest -n 3 .
+    python3 -m pytest -n3 .
 
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
@@ -113,22 +76,14 @@ demos-python: &demos-python
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 documented/poisson/demo_poisson.py
-    python3 documented/cahn-hilliard/demo_cahn-hilliard.py
-    python3 undocumented/elasticity/demo_elasticity.py
-    python3 undocumented/helmholtz2D/demo_helmholtz_plane_wave.py
-    cd documented/stokes-taylor-hood
-    python3 demo_stokes-taylor-hood.py
+    python3 -m pytest -n3 -v -m serial test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
   command: |
     cd python/demo
-    mpirun --allow-run-as-root -np 3 python3 documented/poisson/demo_poisson.py
-    mpirun --allow-run-as-root -np 3 python3 documented/cahn-hilliard/demo_cahn-hilliard.py
-    mpirun --allow-run-as-root -np 3 python3 undocumented/elasticity/demo_elasticity.py
-    cd documented/stokes-taylor-hood
-    mpirun --allow-run-as-root -np 3 python3 demo_stokes-taylor-hood.py
+    python3 ./generate-demo-files.py
+    python3 -m pytest -n2 -v -m mpi test.py --mpi-options="--allow-run-as-root" --num-proc=3
 
 version: 2
 
@@ -146,11 +101,14 @@ jobs:
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
+
       - run: *unit-tests-cpp
-      - run: *demos-cpp
-      - run: *demos-cpp-mpi
+      - run: *regression-tests-cpp
+      - run: *regression-tests-cpp-mpi
+
       - run: *build-python-interface
       - run: *build-documentation-python
+
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
       - run: *demos-python
@@ -174,9 +132,11 @@ jobs:
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
+
       - run: *unit-tests-cpp
-      - run: *demos-cpp-complex
-      - run: *demos-cpp-complex-mpi
+      - run: *regression-tests-cpp
+      - run: *regression-tests-cpp-mpi
+
       - run: *build-python-interface
       - run: *build-documentation-python
       - run: *unit-tests-python
@@ -203,10 +163,10 @@ jobs:
 
   build-and-push-docker-images:
     docker:
-      - image: docker:18.05.0-git
+      - image: docker:18.09.0-git
     steps:
       - setup_remote_docker:
-          version: 18.05.0-ce
+          version: 18.09.0
       - checkout
       - run:
           name: Login to quay.io
