@@ -36,7 +36,7 @@ void common(py::module& m)
   py::class_<dolfin::common::Variable,
              std::shared_ptr<dolfin::common::Variable>>(m, "Variable",
                                                         "Variable base class")
-      .def("id", &dolfin::common::Variable::id)
+      .def_property_readonly("id", &dolfin::common::Variable::id)
       .def("name", &dolfin::common::Variable::name)
       .def("rename", &dolfin::common::Variable::rename);
 

@@ -124,7 +124,7 @@ def test_UFLDomain(interval, square, rectangle, cube, box):
         assert mesh.geometry.dim == domain.geometric_dimension()
         assert mesh.topology.dim == domain.topological_dimension()
         assert mesh.ufl_cell() == domain.ufl_cell()
-        assert mesh.id() == domain.ufl_id()
+        assert mesh.id == domain.ufl_id()
 
     _check_ufl_domain(interval)
     _check_ufl_domain(square)
@@ -459,7 +459,7 @@ def test_mesh_topology_reference():
     """Check that Mesh.topology returns a reference rather
     than copy"""
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
-    assert mesh.topology.id() == mesh.topology.id()
+    assert mesh.topology.id == mesh.topology.id
 
 
 def test_mesh_topology_lifetime():

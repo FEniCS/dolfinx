@@ -19,8 +19,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : common::Variable("Newton solver"), _krylov_iterations(0), _residual(0.0),
-      _residual0(0.0), _mpi_comm(comm)
+    : _krylov_iterations(0), _residual(0.0), _residual0(0.0), _mpi_comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver = std::make_shared<la::PETScKrylovSolver>(comm);
@@ -31,11 +30,6 @@ nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
   la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif
   _solver->set_from_options();
-}
-//-----------------------------------------------------------------------------
-nls::NewtonSolver::~NewtonSolver()
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::pair<int, bool>

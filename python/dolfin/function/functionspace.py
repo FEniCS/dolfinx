@@ -108,11 +108,13 @@ class FunctionSpace(ufl.FunctionSpace):
     def ufl_function_space(self):
         return self
 
-    def dim(self):
+    @property
+    def dim(self) -> int:
         return self._cpp_object.dim
 
-    def id(self):
-        return self._cpp_object.id()
+    @property
+    def id(self) -> int:
+        return self._cpp_object.id
 
     def element(self):
         return self._cpp_object.element()
