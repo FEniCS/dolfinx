@@ -6,13 +6,14 @@
 
 import os
 import sys
+import glob
 
 
 # Get directory of this file
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Directories to scan
-subdirs = [dir_path]
+subdirs = glob.glob(dir_path +"/documented/")
 
 # Check that we can find pylint.py
 parser = dir_path + "/../../utils/pylit/pylit.py"
@@ -30,7 +31,7 @@ for subdir in subdirs:
     for root, dirs, files in os.walk(subdir):
 
         # Check for .py.rst files
-        rstfiles = [f for f in files if len(f) > 7 and f[-7:] == ".py"]
+        rstfiles = [f for f in files if len(f) > 7 and f[-3:] == ".py"]
         if len(rstfiles) == 0:
             continue
 
@@ -38,7 +39,7 @@ for subdir in subdirs:
         os.chdir(root)
         print("Converting py files in in {} ...".format(root))
         for f in rstfiles:
-            command = sys.executable + " " + parser + " " + os.path.abspath(f)
+            command = sys.executable + " " + parser + " -c " + os.path.abspath(f) + " " + os.path.abspath(f) + ".rst"
             #print("  " + command)
             ret = os.system(command)
             if not ret == 0:
