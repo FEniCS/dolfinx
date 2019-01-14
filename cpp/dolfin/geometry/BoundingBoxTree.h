@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <array>
 #include <dolfin/geometry/Point.h>
 #include <limits>
 #include <memory>
@@ -30,17 +31,29 @@ namespace geometry
 
 class BoundingBoxTree
 {
+private:
+  BoundingBoxTree(const std::vector<double>& leaf_bboxes,
+                  const std::vector<unsigned int>::iterator& begin,
+                  const std::vector<unsigned int>::iterator& end,
+                  std::size_t gdim);
+
 public:
   /// Constructor
-  BoundingBoxTree(std::size_t gdim);
+  BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim);
+
+  /// Constructor
+  BoundingBoxTree(const std::vector<Point>& points, std::size_t gdim);
+
+  /// Move constructor
+  BoundingBoxTree(BoundingBoxTree&& tree) = default;
+
+  /// Copy constructor
+  BoundingBoxTree(const BoundingBoxTree& tree) = default;
+
+  /// Move assignment
+  BoundingBoxTree& operator=(BoundingBoxTree&& other) = default;
 
   ~BoundingBoxTree() = default;
-
-  /// Build bounding box tree for mesh entities of given dimension
-  void build(const mesh::Mesh& mesh, std::size_t tdim);
-
-  /// Build bounding box tree for point cloud
-  void build(const std::vector<Point>& points);
 
   /// Compute all collisions between bounding boxes and _Point_
   std::vector<unsigned int> compute_collisions(const Point& point) const;
@@ -98,32 +111,31 @@ public:
   /// Print out for debugging
   std::string str(bool verbose = false);
 
-private:
   // Bounding box data structure. Leaf nodes are indicated by setting child_0
   // equal to the node itself. For leaf nodes, child_1 is set to the
   // index of the entity contained in the leaf bounding box.
-  struct BBox
-  {
-    // Child 0
-    unsigned int child_0;
-    // Child 1
-    unsigned int child_1;
-  };
-
-  // Clear existing data if any
-  void clear();
-
+  using BBox = std::array<unsigned int, 2>;
+  // struct BBox
+  // {
+  //   // Child 0
+  //   unsigned int child_0;
+  //   // Child 1
+  //   unsigned int child_1;
+  // };
+private:
   //--- Recursive build functions ---
 
   // Build bounding box tree for entities (recursive)
-  unsigned int _build(const std::vector<double>& leaf_bboxes,
-                      const std::vector<unsigned int>::iterator& begin,
-                      const std::vector<unsigned int>::iterator& end);
+  unsigned int
+  _build_from_leaf(const std::vector<double>& leaf_bboxes,
+                   const std::vector<unsigned int>::iterator& begin,
+                   const std::vector<unsigned int>::iterator& end);
 
   // Build bounding box tree for points (recursive)
-  unsigned int _build(const std::vector<Point>& points,
-                      const std::vector<unsigned int>::iterator& begin,
-                      const std::vector<unsigned int>::iterator& end);
+  unsigned int
+  _build_from_point(const std::vector<Point>& points,
+                    const std::vector<unsigned int>::iterator& begin,
+                    const std::vector<unsigned int>::iterator& end);
 
   //--- Recursive search functions ---
 
@@ -131,19 +143,19 @@ private:
   // some of them need to deal with more than one tree.
 
   // Compute collisions with point (recursive)
-  static void _compute_collisions(const BoundingBoxTree& tree,
-                                  const Point& point, unsigned int node,
-                                  std::vector<unsigned int>& entities,
-                                  const mesh::Mesh* mesh);
+  static void _compute_collisions_point(const BoundingBoxTree& tree,
+                                        const Point& point, unsigned int node,
+                                        std::vector<unsigned int>& entities,
+                                        const mesh::Mesh* mesh);
 
   // Compute collisions with tree (recursive)
-  static void _compute_collisions(const BoundingBoxTree& A,
-                                  const BoundingBoxTree& B, unsigned int node_A,
-                                  unsigned int node_B,
-                                  std::vector<unsigned int>& entities_A,
-                                  std::vector<unsigned int>& entities_B,
-                                  const mesh::Mesh* mesh_A,
-                                  const mesh::Mesh* mesh_B);
+  static void _compute_collisions_tree(const BoundingBoxTree& A,
+                                       const BoundingBoxTree& B,
+                                       unsigned int node_A, unsigned int node_B,
+                                       std::vector<unsigned int>& entities_A,
+                                       std::vector<unsigned int>& entities_B,
+                                       const mesh::Mesh* mesh_A,
+                                       const mesh::Mesh* mesh_B);
 
   // Compute first collision (recursive)
   static unsigned int _compute_first_collision(const BoundingBoxTree& tree,
@@ -173,33 +185,29 @@ private:
   void build_point_search_tree(const mesh::Mesh& mesh) const;
 
   // Compute bounding box of mesh entity
-  void compute_bbox_of_entity(double* b, const mesh::MeshEntity& entity) const;
+  static void compute_bbox_of_entity(double* b, const mesh::MeshEntity& entity,
+                                     std::size_t gdim);
 
   // Sort points along given axis
-  void sort_points(std::size_t axis, const std::vector<Point>& points,
-                   const std::vector<unsigned int>::iterator& begin,
-                   const std::vector<unsigned int>::iterator& middle,
-                   const std::vector<unsigned int>::iterator& end);
+  static void sort_points(std::size_t axis, const std::vector<Point>& points,
+                          const std::vector<unsigned int>::iterator& begin,
+                          const std::vector<unsigned int>::iterator& middle,
+                          const std::vector<unsigned int>::iterator& end);
 
   // Add bounding box and coordinates
-  inline unsigned int add_bbox(const BBox& bbox, const double* b)
+  unsigned int add_bbox(const BBox& bbox, const double* b)
   {
-    // Add bounding box
+    // Add bounding box and coordinates
     _bboxes.push_back(bbox);
-
-    // Add bounding box coordinates
-    //    for (std::size_t i = 0; i < 2 * _gdim; ++i)
-    //      _bbox_coordinates.push_back(b[i]);
     _bbox_coordinates.insert(_bbox_coordinates.end(), b, b + 2 * _gdim);
-
     return _bboxes.size() - 1;
   }
 
   // Return number of bounding boxes
-  inline unsigned int num_bboxes() const { return _bboxes.size(); }
+  unsigned int num_bboxes() const { return _bboxes.size(); }
 
   // Add bounding box and point coordinates
-  inline unsigned int add_point(const BBox& bbox, const Point& point)
+  unsigned int add_point(const BBox& bbox, const Point& point)
   {
     // Add bounding box
     _bboxes.push_back(bbox);
@@ -212,13 +220,6 @@ private:
       _bbox_coordinates.push_back(x[i]);
 
     return _bboxes.size() - 1;
-  }
-
-  // Check whether bounding box is a leaf node
-  inline bool is_leaf(const BBox& bbox, unsigned int node) const
-  {
-    // Leaf nodes are marked by setting child_0 equal to the node itself
-    return bbox.child_0 == node;
   }
 
   // Return bounding box coordinates for node
@@ -244,22 +245,24 @@ private:
                                         unsigned int node) const;
 
   // Compute bounding box of bounding boxes
-  void compute_bbox_of_bboxes(double* bbox, std::size_t& axis,
-                              const std::vector<double>& leaf_bboxes,
-                              const std::vector<unsigned int>::iterator& begin,
-                              const std::vector<unsigned int>::iterator& end);
+  static void compute_bbox_of_bboxes(
+      double* bbox, std::size_t& axis, const std::vector<double>& leaf_bboxes,
+      const std::vector<unsigned int>::iterator& begin,
+      const std::vector<unsigned int>::iterator& end, std::size_t gdim);
 
   // Compute bounding box of points
-  void compute_bbox_of_points(double* bbox, std::size_t& axis,
-                              const std::vector<Point>& points,
-                              const std::vector<unsigned int>::iterator& begin,
-                              const std::vector<unsigned int>::iterator& end);
+  static void compute_bbox_of_points(
+      double* bbox, std::size_t& axis, const std::vector<Point>& points,
+      const std::vector<unsigned int>::iterator& begin,
+      const std::vector<unsigned int>::iterator& end, std::size_t gdim);
 
   // Sort leaf bounding boxes along given axis
-  void sort_bboxes(std::size_t axis, const std::vector<double>& leaf_bboxes,
-                   const std::vector<unsigned int>::iterator& begin,
-                   const std::vector<unsigned int>::iterator& middle,
-                   const std::vector<unsigned int>::iterator& end);
+  static void sort_bboxes(std::size_t axis,
+                          const std::vector<double>& leaf_bboxes,
+                          const std::vector<unsigned int>::iterator& begin,
+                          const std::vector<unsigned int>::iterator& middle,
+                          const std::vector<unsigned int>::iterator& end,
+                          std::size_t gdim);
 
   // Print out recursively, for debugging
   void tree_print(std::stringstream& s, unsigned int i);
@@ -279,10 +282,11 @@ private:
   std::vector<double> _bbox_coordinates;
 
   // Point search tree used to accelerate distance queries
-  mutable std::shared_ptr<BoundingBoxTree> _point_search_tree;
+  mutable std::unique_ptr<BoundingBoxTree> _point_search_tree;
 
-  // Global tree for mesh ownership of each process (same on all processes)
-  std::shared_ptr<BoundingBoxTree> _global_tree;
+  // Global tree for mesh ownership of each process (same on all
+  // processes)
+  std::unique_ptr<BoundingBoxTree> _global_tree;
 };
 } // namespace geometry
 } // namespace dolfin
