@@ -321,7 +321,8 @@ def test_assembly_taylor_hood(mesh):
         return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     u0 = dolfin.Function(P2)
-    u0.vector().set(0.0)
+    u0.vector().set(1.0)
+    u0.vector().update_ghosts()
     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
     bc1 = dolfin.DirichletBC(P2, u0, boundary1)
 
@@ -333,9 +334,10 @@ def test_assembly_taylor_hood(mesh):
     a10 = ufl.inner(ufl.div(u), q) * dx
     a11 = None
 
-    # f = dolfin.Function(P2)
-    # L0 = ufl.inner(f, v) * dx
-    # L1 = None
+    f = dolfin.Function(P2)
+    p_zero = dolfin.Function(P1)
+    L0 = ufl.inner(f, v) * dx
+    L1 = ufl.inner(q, p_zero) * dx
 
     # Assemble blocks into nested matrix
     A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
@@ -350,6 +352,10 @@ def test_assembly_taylor_hood(mesh):
                 A0norm += norm * norm
     A0norm = math.sqrt(A0norm)
     # print("A0 (MatNest) norm:", A0norm)
+
+    b0 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
+                                    dolfin.cpp.fem.BlockType.nested)
+    b0norm = b0.vec().norm()
 
     # Assemble blocks into monolithic matrix
     A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
@@ -366,7 +372,6 @@ def test_assembly_taylor_hood(mesh):
     W = dolfin.FunctionSpace(mesh, TH)
     (u, p) = dolfin.TrialFunctions(W)
     (v, q) = dolfin.TestFunctions(W)
-    # f = dolfin.Function(W.sub(0).collapse())
     a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx - ufl.inner(p,
                                                              ufl.div(v)) * dx + ufl.inner(ufl.div(u), q) * dx
     a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
@@ -374,9 +379,20 @@ def test_assembly_taylor_hood(mesh):
     a10 = ufl.inner(ufl.div(u), q) * dx
     a = a00 + a01 + a10
 
+    f = dolfin.Function(W.sub(0).collapse())
+    p_zero = dolfin.Function(W.sub(1).collapse())
+    L0 = inner(f, v) * dx
+    L1 = inner(p_zero, q) * dx
+    L = L0 + L1
+
     bc0 = dolfin.DirichletBC(W.sub(0), u0, boundary0)
     bc1 = dolfin.DirichletBC(W.sub(0), u0, boundary1)
 
     A2 = dolfin.fem.assemble_matrix([[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     # print("A2 (full) norm:", A2.mat().norm())
     assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
+
+    b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
+    b2norm = b2.vec().norm()
+    print("Testing norm:", b2norm)
+    assert b2norm == pytest.approx(b0norm, 1.0e-12)
