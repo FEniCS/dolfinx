@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -41,24 +41,17 @@ void common(py::module& m)
       .def("rename", &dolfin::common::Variable::rename);
 
   // From dolfin/common/defines.h
-  m.def("has_debug", &dolfin::has_debug);
-  m.def("has_parmetis", &dolfin::has_parmetis);
-  m.def("has_scotch", &dolfin::has_scotch);
-  m.def("has_petsc_complex", &dolfin::has_petsc_complex,
-        "Return True if PETSc scalar is complex.");
-  m.def("has_slepc", &dolfin::has_slepc,
-        "Return `True` if DOLFIN is configured with SLEPc");
-  m.def("has_slepc4py",
-        []() {
+  m.attr("has_debug") = dolfin::has_debug();
+  m.attr("has_parmetis") = dolfin::has_parmetis();
+  m.attr("has_scotch") = dolfin::has_scotch();
+  m.attr("has_petsc_complex") = dolfin::has_petsc_complex();
+  m.attr("has_slepc") = dolfin::has_slepc();
 #ifdef HAS_PYBIND11_SLEPC4PY
-          return true;
+  m.attr("has_slepc4py") = true;
 #else
-          return false;
+  m.attr("has_slepc4py") = false;
 #endif
-        },
-        "Return `True` if DOLFIN is configured with slepc4py");
-  m.def("git_commit_hash", &dolfin::git_commit_hash,
-        "Returns git hash for this build.");
+  m.attr("git_commit_hash") = dolfin::git_commit_hash();
 
   m.attr("DOLFIN_EPS") = DOLFIN_EPS;
   m.attr("DOLFIN_PI") = DOLFIN_PI;
@@ -115,11 +108,10 @@ void common(py::module& m)
                   (void (*)()) & dolfin::common::SubSystemsManager::init_petsc)
       .def_static("init_petsc",
                   [](std::vector<std::string> args) {
-                    std::vector<char*> argv(args.size());
-                    for (std::size_t i = 0; i < args.size(); ++i)
-                      argv[i] = const_cast<char*>(args[i].data());
-                    dolfin::common::SubSystemsManager::init_petsc(args.size(),
-                                                                  argv.data());
+    std::vector<char*> argv(args.size());
+    for (std::size_t i = 0; i < args.size(); ++i)
+      argv[i] = const_cast<char*>(args[i].data());
+    dolfin::common::SubSystemsManager::init_petsc(args.size(), argv.data());
                   })
       .def_static("finalize", &dolfin::common::SubSystemsManager::finalize)
       .def_static("responsible_mpi",
@@ -130,7 +122,7 @@ void common(py::module& m)
                   &dolfin::common::SubSystemsManager::mpi_initialized)
       .def_static("mpi_finalized",
                   &dolfin::common::SubSystemsManager::mpi_finalized);
-}
+} // namespace dolfin_wrappers
 
 // Interface for MPI
 void mpi(py::module& m)
