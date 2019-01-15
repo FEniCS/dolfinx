@@ -337,7 +337,7 @@ def test_assembly_taylor_hood(mesh):
     f = dolfin.Function(P2)
     p_zero = dolfin.Function(P1)
     L0 = ufl.inner(f, v) * dx
-    L1 = ufl.inner(q, p_zero) * dx
+    L1 = ufl.inner(p_zero, q) * dx
 
     # Assemble blocks into nested matrix
     A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
