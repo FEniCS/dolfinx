@@ -9,17 +9,14 @@ import functools
 
 from dolfin import cpp
 
-# FIXME: replace possibly with numpy.finfo
+# Bring attributes into Python interface namespace
+from dolfin.cpp.common import (git_commit_hash, has_debug, has_parmetis,  # noqa
+                               has_petsc_complex, has_scotch, has_slepc,  # noqa
+                               has_slepc4py)                              # noqa
+
+# FIXME: replace this possibly with numpy.finfo
 DOLFIN_EPS = cpp.common.DOLFIN_EPS
 
-has_debug = cpp.common.has_debug()
-has_parmetis = cpp.common.has_parmetis()
-has_scotch = cpp.common.has_scotch()
-has_petsc_complex = cpp.common.has_petsc_complex()
-has_slepc = cpp.common.has_slepc()
-has_slepc4py = cpp.common.has_slepc4py()
-
-git_commit_hash = cpp.common.git_commit_hash()
 
 TimingType = cpp.common.TimingType
 

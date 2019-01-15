@@ -204,8 +204,7 @@ def test_call(R, V, W, Q, mesh):
     p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0).array()
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
 
-    tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology.dim)
+    tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
 
     assert numpy.allclose(u0(x0, tree), u0(x0, tree))
     assert numpy.allclose(u0(x0, tree), u0(p0, tree))
@@ -289,8 +288,7 @@ def test_interpolation_rank0(V):
 def test_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
 
-    bb_tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
-    bb_tree.build(mesh, mesh.topology.dim)
+    bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)
     u0.vector()[:] = 1.0
     a = Vertex(mesh, 0).point().array()
