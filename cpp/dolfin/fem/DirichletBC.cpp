@@ -271,7 +271,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     if (it == shared_dofs.end())
       throw std::runtime_error("Oops, can't find dof (A).");
 
-    auto it_map = dofs_local.insert({it->first, it->second});
+    const std::array<PetscInt, 2> ldofs = {{it->first, it->second}};
+    auto it_map = dofs_local.insert(ldofs);
     if (it_map.second)
       std::cout << "Inserted off-process dof (A)" << std::endl;
   }
@@ -344,7 +345,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     auto it = shared_dofs.find(dof_remote);
     if (it == shared_dofs.end())
       throw std::runtime_error("Oops, can't find dof (B).");
-    auto it_map = dofs_local.insert({it->first, it->second});
+    const std::array<PetscInt, 2> ldofs = {{it->first, it->second}};
+    auto it_map = dofs_local.insert(ldofs);
     if (it_map.second)
       std::cout << "Inserted off-process dof (B)" << std::endl;
   }
@@ -559,7 +561,7 @@ std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
       const std::size_t index = facet_dofs[facet_local_index][i];
       const PetscInt dof_index = cell_dofs[index];
       const PetscInt dof_index_g = cell_dofs_g[index];
-      bc_dofs.push_back({dof_index, dof_index_g});
+      bc_dofs.push_back({{dof_index, dof_index_g}});
 
       // std::cout << "Old adding bc (cell, local, global): " << cell.index()
       //           << ", " << index << ", " << dof_index << std::endl;
