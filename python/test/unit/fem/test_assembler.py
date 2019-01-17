@@ -330,9 +330,14 @@ def test_assembly_taylor_hood(mesh):
     v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
 
     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
-    a01 = -ufl.inner(p, ufl.div(v)) * dx
+    a01 = ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
     a11 = None
+
+    p00 = inner(ufl.grad(u), ufl.grad(v)) * dx
+    p01 = None
+    p10 = None
+    p11 = inner(p, q) * dx
 
     f = dolfin.Function(P2)
     p_zero = dolfin.Function(P1)
@@ -353,6 +358,19 @@ def test_assembly_taylor_hood(mesh):
     A0norm = math.sqrt(A0norm)
     # print("A0 (MatNest) norm:", A0norm)
 
+    P0 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
+                                    dolfin.cpp.fem.BlockType.nested)
+    P0norm = 0.0
+    nrows, ncols = P0.mat().getNestSize()
+    for row in range(nrows):
+        for col in range(ncols):
+            P_sub = P0.mat().getNestSubMatrix(row, col)
+            if P_sub:
+                norm = P_sub.norm()
+                P0norm += norm * norm
+    P0norm = math.sqrt(P0norm)
+    # print("A0 (MatNest) norm:", A0norm)
+
     b0 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
     b0norm = b0.vec().norm()
@@ -362,8 +380,12 @@ def test_assembly_taylor_hood(mesh):
                                     dolfin.cpp.fem.BlockType.monolithic)
     A1norm = A1.mat().norm()
     assert A1norm == pytest.approx(A0norm, 1.0e-12)
-    # print("A1 (mono) norm:", A1.mat().norm())
-    # A0.mat().view()
+
+    # FIXME
+    # P1 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
+    #                                 dolfin.cpp.fem.BlockType.monolithic)
+    # P1norm = P1.mat().norm()
+    # assert P1norm == pytest.approx(P0norm, 1.0e-12)
 
     # Monolithic form
     P2 = dolfin.VectorElement("Lagrange", mesh.ufl_cell(), 2)
@@ -372,12 +394,14 @@ def test_assembly_taylor_hood(mesh):
     W = dolfin.FunctionSpace(mesh, TH)
     (u, p) = dolfin.TrialFunctions(W)
     (v, q) = dolfin.TestFunctions(W)
-    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx - ufl.inner(p,
-                                                             ufl.div(v)) * dx + ufl.inner(ufl.div(u), q) * dx
     a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
-    a01 = -ufl.inner(p, ufl.div(v)) * dx
+    a01 = ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
     a = a00 + a01 + a10
+
+    p00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
+    p11 = ufl.inner(p, q) * dx
+    p_form = p00 + p11
 
     f = dolfin.Function(W.sub(0).collapse())
     p_zero = dolfin.Function(W.sub(1).collapse())
@@ -389,8 +413,9 @@ def test_assembly_taylor_hood(mesh):
     bc1 = dolfin.DirichletBC(W.sub(0), u0, boundary1)
 
     A2 = dolfin.fem.assemble_matrix([[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
-    # print("A2 (full) norm:", A2.mat().norm())
     assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
+    P2 = dolfin.fem.assemble_matrix([[p_form]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
+    assert P2.mat().norm() == pytest.approx(P0norm, 1.0e-12)
 
     b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     b2norm = b2.vec().norm()
