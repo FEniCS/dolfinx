@@ -326,21 +326,24 @@ def test_assembly_taylor_hood(mesh):
     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
     bc1 = dolfin.DirichletBC(P2, u0, boundary1)
 
+    # FIXME
+    # We need zero function to enforce null block
+    p_zero = dolfin.Function(P1)
+
     u, p = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
     v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
 
     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
     a01 = ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
-    a11 = None
+    a11 = p_zero * p * q * dx
 
     p00 = inner(ufl.grad(u), ufl.grad(v)) * dx
-    p01 = None
-    p10 = None
+    p01 = p_zero * ufl.inner(p, ufl.div(v)) * dx
+    p10 = p_zero * ufl.inner(ufl.div(u), q) * dx
     p11 = inner(p, q) * dx
 
     f = dolfin.Function(P2)
-    p_zero = dolfin.Function(P1)
     L0 = ufl.inner(f, v) * dx
     L1 = ufl.inner(p_zero, q) * dx
 
@@ -372,6 +375,34 @@ def test_assembly_taylor_hood(mesh):
     b0 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
     b0norm = b0.vec().norm()
+
+    # Solve nested problem
+    ksp = PETSc.KSP()
+    ksp.create(mesh.mpi_comm())
+
+    ksp.setOperators(A0.mat(), P0.mat())
+
+    nested_IS = P0.mat().getNestISs()
+
+    opts = PETSc.Options()
+    opts.setValue("ksp_type", "minres")
+    opts.setValue("pc_type", "fieldsplit")
+    opts.setValue("pc_fieldsplit_type", "additive")
+
+    opts.setValue("fieldsplit_u_ksp_type", "preonly")
+    opts.setValue("fieldsplit_u_pc_type", "lu")
+    opts.setValue("fieldsplit_p_ksp_type", "preonly")
+    opts.setValue("fieldsplit_p_pc_type", "lu")
+
+    opts.setValue("ksp_monitor", "")
+    opts.setValue("ksp_max_it", 100)
+    ksp.setFromOptions()
+
+    pc = ksp.getPC()
+    pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+
+    x = dolfin.cpp.la.PETScVector(b0)
+    ksp.solve(b0.vec(), x.vec())
 
     # -- Blocked and monolithic
 
@@ -422,29 +453,3 @@ def test_assembly_taylor_hood(mesh):
     b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     b2norm = b2.vec().norm()
     assert b2norm == pytest.approx(b0norm, 1.0e-12)
-
-    # Solve nested problem
-    # ksp = PETSc.KSP()
-    # ksp.create(PETSc.COMM_WORLD)
-
-    # nested_IS = A0.mat().getNestISs()
-    # pc = ksp.getPC()
-    # pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
-
-    # ksp.setOperators(A0.mat(), P0.mat())
-    # opts = PETSc.Options()
-    # opts.setValue("ksp_type", "minres")
-    # opts.setValue("pc_type", "fieldsplit")
-    # opts.setValue("pc_fieldsplit_type", "additive")
-
-    # opts.setValue("fieldsplit_u_ksp_type", "preonly")
-    # opts.setValue("fieldsplit_u_pc_type", "lu")
-    # opts.setValue("fieldsplit_p_ksp_type", "preonly")
-    # opts.setValue("fieldsplit_p_pc_type", "lu")
-
-    # opts.setValue("ksp_monitor", "")
-    # opts.setValue("ksp_max_it", 100)
-    # ksp.setFromOptions()
-
-    # x = dolfin.cpp.la.PETScVector(b0)
-    # ksp.solve(b0.vec(), x.vec())
