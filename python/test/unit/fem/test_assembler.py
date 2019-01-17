@@ -344,7 +344,8 @@ def test_assembly_taylor_hood(mesh):
     L0 = ufl.inner(f, v) * dx
     L1 = ufl.inner(p_zero, q) * dx
 
-    # Assemble blocks into nested matrix
+    # -- Blocked and nested
+
     A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
     A0norm = 0.0
@@ -356,7 +357,6 @@ def test_assembly_taylor_hood(mesh):
                 norm = A_sub.norm()
                 A0norm += norm * norm
     A0norm = math.sqrt(A0norm)
-    # print("A0 (MatNest) norm:", A0norm)
 
     P0 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
@@ -369,11 +369,11 @@ def test_assembly_taylor_hood(mesh):
                 norm = P_sub.norm()
                 P0norm += norm * norm
     P0norm = math.sqrt(P0norm)
-    # print("A0 (MatNest) norm:", A0norm)
-
     b0 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
     b0norm = b0.vec().norm()
+
+    # -- Blocked and monolithic
 
     # Assemble blocks into monolithic matrix
     A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
@@ -387,7 +387,8 @@ def test_assembly_taylor_hood(mesh):
     # P1norm = P1.mat().norm()
     # assert P1norm == pytest.approx(P0norm, 1.0e-12)
 
-    # Monolithic form
+    # -- Monolithic
+
     P2 = dolfin.VectorElement("Lagrange", mesh.ufl_cell(), 2)
     P1 = dolfin.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     TH = P2 * P1
@@ -414,10 +415,36 @@ def test_assembly_taylor_hood(mesh):
 
     A2 = dolfin.fem.assemble_matrix([[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
+
     P2 = dolfin.fem.assemble_matrix([[p_form]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     assert P2.mat().norm() == pytest.approx(P0norm, 1.0e-12)
 
     b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     b2norm = b2.vec().norm()
-    print("Testing norm:", b2norm)
     assert b2norm == pytest.approx(b0norm, 1.0e-12)
+
+    # Solve nested problem
+    # ksp = PETSc.KSP()
+    # ksp.create(PETSc.COMM_WORLD)
+
+    # nested_IS = A0.mat().getNestISs()
+    # pc = ksp.getPC()
+    # pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+
+    # ksp.setOperators(A0.mat(), P0.mat())
+    # opts = PETSc.Options()
+    # opts.setValue("ksp_type", "minres")
+    # opts.setValue("pc_type", "fieldsplit")
+    # opts.setValue("pc_fieldsplit_type", "additive")
+
+    # opts.setValue("fieldsplit_u_ksp_type", "preonly")
+    # opts.setValue("fieldsplit_u_pc_type", "lu")
+    # opts.setValue("fieldsplit_p_ksp_type", "preonly")
+    # opts.setValue("fieldsplit_p_pc_type", "lu")
+
+    # opts.setValue("ksp_monitor", "")
+    # opts.setValue("ksp_max_it", 100)
+    # ksp.setFromOptions()
+
+    # x = dolfin.cpp.la.PETScVector(b0)
+    # ksp.solve(b0.vec(), x.vec())
