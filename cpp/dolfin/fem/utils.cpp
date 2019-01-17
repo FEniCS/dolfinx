@@ -134,7 +134,7 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
       {
         // FIXME: create sparsity pattern that has just a row/col range
         const std::array<std::shared_ptr<const common::IndexMap>, 2> maps
-            = {rmaps[row], cmaps[col]};
+            = {{rmaps[row], cmaps[col]}};
         auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(), maps);
         patterns[row].push_back(std::move(sp));
       }
@@ -356,8 +356,8 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   // FIXME: handle/check block size > 1
 
   // Get process that owns global index
-  const int bs  = maps[field]->block_size();
-  int owner = maps[field]->owner(index/bs);
+  const int bs = maps[field]->block_size();
+  int owner = maps[field]->owner(index / bs);
 
   // Offset from lower rank processes
   std::size_t offset = 0;

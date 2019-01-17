@@ -35,7 +35,7 @@ class Function(ufl.Coefficient):
             self._cpp_object = cpp.function.Function(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
-        super().__init__(V.ufl_function_space(), count=self._cpp_object.id())
+        super().__init__(V.ufl_function_space(), count=self._cpp_object.id)
 
         # Set name
         if name is None:
@@ -138,9 +138,10 @@ class Function(ufl.Coefficient):
         """Re-name Function."""
         self._cpp_object.rename(name)
 
+    @property
     def id(self) -> int:
         """Return object id index."""
-        return self._cpp_object.id()
+        return self._cpp_object.id
 
     def __str__(self):
         """Return a pretty print representation of it self."""

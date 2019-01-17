@@ -231,8 +231,7 @@ std::shared_ptr<la::PETScMatrix> PETScDMCollection::create_transfer_matrix(
   const unsigned int mpi_size = MPI::size(mpi_comm);
 
   // Initialise bounding box tree and dofmaps
-  geometry::BoundingBoxTree treec(meshc.geometry().dim());
-  treec.build(meshc, meshc.topology().dim());
+  geometry::BoundingBoxTree treec(meshc, meshc.topology().dim());
   std::shared_ptr<const fem::GenericDofMap> coarsemap = coarse_space.dofmap();
   std::shared_ptr<const fem::GenericDofMap> finemap = fine_space.dofmap();
 

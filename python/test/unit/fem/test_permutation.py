@@ -51,8 +51,7 @@ def test_p4_scalar_vector():
         F1 = interpolate(Expression(x1), Q)
         F2 = interpolate(Expression(x2), Q)
 
-        tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
-        tree.build(mesh, mesh.topology.dim)
+        tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
         pts = numpy.array([[0.4, 0.4, 0.1], [0.4, 0.1, 0.4], [0.1, 0.4, 0.4]])
         for pt in pts:
             assert numpy.isclose(pt[0], F0(pt, tree)[0])
@@ -68,8 +67,7 @@ def test_p4_scalar_vector():
             values[:, 2] = 0.0
 
         F = interpolate(Expression(x0x10, shape=(3,)), V)
-        tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
-        tree.build(mesh, mesh.topology.dim)
+        tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
         for pt in pts:
             result = F(pt, tree)
             assert numpy.isclose(pt[0], result[0])
@@ -90,8 +88,7 @@ def test_p4_parallel_2d():
 
     # Generate random points in this mesh partition (one per cell)
     x = numpy.zeros(3)
-    tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology.dim)
+    tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     for c in Cells(mesh):
         x[0] = random()
         x[1] = random() * (1 - x[0])
@@ -117,8 +114,7 @@ def test_p4_parallel_3d():
 
     # Generate random points in this mesh partition (one per cell)
     x = numpy.zeros(4)
-    tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology.dim)
+    tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     for c in Cells(mesh):
         x[0] = random()
         x[1] = random() * (1 - x[0])
@@ -139,8 +135,7 @@ def test_mixed_parallel():
     W = FunctionSpace(mesh, Q * V)
     F = Function(W)
 
-    tree = cpp.geometry.BoundingBoxTree(mesh.geometry.dim)
-    tree.build(mesh, mesh.topology.dim)
+    tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
 
     @function.expression.numba_eval
     def expr_eval(values, x, cell_idx):

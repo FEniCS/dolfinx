@@ -269,34 +269,34 @@ inline MPI_Datatype MPI::mpi_type<std::complex<double>>()
   return MPI_DOUBLE_COMPLEX;
 }
 template <>
-inline MPI_Datatype MPI::mpi_type<std::int16_t>()
+inline MPI_Datatype MPI::mpi_type<short int>()
 {
-  return MPI_INT16_T;
+  return MPI_SHORT;
 }
 template <>
-inline MPI_Datatype MPI::mpi_type<std::uint16_t>()
+inline MPI_Datatype MPI::mpi_type<int>()
 {
-  return MPI_UINT16_T;
+  return MPI_INT;
 }
 template <>
-inline MPI_Datatype MPI::mpi_type<std::int32_t>()
+inline MPI_Datatype MPI::mpi_type<unsigned int>()
 {
-  return MPI_INT32_T;
+  return MPI_UNSIGNED;
 }
 template <>
-inline MPI_Datatype MPI::mpi_type<std::uint32_t>()
+inline MPI_Datatype MPI::mpi_type<long int>()
 {
-  return MPI_UINT32_T;
+  return MPI_LONG;
 }
 template <>
-inline MPI_Datatype MPI::mpi_type<std::int64_t>()
+inline MPI_Datatype MPI::mpi_type<unsigned long>()
 {
-  return MPI_INT64_T;
+  return MPI_UNSIGNED_LONG;
 }
 template <>
-inline MPI_Datatype MPI::mpi_type<std::uint64_t>()
+inline MPI_Datatype MPI::mpi_type<long long>()
 {
-  return MPI_UINT64_T;
+  return MPI_LONG_LONG;
 }
 //---------------------------------------------------------------------------
 template <typename T>

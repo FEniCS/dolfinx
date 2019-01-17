@@ -197,9 +197,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   assert(V);
   assert(g);
   assert(g->function_space());
-  if (V == g->function_space())
-    std::cout << "Spaces are the same" << std::endl;
-  else
+  if (V != g->function_space())
   {
     assert(V->mesh());
     assert(g->function_space()->mesh());
@@ -266,12 +264,12 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       = shared_bc_to_g(*V, *g->function_space());
   for (auto dof_remote : dofs_remote)
   {
-    std::cout << "Checking remote (A)" << std::endl;
     auto it = shared_dofs.find(dof_remote);
     if (it == shared_dofs.end())
       throw std::runtime_error("Oops, can't find dof (A).");
 
-    auto it_map = dofs_local.insert({it->first, it->second});
+    const std::array<PetscInt, 2> ldofs = {{it->first, it->second}};
+    auto it_map = dofs_local.insert(ldofs);
     if (it_map.second)
       std::cout << "Inserted off-process dof (A)" << std::endl;
   }
@@ -294,9 +292,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   assert(V);
   assert(g);
   assert(g->function_space());
-  if (V == g->function_space())
-    std::cout << "Spaces are the same" << std::endl;
-  else
+  if (V != g->function_space())
   {
     assert(V->mesh());
     assert(g->function_space()->mesh());
@@ -316,7 +312,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   assert(V);
   std::set<std::array<PetscInt, 2>> dofs_local;
-  // std::cout << "Num facets: " << _facets.size() << "----" << std::endl;
   if (method == Method::topological)
   {
     dofs_local = compute_bc_dofs_topological(*V, g->function_space().get(),
@@ -332,7 +327,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 
   // std::cout << "Local dofs size: " << MPI::rank(MPI_COMM_WORLD) << ", "
   //           << dofs_local.size() << std::endl;
-  // std::set<std::array<PetscInt, 2>> dofs_remote;
+
   std::set<PetscInt> dofs_remote
       = gather_new(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
 
@@ -340,11 +335,11 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       = shared_bc_to_g(*V, *g->function_space());
   for (auto dof_remote : dofs_remote)
   {
-    std::cout << "Checking remote (B)" << std::endl;
     auto it = shared_dofs.find(dof_remote);
     if (it == shared_dofs.end())
       throw std::runtime_error("Oops, can't find dof (B).");
-    auto it_map = dofs_local.insert({it->first, it->second});
+    const std::array<PetscInt, 2> ldofs = {{it->first, it->second}};
+    auto it_map = dofs_local.insert(ldofs);
     if (it_map.second)
       std::cout << "Inserted off-process dof (B)" << std::endl;
   }
@@ -559,7 +554,7 @@ std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
       const std::size_t index = facet_dofs[facet_local_index][i];
       const PetscInt dof_index = cell_dofs[index];
       const PetscInt dof_index_g = cell_dofs_g[index];
-      bc_dofs.push_back({dof_index, dof_index_g});
+      bc_dofs.push_back({{dof_index, dof_index_g}});
 
       // std::cout << "Old adding bc (cell, local, global): " << cell.index()
       //           << ", " << index << ", " << dof_index << std::endl;

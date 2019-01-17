@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Chris N. Richardson Garth N. Wells
+// Copyright (C) 2017-2019 Chris N. Richardson Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -30,8 +30,8 @@ namespace dolfin_wrappers
 void io(py::module& m)
 {
   // dolfin::io::HDF5File
-  py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>,
-             dolfin::common::Variable>(m, "HDF5File", py::dynamic_attr())
+  py::class_<dolfin::io::HDF5File, std::shared_ptr<dolfin::io::HDF5File>>(
+      m, "HDF5File", py::dynamic_attr())
       .def(py::init([](const MPICommWrapper comm, const std::string filename,
                        const std::string file_mode) {
              return std::make_unique<dolfin::io::HDF5File>(comm.get(), filename,
@@ -136,8 +136,7 @@ void io(py::module& m)
       .def("has_dataset", &dolfin::io::HDF5File::has_dataset);
 
   // dolfin::io::XDMFFile
-  py::class_<dolfin::io::XDMFFile, std::shared_ptr<dolfin::io::XDMFFile>,
-             dolfin::common::Variable>
+  py::class_<dolfin::io::XDMFFile, std::shared_ptr<dolfin::io::XDMFFile>>
       xdmf_file(m, "XDMFFile");
 
   xdmf_file
