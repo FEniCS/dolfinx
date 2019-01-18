@@ -90,7 +90,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
 
 # Download Install gmsh
 RUN cd /usr/local && \
-    wget http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64.tgz && \
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64.tgz && \
     tar -xf gmsh-${GMSH_VERSION}-Linux64.tgz
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64/bin:$PATH
 
