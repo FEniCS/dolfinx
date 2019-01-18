@@ -69,7 +69,7 @@ unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
   command: |
     cd python/test/unit
-    mpirun --allow-run-as-root -n 3 python3 -m pytest .
+    mpirun -n 3 python3 -m pytest .
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
@@ -83,7 +83,7 @@ demos-python-mpi: &demos-python-mpi
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 -m pytest -n2 -v -m mpi test.py --mpi-options="--allow-run-as-root" --num-proc=3
+    python3 -m pytest -n2 -v -m mpi test.py --num-proc=3
 
 version: 2
 
