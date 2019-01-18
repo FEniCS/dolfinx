@@ -379,22 +379,22 @@ def test_assembly_taylor_hood(mesh):
     # Solve nested problem
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
-
     ksp.setOperators(A0.mat(), P0.mat())
-
     nested_IS = P0.mat().getNestISs()
 
     opts = PETSc.Options()
     opts.setValue("ksp_type", "minres")
     opts.setValue("pc_type", "fieldsplit")
-    opts.setValue("pc_fieldsplit_type", "additive")
-
     opts.setValue("fieldsplit_u_ksp_type", "preonly")
-    opts.setValue("fieldsplit_u_pc_type", "lu")
+    opts.setValue("fieldsplit_u_pc_type", "hypre")
+    opts.setValue("fieldsplit_u_pc_hypre_type", "boomeramg")
     opts.setValue("fieldsplit_p_ksp_type", "preonly")
-    opts.setValue("fieldsplit_p_pc_type", "lu")
+    opts.setValue("fieldsplit_p_pc_type", "hypre")
+    opts.setValue("fieldsplit_p_pc_hypre_type", "boomeramg")
 
-    opts.setValue("ksp_monitor", "")
+    # opts.setValue("ksp_monitor", "")
+    opts.setValue("ksp_monitor_true_residual", "")
+    opts.setValue("ksp_rtol", 1.0e-8)
     opts.setValue("ksp_max_it", 100)
     ksp.setFromOptions()
 
