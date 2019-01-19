@@ -21,8 +21,9 @@
 #    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
 #
 
+ARG GMSH_VERSION=4.1.0
 ARG PYBIND11_VERSION=2.2.4
-ARG PETSC_VERSION=3.10.3
+ARG PETSC_VERSION=3.10.2
 ARG SLEPC_VERSION=3.10.1
 ARG PETSC4PY_VERSION=3.10.0
 ARG SLEPC4PY_VERSION=3.10.0
@@ -36,6 +37,8 @@ FROM ubuntu:18.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="Base image for real and complex FEniCS test environments"
 
+
+ARG GMSH_VERSION
 ARG PYBIND11_VERSION
 
 WORKDIR /tmp
@@ -63,12 +66,12 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         libboost-thread-dev \
         libboost-timer-dev \
         libeigen3-dev \
-        libhdf5-openmpi-dev \
+        libhdf5-mpich-dev \
         liblapack-dev \
-        libopenmpi-dev \
+        libmpich-dev \
         libopenblas-dev \
+        mpich \
         ninja-build \
-        openmpi-bin \
         pkg-config \
         python3-dev \
         python3-matplotlib \
@@ -79,12 +82,17 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
         doxygen \
         git \
-        gmsh \
         graphviz \
         valgrind \
         wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Download Install gmsh
+RUN cd /usr/local && \
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64.tgz && \
+    tar -xf gmsh-${GMSH_VERSION}-Linux64.tgz
+ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64/bin:$PATH
 
 # Install Python packages (via pip)
 # First set of packages are required to build and run FEniCS.
