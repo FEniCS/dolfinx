@@ -376,33 +376,35 @@ def test_assembly_taylor_hood(mesh):
                                     dolfin.cpp.fem.BlockType.nested)
     b0norm = b0.vec().norm()
 
+    # FIXME: Setting parameters like this seem to pollute the globa
+    # parameter space and cause other tests to fail
     # Solve nested problem
-    ksp = PETSc.KSP()
-    ksp.create(mesh.mpi_comm())
-    ksp.setOperators(A0.mat(), P0.mat())
-    nested_IS = P0.mat().getNestISs()
+    # ksp = PETSc.KSP()
+    # ksp.create(mesh.mpi_comm())
+    # ksp.setOperators(A0.mat(), P0.mat())
+    # nested_IS = P0.mat().getNestISs()
 
-    opts = PETSc.Options()
-    opts.setValue("ksp_type", "minres")
-    opts.setValue("pc_type", "fieldsplit")
-    opts.setValue("fieldsplit_u_ksp_type", "preonly")
-    opts.setValue("fieldsplit_u_pc_type", "hypre")
-    opts.setValue("fieldsplit_u_pc_hypre_type", "boomeramg")
-    opts.setValue("fieldsplit_p_ksp_type", "preonly")
-    opts.setValue("fieldsplit_p_pc_type", "hypre")
-    opts.setValue("fieldsplit_p_pc_hypre_type", "boomeramg")
+    # opts = PETSc.Options()
+    # opts.setValue("ksp_type", "minres")
+    # opts.setValue("pc_type", "fieldsplit")
+    # opts.setValue("fieldsplit_u_ksp_type", "preonly")
+    # opts.setValue("fieldsplit_u_pc_type", "hypre")
+    # opts.setValue("fieldsplit_u_pc_hypre_type", "boomeramg")
+    # opts.setValue("fieldsplit_p_ksp_type", "preonly")
+    # opts.setValue("fieldsplit_p_pc_type", "hypre")
+    # opts.setValue("fieldsplit_p_pc_hypre_type", "boomeramg")
 
-    # opts.setValue("ksp_monitor", "")
-    opts.setValue("ksp_monitor_true_residual", "")
-    opts.setValue("ksp_rtol", 1.0e-8)
-    opts.setValue("ksp_max_it", 100)
-    ksp.setFromOptions()
+    # # opts.setValue("ksp_monitor", "")
+    # opts.setValue("ksp_monitor_true_residual", "")
+    # opts.setValue("ksp_rtol", 1.0e-8)
+    # opts.setValue("ksp_max_it", 100)
+    # ksp.setFromOptions()
 
-    pc = ksp.getPC()
-    pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+    # pc = ksp.getPC()
+    # pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
 
-    x = dolfin.cpp.la.PETScVector(b0)
-    ksp.solve(b0.vec(), x.vec())
+    # x = dolfin.cpp.la.PETScVector(b0)
+    # ksp.solve(b0.vec(), x.vec())
 
     # -- Blocked and monolithic
 
