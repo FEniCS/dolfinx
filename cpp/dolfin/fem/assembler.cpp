@@ -402,10 +402,15 @@ void fem::assemble(la::PETScMatrix& A,
     // sets
 
     // Extract index maps
-    const std::vector<std::vector<const common::IndexMap*>> maps
-        = la::bocked_index_sets(a);
-    is_row = la::compute_index_sets(maps[0]);
-    is_col = la::compute_index_sets(maps[1]);
+    const std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
+        = fem::blocked_index_sets(a);
+    std::vector<std::vector<const common::IndexMap*>> _maps(2);
+    for (auto& m : maps[0])
+      _maps[0].push_back(m.get());
+    for (auto& m : maps[1])
+      _maps[1].push_back(m.get());
+    is_row = la::compute_index_sets(_maps[0]);
+    is_col = la::compute_index_sets(_maps[1]);
   }
 
   // Loop over each form and assemble

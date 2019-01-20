@@ -407,8 +407,8 @@ def test_assembly_solve_taylor_hood(mesh):
     assert A1norm == pytest.approx(A0norm, 1.0e-12)
 
     # FIXME
-    # P1 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
-    #                                 dolfin.cpp.fem.BlockType.monolithic)
+    P1 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
+                                    dolfin.cpp.fem.BlockType.monolithic)
     # P1norm = P1.mat().norm()
     # assert P1norm == pytest.approx(P0norm, 1.0e-12)
 
