@@ -18,7 +18,6 @@ from ufl import dx, inner
 
 def test_assemble_functional():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
-
     M = 1.0 * dx(domain=mesh)
     value = dolfin.fem.assemble(M)
     assert value == pytest.approx(1.0, 1e-12)
@@ -61,7 +60,6 @@ def test_matrix_assembly_block():
     """
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 4, 8)
-    # mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -91,7 +89,6 @@ def test_matrix_assembly_block():
     a01 = inner(p, v) * dx
     a10 = inner(u, q) * dx
     a11 = inner(p, q) * dx
-    # a11 = None
 
     L0 = zero * inner(f, v) * dx
     L1 = inner(g, q) * dx
@@ -326,22 +323,22 @@ def test_assembly_solve_taylor_hood(mesh):
     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
     bc1 = dolfin.DirichletBC(P2, u0, boundary1)
 
-    # FIXME
-    # We need zero function to enforce null block
-    p_zero = dolfin.Function(P1)
-
     u, p = dolfin.TrialFunction(P2), dolfin.TrialFunction(P1)
     v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
 
     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
     a01 = ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
-    a11 = p_zero * ufl.inner(p, q) * dx
+    a11 = None
 
     p00 = inner(ufl.grad(u), ufl.grad(v)) * dx
-    p01 = p_zero * ufl.inner(p, ufl.div(v)) * dx
-    p10 = p_zero * ufl.inner(ufl.div(u), q) * dx
+    p01 = None
+    p10 = None
     p11 = inner(p, q) * dx
+
+    # FIXME
+    # We need zero function for the 'zero' part of L
+    p_zero = dolfin.Function(P1)
 
     f = dolfin.Function(P2)
     L0 = ufl.inner(f, v) * dx
