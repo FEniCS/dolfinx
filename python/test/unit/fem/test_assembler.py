@@ -305,7 +305,7 @@ def test_assembly_solve_block():
 @pytest.mark.parametrize("mesh", [
     dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31),
     dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)])
-def test_assembly_taylor_hood(mesh):
+def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements."""
 
     P2 = dolfin.VectorFunctionSpace(mesh, ("Lagrange", 2))
@@ -336,7 +336,7 @@ def test_assembly_taylor_hood(mesh):
     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
     a01 = ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
-    a11 = p_zero * p * q * dx
+    a11 = p_zero * ufl.inner(p, q) * dx
 
     p00 = inner(ufl.grad(u), ufl.grad(v)) * dx
     p01 = p_zero * ufl.inner(p, ufl.div(v)) * dx
@@ -376,35 +376,39 @@ def test_assembly_taylor_hood(mesh):
                                     dolfin.cpp.fem.BlockType.nested)
     b0norm = b0.vec().norm()
 
-    # FIXME: Setting parameters like this seem to pollute the globa
-    # parameter space and cause other tests to fail
-    # Solve nested problem
-    # ksp = PETSc.KSP()
-    # ksp.create(mesh.mpi_comm())
-    # ksp.setOperators(A0.mat(), P0.mat())
-    # nested_IS = P0.mat().getNestISs()
+    if not dolfin.has_petsc_complex:
+        # Solve nested problem for real case because
+        # HYPRE preconditioner is not available in complex PETSc
+        ksp = PETSc.KSP()
+        ksp.create(mesh.mpi_comm())
+        ksp.setOperators(A0.mat(), P0.mat())
+        nested_IS = P0.mat().getNestISs()
 
-    # opts = PETSc.Options()
-    # opts.setValue("ksp_type", "minres")
-    # opts.setValue("pc_type", "fieldsplit")
-    # opts.setValue("fieldsplit_u_ksp_type", "preonly")
-    # opts.setValue("fieldsplit_u_pc_type", "hypre")
-    # opts.setValue("fieldsplit_u_pc_hypre_type", "boomeramg")
-    # opts.setValue("fieldsplit_p_ksp_type", "preonly")
-    # opts.setValue("fieldsplit_p_pc_type", "hypre")
-    # opts.setValue("fieldsplit_p_pc_hypre_type", "boomeramg")
+        ksp.setType("minres")
 
-    # # opts.setValue("ksp_monitor", "")
-    # opts.setValue("ksp_monitor_true_residual", "")
-    # opts.setValue("ksp_rtol", 1.0e-8)
-    # opts.setValue("ksp_max_it", 100)
-    # ksp.setFromOptions()
+        pc = ksp.getPC()
+        pc.setType("fieldsplit")
 
-    # pc = ksp.getPC()
-    # pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+        pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+        ksp_u, ksp_p = pc.getFieldSplitSubKSP()
 
-    # x = dolfin.cpp.la.PETScVector(b0)
-    # ksp.solve(b0.vec(), x.vec())
+        ksp_u.setType("preonly")
+        ksp_u.getPC().setType("hypre")
+        ksp_u.getPC().setHYPREType("boomeramg")
+
+        ksp_p.setType("preonly")
+        ksp_p.getPC().setType("hypre")
+        ksp_p.getPC().setHYPREType("boomeramg")
+
+        def monitor(ksp, its, rnorm):
+            pass
+
+        ksp.setTolerances(rtol=1.0e-8, max_it=100)
+        ksp.setMonitor(monitor)
+        ksp.setFromOptions()
+
+        x0 = dolfin.cpp.la.PETScVector(b0)
+        ksp.solve(b0.vec(), x0.vec())
 
     # -- Blocked and monolithic
 
