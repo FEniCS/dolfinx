@@ -452,3 +452,24 @@ def test_assembly_solve_taylor_hood(mesh):
     b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     b2norm = b2.vec().norm()
     assert b2norm == pytest.approx(b0norm, 1.0e-12)
+
+    ksp = PETSc.KSP()
+    ksp.create(mesh.mpi_comm())
+    ksp.setOperators(A2.mat(), P2.mat())
+    ksp.setType("minres")
+    pc = ksp.getPC()
+    pc.setType('lu')
+    pc.setFactorSolverType('mumps')
+
+    def monitor(ksp, its, rnorm):
+        print("Num it, rnorm:", its, rnorm)
+        pass
+
+    ksp.setTolerances(rtol=1.0e-8, max_it=50)
+    ksp.setMonitor(monitor)
+    ksp.setFromOptions()
+    x2 = dolfin.cpp.la.PETScVector(b2)
+    ksp.solve(b2.vec(), x2.vec())
+    assert ksp.getConvergedReason() > 0
+
+    assert x0.vec().norm() == pytest.approx(x2.vec().norm(), 1e-8)
