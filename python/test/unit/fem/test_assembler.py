@@ -407,10 +407,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     assert ksp.getConvergedReason() > 0
 
-
     # -- Blocked and monolithic
 
-    # Assemble blocks into monolithic matrix
     A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.monolithic)
     A1norm = A1.mat().norm()
