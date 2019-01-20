@@ -18,6 +18,10 @@ namespace common
 {
 class IndexMap;
 }
+namespace fem
+{
+class Form;
+}
 namespace la
 {
 
@@ -29,6 +33,11 @@ enum class Norm
   linf,
   frobenius
 };
+
+// FIXME: Move to fem::utils?
+/// Compute IndexSets (IS) for stacked index maps
+std::vector<std::vector<const common::IndexMap*>>
+bocked_index_sets(const std::vector<std::vector<const fem::Form*>> a);
 
 /// Compute IndexSets (IS) for stacked index maps
 std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);

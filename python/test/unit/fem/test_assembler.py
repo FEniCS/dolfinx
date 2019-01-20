@@ -377,18 +377,14 @@ def test_assembly_solve_taylor_hood(mesh):
     ksp.create(mesh.mpi_comm())
     ksp.setOperators(A0.mat(), P0.mat())
     nested_IS = P0.mat().getNestISs()
-
     ksp.setType("minres")
     pc = ksp.getPC()
     pc.setType("fieldsplit")
-
     pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
     ksp_u, ksp_p = pc.getFieldSplitSubKSP()
-
     ksp_u.setType("preonly")
     ksp_u.getPC().setType('lu')
     ksp_u.getPC().setFactorSolverType('mumps')
-
     ksp_p.setType("preonly")
 
     def monitor(ksp, its, rnorm):
@@ -398,7 +394,6 @@ def test_assembly_solve_taylor_hood(mesh):
     ksp.setTolerances(rtol=1.0e-8, max_it=50)
     ksp.setMonitor(monitor)
     ksp.setFromOptions()
-
     x0 = dolfin.cpp.la.PETScVector(b0)
     ksp.solve(b0.vec(), x0.vec())
 

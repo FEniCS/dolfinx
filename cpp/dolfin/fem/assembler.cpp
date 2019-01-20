@@ -141,17 +141,6 @@ void fem::assemble(
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const la::PETScVector* x0, double scale)
 {
-  // for (auto row : a)
-  // {
-  //   for (auto block : row)
-  //   {
-  //     if (!block)
-  //       throw std::runtime_error("Null blocks in bilinear form not supported
-  //       "
-  //                                "yet (bc application for ).");
-  //   }
-  // }
-
   assert(!L.empty());
   const Vec _x0 = x0 ? x0->vec() : nullptr;
 
@@ -411,17 +400,10 @@ void fem::assemble(la::PETScMatrix& A,
   {
     // Prepare data structures for extracting sub-matrices by index
     // sets
-    std::vector<std::vector<const common::IndexMap*>> maps(2);
-    for (std::size_t i = 0; i < a.size(); ++i)
-    {
-      maps[0].push_back(
-          a[i][0]->function_space(0)->dofmap()->index_map().get());
-    }
-    for (std::size_t i = 0; i < a[0].size(); ++i)
-    {
-      maps[1].push_back(
-          a[0][i]->function_space(1)->dofmap()->index_map().get());
-    }
+
+    // Extract index maps
+    const std::vector<std::vector<const common::IndexMap*>> maps
+        = la::bocked_index_sets(a);
     is_row = la::compute_index_sets(maps[0]);
     is_col = la::compute_index_sets(maps[1]);
   }

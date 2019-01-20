@@ -11,6 +11,57 @@
 #include <dolfin/log/log.h>
 #include <petsc.h>
 
+#include <dolfin/fem/Form.h>
+#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/function/FunctionSpace.h>
+
+//-----------------------------------------------------------------------------
+std::vector<std::vector<const dolfin::common::IndexMap*>>
+dolfin::la::bocked_index_sets(
+    const std::vector<std::vector<const dolfin::fem::Form*>> a)
+{
+  std::vector<std::vector<const common::IndexMap*>> maps(2);
+  maps[0].resize(a.size());
+  maps[1].resize(a[0].size());
+
+  // Loop over rows and columns
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+    {
+      if (a[i][j])
+      {
+        assert(a[i][j].rank() == 2);
+        auto m0 = a[i][j]->function_space(0)->dofmap()->index_map();
+        auto m1 = a[i][j]->function_space(1)->dofmap()->index_map();
+        if (!maps[0][i])
+          maps[0][i] = m0.get();
+        else
+        {
+          // TODO: Check that maps are the same
+        }
+
+        if (!maps[1][j])
+          maps[1][j] = m1.get();
+        else
+        {
+          // TODO: Check that maps are the same
+        }
+      }
+    }
+  }
+
+  for (std::size_t i = 0; i < maps.size(); ++i)
+  {
+    for (std::size_t j = 0; j < maps[i].size(); ++j)
+    {
+      if (!maps[i][j])
+        throw std::runtime_error("Could not deduce all block index maps.");
+    }
+  }
+
+  return maps;
+}
 //-----------------------------------------------------------------------------
 std::vector<IS> dolfin::la::compute_index_sets(
     std::vector<const dolfin::common::IndexMap*> maps)
@@ -28,7 +79,7 @@ std::vector<IS> dolfin::la::compute_index_sets(
                   PETSC_COPY_VALUES, &is[i]);
     // ISCreateBlock(MPI_COMM_SELF, bs, index.size(), index.data(),
     //               PETSC_COPY_VALUES, &is[i]);
-    offset += bs*size;
+    offset += bs * size;
     // offset += size;
   }
 
