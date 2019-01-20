@@ -39,7 +39,7 @@ fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>> a)
     {
       if (a[i][j])
       {
-        assert(a[i][j].rank() == 2);
+        assert(a[i][j]->rank() == 2);
         auto m0 = a[i][j]->function_space(0)->dofmap()->index_map();
         auto m1 = a[i][j]->function_space(1)->dofmap()->index_map();
         if (!maps[0][i])
@@ -208,17 +208,6 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
   for (auto& m : maps[1])
     index_maps[1].push_back(m.get());
 
-  // for (std::size_t i = 0; i < a.size(); ++i)
-  // {
-  //   auto map = a[i][0]->function_space(0)->dofmap()->index_map();
-  //   index_maps[0].push_back(map.get());
-  // }
-  // for (std::size_t i = 0; i < a[0].size(); ++i)
-  // {
-  //   auto map = a[0][i]->function_space(1)->dofmap()->index_map();
-  //   index_maps[1].push_back(map.get());
-  // }
-
   // Create row and column local-to-global maps to attach to matrix
   std::array<std::vector<PetscInt>, 2> _maps;
   for (std::size_t i = 0; i < maps[0].size(); ++i)
@@ -254,40 +243,6 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
       }
     }
   }
-
-  // for (std::size_t i = 0; i < a.size(); ++i)
-  // {
-  //   auto map = a[i][0]->function_space(0)->dofmap()->index_map();
-  //   std::size_t size = map->size_local() + map->num_ghosts();
-  //   const int bs0 = map->block_size();
-  //   for (std::size_t k = 0; k < size; ++k)
-  //   {
-  //     std::size_t index_k = map->local_to_global(k);
-  //     for (int block = 0; block < bs0; ++block)
-  //     {
-  //       std::size_t index
-  //           = get_global_index(index_maps[0], i, index_k * bs0 + block);
-  //       _maps[0].push_back(index);
-  //     }
-  //   }
-  // }
-
-  // for (std::size_t i = 0; i < a[0].size(); ++i)
-  // {
-  //   auto map = a[0][i]->function_space(1)->dofmap()->index_map();
-  //   std::size_t size = map->size_local() + map->num_ghosts();
-  //   const int bs1 = map->block_size();
-  //   for (std::size_t k = 0; k < size; ++k)
-  //   {
-  //     std::size_t index_k = map->local_to_global(k);
-  //     for (int block = 0; block < bs1; ++block)
-  //     {
-  //       std::size_t index
-  //           = get_global_index(index_maps[1], i, index_k * bs1 + block);
-  //       _maps[1].push_back(index);
-  //     }
-  //   }
-  // }
 
   // Create PETSc local-to-global map/index sets and attach to matrix
   ISLocalToGlobalMapping petsc_local_to_global0, petsc_local_to_global1;
