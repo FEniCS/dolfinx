@@ -123,6 +123,7 @@ def test_matrix_assembly_block():
     A1 = dolfin.fem.assemble_matrix(a_block, [bc],
                                     dolfin.cpp.fem.BlockType.nested)
     Anorm1 = nest_matrix_norm(A1)
+    assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
     b1 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
                                     dolfin.cpp.fem.BlockType.nested)
     bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
