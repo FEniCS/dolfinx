@@ -39,7 +39,6 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
         else:
             self._F = fem.assemble(self._F, [self.L], [[self.a]], [self.bc], x,
                                    -1.0)
-        print(self._F.vec().getType())
         return self._F
 
     def J(self, x):
@@ -49,7 +48,6 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
                                           dolfin.cpp.fem.BlockType.monolithic)
         else:
             self._J = fem.assemble(self._J, [[self.a]], [self.bc])
-        print(self._J.mat().getType())
         return self._J
 
 
