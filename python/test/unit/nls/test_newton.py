@@ -37,7 +37,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
                                           dolfin.cpp.fem.BlockType.monolithic,
                                           x, -1.0)
         else:
-            self._F = fem.assemble(self._F, self.L, [self.a], [self.bc], x,
+            self._F = fem.assemble(self._F, [self.L], [[self.a]], [self.bc], x,
                                    -1.0)
         return self._F
 
@@ -47,7 +47,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
             self._J = fem.assemble_matrix([[self.a]], [self.bc],
                                           dolfin.cpp.fem.BlockType.monolithic)
         else:
-            self._J = fem.assemble(self._J, self.a, [self.bc])
+            self._J = fem.assemble(self._J, [[self.a]], [self.bc])
         return self._J
 
 

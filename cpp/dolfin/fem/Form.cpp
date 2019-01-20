@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Garth N. Wells
+// Copyright (C) 2007-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -81,11 +81,6 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
     if (_mesh != f->mesh())
       throw std::runtime_error("Incompatible mesh");
   }
-}
-//-----------------------------------------------------------------------------
-Form::~Form()
-{
-  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::rank() const { return _function_spaces.size(); }

@@ -18,6 +18,10 @@ namespace common
 {
 class IndexMap;
 }
+namespace fem
+{
+class Form;
+}
 namespace la
 {
 

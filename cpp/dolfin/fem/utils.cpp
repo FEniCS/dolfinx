@@ -25,6 +25,52 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
+std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
+fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>> a)
+{
+  std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps(2);
+  maps[0].resize(a.size());
+  maps[1].resize(a[0].size());
+
+  // Loop over rows and columns
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+    {
+      if (a[i][j])
+      {
+        assert(a[i][j]->rank() == 2);
+        auto m0 = a[i][j]->function_space(0)->dofmap()->index_map();
+        auto m1 = a[i][j]->function_space(1)->dofmap()->index_map();
+        if (!maps[0][i])
+          maps[0][i] = m0;
+        else
+        {
+          // TODO: Check that maps are the same
+        }
+
+        if (!maps[1][j])
+          maps[1][j] = m1;
+        else
+        {
+          // TODO: Check that maps are the same
+        }
+      }
+    }
+  }
+
+  for (std::size_t i = 0; i < maps.size(); ++i)
+  {
+    for (std::size_t j = 0; j < maps[i].size(); ++j)
+    {
+      if (!maps[i][j])
+        throw std::runtime_error("Could not deduce all block index maps.");
+    }
+  }
+
+  return maps;
+}
+//-----------------------------------------------------------------------------
 la::PETScMatrix
 fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
 {
@@ -104,11 +150,16 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
 
   // FIXME: assume no null block in first row or column
   // Extract and check row/column ranges
-  std::vector<std::shared_ptr<const common::IndexMap>> rmaps, cmaps;
-  for (std::size_t row = 0; row < a.size(); ++row)
-    rmaps.push_back(a[row][0]->function_space(0)->dofmap()->index_map());
-  for (std::size_t col = 0; col < a[0].size(); ++col)
-    cmaps.push_back(a[0][col]->function_space(1)->dofmap()->index_map());
+  // std::vector<std::shared_ptr<const common::IndexMap>> rmaps, cmaps;
+  // for (std::size_t row = 0; row < a.size(); ++row)
+  //   rmaps.push_back(a[row][0]->function_space(0)->dofmap()->index_map());
+  // for (std::size_t col = 0; col < a[0].size(); ++col)
+  //   cmaps.push_back(a[0][col]->function_space(1)->dofmap()->index_map());
+
+  std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
+      = blocked_index_sets(a);
+  std::vector<std::shared_ptr<const common::IndexMap>> rmaps = maps[0];
+  std::vector<std::shared_ptr<const common::IndexMap>> cmaps = maps[1];
 
   // Build sparsity pattern for each block
   std::vector<std::vector<std::unique_ptr<la::SparsityPattern>>> patterns(
@@ -152,22 +203,16 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
 
   // Build list of row and column index maps (over each block)
   std::array<std::vector<const common::IndexMap*>, 2> index_maps;
-  for (std::size_t i = 0; i < a.size(); ++i)
-  {
-    auto map = a[i][0]->function_space(0)->dofmap()->index_map();
-    index_maps[0].push_back(map.get());
-  }
-  for (std::size_t i = 0; i < a[0].size(); ++i)
-  {
-    auto map = a[0][i]->function_space(1)->dofmap()->index_map();
-    index_maps[1].push_back(map.get());
-  }
+  for (auto& m : maps[0])
+    index_maps[0].push_back(m.get());
+  for (auto& m : maps[1])
+    index_maps[1].push_back(m.get());
 
   // Create row and column local-to-global maps to attach to matrix
   std::array<std::vector<PetscInt>, 2> _maps;
-  for (std::size_t i = 0; i < a.size(); ++i)
+  for (std::size_t i = 0; i < maps[0].size(); ++i)
   {
-    auto map = a[i][0]->function_space(0)->dofmap()->index_map();
+    auto map = maps[0][i];
     std::size_t size = map->size_local() + map->num_ghosts();
     const int bs0 = map->block_size();
     for (std::size_t k = 0; k < size; ++k)
@@ -182,9 +227,9 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
     }
   }
 
-  for (std::size_t i = 0; i < a[0].size(); ++i)
+  for (std::size_t i = 0; i < maps[1].size(); ++i)
   {
-    auto map = a[0][i]->function_space(1)->dofmap()->index_map();
+    auto map = maps[1][i];
     std::size_t size = map->size_local() + map->num_ghosts();
     const int bs1 = map->block_size();
     for (std::size_t k = 0; k < size; ++k)
@@ -219,30 +264,38 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
 //-----------------------------------------------------------------------------
 la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
 {
-  // FIXME: handle null blocks
-  // FIXME: handle mixed block sizes
+  // FIXME: handle null blocks?
 
-  std::size_t local_size = 0;
+  // FIXME: handle consatnt block size > 1
+
+  // std::size_t local_size = 0;
   std::vector<const common::IndexMap*> index_maps;
-  for (std::size_t i = 0; i < L.size(); ++i)
+  for (const fem::Form* form : L)
   {
-    assert(L[i]);
-    assert(L[i]->rank() == 1);
-    auto map = L[i]->function_space(0)->dofmap()->index_map();
-    local_size += map->size_local();
+    assert(form);
+    assert(form->rank() == 1);
+    auto map = form->function_space(0)->dofmap()->index_map();
     index_maps.push_back(map.get());
   }
 
+  std::size_t local_size = 0;
   std::vector<std::size_t> ghosts;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
+    const common::IndexMap* map = index_maps[i];
+    const int bs = index_maps[i]->block_size();
+    local_size += map->size_local() * bs;
+
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& field_ghosts
-        = index_maps[i]->ghosts();
+        = map->ghosts();
     for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
     {
-      std::size_t global_index
-          = get_global_index(index_maps, i, field_ghosts[j]);
-      ghosts.push_back(global_index);
+      for (int k = 0; k < bs; ++k)
+      {
+        std::size_t global_index
+            = get_global_index(index_maps, i, bs * field_ghosts[j] + k);
+        ghosts.push_back(global_index);
+      }
     }
   }
 

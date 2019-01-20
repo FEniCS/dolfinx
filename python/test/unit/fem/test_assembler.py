@@ -16,9 +16,22 @@ import ufl
 from ufl import dx, inner
 
 
+def nest_matrix_norm(A):
+    """Return norm of a MatNest matrix"""
+    assert A.mat().getType() == "nest"
+    norm = 0.0
+    nrows, ncols = A.mat().getNestSize()
+    for row in range(nrows):
+        for col in range(ncols):
+            A_sub = A.mat().getNestSubMatrix(row, col)
+            if A_sub:
+                _norm = A_sub.norm()
+                norm += _norm * _norm
+    return math.sqrt(norm)
+
+
 def test_assemble_functional():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
-
     M = 1.0 * dx(domain=mesh)
     value = dolfin.fem.assemble(M)
     assert value == pytest.approx(1.0, 1e-12)
@@ -61,7 +74,6 @@ def test_matrix_assembly_block():
     """
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 4, 8)
-    # mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 1)
 
     p0, p1 = 1, 2
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -91,7 +103,6 @@ def test_matrix_assembly_block():
     a01 = inner(p, v) * dx
     a10 = inner(u, q) * dx
     a11 = inner(p, q) * dx
-    # a11 = None
 
     L0 = zero * inner(f, v) * dx
     L1 = inner(g, q) * dx
@@ -111,19 +122,12 @@ def test_matrix_assembly_block():
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix(a_block, [bc],
                                     dolfin.cpp.fem.BlockType.nested)
+    Anorm1 = nest_matrix_norm(A1)
+    assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
     b1 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
                                     dolfin.cpp.fem.BlockType.nested)
     bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
     assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
-
-    Anorm1 = 0.0
-    nrows, ncols = A1.mat().getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            A_sub = A1.mat().getNestSubMatrix(row, col)
-            norm = A_sub.norm()
-            Anorm1 += norm * norm
-    Anorm1 = math.sqrt(Anorm1)
 
     # Monolithic version
     E = P0 * P1
@@ -152,7 +156,6 @@ def test_assembly_solve_block():
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
     """
-
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31)
     p0, p1 = 1, 1
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -218,14 +221,7 @@ def test_assembly_solve_block():
                                     dolfin.cpp.fem.BlockType.nested)
     b1norm = b1.vec().norm()
     assert b1norm == pytest.approx(b0norm, 1.0e-12)
-    A1norm = 0.0
-    nrows, ncols = A1.mat().getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            A_sub = A1.mat().getNestSubMatrix(row, col)
-            norm = A_sub.norm()
-            A1norm += norm * norm
-    A1norm = math.sqrt(A1norm)
+    A1norm = nest_matrix_norm(A1)
     assert A0norm == pytest.approx(A1norm, 1.0e-12)
 
     x1 = dolfin.la.PETScVector(b1)
@@ -305,13 +301,11 @@ def test_assembly_solve_block():
 @pytest.mark.parametrize("mesh", [
     dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31),
     dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)])
-def test_assembly_taylor_hood(mesh):
-    """Assemble Stokes problem with Taylor-Hood elements."""
-
+def test_assembly_solve_taylor_hood(mesh):
+    """Assemble Stokes problem with Taylor-Hood elements and solve."""
     P2 = dolfin.VectorFunctionSpace(mesh, ("Lagrange", 2))
     P1 = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
 
-    # Define boundary (x = 0)
     def boundary0(x):
         """Define boundary x = 0"""
         return x[:, 0] < 10 * numpy.finfo(float).eps
@@ -321,7 +315,8 @@ def test_assembly_taylor_hood(mesh):
         return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     u0 = dolfin.Function(P2)
-    u0.vector().set(0.0)
+    u0.vector().set(1.0)
+    u0.vector().update_ghosts()
     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
     bc1 = dolfin.DirichletBC(P2, u0, boundary1)
 
@@ -329,54 +324,134 @@ def test_assembly_taylor_hood(mesh):
     v, q = dolfin.TestFunction(P2), dolfin.TestFunction(P1)
 
     a00 = inner(ufl.grad(u), ufl.grad(v)) * dx
-    a01 = -ufl.inner(p, ufl.div(v)) * dx
+    a01 = ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
     a11 = None
 
-    # f = dolfin.Function(P2)
-    # L0 = ufl.inner(f, v) * dx
-    # L1 = None
+    p00 = a00
+    p01, p10 = None, None
+    p11 = inner(p, q) * dx
 
-    # Assemble blocks into nested matrix
+    # FIXME
+    # We need zero function for the 'zero' part of L
+    p_zero = dolfin.Function(P1)
+    f = dolfin.Function(P2)
+    L0 = ufl.inner(f, v) * dx
+    L1 = ufl.inner(p_zero, q) * dx
+
+    # -- Blocked and nested
+
     A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
-    A0norm = 0.0
-    nrows, ncols = A0.mat().getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            A_sub = A0.mat().getNestSubMatrix(row, col)
-            if A_sub:
-                norm = A_sub.norm()
-                A0norm += norm * norm
-    A0norm = math.sqrt(A0norm)
-    # print("A0 (MatNest) norm:", A0norm)
+    A0norm = nest_matrix_norm(A0)
+    P0 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
+                                    dolfin.cpp.fem.BlockType.nested)
+    P0norm = nest_matrix_norm(P0)
+    b0 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
+                                    dolfin.cpp.fem.BlockType.nested)
+    b0norm = b0.vec().norm()
 
-    # Assemble blocks into monolithic matrix
+    ksp = PETSc.KSP()
+    ksp.create(mesh.mpi_comm())
+    ksp.setOperators(A0.mat(), P0.mat())
+    nested_IS = P0.mat().getNestISs()
+    ksp.setType("minres")
+    pc = ksp.getPC()
+    pc.setType("fieldsplit")
+    pc.setFieldSplitIS(["u", nested_IS[0][0]], ["p", nested_IS[1][1]])
+    ksp_u, ksp_p = pc.getFieldSplitSubKSP()
+    ksp_u.setType("preonly")
+    ksp_u.getPC().setType('lu')
+    ksp_u.getPC().setFactorSolverType('mumps')
+    ksp_p.setType("preonly")
+
+    def monitor(ksp, its, rnorm):
+        # print("Num it, rnorm:", its, rnorm)
+        pass
+
+    ksp.setTolerances(rtol=1.0e-8, max_it=50)
+    ksp.setMonitor(monitor)
+    ksp.setFromOptions()
+    x0 = dolfin.cpp.la.PETScVector(b0)
+    ksp.solve(b0.vec(), x0.vec())
+    assert ksp.getConvergedReason() > 0
+
+    # -- Blocked and monolithic
+
     A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.monolithic)
-    A1norm = A1.mat().norm()
-    assert A1norm == pytest.approx(A0norm, 1.0e-12)
-    # print("A1 (mono) norm:", A1.mat().norm())
-    # A0.mat().view()
+    assert A1.mat().norm() == pytest.approx(A0norm, 1.0e-12)
+    P1 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
+                                    dolfin.cpp.fem.BlockType.monolithic)
+    assert P1.mat().norm() == pytest.approx(P0norm, 1.0e-12)
+    b1 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
+                                    dolfin.cpp.fem.BlockType.monolithic)
+    assert b1.vec().norm() == pytest.approx(b0norm, 1.0e-12)
 
-    # Monolithic form
+    ksp = PETSc.KSP()
+    ksp.create(mesh.mpi_comm())
+    ksp.setOperators(A1.mat(), P1.mat())
+    ksp.setType("minres")
+    pc = ksp.getPC()
+    pc.setType('lu')
+    pc.setFactorSolverType('mumps')
+    ksp.setTolerances(rtol=1.0e-8, max_it=50)
+    ksp.setFromOptions()
+    x1 = dolfin.cpp.la.PETScVector(b1)
+    ksp.solve(b1.vec(), x1.vec())
+    assert ksp.getConvergedReason() > 0
+    assert x1.vec().norm() == pytest.approx(x0.vec().norm(), 1e-8)
+
+    # -- Monolithic
+
     P2 = dolfin.VectorElement("Lagrange", mesh.ufl_cell(), 2)
     P1 = dolfin.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     TH = P2 * P1
     W = dolfin.FunctionSpace(mesh, TH)
     (u, p) = dolfin.TrialFunctions(W)
     (v, q) = dolfin.TestFunctions(W)
-    # f = dolfin.Function(W.sub(0).collapse())
-    a = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx - ufl.inner(p,
-                                                             ufl.div(v)) * dx + ufl.inner(ufl.div(u), q) * dx
     a00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
-    a01 = -ufl.inner(p, ufl.div(v)) * dx
+    a01 = ufl.inner(p, ufl.div(v)) * dx
     a10 = ufl.inner(ufl.div(u), q) * dx
     a = a00 + a01 + a10
+
+    p00 = ufl.inner(ufl.grad(u), ufl.grad(v)) * dx
+    p11 = ufl.inner(p, q) * dx
+    p_form = p00 + p11
+
+    f = dolfin.Function(W.sub(0).collapse())
+    p_zero = dolfin.Function(W.sub(1).collapse())
+    L0 = inner(f, v) * dx
+    L1 = inner(p_zero, q) * dx
+    L = L0 + L1
 
     bc0 = dolfin.DirichletBC(W.sub(0), u0, boundary0)
     bc1 = dolfin.DirichletBC(W.sub(0), u0, boundary1)
 
     A2 = dolfin.fem.assemble_matrix([[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
-    # print("A2 (full) norm:", A2.mat().norm())
     assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
+    P2 = dolfin.fem.assemble_matrix([[p_form]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
+    assert P2.mat().norm() == pytest.approx(P0norm, 1.0e-12)
+    b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
+    b2norm = b2.vec().norm()
+    assert b2norm == pytest.approx(b0norm, 1.0e-12)
+
+    ksp = PETSc.KSP()
+    ksp.create(mesh.mpi_comm())
+    ksp.setOperators(A2.mat(), P2.mat())
+    ksp.setType("minres")
+    pc = ksp.getPC()
+    pc.setType('lu')
+    pc.setFactorSolverType('mumps')
+
+    def monitor(ksp, its, rnorm):
+        # print("Num it, rnorm:", its, rnorm)
+        pass
+
+    ksp.setTolerances(rtol=1.0e-8, max_it=50)
+    ksp.setMonitor(monitor)
+    ksp.setFromOptions()
+    x2 = dolfin.cpp.la.PETScVector(b2)
+    ksp.solve(b2.vec(), x2.vec())
+    assert ksp.getConvergedReason() > 0
+    assert x0.vec().norm() == pytest.approx(x2.vec().norm(), 1e-8)
