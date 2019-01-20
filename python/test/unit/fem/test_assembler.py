@@ -16,6 +16,20 @@ import ufl
 from ufl import dx, inner
 
 
+def nest_matrix_norm(A):
+    """Return norm of a MatNest matrix"""
+    assert A.mat().getType() == "nest"
+    norm = 0.0
+    nrows, ncols = A.mat().getNestSize()
+    for row in range(nrows):
+        for col in range(ncols):
+            A_sub = A.mat().getNestSubMatrix(row, col)
+            if A_sub:
+                _norm = A_sub.norm()
+                norm += _norm * _norm
+    return math.sqrt(norm)
+
+
 def test_assemble_functional():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     M = 1.0 * dx(domain=mesh)
@@ -108,19 +122,11 @@ def test_matrix_assembly_block():
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix(a_block, [bc],
                                     dolfin.cpp.fem.BlockType.nested)
+    Anorm1 = nest_matrix_norm(A1)
     b1 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
                                     dolfin.cpp.fem.BlockType.nested)
     bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
     assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
-
-    Anorm1 = 0.0
-    nrows, ncols = A1.mat().getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            A_sub = A1.mat().getNestSubMatrix(row, col)
-            norm = A_sub.norm()
-            Anorm1 += norm * norm
-    Anorm1 = math.sqrt(Anorm1)
 
     # Monolithic version
     E = P0 * P1
@@ -149,7 +155,6 @@ def test_assembly_solve_block():
     """Solve a two-field mass-matrix like problem with block matrix approaches
     and test that solution is the same.
     """
-
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31)
     p0, p1 = 1, 1
     P0 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), p0)
@@ -215,14 +220,7 @@ def test_assembly_solve_block():
                                     dolfin.cpp.fem.BlockType.nested)
     b1norm = b1.vec().norm()
     assert b1norm == pytest.approx(b0norm, 1.0e-12)
-    A1norm = 0.0
-    nrows, ncols = A1.mat().getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            A_sub = A1.mat().getNestSubMatrix(row, col)
-            norm = A_sub.norm()
-            A1norm += norm * norm
-    A1norm = math.sqrt(A1norm)
+    A1norm = nest_matrix_norm(A1)
     assert A0norm == pytest.approx(A1norm, 1.0e-12)
 
     x1 = dolfin.la.PETScVector(b1)
@@ -303,12 +301,10 @@ def test_assembly_solve_block():
     dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31),
     dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)])
 def test_assembly_solve_taylor_hood(mesh):
-    """Assemble Stokes problem with Taylor-Hood elements."""
-
+    """Assemble Stokes problem with Taylor-Hood elements and solve."""
     P2 = dolfin.VectorFunctionSpace(mesh, ("Lagrange", 2))
     P1 = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
 
-    # Define boundary (x = 0)
     def boundary0(x):
         """Define boundary x = 0"""
         return x[:, 0] < 10 * numpy.finfo(float).eps
@@ -331,15 +327,13 @@ def test_assembly_solve_taylor_hood(mesh):
     a10 = ufl.inner(ufl.div(u), q) * dx
     a11 = None
 
-    p00 = inner(ufl.grad(u), ufl.grad(v)) * dx
-    p01 = None
-    p10 = None
+    p00 = a00
+    p01, p10 = None, None
     p11 = inner(p, q) * dx
 
     # FIXME
     # We need zero function for the 'zero' part of L
     p_zero = dolfin.Function(P1)
-
     f = dolfin.Function(P2)
     L0 = ufl.inner(f, v) * dx
     L1 = ufl.inner(p_zero, q) * dx
@@ -348,27 +342,10 @@ def test_assembly_solve_taylor_hood(mesh):
 
     A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
-    A0norm = 0.0
-    nrows, ncols = A0.mat().getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            A_sub = A0.mat().getNestSubMatrix(row, col)
-            if A_sub:
-                norm = A_sub.norm()
-                A0norm += norm * norm
-    A0norm = math.sqrt(A0norm)
-
+    A0norm = nest_matrix_norm(A0)
     P0 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
-    P0norm = 0.0
-    nrows, ncols = P0.mat().getNestSize()
-    for row in range(nrows):
-        for col in range(ncols):
-            P_sub = P0.mat().getNestSubMatrix(row, col)
-            if P_sub:
-                norm = P_sub.norm()
-                P0norm += norm * norm
-    P0norm = math.sqrt(P0norm)
+    P0norm = nest_matrix_norm(P0)
     b0 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
     b0norm = b0.vec().norm()
@@ -452,10 +429,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     A2 = dolfin.fem.assemble_matrix([[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
-
     P2 = dolfin.fem.assemble_matrix([[p_form]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     assert P2.mat().norm() == pytest.approx(P0norm, 1.0e-12)
-
     b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     b2norm = b2.vec().norm()
     assert b2norm == pytest.approx(b0norm, 1.0e-12)
