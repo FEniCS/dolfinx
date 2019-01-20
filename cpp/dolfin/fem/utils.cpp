@@ -264,30 +264,38 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
 //-----------------------------------------------------------------------------
 la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
 {
-  // FIXME: handle null blocks
-  // FIXME: handle mixed block sizes
+  // FIXME: handle null blocks?
 
-  std::size_t local_size = 0;
+  // FIXME: handle consatnt block size > 1
+
+  // std::size_t local_size = 0;
   std::vector<const common::IndexMap*> index_maps;
-  for (std::size_t i = 0; i < L.size(); ++i)
+  for (const fem::Form* form : L)
   {
-    assert(L[i]);
-    assert(L[i]->rank() == 1);
-    auto map = L[i]->function_space(0)->dofmap()->index_map();
-    local_size += map->size_local();
+    assert(form);
+    assert(form->rank() == 1);
+    auto map = form->function_space(0)->dofmap()->index_map();
     index_maps.push_back(map.get());
   }
 
+  std::size_t local_size = 0;
   std::vector<std::size_t> ghosts;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
+    const common::IndexMap* map = index_maps[i];
+    const int bs = index_maps[i]->block_size();
+    local_size += map->size_local() * bs;
+
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& field_ghosts
-        = index_maps[i]->ghosts();
+        = map->ghosts();
     for (Eigen::Index j = 0; j < field_ghosts.size(); ++j)
     {
-      std::size_t global_index
-          = get_global_index(index_maps, i, field_ghosts[j]);
-      ghosts.push_back(global_index);
+      for (int k = 0; k < bs; ++k)
+      {
+        std::size_t global_index
+            = get_global_index(index_maps, i, bs * field_ghosts[j] + k);
+        ghosts.push_back(global_index);
+      }
     }
   }
 

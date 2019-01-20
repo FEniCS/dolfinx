@@ -205,6 +205,8 @@ void fem::assemble(
   }
   else if (L.size() > 1)
   {
+    std::cout << "Blocked/mono assembler" << std::endl;
+
     // Get local representation of b vector and unwrap
     la::VecWrapper _b(b.vec());
     for (std::size_t i = 0; i < L.size(); ++i)
@@ -212,9 +214,11 @@ void fem::assemble(
       // FIXME: Sort out for x0 \ne nullptr case
 
       // Get size for block i
+      assert(L[i]);
       auto map = L[i]->function_space(0)->dofmap()->index_map();
-      const int map_size0 = map->size_local();
-      const int map_size1 = map->num_ghosts();
+      const int bs = map->block_size();
+      const int map_size0 = map->size_local() * bs;
+      const int map_size1 = map->num_ghosts() * bs;
 
       // Assemble and modify for bcs (lifting)
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
@@ -225,11 +229,16 @@ void fem::assemble(
       // Compute offsets for block i
       int offset0(0), offset1(0);
       for (auto& _L : L)
-        offset1 += _L->function_space(0)->dofmap()->index_map()->size_local();
+      {
+        auto map = _L->function_space(0)->dofmap()->index_map();
+        offset1 += map->size_local() * map->block_size();
+      }
       for (std::size_t j = 0; j < i; ++j)
       {
-        offset0 += L[j]->function_space(0)->dofmap()->index_map()->size_local();
-        offset1 += L[j]->function_space(0)->dofmap()->index_map()->num_ghosts();
+        auto map = L[j]->function_space(0)->dofmap()->index_map();
+        const int bs = map->block_size();
+        offset0 += map->size_local() * bs;
+        offset1 += map->num_ghosts() * bs;
       }
 
       // Copy data into PETSc b Vec
@@ -245,13 +254,14 @@ void fem::assemble(
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
     // Set bcs
+    PetscScalar* values;
+    VecGetArray(b.vec(), &values);
     std::size_t offset = 0;
     for (std::size_t i = 0; i < L.size(); ++i)
     {
       auto map = L[i]->function_space(0)->dofmap()->index_map();
-      const int map_size0 = map->size_local();
-      PetscScalar* values;
-      VecGetArray(b.vec(), &values);
+      const int bs = map->block_size();
+      const int map_size0 = map->size_local() * bs;
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
           values + offset, map_size0);
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
@@ -261,10 +271,9 @@ void fem::assemble(
         if (L[i]->function_space(0)->contains(*bc->function_space()))
           bc->set(vec, scale);
       }
-
-      VecRestoreArray(b.vec(), &values);
       offset += map_size0;
     }
+    VecRestoreArray(b.vec(), &values);
   }
   else
   {

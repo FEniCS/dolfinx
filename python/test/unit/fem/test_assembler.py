@@ -396,21 +396,33 @@ def test_assembly_solve_taylor_hood(mesh):
     ksp.setFromOptions()
     x0 = dolfin.cpp.la.PETScVector(b0)
     ksp.solve(b0.vec(), x0.vec())
-
     assert ksp.getConvergedReason() > 0
 
     # -- Blocked and monolithic
 
     A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.monolithic)
-    A1norm = A1.mat().norm()
-    assert A1norm == pytest.approx(A0norm, 1.0e-12)
-
-    # FIXME
+    assert A1.mat().norm() == pytest.approx(A0norm, 1.0e-12)
     P1 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.monolithic)
-    # P1norm = P1.mat().norm()
-    # assert P1norm == pytest.approx(P0norm, 1.0e-12)
+    assert P1.mat().norm() == pytest.approx(P0norm, 1.0e-12)
+    b1 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
+                                    dolfin.cpp.fem.BlockType.monolithic)
+    assert b1.vec().norm() == pytest.approx(b0norm, 1.0e-12)
+
+    ksp = PETSc.KSP()
+    ksp.create(mesh.mpi_comm())
+    ksp.setOperators(A1.mat(), P1.mat())
+    ksp.setType("minres")
+    pc = ksp.getPC()
+    pc.setType('lu')
+    pc.setFactorSolverType('mumps')
+    ksp.setTolerances(rtol=1.0e-8, max_it=50)
+    ksp.setFromOptions()
+    x1 = dolfin.cpp.la.PETScVector(b1)
+    ksp.solve(b1.vec(), x1.vec())
+    assert ksp.getConvergedReason() > 0
+    assert x1.vec().norm() == pytest.approx(x0.vec().norm(), 1e-8)
 
     # -- Monolithic
 
@@ -457,7 +469,7 @@ def test_assembly_solve_taylor_hood(mesh):
     pc.setFactorSolverType('mumps')
 
     def monitor(ksp, its, rnorm):
-        print("Num it, rnorm:", its, rnorm)
+        # print("Num it, rnorm:", its, rnorm)
         pass
 
     ksp.setTolerances(rtol=1.0e-8, max_it=50)
@@ -466,5 +478,4 @@ def test_assembly_solve_taylor_hood(mesh):
     x2 = dolfin.cpp.la.PETScVector(b2)
     ksp.solve(b2.vec(), x2.vec())
     assert ksp.getConvergedReason() > 0
-
     assert x0.vec().norm() == pytest.approx(x2.vec().norm(), 1e-8)
