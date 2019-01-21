@@ -28,7 +28,7 @@ std::vector<IS> dolfin::la::compute_index_sets(
                   PETSC_COPY_VALUES, &is[i]);
     // ISCreateBlock(MPI_COMM_SELF, bs, index.size(), index.data(),
     //               PETSC_COPY_VALUES, &is[i]);
-    offset += bs*size;
+    offset += bs * size;
     // offset += size;
   }
 

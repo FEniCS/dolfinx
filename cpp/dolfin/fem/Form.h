@@ -91,7 +91,7 @@ public:
            function_spaces);
 
   /// Destructor
-  virtual ~Form();
+  virtual ~Form() = default;
 
   /// Return rank of form (bilinear form = 2, linear form = 1,
   /// functional = 0, etc)

@@ -69,8 +69,8 @@ def test_python_interface(V, V2, W, W2, Q):
     assert W.dolfin_element().signature() == W2.dolfin_element().signature()
     assert V.ufl_element() == V2.ufl_element()
     assert W.ufl_element() == W2.ufl_element()
-    assert W.id() == W2.id()
-    assert V.id() == V2.id()
+    assert W.id == W2.id
+    assert V.id == V2.id
 
 
 def test_component(V, W, Q):

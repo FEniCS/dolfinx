@@ -120,16 +120,6 @@ fem::assemble(std::vector<const Form*> L,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               const la::PETScVector* x0, BlockType block_type, double scale)
 {
-  for (auto row : a)
-  {
-    for (auto block : row)
-    {
-      if (!block)
-        throw std::runtime_error(
-            "Null blocks in bilinear form not supported yet.");
-    }
-  }
-
   assert(!L.empty());
 
   la::PETScVector b;
@@ -151,27 +141,17 @@ void fem::assemble(
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const la::PETScVector* x0, double scale)
 {
-  for (auto row : a)
-  {
-    for (auto block : row)
-    {
-      if (!block)
-        throw std::runtime_error(
-            "Null blocks in bilinear form not supported yet.");
-    }
-  }
-
   assert(!L.empty());
   const Vec _x0 = x0 ? x0->vec() : nullptr;
 
-  // Packs DirichletBC pointers for the different dims (row/column) and
-  // blocks
+  // Packs DirichletBC pointers for rows
   std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0(L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
     for (std::shared_ptr<const DirichletBC> bc : bcs)
       if (L[i]->function_space(0)->contains(*bc->function_space()))
         bcs0[i].push_back(bc);
 
+  // Packs DirichletBC pointers for columns
   std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>>
       bcs1(a.size());
   for (std::size_t i = 0; i < a.size(); ++i)
@@ -180,8 +160,14 @@ void fem::assemble(
     {
       bcs1[i].resize(a[j].size());
       for (std::shared_ptr<const DirichletBC> bc : bcs)
-        if (a[i][j]->function_space(1)->contains(*bc->function_space()))
-          bcs1[i][j].push_back(bc);
+      {
+        // FIXME: handle case where a[i][j] is null
+        if (a[i][j])
+        {
+          if (a[i][j]->function_space(1)->contains(*bc->function_space()))
+            bcs1[i][j].push_back(bc);
+        }
+      }
     }
   }
 
@@ -190,6 +176,8 @@ void fem::assemble(
   bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
   if (is_vecnest)
   {
+    // FIXME: merge this with single L case
+
     // FIXME: Sort out for x0 \ne nullptr case
 
     for (std::size_t i = 0; i < L.size(); ++i)
@@ -197,20 +185,28 @@ void fem::assemble(
       // FIXME: need to extract block of x0
       Vec b_sub = nullptr;
       VecNestGetSubVec(b.vec(), i, &b_sub);
+
+      // Assemble
       assemble_petsc(b_sub, *L[i], a[i], bcs1[i], _x0, scale);
 
+      // Set bc values
       for (std::size_t j = 0; j < a[i].size(); ++j)
       {
-        if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
+        if (a[i][j])
         {
-          la::PETScVector _sb(b_sub);
-          set_bc(_sb, bcs0[i], nullptr, scale);
+          if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
+          {
+            la::PETScVector _sb(b_sub);
+            set_bc(_sb, bcs0[i], nullptr, scale);
+          }
         }
       }
     }
   }
   else if (L.size() > 1)
   {
+    std::cout << "Blocked/mono assembler" << std::endl;
+
     // Get local representation of b vector and unwrap
     la::VecWrapper _b(b.vec());
     for (std::size_t i = 0; i < L.size(); ++i)
@@ -218,9 +214,11 @@ void fem::assemble(
       // FIXME: Sort out for x0 \ne nullptr case
 
       // Get size for block i
+      assert(L[i]);
       auto map = L[i]->function_space(0)->dofmap()->index_map();
-      const int map_size0 = map->size_local();
-      const int map_size1 = map->num_ghosts();
+      const int bs = map->block_size();
+      const int map_size0 = map->size_local() * bs;
+      const int map_size1 = map->num_ghosts() * bs;
 
       // Assemble and modify for bcs (lifting)
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
@@ -231,11 +229,16 @@ void fem::assemble(
       // Compute offsets for block i
       int offset0(0), offset1(0);
       for (auto& _L : L)
-        offset1 += _L->function_space(0)->dofmap()->index_map()->size_local();
+      {
+        auto map = _L->function_space(0)->dofmap()->index_map();
+        offset1 += map->size_local() * map->block_size();
+      }
       for (std::size_t j = 0; j < i; ++j)
       {
-        offset0 += L[j]->function_space(0)->dofmap()->index_map()->size_local();
-        offset1 += L[j]->function_space(0)->dofmap()->index_map()->num_ghosts();
+        auto map = L[j]->function_space(0)->dofmap()->index_map();
+        const int bs = map->block_size();
+        offset0 += map->size_local() * bs;
+        offset1 += map->num_ghosts() * bs;
       }
 
       // Copy data into PETSc b Vec
@@ -251,13 +254,14 @@ void fem::assemble(
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
     // Set bcs
+    PetscScalar* values;
+    VecGetArray(b.vec(), &values);
     std::size_t offset = 0;
     for (std::size_t i = 0; i < L.size(); ++i)
     {
       auto map = L[i]->function_space(0)->dofmap()->index_map();
-      const int map_size0 = map->size_local();
-      PetscScalar* values;
-      VecGetArray(b.vec(), &values);
+      const int bs = map->block_size();
+      const int map_size0 = map->size_local() * bs;
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
           values + offset, map_size0);
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
@@ -267,10 +271,9 @@ void fem::assemble(
         if (L[i]->function_space(0)->contains(*bc->function_space()))
           bc->set(vec, scale);
       }
-
-      VecRestoreArray(b.vec(), &values);
       offset += map_size0;
     }
+    VecRestoreArray(b.vec(), &values);
   }
   else
   {
@@ -340,23 +343,26 @@ void fem::assemble_eigen(
   // Modify for Dirichlet bcs (lifting)
   for (std::size_t j = 0; j < a.size(); ++j)
   {
-    auto V1 = a[j]->function_space(1);
-    auto map1 = V1->dofmap()->index_map();
-    const std::size_t col_range
-        = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-    std::vector<bool> bc_markers1(col_range, false);
-    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
-        = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
-    for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
+    if (a[j])
     {
-      bc->mark_dofs(bc_markers1);
-      bc->dof_values(bc_values1);
-    }
+      auto V1 = a[j]->function_space(1);
+      auto map1 = V1->dofmap()->index_map();
+      const std::size_t col_range
+          = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+      std::vector<bool> bc_markers1(col_range, false);
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
+          = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
+      for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
+      {
+        bc->mark_dofs(bc_markers1);
+        bc->dof_values(bc_values1);
+      }
 
-    if (!x0.empty())
-      fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
-    else
-      fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, scale);
+      if (!x0.empty())
+        fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
+      else
+        fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, scale);
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -403,19 +409,17 @@ void fem::assemble(la::PETScMatrix& A,
   {
     // Prepare data structures for extracting sub-matrices by index
     // sets
-    std::vector<std::vector<const common::IndexMap*>> maps(2);
-    for (std::size_t i = 0; i < a.size(); ++i)
-    {
-      maps[0].push_back(
-          a[i][0]->function_space(0)->dofmap()->index_map().get());
-    }
-    for (std::size_t i = 0; i < a[0].size(); ++i)
-    {
-      maps[1].push_back(
-          a[0][i]->function_space(1)->dofmap()->index_map().get());
-    }
-    is_row = la::compute_index_sets(maps[0]);
-    is_col = la::compute_index_sets(maps[1]);
+
+    // Extract index maps
+    const std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
+        = fem::blocked_index_sets(a);
+    std::vector<std::vector<const common::IndexMap*>> _maps(2);
+    for (auto& m : maps[0])
+      _maps[0].push_back(m.get());
+    for (auto& m : maps[1])
+      _maps[1].push_back(m.get());
+    is_row = la::compute_index_sets(_maps[0]);
+    is_col = la::compute_index_sets(_maps[1]);
   }
 
   // Loop over each form and assemble

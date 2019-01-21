@@ -21,9 +21,6 @@
 # Copyright (c) 2009 Benoit Jacob <jacob.benoit.1@gmail.com>
 # Redistribution and use is allowed according to the terms of the 2-clause BSD license.
 
-# Modified by Garth N. Wells <gnw20@cam.ac.uk> to add EIGEN_DIR to
-# search path
-
 if(NOT Eigen3_FIND_VERSION)
   if(NOT Eigen3_FIND_VERSION_MAJOR)
     set(Eigen3_FIND_VERSION_MAJOR 2)
@@ -78,8 +75,8 @@ else (EIGEN3_INCLUDE_DIR)
   if(NOT EIGEN3_INCLUDE_DIR)
     find_path(EIGEN3_INCLUDE_DIR NAMES signature_of_eigen3_matrix_library
         HINTS
-        ${EIGEN_DIR}
-        ENV EIGEN_DIR
+        ${EIGEN_ROOT}
+        ENV EIGEN_ROOT
         ENV EIGEN3_ROOT
         ENV EIGEN3_ROOT_DIR
         PATHS

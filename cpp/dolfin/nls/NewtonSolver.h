@@ -7,7 +7,6 @@
 #pragma once
 
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
 #include <memory>
 #include <utility>
 
@@ -29,7 +28,7 @@ class NonlinearProblem;
 /// This class defines a Newton solver for nonlinear systems of
 /// equations of the form \f$F(x) = 0\f$.
 
-class NewtonSolver : public common::Variable
+class NewtonSolver
 {
 public:
   /// Create nonlinear solver
@@ -37,7 +36,7 @@ public:
   explicit NewtonSolver(MPI_Comm comm);
 
   /// Destructor
-  virtual ~NewtonSolver();
+  virtual ~NewtonSolver() = default;
 
   /// Solve abstract nonlinear problem \f$`F(x) = 0\f$ for given
   /// \f$F\f$ and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.

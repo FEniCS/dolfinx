@@ -7,11 +7,11 @@ find_package(DOLFIN REQUIRED)
 # include(${DOLFIN_USE_FILE})
 
 # Demos that run in real and complex modes
-add_subdirectory(documented/poisson)
+add_subdirectory(poisson)
 
 # Demos that run only in real mode
 if (NOT PETSC_SCALAR_COMPLEX)
-  add_subdirectory(documented/hyperelasticity)
+  add_subdirectory(hyperelasticity)
 endif()
 
 # Demos that run only in complex mode
