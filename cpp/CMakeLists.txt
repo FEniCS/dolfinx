@@ -328,7 +328,7 @@ if (PYTHONINTERP_FOUND AND NOT EXISTS ${DOLFIN_SOURCE_DIR}/demo/poisson/Poisson.
   message(STATUS "Generating form files in demo and test and directories. May take some time...")
   message(STATUS "----------------------------------------------------------------------------------------")
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files.py
+    COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ${DOLFIN_SOURCE_DIR}/cmake/scripts/generate-form-files.py ${PETSC_SCALAR_COMPLEX}
     WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR}
     RESULT_VARIABLE FORM_GENERATION_RESULT
     OUTPUT_VARIABLE FORM_GENERATION_OUTPUT
