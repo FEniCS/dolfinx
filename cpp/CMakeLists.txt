@@ -16,15 +16,13 @@ endif()
 
 #------------------------------------------------------------------------------
 # Set CMake options, see `cmake --help-policy CMP000x`
-cmake_policy(VERSION 3.10.)
 
-if (COMMAND cmake_policy)
-  if (POLICY CMP0074)
-    cmake_policy(SET CMP0074 NEW)
-  endif()
-  if (POLICY CMP0075)
-    cmake_policy(SET CMP0075 NEW)
-  endif()
+cmake_policy(VERSION 3.10)
+if (POLICY CMP0074)
+  cmake_policy(SET CMP0074 NEW)
+endif()
+if (POLICY CMP0075)
+  cmake_policy(SET CMP0075 NEW)
 endif()
 
 #------------------------------------------------------------------------------
