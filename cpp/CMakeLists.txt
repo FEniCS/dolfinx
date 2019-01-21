@@ -21,6 +21,7 @@ if (COMMAND cmake_policy)
   cmake_policy(SET CMP0004 NEW)
   cmake_policy(SET CMP0042 NEW)
   cmake_policy(SET CMP0074 NEW)
+  cmake_policy(SET CMP0075 NEW)
 endif()
 
 #------------------------------------------------------------------------------
