@@ -30,7 +30,7 @@ def process():
         raise RuntimeError("Cannot find pylit.py")
 
     # Directories to scan
-    subdirs = ["../../demo/documented"]
+    subdirs = ["../../demo"]
 
     # Iterate over subdirectories containing demos
     for subdir in subdirs:

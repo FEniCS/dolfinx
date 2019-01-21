@@ -81,7 +81,6 @@ main_file_names = dict(
     demo=set(["main.cpp", "main.cpp.rst"]), bench=set(["main.cpp"]))
 
 # Projects that use custom CMakeLists.txt (shouldn't overwrite)
-#exclude_projects = [os.path.join('demo', 'undocumented', 'plot-qt')]
 exclude_projects = []
 
 

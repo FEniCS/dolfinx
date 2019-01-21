@@ -12,7 +12,7 @@ import os
 import sys
 import shutil
 shutil.rmtree("demos", True)
-shutil.copytree("../../demo/documented", "demos")
+shutil.copytree("../../demo", "demos")
 
 #import rstprocess
 #rstprocess.process()
