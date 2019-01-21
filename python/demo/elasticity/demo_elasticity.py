@@ -1,12 +1,12 @@
-"""This demo solves the equations of static linear elasticity for a
-pulley subjected to centripetal accelerations. The solver uses
-smoothed aggregation algerbaric multigrid."""
-
 # Copyright (C) 2014 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+
+# This demo solves the equations of static linear elasticity for a
+# pulley subjected to centripetal accelerations. The solver uses
+# smoothed aggregation algerbaric multigrid.
 
 import numpy as np
 import dolfin

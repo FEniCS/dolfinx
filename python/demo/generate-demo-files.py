@@ -13,7 +13,7 @@ import glob
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Directories to scan
-subdirs = glob.glob(dir_path +"/documented/")
+subdirs = glob.glob(dir_path + "/*/")
 
 # Check that we can find pylint.py
 parser = dir_path + "/../../utils/pylit/pylit.py"
