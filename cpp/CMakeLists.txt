@@ -1,5 +1,4 @@
 # Top level CMakeLists.txt file for DOLFIN
-
 cmake_minimum_required(VERSION 3.9)
 
 #------------------------------------------------------------------------------
@@ -13,6 +12,15 @@ set(DOLFIN_VERSION_MICRO "0")
 set(DOLFIN_VERSION "${DOLFIN_VERSION_MAJOR}.${DOLFIN_VERSION_MINOR}.${DOLFIN_VERSION_MICRO}")
 if (NOT DOLFIN_VERSION_RELEASE)
   set(DOLFIN_VERSION "${DOLFIN_VERSION}.dev0")
+endif()
+
+#------------------------------------------------------------------------------
+# Set CMake options, see `cmake --help-policy CMP000x`
+if (COMMAND cmake_policy)
+  cmake_policy(SET CMP0003 NEW)
+  cmake_policy(SET CMP0004 NEW)
+  cmake_policy(SET CMP0042 NEW)
+  cmake_policy(SET CMP0074 NEW)
 endif()
 
 #------------------------------------------------------------------------------
@@ -44,13 +52,6 @@ endif()
 
 #------------------------------------------------------------------------------
 # General configuration
-
-# Set CMake options, see `cmake --help-policy CMP000x`
-if (COMMAND cmake_policy)
-  cmake_policy(SET CMP0003 NEW)
-  cmake_policy(SET CMP0004 NEW)
-  cmake_policy(SET CMP0042 NEW)
-endif()
 
 # Set location of our FindFoo.cmake modules
 set(DOLFIN_CMAKE_DIR "${DOLFIN_SOURCE_DIR}/cmake" CACHE INTERNAL "")

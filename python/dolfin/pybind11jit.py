@@ -103,8 +103,8 @@ def compile_cpp_code(cpp_code,
 def get_pybind_include():
     """Find the pybind11 include path"""
 
-    # Look in PYBIND11_DIR
-    pybind_dir = os.getenv('PYBIND11_DIR', None)
+    # Look in PYBIND11_ROOT
+    pybind_dir = os.getenv('PYBIND11_ROOT', None)
     if pybind_dir:
         p = os.path.join(pybind_dir, "include")
         if (_check_pybind_path(p)):
