@@ -174,30 +174,36 @@ void fem::assemble(
   VecType vec_type;
   VecGetType(b.vec(), &vec_type);
   bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-  if (is_vecnest)
+  if (L.size() == 1 or is_vecnest)
   {
-    // FIXME: merge this with single L case
-
     // FIXME: Sort out for x0 \ne nullptr case
 
     for (std::size_t i = 0; i < L.size(); ++i)
     {
       // FIXME: need to extract block of x0
-      Vec b_sub = nullptr;
-      VecNestGetSubVec(b.vec(), i, &b_sub);
+      Vec b_sub = b.vec();
+      if (is_vecnest)
+        VecNestGetSubVec(b.vec(), i, &b_sub);
 
       // Assemble
       assemble_petsc(b_sub, *L[i], a[i], bcs1[i], _x0, scale);
 
       // Set bc values
-      for (std::size_t j = 0; j < a[i].size(); ++j)
+      if (a[0].empty())
       {
-        if (a[i][j])
+        // FIXME: this is a hack to handle the case that no bilinear
+        // forms have been supplied, which may happen in a Newton
+        // iteration. Needs to be fixed for nested systems
+        set_bc_petsc(b_sub, bcs0[0], _x0, scale);
+      }
+      else
+      {
+        for (std::size_t j = 0; j < a[i].size(); ++j)
         {
-          if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
+          if (a[i][j])
           {
-            la::PETScVector _sb(b_sub);
-            set_bc(_sb, bcs0[i], nullptr, scale);
+            if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
+              set_bc_petsc(b_sub, bcs0[i], _x0, scale);
           }
         }
       }
@@ -205,8 +211,6 @@ void fem::assemble(
   }
   else if (L.size() > 1)
   {
-    std::cout << "Blocked/mono assembler" << std::endl;
-
     // Get local representation of b vector and unwrap
     la::VecWrapper _b(b.vec());
     for (std::size_t i = 0; i < L.size(); ++i)
@@ -224,6 +228,7 @@ void fem::assemble(
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
           = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
                                                                 + map_size1);
+
       assemble_eigen(b_vec, *L[i], a[i], bcs1[i], {}, scale);
 
       // Compute offsets for block i
@@ -274,12 +279,6 @@ void fem::assemble(
       offset += map_size0;
     }
     VecRestoreArray(b.vec(), &values);
-  }
-  else
-  {
-    // Assemble single linear form and modify for bc lifting
-    assemble_petsc(b.vec(), *L[0], a[0], bcs1[0], _x0, scale);
-    set_bc(b, bcs0[0], x0, scale);
   }
 }
 //-----------------------------------------------------------------------------
