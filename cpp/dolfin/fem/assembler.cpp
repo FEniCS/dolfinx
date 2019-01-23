@@ -131,11 +131,11 @@ fem::assemble(std::vector<const Form*> L,
   else
     b = la::PETScVector(*L[0]->function_space(0)->dofmap()->index_map());
 
-  assemble(b, L, a, bcs, x0, scale);
+  assemble_vector(b, L, a, bcs, x0, scale);
   return b;
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(
+void fem::assemble_vector(
     la::PETScVector& b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,

@@ -227,13 +227,7 @@ void fem(py::module& m)
         py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("x0"),
         py::arg("block_type"), py::arg("scale") = 1.0,
         "Assemble linear forms over mesh into blocked vector");
-  m.def("reassemble_blocked_vector",
-        py::overload_cast<
-            dolfin::la::PETScVector&, std::vector<const dolfin::fem::Form*>,
-            const std::vector<
-                std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            const dolfin::la::PETScVector*, double>(&dolfin::fem::assemble),
+  m.def("reassemble_blocked_vector", &dolfin::fem::assemble_vector,
         py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("x0"),
         py::arg("scale") = 1.0,
         "Re-assemble linear forms over mesh into blocked vector");
