@@ -176,17 +176,34 @@ void fem::assemble(
   bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
   if (L.size() == 1 or is_vecnest)
   {
-    // FIXME: Sort out for x0 \ne nullptr case
-
     for (std::size_t i = 0; i < L.size(); ++i)
     {
-      // FIXME: need to extract block of x0
       Vec b_sub = b.vec();
       if (is_vecnest)
         VecNestGetSubVec(b.vec(), i, &b_sub);
 
       // Assemble
-      assemble_petsc(b_sub, *L[i], a[i], bcs1[i], _x0, scale);
+      la::VecWrapper _b(b_sub);
+      _b.x.setZero();
+      fem::impl::assemble(_b.x, *L[i]);
+
+      // FIXME: sort out x0 \ne nullptr for nested case
+      // Apply lifting
+      if (_x0)
+      {
+        la::VecReadWrapper x0_wrapper(_x0);
+        std::vector<
+            Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+            x0_vec(1, x0_wrapper.x);
+        apply_lifting(_b.x, a[i], bcs1[i], x0_vec, scale);
+        x0_wrapper.restore();
+      }
+      else
+        apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
+
+      _b.restore();
+
+      // Update ghosts
       VecGhostUpdateBegin(b_sub, ADD_VALUES, SCATTER_REVERSE);
       VecGhostUpdateEnd(b_sub, ADD_VALUES, SCATTER_REVERSE);
 
@@ -231,7 +248,7 @@ void fem::assemble(
           = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
                                                                 + map_size1);
       fem::impl::assemble(b_vec, *L[i]);
-      apply_lifting(b_vec,  a[i], bcs1[i], {}, scale);
+      apply_lifting(b_vec, a[i], bcs1[i], {}, scale);
 
       // Compute offsets for block i
       int offset0(0), offset1(0);
@@ -283,52 +300,6 @@ void fem::assemble(
     }
     VecRestoreArray(b.vec(), &values);
   }
-}
-//-----------------------------------------------------------------------------
-void fem::assemble_petsc(
-    Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    const Vec x0, double scale)
-{
-  la::VecWrapper _b(b);
-  _b.x.setZero();
-  if (x0)
-  {
-    std::vector<la::VecReadWrapper> _x0;
-    if (a.size() > 1)
-    {
-      // FIXME: Add some checks
-      throw std::runtime_error("Not implemented yet.");
-      PetscInt n = 1;
-      Vec* _x0_sub = nullptr;
-      VecNestGetSubVecs(x0, &n, &_x0_sub);
-      for (PetscInt i = 0; i < n; ++i)
-        _x0.push_back(la::VecReadWrapper(_x0_sub[i]));
-    }
-    else
-      _x0.push_back(la::VecReadWrapper(x0));
-
-    // Wrap the x0 vector(s)
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        _x0_ref;
-    for (std::size_t j = 0; j < _x0.size(); ++j)
-      _x0_ref.push_back(_x0[j].x);
-
-    // Assemble and modify for bcs
-    fem::impl::assemble(_b.x, L);
-    apply_lifting(_b.x, a, bcs1, _x0_ref, scale);
-
-    // Restore the x0 vectors
-    for (auto& x : _x0)
-      x.restore();
-  }
-  else
-  {
-    fem::impl::assemble(_b.x, L);
-    apply_lifting(_b.x, a, bcs1, {}, scale);
-  }
-
-  _b.restore();
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(

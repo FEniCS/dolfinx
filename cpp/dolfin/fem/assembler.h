@@ -82,26 +82,6 @@ void assemble(la::PETScVector& b, std::vector<const Form*> L,
 // FIXME: need to pass an array of Vec for x0?
 // FIXME: clarify zeroing of vector
 
-/// Re-assemble a single linear form L into the vector b. The vector b
-/// must already be initialized. Ghost entries in the assembled vector
-/// are not updated, so VecGhostUpdateBegin/VecGhostUpdateEnd must be
-/// called after this function is called to update ghosts.
-///
-/// If boundary conditions (DirichletBC) are supplied, the vector is
-/// modified such that:
-///
-///   b <- b - scale * A_j (g_j - x0_j)
-///
-/// where j is a block (nest) index. For non-blocked probelem j = 1. The
-/// boundary conditions bc1 are on the trial spaces V_j, which can be
-/// different from the trial space of L (V_i). The forms in [a] must
-/// have the same test space as L, but the trial space may differ. If x0
-/// is not supplied, then it is treated as zero.
-void assemble_petsc(
-    Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    const Vec x0, double scale = 1.0);
-
 /// Modify b such that:
 ///
 ///   b <- b - scale * A_j (g_j - x0_j)
