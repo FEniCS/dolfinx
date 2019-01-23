@@ -292,16 +292,16 @@ void fem::reassemble_blocked_vector(
       const int map_size0 = map->size_local() * bs;
       const int map_size1 = map->num_ghosts() * bs;
 
-      // Compute local offset for (owned and ghost) for this field
-      offset0 += map->size_local() * bs;
-      offset1 += map->num_ghosts() * bs;
-
       // Copy data into PETSc b Vec
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& b_i = b_vec[i];
       for (int j = 0; j < map_size0; ++j)
         _b.x[offset0 + j] = b_i[j];
       for (int j = 0; j < map_size1; ++j)
         _b.x[offset1 + j] = b_i[map_size0 + j];
+
+      // Add to local offset for (owned and ghost) for this field
+      offset0 += map->size_local() * bs;
+      offset1 += map->num_ghosts() * bs;
     }
     _b.restore();
 
