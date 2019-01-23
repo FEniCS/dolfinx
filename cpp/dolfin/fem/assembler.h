@@ -97,7 +97,7 @@ void assemble_petsc(
     const Vec x0, double scale = 1.0);
 
 /// Assemble a single linear form L into the vector b. The vector b must
-/// already be initialized.
+/// already be initialized. It will not be zeroed.
 ///
 /// If boundary conditions (DirichletBC) are supplied, the vector is
 /// modified such that:

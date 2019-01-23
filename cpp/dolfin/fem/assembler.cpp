@@ -228,7 +228,6 @@ void fem::assemble(
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
           = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
                                                                 + map_size1);
-
       assemble_eigen(b_vec, *L[i], a[i], bcs1[i], {}, scale);
 
       // Compute offsets for block i
@@ -311,6 +310,7 @@ void fem::assemble_petsc(
       _x0_ref.push_back(_x0[j].x);
 
     // Assemble and modify for bcs
+    _b.x.setZero();
     assemble_eigen(_b.x, L, a, bcs1, _x0_ref, scale);
 
     // Restore the x0 vectors
@@ -318,7 +318,10 @@ void fem::assemble_petsc(
       x.restore();
   }
   else
+  {
+    _b.x.setZero();
     assemble_eigen(_b.x, L, a, bcs1, {}, scale);
+  }
 
   _b.restore();
 
@@ -335,16 +338,14 @@ void fem::assemble_eigen(
         x0,
     double scale)
 {
-  if (!x0.empty() and x0.size() != a.size())
-    throw std::runtime_error("Mismatch in size between x0 and a in assembler.");
+  // FIXME: make changes to reactivate this check
+  // if (!x0.empty() and x0.size() != a.size())
+  //   throw std::runtime_error("Mismatch in size between x0 and a in assembler.");
   if (a.size() != bcs1.size())
   {
     throw std::runtime_error(
         "Mismatch in size between a and bcs in assembler.");
   }
-
-  // FIXME: remove zeroing?
-  b.setZero();
 
   // Assemble b
   fem::impl::assemble(b, L);
@@ -352,7 +353,9 @@ void fem::assemble_eigen(
   // Modify for Dirichlet bcs (lifting)
   for (std::size_t j = 0; j < a.size(); ++j)
   {
-    if (a[j])
+    std::vector<bool> bc_markers1;
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1;
+    if (a[j] and !bcs1[j].empty())
     {
       auto V1 = a[j]->function_space(1);
       assert(V1);
@@ -360,9 +363,8 @@ void fem::assemble_eigen(
       assert(map1);
       const int crange
           = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-      std::vector<bool> bc_markers1(crange, false);
-      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
-          = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
+      bc_markers1.assign(crange, false);
+      bc_values1 = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
       for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
