@@ -82,7 +82,7 @@ def apply_lifting(L: typing.Union[Form, cpp.fem.Form],
                   a: typing.List,
                   bcs: typing.List[DirichletBC],
                   x0: typing.Optional[typing.List[cpp.la.PETScVector]] = None,
-                  scale: float = 1.0):
+                  scale: float = 1.0) -> None:
     """Modify vector for lifting of boundary conditions."""
     L_cpp = _create_cpp_form(L)
     a_cpp = [_create_cpp_form(form) for form in a]
