@@ -60,6 +60,35 @@ def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[],
     return A
 
 
+@functools.singledispatch
+def assemble_vector_new(
+        L: typing.Union[Form, cpp.fem.Form]) -> cpp.la.PETScVector:
+    """Assemble linear form into a vector."""
+    L_cpp = _create_cpp_form(L)
+    return cpp.fem.assemble_vector(L_cpp)
+
+
+@assemble_vector_new.register(cpp.la.PETScVector)
+def _assemble_vector_new(
+        b: cpp.la.PETScVector,
+        L: typing.Union[Form, cpp.fem.Form]) -> cpp.la.PETScVector:
+    """Re-assemble linear form into a vector."""
+    L_cpp = _create_cpp_form(L)
+    cpp.fem.assemble_vector(b, L_cpp)
+    return b
+
+
+def apply_lifting(L: typing.Union[Form, cpp.fem.Form],
+                  a: typing.List,
+                  bcs: typing.List[DirichletBC],
+                  x0: typing.Optional[typing.List[cpp.la.PETScVector]] = None,
+                  scale: float = 1.0):
+    """Modify vector for lifting of boundary conditions."""
+    L_cpp = _create_cpp_form(L)
+    a_cpp = [_create_cpp_form(form) for form in a]
+    cpp.fem.apply_lifting(L_cpp, a_cpp, bcs, x0, scale)
+
+
 def assemble_vector(L,
                     a,
                     bcs: typing.List[DirichletBC],

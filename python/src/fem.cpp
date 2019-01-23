@@ -204,11 +204,6 @@ void fem(py::module& m)
   py::enum_<dolfin::fem::BlockType>(
       m, "BlockType",
       "Enum for matrix/vector assembly type for nested problems")
-      //   .value("monolithic", dolfin::fem::BlockType::monolithic,
-      //          "Use monolithic linear algebra data structures for block
-      //          forms")
-      //   .value("nested", dolfin::fem::BlockType::nested,
-      //          "Use nested linear algebra data structures for block forms");
       .value("monolithic", dolfin::fem::BlockType::monolithic)
       .value("nested", dolfin::fem::BlockType::nested);
 
@@ -216,6 +211,19 @@ void fem(py::module& m)
   m.def("assemble",
         py::overload_cast<const dolfin::fem::Form&>(&dolfin::fem::assemble),
         "Assemble form over mesh");
+  // Vectors (single)
+  m.def("assemble_vector",
+        py::overload_cast<const dolfin::fem::Form&>(
+            &dolfin::fem::assemble_vector),
+        py::arg("L"), "Assemble linear form into a vector");
+  m.def("assemble_vector",
+        py::overload_cast<dolfin::la::PETScVector&, const dolfin::fem::Form&>(
+            &dolfin::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing vector");
+  m.def("apply_lifting", &dolfin::fem::apply_lifting,
+        "Modify vector for lifted boundary conditions");
+  //
   m.def("assemble_blocked_vector",
         py::overload_cast<
             std::vector<const dolfin::fem::Form*>,
