@@ -21,7 +21,8 @@ from dolfin.fem.projection import project
 from dolfin.fem.solving import solve
 
 __all__ = [
-    "assemble_local", "assemble_system", "assemble", "assemble_vector",
+    "apply_lifting", "assemble_local", "assemble_system", "assemble", "assemble_vector_new",
+    "assemble_block_vector",
     "assemble_matrix", "set_bc", "SystemAssembler", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "derivative", "adjoint", "increase_order",
     "tear", "interpolate", "project", "solve"
