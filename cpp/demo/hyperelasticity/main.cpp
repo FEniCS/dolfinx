@@ -117,7 +117,7 @@ public:
           {_l.get()}, {{_j}}, _bcs, &x, fem::BlockType::monolithic, -1.0));
     }
     else
-      assemble(*b, {_l.get()}, {{}}, _bcs, &x, -1.0);
+      assemble_vector(*b, {_l.get()}, {{}}, _bcs, &x, -1.0);
 
     return b.get();
   }
