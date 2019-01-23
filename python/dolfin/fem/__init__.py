@@ -6,7 +6,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tools for assembling and manipulating finite element forms"""
 
-from dolfin.fem.assemble import (assemble, assemble_vector, assemble_matrix,
+from dolfin.fem.assemble import (assemble, assemble_block_vector, assemble_matrix,
                                  set_bc, assemble_vector_new, apply_lifting)
 from dolfin.fem.assembling import (assemble_local, assemble_system,
                                    SystemAssembler)

@@ -113,8 +113,8 @@ def test_matrix_assembly_block():
     # Monolithic blocked
     A0 = dolfin.fem.assemble_matrix(a_block, [bc],
                                     dolfin.cpp.fem.BlockType.monolithic)
-    b0 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
-                                    dolfin.cpp.fem.BlockType.monolithic)
+    b0 = dolfin.fem.assemble_block_vector(L_block, a_block, [bc],
+                                          dolfin.cpp.fem.BlockType.monolithic)
     assert A0.mat().getType() != "nest"
     Anorm0 = A0.mat().norm()
     bnorm0 = b0.vec().norm()
@@ -124,7 +124,7 @@ def test_matrix_assembly_block():
                                     dolfin.cpp.fem.BlockType.nested)
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
-    b1 = dolfin.fem.assemble_vector(L_block, a_block, [bc],
+    b1 = dolfin.fem.assemble_block_vector(L_block, a_block, [bc],
                                     dolfin.cpp.fem.BlockType.nested)
     bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
     assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
@@ -197,7 +197,7 @@ def test_assembly_solve_block():
 
     A0 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], bcs,
                                     dolfin.cpp.fem.BlockType.monolithic)
-    b0 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], bcs,
+    b0 = dolfin.fem.assemble_block_vector([L0, L1], [[a00, a01], [a10, a11]], bcs,
                                     dolfin.cpp.fem.BlockType.monolithic)
     A0norm = A0.mat().norm()
     b0norm = b0.vec().norm()
@@ -215,7 +215,7 @@ def test_assembly_solve_block():
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix([[a00, a01], [a10, a11]], bcs,
                                     dolfin.cpp.fem.BlockType.nested)
-    b1 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], bcs,
+    b1 = dolfin.fem.assemble_block_vector([L0, L1], [[a00, a01], [a10, a11]], bcs,
                                     dolfin.cpp.fem.BlockType.nested)
     b1norm = b1.vec().norm()
     assert b1norm == pytest.approx(b0norm, 1.0e-12)
@@ -264,9 +264,6 @@ def test_assembly_solve_block():
     dolfin.fem.apply_lifting(b2, [a], [bcs])
     b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfin.fem.set_bc(b2, bcs)
-    # b2 = dolfin.fem.assemble_vector([L], [[a]], bcs,
-    #                                 dolfin.cpp.fem.BlockType.monolithic)
-
     A2norm = A2.mat().norm()
     b2norm = b2.vec().norm()
     assert A2norm == pytest.approx(A0norm, 1.0e-12)
@@ -349,7 +346,7 @@ def test_assembly_solve_taylor_hood(mesh):
     P0 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
     P0norm = nest_matrix_norm(P0)
-    b0 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
+    b0 = dolfin.fem.assemble_block_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.nested)
     b0norm = b0.vec().norm()
 
@@ -386,7 +383,7 @@ def test_assembly_solve_taylor_hood(mesh):
     P1 = dolfin.fem.assemble_matrix([[p00, p01], [p10, p11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.monolithic)
     assert P1.mat().norm() == pytest.approx(P0norm, 1.0e-12)
-    b1 = dolfin.fem.assemble_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
+    b1 = dolfin.fem.assemble_block_vector([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1],
                                     dolfin.cpp.fem.BlockType.monolithic)
     assert b1.vec().norm() == pytest.approx(b0norm, 1.0e-12)
 
@@ -439,7 +436,6 @@ def test_assembly_solve_taylor_hood(mesh):
     dolfin.fem.apply_lifting(b2, [a], [[bc0, bc1]])
     b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfin.fem.set_bc(b2, [bc0, bc1])
-    # b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     b2norm = b2.vec().norm()
     assert b2norm == pytest.approx(b0norm, 1.0e-12)
 

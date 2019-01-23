@@ -33,12 +33,14 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
     def F(self, x):
         """Assemble residual vector."""
         if self._F is None:
-            self._F = fem.assemble_vector([self.L], [[self.a]], [self.bc],
-                                          dolfin.cpp.fem.BlockType.monolithic,
-                                          x, -1.0)
+            self._F = fem.assemble_vector_new(self.L)
         else:
-            self._F = fem.assemble(self._F, [self.L], [[self.a]], [self.bc], x,
-                                   -1.0)
+            self._F = fem.assemble_vector_new(self._F, self.L)
+
+        dolfin.fem.apply_lifting(self._F, [self.a], [[self.bc]], [x], -1.0)
+        self._F.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        dolfin.fem.set_bc(self._F, [self.bc], x, -1.0)
+
         return self._F
 
     def J(self, x):
