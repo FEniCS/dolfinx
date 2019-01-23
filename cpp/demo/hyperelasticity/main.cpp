@@ -111,13 +111,14 @@ public:
   /// Compute F at current point x
   la::PETScVector* F(const la::PETScVector& x) final
   {
+    // Assemble b
     if (!b)
-    {
-      b = std::make_unique<la::PETScVector>(assemble(
-          {_l.get()}, {{_j}}, _bcs, &x, fem::BlockType::monolithic, -1.0));
-    }
+      b = std::make_unique<la::PETScVector>(assemble_vector(*_l));
     else
-      assemble_vector(*b, {_l.get()}, {{}}, _bcs, &x, -1.0);
+      assemble_vector(*b, *_l);
+
+    // Set bcs
+    set_bc(*b, _bcs, &x, -1);
 
     return b.get();
   }

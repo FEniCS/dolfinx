@@ -114,6 +114,27 @@ fem::assemble(const Form& a)
   }
 }
 //-----------------------------------------------------------------------------
+la::PETScVector fem::assemble_vector(const Form& L)
+{
+  if (L.rank() != 1)
+    throw std::runtime_error("Form must be rank 1");
+  la::PETScVector b
+      = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
+  fem::assemble_vector(b, L);
+  return b;
+}
+//-----------------------------------------------------------------------------
+void fem::assemble_vector(la::PETScVector& b, const Form& L)
+{
+  la::VecWrapper _b(b.vec());
+  _b.x.setZero();
+  fem::impl::assemble(_b.x, L);
+  _b.restore();
+
+  VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+}
+//-----------------------------------------------------------------------------
 la::PETScVector
 fem::assemble(std::vector<const Form*> L,
               const std::vector<std::vector<std::shared_ptr<const Form>>> a,
@@ -131,11 +152,11 @@ fem::assemble(std::vector<const Form*> L,
   else
     b = la::PETScVector(*L[0]->function_space(0)->dofmap()->index_map());
 
-  assemble_vector(b, L, a, bcs, x0, scale);
+  reassemble_blocked_vector(b, L, a, bcs, x0, scale);
   return b;
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector(
+void fem::reassemble_blocked_vector(
     la::PETScVector& b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
@@ -144,14 +165,14 @@ void fem::assemble_vector(
   assert(!L.empty());
   const Vec _x0 = x0 ? x0->vec() : nullptr;
 
-  // Packs DirichletBC pointers for rows
+  // Pack DirichletBC pointers for rows
   std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0(L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
     for (std::shared_ptr<const DirichletBC> bc : bcs)
       if (L[i]->function_space(0)->contains(*bc->function_space()))
         bcs0[i].push_back(bc);
 
-  // Packs DirichletBC pointers for columns
+  // Pack DirichletBC pointers for columns
   std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>>
       bcs1(a.size());
   for (std::size_t i = 0; i < a.size(); ++i)
@@ -230,8 +251,7 @@ void fem::assemble_vector(
   }
   else if (L.size() > 1)
   {
-    // Get local representation of b vector and unwrap
-    la::VecWrapper _b(b.vec());
+    std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
     for (std::size_t i = 0; i < L.size(); ++i)
     {
       // FIXME: Sort out for x0 \ne nullptr case
@@ -242,34 +262,46 @@ void fem::assemble_vector(
       const int bs = map->block_size();
       const int map_size0 = map->size_local() * bs;
       const int map_size1 = map->num_ghosts() * bs;
+      b_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(
+          map_size0 + map_size1);
 
       // Assemble and modify for bcs (lifting)
-      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
-          = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
-                                                                + map_size1);
-      fem::impl::assemble(b_vec, *L[i]);
-      apply_lifting(b_vec, a[i], bcs1[i], {}, scale);
+      fem::impl::assemble(b_vec[i], *L[i]);
+      apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
+    }
 
-      // Compute offsets for block i
-      int offset0(0), offset1(0);
-      for (auto& _L : L)
-      {
-        auto map = _L->function_space(0)->dofmap()->index_map();
-        offset1 += map->size_local() * map->block_size();
-      }
-      for (std::size_t j = 0; j < i; ++j)
-      {
-        auto map = L[j]->function_space(0)->dofmap()->index_map();
-        const int bs = map->block_size();
-        offset0 += map->size_local() * bs;
-        offset1 += map->num_ghosts() * bs;
-      }
+    // Get local representation of b vector and copy values in
+    la::VecWrapper _b(b.vec());
+
+    // Compute number of owned (i.e., non-ghost) entries for this
+    // process
+    int offset1 = 0;
+    for (auto& _L : L)
+    {
+      auto map = _L->function_space(0)->dofmap()->index_map();
+      const int bs = map->block_size();
+      offset1 += map->size_local() * bs;
+    }
+
+    int offset0 = 0;
+    for (std::size_t i = 0; i < L.size(); ++i)
+    {
+      assert(L[i]);
+      auto map = L[i]->function_space(0)->dofmap()->index_map();
+      const int bs = map->block_size();
+      const int map_size0 = map->size_local() * bs;
+      const int map_size1 = map->num_ghosts() * bs;
+
+      // Compute local offset for (owned and ghost) for this field
+      offset0 += map->size_local() * bs;
+      offset1 += map->num_ghosts() * bs;
 
       // Copy data into PETSc b Vec
+      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& b_i = b_vec[i];
       for (int j = 0; j < map_size0; ++j)
-        _b.x[offset0 + j] = b_vec[j];
+        _b.x[offset0 + j] = b_i[j];
       for (int j = 0; j < map_size1; ++j)
-        _b.x[offset1 + j] = b_vec[map_size0 + j];
+        _b.x[offset1 + j] = b_i[map_size0 + j];
     }
     _b.restore();
 
@@ -281,7 +313,7 @@ void fem::assemble_vector(
     // Set bcs
     PetscScalar* values;
     VecGetArray(b.vec(), &values);
-    std::size_t offset = 0;
+    int offset = 0;
     for (std::size_t i = 0; i < L.size(); ++i)
     {
       auto map = L[i]->function_space(0)->dofmap()->index_map();
@@ -300,6 +332,30 @@ void fem::assemble_vector(
     }
     VecRestoreArray(b.vec(), &values);
   }
+}
+//-----------------------------------------------------------------------------
+void fem::apply_lifting(
+    la::PETScVector& b, const std::vector<std::shared_ptr<const Form>> a,
+    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
+    std::vector<const la::PETScVector*> x0, double scale)
+{
+  if (x0.size() > 0)
+  {
+    throw std::runtime_error(
+        "Simple fem::apply_lifting not get generalised for multiple x0");
+  }
+
+  la::VecWrapper _b(b.vec());
+  if (x0.empty())
+    apply_lifting(_b.x, a, bcs1, {}, scale);
+  else
+  {
+    assert(x0[0]);
+    la::VecReadWrapper x0_wrap(x0[0]->vec());
+    apply_lifting(_b.x, a, bcs1, {x0_wrap.x}, scale);
+    x0_wrap.restore();
+  }
+  _b.restore();
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(

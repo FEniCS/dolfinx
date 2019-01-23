@@ -227,7 +227,7 @@ void fem(py::module& m)
         py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("x0"),
         py::arg("block_type"), py::arg("scale") = 1.0,
         "Assemble linear forms over mesh into blocked vector");
-  m.def("reassemble_blocked_vector", &dolfin::fem::assemble_vector,
+  m.def("reassemble_blocked_vector", &dolfin::fem::reassemble_blocked_vector,
         py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("x0"),
         py::arg("scale") = 1.0,
         "Re-assemble linear forms over mesh into blocked vector");
