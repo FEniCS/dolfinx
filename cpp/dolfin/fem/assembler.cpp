@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Garth N. Wells
+// Copyright (C) 2018-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -216,11 +216,11 @@ void fem::reassemble_blocked_vector(
         std::vector<
             Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
             x0_vec(1, x0_wrapper.x);
-        apply_lifting(_b.x, a[i], bcs1[i], x0_vec, scale);
+        fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_vec, scale);
         x0_wrapper.restore();
       }
       else
-        apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
+        fem::impl::apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
 
       _b.restore();
 
@@ -267,7 +267,7 @@ void fem::reassemble_blocked_vector(
 
       // Assemble and modify for bcs (lifting)
       fem::impl::assemble(b_vec[i], *L[i]);
-      apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
+      fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
     }
 
     // Get local representation of b vector and copy values in
@@ -339,7 +339,7 @@ void fem::apply_lifting(
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     std::vector<const la::PETScVector*> x0, double scale)
 {
-  if (x0.size() > 0)
+  if (x0.size() > 1)
   {
     throw std::runtime_error(
         "Simple fem::apply_lifting not get generalised for multiple x0");
@@ -347,62 +347,15 @@ void fem::apply_lifting(
 
   la::VecWrapper _b(b.vec());
   if (x0.empty())
-    apply_lifting(_b.x, a, bcs1, {}, scale);
+    fem::impl::apply_lifting(_b.x, a, bcs1, {}, scale);
   else
   {
     assert(x0[0]);
     la::VecReadWrapper x0_wrap(x0[0]->vec());
-    apply_lifting(_b.x, a, bcs1, {x0_wrap.x}, scale);
+    fem::impl::apply_lifting(_b.x, a, bcs1, {x0_wrap.x}, scale);
     x0_wrap.restore();
   }
   _b.restore();
-}
-//-----------------------------------------------------------------------------
-void fem::apply_lifting(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0,
-    double scale)
-{
-  // FIXME: make changes to reactivate this check
-  // if (!x0.empty() and x0.size() != a.size())
-  //   throw std::runtime_error("Mismatch in size between x0 and a in
-  //   assembler.");
-  if (a.size() != bcs1.size())
-  {
-    throw std::runtime_error(
-        "Mismatch in size between a and bcs in assembler.");
-  }
-
-  for (std::size_t j = 0; j < a.size(); ++j)
-  {
-    std::vector<bool> bc_markers1;
-    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1;
-    if (a[j] and !bcs1[j].empty())
-    {
-      auto V1 = a[j]->function_space(1);
-      assert(V1);
-      auto map1 = V1->dofmap()->index_map();
-      assert(map1);
-      const int crange
-          = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-      bc_markers1.assign(crange, false);
-      bc_values1 = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
-      for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
-      {
-        bc->mark_dofs(bc_markers1);
-        bc->dof_values(bc_values1);
-      }
-
-      // Modify (apply lifting) vector
-      if (!x0.empty())
-        fem::impl::lift_bc(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
-      else
-        fem::impl::lift_bc(b, *a[j], bc_values1, bc_markers1, scale);
-    }
-  }
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix

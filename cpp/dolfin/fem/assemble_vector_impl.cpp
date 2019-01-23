@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Garth N. Wells
+// Copyright (C) 2018-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -9,6 +9,7 @@
 #include "Form.h"
 #include "GenericDofMap.h"
 #include <dolfin/common/types.h>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
@@ -145,6 +146,53 @@ void fem::impl::assemble(
     L.tabulate_tensor(be.data(), cell, coordinate_dofs);
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
+  }
+}
+//-----------------------------------------------------------------------------
+void fem::impl::apply_lifting(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const std::vector<std::shared_ptr<const Form>> a,
+    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
+    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+        x0,
+    double scale)
+{
+  // FIXME: make changes to reactivate this check
+  // if (!x0.empty() and x0.size() != a.size())
+  //   throw std::runtime_error("Mismatch in size between x0 and a in
+  //   assembler.");
+  if (a.size() != bcs1.size())
+  {
+    throw std::runtime_error(
+        "Mismatch in size between a and bcs in assembler.");
+  }
+
+  for (std::size_t j = 0; j < a.size(); ++j)
+  {
+    std::vector<bool> bc_markers1;
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1;
+    if (a[j] and !bcs1[j].empty())
+    {
+      auto V1 = a[j]->function_space(1);
+      assert(V1);
+      auto map1 = V1->dofmap()->index_map();
+      assert(map1);
+      const int crange
+          = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+      bc_markers1.assign(crange, false);
+      bc_values1 = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
+      for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
+      {
+        bc->mark_dofs(bc_markers1);
+        bc->dof_values(bc_values1);
+      }
+
+      // Modify (apply lifting) vector
+      if (!x0.empty())
+        fem::impl::lift_bc(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
+      else
+        fem::impl::lift_bc(b, *a[j], bc_values1, bc_markers1, scale);
+    }
   }
 }
 //-----------------------------------------------------------------------------
