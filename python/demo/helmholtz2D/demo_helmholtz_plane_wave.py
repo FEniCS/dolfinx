@@ -1,7 +1,7 @@
-''' Test Helmholtz problem for which the exact solution is a plane wave
-propagating at angle theta to the postive x-axis.
-Chosen for comparison with results from Ihlenburg's book
-"Finite Element Analysis of Acoustic Scattering" p138-139 '''
+# Test Helmholtz problem for which the exact solution is a plane wave
+# propagating at angle theta to the postive x-axis. Chosen for
+# comparison with results from Ihlenburg\'s book \"Finite Element
+# Analysis of Acoustic Scattering\" p138-139
 
 # Copyright (C) 2018 Samuel Groth
 #
@@ -9,9 +9,9 @@ Chosen for comparison with results from Ihlenburg's book
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import UnitSquareMesh, MPI, FacetNormal, Expression, \
-    FunctionSpace, TrialFunction, TestFunction, dot, inner, dx, ds, \
-    grad, Function, solve, interpolate, has_petsc_complex, project
+from dolfin import (UnitSquareMesh, MPI, FacetNormal, Expression,
+                    FunctionSpace, TrialFunction, TestFunction, dot, inner, dx, ds,
+                    grad, Function, solve, interpolate, has_petsc_complex, project)
 from dolfin import function
 from dolfin.fem.assemble import assemble
 from dolfin.io import XDMFFile
