@@ -187,6 +187,8 @@ void fem::assemble(
 
       // Assemble
       assemble_petsc(b_sub, *L[i], a[i], bcs1[i], _x0, scale);
+      VecGhostUpdateBegin(b_sub, ADD_VALUES, SCATTER_REVERSE);
+      VecGhostUpdateEnd(b_sub, ADD_VALUES, SCATTER_REVERSE);
 
       // Set bc values
       if (a[0].empty())
@@ -253,7 +255,8 @@ void fem::assemble(
     }
     _b.restore();
 
-    // Update b ghosts
+    // FIXME: should this be lifted higher up in the code path?
+    // Update ghosts
     VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
     VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 
@@ -287,6 +290,7 @@ void fem::assemble_petsc(
     const Vec x0, double scale)
 {
   la::VecWrapper _b(b);
+    _b.x.setZero();
   if (x0)
   {
     std::vector<la::VecReadWrapper> _x0;
@@ -310,7 +314,6 @@ void fem::assemble_petsc(
       _x0_ref.push_back(_x0[j].x);
 
     // Assemble and modify for bcs
-    _b.x.setZero();
     assemble_eigen(_b.x, L, a, bcs1, _x0_ref, scale);
 
     // Restore the x0 vectors
@@ -318,16 +321,9 @@ void fem::assemble_petsc(
       x.restore();
   }
   else
-  {
-    _b.x.setZero();
     assemble_eigen(_b.x, L, a, bcs1, {}, scale);
-  }
 
   _b.restore();
-
-  // FIXME: shift this to higher level?
-  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_eigen(
@@ -340,7 +336,8 @@ void fem::assemble_eigen(
 {
   // FIXME: make changes to reactivate this check
   // if (!x0.empty() and x0.size() != a.size())
-  //   throw std::runtime_error("Mismatch in size between x0 and a in assembler.");
+  //   throw std::runtime_error("Mismatch in size between x0 and a in
+  //   assembler.");
   if (a.size() != bcs1.size())
   {
     throw std::runtime_error(
