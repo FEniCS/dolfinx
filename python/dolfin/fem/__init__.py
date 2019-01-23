@@ -7,7 +7,7 @@
 """Tools for assembling and manipulating finite element forms"""
 
 from dolfin.fem.assemble import (assemble, assemble_vector, assemble_matrix,
-                                 set_bc)
+                                 set_bc, assemble_vector_new, apply_lifting)
 from dolfin.fem.assembling import (assemble_local, assemble_system,
                                    SystemAssembler)
 from dolfin.fem.coordinatemapping import create_coordinate_map

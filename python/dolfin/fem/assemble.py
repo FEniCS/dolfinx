@@ -78,15 +78,14 @@ def _assemble_vector_new(
     return b
 
 
-def apply_lifting(L: typing.Union[Form, cpp.fem.Form],
+def apply_lifting(b: cpp.la.PETScVector,
                   a: typing.List,
                   bcs: typing.List[DirichletBC],
-                  x0: typing.Optional[typing.List[cpp.la.PETScVector]] = None,
+                  x0: typing.Optional[typing.List[cpp.la.PETScVector]] = [],
                   scale: float = 1.0) -> None:
     """Modify vector for lifting of boundary conditions."""
-    L_cpp = _create_cpp_form(L)
     a_cpp = [_create_cpp_form(form) for form in a]
-    cpp.fem.apply_lifting(L_cpp, a_cpp, bcs, x0, scale)
+    cpp.fem.apply_lifting(b, a_cpp, bcs, x0, scale)
 
 
 def assemble_vector(L,

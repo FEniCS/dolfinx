@@ -139,17 +139,15 @@ def test_matrix_assembly_block():
     L = zero * inner(f, v0) * ufl.dx + inner(g, v1) * dx
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
-
     A2 = dolfin.fem.assemble_matrix([[a]], [bc],
                                     dolfin.cpp.fem.BlockType.monolithic)
-    b2 = dolfin.fem.assemble_vector([L], [[a]], [bc],
-                                    dolfin.cpp.fem.BlockType.monolithic)
+    b2 = dolfin.fem.assemble_vector_new(L)
+    dolfin.fem.apply_lifting(b2, [a], [[bc]])
+    b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    dolfin.fem.set_bc(b2, [bc])
     assert A2.mat().getType() != "nest"
-
-    Anorm2 = A2.mat().norm()
-    bnorm2 = b2.vec().norm()
-    assert Anorm0 == pytest.approx(Anorm2, 1.0e-9)
-    assert bnorm0 == pytest.approx(bnorm2, 1.0e-9)
+    assert A2.mat().norm() == pytest.approx(Anorm0, 1.0e-9)
+    assert b2.vec().norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
 def test_assembly_solve_block():
@@ -262,8 +260,12 @@ def test_assembly_solve_block():
 
     A2 = dolfin.fem.assemble_matrix([[a]], bcs,
                                     dolfin.cpp.fem.BlockType.monolithic)
-    b2 = dolfin.fem.assemble_vector([L], [[a]], bcs,
-                                    dolfin.cpp.fem.BlockType.monolithic)
+    b2 = dolfin.fem.assemble_vector_new(L)
+    dolfin.fem.apply_lifting(b2, [a], [bcs])
+    b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    dolfin.fem.set_bc(b2, bcs)
+    # b2 = dolfin.fem.assemble_vector([L], [[a]], bcs,
+    #                                 dolfin.cpp.fem.BlockType.monolithic)
 
     A2norm = A2.mat().norm()
     b2norm = b2.vec().norm()
@@ -432,7 +434,12 @@ def test_assembly_solve_taylor_hood(mesh):
     assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
     P2 = dolfin.fem.assemble_matrix([[p_form]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     assert P2.mat().norm() == pytest.approx(P0norm, 1.0e-12)
-    b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
+
+    b2 = dolfin.fem.assemble_vector_new(L)
+    dolfin.fem.apply_lifting(b2, [a], [[bc0, bc1]])
+    b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    dolfin.fem.set_bc(b2, [bc0, bc1])
+    # b2 = dolfin.fem.assemble_vector([L], [[a]], [bc0, bc1], dolfin.cpp.fem.BlockType.monolithic)
     b2norm = b2.vec().norm()
     assert b2norm == pytest.approx(b0norm, 1.0e-12)
 

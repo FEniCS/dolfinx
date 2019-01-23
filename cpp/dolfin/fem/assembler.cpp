@@ -131,8 +131,8 @@ void fem::assemble_vector(la::PETScVector& b, const Form& L)
   fem::impl::assemble(_b.x, L);
   _b.restore();
 
-  VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+  // VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+  // VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 }
 //-----------------------------------------------------------------------------
 la::PETScVector
@@ -220,8 +220,9 @@ void fem::reassemble_blocked_vector(
         x0_wrapper.restore();
       }
       else
+      {
         fem::impl::apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
-
+      }
       _b.restore();
 
       // Update ghosts
