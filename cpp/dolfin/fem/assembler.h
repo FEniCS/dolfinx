@@ -102,26 +102,22 @@ void assemble_petsc(
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     const Vec x0, double scale = 1.0);
 
-/// Assemble a single linear form L into the vector b. The vector b must
-/// already be initialized. It will not be zeroed.
-///
-/// If boundary conditions (DirichletBC) are supplied, the vector is
-/// modified such that:
+/// Modify b such that:
 ///
 ///   b <- b - scale * A_j (g_j - x0_j)
 ///
 /// where j is a block (nest) index. For non-blocked probelem j = 1. The
-/// boundary conditions bc1 are on the trial spaces V_j, which can be
-/// different from the trial space of L (V_i). The forms in [a] must
-/// have the same test space as L, but the trial space may differ. If x0
-/// is not supplied, then it is treated as zero.
-void assemble_eigen(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+/// boundary conditions bc1 are on the trial spaces V_j. The forms in
+/// [a] must have the same test space as L (from b was built), but the
+/// trial space may differ. If x0 is not supplied, then it is treated as
+/// zero.
+void apply_lifting(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
         x0,
-    double scale = 1.0);
+    double scale);
 
 // -- Matrices ---------------------------------------------------------------
 

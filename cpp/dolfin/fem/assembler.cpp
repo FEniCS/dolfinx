@@ -230,7 +230,8 @@ void fem::assemble(
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
           = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
                                                                 + map_size1);
-      assemble_eigen(b_vec, *L[i], a[i], bcs1[i], {}, scale);
+      fem::impl::assemble(b_vec, *L[i]);
+      apply_lifting(b_vec,  a[i], bcs1[i], {}, scale);
 
       // Compute offsets for block i
       int offset0(0), offset1(0);
@@ -290,7 +291,7 @@ void fem::assemble_petsc(
     const Vec x0, double scale)
 {
   la::VecWrapper _b(b);
-    _b.x.setZero();
+  _b.x.setZero();
   if (x0)
   {
     std::vector<la::VecReadWrapper> _x0;
@@ -314,20 +315,24 @@ void fem::assemble_petsc(
       _x0_ref.push_back(_x0[j].x);
 
     // Assemble and modify for bcs
-    assemble_eigen(_b.x, L, a, bcs1, _x0_ref, scale);
+    fem::impl::assemble(_b.x, L);
+    apply_lifting(_b.x, a, bcs1, _x0_ref, scale);
 
     // Restore the x0 vectors
     for (auto& x : _x0)
       x.restore();
   }
   else
-    assemble_eigen(_b.x, L, a, bcs1, {}, scale);
+  {
+    fem::impl::assemble(_b.x, L);
+    apply_lifting(_b.x, a, bcs1, {}, scale);
+  }
 
   _b.restore();
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_eigen(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+void fem::apply_lifting(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
@@ -344,10 +349,6 @@ void fem::assemble_eigen(
         "Mismatch in size between a and bcs in assembler.");
   }
 
-  // Assemble b
-  fem::impl::assemble(b, L);
-
-  // Modify for Dirichlet bcs (lifting)
   for (std::size_t j = 0; j < a.size(); ++j)
   {
     std::vector<bool> bc_markers1;
