@@ -144,9 +144,6 @@ private:
 
   std::unique_ptr<la::PETScVector> b;
   std::unique_ptr<la::PETScMatrix> A;
-
-  // A, b
-  // _u, _l, _j, _bcs
 };
 
 int main(int argc, char* argv[])

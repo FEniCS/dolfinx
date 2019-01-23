@@ -28,7 +28,7 @@ void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
               const Form& L);
 
 /// Modify RHS vector to account for boundary condition b <- b - scale*Ax_bc
-void modify_bc(
+void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         bc_values1,
@@ -36,7 +36,7 @@ void modify_bc(
 
 /// Modify RHS vector to account for boundary condition such that b <- b
 /// - scale*A (x_bc - x0)
-void modify_bc(
+void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         bc_values1,

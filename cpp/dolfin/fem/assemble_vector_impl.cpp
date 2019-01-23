@@ -21,7 +21,7 @@ using namespace dolfin::fem;
 namespace
 {
 // Implementation of bc application
-void _modify_bc(
+void _lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         bc_values1,
@@ -148,17 +148,17 @@ void fem::impl::assemble(
   }
 }
 //-----------------------------------------------------------------------------
-void fem::impl::modify_bc(
+void fem::impl::lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         bc_values1,
     const std::vector<bool>& bc_markers1, double scale)
 {
   const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0(0);
-  _modify_bc(b, a, bc_values1, bc_markers1, x0, scale);
+  _lift_bc(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
-void fem::impl::modify_bc(
+void fem::impl::lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         bc_values1,
@@ -172,6 +172,6 @@ void fem::impl::modify_bc(
         "Vector size mismatch in modification for boundary conditions.");
   }
 
-  _modify_bc(b, a, bc_values1, bc_markers1, x0, scale);
+  _lift_bc(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------

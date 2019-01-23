@@ -96,18 +96,19 @@ void assemble_petsc(
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
     const Vec x0, double scale = 1.0);
 
-// FIXME: clarify x0
-// FIXME: need to pass an array of Eigen vectors for x0
-
-/// Re-assemble a single linear form L into the vector b. The vector is
-/// modified for any boundary conditions such that:
+/// Assemble a single linear form L into the vector b. The vector b must
+/// already be initialized.
 ///
-///   b_i <- b_i - scale * A_ij g_j
+/// If boundary conditions (DirichletBC) are supplied, the vector is
+/// modified such that:
 ///
-/// where i and j are the block indices. For non-blocked probelem i = j
-/// = 1. The boundary conditions bc1 are on the trial spaces V_j, which
-/// can be different from the trial space of L (V_i). The forms in [a]
-/// must have the same test space as L, but the trial space may differ.
+///   b_i <- b_i - scale * A_ij (g_j - x0_j)
+///
+/// where i and j are the block (nest) indices. For non-blocked probelem
+/// i = j = 1. The boundary conditions bc1 are on the trial spaces V_j,
+/// which can be different from the trial space of L (V_i). The forms in
+/// [a] must have the same test space as L, but the trial space may
+/// differ. If x0 is not supplied, then it is treated as zero.
 void assemble_eigen(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
     const std::vector<std::shared_ptr<const Form>> a,

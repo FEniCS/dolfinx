@@ -335,8 +335,18 @@ void fem::assemble_eigen(
         x0,
     double scale)
 {
-  // Assemble
+  if (!x0.empty() and x0.size() != a.size())
+    throw std::runtime_error("Mismatch in size between x0 and a in assembler.");
+  if (a.size() != bcs1.size())
+  {
+    throw std::runtime_error(
+        "Mismatch in size between a and bcs in assembler.");
+  }
+
+  // FIXME: remove zeroing?
   b.setZero();
+
+  // Assemble b
   fem::impl::assemble(b, L);
 
   // Modify for Dirichlet bcs (lifting)
@@ -345,22 +355,25 @@ void fem::assemble_eigen(
     if (a[j])
     {
       auto V1 = a[j]->function_space(1);
+      assert(V1);
       auto map1 = V1->dofmap()->index_map();
-      const std::size_t col_range
+      assert(map1);
+      const int crange
           = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-      std::vector<bool> bc_markers1(col_range, false);
+      std::vector<bool> bc_markers1(crange, false);
       Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
-          = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
+          = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
       for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
       {
         bc->mark_dofs(bc_markers1);
         bc->dof_values(bc_values1);
       }
 
+      // Modify (apply lifting) vector
       if (!x0.empty())
-        fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
+        fem::impl::lift_bc(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
       else
-        fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, scale);
+        fem::impl::lift_bc(b, *a[j], bc_values1, bc_markers1, scale);
     }
   }
 }
