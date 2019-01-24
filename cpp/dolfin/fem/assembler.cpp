@@ -76,7 +76,9 @@ la::PETScMatrix _assemble_matrix(const Form& a)
 {
   if (a.rank() != 2)
     throw std::runtime_error("Form must be rank 2");
-  return fem::assemble({{&a}}, {}, fem::BlockType::monolithic);
+  la::PETScMatrix A = fem::init_matrix(a);
+  fem::assemble(A, a, {});
+  return A;
 }
 //-----------------------------------------------------------------------------
 void set_diagonal_local(
@@ -384,23 +386,21 @@ void fem::apply_lifting(
   _b.restore();
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix
-fem::assemble(const std::vector<std::vector<const Form*>> a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              BlockType block_type, double diagonal)
+void fem::assemble(la::PETScMatrix& A, const Form& a,
+                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                   double diagonal)
 {
-  assert(!a.empty());
-  const bool block_matrix = a.size() > 1 or a[0].size() > 1;
-  la::PETScMatrix A;
-  if (block_type == BlockType::nested)
-    A = fem::init_nest_matrix(a);
-  else if (block_matrix and block_type == BlockType::monolithic)
-    A = fem::init_monolithic_matrix(a);
-  else
-    A = fem::init_matrix(*a[0][0]);
+  // assert(!a.empty());
+  // const bool block_matrix = a.size() > 1 or a[0].size() > 1;
+  // la::PETScMatrix A;
+  // if (block_type == BlockType::nested)
+  //   A = fem::init_nest_matrix(a);
+  // else if (block_matrix and block_type == BlockType::monolithic)
+  //   A = fem::init_monolithic_matrix(a);
+  // else
+  //   A = fem::init_matrix(*a[0][0]);
 
-  assemble(A, a, bcs, diagonal);
-  return A;
+  assemble(A, {{&a}}, bcs, diagonal);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble(la::PETScMatrix& A,

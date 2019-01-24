@@ -46,8 +46,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
     def J(self, x):
         """Assemble Jacobian matrix."""
         if self._J is None:
-            self._J = fem.assemble_matrix([[self.a]], [self.bc],
-                                          dolfin.cpp.fem.BlockType.monolithic)
+            self._J = fem.assemble_matrix(self.a, [self.bc])
         else:
             self._J = fem.assemble(self._J, [[self.a]], [self.bc])
         return self._J
@@ -183,7 +182,7 @@ def test_nonlinear_pde_snes():
     u.vector().update_ghosts()
 
     b = dolfin.cpp.la.PETScVector(V.dofmap().index_map())
-    J = dolfin.cpp.fem.init_matrix(problem.a_comp._cpp_object)
+    J = dolfin.cpp.fem.create_matrix(problem.a_comp._cpp_object)
 
     # Create Newton solver and solve
     snes = PETSc.SNES().create()

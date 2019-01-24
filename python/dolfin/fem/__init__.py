@@ -8,6 +8,7 @@
 
 from dolfin.fem.assemble import (assemble, assemble_vector_block,
                                  assemble_vector_nest, assemble_matrix,
+                                 assemble_matrix_nest, assemble_matrix_block,
                                  set_bc, assemble_vector, apply_lifting)
 from dolfin.fem.assembling import (assemble_local, assemble_system,
                                    SystemAssembler)
@@ -25,6 +26,7 @@ from dolfin.fem.solving import solve
 __all__ = [
     "apply_lifting", "assemble_local", "assemble_system", "assemble", "assemble_vector",
     "assemble_vector_block", "assemble_vector_nest",
+    "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "SystemAssembler", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "derivative", "adjoint", "increase_order",
     "tear", "interpolate", "project", "solve"

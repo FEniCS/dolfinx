@@ -93,8 +93,12 @@ void fem(py::module& m)
   m.def("create_vector_nest", &dolfin::fem::init_nest,
         "Create a nested vector for multiple (stacked) linear forms.");
 
-  m.def("init_matrix", &dolfin::fem::init_matrix,
+  m.def("create_matrix", &dolfin::fem::init_matrix,
         "Initialise sparse matrix for a bilinear form.");
+  m.def("create_matrix_block", &dolfin::fem::init_monolithic_matrix,
+        "Initialise monolithic sparse matrix for stacked bilinear forms.");
+  m.def("create_matrix_nest", &dolfin::fem::init_nest_matrix,
+        "Initialise nested sparse matrix.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
@@ -237,14 +241,6 @@ void fem(py::module& m)
         "Re-assemble linear forms over mesh into blocked/nested vector");
 
   m.def("assemble_blocked_matrix",
-        py::overload_cast<
-            const std::vector<std::vector<const dolfin::fem::Form*>>,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            dolfin::fem::BlockType, double>(&dolfin::fem::assemble),
-        py::arg("a"), py::arg("bcs"), py::arg("block_type"),
-        py::arg("diagonal"),
-        "Assemble bilinear forms over mesh into blocked matrix");
-  m.def("reassemble_blocked_matrix",
         py::overload_cast<
             dolfin::la::PETScMatrix&,
             const std::vector<std::vector<const dolfin::fem::Form*>>,

@@ -43,7 +43,6 @@ assemble(const Form& a);
 // Assemble linear form into an already allocated vector
 void assemble_vector(la::PETScVector& b, const Form& L);
 
-
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
 
@@ -85,9 +84,9 @@ void apply_lifting(
 /// Assemble blocked bilinear forms into a matrix. Rows and columns
 /// associated with Dirichlet boundary conditions are zeroed, and
 /// 'diagonal' is placed on the diagonal of Dirichlet bcs.
-la::PETScMatrix assemble(const std::vector<std::vector<const Form*>> a,
-                         std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                         BlockType block_type, double diagonal = 1.0);
+void assemble(la::PETScMatrix& A, const Form& a,
+              std::vector<std::shared_ptr<const DirichletBC>> bcs,
+              double diagonal = 1.0);
 
 /// Re-assemble blocked bilinear forms into a matrix
 void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
