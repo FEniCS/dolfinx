@@ -152,7 +152,8 @@ def apply_lifting(b: cpp.la.PETScVector,
                   scale: float = 1.0) -> None:
     """Modify vector for lifting of boundary conditions."""
     a_cpp = [_create_cpp_form(form) for form in a]
-    cpp.fem.apply_lifting(b, a_cpp, bcs, x0, scale)
+    _x0 = [v.vec() if x0 is not None else None for v in x0]
+    cpp.fem.apply_lifting(b.vec(), a_cpp, bcs, _x0, scale)
 
 
 def set_bc(b: cpp.la.PETScVector,
@@ -160,4 +161,5 @@ def set_bc(b: cpp.la.PETScVector,
            x0: typing.Optional[cpp.la.PETScVector] = None,
            scale: float = 1.0) -> None:
     """Insert boundary condition values into vector"""
-    cpp.fem.set_bc(b, bcs, x0, scale)
+    _x0 = x0.vec() if x0 is not None else None
+    cpp.fem.set_bc(b.vec(), bcs, _x0, scale)

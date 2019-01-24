@@ -75,9 +75,9 @@ void assemble_vector(
 /// trial space may differ. If x0 is not supplied, then it is treated as
 /// zero.
 void apply_lifting(
-    la::PETScVector& b, const std::vector<std::shared_ptr<const Form>> a,
+    Vec b, const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<const la::PETScVector*> x0, double scale);
+    const std::vector<Vec> x0, double scale);
 
 // -- Matrices ---------------------------------------------------------------
 
@@ -110,14 +110,7 @@ void assemble_petsc(Mat A, const Form& a,
 /// Set bc values in owned (local) part of the PETScVector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
 /// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc(la::PETScVector& b,
-            std::vector<std::shared_ptr<const DirichletBC>> bcs,
-            const la::PETScVector* x0, double scale = 1.0);
-
-/// Set bc values in owned (local) part of the PETScVector, multiplied
-/// by 'scale'. The vectors b and x0 must have the same local size. The
-/// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc_petsc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                  const Vec x0, double scale = 1.0);
+void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
+            const Vec x0, double scale = 1.0);
 } // namespace fem
 } // namespace dolfin

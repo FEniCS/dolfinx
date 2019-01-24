@@ -197,7 +197,7 @@ void _reassemble_vector_nest(
       // FIXME: this is a hack to handle the case that no bilinear forms
       // have been supplied, which may happen in a Newton iteration.
       // Needs to be fixed for nested systems
-      set_bc_petsc(b_sub, bcs0[0], x0, scale);
+      set_bc(b_sub, bcs0[0], x0, scale);
     }
     else
     {
@@ -206,7 +206,7 @@ void _reassemble_vector_nest(
         if (a[i][j])
         {
           if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-            set_bc_petsc(b_sub, bcs0[i], x0, scale);
+            set_bc(b_sub, bcs0[i], x0, scale);
         }
       }
     }
@@ -361,9 +361,9 @@ void fem::assemble_vector(
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
-    la::PETScVector& b, const std::vector<std::shared_ptr<const Form>> a,
+    Vec b, const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<const la::PETScVector*> x0, double scale)
+    const std::vector<Vec> x0, double scale)
 {
   if (x0.size() > 1)
   {
@@ -371,13 +371,13 @@ void fem::apply_lifting(
         "Simple fem::apply_lifting not get generalised for multiple x0");
   }
 
-  la::VecWrapper _b(b.vec());
+  la::VecWrapper _b(b);
   if (x0.empty())
     fem::impl::apply_lifting(_b.x, a, bcs1, {}, scale);
   else
   {
     assert(x0[0]);
-    la::VecReadWrapper x0_wrap(x0[0]->vec());
+    la::VecReadWrapper x0_wrap(x0[0]);
     fem::impl::apply_lifting(_b.x, a, bcs1, {x0_wrap.x}, scale);
     x0_wrap.restore();
   }
@@ -534,17 +534,8 @@ void fem::assemble_petsc(Mat A, const Form& a,
   // finalisation done elsewhere.
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(la::PETScVector& b,
-                 std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                 const la::PETScVector* x0, double scale)
-{
-  const Vec _x0 = (x0 != nullptr) ? x0->vec() : nullptr;
-  set_bc_petsc(b.vec(), bcs, _x0, scale);
-}
-//-----------------------------------------------------------------------------
-void fem::set_bc_petsc(Vec b,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                       const Vec x0, double scale)
+void fem::set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                 const Vec x0, double scale)
 {
   la::VecWrapper _b(b);
   if (x0)
