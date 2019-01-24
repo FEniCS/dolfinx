@@ -361,9 +361,9 @@ void fem::assemble_vector(
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
-    la::PETScVector& b, const std::vector<std::shared_ptr<const Form>> a,
+    Vec b, const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<const la::PETScVector*> x0, double scale)
+    const std::vector<Vec> x0, double scale)
 {
   if (x0.size() > 1)
   {
@@ -371,13 +371,13 @@ void fem::apply_lifting(
         "Simple fem::apply_lifting not get generalised for multiple x0");
   }
 
-  la::VecWrapper _b(b.vec());
+  la::VecWrapper _b(b);
   if (x0.empty())
     fem::impl::apply_lifting(_b.x, a, bcs1, {}, scale);
   else
   {
     assert(x0[0]);
-    la::VecReadWrapper x0_wrap(x0[0]->vec());
+    la::VecReadWrapper x0_wrap(x0[0]);
     fem::impl::apply_lifting(_b.x, a, bcs1, {x0_wrap.x}, scale);
     x0_wrap.restore();
   }
