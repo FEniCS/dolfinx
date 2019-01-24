@@ -337,28 +337,27 @@ fem::assemble(const Form& a)
   }
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector(la::PETScVector& b, const Form& L)
+void fem::assemble_vector(Vec b, const Form& L)
 {
-  la::VecWrapper _b(b.vec());
+  la::VecWrapper _b(b);
   _b.x.setZero();
   fem::impl::assemble(_b.x, L);
   _b.restore();
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(
-    la::PETScVector& b, std::vector<const Form*> L,
+    Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const la::PETScVector* x0, double scale)
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale)
 {
   VecType vec_type;
-  VecGetType(b.vec(), &vec_type);
+  VecGetType(b, &vec_type);
   const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-  const Vec _x0 = (x0 != nullptr) ? x0->vec() : nullptr;
   if (is_vecnest)
-    _reassemble_vector_nest(b.vec(), L, a, bcs, _x0, scale);
+    _reassemble_vector_nest(b, L, a, bcs, x0, scale);
   else
-    _reassemble_vector_block(b.vec(), L, a, bcs, _x0, scale);
+    _reassemble_vector_block(b, L, a, bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(

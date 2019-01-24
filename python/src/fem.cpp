@@ -223,7 +223,7 @@ void fem(py::module& m)
         "Assemble form over mesh");
   // Vectors (single)
   m.def("assemble_vector",
-        py::overload_cast<dolfin::la::PETScVector&, const dolfin::fem::Form&>(
+        py::overload_cast<Vec, const dolfin::fem::Form&>(
             &dolfin::fem::assemble_vector),
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing vector");
@@ -232,12 +232,11 @@ void fem(py::module& m)
   // Block/nest vectors
   m.def("assemble_vector",
         py::overload_cast<
-            dolfin::la::PETScVector&, std::vector<const dolfin::fem::Form*>,
+            Vec, std::vector<const dolfin::fem::Form*>,
             const std::vector<
                 std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            const dolfin::la::PETScVector*, double>(
-            &dolfin::fem::assemble_vector),
+            const Vec, double>(&dolfin::fem::assemble_vector),
         "Re-assemble linear forms over mesh into blocked/nested vector");
 
   m.def("assemble_blocked_matrix",

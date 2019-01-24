@@ -30,7 +30,7 @@ def _assemble_vector(b: cpp.la.PETScVector,
                      L) -> cpp.la.PETScVector:
     """Re-assemble linear form into a vector."""
     L_cpp = _create_cpp_form(L)
-    cpp.fem.assemble_vector(b, L_cpp)
+    cpp.fem.assemble_vector(b.vec(), L_cpp)
     b.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     return b
 
@@ -56,7 +56,7 @@ def assemble_vector(
     """Assemble linear form into a vector."""
     L_cpp = _create_cpp_form(L)
     _b = cpp.la.PETScVector(L_cpp.function_space(0).dofmap().index_map())
-    cpp.fem.assemble_vector(_b, L_cpp)
+    cpp.fem.assemble_vector(_b.vec(), L_cpp)
     return _b
 
 
@@ -66,7 +66,7 @@ def _reassemble_vector(
         L: typing.Union[Form, cpp.fem.Form]) -> cpp.la.PETScVector:
     """Re-assemble linear form into a vector."""
     L_cpp = _create_cpp_form(L)
-    cpp.fem.assemble_vector(b, L_cpp)
+    cpp.fem.assemble_vector(b.vec(), L_cpp)
     return b
 
 
@@ -79,7 +79,8 @@ def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     _b = cpp.fem.create_vector_nest(L_cpp)
-    cpp.fem.assemble_vector(_b, L_cpp, a_cpp, bcs, x0, scale)
+    _x0 = x0.vec() if x0 is not None else None
+    cpp.fem.assemble_vector(_b.vec(), L_cpp, a_cpp, bcs, _x0, scale)
     return _b
 
 
@@ -92,7 +93,8 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     b = cpp.fem.create_vector(L_cpp)
-    cpp.fem.assemble_vector(b, L_cpp, a_cpp, bcs, x0, scale)
+    _x0 = x0.vec() if x0 is not None else None
+    cpp.fem.assemble_vector(b.vec(), L_cpp, a_cpp, bcs, _x0, scale)
     return b
 
 
@@ -108,7 +110,8 @@ def reassemble_vector(b: cpp.la.PETScVector,
     """
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    cpp.fem.reassemble_vector(b, L_cpp, a_cpp, bcs, x0, scale)
+    _x0 = x0.vec() if x0 is not None else None
+    cpp.fem.reassemble_vector(b, L_cpp, a_cpp, bcs, _x0, scale)
     return b
 
 

@@ -41,7 +41,7 @@ assemble(const Form& a);
 // -- Vectors ----------------------------------------------------------------
 
 // Assemble linear form into an already allocated vector
-void assemble_vector(la::PETScVector& b, const Form& L);
+void assemble_vector(Vec b, const Form& L);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -57,10 +57,10 @@ void assemble_vector(la::PETScVector& b, const Form& L);
 // from the trial space of L (V_i). The forms in [a] / must have the
 // same test space as L, but the trial space may differ.
 void assemble_vector(
-    la::PETScVector& b, std::vector<const Form*> L,
+    Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const la::PETScVector* x0, double scale = 1.0);
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale = 1.0);
 
 // FIXME: need to pass an array of Vec for x0?
 // FIXME: clarify zeroing of vector

@@ -114,7 +114,7 @@ public:
     // Assemble b
     if (!b)
       b = std::make_unique<la::PETScVector>(*_l->function_space(0)->dofmap()->index_map());
-    assemble_vector(*b, *_l);
+    assemble_vector(b->vec(), *_l);
     b->apply_ghosts();
 
     // Set bcs
