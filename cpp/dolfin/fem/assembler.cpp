@@ -140,21 +140,19 @@ bcs_cols(std::vector<std::vector<std::shared_ptr<const Form>>> a,
 }
 //-----------------------------------------------------------------------------
 void _reassemble_vector_nest(
-    la::PETScVector& b, std::vector<const Form*> L,
+    Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const la::PETScVector* x0, double scale)
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale)
 {
   if (L.size() < 2)
     throw std::runtime_error("Oops, using blocked assembly.");
 
   VecType vec_type;
-  VecGetType(b.vec(), &vec_type);
+  VecGetType(b, &vec_type);
   const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
   if (!is_vecnest)
     throw std::runtime_error("Expected a nested vector.");
-
-  const Vec _x0 = x0 ? x0->vec() : nullptr;
 
   // Pack DirichletBC pointers for rows and columns
   std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
@@ -165,7 +163,7 @@ void _reassemble_vector_nest(
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     Vec b_sub = nullptr;
-    VecNestGetSubVec(b.vec(), i, &b_sub);
+    VecNestGetSubVec(b, i, &b_sub);
 
     // Assemble
     la::VecWrapper _b(b_sub);
@@ -174,9 +172,9 @@ void _reassemble_vector_nest(
 
     // FIXME: sort out x0 \ne nullptr for nested case
     // Apply lifting
-    if (_x0)
+    if (x0)
     {
-      la::VecReadWrapper x0_wrapper(_x0);
+      la::VecReadWrapper x0_wrapper(x0);
       std::vector<
           Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
           x0_vec(1, x0_wrapper.x);
@@ -199,7 +197,7 @@ void _reassemble_vector_nest(
       // FIXME: this is a hack to handle the case that no bilinear forms
       // have been supplied, which may happen in a Newton iteration.
       // Needs to be fixed for nested systems
-      set_bc_petsc(b_sub, bcs0[0], _x0, scale);
+      set_bc_petsc(b_sub, bcs0[0], x0, scale);
     }
     else
     {
@@ -208,7 +206,7 @@ void _reassemble_vector_nest(
         if (a[i][j])
         {
           if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-            set_bc_petsc(b_sub, bcs0[i], _x0, scale);
+            set_bc_petsc(b_sub, bcs0[i], x0, scale);
         }
       }
     }
@@ -216,16 +214,16 @@ void _reassemble_vector_nest(
 }
 //-----------------------------------------------------------------------------
 void _reassemble_vector_block(
-    la::PETScVector& b, std::vector<const Form*> L,
+    Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const la::PETScVector* x0, double scale)
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale)
 {
   if (L.size() < 2)
     throw std::runtime_error("Oops, using blocked assembly.");
 
   VecType vec_type;
-  VecGetType(b.vec(), &vec_type);
+  VecGetType(b, &vec_type);
   const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
   if (is_vecnest)
     throw std::runtime_error("Do not expect a nested vector.");
@@ -258,7 +256,7 @@ void _reassemble_vector_block(
   }
 
   // Get local representation of b vector and copy values in
-  la::VecWrapper _b(b.vec());
+  la::VecWrapper _b(b);
 
   // Compute number of owned (i.e., non-ghost) entries for this process
   int offset1 = 0;
@@ -293,12 +291,12 @@ void _reassemble_vector_block(
 
   // FIXME: should this be lifted higher up in the code path?
   // Update ghosts
-  VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 
   // Set bcs
-  PetscScalar* values;
-  VecGetArray(b.vec(), &values);
+  PetscScalar* values = nullptr;
+  VecGetArray(b, &values);
   int offset = 0;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
@@ -316,7 +314,7 @@ void _reassemble_vector_block(
     }
     offset += map_size0;
   }
-  VecRestoreArray(b.vec(), &values);
+  VecRestoreArray(b, &values);
 }
 //-----------------------------------------------------------------------------
 
@@ -356,10 +354,11 @@ void fem::assemble_vector(
   VecType vec_type;
   VecGetType(b.vec(), &vec_type);
   const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  const Vec _x0 = (x0 != nullptr) ? x0->vec() : nullptr;
   if (is_vecnest)
-    _reassemble_vector_nest(b, L, a, bcs, x0, scale);
+    _reassemble_vector_nest(b.vec(), L, a, bcs, _x0, scale);
   else
-    _reassemble_vector_block(b, L, a, bcs, x0, scale);
+    _reassemble_vector_block(b.vec(), L, a, bcs, _x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
