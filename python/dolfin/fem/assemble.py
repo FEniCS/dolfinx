@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2007-2015 Anders Logg
+# Copyright (C) 2018-2019 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -27,7 +27,7 @@ def assemble(M: typing.Union[Form, cpp.fem.Form]
 
 @assemble.register(cpp.la.PETScVector)
 def _assemble_vector(b: cpp.la.PETScVector,
-                     L) -> cpp.la.PETScVector:
+                     L: typing.Union[Form, cpp.fem.Form]) -> cpp.la.PETScVector:
     """Re-assemble linear form into a vector."""
     L_cpp = _create_cpp_form(L)
     cpp.fem.assemble_vector(b.vec(), L_cpp)
@@ -36,17 +36,14 @@ def _assemble_vector(b: cpp.la.PETScVector,
 
 
 @assemble.register(cpp.la.PETScMatrix)
-def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[],
+def _assemble_matrix(A: cpp.la.PETScMatrix, a: typing.Union[Form, cpp.fem.Form], bcs=[],
                      diagonal: float = 1.0) -> cpp.la.PETScMatrix:
-    """Re-assemble bilinear form into a vector, with rows and columns with Dirichlet
+    """Re-assemble bilinear form into a matrix, with rows and columns with Dirichlet
     boundary conditions zeroed.
 
     """
-    try:
-        a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    except TypeError:
-        a_cpp = [[_create_cpp_form(a)]]
-    cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
+    a_cpp = _create_cpp_form(a)
+    cpp.fem.assemble_matrix(A, a_cpp, bcs, diagonal)
     return A
 
 
