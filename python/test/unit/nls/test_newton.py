@@ -33,19 +33,20 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
     def F(self, x):
         """Assemble residual vector."""
         if self._F is None:
-            self._F = fem.assemble_vector([self.L], [[self.a]], [self.bc],
-                                          dolfin.cpp.fem.BlockType.monolithic,
-                                          x, -1.0)
+            self._F = fem.assemble_vector(self.L)
         else:
-            self._F = fem.assemble(self._F, [self.L], [[self.a]], [self.bc], x,
-                                   -1.0)
+            self._F = fem.assemble_vector(self._F, self.L)
+
+        dolfin.fem.apply_lifting(self._F, [self.a], [[self.bc]], [x], -1.0)
+        self._F.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        dolfin.fem.set_bc(self._F, [self.bc], x, -1.0)
+
         return self._F
 
     def J(self, x):
         """Assemble Jacobian matrix."""
         if self._J is None:
-            self._J = fem.assemble_matrix([[self.a]], [self.bc],
-                                          dolfin.cpp.fem.BlockType.monolithic)
+            self._J = fem.assemble_matrix(self.a, [self.bc])
         else:
             self._J = fem.assemble(self._J, [[self.a]], [self.bc])
         return self._J
@@ -70,7 +71,11 @@ class NonlinearPDE_SNESProblem():
         _x.update_ghosts()
         x.copy(self.u.vector().vec())
         self.u.vector().update_ghosts()
-        fem.assemble(_F, self.L, [self.a], [self.bc], _x, -1.0)
+
+        fem.assemble_vector(_F, self.L)
+        fem.apply_lifting(_F, [self.a], [[self.bc]], [_x], -1.0)
+        _F.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        fem.set_bc(_F, [self.bc], _x, -1.0)
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
@@ -177,7 +182,7 @@ def test_nonlinear_pde_snes():
     u.vector().update_ghosts()
 
     b = dolfin.cpp.la.PETScVector(V.dofmap().index_map())
-    J = dolfin.cpp.fem.init_matrix(problem.a_comp._cpp_object)
+    J = dolfin.cpp.fem.create_matrix(problem.a_comp._cpp_object)
 
     # Create Newton solver and solve
     snes = PETSc.SNES().create()

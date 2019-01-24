@@ -87,13 +87,23 @@ void fem(py::module& m)
         },
         "Create a ufc_coordinate_mapping object from a pointer.");
 
-  m.def("init_matrix", &dolfin::fem::init_matrix,
+  // utils
+  m.def("create_vector", &dolfin::fem::init_monolithic,
+        "Create a monolithic vector for multiple (stacked) linear forms.");
+  m.def("create_vector_nest", &dolfin::fem::init_nest,
+        "Create a nested vector for multiple (stacked) linear forms.");
+
+  m.def("create_matrix", &dolfin::fem::init_matrix,
         "Initialise sparse matrix for a bilinear form.");
+  m.def("create_matrix_block", &dolfin::fem::init_monolithic_matrix,
+        "Initialise monolithic sparse matrix for stacked bilinear forms.");
+  m.def("create_matrix_nest", &dolfin::fem::init_nest_matrix,
+        "Initialise nested sparse matrix.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
              std::shared_ptr<dolfin::fem::FiniteElement>>(
-      m, "FiniteElement", "DOLFIN FiniteElement object")
+      m, "FiniteElement", "Finite element object")
       .def(py::init<std::shared_ptr<const ufc_finite_element>>())
       .def("num_sub_elements", &dolfin::fem::FiniteElement::num_sub_elements)
       .def("dof_reference_coordinates",
@@ -106,8 +116,8 @@ void fem(py::module& m)
 
   // dolfin::fem::GenericDofMap
   py::class_<dolfin::fem::GenericDofMap,
-             std::shared_ptr<dolfin::fem::GenericDofMap>>(
-      m, "GenericDofMap", "DOLFIN DofMap object")
+             std::shared_ptr<dolfin::fem::GenericDofMap>>(m, "GenericDofMap",
+                                                          "DofMap object")
       .def("global_dimension", &dolfin::fem::GenericDofMap::global_dimension,
            "The dimension of the global finite element function space")
       .def("index_map", &dolfin::fem::GenericDofMap::index_map)
@@ -204,11 +214,6 @@ void fem(py::module& m)
   py::enum_<dolfin::fem::BlockType>(
       m, "BlockType",
       "Enum for matrix/vector assembly type for nested problems")
-      //   .value("monolithic", dolfin::fem::BlockType::monolithic,
-      //          "Use monolithic linear algebra data structures for block
-      //          forms")
-      //   .value("nested", dolfin::fem::BlockType::nested,
-      //          "Use nested linear algebra data structures for block forms");
       .value("monolithic", dolfin::fem::BlockType::monolithic)
       .value("nested", dolfin::fem::BlockType::nested);
 
@@ -216,37 +221,26 @@ void fem(py::module& m)
   m.def("assemble",
         py::overload_cast<const dolfin::fem::Form&>(&dolfin::fem::assemble),
         "Assemble form over mesh");
-  m.def("assemble_blocked_vector",
-        py::overload_cast<
-            std::vector<const dolfin::fem::Form*>,
-            const std::vector<
-                std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            const dolfin::la::PETScVector*, dolfin::fem::BlockType, double>(
-            &dolfin::fem::assemble),
-        py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("x0"),
-        py::arg("block_type"), py::arg("scale") = 1.0,
-        "Assemble linear forms over mesh into blocked vector");
-  m.def("reassemble_blocked_vector",
+  // Vectors (single)
+  m.def("assemble_vector",
+        py::overload_cast<dolfin::la::PETScVector&, const dolfin::fem::Form&>(
+            &dolfin::fem::assemble_vector),
+        py::arg("b"), py::arg("L"),
+        "Assemble linear form into an existing vector");
+  m.def("apply_lifting", &dolfin::fem::apply_lifting,
+        "Modify vector for lifted boundary conditions");
+  // Block/nest vectors
+  m.def("assemble_vector",
         py::overload_cast<
             dolfin::la::PETScVector&, std::vector<const dolfin::fem::Form*>,
             const std::vector<
                 std::vector<std::shared_ptr<const dolfin::fem::Form>>>,
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            const dolfin::la::PETScVector*, double>(&dolfin::fem::assemble),
-        py::arg("b"), py::arg("L"), py::arg("a"), py::arg("bcs"), py::arg("x0"),
-        py::arg("scale") = 1.0,
-        "Re-assemble linear forms over mesh into blocked vector");
+            const dolfin::la::PETScVector*, double>(
+            &dolfin::fem::assemble_vector),
+        "Re-assemble linear forms over mesh into blocked/nested vector");
 
   m.def("assemble_blocked_matrix",
-        py::overload_cast<
-            const std::vector<std::vector<const dolfin::fem::Form*>>,
-            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            dolfin::fem::BlockType, double>(&dolfin::fem::assemble),
-        py::arg("a"), py::arg("bcs"), py::arg("block_type"),
-        py::arg("diagonal"),
-        "Assemble bilinear forms over mesh into blocked matrix");
-  m.def("reassemble_blocked_matrix",
         py::overload_cast<
             dolfin::la::PETScMatrix&,
             const std::vector<std::vector<const dolfin::fem::Form*>>,
@@ -271,7 +265,7 @@ void fem(py::module& m)
   py::class_<dolfin::fem::SystemAssembler,
              std::shared_ptr<dolfin::fem::SystemAssembler>,
              dolfin::fem::AssemblerBase>(m, "SystemAssembler",
-                                         "DOLFIN SystemAssembler object")
+                                         "SystemAssembler object")
       .def(py::init<
            std::shared_ptr<const dolfin::fem::Form>,
            std::shared_ptr<const dolfin::fem::Form>,
@@ -301,7 +295,7 @@ void fem(py::module& m)
 
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
-      m, "Form", "DOLFIN Form object")
+      m, "Form", "Variational form object")
       .def(py::init<std::shared_ptr<const ufc_form>,
                     std::vector<std::shared_ptr<
                         const dolfin::function::FunctionSpace>>>())
@@ -332,6 +326,7 @@ void fem(py::module& m)
            })
       .def("rank", &dolfin::fem::Form::rank)
       .def("mesh", &dolfin::fem::Form::mesh)
+      .def("function_space", &dolfin::fem::Form::function_space)
       .def("coordinate_mapping", &dolfin::fem::Form::coordinate_mapping);
 
   // dolfin::fem::NonlinearVariationalProblem

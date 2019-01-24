@@ -111,13 +111,14 @@ public:
   /// Compute F at current point x
   la::PETScVector* F(const la::PETScVector& x) final
   {
+    // Assemble b
     if (!b)
-    {
-      b = std::make_unique<la::PETScVector>(assemble(
-          {_l.get()}, {{_j}}, _bcs, &x, fem::BlockType::monolithic, -1.0));
-    }
-    else
-      assemble(*b, {_l.get()}, {{}}, _bcs, &x, -1.0);
+      b = std::make_unique<la::PETScVector>(*_l->function_space(0)->dofmap()->index_map());
+    assemble_vector(*b, *_l);
+    b->apply_ghosts();
+
+    // Set bcs
+    set_bc(*b, _bcs, &x, -1);
 
     return b.get();
   }
@@ -126,27 +127,19 @@ public:
   la::PETScMatrix* J(const la::PETScVector& x) final
   {
     if (!A)
-    {
-      A = std::make_unique<la::PETScMatrix>(
-          assemble({{_j.get()}}, _bcs, fem::BlockType::monolithic));
-    }
-    else
-      assemble(*A, {{_j.get()}}, _bcs);
+      A = std::make_unique<la::PETScMatrix>(fem::init_matrix(*_j));
+    assemble(*A, *_j, _bcs);
 
     return A.get();
   }
 
 private:
   std::shared_ptr<function::Function> _u;
-  std::shared_ptr<fem::Form> _l;
-  std::shared_ptr<fem::Form> _j;
+  std::shared_ptr<fem::Form> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;
 
   std::unique_ptr<la::PETScVector> b;
   std::unique_ptr<la::PETScMatrix> A;
-
-  // A, b
-  // _u, _l, _j, _bcs
 };
 
 int main(int argc, char* argv[])

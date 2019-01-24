@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Garth N. Wells
+// Copyright (C) 2018-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -27,8 +27,25 @@ namespace impl
 void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
               const Form& L);
 
+/// Modify b such that:
+///
+///   b <- b - scale * A_j (g_j - x0_j)
+///
+/// where j is a block (nest) index. For non-blocked probelem j = 1. The
+/// boundary conditions bc1 are on the trial spaces V_j. The forms in
+/// [a] must have the same test space as L (from b was built), but the
+/// trial space may differ. If x0 is not supplied, then it is treated as
+/// zero.
+void apply_lifting(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const std::vector<std::shared_ptr<const Form>> a,
+    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
+    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+        x0,
+    double scale);
+
 /// Modify RHS vector to account for boundary condition b <- b - scale*Ax_bc
-void modify_bc(
+void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         bc_values1,
@@ -36,7 +53,7 @@ void modify_bc(
 
 /// Modify RHS vector to account for boundary condition such that b <- b
 /// - scale*A (x_bc - x0)
-void modify_bc(
+void lift_bc(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         bc_values1,

@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Garth N. Wells
+// Copyright (C) 2018-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -76,7 +76,9 @@ la::PETScMatrix _assemble_matrix(const Form& a)
 {
   if (a.rank() != 2)
     throw std::runtime_error("Form must be rank 2");
-  return fem::assemble({{&a}}, {}, fem::BlockType::monolithic);
+  la::PETScMatrix A = fem::init_matrix(a);
+  fem::assemble(A, a, {});
+  return A;
 }
 //-----------------------------------------------------------------------------
 void set_diagonal_local(
@@ -95,6 +97,227 @@ void set_diagonal_local(
   }
 }
 //-----------------------------------------------------------------------------
+std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>
+bcs_rows(std::vector<const Form*> L,
+         std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
+{
+  // Pack DirichletBC pointers for rows
+  std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>> bcs0(
+      L.size());
+  for (std::size_t i = 0; i < L.size(); ++i)
+    for (std::shared_ptr<const DirichletBC> bc : bcs)
+      if (L[i]->function_space(0)->contains(*bc->function_space()))
+        bcs0[i].push_back(bc);
+
+  return bcs0;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
+bcs_cols(std::vector<std::vector<std::shared_ptr<const Form>>> a,
+         std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
+  // Pack DirichletBC pointers for columns
+  std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
+      bcs1(a.size());
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+    {
+      bcs1[i].resize(a[j].size());
+      for (std::shared_ptr<const DirichletBC> bc : bcs)
+      {
+        // FIXME: handle case where a[i][j] is null
+        if (a[i][j])
+        {
+          if (a[i][j]->function_space(1)->contains(*bc->function_space()))
+            bcs1[i][j].push_back(bc);
+        }
+      }
+    }
+  }
+
+  return bcs1;
+}
+//-----------------------------------------------------------------------------
+void _reassemble_vector_nest(
+    Vec b, std::vector<const Form*> L,
+    const std::vector<std::vector<std::shared_ptr<const Form>>> a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale)
+{
+  if (L.size() < 2)
+    throw std::runtime_error("Oops, using blocked assembly.");
+
+  VecType vec_type;
+  VecGetType(b, &vec_type);
+  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  if (!is_vecnest)
+    throw std::runtime_error("Expected a nested vector.");
+
+  // Pack DirichletBC pointers for rows and columns
+  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
+      = bcs_rows(L, bcs);
+  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
+      = bcs_cols(a, bcs);
+
+  for (std::size_t i = 0; i < L.size(); ++i)
+  {
+    Vec b_sub = nullptr;
+    VecNestGetSubVec(b, i, &b_sub);
+
+    // Assemble
+    la::VecWrapper _b(b_sub);
+    _b.x.setZero();
+    fem::impl::assemble(_b.x, *L[i]);
+
+    // FIXME: sort out x0 \ne nullptr for nested case
+    // Apply lifting
+    if (x0)
+    {
+      la::VecReadWrapper x0_wrapper(x0);
+      std::vector<
+          Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+          x0_vec(1, x0_wrapper.x);
+      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], x0_vec, scale);
+      x0_wrapper.restore();
+    }
+    else
+    {
+      fem::impl::apply_lifting(_b.x, a[i], bcs1[i], {}, scale);
+    }
+    _b.restore();
+
+    // Update ghosts
+    VecGhostUpdateBegin(b_sub, ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateEnd(b_sub, ADD_VALUES, SCATTER_REVERSE);
+
+    // Set bc values
+    if (a[0].empty())
+    {
+      // FIXME: this is a hack to handle the case that no bilinear forms
+      // have been supplied, which may happen in a Newton iteration.
+      // Needs to be fixed for nested systems
+      set_bc_petsc(b_sub, bcs0[0], x0, scale);
+    }
+    else
+    {
+      for (std::size_t j = 0; j < a[i].size(); ++j)
+      {
+        if (a[i][j])
+        {
+          if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
+            set_bc_petsc(b_sub, bcs0[i], x0, scale);
+        }
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void _reassemble_vector_block(
+    Vec b, std::vector<const Form*> L,
+    const std::vector<std::vector<std::shared_ptr<const Form>>> a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale)
+{
+  if (L.size() < 2)
+    throw std::runtime_error("Oops, using blocked assembly.");
+
+  VecType vec_type;
+  VecGetType(b, &vec_type);
+  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  if (is_vecnest)
+    throw std::runtime_error("Do not expect a nested vector.");
+
+  // const Vec _x0 = x0 ? x0->vec() : nullptr;
+
+  // Pack DirichletBC pointers for rows and columns
+  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
+      = bcs_rows(L, bcs);
+  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
+      = bcs_cols(a, bcs);
+
+  std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
+  for (std::size_t i = 0; i < L.size(); ++i)
+  {
+    // FIXME: Sort out for x0 \ne nullptr case
+
+    // Get size for block i
+    assert(L[i]);
+    auto map = L[i]->function_space(0)->dofmap()->index_map();
+    const int bs = map->block_size();
+    const int map_size0 = map->size_local() * bs;
+    const int map_size1 = map->num_ghosts() * bs;
+    b_vec[i] = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
+                                                                   + map_size1);
+
+    // Assemble and modify for bcs (lifting)
+    fem::impl::assemble(b_vec[i], *L[i]);
+    fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
+  }
+
+  // Get local representation of b vector and copy values in
+  la::VecWrapper _b(b);
+
+  // Compute number of owned (i.e., non-ghost) entries for this process
+  int offset1 = 0;
+  for (auto& _L : L)
+  {
+    auto map = _L->function_space(0)->dofmap()->index_map();
+    const int bs = map->block_size();
+    offset1 += map->size_local() * bs;
+  }
+
+  int offset0 = 0;
+  for (std::size_t i = 0; i < L.size(); ++i)
+  {
+    assert(L[i]);
+    auto map = L[i]->function_space(0)->dofmap()->index_map();
+    const int bs = map->block_size();
+    const int map_size0 = map->size_local() * bs;
+    const int map_size1 = map->num_ghosts() * bs;
+
+    // Copy data into PETSc b Vec
+    Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>& b_i = b_vec[i];
+    for (int j = 0; j < map_size0; ++j)
+      _b.x[offset0 + j] = b_i[j];
+    for (int j = 0; j < map_size1; ++j)
+      _b.x[offset1 + j] = b_i[map_size0 + j];
+
+    // Add to local offset for (owned and ghost) for this field
+    offset0 += map->size_local() * bs;
+    offset1 += map->num_ghosts() * bs;
+  }
+  _b.restore();
+
+  // FIXME: should this be lifted higher up in the code path?
+  // Update ghosts
+  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
+
+  // Set bcs
+  PetscScalar* values = nullptr;
+  VecGetArray(b, &values);
+  int offset = 0;
+  for (std::size_t i = 0; i < L.size(); ++i)
+  {
+    auto map = L[i]->function_space(0)->dofmap()->index_map();
+    const int bs = map->block_size();
+    const int map_size0 = map->size_local() * bs;
+    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
+        values + offset, map_size0);
+    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
+                                                                     0);
+    for (auto bc : bcs)
+    {
+      if (L[i]->function_space(0)->contains(*bc->function_space()))
+        bc->set(vec, scale);
+    }
+    offset += map_size0;
+  }
+  VecRestoreArray(b, &values);
+}
+//-----------------------------------------------------------------------------
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -114,275 +337,69 @@ fem::assemble(const Form& a)
   }
 }
 //-----------------------------------------------------------------------------
-la::PETScVector
-fem::assemble(std::vector<const Form*> L,
-              const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              const la::PETScVector* x0, BlockType block_type, double scale)
+void fem::assemble_vector(la::PETScVector& b, const Form& L)
 {
-  assert(!L.empty());
-
-  la::PETScVector b;
-  const bool block_vector = L.size() > 1;
-  if (block_type == BlockType::nested)
-    b = fem::init_nest(L);
-  else if (block_vector and block_type == BlockType::monolithic)
-    b = fem::init_monolithic(L);
-  else
-    b = la::PETScVector(*L[0]->function_space(0)->dofmap()->index_map());
-
-  assemble(b, L, a, bcs, x0, scale);
-  return b;
+  la::VecWrapper _b(b.vec());
+  _b.x.setZero();
+  fem::impl::assemble(_b.x, L);
+  _b.restore();
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(
+void fem::assemble_vector(
     la::PETScVector& b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const la::PETScVector* x0, double scale)
 {
-  assert(!L.empty());
-  const Vec _x0 = x0 ? x0->vec() : nullptr;
-
-  // Packs DirichletBC pointers for rows
-  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0(L.size());
-  for (std::size_t i = 0; i < L.size(); ++i)
-    for (std::shared_ptr<const DirichletBC> bc : bcs)
-      if (L[i]->function_space(0)->contains(*bc->function_space()))
-        bcs0[i].push_back(bc);
-
-  // Packs DirichletBC pointers for columns
-  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>>
-      bcs1(a.size());
-  for (std::size_t i = 0; i < a.size(); ++i)
-  {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-    {
-      bcs1[i].resize(a[j].size());
-      for (std::shared_ptr<const DirichletBC> bc : bcs)
-      {
-        // FIXME: handle case where a[i][j] is null
-        if (a[i][j])
-        {
-          if (a[i][j]->function_space(1)->contains(*bc->function_space()))
-            bcs1[i][j].push_back(bc);
-        }
-      }
-    }
-  }
-
   VecType vec_type;
   VecGetType(b.vec(), &vec_type);
-  bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  const Vec _x0 = (x0 != nullptr) ? x0->vec() : nullptr;
   if (is_vecnest)
-  {
-    // FIXME: merge this with single L case
-
-    // FIXME: Sort out for x0 \ne nullptr case
-
-    for (std::size_t i = 0; i < L.size(); ++i)
-    {
-      // FIXME: need to extract block of x0
-      Vec b_sub = nullptr;
-      VecNestGetSubVec(b.vec(), i, &b_sub);
-
-      // Assemble
-      assemble_petsc(b_sub, *L[i], a[i], bcs1[i], _x0, scale);
-
-      // Set bc values
-      for (std::size_t j = 0; j < a[i].size(); ++j)
-      {
-        if (a[i][j])
-        {
-          if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-          {
-            la::PETScVector _sb(b_sub);
-            set_bc(_sb, bcs0[i], nullptr, scale);
-          }
-        }
-      }
-    }
-  }
-  else if (L.size() > 1)
-  {
-    std::cout << "Blocked/mono assembler" << std::endl;
-
-    // Get local representation of b vector and unwrap
-    la::VecWrapper _b(b.vec());
-    for (std::size_t i = 0; i < L.size(); ++i)
-    {
-      // FIXME: Sort out for x0 \ne nullptr case
-
-      // Get size for block i
-      assert(L[i]);
-      auto map = L[i]->function_space(0)->dofmap()->index_map();
-      const int bs = map->block_size();
-      const int map_size0 = map->size_local() * bs;
-      const int map_size1 = map->num_ghosts() * bs;
-
-      // Assemble and modify for bcs (lifting)
-      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> b_vec
-          = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(map_size0
-                                                                + map_size1);
-      assemble_eigen(b_vec, *L[i], a[i], bcs1[i], {}, scale);
-
-      // Compute offsets for block i
-      int offset0(0), offset1(0);
-      for (auto& _L : L)
-      {
-        auto map = _L->function_space(0)->dofmap()->index_map();
-        offset1 += map->size_local() * map->block_size();
-      }
-      for (std::size_t j = 0; j < i; ++j)
-      {
-        auto map = L[j]->function_space(0)->dofmap()->index_map();
-        const int bs = map->block_size();
-        offset0 += map->size_local() * bs;
-        offset1 += map->num_ghosts() * bs;
-      }
-
-      // Copy data into PETSc b Vec
-      for (int j = 0; j < map_size0; ++j)
-        _b.x[offset0 + j] = b_vec[j];
-      for (int j = 0; j < map_size1; ++j)
-        _b.x[offset1 + j] = b_vec[map_size0 + j];
-    }
-    _b.restore();
-
-    // Update b ghosts
-    VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-    VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-
-    // Set bcs
-    PetscScalar* values;
-    VecGetArray(b.vec(), &values);
-    std::size_t offset = 0;
-    for (std::size_t i = 0; i < L.size(); ++i)
-    {
-      auto map = L[i]->function_space(0)->dofmap()->index_map();
-      const int bs = map->block_size();
-      const int map_size0 = map->size_local() * bs;
-      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
-          values + offset, map_size0);
-      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec_x0(nullptr,
-                                                                       0);
-      for (auto bc : bcs)
-      {
-        if (L[i]->function_space(0)->contains(*bc->function_space()))
-          bc->set(vec, scale);
-      }
-      offset += map_size0;
-    }
-    VecRestoreArray(b.vec(), &values);
-  }
+    _reassemble_vector_nest(b.vec(), L, a, bcs, _x0, scale);
   else
-  {
-    // Assemble single linear form and modify for bc lifting
-    assemble_petsc(b.vec(), *L[0], a[0], bcs1[0], _x0, scale);
-    set_bc(b, bcs0[0], x0, scale);
-  }
+    _reassemble_vector_block(b.vec(), L, a, bcs, _x0, scale);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_petsc(
-    Vec b, const Form& L, const std::vector<std::shared_ptr<const Form>> a,
+void fem::apply_lifting(
+    la::PETScVector& b, const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    const Vec x0, double scale)
+    std::vector<const la::PETScVector*> x0, double scale)
 {
-  la::VecWrapper _b(b);
-  if (x0)
+  if (x0.size() > 1)
   {
-    std::vector<la::VecReadWrapper> _x0;
-    if (a.size() > 1)
-    {
-      // FIXME: Add some checks
-      throw std::runtime_error("Not implemented yet.");
-      PetscInt n = 1;
-      Vec* _x0_sub = nullptr;
-      VecNestGetSubVecs(x0, &n, &_x0_sub);
-      for (PetscInt i = 0; i < n; ++i)
-        _x0.push_back(la::VecReadWrapper(_x0_sub[i]));
-    }
-    else
-      _x0.push_back(la::VecReadWrapper(x0));
-
-    // Wrap the x0 vector(s)
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        _x0_ref;
-    for (std::size_t j = 0; j < _x0.size(); ++j)
-      _x0_ref.push_back(_x0[j].x);
-
-    // Assemble and modify for bcs
-    assemble_eigen(_b.x, L, a, bcs1, _x0_ref, scale);
-
-    // Restore the x0 vectors
-    for (auto& x : _x0)
-      x.restore();
+    throw std::runtime_error(
+        "Simple fem::apply_lifting not get generalised for multiple x0");
   }
-  else
-    assemble_eigen(_b.x, L, a, bcs1, {}, scale);
 
+  la::VecWrapper _b(b.vec());
+  if (x0.empty())
+    fem::impl::apply_lifting(_b.x, a, bcs1, {}, scale);
+  else
+  {
+    assert(x0[0]);
+    la::VecReadWrapper x0_wrap(x0[0]->vec());
+    fem::impl::apply_lifting(_b.x, a, bcs1, {x0_wrap.x}, scale);
+    x0_wrap.restore();
+  }
   _b.restore();
-
-  // FIXME: shift this to higher level?
-  VecGhostUpdateBegin(b, ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b, ADD_VALUES, SCATTER_REVERSE);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_eigen(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
-    const std::vector<std::shared_ptr<const Form>> a,
-    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
-        x0,
-    double scale)
+void fem::assemble(la::PETScMatrix& A, const Form& a,
+                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                   double diagonal)
 {
-  // Assemble
-  b.setZero();
-  fem::impl::assemble(b, L);
+  // assert(!a.empty());
+  // const bool block_matrix = a.size() > 1 or a[0].size() > 1;
+  // la::PETScMatrix A;
+  // if (block_type == BlockType::nested)
+  //   A = fem::init_nest_matrix(a);
+  // else if (block_matrix and block_type == BlockType::monolithic)
+  //   A = fem::init_monolithic_matrix(a);
+  // else
+  //   A = fem::init_matrix(*a[0][0]);
 
-  // Modify for Dirichlet bcs (lifting)
-  for (std::size_t j = 0; j < a.size(); ++j)
-  {
-    if (a[j])
-    {
-      auto V1 = a[j]->function_space(1);
-      auto map1 = V1->dofmap()->index_map();
-      const std::size_t col_range
-          = map1->block_size() * (map1->size_local() + map1->num_ghosts());
-      std::vector<bool> bc_markers1(col_range, false);
-      Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> bc_values1
-          = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(col_range);
-      for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])
-      {
-        bc->mark_dofs(bc_markers1);
-        bc->dof_values(bc_values1);
-      }
-
-      if (!x0.empty())
-        fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, x0[j], scale);
-      else
-        fem::impl::modify_bc(b, *a[j], bc_values1, bc_markers1, scale);
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-la::PETScMatrix
-fem::assemble(const std::vector<std::vector<const Form*>> a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              BlockType block_type, double diagonal)
-{
-  assert(!a.empty());
-  const bool block_matrix = a.size() > 1 or a[0].size() > 1;
-  la::PETScMatrix A;
-  if (block_type == BlockType::nested)
-    A = fem::init_nest_matrix(a);
-  else if (block_matrix and block_type == BlockType::monolithic)
-    A = fem::init_monolithic_matrix(a);
-  else
-    A = fem::init_matrix(*a[0][0]);
-
-  assemble(A, a, bcs, diagonal);
-  return A;
+  assemble(A, {{&a}}, bcs, diagonal);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble(la::PETScMatrix& A,
