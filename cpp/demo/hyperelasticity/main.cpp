@@ -116,6 +116,7 @@ public:
       b = std::make_unique<la::PETScVector>(assemble_vector(*_l));
     else
       assemble_vector(*b, *_l);
+    b->apply_ghosts();
 
     // Set bcs
     set_bc(*b, _bcs, &x, -1);
