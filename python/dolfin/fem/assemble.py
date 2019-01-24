@@ -160,4 +160,5 @@ def set_bc(b: cpp.la.PETScVector,
            x0: typing.Optional[cpp.la.PETScVector] = None,
            scale: float = 1.0) -> None:
     """Insert boundary condition values into vector"""
-    cpp.fem.set_bc(b, bcs, x0, scale)
+    _x0 = x0.vec() if x0 is not None else None
+    cpp.fem.set_bc(b.vec(), bcs, _x0, scale)

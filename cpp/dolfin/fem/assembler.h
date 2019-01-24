@@ -110,14 +110,7 @@ void assemble_petsc(Mat A, const Form& a,
 /// Set bc values in owned (local) part of the PETScVector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
 /// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc(la::PETScVector& b,
-            std::vector<std::shared_ptr<const DirichletBC>> bcs,
-            const la::PETScVector* x0, double scale = 1.0);
-
-/// Set bc values in owned (local) part of the PETScVector, multiplied
-/// by 'scale'. The vectors b and x0 must have the same local size. The
-/// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc_petsc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
+void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
                   const Vec x0, double scale = 1.0);
 } // namespace fem
 } // namespace dolfin

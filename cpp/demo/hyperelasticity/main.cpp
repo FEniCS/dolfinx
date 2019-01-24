@@ -118,7 +118,7 @@ public:
     b->apply_ghosts();
 
     // Set bcs
-    set_bc(*b, _bcs, &x, -1);
+    set_bc(b->vec(), _bcs, x.vec(), -1);
 
     return b.get();
   }
