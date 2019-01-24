@@ -9,6 +9,8 @@
 import functools
 import typing
 
+from petsc4py import PETSc
+
 from dolfin import cpp
 from dolfin.fem.assembling import _create_cpp_form
 from dolfin.fem.dirichletbc import DirichletBC
@@ -30,18 +32,12 @@ def _assemble_vector_old(b: cpp.la.PETScVector,
                          bcs: typing.List[DirichletBC] = [],
                          x0: typing.Optional[cpp.la.PETScVector] = None,
                          scale: float = 1.0) -> cpp.la.PETScVector:
-    """Re-assemble linear form into a vector, with modification for Dirichlet
-    boundary conditions
+    """Re-assemble linear form into a vector.
 
     """
-    try:
-        L_cpp = [_create_cpp_form(form) for form in L]
-        a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    except TypeError:
-        L_cpp = [_create_cpp_form(L)]
-        a_cpp = [[_create_cpp_form(form) for form in a]]
-
-    cpp.fem.reassemble_blocked_vector(b, L_cpp, a_cpp, bcs, x0, scale)
+    L_cpp = _create_cpp_form(L)
+    cpp.fem.assemble_vector(b, L_cpp)
+    b.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     return b
 
 

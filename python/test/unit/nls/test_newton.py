@@ -72,7 +72,11 @@ class NonlinearPDE_SNESProblem():
         _x.update_ghosts()
         x.copy(self.u.vector().vec())
         self.u.vector().update_ghosts()
-        fem.assemble(_F, self.L, [self.a], [self.bc], _x, -1.0)
+
+        fem.assemble_vector(_F, self.L)
+        fem.apply_lifting(_F, [self.a], [self.bc], _x, -1.0)
+        _F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        fem.set_bc(_F, [self.bc], _x, -1.0)
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""

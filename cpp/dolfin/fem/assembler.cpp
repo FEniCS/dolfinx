@@ -162,7 +162,9 @@ void fem::reassemble_blocked_vector(
     std::vector<std::shared_ptr<const DirichletBC>> bcs,
     const la::PETScVector* x0, double scale)
 {
-  assert(!L.empty());
+  if (L.size() < 2)
+    throw std::runtime_error("Oops, using blocked assembly.");
+
   const Vec _x0 = x0 ? x0->vec() : nullptr;
 
   // Pack DirichletBC pointers for rows
@@ -195,13 +197,12 @@ void fem::reassemble_blocked_vector(
   VecType vec_type;
   VecGetType(b.vec(), &vec_type);
   bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-  if (L.size() == 1 or is_vecnest)
+  if (is_vecnest)
   {
     for (std::size_t i = 0; i < L.size(); ++i)
     {
-      Vec b_sub = b.vec();
-      if (is_vecnest)
-        VecNestGetSubVec(b.vec(), i, &b_sub);
+      Vec b_sub = nullptr;
+      VecNestGetSubVec(b.vec(), i, &b_sub);
 
       // Assemble
       la::VecWrapper _b(b_sub);
