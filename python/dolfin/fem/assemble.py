@@ -26,15 +26,9 @@ def assemble(M: typing.Union[Form, cpp.fem.Form]
 
 
 @assemble.register(cpp.la.PETScVector)
-def _assemble_vector_old(b: cpp.la.PETScVector,
-                         L,
-                         a=[],
-                         bcs: typing.List[DirichletBC] = [],
-                         x0: typing.Optional[cpp.la.PETScVector] = None,
-                         scale: float = 1.0) -> cpp.la.PETScVector:
-    """Re-assemble linear form into a vector.
-
-    """
+def _assemble_vector(b: cpp.la.PETScVector,
+                     L) -> cpp.la.PETScVector:
+    """Re-assemble linear form into a vector."""
     L_cpp = _create_cpp_form(L)
     cpp.fem.assemble_vector(b, L_cpp)
     b.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -57,15 +51,17 @@ def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[],
 
 
 @functools.singledispatch
-def assemble_vector_new(
+def assemble_vector(
         L: typing.Union[Form, cpp.fem.Form]) -> cpp.la.PETScVector:
     """Assemble linear form into a vector."""
     L_cpp = _create_cpp_form(L)
-    return cpp.fem.assemble_vector(L_cpp)
+    _b = cpp.la.PETScVector(L_cpp.function_space(0).dofmap().index_map())
+    cpp.fem.assemble_vector(_b, L_cpp)
+    return _b
 
 
-@assemble_vector_new.register(cpp.la.PETScVector)
-def _assemble_vector_new(
+@assemble_vector.register(cpp.la.PETScVector)
+def _reassemble_vector(
         b: cpp.la.PETScVector,
         L: typing.Union[Form, cpp.fem.Form]) -> cpp.la.PETScVector:
     """Re-assemble linear form into a vector."""
@@ -74,49 +70,45 @@ def _assemble_vector_new(
     return b
 
 
-def apply_lifting(b: cpp.la.PETScVector,
-                  a: typing.List,
-                  bcs: typing.List[DirichletBC],
-                  x0: typing.Optional[typing.List[cpp.la.PETScVector]] = [],
-                  scale: float = 1.0) -> None:
-    """Modify vector for lifting of boundary conditions."""
-    a_cpp = [_create_cpp_form(form) for form in a]
-    cpp.fem.apply_lifting(b, a_cpp, bcs, x0, scale)
-
-
-@functools.singledispatch
-def assemble_block_vector(L,
-                          a,
-                          bcs: typing.List[DirichletBC],
-                          block_type: cpp.fem.BlockType,
-                          x0: typing.Optional[cpp.la.PETScVector] = None,
-                          scale: float = 1.0) -> cpp.la.PETScVector:
-    """Assemble linear forms into block vector"""
+def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
+                         a,
+                         bcs: typing.List[DirichletBC],
+                         x0: typing.Optional[cpp.la.PETScVector] = None,
+                         scale: float = 1.0) -> cpp.la.PETScVector:
+    """Assemble linear forms into a nested vector"""
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    return cpp.fem.assemble_blocked_vector(L_cpp, a_cpp, bcs, x0, block_type,
-                                           scale)
+    _b = cpp.fem.create_vector_nest(L_cpp)
+    cpp.fem.assemble_vector(_b, L_cpp, a_cpp, bcs, x0, scale)
+    return _b
 
 
-@assemble_block_vector.register(cpp.la.PETScVector)
-def _assemble_block_vector(b: cpp.la.PETScVector,
-                           L,
-                           a=[],
-                           bcs: typing.List[DirichletBC] = [],
-                           x0: typing.Optional[cpp.la.PETScVector] = None,
-                           scale: float = 1.0) -> cpp.la.PETScVector:
+def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
+                          a,
+                          bcs: typing.List[DirichletBC],
+                          x0: typing.Optional[cpp.la.PETScVector] = None,
+                          scale: float = 1.0) -> cpp.la.PETScVector:
+    """Assemble linear forms into a monolithic vector"""
+    L_cpp = [_create_cpp_form(form) for form in L]
+    a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
+    _b = cpp.fem.create_vector(L_cpp)
+    cpp.fem.assemble_vector(_b, L_cpp, a_cpp, bcs, x0, scale)
+    return _b
+
+
+def reassemble_vector(b: cpp.la.PETScVector,
+                      L,
+                      a=[],
+                      bcs: typing.List[DirichletBC] = [],
+                      x0: typing.Optional[cpp.la.PETScVector] = None,
+                      scale: float = 1.0) -> cpp.la.PETScVector:
     """Re-assemble linear forms into a block vector, with modification for Dirichlet
     boundary conditions
 
     """
-    try:
-        L_cpp = [_create_cpp_form(form) for form in L]
-        a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    except TypeError:
-        L_cpp = [_create_cpp_form(L)]
-        a_cpp = [[_create_cpp_form(form) for form in a]]
-
-    cpp.fem.reassemble_blocked_vector(b, L_cpp, a_cpp, bcs, x0, scale)
+    L_cpp = [_create_cpp_form(form) for form in L]
+    a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
+    cpp.fem.reassemble_vector(b, L_cpp, a_cpp, bcs, x0, scale)
     return b
 
 
@@ -127,6 +119,16 @@ def assemble_matrix(a,
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     return cpp.fem.assemble_blocked_matrix(a_cpp, bcs, block_type, diagonal)
+
+
+def apply_lifting(b: cpp.la.PETScVector,
+                  a: typing.List[typing.Union[Form, cpp.fem.Form]],
+                  bcs: typing.List[DirichletBC],
+                  x0: typing.Optional[typing.List[cpp.la.PETScVector]] = [],
+                  scale: float = 1.0) -> None:
+    """Modify vector for lifting of boundary conditions."""
+    a_cpp = [_create_cpp_form(form) for form in a]
+    cpp.fem.apply_lifting(b, a_cpp, bcs, x0, scale)
 
 
 def set_bc(b: cpp.la.PETScVector,
