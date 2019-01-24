@@ -83,16 +83,16 @@
 # facets). Mesh and mesh functions can be read from file in the
 # following way::
 
-from dolfin.plotting import plot
 import matplotlib.pyplot as plt
 import numpy as np
-import numpy
-import ufl
 
 import dolfin
-from dolfin import *
-from dolfin import function
+from dolfin import (MPI, DirichletBC, Expression, FiniteElement, Function,
+                    FunctionSpace, TestFunctions, TrialFunctions,
+                    VectorElement, function, interpolate, solve)
 from dolfin.io import XDMFFile
+from dolfin.plotting import plot
+from ufl import div, dx, grad, inner
 
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
@@ -131,8 +131,8 @@ def noslip_eval(values, x, cell):
 
 # Extract subdomain facet arrays
 mf = sub_domains.array()
-mf0 = numpy.where(mf == 0)
-mf1 = numpy.where(mf == 1)
+mf0 = np.where(mf == 0)
+mf1 = np.where(mf == 1)
 
 noslip_expr = Expression(noslip_eval, shape=(2,))
 noslip = interpolate(noslip_expr, W.sub(0).collapse())
@@ -144,7 +144,7 @@ bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
 @function.expression.numba_eval
 def inflow_eval(values, x, cell):
-    values[:, 0] = - numpy.sin(x[:, 1] * numpy.pi)
+    values[:, 0] = - np.sin(x[:, 1] * np.pi)
     values[:, 1] = 0.0
 
 

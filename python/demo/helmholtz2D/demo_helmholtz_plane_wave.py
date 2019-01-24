@@ -9,13 +9,14 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (UnitSquareMesh, MPI, FacetNormal, Expression,
-                    FunctionSpace, TrialFunction, TestFunction, dot, inner, dx, ds,
-                    grad, Function, solve, interpolate, has_petsc_complex, project)
-from dolfin import function
+import numpy as np
+
+from dolfin import (MPI, Expression, FacetNormal, Function, FunctionSpace,
+                    TestFunction, TrialFunction, UnitSquareMesh, dot, ds, dx,
+                    function, grad, has_petsc_complex, inner, interpolate,
+                    project, solve)
 from dolfin.fem.assemble import assemble
 from dolfin.io import XDMFFile
-import numpy as np
 
 if not has_petsc_complex:
     print('This demo only works with PETSc-complex')
@@ -23,8 +24,10 @@ if not has_petsc_complex:
 
 # Wavenumber
 k0 = 20
+
 # approximation space polynomial degree
 deg = 1
+
 # number of elements in each direction of mesh
 n_elem = 128
 
@@ -34,9 +37,11 @@ n = FacetNormal(mesh)
 # Incident plane wave
 theta = np.pi / 8
 
+
 @function.expression.numba_eval
 def ui_eval(values, x, cell_idx):
     values[:, 0] = np.exp(1.0j * k0 * (np.cos(theta) * x[:, 0] + np.sin(theta) * x[:, 1]))
+
 
 # Test and trial function space
 V = FunctionSpace(mesh, ("Lagrange", deg))

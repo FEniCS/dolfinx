@@ -40,7 +40,6 @@ for subdir in subdirs:
         print("Converting py files in in {} ...".format(root))
         for f in rstfiles:
             command = sys.executable + " " + parser + " -c " + os.path.abspath(f) + " " + os.path.abspath(f) + ".rst"
-            #print("  " + command)
             ret = os.system(command)
             if not ret == 0:
                 raise RuntimeError("Unable to convert .py file to a .py.rst ({})".format(f))
