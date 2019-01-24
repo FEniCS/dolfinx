@@ -128,8 +128,9 @@ public:
   {
     if (!A)
       A = std::make_unique<la::PETScMatrix>(fem::init_matrix(*_j));
-    assemble(*A, *_j, _bcs);
-
+    A->zero();
+    assemble(A->mat(), *_j, _bcs);
+    A->apply(la::PETScMatrix::AssemblyType::FINAL);
     return A.get();
   }
 
@@ -148,7 +149,7 @@ int main(int argc, char* argv[])
 
   // Inside the ``main`` function, we begin by defining a tetrahedral mesh
   // of the domain and the function space on this mesh. Here, we choose to
-  // create a unit cube mesh with 25 ( = 24 + 1) verices in one direction
+  // create a unit cube mesh with 25 ( = 24 + 1) vertices in one direction
   // and 17 ( = 16 + 1) vertices in the other two directions. With this
   // mesh, we initialize the (finite element) function space defined by the
   // generated code.

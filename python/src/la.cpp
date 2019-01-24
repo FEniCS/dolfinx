@@ -221,7 +221,8 @@ void la(py::module& m)
 
   // dolfin::la::PETScMatrix
   py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
-             dolfin::la::PETScOperator>(m, "PETScMatrix", py::dynamic_attr(), "PETScMatrix object")
+             dolfin::la::PETScOperator>(m, "PETScMatrix", py::dynamic_attr(),
+                                        "PETScMatrix object")
       .def(py::init<>())
       .def(py::init<Mat>())
       .def(py::init(
@@ -232,12 +233,13 @@ void la(py::module& m)
       .def("get_options_prefix", &dolfin::la::PETScMatrix::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
       .def("set_nullspace", &dolfin::la::PETScMatrix::set_nullspace)
-      .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace);
+      .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace)
+      .def("zero", &dolfin::la::PETScMatrix::zero);
 
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
              std::shared_ptr<dolfin::la::PETScKrylovSolver>>(
-      m, "PETScKrylovSolver", "DOLFIN PETScKrylovSolver object")
+      m, "PETScKrylovSolver", "PETScKrylovSolver object")
       .def(py::init([](const MPICommWrapper comm) {
              return std::make_unique<dolfin::la::PETScKrylovSolver>(comm.get());
            }),

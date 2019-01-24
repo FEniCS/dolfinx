@@ -238,11 +238,18 @@ void fem(py::module& m)
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
             const Vec, double>(&dolfin::fem::assemble_vector),
         "Re-assemble linear forms over mesh into blocked/nested vector");
-
+  // Matrices
+  m.def(
+      "assemble_matrix",
+      py::overload_cast<
+          Mat, const dolfin::fem::Form&,
+          std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
+          &dolfin::fem::assemble),
+      py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
+      "Assemble bilinear form over mesh into matrix");
   m.def("assemble_blocked_matrix",
         py::overload_cast<
-            dolfin::la::PETScMatrix&,
-            const std::vector<std::vector<const dolfin::fem::Form*>>,
+            Mat, const std::vector<std::vector<const dolfin::fem::Form*>>,
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
             double, bool>(&dolfin::fem::assemble),
         py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),

@@ -27,7 +27,7 @@ def assemble(M: typing.Union[Form, cpp.fem.Form]
 
 @assemble.register(cpp.la.PETScVector)
 def _assemble_vector(b: cpp.la.PETScVector,
-                     L) -> cpp.la.PETScVector:
+                     L: typing.Union[Form, cpp.fem.Form]) -> cpp.la.PETScVector:
     """Re-assemble linear form into a vector."""
     L_cpp = _create_cpp_form(L)
     cpp.fem.assemble_vector(b.vec(), L_cpp)
@@ -36,17 +36,16 @@ def _assemble_vector(b: cpp.la.PETScVector,
 
 
 @assemble.register(cpp.la.PETScMatrix)
-def _assemble_matrix(A: cpp.la.PETScMatrix, a, bcs=[],
+def _assemble_matrix(A: cpp.la.PETScMatrix, a: typing.Union[Form, cpp.fem.Form], bcs=[],
                      diagonal: float = 1.0) -> cpp.la.PETScMatrix:
-    """Re-assemble bilinear form into a vector, with rows and columns with Dirichlet
+    """Assemble bilinear form into a vector, with rows and columns with Dirichlet
     boundary conditions zeroed.
 
     """
-    try:
-        a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    except TypeError:
-        a_cpp = [[_create_cpp_form(a)]]
-    cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
+    A.zero()
+    a_cpp = _create_cpp_form(a)
+    cpp.fem.assemble_matrix(A.mat(), a_cpp, bcs, diagonal)
+    A.mat().assemble()
     return A
 
 
@@ -121,7 +120,7 @@ def assemble_matrix_nest(a,
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     A = cpp.fem.create_matrix_nest(a_cpp)
-    cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
+    cpp.fem.assemble_blocked_matrix(A.mat(), a_cpp, bcs, diagonal)
     return A
 
 
@@ -131,17 +130,17 @@ def assemble_matrix_block(a,
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     A = cpp.fem.create_matrix_block(a_cpp)
-    cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
+    cpp.fem.assemble_blocked_matrix(A.mat(), a_cpp, bcs, diagonal)
     return A
 
 
 def assemble_matrix(a,
                     bcs: typing.List[DirichletBC],
                     diagonal: float = 1.0) -> cpp.la.PETScMatrix:
-    """Assemble bilinear form into matrix"""
+    """Assemble bilinear form into matrix."""
     a_cpp = _create_cpp_form(a)
     A = cpp.fem.create_matrix(a_cpp)
-    cpp.fem.assemble_blocked_matrix(A, [[a_cpp]], bcs, diagonal)
+    assemble(A, a_cpp, bcs, diagonal)
     return A
 
 
