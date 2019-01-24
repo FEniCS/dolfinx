@@ -343,9 +343,6 @@ void fem::assemble_vector(la::PETScVector& b, const Form& L)
   _b.x.setZero();
   fem::impl::assemble(_b.x, L);
   _b.restore();
-
-  // VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-  // VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(
