@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -6,17 +6,16 @@
 
 #pragma once
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
+#include <petsc4py/petsc4py.h>
 #include <petscdm.h>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscsnes.h>
 #include <petscvec.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 // pybind11 casters for PETSc/petsc4py objects
-#include <petsc4py/petsc4py.h>
 
 // Import petsc4py on demand
 #define VERIFY_PETSC4PY(func)                                                  \
@@ -29,7 +28,7 @@
     }                                                                          \
   }
 
-// Macro for casting between dolfin and petsc4py objects
+// Macro for casting between PETSc and petsc4py objects
 #define PETSC_CASTER_MACRO(TYPE, NAME)                                         \
   template <>                                                                  \
   class type_caster<_p_##TYPE>                                                 \
@@ -38,6 +37,11 @@
     PYBIND11_TYPE_CASTER(TYPE, _(#NAME));                                      \
     bool load(handle src, bool)                                                \
     {                                                                          \
+      if (src.is_none())                                                       \
+      {                                                                        \
+        value = nullptr;                                                       \
+        return true;                                                           \
+      }                                                                        \
       VERIFY_PETSC4PY(PyPetsc##TYPE##_Get);                                    \
       if (PyObject_TypeCheck(src.ptr(), &PyPetsc##TYPE##_Type) == 0)           \
         return false;                                                          \
@@ -64,7 +68,7 @@ PETSC_CASTER_MACRO(KSP, ksp);
 PETSC_CASTER_MACRO(Mat, mat);
 PETSC_CASTER_MACRO(SNES, snes);
 PETSC_CASTER_MACRO(Vec, vec);
-}
-}
+} // namespace detail
+} // namespace pybind11
 
 #undef PETSC_CASTER_MACRO
