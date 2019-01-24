@@ -95,32 +95,27 @@ void set_diagonal_local(
   }
 }
 //-----------------------------------------------------------------------------
-void _reassemble_vector_nest(
-    la::PETScVector& b, std::vector<const Form*> L,
-    const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const la::PETScVector* x0, double scale)
+std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>
+bcs_rows(std::vector<const Form*> L,
+         std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
 {
-  if (L.size() < 2)
-    throw std::runtime_error("Oops, using blocked assembly.");
-
-  VecType vec_type;
-  VecGetType(b.vec(), &vec_type);
-  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-  if (!is_vecnest)
-    throw std::runtime_error("Expected a nested vector.");
-
-  const Vec _x0 = x0 ? x0->vec() : nullptr;
-
   // Pack DirichletBC pointers for rows
-  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0(L.size());
+  std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>> bcs0(
+      L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
     for (std::shared_ptr<const DirichletBC> bc : bcs)
       if (L[i]->function_space(0)->contains(*bc->function_space()))
         bcs0[i].push_back(bc);
 
+  return bcs0;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
+bcs_cols(std::vector<std::vector<std::shared_ptr<const Form>>> a,
+         std::vector<std::shared_ptr<const DirichletBC>> bcs)
+{
   // Pack DirichletBC pointers for columns
-  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>>
+  std::vector<std::vector<std::vector<std::shared_ptr<const fem::DirichletBC>>>>
       bcs1(a.size());
   for (std::size_t i = 0; i < a.size(); ++i)
   {
@@ -138,6 +133,32 @@ void _reassemble_vector_nest(
       }
     }
   }
+
+  return bcs1;
+}
+//-----------------------------------------------------------------------------
+void _reassemble_vector_nest(
+    la::PETScVector& b, std::vector<const Form*> L,
+    const std::vector<std::vector<std::shared_ptr<const Form>>> a,
+    std::vector<std::shared_ptr<const DirichletBC>> bcs,
+    const la::PETScVector* x0, double scale)
+{
+  if (L.size() < 2)
+    throw std::runtime_error("Oops, using blocked assembly.");
+
+  VecType vec_type;
+  VecGetType(b.vec(), &vec_type);
+  const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
+  if (!is_vecnest)
+    throw std::runtime_error("Expected a nested vector.");
+
+  const Vec _x0 = x0 ? x0->vec() : nullptr;
+
+  // Pack DirichletBC pointers for rows and columns
+  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
+      = bcs_rows(L, bcs);
+  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
+      = bcs_cols(a, bcs);
 
   for (std::size_t i = 0; i < L.size(); ++i)
   {
@@ -209,32 +230,11 @@ void _reassemble_vector_block(
 
   // const Vec _x0 = x0 ? x0->vec() : nullptr;
 
-  // Pack DirichletBC pointers for rows
-  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0(L.size());
-  for (std::size_t i = 0; i < L.size(); ++i)
-    for (std::shared_ptr<const DirichletBC> bc : bcs)
-      if (L[i]->function_space(0)->contains(*bc->function_space()))
-        bcs0[i].push_back(bc);
-
-  // Pack DirichletBC pointers for columns
-  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>>
-      bcs1(a.size());
-  for (std::size_t i = 0; i < a.size(); ++i)
-  {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
-    {
-      bcs1[i].resize(a[j].size());
-      for (std::shared_ptr<const DirichletBC> bc : bcs)
-      {
-        // FIXME: handle case where a[i][j] is null
-        if (a[i][j])
-        {
-          if (a[i][j]->function_space(1)->contains(*bc->function_space()))
-            bcs1[i][j].push_back(bc);
-        }
-      }
-    }
-  }
+  // Pack DirichletBC pointers for rows and columns
+  std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs0
+      = bcs_rows(L, bcs);
+  std::vector<std::vector<std::vector<std::shared_ptr<const DirichletBC>>>> bcs1
+      = bcs_cols(a, bcs);
 
   std::vector<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b_vec(L.size());
   for (std::size_t i = 0; i < L.size(); ++i)
