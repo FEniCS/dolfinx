@@ -43,7 +43,8 @@ def _assemble_matrix(A: cpp.la.PETScMatrix, a: typing.Union[Form, cpp.fem.Form],
 
     """
     a_cpp = _create_cpp_form(a)
-    cpp.fem.assemble_matrix(A, a_cpp, bcs, diagonal)
+    cpp.fem.assemble_matrix(A.mat(), a_cpp, bcs, diagonal)
+    A.mat().assemble()
     return A
 
 
@@ -118,7 +119,7 @@ def assemble_matrix_nest(a,
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     A = cpp.fem.create_matrix_nest(a_cpp)
-    cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
+    cpp.fem.assemble_blocked_matrix(A.mat(), a_cpp, bcs, diagonal)
     return A
 
 
@@ -128,7 +129,7 @@ def assemble_matrix_block(a,
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     A = cpp.fem.create_matrix_block(a_cpp)
-    cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
+    cpp.fem.assemble_blocked_matrix(A.mat(), a_cpp, bcs, diagonal)
     return A
 
 
@@ -138,7 +139,7 @@ def assemble_matrix(a,
     """Assemble bilinear form into matrix"""
     a_cpp = _create_cpp_form(a)
     A = cpp.fem.create_matrix(a_cpp)
-    cpp.fem.assemble_blocked_matrix(A, [[a_cpp]], bcs, diagonal)
+    cpp.fem.assemble_blocked_matrix(A.mat(), [[a_cpp]], bcs, diagonal)
     return A
 
 

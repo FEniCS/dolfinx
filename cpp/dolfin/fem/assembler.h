@@ -81,23 +81,20 @@ void apply_lifting(
 
 // -- Matrices ---------------------------------------------------------------
 
-/// Assemble blocked bilinear forms into a matrix. Rows and columns
-/// associated with Dirichlet boundary conditions are zeroed, and
-/// 'diagonal' is placed on the diagonal of Dirichlet bcs.
-void assemble(la::PETScMatrix& A, const Form& a,
+/// Assemble bilinear form into a matrix. Rows and columns associated
+/// with Dirichlet boundary conditions are zeroed, and 'diagonal' is
+/// placed on the diagonal of Dirichlet bcs.
+///
+/// Matrix must be initialised. Does not finalise (assemble/communicate)
+/// matrix.
+void assemble(Mat A, const Form& a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double diagonal = 1.0);
 
 /// Re-assemble blocked bilinear forms into a matrix
-void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
+void assemble(Mat A, const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double diagonal = 1.0, bool use_nest_extract = true);
-
-/// Assemble bilinear form into a matrix. Matrix must be initialised.
-/// Does not finalise matrix.
-void assemble_petsc(Mat A, const Form& a,
-                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                    double diagonal);
 
 // -- Setting bcs ------------------------------------------------------------
 

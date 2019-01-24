@@ -77,7 +77,8 @@ la::PETScMatrix _assemble_matrix(const Form& a)
   if (a.rank() != 2)
     throw std::runtime_error("Form must be rank 2");
   la::PETScMatrix A = fem::init_matrix(a);
-  fem::assemble(A, a, {});
+  fem::assemble(A.mat(), a, {});
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
   return A;
 }
 //-----------------------------------------------------------------------------
@@ -384,25 +385,7 @@ void fem::apply_lifting(
   _b.restore();
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(la::PETScMatrix& A, const Form& a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double diagonal)
-{
-  // assert(!a.empty());
-  // const bool block_matrix = a.size() > 1 or a[0].size() > 1;
-  // la::PETScMatrix A;
-  // if (block_type == BlockType::nested)
-  //   A = fem::init_nest_matrix(a);
-  // else if (block_matrix and block_type == BlockType::monolithic)
-  //   A = fem::init_monolithic_matrix(a);
-  // else
-  //   A = fem::init_matrix(*a[0][0]);
-
-  assemble(A, {{&a}}, bcs, diagonal);
-}
-//-----------------------------------------------------------------------------
-void fem::assemble(la::PETScMatrix& A,
-                   const std::vector<std::vector<const Form*>> a,
+void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
                    double diagonal, bool use_nest_extract)
 {
@@ -412,10 +395,10 @@ void fem::assemble(la::PETScMatrix& A,
 
   // FIXME: should zeroing be an option?
   // Zero matrix
-  A.zero();
+  MatZeroEntries(A);
 
   MatType mat_type;
-  MatGetType(A.mat(), &mat_type);
+  MatGetType(A, &mat_type);
   const bool is_matnest
       = (strcmp(mat_type, MATNEST) == 0) and use_nest_extract ? true : false;
 
@@ -423,8 +406,7 @@ void fem::assemble(la::PETScMatrix& A,
   std::vector<IS> is_row, is_col;
   if (block_matrix and !is_matnest)
   {
-    // Prepare data structures for extracting sub-matrices by index
-    // sets
+    // Prepare data structures for extracting sub-matrices by index sets
 
     // Extract index maps
     const std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
@@ -447,15 +429,15 @@ void fem::assemble(la::PETScMatrix& A,
       {
         Mat subA;
         if (block_matrix and !is_matnest)
-          MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
+          MatGetLocalSubMatrix(A, is_row[i], is_col[j], &subA);
         else if (is_matnest)
-          MatNestGetSubMat(A.mat(), i, j, &subA);
+          MatNestGetSubMat(A, i, j, &subA);
         else
-          subA = A.mat();
+          subA = A;
 
-        assemble_petsc(subA, *a[i][j], bcs, diagonal);
+        assemble(subA, *a[i][j], bcs, diagonal);
         if (block_matrix and !is_matnest)
-          MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
+          MatRestoreLocalSubMatrix(A, is_row[i], is_row[j], &subA);
       }
       else
       {
@@ -470,12 +452,13 @@ void fem::assemble(la::PETScMatrix& A,
   for (std::size_t i = 0; i < is_col.size(); ++i)
     ISDestroy(&is_col[i]);
 
-  A.apply(la::PETScMatrix::AssemblyType::FINAL);
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_petsc(Mat A, const Form& a,
-                         std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                         double diagonal)
+void fem::assemble(Mat A, const Form& a,
+                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                   double diagonal)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map();

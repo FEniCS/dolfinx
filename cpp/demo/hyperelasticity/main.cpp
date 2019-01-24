@@ -118,7 +118,7 @@ public:
     b->apply_ghosts();
 
     // Set bcs
-    set_bc(*b, _bcs, &x, -1);
+    set_bc(b->vec(), _bcs, x.vec(), -1);
 
     return b.get();
   }
@@ -128,7 +128,7 @@ public:
   {
     if (!A)
       A = std::make_unique<la::PETScMatrix>(fem::init_matrix(*_j));
-    assemble(*A, *_j, _bcs);
+    assemble(A->mat(), *_j, _bcs);
 
     return A.get();
   }
