@@ -81,13 +81,14 @@ void apply_lifting(
 
 // -- Matrices ---------------------------------------------------------------
 
-/// Re-assemble blocked bilinear forms into a matrix
+/// Re-assemble blocked bilinear forms into a matrix. Does not zero the
+/// matrix.
 void assemble(Mat A, const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double diagonal = 1.0, bool use_nest_extract = true);
 
 /// Assemble bilinear form into a matrix. Matrix must be initialised.
-/// Does not zero or finalise matrix.
+/// Does not zero or finalise the matrix.
 void assemble(Mat A, const Form& a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double diagonal = 1.0);

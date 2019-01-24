@@ -77,6 +77,7 @@ la::PETScMatrix _assemble_matrix(const Form& a)
   if (a.rank() != 2)
     throw std::runtime_error("Form must be rank 2");
   la::PETScMatrix A = fem::init_matrix(a);
+  A.zero();
   fem::assemble(A.mat(), a, {});
   A.apply(la::PETScMatrix::AssemblyType::FINAL);
   return A;
@@ -140,7 +141,7 @@ bcs_cols(std::vector<std::vector<std::shared_ptr<const Form>>> a,
   return bcs1;
 }
 //-----------------------------------------------------------------------------
-void _reassemble_vector_nest(
+void _assemble_vector_nest(
     Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
@@ -214,7 +215,7 @@ void _reassemble_vector_nest(
   }
 }
 //-----------------------------------------------------------------------------
-void _reassemble_vector_block(
+void _assemble_vector_block(
     Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
@@ -356,9 +357,9 @@ void fem::assemble_vector(
   VecGetType(b, &vec_type);
   const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
   if (is_vecnest)
-    _reassemble_vector_nest(b, L, a, bcs, x0, scale);
+    _assemble_vector_nest(b, L, a, bcs, x0, scale);
   else
-    _reassemble_vector_block(b, L, a, bcs, x0, scale);
+    _assemble_vector_block(b, L, a, bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
@@ -392,10 +393,6 @@ void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
   // Check if matrix should be nested
   assert(!a.empty());
   const bool block_matrix = a.size() > 1 or a[0].size() > 1;
-
-  // FIXME: should zeroing be an option?
-  // Zero matrix
-  MatZeroEntries(A);
 
   MatType mat_type;
   MatGetType(A, &mat_type);

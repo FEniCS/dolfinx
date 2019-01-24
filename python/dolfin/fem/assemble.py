@@ -120,6 +120,7 @@ def assemble_matrix_nest(a,
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     A = cpp.fem.create_matrix_nest(a_cpp)
+    A.zero()
     cpp.fem.assemble_blocked_matrix(A.mat(), a_cpp, bcs, diagonal)
     return A
 
@@ -130,6 +131,7 @@ def assemble_matrix_block(a,
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     A = cpp.fem.create_matrix_block(a_cpp)
+    A.zero()
     cpp.fem.assemble_blocked_matrix(A.mat(), a_cpp, bcs, diagonal)
     return A
 
