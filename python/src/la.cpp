@@ -215,7 +215,7 @@ void la(py::module& m)
   // dolfin::la::PETScOperator
   py::class_<dolfin::la::PETScOperator,
              std::shared_ptr<dolfin::la::PETScOperator>>(m, "PETScOperator")
-      .def("init_vector", &dolfin::la::PETScOperator::init_vector)
+      .def("create_vector", &dolfin::la::PETScOperator::create_vector)
       .def("size", &dolfin::la::PETScOperator::size)
       .def("mat", &dolfin::la::PETScOperator::mat,
            "Return underlying PETSc Mat object");

@@ -84,10 +84,10 @@ bool VectorSpaceBasis::is_orthogonal(double tol) const
 //-----------------------------------------------------------------------------
 bool VectorSpaceBasis::in_nullspace(const PETScMatrix& A, double tol) const
 {
-  PETScVector y = A.init_vector(0);
+  PETScVector y = A.create_vector(0);
   for (auto x : _basis)
   {
-    A.mult(*x, y);
+    MatMult(A.mat(), x->vec(), y.vec());
     const double norm = y.norm(la::Norm::l2);
     if (norm > tol)
       return false;

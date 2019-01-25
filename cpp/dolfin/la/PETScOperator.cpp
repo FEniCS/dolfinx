@@ -78,7 +78,7 @@ std::array<std::int64_t, 2> PETScOperator::local_range(std::size_t dim) const
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-PETScVector PETScOperator::init_vector(std::size_t dim) const
+PETScVector PETScOperator::create_vector(std::size_t dim) const
 {
   assert(_matA);
   PetscErrorCode ierr;
@@ -122,9 +122,4 @@ MPI_Comm PETScOperator::mpi_comm() const
 }
 //-----------------------------------------------------------------------------
 Mat PETScOperator::mat() const { return _matA; }
-//-----------------------------------------------------------------------------
-std::string PETScOperator::str(bool verbose) const
-{
-  return "No str function for this PETSc matrix operator.";
-}
 //-----------------------------------------------------------------------------

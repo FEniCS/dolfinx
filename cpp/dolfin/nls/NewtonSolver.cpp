@@ -76,7 +76,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     P = nonlinear_problem.P(x);
 
     if (!_dx)
-      _dx = std::make_unique<la::PETScVector>(A->init_vector(1));
+      _dx = std::make_unique<la::PETScVector>(A->create_vector(1));
 
     // FIXME: check that this is efficient if A and/or P are unchanged
     // Set operators

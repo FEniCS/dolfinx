@@ -154,8 +154,8 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc,
 
     // Wrap operator and initialize r and c
     PETScMatrix A_wrapped(A);
-    r = A_wrapped.init_vector(0);
-    c = A_wrapped.init_vector(0);
+    r = A_wrapped.create_vector(0);
+    c = A_wrapped.create_vector(0);
 
     // Get eigen pairs
     EPSGetEigenpair(_eps, ii, &lr, &lc, r.vec(), c.vec());

@@ -25,6 +25,36 @@
 using namespace dolfin;
 using namespace dolfin::la;
 
+namespace
+{
+MatNullSpace _create_petsc_nullspace(MPI_Comm comm,
+                                     const la::VectorSpaceBasis& nullspace)
+{
+  PetscErrorCode ierr;
+
+  // Copy vectors in vector space object
+  std::vector<Vec> _nullspace;
+  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  {
+    assert(nullspace[i]);
+    auto x = nullspace[i]->vec();
+
+    // Copy vector pointer
+    assert(x);
+    _nullspace.push_back(x);
+  }
+
+  // Create PETSC nullspace
+  MatNullSpace petsc_nullspace = NULL;
+  ierr = MatNullSpaceCreate(comm, PETSC_FALSE, _nullspace.size(),
+                            _nullspace.data(), &petsc_nullspace);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+
+  return petsc_nullspace;
+}
+} // namespace
+
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix() : PETScOperator()
 {
@@ -92,16 +122,6 @@ void PETScMatrix::set_local(const PetscScalar* block, std::size_t m,
     petsc_error(ierr, __FILE__, "MatSetValuesLocal");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::add(const PetscScalar* block, std::size_t m,
-                      const PetscInt* rows, std::size_t n, const PetscInt* cols)
-{
-  assert(_matA);
-  PetscErrorCode ierr
-      = MatSetValues(_matA, m, rows, n, cols, block, ADD_VALUES);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetValues");
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::add_local(const PetscScalar* block, std::size_t m,
                             const PetscInt* rows, std::size_t n,
                             const PetscInt* cols)
@@ -111,17 +131,6 @@ void PETScMatrix::add_local(const PetscScalar* block, std::size_t m,
       = MatSetValuesLocal(_matA, m, rows, n, cols, block, ADD_VALUES);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-}
-//-----------------------------------------------------------------------------
-void PETScMatrix::mult(const PETScVector& x, PETScVector& y) const
-{
-  assert(_matA);
-  if (y.size() == 0)
-    y = init_vector(0);
-
-  PetscErrorCode ierr = MatMult(_matA, x.vec(), y.vec());
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatMult");
 }
 //-----------------------------------------------------------------------------
 double PETScMatrix::norm(la::Norm norm_type) const
@@ -180,34 +189,6 @@ void PETScMatrix::zero()
     petsc_error(ierr, __FILE__, "MatZeroEntries");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::scale(PetscScalar a)
-{
-  assert(_matA);
-  PetscErrorCode ierr = MatScale(_matA, a);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatScale");
-}
-//-----------------------------------------------------------------------------
-bool PETScMatrix::is_symmetric(double tol) const
-{
-  assert(_matA);
-  PetscBool symmetric = PETSC_FALSE;
-  PetscErrorCode ierr = MatIsSymmetric(_matA, tol, &symmetric);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatIsSymmetric");
-  return symmetric == PETSC_TRUE ? true : false;
-}
-//-----------------------------------------------------------------------------
-bool PETScMatrix::is_hermitian(double tol) const
-{
-  assert(_matA);
-  PetscBool hermitian = PETSC_FALSE;
-  PetscErrorCode ierr = MatIsHermitian(_matA, tol, &hermitian);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatIsHermitian");
-  return hermitian == PETSC_TRUE ? true : false;
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::set_options_prefix(std::string options_prefix)
 {
   assert(_matA);
@@ -231,7 +212,7 @@ void PETScMatrix::set_from_options()
 void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
 {
   // Create PETSc nullspace
-  MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
+  MatNullSpace petsc_ns = _create_petsc_nullspace(mpi_comm(), nullspace);
 
   // Attach PETSc nullspace to matrix
   assert(_matA);
@@ -246,7 +227,7 @@ void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
 void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
 {
   // Create PETSc nullspace
-  MatNullSpace petsc_ns = create_petsc_nullspace(nullspace);
+  MatNullSpace petsc_ns = _create_petsc_nullspace(mpi_comm(), nullspace);
 
   // Attach near  nullspace to matrix
   assert(_matA);
@@ -294,32 +275,5 @@ std::string PETScMatrix::str(bool verbose) const
   }
 
   return s.str();
-}
-//-----------------------------------------------------------------------------
-MatNullSpace
-PETScMatrix::create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const
-{
-  PetscErrorCode ierr;
-
-  // Copy vectors in vector space object
-  std::vector<Vec> _nullspace;
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
-  {
-    assert(nullspace[i]);
-    auto x = nullspace[i]->vec();
-
-    // Copy vector pointer
-    assert(x);
-    _nullspace.push_back(x);
-  }
-
-  // Create PETSC nullspace
-  MatNullSpace petsc_nullspace = NULL;
-  ierr = MatNullSpaceCreate(mpi_comm(), PETSC_FALSE, _nullspace.size(),
-                            _nullspace.data(), &petsc_nullspace);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
-
-  return petsc_nullspace;
 }
 //-----------------------------------------------------------------------------

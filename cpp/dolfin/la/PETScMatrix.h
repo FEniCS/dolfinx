@@ -93,29 +93,12 @@ public:
   void set_local(const PetscScalar* block, std::size_t m, const PetscInt* rows,
                  std::size_t n, const PetscInt* cols);
 
-  /// Add block of values using global indices
-  void add(const PetscScalar* block, std::size_t m, const PetscInt* rows,
-           std::size_t n, const PetscInt* cols);
-
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows,
                  std::size_t n, const PetscInt* cols);
 
   /// Return norm of matrix
   double norm(la::Norm norm_type) const;
-
-  // FIXME: Move to PETScOperator
-  /// Matrix-vector product, y = Ax
-  void mult(const PETScVector& x, PETScVector& y) const;
-
-  /// Multiply matrix by scalar
-  void scale(PetscScalar a);
-
-  /// Test if matrix is symmetric
-  bool is_symmetric(double tol) const;
-
-  /// Test if matrix is hermitian
-  bool is_hermitian(double tol) const;
 
   //--- Special PETSc Functions ---
 
@@ -137,11 +120,6 @@ public:
   /// Attach 'near' nullspace to matrix (used by preconditioners,
   /// such as smoothed aggregation algerbraic multigrid)
   void set_near_nullspace(const la::VectorSpaceBasis& nullspace);
-
-private:
-  // Create PETSc nullspace object
-  MatNullSpace
-  create_petsc_nullspace(const la::VectorSpaceBasis& nullspace) const;
 };
 } // namespace la
 } // namespace dolfin
