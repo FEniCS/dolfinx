@@ -77,7 +77,9 @@ la::PETScMatrix _assemble_matrix(const Form& a)
   if (a.rank() != 2)
     throw std::runtime_error("Form must be rank 2");
   la::PETScMatrix A = fem::init_matrix(a);
-  fem::assemble(A, a, {});
+  A.zero();
+  fem::assemble(A.mat(), a, {});
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
   return A;
 }
 //-----------------------------------------------------------------------------
@@ -139,7 +141,7 @@ bcs_cols(std::vector<std::vector<std::shared_ptr<const Form>>> a,
   return bcs1;
 }
 //-----------------------------------------------------------------------------
-void _reassemble_vector_nest(
+void _assemble_vector_nest(
     Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
@@ -197,7 +199,7 @@ void _reassemble_vector_nest(
       // FIXME: this is a hack to handle the case that no bilinear forms
       // have been supplied, which may happen in a Newton iteration.
       // Needs to be fixed for nested systems
-      set_bc_petsc(b_sub, bcs0[0], x0, scale);
+      set_bc(b_sub, bcs0[0], x0, scale);
     }
     else
     {
@@ -206,14 +208,14 @@ void _reassemble_vector_nest(
         if (a[i][j])
         {
           if (*L[i]->function_space(0) == *a[i][j]->function_space(1))
-            set_bc_petsc(b_sub, bcs0[i], x0, scale);
+            set_bc(b_sub, bcs0[i], x0, scale);
         }
       }
     }
   }
 }
 //-----------------------------------------------------------------------------
-void _reassemble_vector_block(
+void _assemble_vector_block(
     Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
     std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
@@ -337,34 +339,33 @@ fem::assemble(const Form& a)
   }
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_vector(la::PETScVector& b, const Form& L)
+void fem::assemble_vector(Vec b, const Form& L)
 {
-  la::VecWrapper _b(b.vec());
+  la::VecWrapper _b(b);
   _b.x.setZero();
   fem::impl::assemble(_b.x, L);
   _b.restore();
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(
-    la::PETScVector& b, std::vector<const Form*> L,
+    Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const la::PETScVector* x0, double scale)
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale)
 {
   VecType vec_type;
-  VecGetType(b.vec(), &vec_type);
+  VecGetType(b, &vec_type);
   const bool is_vecnest = strcmp(vec_type, VECNEST) == 0 ? true : false;
-  const Vec _x0 = (x0 != nullptr) ? x0->vec() : nullptr;
   if (is_vecnest)
-    _reassemble_vector_nest(b.vec(), L, a, bcs, _x0, scale);
+    _assemble_vector_nest(b, L, a, bcs, x0, scale);
   else
-    _reassemble_vector_block(b.vec(), L, a, bcs, _x0, scale);
+    _assemble_vector_block(b, L, a, bcs, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::apply_lifting(
-    la::PETScVector& b, const std::vector<std::shared_ptr<const Form>> a,
+    Vec b, const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<const la::PETScVector*> x0, double scale)
+    const std::vector<Vec> x0, double scale)
 {
   if (x0.size() > 1)
   {
@@ -372,38 +373,20 @@ void fem::apply_lifting(
         "Simple fem::apply_lifting not get generalised for multiple x0");
   }
 
-  la::VecWrapper _b(b.vec());
+  la::VecWrapper _b(b);
   if (x0.empty())
     fem::impl::apply_lifting(_b.x, a, bcs1, {}, scale);
   else
   {
     assert(x0[0]);
-    la::VecReadWrapper x0_wrap(x0[0]->vec());
+    la::VecReadWrapper x0_wrap(x0[0]);
     fem::impl::apply_lifting(_b.x, a, bcs1, {x0_wrap.x}, scale);
     x0_wrap.restore();
   }
   _b.restore();
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(la::PETScMatrix& A, const Form& a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double diagonal)
-{
-  // assert(!a.empty());
-  // const bool block_matrix = a.size() > 1 or a[0].size() > 1;
-  // la::PETScMatrix A;
-  // if (block_type == BlockType::nested)
-  //   A = fem::init_nest_matrix(a);
-  // else if (block_matrix and block_type == BlockType::monolithic)
-  //   A = fem::init_monolithic_matrix(a);
-  // else
-  //   A = fem::init_matrix(*a[0][0]);
-
-  assemble(A, {{&a}}, bcs, diagonal);
-}
-//-----------------------------------------------------------------------------
-void fem::assemble(la::PETScMatrix& A,
-                   const std::vector<std::vector<const Form*>> a,
+void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
                    double diagonal, bool use_nest_extract)
 {
@@ -411,12 +394,8 @@ void fem::assemble(la::PETScMatrix& A,
   assert(!a.empty());
   const bool block_matrix = a.size() > 1 or a[0].size() > 1;
 
-  // FIXME: should zeroing be an option?
-  // Zero matrix
-  A.zero();
-
   MatType mat_type;
-  MatGetType(A.mat(), &mat_type);
+  MatGetType(A, &mat_type);
   const bool is_matnest
       = (strcmp(mat_type, MATNEST) == 0) and use_nest_extract ? true : false;
 
@@ -448,15 +427,15 @@ void fem::assemble(la::PETScMatrix& A,
       {
         Mat subA;
         if (block_matrix and !is_matnest)
-          MatGetLocalSubMatrix(A.mat(), is_row[i], is_col[j], &subA);
+          MatGetLocalSubMatrix(A, is_row[i], is_col[j], &subA);
         else if (is_matnest)
-          MatNestGetSubMat(A.mat(), i, j, &subA);
+          MatNestGetSubMat(A, i, j, &subA);
         else
-          subA = A.mat();
+          subA = A;
 
-        assemble_petsc(subA, *a[i][j], bcs, diagonal);
+        assemble(subA, *a[i][j], bcs, diagonal);
         if (block_matrix and !is_matnest)
-          MatRestoreLocalSubMatrix(A.mat(), is_row[i], is_row[j], &subA);
+          MatRestoreLocalSubMatrix(A, is_row[i], is_row[j], &subA);
       }
       else
       {
@@ -471,12 +450,13 @@ void fem::assemble(la::PETScMatrix& A,
   for (std::size_t i = 0; i < is_col.size(); ++i)
     ISDestroy(&is_col[i]);
 
-  A.apply(la::PETScMatrix::AssemblyType::FINAL);
+  MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble_petsc(Mat A, const Form& a,
-                         std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                         double diagonal)
+void fem::assemble(Mat A, const Form& a,
+                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                   double diagonal)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map();
@@ -535,17 +515,8 @@ void fem::assemble_petsc(Mat A, const Form& a,
   // finalisation done elsewhere.
 }
 //-----------------------------------------------------------------------------
-void fem::set_bc(la::PETScVector& b,
-                 std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                 const la::PETScVector* x0, double scale)
-{
-  const Vec _x0 = (x0 != nullptr) ? x0->vec() : nullptr;
-  set_bc_petsc(b.vec(), bcs, _x0, scale);
-}
-//-----------------------------------------------------------------------------
-void fem::set_bc_petsc(Vec b,
-                       std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                       const Vec x0, double scale)
+void fem::set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                 const Vec x0, double scale)
 {
   la::VecWrapper _b(b);
   if (x0)

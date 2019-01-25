@@ -41,7 +41,7 @@ assemble(const Form& a);
 // -- Vectors ----------------------------------------------------------------
 
 // Assemble linear form into an already allocated vector
-void assemble_vector(la::PETScVector& b, const Form& L);
+void assemble_vector(Vec b, const Form& L);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
@@ -57,10 +57,10 @@ void assemble_vector(la::PETScVector& b, const Form& L);
 // from the trial space of L (V_i). The forms in [a] / must have the
 // same test space as L, but the trial space may differ.
 void assemble_vector(
-    la::PETScVector& b, std::vector<const Form*> L,
+    Vec b, std::vector<const Form*> L,
     const std::vector<std::vector<std::shared_ptr<const Form>>> a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const la::PETScVector* x0, double scale = 1.0);
+    std::vector<std::shared_ptr<const DirichletBC>> bcs, const Vec x0,
+    double scale = 1.0);
 
 // FIXME: need to pass an array of Vec for x0?
 // FIXME: clarify zeroing of vector
@@ -75,29 +75,23 @@ void assemble_vector(
 /// trial space may differ. If x0 is not supplied, then it is treated as
 /// zero.
 void apply_lifting(
-    la::PETScVector& b, const std::vector<std::shared_ptr<const Form>> a,
+    Vec b, const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
-    std::vector<const la::PETScVector*> x0, double scale);
+    const std::vector<Vec> x0, double scale);
 
 // -- Matrices ---------------------------------------------------------------
 
-/// Assemble blocked bilinear forms into a matrix. Rows and columns
-/// associated with Dirichlet boundary conditions are zeroed, and
-/// 'diagonal' is placed on the diagonal of Dirichlet bcs.
-void assemble(la::PETScMatrix& A, const Form& a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double diagonal = 1.0);
-
-/// Re-assemble blocked bilinear forms into a matrix
-void assemble(la::PETScMatrix& A, const std::vector<std::vector<const Form*>> a,
+/// Re-assemble blocked bilinear forms into a matrix. Does not zero the
+/// matrix.
+void assemble(Mat A, const std::vector<std::vector<const Form*>> a,
               std::vector<std::shared_ptr<const DirichletBC>> bcs,
               double diagonal = 1.0, bool use_nest_extract = true);
 
 /// Assemble bilinear form into a matrix. Matrix must be initialised.
-/// Does not finalise matrix.
-void assemble_petsc(Mat A, const Form& a,
-                    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                    double diagonal);
+/// Does not zero or finalise the matrix.
+void assemble(Mat A, const Form& a,
+              std::vector<std::shared_ptr<const DirichletBC>> bcs,
+              double diagonal = 1.0);
 
 // -- Setting bcs ------------------------------------------------------------
 
@@ -110,14 +104,7 @@ void assemble_petsc(Mat A, const Form& a,
 /// Set bc values in owned (local) part of the PETScVector, multiplied
 /// by 'scale'. The vectors b and x0 must have the same local size. The
 /// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc(la::PETScVector& b,
-            std::vector<std::shared_ptr<const DirichletBC>> bcs,
-            const la::PETScVector* x0, double scale = 1.0);
-
-/// Set bc values in owned (local) part of the PETScVector, multiplied
-/// by 'scale'. The vectors b and x0 must have the same local size. The
-/// bcs should be on (sub-)spaces of the form L that b represents.
-void set_bc_petsc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                  const Vec x0, double scale = 1.0);
+void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
+            const Vec x0, double scale = 1.0);
 } // namespace fem
 } // namespace dolfin

@@ -48,7 +48,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
         if self._J is None:
             self._J = fem.assemble_matrix(self.a, [self.bc])
         else:
-            self._J = fem.assemble(self._J, [[self.a]], [self.bc])
+            self._J = fem.assemble(self._J, self.a, [self.bc])
         return self._J
 
 
