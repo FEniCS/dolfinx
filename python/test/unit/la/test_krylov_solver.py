@@ -7,10 +7,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-import ufl
+from petsc4py import PETSc
 
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace,
-                    Identity, TestFunction, TrialFunction, UnitSquareMesh,
+import ufl
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace, Identity,
+                    TestFunction, TrialFunction, UnitSquareMesh,
                     VectorFunctionSpace, cpp, dot, dx, fem, grad, inner, sym,
                     tr)
 from dolfin.fem import assemble
@@ -42,8 +43,7 @@ def test_krylov_solver_lu():
     solver.solve(x.vec(), b.vec())
 
     # *Tight* tolerance for LU solves
-    x = PETScVector(x)
-    assert round(x.norm(cpp.la.Norm.l2) - norm, 12) == 0
+    assert round(x.vec().norm(PETSc.NormType.N2) - norm, 12) == 0
 
 
 @pytest.mark.skip

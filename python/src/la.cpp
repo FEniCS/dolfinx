@@ -160,52 +160,10 @@ void la(py::module& m)
       .def("apply", &dolfin::la::PETScVector::apply)
       .def("apply_ghosts", &dolfin::la::PETScVector::apply_ghosts)
       .def("update_ghosts", &dolfin::la::PETScVector::update_ghosts)
-      .def("norm", &dolfin::la::PETScVector::norm)
       .def("axpy", &dolfin::la::PETScVector::axpy)
       .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScVector::set_options_prefix)
-      .def("size", &dolfin::la::PETScVector::size)
       .def("set", py::overload_cast<PetscScalar>(&dolfin::la::PETScVector::set))
-      .def("get_local",
-           [](const dolfin::la::PETScVector& self) {
-             std::vector<PetscScalar> values;
-             self.get_local(values);
-             return py::array_t<PetscScalar>(values.size(), values.data());
-           })
-      .def(
-          "__setitem__",
-          [](dolfin::la::PETScVector& self, py::slice slice,
-             PetscScalar value) {
-            std::size_t start, stop, step, slicelength;
-            if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
-              throw py::error_already_set();
-            if (start != 0 or stop != (std::size_t)self.size() or step != 1)
-            {
-              throw std::range_error(
-                  "Only setting full slices for GenericVector is supported");
-            }
-            self.set(value);
-          })
-      .def(
-          "__setitem__",
-          [](dolfin::la::PETScVector& self, py::slice slice,
-             const py::array_t<PetscScalar> x) {
-            if (x.ndim() != 1)
-              throw py::index_error("Values to set must be a 1D array");
-
-            std::size_t start, stop, step, slicelength;
-            if (!slice.compute(self.size(), &start, &stop, &step, &slicelength))
-              throw py::error_already_set();
-            if (start != 0 or stop != (std::size_t)self.size() or step != 1)
-              throw std::range_error("Only full slices are supported");
-
-            std::vector<PetscScalar> values(x.data(), x.data() + x.size());
-            if (!values.empty())
-            {
-              self.set_local(values);
-              self.apply();
-            }
-          })
       .def("vec", &dolfin::la::PETScVector::vec,
            "Return underlying PETSc Vec object");
 
@@ -222,11 +180,6 @@ void la(py::module& m)
                                         "PETScMatrix object")
       .def(py::init<>())
       .def(py::init<Mat>())
-      // .def(py::init(
-      //     [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p)
-      //     {
-      //       return std::make_unique<dolfin::la::PETScMatrix>(comm.get(), p);
-      //     }))
       .def("get_options_prefix", &dolfin::la::PETScMatrix::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
       .def("set_nullspace", &dolfin::la::PETScMatrix::set_nullspace)

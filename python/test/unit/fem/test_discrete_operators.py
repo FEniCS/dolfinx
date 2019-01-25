@@ -11,7 +11,6 @@ from math import sqrt
 import pytest
 from petsc4py import PETSc
 
-import dolfin
 from dolfin import MPI, FunctionSpace, UnitCubeMesh, UnitSquareMesh
 from dolfin.cpp.fem import DiscreteOperators
 from dolfin_utils.test.skips import skip_in_parallel

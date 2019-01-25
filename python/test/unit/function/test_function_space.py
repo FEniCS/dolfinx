@@ -134,7 +134,7 @@ def test_collapse(W, V):
     assert Vc.dofmap().cell_dofs(0)[0] == V.dofmap().cell_dofs(0)[0]
     f0 = Function(V)
     f1 = Function(Vc)
-    assert f0.vector().size() == f1.vector().size()
+    assert f0.vector().vec().getSize() == f1.vector().vec().getSize()
 
 
 def test_argument_equality(mesh, V, V2, W, W2):

@@ -5,6 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the JIT compiler"""
 
+import numpy as np
 import pytest
 
 import dolfin
@@ -73,8 +74,6 @@ def test_petsc():
 
 
 def test_pass_array_int():
-    import numpy
-
     code = """
     #include <Eigen/Core>
     #include <pybind11/pybind11.h>
@@ -90,14 +89,12 @@ def test_pass_array_int():
     }
     """
     module = compile_cpp_code(code)
-    arr = numpy.array([1, 2, 4, 8], dtype=numpy.intc)
+    arr = np.array([1, 2, 4, 8], dtype=np.intc)
     ans = module.test_int_array(arr)
     assert ans == arr.sum() == 15
 
 
 def test_pass_array_double():
-    import numpy
-
     code = """
     #include <Eigen/Core>
     #include <pybind11/pybind11.h>
@@ -113,7 +110,7 @@ def test_pass_array_double():
     }
     """
     module = compile_cpp_code(code)
-    arr = numpy.array([1, 2, 4, 8], dtype=float)
+    arr = np.array([1, 2, 4, 8], dtype=float)
     ans = module.test_double_array(arr)
     assert abs(arr.sum() - 15) < 1e-15
     assert abs(ans - 15) < 1e-15
@@ -125,7 +122,6 @@ def test_compile_extension_module():
     # compile_extension_module function in compilemodule.py.  Remember
     # to update the docstring if the test is modified!
 
-    from numpy import arange, exp
     code = """
       #include <pybind11/pybind11.h>
       #include <petscvec.h>
@@ -145,15 +141,21 @@ def test_compile_extension_module():
     """
 
     ext_module = compile_cpp_code(code)
-
     local_range = MPI.local_range(MPI.comm_world, 10)
-    vec = PETScVector(MPI.comm_world, local_range, [], 1)
-    np_vec = vec.get_local()
-    np_vec[:] = arange(len(np_vec))
-    vec[:] = np_vec
-    ext_module.PETSc_exp(vec)
-    np_vec[:] = exp(np_vec)
-    assert (np_vec == vec.get_local()).all()
+    x = PETScVector(MPI.comm_world, local_range, [], 1)
+    x_np = np.arange(float(local_range[1] - local_range[0]))
+    x.vec()[:] = x_np
+    ext_module.PETSc_exp(x)
+    x_np = np.exp(x_np)
+    x = x.vec().getArray()
+    assert (x == x_np).all()
+
+    # np_vec = vec.get_local()
+    # np_vec[:] = arange(len(np_vec))
+    # vec[:] = np_vec
+    # ext_module.PETSc_exp(vec)
+    # np_vec[:] = exp(np_vec)
+    # assert (np_vec == vec.get_local()).all()
 
 
 @pytest.mark.xfail

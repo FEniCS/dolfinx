@@ -5,13 +5,14 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the Function class"""
 
+import importlib
 import math
 
 import cffi
-import importlib
 import numba
 import numpy
 import pytest
+from petsc4py import PETSc
 
 import ufl
 from dolfin import (DOLFIN_EPS, MPI, Expression, Function, FunctionSpace,
@@ -19,7 +20,7 @@ from dolfin import (DOLFIN_EPS, MPI, Expression, Function, FunctionSpace,
                     VectorFunctionSpace, Vertex, cpp, function, interpolate,
                     lt)
 from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel, skip_if_complex
+from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
 @fixture
@@ -60,8 +61,8 @@ def test_compute_point_values(V, W, mesh):
     u = Function(V)
     v = Function(W)
 
-    u.vector()[:] = 1.
-    v.vector()[:] = 1.
+    u.vector().vec().set(1.0)
+    v.vector().vec().set(1.0)
 
     u.vector().update_ghosts()
     v.vector().update_ghosts()
@@ -196,7 +197,7 @@ def test_call(R, V, W, Q, mesh):
 
     e3 = Expression(expr_eval3, shape=(3, 3))
 
-    u0.vector()[:] = 1.0
+    u0.vector().vec().set(1.0)
     u1.interpolate(e1)
     u2.interpolate(e2)
     u3.interpolate(e3)
@@ -228,7 +229,7 @@ def test_call(R, V, W, Q, mesh):
 
 def test_scalar_conditions(R):
     c = Function(R)
-    c.vector()[:] = 1.5
+    c.vector().set(1.5)
 
     # Float conversion does not interfere with boolean ufl expressions
     assert isinstance(lt(c, 3), ufl.classes.LT)
@@ -280,8 +281,8 @@ def test_interpolation_rank0(V):
     f = Expression(expr_eval, shape=())
     w = interpolate(f, V)
     x = w.vector()
-    assert MPI.max(MPI.comm_world, abs(x.get_local()).max()) == 1
-    assert MPI.min(MPI.comm_world, abs(x.get_local()).min()) == 1
+    assert MPI.max(MPI.comm_world, abs(x.vec().max()[1])) == 1
+    assert MPI.min(MPI.comm_world, abs(x.vec().min()[1])) == 1
 
 
 @skip_in_parallel
@@ -290,7 +291,7 @@ def test_near_evaluations(R, mesh):
 
     bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)
-    u0.vector()[:] = 1.0
+    u0.vector().vec().set(1.0)
     a = Vertex(mesh, 0).point().array()
     offset = 0.99 * DOLFIN_EPS
 
@@ -313,8 +314,8 @@ def test_interpolation_rank1(W):
     f = Expression(expr_eval, shape=(3, ))
     w = interpolate(f, W)
     x = w.vector()
-    assert abs(x.get_local()).max() == 1
-    assert abs(x.get_local()).min() == 1
+    assert x.vec().max()[1] == 1.0
+    assert x.vec().min()[1] == 1.0
 
 
 @pytest.mark.xfail(raises=numba.errors.TypingError)
@@ -349,13 +350,13 @@ def test_interpolation_old(V, W, mesh):
     f0 = Expression(expr_eval0)
     f = Function(V)
     f = interpolate(f0, V)
-    assert round(f.vector().norm(cpp.la.Norm.l1) - mesh.num_vertices(), 7) == 0
+    assert round(f.vector().vec().norm(PETSc.NormType.N1) - mesh.num_vertices(), 7) == 0
 
     # Vector interpolation
     f1 = Expression(expr_eval1, shape=(3, ))
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector().norm(cpp.la.Norm.l1) - 3 * mesh.num_vertices(),
+    assert round(f.vector().vec().norm(PETSc.NormType.N1) - 3 * mesh.num_vertices(),
                  7) == 0
 
 
@@ -369,7 +370,7 @@ def test_numba_expression_address(V):
     f = Function(V)
 
     f.interpolate(f1)
-    assert (f.vector().get_local() == 1.0).all()
+    assert (f.vector().vec()[:] == 1.0).all()
 
 
 @skip_if_complex
@@ -417,5 +418,4 @@ def test_cffi_expression(V):
     ex2 = Expression(expr_eval2)
     f2 = Function(V)
     f2.interpolate(ex2)
-
-    assert (f1.vector().get_local() == f2.vector().get_local()).all()
+    assert (f1.vector().vec() - f2.vector().vec()).norm() < 1.0e-12

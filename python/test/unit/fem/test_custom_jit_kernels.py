@@ -65,7 +65,7 @@ def test_numba_assembly():
     b = dolfin.cpp.fem.assemble(L)
 
     Anorm = A.mat().norm(PETSc.NormType.FROBENIUS)
-    bnorm = b.norm(cpp.la.Norm.l2)
+    bnorm = b.vec().norm(PETSc.NormType.N2)
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 
