@@ -144,18 +144,14 @@ def test_compile_extension_module():
     local_range = MPI.local_range(MPI.comm_world, 10)
     x = PETScVector(MPI.comm_world, local_range, [], 1)
     x_np = np.arange(float(local_range[1] - local_range[0]))
-    x.vec()[:] = x_np
+    with x.vec().localForm() as lf:
+        lf[:] = x_np
+
     ext_module.PETSc_exp(x)
     x_np = np.exp(x_np)
+
     x = x.vec().getArray()
     assert (x == x_np).all()
-
-    # np_vec = vec.get_local()
-    # np_vec[:] = arange(len(np_vec))
-    # vec[:] = np_vec
-    # ext_module.PETSc_exp(vec)
-    # np_vec[:] = exp(np_vec)
-    # assert (np_vec == vec.get_local()).all()
 
 
 @pytest.mark.xfail

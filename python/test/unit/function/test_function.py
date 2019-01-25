@@ -370,7 +370,8 @@ def test_numba_expression_address(V):
     f = Function(V)
 
     f.interpolate(f1)
-    assert (f.vector().vec()[:] == 1.0).all()
+    with f.vector().vec().localForm() as lf:
+        assert (lf[:] == 1.0).all()
 
 
 @skip_if_complex
