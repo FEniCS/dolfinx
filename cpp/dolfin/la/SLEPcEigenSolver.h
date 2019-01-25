@@ -11,6 +11,8 @@
 #include "dolfin/common/MPI.h"
 #include "dolfin/common/types.h"
 #include <memory>
+#include <petscmat.h>
+#include <petscvec.h>
 #include <slepceps.h>
 #include <string>
 
@@ -18,14 +20,12 @@ namespace dolfin
 {
 namespace la
 {
-class PETScMatrix;
-class PETScVector;
 class VectorSpaceBasis;
 
 /// This class provides an eigenvalue solver for PETSc matrices. It is a
 /// wrapper for the SLEPc eigenvalue solver.
 
-class SLEPcEigenSolver : public common::Variable
+class SLEPcEigenSolver
 {
 public:
   /// Create eigenvalue solver
@@ -39,8 +39,7 @@ public:
 
   /// Set opeartors (B may be nullptr for regular eigenvalues
   /// problems)
-  void set_operators(std::shared_ptr<const PETScMatrix> A,
-                     std::shared_ptr<const PETScMatrix> B);
+  void set_operators(const Mat A, const Mat B);
 
   /// Compute all eigenpairs of the matrix A (solve Ax = \lambda x)
   void solve();
@@ -52,8 +51,8 @@ public:
   std::complex<PetscReal> get_eigenvalue(std::size_t i) const;
 
   /// Get ith eigenpair
-  void get_eigenpair(PetscScalar& lr, PetscScalar& lc, PETScVector& r,
-                     PETScVector& c, std::size_t i) const;
+  void get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r, Vec c,
+                     std::size_t i) const;
 
   /// Get the number of iterations used by the solver
   std::size_t get_iteration_number() const;

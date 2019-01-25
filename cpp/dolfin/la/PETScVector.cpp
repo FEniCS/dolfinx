@@ -332,39 +332,7 @@ void PETScVector::set(PetscScalar a)
   CHECK_ERROR("VecSet");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::shift(PetscScalar a)
-{
-  assert(_x);
-  PetscErrorCode ierr = VecShift(_x, a);
-  CHECK_ERROR("VecShift");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::scale(PetscScalar a)
-{
-  assert(_x);
-  PetscErrorCode ierr = VecScale(_x, a);
-  CHECK_ERROR("VecScale");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::mult(const PETScVector& v)
-{
-  assert(_x);
-  assert(v._x);
-  PetscErrorCode ierr = VecPointwiseMult(_x, _x, v._x);
-  CHECK_ERROR("VecPointwiseMult");
-}
-//-----------------------------------------------------------------------------
 bool PETScVector::empty() const { return _x == nullptr ? true : false; }
-//-----------------------------------------------------------------------------
-PetscScalar PETScVector::dot(const PETScVector& y) const
-{
-  assert(_x);
-  assert(y._x);
-  PetscScalar a;
-  PetscErrorCode ierr = VecDot(_x, y._x, &a);
-  CHECK_ERROR("VecDot");
-  return a;
-}
 //-----------------------------------------------------------------------------
 void PETScVector::axpy(PetscScalar a, const PETScVector& y)
 {
@@ -372,13 +340,6 @@ void PETScVector::axpy(PetscScalar a, const PETScVector& y)
   assert(y._x);
   PetscErrorCode ierr = VecAXPY(_x, a, y._x);
   CHECK_ERROR("VecAXPY");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::abs()
-{
-  assert(_x);
-  PetscErrorCode ierr = VecAbs(_x);
-  CHECK_ERROR("VecAbs");
 }
 //-----------------------------------------------------------------------------
 PetscReal PETScVector::norm(la::Norm norm_type) const
@@ -405,146 +366,6 @@ PetscReal PETScVector::norm(la::Norm norm_type) const
   }
 
   return value;
-}
-//-----------------------------------------------------------------------------
-PetscReal PETScVector::normalize()
-{
-  assert(_x);
-  PetscReal norm;
-  PetscErrorCode ierr = VecNormalize(_x, &norm);
-  CHECK_ERROR("VecNormalize");
-  return norm;
-}
-//-----------------------------------------------------------------------------
-std::pair<double, PetscInt> PETScVector::min() const
-{
-  assert(_x);
-  std::pair<double, PetscInt> data;
-  PetscErrorCode ierr = VecMin(_x, &data.second, &data.first);
-  CHECK_ERROR("VecMin");
-  return data;
-}
-//-----------------------------------------------------------------------------
-std::pair<double, PetscInt> PETScVector::max() const
-{
-  assert(_x);
-  std::pair<double, PetscInt> data;
-  PetscErrorCode ierr = VecMax(_x, &data.second, &data.first);
-  CHECK_ERROR("VecMax");
-  return data;
-}
-//-----------------------------------------------------------------------------
-PetscScalar PETScVector::sum() const
-{
-  assert(_x);
-  PetscScalar value = 0.0;
-  PetscErrorCode ierr = VecSum(_x, &value);
-  CHECK_ERROR("VecSum");
-  return value;
-}
-//-----------------------------------------------------------------------------
-std::string PETScVector::str(bool verbose) const
-{
-  assert(_x);
-  PetscErrorCode ierr;
-
-  // Check if vector type has not been set
-  VecType vec_type = nullptr;
-  ierr = VecGetType(_x, &vec_type);
-  if (vec_type == nullptr)
-    return "<Uninitialized PETScVector>";
-  CHECK_ERROR("VecGetType");
-
-  std::stringstream s;
-  if (verbose)
-  {
-    // Get vector type
-    VecType petsc_type = nullptr;
-    assert(_x);
-    ierr = VecGetType(_x, &petsc_type);
-    CHECK_ERROR("VecGetType");
-
-    if (strcmp(petsc_type, VECSEQ) == 0)
-    {
-      ierr = VecView(_x, PETSC_VIEWER_STDOUT_SELF);
-      CHECK_ERROR("VecView");
-    }
-    else if (strcmp(petsc_type, VECMPI) == 0)
-    {
-      ierr = VecView(_x, PETSC_VIEWER_STDOUT_WORLD);
-      CHECK_ERROR("VecView");
-    }
-  }
-  else
-    s << "<PETScVector of size " << size() << ">";
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-void PETScVector::gather(PETScVector& y,
-                         const std::vector<PetscInt>& indices) const
-{
-  assert(_x);
-  PetscErrorCode ierr;
-
-  // Get number of required entries
-  const std::int64_t n = indices.size();
-
-  // Check that passed vector is local
-  if (MPI::size(y.mpi_comm()) != 1)
-  {
-    throw std::runtime_error(
-        "PETSc gather vector must be a local vector (MPI_COMM_SELF).");
-  }
-
-  // Initialize vector if empty
-  if (y.empty())
-    y = PETScVector(PETSC_COMM_SELF, {{0, n}}, {}, 1);
-
-  // Check that passed vector has correct size
-  if (y.size() != n)
-  {
-    throw std::runtime_error(
-        "PETSc gather vector must be empty or of correct size "
-        "(same as provided indices)");
-  }
-
-  // Prepare data for index sets (global indices)
-  std::vector<PetscInt> global_indices(indices.begin(), indices.end());
-
-  // PETSc will bail out if it receives a NULL pointer even though m ==
-  // 0.  Can't return from function since function calls are collective.
-  if (n == 0)
-    global_indices.resize(1);
-
-  // Create local index sets
-  IS from, to;
-  ierr = ISCreateGeneral(PETSC_COMM_SELF, n, global_indices.data(),
-                         PETSC_COPY_VALUES, &from);
-  CHECK_ERROR("ISCreateGeneral");
-  ierr = ISCreateStride(PETSC_COMM_SELF, n, 0, 1, &to);
-  CHECK_ERROR("ISCreateStride");
-
-  // Perform scatter
-  VecScatter scatter;
-#if PETSC_VERSION_LE(3, 10, 100)
-  ierr = VecScatterCreate(_x, from, y.vec(), to, &scatter);
-#else
-  ierr = VecScatterCreateWithData(_x, from, y.vec(), to, &scatter);
-#endif
-  CHECK_ERROR("VecScatterCreate");
-  ierr = VecScatterBegin(scatter, _x, y.vec(), INSERT_VALUES, SCATTER_FORWARD);
-  CHECK_ERROR("VecScatterBegin");
-  ierr = VecScatterEnd(scatter, _x, y.vec(), INSERT_VALUES, SCATTER_FORWARD);
-  CHECK_ERROR("VecScatterEnd");
-
-  // Clean up
-  ierr = VecScatterDestroy(&scatter);
-  CHECK_ERROR("VecScatterDestroy");
-  ierr = ISDestroy(&from);
-  CHECK_ERROR("ISDestroy");
-  ierr = ISDestroy(&to);
-  CHECK_ERROR("ISDestroy");
 }
 //-----------------------------------------------------------------------------
 void PETScVector::set_options_prefix(std::string options_prefix)

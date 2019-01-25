@@ -58,7 +58,7 @@ public:
   ///
   /// @param      dim (std::size_t) The dimension (axis): dim = 0 --> z
   ///         = y, dim = 1 --> z = x
-  PETScVector init_vector(std::size_t dim) const;
+  PETScVector create_vector(std::size_t dim) const;
 
   /// Return the MPI communicator
   MPI_Comm mpi_comm() const;
@@ -66,8 +66,6 @@ public:
   /// Return PETSc Mat pointer
   Mat mat() const;
 
-  /// Return informal string representation (pretty-print)
-  virtual std::string str(bool verbose) const;
 
 protected:
   // PETSc Mat pointer

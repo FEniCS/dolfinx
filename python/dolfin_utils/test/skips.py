@@ -9,11 +9,7 @@
 import pytest
 
 from dolfin import MPI
-from dolfin.common import (has_debug, has_petsc_complex, has_slepc)
-
-# Skips with dependencies
-skip_if_not_SLEPc = pytest.mark.skipif(
-    not has_slepc, reason="Skipping unit test(s) depending on SLEPc.")
+from dolfin.common import (has_debug, has_petsc_complex)
 
 # Skips with respect to parallel or serial
 xfail_in_parallel = pytest.mark.xfail(

@@ -12,7 +12,6 @@ from dolfin import (UnitCubeMesh, UnitSquareMesh, FunctionSpace, MPI,
                     FiniteElement, MixedElement, VectorFunctionSpace)
 from dolfin import function
 from dolfin.cpp.fem import PETScDMCollection
-from dolfin.cpp.la import Norm
 
 
 def test_scalar_p1():
@@ -38,7 +37,7 @@ def test_scalar_p1():
     diff = Vuc.vector()
     diff.vec().axpy(-1, uf.vector().vec())
 
-    assert diff.norm(Norm.l2) < 1.0e-12
+    assert diff.vec().norm() < 1.0e-12
 
 
 def test_scalar_p1_scaled_mesh():
@@ -67,7 +66,7 @@ def test_scalar_p1_scaled_mesh():
     diff = Vuc.vector()
     diff.vec().axpy(-1, uf.vector().vec())
 
-    assert diff.norm(Norm.l2) < 1.0e-12
+    assert diff.vec().norm() < 1.0e-12
 
     # Now make coarse mesh larger than fine mesh
     meshc.geometry.points *= 1.5
@@ -81,7 +80,7 @@ def test_scalar_p1_scaled_mesh():
     diff = Vuc.vector()
     diff.vec().axpy(-1, uf.vector().vec())
 
-    assert diff.norm(Norm.l2) < 1.0e-12
+    assert diff.vec().norm() < 1.0e-12
 
 
 def test_scalar_p2():
@@ -107,7 +106,7 @@ def test_scalar_p2():
     diff = Vuc.vector()
     diff.vec().axpy(-1, uf.vector().vec())
 
-    assert diff.norm(Norm.l2) < 1.0e-12
+    assert diff.vec().norm() < 1.0e-12
 
 
 def test_vector_p1_2d():
@@ -134,7 +133,7 @@ def test_vector_p1_2d():
 
     diff = Vuc.vector()
     diff.vec().axpy(-1, uf.vector().vec())
-    assert diff.norm(Norm.l2) < 1.0e-12
+    assert diff.vec().norm() < 1.0e-12
 
 
 def test_vector_p2_2d():
@@ -160,7 +159,7 @@ def test_vector_p2_2d():
 
     diff = Vuc.vector()
     diff.vec().axpy(-1, uf.vector().vec())
-    assert diff.norm(Norm.l2) < 1.0e-12
+    assert diff.vec().norm() < 1.0e-12
 
 
 def test_vector_p1_3d():
@@ -187,7 +186,7 @@ def test_vector_p1_3d():
 
     diff = Vuc.vector()
     diff.vec().axpy(-1, uf.vector().vec())
-    assert diff.norm(Norm.l2) < 1.0e-12
+    assert diff.vec().norm() < 1.0e-12
 
 
 @pytest.mark.xfail

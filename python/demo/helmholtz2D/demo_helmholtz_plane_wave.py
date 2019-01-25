@@ -66,13 +66,15 @@ with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
               encoding=XDMFFile.Encoding.HDF5) as file:
     file.write(u)
 
-''' Calculate L2 and H1 errors of FEM solution and best approximation.
-This demonstrates the error bounds given in Ihlenburg.
-Pollution errors are evident for high wavenumbers.'''
+"""Calculate L2 and H1 errors of FEM solution and best approximation.
+This demonstrates the error bounds given in Ihlenburg. Pollution errors
+are evident for high wavenumbers."""
 # Function space for exact solution - need it to be higher than deg
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
+
 # "exact" solution
 u_exact = interpolate(Expression(ui_eval), V_exact)
+
 # best approximation from V
 u_BA = project(u_exact, V)
 

@@ -6,9 +6,8 @@
 
 import os
 
-import dolfin.cpp as cpp
-from dolfin import MPI, Expression, Function, FunctionSpace, UnitSquareMesh
-from dolfin import function
+from dolfin import (MPI, Expression, Function, FunctionSpace, UnitSquareMesh,
+                    function)
 from dolfin.io import HDF5File
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import xfail_if_complex
@@ -49,6 +48,6 @@ def test_save_and_read_function_timeseries(tempdir):
         F0 = hdf5_file.read_function(Q, vec_name)
         # timestamp = hdf5_file.attributes(vec_name)["timestamp"]
         # assert timestamp == t
-        F0.vector().axpy(-1.0, F1.vector())
-        assert F0.vector().norm(cpp.la.Norm.l2) < 1.0e-12
+        F0.vector().vec().axpy(-1.0, F1.vector().vec())
+        assert F0.vector().vec().norm() < 1.0e-12
     hdf5_file.close()

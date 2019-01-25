@@ -98,7 +98,7 @@ def mplot_function(ax, f, **kwargs):
             return
         fvec = fem.interpolate(f, fspace).vector()
 
-    if fvec.size() == mesh.num_cells():
+    if fvec.vec().getSize() == mesh.num_cells():
         # DG0 cellwise function
         C = fvec.get_local()
         if (C.dtype.type is np.complex128):

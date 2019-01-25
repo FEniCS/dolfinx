@@ -7,10 +7,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-import ufl
+from petsc4py import PETSc
 
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace,
-                    Identity, TestFunction, TrialFunction, UnitSquareMesh,
+import ufl
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace, Identity,
+                    TestFunction, TrialFunction, UnitSquareMesh,
                     VectorFunctionSpace, cpp, dot, dx, fem, grad, inner, sym,
                     tr)
 from dolfin.fem import assemble
@@ -37,28 +38,18 @@ def test_krylov_solver_lu():
     PETScOptions.set("test_lu_ksp_type", "preonly")
     PETScOptions.set("test_lu_pc_type", "lu")
     solver.set_from_options()
-    x = PETScVector()
-    solver.set_operator(A)
-    solver.solve(x, b)
+    x = A.create_vector(1)
+    solver.set_operator(A.mat())
+    solver.solve(x.vec(), b.vec())
 
     # *Tight* tolerance for LU solves
-    assert round(x.norm(cpp.la.Norm.l2) - norm, 12) == 0
+    assert round(x.vec().norm(PETSc.NormType.N2) - norm, 12) == 0
 
 
 @pytest.mark.skip
 def test_krylov_reuse_pc_lu():
     """Test that LU re-factorisation is only performed after
     set_operator(A) is called"""
-
-    # Test requires PETSc version 3.5 or later. Use petsc4py to check
-    # version number.
-    try:
-        from petsc4py import PETSc
-    except ImportError:
-        pytest.skip("petsc4py required to check PETSc version")
-    else:
-        if not PETSc.Sys.getVersion() >= (3, 5, 0):
-            pytest.skip("PETSc version must be 3.5  of higher")
 
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
     V = FunctionSpace(mesh, ("Lagrange", 1))
@@ -76,7 +67,7 @@ def test_krylov_reuse_pc_lu():
     PETScOptions.set("test_lu_ksp_type", "preonly")
     PETScOptions.set("test_lu_pc_type", "lu")
     solver.set_from_options()
-    solver.set_operator(A)
+    solver.set_operator(A.mat())
     x = PETScVector(mesh.mpi_comm())
     solver.solve(x, b)
     assert round(x.norm(cpp.la.Norm.l2) - norm, 10) == 0
@@ -87,7 +78,7 @@ def test_krylov_reuse_pc_lu():
     solver.solve(x, b)
     assert round(x.norm(cpp.la.Norm.l2) - 2.0 * norm, 10) == 0
 
-    solver.set_operator(A)
+    solver.set_operator(A.mat())
     solver.solve(x, b)
     assert round(x.norm(cpp.la.Norm.l2) - 2.0 * norm, 10) == 0
 
@@ -161,7 +152,7 @@ def test_krylov_samg_solver_elasticity():
         solver = PETScKrylovSolver("cg", method)
 
         # Set matrix operator
-        solver.set_operator(A)
+        solver.set_operator(A.mat())
 
         # Compute solution and return number of iterations
         return solver.solve(u.vector(), b)
@@ -218,7 +209,7 @@ def test_krylov_reuse_pc():
 
     # Create Krysolv solver and set operators
     solver = PETScKrylovSolver("gmres", "bjacobi")
-    solver.set_operators(A, P)
+    solver.set_operators(A.mat(), P.mat())
 
     # Solve
     x = PETScVector()

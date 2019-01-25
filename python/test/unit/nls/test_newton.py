@@ -97,7 +97,7 @@ def test_linear_pde():
         return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
-    u_bc.vector().set(1.0)
+    u_bc.vector().vec().set(1.0)
     u_bc.vector().update_ghosts()
     bc = fem.DirichletBC(V, u_bc, boundary)
 
@@ -111,7 +111,7 @@ def test_linear_pde():
     assert n == 1
 
     # Increment boundary condition and solve again
-    u_bc.vector().set(2.0)
+    u_bc.vector().vec().set(2.0)
     u_bc.vector().update_ghosts()
     n, converged = solver.solve(problem, u.vector())
     assert converged
@@ -133,7 +133,7 @@ def test_nonlinear_pde():
         return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
-    u_bc.vector().set(1.0)
+    u_bc.vector().vec().set(1.0)
     u_bc.vector().update_ghosts()
     bc = fem.DirichletBC(V, u_bc, boundary)
 
@@ -141,7 +141,7 @@ def test_nonlinear_pde():
     problem = NonlinearPDEProblem(F, u, bc)
 
     # Create Newton solver and solve
-    u.vector().set(0.9)
+    u.vector().vec().set(0.9)
     u.vector().update_ghosts()
     solver = dolfin.cpp.nls.NewtonSolver(dolfin.MPI.comm_world)
     n, converged = solver.solve(problem, u.vector())
@@ -149,7 +149,7 @@ def test_nonlinear_pde():
     assert n < 6
 
     # Modify boundary condition and solve again
-    u_bc.vector().set(0.5)
+    u_bc.vector().vec().set(0.5)
     u_bc.vector().update_ghosts()
     n, converged = solver.solve(problem, u.vector())
     assert converged
@@ -171,14 +171,14 @@ def test_nonlinear_pde_snes():
         return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
-    u_bc.vector().set(1.0)
+    u_bc.vector().vec().set(1.0)
     u_bc.vector().update_ghosts()
     bc = fem.DirichletBC(V, u_bc, boundary)
 
     # Create nonlinear problem
     problem = NonlinearPDE_SNESProblem(F, u, bc)
 
-    u.vector().set(0.9)
+    u.vector().vec().set(0.9)
     u.vector().update_ghosts()
 
     b = dolfin.cpp.la.PETScVector(V.dofmap().index_map())
@@ -198,7 +198,7 @@ def test_nonlinear_pde_snes():
     assert snes.getIterationNumber() < 6
 
     # Modify boundary condition and solve again
-    u_bc.vector().set(0.5)
+    u_bc.vector().vec().set(0.5)
     u_bc.vector().update_ghosts()
     snes.solve(None, u.vector().vec())
     assert snes.getConvergedReason() > 0

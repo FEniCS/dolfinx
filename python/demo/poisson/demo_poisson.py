@@ -141,7 +141,7 @@ def boundary(x):
 
 # Define boundary condition
 u0 = Function(V)
-u0.vector().set(0.0)
+u0.vector().vec().set(0.0)
 bc = DirichletBC(V, u0, boundary)
 
 # Next, we want to express the variational problem.  First, we need to

@@ -76,18 +76,18 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     P = nonlinear_problem.P(x);
 
     if (!_dx)
-      _dx = std::make_unique<la::PETScVector>(A->init_vector(1));
+      _dx = std::make_unique<la::PETScVector>(A->create_vector(1));
 
     // FIXME: check that this is efficient if A and/or P are unchanged
     // Set operators
     assert(_solver);
     if (P)
-      _solver->set_operators(*A, *P);
+      _solver->set_operators(A->mat(), P->mat());
     else
-      _solver->set_operator(*A);
+      _solver->set_operator(A->mat());
 
     // Perform linear solve and update total number of Krylov iterations
-    _krylov_iterations += _solver->solve(*_dx, *b);
+    _krylov_iterations += _solver->solve(_dx->vec(), b->vec());
 
     // Update solution
     update_solution(x, *_dx, relaxation_parameter, nonlinear_problem,

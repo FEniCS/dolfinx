@@ -51,8 +51,6 @@ build_demo.*
 test_*_tempdir
 /python/demo/**/*.py.rst
 /python/demo/**/*.xml
-/cpp/demo/**/*.ufl
-/cpp/demo/**/*.cpp
 /cpp/demo/**/*.c
 
 # Tests

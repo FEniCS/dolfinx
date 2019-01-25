@@ -142,20 +142,19 @@ PETScOptions.set("ksp_monitor")
 
 # Create CG Krylov solver and turn convergence monitoring on
 solver = PETScKrylovSolver(MPI.comm_world)
-# solver = PETScKrylovSolver()
 solver.set_from_options()
 
 # Set matrix operator
-solver.set_operator(A)
+solver.set_operator(A.mat())
 
 # Compute solution
-solver.solve(u.vector(), b)
+solver.solve(u.vector().vec(), b.vec())
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
 file.write(u)
 
-unorm = u.vector().norm(dolfin.cpp.la.Norm.l2)
+unorm = u.vector().vec().norm()
 if MPI.rank(mesh.mpi_comm()) == 0:
     print("Solution vector norm:", unorm)
 

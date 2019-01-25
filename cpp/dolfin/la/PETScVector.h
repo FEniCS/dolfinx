@@ -24,7 +24,8 @@ class IndexMap;
 namespace la
 {
 
-/// It is a simple wrapper for a PETSc vector pointer (Vec).
+/// It is a simple wrapper for a PETSc vector pointer (Vec). Its main
+/// purpose is to assist memory management of PETSc Vec objects.
 ///
 /// For advanced usage, access the PETSc Vec pointer using the function
 /// vec() and use the standard PETSc interface.
@@ -77,16 +78,6 @@ public:
   /// update ghost entries.
   void set(PetscScalar a);
 
-  /// A scalar 'a' using VecSet. This is local and does not update ghost
-  /// entries.
-  void shift(PetscScalar a);
-
-  /// Multiply by scala a
-  void scale(PetscScalar a);
-
-  /// Multiply vector by vector x pointwise
-  void mult(const PETScVector& x);
-
   /// Finalize assembly of vector. Communicates off-process entries
   /// added or set on this process to the owner, and receives from other
   /// processes changes to owned entries.
@@ -104,9 +95,6 @@ public:
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
-
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
 
   /// Return true if vector is empty
   bool empty() const;
@@ -135,39 +123,11 @@ public:
   /// Add values to each entry on local process
   void add_local(const std::vector<PetscScalar>& values);
 
-  /// Gather entries (given by global indices) into local
-  /// (MPI_COMM_SELF) vector x. Provided x must be empty or of correct
-  /// dimension (same as provided indices). This operation is
-  /// collective.
-  void gather(PETScVector& y, const std::vector<PetscInt>& indices) const;
-
   /// Add multiple of given vector (AXPY operation, this = a*x + this)
   void axpy(PetscScalar a, const PETScVector& x);
 
-  /// Replace all entries in the vector by their absolute values
-  void abs();
-
-  /// Return dot product with given vector. For complex vectors, the
-  /// argument v gets complex conjugate.
-  PetscScalar dot(const PETScVector& v) const;
-
   /// Return norm of vector
   PetscReal norm(la::Norm norm_type) const;
-
-  /// Normalize vector with respect to the l2 norm. Returns the norm
-  /// before normalization.
-  PetscReal normalize();
-
-  /// Return minimum value of vector, and location of entry. For complex
-  /// vectors returns the minimum real part.
-  std::pair<double, PetscInt> min() const;
-
-  /// Return maximum value of vector, and location of entry. For complex
-  /// vectors returns the maximum real part.
-  std::pair<double, PetscInt> max() const;
-
-  /// Return sum of entries
-  PetscScalar sum() const;
 
   /// Sets the prefix used by PETSc when searching the options database
   void set_options_prefix(std::string options_prefix);
