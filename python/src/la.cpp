@@ -142,10 +142,8 @@ void la(py::module& m)
       .def("apply", &dolfin::la::PETScVector::apply)
       .def("apply_ghosts", &dolfin::la::PETScVector::apply_ghosts)
       .def("update_ghosts", &dolfin::la::PETScVector::update_ghosts)
-      .def("axpy", &dolfin::la::PETScVector::axpy)
       .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScVector::set_options_prefix)
-      .def("set", py::overload_cast<PetscScalar>(&dolfin::la::PETScVector::set))
       .def("vec", &dolfin::la::PETScVector::vec,
            "Return underlying PETSc Vec object");
 

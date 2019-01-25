@@ -48,7 +48,7 @@ def test_save_and_read_vector(tempdir):
     with HDF5File(MPI.comm_world, filename, "r") as vector_file:
         y = vector_file.read_vector(MPI.comm_world, "/my_vector", False)
         assert y.vec().getSize() == x.vec().getSize()
-        x.axpy(-1.0, y)
+        x.vec().axpy(-1.0, y.vec())
         assert x.vec().norm() == 0.0
 
 
@@ -185,7 +185,7 @@ def test_save_and_read_function(tempdir):
     # Read back from file
     hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
     F1 = hdf5_file.read_function(Q, "/function")
-    F0.vector().axpy(-1.0, F1.vector())
+    F0.vector().vec().axpy(-1.0, F1.vector().vec())
     assert F0.vector().vec().norm() < 1.0e-12
     hdf5_file.close()
 

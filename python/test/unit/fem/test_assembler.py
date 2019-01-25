@@ -86,7 +86,7 @@ def test_matrix_assembly_block():
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.Function(V1)
-    u_bc.vector().set(50.0)
+    u_bc.vector().vec().set(50.0)
     u_bc.vector().update_ghosts()
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
@@ -160,10 +160,10 @@ def test_assembly_solve_block():
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc0 = dolfin.function.Function(V0)
-    u_bc0.vector().set(50.0)
+    u_bc0.vector().vec().set(50.0)
     u_bc0.vector().update_ghosts()
     u_bc1 = dolfin.function.Function(V1)
-    u_bc1.vector().set(20.0)
+    u_bc1.vector().vec().set(20.0)
     u_bc1.vector().update_ghosts()
     bcs = [
         dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
@@ -237,11 +237,11 @@ def test_assembly_solve_block():
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
 
     u0_bc = dolfin.function.Function(V0)
-    u0_bc.vector().set(50.0)
+    u0_bc.vector().vec().set(50.0)
     u0_bc.vector().update_ghosts()
 
     u1_bc = dolfin.function.Function(V1)
-    u1_bc.vector().set(20.0)
+    u1_bc.vector().vec().set(20.0)
     u1_bc.vector().update_ghosts()
 
     bcs = [
@@ -304,7 +304,7 @@ def test_assembly_solve_taylor_hood(mesh):
         return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     u0 = dolfin.Function(P2)
-    u0.vector().set(1.0)
+    u0.vector().vec().set(1.0)
     u0.vector().update_ghosts()
     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
     bc1 = dolfin.DirichletBC(P2, u0, boundary1)

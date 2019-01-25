@@ -229,7 +229,7 @@ def test_call(R, V, W, Q, mesh):
 
 def test_scalar_conditions(R):
     c = Function(R)
-    c.vector().set(1.5)
+    c.vector().vec().set(1.5)
 
     # Float conversion does not interfere with boolean ufl expressions
     assert isinstance(lt(c, 3), ufl.classes.LT)
@@ -288,7 +288,6 @@ def test_interpolation_rank0(V):
 @skip_in_parallel
 def test_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
-
     bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)
     u0.vector().vec().set(1.0)
@@ -376,7 +375,6 @@ def test_numba_expression_address(V):
 
 @skip_if_complex
 def test_cffi_expression(V):
-
     code_h = """
     void eval(double* values, const double* x, const int64_t* cell_idx,
             int num_points, int value_size, int gdim, int num_cells);

@@ -7,6 +7,7 @@
 
 import numpy as np
 import pytest
+from petsc4py import PETSc
 
 import dolfin
 import ufl
@@ -90,7 +91,7 @@ def test_complex_assembly_solve():
     solver.set_from_options()
     x = dolfin.cpp.la.PETScVector()
     solver.set_operator(A.mat())
-    solver.solve(x, b)
+    solver.solve(x.vec(), b.vec())
 
     # Reference Solution
     @dolfin.function.expression.numba_eval
@@ -98,6 +99,6 @@ def test_complex_assembly_solve():
         values[:, 0] = np.cos(2 * np.pi * x[:, 0]) * np.cos(2 * np.pi * x[:, 1])
     u_ref = dolfin.interpolate(dolfin.Expression(ref_eval), V)
 
-    xnorm = x.norm(dolfin.cpp.la.Norm.l2)
-    x_ref_norm = u_ref.vector().norm(dolfin.cpp.la.Norm.l2)
+    xnorm = x.vec().norm(PETSc.NormType.N2)
+    x_ref_norm = u_ref.vector().vec().norm(PETSc.NormType.N2)
     assert np.isclose(xnorm, x_ref_norm)
