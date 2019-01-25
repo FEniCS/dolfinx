@@ -154,7 +154,7 @@ solver.solve(u.vector().vec(), b.vec())
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
 file.write(u)
 
-unorm = u.vector().norm(dolfin.cpp.la.Norm.l2)
+unorm = u.vector().vec().norm()
 if MPI.rank(mesh.mpi_comm()) == 0:
     print("Solution vector norm:", unorm)
 
