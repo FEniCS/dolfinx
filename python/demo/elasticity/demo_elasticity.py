@@ -9,14 +9,15 @@
 # smoothed aggregation algerbaric multigrid.
 
 import numpy as np
-import dolfin
-from dolfin import *
-from dolfin.io import XDMFFile
-from dolfin.la import (VectorSpaceBasis, PETScVector, PETScOptions,
-                       PETScKrylovSolver)
-from dolfin.fem.assembling import assemble_system
 
-import matplotlib.pyplot as plt
+import dolfin
+from dolfin import (DOLFIN_EPS, MPI, BoxMesh, CellType, DirichletBC, Function,
+                    Point, TestFunction, TrialFunction, VectorFunctionSpace)
+from dolfin.fem.assembling import assemble_system
+from dolfin.io import XDMFFile
+from dolfin.la import (PETScKrylovSolver, PETScOptions, PETScVector,
+                       VectorSpaceBasis)
+from ufl import Identity, as_vector, dx, grad, inner, sym, tr
 
 
 def build_nullspace(V, x):

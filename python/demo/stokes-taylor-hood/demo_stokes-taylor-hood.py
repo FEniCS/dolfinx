@@ -1,53 +1,53 @@
-# 
+#
 # .. _demo_pde_stokes-taylor-hood_python_documentation:
-# 
+#
 # Stokes equations with Taylor-Hood elements
 # ==========================================
-# 
+#
 # This demo is implemented in a single Python file,
 # :download:`demo_stokes-taylor-hood.py`, which contains both the
 # variational form and the solver.
-# 
+#
 # Equation and problem definition
 # -------------------------------
-# 
+#
 # Strong formulation
 # ^^^^^^^^^^^^^^^^^^
-# 
+#
 # .. math::
 #         - \nabla \cdot (\nabla u + p I) &= f \quad {\rm in} \ \Omega, \\
 #                         \nabla \cdot u &= 0 \quad {\rm in} \ \Omega. \\
-# 
-# 
+#
+#
 # .. note::
 #         The sign of the pressure has been flipped from the classical
 #         definition. This is done in order to have a symmetric (but not
 #         positive-definite) system of equations rather than a
 #         non-symmetric (but positive-definite) system of equations.
-# 
+#
 # A typical set of boundary conditions on the boundary :math:`\partial
 # \Omega = \Gamma_{D} \cup \Gamma_{N}` can be:
-# 
+#
 # .. math::
 #         u &= u_0 \quad {\rm on} \ \Gamma_{D}, \\
 #         \nabla u \cdot n + p n &= g \,   \quad\;\; {\rm on} \ \Gamma_{N}. \\
-# 
-# 
+#
+#
 # Weak formulation
 # ^^^^^^^^^^^^^^^^
-# 
+#
 # The Stokes equations can easily be formulated in a mixed variational
 # form; that is, a form where the two variables, the velocity and the
 # pressure, are approximated simultaneously. Using the abstract
 # framework, we have the problem: find :math:`(u, p) \in W` such that
-# 
+#
 # .. math::
 #         a((u, p), (v, q)) = L((v, q))
-# 
+#
 # for all :math:`(v, q) \in W`, where
-# 
+#
 # .. math::
-# 
+#
 #         a((u, p), (v, q))
 #                                 &= \int_{\Omega} \nabla u \cdot \nabla v
 #                  - \nabla \cdot v \ p
@@ -55,26 +55,26 @@
 #         L((v, q))
 #                                 &= \int_{\Omega} f \cdot v \, {\rm d} x
 #                         + \int_{\partial \Omega_N} g \cdot v \, {\rm d} s. \\
-# 
+#
 # The space :math:`W` should be a mixed (product) function space
 # :math:`W = V \times Q`, such that :math:`u \in V` and :math:`q \in Q`.
-# 
+#
 # Domain and boundary conditions
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-# 
+#
 # In this demo, we shall consider the following definitions of the input functions, the domain, and the boundaries:
-# 
+#
 # * :math:`\Omega = [0,1]\times[0,1] \backslash {\rm dolphin}` (a unit cube)
 # * :math:`\Gamma_D =`
 # * :math:`\Gamma_N =`
 # * :math:`u_0 = (- \sin(\pi x_1), 0.0)` for :math:`x_0 = 1` and :math:`u_0 = (0.0, 0.0)` otherwise
 # * :math:`f = (0.0, 0.0)`
 # * :math:`g = (0.0, 0.0)`
-# 
-# 
+#
+#
 # Implementation
 # --------------
-# 
+#
 # In this example, different boundary conditions are prescribed on
 # different parts of the boundaries. Each sub-regions is tagged with
 # different (integer) labels. For this purpose, DOLFIN provides
@@ -83,13 +83,16 @@
 # facets). Mesh and mesh functions can be read from file in the
 # following way::
 
-import numpy
-import ufl
+import matplotlib.pyplot as plt
+import numpy as np
 
 import dolfin
-from dolfin import *
-from dolfin import function
+from dolfin import (MPI, DirichletBC, Expression, FiniteElement, Function,
+                    FunctionSpace, TestFunctions, TrialFunctions,
+                    VectorElement, function, interpolate, solve)
 from dolfin.io import XDMFFile
+from dolfin.plotting import plot
+from ufl import div, dx, grad, inner
 
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
@@ -119,15 +122,17 @@ W = FunctionSpace(mesh, TH)
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 
+
 @function.expression.numba_eval
 def noslip_eval(values, x, cell):
     values[:, 0] = 0.0
     values[:, 1] = 0.0
 
+
 # Extract subdomain facet arrays
 mf = sub_domains.array()
-mf0 = numpy.where(mf == 0)
-mf1 = numpy.where(mf == 1)
+mf0 = np.where(mf == 0)
+mf1 = np.where(mf == 1)
 
 noslip_expr = Expression(noslip_eval, shape=(2,))
 noslip = interpolate(noslip_expr, W.sub(0).collapse())
@@ -136,10 +141,12 @@ bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 # Inflow boundary condition for velocity
 # x0 = 1
 
+
 @function.expression.numba_eval
 def inflow_eval(values, x, cell):
-    values[:, 0] = - numpy.sin(x[:, 1] * numpy.pi)
+    values[:, 0] = - np.sin(x[:, 1] * np.pi)
     values[:, 1] = 0.0
+
 
 inflow_expr = Expression(inflow_eval, shape=(2,))
 inflow = interpolate(inflow_expr, W.sub(0).collapse())
@@ -158,7 +165,7 @@ bcs = [bc0, bc1]
 # The second argument specifies the value on the Dirichlet
 # boundary. The last two arguments specify the marking of the subdomains:
 # ``sub_domains`` contains the subdomain markers, and the final argument is the subdomain index.
-# 
+#
 # The bilinear and linear forms corresponding to the weak mixed
 # formulation of the Stokes equations are defined as follows::
 
@@ -166,8 +173,8 @@ bcs = [bc0, bc1]
 (u, p) = TrialFunctions(W)
 (v, q) = TestFunctions(W)
 f = Function(W.sub(0).collapse())
-a = (inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q))*dx
-L = inner(f, v)*dx
+a = (inner(grad(u), grad(v)) - inner(p, div(v)) + inner(div(u), q)) * dx
+L = inner(f, v) * dx
 
 # We also need to create a :py:class:`Function
 # <dolfin.cpp.function.Function>` to store the solution(s). The (full)
@@ -184,7 +191,7 @@ L = inner(f, v)*dx
 # Compute solution
 w = Function(W)
 solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
-      "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
+                                     "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
 
 # Split the mixed solution and collapse
 u = w.sub(0).collapse()
@@ -197,7 +204,6 @@ print("Norm of pressure coefficient vector: %.15g" % p.vector().norm(dolfin.cpp.
 
 # Check pressure norm
 pnorm = p.vector().norm(dolfin.cpp.la.Norm.l2)
-import numpy as np
 assert np.isclose(pnorm, 4147.69457577)
 
 # Finally, we can save and plot the solutions::
@@ -210,12 +216,10 @@ with XDMFFile(MPI.comm_world, "pressure.xdmf") as pfile_xdmf:
     pfile_xdmf.write(p)
 
 # Plot solution
-import matplotlib.pyplot as plt
-from dolfin.plotting import plot
 plt.figure()
 plot(u, title="velocity")
 
-#plt.figure()
+# plt.figure()
 plot(p, title="pressure" + str(MPI.rank(mesh.mpi_comm())))
 
 # Display plots

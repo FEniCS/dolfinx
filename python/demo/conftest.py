@@ -1,9 +1,6 @@
 import pytest
 
 
-import pytest
-
-
 def pytest_addoption(parser):
     parser.addoption("--mpiexec", action="store", default="mpirun",
                      help="Name of program to run MPI, e.g. mpiexex")

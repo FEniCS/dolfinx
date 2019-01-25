@@ -12,6 +12,7 @@ flake8-python-code: &flake8-python-code
   command: |
             python3 -m flake8 python/dolfin
             python3 -m flake8 python/dolfin_utils
+            python3 -m flake8 python/demo
             python3 -m flake8 python/test
 
 build-documentation-cpp: &build-documentation-cpp
