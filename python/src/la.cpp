@@ -1,4 +1,4 @@
-// Copyright (C) 2017 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -30,16 +30,6 @@ namespace py = pybind11;
 
 namespace
 {
-template <typename T>
-void check_indices(const py::array_t<T>& x, std::int64_t local_size)
-{
-  for (std::int64_t i = 0; i < (std::int64_t)x.size(); ++i)
-  {
-    std::int64_t _x = *(x.data() + i);
-    if (_x < 0 or !(_x < local_size))
-      throw py::index_error("Vector index out of range");
-  }
-}
 
 // Linear operator trampoline class
 template <typename LinearOperatorBase>
@@ -94,8 +84,7 @@ void la(py::module& m)
           [](const MPICommWrapper comm,
              std::array<std::shared_ptr<const dolfin::common::IndexMap>, 2>
                  index_maps) {
-            return std::make_unique<dolfin::la::SparsityPattern>(comm.get(),
-                                                                 index_maps);
+            return dolfin::la::SparsityPattern(comm.get(), index_maps);
           }))
       .def(py::init(
           [](const MPICommWrapper comm,
@@ -134,13 +123,6 @@ void la(py::module& m)
       .def_static("clear",
                   (void (*)(std::string)) & dolfin::la::PETScOptions::clear)
       .def_static("clear", (void (*)()) & dolfin::la::PETScOptions::clear);
-
-  // dolfin::la::Norm enums
-  py::enum_<dolfin::la::Norm>(m, "Norm")
-      .value("l1", dolfin::la::Norm::l1)
-      .value("l2", dolfin::la::Norm::l2)
-      .value("linf", dolfin::la::Norm::linf)
-      .value("frobenius", dolfin::la::Norm::frobenius);
 
   // dolfin::la::PETScVector
   py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>>(
