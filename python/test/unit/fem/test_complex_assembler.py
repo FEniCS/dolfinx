@@ -33,26 +33,26 @@ def test_complex_assembly():
     a_real = inner(u, v) * dx
     L1 = inner(g, v) * dx
 
-    bnorm = dolfin.fem.assemble(L1).norm(dolfin.cpp.la.Norm.l1)
+    bnorm = dolfin.fem.assemble(L1).vec().norm(PETSc.NormType.N1)
     b_norm_ref = abs(-2 + 3.0j)
     assert np.isclose(bnorm, b_norm_ref)
-    A0_norm = dolfin.fem.assemble(a_real).norm(dolfin.cpp.la.Norm.frobenius)
+    A0_norm = dolfin.fem.assemble(a_real).mat().norm(PETSc.NormType.FROBENIUS)
 
     x = dolfin.SpatialCoordinate(mesh)
 
     a_imag = j * inner(u, v) * dx
     f = 1j * ufl.sin(2 * np.pi * x[0])
     L0 = inner(f, v) * dx
-    A1_norm = dolfin.fem.assemble(a_imag).norm(dolfin.cpp.la.Norm.frobenius)
+    A1_norm = dolfin.fem.assemble(a_imag).mat().norm(PETSc.NormType.FROBENIUS)
     assert np.isclose(A0_norm, A1_norm)
-    b1_norm = dolfin.fem.assemble(L0).norm(dolfin.cpp.la.Norm.l2)
+    b1_norm = dolfin.fem.assemble(L0).vec().norm(PETSc.NormType.N2)
 
     a_complex = (1 + j) * inner(u, v) * dx
     f = ufl.sin(2 * np.pi * x[0])
     L2 = inner(f, v) * dx
-    A2_norm = dolfin.fem.assemble(a_complex).norm(dolfin.cpp.la.Norm.frobenius)
+    A2_norm = dolfin.fem.assemble(a_complex).mat().norm(PETSc.NormType.FROBENIUS)
     assert np.isclose(A1_norm, A2_norm / np.sqrt(2))
-    b2_norm = dolfin.fem.assemble(L2).norm(dolfin.cpp.la.Norm.l2)
+    b2_norm = dolfin.fem.assemble(L2).vec().norm(PETSc.NormType.N2)
     assert np.isclose(b2_norm, b1_norm)
 
 
