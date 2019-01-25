@@ -10,7 +10,7 @@ import pytest
 import dolfin
 from dolfin import MPI, compile_cpp_code
 from dolfin.la import PETScVector
-from dolfin_utils.test.skips import (skip_if_not_SLEPc, skip_in_serial)
+from dolfin_utils.test.skips import skip_in_serial
 
 
 def test_mpi_pybind11():
@@ -70,32 +70,6 @@ def test_petsc():
     '''
     module = compile_cpp_code(create_matrix_code)
     assert (module)
-
-
-@pytest.mark.skip
-@skip_if_not_SLEPc
-def test_slepc():
-    create_eps_code = r'''
-    #include <pybind11/pybind11.h>
-    #include <dolfin.h>
-    #include <slepc.h>
-    namespace dolfin
-    {
-        std::shared_ptr<EPS> create_matrix(MPI_Comm comm) {
-            EPS eps;
-            EPSCreate(comm, &eps);
-            std::shared_ptr<EPS> ptr = std::make_shared<EPS>(eps);
-            return ptr;
-        }
-    }
-
-    PYBIND11_MODULE(SIGNATURE, m)
-    {
-      m.def("create_matrix", &dolfin::create_matrix);
-    }
-
-    '''
-    compile_cpp_code(create_eps_code)
 
 
 def test_pass_array_int():
@@ -199,7 +173,7 @@ def test_mpi_dependent_jiting():
                         Form, FunctionSpace, dx, CompiledSubDomain,
                         SubSystemsManager)
 
-    # Init petsc (needed to initalize petsc and slepc collectively on
+    # Init petsc (needed to initalize petsc collectively on
     # all processes)
     SubSystemsManager.init_petsc()
 

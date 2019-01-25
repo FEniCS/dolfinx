@@ -32,10 +32,9 @@ del sys
 from .cpp import __version__
 
 
-from dolfin.common import (
-    has_debug, has_scotch, has_petsc_complex, has_parmetis,
-    has_slepc, has_slepc4py, git_commit_hash, TimingType,
-    timing, timings, list_timings, DOLFIN_EPS)
+from dolfin.common import (has_debug, has_scotch, has_petsc_complex,
+                           has_parmetis, git_commit_hash, TimingType,
+                           timing, timings, list_timings, DOLFIN_EPS)
 
 import dolfin.MPI
 
@@ -43,9 +42,6 @@ from dolfin.fem import DofMap
 from dolfin.geometry import BoundingBoxTree, Point
 
 from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
-
-if has_slepc:
-    from .cpp.la import SLEPcEigenSolver
 
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, CellType, Cell, Facet,
                        Face, Edge, Vertex, MeshEntity, Cells, Facets, Faces,

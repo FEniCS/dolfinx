@@ -47,8 +47,8 @@ class PyLinearOperator : public LinearOperatorBase
 {
   using LinearOperatorBase::LinearOperatorBase;
 
-  // pybdind11 has some issues when passing by reference (due to
-  // the return value policy), so the below is non-standard.  See
+  // pybdind11 has some issues when passing by reference (due to the
+  // return value policy), so the below is non-standard.  See
   // https://github.com/pybind/pybind11/issues/250.
 
   std::size_t size(std::size_t dim) const
@@ -260,40 +260,6 @@ void la(py::module& m)
       .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
       .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
       .def("ksp", &dolfin::la::PETScKrylovSolver::ksp);
-
-#ifdef HAS_SLEPC
-  // dolfin::la::SLEPcEigenSolver
-  py::class_<dolfin::la::SLEPcEigenSolver,
-             std::shared_ptr<dolfin::la::SLEPcEigenSolver>,
-             dolfin::common::Variable>(m, "SLEPcEigenSolver")
-      .def(py::init([](const MPICommWrapper comm) {
-        return std::make_unique<dolfin::la::SLEPcEigenSolver>(comm.get());
-      }))
-      .def("set_options_prefix",
-           &dolfin::la::SLEPcEigenSolver::set_options_prefix)
-      .def("set_from_options", &dolfin::la::SLEPcEigenSolver::set_from_options)
-      .def("set_operators", &dolfin::la::SLEPcEigenSolver::set_operators)
-      .def("get_options_prefix",
-           &dolfin::la::SLEPcEigenSolver::get_options_prefix)
-      .def("get_number_converged",
-           &dolfin::la::SLEPcEigenSolver::get_number_converged)
-      .def("set_deflation_space",
-           &dolfin::la::SLEPcEigenSolver::set_deflation_space)
-      .def("set_initial_space",
-           &dolfin::la::SLEPcEigenSolver::set_initial_space)
-      .def("solve", (void (dolfin::la::SLEPcEigenSolver::*)())
-                        & dolfin::la::SLEPcEigenSolver::solve)
-      .def("solve", (void (dolfin::la::SLEPcEigenSolver::*)(std::int64_t))
-                        & dolfin::la::SLEPcEigenSolver::solve)
-      .def("get_eigenvalue", &dolfin::la::SLEPcEigenSolver::get_eigenvalue)
-      .def("get_eigenpair",
-           [](dolfin::la::SLEPcEigenSolver& self, std::size_t i) {
-             PetscScalar lr, lc;
-             dolfin::la::PETScVector r, c;
-             self.get_eigenpair(lr, lc, r, c, i);
-             return py::make_tuple(lr, lc, r, c);
-           });
-#endif
 
   // dolfin::la::VectorSpaceBasis
   py::class_<dolfin::la::VectorSpaceBasis,
