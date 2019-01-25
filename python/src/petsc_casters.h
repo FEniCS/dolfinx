@@ -53,7 +53,10 @@
                        handle parent)                                          \
     {                                                                          \
       VERIFY_PETSC4PY(PyPetsc##TYPE##_New);                                    \
-      return pybind11::handle(PyPetsc##TYPE##_New(src));                       \
+      auto obj = PyPetsc##TYPE##_New(src);                                     \
+      if (policy == pybind11::return_value_policy::take_ownership)             \
+        PetscObjectDereference((PetscObject)src);                              \
+      return pybind11::handle(obj);                                            \
     }                                                                          \
                                                                                \
     operator TYPE() { return value; }                                          \

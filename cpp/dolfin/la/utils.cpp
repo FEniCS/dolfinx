@@ -11,6 +11,62 @@
 #include <dolfin/log/log.h>
 #include <petsc.h>
 
+#define CHECK_ERROR(NAME)                                                      \
+  do                                                                           \
+  {                                                                            \
+    if (ierr != 0)                                                             \
+      petsc_error(ierr, __FILE__, NAME);                                       \
+  } while (0)
+
+//-----------------------------------------------------------------------------
+Vec dolfin::la::create_vector(const dolfin::common::IndexMap& map)
+{
+  return dolfin::la::create_vector(map.mpi_comm(), map.local_range(),
+                                   map.ghosts(), map.block_size());
+}
+//-----------------------------------------------------------------------------
+Vec dolfin::la::create_vector(
+    MPI_Comm comm, std::array<std::int64_t, 2> range,
+    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
+    int block_size)
+{
+  PetscErrorCode ierr;
+
+  // Get local size
+  assert(range[1] >= range[0]);
+  const std::size_t local_size = range[1] - range[0];
+
+  Vec x;
+  ierr = VecCreateGhostBlock(comm, block_size, block_size * local_size,
+                             PETSC_DECIDE, ghost_indices.size(),
+                             ghost_indices.data(), &x);
+  CHECK_ERROR("VecCreateGhostBlock");
+  assert(x);
+
+  // Set from PETSc options. This will set the vector type.
+  // ierr = VecSetFromOptions(_x);
+  // CHECK_ERROR("VecSetFromOptions");
+
+  // NOTE: shouldn't need to do this, but there appears to be an issue
+  // with PETSc
+  // (https://lists.mcs.anl.gov/pipermail/petsc-dev/2018-May/022963.html)
+  // Set local-to-global map
+  std::vector<PetscInt> l2g(local_size + ghost_indices.size());
+  std::iota(l2g.begin(), l2g.begin() + local_size, range[0]);
+  std::copy(ghost_indices.data(), ghost_indices.data() + ghost_indices.size(),
+            l2g.begin() + local_size);
+  ISLocalToGlobalMapping petsc_local_to_global;
+  ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size, l2g.size(),
+                                      l2g.data(), PETSC_COPY_VALUES,
+                                      &petsc_local_to_global);
+  CHECK_ERROR("ISLocalToGlobalMappingCreate");
+  ierr = VecSetLocalToGlobalMapping(x, petsc_local_to_global);
+  CHECK_ERROR("VecSetLocalToGlobalMapping");
+  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
+  CHECK_ERROR("ISLocalToGlobalMappingDestroy");
+
+  return x;
+}
 //-----------------------------------------------------------------------------
 std::vector<IS> dolfin::la::compute_index_sets(
     std::vector<const dolfin::common::IndexMap*> maps)

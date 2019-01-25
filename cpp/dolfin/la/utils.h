@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Garth N. Wells
+// Copyright (C) 2018-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -7,6 +7,8 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <array>
+#include <dolfin/common/MPI.h>
 #include <petscis.h>
 #include <petscvec.h>
 #include <string>
@@ -33,6 +35,17 @@ enum class Norm
   linf,
   frobenius
 };
+
+/// Create a ghosted PETSc Vec. Caller is responsible for destroying the
+/// Vec object.
+Vec create_vector(const common::IndexMap& map);
+
+/// Create a ghosted PETSc Vec. Caller is responsible for destroying the
+/// Vec object.
+Vec create_vector(
+    MPI_Comm comm, std::array<std::int64_t, 2> range,
+    const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
+    int block_size);
 
 /// Compute IndexSets (IS) for stacked index maps
 std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);
