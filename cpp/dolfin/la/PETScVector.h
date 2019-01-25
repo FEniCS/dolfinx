@@ -123,20 +123,11 @@ public:
   /// Add values to each entry on local process
   void add_local(const std::vector<PetscScalar>& values);
 
-  /// Gather entries (given by global indices) into local
-  /// (MPI_COMM_SELF) vector x. Provided x must be empty or of correct
-  /// dimension (same as provided indices). This operation is
-  /// collective.
-  void gather(PETScVector& y, const std::vector<PetscInt>& indices) const;
-
   /// Add multiple of given vector (AXPY operation, this = a*x + this)
   void axpy(PetscScalar a, const PETScVector& x);
 
   /// Return norm of vector
   PetscReal norm(la::Norm norm_type) const;
-
-  /// Return sum of entries
-  PetscScalar sum() const;
 
   /// Sets the prefix used by PETSc when searching the options database
   void set_options_prefix(std::string options_prefix);
