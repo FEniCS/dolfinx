@@ -6,11 +6,9 @@
 
 #pragma once
 
-#include <dolfin/common/types.h>
-#include <map>
-#include <memory>
 #include <petscksp.h>
-#include <string>
+#include <petscmat.h>
+#include <petscvec.h>
 
 namespace dolfin
 {
@@ -21,9 +19,6 @@ class PETScDMCollection;
 
 namespace la
 {
-class PETScOperator;
-class PETScMatrix;
-class PETScVector;
 class VectorSpaceBasis;
 
 /// This class implements Krylov methods for linear systems of the
@@ -32,7 +27,6 @@ class VectorSpaceBasis;
 class PETScKrylovSolver
 {
 public:
-
   /// Create Krylov solver for a particular method and named
   /// preconditioner
   explicit PETScKrylovSolver(MPI_Comm comm);
@@ -45,18 +39,16 @@ public:
 
   /// Set operator (PETScMatrix). This is memory-safe as PETSc will
   /// increase the reference count to the underlying PETSc object.
-  void set_operator(const la::PETScOperator& A);
+  void set_operator(const Mat A);
 
   /// Set operator and preconditioner matrix (PETScMatrix). This is
   /// memory-safe as PETSc will increase the reference count to the
   /// underlying PETSc objects.
-  void set_operators(const la::PETScOperator& A,
-                     const la::PETScOperator& P);
+  void set_operators(const Mat A, const Mat P);
 
   /// Solve linear system Ax = b and return number of iterations
   /// (A^t x = b if transpose is true)
-  std::size_t solve(PETScVector& x, const PETScVector& b,
-                    bool transpose = false);
+  std::size_t solve(Vec x, const Vec b, bool transpose = false);
 
   /// Reuse preconditioner if true, even if matrix operator changes
   /// (by default preconditioner will be re-built if the matrix
@@ -74,9 +66,6 @@ public:
   /// Set options from PETSc options database
   void set_from_options() const;
 
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
-
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
 
@@ -90,19 +79,11 @@ public:
   void set_dm_active(bool val);
 
 private:
-  // Solve linear system Ax = b and return number of iterations
-  std::size_t _solve(const la::PETScOperator& A, PETScVector& x,
-                     const PETScVector& b);
-
   // Report the number of iterations
-  void write_report(int num_iterations, KSPConvergedReason reason);
-
-  void check_dimensions(const la::PETScOperator& A, const PETScVector& x,
-                        const PETScVector& b) const;
+  void write_report(int num_iterations, KSPConvergedReason reason) const;
 
   // PETSc solver pointer
   KSP _ksp;
-
 };
 } // namespace la
 } // namespace dolfin

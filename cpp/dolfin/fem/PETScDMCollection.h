@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/log/log.h>
 #include <memory>
 #include <petscdm.h>
@@ -19,11 +20,6 @@ namespace dolfin
 namespace geometry
 {
 class BoundingBoxTree;
-}
-
-namespace la
-{
-class PETScMatrix;
 }
 
 namespace function
@@ -71,7 +67,7 @@ public:
 
   /// Create the interpolation matrix from the coarse to the fine
   /// space (prolongation matrix)
-  static std::shared_ptr<la::PETScMatrix>
+  static la::PETScMatrix
   create_transfer_matrix(const function::FunctionSpace& coarse_space,
                          const function::FunctionSpace& fine_space);
 

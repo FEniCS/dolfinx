@@ -138,8 +138,8 @@ def _solve_varproblem(*args, **kwargs):
             cpp.la.PETScOptions.set("dolfin_solve_" + k, v)
         solver.set_from_options()
 
-        solver.set_operator(A)
-        solver.solve(u.vector(), b)
+        solver.set_operator(A.mat())
+        solver.solve(u.vector().vec(), b.vec())
 
     # Solve nonlinear variational problem
     else:

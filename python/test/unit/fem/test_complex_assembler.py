@@ -89,7 +89,7 @@ def test_complex_assembly_solve():
     dolfin.cpp.la.PETScOptions.set("pc_type", "lu")
     solver.set_from_options()
     x = dolfin.cpp.la.PETScVector()
-    solver.set_operator(A)
+    solver.set_operator(A.mat())
     solver.solve(x, b)
 
     # Reference Solution

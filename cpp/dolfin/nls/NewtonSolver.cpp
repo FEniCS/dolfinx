@@ -82,12 +82,12 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     // Set operators
     assert(_solver);
     if (P)
-      _solver->set_operators(*A, *P);
+      _solver->set_operators(A->mat(), P->mat());
     else
-      _solver->set_operator(*A);
+      _solver->set_operator(A->mat());
 
     // Perform linear solve and update total number of Krylov iterations
-    _krylov_iterations += _solver->solve(*_dx, *b);
+    _krylov_iterations += _solver->solve(_dx->vec(), b->vec());
 
     // Update solution
     update_solution(x, *_dx, relaxation_parameter, nonlinear_problem,

@@ -5,9 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PETScKrylovSolver.h"
-#include "PETScMatrix.h"
 #include "PETScOperator.h"
-#include "PETScVector.h"
 #include "VectorSpaceBasis.h"
 #include "utils.h"
 #include <dolfin/common/MPI.h>
@@ -56,28 +54,25 @@ PETScKrylovSolver::~PETScKrylovSolver()
     KSPDestroy(&_ksp);
 }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operator(const la::PETScOperator& A)
-{
-  set_operators(A, A);
-}
+void PETScKrylovSolver::set_operator(const Mat A) { set_operators(A, A); }
 //-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_operators(const la::PETScOperator& A,
-                                      const la::PETScOperator& P)
+void PETScKrylovSolver::set_operators(const Mat A, const Mat P)
 {
-  assert(A.mat());
-  assert(P.mat());
+  assert(A);
+  assert(P);
   assert(_ksp);
 
   PetscErrorCode ierr;
-  ierr = KSPSetOperators(_ksp, A.mat(), P.mat());
+  ierr = KSPSetOperators(_ksp, A, P);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
-                                     bool transpose)
+std::size_t PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose)
 {
   common::Timer timer("PETSc Krylov solver");
+  assert(x);
+  assert(b);
 
   // Get PETSc operators
   Mat _A, _P;
@@ -85,34 +80,21 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   assert(_A);
 
   // Create wrapper around PETSc Mat object
-  la::PETScOperator A(_A);
+  // la::PETScOperator A(_A);
 
   PetscErrorCode ierr;
 
-  // Check dimensions
-  const std::array<std::int64_t, 2> size = A.size();
-  if (size[0] != b.size())
-  {
-    log::dolfin_error(
-        "PETScKrylovSolver.cpp",
-        "unable to solve linear system with PETSc Krylov solver",
-        "Non-matching dimensions for linear system (matrix has %ld "
-        "rows and right-hand side vector has %ld rows)",
-        size[0], b.size());
-  }
-
-  // Initialize solution vector, if necessary
-  if (x.empty())
-  {
-    x = A.create_vector(1);
-    // Zero the vector unless PETSc does it for us
-    PetscBool nonzero_guess;
-    ierr = KSPGetInitialGuessNonzero(_ksp, &nonzero_guess);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "KSPGetInitialGuessNonzero");
-    if (nonzero_guess)
-      x.set(0.0);
-  }
+  // // Check dimensions
+  // const std::array<std::int64_t, 2> size = A.size();
+  // if (size[0] != b.size())
+  // {
+  //   log::dolfin_error(
+  //       "PETScKrylovSolver.cpp",
+  //       "unable to solve linear system with PETSc Krylov solver",
+  //       "Non-matching dimensions for linear system (matrix has %ld "
+  //       "rows and right-hand side vector has %ld rows)",
+  //       size[0], b.size());
+  // }
 
   // Solve linear system
   if (dolfin::MPI::rank(this->mpi_comm()) == 0)
@@ -121,19 +103,28 @@ std::size_t PETScKrylovSolver::solve(PETScVector& x, const PETScVector& b,
   // Solve system
   if (!transpose)
   {
-    ierr = KSPSolve(_ksp, b.vec(), x.vec());
+    ierr = KSPSolve(_ksp, b, x);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "KSPSolve");
   }
   else
   {
-    ierr = KSPSolveTranspose(_ksp, b.vec(), x.vec());
+    ierr = KSPSolveTranspose(_ksp, b, x);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "KSPSolve");
   }
 
+  // FIXME: Remove ghost updating?
   // Update ghost values in solution vector
-  x.update_ghosts();
+  Vec xg;
+  VecGhostGetLocalForm(x, &xg);
+  const bool is_ghosted = xg ? true : false;
+  VecGhostRestoreLocalForm(x, &xg);
+  if (is_ghosted)
+  {
+    VecGhostUpdateBegin(x, INSERT_VALUES, SCATTER_FORWARD);
+    VecGhostUpdateEnd(x, INSERT_VALUES, SCATTER_FORWARD);
+  }
 
   // Get the number of iterations
   PetscInt num_iterations = 0;
@@ -234,24 +225,6 @@ void PETScKrylovSolver::set_from_options() const
     petsc_error(ierr, __FILE__, "KSPSetFromOptions");
 }
 //-----------------------------------------------------------------------------
-std::string PETScKrylovSolver::str(bool verbose) const
-{
-  assert(_ksp);
-  std::stringstream s;
-  if (verbose)
-  {
-    log::warning("Verbose output for PETScKrylovSolver not implemented, "
-                 "calling PETSc KSPView directly.");
-    PetscErrorCode ierr = KSPView(_ksp, PETSC_VIEWER_STDOUT_WORLD);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "KSPView");
-  }
-  else
-    s << "<PETScKrylovSolver>";
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
 MPI_Comm PETScKrylovSolver::mpi_comm() const
 {
   assert(_ksp);
@@ -262,25 +235,8 @@ MPI_Comm PETScKrylovSolver::mpi_comm() const
 //-----------------------------------------------------------------------------
 KSP PETScKrylovSolver::ksp() const { return _ksp; }
 //-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::_solve(const la::PETScOperator& A,
-                                      PETScVector& x, const PETScVector& b)
-{
-  // Set operator
-  assert(_ksp);
-  assert(A.mat());
-  KSPSetOperators(_ksp, A.mat(), A.mat());
-
-  // Call solve
-  std::size_t num_iter = solve(x, b);
-
-  // Clear operators
-  KSPSetOperators(_ksp, nullptr, nullptr);
-
-  return num_iter;
-}
-//-----------------------------------------------------------------------------
 void PETScKrylovSolver::write_report(int num_iterations,
-                                     KSPConvergedReason reason)
+                                     KSPConvergedReason reason) const
 {
   assert(_ksp);
 
@@ -372,43 +328,5 @@ void PETScKrylovSolver::write_report(int num_iterations,
     log::log(PROGRESS, "  Hypre preconditioner method: %s", hypre_sub_type);
   }
 #endif
-}
-//-----------------------------------------------------------------------------
-void PETScKrylovSolver::check_dimensions(const la::PETScOperator& A,
-                                         const PETScVector& x,
-                                         const PETScVector& b) const
-{
-  std::array<std::int64_t, 2> size = A.size();
-
-  // Check dimensions of A
-  if (size[0] == 0 || size[1] == 0)
-  {
-    log::dolfin_error(
-        "PETScKrylovSolver.cpp",
-        "unable to solve linear system with PETSc Krylov solver",
-        "Matrix does not have a nonzero number of rows and columns");
-  }
-
-  // Check dimensions of A vs b
-  if (size[0] != b.size())
-  {
-    log::dolfin_error(
-        "PETScKrylovSolver.cpp",
-        "unable to solve linear system with PETSc Krylov solver",
-        "Non-matching dimensions for linear system (matrix has %ld "
-        "rows and right-hand side vector has %ld rows)",
-        size[0], b.size());
-  }
-
-  // Check dimensions of A vs x
-  if (!x.empty() && x.size() != size[1])
-  {
-    log::dolfin_error(
-        "PETScKrylovSolver.cpp",
-        "unable to solve linear system with PETSc Krylov solver",
-        "Non-matching dimensions for linear system (matrix has %ld "
-        "columns and solution vector has %ld rows)",
-        size[1], x.size());
-  }
 }
 //-----------------------------------------------------------------------------
