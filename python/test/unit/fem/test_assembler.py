@@ -49,7 +49,7 @@ def test_basic_assembly():
     a = 1.0 * inner(u, v) * dx
     L = inner(1.0, v) * dx
 
-    # # Initial assembly
+    # Initial assembly
     A = dolfin.fem.assemble(a)
     b = dolfin.fem.assemble(L)
     assert isinstance(A, dolfin.cpp.la.PETScMatrix)

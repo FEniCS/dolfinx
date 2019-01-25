@@ -319,7 +319,10 @@ void la(py::module& m)
             &dolfin::la::create_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
-  m.def("create_matrix", &dolfin::la::create_matrix,
+  m.def("create_matrix",
+        [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
+          return dolfin::la::create_matrix(comm.get(), p);
+        },
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Mat from sparsity pattern.");
 }
