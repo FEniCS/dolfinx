@@ -24,6 +24,7 @@
 #include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/VectorSpaceBasis.h>
+#include <dolfin/la/utils.h>
 
 namespace py = pybind11;
 
@@ -312,5 +313,18 @@ void la(py::module& m)
            py::arg("tol") = 1.0e-10)
       .def("dim", &dolfin::la::VectorSpaceBasis::dim)
       .def("__getitem__", &dolfin::la::VectorSpaceBasis::operator[]);
+
+  // utils
+  m.def("create_vector",
+        py::overload_cast<const dolfin::common::IndexMap&>(
+            &dolfin::la::create_vector),
+        py::return_value_policy::take_ownership,
+        "Create a ghosted PETSc Vec for index map.");
+  m.def("create_matrix",
+        [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
+          return dolfin::la::create_matrix(comm.get(), p);
+        },
+        py::return_value_policy::take_ownership,
+        "Create a ghosted PETSc Mat from sparsity pattern.");
 }
 } // namespace dolfin_wrappers

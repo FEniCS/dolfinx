@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
-
 #include <dolfin/fem/utils.h>
 
 using namespace dolfin;
@@ -144,11 +143,12 @@ SparsityPattern::SparsityPattern(
       }
 
       // Increment global column offset
-      col_global_offset += p->_index_maps[1]->size_local()*p->_index_maps[1]->block_size();
+      col_global_offset
+          += p->_index_maps[1]->size_local() * p->_index_maps[1]->block_size();
     }
 
     // Increment local row offset
-    row_local_offset += bs0*row_size;
+    row_local_offset += bs0 * row_size;
   }
 
   // FIXME: Need to add unowned entries?
@@ -164,8 +164,8 @@ SparsityPattern::SparsityPattern(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_global(
-    const Eigen::Ref<const EigenArrayXpetscint> rows,
-    const Eigen::Ref<const EigenArrayXpetscint> cols)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols)
 {
   // The primary_dim is global and must be mapped to local
   const auto row_map = [](const PetscInt i_index,
@@ -185,8 +185,8 @@ void SparsityPattern::insert_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local(
-    const Eigen::Ref<const EigenArrayXpetscint> rows,
-    const Eigen::Ref<const EigenArrayXpetscint> cols)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols)
 {
   // The primary_dim is local and stays the same
   const auto row_map
@@ -207,8 +207,8 @@ void SparsityPattern::insert_local(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_local_global(
-    const Eigen::Ref<const EigenArrayXpetscint> rows,
-    const Eigen::Ref<const EigenArrayXpetscint> cols)
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols)
 {
   const auto row_map
       = [](const PetscInt i_index,
@@ -222,15 +222,15 @@ void SparsityPattern::insert_local_global(
 }
 //-----------------------------------------------------------------------------
 void SparsityPattern::insert_entries(
-    const Eigen::Ref<const EigenArrayXpetscint> rows,
-    const Eigen::Ref<const EigenArrayXpetscint> cols,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols,
     const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
         row_map,
     const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
         col_map)
 {
-  const Eigen::Ref<const EigenArrayXpetscint> map_i = rows;
-  const Eigen::Ref<const EigenArrayXpetscint> map_j = cols;
+  const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> map_i = rows;
+  const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> map_j = cols;
   const common::IndexMap& index_map0 = *_index_maps[0];
   const common::IndexMap& index_map1 = *_index_maps[1];
 
@@ -370,9 +370,10 @@ std::size_t SparsityPattern::num_nonzeros() const
   return nz;
 }
 //-----------------------------------------------------------------------------
-EigenArrayXi32 SparsityPattern::num_nonzeros_diagonal() const
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+SparsityPattern::num_nonzeros_diagonal() const
 {
-  EigenArrayXi32 num_nonzeros(_diagonal.size());
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(_diagonal.size());
 
   // Get number of nonzeros per generalised row
   for (auto slice = _diagonal.begin(); slice != _diagonal.end(); ++slice)
@@ -394,9 +395,11 @@ EigenArrayXi32 SparsityPattern::num_nonzeros_diagonal() const
   return num_nonzeros;
 }
 //-----------------------------------------------------------------------------
-EigenArrayXi32 SparsityPattern::num_nonzeros_off_diagonal() const
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+SparsityPattern::num_nonzeros_off_diagonal() const
 {
-  EigenArrayXi32 num_nonzeros(_off_diagonal.size());
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(
+      _off_diagonal.size());
 
   // Return if there is no off-diagonal
   if (_off_diagonal.empty())
@@ -431,12 +434,15 @@ EigenArrayXi32 SparsityPattern::num_nonzeros_off_diagonal() const
   return num_nonzeros;
 }
 //-----------------------------------------------------------------------------
-EigenArrayXi32 SparsityPattern::num_local_nonzeros() const
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+SparsityPattern::num_local_nonzeros() const
 {
-  EigenArrayXi32 num_nonzeros = num_nonzeros_diagonal();
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros
+      = num_nonzeros_diagonal();
   if (!_off_diagonal.empty())
   {
-    EigenArrayXi32 num_nonzeros_off_diag = num_nonzeros_off_diagonal();
+    Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros_off_diag
+        = num_nonzeros_off_diagonal();
     num_nonzeros += num_nonzeros_off_diag;
   }
 
@@ -466,8 +472,8 @@ void SparsityPattern::apply()
     assert(_non_local.size() % 2 == 0);
     std::vector<std::vector<std::size_t>> non_local_send(num_processes);
 
-    const Eigen::Ref<const EigenRowArrayXi32> off_process_owner
-        = _index_maps[0]->ghost_owners();
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+        off_process_owner = _index_maps[0]->ghost_owners();
 
     // Get local-to-global for unowned blocks
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>

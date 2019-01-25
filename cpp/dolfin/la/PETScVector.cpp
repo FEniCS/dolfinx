@@ -40,52 +40,7 @@ PETScVector::PETScVector(
     int block_size)
     : _x(nullptr)
 {
-  PetscErrorCode ierr;
-
-  // Get local size
-  assert(range[1] >= range[0]);
-  const std::size_t local_size = range[1] - range[0];
-
-  ierr = VecCreateGhostBlock(comm, block_size, block_size * local_size,
-                             PETSC_DECIDE, ghost_indices.size(),
-                             ghost_indices.data(), &_x);
-  CHECK_ERROR("VecCreateGhostBlock");
-  assert(_x);
-
-  // Set from PETSc options. This will set the vector type.
-  // ierr = VecSetFromOptions(_x);
-  // CHECK_ERROR("VecSetFromOptions");
-
-  // NOTE: shouldn't need to do this, but there appears to be an issue
-  // with PETSc
-  // (https://lists.mcs.anl.gov/pipermail/petsc-dev/2018-May/022963.html)
-  // Set local-to-global map
-  std::vector<PetscInt> l2g(local_size + ghost_indices.size());
-  std::iota(l2g.begin(), l2g.begin() + local_size, range[0]);
-  std::copy(ghost_indices.data(), ghost_indices.data() + ghost_indices.size(),
-            l2g.begin() + local_size);
-  ISLocalToGlobalMapping petsc_local_to_global;
-  ierr = ISLocalToGlobalMappingCreate(PETSC_COMM_SELF, block_size, l2g.size(),
-                                      l2g.data(), PETSC_COPY_VALUES,
-                                      &petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingCreate");
-  ierr = VecSetLocalToGlobalMapping(_x, petsc_local_to_global);
-  CHECK_ERROR("VecSetLocalToGlobalMapping");
-  ierr = ISLocalToGlobalMappingDestroy(&petsc_local_to_global);
-  CHECK_ERROR("ISLocalToGlobalMappingDestroy");
-
-  // Debug output
-  // if (MPI::rank(comm) == 1)
-  // {
-  //   std::cout << "block size: " << block_size << std::endl;
-  //   std::cout << "local size: " << local_size << std::endl;
-  //   std::cout << "ghost size: " << ghost_indices.size() << std::endl;
-  //   for (std::size_t i = 0; i < ghost_indices.size(); ++i)
-  //     std::cout << "  ghost i: " << ghost_indices[i] << std::endl;
-  //   ISLocalToGlobalMapping mapping;
-  //   VecGetLocalToGlobalMapping(_x, &mapping);
-  //   ISLocalToGlobalMappingView(mapping, PETSC_VIEWER_STDOUT_SELF);
-  // }
+  _x = la::create_vector(comm, range, ghost_indices, block_size);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector() : _x(nullptr) {}
