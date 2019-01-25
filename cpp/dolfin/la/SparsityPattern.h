@@ -6,10 +6,11 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
-#include <dolfin/common/types.h>
 #include <memory>
+#include <petscsys.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -25,8 +26,8 @@ class IndexMap;
 namespace la
 {
 
-/// This class implements a sparsity pattern data structure.  It is used
-/// by most linear algebra backends.
+/// This class provides a sparsity pattern data structure that can be
+/// used to initialize sparse matrices.
 
 class SparsityPattern
 {
@@ -44,7 +45,7 @@ public:
     unsorted
   };
 
-  /// Create empty sparsity pattern
+  /// Create an empty sparsity pattern with specified dimensions
   SparsityPattern(
       MPI_Comm comm,
       std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps);
@@ -68,18 +69,21 @@ public:
   SparsityPattern& operator=(SparsityPattern&& pattern) = default;
 
   /// Insert non-zero entries using global indices
-  void insert_global(const Eigen::Ref<const EigenArrayXpetscint> rows,
-                     const Eigen::Ref<const EigenArrayXpetscint> cols);
+  void insert_global(
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols);
 
   /// Insert non-zero entries using local (process-wise) indices
-  void insert_local(const Eigen::Ref<const EigenArrayXpetscint> rows,
-                    const Eigen::Ref<const EigenArrayXpetscint> cols);
+  void insert_local(
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols);
 
   // FIXME: Remove?
   /// Insert non-zero entries using local (process-wise) indices for the
   /// primary dimension and global indices for the co-dimension
-  void insert_local_global(const Eigen::Ref<const EigenArrayXpetscint> rows,
-                           const Eigen::Ref<const EigenArrayXpetscint> cols);
+  void insert_local_global(
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
+      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols);
 
   /// Insert full rows (or columns, according to primary dimension)
   /// using local (process-wise) indices. This must be called before any
@@ -100,16 +104,17 @@ public:
 
   /// Fill array with number of nonzeros per row for diagonal block in
   /// local_range for dimension 0
-  EigenArrayXi32 num_nonzeros_diagonal() const;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros_diagonal() const;
 
   /// Fill array with number of nonzeros for off-diagonal block in
   /// local_range for dimension 0. If there is no off-diagonal pattern,
   /// the returned vector will have zero-length.
-  EigenArrayXi32 num_nonzeros_off_diagonal() const;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
+  num_nonzeros_off_diagonal() const;
 
   /// Fill vector with number of nonzeros in local_range for
   /// dimension 0
-  EigenArrayXi32 num_local_nonzeros() const;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_local_nonzeros() const;
 
   /// Finalize sparsity pattern
   void apply();
@@ -136,12 +141,14 @@ private:
   // The primary dim entries must be local
   // The primary_codim entries must be global
   void insert_entries(
-      const Eigen::Ref<const EigenArrayXi32> rows,
-      const Eigen::Ref<const EigenArrayXi32> cols,
-      const std::function<PetscInt(const PetscInt,
-                                     const common::IndexMap&)>& row_map,
-      const std::function<PetscInt(const PetscInt,
-                                     const common::IndexMap&)>& col_map);
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+          rows,
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+          cols,
+      const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
+          row_map,
+      const std::function<PetscInt(const PetscInt, const common::IndexMap&)>&
+          col_map);
 
   // Print some useful information
   void info_statistics() const;
