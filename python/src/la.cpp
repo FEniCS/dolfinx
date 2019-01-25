@@ -224,7 +224,6 @@ void la(py::module& m)
   py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
              dolfin::la::PETScOperator>(m, "PETScMatrix", py::dynamic_attr(),
                                         "PETScMatrix object")
-      .def(py::init<>())
       .def(py::init<Mat>())
       .def(py::init(
           [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
@@ -318,6 +317,10 @@ void la(py::module& m)
   m.def("create_vector",
         py::overload_cast<const dolfin::common::IndexMap&>(
             &dolfin::la::create_vector),
-        py::return_value_policy::take_ownership, "Create a ghosted PETSc Vec.");
+        py::return_value_policy::take_ownership,
+        "Create a ghosted PETSc Vec for index map.");
+  m.def("create_matrix", &dolfin::la::create_matrix,
+        py::return_value_policy::take_ownership,
+        "Create a ghosted PETSc Mat from sparsity pattern.");
 }
 } // namespace dolfin_wrappers

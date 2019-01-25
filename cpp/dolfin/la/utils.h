@@ -10,6 +10,7 @@
 #include <array>
 #include <dolfin/common/MPI.h>
 #include <petscis.h>
+#include <petscmat.h>
 #include <petscvec.h>
 #include <string>
 #include <vector>
@@ -26,6 +27,7 @@ class Form;
 }
 namespace la
 {
+class SparsityPattern;
 
 /// Norm types
 enum class Norm
@@ -46,6 +48,9 @@ Vec create_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
     int block_size);
+
+/// Create a PETSc Mat. Caller is responsible for destroying the object.
+Mat create_matrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 
 /// Compute IndexSets (IS) for stacked index maps
 std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);
