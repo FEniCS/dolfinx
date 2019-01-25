@@ -84,8 +84,6 @@ class PyLinearOperatorPure : public LinearOperatorBase
 
 namespace dolfin_wrappers
 {
-using RowMatrixXd
-    = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 void la(py::module& m)
 {
@@ -215,7 +213,6 @@ void la(py::module& m)
   py::class_<dolfin::la::PETScOperator,
              std::shared_ptr<dolfin::la::PETScOperator>>(m, "PETScOperator")
       .def("create_vector", &dolfin::la::PETScOperator::create_vector)
-      .def("size", &dolfin::la::PETScOperator::size)
       .def("mat", &dolfin::la::PETScOperator::mat,
            "Return underlying PETSc Mat object");
 
@@ -225,16 +222,15 @@ void la(py::module& m)
                                         "PETScMatrix object")
       .def(py::init<>())
       .def(py::init<Mat>())
-      .def(py::init(
-          [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
-            return std::make_unique<dolfin::la::PETScMatrix>(comm.get(), p);
-          }))
-      .def("norm", &dolfin::la::PETScMatrix::norm)
+      // .def(py::init(
+      //     [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p)
+      //     {
+      //       return std::make_unique<dolfin::la::PETScMatrix>(comm.get(), p);
+      //     }))
       .def("get_options_prefix", &dolfin::la::PETScMatrix::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
       .def("set_nullspace", &dolfin::la::PETScMatrix::set_nullspace)
-      .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace)
-      .def("zero", &dolfin::la::PETScMatrix::zero);
+      .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace);
 
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
