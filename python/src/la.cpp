@@ -224,6 +224,7 @@ void la(py::module& m)
   py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
              dolfin::la::PETScOperator>(m, "PETScMatrix", py::dynamic_attr(),
                                         "PETScMatrix object")
+      .def(py::init<>())
       .def(py::init<Mat>())
       .def(py::init(
           [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
