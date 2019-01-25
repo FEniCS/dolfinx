@@ -26,16 +26,19 @@ void VectorSpaceBasis::orthonormalize(double tol)
   // Loop over each vector in basis
   for (std::size_t i = 0; i < _basis.size(); ++i)
   {
+    assert(_basis[i]);
     // Orthogonalize vector i with respect to previously orthonormalized
     // vectors
     for (std::size_t j = 0; j < i; ++j)
     {
-      const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
+      PetscScalar dot_ij = 0.0;
+      VecDot(_basis[i]->vec(), _basis[j]->vec(), &dot_ij);
       _basis[i]->axpy(-dot_ij, *_basis[j]);
     }
 
     // Normalise basis function
-    const PetscReal norm = _basis[i]->normalize();
+    PetscReal norm = 0.0;
+    VecNormalize(_basis[i]->vec(), &norm);
     if (norm < tol)
     {
       throw std::runtime_error(
@@ -53,7 +56,9 @@ bool VectorSpaceBasis::is_orthonormal(double tol) const
       assert(_basis[i]);
       assert(_basis[j]);
       const double delta_ij = (i == j) ? 1.0 : 0.0;
-      const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
+      PetscScalar dot_ij = 0.0;
+      VecDot(_basis[i]->vec(), _basis[j]->vec(), &dot_ij);
+
       if (std::abs(delta_ij - dot_ij) > tol)
         return false;
     }
@@ -72,7 +77,8 @@ bool VectorSpaceBasis::is_orthogonal(double tol) const
       assert(_basis[j]);
       if (i != j)
       {
-        const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
+        PetscScalar dot_ij = 0.0;
+        VecDot(_basis[i]->vec(), _basis[j]->vec(), &dot_ij);
         if (std::abs(dot_ij) > tol)
           return false;
       }
@@ -101,7 +107,8 @@ void VectorSpaceBasis::orthogonalize(PETScVector& x) const
   for (std::size_t i = 0; i < _basis.size(); i++)
   {
     assert(_basis[i]);
-    const PetscScalar dot = _basis[i]->dot(x);
+    PetscScalar dot = 0.0;
+    VecDot(_basis[i]->vec(), x.vec(), &dot);
     x.axpy(-dot, *_basis[i]);
   }
 }
