@@ -116,23 +116,23 @@ def reassemble_vector(b: cpp.la.PETScVector,
 
 def assemble_matrix_nest(a,
                          bcs: typing.List[DirichletBC],
-                         diagonal: float = 1.0) -> cpp.la.PETScMatrix:
+                         diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    A = cpp.fem.create_matrix_nest(a_cpp)
-    A.mat().zeroEntries()
-    cpp.fem.assemble_blocked_matrix(A.mat(), a_cpp, bcs, diagonal)
+    A = cpp.fem.create_matrix_nest(a_cpp).mat()
+    A.zeroEntries()
+    cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
     return A
 
 
 def assemble_matrix_block(a,
                           bcs: typing.List[DirichletBC],
-                          diagonal: float = 1.0) -> cpp.la.PETScMatrix:
+                          diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    A = cpp.fem.create_matrix_block(a_cpp)
-    A.mat().zeroEntries()
-    cpp.fem.assemble_blocked_matrix(A.mat(), a_cpp, bcs, diagonal)
+    A = cpp.fem.create_matrix_block(a_cpp).mat()
+    A.zeroEntries()
+    cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
     return A
 
 

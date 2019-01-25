@@ -18,12 +18,12 @@ from ufl import dx, inner
 
 def nest_matrix_norm(A):
     """Return norm of a MatNest matrix"""
-    assert A.mat().getType() == "nest"
+    assert A.getType() == "nest"
     norm = 0.0
-    nrows, ncols = A.mat().getNestSize()
+    nrows, ncols = A.getNestSize()
     for row in range(nrows):
         for col in range(ncols):
-            A_sub = A.mat().getNestSubMatrix(row, col)
+            A_sub = A.getNestSubMatrix(row, col)
             if A_sub:
                 _norm = A_sub.norm()
                 norm += _norm * _norm
@@ -113,8 +113,8 @@ def test_matrix_assembly_block():
     # Monolithic blocked
     A0 = dolfin.fem.assemble_matrix_block(a_block, [bc])
     b0 = dolfin.fem.assemble_vector_block(L_block, a_block, [bc])
-    assert A0.mat().getType() != "nest"
-    Anorm0 = A0.mat().norm()
+    assert A0.getType() != "nest"
+    Anorm0 = A0.norm()
     bnorm0 = b0.vec().norm()
 
     # Nested (MatNest)
@@ -192,12 +192,12 @@ def test_assembly_solve_block():
 
     A0 = dolfin.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs)
     b0 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs)
-    A0norm = A0.mat().norm()
+    A0norm = A0.norm()
     b0norm = b0.vec().norm()
-    x0 = A0.mat().createVecLeft()
+    x0 = A0.createVecLeft()
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
-    ksp.setOperators(A0.mat())
+    ksp.setOperators(A0)
     ksp.setMonitor(monitor)
     ksp.setType('cg')
     ksp.setTolerances(rtol=1.0e-14)
@@ -217,7 +217,7 @@ def test_assembly_solve_block():
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
     ksp.setMonitor(monitor)
-    ksp.setOperators(A1.mat())
+    ksp.setOperators(A1)
     ksp.setType('cg')
     ksp.setTolerances(rtol=1.0e-12)
     ksp.setFromOptions()
@@ -339,8 +339,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
-    ksp.setOperators(A0.mat(), P0.mat())
-    nested_IS = P0.mat().getNestISs()
+    ksp.setOperators(A0, P0)
+    nested_IS = P0.getNestISs()
     ksp.setType("minres")
     pc = ksp.getPC()
     pc.setType("fieldsplit")
@@ -365,15 +365,15 @@ def test_assembly_solve_taylor_hood(mesh):
     # -- Blocked and monolithic
 
     A1 = dolfin.fem.assemble_matrix_block([[a00, a01], [a10, a11]], [bc0, bc1])
-    assert A1.mat().norm() == pytest.approx(A0norm, 1.0e-12)
+    assert A1.norm() == pytest.approx(A0norm, 1.0e-12)
     P1 = dolfin.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
-    assert P1.mat().norm() == pytest.approx(P0norm, 1.0e-12)
+    assert P1.norm() == pytest.approx(P0norm, 1.0e-12)
     b1 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1])
     assert b1.vec().norm() == pytest.approx(b0norm, 1.0e-12)
 
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
-    ksp.setOperators(A1.mat(), P1.mat())
+    ksp.setOperators(A1, P1)
     ksp.setType("minres")
     pc = ksp.getPC()
     pc.setType('lu')
