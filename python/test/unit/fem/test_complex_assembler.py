@@ -89,7 +89,7 @@ def test_complex_assembly_solve():
     dolfin.cpp.la.PETScOptions.set("ksp_type", "preonly")
     dolfin.cpp.la.PETScOptions.set("pc_type", "lu")
     solver.set_from_options()
-    x = dolfin.cpp.la.PETScVector()
+    x = A.create_vector(1)
     solver.set_operator(A.mat())
     solver.solve(x.vec(), b.vec())
 
