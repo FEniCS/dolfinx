@@ -124,14 +124,14 @@ public:
   }
 
   /// Compute J = F' at current point x
-  la::PETScMatrix* J(const la::PETScVector& x) final
+  Mat J(const la::PETScVector& x) final
   {
     if (!A)
       A = std::make_unique<la::PETScMatrix>(fem::init_matrix(*_j));
     A->zero();
     assemble(A->mat(), *_j, _bcs);
     A->apply(la::PETScMatrix::AssemblyType::FINAL);
-    return A.get();
+    return A->mat();
   }
 
 private:
