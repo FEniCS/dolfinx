@@ -308,12 +308,13 @@ file = XDMFFile(MPI.comm_world, "output.xdmf")
 # Step in time
 t = 0.0
 T = 50 * dt
-u.vector().vec().copy(result=u0.vector().vec())
-u0.vector().update_ghosts()
+u.vector().copy(result=u0.vector())
+u0.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
 while (t < T):
     t += dt
-    solver.solve(problem, u.vector().vec())
-    u.vector().vec().copy(result=u0.vector().vec())
+    solver.solve(problem, u.vector())
+    u.vector().copy(result=u0.vector())
     file.write(u.sub(0), t)
 
 # The string ``"compressed"`` indicates that the output data should be

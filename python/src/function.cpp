@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "casters.h"
 #include <cstdint>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -16,6 +17,7 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
+#include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
@@ -84,12 +86,10 @@ void function(py::module& m)
            py::overload_cast<const dolfin::function::Expression&>(
                &dolfin::function::Function::interpolate),
            py::arg("expr"))
-      // FIXME: A lot of error when using non-const version - misused
-      // by Python interface?
       .def("vector",
-           (std::shared_ptr<const dolfin::la::PETScVector>(
-               dolfin::function::Function::*)() const)
-               & dolfin::function::Function::vector,
+           [](const dolfin::function::Function& self) {
+             return self.vector()->vec();
+           },
            "Return the vector associated with the finite element Function")
       .def("value_dimension", &dolfin::function::Function::value_dimension)
       .def("value_size", &dolfin::function::Function::value_size)

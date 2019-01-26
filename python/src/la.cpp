@@ -4,15 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <memory>
-#include <petsc4py/petsc4py.h>
-#include <pybind11/complex.h>
-#include <pybind11/eigen.h>
-#include <pybind11/numpy.h>
-#include <pybind11/operators.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "casters.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/la/PETScKrylovSolver.h>
@@ -23,6 +14,14 @@
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/VectorSpaceBasis.h>
 #include <dolfin/la/utils.h>
+#include <memory>
+#include <petsc4py/petsc4py.h>
+#include <pybind11/complex.h>
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+#include <pybind11/operators.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 
@@ -197,8 +196,9 @@ void la(py::module& m)
       .def("orthonormalize", &dolfin::la::VectorSpaceBasis::orthonormalize,
            py::arg("tol") = 1.0e-10)
       .def("dim", &dolfin::la::VectorSpaceBasis::dim)
-      .def("__getitem__", [](const dolfin::la::VectorSpaceBasis& self,
-                             int i) { return self[i]->vec(); });
+      .def("__getitem__", [](const dolfin::la::VectorSpaceBasis& self, int i) {
+        return self[i]->vec();
+      });
 
   // utils
   m.def("create_vector",
@@ -212,12 +212,12 @@ void la(py::module& m)
         },
         py::return_value_policy::take_ownership,
         "Create a PETSc Mat from sparsity pattern.");
-//   m.def("create_nullspace",
-//         [](const MPICommWrapper comm, MPI_Comm comm,
-//            const dolfin::la::VectorSpaceBasis& nullspace) {
-//           return dolfin::la::create_petsc_nullspace(comm.get(), nullspace);
-//         },
-//         py::return_value_policy::take_ownership,
-//         "Create a PETSc MatNullSpace.");
+  //   m.def("create_nullspace",
+  //         [](const MPICommWrapper comm, MPI_Comm comm,
+  //            const dolfin::la::VectorSpaceBasis& nullspace) {
+  //           return dolfin::la::create_petsc_nullspace(comm.get(), nullspace);
+  //         },
+  //         py::return_value_policy::take_ownership,
+  //         "Create a PETSc MatNullSpace.");
 }
 } // namespace dolfin_wrappers
