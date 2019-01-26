@@ -30,7 +30,7 @@ def test_scalar_p1():
     uf = interpolate(u, Vf)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
-                                                   Vf._cpp_object).mat()
+                                                   Vf._cpp_object)
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
@@ -59,7 +59,7 @@ def test_scalar_p1_scaled_mesh():
     uf = interpolate(u, Vf)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
-                                                   Vf._cpp_object).mat()
+                                                   Vf._cpp_object)
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
@@ -74,7 +74,7 @@ def test_scalar_p1_scaled_mesh():
     uc = interpolate(u, Vc)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
-                                                   Vf._cpp_object).mat()
+                                                   Vf._cpp_object)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
     diff = Vuc.vector()
@@ -99,7 +99,7 @@ def test_scalar_p2():
     uf = interpolate(u, Vf)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
-                                                   Vf._cpp_object).mat()
+                                                   Vf._cpp_object)
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
@@ -126,7 +126,7 @@ def test_vector_p1_2d():
     uf = interpolate(u, Vf)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
-                                                   Vf._cpp_object).mat()
+                                                   Vf._cpp_object)
 
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
@@ -153,7 +153,7 @@ def test_vector_p2_2d():
     uf = interpolate(u, Vf)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
-                                                   Vf._cpp_object).mat()
+                                                   Vf._cpp_object)
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 
@@ -180,7 +180,7 @@ def test_vector_p1_3d():
     uf = interpolate(u, Vf)
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
-                                                   Vf._cpp_object).mat()
+                                                   Vf._cpp_object)
     Vuc = Function(Vf)
     mat.mult(uc.vector().vec(), Vuc.vector().vec())
 

@@ -5,6 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include "PETScVector.h"
+#include "VectorSpaceBasis.h"
 #include <cassert>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/SubSystemsManager.h>
@@ -204,6 +206,33 @@ Mat dolfin::la::create_matrix(
     petsc_error(ierr, __FILE__, "MatSetOption");
 
   return A;
+}
+//-----------------------------------------------------------------------------
+MatNullSpace dolfin::la::create_petsc_nullspace(
+    MPI_Comm comm, const dolfin::la::VectorSpaceBasis& nullspace)
+{
+  PetscErrorCode ierr;
+
+  // Copy vectors in vector space object
+  std::vector<Vec> _nullspace;
+  for (std::size_t i = 0; i < nullspace.dim(); ++i)
+  {
+    assert(nullspace[i]);
+    auto x = nullspace[i]->vec();
+
+    // Copy vector pointer
+    assert(x);
+    _nullspace.push_back(x);
+  }
+
+  // Create PETSC nullspace
+  MatNullSpace petsc_nullspace = NULL;
+  ierr = MatNullSpaceCreate(comm, PETSC_FALSE, _nullspace.size(),
+                            _nullspace.data(), &petsc_nullspace);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
+
+  return petsc_nullspace;
 }
 //-----------------------------------------------------------------------------
 std::vector<IS> dolfin::la::compute_index_sets(

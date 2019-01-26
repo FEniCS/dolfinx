@@ -9,6 +9,7 @@
 # smoothed aggregation algerbaric multigrid.
 
 import numpy as np
+from petsc4py import PETSc
 
 import dolfin
 from dolfin import (DOLFIN_EPS, MPI, BoxMesh, CellType, DirichletBC, Function,
@@ -46,7 +47,12 @@ def build_nullspace(V, x):
     basis = VectorSpaceBasis(nullspace_basis)
     basis.orthonormalize()
 
-    return basis
+    # _x = [x.vec() for x in nullspace_basis]
+    _x = [basis[i] for i in range(6)]
+
+    nsp = PETSc.NullSpace()
+    nsp.create(_x)
+    return nsp
 
 
 # Load mesh from file
@@ -110,7 +116,8 @@ bc = DirichletBC(V, u0, boundary)
 # Assemble system, applying boundary conditions and preserving
 # symmetry)
 A, b = assemble_system(a, L, bc)
-assert A.mat().block_size == 3
+A = A.mat()
+assert A.block_size == 3
 
 # Create solution function
 u = Function(V)
@@ -121,7 +128,7 @@ u = Function(V)
 null_space = build_nullspace(V, u.vector())
 
 # Attach near nullspace to matrix
-A.set_near_nullspace(null_space)
+A.setNearNullSpace(null_space)
 
 # Set solver options
 PETScOptions.set("ksp_view")
@@ -145,7 +152,7 @@ solver = PETScKrylovSolver(MPI.comm_world)
 solver.set_from_options()
 
 # Set matrix operator
-solver.set_operator(A.mat())
+solver.set_operator(A)
 
 # Compute solution
 solver.solve(u.vector().vec(), b.vec())

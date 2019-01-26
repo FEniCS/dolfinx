@@ -36,21 +36,21 @@ def test_complex_assembly():
     bnorm = dolfin.fem.assemble(L1).vec().norm(PETSc.NormType.N1)
     b_norm_ref = abs(-2 + 3.0j)
     assert np.isclose(bnorm, b_norm_ref)
-    A0_norm = dolfin.fem.assemble(a_real).mat().norm(PETSc.NormType.FROBENIUS)
+    A0_norm = dolfin.fem.assemble(a_real).norm(PETSc.NormType.FROBENIUS)
 
     x = dolfin.SpatialCoordinate(mesh)
 
     a_imag = j * inner(u, v) * dx
     f = 1j * ufl.sin(2 * np.pi * x[0])
     L0 = inner(f, v) * dx
-    A1_norm = dolfin.fem.assemble(a_imag).mat().norm(PETSc.NormType.FROBENIUS)
+    A1_norm = dolfin.fem.assemble(a_imag).norm(PETSc.NormType.FROBENIUS)
     assert np.isclose(A0_norm, A1_norm)
     b1_norm = dolfin.fem.assemble(L0).vec().norm(PETSc.NormType.N2)
 
     a_complex = (1 + j) * inner(u, v) * dx
     f = ufl.sin(2 * np.pi * x[0])
     L2 = inner(f, v) * dx
-    A2_norm = dolfin.fem.assemble(a_complex).mat().norm(PETSc.NormType.FROBENIUS)
+    A2_norm = dolfin.fem.assemble(a_complex).norm(PETSc.NormType.FROBENIUS)
     assert np.isclose(A1_norm, A2_norm / np.sqrt(2))
     b2_norm = dolfin.fem.assemble(L2).vec().norm(PETSc.NormType.N2)
     assert np.isclose(b2_norm, b1_norm)
@@ -89,9 +89,9 @@ def test_complex_assembly_solve():
     dolfin.cpp.la.PETScOptions.set("ksp_type", "preonly")
     dolfin.cpp.la.PETScOptions.set("pc_type", "lu")
     solver.set_from_options()
-    x = A.create_vector(1)
-    solver.set_operator(A.mat())
-    solver.solve(x.vec(), b.vec())
+    x = A.createVecRight()
+    solver.set_operator(A)
+    solver.solve(x, b.vec())
 
     # Reference Solution
     @dolfin.function.expression.numba_eval
@@ -99,6 +99,6 @@ def test_complex_assembly_solve():
         values[:, 0] = np.cos(2 * np.pi * x[:, 0]) * np.cos(2 * np.pi * x[:, 1])
     u_ref = dolfin.interpolate(dolfin.Expression(ref_eval), V)
 
-    xnorm = x.vec().norm(PETSc.NormType.N2)
+    xnorm = x.norm(PETSc.NormType.N2)
     x_ref_norm = u_ref.vector().vec().norm(PETSc.NormType.N2)
     assert np.isclose(xnorm, x_ref_norm)

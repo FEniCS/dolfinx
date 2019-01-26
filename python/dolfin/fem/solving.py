@@ -129,6 +129,7 @@ def _solve_varproblem(*args, **kwargs):
 
         assembler = cpp.fem.SystemAssembler(a._cpp_object, L._cpp_object, bcs)
         assembler.assemble(A, b)
+        A = A.mat()
 
         comm = L._cpp_object.mesh().mpi_comm()
         solver = cpp.la.PETScKrylovSolver(comm)
@@ -138,7 +139,7 @@ def _solve_varproblem(*args, **kwargs):
             cpp.la.PETScOptions.set("dolfin_solve_" + k, v)
         solver.set_from_options()
 
-        solver.set_operator(A.mat())
+        solver.set_operator(A)
         solver.solve(u.vector().vec(), b.vec())
 
     # Solve nonlinear variational problem

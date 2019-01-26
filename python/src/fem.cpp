@@ -93,12 +93,33 @@ void fem(py::module& m)
   m.def("create_vector_nest", &dolfin::fem::init_nest,
         "Create a nested vector for multiple (stacked) linear forms.");
 
-  m.def("create_matrix", &dolfin::fem::init_matrix,
-        "Initialise sparse matrix for a bilinear form.");
-  m.def("create_matrix_block", &dolfin::fem::init_monolithic_matrix,
+  m.def("create_matrix",
+        [](const dolfin::fem::Form& a) {
+          auto A = dolfin::fem::init_matrix(a);
+          Mat _A = A.mat();
+          PetscObjectReference((PetscObject)_A);
+          return _A;
+        },
+        py::return_value_policy::take_ownership,
+        "Create a PETSc Mat for bilinear form.");
+  m.def("create_matrix_block",
+        [](std::vector<std::vector<const dolfin::fem::Form*>> a) {
+          auto A = dolfin::fem::init_monolithic_matrix(a);
+          Mat _A = A.mat();
+          PetscObjectReference((PetscObject)_A);
+          return _A;
+        },
+        py::return_value_policy::take_ownership,
         "Initialise monolithic sparse matrix for stacked bilinear forms.");
-  m.def("create_matrix_nest", &dolfin::fem::init_nest_matrix,
-        "Initialise nested sparse matrix.");
+  m.def("create_matrix_nest",
+        [](const std::vector<std::vector<const dolfin::fem::Form*>> a) {
+          auto A = dolfin::fem::init_nest_matrix(a);
+          Mat _A = A.mat();
+          PetscObjectReference((PetscObject)_A);
+          return _A;
+        },
+        py::return_value_policy::take_ownership,
+        "Initialise nested sparse matrix for bilinear forms.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
@@ -297,7 +318,15 @@ void fem(py::module& m)
   // dolfin::fem::DiscreteOperators
   py::class_<dolfin::fem::DiscreteOperators>(m, "DiscreteOperators")
       .def_static("build_gradient",
-                  &dolfin::fem::DiscreteOperators::build_gradient);
+                  [](const dolfin::function::FunctionSpace& V0,
+                     const dolfin::function::FunctionSpace& V1) {
+                    auto A = dolfin::fem::DiscreteOperators::build_gradient(V0,
+                                                                            V1);
+                    Mat _A = A->mat();
+                    PetscObjectReference((PetscObject)_A);
+                    return _A;
+                  },
+                  py::return_value_policy::take_ownership);
 
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
@@ -359,8 +388,17 @@ void fem(py::module& m)
       m, "PETScDMCollection")
       .def(py::init<std::vector<
                std::shared_ptr<const dolfin::function::FunctionSpace>>>())
-      .def_static("create_transfer_matrix",
-                  &dolfin::fem::PETScDMCollection::create_transfer_matrix)
+      .def_static(
+          "create_transfer_matrix",
+          [](const dolfin::function::FunctionSpace& V0,
+             const dolfin::function::FunctionSpace& V1) {
+            auto A = dolfin::fem::PETScDMCollection::create_transfer_matrix(V0,
+                                                                            V1);
+            Mat _A = A.mat();
+            PetscObjectReference((PetscObject)_A);
+            return _A;
+          },
+          py::return_value_policy::take_ownership)
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
 }

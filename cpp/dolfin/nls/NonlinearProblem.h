@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <petscmat.h>
+
 namespace dolfin
 {
 
@@ -43,12 +45,12 @@ public:
   virtual la::PETScVector* F(const la::PETScVector& x) = 0;
 
   /// Compute J = F' at current point x
-  virtual la::PETScMatrix* J(const la::PETScVector& x) = 0;
+  virtual Mat J(const la::PETScVector& x) = 0;
 
   /// Compute J_pc used to precondition J. Not implementing this
   /// or leaving P empty results in system matrix A being used
   /// to construct preconditioner.
-  virtual la::PETScMatrix* P(const la::PETScVector& x) { return nullptr; }
+  virtual Mat P(const la::PETScVector& x) { return nullptr; }
 };
 } // namespace nls
 } // namespace dolfin

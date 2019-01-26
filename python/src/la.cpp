@@ -5,15 +5,13 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <memory>
+#include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#ifdef HAS_PYBIND11_PETSC4PY
-#include <petsc4py/petsc4py.h>
-#endif
 
 #include "casters.h"
 #include <dolfin/common/IndexMap.h>
@@ -52,8 +50,7 @@ class PyLinearOperator : public LinearOperatorBase
   }
 };
 
-// Linear operator trampoline class (with pure virtual 'mult'
-// function)
+// Linear operator trampoline class (with pure virtual 'mult' function)
 template <typename LinearOperatorBase>
 class PyLinearOperatorPure : public LinearOperatorBase
 {
@@ -150,7 +147,6 @@ void la(py::module& m)
   // dolfin::la::PETScOperator
   py::class_<dolfin::la::PETScOperator,
              std::shared_ptr<dolfin::la::PETScOperator>>(m, "PETScOperator")
-      .def("create_vector", &dolfin::la::PETScOperator::create_vector)
       .def("mat", &dolfin::la::PETScOperator::mat,
            "Return underlying PETSc Mat object");
 
@@ -158,12 +154,7 @@ void la(py::module& m)
   py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
              dolfin::la::PETScOperator>(m, "PETScMatrix", py::dynamic_attr(),
                                         "PETScMatrix object")
-      .def(py::init<>())
-      .def(py::init<Mat>())
-      .def("get_options_prefix", &dolfin::la::PETScMatrix::get_options_prefix)
-      .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
-      .def("set_nullspace", &dolfin::la::PETScMatrix::set_nullspace)
-      .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace);
+      .def(py::init<>());
 
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
@@ -206,7 +197,8 @@ void la(py::module& m)
       .def("orthonormalize", &dolfin::la::VectorSpaceBasis::orthonormalize,
            py::arg("tol") = 1.0e-10)
       .def("dim", &dolfin::la::VectorSpaceBasis::dim)
-      .def("__getitem__", &dolfin::la::VectorSpaceBasis::operator[]);
+      .def("__getitem__", [](const dolfin::la::VectorSpaceBasis& self,
+                             int i) { return self[i]->vec(); });
 
   // utils
   m.def("create_vector",
@@ -219,6 +211,13 @@ void la(py::module& m)
           return dolfin::la::create_matrix(comm.get(), p);
         },
         py::return_value_policy::take_ownership,
-        "Create a ghosted PETSc Mat from sparsity pattern.");
+        "Create a PETSc Mat from sparsity pattern.");
+//   m.def("create_nullspace",
+//         [](const MPICommWrapper comm, MPI_Comm comm,
+//            const dolfin::la::VectorSpaceBasis& nullspace) {
+//           return dolfin::la::create_petsc_nullspace(comm.get(), nullspace);
+//         },
+//         py::return_value_policy::take_ownership,
+//         "Create a PETSc MatNullSpace.");
 }
 } // namespace dolfin_wrappers

@@ -61,10 +61,10 @@ def test_numba_assembly():
     L = cpp.fem.Form([V._cpp_object])
     L.set_cell_tabulate(0, tabulate_tensor_b.address)
 
-    A = dolfin.cpp.fem.assemble(a)
+    A = dolfin.fem.assemble(a)
     b = dolfin.cpp.fem.assemble(L)
 
-    Anorm = A.mat().norm(PETSc.NormType.FROBENIUS)
+    Anorm = A.norm(PETSc.NormType.FROBENIUS)
     bnorm = b.vec().norm(PETSc.NormType.N2)
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))

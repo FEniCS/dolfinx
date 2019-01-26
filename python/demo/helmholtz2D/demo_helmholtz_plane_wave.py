@@ -53,8 +53,7 @@ ui = interpolate(Expression(ui_eval), V)
 u = TrialFunction(V)
 v = TestFunction(V)
 g = dot(grad(ui), n) + 1j * k0 * ui
-a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx + \
-    1j * k0 * inner(u, v) * ds
+a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx + 1j * k0 * inner(u, v) * ds
 L = inner(g, v) * ds
 
 # Compute solution

@@ -79,8 +79,7 @@ class NonlinearPDE_SNESProblem():
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
-        _J = dolfin.cpp.la.PETScMatrix(J)
-        fem.assemble(_J, self.a, [self.bc])
+        fem.assemble(J, self.a, [self.bc])
 
 
 def test_linear_pde():
@@ -187,7 +186,7 @@ def test_nonlinear_pde_snes():
     # Create Newton solver and solve
     snes = PETSc.SNES().create()
     snes.setFunction(problem.F, b.vec())
-    snes.setJacobian(problem.J, J.mat())
+    snes.setJacobian(problem.J, J)
 
     snes.setTolerances(rtol=1.0e-9, max_it=10)
     snes.setFromOptions()

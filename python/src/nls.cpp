@@ -106,10 +106,9 @@ void nls(py::module& m)
     // the return value policy), so the below is non-standard.  See
     // https://github.com/pybind/pybind11/issues/250.
 
-    dolfin::la::PETScMatrix* J(const dolfin::la::PETScVector& x) override
+    Mat J(const dolfin::la::PETScVector& x) override
     {
-      PYBIND11_OVERLOAD_INT(dolfin::la::PETScMatrix*,
-                            dolfin::nls::NonlinearProblem, "J", &x);
+      PYBIND11_OVERLOAD_INT(Mat, dolfin::nls::NonlinearProblem, "J", &x);
       py::pybind11_fail(
           "Tried to call pure virtual function dolfin::NonlinerProblem::J");
     }
