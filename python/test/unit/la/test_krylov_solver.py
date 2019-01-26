@@ -40,7 +40,7 @@ def test_krylov_solver_lu():
     solver.set_from_options()
     x = A.createVecRight()
     solver.set_operator(A)
-    solver.solve(x, b.vec())
+    solver.solve(x, b)
 
     # *Tight* tolerance for LU solves
     assert round(x.norm(PETSc.NormType.N2) - norm, 12) == 0

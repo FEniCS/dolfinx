@@ -33,7 +33,7 @@ void nls(py::module& m)
     // the return value policy), so the below is non-standard.  See
     // https://github.com/pybind/pybind11/issues/250.
 
-    bool converged(const dolfin::la::PETScVector& r,
+    bool converged(const Vec r,
                    const dolfin::nls::NonlinearProblem& nonlinear_problem,
                    std::size_t iteration)
     {
@@ -106,24 +106,23 @@ void nls(py::module& m)
     // the return value policy), so the below is non-standard.  See
     // https://github.com/pybind/pybind11/issues/250.
 
-    Mat J(const dolfin::la::PETScVector& x) override
+    Mat J(const Vec x) override
     {
-      PYBIND11_OVERLOAD_INT(Mat, dolfin::nls::NonlinearProblem, "J", &x);
+      PYBIND11_OVERLOAD_INT(Mat, dolfin::nls::NonlinearProblem, "J", x);
       py::pybind11_fail(
           "Tried to call pure virtual function dolfin::NonlinerProblem::J");
     }
 
-    dolfin::la::PETScVector* F(const dolfin::la::PETScVector& x) override
+    Vec F(const Vec x) override
     {
-      PYBIND11_OVERLOAD_INT(dolfin::la::PETScVector*,
-                            dolfin::nls::NonlinearProblem, "F", &x);
+      PYBIND11_OVERLOAD_INT(Vec, dolfin::nls::NonlinearProblem, "F", x);
       py::pybind11_fail(
           "Tried to call pure virtual function dolfin::NonlinearProblem::F");
     }
 
-    void form(dolfin::la::PETScVector& x) override
+    void form(Vec x) override
     {
-      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NonlinearProblem, "form", &x);
+      PYBIND11_OVERLOAD_INT(void, dolfin::nls::NonlinearProblem, "form", x);
       return dolfin::nls::NonlinearProblem::form(x);
     }
   };

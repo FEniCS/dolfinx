@@ -28,7 +28,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
         self._F, self._J = None, None
 
     def form(self, x):
-        x.update_ghosts()
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, x):
         """Assemble residual vector."""
@@ -38,7 +38,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
             self._F = fem.assemble_vector(self._F, self.L)
 
         dolfin.fem.apply_lifting(self._F, [self.a], [[self.bc]], [x], -1.0)
-        self._F.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        self._F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfin.fem.set_bc(self._F, [self.bc], x, -1.0)
 
         return self._F

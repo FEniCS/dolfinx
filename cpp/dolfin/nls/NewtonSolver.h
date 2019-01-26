@@ -8,6 +8,7 @@
 
 #include <dolfin/common/MPI.h>
 #include <memory>
+#include <petscvec.h>
 #include <utility>
 
 namespace dolfin
@@ -106,8 +107,7 @@ protected:
   ///
   /// @returns  bool
   ///         Whether convergence occurred.
-  virtual bool converged(const la::PETScVector& r,
-                         const NonlinearProblem& nonlinear_problem,
+  virtual bool converged(const Vec r, const NonlinearProblem& nonlinear_problem,
                          std::size_t iteration);
 
   /// Update solution vector by computed Newton step. Default

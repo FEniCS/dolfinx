@@ -53,13 +53,13 @@ def test_basic_assembly():
     A = dolfin.fem.assemble(a)
     b = dolfin.fem.assemble(L)
     assert isinstance(A, PETSc.Mat)
-    assert isinstance(b, dolfin.cpp.la.PETScVector)
+    assert isinstance(b, PETSc.Vec)
 
     # Second assembly
     A = dolfin.fem.assemble(A, a)
     b = dolfin.fem.assemble(b, L)
     assert isinstance(A, PETSc.Mat)
-    assert isinstance(b, dolfin.cpp.la.PETScVector)
+    assert isinstance(b, PETSc.Vec)
 
     # Function as coefficient
     f = dolfin.Function(V)
@@ -115,14 +115,14 @@ def test_matrix_assembly_block():
     b0 = dolfin.fem.assemble_vector_block(L_block, a_block, [bc])
     assert A0.getType() != "nest"
     Anorm0 = A0.norm()
-    bnorm0 = b0.vec().norm()
+    bnorm0 = b0.norm()
 
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix_nest(a_block, [bc])
     Anorm1 = nest_matrix_norm(A1)
     assert Anorm0 == pytest.approx(Anorm1, 1.0e-12)
     b1 = dolfin.fem.assemble_vector_nest(L_block, a_block, [bc])
-    bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.vec().getNestSubVecs()]))
+    bnorm1 = math.sqrt(sum([x.norm()**2 for x in b1.getNestSubVecs()]))
     assert bnorm0 == pytest.approx(bnorm1, 1.0e-12)
 
     # Monolithic version
@@ -138,11 +138,11 @@ def test_matrix_assembly_block():
     A2 = dolfin.fem.assemble_matrix(a, [bc])
     b2 = dolfin.fem.assemble_vector(L)
     dolfin.fem.apply_lifting(b2, [a], [[bc]])
-    b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfin.fem.set_bc(b2, [bc])
     assert A2.getType() != "nest"
     assert A2.norm() == pytest.approx(Anorm0, 1.0e-9)
-    assert b2.vec().norm() == pytest.approx(bnorm0, 1.0e-9)
+    assert b2.norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
 def test_assembly_solve_block():
@@ -193,7 +193,7 @@ def test_assembly_solve_block():
     A0 = dolfin.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs)
     b0 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs)
     A0norm = A0.norm()
-    b0norm = b0.vec().norm()
+    b0norm = b0.norm()
     x0 = A0.createVecLeft()
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
@@ -202,18 +202,18 @@ def test_assembly_solve_block():
     ksp.setType('cg')
     ksp.setTolerances(rtol=1.0e-14)
     ksp.setFromOptions()
-    ksp.solve(b0.vec(), x0)
+    ksp.solve(b0, x0)
     x0norm = x0.norm()
 
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs)
     b1 = dolfin.fem.assemble_vector_nest([L0, L1], [[a00, a01], [a10, a11]], bcs)
-    b1norm = b1.vec().norm()
+    b1norm = b1.norm()
     assert b1norm == pytest.approx(b0norm, 1.0e-12)
     A1norm = nest_matrix_norm(A1)
     assert A0norm == pytest.approx(A1norm, 1.0e-12)
 
-    x1 = dolfin.la.PETScVector(b1)
+    x1 = b1.copy()
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
     ksp.setMonitor(monitor)
@@ -221,8 +221,8 @@ def test_assembly_solve_block():
     ksp.setType('cg')
     ksp.setTolerances(rtol=1.0e-12)
     ksp.setFromOptions()
-    ksp.solve(b1.vec(), x1.vec())
-    x1norm = x1.vec().norm()
+    ksp.solve(b1, x1)
+    x1norm = x1.norm()
     assert x1norm == pytest.approx(x0norm, rel=1.0e-12)
 
     # Monolithic version
@@ -252,14 +252,14 @@ def test_assembly_solve_block():
     A2 = dolfin.fem.assemble_matrix(a, bcs)
     b2 = dolfin.fem.assemble_vector(L)
     dolfin.fem.apply_lifting(b2, [a], [bcs])
-    b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfin.fem.set_bc(b2, bcs)
     A2norm = A2.norm()
-    b2norm = b2.vec().norm()
+    b2norm = b2.norm()
     assert A2norm == pytest.approx(A0norm, 1.0e-12)
     assert b2norm == pytest.approx(b0norm, 1.0e-12)
 
-    x2 = dolfin.cpp.la.PETScVector(b2)
+    x2 = b2.copy()
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
     ksp.setMonitor(monitor)
@@ -268,14 +268,15 @@ def test_assembly_solve_block():
     ksp.getPC().setType('jacobi')
     ksp.setTolerances(rtol=1.0e-12)
     ksp.setFromOptions()
-    ksp.solve(b2.vec(), x2.vec())
-    x2norm = x2.vec().norm()
+    ksp.solve(b2, x2)
+    x2norm = x2.norm()
     assert x2norm == pytest.approx(x0norm, 1.0e-10)
 
     # # Old assembler (reference solution)
     A3, b3 = dolfin.fem.assembling.assemble_system(a, L, bcs)
     A3 = A3.mat()
-    x3 = dolfin.cpp.la.PETScVector(b3)
+    b3 = b3.vec()
+    x3 = b3.copy()
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
     ksp.setMonitor(monitor)
@@ -283,8 +284,8 @@ def test_assembly_solve_block():
     ksp.setType('cg')
     ksp.setTolerances(rtol=1.0e-12)
     ksp.setFromOptions()
-    ksp.solve(b3.vec(), x3.vec())
-    x3norm = x3.vec().norm()
+    ksp.solve(b3, x3)
+    x3norm = x3.norm()
     assert x3norm == pytest.approx(x0norm, 1.0e-10)
 
 
@@ -336,7 +337,7 @@ def test_assembly_solve_taylor_hood(mesh):
     P0 = dolfin.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
     P0norm = nest_matrix_norm(P0)
     b0 = dolfin.fem.assemble_vector_nest([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1])
-    b0norm = b0.vec().norm()
+    b0norm = b0.norm()
 
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
@@ -359,8 +360,8 @@ def test_assembly_solve_taylor_hood(mesh):
     ksp.setTolerances(rtol=1.0e-8, max_it=50)
     ksp.setMonitor(monitor)
     ksp.setFromOptions()
-    x0 = dolfin.cpp.la.PETScVector(b0)
-    ksp.solve(b0.vec(), x0.vec())
+    x0 = b0.copy()
+    ksp.solve(b0, x0)
     assert ksp.getConvergedReason() > 0
 
     # -- Blocked and monolithic
@@ -370,7 +371,7 @@ def test_assembly_solve_taylor_hood(mesh):
     P1 = dolfin.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
     assert P1.norm() == pytest.approx(P0norm, 1.0e-12)
     b1 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1])
-    assert b1.vec().norm() == pytest.approx(b0norm, 1.0e-12)
+    assert b1.norm() == pytest.approx(b0norm, 1.0e-12)
 
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
@@ -381,10 +382,10 @@ def test_assembly_solve_taylor_hood(mesh):
     pc.setFactorSolverType('mumps')
     ksp.setTolerances(rtol=1.0e-8, max_it=50)
     ksp.setFromOptions()
-    x1 = dolfin.cpp.la.PETScVector(b1)
-    ksp.solve(b1.vec(), x1.vec())
+    x1 = A1.createVecRight()
+    ksp.solve(b1, x1)
     assert ksp.getConvergedReason() > 0
-    assert x1.vec().norm() == pytest.approx(x0.vec().norm(), 1e-8)
+    assert x1.norm() == pytest.approx(x0.norm(), 1e-8)
 
     # -- Monolithic
 
@@ -419,9 +420,9 @@ def test_assembly_solve_taylor_hood(mesh):
 
     b2 = dolfin.fem.assemble_vector(L)
     dolfin.fem.apply_lifting(b2, [a], [[bc0, bc1]])
-    b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfin.fem.set_bc(b2, [bc0, bc1])
-    b2norm = b2.vec().norm()
+    b2norm = b2.norm()
     assert b2norm == pytest.approx(b0norm, 1.0e-12)
 
     ksp = PETSc.KSP()
@@ -439,7 +440,7 @@ def test_assembly_solve_taylor_hood(mesh):
     ksp.setTolerances(rtol=1.0e-8, max_it=50)
     ksp.setMonitor(monitor)
     ksp.setFromOptions()
-    x2 = dolfin.cpp.la.PETScVector(b2)
-    ksp.solve(b2.vec(), x2.vec())
+    x2 = A2.createVecRight()
+    ksp.solve(b2, x2)
     assert ksp.getConvergedReason() > 0
-    assert x0.vec().norm() == pytest.approx(x2.vec().norm(), 1e-8)
+    assert x0.norm() == pytest.approx(x2.norm(), 1e-8)

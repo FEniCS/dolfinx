@@ -88,11 +88,24 @@ void fem(py::module& m)
         "Create a ufc_coordinate_mapping object from a pointer.");
 
   // utils
-  m.def("create_vector", &dolfin::fem::init_monolithic,
-        "Create a monolithic vector for multiple (stacked) linear forms.");
-  m.def("create_vector_nest", &dolfin::fem::init_nest,
-        "Create a nested vector for multiple (stacked) linear forms.");
-
+  m.def("create_vector",
+        [](const std::vector<const dolfin::fem::Form*> L) {
+          auto x = dolfin::fem::init_monolithic(L);
+          Vec _x = x.vec();
+          PetscObjectReference((PetscObject)_x);
+          return _x;
+        },
+        py::return_value_policy::take_ownership,
+        "Initialise monolithic vector for multiple (stacked) linear forms.");
+  m.def("create_vector_nest",
+        [](const std::vector<const dolfin::fem::Form*> L) {
+          auto x = dolfin::fem::init_nest(L);
+          Vec _x = x.vec();
+          PetscObjectReference((PetscObject)_x);
+          return _x;
+        },
+        py::return_value_policy::take_ownership,
+        "Initialise nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix",
         [](const dolfin::fem::Form& a) {
           auto A = dolfin::fem::init_matrix(a);

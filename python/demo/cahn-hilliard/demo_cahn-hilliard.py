@@ -113,6 +113,8 @@
 
 import random
 
+from petsc4py import PETSc
+
 from dolfin import (MPI, CellType, Expression, FiniteElement, Function,
                     FunctionSpace, NewtonSolver, NonlinearProblem,
                     TestFunctions, TrialFunction, UnitSquareMesh, function,
@@ -140,7 +142,7 @@ class CahnHilliardEquation(NonlinearProblem):
         self._J = None
 
     def form(self, x):
-        x.update_ghosts()
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, x):
         if self._F is None:

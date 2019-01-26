@@ -106,25 +106,32 @@ public:
   /// Destructor
   virtual ~HyperElasticProblem() = default;
 
-  void form(la::PETScVector& x) final { x.update_ghosts(); }
+  void form(Vec x) final
+  {
+    la::PETScVector _x(x);
+    _x.update_ghosts();
+  }
 
   /// Compute F at current point x
-  la::PETScVector* F(const la::PETScVector& x) final
+  Vec F(const Vec x) final
   {
     // Assemble b
     if (!b)
-      b = std::make_unique<la::PETScVector>(*_l->function_space(0)->dofmap()->index_map());
+    {
+      b = std::make_unique<la::PETScVector>(
+          *_l->function_space(0)->dofmap()->index_map());
+    }
     assemble_vector(b->vec(), *_l);
     b->apply_ghosts();
 
     // Set bcs
-    set_bc(b->vec(), _bcs, x.vec(), -1);
+    set_bc(b->vec(), _bcs, x, -1);
 
-    return b.get();
+    return b->vec();
   }
 
   /// Compute J = F' at current point x
-  Mat J(const la::PETScVector& x) final
+  Mat J(const Vec x) final
   {
     if (!A)
       A = std::make_unique<la::PETScMatrix>(fem::init_matrix(*_j));
