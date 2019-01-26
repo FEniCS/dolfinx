@@ -29,7 +29,7 @@
   }
 
 // Macro for casting between PETSc and petsc4py objects
-#define PETSC_CASTER_MACRO(TYPE, NAME)                                         \
+#define PETSC_CASTER_MACRO(TYPE, P4PYTYPE, NAME)                                         \
   template <>                                                                  \
   class type_caster<_p_##TYPE>                                                 \
   {                                                                            \
@@ -42,18 +42,18 @@
         value = nullptr;                                                       \
         return true;                                                           \
       }                                                                        \
-      VERIFY_PETSC4PY(PyPetsc##TYPE##_Get);                                    \
-      if (PyObject_TypeCheck(src.ptr(), &PyPetsc##TYPE##_Type) == 0)           \
+      VERIFY_PETSC4PY(PyPetsc##P4PYTYPE##_Get);                                \
+      if (PyObject_TypeCheck(src.ptr(), &PyPetsc##P4PYTYPE##_Type) == 0)       \
         return false;                                                          \
-      value = PyPetsc##TYPE##_Get(src.ptr());                                  \
+      value = PyPetsc##P4PYTYPE##_Get(src.ptr());                              \
       return true;                                                             \
     }                                                                          \
                                                                                \
     static handle cast(TYPE src, pybind11::return_value_policy policy,         \
                        handle parent)                                          \
     {                                                                          \
-      VERIFY_PETSC4PY(PyPetsc##TYPE##_New);                                    \
-      auto obj = PyPetsc##TYPE##_New(src);                                     \
+      VERIFY_PETSC4PY(PyPetsc##P4PYTYPE##_New);                                \
+      auto obj = PyPetsc##P4PYTYPE##_New(src);                                 \
       if (policy == pybind11::return_value_policy::take_ownership)             \
         PetscObjectDereference((PetscObject)src);                              \
       return pybind11::handle(obj);                                            \
@@ -66,11 +66,12 @@ namespace pybind11
 {
 namespace detail
 {
-PETSC_CASTER_MACRO(DM, dm);
-PETSC_CASTER_MACRO(KSP, ksp);
-PETSC_CASTER_MACRO(Mat, mat);
-PETSC_CASTER_MACRO(SNES, snes);
-PETSC_CASTER_MACRO(Vec, vec);
+PETSC_CASTER_MACRO(DM, DM, dm);
+PETSC_CASTER_MACRO(KSP, KSP, ksp);
+PETSC_CASTER_MACRO(Mat, Mat, mat);
+// PETSC_CASTER_MACRO(MatNullSpace, NullSpace, matnullspace);
+PETSC_CASTER_MACRO(SNES, SNES, snes);
+PETSC_CASTER_MACRO(Vec, Vec, vec);
 } // namespace detail
 } // namespace pybind11
 

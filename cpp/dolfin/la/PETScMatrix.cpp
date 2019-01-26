@@ -25,36 +25,6 @@
 using namespace dolfin;
 using namespace dolfin::la;
 
-namespace
-{
-MatNullSpace _create_petsc_nullspace(MPI_Comm comm,
-                                     const la::VectorSpaceBasis& nullspace)
-{
-  PetscErrorCode ierr;
-
-  // Copy vectors in vector space object
-  std::vector<Vec> _nullspace;
-  for (std::size_t i = 0; i < nullspace.dim(); ++i)
-  {
-    assert(nullspace[i]);
-    auto x = nullspace[i]->vec();
-
-    // Copy vector pointer
-    assert(x);
-    _nullspace.push_back(x);
-  }
-
-  // Create PETSC nullspace
-  MatNullSpace petsc_nullspace = NULL;
-  ierr = MatNullSpaceCreate(comm, PETSC_FALSE, _nullspace.size(),
-                            _nullspace.data(), &petsc_nullspace);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatNullSpaceCreate");
-
-  return petsc_nullspace;
-}
-} // namespace
-
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix() : PETScOperator()
 {
@@ -212,7 +182,7 @@ void PETScMatrix::set_from_options()
 void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
 {
   // Create PETSc nullspace
-  MatNullSpace petsc_ns = _create_petsc_nullspace(mpi_comm(), nullspace);
+  MatNullSpace petsc_ns = create_petsc_nullspace(mpi_comm(), nullspace);
 
   // Attach PETSc nullspace to matrix
   assert(_matA);
@@ -227,7 +197,7 @@ void PETScMatrix::set_nullspace(const la::VectorSpaceBasis& nullspace)
 void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
 {
   // Create PETSc nullspace
-  MatNullSpace petsc_ns = _create_petsc_nullspace(mpi_comm(), nullspace);
+  MatNullSpace petsc_ns = la::create_petsc_nullspace(mpi_comm(), nullspace);
 
   // Attach near  nullspace to matrix
   assert(_matA);

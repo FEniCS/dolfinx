@@ -27,6 +27,7 @@ class Form;
 }
 namespace la
 {
+class VectorSpaceBasis;
 class SparsityPattern;
 
 /// Norm types
@@ -51,6 +52,10 @@ Vec create_vector(
 
 /// Create a PETSc Mat. Caller is responsible for destroying the object.
 Mat create_matrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
+
+/// Create PETSc MatNullSpace. Caller is responsible for destruction.
+MatNullSpace create_petsc_nullspace(MPI_Comm comm,
+                                    const VectorSpaceBasis& nullspace);
 
 /// Compute IndexSets (IS) for stacked index maps
 std::vector<IS> compute_index_sets(std::vector<const common::IndexMap*> maps);
