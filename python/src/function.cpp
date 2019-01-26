@@ -69,8 +69,7 @@ void function(py::module& m)
                                        "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")
-      .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>,
-                    std::shared_ptr<dolfin::la::PETScVector>>())
+      .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
       .def("collapse",

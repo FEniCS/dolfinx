@@ -32,12 +32,12 @@ def test_scalar_p1():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector().vec(), Vuc.vector().vec())
+    mat.mult(uc.vector(), Vuc.vector())
 
     diff = Vuc.vector()
-    diff.vec().axpy(-1, uf.vector().vec())
+    diff.axpy(-1, uf.vector())
 
-    assert diff.vec().norm() < 1.0e-12
+    assert diff.norm() < 1.0e-12
 
 
 def test_scalar_p1_scaled_mesh():
@@ -61,12 +61,12 @@ def test_scalar_p1_scaled_mesh():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector().vec(), Vuc.vector().vec())
+    mat.mult(uc.vector(), Vuc.vector())
 
     diff = Vuc.vector()
-    diff.vec().axpy(-1, uf.vector().vec())
+    diff.axpy(-1, uf.vector())
 
-    assert diff.vec().norm() < 1.0e-12
+    assert diff.norm() < 1.0e-12
 
     # Now make coarse mesh larger than fine mesh
     meshc.geometry.points *= 1.5
@@ -75,12 +75,12 @@ def test_scalar_p1_scaled_mesh():
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
-    mat.mult(uc.vector().vec(), Vuc.vector().vec())
+    mat.mult(uc.vector(), Vuc.vector())
 
     diff = Vuc.vector()
-    diff.vec().axpy(-1, uf.vector().vec())
+    diff.axpy(-1, uf.vector())
 
-    assert diff.vec().norm() < 1.0e-12
+    assert diff.norm() < 1.0e-12
 
 
 def test_scalar_p2():
@@ -101,12 +101,12 @@ def test_scalar_p2():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector().vec(), Vuc.vector().vec())
+    mat.mult(uc.vector(), Vuc.vector())
 
     diff = Vuc.vector()
-    diff.vec().axpy(-1, uf.vector().vec())
+    diff.axpy(-1, uf.vector())
 
-    assert diff.vec().norm() < 1.0e-12
+    assert diff.norm() < 1.0e-12
 
 
 def test_vector_p1_2d():
@@ -129,11 +129,11 @@ def test_vector_p1_2d():
                                                    Vf._cpp_object)
 
     Vuc = Function(Vf)
-    mat.mult(uc.vector().vec(), Vuc.vector().vec())
+    mat.mult(uc.vector(), Vuc.vector())
 
     diff = Vuc.vector()
-    diff.vec().axpy(-1, uf.vector().vec())
-    assert diff.vec().norm() < 1.0e-12
+    diff.axpy(-1, uf.vector())
+    assert diff.norm() < 1.0e-12
 
 
 def test_vector_p2_2d():
@@ -155,11 +155,11 @@ def test_vector_p2_2d():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector().vec(), Vuc.vector().vec())
+    mat.mult(uc.vector(), Vuc.vector())
 
     diff = Vuc.vector()
-    diff.vec().axpy(-1, uf.vector().vec())
-    assert diff.vec().norm() < 1.0e-12
+    diff.axpy(-1, uf.vector())
+    assert diff.norm() < 1.0e-12
 
 
 def test_vector_p1_3d():
@@ -182,11 +182,11 @@ def test_vector_p1_3d():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector().vec(), Vuc.vector().vec())
+    mat.mult(uc.vector(), Vuc.vector())
 
     diff = Vuc.vector()
-    diff.vec().axpy(-1, uf.vector().vec())
-    assert diff.vec().norm() < 1.0e-12
+    diff.axpy(-1, uf.vector())
+    assert diff.norm() < 1.0e-12
 
 
 @pytest.mark.xfail

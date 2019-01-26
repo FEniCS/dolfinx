@@ -6,16 +6,13 @@
 
 #include <Eigen/Dense>
 #include <memory>
+#include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 #include <string>
-
-#ifdef HAS_PYBIND11_PETSC4PY
-#include <petsc4py/petsc4py.h>
-#endif
 
 #include "casters.h"
 #include <dolfin/common/IndexMap.h>
