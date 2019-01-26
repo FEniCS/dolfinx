@@ -24,7 +24,7 @@ def assemble(M: typing.Union[Form, cpp.fem.Form]
     M_cpp = _create_cpp_form(M)
     try:
         return cpp.fem.assemble(M_cpp).mat()
-    except:
+    except AttributeError:
         return cpp.fem.assemble(M_cpp)
 
 
