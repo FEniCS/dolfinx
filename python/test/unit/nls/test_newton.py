@@ -78,10 +78,6 @@ class NonlinearPDE_SNESProblem():
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
-        if J is None:
-            print("!!!!!!!!!!!!!!!!!!!!!")
-        else:
-            print("BBBB!!!!!!!!!!!!!!!!!!!!!")
         fem.assemble(J, self.a, [self.bc])
 
 
@@ -120,7 +116,7 @@ def test_linear_pde():
     assert n == 1
 
 
-def xtest_nonlinear_pde():
+def test_nonlinear_pde():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 5)
@@ -158,7 +154,7 @@ def xtest_nonlinear_pde():
     assert n < 6
 
 
-def xtest_nonlinear_pde_snes():
+def test_nonlinear_pde_snes():
     """Test Newton solver for a simple nonlinear PDE"""
     # Create mesh and function space
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 15)
@@ -184,12 +180,13 @@ def xtest_nonlinear_pde_snes():
     u.vector().update_ghosts()
 
     b = dolfin.cpp.la.PETScVector(V.dofmap().index_map())
+    #J = dolfin.cpp.fem.create_matrix(problem.a_comp._cpp_object)
     J = dolfin.cpp.fem.create_matrix(problem.a_comp._cpp_object)
 
     # Create Newton solver and solve
     snes = PETSc.SNES().create()
     snes.setFunction(problem.F, b.vec())
-    snes.setJacobian(problem.J, J.mat())
+    snes.setJacobian(problem.J, J)
 
     snes.setTolerances(rtol=1.0e-9, max_it=10)
     snes.setFromOptions()

@@ -110,7 +110,8 @@ bc = DirichletBC(V, u0, boundary)
 # Assemble system, applying boundary conditions and preserving
 # symmetry)
 A, b = assemble_system(a, L, bc)
-assert A.mat().block_size == 3
+A = A.mat()
+assert A.block_size == 3
 
 # Create solution function
 u = Function(V)
@@ -145,7 +146,7 @@ solver = PETScKrylovSolver(MPI.comm_world)
 solver.set_from_options()
 
 # Set matrix operator
-solver.set_operator(A.mat())
+solver.set_operator(A)
 
 # Compute solution
 solver.solve(u.vector().vec(), b.vec())

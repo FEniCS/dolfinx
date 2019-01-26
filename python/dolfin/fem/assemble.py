@@ -122,7 +122,7 @@ def assemble_matrix_nest(a,
                          diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    A = cpp.fem.create_matrix_nest(a_cpp).mat()
+    A = cpp.fem.create_matrix_nest(a_cpp)
     A.zeroEntries()
     cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
     return A
@@ -133,7 +133,7 @@ def assemble_matrix_block(a,
                           diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear forms into matrix"""
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    A = cpp.fem.create_matrix_block(a_cpp).mat()
+    A = cpp.fem.create_matrix_block(a_cpp)
     A.zeroEntries()
     cpp.fem.assemble_blocked_matrix(A, a_cpp, bcs, diagonal)
     return A
@@ -144,7 +144,7 @@ def assemble_matrix(a,
                     diagonal: float = 1.0) -> cpp.la.PETScMatrix:
     """Assemble bilinear form into matrix."""
     a_cpp = _create_cpp_form(a)
-    A = cpp.fem.create_matrix(a_cpp).mat()
+    A = cpp.fem.create_matrix(a_cpp)
     assemble(A, a_cpp, bcs, diagonal)
     return A
 

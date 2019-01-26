@@ -50,8 +50,7 @@ class PyLinearOperator : public LinearOperatorBase
   }
 };
 
-// Linear operator trampoline class (with pure virtual 'mult'
-// function)
+// Linear operator trampoline class (with pure virtual 'mult' function)
 template <typename LinearOperatorBase>
 class PyLinearOperatorPure : public LinearOperatorBase
 {
@@ -156,12 +155,12 @@ void la(py::module& m)
   py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
              dolfin::la::PETScOperator>(m, "PETScMatrix", py::dynamic_attr(),
                                         "PETScMatrix object")
-      .def(py::init<>())
-      .def(py::init<Mat>())
-      .def("get_options_prefix", &dolfin::la::PETScMatrix::get_options_prefix)
-      .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
-      .def("set_nullspace", &dolfin::la::PETScMatrix::set_nullspace)
-      .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace);
+      .def(py::init<>());
+     //  .def(py::init<Mat>())
+     //  .def("get_options_prefix", &dolfin::la::PETScMatrix::get_options_prefix)
+     //  .def("set_options_prefix", &dolfin::la::PETScMatrix::set_options_prefix)
+     //  .def("set_nullspace", &dolfin::la::PETScMatrix::set_nullspace)
+     //  .def("set_near_nullspace", &dolfin::la::PETScMatrix::set_near_nullspace);
 
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
@@ -217,6 +216,6 @@ void la(py::module& m)
           return dolfin::la::create_matrix(comm.get(), p);
         },
         py::return_value_policy::take_ownership,
-        "Create a ghosted PETSc Mat from sparsity pattern.");
+        "Create a PETSc Mat from sparsity pattern.");
 }
 } // namespace dolfin_wrappers

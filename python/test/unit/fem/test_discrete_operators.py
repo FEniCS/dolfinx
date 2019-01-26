@@ -24,14 +24,14 @@ def test_gradient():
     def compute_discrete_gradient(mesh):
         V = FunctionSpace(mesh, ("Lagrange", 1))
         W = FunctionSpace(mesh, ("Nedelec 1st kind H(curl)", 1))
-
         G = DiscreteOperators.build_gradient(W._cpp_object, V._cpp_object)
+        assert G.getRefCount() == 1
         num_edges = mesh.num_entities_global(1)
-        m, n = G.mat().getSize()
+        m, n = G.getSize()
         assert m == num_edges
         assert n == mesh.num_entities_global(0)
         assert round(
-            G.mat().norm(PETSc.NormType.FROBENIUS) - sqrt(2.0 * num_edges),
+            G.norm(PETSc.NormType.FROBENIUS) - sqrt(2.0 * num_edges),
             8) == 0.0
 
     meshes = [

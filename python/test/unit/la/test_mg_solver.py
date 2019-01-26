@@ -42,7 +42,7 @@ def test_mg_solver_laplace():
 
     # Create PETSc Krylov solver and set operator
     solver = PETScKrylovSolver()
-    solver.set_operator(A.mat())
+    solver.set_operator(A)
 
     # Set PETSc solver type
     PETScOptions.set("ksp_type", "richardson")
@@ -146,7 +146,7 @@ def xtest_mg_solver_stokes():
     dm_collection = PETScDMCollection(spaces)
 
     solver = PETScKrylovSolver()
-    solver.set_operators(A.mat(), P.mat())
+    solver.set_operators(A, P)
 
     PETScOptions.set("ksp_type", "gcr")
     PETScOptions.set("pc_type", "mg")

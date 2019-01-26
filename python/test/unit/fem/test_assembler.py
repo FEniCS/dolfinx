@@ -274,11 +274,12 @@ def test_assembly_solve_block():
 
     # # Old assembler (reference solution)
     A3, b3 = dolfin.fem.assembling.assemble_system(a, L, bcs)
+    A3 = A3.mat()
     x3 = dolfin.cpp.la.PETScVector(b3)
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
     ksp.setMonitor(monitor)
-    ksp.setOperators(A3.mat())
+    ksp.setOperators(A3)
     ksp.setType('cg')
     ksp.setTolerances(rtol=1.0e-12)
     ksp.setFromOptions()
