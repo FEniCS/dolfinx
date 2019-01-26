@@ -206,6 +206,14 @@ void la(py::module& m)
             &dolfin::la::create_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
+  m.def("create_vector",
+        [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
+           const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
+           int block_size) {
+          return dolfin::la::create_vector(comm.get(), range, ghost_indices,
+                                           block_size);
+        },
+        py::return_value_policy::take_ownership, "Create a PETSc Vec.");
   m.def("create_matrix",
         [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
           return dolfin::la::create_matrix(comm.get(), p);
