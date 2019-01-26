@@ -312,7 +312,7 @@ u.vector().vec().copy(result=u0.vector().vec())
 u0.vector().update_ghosts()
 while (t < T):
     t += dt
-    solver.solve(problem, u.vector())
+    solver.solve(problem, u.vector().vec())
     u.vector().vec().copy(result=u0.vector().vec())
     file.write(u.sub(0), t)
 

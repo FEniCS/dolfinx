@@ -105,14 +105,14 @@ def test_linear_pde():
 
     # Create Newton solver and solve
     solver = dolfin.cpp.nls.NewtonSolver(dolfin.MPI.comm_world)
-    n, converged = solver.solve(problem, u.vector())
+    n, converged = solver.solve(problem, u.vector().vec())
     assert converged
     assert n == 1
 
     # Increment boundary condition and solve again
     u_bc.vector().vec().set(2.0)
     u_bc.vector().update_ghosts()
-    n, converged = solver.solve(problem, u.vector())
+    n, converged = solver.solve(problem, u.vector().vec())
     assert converged
     assert n == 1
 
@@ -143,14 +143,14 @@ def test_nonlinear_pde():
     u.vector().vec().set(0.9)
     u.vector().update_ghosts()
     solver = dolfin.cpp.nls.NewtonSolver(dolfin.MPI.comm_world)
-    n, converged = solver.solve(problem, u.vector())
+    n, converged = solver.solve(problem, u.vector().vec())
     assert converged
     assert n < 6
 
     # Modify boundary condition and solve again
     u_bc.vector().vec().set(0.5)
     u_bc.vector().update_ghosts()
-    n, converged = solver.solve(problem, u.vector())
+    n, converged = solver.solve(problem, u.vector().vec())
     assert converged
     assert n < 6
 

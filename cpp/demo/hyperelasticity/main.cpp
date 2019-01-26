@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
 
   HyperElasticProblem problem(u, L, a, bcs);
   nls::NewtonSolver newton_solver(MPI_COMM_WORLD);
-  newton_solver.solve(problem, *u->vector());
+  newton_solver.solve(problem, u->vector()->vec());
 
   // Save solution in VTK format
   io::VTKFile file("u.pvd");

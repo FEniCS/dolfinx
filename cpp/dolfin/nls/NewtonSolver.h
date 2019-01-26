@@ -17,7 +17,6 @@ namespace dolfin
 namespace la
 {
 class PETScKrylovSolver;
-class PETScMatrix;
 class PETScVector;
 } // namespace la
 
@@ -50,8 +49,7 @@ public:
   /// @returns    std::pair<std::size_t, bool>
   ///         Pair of number of Newton iterations, and whether
   ///         iteration converged)
-  std::pair<int, bool> solve(NonlinearProblem& nonlinear_function,
-                             la::PETScVector& x);
+  std::pair<int, bool> solve(NonlinearProblem& nonlinear_function, Vec x);
 
   /// Return number of Krylov iterations elapsed since
   /// solve started
@@ -125,8 +123,7 @@ protected:
   ///         The nonlinear problem.
   ///  @param iteration (std::size_t)
   ///         Newton iteration number.
-  virtual void update_solution(la::PETScVector& x, const la::PETScVector& dx,
-                               double relaxation_parameter,
+  virtual void update_solution(Vec x, const Vec dx, double relaxation_parameter,
                                const NonlinearProblem& nonlinear_problem,
                                std::size_t iteration);
 
