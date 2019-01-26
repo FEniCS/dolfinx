@@ -38,12 +38,12 @@ def test_krylov_solver_lu():
     PETScOptions.set("test_lu_ksp_type", "preonly")
     PETScOptions.set("test_lu_pc_type", "lu")
     solver.set_from_options()
-    x = A.create_vector(1)
-    solver.set_operator(A.mat())
-    solver.solve(x.vec(), b.vec())
+    x = A.createVecRight()
+    solver.set_operator(A)
+    solver.solve(x, b.vec())
 
     # *Tight* tolerance for LU solves
-    assert round(x.vec().norm(PETSc.NormType.N2) - norm, 12) == 0
+    assert round(x.norm(PETSc.NormType.N2) - norm, 12) == 0
 
 
 @pytest.mark.skip

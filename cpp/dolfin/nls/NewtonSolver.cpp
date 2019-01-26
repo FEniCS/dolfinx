@@ -41,7 +41,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   _krylov_iterations = 0;
 
   // Compute F(u) (assembled into _b)
-  la::PETScMatrix *A(nullptr), *P(nullptr);
+  Mat A(nullptr), P(nullptr);
   la::PETScVector* b = nullptr;
 
   nonlinear_problem.form(x);
@@ -74,17 +74,19 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     A = nonlinear_problem.J(x);
     assert(A);
     P = nonlinear_problem.P(x);
+    if (!P)
+      P = A;
 
     if (!_dx)
-      _dx = std::make_unique<la::PETScVector>(A->create_vector(1));
+    {
+      la::PETScMatrix _A(A);
+      _dx = std::make_unique<la::PETScVector>(_A.create_vector(1));
+    }
 
     // FIXME: check that this is efficient if A and/or P are unchanged
     // Set operators
     assert(_solver);
-    if (P)
-      _solver->set_operators(A->mat(), P->mat());
-    else
-      _solver->set_operator(A->mat());
+    _solver->set_operators(A, P);
 
     // Perform linear solve and update total number of Krylov iterations
     _krylov_iterations += _solver->solve(_dx->vec(), b->vec());

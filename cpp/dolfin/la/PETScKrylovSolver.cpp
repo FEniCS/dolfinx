@@ -59,9 +59,7 @@ void PETScKrylovSolver::set_operator(const Mat A) { set_operators(A, A); }
 void PETScKrylovSolver::set_operators(const Mat A, const Mat P)
 {
   assert(A);
-  assert(P);
   assert(_ksp);
-
   PetscErrorCode ierr;
   ierr = KSPSetOperators(_ksp, A, P);
   if (ierr != 0)

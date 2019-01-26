@@ -52,20 +52,20 @@ def test_basic_assembly():
     # Initial assembly
     A = dolfin.fem.assemble(a)
     b = dolfin.fem.assemble(L)
-    assert isinstance(A, dolfin.cpp.la.PETScMatrix)
+    assert isinstance(A, PETSc.Mat)
     assert isinstance(b, dolfin.cpp.la.PETScVector)
 
     # Second assembly
     A = dolfin.fem.assemble(A, a)
     b = dolfin.fem.assemble(b, L)
-    assert isinstance(A, dolfin.cpp.la.PETScMatrix)
+    assert isinstance(A, PETSc.Mat)
     assert isinstance(b, dolfin.cpp.la.PETScVector)
 
     # Function as coefficient
     f = dolfin.Function(V)
     a = f * inner(u, v) * dx
     A = dolfin.fem.assemble(a)
-    assert isinstance(A, dolfin.cpp.la.PETScMatrix)
+    assert isinstance(A, PETSc.Mat)
 
 
 def test_matrix_assembly_block():
@@ -140,8 +140,8 @@ def test_matrix_assembly_block():
     dolfin.fem.apply_lifting(b2, [a], [[bc]])
     b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfin.fem.set_bc(b2, [bc])
-    assert A2.mat().getType() != "nest"
-    assert A2.mat().norm() == pytest.approx(Anorm0, 1.0e-9)
+    assert A2.getType() != "nest"
+    assert A2.norm() == pytest.approx(Anorm0, 1.0e-9)
     assert b2.vec().norm() == pytest.approx(bnorm0, 1.0e-9)
 
 
@@ -254,7 +254,7 @@ def test_assembly_solve_block():
     dolfin.fem.apply_lifting(b2, [a], [bcs])
     b2.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     dolfin.fem.set_bc(b2, bcs)
-    A2norm = A2.mat().norm()
+    A2norm = A2.norm()
     b2norm = b2.vec().norm()
     assert A2norm == pytest.approx(A0norm, 1.0e-12)
     assert b2norm == pytest.approx(b0norm, 1.0e-12)
@@ -263,7 +263,7 @@ def test_assembly_solve_block():
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
     ksp.setMonitor(monitor)
-    ksp.setOperators(A2.mat())
+    ksp.setOperators(A2)
     ksp.setType('cg')
     ksp.getPC().setType('jacobi')
     ksp.setTolerances(rtol=1.0e-12)
@@ -412,9 +412,9 @@ def test_assembly_solve_taylor_hood(mesh):
     bc1 = dolfin.DirichletBC(W.sub(0), u0, boundary1)
 
     A2 = dolfin.fem.assemble_matrix(a, [bc0, bc1])
-    assert A2.mat().norm() == pytest.approx(A0norm, 1.0e-12)
+    assert A2.norm() == pytest.approx(A0norm, 1.0e-12)
     P2 = dolfin.fem.assemble_matrix(p_form, [bc0, bc1])
-    assert P2.mat().norm() == pytest.approx(P0norm, 1.0e-12)
+    assert P2.norm() == pytest.approx(P0norm, 1.0e-12)
 
     b2 = dolfin.fem.assemble_vector(L)
     dolfin.fem.apply_lifting(b2, [a], [[bc0, bc1]])
@@ -425,7 +425,7 @@ def test_assembly_solve_taylor_hood(mesh):
 
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())
-    ksp.setOperators(A2.mat(), P2.mat())
+    ksp.setOperators(A2, P2)
     ksp.setType("minres")
     pc = ksp.getPC()
     pc.setType('lu')

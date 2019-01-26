@@ -5,15 +5,13 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <memory>
+#include <petsc4py/petsc4py.h>
 #include <pybind11/complex.h>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#ifdef HAS_PYBIND11_PETSC4PY
-#include <petsc4py/petsc4py.h>
-#endif
 
 #include "casters.h"
 #include <dolfin/common/IndexMap.h>
