@@ -13,7 +13,6 @@ from dolfin import (MPI, Cell, Expression, Function, FunctionSpace,
                     MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp,
                     function)
 from dolfin.io import HDF5File
-from dolfin.la import PETScVector
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import xfail_if_complex
 

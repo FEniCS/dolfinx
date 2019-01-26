@@ -10,7 +10,6 @@ import pytest
 
 import dolfin
 from dolfin import MPI, compile_cpp_code, cpp
-from dolfin.la import PETScVector
 from dolfin_utils.test.skips import skip_in_serial
 
 

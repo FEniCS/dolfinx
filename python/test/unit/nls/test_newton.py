@@ -76,7 +76,7 @@ class NonlinearPDE_SNESProblem():
 
         fem.assemble_vector(_F, self.L)
         fem.apply_lifting(_F, [self.a], [[self.bc]], [_x], -1.0)
-        _FghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        _F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         fem.set_bc(_F, [self.bc], _x, -1.0)
 
     def J(self, snes, x, J, P):
