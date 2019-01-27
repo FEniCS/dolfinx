@@ -21,6 +21,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
@@ -32,6 +33,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include <iomanip>
 #include <memory>
+#include <petscvec.h>
 #include <set>
 #include <string>
 #include <vector>
@@ -1348,10 +1350,18 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/cell_dofs",
                 cell_dofs, {num_cell_dofs_global, 1}, "UInt");
 
+  // FIXME: Avoid unnecessary copying of data
   // Get all local data
   const la::PETScVector& u_vector = *u.vector();
-  std::vector<PetscScalar> local_data;
-  u_vector.get_local(local_data);
+  PetscErrorCode ierr;
+  const PetscScalar* u_ptr = nullptr;
+  ierr = VecGetArrayRead(u_vector.vec(), &u_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecGetArrayRead");
+  std::vector<PetscScalar> local_data(u_ptr, u_ptr + u_vector.local_size());
+  ierr = VecRestoreArrayRead(u_vector.vec(), &u_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecRestoreArrayRead");
 
 #ifdef PETSC_USE_COMPLEX
   // FIXME: Avoid copies by writing directly a compound data
@@ -2016,11 +2026,15 @@ XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
   pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
   assert(type_attr);
 
-  const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin = {
-      {"polyvertex", {"point", 1}},    {"polyline", {"interval", 1}},
-      {"edge_3", {"interval", 2}},     {"triangle", {"triangle", 1}},
-      {"triangle_6", {"triangle", 2}}, {"tetrahedron", {"tetrahedron", 1}},
-      {"tetrahedron_10", {"tetrahedron", 2}},  {"quadrilateral", {"quadrilateral", 1}}};
+  const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
+      = {{"polyvertex", {"point", 1}},
+         {"polyline", {"interval", 1}},
+         {"edge_3", {"interval", 2}},
+         {"triangle", {"triangle", 1}},
+         {"triangle_6", {"triangle", 2}},
+         {"tetrahedron", {"tetrahedron", 1}},
+         {"tetrahedron_10", {"tetrahedron", 2}},
+         {"quadrilateral", {"quadrilateral", 1}}};
 
   // Convert XDMF cell type string to DOLFIN cell type string
   std::string cell_type = type_attr.as_string();

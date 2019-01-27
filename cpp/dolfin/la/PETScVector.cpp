@@ -122,51 +122,6 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   return {{n0, n1}};
 }
 //-----------------------------------------------------------------------------
-// void PETScVector::get_local(std::vector<PetscScalar>& values) const
-// {
-//   assert(_x);
-//   const auto _local_range = local_range();
-//   const std::size_t local_size = _local_range[1] - _local_range[0];
-//   values.resize(local_size);
-
-//   if (local_size == 0)
-//     return;
-
-//   // Get pointer to PETSc vector data
-//   const PetscScalar* data;
-//   PetscErrorCode ierr = VecGetArrayRead(_x, &data);
-//   CHECK_ERROR("VecGetArrayRead");
-
-//   // Copy data into vector
-//   std::copy(data, data + local_size, values.begin());
-
-//   // Restore array
-//   ierr = VecRestoreArrayRead(_x, &data);
-//   CHECK_ERROR("VecRestoreArrayRead");
-// }
-//-----------------------------------------------------------------------------
-void PETScVector::set_local(const std::vector<PetscScalar>& values)
-{
-  assert(_x);
-  const auto _local_range = local_range();
-  const std::size_t local_size = _local_range[1] - _local_range[0];
-  if (values.size() != local_size)
-  {
-    throw std::runtime_error("Cannot set local values of PETSc vector. Size of "
-                             "values array is not equal to local vector size");
-  }
-
-  if (local_size == 0)
-    return;
-
-  // Build array of local indices
-  std::vector<PetscInt> rows(local_size, 0);
-  std::iota(rows.begin(), rows.end(), 0);
-  PetscErrorCode ierr = VecSetValuesLocal(_x, local_size, rows.data(),
-                                          values.data(), INSERT_VALUES);
-  CHECK_ERROR("VecSetValuesLocal");
-}
-//-----------------------------------------------------------------------------
 void PETScVector::get_local(PetscScalar* block, std::size_t m,
                             const PetscInt* rows) const
 {
