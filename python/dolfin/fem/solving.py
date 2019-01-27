@@ -130,6 +130,7 @@ def _solve_varproblem(*args, **kwargs):
         assembler = cpp.fem.SystemAssembler(a._cpp_object, L._cpp_object, bcs)
         assembler.assemble(A, b)
         A = A.mat()
+        b = b.vec()
 
         comm = L._cpp_object.mesh().mpi_comm()
         solver = cpp.la.PETScKrylovSolver(comm)
@@ -140,7 +141,7 @@ def _solve_varproblem(*args, **kwargs):
         solver.set_from_options()
 
         solver.set_operator(A)
-        solver.solve(u.vector().vec(), b.vec())
+        solver.solve(u.vector(), b)
 
     # Solve nonlinear variational problem
     else:

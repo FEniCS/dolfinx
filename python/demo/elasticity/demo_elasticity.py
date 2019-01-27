@@ -117,6 +117,7 @@ bc = DirichletBC(V, u0, boundary)
 # symmetry)
 A, b = assemble_system(a, L, bc)
 A = A.mat()
+b = b.vec()
 assert A.block_size == 3
 
 # Create solution function
@@ -155,13 +156,13 @@ solver.set_from_options()
 solver.set_operator(A)
 
 # Compute solution
-solver.solve(u.vector().vec(), b.vec())
+solver.solve(u.vector(), b)
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
 file.write(u)
 
-unorm = u.vector().vec().norm()
+unorm = u.vector().norm()
 if MPI.rank(mesh.mpi_comm()) == 0:
     print("Solution vector norm:", unorm)
 
