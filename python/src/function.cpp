@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "casters.h"
 #include <cstdint>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -16,6 +17,7 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
+#include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
@@ -67,8 +69,7 @@ void function(py::module& m)
                                        "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")
-      .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>,
-                    std::shared_ptr<dolfin::la::PETScVector>>())
+      .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
       .def("collapse",
@@ -84,12 +85,10 @@ void function(py::module& m)
            py::overload_cast<const dolfin::function::Expression&>(
                &dolfin::function::Function::interpolate),
            py::arg("expr"))
-      // FIXME: A lot of error when using non-const version - misused
-      // by Python interface?
       .def("vector",
-           (std::shared_ptr<const dolfin::la::PETScVector>(
-               dolfin::function::Function::*)() const)
-               & dolfin::function::Function::vector,
+           [](const dolfin::function::Function& self) {
+             return self.vector()->vec();
+           },
            "Return the vector associated with the finite element Function")
       .def("value_dimension", &dolfin::function::Function::value_dimension)
       .def("value_size", &dolfin::function::Function::value_size)
@@ -158,7 +157,12 @@ void function(py::module& m)
       .def("element", &dolfin::function::FunctionSpace::element)
       .def("mesh", &dolfin::function::FunctionSpace::mesh)
       .def("dofmap", &dolfin::function::FunctionSpace::dofmap)
-      .def("set_x", &dolfin::function::FunctionSpace::set_x)
+      .def("set_x",
+           [](const dolfin::function::FunctionSpace& self, Vec x, PetscScalar value,
+              int component) {
+             dolfin::la::PETScVector _x(x);
+             self.set_x(_x, value, component);
+           })
       .def("sub", &dolfin::function::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
            &dolfin::function::FunctionSpace::tabulate_dof_coordinates);

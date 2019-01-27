@@ -4,15 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <memory>
-#include <petsc4py/petsc4py.h>
-#include <pybind11/complex.h>
-#include <pybind11/eigen.h>
-#include <pybind11/numpy.h>
-#include <pybind11/operators.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-
 #include "casters.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/la/PETScKrylovSolver.h>
@@ -23,51 +14,16 @@
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/VectorSpaceBasis.h>
 #include <dolfin/la/utils.h>
+#include <memory>
+#include <petsc4py/petsc4py.h>
+#include <pybind11/complex.h>
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+#include <pybind11/operators.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
-
-namespace
-{
-
-// Linear operator trampoline class
-template <typename LinearOperatorBase>
-class PyLinearOperator : public LinearOperatorBase
-{
-  using LinearOperatorBase::LinearOperatorBase;
-
-  // pybdind11 has some issues when passing by reference (due to the
-  // return value policy), so the below is non-standard.  See
-  // https://github.com/pybind/pybind11/issues/250.
-
-  std::size_t size(std::size_t dim) const
-  {
-    PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, );
-  }
-
-  void mult(const dolfin::la::PETScVector& x, dolfin::la::PETScVector& y) const
-  {
-    PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
-  }
-};
-
-// Linear operator trampoline class (with pure virtual 'mult' function)
-template <typename LinearOperatorBase>
-class PyLinearOperatorPure : public LinearOperatorBase
-{
-  using LinearOperatorBase::LinearOperatorBase;
-
-  std::size_t size(std::size_t dim) const
-  {
-    PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, );
-  }
-
-  void mult(const dolfin::la::PETScVector& x, dolfin::la::PETScVector& y) const
-  {
-    PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
-    py::pybind11_fail("Tried to call pure virtual function \'mult\'");
-  }
-};
-} // namespace
 
 namespace dolfin_wrappers
 {
@@ -109,52 +65,14 @@ void la(py::module& m)
   py::class_<dolfin::la::PETScOptions>(m, "PETScOptions")
       .def_static("set",
                   (void (*)(std::string)) & dolfin::la::PETScOptions::set)
-      .def_static("set",
-                  (void (*)(std::string, bool)) & dolfin::la::PETScOptions::set)
-      .def_static("set",
-                  (void (*)(std::string, int)) & dolfin::la::PETScOptions::set)
-      .def_static("set", (void (*)(std::string, double))
-                             & dolfin::la::PETScOptions::set)
-      .def_static("set", (void (*)(std::string, std::string))
-                             & dolfin::la::PETScOptions::set)
+      .def_static("set", &dolfin::la::PETScOptions::set<bool>)
+      .def_static("set", &dolfin::la::PETScOptions::set<int>)
+      .def_static("set", &dolfin::la::PETScOptions::set<double>)
+      .def_static("set", &dolfin::la::PETScOptions::set<std::string>)
+      .def_static("clear", py::overload_cast<std::string>(
+                               &dolfin::la::PETScOptions::clear))
       .def_static("clear",
-                  (void (*)(std::string)) & dolfin::la::PETScOptions::clear)
-      .def_static("clear", (void (*)()) & dolfin::la::PETScOptions::clear);
-
-  // dolfin::la::PETScVector
-  py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>>(
-      m, "PETScVector", py::dynamic_attr(), "PETScVector object")
-      .def(py::init<>())
-      .def(py::init<const dolfin::common::IndexMap&>())
-      .def(py::init(
-          [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
-             const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-                 ghost_indices,
-             int block_size) {
-            return dolfin::la::PETScVector(comm.get(), range, ghost_indices,
-                                           block_size);
-          }))
-      .def(py::init<Vec>())
-      .def(py::init<const dolfin::la::PETScVector&>())
-      .def("apply", &dolfin::la::PETScVector::apply)
-      .def("apply_ghosts", &dolfin::la::PETScVector::apply_ghosts)
-      .def("update_ghosts", &dolfin::la::PETScVector::update_ghosts)
-      .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
-      .def("set_options_prefix", &dolfin::la::PETScVector::set_options_prefix)
-      .def("vec", &dolfin::la::PETScVector::vec,
-           "Return underlying PETSc Vec object");
-
-  // dolfin::la::PETScOperator
-  py::class_<dolfin::la::PETScOperator,
-             std::shared_ptr<dolfin::la::PETScOperator>>(m, "PETScOperator")
-      .def("mat", &dolfin::la::PETScOperator::mat,
-           "Return underlying PETSc Mat object");
-
-  // dolfin::la::PETScMatrix
-  py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
-             dolfin::la::PETScOperator>(m, "PETScMatrix", py::dynamic_attr(),
-                                        "PETScMatrix object")
-      .def(py::init<>());
+                  py::overload_cast<>(&dolfin::la::PETScOptions::clear));
 
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
@@ -185,20 +103,32 @@ void la(py::module& m)
   py::class_<dolfin::la::VectorSpaceBasis,
              std::shared_ptr<dolfin::la::VectorSpaceBasis>>(m,
                                                             "VectorSpaceBasis")
-      .def(py::init<
-           const std::vector<std::shared_ptr<dolfin::la::PETScVector>>>())
+      .def(py::init([](const std::vector<Vec> x) {
+        std::vector<std::shared_ptr<dolfin::la::PETScVector>> _x;
+        for (std::size_t i = 0; i < x.size(); ++i)
+        {
+          assert(x[i]);
+          _x.push_back(std::make_shared<dolfin::la::PETScVector>(x[i]));
+        }
+        return dolfin::la::VectorSpaceBasis(_x);
+      }))
       .def("is_orthonormal", &dolfin::la::VectorSpaceBasis::is_orthonormal,
            py::arg("tol") = 1.0e-10)
       .def("is_orthogonal", &dolfin::la::VectorSpaceBasis::is_orthogonal,
            py::arg("tol") = 1.0e-10)
-      .def("in_nullspace", &dolfin::la::VectorSpaceBasis::in_nullspace,
+      .def("in_nullspace",
+           [](const dolfin::la::VectorSpaceBasis& self, Mat A, double tol) {
+             dolfin::la::PETScMatrix _A(A);
+             return self.in_nullspace(_A, tol);
+           },
            py::arg("A"), py::arg("tol") = 1.0e-10)
       .def("orthogonalize", &dolfin::la::VectorSpaceBasis::orthogonalize)
       .def("orthonormalize", &dolfin::la::VectorSpaceBasis::orthonormalize,
            py::arg("tol") = 1.0e-10)
       .def("dim", &dolfin::la::VectorSpaceBasis::dim)
-      .def("__getitem__", [](const dolfin::la::VectorSpaceBasis& self,
-                             int i) { return self[i]->vec(); });
+      .def("__getitem__", [](const dolfin::la::VectorSpaceBasis& self, int i) {
+        return self[i]->vec();
+      });
 
   // utils
   m.def("create_vector",
@@ -206,18 +136,28 @@ void la(py::module& m)
             &dolfin::la::create_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
+  m.def("create_vector",
+        [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
+           const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
+           int block_size) {
+          return dolfin::la::create_vector(comm.get(), range, ghost_indices,
+                                           block_size);
+        },
+        py::return_value_policy::take_ownership, "Create a PETSc Vec.");
   m.def("create_matrix",
         [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
           return dolfin::la::create_matrix(comm.get(), p);
         },
         py::return_value_policy::take_ownership,
         "Create a PETSc Mat from sparsity pattern.");
-//   m.def("create_nullspace",
-//         [](const MPICommWrapper comm, MPI_Comm comm,
-//            const dolfin::la::VectorSpaceBasis& nullspace) {
-//           return dolfin::la::create_petsc_nullspace(comm.get(), nullspace);
-//         },
-//         py::return_value_policy::take_ownership,
-//         "Create a PETSc MatNullSpace.");
+  // NOTE: Enabling the below requires adding a C API for MatNullSpace to
+  // petsc4py
+  //   m.def("create_nullspace",
+  //         [](const MPICommWrapper comm, MPI_Comm comm,
+  //            const dolfin::la::VectorSpaceBasis& nullspace) {
+  //           return dolfin::la::create_petsc_nullspace(comm.get(), nullspace);
+  //         },
+  //         py::return_value_policy::take_ownership,
+  //         "Create a PETSc MatNullSpace.");
 }
 } // namespace dolfin_wrappers

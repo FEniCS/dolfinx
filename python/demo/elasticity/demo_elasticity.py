@@ -13,19 +13,20 @@ from petsc4py import PETSc
 
 import dolfin
 from dolfin import (DOLFIN_EPS, MPI, BoxMesh, CellType, DirichletBC, Function,
-                    Point, TestFunction, TrialFunction, VectorFunctionSpace)
+                    Point, TestFunction, TrialFunction, VectorFunctionSpace,
+                    cpp)
 from dolfin.fem.assembling import assemble_system
 from dolfin.io import XDMFFile
-from dolfin.la import (PETScKrylovSolver, PETScOptions, PETScVector,
-                       VectorSpaceBasis)
+from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 from ufl import Identity, as_vector, dx, grad, inner, sym, tr
 
 
-def build_nullspace(V, x):
+def build_nullspace(V):
     """Function to build null space for 3D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [PETScVector(x) for i in range(6)]
+    index_map = V.dofmap().index_map()
+    nullspace_basis = [cpp.la.create_vector(index_map) for i in range(6)]
 
     # Build translational null space basis
     V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
@@ -40,14 +41,14 @@ def build_nullspace(V, x):
     V.sub(2).set_x(nullspace_basis[5], 1.0, 1)
     V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
 
+    # FIXME: this shouldn't be needed
     for x in nullspace_basis:
-        x.apply()
+        x.assemble()
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
     basis.orthonormalize()
 
-    # _x = [x.vec() for x in nullspace_basis]
     _x = [basis[i] for i in range(6)]
 
     nsp = PETSc.NullSpace()
@@ -113,19 +114,15 @@ u0 = Function(V)
 # Set up boundary condition on inner surface
 bc = DirichletBC(V, u0, boundary)
 
-# Assemble system, applying boundary conditions and preserving
-# symmetry)
+# Assemble system, applying boundary conditions and preserving symmetry)
 A, b = assemble_system(a, L, bc)
-A = A.mat()
 assert A.block_size == 3
 
 # Create solution function
 u = Function(V)
 
-# Create near null space basis (required for smoothed aggregation
-# AMG). The solution vector is passed so that it can be copied to
-# generate compatible vectors for the nullspace.
-null_space = build_nullspace(V, u.vector())
+# Create near null space basis (required for smoothed aggregation AMG).
+null_space = build_nullspace(V)
 
 # Attach near nullspace to matrix
 A.setNearNullSpace(null_space)
@@ -155,13 +152,13 @@ solver.set_from_options()
 solver.set_operator(A)
 
 # Compute solution
-solver.solve(u.vector().vec(), b.vec())
+solver.solve(u.vector(), b)
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
 file.write(u)
 
-unorm = u.vector().vec().norm()
+unorm = u.vector().norm()
 if MPI.rank(mesh.mpi_comm()) == 0:
     print("Solution vector norm:", unorm)
 

@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "casters.h"
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/Point.h>
@@ -19,8 +20,6 @@
 #include <pybind11/stl.h>
 #include <string>
 #include <vector>
-
-#include "casters.h"
 
 namespace py = pybind11;
 
@@ -51,9 +50,13 @@ void io(py::module& m)
       .def("read_vector",
            [](dolfin::io::HDF5File& self, const MPICommWrapper comm,
               const std::string data_path, bool use_partition_from_file) {
-             return self.read_vector(comm.get(), data_path,
-                                     use_partition_from_file);
-           })
+             auto x = self.read_vector(comm.get(), data_path,
+                                       use_partition_from_file);
+             Vec _x = x.vec();
+             PetscObjectReference((PetscObject)_x);
+             return _x;
+           },
+           py::return_value_policy::take_ownership)
       .def("read_mf_bool", &dolfin::io::HDF5File::read_mf_bool, py::arg("mesh"),
            py::arg("name"))
       .def("read_mf_int", &dolfin::io::HDF5File::read_mf_int, py::arg("mesh"),
@@ -115,9 +118,10 @@ void io(py::module& m)
                & dolfin::io::HDF5File::write,
            py::arg("meshfunction"), py::arg("name"))
       .def("write",
-           (void (dolfin::io::HDF5File::*)(const dolfin::la::PETScVector&,
-                                           std::string))
-               & dolfin::io::HDF5File::write,
+           [](dolfin::io::HDF5File& self, Vec x, std::string s) {
+             dolfin::la::PETScVector _x(x);
+             self.write(_x, s);
+           },
            py::arg("vector"), py::arg("name"))
       .def("write",
            (void (dolfin::io::HDF5File::*)(const dolfin::function::Function&,

@@ -19,7 +19,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : _krylov_iterations(0), _residual(0.0), _residual0(0.0), _mpi_comm(comm)
+    : _krylov_iterations(0), _residual(0.0), _residual0(0.0), _dx(nullptr),
+      _mpi_comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver = std::make_shared<la::PETScKrylovSolver>(comm);
@@ -32,9 +33,14 @@ nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
   _solver->set_from_options();
 }
 //-----------------------------------------------------------------------------
+nls::NewtonSolver::~NewtonSolver()
+{
+  if (_dx)
+    VecDestroy(&_dx);
+}
+//-----------------------------------------------------------------------------
 std::pair<int, bool>
-dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
-                                 la::PETScVector& x)
+dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
 {
   // Reset iteration counts
   int newton_iteration = 0;
@@ -42,7 +48,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
   // Compute F(u) (assembled into _b)
   Mat A(nullptr), P(nullptr);
-  la::PETScVector* b = nullptr;
+  Vec b = nullptr;
 
   nonlinear_problem.form(x);
   b = nonlinear_problem.F(x);
@@ -51,7 +57,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
   // Check convergence
   bool newton_converged = false;
   if (convergence_criterion == "residual")
-    newton_converged = converged(*b, nonlinear_problem, 0);
+    newton_converged = converged(b, nonlinear_problem, 0);
   else if (convergence_criterion == "incremental")
   {
     // We need to do at least one Newton step with the ||dx||-stopping
@@ -78,10 +84,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
       P = A;
 
     if (!_dx)
-    {
-      la::PETScMatrix _A(A);
-      _dx = std::make_unique<la::PETScVector>(_A.create_vector(1));
-    }
+      MatCreateVecs(A, &_dx, nullptr);
 
     // FIXME: check that this is efficient if A and/or P are unchanged
     // Set operators
@@ -89,10 +92,10 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
     _solver->set_operators(A, P);
 
     // Perform linear solve and update total number of Krylov iterations
-    _krylov_iterations += _solver->solve(_dx->vec(), b->vec());
+    _krylov_iterations += _solver->solve(_dx, b);
 
     // Update solution
-    update_solution(x, *_dx, relaxation_parameter, nonlinear_problem,
+    update_solution(x, _dx, relaxation_parameter, nonlinear_problem,
                     newton_iteration);
 
     // Increment iteration count
@@ -107,13 +110,13 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem,
 
     // Test for convergence
     if (convergence_criterion == "residual")
-      newton_converged = converged(*b, nonlinear_problem, newton_iteration);
+      newton_converged = converged(b, nonlinear_problem, newton_iteration);
     else if (convergence_criterion == "incremental")
     {
       // Subtract 1 to make sure that the initial residual0 is
       // properly set.
       newton_converged
-          = converged(*_dx, nonlinear_problem, newton_iteration - 1);
+          = converged(_dx, nonlinear_problem, newton_iteration - 1);
     }
     else
       throw std::runtime_error("Unknown convergence criterion string.");
@@ -153,11 +156,12 @@ double nls::NewtonSolver::residual() const { return _residual; }
 //-----------------------------------------------------------------------------
 double nls::NewtonSolver::residual0() const { return _residual0; }
 //-----------------------------------------------------------------------------
-bool nls::NewtonSolver::converged(const la::PETScVector& r,
+bool nls::NewtonSolver::converged(const Vec r,
                                   const NonlinearProblem& nonlinear_problem,
                                   std::size_t newton_iteration)
 {
-  _residual = r.norm(la::Norm::l2);
+  la::PETScVector _r(r);
+  _residual = _r.norm(la::Norm::l2);
 
   // If this is the first iteration step, set initial residual
   if (newton_iteration == 0)
@@ -183,9 +187,9 @@ bool nls::NewtonSolver::converged(const la::PETScVector& r,
 }
 //-----------------------------------------------------------------------------
 void nls::NewtonSolver::update_solution(
-    la::PETScVector& x, const la::PETScVector& dx, double relaxation,
+    Vec x, const Vec dx, double relaxation,
     const NonlinearProblem& nonlinear_problem, std::size_t interation)
 {
-  x.axpy(-relaxation, dx);
+  VecAXPY(x, -relaxation, dx);
 }
 //-----------------------------------------------------------------------------

@@ -93,7 +93,6 @@ def project(v,
     # Assemble linear system
     A, b = fem.assemble_system(
         a, L, bcs=bcs, form_compiler_parameters=form_compiler_parameters)
-    A = A.mat()
 
     # Solve linear system for projection
     if funct is None:

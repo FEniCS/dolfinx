@@ -113,6 +113,8 @@
 
 import random
 
+from petsc4py import PETSc
+
 from dolfin import (MPI, CellType, Expression, FiniteElement, Function,
                     FunctionSpace, NewtonSolver, NonlinearProblem,
                     TestFunctions, TrialFunction, UnitSquareMesh, function,
@@ -140,7 +142,7 @@ class CahnHilliardEquation(NonlinearProblem):
         self._J = None
 
     def form(self, x):
-        x.update_ghosts()
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, x):
         if self._F is None:
@@ -306,12 +308,13 @@ file = XDMFFile(MPI.comm_world, "output.xdmf")
 # Step in time
 t = 0.0
 T = 50 * dt
-u.vector().vec().copy(result=u0.vector().vec())
-u0.vector().update_ghosts()
+u.vector().copy(result=u0.vector())
+u0.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+
 while (t < T):
     t += dt
     solver.solve(problem, u.vector())
-    u.vector().vec().copy(result=u0.vector().vec())
+    u.vector().copy(result=u0.vector())
     file.write(u.sub(0), t)
 
 # The string ``"compressed"`` indicates that the output data should be

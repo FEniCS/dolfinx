@@ -28,7 +28,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
         self._F, self._J = None, None
 
     def form(self, x):
-        x.update_ghosts()
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     def F(self, x):
         """Assemble residual vector."""
@@ -38,7 +38,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
             self._F = fem.assemble_vector(self._F, self.L)
 
         dolfin.fem.apply_lifting(self._F, [self.a], [[self.bc]], [x], -1.0)
-        self._F.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        self._F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfin.fem.set_bc(self._F, [self.bc], x, -1.0)
 
         return self._F
@@ -66,16 +66,14 @@ class NonlinearPDE_SNESProblem():
 
     def F(self, snes, x, F):
         """Assemble residual vector."""
-        _F = dolfin.cpp.la.PETScVector(F)
-        _x = dolfin.cpp.la.PETScVector(x)
-        _x.update_ghosts()
-        x.copy(self.u.vector().vec())
-        self.u.vector().update_ghosts()
+        x.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+        x.copy(self.u.vector())
+        self.u.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-        fem.assemble_vector(_F, self.L)
-        fem.apply_lifting(_F, [self.a], [[self.bc]], [_x], -1.0)
-        _F.vec().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-        fem.set_bc(_F, [self.bc], _x, -1.0)
+        fem.assemble_vector(F, self.L)
+        fem.apply_lifting(F, [self.a], [[self.bc]], [x], -1.0)
+        F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        fem.set_bc(F, [self.bc], x, -1.0)
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
@@ -96,8 +94,8 @@ def test_linear_pde():
         return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
-    u_bc.vector().vec().set(1.0)
-    u_bc.vector().update_ghosts()
+    u_bc.vector().set(1.0)
+    u_bc.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bc = fem.DirichletBC(V, u_bc, boundary)
 
     # Create nonlinear problem
@@ -110,8 +108,8 @@ def test_linear_pde():
     assert n == 1
 
     # Increment boundary condition and solve again
-    u_bc.vector().vec().set(2.0)
-    u_bc.vector().update_ghosts()
+    u_bc.vector().set(2.0)
+    u_bc.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     n, converged = solver.solve(problem, u.vector())
     assert converged
     assert n == 1
@@ -132,24 +130,24 @@ def test_nonlinear_pde():
         return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
-    u_bc.vector().vec().set(1.0)
-    u_bc.vector().update_ghosts()
+    u_bc.vector().set(1.0)
+    u_bc.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bc = fem.DirichletBC(V, u_bc, boundary)
 
     # Create nonlinear problem
     problem = NonlinearPDEProblem(F, u, bc)
 
     # Create Newton solver and solve
-    u.vector().vec().set(0.9)
-    u.vector().update_ghosts()
+    u.vector().set(0.9)
+    u.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     solver = dolfin.cpp.nls.NewtonSolver(dolfin.MPI.comm_world)
     n, converged = solver.solve(problem, u.vector())
     assert converged
     assert n < 6
 
     # Modify boundary condition and solve again
-    u_bc.vector().vec().set(0.5)
-    u_bc.vector().update_ghosts()
+    u_bc.vector().set(0.5)
+    u_bc.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     n, converged = solver.solve(problem, u.vector())
     assert converged
     assert n < 6
@@ -170,36 +168,36 @@ def test_nonlinear_pde_snes():
         return np.logical_or(x[:, 0] < 1.0e-8, x[:, 0] > 1.0 - 1.0e-8)
 
     u_bc = function.Function(V)
-    u_bc.vector().vec().set(1.0)
-    u_bc.vector().update_ghosts()
+    u_bc.vector().set(1.0)
+    u_bc.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bc = fem.DirichletBC(V, u_bc, boundary)
 
     # Create nonlinear problem
     problem = NonlinearPDE_SNESProblem(F, u, bc)
 
-    u.vector().vec().set(0.9)
-    u.vector().update_ghosts()
+    u.vector().set(0.9)
+    u.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    b = dolfin.cpp.la.PETScVector(V.dofmap().index_map())
+    b = dolfin.cpp.la.create_vector(V.dofmap().index_map())
     J = dolfin.cpp.fem.create_matrix(problem.a_comp._cpp_object)
 
     # Create Newton solver and solve
     snes = PETSc.SNES().create()
-    snes.setFunction(problem.F, b.vec())
+    snes.setFunction(problem.F, b)
     snes.setJacobian(problem.J, J)
 
     snes.setTolerances(rtol=1.0e-9, max_it=10)
     snes.setFromOptions()
 
     snes.getKSP().setTolerances(rtol=1.0e-9)
-    snes.solve(None, u.vector().vec())
+    snes.solve(None, u.vector())
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6
 
     # Modify boundary condition and solve again
-    u_bc.vector().vec().set(0.5)
-    u_bc.vector().update_ghosts()
-    snes.solve(None, u.vector().vec())
+    u_bc.vector().set(0.5)
+    u_bc.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    snes.solve(None, u.vector())
     assert snes.getConvergedReason() > 0
     assert snes.getIterationNumber() < 6
     # print(snes.getIterationNumber())

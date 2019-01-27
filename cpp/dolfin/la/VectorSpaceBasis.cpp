@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Patrick E. Farrell
+// Copyright (C) 2013-2019 Patrick E. Farrell and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -33,7 +33,7 @@ void VectorSpaceBasis::orthonormalize(double tol)
     {
       PetscScalar dot_ij = 0.0;
       VecDot(_basis[i]->vec(), _basis[j]->vec(), &dot_ij);
-      _basis[i]->axpy(-dot_ij, *_basis[j]);
+      VecAXPY(_basis[i]->vec(), -dot_ij, _basis[j]->vec());
     }
 
     // Normalise basis function
@@ -42,7 +42,7 @@ void VectorSpaceBasis::orthonormalize(double tol)
     if (norm < tol)
     {
       throw std::runtime_error(
-          "VectorSpaceBasis has linear dependency. Cannot orthogonalize");
+          "VectorSpaceBasis has linear dependency. Cannot orthogonalize.");
     }
   }
 }
@@ -109,7 +109,7 @@ void VectorSpaceBasis::orthogonalize(PETScVector& x) const
     assert(_basis[i]);
     PetscScalar dot = 0.0;
     VecDot(_basis[i]->vec(), x.vec(), &dot);
-    x.axpy(-dot, *_basis[i]);
+    VecAXPY(x.vec(), -dot, _basis[i]->vec());
   }
 }
 //-----------------------------------------------------------------------------

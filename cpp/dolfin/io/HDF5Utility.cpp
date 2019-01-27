@@ -10,11 +10,13 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <iostream>
+#include <petscvec.h>
 
 using namespace dolfin;
 using namespace dolfin::io;
@@ -285,6 +287,7 @@ void HDF5Utility::set_local_vector_values(
     const std::array<std::int64_t, 2> input_vector_range,
     const fem::GenericDofMap& dofmap)
 {
+  // FIXME: Revise to avoid data copying. Set directly in PETSc Vec.
 
   // Calculate one (global cell, local_dof_index) to associate with
   // each item in the vector on this process
@@ -355,7 +358,17 @@ void HDF5Utility::set_local_vector_values(
     }
   }
 
-  x.set_local(vector_values);
+  PetscErrorCode ierr;
+  PetscScalar* x_ptr = nullptr;
+  ierr = VecGetArray(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecGetArray");
+  std::copy(vector_values.begin(), vector_values.end(), x_ptr);
+  ierr = VecRestoreArray(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecRestoreArray");
+
+  // FIXME: No required?
   x.apply();
 }
 //-----------------------------------------------------------------------------

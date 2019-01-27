@@ -58,6 +58,19 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
   assert(V->dofmap()->global_dimension() <= x->size());
 }
 //-----------------------------------------------------------------------------
+Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
+    : _function_space(V)
+{
+  _vector = std::make_shared<la::PETScVector>(x);
+
+  // We do not check for a subspace since this constructor is used for
+  // creating subfunctions
+
+  // Assertion uses '<=' to deal with sub-functions
+  assert(V->dofmap());
+  assert(V->dofmap()->global_dimension() <= _vector->size());
+}
+//-----------------------------------------------------------------------------
 Function::Function(const Function& v)
 {
   // Make a copy of all the data, or if v is a sub-function, then we

@@ -19,6 +19,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
@@ -30,6 +31,7 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <petscvec.h>
 #include <string>
 
 using namespace dolfin;
@@ -132,15 +134,22 @@ void HDF5File::write(const la::PETScVector& x, const std::string dataset_name)
   assert(_hdf5_file_id > 0);
 
   // Get all local data
-  std::vector<PetscScalar> local_data;
-  x.get_local(local_data);
+  PetscErrorCode ierr;
+  const PetscScalar* x_ptr = nullptr;
+  ierr = VecGetArrayRead(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecGetArrayRead");
 
   // Write data to file
   const auto local_range = x.local_range();
   const std::vector<std::int64_t> global_size(1, x.size());
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
-  HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, local_data.data(),
-                               local_range, global_size, mpi_io, chunking);
+  HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, x_ptr, local_range,
+                               global_size, mpi_io, chunking);
+
+  ierr = VecRestoreArrayRead(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecRestoreArrayRead");
 
   // Add partitioning attribute to dataset
   std::vector<std::size_t> partitions;
@@ -222,7 +231,18 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
       _hdf5_file_id, dataset_name, local_range);
 
   // Set data
-  x.set_local(data);
+  PetscErrorCode ierr;
+  PetscScalar* x_ptr = nullptr;
+  ierr = VecGetArray(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecGetArray");
+  std::copy(data.begin(), data.end(), x_ptr);
+  ierr = VecRestoreArray(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecRestoreArray");
+  // x.set_local(data);
+
+  // FIXME: Not required?
   x.apply();
 
   return x;

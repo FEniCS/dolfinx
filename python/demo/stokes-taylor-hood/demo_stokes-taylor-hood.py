@@ -199,11 +199,11 @@ p = w.sub(1).collapse()
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("Norm of velocity coefficient vector: %.15g" % u.vector().vec().norm())
-print("Norm of pressure coefficient vector: %.15g" % p.vector().vec().norm())
+print("Norm of velocity coefficient vector: %.15g" % u.vector().norm())
+print("Norm of pressure coefficient vector: %.15g" % p.vector().norm())
 
 # Check pressure norm
-pnorm = p.vector().vec().norm()
+pnorm = p.vector().norm()
 assert np.isclose(pnorm, 4147.69457577)
 
 # Finally, we can save and plot the solutions::

@@ -92,7 +92,6 @@ CMakeLists.txt
 !dolfin/CMakeLists.txt
 !dolfin/*/CMakeLists.txt
 !bench/CMakeLists.txt
-!dolfin/swig/CMakeLists.txt
 !doc/CMakeLists.txt
 !demo/CMakeLists.txt
 !test/unit/CMakeLists.txt

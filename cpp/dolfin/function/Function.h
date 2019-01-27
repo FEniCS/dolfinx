@@ -12,6 +12,7 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <memory>
 #include <petscsys.h>
+#include <petscvec.h>
 #include <vector>
 
 namespace dolfin
@@ -64,6 +65,16 @@ public:
   ///         The vector.
   Function(std::shared_ptr<const FunctionSpace> V,
            std::shared_ptr<la::PETScVector> x);
+
+  /// Create function on given function space with a given vector
+  ///
+  /// *Warning: This constructor is intended for internal library use only*
+  ///
+  /// @param V (_FunctionSpace_)
+  ///         The function space.
+  /// @param x (_Vec_)
+  ///         The vector.
+  Function(std::shared_ptr<const FunctionSpace> V, Vec x);
 
   /// Copy constructor
   ///

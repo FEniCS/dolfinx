@@ -13,6 +13,7 @@ from petsc4py import PETSc
 import dolfin
 from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
                     list_timings)
+from dolfin_utils.test.skips import skip_if_complex
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
@@ -62,17 +63,18 @@ def test_numba_assembly():
     L.set_cell_tabulate(0, tabulate_tensor_b.address)
 
     A = dolfin.fem.assemble(a)
-    b = dolfin.cpp.fem.assemble(L)
+    b = dolfin.fem.assemble(L)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
-    bnorm = b.vec().norm(PETSc.NormType.N2)
+    bnorm = b.norm(PETSc.NormType.N2)
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 
     list_timings([TimingType.wall])
 
 
-def xtest_cffi_assembly():
+@skip_if_complex
+def test_cffi_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
@@ -176,12 +178,11 @@ def xtest_cffi_assembly():
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     L.set_cell_tabulate(0, ptrL)
 
-    assembler = cpp.fem.Assembler([[a]], [L], [])
-    A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
-    b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
+    A = dolfin.fem.assemble(a)
+    b = dolfin.fem.assemble(L)
 
-    Anorm = A.norm(cpp.la.Norm.frobenius)
-    bnorm = b.norm(cpp.la.Norm.l2)
+    Anorm = A.norm(PETSc.NormType.FROBENIUS)
+    bnorm = b.norm(PETSc.NormType.N2)
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 

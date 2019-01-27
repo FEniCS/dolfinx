@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2017 Patrick E. Farrell and Garth N. Wells
+// Copyright (C) 2013-2019 Patrick E. Farrell and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //

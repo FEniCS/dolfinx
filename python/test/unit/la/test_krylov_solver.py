@@ -12,12 +12,10 @@ from petsc4py import PETSc
 import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, Identity,
                     TestFunction, TrialFunction, UnitSquareMesh,
-                    VectorFunctionSpace, cpp, dot, dx, fem, grad, inner, sym,
-                    tr)
+                    VectorFunctionSpace, dot, dx, grad, inner, sym, tr)
 from dolfin.fem import assemble
 from dolfin.fem.assembling import assemble_system
-from dolfin.la import (PETScKrylovSolver, PETScOptions, PETScVector,
-                       VectorSpaceBasis)
+from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 
 
 def test_krylov_solver_lu():
@@ -40,47 +38,10 @@ def test_krylov_solver_lu():
     solver.set_from_options()
     x = A.createVecRight()
     solver.set_operator(A)
-    solver.solve(x, b.vec())
+    solver.solve(x, b)
 
     # *Tight* tolerance for LU solves
     assert round(x.norm(PETSc.NormType.N2) - norm, 12) == 0
-
-
-@pytest.mark.skip
-def test_krylov_reuse_pc_lu():
-    """Test that LU re-factorisation is only performed after
-    set_operator(A) is called"""
-
-    mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
-    V = FunctionSpace(mesh, ("Lagrange", 1))
-    u, v = TrialFunction(V), TestFunction(V)
-
-    a = u * v * dx
-    L = v * dx
-    assembler = fem.Assembler(a, L)
-    A = assembler.assemble_matrix().mat()
-    b = assembler.assemble_vector()
-    norm = 13.0
-
-    solver = PETScKrylovSolver(mesh.mpi_comm())
-    solver.set_options_prefix("test_lu_")
-    PETScOptions.set("test_lu_ksp_type", "preonly")
-    PETScOptions.set("test_lu_pc_type", "lu")
-    solver.set_from_options()
-    solver.set_operator(A)
-    x = PETScVector(mesh.mpi_comm())
-    solver.solve(x, b)
-    assert round(x.norm(cpp.la.Norm.l2) - norm, 10) == 0
-
-    assembler = fem.assemble.Assembler(0.5 * u * v * dx, L)
-    assembler.assemble(A)
-    x = PETScVector(mesh.mpi_comm())
-    solver.solve(x, b)
-    assert round(x.norm(cpp.la.Norm.l2) - 2.0 * norm, 10) == 0
-
-    solver.set_operator(A)
-    solver.solve(x, b)
-    assert round(x.norm(cpp.la.Norm.l2) - 2.0 * norm, 10) == 0
 
 
 @pytest.mark.skip
@@ -134,7 +95,6 @@ def test_krylov_samg_solver_elasticity():
 
         # Assemble linear algebra objects
         A, b = assemble_system(a, L, bc)
-        A = A.mat()
 
         # Create solution function
         u = Function(V)

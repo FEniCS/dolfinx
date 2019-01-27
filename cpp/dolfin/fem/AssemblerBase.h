@@ -16,7 +16,7 @@ namespace la
 {
 class PETScMatrix;
 class PETScVector;
-}
+} // namespace la
 
 namespace fem
 {
@@ -27,16 +27,7 @@ class AssemblerBase
 {
 public:
   /// Constructor
-  AssemblerBase()
-      : add_values(false), finalize_tensor(true), keep_diagonal(false)
-  {
-  }
-
-  /// add_values (bool)
-  ///     Default value is false.
-  ///     This controls whether values are added to the given
-  ///     tensor or if it is zeroed prior to assembly.
-  bool add_values;
+  AssemblerBase() : finalize_tensor(true), keep_diagonal(false) {}
 
   /// finalize_tensor (bool)
   ///     Default value is true.
@@ -52,20 +43,6 @@ public:
   ///     if the matrix is finalised.
   bool keep_diagonal;
 
-  /// Initialize global tensor (PETScVector)
-  /// @param[out] b (PETScVector&)
-  ///  GenericTensor to assemble into
-  /// @param[in] L (Form&)
-  ///  Form to assemble from
-  void init_global_tensor(la::PETScVector& b, const Form& L);
-
-  /// Initialize global tensor (PETScMatrix)
-  /// @param[out] A (PETScMatrix&)
-  ///  GenericTensor to assemble into
-  /// @param[in] a (Form&)
-  ///  Form to assemble from
-  void init_global_tensor(la::PETScMatrix& A, const Form& a);
-
 protected:
   /// Check form
   static void check(const Form& a);
@@ -74,5 +51,5 @@ protected:
   static std::string progress_message(std::size_t rank,
                                       std::string integral_type);
 };
-}
-}
+} // namespace fem
+} // namespace dolfin

@@ -9,9 +9,8 @@
 #include <Eigen/Dense>
 #include <boost/variant.hpp>
 #include <dolfin/common/types.h>
-#include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/PETScVector.h>
 #include <memory>
+#include <petscmat.h>
 #include <petscvec.h>
 #include <vector>
 
@@ -27,16 +26,13 @@ namespace fem
 class DirichletBC;
 class Form;
 
-/// Assembly type for block forms
-enum class BlockType
-{
-  monolithic,
-  nested
-};
+/// Assemble variational form. Caller is responsible for destroying.
+// boost::variant<PetscScalar, Vec, Mat> assemble(const Form& a);
 
-/// Assemble variational form
-boost::variant<PetscScalar, la::PETScVector, la::PETScMatrix>
-assemble(const Form& a);
+// -- Scalar ----------------------------------------------------------------
+
+// Assemble functional in scalar
+PetscScalar assemble_scalar(const Form& M);
 
 // -- Vectors ----------------------------------------------------------------
 

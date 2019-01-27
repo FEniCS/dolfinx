@@ -6,16 +6,13 @@
 
 #include <Eigen/Dense>
 #include <memory>
+#include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
 #include <pybind11/stl.h>
 #include <string>
-
-#ifdef HAS_PYBIND11_PETSC4PY
-#include <petsc4py/petsc4py.h>
-#endif
 
 #include "casters.h"
 #include <dolfin/common/IndexMap.h>
@@ -88,11 +85,24 @@ void fem(py::module& m)
         "Create a ufc_coordinate_mapping object from a pointer.");
 
   // utils
-  m.def("create_vector", &dolfin::fem::init_monolithic,
-        "Create a monolithic vector for multiple (stacked) linear forms.");
-  m.def("create_vector_nest", &dolfin::fem::init_nest,
-        "Create a nested vector for multiple (stacked) linear forms.");
-
+  m.def("create_vector",
+        [](const std::vector<const dolfin::fem::Form*> L) {
+          auto x = dolfin::fem::init_monolithic(L);
+          Vec _x = x.vec();
+          PetscObjectReference((PetscObject)_x);
+          return _x;
+        },
+        py::return_value_policy::take_ownership,
+        "Initialise monolithic vector for multiple (stacked) linear forms.");
+  m.def("create_vector_nest",
+        [](const std::vector<const dolfin::fem::Form*> L) {
+          auto x = dolfin::fem::init_nest(L);
+          Vec _x = x.vec();
+          PetscObjectReference((PetscObject)_x);
+          return _x;
+        },
+        py::return_value_policy::take_ownership,
+        "Initialise nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix",
         [](const dolfin::fem::Form& a) {
           auto A = dolfin::fem::init_matrix(a);
@@ -167,7 +177,12 @@ void fem(py::module& m)
       .def("tabulate_entity_dofs",
            &dolfin::fem::GenericDofMap::tabulate_entity_dofs)
       .def("block_size", &dolfin::fem::GenericDofMap::block_size)
-      .def("set", &dolfin::fem::GenericDofMap::set);
+      //   .def("set", &dolfin::fem::GenericDofMap::set);
+      .def("set", [](const dolfin::fem::GenericDofMap& self, Vec x,
+                     PetscScalar value) {
+        dolfin::la::PETScVector _x(x);
+        self.set(_x, value);
+      });
 
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
@@ -232,24 +247,15 @@ void fem(py::module& m)
         return map;
       });
 
-  py::enum_<dolfin::fem::BlockType>(
-      m, "BlockType",
-      "Enum for matrix/vector assembly type for nested problems")
-      .value("monolithic", dolfin::fem::BlockType::monolithic)
-      .value("nested", dolfin::fem::BlockType::nested);
-
   // dolfin::fem::assemble
-  m.def("assemble",
-        py::overload_cast<const dolfin::fem::Form&>(&dolfin::fem::assemble),
-        "Assemble form over mesh");
+  m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
+        "Assemble functional over mesh");
   // Vectors (single)
   m.def("assemble_vector",
         py::overload_cast<Vec, const dolfin::fem::Form&>(
             &dolfin::fem::assemble_vector),
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing vector");
-  m.def("apply_lifting", &dolfin::fem::apply_lifting,
-        "Modify vector for lifted boundary conditions");
   // Block/nest vectors
   m.def("assemble_vector",
         py::overload_cast<
@@ -276,13 +282,15 @@ void fem(py::module& m)
         py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
         py::arg("use_nest_extract") = true,
         "Re-assemble bilinear forms over mesh into blocked matrix");
+  // BC modifiers
+  m.def("apply_lifting", &dolfin::fem::apply_lifting,
+        "Modify vector for lifted boundary conditions");
   m.def("set_bc", &dolfin::fem::set_bc,
         "Insert boundary condition values into vector");
 
   // dolfin::fem::AssemblerBase
   py::class_<dolfin::fem::AssemblerBase,
              std::shared_ptr<dolfin::fem::AssemblerBase>>(m, "AssemblerBase")
-      .def_readwrite("add_values", &dolfin::fem::AssemblerBase::add_values)
       .def_readwrite("keep_diagonal",
                      &dolfin::fem::AssemblerBase::keep_diagonal)
       .def_readwrite("finalize_tensor",
@@ -297,23 +305,32 @@ void fem(py::module& m)
            std::shared_ptr<const dolfin::fem::Form>,
            std::shared_ptr<const dolfin::fem::Form>,
            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>())
-      .def("assemble", (void (dolfin::fem::SystemAssembler::*)(
-                           dolfin::la::PETScMatrix&, dolfin::la::PETScVector&))
-                           & dolfin::fem::SystemAssembler::assemble)
       .def("assemble",
-           (void (dolfin::fem::SystemAssembler::*)(dolfin::la::PETScMatrix&))
-               & dolfin::fem::SystemAssembler::assemble)
+           [](dolfin::fem::SystemAssembler self, Mat A, Vec b) {
+             dolfin::la::PETScMatrix _A(A);
+             dolfin::la::PETScVector _b(b);
+             self.assemble(_A, _b);
+           })
       .def("assemble",
-           (void (dolfin::fem::SystemAssembler::*)(dolfin::la::PETScVector&))
-               & dolfin::fem::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::fem::SystemAssembler::*)(
-                           dolfin::la::PETScMatrix&, dolfin::la::PETScVector&,
-                           const dolfin::la::PETScVector&))
-                           & dolfin::fem::SystemAssembler::assemble)
+           [](dolfin::fem::SystemAssembler self, Mat A) {
+             dolfin::la::PETScMatrix _A(A);
+             self.assemble(_A);
+           })
       .def("assemble",
-           (void (dolfin::fem::SystemAssembler::*)(
-               dolfin::la::PETScVector&, const dolfin::la::PETScVector&))
-               & dolfin::fem::SystemAssembler::assemble);
+           [](dolfin::fem::SystemAssembler self, Vec b) {
+             dolfin::la::PETScVector _b(b);
+             self.assemble(_b);
+           })
+      .def("assemble",
+           [](dolfin::fem::SystemAssembler self, Mat A, Vec b, Vec x) {
+             dolfin::la::PETScMatrix _A(A);
+             dolfin::la::PETScVector _b(b), _x(x);
+             self.assemble(_A, _b, _x);
+           })
+      .def("assemble", [](dolfin::fem::SystemAssembler self, Vec b, Vec x) {
+        dolfin::la::PETScVector _b(b), _x(x);
+        self.assemble(_b, _x);
+      });
 
   // dolfin::fem::DiscreteOperators
   py::class_<dolfin::fem::DiscreteOperators>(m, "DiscreteOperators")
@@ -401,5 +418,5 @@ void fem(py::module& m)
           py::return_value_policy::take_ownership)
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
-}
+} // namespace dolfin_wrappers
 } // namespace dolfin_wrappers
