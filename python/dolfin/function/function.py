@@ -9,6 +9,7 @@
 import typing
 
 import numpy as np
+from petsc4py import PETSc
 
 import ufl
 from dolfin import common, cpp, function
@@ -24,7 +25,7 @@ class Function(ufl.Coefficient):
 
     def __init__(self,
                  V: functionspace.FunctionSpace,
-                 x: typing.Optional[cpp.la.PETScVector] = None,
+                 x: typing.Optional[PETSc.Vec] = None,
                  name: typing.Optional[str] = None):
         """Initialize finite element Function."""
 

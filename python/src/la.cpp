@@ -134,10 +134,8 @@ void la(py::module& m)
                                            block_size);
           }))
       .def(py::init<Vec>())
-      .def(py::init<const dolfin::la::PETScVector&>())
+     //  .def(py::init<const dolfin::la::PETScVector&>())
       .def("apply", &dolfin::la::PETScVector::apply)
-      .def("apply_ghosts", &dolfin::la::PETScVector::apply_ghosts)
-      .def("update_ghosts", &dolfin::la::PETScVector::update_ghosts)
       .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
       .def("set_options_prefix", &dolfin::la::PETScVector::set_options_prefix)
       .def("vec", &dolfin::la::PETScVector::vec,

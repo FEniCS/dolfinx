@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Patrick E. Farrell
+// Copyright (C) 2013-2019 Patrick E. Farrell and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -42,7 +42,7 @@ void VectorSpaceBasis::orthonormalize(double tol)
     if (norm < tol)
     {
       throw std::runtime_error(
-          "VectorSpaceBasis has linear dependency. Cannot orthogonalize");
+          "VectorSpaceBasis has linear dependency. Cannot orthogonalize.");
     }
   }
 }

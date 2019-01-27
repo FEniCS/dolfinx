@@ -19,7 +19,7 @@ from dolfin.fem.form import Form
 
 @functools.singledispatch
 def assemble(M: typing.Union[Form, cpp.fem.Form]
-             ) -> typing.Union[float, PETSc.Mat, cpp.la.PETScVector]:
+             ) -> typing.Union[float, PETSc.Mat, PETSc.Vec]:
     """Assemble a form over mesh"""
     M_cpp = _create_cpp_form(M)
     x = cpp.fem.assemble(M_cpp)
@@ -149,7 +149,7 @@ def assemble_matrix_block(a,
 
 
 def assemble_matrix(a, bcs: typing.List[DirichletBC],
-                    diagonal: float = 1.0) -> cpp.la.PETScMatrix:
+                    diagonal: float = 1.0) -> PETSc.Mat:
     """Assemble bilinear form into matrix."""
     a_cpp = _create_cpp_form(a)
     A = cpp.fem.create_matrix(a_cpp)
@@ -158,18 +158,18 @@ def assemble_matrix(a, bcs: typing.List[DirichletBC],
 
 
 def apply_lifting(
-        b: cpp.la.PETScVector,
+        b: PETSc.Vec,
         a: typing.List[typing.Union[Form, cpp.fem.Form]],
         bcs: typing.List[DirichletBC],
-        x0: typing.Optional[typing.List[cpp.la.PETScVector]] = [],
+        x0: typing.Optional[typing.List[PETSc.Vec]] = [],
         scale: float = 1.0) -> None:
     """Modify vector for lifting of boundary conditions."""
     a_cpp = [_create_cpp_form(form) for form in a]
     cpp.fem.apply_lifting(b, a_cpp, bcs, x0, scale)
 
 
-def set_bc(b: cpp.la.PETScVector, bcs: typing.List[DirichletBC],
-           x0: typing.Optional[cpp.la.PETScVector] = None,
+def set_bc(b: PETSc.Vec, bcs: typing.List[DirichletBC],
+           x0: typing.Optional[PETSc.Vec] = None,
            scale: float = 1.0) -> None:
     """Insert boundary condition values into vector"""
     cpp.fem.set_bc(b, bcs, x0, scale)

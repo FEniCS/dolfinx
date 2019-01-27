@@ -31,5 +31,5 @@ def solve(A, x, b, method="default", preconditioner="default"):
 
     solver = cpp.la.PETScKrylovSolver(cpp.MPI.comm_world)
     solver.set_operator(A)
-    solver.solve(x.vec(), b.vec())
+    solver.solve(x, b)
     return x

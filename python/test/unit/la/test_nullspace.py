@@ -9,8 +9,9 @@
 import pytest
 
 import ufl
-from dolfin import (MPI, Point, TestFunction, TrialFunction, Function,
-                    UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, fem, la)
+from dolfin import (MPI, Function, Point, TestFunction, TrialFunction,
+                    UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
+                    fem, la)
 from dolfin.cpp.generation import BoxMesh
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assembling
@@ -29,7 +30,7 @@ def build_elastic_nullspace(V):
 
     # Create list of vectors for null space
     nullspace_basis = [
-        la.PETScVector(V.dofmap().index_map()) for i in range(dim)
+        cpp.la.PETScVector(V.dofmap().index_map()) for i in range(dim)
     ]
 
     # Build translational null space basis
@@ -61,7 +62,7 @@ def build_broken_elastic_nullspace(V):
 
     # Create list of vectors for null space
     nullspace_basis = [
-        la.PETScVector(V.dofmap().index_map()) for i in range(4)
+        cpp.la.PETScVector(V.dofmap().index_map()) for i in range(4)
     ]
 
     # Build translational null space basis

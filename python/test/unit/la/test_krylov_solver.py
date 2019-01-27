@@ -14,10 +14,10 @@ from dolfin import (MPI, DirichletBC, Function, FunctionSpace, Identity,
                     TestFunction, TrialFunction, UnitSquareMesh,
                     VectorFunctionSpace, cpp, dot, dx, fem, grad, inner, sym,
                     tr)
+from dolfin.cpp.la import PETScVector
 from dolfin.fem import assemble
 from dolfin.fem.assembling import assemble_system
-from dolfin.la import (PETScKrylovSolver, PETScOptions, PETScVector,
-                       VectorSpaceBasis)
+from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 
 
 def test_krylov_solver_lu():

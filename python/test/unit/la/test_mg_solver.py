@@ -9,17 +9,17 @@
 
 import numpy
 import pytest
-import ufl
 
-from dolfin import (DOLFIN_EPS, DirichletBC, Expression, Function,
-                    FiniteElement, FunctionSpace, MixedElement, TestFunction,
+import ufl
+from dolfin import (DOLFIN_EPS, DirichletBC, Expression, FiniteElement,
+                    Function, FunctionSpace, MixedElement, TestFunction,
                     TestFunctions, TrialFunction, TrialFunctions, UnitCubeMesh,
-                    UnitSquareMesh, VectorElement, div, dot, dx, grad, inner,
-                    interpolate)
-from dolfin import function
+                    UnitSquareMesh, VectorElement, div, dot, dx, function,
+                    grad, inner, interpolate)
+from dolfin.cpp.la import PETScVector
 from dolfin.cpp.fem import PETScDMCollection
 from dolfin.fem.assembling import assemble_system
-from dolfin.la import PETScKrylovSolver, PETScOptions, PETScVector
+from dolfin.la import PETScKrylovSolver, PETScOptions
 
 
 @pytest.mark.skip  # See https://bitbucket.org/fenics-project/dolfin/issues/938
