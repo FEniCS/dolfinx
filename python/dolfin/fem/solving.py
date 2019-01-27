@@ -124,13 +124,11 @@ def _solve_varproblem(*args, **kwargs):
         a = fem.Form(eq.lhs, form_compiler_parameters=form_compiler_parameters)
         L = fem.Form(eq.rhs, form_compiler_parameters=form_compiler_parameters)
 
-        A = cpp.la.PETScMatrix()
-        b = cpp.la.PETScVector()
+        A = cpp.fem.create_matrix(a._cpp_object)
+        b = cpp.la.create_vector(L._cpp_object.function_space(0).dofmap().index_map())
 
         assembler = cpp.fem.SystemAssembler(a._cpp_object, L._cpp_object, bcs)
         assembler.assemble(A, b)
-        A = A.mat()
-        b = b.vec()
 
         comm = L._cpp_object.mesh().mpi_comm()
         solver = cpp.la.PETScKrylovSolver(comm)

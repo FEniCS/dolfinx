@@ -58,7 +58,6 @@ def assemble_system(A_form,
                     bcs=None,
                     x0=None,
                     form_compiler_parameters=None,
-                    add_values=False,
                     finalize_tensor=True,
                     keep_diagonal=False,
                     A_tensor=None,
@@ -103,16 +102,15 @@ def assemble_system(A_form,
 
     # Create tensors
     if A_tensor is None:
-        A_tensor = cpp.la.PETScMatrix()
+        A_tensor = cpp.fem.create_matrix(A_dolfin_form)
     if b_tensor is None:
-        b_tensor = cpp.la.PETScVector()
+        b_tensor = cpp.la.create_vector(b_dolfin_form.function_space(0).dofmap().index_map())
 
     # Check bcs
     bcs = _wrap_in_list(bcs, 'bcs', cpp.fem.DirichletBC)
 
     # Call C++ assemble function
     assembler = cpp.fem.SystemAssembler(A_dolfin_form, b_dolfin_form, bcs)
-    assembler.add_values = add_values
     assembler.finalize_tensor = finalize_tensor
     assembler.keep_diagonal = keep_diagonal
     if x0 is not None:
@@ -120,7 +118,7 @@ def assemble_system(A_form,
     else:
         assembler.assemble(A_tensor, b_tensor)
 
-    return A_tensor.mat(), b_tensor.vec()
+    return A_tensor, b_tensor
 
 
 def _wrap_in_list(obj, name, types=type):

@@ -21,16 +21,19 @@ from dolfin.fem.form import Form
 def assemble(M: typing.Union[Form, cpp.fem.Form]
              ) -> typing.Union[float, PETSc.Mat, PETSc.Vec]:
     """Assemble a form over mesh"""
-    M_cpp = _create_cpp_form(M)
-    x = cpp.fem.assemble(M_cpp)
-    try:
-        return x.mat()
-    except AttributeError:
-        pass
-    try:
-        return x.vec()
-    except AttributeError:
-        return x
+    _M = _create_cpp_form(M)
+    if _M.rank() == 0:
+        return cpp.fem.assemble_scalar(_M)
+    elif _M.rank() == 1:
+        b = cpp.la.create_vector(_M.function_space(0).dofmap().index_map())
+        assemble(b, _M)
+        return b
+    elif _M.rank() == 2:
+        A = cpp.fem.create_matrix(_M)
+        assemble(A, _M)
+        return A
+    else:
+        raise RuntimeError("Form rank not supported by assembler.")
 
 
 @assemble.register(PETSc.Vec)

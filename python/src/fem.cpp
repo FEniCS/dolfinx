@@ -249,17 +249,14 @@ void fem(py::module& m)
       .value("nested", dolfin::fem::BlockType::nested);
 
   // dolfin::fem::assemble
-  m.def("assemble",
-        py::overload_cast<const dolfin::fem::Form&>(&dolfin::fem::assemble),
-        "Assemble form over mesh");
+  m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
+        "Assemble functional over mesh");
   // Vectors (single)
   m.def("assemble_vector",
         py::overload_cast<Vec, const dolfin::fem::Form&>(
             &dolfin::fem::assemble_vector),
         py::arg("b"), py::arg("L"),
         "Assemble linear form into an existing vector");
-  m.def("apply_lifting", &dolfin::fem::apply_lifting,
-        "Modify vector for lifted boundary conditions");
   // Block/nest vectors
   m.def("assemble_vector",
         py::overload_cast<
@@ -286,13 +283,15 @@ void fem(py::module& m)
         py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
         py::arg("use_nest_extract") = true,
         "Re-assemble bilinear forms over mesh into blocked matrix");
+  // BC modifiers
+  m.def("apply_lifting", &dolfin::fem::apply_lifting,
+        "Modify vector for lifted boundary conditions");
   m.def("set_bc", &dolfin::fem::set_bc,
         "Insert boundary condition values into vector");
 
   // dolfin::fem::AssemblerBase
   py::class_<dolfin::fem::AssemblerBase,
              std::shared_ptr<dolfin::fem::AssemblerBase>>(m, "AssemblerBase")
-      .def_readwrite("add_values", &dolfin::fem::AssemblerBase::add_values)
       .def_readwrite("keep_diagonal",
                      &dolfin::fem::AssemblerBase::keep_diagonal)
       .def_readwrite("finalize_tensor",
@@ -307,21 +306,32 @@ void fem(py::module& m)
            std::shared_ptr<const dolfin::fem::Form>,
            std::shared_ptr<const dolfin::fem::Form>,
            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>())
-      .def(
-          "assemble",
-          py::overload_cast<dolfin::la::PETScMatrix&, dolfin::la::PETScVector&>(
-              &dolfin::fem::SystemAssembler::assemble))
-      .def("assemble", py::overload_cast<dolfin::la::PETScMatrix&>(
-                           &dolfin::fem::SystemAssembler::assemble))
-      .def("assemble", py::overload_cast<dolfin::la::PETScVector&>(
-                           &dolfin::fem::SystemAssembler::assemble))
       .def("assemble",
-           py::overload_cast<dolfin::la::PETScMatrix&, dolfin::la::PETScVector&,
-                             const dolfin::la::PETScVector&>(
-               &dolfin::fem::SystemAssembler::assemble))
-      .def("assemble", py::overload_cast<dolfin::la::PETScVector&,
-                                         const dolfin::la::PETScVector&>(
-                           &dolfin::fem::SystemAssembler::assemble));
+           [](dolfin::fem::SystemAssembler self, Mat A, Vec b) {
+             dolfin::la::PETScMatrix _A(A);
+             dolfin::la::PETScVector _b(b);
+             self.assemble(_A, _b);
+           })
+      .def("assemble",
+           [](dolfin::fem::SystemAssembler self, Mat A) {
+             dolfin::la::PETScMatrix _A(A);
+             self.assemble(_A);
+           })
+      .def("assemble",
+           [](dolfin::fem::SystemAssembler self, Vec b) {
+             dolfin::la::PETScVector _b(b);
+             self.assemble(_b);
+           })
+      .def("assemble",
+           [](dolfin::fem::SystemAssembler self, Mat A, Vec b, Vec x) {
+             dolfin::la::PETScMatrix _A(A);
+             dolfin::la::PETScVector _b(b), _x(x);
+             self.assemble(_A, _b, _x);
+           })
+      .def("assemble", [](dolfin::fem::SystemAssembler self, Vec b, Vec x) {
+        dolfin::la::PETScVector _b(b), _x(x);
+        self.assemble(_b, _x);
+      });
 
   // dolfin::fem::DiscreteOperators
   py::class_<dolfin::fem::DiscreteOperators>(m, "DiscreteOperators")
@@ -409,5 +419,5 @@ void fem(py::module& m)
           py::return_value_policy::take_ownership)
       .def("check_ref_count", &dolfin::fem::PETScDMCollection::check_ref_count)
       .def("get_dm", &dolfin::fem::PETScDMCollection::get_dm);
-}
+} // namespace dolfin_wrappers
 } // namespace dolfin_wrappers

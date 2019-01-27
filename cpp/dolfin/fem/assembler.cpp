@@ -323,21 +323,7 @@ void _assemble_vector_block(
 } // namespace
 
 //-----------------------------------------------------------------------------
-boost::variant<PetscScalar, la::PETScVector, la::PETScMatrix>
-fem::assemble(const Form& a)
-{
-  if (a.rank() == 0)
-    return _assemble_scalar(a);
-  else if (a.rank() == 1)
-    return _assemble_vector(a);
-  else if (a.rank() == 2)
-    return _assemble_matrix(a);
-  else
-  {
-    throw std::runtime_error("Unsupported rank");
-    return 0.0;
-  }
-}
+PetscScalar fem::assemble_scalar(const Form& M) { return _assemble_scalar(M); }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(Vec b, const Form& L)
 {
