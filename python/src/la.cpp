@@ -120,26 +120,6 @@ void la(py::module& m)
                   (void (*)(std::string)) & dolfin::la::PETScOptions::clear)
       .def_static("clear", (void (*)()) & dolfin::la::PETScOptions::clear);
 
-  // dolfin::la::PETScVector
-  py::class_<dolfin::la::PETScVector, std::shared_ptr<dolfin::la::PETScVector>>(
-      m, "PETScVector", py::dynamic_attr(), "PETScVector object")
-      .def(py::init<>())
-      .def(py::init<const dolfin::common::IndexMap&>())
-      .def(py::init(
-          [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
-             const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-                 ghost_indices,
-             int block_size) {
-            return dolfin::la::PETScVector(comm.get(), range, ghost_indices,
-                                           block_size);
-          }))
-      .def(py::init<Vec>())
-      .def("apply", &dolfin::la::PETScVector::apply)
-      .def("get_options_prefix", &dolfin::la::PETScVector::get_options_prefix)
-      .def("set_options_prefix", &dolfin::la::PETScVector::set_options_prefix)
-      .def("vec", &dolfin::la::PETScVector::vec,
-           "Return underlying PETSc Vec object");
-
   // dolfin::la::PETScOperator
   py::class_<dolfin::la::PETScOperator,
              std::shared_ptr<dolfin::la::PETScOperator>>(m, "PETScOperator")
@@ -186,28 +166,29 @@ void la(py::module& m)
         for (std::size_t i = 0; i < x.size(); ++i)
         {
           assert(x[i]);
-          _x.push_back( std::make_shared<dolfin::la::PETScVector>(x[i]) );
+          _x.push_back(std::make_shared<dolfin::la::PETScVector>(x[i]));
         }
         return dolfin::la::VectorSpaceBasis(_x);
       }))
       .def("is_orthonormal", &dolfin::la::VectorSpaceBasis::is_orthonormal,
            py::arg("tol") = 1.0e-10)
-          .def("is_orthogonal", &dolfin::la::VectorSpaceBasis::is_orthogonal,
-               py::arg("tol") = 1.0e-10)
-          //  .def("in_nullspace", &dolfin::la::VectorSpaceBasis::in_nullspace,
-          //       py::arg("A"), py::arg("tol") = 1.0e-10)
-          .def("in_nullspace",
-               [](const dolfin::la::VectorSpaceBasis& self, Mat A, double tol) {
-                 dolfin::la::PETScMatrix _A(A);
-                 return self.in_nullspace(_A, tol);
-               },
-               py::arg("A"), py::arg("tol") = 1.0e-10)
-          .def("orthogonalize", &dolfin::la::VectorSpaceBasis::orthogonalize)
-          .def("orthonormalize", &dolfin::la::VectorSpaceBasis::orthonormalize,
-               py::arg("tol") = 1.0e-10)
-          .def("dim", &dolfin::la::VectorSpaceBasis::dim)
-          .def("__getitem__", [](const dolfin::la::VectorSpaceBasis& self,
-                                 int i) { return self[i]->vec(); });
+      .def("is_orthogonal", &dolfin::la::VectorSpaceBasis::is_orthogonal,
+           py::arg("tol") = 1.0e-10)
+      //  .def("in_nullspace", &dolfin::la::VectorSpaceBasis::in_nullspace,
+      //       py::arg("A"), py::arg("tol") = 1.0e-10)
+      .def("in_nullspace",
+           [](const dolfin::la::VectorSpaceBasis& self, Mat A, double tol) {
+             dolfin::la::PETScMatrix _A(A);
+             return self.in_nullspace(_A, tol);
+           },
+           py::arg("A"), py::arg("tol") = 1.0e-10)
+      .def("orthogonalize", &dolfin::la::VectorSpaceBasis::orthogonalize)
+      .def("orthonormalize", &dolfin::la::VectorSpaceBasis::orthonormalize,
+           py::arg("tol") = 1.0e-10)
+      .def("dim", &dolfin::la::VectorSpaceBasis::dim)
+      .def("__getitem__", [](const dolfin::la::VectorSpaceBasis& self, int i) {
+        return self[i]->vec();
+      });
 
   // utils
   m.def("create_vector",

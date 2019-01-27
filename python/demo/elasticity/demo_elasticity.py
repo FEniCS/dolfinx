@@ -41,14 +41,14 @@ def build_nullspace(V):
     V.sub(2).set_x(nullspace_basis[5], 1.0, 1)
     V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
 
+    # FIXME: this shouldn't be needed
     for x in nullspace_basis:
-        cpp.la.PETScVector(x).apply()
+        x.assemble()
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
     basis.orthonormalize()
 
-    # _x = [x.vec() for x in nullspace_basis]
     _x = [basis[i] for i in range(6)]
 
     nsp = PETSc.NullSpace()

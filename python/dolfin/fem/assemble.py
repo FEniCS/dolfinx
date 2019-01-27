@@ -124,8 +124,7 @@ def reassemble_vector(
     """
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
-    _x0 = x0.vec() if x0 is not None else None
-    cpp.fem.reassemble_vector(b, L_cpp, a_cpp, bcs, _x0, scale)
+    cpp.fem.reassemble_vector(b, L_cpp, a_cpp, bcs, x0, scale)
     return b
 
 
