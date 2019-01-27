@@ -13,6 +13,7 @@ from petsc4py import PETSc
 import dolfin
 from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
                     list_timings)
+from dolfin_utils.test.skips import skip_if_complex
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
@@ -72,6 +73,7 @@ def test_numba_assembly():
     list_timings([TimingType.wall])
 
 
+@skip_if_complex
 def test_cffi_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))

@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2018 Garth N. Wells
+// Copyright (C) 2005-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -17,7 +17,6 @@ namespace dolfin
 namespace la
 {
 class PETScKrylovSolver;
-class PETScVector;
 } // namespace la
 
 namespace nls
@@ -43,7 +42,7 @@ public:
   ///
   /// @param    nonlinear_function (_NonlinearProblem_)
   ///         The nonlinear problem.
-  /// @param    x (_la::PETScVector_)
+  /// @param    x (_Vec_)
   ///         The vector.
   ///
   /// @returns    std::pair<std::size_t, bool>
@@ -96,7 +95,7 @@ protected:
   /// Convergence test. It may be overloaded using virtual inheritance and
   /// this base criterion may be called from derived, both in C++ and Python.
   ///
-  /// @param r (_la::PETScVector_)
+  /// @param r (_Vec_)
   ///         Residual for criterion evaluation.
   /// @param nonlinear_problem (_NonlinearProblem_)
   ///         The nonlinear problem.
@@ -113,9 +112,9 @@ protected:
   ///
   ///   x -= relaxation_parameter*dx
   ///
-  ///  @param x (_la::PETScVector>_)
+  ///  @param x (_Vec_)
   ///         The solution vector to be updated.
-  ///  @param dx (_la::PETScVector>_)
+  ///  @param dx (_Vec_)
   ///         The update vector computed by Newton step.
   ///  @param relaxation_parameter (double)
   ///         Newton relaxation parameter.

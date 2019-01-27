@@ -11,10 +11,6 @@
 
 namespace dolfin
 {
-namespace la
-{
-class PETScMatrix;
-} // namespace la
 
 namespace fem
 {

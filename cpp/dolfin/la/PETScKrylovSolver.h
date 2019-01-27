@@ -37,13 +37,13 @@ public:
   /// Destructor
   virtual ~PETScKrylovSolver();
 
-  /// Set operator (PETScMatrix). This is memory-safe as PETSc will
-  /// increase the reference count to the underlying PETSc object.
+  /// Set operator (Mat). This is memory-safe as PETSc will increase the
+  /// reference count to the underlying PETSc object.
   void set_operator(const Mat A);
 
-  /// Set operator and preconditioner matrix (PETScMatrix). This is
-  /// memory-safe as PETSc will increase the reference count to the
-  /// underlying PETSc objects.
+  /// Set operator and preconditioner matrix (Mat). This is memory-safe
+  /// as PETSc will increase the reference count to the underlying PETSc
+  /// objects.
   void set_operators(const Mat A, const Mat P);
 
   /// Solve linear system Ax = b and return number of iterations
