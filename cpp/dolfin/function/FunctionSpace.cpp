@@ -113,6 +113,7 @@ void FunctionSpace::interpolate_from_any(
 
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs;
+  la::VecWrapper coeff(expansion_coefficients.vec());
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Get cell coordinate dofs
@@ -125,10 +126,8 @@ void FunctionSpace::interpolate_from_any(
     // Tabulate dofs
     auto cell_dofs = _dofmap->cell_dofs(cell.index());
 
-    // Copy dofs to vector
-    expansion_coefficients.set_local(cell_coefficients.data(),
-                                     _dofmap->num_element_dofs(cell.index()),
-                                     cell_dofs.data());
+    for (std::size_t i = 0; i < cell_dofs.size(); ++i)
+      coeff.x[cell_dofs[i]] = cell_coefficients[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -144,6 +143,7 @@ void FunctionSpace::interpolate_from_any(
 
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs;
+  la::VecWrapper coeff(expansion_coefficients.vec());
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Get cell coordinate dofs
@@ -158,9 +158,8 @@ void FunctionSpace::interpolate_from_any(
         = _dofmap->cell_dofs(cell.index());
 
     // Copy dofs to vector
-    expansion_coefficients.set_local(cell_coefficients.data(),
-                                     _dofmap->num_element_dofs(cell.index()),
-                                     cell_dofs.data());
+    for (std::size_t i = 0; i < cell_dofs.size(); ++i)
+      coeff.x[cell_dofs[i]] = cell_coefficients[i];
   }
 }
 //-----------------------------------------------------------------------------

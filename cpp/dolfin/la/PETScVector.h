@@ -105,9 +105,6 @@ public:
   /// Set block of values using global indices
   void set(const PetscScalar* block, std::size_t m, const PetscInt* rows);
 
-  /// Set block of values using local indices
-  void set_local(const PetscScalar* block, std::size_t m, const PetscInt* rows);
-
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows);
 

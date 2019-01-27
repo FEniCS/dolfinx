@@ -115,8 +115,12 @@ Function::Function(const Function& v)
 
     // FIXME (local): Check this for local or global
     // Set values in vector
-    this->_vector->set_local(gathered_values.data(), collapsed_map.size(),
-                             new_rows.data());
+    la::VecWrapper v(this->_vector->vec());
+    for (std::size_t i = 0; i < collapsed_map.size(); ++i)
+      v.x[new_rows[i]] = gathered_values[i];
+    v.restore();
+
+    // FIXME: Check is this apply is required
     this->_vector->apply();
   }
 }
