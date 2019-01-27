@@ -301,6 +301,23 @@ dolfin::la::VecWrapper::VecWrapper(Vec y, bool ghosted) : x(nullptr, 0), _y(y)
   new (&x) Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
 }
 //-----------------------------------------------------------------------------
+dolfin::la::VecWrapper::~VecWrapper()
+{
+  if (_y)
+  {
+    assert(_y_local);
+    VecRestoreArray(_y_local, &array);
+
+    PetscBool is_ghost_local_form;
+    assert(_y);
+    VecGhostIsLocalForm(_y, _y_local, &is_ghost_local_form);
+    if (is_ghost_local_form == PETSC_TRUE)
+      VecGhostRestoreLocalForm(_y, &_y_local);
+    else
+      VecRestoreLocalVector(_y, _y_local);
+  }
+}
+//-----------------------------------------------------------------------------
 void dolfin::la::VecWrapper::restore()
 {
   assert(_y_local);
@@ -313,6 +330,10 @@ void dolfin::la::VecWrapper::restore()
     VecGhostRestoreLocalForm(_y, &_y_local);
   else
     VecRestoreLocalVector(_y, _y_local);
+
+  _y = nullptr;
+  new (&x)
+      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }
 //-----------------------------------------------------------------------------
 dolfin::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
@@ -331,6 +352,21 @@ dolfin::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
       Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
 }
 //-----------------------------------------------------------------------------
+dolfin::la::VecReadWrapper::~VecReadWrapper()
+{
+  if (_y)
+  {
+    assert(_y_local);
+    VecRestoreArrayRead(_y_local, &array);
+    PetscBool is_ghost_local_form;
+    VecGhostIsLocalForm(_y, _y_local, &is_ghost_local_form);
+    if (is_ghost_local_form == PETSC_TRUE)
+      VecGhostRestoreLocalForm(_y, &_y_local);
+    else
+      VecRestoreLocalVector(_y, _y_local);
+  }
+}
+//-----------------------------------------------------------------------------
 void dolfin::la::VecReadWrapper::restore()
 {
   assert(_y_local);
@@ -343,5 +379,9 @@ void dolfin::la::VecReadWrapper::restore()
     VecGhostRestoreLocalForm(_y, &_y_local);
   else
     VecRestoreLocalVector(_y, _y_local);
+
+  _y = nullptr;
+  new (&x)
+      Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }
 //-----------------------------------------------------------------------------

@@ -211,7 +211,6 @@ void DofMap::set(Vec x, PetscScalar value) const
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_array = _x.x;
   for (auto index : _dofmap)
     x_array[index] = value;
-  _x.restore();
 }
 //-----------------------------------------------------------------------------
 void DofMap::check_provided_entities(const ufc_dofmap& dofmap,

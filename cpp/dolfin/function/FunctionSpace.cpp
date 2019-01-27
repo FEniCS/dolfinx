@@ -419,7 +419,6 @@ void FunctionSpace::set_x(Vec x, PetscScalar value, int component) const
     for (Eigen::Index i = 0; i < coordinates.rows(); ++i)
       x_array[dofs[i]] = value * coordinates(i, component);
   }
-  _x.restore();
 }
 //-----------------------------------------------------------------------------
 std::string FunctionSpace::str(bool verbose) const
