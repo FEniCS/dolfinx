@@ -123,9 +123,6 @@ public:
   /// Add values to each entry on local process
   void add_local(const std::vector<PetscScalar>& values);
 
-  /// Add multiple of given vector (AXPY operation, this = a*x + this)
-  void axpy(PetscScalar a, const PETScVector& x);
-
   /// Return norm of vector
   PetscReal norm(la::Norm norm_type) const;
 

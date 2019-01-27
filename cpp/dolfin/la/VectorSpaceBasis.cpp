@@ -33,7 +33,7 @@ void VectorSpaceBasis::orthonormalize(double tol)
     {
       PetscScalar dot_ij = 0.0;
       VecDot(_basis[i]->vec(), _basis[j]->vec(), &dot_ij);
-      VecAXPY(_basis[i]->vec(), dot_ij, _basis[j]->vec());
+      VecAXPY(_basis[i]->vec(), -dot_ij, _basis[j]->vec());
     }
 
     // Normalise basis function
@@ -109,7 +109,7 @@ void VectorSpaceBasis::orthogonalize(PETScVector& x) const
     assert(_basis[i]);
     PetscScalar dot = 0.0;
     VecDot(_basis[i]->vec(), x.vec(), &dot);
-    x.axpy(-dot, *_basis[i]);
+    VecAXPY(x.vec(), -dot, _basis[i]->vec());
   }
 }
 //-----------------------------------------------------------------------------

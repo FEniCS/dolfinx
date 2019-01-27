@@ -334,14 +334,6 @@ void PETScVector::set(PetscScalar a)
 //-----------------------------------------------------------------------------
 bool PETScVector::empty() const { return _x == nullptr ? true : false; }
 //-----------------------------------------------------------------------------
-void PETScVector::axpy(PetscScalar a, const PETScVector& y)
-{
-  assert(_x);
-  assert(y._x);
-  PetscErrorCode ierr = VecAXPY(_x, a, y._x);
-  CHECK_ERROR("VecAXPY");
-}
-//-----------------------------------------------------------------------------
 PetscReal PETScVector::norm(la::Norm norm_type) const
 {
   assert(_x);
