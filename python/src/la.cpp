@@ -25,49 +25,6 @@
 
 namespace py = pybind11;
 
-namespace
-{
-
-// Linear operator trampoline class
-template <typename LinearOperatorBase>
-class PyLinearOperator : public LinearOperatorBase
-{
-  using LinearOperatorBase::LinearOperatorBase;
-
-  // pybdind11 has some issues when passing by reference (due to the
-  // return value policy), so the below is non-standard.  See
-  // https://github.com/pybind/pybind11/issues/250.
-
-  std::size_t size(std::size_t dim) const
-  {
-    PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, );
-  }
-
-  void mult(const dolfin::la::PETScVector& x, dolfin::la::PETScVector& y) const
-  {
-    PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
-  }
-};
-
-// Linear operator trampoline class (with pure virtual 'mult' function)
-template <typename LinearOperatorBase>
-class PyLinearOperatorPure : public LinearOperatorBase
-{
-  using LinearOperatorBase::LinearOperatorBase;
-
-  std::size_t size(std::size_t dim) const
-  {
-    PYBIND11_OVERLOAD_PURE(std::size_t, LinearOperatorBase, size, );
-  }
-
-  void mult(const dolfin::la::PETScVector& x, dolfin::la::PETScVector& y) const
-  {
-    PYBIND11_OVERLOAD_INT(void, LinearOperatorBase, "mult", &x, &y);
-    py::pybind11_fail("Tried to call pure virtual function \'mult\'");
-  }
-};
-} // namespace
-
 namespace dolfin_wrappers
 {
 
@@ -108,17 +65,14 @@ void la(py::module& m)
   py::class_<dolfin::la::PETScOptions>(m, "PETScOptions")
       .def_static("set",
                   (void (*)(std::string)) & dolfin::la::PETScOptions::set)
-      .def_static("set",
-                  (void (*)(std::string, bool)) & dolfin::la::PETScOptions::set)
-      .def_static("set",
-                  (void (*)(std::string, int)) & dolfin::la::PETScOptions::set)
-      .def_static("set", (void (*)(std::string, double))
-                             & dolfin::la::PETScOptions::set)
-      .def_static("set", (void (*)(std::string, std::string))
-                             & dolfin::la::PETScOptions::set)
+      .def_static("set", &dolfin::la::PETScOptions::set<bool>)
+      .def_static("set", &dolfin::la::PETScOptions::set<int>)
+      .def_static("set", &dolfin::la::PETScOptions::set<double>)
+      .def_static("set", &dolfin::la::PETScOptions::set<std::string>)
+      .def_static("clear", py::overload_cast<std::string>(
+                               &dolfin::la::PETScOptions::clear))
       .def_static("clear",
-                  (void (*)(std::string)) & dolfin::la::PETScOptions::clear)
-      .def_static("clear", (void (*)()) & dolfin::la::PETScOptions::clear);
+                  py::overload_cast<>(&dolfin::la::PETScOptions::clear));
 
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
@@ -162,8 +116,6 @@ void la(py::module& m)
            py::arg("tol") = 1.0e-10)
       .def("is_orthogonal", &dolfin::la::VectorSpaceBasis::is_orthogonal,
            py::arg("tol") = 1.0e-10)
-      //  .def("in_nullspace", &dolfin::la::VectorSpaceBasis::in_nullspace,
-      //       py::arg("A"), py::arg("tol") = 1.0e-10)
       .def("in_nullspace",
            [](const dolfin::la::VectorSpaceBasis& self, Mat A, double tol) {
              dolfin::la::PETScMatrix _A(A);
@@ -198,6 +150,8 @@ void la(py::module& m)
         },
         py::return_value_policy::take_ownership,
         "Create a PETSc Mat from sparsity pattern.");
+  // NOTE: Enabling the below requires adding a C API for MatNullSpace to
+  // petsc4py
   //   m.def("create_nullspace",
   //         [](const MPICommWrapper comm, MPI_Comm comm,
   //            const dolfin::la::VectorSpaceBasis& nullspace) {
