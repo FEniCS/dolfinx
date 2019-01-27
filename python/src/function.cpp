@@ -157,12 +157,7 @@ void function(py::module& m)
       .def("element", &dolfin::function::FunctionSpace::element)
       .def("mesh", &dolfin::function::FunctionSpace::mesh)
       .def("dofmap", &dolfin::function::FunctionSpace::dofmap)
-      .def("set_x",
-           [](const dolfin::function::FunctionSpace& self, Vec x, PetscScalar value,
-              int component) {
-             dolfin::la::PETScVector _x(x);
-             self.set_x(_x, value, component);
-           })
+      .def("set_x", &dolfin::function::FunctionSpace::set_x)
       .def("sub", &dolfin::function::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
            &dolfin::function::FunctionSpace::tabulate_dof_coordinates);

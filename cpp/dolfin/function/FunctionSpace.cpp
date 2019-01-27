@@ -373,8 +373,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   return x;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::set_x(la::PETScVector& x, PetscScalar value,
-                          std::size_t component) const
+void FunctionSpace::set_x(Vec x, PetscScalar value, int component) const
 {
   assert(_mesh);
   assert(_dofmap);
@@ -384,7 +383,8 @@ void FunctionSpace::set_x(la::PETScVector& x, PetscScalar value,
   std::vector<PetscScalar> x_values;
 
   // Dof coordinate on reference element
-  const EigenRowArrayXXd& X = _element->dof_reference_coordinates();
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
+      = _element->dof_reference_coordinates();
 
   // Get coordinate mapping
   if (!_mesh->geometry().coord_mapping)
@@ -394,9 +394,12 @@ void FunctionSpace::set_x(la::PETScVector& x, PetscScalar value,
   }
   const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
 
-  EigenRowArrayXXd coordinates(_element->space_dimension(),
-                               _mesh->geometry().dim());
-  EigenRowArrayXXd coordinate_dofs;
+  la::VecWrapper _x(x);
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_array = _x.x;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinates(_element->space_dimension(), _mesh->geometry().dim());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
@@ -410,16 +413,13 @@ void FunctionSpace::set_x(la::PETScVector& x, PetscScalar value,
     cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
 
     assert(coordinates.rows() == dofs.size());
-    assert(component < (std::size_t)coordinates.cols());
+    assert(component < (int)coordinates.cols());
 
     // Copy coordinate (it may be possible to avoid this)
-    x_values.resize(dofs.size());
     for (Eigen::Index i = 0; i < coordinates.rows(); ++i)
-      x_values[i] = value * coordinates(i, component);
-
-    // Set x[component] values in vector
-    x.set_local(x_values.data(), dofs.size(), dofs.data());
+      x_array[dofs[i]] = value * coordinates(i, component);
   }
+  _x.restore();
 }
 //-----------------------------------------------------------------------------
 std::string FunctionSpace::str(bool verbose) const

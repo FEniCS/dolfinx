@@ -177,12 +177,7 @@ void fem(py::module& m)
       .def("tabulate_entity_dofs",
            &dolfin::fem::GenericDofMap::tabulate_entity_dofs)
       .def("block_size", &dolfin::fem::GenericDofMap::block_size)
-      //   .def("set", &dolfin::fem::GenericDofMap::set);
-      .def("set", [](const dolfin::fem::GenericDofMap& self, Vec x,
-                     PetscScalar value) {
-        dolfin::la::PETScVector _x(x);
-        self.set(_x, value);
-      });
+      .def("set", &dolfin::fem::GenericDofMap::set);
 
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,

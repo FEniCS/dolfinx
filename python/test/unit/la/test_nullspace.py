@@ -49,10 +49,6 @@ def build_elastic_nullspace(V):
         V.sub(2).set_x(nullspace_basis[5], 1.0, 1)
         V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
 
-    # FIXME: shouldn't need to do this?
-    for x in nullspace_basis:
-        x.assemble()
-
     return la.VectorSpaceBasis(nullspace_basis)
 
 
@@ -72,10 +68,6 @@ def build_broken_elastic_nullspace(V):
 
     # Add vector that is not in nullspace
     V.sub(1).set_x(nullspace_basis[3], 1.0, 1)
-
-    # FIXME: shouldn't need to do this?
-    for x in nullspace_basis:
-        x.assemble()
 
     return la.VectorSpaceBasis(nullspace_basis)
 

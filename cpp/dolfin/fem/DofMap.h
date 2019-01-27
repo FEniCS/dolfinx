@@ -27,11 +27,6 @@ namespace common
 class IndexMap;
 }
 
-namespace la
-{
-class PETScVector;
-}
-
 namespace mesh
 {
 class Mesh;
@@ -227,11 +222,11 @@ public:
   /// function is typically used to construct the null space of a
   /// matrix operator.
   ///
-  /// @param  x (la::PETScVector)
+  /// @param  x (Vec)
   ///         The vector to set.
   /// @param  value (PetscScalar)
   ///         The value to set.
-  void set(la::PETScVector& x, PetscScalar value) const;
+  void set(Vec x, PetscScalar value) const;
 
   /// Return the map (const access)
   std::shared_ptr<const common::IndexMap> index_map() const;
