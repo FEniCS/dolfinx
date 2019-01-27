@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "AssemblerBase.h"
 #include "DirichletBC.h"
 #include <Eigen/Dense>
 #include <array>
@@ -58,7 +57,7 @@ class UFC;
 /// applies boundary conditions at the time of assembly, which
 /// preserves any symmetries in A.
 
-class SystemAssembler : public AssemblerBase
+class SystemAssembler
 {
 public:
   /// Constructor

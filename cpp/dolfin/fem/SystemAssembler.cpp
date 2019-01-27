@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "SystemAssembler.h"
-#include "AssemblerBase.h"
 #include "DirichletBC.h"
 #include "FiniteElement.h"
 #include "Form.h"
@@ -140,10 +139,6 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
                                _a->interior_facet_domains(),
                                _l->interior_facet_domains());
 
-  // Check forms
-  AssemblerBase::check(*_a);
-  AssemblerBase::check(*_l);
-
   // Check that we have a bilinear and a linear form
   assert(_a->rank() == 2);
   assert(_l->rank() == 1);
@@ -265,13 +260,10 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   }
 
   // Finalise assembly
-  if (finalize_tensor)
-  {
-    if (A)
-      A->apply(la::PETScMatrix::AssemblyType::FINAL);
-    if (b)
-      b->apply();
-  }
+  if (A)
+    A->apply(la::PETScMatrix::AssemblyType::FINAL);
+  if (b)
+    b->apply();
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(
@@ -477,7 +469,7 @@ void SystemAssembler::facet_wise_assembly(
   assert(ufc[0]->dolfin_form.mesh());
   const mesh::Mesh& mesh = *(ufc[0]->dolfin_form.mesh());
 
-  // Sanity check of ghost mode (proper check in AssemblerBase::check)
+  // Sanity check of ghost mode
   assert(mesh.get_ghost_mode() == mesh::GhostMode::shared_vertex
          or mesh.get_ghost_mode() == mesh::GhostMode::shared_facet
          or MPI::size(mesh.mpi_comm()) == 1);
