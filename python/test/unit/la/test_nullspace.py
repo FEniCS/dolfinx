@@ -29,9 +29,7 @@ def build_elastic_nullspace(V):
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    nullspace_basis = [
-        cpp.la.PETScVector(V.dofmap().index_map()) for i in range(dim)
-    ]
+    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map()) for i in range(dim)]
 
     # Build translational null space basis
     for i in range(gdim):
@@ -51,8 +49,9 @@ def build_elastic_nullspace(V):
         V.sub(2).set_x(nullspace_basis[5], 1.0, 1)
         V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
 
+    # FIXME:
     for x in nullspace_basis:
-        x.apply()
+        cpp.la.PETScVector(x).apply()
 
     return la.VectorSpaceBasis(nullspace_basis)
 
@@ -61,9 +60,7 @@ def build_broken_elastic_nullspace(V):
     """Function to build incorrect null space for 2D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [
-        cpp.la.PETScVector(V.dofmap().index_map()) for i in range(4)
-    ]
+    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map()) for i in range(4)]
 
     # Build translational null space basis
     V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
@@ -76,8 +73,9 @@ def build_broken_elastic_nullspace(V):
     # Add vector that is not in nullspace
     V.sub(1).set_x(nullspace_basis[3], 1.0, 1)
 
+    # FIXME:
     for x in nullspace_basis:
-        x.apply()
+        cpp.la.PETScVector(x).apply()
 
     return la.VectorSpaceBasis(nullspace_basis)
 

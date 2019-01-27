@@ -256,8 +256,7 @@ int main(int argc, char* argv[])
   la::PETScVector b(*L->function_space(0)->dofmap()->index_map());
 
   fem::SystemAssembler assembler(a, L, bc);
-  assembler.assemble(A);
-  assembler.assemble(b);
+  assembler.assemble(A, b);
 
   la::PETScKrylovSolver lu(MPI_COMM_WORLD);
   la::PETScOptions::set("ksp_type", "preonly");

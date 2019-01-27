@@ -13,19 +13,20 @@ from petsc4py import PETSc
 
 import dolfin
 from dolfin import (DOLFIN_EPS, MPI, BoxMesh, CellType, DirichletBC, Function,
-                    Point, TestFunction, TrialFunction, VectorFunctionSpace)
-from dolfin.cpp.la import PETScVector
+                    Point, TestFunction, TrialFunction, VectorFunctionSpace,
+                    cpp)
 from dolfin.fem.assembling import assemble_system
 from dolfin.io import XDMFFile
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 from ufl import Identity, as_vector, dx, grad, inner, sym, tr
 
 
-def build_nullspace(V, x):
+def build_nullspace(V):
     """Function to build null space for 3D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [PETScVector(x) for i in range(6)]
+    index_map = V.dofmap().index_map()
+    nullspace_basis = [cpp.la.create_vector(index_map) for i in range(6)]
 
     # Build translational null space basis
     V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
@@ -41,7 +42,7 @@ def build_nullspace(V, x):
     V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
 
     for x in nullspace_basis:
-        x.apply()
+        cpp.la.PETScVector(x).apply()
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
@@ -113,18 +114,15 @@ u0 = Function(V)
 # Set up boundary condition on inner surface
 bc = DirichletBC(V, u0, boundary)
 
-# Assemble system, applying boundary conditions and preserving
-# symmetry)
+# Assemble system, applying boundary conditions and preserving symmetry)
 A, b = assemble_system(a, L, bc)
 assert A.block_size == 3
 
 # Create solution function
 u = Function(V)
 
-# Create near null space basis (required for smoothed aggregation
-# AMG). The solution vector is passed so that it can be copied to
-# generate compatible vectors for the nullspace.
-null_space = build_nullspace(V, u.vector())
+# Create near null space basis (required for smoothed aggregation AMG).
+null_space = build_nullspace(V)
 
 # Attach near nullspace to matrix
 A.setNearNullSpace(null_space)
