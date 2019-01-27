@@ -273,8 +273,6 @@ def test_assembly_solve_block():
 
     # # Old assembler (reference solution)
     A3, b3 = dolfin.fem.assembling.assemble_system(a, L, bcs)
-    A3 = A3.mat()
-    b3 = b3.vec()
     x3 = b3.copy()
     ksp = PETSc.KSP()
     ksp.create(mesh.mpi_comm())

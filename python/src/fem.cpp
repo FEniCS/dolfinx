@@ -307,23 +307,21 @@ void fem(py::module& m)
            std::shared_ptr<const dolfin::fem::Form>,
            std::shared_ptr<const dolfin::fem::Form>,
            std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>())
-      .def("assemble", (void (dolfin::fem::SystemAssembler::*)(
-                           dolfin::la::PETScMatrix&, dolfin::la::PETScVector&))
-                           & dolfin::fem::SystemAssembler::assemble)
+      .def(
+          "assemble",
+          py::overload_cast<dolfin::la::PETScMatrix&, dolfin::la::PETScVector&>(
+              &dolfin::fem::SystemAssembler::assemble))
+      .def("assemble", py::overload_cast<dolfin::la::PETScMatrix&>(
+                           &dolfin::fem::SystemAssembler::assemble))
+      .def("assemble", py::overload_cast<dolfin::la::PETScVector&>(
+                           &dolfin::fem::SystemAssembler::assemble))
       .def("assemble",
-           (void (dolfin::fem::SystemAssembler::*)(dolfin::la::PETScMatrix&))
-               & dolfin::fem::SystemAssembler::assemble)
-      .def("assemble",
-           (void (dolfin::fem::SystemAssembler::*)(dolfin::la::PETScVector&))
-               & dolfin::fem::SystemAssembler::assemble)
-      .def("assemble", (void (dolfin::fem::SystemAssembler::*)(
-                           dolfin::la::PETScMatrix&, dolfin::la::PETScVector&,
-                           const dolfin::la::PETScVector&))
-                           & dolfin::fem::SystemAssembler::assemble)
-      .def("assemble",
-           (void (dolfin::fem::SystemAssembler::*)(
-               dolfin::la::PETScVector&, const dolfin::la::PETScVector&))
-               & dolfin::fem::SystemAssembler::assemble);
+           py::overload_cast<dolfin::la::PETScMatrix&, dolfin::la::PETScVector&,
+                             const dolfin::la::PETScVector&>(
+               &dolfin::fem::SystemAssembler::assemble))
+      .def("assemble", py::overload_cast<dolfin::la::PETScVector&,
+                                         const dolfin::la::PETScVector&>(
+                           &dolfin::fem::SystemAssembler::assemble));
 
   // dolfin::fem::DiscreteOperators
   py::class_<dolfin::fem::DiscreteOperators>(m, "DiscreteOperators")

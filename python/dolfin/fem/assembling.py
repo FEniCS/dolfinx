@@ -120,7 +120,7 @@ def assemble_system(A_form,
     else:
         assembler.assemble(A_tensor, b_tensor)
 
-    return A_tensor, b_tensor
+    return A_tensor.mat(), b_tensor.vec()
 
 
 def _wrap_in_list(obj, name, types=type):

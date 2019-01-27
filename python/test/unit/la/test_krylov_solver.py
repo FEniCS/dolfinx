@@ -58,7 +58,7 @@ def test_krylov_reuse_pc_lu():
     a = u * v * dx
     L = v * dx
     assembler = fem.Assembler(a, L)
-    A = assembler.assemble_matrix().mat()
+    A = assembler.assemble_matrix()
     b = assembler.assemble_vector()
     norm = 13.0
 
@@ -134,7 +134,6 @@ def test_krylov_samg_solver_elasticity():
 
         # Assemble linear algebra objects
         A, b = assemble_system(a, L, bc)
-        A = A.mat()
 
         # Create solution function
         u = Function(V)
