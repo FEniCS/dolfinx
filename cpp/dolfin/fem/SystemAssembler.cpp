@@ -169,9 +169,13 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   std::array<UFC*, 2> ufc = {{&A_ufc, &b_ufc}};
 
   // Zero tensors
-  A->zero();
-  b->set(0.0);
-  b->update_ghosts();
+  if (A)
+    A->zero();
+  if (b)
+  {
+    b->set(0.0);
+    b->update_ghosts();
+  }
 
   // Gather tensors
   std::pair<la::PETScMatrix*, la::PETScVector*> tensors(A, b);

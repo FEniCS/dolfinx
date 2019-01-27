@@ -51,8 +51,10 @@
 // functions, the domain, and the boundaries:
 //
 // * :math:`\Omega = [0,1] \times [0,1]` (a unit square)
-// * :math:`\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}` (Dirichlet boundary)
-// * :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}` (Neumann boundary)
+// * :math:`\Gamma_{D} = \{(0, y) \cup (1, y) \subset \partial \Omega\}`
+// (Dirichlet boundary)
+// * :math:`\Gamma_{N} = \{(x, 0) \cup (x, 1) \subset \partial \Omega\}`
+// (Neumann boundary)
 // * :math:`g = \sin(5x)` (normal derivative)
 // * :math:`f = 10\exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.02)` (source term)
 //
@@ -104,14 +106,16 @@ public:
   Source() : function::Expression({}) {}
 
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                   Eigen::RowMajor>> values,
-     Eigen::Ref<const EigenRowArrayXXd> x, const dolfin::mesh::Cell& cell) const
+                                    Eigen::RowMajor>>
+                values,
+            Eigen::Ref<const EigenRowArrayXXd> x,
+            const dolfin::mesh::Cell& cell) const
   {
-  for (unsigned int i = 0; i != x.rows(); ++i)
+    for (unsigned int i = 0; i != x.rows(); ++i)
     {
       double dx = x(i, 0) - 0.5;
       double dy = x(i, 1) - 0.5;
-      values(i, 0) = 10*exp(-(dx*dx + dy*dy) / 0.02);
+      values(i, 0) = 10 * exp(-(dx * dx + dy * dy) / 0.02);
     }
   }
 };
@@ -123,11 +127,13 @@ public:
   dUdN() : function::Expression({}) {}
 
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                   Eigen::RowMajor>> values,
-           Eigen::Ref<const EigenRowArrayXXd> x, const dolfin::mesh::Cell& cell) const
+                                    Eigen::RowMajor>>
+                values,
+            Eigen::Ref<const EigenRowArrayXXd> x,
+            const dolfin::mesh::Cell& cell) const
   {
     for (unsigned int i = 0; i != x.rows(); ++i)
-        values(i, 0) = sin(5*x(i, 0));
+      values(i, 0) = sin(5 * x(i, 0));
   }
 };
 
@@ -140,8 +146,8 @@ public:
 // Sub domain for Dirichlet boundary condition
 class DirichletBoundary : public mesh::SubDomain
 {
-  EigenArrayXb
-  inside(Eigen::Ref<const EigenRowArrayXXd > x, bool on_boundary) const
+  EigenArrayXb inside(Eigen::Ref<const EigenRowArrayXXd> x,
+                      bool on_boundary) const
   {
     EigenArrayXb result(x.rows());
     for (unsigned int i = 0; i != x.rows(); ++i)
@@ -159,111 +165,114 @@ class DirichletBoundary : public mesh::SubDomain
 //
 // .. code-block:: cpp
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
   common::SubSystemsManager::init_petsc(argc, argv);
 
   // Create mesh and function space
-  std::array<geometry::Point, 2> pt = {geometry::Point(0.,0.), geometry::Point(1.,1.)};
+  std::array<geometry::Point, 2> pt
+      = {geometry::Point(0., 0.), geometry::Point(1., 1.)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-     MPI_COMM_WORLD, pt, {{32, 32}},
-     mesh::CellType::Type::triangle, mesh::GhostMode::none));
+      MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
+      mesh::GhostMode::none));
 
   auto space = std::unique_ptr<dolfin_function_space>(PoissonFunctionSpace());
-  auto V = std::make_shared<function::FunctionSpace>(mesh,
-     std::make_shared<fem::FiniteElement>(std::shared_ptr<ufc_finite_element>(space->element())),
-     std::make_shared<fem::DofMap>(std::shared_ptr<ufc_dofmap>(space->dofmap()), *mesh));
+  auto V = std::make_shared<function::FunctionSpace>(
+      mesh,
+      std::make_shared<fem::FiniteElement>(
+          std::shared_ptr<ufc_finite_element>(space->element())),
+      std::make_shared<fem::DofMap>(
+          std::shared_ptr<ufc_dofmap>(space->dofmap()), *mesh));
 
-// Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
-// using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
-// takes three arguments: the function space the boundary condition
-// applies to, the value of the boundary condition, and the part of the
-// boundary on which the condition applies. In our example, the function
-// space is ``V``, the value of the boundary condition (0.0) can
-// represented using a :cpp:class:`Function`, and the Dirichlet boundary
-// is defined by the class :cpp:class:`DirichletBoundary` listed
-// above. The definition of the Dirichlet boundary condition then looks
-// as follows:
-//
-// .. code-block:: cpp
+  // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
+  // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
+  // takes three arguments: the function space the boundary condition
+  // applies to, the value of the boundary condition, and the part of the
+  // boundary on which the condition applies. In our example, the function
+  // space is ``V``, the value of the boundary condition (0.0) can
+  // represented using a :cpp:class:`Function`, and the Dirichlet boundary
+  // is defined by the class :cpp:class:`DirichletBoundary` listed
+  // above. The definition of the Dirichlet boundary condition then looks
+  // as follows:
+  //
+  // .. code-block:: cpp
 
   // FIXME: zero function and make sure ghosts are updated
   // Define boundary condition
   auto u0 = std::make_shared<function::Function>(V);
-  DirichletBoundary boundary;;
-  std::vector<std::shared_ptr<const fem:: DirichletBC>> bc
-   = {std::make_shared<fem::DirichletBC>(V, u0, boundary)};
+  DirichletBoundary boundary;
+  ;
+  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
+      = {std::make_shared<fem::DirichletBC>(V, u0, boundary)};
 
+  // Next, we define the variational formulation by initializing the
+  // bilinear and linear forms (:math:`a`, :math:`L`) using the previously
+  // defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
+  // source and boundary flux term (:math:`f`, :math:`g`) and attach these
+  // to the linear form.
+  //
+  // .. code-block:: cpp
 
-// Next, we define the variational formulation by initializing the
-// bilinear and linear forms (:math:`a`, :math:`L`) using the previously
-// defined :cpp:class:`FunctionSpace` ``V``.  Then we can create the
-// source and boundary flux term (:math:`f`, :math:`g`) and attach these
-// to the linear form.
-//
-// .. code-block:: cpp
+  auto form_L = std::unique_ptr<dolfin_form>(PoissonLinearForm());
+  auto form_a = std::unique_ptr<dolfin_form>(PoissonBilinearForm());
 
- auto form_L = std::unique_ptr<dolfin_form>(PoissonLinearForm());
- auto form_a = std::unique_ptr<dolfin_form>(PoissonBilinearForm());
+  // Define variational forms
+  auto a = std::make_shared<fem::Form>(
+      std::shared_ptr<ufc_form>(form_a->form()),
+      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
+                                                                            V});
+  auto L = std::make_shared<fem::Form>(
+      std::shared_ptr<ufc_form>(form_L->form()),
+      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
+  auto f_expr = Source();
+  auto g_expr = dUdN();
 
- // Define variational forms
- auto a = std::make_shared<fem::Form>(
-     std::shared_ptr<ufc_form>(form_a->form()),
-     std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V, V});
- auto L = std::make_shared<fem::Form>(
-     std::shared_ptr<ufc_form>(form_L->form()),
-     std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
- auto f_expr = Source();
- auto g_expr = dUdN();
+  auto f = std::make_shared<function::Function>(V);
+  auto g = std::make_shared<function::Function>(V);
 
- auto f = std::make_shared<function::Function>(V);
- auto g = std::make_shared<function::Function>(V);
+  // Attach 'coordinate mapping' to mesh
+  auto cmap = a->coordinate_mapping();
+  mesh->geometry().coord_mapping = cmap;
 
- // Attach 'coordinate mapping' to mesh
- auto cmap = a->coordinate_mapping();
- mesh->geometry().coord_mapping = cmap;
+  f->interpolate(f_expr);
+  g->interpolate(g_expr);
 
- f->interpolate(f_expr);
- g->interpolate(g_expr);
+  L->set_coefficient_index_to_name_map(form_L->coefficient_number_map);
+  L->set_coefficient_name_to_index_map(form_L->coefficient_name_map);
+  L->set_coefficients({{"f", f}, {"g", g}});
 
- L->set_coefficient_index_to_name_map(form_L->coefficient_number_map);
- L->set_coefficient_name_to_index_map(form_L->coefficient_name_map);
- L->set_coefficients({ {"f", f}, {"g", g} });
-
-
-// Now, we have specified the variational forms and can consider the
-// solution of the variational problem. First, we need to define a
-// :cpp:class:`Function` ``u`` to store the solution. (Upon
-// initialization, it is simply set to the zero function.) Next, we can
-// call the ``solve`` function with the arguments ``a == L``, ``u`` and
-// ``bc`` as follows:
-//
-// .. code-block:: cpp
+  // Now, we have specified the variational forms and can consider the
+  // solution of the variational problem. First, we need to define a
+  // :cpp:class:`Function` ``u`` to store the solution. (Upon
+  // initialization, it is simply set to the zero function.) Next, we can
+  // call the ``solve`` function with the arguments ``a == L``, ``u`` and
+  // ``bc`` as follows:
+  //
+  // .. code-block:: cpp
 
   // Compute solution
   function::Function u(V);
-  auto A = std::make_shared<la::PETScMatrix>();
-  auto b = std::make_shared<la::PETScVector>();
+  la::PETScMatrix A = fem::init_matrix(*a);
+  la::PETScVector b(*L->function_space(0)->dofmap()->index_map());
 
   fem::SystemAssembler assembler(a, L, bc);
-  assembler.assemble(*A);
-  assembler.assemble(*b);
+  assembler.assemble(A);
+  assembler.assemble(b);
 
   la::PETScKrylovSolver lu(MPI_COMM_WORLD);
   la::PETScOptions::set("ksp_type", "preonly");
   la::PETScOptions::set("pc_type", "lu");
   lu.set_from_options();
 
-  lu.set_operator(A->mat());
-  lu.solve(u.vector()->vec(), b->vec());
+  lu.set_operator(A.mat());
+  lu.solve(u.vector()->vec(), b.vec());
 
-
-// The function ``u`` will be modified during the call to solve. A
-// :cpp:class:`Function` can be saved to a file. Here, we output the
-// solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
-// visualisation in an external program such as Paraview.
-//
-// .. code-block:: cpp
+  // The function ``u`` will be modified during the call to solve. A
+  // :cpp:class:`Function` can be saved to a file. Here, we output the
+  // solution to a ``VTK`` file (specified using the suffix ``.pvd``) for
+  // visualisation in an external program such as Paraview.
+  //
+  // .. code-block:: cpp
 
   // Save solution in VTK format
   io::VTKFile file("poisson.pvd");
