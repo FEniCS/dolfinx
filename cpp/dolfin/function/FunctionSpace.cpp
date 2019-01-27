@@ -126,7 +126,7 @@ void FunctionSpace::interpolate_from_any(
     // Tabulate dofs
     auto cell_dofs = _dofmap->cell_dofs(cell.index());
 
-    for (std::size_t i = 0; i < cell_dofs.size(); ++i)
+    for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
       coeff.x[cell_dofs[i]] = cell_coefficients[i];
   }
 }
@@ -158,7 +158,7 @@ void FunctionSpace::interpolate_from_any(
         = _dofmap->cell_dofs(cell.index());
 
     // Copy dofs to vector
-    for (std::size_t i = 0; i < cell_dofs.size(); ++i)
+    for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
       coeff.x[cell_dofs[i]] = cell_coefficients[i];
   }
 }
