@@ -120,18 +120,6 @@ void la(py::module& m)
                   (void (*)(std::string)) & dolfin::la::PETScOptions::clear)
       .def_static("clear", (void (*)()) & dolfin::la::PETScOptions::clear);
 
-  // dolfin::la::PETScOperator
-  py::class_<dolfin::la::PETScOperator,
-             std::shared_ptr<dolfin::la::PETScOperator>>(m, "PETScOperator")
-      .def("mat", &dolfin::la::PETScOperator::mat,
-           "Return underlying PETSc Mat object");
-
-  // dolfin::la::PETScMatrix
-  py::class_<dolfin::la::PETScMatrix, std::shared_ptr<dolfin::la::PETScMatrix>,
-             dolfin::la::PETScOperator>(m, "PETScMatrix", py::dynamic_attr(),
-                                        "PETScMatrix object")
-      .def(py::init<>());
-
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
              std::shared_ptr<dolfin::la::PETScKrylovSolver>>(

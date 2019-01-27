@@ -36,7 +36,7 @@ public:
   explicit NewtonSolver(MPI_Comm comm);
 
   /// Destructor
-  virtual ~NewtonSolver() = default;
+  virtual ~NewtonSolver();
 
   /// Solve abstract nonlinear problem \f$`F(x) = 0\f$ for given
   /// \f$F\f$ and Jacobian \f$\dfrac{\partial F}{\partial x}\f$.
@@ -138,7 +138,7 @@ private:
   std::shared_ptr<la::PETScKrylovSolver> _solver;
 
   // Solution vector
-  std::unique_ptr<la::PETScVector> _dx;
+  Vec _dx;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;

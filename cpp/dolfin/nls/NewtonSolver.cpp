@@ -19,7 +19,8 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : _krylov_iterations(0), _residual(0.0), _residual0(0.0), _mpi_comm(comm)
+    : _krylov_iterations(0), _residual(0.0), _residual0(0.0), _dx(nullptr),
+      _mpi_comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
   _solver = std::make_shared<la::PETScKrylovSolver>(comm);
@@ -30,6 +31,12 @@ nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
   la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif
   _solver->set_from_options();
+}
+//-----------------------------------------------------------------------------
+nls::NewtonSolver::~NewtonSolver()
+{
+  if (_dx)
+    VecDestroy(&_dx);
 }
 //-----------------------------------------------------------------------------
 std::pair<int, bool>
@@ -77,10 +84,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
       P = A;
 
     if (!_dx)
-    {
-      la::PETScMatrix _A(A);
-      _dx = std::make_unique<la::PETScVector>(_A.create_vector(1));
-    }
+      MatCreateVecs(A, &_dx, nullptr);
 
     // FIXME: check that this is efficient if A and/or P are unchanged
     // Set operators
@@ -88,10 +92,10 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
     _solver->set_operators(A, P);
 
     // Perform linear solve and update total number of Krylov iterations
-    _krylov_iterations += _solver->solve(_dx->vec(), b);
+    _krylov_iterations += _solver->solve(_dx, b);
 
     // Update solution
-    update_solution(x, _dx->vec(), relaxation_parameter, nonlinear_problem,
+    update_solution(x, _dx, relaxation_parameter, nonlinear_problem,
                     newton_iteration);
 
     // Increment iteration count
@@ -112,7 +116,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
       // Subtract 1 to make sure that the initial residual0 is
       // properly set.
       newton_converged
-          = converged(_dx->vec(), nonlinear_problem, newton_iteration - 1);
+          = converged(_dx, nonlinear_problem, newton_iteration - 1);
     }
     else
       throw std::runtime_error("Unknown convergence criterion string.");
