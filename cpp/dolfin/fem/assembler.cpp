@@ -55,34 +55,6 @@ PetscScalar _assemble_scalar(const fem::Form& M)
   return MPI::sum(mesh.mpi_comm(), value);
 }
 //-----------------------------------------------------------------------------
-la::PETScVector _assemble_vector(const Form& L)
-{
-  if (L.rank() != 1)
-    throw std::runtime_error("Form must be rank 1");
-  la::PETScVector b
-      = la::PETScVector(*L.function_space(0)->dofmap()->index_map());
-  la::VecWrapper _b(b.vec());
-  _b.x.setZero();
-  fem::impl::assemble(_b.x, L);
-  _b.restore();
-
-  VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-  VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
-
-  return b;
-}
-//-----------------------------------------------------------------------------
-la::PETScMatrix _assemble_matrix(const Form& a)
-{
-  if (a.rank() != 2)
-    throw std::runtime_error("Form must be rank 2");
-  la::PETScMatrix A = fem::init_matrix(a);
-  A.zero();
-  fem::assemble(A.mat(), a, {});
-  A.apply(la::PETScMatrix::AssemblyType::FINAL);
-  return A;
-}
-//-----------------------------------------------------------------------------
 void set_diagonal_local(
     Mat A,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
