@@ -6,7 +6,6 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy as np
-from numpy import intc, int64
 
 from dolfin import cpp
 from dolfin.la.solver import solve
@@ -22,4 +21,4 @@ from dolfin.cpp.la import (PETScKrylovSolver, PETScOptions)  # noqa
 
 def la_index_dtype():
     """Return the numpy dtype equivalent to the type of la_index"""
-    return intc if cpp.common.sizeof_la_index() == 4 else int64
+    return np.intc if cpp.common.sizeof_la_index() == 4 else np.int64

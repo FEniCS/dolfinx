@@ -108,20 +108,14 @@ public:
   /// Set block of values using local indices
   void set_local(const PetscScalar* block, std::size_t m, const PetscInt* rows);
 
-  /// Add block of values using global indices
-  void add(const PetscScalar* block, std::size_t m, const PetscInt* rows);
-
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows);
 
   /// Get all values on local process
-  void get_local(std::vector<PetscScalar>& values) const;
+  // void get_local(std::vector<PetscScalar>& values) const;
 
   /// Set all values on local process
   void set_local(const std::vector<PetscScalar>& values);
-
-  /// Add values to each entry on local process
-  void add_local(const std::vector<PetscScalar>& values);
 
   /// Return norm of vector
   PetscReal norm(la::Norm norm_type) const;
