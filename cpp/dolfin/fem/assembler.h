@@ -26,13 +26,6 @@ namespace fem
 class DirichletBC;
 class Form;
 
-/// Assembly type for block forms
-enum class BlockType
-{
-  monolithic,
-  nested
-};
-
 /// Assemble variational form. Caller is responsible for destroying.
 // boost::variant<PetscScalar, Vec, Mat> assemble(const Form& a);
 

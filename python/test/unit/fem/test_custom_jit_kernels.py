@@ -72,7 +72,7 @@ def test_numba_assembly():
     list_timings([TimingType.wall])
 
 
-def xtest_cffi_assembly():
+def test_cffi_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
@@ -176,12 +176,11 @@ def xtest_cffi_assembly():
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     L.set_cell_tabulate(0, ptrL)
 
-    assembler = cpp.fem.Assembler([[a]], [L], [])
-    A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
-    b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
+    A = dolfin.fem.assemble(a)
+    b = dolfin.fem.assemble(L)
 
-    Anorm = A.norm(cpp.la.Norm.frobenius)
-    bnorm = b.norm(cpp.la.Norm.l2)
+    Anorm = A.norm(PETSc.NormType.FROBENIUS)
+    bnorm = b.norm(PETSc.NormType.N2)
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 

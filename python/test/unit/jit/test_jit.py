@@ -115,9 +115,8 @@ def test_pass_array_double():
     assert abs(ans - 15) < 1e-15
 
 
-# FIXME: does this need the PETSc/pybind11 caster to be included?
-def xtest_compile_extension_module():
-
+@pytest.mark.skip(reason="FIXME: does this need pybind11 petsc_caster.h to be included?")
+def test_compile_extension_module():
     # This test should do basically the same as the docstring of the
     # compile_extension_module function in compilemodule.py.  Remember
     # to update the docstring if the test is modified!

@@ -177,10 +177,10 @@ void fem(py::module& m)
       .def("tabulate_entity_dofs",
            &dolfin::fem::GenericDofMap::tabulate_entity_dofs)
       .def("block_size", &dolfin::fem::GenericDofMap::block_size)
-    //   .def("set", &dolfin::fem::GenericDofMap::set);
-      .def("set", [](const dolfin::fem::GenericDofMap& self, Vec x, PetscScalar value)
-      {
-          dolfin::la::PETScVector _x(x);
+      //   .def("set", &dolfin::fem::GenericDofMap::set);
+      .def("set", [](const dolfin::fem::GenericDofMap& self, Vec x,
+                     PetscScalar value) {
+        dolfin::la::PETScVector _x(x);
         self.set(_x, value);
       });
 
@@ -246,12 +246,6 @@ void fem(py::module& m)
         instance.get_boundary_values(map);
         return map;
       });
-
-  py::enum_<dolfin::fem::BlockType>(
-      m, "BlockType",
-      "Enum for matrix/vector assembly type for nested problems")
-      .value("monolithic", dolfin::fem::BlockType::monolithic)
-      .value("nested", dolfin::fem::BlockType::nested);
 
   // dolfin::fem::assemble
   m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
