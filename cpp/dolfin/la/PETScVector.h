@@ -41,10 +41,6 @@ public:
               const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
               int block_size);
 
-  // FIXME: Try to remove
-  /// Create empty vector
-  PETScVector();
-
   /// Copy constructor
   PETScVector(const PETScVector& x);
 
@@ -95,9 +91,6 @@ public:
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
-
-  /// Return true if vector is empty
-  bool empty() const;
 
   /// Get block of values using local indices
   void get_local(PetscScalar* block, std::size_t m, const PetscInt* rows) const;
