@@ -71,79 +71,107 @@ fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>> a)
   return maps;
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix
-fem::init_nest_matrix(std::vector<std::vector<const fem::Form*>> a)
+la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
 {
-  // Check that array of forms is not empty and is square
-  if (a.empty())
-    throw std::runtime_error("Cannot created nested matrix without forms.");
-  for (const auto& a_row : a)
+  bool keep_diagonal = false;
+  if (a.rank() != 2)
   {
-    if (a_row.size() != a[0].size())
-    {
-      throw std::runtime_error(
-          "Array for forms must be rectangular to initialised nested matrix.");
-    }
+    throw std::runtime_error(
+        "Cannot initialise matrx. Form is not a bilinear form");
   }
 
-  // Block shape
-  const auto shape = boost::extents[a.size()][a[0].size()];
+  // Get dof maps
+  std::array<const GenericDofMap*, 2> dofmaps
+      = {{a.function_space(0)->dofmap().get(),
+          a.function_space(1)->dofmap().get()}};
 
-  // Loop over each form and create matrix
-  boost::multi_array<std::shared_ptr<la::PETScMatrix>, 2> mats(shape);
-  boost::multi_array<Mat, 2> petsc_mats(shape);
-  for (std::size_t i = 0; i < a.size(); ++i)
+  // Get mesh
+  assert(a.mesh());
+  const mesh::Mesh& mesh = *(a.mesh());
+
+  common::Timer t0("Build sparsity");
+
+  // Get common::IndexMaps for each dimension
+  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
+      = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
+
+  // Create and build sparsity pattern
+  la::SparsityPattern pattern = SparsityPatternBuilder::build(
+      mesh.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
+      (a.integrals().num_interior_facet_integrals() > 0),
+      (a.integrals().num_exterior_facet_integrals() > 0));
+  pattern.assemble();
+  t0.stop();
+
+  // Initialize matrix
+  common::Timer t1("Init tensor");
+  la::PETScMatrix A(a.mesh()->mpi_comm(), pattern);
+  t1.stop();
+
+  // Insert zeros to dense rows in increasing order of column index
+  // to avoid CSR data reallocation when assembling in random order
+  // resulting in quadratic complexity; this has to be done before
+  // inserting to diagonal below
+
+  // Tabulate indices of dense rows
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> global_dofs
+      = dofmaps[0]->tabulate_global_dofs();
+  if (global_dofs.size() > 0)
   {
-    for (std::size_t j = 0; j < a[i].size(); ++j)
+    // Get local row range
+    const common::IndexMap& index_map_0 = *dofmaps[0]->index_map();
+    std::array<PetscInt, 2> row_range;
+    MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
+
+    assert(index_map_0.block_size() == 1);
+
+    // Set zeros in dense rows in order of increasing column index
+    const PetscScalar block = 0.0;
+    PetscInt IJ[2];
+    for (Eigen::Index i = 0; i < global_dofs.size(); ++i)
     {
-      if (a[i][j])
+      const std::int64_t I = index_map_0.local_to_global(global_dofs[i]);
+      if (I >= row_range[0] && I < row_range[1])
       {
-        mats[i][j] = std::make_shared<la::PETScMatrix>(init_matrix(*a[i][j]));
-        petsc_mats[i][j] = mats[i][j]->mat();
+        IJ[0] = I;
+        for (std::int64_t J = 0; J < A.size()[1]; J++)
+        {
+          IJ[1] = J;
+          A.set(&block, 1, &IJ[0], 1, &IJ[1]);
+        }
       }
-      else
-        petsc_mats[i][j] = nullptr;
     }
+
+    // Eventually wait with assembly flush for keep_diagonal
+    if (!keep_diagonal)
+      A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
 
-  // Initialise block (MatNest) matrix
-  Mat _A;
-  MatCreate(a[0][0]->mesh()->mpi_comm(), &_A);
-  MatSetType(_A, MATNEST);
-  MatNestSetSubMats(_A, petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
-                    NULL, petsc_mats.data());
-  MatSetUp(_A);
-
-  return la::PETScMatrix(_A);
-}
-//-----------------------------------------------------------------------------
-la::PETScVector fem::init_nest(std::vector<const fem::Form*> L)
-{
-  // Loop over each form and create vector
-  std::vector<std::shared_ptr<la::PETScVector>> vecs(L.size());
-  std::vector<Vec> petsc_vecs(L.size());
-  for (std::size_t i = 0; i < L.size(); ++i)
+  // FIXME: Check if there is a PETSc function for this
+  // Insert zeros on the diagonal as diagonal entries may be
+  // optimised away, e.g. when calling PETScMatrix::apply.
+  if (keep_diagonal)
   {
-    if (L[i])
+    // Loop over rows and insert 0.0 on the diagonal
+    const PetscScalar block = 0.0;
+    std::array<PetscInt, 2> row_range;
+    MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
+    const std::int64_t range = std::min(row_range[1], (PetscInt)A.size()[1]);
+
+    for (std::int64_t i = row_range[0]; i < range; i++)
     {
-      const common::IndexMap& index_map
-          = *L[i]->function_space(0)->dofmap()->index_map();
-      vecs[i] = std::make_shared<la::PETScVector>(index_map);
-      petsc_vecs[i] = vecs[i]->vec();
+      const PetscInt _i = i;
+      A.set(&block, 1, &_i, 1, &_i);
     }
-    else
-      petsc_vecs[i] = nullptr;
+
+    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
   }
 
-  // Create nested (VecNest) vector
-  Vec y;
-  VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), NULL, petsc_vecs.data(),
-                &y);
-  return la::PETScVector(y);
+  return A;
 }
 //-----------------------------------------------------------------------------
 la::PETScMatrix
-fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
+fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
 {
   // FIXME: this assumes that a00 is not null
   const mesh::Mesh& mesh = *a[0][0]->mesh();
@@ -178,7 +206,8 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
                 a[row][col]->function_space(1)->dofmap().get()}};
         auto sp = std::make_unique<la::SparsityPattern>(
             SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps, true,
-                                          false, false, false, false));
+                                          false, false));
+        sp->assemble();
         patterns[row].push_back(std::move(sp));
       }
       else
@@ -262,7 +291,53 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
   return A;
 }
 //-----------------------------------------------------------------------------
-la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
+la::PETScMatrix
+fem::create_matrix_nest(std::vector<std::vector<const fem::Form*>> a)
+{
+  // Check that array of forms is not empty and is square
+  if (a.empty())
+    throw std::runtime_error("Cannot created nested matrix without forms.");
+  for (const auto& a_row : a)
+  {
+    if (a_row.size() != a[0].size())
+    {
+      throw std::runtime_error(
+          "Array for forms must be rectangular to initialised nested matrix.");
+    }
+  }
+
+  // Block shape
+  const auto shape = boost::extents[a.size()][a[0].size()];
+
+  // Loop over each form and create matrix
+  boost::multi_array<std::shared_ptr<la::PETScMatrix>, 2> mats(shape);
+  boost::multi_array<Mat, 2> petsc_mats(shape);
+  for (std::size_t i = 0; i < a.size(); ++i)
+  {
+    for (std::size_t j = 0; j < a[i].size(); ++j)
+    {
+      if (a[i][j])
+      {
+        mats[i][j] = std::make_shared<la::PETScMatrix>(create_matrix(*a[i][j]));
+        petsc_mats[i][j] = mats[i][j]->mat();
+      }
+      else
+        petsc_mats[i][j] = nullptr;
+    }
+  }
+
+  // Initialise block (MatNest) matrix
+  Mat _A;
+  MatCreate(a[0][0]->mesh()->mpi_comm(), &_A);
+  MatSetType(_A, MATNEST);
+  MatNestSetSubMats(_A, petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
+                    NULL, petsc_mats.data());
+  MatSetUp(_A);
+
+  return la::PETScMatrix(_A);
+}
+//-----------------------------------------------------------------------------
+la::PETScVector fem::create_vector_block(std::vector<const fem::Form*> L)
 {
   // FIXME: handle null blocks?
 
@@ -304,103 +379,29 @@ la::PETScVector fem::init_monolithic(std::vector<const fem::Form*> L)
   return la::PETScVector(index_map);
 }
 //-----------------------------------------------------------------------------
-la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
+la::PETScVector fem::create_vector_nest(std::vector<const fem::Form*> L)
 {
-  bool keep_diagonal = false;
-  if (a.rank() != 2)
+  // Loop over each form and create vector
+  std::vector<std::shared_ptr<la::PETScVector>> vecs(L.size());
+  std::vector<Vec> petsc_vecs(L.size());
+  for (std::size_t i = 0; i < L.size(); ++i)
   {
-    throw std::runtime_error(
-        "Cannot initialise matrx. Form is not a bilinear form");
-  }
-
-  // Get dof maps
-  std::array<const GenericDofMap*, 2> dofmaps
-      = {{a.function_space(0)->dofmap().get(),
-          a.function_space(1)->dofmap().get()}};
-
-  // Get mesh
-  assert(a.mesh());
-  const mesh::Mesh& mesh = *(a.mesh());
-
-  common::Timer t0("Build sparsity");
-
-  // Get common::IndexMaps for each dimension
-  std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
-
-  // Create and build sparsity pattern
-  la::SparsityPattern pattern = SparsityPatternBuilder::build(
-      mesh.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
-      (a.integrals().num_interior_facet_integrals() > 0),
-      (a.integrals().num_exterior_facet_integrals() > 0),
-      (a.integrals().num_vertex_integrals() > 0), keep_diagonal);
-  t0.stop();
-
-  // Initialize matrix
-  common::Timer t1("Init tensor");
-  la::PETScMatrix A(a.mesh()->mpi_comm(), pattern);
-  t1.stop();
-
-  // Insert zeros to dense rows in increasing order of column index
-  // to avoid CSR data reallocation when assembling in random order
-  // resulting in quadratic complexity; this has to be done before
-  // inserting to diagonal below
-
-  // Tabulate indices of dense rows
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> global_dofs
-      = dofmaps[0]->tabulate_global_dofs();
-  if (global_dofs.size() > 0)
-  {
-    // Get local row range
-    const common::IndexMap& index_map_0 = *dofmaps[0]->index_map();
-    std::array<PetscInt, 2> row_range;
-    MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
-
-    assert(index_map_0.block_size() == 1);
-
-    // Set zeros in dense rows in order of increasing column index
-    const PetscScalar block = 0.0;
-    PetscInt IJ[2];
-    for (Eigen::Index i = 0; i < global_dofs.size(); ++i)
+    if (L[i])
     {
-      const std::int64_t I = index_map_0.local_to_global(global_dofs[i]);
-      if (I >= row_range[0] && I < row_range[1])
-      {
-        IJ[0] = I;
-        for (std::int64_t J = 0; J < A.size()[1]; J++)
-        {
-          IJ[1] = J;
-          A.set(&block, 1, &IJ[0], 1, &IJ[1]);
-        }
-      }
+      const common::IndexMap& index_map
+          = *L[i]->function_space(0)->dofmap()->index_map();
+      vecs[i] = std::make_shared<la::PETScVector>(index_map);
+      petsc_vecs[i] = vecs[i]->vec();
     }
-
-    // Eventually wait with assembly flush for keep_diagonal
-    if (!keep_diagonal)
-      A.apply(la::PETScMatrix::AssemblyType::FLUSH);
+    else
+      petsc_vecs[i] = nullptr;
   }
 
-  // FIXME: Check if there is a PETSc function for this
-  // Insert zeros on the diagonal as diagonal entries may be
-  // optimised away, e.g. when calling PETScMatrix::apply.
-  if (keep_diagonal)
-  {
-    // Loop over rows and insert 0.0 on the diagonal
-    const PetscScalar block = 0.0;
-    std::array<PetscInt, 2> row_range;
-    MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
-    const std::int64_t range = std::min(row_range[1], (PetscInt)A.size()[1]);
-
-    for (std::int64_t i = row_range[0]; i < range; i++)
-    {
-      const PetscInt _i = i;
-      A.set(&block, 1, &_i, 1, &_i);
-    }
-
-    A.apply(la::PETScMatrix::AssemblyType::FLUSH);
-  }
-
-  return A;
+  // Create nested (VecNest) vector
+  Vec y;
+  VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), NULL, petsc_vecs.data(),
+                &y);
+  return la::PETScVector(y);
 }
 //-----------------------------------------------------------------------------
 std::size_t

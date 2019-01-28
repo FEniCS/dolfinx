@@ -98,7 +98,9 @@ public:
                       std::shared_ptr<fem::Form> L,
                       std::shared_ptr<fem::Form> J,
                       std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
-      : _u(u), _l(L), _j(J), _bcs(bcs)
+      : _u(u), _l(L), _j(J), _bcs(bcs),
+        _b(*L->function_space(0)->dofmap()->index_map()),
+        _matA(fem::create_matrix(*J))
   {
     // Do nothing
   }
@@ -116,29 +118,22 @@ public:
   Vec F(const Vec x) final
   {
     // Assemble b
-    if (!b)
-    {
-      b = std::make_unique<la::PETScVector>(
-          *_l->function_space(0)->dofmap()->index_map());
-    }
-    assemble_vector(b->vec(), *_l);
-    b->apply_ghosts();
+    assemble_vector(_b.vec(), *_l);
+    _b.apply_ghosts();
 
     // Set bcs
-    set_bc(b->vec(), _bcs, x, -1);
+    set_bc(_b.vec(), _bcs, x, -1);
 
-    return b->vec();
+    return _b.vec();
   }
 
   /// Compute J = F' at current point x
   Mat J(const Vec x) final
   {
-    if (!A)
-      A = std::make_unique<la::PETScMatrix>(fem::init_matrix(*_j));
-    A->zero();
-    assemble(A->mat(), *_j, _bcs);
-    A->apply(la::PETScMatrix::AssemblyType::FINAL);
-    return A->mat();
+    _matA.zero();
+    assemble(_matA.mat(), *_j, _bcs);
+    _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
+    return _matA.mat();
   }
 
 private:
@@ -146,8 +141,8 @@ private:
   std::shared_ptr<fem::Form> _l, _j;
   std::vector<std::shared_ptr<const fem::DirichletBC>> _bcs;
 
-  std::unique_ptr<la::PETScVector> b;
-  std::unique_ptr<la::PETScMatrix> A;
+  la::PETScVector _b;
+  la::PETScMatrix _matA;
 };
 
 int main(int argc, char* argv[])

@@ -78,21 +78,6 @@ public:
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
       const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols);
 
-  // FIXME: Remove?
-  /// Insert non-zero entries using local (process-wise) indices for the
-  /// primary dimension and global indices for the co-dimension
-  void insert_local_global(
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> rows,
-      const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cols);
-
-  /// Insert full rows (or columns, according to primary dimension)
-  /// using local (process-wise) indices. This must be called before any
-  /// other sparse insertion occurs to avoid quadratic complexity of
-  /// dense rows insertion
-  void insert_full_rows_local(
-      const Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>>
-          rows);
-
   /// Return local range for dimension dim
   std::array<std::size_t, 2> local_range(std::size_t dim) const;
 
@@ -116,8 +101,8 @@ public:
   /// dimension 0
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_local_nonzeros() const;
 
-  /// Finalize sparsity pattern
-  void apply();
+  /// Finalize sparsity pattern and communicate off-process entries
+  void assemble();
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const { return _mpi_comm.comm(); }
@@ -161,13 +146,6 @@ private:
 
   // Sparsity patterns for diagonal and off-diagonal blocks
   std::vector<set_type> _diagonal, _off_diagonal;
-
-  // List of full rows (or columns, according to primary dimension).
-  // Full rows are kept separately to circumvent quadratic scaling
-  // (caused by linear insertion time into dolfin::Set; std::set has
-  // logarithmic insertion, which would result in N log::log(N) overall
-  // complexity for dense rows)
-  set_type _full_rows;
 
   // Cache for non-local entries stored as [i0, j0, i1, j1, ...].
   // Cleared after communication via apply()

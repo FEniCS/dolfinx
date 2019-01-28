@@ -40,10 +40,8 @@ def xtest_str(mesh, V):
         mesh, [dm._cpp_object, dm._cpp_object],
         True,
         False,
-        False,
-        False,
-        False,
-        finalize=True)
+        False)
+    sp.assemble()
 
     sp.str(False)
     sp.str(True)
@@ -59,10 +57,8 @@ def test_insert_local(mesh, V):
         mesh, [dm._cpp_object, dm._cpp_object],
         True,
         False,
-        False,
-        False,
-        False,
-        finalize=True)
+        False)
+    sp.assemble()
 
     sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp], [sp]])
     if (MPI.rank(mesh.mpi_comm()) == 0):

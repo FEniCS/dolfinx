@@ -85,9 +85,9 @@ void fem(py::module& m)
         "Create a ufc_coordinate_mapping object from a pointer.");
 
   // utils
-  m.def("create_vector",
+  m.def("create_vector",  // TODO: change name to create_vector_block
         [](const std::vector<const dolfin::fem::Form*> L) {
-          auto x = dolfin::fem::init_monolithic(L);
+          auto x = dolfin::fem::create_vector_block(L);
           Vec _x = x.vec();
           PetscObjectReference((PetscObject)_x);
           return _x;
@@ -96,7 +96,7 @@ void fem(py::module& m)
         "Initialise monolithic vector for multiple (stacked) linear forms.");
   m.def("create_vector_nest",
         [](const std::vector<const dolfin::fem::Form*> L) {
-          auto x = dolfin::fem::init_nest(L);
+          auto x = dolfin::fem::create_vector_nest(L);
           Vec _x = x.vec();
           PetscObjectReference((PetscObject)_x);
           return _x;
@@ -105,7 +105,7 @@ void fem(py::module& m)
         "Initialise nested vector for multiple (stacked) linear forms.");
   m.def("create_matrix",
         [](const dolfin::fem::Form& a) {
-          auto A = dolfin::fem::init_matrix(a);
+          auto A = dolfin::fem::create_matrix(a);
           Mat _A = A.mat();
           PetscObjectReference((PetscObject)_A);
           return _A;
@@ -114,22 +114,22 @@ void fem(py::module& m)
         "Create a PETSc Mat for bilinear form.");
   m.def("create_matrix_block",
         [](std::vector<std::vector<const dolfin::fem::Form*>> a) {
-          auto A = dolfin::fem::init_monolithic_matrix(a);
+          auto A = dolfin::fem::create_matrix_block(a);
           Mat _A = A.mat();
           PetscObjectReference((PetscObject)_A);
           return _A;
         },
         py::return_value_policy::take_ownership,
-        "Initialise monolithic sparse matrix for stacked bilinear forms.");
+        "Create monolithic sparse matrix for stacked bilinear forms.");
   m.def("create_matrix_nest",
         [](const std::vector<std::vector<const dolfin::fem::Form*>> a) {
-          auto A = dolfin::fem::init_nest_matrix(a);
+          auto A = dolfin::fem::create_matrix_nest(a);
           Mat _A = A.mat();
           PetscObjectReference((PetscObject)_A);
           return _A;
         },
         py::return_value_policy::take_ownership,
-        "Initialise nested sparse matrix for bilinear forms.");
+        "Create nested sparse matrix for bilinear forms.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
@@ -198,16 +198,14 @@ void fem(py::module& m)
           "build",
           [](const MPICommWrapper comm, const dolfin::mesh::Mesh& mesh,
              const std::array<const dolfin::fem::GenericDofMap*, 2> dofmaps,
-             bool cells, bool interior_facets, bool exterior_facets,
-             bool vertices, bool diagonal, bool finalize) {
+             bool cells, bool interior_facets, bool exterior_facets) {
             return dolfin::fem::SparsityPatternBuilder::build(
                 comm.get(), mesh, dofmaps, cells, interior_facets,
-                exterior_facets, vertices, diagonal, finalize);
+                exterior_facets);
           },
           py::arg("mpi_comm"), py::arg("mesh"), py::arg("dofmaps"),
           py::arg("cells"), py::arg("interior_facets"),
-          py::arg("exterior_facets"), py::arg("vertices"), py::arg("diagonal"),
-          py::arg("finalize") = true,
+          py::arg("exterior_facets"),
           "Create SparsityPattern from pair of dofmaps");
 
   // dolfin::fem::DirichletBC
