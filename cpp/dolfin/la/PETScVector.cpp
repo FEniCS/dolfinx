@@ -101,20 +101,6 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   return {{n0, n1}};
 }
 //-----------------------------------------------------------------------------
-void PETScVector::apply()
-{
-  common::Timer timer("Apply (PETScVector)");
-  assert(_x);
-  PetscErrorCode ierr;
-  ierr = VecAssemblyBegin(_x);
-  CHECK_ERROR("VecAssemblyBegin");
-  ierr = VecAssemblyEnd(_x);
-  CHECK_ERROR("VecAssemblyEnd");
-
-  // Update any ghost values
-  update_ghosts();
-}
-//-----------------------------------------------------------------------------
 void PETScVector::apply_ghosts()
 {
   assert(_x);

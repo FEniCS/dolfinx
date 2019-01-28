@@ -92,12 +92,6 @@ public:
   /// Destructor
   virtual ~Function() = default;
 
-  // Assignment from function
-  //
-  // @param v (_Function_)
-  //         Another function.
-  // const Function& operator= (const Function& v);
-
   /// Extract subfunction (view into the Function)
   ///
   /// @param i (std::size_t)

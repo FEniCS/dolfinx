@@ -244,9 +244,6 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
   if (ierr != 0)
     la::petsc_error(ierr, __FILE__, "VecRestoreArray");
 
-  // FIXME: Not required?
-  x->apply();
-
   return *x;
 }
 //-----------------------------------------------------------------------------
