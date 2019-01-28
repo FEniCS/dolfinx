@@ -52,10 +52,7 @@ public:
   /// Move assignment operator
   PETScMatrix& operator=(PETScMatrix&& A) = default;
 
-  /// Return local ownership range
-  std::array<std::int64_t, 2> local_range(std::size_t dim) const;
-
-  /// Set all entries to zero and keep any sparse structure
+   /// Set all entries to zero and keep any sparse structure
   void zero();
 
   /// Assembly type

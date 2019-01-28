@@ -6,17 +6,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PETScMatrix.h"
-#include "PETScVector.h"
-#include "SparsityPattern.h"
 #include "VectorSpaceBasis.h"
 #include "utils.h"
-#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/log/log.h>
-#include <iomanip>
 #include <iostream>
-#include <numeric>
 #include <sstream>
 
 // Ceiling division of nonnegative integers
@@ -47,11 +42,6 @@ PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScOperator()
 PETScMatrix::~PETScMatrix()
 {
   // Do nothing (PETSc matrix is destroyed in base class)
-}
-//-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> PETScMatrix::local_range(std::size_t dim) const
-{
-  return PETScOperator::local_range(dim);
 }
 //-----------------------------------------------------------------------------
 void PETScMatrix::set(const PetscScalar* block, std::size_t m,

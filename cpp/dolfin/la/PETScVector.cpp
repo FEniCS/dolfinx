@@ -6,15 +6,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PETScVector.h"
-#include "SparsityPattern.h"
 #include "utils.h"
-#include <cmath>
 #include <cstddef>
 #include <cstring>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <numeric>
 
 using namespace dolfin;
 using namespace dolfin::la;
@@ -79,12 +75,7 @@ PETScVector& PETScVector::operator=(PETScVector&& v)
 //-----------------------------------------------------------------------------
 std::int64_t PETScVector::size() const
 {
-  if (!_x)
-  {
-    throw std::runtime_error(
-        "PETSc vector has not been initialised. Cannot return size.");
-  }
-
+  assert(_x);
   PetscInt n = 0;
   PetscErrorCode ierr = VecGetSize(_x, &n);
   CHECK_ERROR("VecGetSize");
@@ -93,12 +84,7 @@ std::int64_t PETScVector::size() const
 //-----------------------------------------------------------------------------
 std::size_t PETScVector::local_size() const
 {
-  if (!_x)
-  {
-    throw std::runtime_error(
-        "PETSc vector has not been initialised. Cannot return local size.");
-  }
-
+  assert(_x);
   PetscInt n = 0;
   PetscErrorCode ierr = VecGetLocalSize(_x, &n);
   CHECK_ERROR("VecGetLocalSize");
@@ -107,12 +93,7 @@ std::size_t PETScVector::local_size() const
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScVector::local_range() const
 {
-  if (!_x)
-  {
-    throw std::runtime_error(
-        "PETSc vector has not been initialised. Cannot return local range.");
-  }
-
+  assert(_x);
   PetscInt n0, n1;
   PetscErrorCode ierr = VecGetOwnershipRange(_x, &n0, &n1);
   CHECK_ERROR("VecGetOwnershipRange");
@@ -226,25 +207,14 @@ PetscReal PETScVector::norm(la::Norm norm_type) const
 //-----------------------------------------------------------------------------
 void PETScVector::set_options_prefix(std::string options_prefix)
 {
-  if (!_x)
-  {
-    throw std::runtime_error(
-        "Cannot set options prefix. PETSc Vec has not been initialized.");
-  }
-
-  // Set PETSc options prefix
+  assert(_x);
   PetscErrorCode ierr = VecSetOptionsPrefix(_x, options_prefix.c_str());
   CHECK_ERROR("VecSetOptionsPrefix");
 }
 //-----------------------------------------------------------------------------
 std::string PETScVector::get_options_prefix() const
 {
-  if (!_x)
-  {
-    throw std::runtime_error(
-        "Cannot get options prefix. PETSc Vec has not been initialized.");
-  }
-
+  assert(_x);
   const char* prefix = nullptr;
   PetscErrorCode ierr = VecGetOptionsPrefix(_x, &prefix);
   CHECK_ERROR("VecGetOptionsPrefix");
@@ -253,12 +223,7 @@ std::string PETScVector::get_options_prefix() const
 //-----------------------------------------------------------------------------
 void PETScVector::set_from_options()
 {
-  if (!_x)
-  {
-    throw std::runtime_error(
-        "Cannot call VecSetFromOptions. PETSc Vec has not been initialized.");
-  }
-
+  assert(_x);
   PetscErrorCode ierr = VecSetFromOptions(_x);
   CHECK_ERROR("VecSetFromOptions");
 }
