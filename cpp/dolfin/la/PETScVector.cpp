@@ -46,16 +46,6 @@ PETScVector::PETScVector(Vec x) : _x(x)
   PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v) : _x(nullptr)
-{
-  PetscErrorCode ierr;
-  assert(v._x);
-  ierr = VecDuplicate(v._x, &_x);
-  CHECK_ERROR("VecDuplicate");
-  ierr = VecCopy(v._x, _x);
-  CHECK_ERROR("VecCopy");
-}
-//-----------------------------------------------------------------------------
 PETScVector::PETScVector(PETScVector&& v) : _x(v._x) { v._x = nullptr; }
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
@@ -71,6 +61,16 @@ PETScVector& PETScVector::operator=(PETScVector&& v)
   _x = v._x;
   v._x = nullptr;
   return *this;
+}
+//-----------------------------------------------------------------------------
+PETScVector PETScVector::copy() const
+{
+  Vec _y;
+  VecDuplicate(_x, &_y);
+  VecCopy(_x, _y);
+  PETScVector y(_y);
+  VecDestroy(&_y);
+  return y;
 }
 //-----------------------------------------------------------------------------
 std::int64_t PETScVector::size() const

@@ -244,7 +244,9 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
   if (ierr != 0)
     la::petsc_error(ierr, __FILE__, "VecRestoreArray");
 
-  return *x;
+
+  la::PETScVector _x(x->vec());
+  return _x;
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const mesh::Mesh& mesh, const std::string name)

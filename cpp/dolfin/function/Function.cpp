@@ -83,7 +83,7 @@ Function::Function(const Function& v)
     this->_function_space = v._function_space;
 
     // Copy vector
-    this->_vector = std::make_shared<la::PETScVector>(*v._vector);
+    this->_vector = std::make_shared<la::PETScVector>(v._vector->copy());
   }
   else
   {

@@ -41,7 +41,7 @@ public:
               int block_size);
 
   /// Copy constructor
-  PETScVector(const PETScVector& x);
+  PETScVector(const PETScVector& x) = delete;
 
   /// Move constructor
   PETScVector(PETScVector&& x);
@@ -60,6 +60,10 @@ public:
   /// Move Assignment operator
   PETScVector& operator=(PETScVector&& x);
 
+
+  // Copy vector
+  PETScVector copy() const;
+
   /// Return global size of vector
   std::int64_t size() const;
 
@@ -72,11 +76,6 @@ public:
   /// Set all entries to 'a' using VecSet. This is local and does not
   /// update ghost entries.
   void set(PetscScalar a);
-
-  /// Finalize assembly of vector. Communicates off-process entries
-  /// added or set on this process to the owner, and receives from other
-  /// processes changes to owned entries.
-  void apply();
 
   /// Update owned entries owned by this process and which are ghosts on
   /// other processes, i.e., have been added to by a remote process.
