@@ -91,9 +91,6 @@ public:
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
 
-  /// Add block of values using local indices
-  void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows);
-
   /// Return norm of vector
   PetscReal norm(la::Norm norm_type) const;
 

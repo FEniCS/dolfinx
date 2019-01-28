@@ -101,14 +101,6 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   return {{n0, n1}};
 }
 //-----------------------------------------------------------------------------
-void PETScVector::add_local(const PetscScalar* block, std::size_t m,
-                            const PetscInt* rows)
-{
-  assert(_x);
-  PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, ADD_VALUES);
-  CHECK_ERROR("VecSetValuesLocal");
-}
-//-----------------------------------------------------------------------------
 void PETScVector::apply()
 {
   common::Timer timer("Apply (PETScVector)");
