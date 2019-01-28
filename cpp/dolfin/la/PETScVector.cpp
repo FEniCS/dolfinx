@@ -161,14 +161,6 @@ void PETScVector::get_local(PetscScalar* block, std::size_t m,
   }
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set(const PetscScalar* block, std::size_t m,
-                      const PetscInt* rows)
-{
-  assert(_x);
-  PetscErrorCode ierr = VecSetValues(_x, m, rows, block, INSERT_VALUES);
-  CHECK_ERROR("VecSetValues");
-}
-//-----------------------------------------------------------------------------
 void PETScVector::add_local(const PetscScalar* block, std::size_t m,
                             const PetscInt* rows)
 {

@@ -13,7 +13,6 @@
 #include <cstdint>
 #include <petscsys.h>
 #include <petscvec.h>
-#include <vector>
 
 namespace dolfin
 {
@@ -94,9 +93,6 @@ public:
 
   /// Get block of values using local indices
   void get_local(PetscScalar* block, std::size_t m, const PetscInt* rows) const;
-
-  /// Set block of values using global indices
-  void set(const PetscScalar* block, std::size_t m, const PetscInt* rows);
 
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows);
