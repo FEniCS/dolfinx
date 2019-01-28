@@ -367,8 +367,5 @@ void HDF5Utility::set_local_vector_values(
   ierr = VecRestoreArray(x.vec(), &x_ptr);
   if (ierr != 0)
     la::petsc_error(ierr, __FILE__, "VecRestoreArray");
-
-  // FIXME: No required?
-  x.apply();
 }
 //-----------------------------------------------------------------------------
