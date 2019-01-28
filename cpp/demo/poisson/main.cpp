@@ -252,7 +252,7 @@ int main(int argc, char* argv[])
 
   // Compute solution
   function::Function u(V);
-  la::PETScMatrix A = fem::init_matrix(*a);
+  la::PETScMatrix A = fem::create_matrix(*a);
   la::PETScVector b(*L->function_space(0)->dofmap()->index_map());
 
   fem::SystemAssembler assembler(a, L, bc);
