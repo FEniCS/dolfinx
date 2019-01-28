@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
   lu.set_from_options();
 
   lu.set_operator(A.mat());
-  lu.solve(u.vector()->vec(), b.vec());
+  lu.solve(u.vector().vec(), b.vec());
 
   // The function ``u`` will be modified during the call to solve. A
   // :cpp:class:`Function` can be saved to a file. Here, we output the

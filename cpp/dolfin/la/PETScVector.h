@@ -40,7 +40,7 @@ public:
               const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
               int block_size);
 
-  /// Copy constructor
+  // Delete copy constructor to avoid accidental copying of 'heavy' data
   PETScVector(const PETScVector& x) = delete;
 
   /// Move constructor
@@ -59,7 +59,6 @@ public:
 
   /// Move Assignment operator
   PETScVector& operator=(PETScVector&& x);
-
 
   // Copy vector
   PETScVector copy() const;

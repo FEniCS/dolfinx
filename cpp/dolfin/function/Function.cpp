@@ -33,7 +33,7 @@ using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : common::Variable("u"), _function_space(V)
+    : common::Variable("u"), _function_space(V), _vector(_create_vector(*V))
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -41,13 +41,9 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
     throw std::runtime_error("Cannot create Function from subspace. Consider "
                              "collapsing the function space");
   }
-
-  // Initialize vector
-  init_vector();
 }
 //-----------------------------------------------------------------------------
-Function::Function(std::shared_ptr<const FunctionSpace> V,
-                   std::shared_ptr<la::PETScVector> x)
+Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
     : _function_space(V), _vector(x)
 {
   // We do not check for a subspace since this constructor is used for
@@ -55,35 +51,21 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap());
-  assert(V->dofmap()->global_dimension() <= x->size());
+  assert(V->dofmap()->global_dimension() <= _vector.size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
-    : _function_space(V)
-{
-  _vector = std::make_shared<la::PETScVector>(x);
-
-  // We do not check for a subspace since this constructor is used for
-  // creating subfunctions
-
-  // Assertion uses '<=' to deal with sub-functions
-  assert(V->dofmap());
-  assert(V->dofmap()->global_dimension() <= _vector->size());
-}
-//-----------------------------------------------------------------------------
-Function::Function(const Function& v)
+Function::Function(const Function& v) : _vector(v.vector().vec())
 {
   // Make a copy of all the data, or if v is a sub-function, then we
   // collapse the dof map and copy only the relevant entries from the
   // vector of v.
-  assert(v._vector);
-  if (v._vector->size() == v._function_space->dim())
+  if (v._vector.size() == v._function_space->dim())
   {
     // Copy function space pointer
     this->_function_space = v._function_space;
 
     // Copy vector
-    this->_vector = std::make_shared<la::PETScVector>(v._vector->copy());
+    this->_vector = v._vector.copy();
   }
   else
   {
@@ -103,8 +85,7 @@ Function::Function(const Function& v)
     }
 
     // Gather values into a vector
-    assert(v.vector());
-    la::VecReadWrapper v_wrap(v.vector()->vec());
+    la::VecReadWrapper v_wrap(v.vector().vec());
     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
         = v_wrap.x;
     std::vector<PetscScalar> gathered_values(collapsed_map.size());
@@ -112,13 +93,13 @@ Function::Function(const Function& v)
       gathered_values[j] = x[old_rows[j]];
 
     // Initial new vector (global)
-    init_vector();
+    _vector = _create_vector(*_function_space);
     assert(_function_space->dofmap());
-    assert(_vector->size() == _function_space->dofmap()->global_dimension());
+    assert(_vector.size() == _function_space->dofmap()->global_dimension());
 
     // FIXME (local): Check this for local or global
     // Set values in vector
-    la::VecWrapper v(this->_vector->vec());
+    la::VecWrapper v(this->_vector.vec());
     for (std::size_t i = 0; i < collapsed_map.size(); ++i)
       v.x[new_rows[i]] = gathered_values[i];
     v.restore();
@@ -132,17 +113,15 @@ Function Function::sub(std::size_t i) const
 
   // Return sub-function
   assert(sub_space);
-  assert(_vector);
-  return Function(sub_space, _vector);
+  return Function(sub_space, _vector.vec());
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<la::PETScVector> Function::vector()
+la::PETScVector& Function::vector()
 {
-  assert(_vector);
   assert(_function_space->dofmap());
 
   // Check that this is not a sub function.
-  if (_vector->size() != _function_space->dofmap()->global_dimension())
+  if (_vector.size() != _function_space->dofmap()->global_dimension())
   {
     throw std::runtime_error(
         "Cannot access a non-const vector from a subfunction");
@@ -151,11 +130,7 @@ std::shared_ptr<la::PETScVector> Function::vector()
   return _vector;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const la::PETScVector> Function::vector() const
-{
-  assert(_vector);
-  return _vector;
-}
+const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
@@ -289,20 +264,14 @@ void Function::eval(
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
-  assert(_vector);
   assert(_function_space);
-
-  // Interpolate
-  _function_space->interpolate(*_vector, v);
+  _function_space->interpolate(_vector, v);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Expression& expr)
 {
-  assert(_vector);
   assert(_function_space);
-
-  // Interpolate
-  _function_space->interpolate(*_vector, expr);
+  _function_space->interpolate(_vector, expr);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const
@@ -339,7 +308,7 @@ void Function::restrict(
   assert(_function_space->dofmap());
 
   // Check if we are restricting to an element of this function space
-  la::VecReadWrapper v(_vector->vec());
+  la::VecReadWrapper v(_vector.vec());
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
   if (_function_space->has_element(element)
       && _function_space->has_cell(dolfin_cell))
@@ -425,14 +394,13 @@ Function::compute_point_values() const
   return compute_point_values(*_function_space->mesh());
 }
 //-----------------------------------------------------------------------------
-void Function::init_vector()
+la::PETScVector Function::_create_vector(const function::FunctionSpace& V)
 {
   common::Timer timer("Init dof vector");
 
   // Get dof map
-  assert(_function_space);
-  assert(_function_space->dofmap());
-  const fem::GenericDofMap& dofmap = *(_function_space->dofmap());
+  assert(V.dofmap());
+  const fem::GenericDofMap& dofmap = *(V.dofmap());
 
   // Check that function space is not a subspace (view)
   if (dofmap.is_view())
@@ -446,9 +414,9 @@ void Function::init_vector()
   std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
   assert(index_map);
 
-  _vector = std::make_shared<la::PETScVector>(*index_map);
-  assert(_vector);
-  _vector->set(0.0);
+  la::PETScVector v = la::PETScVector(*index_map);
+  v.set(0.0);
+  return v;
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_size() const

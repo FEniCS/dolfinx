@@ -87,7 +87,7 @@ void function(py::module& m)
            py::arg("expr"))
       .def("vector",
            [](const dolfin::function::Function& self) {
-             return self.vector()->vec();
+             return self.vector().vec();
            },
            "Return the vector associated with the finite element Function")
       .def("value_dimension", &dolfin::function::Function::value_dimension)
