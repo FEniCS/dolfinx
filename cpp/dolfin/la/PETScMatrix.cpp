@@ -54,17 +54,6 @@ void PETScMatrix::set(const PetscScalar* block, std::size_t m,
     petsc_error(ierr, __FILE__, "MatSetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::set_local(const PetscScalar* block, std::size_t m,
-                            const PetscInt* rows, std::size_t n,
-                            const PetscInt* cols)
-{
-  assert(_matA);
-  PetscErrorCode ierr
-      = MatSetValuesLocal(_matA, m, rows, n, cols, block, INSERT_VALUES);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatSetValuesLocal");
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::add_local(const PetscScalar* block, std::size_t m,
                             const PetscInt* rows, std::size_t n,
                             const PetscInt* cols)

@@ -52,7 +52,7 @@ public:
   /// Move assignment operator
   PETScMatrix& operator=(PETScMatrix&& A) = default;
 
-   /// Set all entries to zero and keep any sparse structure
+  /// Set all entries to zero and keep any sparse structure
   void zero();
 
   /// Assembly type
@@ -77,10 +77,6 @@ public:
   /// Set block of values using global indices
   void set(const PetscScalar* block, std::size_t m, const PetscInt* rows,
            std::size_t n, const PetscInt* cols);
-
-  /// Set block of values using local indices
-  void set_local(const PetscScalar* block, std::size_t m, const PetscInt* rows,
-                 std::size_t n, const PetscInt* cols);
 
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows,
