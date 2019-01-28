@@ -326,6 +326,14 @@ void SystemAssembler::cell_wise_assembly(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs;
 
+  PetscScalar* _b = nullptr;
+  Vec b_local = nullptr;
+  if (b)
+  {
+    VecGhostGetLocalForm(b->vec(), &b_local);
+    VecGetArray(b_local, &_b);
+  }
+
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
@@ -448,12 +456,25 @@ void SystemAssembler::cell_wise_assembly(
 
     // Add entries to global tensor
     if (A)
+    {
       A->add_local(data.Ae[0].data(), cell_dofs[0][0].size(),
                    cell_dofs[0][0].data(), cell_dofs[0][1].size(),
                    cell_dofs[0][1].data());
+    }
+
     if (b)
-      b->add_local(data.Ae[1].data(), cell_dofs[1][0].size(),
-                   cell_dofs[1][0].data());
+    {
+      for (std::size_t i = 0; i < cell_dofs[1][0].size(); ++i)
+        _b[cell_dofs[1][0][i]] += data.Ae[1][i];
+      // b->add_local(data.Ae[1].data(), cell_dofs[1][0].size(),
+      //              cell_dofs[1][0].data());
+    }
+  }
+
+  if (b)
+  {
+    VecRestoreArray(b_local, &_b);
+    VecGhostRestoreLocalForm(b->vec(), &b_local);
   }
 }
 //-----------------------------------------------------------------------------
