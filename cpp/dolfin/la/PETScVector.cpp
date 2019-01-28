@@ -46,16 +46,6 @@ PETScVector::PETScVector(Vec x) : _x(x)
   PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(const PETScVector& v) : _x(nullptr)
-{
-  PetscErrorCode ierr;
-  assert(v._x);
-  ierr = VecDuplicate(v._x, &_x);
-  CHECK_ERROR("VecDuplicate");
-  ierr = VecCopy(v._x, _x);
-  CHECK_ERROR("VecCopy");
-}
-//-----------------------------------------------------------------------------
 PETScVector::PETScVector(PETScVector&& v) : _x(v._x) { v._x = nullptr; }
 //-----------------------------------------------------------------------------
 PETScVector::~PETScVector()
@@ -71,6 +61,16 @@ PETScVector& PETScVector::operator=(PETScVector&& v)
   _x = v._x;
   v._x = nullptr;
   return *this;
+}
+//-----------------------------------------------------------------------------
+PETScVector PETScVector::copy() const
+{
+  Vec _y;
+  VecDuplicate(_x, &_y);
+  VecCopy(_x, _y);
+  PETScVector y(_y);
+  VecDestroy(&_y);
+  return y;
 }
 //-----------------------------------------------------------------------------
 std::int64_t PETScVector::size() const
@@ -99,28 +99,6 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   CHECK_ERROR("VecGetOwnershipRange");
   assert(n0 <= n1);
   return {{n0, n1}};
-}
-//-----------------------------------------------------------------------------
-void PETScVector::add_local(const PetscScalar* block, std::size_t m,
-                            const PetscInt* rows)
-{
-  assert(_x);
-  PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, ADD_VALUES);
-  CHECK_ERROR("VecSetValuesLocal");
-}
-//-----------------------------------------------------------------------------
-void PETScVector::apply()
-{
-  common::Timer timer("Apply (PETScVector)");
-  assert(_x);
-  PetscErrorCode ierr;
-  ierr = VecAssemblyBegin(_x);
-  CHECK_ERROR("VecAssemblyBegin");
-  ierr = VecAssemblyEnd(_x);
-  CHECK_ERROR("VecAssemblyEnd");
-
-  // Update any ghost values
-  update_ghosts();
 }
 //-----------------------------------------------------------------------------
 void PETScVector::apply_ghosts()

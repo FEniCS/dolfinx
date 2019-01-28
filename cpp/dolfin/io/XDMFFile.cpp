@@ -1352,7 +1352,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   // FIXME: Avoid unnecessary copying of data
   // Get all local data
-  const la::PETScVector& u_vector = *u.vector();
+  const la::PETScVector& u_vector = u.vector();
   PetscErrorCode ierr;
   const PetscScalar* u_ptr = nullptr;
   ierr = VecGetArrayRead(u_vector.vec(), &u_ptr);
@@ -1680,8 +1680,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
 #endif
 
   function::Function u(V);
-  assert(u.vector());
-  HDF5Utility::set_local_vector_values(_mpi_comm.comm(), *u.vector(), mesh,
+  HDF5Utility::set_local_vector_values(_mpi_comm.comm(), u.vector(), mesh,
                                        cells, cell_dofs, x_cell_dofs, vector,
                                        input_vector_range, dofmap);
 
@@ -2704,7 +2703,6 @@ std::vector<PetscScalar>
 XDMFFile::get_cell_data_values(const function::Function& u)
 {
   assert(u.function_space()->dofmap());
-  assert(u.vector());
 
   const auto mesh = u.function_space()->mesh();
   const std::size_t value_size = u.value_size();
@@ -2732,8 +2730,7 @@ XDMFFile::get_cell_data_values(const function::Function& u)
   // Get  values
   std::vector<PetscScalar> data_values(dof_set.size());
   {
-    assert(u.vector());
-    la::VecReadWrapper u_wrapper(u.vector()->vec());
+    la::VecReadWrapper u_wrapper(u.vector().vec());
     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
         = u_wrapper.x;
     for (std::size_t i = 0; i < dof_set.size(); ++i)
@@ -2878,8 +2875,7 @@ XDMFFile::get_p2_data_values(const function::Function& u)
 
     // Get the values at the vertex points
     {
-      assert(u.vector());
-      la::VecReadWrapper u_wrapper(u.vector()->vec());
+      la::VecReadWrapper u_wrapper(u.vector().vec());
       Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
           = u_wrapper.x;
       for (std::size_t i = 0; i < data_dofs.size(); ++i)
@@ -2922,8 +2918,7 @@ XDMFFile::get_p2_data_values(const function::Function& u)
       }
     }
 
-    assert(u.vector());
-    la::VecReadWrapper u_wrapper(u.vector()->vec());
+    la::VecReadWrapper u_wrapper(u.vector().vec());
     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
         = u_wrapper.x;
     for (std::size_t i = 0; i < data_dofs.size(); ++i)

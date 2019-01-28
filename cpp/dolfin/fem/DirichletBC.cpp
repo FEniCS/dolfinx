@@ -357,9 +357,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
 void DirichletBC::get_boundary_values(Map& boundary_values) const
 {
   assert(_g);
-  assert(_g->vector());
-  assert(_g->vector()->vec());
-  la::VecReadWrapper g(_g->vector()->vec());
+  la::VecReadWrapper g(_g->vector().vec());
   for (auto dof : _dofs)
     boundary_values.insert({dof[0], g.x[dof[1]]});
   g.restore();
@@ -387,11 +385,9 @@ void DirichletBC::set(
     double scale) const
 {
   assert(_g);
-  assert(_g->vector());
-  assert(_g->vector()->vec());
 
   // FIXME: This one excludes ghosts. Need to straighten out.
-  la::VecReadWrapper g(_g->vector()->vec());
+  la::VecReadWrapper g(_g->vector().vec());
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
@@ -406,11 +402,9 @@ void DirichletBC::set(
     double scale) const
 {
   assert(_g);
-  assert(_g->vector());
-  assert(_g->vector()->vec());
 
   // FIXME: This one excludes ghosts. Need to straighten out.
-  la::VecReadWrapper g(_g->vector()->vec());
+  la::VecReadWrapper g(_g->vector().vec());
   for (auto& dof : _dofs)
   {
     if (dof[0] < x.rows())
@@ -432,11 +426,9 @@ void DirichletBC::dof_values(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const
 {
   assert(_g);
-  assert(_g->vector());
-  assert(_g->vector()->vec());
 
   // Unwrap PETSc bc vector (_g)
-  la::VecReadWrapper g(_g->vector()->vec());
+  la::VecReadWrapper g(_g->vector().vec());
   for (auto& dof : _dofs)
     values[dof[0]] = g.x[dof[1]];
   g.restore();

@@ -265,7 +265,10 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   if (A)
     A->apply(la::PETScMatrix::AssemblyType::FINAL);
   if (b)
-    b->apply();
+  {
+    VecGhostUpdateBegin(b->vec(), ADD_VALUES, SCATTER_REVERSE);
+    VecGhostUpdateEnd(b->vec(), ADD_VALUES, SCATTER_REVERSE);
+  }
 }
 //-----------------------------------------------------------------------------
 void SystemAssembler::cell_wise_assembly(
@@ -325,6 +328,14 @@ void SystemAssembler::cell_wise_assembly(
   // Iterate over all cells
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs;
+
+  PetscScalar* _b = nullptr;
+  Vec b_local = nullptr;
+  if (b)
+  {
+    VecGhostGetLocalForm(b->vec(), &b_local);
+    VecGetArray(b_local, &_b);
+  }
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
@@ -448,12 +459,25 @@ void SystemAssembler::cell_wise_assembly(
 
     // Add entries to global tensor
     if (A)
+    {
       A->add_local(data.Ae[0].data(), cell_dofs[0][0].size(),
                    cell_dofs[0][0].data(), cell_dofs[0][1].size(),
                    cell_dofs[0][1].data());
+    }
+
     if (b)
-      b->add_local(data.Ae[1].data(), cell_dofs[1][0].size(),
-                   cell_dofs[1][0].data());
+    {
+      for (std::size_t i = 0; i < cell_dofs[1][0].size(); ++i)
+        _b[cell_dofs[1][0][i]] += data.Ae[1][i];
+      // bdata.Ae[1].data(), cell_dofs[1][0].size(),
+      //              cell_dofs[1][0].data());
+    }
+  }
+
+  if (b)
+  {
+    VecRestoreArray(b_local, &_b);
+    VecGhostRestoreLocalForm(b->vec(), &b_local);
   }
 }
 //-----------------------------------------------------------------------------
@@ -548,6 +572,14 @@ void SystemAssembler::facet_wise_assembly(
   std::array<
       Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>, 2>
       coordinate_dofs;
+
+  PetscScalar* _b = nullptr;
+  Vec b_local = nullptr;
+  if (b)
+  {
+    VecGhostGetLocalForm(b->vec(), &b_local);
+    VecGetArray(b_local, &_b);
+  }
 
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
@@ -719,11 +751,8 @@ void SystemAssembler::facet_wise_assembly(
       // Add entries to global tensor
       if (b)
       {
-        std::vector<common::ArrayView<const PetscInt>> mdofs(
-            macro_dofs[1].size());
         for (std::size_t i = 0; i < macro_dofs[1].size(); ++i)
-          mdofs[i].set(macro_dofs[1][i]);
-        b->add_local(ufc[1]->macro_A.data(), mdofs[0].size(), mdofs[0].data());
+          _b[macro_dofs[1][0][i]] += ufc[1]->macro_A[i];
       }
 
       const bool add_macro_element
@@ -829,13 +858,19 @@ void SystemAssembler::facet_wise_assembly(
 
       if (b)
       {
-        b->add_local(data.Ae[1].data(), cell_dofs[1][0][0].size(),
-                     cell_dofs[1][0][0].data());
+        for (std::size_t i = 0; i < cell_dofs[1][0][0].size(); ++i)
+          _b[cell_dofs[1][0][0][i]] += data.Ae[1][i];
       }
 
       // Mark cell as processed
       cell_tensor_computed[cell.index()] = true;
     }
+  }
+
+  if (b)
+  {
+    VecRestoreArray(b_local, &_b);
+    VecGhostRestoreLocalForm(b->vec(), &b_local);
   }
 }
 //-----------------------------------------------------------------------------

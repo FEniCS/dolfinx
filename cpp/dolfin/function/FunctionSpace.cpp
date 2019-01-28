@@ -202,9 +202,6 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
 
   std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
   interpolate_from_any(expansion_coefficients, v);
-
-  // Finalise changes
-  expansion_coefficients.apply();
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
@@ -241,9 +238,6 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   expansion_coefficients.set(0.0);
 
   interpolate_from_any(expansion_coefficients, expr);
-
-  // Finalise changes
-  expansion_coefficients.apply();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>

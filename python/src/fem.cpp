@@ -365,23 +365,23 @@ void fem(py::module& m)
       .def("function_space", &dolfin::fem::Form::function_space)
       .def("coordinate_mapping", &dolfin::fem::Form::coordinate_mapping);
 
-  // dolfin::fem::NonlinearVariationalProblem
-  py::class_<dolfin::fem::NonlinearVariationalProblem,
-             std::shared_ptr<dolfin::fem::NonlinearVariationalProblem>>(
-      m, "NonlinearVariationalProblem")
-      .def(
-          py::init<std::shared_ptr<const dolfin::fem::Form>,
-                   std::shared_ptr<dolfin::function::Function>,
-                   std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-                   std::shared_ptr<const dolfin::fem::Form>>())
-      .def("set_bounds",
-           py::overload_cast<std::shared_ptr<const dolfin::la::PETScVector>,
-                             std::shared_ptr<const dolfin::la::PETScVector>>(
-               &dolfin::fem::NonlinearVariationalProblem::set_bounds))
-      .def("set_bounds",
-           py::overload_cast<const dolfin::function::Function&,
-                             const dolfin::function::Function&>(
-               &dolfin::fem::NonlinearVariationalProblem::set_bounds));
+//   // dolfin::fem::NonlinearVariationalProblem
+//   py::class_<dolfin::fem::NonlinearVariationalProblem,
+//              std::shared_ptr<dolfin::fem::NonlinearVariationalProblem>>(
+//       m, "NonlinearVariationalProblem")
+//       .def(
+//           py::init<std::shared_ptr<const dolfin::fem::Form>,
+//                    std::shared_ptr<dolfin::function::Function>,
+//                    std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
+//                    std::shared_ptr<const dolfin::fem::Form>>())
+//       .def("set_bounds",
+//            py::overload_cast<std::shared_ptr<const dolfin::la::PETScVector>,
+//                              std::shared_ptr<const dolfin::la::PETScVector>>(
+//                &dolfin::fem::NonlinearVariationalProblem::set_bounds))
+//       .def("set_bounds",
+//            py::overload_cast<const dolfin::function::Function&,
+//                              const dolfin::function::Function&>(
+//                &dolfin::fem::NonlinearVariationalProblem::set_bounds));
 
   // dolfin::fem::PETScDMCollection
   py::class_<dolfin::fem::PETScDMCollection,

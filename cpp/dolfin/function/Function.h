@@ -10,6 +10,7 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/la/PETScVector.h>
 #include <memory>
 #include <petscsys.h>
 #include <petscvec.h>
@@ -21,10 +22,6 @@ namespace dolfin
 namespace geometry
 {
 class BoundingBoxTree;
-}
-namespace la
-{
-class PETScVector;
 }
 namespace mesh
 {
@@ -47,24 +44,11 @@ class FunctionSpace;
 class Function : public common::Variable
 {
 public:
-  Function() {}
-
   /// Create function on given function space
   ///
   /// @param V (_FunctionSpace_)
   ///         The function space.
   explicit Function(std::shared_ptr<const FunctionSpace> V);
-
-  /// Create function on given function space with a given vector
-  ///
-  /// *Warning: This constructor is intended for internal library use only*
-  ///
-  /// @param V (_FunctionSpace_)
-  ///         The function space.
-  /// @param x (_GenericVector_)
-  ///         The vector.
-  Function(std::shared_ptr<const FunctionSpace> V,
-           std::shared_ptr<la::PETScVector> x);
 
   /// Create function on given function space with a given vector
   ///
@@ -92,12 +76,6 @@ public:
   /// Destructor
   virtual ~Function() = default;
 
-  // Assignment from function
-  //
-  // @param v (_Function_)
-  //         Another function.
-  // const Function& operator= (const Function& v);
-
   /// Extract subfunction (view into the Function)
   ///
   /// @param i (std::size_t)
@@ -120,13 +98,13 @@ public:
   ///
   /// @returns  _PETScVector_
   ///         The vector of expansion coefficients.
-  std::shared_ptr<la::PETScVector> vector();
+  la::PETScVector& vector();
 
   /// Return vector of expansion coefficients (const version)
   ///
   /// @returns _PETScVector_
   ///         The vector of expansion coefficients (const).
-  std::shared_ptr<const la::PETScVector> vector() const;
+  const la::PETScVector& vector() const;
 
   /// Interpolate function (on possibly non-matching meshes)
   ///
@@ -230,14 +208,14 @@ public:
   compute_point_values() const;
 
 private:
-  // Initialize vector
-  void init_vector();
+  // Create vector
+  static la::PETScVector _create_vector(const function::FunctionSpace& V);
 
   // The function space
   std::shared_ptr<const FunctionSpace> _function_space;
 
   // The vector of expansion coefficients (local)
-  std::shared_ptr<la::PETScVector> _vector;
+  la::PETScVector _vector;
 };
 } // namespace function
 } // namespace dolfin

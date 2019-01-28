@@ -244,10 +244,9 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
   if (ierr != 0)
     la::petsc_error(ierr, __FILE__, "VecRestoreArray");
 
-  // FIXME: Not required?
-  x->apply();
 
-  return *x;
+  la::PETScVector _x(x->vec());
+  return _x;
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const mesh::Mesh& mesh, const std::string name)
@@ -819,7 +818,7 @@ void HDF5File::write(const function::Function& u, const std::string name,
     HDF5Interface::add_attribute(_hdf5_file_id, name, "count", vec_count);
 
     // Write new vector and save timestamp
-    write(*u.vector(), vec_name);
+    write(u.vector(), vec_name);
     if (HDF5Interface::has_attribute(_hdf5_file_id, vec_name, "timestamp"))
       HDF5Interface::delete_attribute(_hdf5_file_id, vec_name, "timestamp");
     HDF5Interface::add_attribute(_hdf5_file_id, vec_name, "timestamp",
@@ -895,7 +894,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
                                u.function_space()->element()->signature());
 
   // Save vector
-  write(*u.vector(), name + "/vector_0");
+  write(u.vector(), name + "/vector_0");
 }
 //-----------------------------------------------------------------------------
 function::Function
@@ -1013,7 +1012,7 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
       _hdf5_file_id, cell_dofs_dataset_name,
       {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
-  la::PETScVector& x = *u.vector();
+  la::PETScVector& x = u.vector();
 
   const std::vector<std::int64_t> vector_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, vector_dataset_name);

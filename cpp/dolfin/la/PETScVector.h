@@ -40,8 +40,8 @@ public:
               const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
               int block_size);
 
-  /// Copy constructor
-  PETScVector(const PETScVector& x);
+  // Delete copy constructor to avoid accidental copying of 'heavy' data
+  PETScVector(const PETScVector& x) = delete;
 
   /// Move constructor
   PETScVector(PETScVector&& x);
@@ -60,6 +60,9 @@ public:
   /// Move Assignment operator
   PETScVector& operator=(PETScVector&& x);
 
+  // Copy vector
+  PETScVector copy() const;
+
   /// Return global size of vector
   std::int64_t size() const;
 
@@ -73,11 +76,6 @@ public:
   /// update ghost entries.
   void set(PetscScalar a);
 
-  /// Finalize assembly of vector. Communicates off-process entries
-  /// added or set on this process to the owner, and receives from other
-  /// processes changes to owned entries.
-  void apply();
-
   /// Update owned entries owned by this process and which are ghosts on
   /// other processes, i.e., have been added to by a remote process.
   /// This is more efficient that apply() when processes only add/set
@@ -90,9 +88,6 @@ public:
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
-
-  /// Add block of values using local indices
-  void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows);
 
   /// Return norm of vector
   PetscReal norm(la::Norm norm_type) const;
