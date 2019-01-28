@@ -353,7 +353,8 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
   {
     // Get local row range
     const common::IndexMap& index_map_0 = *dofmaps[0]->index_map();
-    const auto row_range = A.local_range(0);
+    std::array<PetscInt, 2> row_range;
+    MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
 
     assert(index_map_0.block_size() == 1);
 
@@ -386,8 +387,9 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
   {
     // Loop over rows and insert 0.0 on the diagonal
     const PetscScalar block = 0.0;
-    const auto row_range = A.local_range(0);
-    const std::int64_t range = std::min(row_range[1], A.size()[1]);
+    std::array<PetscInt, 2> row_range;
+    MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
+    const std::int64_t range = std::min(row_range[1], (PetscInt)A.size()[1]);
 
     for (std::int64_t i = row_range[0]; i < range; i++)
     {

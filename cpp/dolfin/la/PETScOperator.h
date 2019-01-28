@@ -49,10 +49,6 @@ public:
   /// returns -1 if size has not been set.
   std::array<std::int64_t, 2> size() const;
 
-  // FIXME: Remove? Not appropriate for operator?
-  /// Return local range along dimension dim
-  std::array<std::int64_t, 2> local_range(std::size_t dim) const;
-
   /// Initialize vector to be compatible with the matrix-vector product
   /// y = Ax. In the parallel case, size and layout are both important.
   ///
@@ -65,7 +61,6 @@ public:
 
   /// Return PETSc Mat pointer
   Mat mat() const;
-
 
 protected:
   // PETSc Mat pointer

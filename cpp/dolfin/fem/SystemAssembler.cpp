@@ -224,6 +224,10 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   {
     assert(x0->size() == _a->function_space(1)->dofmap()->global_dimension());
 
+    la::VecReadWrapper x0_wrap(x0->vec());
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x0
+        = x0_wrap.x;
+
     const std::size_t num_bc_dofs = boundary_values[0].size();
     std::vector<PetscInt> bc_indices;
     std::vector<PetscScalar> bc_values;
@@ -238,10 +242,8 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
     }
 
     // Modify bc values
-    std::vector<PetscScalar> x0_values(num_bc_dofs);
-    x0->get_local(x0_values.data(), num_bc_dofs, bc_indices.data());
     for (std::size_t i = 0; i < num_bc_dofs; i++)
-      boundary_values[0][bc_indices[i]] = x0_values[i] - bc_values[i];
+      boundary_values[0][bc_indices[i]] = _x0[bc_indices[i]] - bc_values[i];
   }
 
   // Check whether we should do cell-wise or facet-wise assembly

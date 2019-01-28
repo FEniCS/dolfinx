@@ -61,23 +61,6 @@ std::array<std::int64_t, 2> PETScOperator::size() const
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> PETScOperator::local_range(std::size_t dim) const
-{
-  assert(dim <= 1);
-  if (dim == 1)
-  {
-    throw std::runtime_error(
-        "Only local row range is available for PETSc matrices");
-  }
-
-  assert(_matA);
-  PetscInt m(0), n(0);
-  PetscErrorCode ierr = MatGetOwnershipRange(_matA, &m, &n);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatGetOwnershipRange");
-  return {{m, n}};
-}
-//-----------------------------------------------------------------------------
 PETScVector PETScOperator::create_vector(std::size_t dim) const
 {
   assert(_matA);

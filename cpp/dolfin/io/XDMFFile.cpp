@@ -2731,8 +2731,14 @@ XDMFFile::get_cell_data_values(const function::Function& u)
 
   // Get  values
   std::vector<PetscScalar> data_values(dof_set.size());
-  assert(u.vector());
-  u.vector()->get_local(data_values.data(), dof_set.size(), dof_set.data());
+  {
+    assert(u.vector());
+    la::VecReadWrapper u_wrapper(u.vector()->vec());
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
+        = u_wrapper.x;
+    for (std::size_t i = 0; i < dof_set.size(); ++i)
+      data_values[i] = x[dof_set[i]];
+  }
 
   if (value_rank == 1 && value_size == 2)
   {
@@ -2871,8 +2877,14 @@ XDMFFile::get_p2_data_values(const function::Function& u)
     }
 
     // Get the values at the vertex points
-    const la::PETScVector& uvec = *u.vector();
-    uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
+    {
+      assert(u.vector());
+      la::VecReadWrapper u_wrapper(u.vector()->vec());
+      Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
+          = u_wrapper.x;
+      for (std::size_t i = 0; i < data_dofs.size(); ++i)
+        data_values[i] = x[data_dofs[i]];
+    }
 
     // Get midpoint values for  mesh::Edge points
     for (auto& e : mesh::MeshRange<mesh::Edge>(*mesh))
@@ -2910,14 +2922,18 @@ XDMFFile::get_p2_data_values(const function::Function& u)
       }
     }
 
-    const la::PETScVector& uvec = *u.vector();
-    uvec.get_local(data_values.data(), data_dofs.size(), data_dofs.data());
+    assert(u.vector());
+    la::VecReadWrapper u_wrapper(u.vector()->vec());
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
+        = u_wrapper.x;
+    for (std::size_t i = 0; i < data_dofs.size(); ++i)
+      data_values[i] = x[data_dofs[i]];
   }
   else
   {
-    log::dolfin_error("XDMFFile.cpp", "get point values for function::Function",
-                      "Function appears not to be defined on a P1 or P2 type "
-                      "function::FunctionSpace");
+    throw std::runtime_error(
+        "Cannotget point values for function::Function. Function appears not "
+        "to be defined on a P1 or P2 type function::FunctionSpace");
   }
 
   // Blank out empty values of 2D vector and tensor
