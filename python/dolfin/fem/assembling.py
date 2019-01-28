@@ -58,8 +58,6 @@ def assemble_system(A_form,
                     bcs=None,
                     x0=None,
                     form_compiler_parameters=None,
-                    finalize_tensor=True,
-                    keep_diagonal=False,
                     A_tensor=None,
                     b_tensor=None,
                     backend=None):
@@ -111,8 +109,6 @@ def assemble_system(A_form,
 
     # Call C++ assemble function
     assembler = cpp.fem.SystemAssembler(A_dolfin_form, b_dolfin_form, bcs)
-    assembler.finalize_tensor = finalize_tensor
-    assembler.keep_diagonal = keep_diagonal
     if x0 is not None:
         assembler.assemble(A_tensor, b_tensor, x0)
     else:

@@ -12,7 +12,6 @@ namespace dolfin
 // DOLFIN fem interface
 
 #include <dolfin/fem/assembler.h>
-#include <dolfin/fem/AssemblerBase.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>

@@ -288,19 +288,10 @@ void fem(py::module& m)
   m.def("set_bc", &dolfin::fem::set_bc,
         "Insert boundary condition values into vector");
 
-  // dolfin::fem::AssemblerBase
-  py::class_<dolfin::fem::AssemblerBase,
-             std::shared_ptr<dolfin::fem::AssemblerBase>>(m, "AssemblerBase")
-      .def_readwrite("keep_diagonal",
-                     &dolfin::fem::AssemblerBase::keep_diagonal)
-      .def_readwrite("finalize_tensor",
-                     &dolfin::fem::AssemblerBase::finalize_tensor);
-
   // dolfin::fem::SystemAssembler
   py::class_<dolfin::fem::SystemAssembler,
-             std::shared_ptr<dolfin::fem::SystemAssembler>,
-             dolfin::fem::AssemblerBase>(m, "SystemAssembler",
-                                         "SystemAssembler object")
+             std::shared_ptr<dolfin::fem::SystemAssembler>>(
+      m, "SystemAssembler", "SystemAssembler object")
       .def(py::init<
            std::shared_ptr<const dolfin::fem::Form>,
            std::shared_ptr<const dolfin::fem::Form>,
