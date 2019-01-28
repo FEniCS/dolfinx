@@ -19,18 +19,17 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::NewtonSolver(MPI_Comm comm)
-    : _krylov_iterations(0), _residual(0.0), _residual0(0.0), _dx(nullptr),
-      _mpi_comm(comm)
+    : _krylov_iterations(0), _residual(0.0), _residual0(0.0), _solver(comm),
+      _dx(nullptr), _mpi_comm(comm)
 {
   // Create linear solver if not already created. Default to LU.
-  _solver = std::make_shared<la::PETScKrylovSolver>(comm);
-  _solver->set_options_prefix("nls_solve_");
+  _solver.set_options_prefix("nls_solve_");
   la::PETScOptions::set("nls_solve_ksp_type", "preonly");
   la::PETScOptions::set("nls_solve_pc_type", "lu");
 #if PETSC_HAVE_MUMPS
   la::PETScOptions::set("nls_solve_pc_factor_mat_solver_type", "mumps");
 #endif
-  _solver->set_from_options();
+  _solver.set_from_options();
 }
 //-----------------------------------------------------------------------------
 nls::NewtonSolver::~NewtonSolver()
@@ -88,11 +87,10 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
 
     // FIXME: check that this is efficient if A and/or P are unchanged
     // Set operators
-    assert(_solver);
-    _solver->set_operators(A, P);
+    _solver.set_operators(A, P);
 
     // Perform linear solve and update total number of Krylov iterations
-    _krylov_iterations += _solver->solve(_dx, b);
+    _krylov_iterations += _solver.solve(_dx, b);
 
     // Update solution
     update_solution(x, _dx, relaxation_parameter, nonlinear_problem,
