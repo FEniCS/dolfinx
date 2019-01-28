@@ -198,16 +198,14 @@ void fem(py::module& m)
           "build",
           [](const MPICommWrapper comm, const dolfin::mesh::Mesh& mesh,
              const std::array<const dolfin::fem::GenericDofMap*, 2> dofmaps,
-             bool cells, bool interior_facets, bool exterior_facets,
-             bool vertices, bool diagonal, bool finalize) {
+             bool cells, bool interior_facets, bool exterior_facets) {
             return dolfin::fem::SparsityPatternBuilder::build(
                 comm.get(), mesh, dofmaps, cells, interior_facets,
-                exterior_facets, vertices, diagonal, finalize);
+                exterior_facets);
           },
           py::arg("mpi_comm"), py::arg("mesh"), py::arg("dofmaps"),
           py::arg("cells"), py::arg("interior_facets"),
-          py::arg("exterior_facets"), py::arg("vertices"), py::arg("diagonal"),
-          py::arg("finalize") = true,
+          py::arg("exterior_facets"),
           "Create SparsityPattern from pair of dofmaps");
 
   // dolfin::fem::DirichletBC

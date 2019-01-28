@@ -48,7 +48,7 @@ void la(py::module& m)
           }))
       .def("local_range", &dolfin::la::SparsityPattern::local_range)
       .def("index_map", &dolfin::la::SparsityPattern::index_map)
-      .def("apply", &dolfin::la::SparsityPattern::apply)
+      .def("assemble", &dolfin::la::SparsityPattern::assemble)
       .def("str", &dolfin::la::SparsityPattern::str)
       .def("num_nonzeros", &dolfin::la::SparsityPattern::num_nonzeros)
       .def("num_nonzeros_diagonal",
@@ -58,9 +58,7 @@ void la(py::module& m)
       .def("num_local_nonzeros",
            &dolfin::la::SparsityPattern::num_local_nonzeros)
       .def("insert_local", &dolfin::la::SparsityPattern::insert_local)
-      .def("insert_global", &dolfin::la::SparsityPattern::insert_global)
-      .def("insert_local_global",
-           &dolfin::la::SparsityPattern::insert_local_global);
+      .def("insert_global", &dolfin::la::SparsityPattern::insert_global);
 
   py::class_<dolfin::la::PETScOptions>(m, "PETScOptions")
       .def_static("set",

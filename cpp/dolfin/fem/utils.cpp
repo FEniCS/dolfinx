@@ -178,7 +178,8 @@ fem::init_monolithic_matrix(std::vector<std::vector<const fem::Form*>> a)
                 a[row][col]->function_space(1)->dofmap().get()}};
         auto sp = std::make_unique<la::SparsityPattern>(
             SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps, true,
-                                          false, false, false, false));
+                                          false, false));
+        sp->assemble();
         patterns[row].push_back(std::move(sp));
       }
       else
@@ -332,8 +333,8 @@ la::PETScMatrix dolfin::fem::init_matrix(const Form& a)
   la::SparsityPattern pattern = SparsityPatternBuilder::build(
       mesh.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
       (a.integrals().num_interior_facet_integrals() > 0),
-      (a.integrals().num_exterior_facet_integrals() > 0),
-      (a.integrals().num_vertex_integrals() > 0), keep_diagonal);
+      (a.integrals().num_exterior_facet_integrals() > 0));
+  pattern.assemble();
   t0.stop();
 
   // Initialize matrix

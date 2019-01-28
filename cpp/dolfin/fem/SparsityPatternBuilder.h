@@ -32,8 +32,7 @@ public:
   static la::SparsityPattern
   build(MPI_Comm comm, const mesh::Mesh& mesh,
         const std::array<const fem::GenericDofMap*, 2> dofmaps, bool cells,
-        bool interior_facets, bool exterior_facets, bool vertices,
-        bool diagonal, bool finalize = true);
+        bool interior_facets, bool exterior_facets);
 };
 } // namespace fem
 } // namespace dolfin
