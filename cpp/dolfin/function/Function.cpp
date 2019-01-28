@@ -104,9 +104,12 @@ Function::Function(const Function& v)
 
     // Gather values into a vector
     assert(v.vector());
+    la::VecReadWrapper v_wrap(v.vector()->vec());
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
+        = v_wrap.x;
     std::vector<PetscScalar> gathered_values(collapsed_map.size());
-    v.vector()->get_local(gathered_values.data(), gathered_values.size(),
-                          old_rows.data());
+    for (std::size_t j = 0; j < gathered_values.size(); ++j)
+      gathered_values[j] = x[old_rows[j]];
 
     // Initial new vector (global)
     init_vector();
@@ -398,6 +401,8 @@ void Function::restrict(
   assert(_function_space->dofmap());
 
   // Check if we are restricting to an element of this function space
+  la::VecReadWrapper v(_vector->vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
   if (_function_space->has_element(element)
       && _function_space->has_cell(dolfin_cell))
   {
@@ -405,9 +410,10 @@ void Function::restrict(
     const fem::GenericDofMap& dofmap = *_function_space->dofmap();
     auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
-    // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
-    // Pick values from vector(s)
-    _vector->get_local(w, dofs.size(), dofs.data());
+    // Note: We should have dofmap.max_element_dofs() == dofs.size()
+    // here. Pick values from vector(s)
+    for (Eigen::Index i = 0; i < dofs.size(); ++i)
+      w[i] = _v[dofs[i]];
   }
   else
     dolfin_not_implemented();

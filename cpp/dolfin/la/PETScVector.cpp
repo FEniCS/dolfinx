@@ -120,47 +120,6 @@ std::array<std::int64_t, 2> PETScVector::local_range() const
   return {{n0, n1}};
 }
 //-----------------------------------------------------------------------------
-void PETScVector::get_local(PetscScalar* block, std::size_t m,
-                            const PetscInt* rows) const
-{
-  if (m == 0)
-    return;
-
-  assert(_x);
-  PetscErrorCode ierr;
-
-  // Get ghost vector
-  Vec xg = nullptr;
-  ierr = VecGhostGetLocalForm(_x, &xg);
-  CHECK_ERROR("VecGhostGetLocalForm");
-
-  // Use array access if no ghost points, otherwise use VecGetValues on
-  // local ghosted form of vector
-  if (!xg)
-  {
-    // Get pointer to PETSc vector data
-    const PetscScalar* data;
-    ierr = VecGetArrayRead(_x, &data);
-    CHECK_ERROR("VecGetArrayRead");
-
-    for (std::size_t i = 0; i < m; ++i)
-      block[i] = data[rows[i]];
-
-    // Restore array
-    ierr = VecRestoreArrayRead(_x, &data);
-    CHECK_ERROR("VecRestoreArrayRead");
-  }
-  else
-  {
-    assert(xg);
-    ierr = VecGetValues(xg, m, rows, block);
-    CHECK_ERROR("VecGetValues");
-
-    ierr = VecGhostRestoreLocalForm(_x, &xg);
-    CHECK_ERROR("VecGhostRestoreLocalForm");
-  }
-}
-//-----------------------------------------------------------------------------
 void PETScVector::add_local(const PetscScalar* block, std::size_t m,
                             const PetscInt* rows)
 {

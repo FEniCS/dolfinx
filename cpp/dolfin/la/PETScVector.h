@@ -91,9 +91,6 @@ public:
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
 
-  /// Get block of values using local indices
-  void get_local(PetscScalar* block, std::size_t m, const PetscInt* rows) const;
-
   /// Add block of values using local indices
   void add_local(const PetscScalar* block, std::size_t m, const PetscInt* rows);
 

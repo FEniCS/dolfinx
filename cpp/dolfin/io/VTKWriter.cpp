@@ -1,4 +1,4 @@
-// Copyright (C) 2010-2016 Garth N. Wells
+// Copyright (C) 2010-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -12,6 +12,7 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -51,8 +52,8 @@ void VTKWriter::write_cell_data(const function::Function& u,
   if (rank > 2)
   {
     log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                 "Don't know how to handle vector function with dimension "
-                 "other than 2 or 3");
+                      "Don't know how to handle vector function with dimension "
+                      "other than 2 or 3");
   }
 
   // Get number of components
@@ -73,9 +74,10 @@ void VTKWriter::write_cell_data(const function::Function& u,
   {
     if (!(data_dim == 2 || data_dim == 3))
     {
-      log::dolfin_error("VTKWriter.cpp", "write data to VTK file",
-                   "Don't know how to handle vector function with dimension "
-                   "other than 2 or 3");
+      log::dolfin_error(
+          "VTKWriter.cpp", "write data to VTK file",
+          "Don't know how to handle vector function with dimension "
+          "other than 2 or 3");
     }
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
     fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
@@ -85,9 +87,10 @@ void VTKWriter::write_cell_data(const function::Function& u,
   {
     if (!(data_dim == 4 || data_dim == 9))
     {
-      log::dolfin_error("VTKFile.cpp", "write data to VTK file",
-                   "Don't know how to handle tensor function with dimension "
-                   "other than 4 or 9");
+      log::dolfin_error(
+          "VTKFile.cpp", "write data to VTK file",
+          "Don't know how to handle tensor function with dimension "
+          "other than 4 or 9");
     }
     fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
     fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
@@ -116,7 +119,11 @@ void VTKWriter::write_cell_data(const function::Function& u,
   // Get  values
   std::vector<PetscScalar> values(dof_set.size());
   assert(u.vector());
-  u.vector()->get_local(values.data(), dof_set.size(), dof_set.data());
+  la::VecReadWrapper u_wrapper(u.vector()->vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x
+      = u_wrapper.x;
+  for (std::size_t i = 0; i < dof_set.size(); ++i)
+    values[i] = _x[dof_set[i]];
 
   // Get cell data
   fp << ascii_cell_data(mesh, offset, values, data_dim, rank);
@@ -182,9 +189,10 @@ void VTKWriter::write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file.precision(16);
   if (!file.is_open())
   {
-    log::dolfin_error("VTKWriter.cpp", "write mesh to VTK file"
-                                  "Unable to open file \"%s\"",
-                 filename.c_str());
+    log::dolfin_error("VTKWriter.cpp",
+                      "write mesh to VTK file"
+                      "Unable to open file \"%s\"",
+                      filename.c_str());
   }
 
   // Write vertex positions
@@ -260,7 +268,7 @@ std::uint8_t VTKWriter::vtk_cell_type(const mesh::Mesh& mesh,
   else
   {
     log::dolfin_error("VTKWriter.cpp", "write data to VTK file",
-                 "Unknown cell type (%d)", cell_type);
+                      "Unknown cell type (%d)", cell_type);
   }
 
   return vtk_cell_type;
