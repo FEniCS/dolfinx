@@ -43,8 +43,6 @@ PETScVector::PETScVector(
   _x = la::create_vector(comm, range, ghost_indices, block_size);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector() : _x(nullptr) {}
-//-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x) : _x(x)
 {
   // Increase reference count to PETSc object
@@ -171,14 +169,6 @@ void PETScVector::set(const PetscScalar* block, std::size_t m,
   CHECK_ERROR("VecSetValues");
 }
 //-----------------------------------------------------------------------------
-void PETScVector::set_local(const PetscScalar* block, std::size_t m,
-                            const PetscInt* rows)
-{
-  assert(_x);
-  PetscErrorCode ierr = VecSetValuesLocal(_x, m, rows, block, INSERT_VALUES);
-  CHECK_ERROR("VecSetValuesLocal");
-}
-//-----------------------------------------------------------------------------
 void PETScVector::add_local(const PetscScalar* block, std::size_t m,
                             const PetscInt* rows)
 {
@@ -256,8 +246,6 @@ void PETScVector::set(PetscScalar a)
   PetscErrorCode ierr = VecSet(_x, a);
   CHECK_ERROR("VecSet");
 }
-//-----------------------------------------------------------------------------
-bool PETScVector::empty() const { return _x == nullptr ? true : false; }
 //-----------------------------------------------------------------------------
 PetscReal PETScVector::norm(la::Norm norm_type) const
 {

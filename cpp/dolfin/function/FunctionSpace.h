@@ -228,17 +228,16 @@ public:
   /// Set dof entries in vector to value*x[i], where [x][i] is the
   /// coordinate of the dof spatial coordinate. Parallel layout of
   /// vector must be consistent with dof map range This function is
-  /// typically used to construct the null space of a matrix
-  /// operator, e.g. rigid body rotations.
+  /// typically used to construct the null space of a matrix operator,
+  /// e.g. rigid body rotations.
   ///
-  /// @param x (_la::PETScVector_)
+  /// @param x (_Vec_)
   ///         The vector to set.
   /// @param value (double)
   ///         The value to multiply to coordinate by.
-  /// @param component (std::size_t)
+  /// @param component (int)
   ///         The coordinate index.
-  void set_x(la::PETScVector& x, PetscScalar value,
-             std::size_t component) const;
+  void set_x(Vec x, PetscScalar value, int component) const;
 
   /// Return informal string representation (pretty-print)
   ///

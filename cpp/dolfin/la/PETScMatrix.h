@@ -18,7 +18,6 @@ namespace dolfin
 
 namespace la
 {
-class PETScVector;
 class SparsityPattern;
 class VectorSpaceBasis;
 
@@ -32,14 +31,10 @@ class VectorSpaceBasis;
 class PETScMatrix : public PETScOperator
 {
 public:
-  // FIXME: Remove?
-  /// Create empty matrix
-  PETScMatrix();
-
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 
-  /// Create a wrapper around a PETSc Mat pointer. The Mat object
-  /// should have been created, e.g. via PETSc MatCreate.
+  /// Create a wrapper around a PETSc Mat pointer. The Mat object should
+  /// have been created, e.g. via PETSc MatCreate.
   explicit PETScMatrix(Mat A);
 
   /// Copy constructor
@@ -56,9 +51,6 @@ public:
 
   /// Move assignment operator
   PETScMatrix& operator=(PETScMatrix&& A) = default;
-
-  /// Return true if empty
-  bool empty() const;
 
   /// Return local ownership range
   std::array<std::int64_t, 2> local_range(std::size_t dim) const;

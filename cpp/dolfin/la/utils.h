@@ -72,7 +72,7 @@ public:
   VecWrapper(VecWrapper&& x) = default;
   VecWrapper& operator=(const VecWrapper& x) = delete;
   VecWrapper& operator=(VecWrapper&& x) = default;
-  ~VecWrapper() = default;
+  ~VecWrapper();
   void restore();
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
 
@@ -90,13 +90,13 @@ public:
   VecReadWrapper(VecReadWrapper&& x) = default;
   VecReadWrapper& operator=(const VecReadWrapper& x) = delete;
   VecReadWrapper& operator=(VecReadWrapper&& x) = default;
-  ~VecReadWrapper() = default;
+  ~VecReadWrapper();
   void restore();
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
 
 private:
   PetscScalar const* array = nullptr;
-  const Vec _y;
+  Vec _y;
   Vec _y_local = nullptr;
 };
 

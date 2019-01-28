@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <memory>
 #include <petscsys.h>
+#include <petscvec.h>
 #include <set>
 #include <unordered_map>
 #include <utility>
@@ -16,11 +17,6 @@
 
 namespace dolfin
 {
-
-namespace la
-{
-class PETScVector;
-}
 
 namespace common
 {
@@ -117,7 +113,7 @@ public:
   /// layout of vector must be consistent with dof map range. This
   /// function is typically used to construct the null space of a
   /// matrix operator
-  virtual void set(la::PETScVector& x, PetscScalar value) const = 0;
+  virtual void set(Vec x, PetscScalar value) const = 0;
 
   /// Index map (const access)
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;

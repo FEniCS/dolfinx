@@ -26,11 +26,6 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix() : PETScOperator()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
 {
   _matA = create_matrix(comm, sparsity_pattern);
@@ -44,27 +39,15 @@ PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)
 PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScOperator()
 {
   assert(A.mat());
-  if (!A.empty())
-  {
-    PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatDuplicate");
-  }
-  else
-  {
-    // Create uninitialised matrix
-    PetscErrorCode ierr = MatCreate(A.mpi_comm(), &_matA);
-    if (ierr != 0)
-      petsc_error(ierr, __FILE__, "MatCreate");
-  }
+  PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
+  if (ierr != 0)
+    petsc_error(ierr, __FILE__, "MatDuplicate");
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
 {
   // Do nothing (PETSc matrix is destroyed in base class)
 }
-//-----------------------------------------------------------------------------
-bool PETScMatrix::empty() const { return _matA == nullptr ? true : false; }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> PETScMatrix::local_range(std::size_t dim) const
 {
@@ -212,9 +195,6 @@ void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
 std::string PETScMatrix::str(bool verbose) const
 {
   assert(_matA);
-  if (this->empty())
-    return "<Uninitialized PETScMatrix>";
-
   std::stringstream s;
   if (verbose)
   {
