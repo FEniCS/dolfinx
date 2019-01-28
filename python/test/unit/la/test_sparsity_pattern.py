@@ -41,6 +41,7 @@ def xtest_str(mesh, V):
         True,
         False,
         False)
+    sp.assemble()
 
     sp.str(False)
     sp.str(True)
@@ -57,6 +58,7 @@ def test_insert_local(mesh, V):
         True,
         False,
         False)
+    sp.assemble()
 
     sp1 = cpp.la.SparsityPattern(mesh.mpi_comm(), [[sp], [sp]])
     if (MPI.rank(mesh.mpi_comm()) == 0):
