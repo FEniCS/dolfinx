@@ -283,7 +283,6 @@ void SparsityPattern::insert_entries(
         {
           auto j_index = map_j[j];
           const auto J = col_map(j_index, index_map1);
-          // Store indices
           _non_local.push_back(I);
           _non_local.push_back(J);
         }
@@ -310,8 +309,6 @@ SparsityPattern::index_map(std::size_t dim) const
 std::size_t SparsityPattern::num_nonzeros() const
 {
   std::size_t nz = 0;
-
-  // Contribution from diagonal and off-diagonal
   for (const auto& slice : _diagonal)
     nz += slice.size();
   for (const auto& slice : _off_diagonal)
@@ -324,8 +321,6 @@ Eigen::Array<std::int32_t, Eigen::Dynamic, 1>
 SparsityPattern::num_nonzeros_diagonal() const
 {
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_nonzeros(_diagonal.size());
-
-  // Get number of nonzeros per generalised row
   for (auto slice = _diagonal.begin(); slice != _diagonal.end(); ++slice)
     num_nonzeros[slice - _diagonal.begin()] = slice->size();
 
