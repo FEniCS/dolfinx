@@ -628,11 +628,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   ierr = MatAssemblyEnd(I, MAT_FINAL_ASSEMBLY);
   CHKERRABORT(PETSC_COMM_WORLD, ierr);
 
-  la::PETScMatrix A(I);
-  ierr = MatDestroy(&I);
-  CHKERRABORT(PETSC_COMM_WORLD, ierr);
-
-  return A;
+  return la::PETScMatrix(I, false);
 }
 //-----------------------------------------------------------------------------
 void PETScDMCollection::find_exterior_points(

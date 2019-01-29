@@ -79,14 +79,7 @@ PETScVector PETScOperator::create_vector(std::size_t dim) const
                       "Dimension must be 0 or 1, not %d", dim);
   }
 
-  // Associate new PETSc Vec with z (this will increase the reference
-  // count to x)
-  PETScVector z(x);
-
-  // Decrease reference count
-  VecDestroy(&x);
-
-  return z;
+  return PETScVector(x, false);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScOperator::mpi_comm() const
