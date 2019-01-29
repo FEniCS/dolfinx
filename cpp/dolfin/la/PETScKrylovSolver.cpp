@@ -27,29 +27,19 @@ PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm) : _ksp(NULL)
     petsc_error(ierr, __FILE__, "KSPCreate");
 }
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(KSP ksp) : _ksp(ksp)
+PETScKrylovSolver::PETScKrylovSolver(KSP ksp, bool inc_ref_count) : _ksp(ksp)
 {
-  PetscErrorCode ierr;
-  if (_ksp)
+  assert(_ksp);
+  if (inc_ref_count)
   {
-    // Increment reference count since we holding a pointer to it
-    ierr = PetscObjectReference((PetscObject)_ksp);
+    PetscErrorCode ierr = PetscObjectReference((PetscObject)_ksp);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "PetscObjectReference");
-  }
-  else
-  {
-    log::dolfin_error(
-        "PETScKrylovSolver.cpp",
-        "initialize PETScKrylovSolver with PETSc KSP object",
-        "PETSc KSP must be initialised (KSPCreate) before wrapping");
   }
 }
 //-----------------------------------------------------------------------------
 PETScKrylovSolver::~PETScKrylovSolver()
 {
-  // Decrease reference count for KSP object, and clean-up if
-  // reference count goes to zero.
   if (_ksp)
     KSPDestroy(&_ksp);
 }
@@ -237,7 +227,6 @@ void PETScKrylovSolver::write_report(int num_iterations,
                                      KSPConvergedReason reason) const
 {
   assert(_ksp);
-
   PetscErrorCode ierr;
 
   // Get name of solver and preconditioner

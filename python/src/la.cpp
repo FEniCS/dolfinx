@@ -80,7 +80,8 @@ void la(py::module& m)
              return std::make_unique<dolfin::la::PETScKrylovSolver>(comm.get());
            }),
            py::arg("comm"))
-      .def(py::init<KSP>())
+      .def(py::init<KSP, bool>(), py::arg("comm"),
+           py::arg("inc_ref_count") = true)
       .def("get_options_prefix",
            &dolfin::la::PETScKrylovSolver::get_options_prefix)
       .def("set_options_prefix",
