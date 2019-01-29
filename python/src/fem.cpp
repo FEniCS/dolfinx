@@ -323,7 +323,7 @@ void fem(py::module& m)
                      const dolfin::function::FunctionSpace& V1) {
                     auto A = dolfin::fem::DiscreteOperators::build_gradient(V0,
                                                                             V1);
-                    Mat _A = A->mat();
+                    Mat _A = A.mat();
                     PetscObjectReference((PetscObject)_A);
                     return _A;
                   },

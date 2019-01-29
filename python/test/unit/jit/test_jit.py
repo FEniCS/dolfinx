@@ -56,10 +56,11 @@ def test_petsc():
     #include <dolfin.h>
     namespace dolfin
     {
-        std::shared_ptr<la::PETScMatrix> create_matrix(void) {
+        la::PETScMatrix create_matrix(void)
+        {
             Mat I;
-            std::shared_ptr<la::PETScMatrix> ptr = std::make_shared<la::PETScMatrix>(I);
-            return ptr;
+            la::PETScMatrix A = la::PETScMatrix(I);
+            return A;
         }
     }
 
