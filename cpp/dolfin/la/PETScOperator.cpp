@@ -14,8 +14,6 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
-PETScOperator::PETScOperator() : _matA(nullptr) {}
-//-----------------------------------------------------------------------------
 PETScOperator::PETScOperator(Mat A, bool inc_ref_count) : _matA(A)
 {
   assert(A);

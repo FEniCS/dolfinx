@@ -25,12 +25,9 @@ class PETScOperator
 {
 public:
   /// Constructor
-  PETScOperator();
-
-  /// Constructor
   explicit PETScOperator(Mat, bool inc_ref_count);
 
-  /// Copy constructor (deleted)
+  // Copy constructor (deleted)
   PETScOperator(const PETScOperator& A) = delete;
 
   /// Move constructor

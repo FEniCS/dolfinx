@@ -40,8 +40,8 @@ public:
   /// always be decreased upon destruction of the the PETScMatrix.
   explicit PETScMatrix(Mat A, bool inc_ref_count = true);
 
-  /// Copy constructor
-  PETScMatrix(const PETScMatrix& A);
+  // Copy constructor (deleted)
+  PETScMatrix(const PETScMatrix& A) = delete;
 
   /// Move constructor (falls through to base class move constructor)
   PETScMatrix(PETScMatrix&& A) = default;
