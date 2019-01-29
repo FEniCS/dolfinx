@@ -70,6 +70,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         liblapack-dev \
         libmpich-dev \
         libopenblas-dev \
+        libspdlog-dev \
         mpich \
         ninja-build \
         pkg-config \
