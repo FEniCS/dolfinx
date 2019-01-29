@@ -8,7 +8,6 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/nls/NonlinearProblem.h>
-#include <dolfin/nls/OptimisationProblem.h>
 #include <memory>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
