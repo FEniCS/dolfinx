@@ -22,21 +22,15 @@ using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
+    : PETScOperator(create_matrix(comm, sparsity_pattern), false)
 {
-  _matA = create_matrix(comm, sparsity_pattern);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)
+PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
+    : PETScOperator(A, inc_ref_count)
 {
   // Reference count to A is incremented in base class
-}
-//-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScOperator()
-{
-  assert(A.mat());
-  PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatDuplicate");
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
