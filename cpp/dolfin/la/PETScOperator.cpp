@@ -16,16 +16,11 @@ using namespace dolfin::la;
 //-----------------------------------------------------------------------------
 PETScOperator::PETScOperator() : _matA(nullptr) {}
 //-----------------------------------------------------------------------------
-PETScOperator::PETScOperator(Mat A) : _matA(A)
+PETScOperator::PETScOperator(Mat A, bool inc_ref_count) : _matA(A)
 {
-  // Increase reference count, and throw error if Mat pointer is NULL
-  if (_matA)
+  assert(A);
+  if (inc_ref_count)
     PetscObjectReference((PetscObject)_matA);
-  else
-  {
-    throw std::runtime_error(
-        "Cannot wrap PETSc Mat objects that have not been initialized");
-  }
 }
 //-----------------------------------------------------------------------------
 PETScOperator::PETScOperator(PETScOperator&& A) : _matA(nullptr)
@@ -36,8 +31,8 @@ PETScOperator::PETScOperator(PETScOperator&& A) : _matA(nullptr)
 //-----------------------------------------------------------------------------
 PETScOperator::~PETScOperator()
 {
-  // Decrease reference count (PETSc will destroy object once
-  // reference counts reached zero)
+  // Decrease reference count (PETSc will destroy object once reference
+  // counts reached zero)
   if (_matA)
     MatDestroy(&_matA);
 }

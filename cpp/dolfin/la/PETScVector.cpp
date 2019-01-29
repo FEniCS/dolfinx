@@ -39,11 +39,11 @@ PETScVector::PETScVector(
   _x = la::create_vector(comm, range, ghost_indices, block_size);
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(Vec x) : _x(x)
+PETScVector::PETScVector(Vec x, bool inc_ref_count) : _x(x)
 {
-  // Increase reference count to PETSc object
   assert(x);
-  PetscObjectReference((PetscObject)_x);
+  if (inc_ref_count)
+    PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(PETScVector&& v) : _x(v._x) { v._x = nullptr; }

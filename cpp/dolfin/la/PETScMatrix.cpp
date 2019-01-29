@@ -26,7 +26,8 @@ PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
   _matA = create_matrix(comm, sparsity_pattern);
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)
+PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
+    : PETScOperator(A, inc_ref_count)
 {
   // Reference count to A is incremented in base class
 }

@@ -33,9 +33,12 @@ class PETScMatrix : public PETScOperator
 public:
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 
-  /// Create a wrapper around a PETSc Mat pointer. The Mat object should
-  /// have been created, e.g. via PETSc MatCreate.
-  explicit PETScMatrix(Mat A);
+
+  /// Create holder of a PETSc Mat object/pointer. The Mat A object
+  /// should already be created. If inc_ref_count is true, the reference
+  /// counter of the Mat will be increased. The Mat reference count will
+  /// always be decreased upon destruction of the the PETScMatrix.
+  explicit PETScMatrix(Mat A, bool inc_ref_count = true);
 
   /// Copy constructor
   PETScMatrix(const PETScMatrix& A);

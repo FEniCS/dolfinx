@@ -46,10 +46,12 @@ public:
   /// Move constructor
   PETScVector(PETScVector&& x);
 
-  /// Create vector wrapper of PETSc Vec pointer. The reference counter
-  /// of the Vec will be increased, and decreased upon destruction of
-  /// this object.
-  explicit PETScVector(Vec x);
+  /// Create holder of a PETSc Vec object/pointer. The Vec x object
+  /// should already be created. If inc_ref_count is true, the reference
+  /// counter of the Vec object will be increased. The Vec reference
+  /// count will always be decreased upon destruction of the the
+  /// PETScVector.
+  explicit PETScVector(Vec x, bool inc_ref_count = true);
 
   /// Destructor
   virtual ~PETScVector();
