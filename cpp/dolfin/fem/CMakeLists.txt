@@ -15,7 +15,6 @@ set(HEADERS
   FormIntegrals.h
   GenericDofMap.h
   LocalAssembler.h
-  NonlinearVariationalProblem.h
   PETScDMCollection.h
   SparsityPatternBuilder.h
   SystemAssembler.h
@@ -37,7 +36,6 @@ set(SOURCES
   FormIntegrals.cpp
   GenericDofMap.cpp
   LocalAssembler.cpp
-  NonlinearVariationalProblem.cpp
   PETScDMCollection.cpp
   SparsityPatternBuilder.cpp
   SystemAssembler.cpp

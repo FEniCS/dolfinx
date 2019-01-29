@@ -191,7 +191,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
          or (data_shape.size() == 2 and data_shape[1] == 1));
 
   // Initialize vector
-  std::unique_ptr<la::PETScVector> x;
+  std::array<std::int64_t, 2> range;
   if (use_partition_from_file)
   {
     // Get partition from file
@@ -211,23 +211,18 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
 
     // Initialise vector
     const std::size_t process_num = _mpi_comm.rank();
-    const std::array<std::int64_t, 2> range
-        = {{(std::int64_t)partitions[process_num],
-            (std::int64_t)partitions[process_num + 1]}};
-    Eigen::Array<PetscInt, Eigen::Dynamic, 1> ghosts;
-    x = std::make_unique<la::PETScVector>(comm, range, ghosts, 1);
+    range = {{(std::int64_t)partitions[process_num],
+              (std::int64_t)partitions[process_num + 1]}};
   }
   else
   {
-    const std::array<std::int64_t, 2> local_range
-        = MPI::local_range(comm, data_shape[0]);
-    Eigen::Array<PetscInt, Eigen::Dynamic, 1> ghosts;
-    x = std::make_unique<la::PETScVector>(comm, local_range, ghosts, 1);
+    range = MPI::local_range(comm, data_shape[0]);
   }
-  assert(x);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> ghosts;
+  la::PETScVector x(comm, range, ghosts, 1);
 
   // Get local range
-  const std::array<std::int64_t, 2> local_range = x->local_range();
+  const std::array<std::int64_t, 2> local_range = x.local_range();
 
   // Read data from file
   std::vector<PetscScalar> data = HDF5Interface::read_dataset<PetscScalar>(
@@ -236,17 +231,15 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
   // Set data
   PetscErrorCode ierr;
   PetscScalar* x_ptr = nullptr;
-  ierr = VecGetArray(x->vec(), &x_ptr);
+  ierr = VecGetArray(x.vec(), &x_ptr);
   if (ierr != 0)
     la::petsc_error(ierr, __FILE__, "VecGetArray");
   std::copy(data.begin(), data.end(), x_ptr);
-  ierr = VecRestoreArray(x->vec(), &x_ptr);
+  ierr = VecRestoreArray(x.vec(), &x_ptr);
   if (ierr != 0)
     la::petsc_error(ierr, __FILE__, "VecRestoreArray");
 
-
-  la::PETScVector _x(x->vec());
-  return _x;
+  return x;
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const mesh::Mesh& mesh, const std::string name)

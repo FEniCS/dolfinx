@@ -50,9 +50,8 @@ public:
   ///  P1 Lagrange space
   ///
   /// @return la::PETScMatrix
-  static std::shared_ptr<la::PETScMatrix>
-  build_gradient(const function::FunctionSpace& V0,
-                 const function::FunctionSpace& V1);
+  static la::PETScMatrix build_gradient(const function::FunctionSpace& V0,
+                                        const function::FunctionSpace& V1);
 };
 } // namespace fem
 } // namespace dolfin

@@ -23,7 +23,6 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/Form.h>
-#include <dolfin/fem/NonlinearVariationalProblem.h>
 #include <dolfin/fem/PETScDMCollection.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/SystemAssembler.h>
@@ -85,7 +84,7 @@ void fem(py::module& m)
         "Create a ufc_coordinate_mapping object from a pointer.");
 
   // utils
-  m.def("create_vector",  // TODO: change name to create_vector_block
+  m.def("create_vector", // TODO: change name to create_vector_block
         [](const std::vector<const dolfin::fem::Form*> L) {
           auto x = dolfin::fem::create_vector_block(L);
           Vec _x = x.vec();
@@ -323,7 +322,7 @@ void fem(py::module& m)
                      const dolfin::function::FunctionSpace& V1) {
                     auto A = dolfin::fem::DiscreteOperators::build_gradient(V0,
                                                                             V1);
-                    Mat _A = A->mat();
+                    Mat _A = A.mat();
                     PetscObjectReference((PetscObject)_A);
                     return _A;
                   },
@@ -364,24 +363,6 @@ void fem(py::module& m)
       .def("mesh", &dolfin::fem::Form::mesh)
       .def("function_space", &dolfin::fem::Form::function_space)
       .def("coordinate_mapping", &dolfin::fem::Form::coordinate_mapping);
-
-//   // dolfin::fem::NonlinearVariationalProblem
-//   py::class_<dolfin::fem::NonlinearVariationalProblem,
-//              std::shared_ptr<dolfin::fem::NonlinearVariationalProblem>>(
-//       m, "NonlinearVariationalProblem")
-//       .def(
-//           py::init<std::shared_ptr<const dolfin::fem::Form>,
-//                    std::shared_ptr<dolfin::function::Function>,
-//                    std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-//                    std::shared_ptr<const dolfin::fem::Form>>())
-//       .def("set_bounds",
-//            py::overload_cast<std::shared_ptr<const dolfin::la::PETScVector>,
-//                              std::shared_ptr<const dolfin::la::PETScVector>>(
-//                &dolfin::fem::NonlinearVariationalProblem::set_bounds))
-//       .def("set_bounds",
-//            py::overload_cast<const dolfin::function::Function&,
-//                              const dolfin::function::Function&>(
-//                &dolfin::fem::NonlinearVariationalProblem::set_bounds));
 
   // dolfin::fem::PETScDMCollection
   py::class_<dolfin::fem::PETScDMCollection,

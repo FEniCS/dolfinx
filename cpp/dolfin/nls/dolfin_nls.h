@@ -13,4 +13,3 @@ namespace dolfin
 
 #include <dolfin/nls/NewtonSolver.h>
 #include <dolfin/nls/NonlinearProblem.h>
-#include <dolfin/nls/OptimisationProblem.h>
