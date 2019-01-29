@@ -7,6 +7,7 @@
 #pragma once
 
 #include <dolfin/common/MPI.h>
+#include <dolfin/la/PETScKrylovSolver.h>
 #include <memory>
 #include <petscvec.h>
 #include <utility>
@@ -134,7 +135,7 @@ private:
   double _residual, _residual0;
 
   // Solver
-  std::shared_ptr<la::PETScKrylovSolver> _solver;
+  la::PETScKrylovSolver _solver;
 
   // Solution vector
   Vec _dx;
