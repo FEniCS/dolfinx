@@ -22,7 +22,7 @@ using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
-    : PETScOperator(create_matrix(comm, sparsity_pattern), true)
+    : PETScOperator(create_matrix(comm, sparsity_pattern), false)
 {
   // Do nothing
 }
