@@ -9,7 +9,8 @@
 #include "MeshEntity.h"
 #include "MeshGeometry.h"
 #include <algorithm>
-#include <dolfin/log/log.h>
+#include <spdlog/spdlog.h>
+#include <stdexcept>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -26,9 +27,10 @@ std::size_t IntervalCell::num_entities(std::size_t dim) const
   case 1:
     return 1; // cells
   default:
-    log::dolfin_error("IntervalCell.cpp",
-                      "access number of entities of interval cell",
-                      "Illegal topological dimension (%d)", dim);
+    spdlog::error("IntervalCell.cpp: "
+                  "access number of entities of interval cell. "
+                  "Illegal topological dimension ({}).", dim);
+    throw std::invalid_argument();
   }
 
   return 0;

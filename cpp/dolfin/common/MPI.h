@@ -20,7 +20,6 @@
 #include <mpi.h>
 
 #include <dolfin/log/Table.h>
-#include <dolfin/log/log.h>
 
 namespace dolfin
 {
