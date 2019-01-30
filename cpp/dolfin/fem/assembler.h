@@ -26,21 +26,22 @@ namespace fem
 class DirichletBC;
 class Form;
 
-/// Assemble variational form. Caller is responsible for destroying.
-// boost::variant<PetscScalar, Vec, Mat> assemble(const Form& a);
-
 // -- Scalar ----------------------------------------------------------------
 
-// Assemble functional in scalar
+// Assemble functional into scalar. Scalar is summed across all
+// processes.
 PetscScalar assemble_scalar(const Form& M);
 
 // -- Vectors ----------------------------------------------------------------
 
-// Assemble linear form into an already allocated vector
+/// Assemble linear form into an already allocated vector. Ghost
+/// contributions are no accumulated (not sent to owner). Caller is
+/// responsible for calling VecGhostUpdateBegin/End.
 void assemble_vector(Vec b, const Form& L);
 
 // FIXME: clarify how x0 is used
 // FIXME: if bcs entries are set
+// FIXME: split into assemble and lift stages?
 
 /// Re-assemble a blocked linear form L into the vector b. The vector is
 /// modified for any boundary conditions such that:
@@ -70,6 +71,9 @@ void assemble_vector(
 /// [a] must have the same test space as L (from b was built), but the
 /// trial space may differ. If x0 is not supplied, then it is treated as
 /// zero.
+///
+/// Ghost contributions are no accumulated (not sent to owner). Caller
+/// is responsible for calling VecGhostUpdateBegin/End.
 void apply_lifting(
     Vec b, const std::vector<std::shared_ptr<const Form>> a,
     std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
@@ -79,15 +83,15 @@ void apply_lifting(
 
 /// Re-assemble blocked bilinear forms into a matrix. Does not zero the
 /// matrix.
-void assemble(Mat A, const std::vector<std::vector<const Form*>> a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double diagonal = 1.0, bool use_nest_extract = true);
+void assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,
+                     std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                     double diagonal = 1.0, bool use_nest_extract = true);
 
 /// Assemble bilinear form into a matrix. Matrix must be initialised.
 /// Does not zero or finalise the matrix.
-void assemble(Mat A, const Form& a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              double diagonal = 1.0);
+void assemble_matrix(Mat A, const Form& a,
+                     std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                     double diagonal = 1.0);
 
 // -- Setting bcs ------------------------------------------------------------
 
