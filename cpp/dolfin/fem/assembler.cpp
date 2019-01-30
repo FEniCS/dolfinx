@@ -372,8 +372,8 @@ void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
       _maps[0].push_back(m.get());
     for (auto& m : maps[1])
       _maps[1].push_back(m.get());
-    is_row = la::compute_index_sets(_maps[0]);
-    is_col = la::compute_index_sets(_maps[1]);
+    is_row = la::compute_petsc_index_sets(_maps[0]);
+    is_col = la::compute_petsc_index_sets(_maps[1]);
   }
 
   // Loop over each form and assemble

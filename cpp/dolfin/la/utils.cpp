@@ -27,13 +27,13 @@
   } while (0)
 
 //-----------------------------------------------------------------------------
-Vec dolfin::la::create_vector(const dolfin::common::IndexMap& map)
+Vec dolfin::la::create_petsc_vector(const dolfin::common::IndexMap& map)
 {
-  return dolfin::la::create_vector(map.mpi_comm(), map.local_range(),
-                                   map.ghosts(), map.block_size());
+  return dolfin::la::create_petsc_vector(map.mpi_comm(), map.local_range(),
+                                         map.ghosts(), map.block_size());
 }
 //-----------------------------------------------------------------------------
-Vec dolfin::la::create_vector(
+Vec dolfin::la::create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
     int block_size)
@@ -76,7 +76,7 @@ Vec dolfin::la::create_vector(
   return x;
 }
 //-----------------------------------------------------------------------------
-Mat dolfin::la::create_matrix(
+Mat dolfin::la::create_petsc_matrix(
     MPI_Comm comm, const dolfin::la::SparsityPattern& sparsity_pattern)
 {
   PetscErrorCode ierr;
@@ -235,7 +235,7 @@ MatNullSpace dolfin::la::create_petsc_nullspace(
   return petsc_nullspace;
 }
 //-----------------------------------------------------------------------------
-std::vector<IS> dolfin::la::compute_index_sets(
+std::vector<IS> dolfin::la::compute_petsc_index_sets(
     std::vector<const dolfin::common::IndexMap*> maps)
 {
   std::vector<IS> is(maps.size());
