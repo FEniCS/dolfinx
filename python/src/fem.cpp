@@ -263,14 +263,14 @@ void fem(py::module& m)
       py::overload_cast<
           Mat, const dolfin::fem::Form&,
           std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
-          &dolfin::fem::assemble),
+          &dolfin::fem::assemble_matrix),
       py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
       "Assemble bilinear form over mesh into matrix");
   m.def("assemble_blocked_matrix",
         py::overload_cast<
             Mat, const std::vector<std::vector<const dolfin::fem::Form*>>,
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            double, bool>(&dolfin::fem::assemble),
+            double, bool>(&dolfin::fem::assemble_matrix),
         py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
         py::arg("use_nest_extract") = true,
         "Re-assemble bilinear forms over mesh into blocked matrix");
