@@ -344,9 +344,9 @@ void fem::apply_lifting(
   _b.restore();
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double diagonal, bool use_nest_extract)
+void fem::assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,
+                          std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                          double diagonal, bool use_nest_extract)
 {
   // Check if matrix should be nested
   assert(!a.empty());
@@ -391,7 +391,7 @@ void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
         else
           subA = A;
 
-        assemble(subA, *a[i][j], bcs, diagonal);
+        assemble_matrix(subA, *a[i][j], bcs, diagonal);
         if (block_matrix and !is_matnest)
           MatRestoreLocalSubMatrix(A, is_row[i], is_row[j], &subA);
       }
@@ -412,9 +412,9 @@ void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(Mat A, const Form& a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double diagonal)
+void fem::assemble_matrix(Mat A, const Form& a,
+                          std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                          double diagonal)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map();
