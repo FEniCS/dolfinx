@@ -259,7 +259,7 @@ void Form::tabulate_tensor_cell(
   }
 
   // Restrict coefficients to cell
-  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
+  const bool* enabled_coefficients = _integrals.enabled_coefficients_cell(idx);
   for (std::size_t i = 0; i < _coefficients.size(); ++i)
   {
     if (enabled_coefficients[i])
@@ -273,7 +273,7 @@ void Form::tabulate_tensor_cell(
   // Compute cell matrix
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                            int)>& tab_fn
-      = _integrals.cell_tabulate_tensor(idx);
+      = _integrals.tabulate_tensor_cell(idx);
   tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
@@ -290,7 +290,8 @@ void Form::tabulate_tensor_exterior_facet(
   // }
 
   // Restrict coefficients to cell
-  const bool* enabled_coefficients = _integrals.facet_enabled_coefficients(idx);
+  const bool* enabled_coefficients
+      = _integrals.enabled_coefficients_exterior_facet(idx);
   for (std::size_t i = 0; i < _coefficients.size(); ++i)
   {
     if (enabled_coefficients[i])
@@ -304,7 +305,7 @@ void Form::tabulate_tensor_exterior_facet(
   // Compute contribution
   const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
                            int)>& tab_fn
-      = _integrals.exterior_facet_tabulate_tensor(idx);
+      = _integrals.tabulate_tensor_exterior_facet(idx);
   tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), facet, 1);
 }
 //-----------------------------------------------------------------------------

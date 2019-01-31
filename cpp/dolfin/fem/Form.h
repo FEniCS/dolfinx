@@ -139,16 +139,15 @@ public:
   ///         coefficients.
   std::size_t original_coefficient_position(std::size_t i) const;
 
-  /// Return the size of the element tensor, needed to create temporary space
-  /// for assemblers. If the largest number of per-element dofs in
-  /// function::FunctionSpace
-  /// i is N_i, then for a linear form this is N_0, and for a bilinear form,
-  /// N_0*N_1.
+  // FIXME: remove this function. Assembler should calculate or put in
+  // utils.
+  /// Return the size of the element tensor, needed to create temporary
+  /// space for assemblers. If the largest number of per-element dofs in
+  /// function::FunctionSpace i is N_i, then for a linear form this is
+  /// N_0, and for a bilinear form, N_0*N_1.
   ///
-  /// @return std::size_t
-  ///         The maximum number of values in a local element tensor
-  ///
-  /// FIXME: remove this, Assembler should calculate or put in utils
+  /// @return std::size_t The maximum number of values in a local
+  ///         element tensor
   std::size_t max_element_tensor_size() const;
 
   /// Set mesh, necessary for functionals when there are no function
@@ -296,21 +295,14 @@ private:
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const mesh::Mesh> _mesh;
 
-  // Domain markers for cells
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dx;
-
-  // Domain markers for exterior facets
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> ds;
-
-  // Domain markers for interior facets
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dS;
-
-  // Domain markers for vertices
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dP;
+  // Domain markers for cells (dx), exterior facets (ds), interior
+  // facets (dS) and vertices (dP)
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dx, ds, dS, dP;
 
   // Coordinate_mapping
   std::shared_ptr<const fem::CoordinateMapping> _coord_mapping;
 
+  // Function pointers for coeffiecient name <-> index mapping
   std::function<int(const char*)> _coefficient_index_map;
   std::function<const char*(int)> _coefficient_name_map;
 

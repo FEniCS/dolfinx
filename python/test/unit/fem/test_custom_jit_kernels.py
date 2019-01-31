@@ -57,10 +57,10 @@ def test_numba_assembly():
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
-    a.set_cell_tabulate(0, tabulate_tensor_A.address)
+    a.set_tabulate_cell(0, tabulate_tensor_A.address)
 
     L = cpp.fem.Form([V._cpp_object])
-    L.set_cell_tabulate(0, tabulate_tensor_b.address)
+    L.set_tabulate_cell(0, tabulate_tensor_b.address)
 
     A = dolfin.fem.assemble(a)
     b = dolfin.fem.assemble(L)

@@ -57,35 +57,39 @@ public:
   ///    Function to call for tabulate_tensor on a cell
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                            int)>&
-  cell_tabulate_tensor(int i) const;
+  tabulate_tensor_cell(int i) const;
 
   const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
                            int)>&
-  exterior_facet_tabulate_tensor(int i) const;
+  tabulate_tensor_exterior_facet(int i) const;
 
   /// Get the enabled coefficients on cell integral i
   /// @param i
   ///    Integral number
   /// @returns bool*
   ///    Pointer to list of enabled coefficients for this integral
-  const bool* cell_enabled_coefficients(int i) const;
+  const bool* enabled_coefficients_cell(int i) const;
 
-  const bool* facet_enabled_coefficients(int i) const;
+  const bool* enabled_coefficients_exterior_facet(int i) const;
 
   /// Set the function for 'tabulate_tensor' for cell integral i
-  void set_cell_tabulate_tensor(int i,
+  void set_tabulate_tensor_cell(int i,
                                 void (*fn)(PetscScalar*, const PetscScalar*,
                                            const double*, int));
 
-  void set_exterior_tabulate_tensor(int i,
-                                    void (*fn)(PetscScalar*, const PetscScalar*,
-                                               const double*, int, int));
+  void set_tabulate_tensor_exterior_facet(int i,
+                                          void (*fn)(PetscScalar*,
+                                                     const PetscScalar*,
+                                                     const double*, int, int));
 
   /// Number of integrals of given type
   int count(FormIntegrals::Type t) const;
 
   /// Number of cell integrals
   int num_cell_integrals() const;
+
+  /// Number of exterior facet integrals
+  int num_exterior_facet_integrals() const;
 
   /// Default exterior facet integral
   std::shared_ptr<const ufc_exterior_facet_integral>
@@ -94,9 +98,6 @@ public:
   /// Exterior facet integral for domain i
   std::shared_ptr<const ufc_exterior_facet_integral>
   exterior_facet_integral(unsigned int i) const;
-
-  /// Number of exterior facet integrals
-  int num_exterior_facet_integrals() const;
 
   /// Default interior facet integral
   std::shared_ptr<const ufc_interior_facet_integral>
@@ -120,25 +121,23 @@ public:
   int num_vertex_integrals() const;
 
 private:
-  // Cell integrals
-  std::vector<std::shared_ptr<ufc_cell_integral>> _cell_integrals;
+  // Integrals
+  std::vector<std::shared_ptr<ufc_cell_integral>> _integrals_cell;
+  std::vector<std::shared_ptr<ufc_exterior_facet_integral>>
+      _integrals_exterior_facet;
 
   // Function pointers to cell tabulate_tensor functions
   std::vector<
       std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>>
-      _cell_tabulate_tensor;
+      _tabulate_tensor_cell;
 
   std::vector<std::function<void(PetscScalar*, const PetscScalar*,
                                  const double*, int, int)>>
-      _exterior_tabulate_tensor;
+      _tabulate_tensor_exterior_facet;
 
   // Storage for enabled coefficients, to match the functions
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _enabled_coefficients, _enabled_coefficients_facet;
-
-  // Exterior facet integrals
-  std::vector<std::shared_ptr<ufc_exterior_facet_integral>>
-      _exterior_facet_integrals;
+      _enabled_coefficients_cell, _enabled_coefficients_exterior_facet;
 
   // Interior facet integrals
   std::vector<std::shared_ptr<ufc_interior_facet_integral>>
