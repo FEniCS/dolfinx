@@ -29,12 +29,12 @@ class FormIntegrals
 {
 public:
   /// Type of integral
-  enum class Type
+  enum class Type : std::int8_t
   {
-    cell,
-    exterior_facet,
-    interior_facet,
-    vertex
+    cell = 0,
+    exterior_facet = 1,
+    interior_facet = 2,
+    vertex = 3
   };
 
   /// Initialise the FormIntegrals from a ufc::form instantiating all
@@ -83,13 +83,7 @@ public:
                                                      const double*, int, int));
 
   /// Number of integrals of given type
-  int count(FormIntegrals::Type t) const;
-
-  /// Number of cell integrals
-  int num_cell_integrals() const;
-
-  /// Number of exterior facet integrals
-  int num_exterior_facet_integrals() const;
+  int num_integrals(FormIntegrals::Type t) const;
 
   /// Default exterior facet integral
   std::shared_ptr<const ufc_exterior_facet_integral>
@@ -106,19 +100,12 @@ public:
   /// Interior facet integral for domain i
   std::shared_ptr<const ufc_interior_facet_integral>
   interior_facet_integral(unsigned int i) const;
-
-  /// Number of interior facet integrals
-  int num_interior_facet_integrals() const;
-
   /// Default interior facet integral
   std::shared_ptr<const ufc_vertex_integral> vertex_integral() const;
 
   /// Interior facet integral for domain i
   std::shared_ptr<const ufc_vertex_integral>
   vertex_integral(unsigned int i) const;
-
-  /// Number of vertex integrals
-  int num_vertex_integrals() const;
 
 private:
   // Integrals

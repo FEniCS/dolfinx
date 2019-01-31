@@ -154,8 +154,8 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   UFC A_ufc(*_a), b_ufc(*_l);
 
   // Raise error for Point integrals
-  if (_a->integrals().num_vertex_integrals() > 0
-      or _l->integrals().num_vertex_integrals() > 0)
+  if (_a->integrals().num_integrals(fem::FormIntegrals::Type::vertex) > 0
+      or _l->integrals().num_integrals(fem::FormIntegrals::Type::vertex) > 0)
   {
     throw std::runtime_error("Point integrals are not supported (yet)");
   }
@@ -247,8 +247,12 @@ void SystemAssembler::assemble(la::PETScMatrix* A, la::PETScVector* b,
   }
 
   // Check whether we should do cell-wise or facet-wise assembly
-  if (ufc[0]->dolfin_form.integrals().num_interior_facet_integrals() == 0
-      && ufc[1]->dolfin_form.integrals().num_interior_facet_integrals() == 0)
+  if (ufc[0]->dolfin_form.integrals().num_integrals(
+          fem::FormIntegrals::Type::interior_facet)
+          == 0
+      && ufc[1]->dolfin_form.integrals().num_integrals(
+             fem::FormIntegrals::Type::interior_facet)
+             == 0)
   {
     // Assemble cell-wise (no interior facet integrals)
     cell_wise_assembly(tensors, ufc, data, boundary_values, cell_domains,
@@ -285,8 +289,12 @@ void SystemAssembler::cell_wise_assembly(
 
   // Initialize entities if using external facet integrals
   bool has_exterior_facet_integrals
-      = ufc[0]->dolfin_form.integrals().num_exterior_facet_integrals() > 0
-        or ufc[1]->dolfin_form.integrals().num_exterior_facet_integrals() > 0;
+      = ufc[0]->dolfin_form.integrals().num_integrals(
+            fem::FormIntegrals::Type::exterior_facet)
+            > 0
+        or ufc[1]->dolfin_form.integrals().num_integrals(
+               fem::FormIntegrals::Type::exterior_facet)
+               > 0;
   if (has_exterior_facet_integrals)
   {
     // Compute facets and facet-cell connectivity if not already computed
@@ -756,7 +764,9 @@ void SystemAssembler::facet_wise_assembly(
       }
 
       const bool add_macro_element
-          = ufc[0]->dolfin_form.integrals().num_interior_facet_integrals() > 0;
+          = ufc[0]->dolfin_form.integrals().num_integrals(
+                fem::FormIntegrals::Type::interior_facet)
+            > 0;
       if (A && add_macro_element)
       {
         std::vector<common::ArrayView<const PetscInt>> mdofs(

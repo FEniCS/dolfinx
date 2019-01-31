@@ -110,13 +110,13 @@ void _lift_bc(
 void fem::impl::assemble(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
-  if (L.integrals().num_cell_integrals() > 0)
+  if (L.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
     fem::impl::assemble_cells(b, L);
 
-  if (L.integrals().num_exterior_facet_integrals() > 0)
+  if (L.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
     fem::impl::assemble_exterior_facets(b, L);
 
-  if (L.integrals().num_interior_facet_integrals() > 0)
+  if (L.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
     fem::impl::assemble_interior_facets(b, L);
 }
 //-----------------------------------------------------------------------------

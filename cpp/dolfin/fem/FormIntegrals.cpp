@@ -191,9 +191,9 @@ void FormIntegrals::set_tabulate_tensor_exterior_facet(
   _enabled_coefficients_exterior_facet.row(i) = true;
 }
 //-----------------------------------------------------------------------------
-int FormIntegrals::count(FormIntegrals::Type t) const
+int FormIntegrals::num_integrals(FormIntegrals::Type type) const
 {
-  switch (t)
+  switch (type)
   {
   case Type::cell:
     return _tabulate_tensor_cell.size();
@@ -206,16 +206,6 @@ int FormIntegrals::count(FormIntegrals::Type t) const
   }
 
   return 0;
-}
-//-----------------------------------------------------------------------------
-int FormIntegrals::num_cell_integrals() const
-{
-  return _tabulate_tensor_cell.size();
-}
-//-----------------------------------------------------------------------------
-int FormIntegrals::num_exterior_facet_integrals() const
-{
-  return _integrals_exterior_facet.size();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const ufc_exterior_facet_integral>
@@ -254,11 +244,6 @@ FormIntegrals::interior_facet_integral(unsigned int i) const
     return _interior_facet_integrals[i + 1];
 }
 //-----------------------------------------------------------------------------
-int FormIntegrals::num_interior_facet_integrals() const
-{
-  return _interior_facet_integrals.size();
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<const ufc_vertex_integral>
 FormIntegrals::vertex_integral() const
 {
@@ -275,10 +260,5 @@ FormIntegrals::vertex_integral(unsigned int i) const
     return std::shared_ptr<const ufc_vertex_integral>();
   else
     return _vertex_integrals[i + 1];
-}
-//-----------------------------------------------------------------------------
-int FormIntegrals::num_vertex_integrals() const
-{
-  return _vertex_integrals.size();
 }
 //-----------------------------------------------------------------------------
