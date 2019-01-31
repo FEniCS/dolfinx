@@ -59,6 +59,10 @@ public:
                            int)>&
   cell_tabulate_tensor(int i) const;
 
+  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                           int)>&
+  exterior_facet_tabulate_tensor(int i) const;
+
   /// Get the enabled coefficients on cell integral i
   /// @param i
   ///    Integral number
@@ -70,6 +74,10 @@ public:
   void set_cell_tabulate_tensor(int i,
                                 void (*fn)(PetscScalar*, const PetscScalar*,
                                            const double*, int));
+
+  void set_exterior_tabulate_tensor(int i,
+                                    void (*fn)(PetscScalar*, const PetscScalar*,
+                                               const double*, int));
 
   /// Number of integrals of given type
   int count(FormIntegrals::Type t) const;
@@ -117,6 +125,10 @@ private:
   std::vector<
       std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>>
       _cell_tabulate_tensor;
+
+  std::vector<
+      std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>>
+      _exterior_tabulate_tensor;
 
   // Storage for enabled coefficients, to match the functions
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

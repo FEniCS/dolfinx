@@ -141,6 +141,12 @@ FormIntegrals::cell_tabulate_tensor(int i) const
   return _cell_tabulate_tensor[i];
 }
 //-----------------------------------------------------------------------------
+const std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>&
+FormIntegrals::exterior_facet_tabulate_tensor(int i) const
+{
+  return _exterior_tabulate_tensor[i];
+}
+//-----------------------------------------------------------------------------
 const bool* FormIntegrals::cell_enabled_coefficients(int i) const
 {
   return _enabled_coefficients.row(i).data();
@@ -151,6 +157,17 @@ void FormIntegrals::set_cell_tabulate_tensor(
 {
   _cell_tabulate_tensor.resize(i + 1);
   _cell_tabulate_tensor[i] = fn;
+
+  // Enable all coefficients for this integral
+  _enabled_coefficients.conservativeResize(i + 1, Eigen::NoChange);
+  _enabled_coefficients.row(i) = true;
+}
+//-----------------------------------------------------------------------------
+void FormIntegrals::set_exterior_tabulate_tensor(
+    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
+{
+  _exterior_tabulate_tensor.resize(i + 1);
+  _exterior_tabulate_tensor[i] = fn;
 
   // Enable all coefficients for this integral
   _enabled_coefficients.conservativeResize(i + 1, Eigen::NoChange);

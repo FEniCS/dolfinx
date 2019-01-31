@@ -39,6 +39,7 @@ class Mesh;
 template <typename T>
 class MeshFunction;
 class Cell;
+class Facet;
 } // namespace mesh
 
 namespace fem
@@ -267,8 +268,19 @@ public:
   ///    Cell on which to calculate
   /// @param coordinate_dofs
   ///    Coordinates of the cell
-  ///
   void tabulate_tensor(
+      PetscScalar* A, const mesh::Cell& cell,
+      const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
+
+  /// Call tabulate_tensor for an exterior fact, returning the local
+  /// element tensor contribution
+  /// @param A
+  ///    Local element tensor (to be calculated)
+  /// @param cell
+  ///    Cell on which to calculate
+  /// @param coordinate_dofs
+  ///    Coordinates of the cell
+  void tabulate_tensor_exterior_facet(
       PetscScalar* A, const mesh::Cell& cell,
       const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
 

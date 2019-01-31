@@ -27,6 +27,18 @@ namespace impl
 void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
               const Form& L);
 
+/// Assemble linear form cell integrals into an Eigen vector
+void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                    const Form& L);
+
+/// Assemble linear form exterior facet integrals into an Eigen vector
+void assemble_exterior_facets(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
+
+/// Assemble linear form interior facet integrals into an Eigen vector
+void assemble_interior_facets(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
+
 /// Modify b such that:
 ///
 ///   b <- b - scale * A_j (g_j - x0_j)

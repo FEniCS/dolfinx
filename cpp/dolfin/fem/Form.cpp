@@ -13,6 +13,8 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <memory>
@@ -256,6 +258,37 @@ void Form::tabulate_tensor(
     // FIXME: check on idx validity
     idx = (*dx)[cell] + 1;
   }
+
+  // Restrict coefficients to cell
+  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
+  for (std::size_t i = 0; i < _coefficients.size(); ++i)
+  {
+    if (enabled_coefficients[i])
+    {
+      const function::Function* coefficient = _coefficients.get(i);
+      const FiniteElement& element = _coefficients.element(i);
+      coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
+    }
+  }
+
+  // Compute cell matrix
+  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                           int)>& tab_fn
+      = _integrals.cell_tabulate_tensor(idx);
+  tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), 1);
+}
+//-----------------------------------------------------------------------------
+void Form::tabulate_tensor_exterior_facet(
+    PetscScalar* A, const mesh::Cell& cell,
+    const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
+{
+  // Switch integral based on domain from dx MeshFunction
+  std::uint32_t idx = 0;
+  // if (ds)
+  // {
+  //   // FIXME: check on idx validity
+  //   idx = (*dx)[facet] + 1;
+  // }
 
   // Restrict coefficients to cell
   const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
