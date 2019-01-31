@@ -11,6 +11,11 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
+FormIntegrals::FormIntegrals()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
 {
   // -- Create cell integrals
@@ -145,14 +150,14 @@ FormIntegrals::cell_integral(unsigned int i) const
 }
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>&
-FormIntegrals::tabulate_tensor_cell(int i) const
+FormIntegrals::tabulate_tensor_fn_cell(int i) const
 {
   return _tabulate_tensor_cell[i];
 }
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
                          int)>&
-FormIntegrals::tabulate_tensor_exterior_facet(int i) const
+FormIntegrals::tabulate_tensor_fn_exterior_facet(int i) const
 {
   return _tabulate_tensor_exterior_facet[i];
 }

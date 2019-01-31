@@ -273,7 +273,7 @@ void Form::tabulate_tensor_cell(
   // Compute cell matrix
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                            int)>& tab_fn
-      = _integrals.tabulate_tensor_cell(idx);
+      = _integrals.tabulate_tensor_fn_cell(idx);
   tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), 1);
 }
 //-----------------------------------------------------------------------------
@@ -305,7 +305,7 @@ void Form::tabulate_tensor_exterior_facet(
   // Compute contribution
   const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
                            int)>& tab_fn
-      = _integrals.tabulate_tensor_exterior_facet(idx);
+      = _integrals.tabulate_tensor_fn_exterior_facet(idx);
   tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), facet, 1);
 }
 //-----------------------------------------------------------------------------

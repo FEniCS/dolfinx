@@ -23,6 +23,9 @@ namespace dolfin
 namespace fem
 {
 
+// FIXME: This class would be greatly simplified if all integrals types
+// (cell, facet, etc) were the same type.
+
 /// Integrals of a Form, including those defined over cells, interior
 /// and exterior facets, and vertices.
 class FormIntegrals
@@ -37,16 +40,18 @@ public:
     vertex = 3
   };
 
+  /// Initialise the FormIntegrals as empty
+  FormIntegrals();
+
   /// Initialise the FormIntegrals from a ufc::form instantiating all
   /// the required integrals
   FormIntegrals(const ufc_form& ufc_form);
 
-  /// Initialise the FormIntegrals as empty
-  FormIntegrals() {}
-
+  // FIXME: Avoid returning UFC objects
   /// Default cell integral
   std::shared_ptr<const ufc_cell_integral> cell_integral() const;
 
+  // FIXME: Avoid returning UFC objects
   /// Cell integral for domain i
   std::shared_ptr<const ufc_cell_integral> cell_integral(unsigned int i) const;
 
@@ -57,11 +62,11 @@ public:
   ///    Function to call for tabulate_tensor on a cell
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                            int)>&
-  tabulate_tensor_cell(int i) const;
+  tabulate_tensor_fn_cell(int i) const;
 
   const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
                            int)>&
-  tabulate_tensor_exterior_facet(int i) const;
+  tabulate_tensor_fn_exterior_facet(int i) const;
 
   /// Get the enabled coefficients on cell integral i
   /// @param i
@@ -100,6 +105,7 @@ public:
   /// Interior facet integral for domain i
   std::shared_ptr<const ufc_interior_facet_integral>
   interior_facet_integral(unsigned int i) const;
+
   /// Default interior facet integral
   std::shared_ptr<const ufc_vertex_integral> vertex_integral() const;
 

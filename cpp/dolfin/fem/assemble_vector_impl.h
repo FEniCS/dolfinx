@@ -15,10 +15,16 @@
 namespace dolfin
 {
 
+namespace mesh
+{
+class Mesh;
+}
+
 namespace fem
 {
 class DirichletBC;
 class Form;
+class GenericDofMap;
 
 namespace impl
 {
@@ -29,11 +35,18 @@ void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
 
 /// Assemble linear form cell integrals into an Eigen vector
 void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L);
+                    const fem::Form& L, const mesh::Mesh& mesh,
+                    const fem::GenericDofMap& dofmap,
+                    const std::function<void(PetscScalar*, const PetscScalar*,
+                                             const double*, int)>& fn);
 
 /// Assemble linear form exterior facet integrals into an Eigen vector
 void assemble_exterior_facets(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const fem::Form& L, const mesh::Mesh& mesh,
+    const fem::GenericDofMap& dofmap,
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             int, int)>& fn);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 void assemble_interior_facets(

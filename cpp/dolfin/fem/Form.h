@@ -141,6 +141,7 @@ public:
 
   // FIXME: remove this function. Assembler should calculate or put in
   // utils.
+
   /// Return the size of the element tensor, needed to create temporary
   /// space for assemblers. If the largest number of per-element dofs in
   /// function::FunctionSpace i is N_i, then for a linear form this is
@@ -258,6 +259,7 @@ public:
     return _coord_mapping;
   }
 
+  // TODO: Remove
   /// Call tabulate_tensor on a cell, returning the local element matrix
   /// @param A
   ///    Local element tensor (to be calculated)
@@ -269,6 +271,7 @@ public:
       PetscScalar* A, const mesh::Cell& cell,
       const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
 
+  // TODO: Remove
   /// Call tabulate_tensor for an exterior fact, returning the local
   /// element tensor contribution
   /// @param A
