@@ -10,7 +10,7 @@ import ufl
 from dolfin import jit
 from dolfin import fem
 from dolfin import cpp
-
+from cffi import FFI
 
 def create_coordinate_map(o):
     """Return a compiled UFC coordinate_mapping object"""
@@ -33,5 +33,6 @@ def create_coordinate_map(o):
         raise
 
     # Wrap compiled coordinate map and return
-    ufc_cmap = fem.dofmap.make_ufc_coordinate_mapping(cmap_ptr)
+    ffi = FFI()
+    ufc_cmap = fem.dofmap.make_ufc_coordinate_mapping(ffi.cast("uint64_t", cmap_ptr[0][0]))
     return cpp.fem.CoordinateMapping(ufc_cmap)

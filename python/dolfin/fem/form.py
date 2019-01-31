@@ -8,7 +8,7 @@
 import ufl
 
 from dolfin import cpp, fem, jit
-
+import cffi
 
 class Form(ufl.Form):
     def __init__(self, form: ufl.Form, form_compiler_parameters: dict = None):
@@ -48,12 +48,17 @@ class Form(ufl.Form):
         mesh = domain.ufl_cargo()
 
         # Compile UFL form with JIT
-        ufc_form = jit.ffc_jit(
+        objects, module = jit.ffc_jit(
             form,
             form_compiler_parameters=self.form_compiler_parameters,
             mpi_comm=mesh.mpi_comm())
         # Cast compiled library to pointer to ufc_form
-        ufc_form = fem.dofmap.make_ufc_form(ufc_form[0])
+        ffi = cffi.FFI()
+        print(objects[0][0])
+        ufc_form = ffi.addressof(objects[0][0])
+        print("ufc_form = ", ufc_form)
+        print("casting = ", ffi.cast("uint64_t", ufc_form))
+        ufc_form = fem.dofmap.make_ufc_form(ffi.cast("uint64_t", ufc_form))
 
         # For every argument in form extract its function space
         function_spaces = [
