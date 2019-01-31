@@ -12,6 +12,7 @@ from dolfin import fem
 from dolfin import cpp
 from cffi import FFI
 
+
 def create_coordinate_map(o):
     """Return a compiled UFC coordinate_mapping object"""
 

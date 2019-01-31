@@ -10,6 +10,7 @@ import ufl
 from dolfin import cpp, fem, jit
 import cffi
 
+
 class Form(ufl.Form):
     def __init__(self, form: ufl.Form, form_compiler_parameters: dict = None):
         """Create dolfin Form
