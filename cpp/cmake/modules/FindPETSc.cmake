@@ -175,13 +175,6 @@ int main()
                      "PETSC_TEST_LIB_OUTPUT = ${PETSC_TEST_LIB_OUTPUT}")
     endif()
 
-    # Add MPI variables if MPI has been found
-    if (MPI_C_FOUND)
-      set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
-      set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
-      set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
-    endif()
-
     # Try to run test program (static linking)
     try_run(
       PETSC_TEST_LIB_EXITCODE
