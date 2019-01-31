@@ -13,7 +13,7 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
 {
-  // Create cell integrals
+  // -- Create cell integrals
   ufc_cell_integral* _default_cell_integral
       = ufc_form.create_default_cell_integral();
   if (_default_cell_integral)
@@ -26,7 +26,6 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   if (num_cell_domains > 0)
   {
     _cell_integrals.resize(num_cell_domains + 1);
-
     for (std::size_t i = 0; i < num_cell_domains; ++i)
     {
       _cell_integrals[i + 1] = std::shared_ptr<ufc_cell_integral>(
@@ -34,20 +33,19 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
     }
   }
 
+  // Experimental function pointers for tabulate_tensor cell integral
   _enabled_coefficients.resize(_cell_integrals.size(),
                                ufc_form.num_coefficients);
-
-  // Experimental function pointers for tabulate_tensor cell integral
-  for (unsigned int i = 0; i != _cell_integrals.size(); ++i)
+  for (unsigned int i = 0; i < _cell_integrals.size(); ++i)
   {
-    const auto ci = _cell_integrals[i];
+    std::shared_ptr<const ufc_cell_integral> ci = _cell_integrals[i];
     _cell_tabulate_tensor.push_back(ci->tabulate_tensor);
     std::copy(ci->enabled_coefficients,
               ci->enabled_coefficients + ufc_form.num_coefficients,
               _enabled_coefficients.row(i).data());
   }
 
-  // Exterior facet integrals
+  // -- Create exterior facet integrals
   ufc_exterior_facet_integral* _default_exterior_facet_integral
       = ufc_form.create_default_exterior_facet_integral();
   if (_default_exterior_facet_integral)
@@ -59,17 +57,28 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
 
   const std::size_t num_exterior_facet_domains
       = ufc_form.max_exterior_facet_subdomain_id;
-
   if (num_exterior_facet_domains > 0)
   {
     _exterior_facet_integrals.resize(num_exterior_facet_domains + 1);
-
     for (std::size_t i = 0; i < num_exterior_facet_domains; ++i)
     {
       _exterior_facet_integrals[i + 1]
           = std::shared_ptr<ufc_exterior_facet_integral>(
               ufc_form.create_exterior_facet_integral(i));
     }
+  }
+
+  // Experimental function pointers for tabulate_tensor cell integral
+  _enabled_coefficients_facet.resize(_exterior_facet_integrals.size(),
+                                     ufc_form.num_coefficients);
+  for (unsigned int i = 0; i < _exterior_facet_integrals.size(); ++i)
+  {
+    std::shared_ptr<const ufc_exterior_facet_integral> fi
+        = _exterior_facet_integrals[i];
+    _exterior_tabulate_tensor.push_back(fi->tabulate_tensor);
+    std::copy(fi->enabled_coefficients,
+              fi->enabled_coefficients + ufc_form.num_coefficients,
+              _enabled_coefficients_facet.row(i).data());
   }
 
   // Interior facet integrals
@@ -141,7 +150,8 @@ FormIntegrals::cell_tabulate_tensor(int i) const
   return _cell_tabulate_tensor[i];
 }
 //-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>&
+const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
+                         int)>&
 FormIntegrals::exterior_facet_tabulate_tensor(int i) const
 {
   return _exterior_tabulate_tensor[i];
@@ -150,6 +160,11 @@ FormIntegrals::exterior_facet_tabulate_tensor(int i) const
 const bool* FormIntegrals::cell_enabled_coefficients(int i) const
 {
   return _enabled_coefficients.row(i).data();
+}
+//-----------------------------------------------------------------------------
+const bool* FormIntegrals::facet_enabled_coefficients(int i) const
+{
+  return _enabled_coefficients_facet.row(i).data();
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_cell_tabulate_tensor(
@@ -164,7 +179,8 @@ void FormIntegrals::set_cell_tabulate_tensor(
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_exterior_tabulate_tensor(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
+    int i,
+    void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int))
 {
   _exterior_tabulate_tensor.resize(i + 1);
   _exterior_tabulate_tensor[i] = fn;

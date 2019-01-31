@@ -60,7 +60,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 
     // Tabulate tensor
     Ae.setZero(dmap0.size(), dmap1.size());
-    a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
+    a.tabulate_tensor_cell(Ae.data(), cell, coordinate_dofs);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

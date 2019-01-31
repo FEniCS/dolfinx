@@ -8,7 +8,6 @@
 
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
-#include "UFC.h"
 #include <dolfin/common/types.h>
 #include <functional>
 #include <map>
@@ -50,8 +49,8 @@ namespace fem
 /// A note on the order of trial and test spaces: FEniCS numbers
 /// argument spaces starting with the leading dimension of the
 /// corresponding tensor (matrix). In other words, the test space is
-/// numbered 0 and the trial space is numbered 1. However, in order
-/// to have a notation that agrees with most existing finite element
+/// numbered 0 and the trial space is numbered 1. However, in order to
+/// have a notation that agrees with most existing finite element
 /// literature, in particular
 ///
 ///  \f[   a = a(u, v)        \f]
@@ -60,15 +59,14 @@ namespace fem
 ///
 ///  \f[   a: V_1 \times V_0 \rightarrow \mathbb{R}  \f]
 ///
-///
 /// This is reflected in the ordering of the spaces that should be
 /// supplied to generated subclasses. In particular, when a bilinear
-/// form is initialized, it should be initialized as `a(V_1, V_0) = ...`,
-/// where `V_1` is the trial space and `V_0` is the test space.
+/// form is initialized, it should be initialized as `a(V_1, V_0) =
+/// ...`, where `V_1` is the trial space and `V_0` is the test space.
 /// However, when a form is initialized by a list of argument spaces
-/// (the variable `function_spaces` in the constructors below), the
-/// list of spaces should start with space number 0 (the test space)
-/// and then space number 1 (the trial space).
+/// (the variable `function_spaces` in the constructors below), the list
+/// of spaces should start with space number 0 (the test space) and then
+/// space number 1 (the trial space).
 
 class Form
 {
@@ -268,7 +266,7 @@ public:
   ///    Cell on which to calculate
   /// @param coordinate_dofs
   ///    Coordinates of the cell
-  void tabulate_tensor(
+  void tabulate_tensor_cell(
       PetscScalar* A, const mesh::Cell& cell,
       const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
 
@@ -282,7 +280,8 @@ public:
   ///    Coordinates of the cell
   void tabulate_tensor_exterior_facet(
       PetscScalar* A, const mesh::Cell& cell,
-      const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
+      const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs,
+      int facet) const;
 
 private:
   // Integrals associated with the Form
@@ -315,8 +314,9 @@ private:
   std::function<int(const char*)> _coefficient_index_map;
   std::function<const char*(int)> _coefficient_name_map;
 
-  // Initialise temporary storage for coefficient values
-  // needed for interface with UFC integrals
+  // TODO: Remove
+  // Initialise temporary storage for coefficient values needed for
+  // interface with UFC integrals
   void init_coeff_scratch_space();
 
   // Temporary storage for coefficient values

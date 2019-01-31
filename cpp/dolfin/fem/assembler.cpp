@@ -48,7 +48,7 @@ PetscScalar _assemble_scalar(const fem::Form& M)
     PetscScalar cell_value = 0.0;
     assert(!cell.is_ghost());
     cell.get_coordinate_dofs(coordinate_dofs);
-    M.tabulate_tensor(&cell_value, cell, coordinate_dofs);
+    M.tabulate_tensor_cell(&cell_value, cell, coordinate_dofs);
     value += cell_value;
   }
 

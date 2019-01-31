@@ -83,7 +83,7 @@ void _lift_bc(
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
         = dofmap0.cell_dofs(cell.index());
     Ae.setZero(dmap0.size(), dmap1.size());
-    a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
+    a.tabulate_tensor_cell(Ae.data(), cell, coordinate_dofs);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -110,7 +110,7 @@ void _lift_bc(
 void fem::impl::assemble(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
-  if (L.integrals().num_interior_facet_integrals() > 0)
+  if (L.integrals().num_cell_integrals() > 0)
     fem::impl::assemble_cells(b, L);
 
   if (L.integrals().num_exterior_facet_integrals() > 0)
@@ -157,7 +157,7 @@ void fem::impl::assemble_cells(
     be.setZero(dmap.size());
 
     // Compute local cell vector and add to global vector
-    L.tabulate_tensor(be.data(), cell, coordinate_dofs);
+    L.tabulate_tensor_cell(be.data(), cell, coordinate_dofs);
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }
@@ -166,7 +166,6 @@ void fem::impl::assemble_cells(
 void fem::impl::assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
-  // Get mesh from form
   assert(L.mesh());
   const mesh::Mesh& mesh = *L.mesh();
   const std::size_t tdim = mesh.topology().dim();
@@ -186,6 +185,9 @@ void fem::impl::assemble_exterior_facets(
   // Iterate over all facets
   for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
+    if (facet.num_global_entities(tdim) != 1)
+      continue;
+
     // TODO: check ghosting sanity?
 
     // TODO: check for parallel case
@@ -197,6 +199,9 @@ void fem::impl::assemble_exterior_facets(
     // Create attached cell
     mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
+    // Get local index of facet with respect to the cell
+    const int local_facet = cell.index(facet);
+
     // Get cell vertex coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
 
@@ -204,13 +209,14 @@ void fem::impl::assemble_exterior_facets(
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap
         = dofmap.cell_dofs(cell.index());
 
-    //   // Size data structure for assembly
+    // Size data structure for assembly
     be.setZero(dmap.size());
 
-    //   // Compute local cell vector and add to global vector
-      // L.tabulate_tensor_exterior(be.data(), cell, coordinate_dofs);
-    //   for (Eigen::Index i = 0; i < dmap.size(); ++i)
-    //     b[dmap[i]] += be[i];
+    // Compute local cell vector and add to global vector
+    L.tabulate_tensor_exterior_facet(be.data(), cell, coordinate_dofs,
+                                     local_facet);
+    for (Eigen::Index i = 0; i < dmap.size(); ++i)
+      b[dmap[i]] += be[i];
   }
 }
 //-----------------------------------------------------------------------------
