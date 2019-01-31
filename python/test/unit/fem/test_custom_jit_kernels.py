@@ -172,11 +172,11 @@ def test_cffi_assembly():
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    a.set_cell_tabulate(0, ptrA)
+    a.set_tabulate_cell(0, ptrA)
 
     L = cpp.fem.Form([V._cpp_object])
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    L.set_cell_tabulate(0, ptrL)
+    L.set_tabulate_cell(0, ptrL)
 
     A = dolfin.fem.assemble(a)
     b = dolfin.fem.assemble(L)
