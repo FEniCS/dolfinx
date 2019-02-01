@@ -1,6 +1,7 @@
 set(HEADERS
   assembler.h
   assemble_matrix_impl.h
+  assemble_scalar_impl.h
   assemble_vector_impl.h
   CoordinateMapping.h
   DirichletBC.h
@@ -21,6 +22,7 @@ set(HEADERS
 set(SOURCES
   assembler.cpp
   assemble_matrix_impl.cpp
+  assemble_scalar_impl.cpp
   assemble_vector_impl.cpp
   DirichletBC.cpp
   DiscreteOperators.cpp
