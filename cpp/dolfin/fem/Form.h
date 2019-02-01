@@ -259,32 +259,6 @@ public:
     return _coord_mapping;
   }
 
-  // TODO: Remove
-  /// Call tabulate_tensor on a cell, returning the local element matrix
-  /// @param A
-  ///    Local element tensor (to be calculated)
-  /// @param cell
-  ///    Cell on which to calculate
-  /// @param coordinate_dofs
-  ///    Coordinates of the cell
-  void tabulate_tensor_cell(
-      PetscScalar* A, const mesh::Cell& cell,
-      const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
-
-  // TODO: Remove
-  /// Call tabulate_tensor for an exterior fact, returning the local
-  /// element tensor contribution
-  /// @param A
-  ///    Local element tensor (to be calculated)
-  /// @param cell
-  ///    Cell on which to calculate
-  /// @param coordinate_dofs
-  ///    Coordinates of the cell
-  void tabulate_tensor_exterior_facet(
-      PetscScalar* A, const mesh::Cell& cell,
-      const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs,
-      int facet) const;
-
 private:
   // Integrals associated with the Form
   FormIntegrals _integrals;

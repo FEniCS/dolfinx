@@ -46,6 +46,26 @@ void _lift_bc(
   const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
 
+  // TODO: simplify and move elsewhere
+  // Manage coefficients
+  const bool* enabled_coefficients = a.integrals().enabled_coefficients_cell(0);
+  const FormCoefficients& coefficients = a.coeffs();
+  std::vector<std::uint32_t> n = {0};
+  std::vector<const function::Function*> coefficients_ptr(coefficients.size());
+  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
+  for (std::uint32_t i = 0; i < coefficients.size(); ++i)
+  {
+    coefficients_ptr[i] = coefficients.get(i);
+    elements_ptr[i] = &coefficients.element(i);
+    const FiniteElement& element = coefficients.element(i);
+    n.push_back(n.back() + element.space_dimension());
+  }
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
+
+  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                           int)>& fn
+      = a.integrals().tabulate_tensor_fn_cell(0);
+
   // Data structures used in bc application
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
@@ -83,8 +103,24 @@ void _lift_bc(
     // Size data structure for assembly
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
         = dofmap0.cell_dofs(cell.index());
+
+    // FIXME: Need to add boundary contributions to a too.
+
+    // TODO: Move gathering of coefficients outside of main assembly
+    // loop
+    // Update coefficients
+    for (std::size_t i = 0; i < coefficients.size(); ++i)
+    {
+      if (enabled_coefficients[i])
+      {
+        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
+                                      *elements_ptr[i], cell, coordinate_dofs);
+      }
+    }
+
     Ae.setZero(dmap0.size(), dmap1.size());
-    a.tabulate_tensor_cell(Ae.data(), cell, coordinate_dofs);
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+    // a.tabulate_tensor_cell(Ae.data(), cell, coordinate_dofs);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -243,7 +279,6 @@ void fem::impl::assemble_exterior_facets(
       continue;
 
     // TODO: check ghosting sanity?
-
 
     // Create attached cell
     mesh::Cell cell(mesh, facet.entities(tdim)[0]);

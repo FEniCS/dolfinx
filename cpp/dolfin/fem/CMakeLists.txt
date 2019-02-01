@@ -16,7 +16,6 @@ set(HEADERS
   GenericDofMap.h
   PETScDMCollection.h
   SparsityPatternBuilder.h
-  UFC.h
   PARENT_SCOPE)
 
 set(SOURCES
@@ -35,5 +34,4 @@ set(SOURCES
   GenericDofMap.cpp
   PETScDMCollection.cpp
   SparsityPatternBuilder.cpp
-  UFC.cpp
   PARENT_SCOPE)
