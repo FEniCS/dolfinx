@@ -244,11 +244,6 @@ void fem::impl::assemble_exterior_facets(
 
     // TODO: check ghosting sanity?
 
-    // TODO: check for parallel case
-    // Number of cells sharing facet
-    const int num_cells = facet.num_entities(tdim);
-    if (num_cells > 1)
-      continue;
 
     // Create attached cell
     mesh::Cell cell(mesh, facet.entities(tdim)[0]);
