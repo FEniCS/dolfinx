@@ -50,8 +50,8 @@ class FunctionSpace(ufl.FunctionSpace):
         # Compile dofmap and element and create DOLFIN objects
         objects, module = jit.ffc_jit(
             self.ufl_element(),
-            form_compiler_parameters=None,
-            mpi_comm=mesh.mpi_comm())
+            form_compiler_parameters=None)
+#            mpi_comm=mesh.mpi_comm())
 
         objects = list(objects)
 
