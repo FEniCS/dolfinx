@@ -43,16 +43,17 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
   {
-    throw std::runtime_error(
-        "Multiple exterior facet integrals in bilinear form not yet supported.");
+    throw std::runtime_error("Multiple exterior facet integrals in bilinear "
+                             "form not yet supported.");
   }
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
-        = a.integrals().tabulate_tensor_fn_exertior_facet(0);
-    fem::impl::assemble_exterior_facet(A, a, mesh, dofmap0, dofmap1, bc0, bc1, fn);
-   }
+        = a.integrals().tabulate_tensor_fn_exterior_facet(0);
+    fem::impl::assemble_exterior_facet(A, a, mesh, dofmap0, dofmap1, bc0, bc1,
+                                       fn);
+  }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
   {
