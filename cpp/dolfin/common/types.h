@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <petscsys.h>
 
-// Typedefs for ufc_scalar - to be used in UFC.h
+// Typedefs for ufc_scalar
 #ifdef PETSC_USE_COMPLEX
 #include <complex>
 using ufc_scalar_t = std::complex<double>;

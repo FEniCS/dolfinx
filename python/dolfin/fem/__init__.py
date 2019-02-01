@@ -10,8 +10,7 @@ from dolfin.fem.assemble import (assemble, assemble_vector_block,
                                  assemble_vector_nest, assemble_matrix,
                                  assemble_matrix_nest, assemble_matrix_block,
                                  set_bc, assemble_vector, apply_lifting)
-from dolfin.fem.assembling import (assemble_local, assemble_system,
-                                   SystemAssembler)
+from dolfin.fem.assembling import (assemble_local, assemble_system)
 from dolfin.fem.coordinatemapping import create_coordinate_map
 from dolfin.fem.dirichletbc import DirichletBC
 from dolfin.fem.dofmap import DofMap
@@ -27,7 +26,7 @@ __all__ = [
     "apply_lifting", "assemble_local", "assemble_system", "assemble", "assemble_vector",
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
-    "assemble_matrix", "set_bc", "SystemAssembler", "create_coordinate_map",
+    "assemble_matrix", "set_bc", "create_coordinate_map",
     "DirichletBC", "DofMap", "Form", "derivative", "adjoint", "increase_order",
     "tear", "interpolate", "project", "solve"
 ]
