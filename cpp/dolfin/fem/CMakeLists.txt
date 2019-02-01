@@ -14,10 +14,8 @@ set(HEADERS
   FormCoefficients.h
   FormIntegrals.h
   GenericDofMap.h
-  LocalAssembler.h
   PETScDMCollection.h
   SparsityPatternBuilder.h
-  SystemAssembler.h
   UFC.h
   PARENT_SCOPE)
 
@@ -35,9 +33,7 @@ set(SOURCES
   FormCoefficients.cpp
   FormIntegrals.cpp
   GenericDofMap.cpp
-  LocalAssembler.cpp
   PETScDMCollection.cpp
   SparsityPatternBuilder.cpp
-  SystemAssembler.cpp
   UFC.cpp
   PARENT_SCOPE)
