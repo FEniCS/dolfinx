@@ -282,15 +282,6 @@ private:
   // Function pointers for coeffiecient name <-> index mapping
   std::function<int(const char*)> _coefficient_index_map;
   std::function<const char*(int)> _coefficient_name_map;
-
-  // TODO: Remove
-  // Initialise temporary storage for coefficient values needed for
-  // interface with UFC integrals
-  void init_coeff_scratch_space();
-
-  // Temporary storage for coefficient values
-  std::vector<PetscScalar> _w;
-  std::vector<PetscScalar*> _wpointer;
 };
 } // namespace fem
 } // namespace dolfin
