@@ -45,7 +45,7 @@ PetscScalar _assemble_scalar(const fem::Form& M)
       coordinate_dofs;
 
   const bool* enabled_coefficients
-      = M.integrals().enabled_coefficients_exterior_facet(0);
+      = M.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = M.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
