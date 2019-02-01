@@ -136,6 +136,7 @@ def _check_pybind_path(root):
     else:
         return False
 
+
 @mpi_jit_decorator
 def dijitso_jit(*args, **kwargs):
     return dijitso.jit(*args, **kwargs)
