@@ -49,9 +49,9 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& fn
+                             int, int)>& fn
         = a.integrals().tabulate_tensor_fn_exterior_facet(0);
-    fem::impl::assemble_exterior_facet(A, a, mesh, dofmap0, dofmap1, bc0, bc1,
+    fem::impl::assemble_exterior_facets(A, a, mesh, dofmap0, dofmap1, bc0, bc1,
                                        fn);
   }
 
