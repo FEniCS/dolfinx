@@ -7,7 +7,6 @@
 
 import functools
 
-import dijitso
 import dolfin.pkgconfig
 import ffc
 import ufl
@@ -93,7 +92,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     return mpi_jit
 
 
-@mpi_jit_decorator
+# @mpi_jit_decorator
 def ffc_jit(ufl_object, form_compiler_parameters=None):
     # Prepare form compiler parameters with overrides from dolfin
     p = ffc.default_jit_parameters()
@@ -110,8 +109,3 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
         raise TypeError(type(ufl_object))
 
     return r
-
-
-@mpi_jit_decorator
-def dijitso_jit(*args, **kwargs):
-    return dijitso.jit(*args, **kwargs)

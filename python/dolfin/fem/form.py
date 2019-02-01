@@ -51,8 +51,8 @@ class Form(ufl.Form):
         # Compile UFL form with JIT
         objects, module = jit.ffc_jit(
             form,
-            form_compiler_parameters=self.form_compiler_parameters,
-            mpi_comm=mesh.mpi_comm())
+            form_compiler_parameters=self.form_compiler_parameters)
+#            mpi_comm=mesh.mpi_comm())
         # Cast compiled library to pointer to ufc_form
         ffi = cffi.FFI()
         print(objects[0][0])
