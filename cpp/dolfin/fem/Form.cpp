@@ -13,6 +13,8 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <memory>
@@ -31,8 +33,6 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
 {
   assert(ufc_form);
   assert(ufc_form->rank == (int)function_spaces.size());
-
-  init_coeff_scratch_space();
 
   // Check argument function spaces
   for (std::size_t i = 0; i < function_spaces.size(); ++i)
@@ -71,8 +71,6 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
     : _coefficients({}), _function_spaces(function_spaces)
 {
-  init_coeff_scratch_space();
-
   // Set _mesh from function::FunctionSpace and check they are the same
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
@@ -153,7 +151,6 @@ void Form::set_coefficients(
       throw std::runtime_error("Cannot find coefficient index for \"" + c.first
                                + "\"");
     }
-
     _coefficients.set(index, c.second);
   }
 }
@@ -243,60 +240,5 @@ void Form::set_vertex_domains(
     std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains)
 {
   dP = vertex_domains;
-}
-//-----------------------------------------------------------------------------
-void Form::tabulate_tensor(
-    PetscScalar* A, const mesh::Cell& cell,
-    const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
-{
-  // Switch integral based on domain from dx MeshFunction
-  std::uint32_t idx = 0;
-  if (dx)
-  {
-    // FIXME: check on idx validity
-    idx = (*dx)[cell] + 1;
-  }
-
-  // Restrict coefficients to cell
-  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
-  for (std::size_t i = 0; i < _coefficients.size(); ++i)
-  {
-    if (enabled_coefficients[i])
-    {
-      const function::Function* coefficient = _coefficients.get(i);
-      const FiniteElement& element = _coefficients.element(i);
-      coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
-    }
-  }
-
-  // Compute cell matrix
-  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                           int)>& tab_fn
-      = _integrals.cell_tabulate_tensor(idx);
-  tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), 1);
-}
-//-----------------------------------------------------------------------------
-void Form::init_coeff_scratch_space()
-{
-  const std::size_t num_coeffs = _coefficients.size();
-
-  // Calculate space needed for each coefficient's values and create a
-  // vector of offsets from zero. Allowing double space here, so that
-  // the same scratch space can be also used for "macro" elements (two
-  // neighbouring cells) for interior facet integrals.
-  std::vector<std::uint32_t> n = {0};
-  for (std::uint32_t i = 0; i < num_coeffs; ++i)
-  {
-    const FiniteElement& element = _coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
-  }
-  // Allocate memory capable of storing all coefficient values in a
-  // contiguous block
-  _w.resize(n.back());
-
-  // Create pointers into _w for each coefficient
-  _wpointer.resize(n.size());
-  for (std::uint32_t i = 0; i < n.size(); ++i)
-    _wpointer[i] = _w.data() + n[i];
 }
 //-----------------------------------------------------------------------------
