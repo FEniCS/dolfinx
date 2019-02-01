@@ -149,10 +149,11 @@ void fem::impl::assemble_cells(
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim);
 
+  // TODO: simplify and move elsewhere
+  // Manage coefficients
   const bool* enabled_coefficients = L.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<std::uint32_t> n = {0};
-
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
   std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
