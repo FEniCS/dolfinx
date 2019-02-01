@@ -22,6 +22,9 @@ if not has_petsc_complex:
     print('This demo only works with PETSc-complex')
     exit()
 
+print("Waiting to update matrix facet assembly.")
+exit()
+
 # Wavenumber
 k0 = 20
 
