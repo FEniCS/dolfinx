@@ -97,9 +97,12 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
 
   // Create and build sparsity pattern
   la::SparsityPattern pattern = SparsityPatternBuilder::build(
-      mesh.mpi_comm(), mesh, dofmaps, (a.integrals().num_cell_integrals() > 0),
-      (a.integrals().num_interior_facet_integrals() > 0),
-      (a.integrals().num_exterior_facet_integrals() > 0));
+      mesh.mpi_comm(), mesh, dofmaps,
+      (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0),
+      (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet)
+       > 0),
+      (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet)
+       > 0));
   pattern.assemble();
   t0.stop();
 
