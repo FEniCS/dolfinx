@@ -34,4 +34,4 @@ L = inner(f, v) * dx + inner(g, v) * ds
 # 
 # .. code-block:: sh
 # 
-#    ffc -l dolfin Poisson.ufl
+#    ffc Poisson.ufl
