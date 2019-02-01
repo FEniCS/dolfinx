@@ -31,8 +31,12 @@ void LocalAssembler::assemble(
   assemble_cell(A, ufc, coordinate_dofs, cell, cell_domains);
 
   // Assemble contributions from facet integrals
-  if (ufc.dolfin_form.integrals().num_exterior_facet_integrals() > 0
-      or ufc.dolfin_form.integrals().num_interior_facet_integrals() > 0)
+  if (ufc.dolfin_form.integrals().num_integrals(
+          fem::FormIntegrals::Type::exterior_facet)
+          > 0
+      or ufc.dolfin_form.integrals().num_integrals(
+             fem::FormIntegrals::Type::interior_facet)
+             > 0)
   {
     unsigned int local_facet = 0;
     for (auto& facet : mesh::EntityRange<mesh::Facet>(cell))
@@ -61,7 +65,9 @@ void LocalAssembler::assemble(
   }
 
   // Check that there are no vertex integrals
-  if (ufc.dolfin_form.integrals().num_vertex_integrals() > 0)
+  if (ufc.dolfin_form.integrals().num_integrals(
+          fem::FormIntegrals::Type::vertex)
+      > 0)
   {
     throw std::runtime_error("Local problem contains vertex integrals which "
                              "are not yet supported by LocalAssembler");
@@ -75,7 +81,8 @@ void LocalAssembler::assemble_cell(
     const mesh::Cell& cell, const mesh::MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no cell integrals
-  if (ufc.dolfin_form.integrals().num_cell_integrals() == 0)
+  if (ufc.dolfin_form.integrals().num_integrals(fem::FormIntegrals::Type::cell)
+      == 0)
   {
     // Clear tensor here instead of in assemble() as a small speedup
     A.setZero();
@@ -120,8 +127,12 @@ void LocalAssembler::assemble_exterior_facet(
     const mesh::MeshFunction<std::size_t>* exterior_facet_domains)
 {
   // Skip if there are no exterior facet integrals
-  if (ufc.dolfin_form.integrals().num_exterior_facet_integrals() == 0)
+  if (ufc.dolfin_form.integrals().num_integrals(
+          fem::FormIntegrals::Type::exterior_facet)
+      == 0)
+  {
     return;
+  }
 
   // Extract default exterior facet integral
   const ufc_exterior_facet_integral* integral
@@ -167,8 +178,12 @@ void LocalAssembler::assemble_interior_facet(
     const mesh::MeshFunction<std::size_t>* cell_domains)
 {
   // Skip if there are no interior facet integrals
-  if (ufc.dolfin_form.integrals().num_interior_facet_integrals() == 0)
+  if (ufc.dolfin_form.integrals().num_integrals(
+          fem::FormIntegrals::Type::interior_facet)
+      == 0)
+  {
     return;
+  }
 
   // Extract default interior facet integral
   const ufc_interior_facet_integral* integral

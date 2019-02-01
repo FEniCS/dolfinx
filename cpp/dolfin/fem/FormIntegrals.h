@@ -23,30 +23,35 @@ namespace dolfin
 namespace fem
 {
 
+// FIXME: This class would be greatly simplified if all integrals types
+// (cell, facet, etc) were the same type.
+
 /// Integrals of a Form, including those defined over cells, interior
 /// and exterior facets, and vertices.
 class FormIntegrals
 {
 public:
   /// Type of integral
-  enum class Type
+  enum class Type : std::int8_t
   {
-    cell,
-    exterior_facet,
-    interior_facet,
-    vertex
+    cell = 0,
+    exterior_facet = 1,
+    interior_facet = 2,
+    vertex = 3
   };
+
+  /// Initialise the FormIntegrals as empty
+  FormIntegrals();
 
   /// Initialise the FormIntegrals from a ufc::form instantiating all
   /// the required integrals
   FormIntegrals(const ufc_form& ufc_form);
 
-  /// Initialise the FormIntegrals as empty
-  FormIntegrals() {}
-
+  // FIXME: remove
   /// Default cell integral
   std::shared_ptr<const ufc_cell_integral> cell_integral() const;
 
+  // FIXME: remove
   /// Cell integral for domain i
   std::shared_ptr<const ufc_cell_integral> cell_integral(unsigned int i) const;
 
@@ -57,74 +62,83 @@ public:
   ///    Function to call for tabulate_tensor on a cell
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                            int)>&
-  cell_tabulate_tensor(int i) const;
+  tabulate_tensor_fn_cell(int i) const;
+
+  const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
+                           int)>&
+  tabulate_tensor_fn_exterior_facet(int i) const;
 
   /// Get the enabled coefficients on cell integral i
   /// @param i
   ///    Integral number
   /// @returns bool*
   ///    Pointer to list of enabled coefficients for this integral
-  const bool* cell_enabled_coefficients(int i) const;
+  const bool* enabled_coefficients_cell(int i) const;
+
+  const bool* enabled_coefficients_exterior_facet(int i) const;
 
   /// Set the function for 'tabulate_tensor' for cell integral i
-  void set_cell_tabulate_tensor(int i,
+  void set_tabulate_tensor_cell(int i,
                                 void (*fn)(PetscScalar*, const PetscScalar*,
                                            const double*, int));
 
+  /// Set the function for 'tabulate_tensor' for exterior facet integral
+  /// i
+  void set_tabulate_tensor_exterior_facet(int i,
+                                          void (*fn)(PetscScalar*,
+                                                     const PetscScalar*,
+                                                     const double*, int, int));
+
   /// Number of integrals of given type
-  int count(FormIntegrals::Type t) const;
+  int num_integrals(FormIntegrals::Type t) const;
 
-  /// Number of cell integrals
-  int num_cell_integrals() const;
-
+  // FIXME: remove
   /// Default exterior facet integral
   std::shared_ptr<const ufc_exterior_facet_integral>
   exterior_facet_integral() const;
 
+  // FIXME: remove
   /// Exterior facet integral for domain i
   std::shared_ptr<const ufc_exterior_facet_integral>
   exterior_facet_integral(unsigned int i) const;
 
-  /// Number of exterior facet integrals
-  int num_exterior_facet_integrals() const;
-
+  // FIXME: remove
   /// Default interior facet integral
   std::shared_ptr<const ufc_interior_facet_integral>
   interior_facet_integral() const;
 
+  // FIXME: remove
   /// Interior facet integral for domain i
   std::shared_ptr<const ufc_interior_facet_integral>
   interior_facet_integral(unsigned int i) const;
 
-  /// Number of interior facet integrals
-  int num_interior_facet_integrals() const;
-
+  // FIXME: remove
   /// Default interior facet integral
   std::shared_ptr<const ufc_vertex_integral> vertex_integral() const;
 
+  // FIXME: remove
   /// Interior facet integral for domain i
   std::shared_ptr<const ufc_vertex_integral>
   vertex_integral(unsigned int i) const;
 
-  /// Number of vertex integrals
-  int num_vertex_integrals() const;
-
 private:
-  // Cell integrals
-  std::vector<std::shared_ptr<ufc_cell_integral>> _cell_integrals;
+  // Integrals
+  std::vector<std::shared_ptr<ufc_cell_integral>> _integrals_cell;
+  std::vector<std::shared_ptr<ufc_exterior_facet_integral>>
+      _integrals_exterior_facet;
 
   // Function pointers to cell tabulate_tensor functions
   std::vector<
       std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>>
-      _cell_tabulate_tensor;
+      _tabulate_tensor_cell;
+
+  std::vector<std::function<void(PetscScalar*, const PetscScalar*,
+                                 const double*, int, int)>>
+      _tabulate_tensor_exterior_facet;
 
   // Storage for enabled coefficients, to match the functions
   Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _enabled_coefficients;
-
-  // Exterior facet integrals
-  std::vector<std::shared_ptr<ufc_exterior_facet_integral>>
-      _exterior_facet_integrals;
+      _enabled_coefficients_cell, _enabled_coefficients_exterior_facet;
 
   // Interior facet integrals
   std::vector<std::shared_ptr<ufc_interior_facet_integral>>

@@ -7,6 +7,7 @@
 #include "assemble_matrix_impl.h"
 #include "Form.h"
 #include "GenericDofMap.h"
+#include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
@@ -21,19 +22,62 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
                                 const std::vector<bool>& bc0,
                                 const std::vector<bool>& bc1)
 {
-  assert(A);
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
+  const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
+  const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
 
-  // Function spaces and dofmaps for each axis
-  assert(a.function_space(0));
-  assert(a.function_space(1));
-  const function::FunctionSpace& V0 = *a.function_space(0);
-  const function::FunctionSpace& V1 = *a.function_space(1);
-  assert(V0.dofmap());
-  assert(V1.dofmap());
-  const fem::GenericDofMap& map0 = *V0.dofmap();
-  const fem::GenericDofMap& map1 = *V1.dofmap();
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
+  {
+    throw std::runtime_error(
+        "Multiple cell integrals in bilinear form not yet supported.");
+  }
+
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+  {
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             int)>& fn
+        = a.integrals().tabulate_tensor_fn_cell(0);
+    fem::impl::assemble_cells(A, a, mesh, dofmap0, dofmap1, bc0, bc1, fn);
+  }
+
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+  {
+    throw std::runtime_error(
+        "Exterior facet integrals in bilinear form not yet supported.");
+  }
+
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
+  {
+    throw std::runtime_error(
+        "Interior facet integrals in bilinear forms not yet supported.");
+  }
+}
+//-----------------------------------------------------------------------------
+void fem::impl::assemble_cells(
+    Mat A, const Form& a, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
+    const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
+    const std::vector<bool>& bc1,
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             int)>& fn)
+{
+  assert(A);
+
+  // TODO: simplify and move elsewhere
+  // Manage coefficients
+  const bool* enabled_coefficients = a.integrals().enabled_coefficients_cell(0);
+  const FormCoefficients& coefficients = a.coeffs();
+  std::vector<std::uint32_t> n = {0};
+  std::vector<const function::Function*> coefficients_ptr(coefficients.size());
+  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
+  for (std::uint32_t i = 0; i < coefficients.size(); ++i)
+  {
+    coefficients_ptr[i] = coefficients.get(i);
+    elements_ptr[i] = &coefficients.element(i);
+    const FiniteElement& element = coefficients.element(i);
+    n.push_back(n.back() + element.space_dimension());
+  }
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
   // Data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -54,13 +98,25 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     // Get dof maps for cell
     const std::size_t cell_index = cell.index();
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
-        = map0.cell_dofs(cell_index);
+        = dofmap0.cell_dofs(cell_index);
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
-        = map1.cell_dofs(cell_index);
+        = dofmap1.cell_dofs(cell_index);
+
+    // TODO: Move gathering of coefficients outside of main assembly
+    // loop
+    // Update coefficients
+    for (std::size_t i = 0; i < coefficients.size(); ++i)
+    {
+      if (enabled_coefficients[i])
+      {
+        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
+                                      *elements_ptr[i], cell, coordinate_dofs);
+      }
+    }
 
     // Tabulate tensor
     Ae.setZero(dmap0.size(), dmap1.size());
-    a.tabulate_tensor(Ae.data(), cell, coordinate_dofs);
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), 1);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

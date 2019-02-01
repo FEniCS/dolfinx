@@ -13,6 +13,8 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <memory>
@@ -153,7 +155,6 @@ void Form::set_coefficients(
       throw std::runtime_error("Cannot find coefficient index for \"" + c.first
                                + "\"");
     }
-
     _coefficients.set(index, c.second);
   }
 }
@@ -245,7 +246,7 @@ void Form::set_vertex_domains(
   dP = vertex_domains;
 }
 //-----------------------------------------------------------------------------
-void Form::tabulate_tensor(
+void Form::tabulate_tensor_cell(
     PetscScalar* A, const mesh::Cell& cell,
     const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
 {
@@ -258,7 +259,7 @@ void Form::tabulate_tensor(
   }
 
   // Restrict coefficients to cell
-  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
+  const bool* enabled_coefficients = _integrals.enabled_coefficients_cell(idx);
   for (std::size_t i = 0; i < _coefficients.size(); ++i)
   {
     if (enabled_coefficients[i])
@@ -272,8 +273,40 @@ void Form::tabulate_tensor(
   // Compute cell matrix
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                            int)>& tab_fn
-      = _integrals.cell_tabulate_tensor(idx);
+      = _integrals.tabulate_tensor_fn_cell(idx);
   tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), 1);
+}
+//-----------------------------------------------------------------------------
+void Form::tabulate_tensor_exterior_facet(
+    PetscScalar* A, const mesh::Cell& cell,
+    const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs, int facet) const
+{
+  // Switch integral based on domain from dx MeshFunction
+  std::uint32_t idx = 0;
+  // if (ds)
+  // {
+  //   // FIXME: check on idx validity
+  //   idx = (*dx)[facet] + 1;
+  // }
+
+  // Restrict coefficients to cell
+  const bool* enabled_coefficients
+      = _integrals.enabled_coefficients_exterior_facet(idx);
+  for (std::size_t i = 0; i < _coefficients.size(); ++i)
+  {
+    if (enabled_coefficients[i])
+    {
+      const function::Function* coefficient = _coefficients.get(i);
+      const FiniteElement& element = _coefficients.element(i);
+      coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
+    }
+  }
+
+  // Compute contribution
+  const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
+                           int)>& tab_fn
+      = _integrals.tabulate_tensor_fn_exterior_facet(idx);
+  tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), facet, 1);
 }
 //-----------------------------------------------------------------------------
 void Form::init_coeff_scratch_space()

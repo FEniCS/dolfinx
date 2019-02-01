@@ -6,15 +6,22 @@
 
 #pragma once
 
+#include <functional>
 #include <petscmat.h>
 #include <vector>
 
 namespace dolfin
 {
 
+namespace mesh
+{
+class Mesh;
+}
+
 namespace fem
 {
 class Form;
+class GenericDofMap;
 
 namespace impl
 {
@@ -26,6 +33,13 @@ namespace impl
 /// are applied. Matrix is not finalised.
 void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
                      const std::vector<bool>& bc1);
+
+/// Assemble linear form cell integrals into an Eigen vector
+void assemble_cells(Mat A, const Form& a, const mesh::Mesh& mesh,
+                    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+                    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
+                    const std::function<void(PetscScalar*, const PetscScalar*,
+                                             const double*, int)>& fn);
 
 } // namespace impl
 } // namespace fem
