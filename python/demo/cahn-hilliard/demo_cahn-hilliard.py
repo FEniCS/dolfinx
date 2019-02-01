@@ -112,6 +112,7 @@
 # :py:mod:`dolfin` module are imported::
 
 import random
+import os
 
 from petsc4py import PETSc
 
@@ -307,7 +308,13 @@ file = XDMFFile(MPI.comm_world, "output.xdmf")
 
 # Step in time
 t = 0.0
-T = 50 * dt
+
+# Check if we are running on CI server and reduce run time
+if "CI" in os.environ.keys():
+    T = 3 * dt
+else:
+    T = 50 * dt
+
 u.vector().copy(result=u0.vector())
 u0.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
