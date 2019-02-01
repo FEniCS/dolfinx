@@ -234,12 +234,6 @@ void fem::impl::assemble_exterior_facets(
     const FiniteElement& element = coefficients.element(i);
     n.push_back(n.back() + element.space_dimension());
   }
-
-  // for (std::uint32_t i = 0; i < coefficients.size(); ++i)
-  // {
-  //   const FiniteElement& element = coefficients.element(i);
-  //   n.push_back(n.back() + element.space_dimension());
-  // }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
   // Iterate over all facets
@@ -270,7 +264,6 @@ void fem::impl::assemble_exterior_facets(
         = dofmap.cell_dofs(cell.index());
 
     // Size data structure for assembly
-    be.setZero(dmap.size());
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
@@ -279,18 +272,16 @@ void fem::impl::assemble_exterior_facets(
     {
       if (enabled_coefficients[i])
       {
-        // const function::Function* coefficient = coefficients.get(i);
-        // const FiniteElement& element = coefficients.element(i);
         coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
                                       *elements_ptr[i], cell, coordinate_dofs);
       }
     }
 
+    // Tabulate element vector
+    be.setZero(dmap.size());
     fn(be.data(), coeff_array.data(), coordinate_dofs.data(), local_facet, 1);
 
-    // // Compute local cell vector and add to global vector
-    // L.tabulate_tensor_exterior_facet(be.data(), cell, coordinate_dofs,
-    //                                  local_facet);
+    // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }

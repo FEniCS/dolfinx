@@ -47,11 +47,11 @@ public:
   /// the required integrals
   FormIntegrals(const ufc_form& ufc_form);
 
-  // FIXME: Avoid returning UFC objects
+  // FIXME: remove
   /// Default cell integral
   std::shared_ptr<const ufc_cell_integral> cell_integral() const;
 
-  // FIXME: Avoid returning UFC objects
+  // FIXME: remove
   /// Cell integral for domain i
   std::shared_ptr<const ufc_cell_integral> cell_integral(unsigned int i) const;
 
@@ -82,6 +82,8 @@ public:
                                 void (*fn)(PetscScalar*, const PetscScalar*,
                                            const double*, int));
 
+  /// Set the function for 'tabulate_tensor' for exterior facet integral
+  /// i
   void set_tabulate_tensor_exterior_facet(int i,
                                           void (*fn)(PetscScalar*,
                                                      const PetscScalar*,
@@ -90,25 +92,31 @@ public:
   /// Number of integrals of given type
   int num_integrals(FormIntegrals::Type t) const;
 
+  // FIXME: remove
   /// Default exterior facet integral
   std::shared_ptr<const ufc_exterior_facet_integral>
   exterior_facet_integral() const;
 
+  // FIXME: remove
   /// Exterior facet integral for domain i
   std::shared_ptr<const ufc_exterior_facet_integral>
   exterior_facet_integral(unsigned int i) const;
 
+  // FIXME: remove
   /// Default interior facet integral
   std::shared_ptr<const ufc_interior_facet_integral>
   interior_facet_integral() const;
 
+  // FIXME: remove
   /// Interior facet integral for domain i
   std::shared_ptr<const ufc_interior_facet_integral>
   interior_facet_integral(unsigned int i) const;
 
+  // FIXME: remove
   /// Default interior facet integral
   std::shared_ptr<const ufc_vertex_integral> vertex_integral() const;
 
+  // FIXME: remove
   /// Interior facet integral for domain i
   std::shared_ptr<const ufc_vertex_integral>
   vertex_integral(unsigned int i) const;
