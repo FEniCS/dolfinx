@@ -33,9 +33,6 @@ public:
   /// the required elements
   FormCoefficients(const ufc_form& ufc_form);
 
-  /// Initialise the FormCoefficients with their elements only
-  FormCoefficients(std::vector<fem::FiniteElement>& coefficient_elements);
-
   /// Get number of coefficients
   std::size_t size() const;
 
@@ -53,9 +50,6 @@ public:
   std::size_t original_position(std::size_t i) const;
 
 private:
-  // Finite elements for coefficients
-  std::vector<fem::FiniteElement> _elements;
-
   // Functions for the coefficients
   std::vector<std::shared_ptr<const function::Function>> _coefficients;
 
