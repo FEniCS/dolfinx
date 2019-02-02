@@ -23,8 +23,7 @@ namespace fem
 {
 class FiniteElement;
 
-/// Storage for the coefficients of a Form consisting of Function and
-/// the Element objects they are defined on.
+/// Holder for the coefficients of a Form.
 
 class FormCoefficients
 {
@@ -41,19 +40,16 @@ public:
            std::shared_ptr<const function::Function> coefficient);
 
   /// Get the Function coefficient i
-  const function::Function* get(std::size_t i) const;
+  std::shared_ptr<const function::Function> get(std::size_t i) const;
 
-  /// Get the element for coefficient i
-  const fem::FiniteElement& element(std::size_t i) const;
-
-  /// Original position of coefficient in UFL form
+  /// Return the original position of coefficient in UFL form
   std::size_t original_position(std::size_t i) const;
 
 private:
   // Functions for the coefficients
   std::vector<std::shared_ptr<const function::Function>> _coefficients;
 
-  // Copy of 'original positions' in UFL form
+  // 'Original positions' in UFL form
   std::vector<std::size_t> _original_pos;
 };
 } // namespace fem

@@ -20,7 +20,6 @@ using namespace dolfin::fem;
 FormCoefficients::FormCoefficients(const ufc_form& ufc_form)
     : _coefficients(ufc_form.num_coefficients)
 {
-  // Create finite elements for coefficients
   for (int i = 0; i < ufc_form.num_coefficients; i++)
     _original_pos.push_back(ufc_form.original_coefficient_position(i));
 }
@@ -34,17 +33,11 @@ void FormCoefficients::set(
   _coefficients[i] = coefficient;
 }
 //-----------------------------------------------------------------------------
-const function::Function* FormCoefficients::get(std::size_t i) const
+std::shared_ptr<const function::Function>
+FormCoefficients::get(std::size_t i) const
 {
   assert(i < _coefficients.size());
-  return _coefficients[i].get();
-}
-//-----------------------------------------------------------------------------
-const fem::FiniteElement& FormCoefficients::element(std::size_t i) const
-{
-  assert(i < _coefficients.size());
-  assert(_coefficients[i]->function_space()->element());
-  return *_coefficients[i]->function_space()->element();
+  return _coefficients[i];
 }
 //-----------------------------------------------------------------------------
 std::size_t FormCoefficients::original_position(std::size_t i) const
