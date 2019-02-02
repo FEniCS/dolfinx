@@ -145,14 +145,16 @@ FormIntegrals::tabulate_tensor_fn_exterior_facet(int i) const
   return _tabulate_tensor_exterior_facet[i];
 }
 //-----------------------------------------------------------------------------
-const bool* FormIntegrals::enabled_coefficients_cell(int i) const
+Eigen::Array<bool, Eigen::Dynamic, 1>
+FormIntegrals::enabled_coefficients_cell(int i) const
 {
-  return _enabled_coefficients_cell.row(i).data();
+  return _enabled_coefficients_cell.row(i);
 }
 //-----------------------------------------------------------------------------
-const bool* FormIntegrals::enabled_coefficients_exterior_facet(int i) const
+Eigen::Array<bool, Eigen::Dynamic, 1>
+FormIntegrals::enabled_coefficients_exterior_facet(int i) const
 {
-  return _enabled_coefficients_exterior_facet.row(i).data();
+  return _enabled_coefficients_exterior_facet.row(i);
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_tabulate_tensor_cell(

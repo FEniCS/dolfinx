@@ -10,6 +10,7 @@
 #include "Form.h"
 #include "GenericDofMap.h"
 #include "assemble_matrix_impl.h"
+#include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include "assembler.h"
 #include "utils.h"
@@ -27,71 +28,6 @@ using namespace dolfin::fem;
 
 namespace
 {
-PetscScalar _assemble_scalar(const fem::Form& M)
-{
-  // FIXME: support facet integrals
-
-  if (M.rank() != 0)
-    throw std::runtime_error("Form must be rank 0");
-
-  // Get mesh from form
-  assert(M.mesh());
-  const mesh::Mesh& mesh = *M.mesh();
-  const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim);
-
-  // Data structure used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
-
-  const bool* enabled_coefficients
-      = M.integrals().enabled_coefficients_cell(0);
-  const FormCoefficients& coefficients = M.coeffs();
-  std::vector<std::uint32_t> n = {0};
-  std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
-  for (std::uint32_t i = 0; i < coefficients.size(); ++i)
-  {
-    coefficients_ptr[i] = coefficients.get(i);
-    elements_ptr[i] = &coefficients.element(i);
-    const FiniteElement& element = coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
-  }
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
-
-  if (M.integrals().num_integrals(fem::FormIntegrals::Type::cell) == 0)
-    throw std::runtime_error("Functional has not cell integrals.");
-
-  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                           int)>& fn
-      = M.integrals().tabulate_tensor_fn_cell(0);
-
-  // Iterate over all cells
-  PetscScalar value = 0.0;
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
-  {
-    PetscScalar cell_value = 0.0;
-    assert(!cell.is_ghost());
-    cell.get_coordinate_dofs(coordinate_dofs);
-
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
-    // Update coefficients
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
-    {
-      if (enabled_coefficients[i])
-      {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
-                                      *elements_ptr[i], cell, coordinate_dofs);
-      }
-    }
-
-    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), 1);
-    value += cell_value;
-  }
-
-  return MPI::sum(mesh.mpi_comm(), value);
-}
 //-----------------------------------------------------------------------------
 void set_diagonal_local(
     Mat A,
@@ -333,7 +269,12 @@ void _assemble_vector_block(
 } // namespace
 
 //-----------------------------------------------------------------------------
-PetscScalar fem::assemble_scalar(const Form& M) { return _assemble_scalar(M); }
+PetscScalar fem::assemble_scalar(const Form& M)
+{
+  assert(M.mesh());
+  PetscScalar value = fem::impl::assemble(M);
+  return MPI::sum(M.mesh()->mpi_comm(), value);
+}
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(Vec b, const Form& L)
 {
