@@ -231,12 +231,7 @@ void fem(py::module& m)
                     const std::vector<std::int32_t>&,
                     dolfin::fem::DirichletBC::Method>(),
            py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
-      .def("function_space", &dolfin::fem::DirichletBC::function_space)
-      .def("get_boundary_values", [](const dolfin::fem::DirichletBC& instance) {
-        dolfin::fem::DirichletBC::Map map;
-        instance.get_boundary_values(map);
-        return map;
-      });
+      .def("function_space", &dolfin::fem::DirichletBC::function_space);
 
   // dolfin::fem::assemble
   m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
