@@ -5,9 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FormCoefficients.h"
-#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
-#include <dolfin/function/FunctionSpace.h>
 #include <dolfin/log/log.h>
 #include <memory>
 #include <string>
@@ -34,18 +32,11 @@ void FormCoefficients::set(
   _coefficients[i] = coefficient;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const function::Function>
-FormCoefficients::get(std::size_t i) const
+std::shared_ptr<const function::Function> FormCoefficients::
+operator[](std::size_t i) const
 {
   assert(i < _coefficients.size());
   return _coefficients[i];
-}
-//-----------------------------------------------------------------------------
-const fem::FiniteElement& FormCoefficients::element(std::size_t i) const
-{
-  assert(i < _coefficients.size());
-  assert(_coefficients[i]->function_space()->element());
-  return *_coefficients[i]->function_space()->element();
 }
 //-----------------------------------------------------------------------------
 std::size_t FormCoefficients::original_position(std::size_t i) const
