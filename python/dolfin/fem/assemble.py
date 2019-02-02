@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2007-2015 Anders Logg
+# Copyright (C) 2018-2019 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Functions for the assembly of variational forms."""
+"""Assembly functions for variational forms."""
 
 import functools
 import typing
@@ -162,7 +162,7 @@ def assemble_matrix(a, bcs: typing.List[DirichletBC],
 def apply_lifting(
         b: PETSc.Vec,
         a: typing.List[typing.Union[Form, cpp.fem.Form]],
-        bcs: typing.List[DirichletBC],
+        bcs: typing.List[typing.List[DirichletBC]],
         x0: typing.Optional[typing.List[PETSc.Vec]] = [],
         scale: float = 1.0) -> None:
     """Modify vector for lifting of boundary conditions."""
