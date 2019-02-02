@@ -10,11 +10,13 @@
 #include "Form.h"
 #include "GenericDofMap.h"
 #include "assemble_matrix_impl.h"
+#include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"
 #include "assembler.h"
 #include "utils.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
+#include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/mesh/Cell.h>
@@ -26,34 +28,6 @@ using namespace dolfin::fem;
 
 namespace
 {
-PetscScalar _assemble_scalar(const fem::Form& M)
-{
-  if (M.rank() != 0)
-    throw std::runtime_error("Form must be rank 0");
-
-  // Get mesh from form
-  assert(M.mesh());
-  const mesh::Mesh& mesh = *M.mesh();
-  const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim);
-
-  // Data structure used in assembly
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
-
-  // Iterate over all cells
-  PetscScalar value = 0.0;
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
-  {
-    PetscScalar cell_value = 0.0;
-    assert(!cell.is_ghost());
-    cell.get_coordinate_dofs(coordinate_dofs);
-    M.tabulate_tensor(&cell_value, cell, coordinate_dofs);
-    value += cell_value;
-  }
-
-  return MPI::sum(mesh.mpi_comm(), value);
-}
 //-----------------------------------------------------------------------------
 void set_diagonal_local(
     Mat A,
@@ -295,7 +269,12 @@ void _assemble_vector_block(
 } // namespace
 
 //-----------------------------------------------------------------------------
-PetscScalar fem::assemble_scalar(const Form& M) { return _assemble_scalar(M); }
+PetscScalar fem::assemble_scalar(const Form& M)
+{
+  assert(M.mesh());
+  PetscScalar value = fem::impl::assemble(M);
+  return MPI::sum(M.mesh()->mpi_comm(), value);
+}
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(Vec b, const Form& L)
 {
@@ -344,9 +323,9 @@ void fem::apply_lifting(
   _b.restore();
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double diagonal, bool use_nest_extract)
+void fem::assemble_matrix(Mat A, const std::vector<std::vector<const Form*>> a,
+                          std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                          double diagonal, bool use_nest_extract)
 {
   // Check if matrix should be nested
   assert(!a.empty());
@@ -372,8 +351,8 @@ void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
       _maps[0].push_back(m.get());
     for (auto& m : maps[1])
       _maps[1].push_back(m.get());
-    is_row = la::compute_index_sets(_maps[0]);
-    is_col = la::compute_index_sets(_maps[1]);
+    is_row = la::compute_petsc_index_sets(_maps[0]);
+    is_col = la::compute_petsc_index_sets(_maps[1]);
   }
 
   // Loop over each form and assemble
@@ -391,7 +370,7 @@ void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
         else
           subA = A;
 
-        assemble(subA, *a[i][j], bcs, diagonal);
+        assemble_matrix(subA, *a[i][j], bcs, diagonal);
         if (block_matrix and !is_matnest)
           MatRestoreLocalSubMatrix(A, is_row[i], is_row[j], &subA);
       }
@@ -412,9 +391,9 @@ void fem::assemble(Mat A, const std::vector<std::vector<const Form*>> a,
   MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
 }
 //-----------------------------------------------------------------------------
-void fem::assemble(Mat A, const Form& a,
-                   std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                   double diagonal)
+void fem::assemble_matrix(Mat A, const Form& a,
+                          std::vector<std::shared_ptr<const DirichletBC>> bcs,
+                          double diagonal)
 {
   // Index maps for dof ranges
   auto map0 = a.function_space(0)->dofmap()->index_map();
@@ -476,10 +455,10 @@ void fem::assemble(Mat A, const Form& a,
 void fem::set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
                  const Vec x0, double scale)
 {
-  la::VecWrapper _b(b);
+  la::VecWrapper _b(b, false);
   if (x0)
   {
-    la::VecReadWrapper _x0(x0);
+    la::VecReadWrapper _x0(x0, false);
     if (_b.x.size() != _x0.x.size())
       throw std::runtime_error("Size mismatch between b and x0 vectors.");
     for (auto bc : bcs)
@@ -496,7 +475,5 @@ void fem::set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
       bc->set(_b.x, scale);
     }
   }
-
-  _b.restore();
 }
 //-----------------------------------------------------------------------------

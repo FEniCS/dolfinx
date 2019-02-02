@@ -34,9 +34,9 @@ PETScVector::PETScVector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
     int block_size)
-    : _x(nullptr)
+    : _x(la::create_petsc_vector(comm, range, ghost_indices, block_size))
 {
-  _x = la::create_vector(comm, range, ghost_indices, block_size);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(Vec x, bool inc_ref_count) : _x(x)

@@ -13,7 +13,7 @@ from petsc4py import PETSc
 
 import dolfin
 import ufl
-from ufl import dx, inner
+from ufl import ds, dx, inner
 
 
 def nest_matrix_norm(A):
@@ -68,11 +68,44 @@ def test_basic_assembly():
     assert isinstance(A, PETSc.Mat)
 
 
+def test_assembly_bcs():
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
+    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    a = inner(u, v) * dx + inner(u, v) * ds
+    L = inner(1.0, v) * dx
+
+    def boundary(x):
+        return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
+
+    u_bc = dolfin.function.Function(V)
+    with u_bc.vector().localForm() as u_local:
+        u_local.set(1.0)
+    bc = dolfin.fem.dirichletbc.DirichletBC(V, u_bc, boundary)
+
+    # Assemble and apply 'global' lifting of bcs
+    A = dolfin.fem.assemble(a)
+    b = dolfin.fem.assemble(L)
+    g = A.createVecRight()
+    g.set(0.0)
+    dolfin.fem.set_bc(g, [bc])
+    f = b - A * g
+    dolfin.fem.set_bc(f, [bc])
+
+    # Assemble vector and apply lifting of bcs during assembly
+    b = dolfin.fem.assemble(L)
+    b_bc = dolfin.fem.assemble_vector(L)
+    dolfin.fem.apply_lifting(b_bc, [a], [[bc]])
+    b_bc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    dolfin.fem.set_bc(b_bc, [bc])
+
+    assert (f - b_bc).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
+
+
 def test_matrix_assembly_block():
     """Test assembly of block matrices and vectors into (a) monolithic
     blocked structures, PETSc Nest structures, and monolithic structures.
     """
-
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 4, 8)
 
     p0, p1 = 1, 2
@@ -86,8 +119,8 @@ def test_matrix_assembly_block():
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.Function(V1)
-    u_bc.vector().set(50.0)
-    u_bc.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    with u_bc.vector().localForm() as u_local:
+        u_local.set(50.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
     # Define variational problem
@@ -270,20 +303,6 @@ def test_assembly_solve_block():
     ksp.solve(b2, x2)
     x2norm = x2.norm()
     assert x2norm == pytest.approx(x0norm, 1.0e-10)
-
-    # # Old assembler (reference solution)
-    A3, b3 = dolfin.fem.assembling.assemble_system(a, L, bcs)
-    x3 = b3.copy()
-    ksp = PETSc.KSP()
-    ksp.create(mesh.mpi_comm())
-    ksp.setMonitor(monitor)
-    ksp.setOperators(A3)
-    ksp.setType('cg')
-    ksp.setTolerances(rtol=1.0e-12)
-    ksp.setFromOptions()
-    ksp.solve(b3, x3)
-    x3norm = x3.norm()
-    assert x3norm == pytest.approx(x0norm, 1.0e-10)
 
 
 @pytest.mark.parametrize("mesh", [

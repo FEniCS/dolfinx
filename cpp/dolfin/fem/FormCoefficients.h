@@ -23,17 +23,15 @@ namespace fem
 {
 class FiniteElement;
 
-/// Storage for the coefficients of a Form consisting of
-/// Functions and the Elements they are defined on
+/// Storage for the coefficients of a Form consisting of Function and
+/// the Element objects they are defined on.
+
 class FormCoefficients
 {
 public:
-  /// Initialise the FormCoefficients from a ufc_form, instantiating all the
-  /// required elements
+  /// Initialise the FormCoefficients from a ufc_form, instantiating all
+  /// the required elements
   FormCoefficients(const ufc_form& ufc_form);
-
-  /// Initialise the FormCoefficients with their elements only
-  FormCoefficients(std::vector<fem::FiniteElement>& coefficient_elements);
 
   /// Get number of coefficients
   std::size_t size() const;
@@ -43,7 +41,7 @@ public:
            std::shared_ptr<const function::Function> coefficient);
 
   /// Get the Function coefficient i
-  const function::Function* get(std::size_t i) const;
+  std::shared_ptr<const function::Function> get(std::size_t i) const;
 
   /// Get the element for coefficient i
   const fem::FiniteElement& element(std::size_t i) const;
@@ -52,9 +50,6 @@ public:
   std::size_t original_position(std::size_t i) const;
 
 private:
-  // Finite elements for coefficients
-  std::vector<fem::FiniteElement> _elements;
-
   // Functions for the coefficients
   std::vector<std::shared_ptr<const function::Function>> _coefficients;
 

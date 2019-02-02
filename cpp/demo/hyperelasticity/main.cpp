@@ -131,7 +131,7 @@ public:
   Mat J(const Vec x) final
   {
     _matA.zero();
-    assemble(_matA.mat(), *_j, _bcs);
+    assemble_matrix(_matA.mat(), *_j, _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
     return _matA.mat();
   }
