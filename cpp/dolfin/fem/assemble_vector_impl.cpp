@@ -105,8 +105,6 @@ void _lift_bc_cells(
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
         = dofmap0.cell_dofs(cell.index());
 
-    // FIXME: Need to add boundary contributions to 'a' too.
-
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
     // Update coefficients
@@ -121,6 +119,134 @@ void _lift_bc_cells(
 
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+
+    // Size data structure for assembly
+    be.setZero(dmap0.size());
+    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    {
+      const PetscInt jj = dmap1[j];
+      if (bc_markers1[jj])
+      {
+        const PetscScalar bc = bc_values1[jj];
+        if (x0.rows() > 0)
+          be -= Ae.col(j) * scale * (bc - x0[jj]);
+        else
+          be -= Ae.col(j) * scale * bc;
+      }
+    }
+
+    for (Eigen::Index k = 0; k < dmap0.size(); ++k)
+      b[dmap0[k]] += be[k];
+  }
+}
+//----------------------------------------------------------------------------
+void _lift_bc_exterior_facets(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        bc_values1,
+    const std::vector<bool>& bc_markers1,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+    double scale)
+{
+  assert(a.rank() == 2);
+
+  // Get mesh from form
+  assert(a.mesh());
+  const mesh::Mesh& mesh = *a.mesh();
+
+  const std::size_t tdim = mesh.topology().dim();
+  mesh.init(tdim - 1);
+  mesh.init(tdim - 1, tdim);
+
+  // Get dofmap for columns and rows of a
+  assert(a.function_space(0));
+  assert(a.function_space(0)->dofmap());
+  assert(a.function_space(1));
+  assert(a.function_space(1)->dofmap());
+  const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
+  const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
+
+  // TODO: simplify and move elsewhere
+  // Manage coefficients
+  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
+      = a.integrals().enabled_coefficients_exterior_facet(0);
+  const FormCoefficients& coefficients = a.coeffs();
+  std::vector<std::uint32_t> n = {0};
+  std::vector<const function::Function*> coefficients_ptr(coefficients.size());
+  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
+  for (std::uint32_t i = 0; i < coefficients.size(); ++i)
+  {
+    coefficients_ptr[i] = coefficients.get(i).get();
+    elements_ptr[i] = &coefficients.element(i);
+    const FiniteElement& element = coefficients.element(i);
+    n.push_back(n.back() + element.space_dimension());
+  }
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
+
+  const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
+                           int)>& fn
+      = a.integrals().tabulate_tensor_fn_exterior_facet(0);
+
+  // Data structures used in bc application
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      Ae;
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
+
+  // Iterate over all cells
+  for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  {
+    if (facet.num_global_entities(tdim) != 1)
+      continue;
+
+    // FIXME: sort out ghosts
+
+    // Create attached cell
+    mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+
+    // Get local index of facet with respect to the cell
+    const int local_facet = cell.index(facet);
+
+    // Get dof maps for cell
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
+        = dofmap1.cell_dofs(cell.index());
+
+    // Check if bc is applied to cell
+    bool has_bc = false;
+    for (Eigen::Index j = 0; j < dmap1.size(); ++j)
+    {
+      if (bc_markers1[dmap1[j]])
+      {
+        has_bc = true;
+        break;
+      }
+    }
+
+    if (!has_bc)
+      continue;
+
+    // Get cell vertex coordinates
+    cell.get_coordinate_dofs(coordinate_dofs);
+
+    // Size data structure for assembly
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
+        = dofmap0.cell_dofs(cell.index());
+
+    // TODO: Move gathering of coefficients outside of main assembly
+    // loop
+    // Update coefficients
+    for (std::size_t i = 0; i < coefficients.size(); ++i)
+    {
+      if (enabled_coefficients[i])
+      {
+        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
+                                      *elements_ptr[i], cell, coordinate_dofs);
+      }
+    }
+
+    Ae.setZero(dmap0.size(), dmap1.size());
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), local_facet, 1);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -380,7 +506,10 @@ void fem::impl::lift_bc(
   // FIXME: add lifting over exterior facets
 
   const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0(0);
-  _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+    _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+    _lift_bc_exterior_facets(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::lift_bc(
@@ -397,6 +526,9 @@ void fem::impl::lift_bc(
         "Vector size mismatch in modification for boundary conditions.");
   }
 
-  _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+    _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+    _lift_bc_exterior_facets(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
