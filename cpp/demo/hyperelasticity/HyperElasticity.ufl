@@ -79,8 +79,4 @@ J = derivative(F, u, du)
 # 
 # .. code-block:: sh
 # 
-#     ffc -l dolfin HyperElasticity.ufl
-# 
-# Note the flag ``-l dolfin`` which tells FFC to generate
-# DOLFIN-specific wrappers that make it easy to access the generated
-# code from within DOLFIN.
+#     ffc HyperElasticity.ufl
