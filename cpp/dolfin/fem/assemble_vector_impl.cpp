@@ -48,17 +48,17 @@ void _lift_bc(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = a.integrals().enabled_coefficients(FormIntegrals::Type::cell, 0);
+  const bool* enabled_coefficients = a.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
   std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
-    coefficients_ptr[i] = coefficients.get(i).get();
-    elements_ptr[i] = coefficients_ptr[i]->function_space()->element().get();
-    n.push_back(n.back() + elements_ptr.back()->space_dimension());
+    coefficients_ptr[i] = coefficients.get(i);
+    elements_ptr[i] = &coefficients.element(i);
+    const FiniteElement& element = coefficients.element(i);
+    n.push_back(n.back() + element.space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -187,17 +187,17 @@ void fem::impl::assemble_cells(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = L.integrals().enabled_coefficients(FormIntegrals::Type::cell, 0);
+  const bool* enabled_coefficients = L.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
   std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
-    coefficients_ptr[i] = coefficients.get(i).get();
-    elements_ptr[i] = coefficients_ptr[i]->function_space()->element().get();
-    n.push_back(n.back() + elements_ptr.back()->space_dimension());
+    coefficients_ptr[i] = coefficients.get(i);
+    elements_ptr[i] = &coefficients.element(i);
+    const FiniteElement& element = coefficients.element(i);
+    n.push_back(n.back() + element.space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -256,9 +256,8 @@ void fem::impl::assemble_exterior_facets(
       coordinate_dofs;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = L.integrals().enabled_coefficients(FormIntegrals::Type::exterior_facet,
-                                           0);
+  const bool* enabled_coefficients
+      = L.integrals().enabled_coefficients_exterior_facet(0);
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<std::uint32_t> n = {0};
 
@@ -266,9 +265,10 @@ void fem::impl::assemble_exterior_facets(
   std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
-    coefficients_ptr[i] = coefficients.get(i).get();
-    elements_ptr[i] = coefficients_ptr[i]->function_space()->element().get();
-    n.push_back(n.back() + elements_ptr.back()->space_dimension());
+    coefficients_ptr[i] = coefficients.get(i);
+    elements_ptr[i] = &coefficients.element(i);
+    const FiniteElement& element = coefficients.element(i);
+    n.push_back(n.back() + element.space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 

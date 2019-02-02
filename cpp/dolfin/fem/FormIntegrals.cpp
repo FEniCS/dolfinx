@@ -145,21 +145,14 @@ FormIntegrals::tabulate_tensor_fn_exterior_facet(int i) const
   return _tabulate_tensor_exterior_facet[i];
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<bool, Eigen::Dynamic, 1>
-FormIntegrals::enabled_coefficients(FormIntegrals::Type type, int i) const
+const bool* FormIntegrals::enabled_coefficients_cell(int i) const
 {
-  switch (type)
-  {
-  case Type::cell:
-    return _enabled_coefficients_cell.row(i);
-  case Type::exterior_facet:
-    return _enabled_coefficients_exterior_facet.row(i);
-  default:
-    throw std::runtime_error("FormIntegrals::enabled_coefficients doesn't "
-                             "support interior facets or vertices yet.");
-  }
-
-  return Eigen::Array<bool, Eigen::Dynamic, 1>();
+  return _enabled_coefficients_cell.row(i).data();
+}
+//-----------------------------------------------------------------------------
+const bool* FormIntegrals::enabled_coefficients_exterior_facet(int i) const
+{
+  return _enabled_coefficients_exterior_facet.row(i).data();
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_tabulate_tensor_cell(

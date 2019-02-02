@@ -28,7 +28,6 @@ namespace fem
 
 /// Integrals of a Form, including those defined over cells, interior
 /// and exterior facets, and vertices.
-
 class FormIntegrals
 {
 public:
@@ -66,8 +65,9 @@ public:
   ///    Integral number
   /// @returns bool*
   ///    Pointer to list of enabled coefficients for this integral
-  Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients(Type type,
-                                                             int i) const;
+  const bool* enabled_coefficients_cell(int i) const;
+
+  const bool* enabled_coefficients_exterior_facet(int i) const;
 
   /// Set the function for 'tabulate_tensor' for cell integral i
   void set_tabulate_tensor_cell(int i,
