@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2007-2015 Anders Logg
+# Copyright (C) 2018-2019 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Functions for the assembly of variational forms."""
+"""Assembly functions for variational forms."""
 
 import functools
 import typing
