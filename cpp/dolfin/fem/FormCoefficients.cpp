@@ -34,10 +34,11 @@ void FormCoefficients::set(
   _coefficients[i] = coefficient;
 }
 //-----------------------------------------------------------------------------
-const function::Function* FormCoefficients::get(std::size_t i) const
+std::shared_ptr<const function::Function>
+FormCoefficients::get(std::size_t i) const
 {
   assert(i < _coefficients.size());
-  return _coefficients[i].get();
+  return _coefficients[i];
 }
 //-----------------------------------------------------------------------------
 const fem::FiniteElement& FormCoefficients::element(std::size_t i) const

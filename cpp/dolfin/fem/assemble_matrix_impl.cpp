@@ -81,7 +81,7 @@ void fem::impl::assemble_cells(
   std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
-    coefficients_ptr[i] = coefficients.get(i);
+    coefficients_ptr[i] = coefficients.get(i).get();
     elements_ptr[i] = &coefficients.element(i);
     const FiniteElement& element = coefficients.element(i);
     n.push_back(n.back() + element.space_dimension());
@@ -173,7 +173,7 @@ void fem::impl::assemble_exterior_facets(
   std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
-    coefficients_ptr[i] = coefficients.get(i);
+    coefficients_ptr[i] = coefficients.get(i).get();
     elements_ptr[i] = &coefficients.element(i);
     const FiniteElement& element = coefficients.element(i);
     n.push_back(n.back() + element.space_dimension());

@@ -41,7 +41,7 @@ public:
            std::shared_ptr<const function::Function> coefficient);
 
   /// Get the Function coefficient i
-  const function::Function* get(std::size_t i) const;
+  std::shared_ptr<const function::Function> get(std::size_t i) const;
 
   /// Get the element for coefficient i
   const fem::FiniteElement& element(std::size_t i) const;
