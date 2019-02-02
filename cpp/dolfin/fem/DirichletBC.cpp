@@ -272,13 +272,22 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       std::cout << "Inserted off-process dof (A)" << std::endl;
   }
 
-  _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
-                                               dofs_local.end());
+  // _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
+  //                                              dofs_local.end());
+  // _dof_indices = Eigen::Array<PetscInt, Eigen::Dynamic, 1>(_dofs.rows());
+  // std::size_t i = 0;
+  // for (const auto& dof : _dofs)
+  //   _dof_indices[i++] = dof[0];
 
-  _dof_indices = Eigen::Array<PetscInt, Eigen::Dynamic, 1>(_dofs.size());
-  std::size_t i = 0;
-  for (const auto& dof : _dofs)
-    _dof_indices[i++] = dof[0];
+  _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
+      dofs_local.size(), 2);
+  for (auto e = dofs_local.cbegin(); e != dofs_local.cend(); ++e)
+  {
+    std::size_t pos = std::distance(dofs_local.begin(), e);
+    _dofs(pos, 0) = (*e)[0];
+    _dofs(pos, 1) = (*e)[1];
+  }
+  _dof_indices = _dofs.col(0);
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -342,14 +351,22 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       std::cout << "Inserted off-process dof (B)" << std::endl;
   }
 
-  // std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
-  //                dofs_remote.end(), std::back_inserter(_dofs));
-  _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
-                                               dofs_local.end());
-  _dof_indices = Eigen::Array<PetscInt, Eigen::Dynamic, 1>(_dofs.size());
-  std::size_t i = 0;
-  for (const auto& dof : _dofs)
-    _dof_indices[i++] = dof[0];
+  // _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
+  //                                              dofs_local.end());
+  // _dof_indices = Eigen::Array<PetscInt, Eigen::Dynamic, 1>(_dofs.size());
+  // std::size_t i = 0;
+  // for (const auto& dof : _dofs)
+  //   _dof_indices[i++] = dof[0];
+
+  _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
+      dofs_local.size(), 2);
+  for (auto e = dofs_local.cbegin(); e != dofs_local.cend(); ++e)
+  {
+    std::size_t pos = std::distance(dofs_local.begin(), e);
+    _dofs(pos, 0) = (*e)[0];
+    _dofs(pos, 1) = (*e)[1];
+  }
+  _dof_indices = _dofs.col(0);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace>
@@ -373,15 +390,20 @@ void DirichletBC::set(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     double scale) const
 {
-  assert(_g);
-
   // FIXME: This one excludes ghosts. Need to straighten out.
+
+  assert(_g);
   la::VecReadWrapper g(_g->vector().vec());
-  for (auto& dof : _dofs)
+  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
   {
-    if (dof[0] < x.rows())
-      x[dof[0]] = g.x[dof[1]];
+    if (_dofs(i, 0) < x.rows())
+      x[_dofs(i, 0)] = scale * g.x[_dofs(i, 1)];
   }
+  // for (auto& dof : _dofs)
+  // {
+  //   if (dof[0] < x.rows())
+  //     x[dof[0]] = scale * g.x[dof[1]];
+  // }
   g.restore();
 }
 //-----------------------------------------------------------------------------
@@ -390,15 +412,21 @@ void DirichletBC::set(
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale) const
 {
-  assert(_g);
-
   // FIXME: This one excludes ghosts. Need to straighten out.
+
+  assert(_g);
+  assert(x.rows() == x0.rows());
   la::VecReadWrapper g(_g->vector().vec());
-  for (auto& dof : _dofs)
+  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
   {
-    if (dof[0] < x.rows())
-      x[dof[0]] = scale * (g.x[dof[1]] - x0[dof[0]]);
+    if (_dofs(i, 0) < x.rows())
+      x[_dofs(i, 0)] = scale * (g.x[_dofs(i, 1)] - x0[_dofs(i, 0)]);
   }
+  // for (auto& dof : _dofs)
+  // {
+  //   if (dof[0] < x.rows())
+  //     x[dof[0]] = scale * (g.x[dof[1]] - x0[dof[0]]);
+  // }
   g.restore();
 }
 //-----------------------------------------------------------------------------
@@ -406,11 +434,11 @@ void DirichletBC::dof_values(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const
 {
   assert(_g);
-
-  // Unwrap PETSc bc vector (_g)
   la::VecReadWrapper g(_g->vector().vec());
-  for (auto& dof : _dofs)
-    values[dof[0]] = g.x[dof[1]];
+  for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
+    values[_dofs(i, 0)] = g.x[_dofs(i, 1)];
+  // for (auto& dof : _dofs)
+  //   values[dof[0]] = g.x[dof[1]];
   g.restore();
 }
 //-----------------------------------------------------------------------------

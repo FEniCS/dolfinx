@@ -164,7 +164,8 @@ public:
   /// Return boundary value g
   ///
   /// @return Function
-  ///         The boundary values.
+  ///         The boundary values Function. Returns null if it does not
+  ///         exist.
   std::shared_ptr<const function::Function> value() const;
 
   // FIXME: clarify  w.r.t ghosts
@@ -180,7 +181,7 @@ public:
            double scale = 1.0) const;
 
   // FIXME: clarify w.r.t ghosts
-  /// Set bc entries in x to scale*(x0 - x_bc)
+  /// Set bc entries in x to scale*(x0 - x_bc).
   void set(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
@@ -224,7 +225,8 @@ private:
   // Vector tuples (dof index in _function_space, dof index in g
   // space) to which bcs are applied, i.e. u[dofs[i][0]] = g[dofs[i][1]]
   // where u is in _function_space.
-  std::vector<std::array<PetscInt, 2>> _dofs;
+  // std::vector<std::array<PetscInt, 2>> _dofs;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor> _dofs;
 
   // Indices in _function_space to which bcs are applied. Must be sorted.
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dof_indices;
