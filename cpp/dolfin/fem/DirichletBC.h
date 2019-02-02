@@ -222,10 +222,9 @@ private:
   // The function
   std::shared_ptr<const function::Function> _g;
 
-  // Vector tuples (dof index in _function_space, dof index in g
-  // space) to which bcs are applied, i.e. u[dofs[i][0]] = g[dofs[i][1]]
-  // where u is in _function_space.
-  // std::vector<std::array<PetscInt, 2>> _dofs;
+  // Vector tuples (dof in _function_space, dof in g-space) to which bcs
+  // are applied, i.e. u[dofs[i][0]] = g[dofs[i][1]] where u is in
+  // _function_space.
   Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor> _dofs;
 
   // Indices in _function_space to which bcs are applied. Must be sorted.

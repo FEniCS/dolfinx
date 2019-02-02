@@ -162,7 +162,7 @@ def assemble_matrix(a, bcs: typing.List[DirichletBC],
 def apply_lifting(
         b: PETSc.Vec,
         a: typing.List[typing.Union[Form, cpp.fem.Form]],
-        bcs: typing.List[DirichletBC],
+        bcs: typing.List[typing.List[DirichletBC]],
         x0: typing.Optional[typing.List[PETSc.Vec]] = [],
         scale: float = 1.0) -> None:
     """Modify vector for lifting of boundary conditions."""

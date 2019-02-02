@@ -272,13 +272,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       std::cout << "Inserted off-process dof (A)" << std::endl;
   }
 
-  // _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
-  //                                              dofs_local.end());
-  // _dof_indices = Eigen::Array<PetscInt, Eigen::Dynamic, 1>(_dofs.rows());
-  // std::size_t i = 0;
-  // for (const auto& dof : _dofs)
-  //   _dof_indices[i++] = dof[0];
-
   _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
       dofs_local.size(), 2);
   for (auto e = dofs_local.cbegin(); e != dofs_local.cend(); ++e)
@@ -350,13 +343,6 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     if (it_map.second)
       std::cout << "Inserted off-process dof (B)" << std::endl;
   }
-
-  // _dofs = std::vector<std::array<PetscInt, 2>>(dofs_local.begin(),
-  //                                              dofs_local.end());
-  // _dof_indices = Eigen::Array<PetscInt, Eigen::Dynamic, 1>(_dofs.size());
-  // std::size_t i = 0;
-  // for (const auto& dof : _dofs)
-  //   _dof_indices[i++] = dof[0];
 
   _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
       dofs_local.size(), 2);
