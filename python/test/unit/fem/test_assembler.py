@@ -72,7 +72,7 @@ def test_assembly_bcs():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
-    a = inner(u, v) * dx # + inner(u, v) * ds
+    a = inner(u, v) * dx + inner(u, v) * ds
     L = inner(1.0, v) * dx
 
     def boundary(x):
