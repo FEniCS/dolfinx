@@ -48,7 +48,8 @@ void _lift_bc(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const bool* enabled_coefficients = a.integrals().enabled_coefficients_cell(0);
+  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
+      = a.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
@@ -187,7 +188,8 @@ void fem::impl::assemble_cells(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const bool* enabled_coefficients = L.integrals().enabled_coefficients_cell(0);
+  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
+      = L.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
@@ -256,7 +258,7 @@ void fem::impl::assemble_exterior_facets(
       coordinate_dofs;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  const bool* enabled_coefficients
+  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
       = L.integrals().enabled_coefficients_exterior_facet(0);
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<std::uint32_t> n = {0};

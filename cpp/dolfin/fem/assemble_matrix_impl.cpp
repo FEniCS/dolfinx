@@ -52,7 +52,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
                              int, int)>& fn
         = a.integrals().tabulate_tensor_fn_exterior_facet(0);
     fem::impl::assemble_exterior_facets(A, a, mesh, dofmap0, dofmap1, bc0, bc1,
-                                       fn);
+                                        fn);
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
@@ -73,7 +73,8 @@ void fem::impl::assemble_cells(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const bool* enabled_coefficients = a.integrals().enabled_coefficients_cell(0);
+  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
+      = a.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
@@ -164,7 +165,7 @@ void fem::impl::assemble_exterior_facets(
   mesh.init(tdim - 1);
   mesh.init(tdim - 1, tdim);
 
-  const bool* enabled_coefficients
+  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
       = a.integrals().enabled_coefficients_exterior_facet(0);
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
