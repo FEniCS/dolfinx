@@ -22,6 +22,7 @@ if not has_petsc_complex:
     print('This demo only works with PETSc-complex')
     exit()
 
+
 # Wavenumber
 k0 = 20
 
