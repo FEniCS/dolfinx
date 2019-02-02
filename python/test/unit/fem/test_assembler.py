@@ -86,11 +86,8 @@ def test_assembly_bcs():
     # Assemble and apply 'global' lifting of bcs
     A = dolfin.fem.assemble(a)
     b = dolfin.fem.assemble(L)
-    # g = A.createVecRight()
-    # g.set(0.0)
-    g = b.copy()
-    with g.localForm() as g_local:
-        g_local.set(0.0)
+    g = A.createVecRight()
+    g.set(0.0)
     dolfin.fem.set_bc(g, [bc])
     f = b - A * g
     dolfin.fem.set_bc(f, [bc])

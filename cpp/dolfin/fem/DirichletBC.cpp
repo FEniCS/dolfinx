@@ -379,18 +379,19 @@ void DirichletBC::set(
   // FIXME: This one excludes ghosts. Need to straighten out.
 
   assert(_g);
-  la::VecReadWrapper g(_g->vector().vec());
+  la::VecReadWrapper g(_g->vector().vec(), false);
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
   {
     if (_dofs(i, 0) < x.rows())
       x[_dofs(i, 0)] = scale * g.x[_dofs(i, 1)];
   }
+
+
   // for (auto& dof : _dofs)
   // {
   //   if (dof[0] < x.rows())
   //     x[dof[0]] = scale * g.x[dof[1]];
   // }
-  g.restore();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::set(
@@ -402,7 +403,7 @@ void DirichletBC::set(
 
   assert(_g);
   assert(x.rows() == x0.rows());
-  la::VecReadWrapper g(_g->vector().vec());
+  la::VecReadWrapper g(_g->vector().vec(), false);
   for (Eigen::Index i = 0; i < _dofs.rows(); ++i)
   {
     if (_dofs(i, 0) < x.rows())
@@ -413,7 +414,6 @@ void DirichletBC::set(
   //   if (dof[0] < x.rows())
   //     x[dof[0]] = scale * (g.x[dof[1]] - x0[dof[0]]);
   // }
-  g.restore();
 }
 //-----------------------------------------------------------------------------
 void DirichletBC::dof_values(

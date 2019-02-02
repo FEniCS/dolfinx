@@ -455,10 +455,10 @@ void fem::assemble_matrix(Mat A, const Form& a,
 void fem::set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
                  const Vec x0, double scale)
 {
-  la::VecWrapper _b(b);
+  la::VecWrapper _b(b, false);
   if (x0)
   {
-    la::VecReadWrapper _x0(x0);
+    la::VecReadWrapper _x0(x0, false);
     if (_b.x.size() != _x0.x.size())
       throw std::runtime_error("Size mismatch between b and x0 vectors.");
     for (auto bc : bcs)
@@ -475,7 +475,5 @@ void fem::set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
       bc->set(_b.x, scale);
     }
   }
-
-  _b.restore();
 }
 //-----------------------------------------------------------------------------
