@@ -21,6 +21,7 @@ class Function;
 
 namespace fem
 {
+class FiniteElement;
 
 /// Storage for the coefficients of a Form consisting of Function and
 /// the Element objects they are defined on.
@@ -40,7 +41,10 @@ public:
            std::shared_ptr<const function::Function> coefficient);
 
   /// Get the Function coefficient i
-  std::shared_ptr<const function::Function> operator[](std::size_t i) const;
+  std::shared_ptr<const function::Function> get(std::size_t i) const;
+
+  /// Get the element for coefficient i
+  const fem::FiniteElement& element(std::size_t i) const;
 
   /// Original position of coefficient in UFL form
   std::size_t original_position(std::size_t i) const;
