@@ -24,7 +24,7 @@ using namespace dolfin::fem;
 namespace
 {
 // Implementation of bc application
-void _lift_bc(
+void _lift_bc_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
     const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         bc_values1,
@@ -105,7 +105,7 @@ void _lift_bc(
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
         = dofmap0.cell_dofs(cell.index());
 
-    // FIXME: Need to add boundary contributions to a too.
+    // FIXME: Need to add boundary contributions to 'a' too.
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
@@ -121,7 +121,6 @@ void _lift_bc(
 
     Ae.setZero(dmap0.size(), dmap1.size());
     fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), 1);
-    // a.tabulate_tensor_cell(Ae.data(), cell, coordinate_dofs);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -378,8 +377,10 @@ void fem::impl::lift_bc(
         bc_values1,
     const std::vector<bool>& bc_markers1, double scale)
 {
+  // FIXME: add lifting over exterior facets
+
   const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> x0(0);
-  _lift_bc(b, a, bc_values1, bc_markers1, x0, scale);
+  _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
 void fem::impl::lift_bc(
@@ -396,6 +397,6 @@ void fem::impl::lift_bc(
         "Vector size mismatch in modification for boundary conditions.");
   }
 
-  _lift_bc(b, a, bc_values1, bc_markers1, x0, scale);
+  _lift_bc_cells(b, a, bc_values1, bc_markers1, x0, scale);
 }
 //-----------------------------------------------------------------------------
