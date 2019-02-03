@@ -8,7 +8,6 @@
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include <cmath>
-#include <dolfin/common/constants.h>
 
 using namespace dolfin;
 using namespace dolfin::la;

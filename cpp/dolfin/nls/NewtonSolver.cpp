@@ -7,7 +7,6 @@
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScOptions.h>

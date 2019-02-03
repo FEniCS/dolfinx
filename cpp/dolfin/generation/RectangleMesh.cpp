@@ -6,9 +6,9 @@
 
 #include "RectangleMesh.h"
 #include <Eigen/Dense>
+#include <cfloat>
 #include <cmath>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
@@ -46,8 +46,7 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 3);
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::triangle, geom, topo, {},
-        ghost_mode);
+        comm, mesh::CellType::Type::triangle, geom, topo, {}, ghost_mode);
   }
 
   // Check options
@@ -76,7 +75,7 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   const double d = y1;
   const double cd = (d - c) / static_cast<double>(ny);
 
-  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS)
+  if (std::abs(x0 - x1) < DBL_EPSILON || std::abs(y0 - y1) < DBL_EPSILON)
   {
     throw std::runtime_error("Rectangle seems to have zero width, height or "
                              "depth. Check dimensions");
@@ -212,8 +211,7 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   }
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::triangle, geom, topo, {},
-      ghost_mode);
+      comm, mesh::CellType::Type::triangle, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
@@ -227,8 +225,7 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 4);
     return mesh::MeshPartitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::quadrilateral, geom, topo, {},
-        ghost_mode);
+        comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, ghost_mode);
   }
 
   const std::size_t nx = n[0];
@@ -272,7 +269,6 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
     }
 
   return mesh::MeshPartitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::quadrilateral, geom, topo, {},
-      ghost_mode);
+      comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------

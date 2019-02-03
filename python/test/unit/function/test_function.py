@@ -10,15 +10,14 @@ import math
 
 import cffi
 import numba
-import numpy
+import numpy as np
 import pytest
 from petsc4py import PETSc
 
 import ufl
-from dolfin import (DOLFIN_EPS, MPI, Expression, Function, FunctionSpace,
-                    Point, TensorFunctionSpace, UnitCubeMesh,
-                    VectorFunctionSpace, Vertex, cpp, function, interpolate,
-                    lt)
+from dolfin import (MPI, Expression, Function, FunctionSpace, Point,
+                    TensorFunctionSpace, UnitCubeMesh, VectorFunctionSpace,
+                    Vertex, cpp, function, interpolate, lt)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
@@ -57,27 +56,19 @@ def test_name_argument(W):
 
 
 def test_compute_point_values(V, W, mesh):
-    from numpy import all
     u = Function(V)
     v = Function(W)
-
-    u.vector().set(1.0)
-    v.vector().set(1.0)
-
-    u.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    v.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-
+    with u.vector().localForm() as u_local, v.vector().localForm() as v_local:
+        u_local.set(1.0)
+        v_local.set(1.0)
     u_values = u.compute_point_values(mesh)
     v_values = v.compute_point_values(mesh)
 
-    u_ones = numpy.ones_like(u_values, dtype=numpy.float64)
-    assert all(numpy.isclose(u_values, u_ones))
-
-    v_ones = numpy.ones_like(v_values, dtype=numpy.float64)
-    assert all(numpy.isclose(v_values, v_ones))
-
+    u_ones = np.ones_like(u_values, dtype=np.float64)
+    assert np.all(np.isclose(u_values, u_ones))
+    v_ones = np.ones_like(v_values, dtype=np.float64)
+    assert np.all(np.isclose(v_values, v_ones))
     u_values2 = u.compute_point_values()
-
     assert all(u_values == u_values2)
 
 
@@ -207,19 +198,19 @@ def test_call(R, V, W, Q, mesh):
 
     tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
 
-    assert numpy.allclose(u0(x0, tree), u0(x0, tree))
-    assert numpy.allclose(u0(x0, tree), u0(p0, tree))
-    assert numpy.allclose(u1(x0, tree), u1(x0, tree))
-    assert numpy.allclose(u1(x0, tree), u1(p0, tree))
-    assert numpy.allclose(u2(x0, tree)[0], u1(p0, tree))
+    assert np.allclose(u0(x0, tree), u0(x0, tree))
+    assert np.allclose(u0(x0, tree), u0(p0, tree))
+    assert np.allclose(u1(x0, tree), u1(x0, tree))
+    assert np.allclose(u1(x0, tree), u1(p0, tree))
+    assert np.allclose(u2(x0, tree)[0], u1(p0, tree))
 
-    assert numpy.allclose(u2(x0, tree), u2(p0, tree))
-    assert numpy.allclose(u3(x0, tree)[:3], u2(x0, tree), rtol=1e-15, atol=1e-15)
+    assert np.allclose(u2(x0, tree), u2(p0, tree))
+    assert np.allclose(u3(x0, tree)[:3], u2(x0, tree), rtol=1e-15, atol=1e-15)
 
     p0_list = [p for p in p0]
     x0_list = [x for x in x0]
-    assert numpy.allclose(u0(x0_list, tree), u0(x0_list, tree))
-    assert numpy.allclose(u0(x0_list, tree), u0(p0_list, tree))
+    assert np.allclose(u0(x0_list, tree), u0(x0_list, tree))
+    assert np.allclose(u0(x0_list, tree), u0(p0_list, tree))
 
     with pytest.raises(ValueError):
         u0([0, 0, 0, 0], tree)
@@ -292,7 +283,7 @@ def test_near_evaluations(R, mesh):
     u0 = Function(R)
     u0.vector().set(1.0)
     a = Vertex(mesh, 0).point().array()
-    offset = 0.99 * DOLFIN_EPS
+    offset = 0.99 * np.finfo(float).eps
 
     a_shift_x = Point(a[0] - offset, a[1], a[2]).array()
     assert round(u0(a, bb_tree)[0] - u0(a_shift_x, bb_tree)[0], 7) == 0
@@ -349,7 +340,8 @@ def test_interpolation_old(V, W, mesh):
     f0 = Expression(expr_eval0)
     f = Function(V)
     f = interpolate(f0, V)
-    assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_vertices(), 7) == 0
+    assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_vertices(),
+                 7) == 0
 
     # Vector interpolation
     f1 = Expression(expr_eval1, shape=(3, ))
