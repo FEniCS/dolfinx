@@ -35,8 +35,9 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
         if self._F is None:
             self._F = fem.assemble_vector(self.L)
         else:
+            with self._F.localForm() as f_local:
+                f_local.set(0.0)
             self._F = fem.assemble_vector(self._F, self.L)
-
         dolfin.fem.apply_lifting(self._F, [self.a], [[self.bc]], [x], -1.0)
         self._F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfin.fem.set_bc(self._F, [self.bc], x, -1.0)
@@ -48,7 +49,9 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
         if self._J is None:
             self._J = fem.assemble_matrix(self.a, [self.bc])
         else:
-            self._J = fem.assemble(self._J, self.a, [self.bc])
+            self._J.zeroEntries()
+            self._J = fem.assemble_matrix(self._J, self.a, [self.bc])
+        self._J.assemble()
         return self._J
 
 
@@ -70,6 +73,8 @@ class NonlinearPDE_SNESProblem():
         x.copy(self.u.vector())
         self.u.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
+        with F.localForm() as f_local:
+            f_local.set(0.0)
         fem.assemble_vector(F, self.L)
         fem.apply_lifting(F, [self.a], [[self.bc]], [x], -1.0)
         F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)

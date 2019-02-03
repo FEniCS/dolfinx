@@ -118,6 +118,10 @@ public:
   Vec F(const Vec x) final
   {
     // Assemble b
+    la::VecWrapper b_wrapper(_b.vec());
+    b_wrapper.x.setZero();
+    b_wrapper.restore();
+
     assemble_vector(_b.vec(), *_l);
     _b.apply_ghosts();
 
@@ -130,7 +134,7 @@ public:
   /// Compute J = F' at current point x
   Mat J(const Vec x) final
   {
-    _matA.zero();
+    MatZeroEntries(_matA.mat());
     assemble_matrix(_matA.mat(), *_j, _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
     return _matA.mat();

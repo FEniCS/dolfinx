@@ -46,26 +46,39 @@ def test_basic_assembly():
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
-    a = 1.0 * inner(u, v) * dx
-    L = inner(1.0, v) * dx
+    f = dolfin.Function(V)
+    with f.vector().localForm() as f_local:
+        f_local.set(10.0)
+    a = inner(f * u, v) * dx + inner(u, v) * ds
+    L = inner(f, v) * dx + inner(2.0, v) * ds
 
     # Initial assembly
     A = dolfin.fem.assemble(a)
-    b = dolfin.fem.assemble(L)
     assert isinstance(A, PETSc.Mat)
+    b = dolfin.fem.assemble(L)
     assert isinstance(b, PETSc.Vec)
 
     # Second assembly
+    normA = A.norm()
     A = dolfin.fem.assemble(A, a)
+    assert isinstance(A, PETSc.Mat)
+    assert normA == pytest.approx(A.norm())
+    normb = b.norm()
     b = dolfin.fem.assemble(b, L)
-    assert isinstance(A, PETSc.Mat)
     assert isinstance(b, PETSc.Vec)
+    assert normb == pytest.approx(b.norm())
 
-    # Function as coefficient
-    f = dolfin.Function(V)
-    a = f * inner(u, v) * dx
-    A = dolfin.fem.assemble(a)
-    assert isinstance(A, PETSc.Mat)
+    # Vector re-assembly - no zeroing (need to zero ghost entries)
+    with b.localForm() as b_local:
+        b_local.array[b.local_size:] = 0.0
+    dolfin.fem.assemble_vector(b, L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    assert 2.0 * normb == pytest.approx(b.norm())
+
+    # Matrix re-assembly (no zeroing)
+    dolfin.fem.assemble_matrix(A, a)
+    A.assemble()
+    assert 2.0 * normA == pytest.approx(A.norm())
 
 
 def test_assembly_bcs():
@@ -169,6 +182,7 @@ def test_matrix_assembly_block():
 
     bc = dolfin.fem.dirichletbc.DirichletBC(W.sub(1), u_bc, boundary)
     A2 = dolfin.fem.assemble_matrix(a, [bc])
+    A2.assemble()
     b2 = dolfin.fem.assemble_vector(L)
     dolfin.fem.apply_lifting(b2, [a], [[bc]])
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -194,10 +208,12 @@ def test_assembly_solve_block():
 
     u_bc0 = dolfin.function.Function(V0)
     u_bc0.vector().set(50.0)
-    u_bc0.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u_bc0.vector().ghostUpdate(
+        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     u_bc1 = dolfin.function.Function(V1)
     u_bc1.vector().set(20.0)
-    u_bc1.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u_bc1.vector().ghostUpdate(
+        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bcs = [
         dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
         dolfin.fem.dirichletbc.DirichletBC(V1, u_bc1, boundary)
@@ -224,7 +240,8 @@ def test_assembly_solve_block():
         # print("Norm:", its, rnorm)
 
     A0 = dolfin.fem.assemble_matrix_block([[a00, a01], [a10, a11]], bcs)
-    b0 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], bcs)
+    b0 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
+                                          bcs)
     A0norm = A0.norm()
     b0norm = b0.norm()
     x0 = A0.createVecLeft()
@@ -240,7 +257,8 @@ def test_assembly_solve_block():
 
     # Nested (MatNest)
     A1 = dolfin.fem.assemble_matrix_nest([[a00, a01], [a10, a11]], bcs)
-    b1 = dolfin.fem.assemble_vector_nest([L0, L1], [[a00, a01], [a10, a11]], bcs)
+    b1 = dolfin.fem.assemble_vector_nest([L0, L1], [[a00, a01], [a10, a11]],
+                                         bcs)
     b1norm = b1.norm()
     assert b1norm == pytest.approx(b0norm, 1.0e-12)
     A1norm = nest_matrix_norm(A1)
@@ -271,10 +289,12 @@ def test_assembly_solve_block():
 
     u0_bc = dolfin.function.Function(V0)
     u0_bc.vector().set(50.0)
-    u0_bc.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u0_bc.vector().ghostUpdate(
+        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     u1_bc = dolfin.function.Function(V1)
     u1_bc.vector().set(20.0)
-    u1_bc.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u1_bc.vector().ghostUpdate(
+        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     bcs = [
         dolfin.fem.dirichletbc.DirichletBC(W.sub(0), u0_bc, boundary),
@@ -282,6 +302,7 @@ def test_assembly_solve_block():
     ]
 
     A2 = dolfin.fem.assemble_matrix(a, bcs)
+    A2.assemble()
     b2 = dolfin.fem.assemble_vector(L)
     dolfin.fem.apply_lifting(b2, [a], [bcs])
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
@@ -307,7 +328,8 @@ def test_assembly_solve_block():
 
 @pytest.mark.parametrize("mesh", [
     dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 32, 31),
-    dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)])
+    dolfin.generation.UnitCubeMesh(dolfin.MPI.comm_world, 3, 7, 8)
+])
 def test_assembly_solve_taylor_hood(mesh):
     """Assemble Stokes problem with Taylor-Hood elements and solve."""
     P2 = dolfin.VectorFunctionSpace(mesh, ("Lagrange", 2))
@@ -323,7 +345,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     u0 = dolfin.Function(P2)
     u0.vector().set(1.0)
-    u0.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u0.vector().ghostUpdate(
+        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
     bc1 = dolfin.DirichletBC(P2, u0, boundary1)
 
@@ -352,7 +375,8 @@ def test_assembly_solve_taylor_hood(mesh):
     A0norm = nest_matrix_norm(A0)
     P0 = dolfin.fem.assemble_matrix_nest([[p00, p01], [p10, p11]], [bc0, bc1])
     P0norm = nest_matrix_norm(P0)
-    b0 = dolfin.fem.assemble_vector_nest([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1])
+    b0 = dolfin.fem.assemble_vector_nest([L0, L1], [[a00, a01], [a10, a11]],
+                                         [bc0, bc1])
     b0norm = b0.norm()
 
     ksp = PETSc.KSP()
@@ -386,7 +410,8 @@ def test_assembly_solve_taylor_hood(mesh):
     assert A1.norm() == pytest.approx(A0norm, 1.0e-12)
     P1 = dolfin.fem.assemble_matrix_block([[p00, p01], [p10, p11]], [bc0, bc1])
     assert P1.norm() == pytest.approx(P0norm, 1.0e-12)
-    b1 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]], [bc0, bc1])
+    b1 = dolfin.fem.assemble_vector_block([L0, L1], [[a00, a01], [a10, a11]],
+                                          [bc0, bc1])
     assert b1.norm() == pytest.approx(b0norm, 1.0e-12)
 
     ksp = PETSc.KSP()
@@ -430,8 +455,10 @@ def test_assembly_solve_taylor_hood(mesh):
     bc1 = dolfin.DirichletBC(W.sub(0), u0, boundary1)
 
     A2 = dolfin.fem.assemble_matrix(a, [bc0, bc1])
+    A2.assemble()
     assert A2.norm() == pytest.approx(A0norm, 1.0e-12)
     P2 = dolfin.fem.assemble_matrix(p_form, [bc0, bc1])
+    P2.assemble()
     assert P2.norm() == pytest.approx(P0norm, 1.0e-12)
 
     b2 = dolfin.fem.assemble_vector(L)
