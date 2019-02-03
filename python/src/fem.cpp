@@ -52,7 +52,7 @@ void fem(py::module& m)
   py::class_<ufc_coordinate_mapping, std::shared_ptr<ufc_coordinate_mapping>>(
       m, "ufc_coordinate_mapping", "UFC coordinate_mapping object");
 
-  // Function to convert pointers (from JIT usually) to UFC objects
+  // Functions to convert pointers (from JIT usually) to UFC objects
   m.def("make_ufc_finite_element",
         [](std::uintptr_t e) {
           ufc_finite_element* p = reinterpret_cast<ufc_finite_element*>(e);
@@ -185,6 +185,7 @@ void fem(py::module& m)
       .def("ownership_range", &dolfin::fem::DofMap::ownership_range)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs);
 
+  // dolfin::fem::CoordinateMapping
   py::class_<dolfin::fem::CoordinateMapping,
              std::shared_ptr<dolfin::fem::CoordinateMapping>>(
       m, "CoordinateMapping", "Coordinate mapping object")

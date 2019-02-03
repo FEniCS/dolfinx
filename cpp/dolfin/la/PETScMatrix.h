@@ -21,9 +21,8 @@ namespace la
 class SparsityPattern;
 class VectorSpaceBasis;
 
-/// This class provides a simple matrix class based on PETSc. It is a
-/// wrapper for a PETSc matrix pointer (Mat) implementing the
-/// GenericMatrix interface.
+/// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
+/// purpose is to assist memory management of PETSc Mat objects.
 ///
 /// For advanced usage, access the PETSc Mat pointer using the function
 /// mat() and use the standard PETSc interface.
@@ -32,7 +31,6 @@ class PETScMatrix : public PETScOperator
 {
 public:
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
-
 
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference
@@ -55,9 +53,6 @@ public:
   /// Move assignment operator
   PETScMatrix& operator=(PETScMatrix&& A) = default;
 
-  /// Set all entries to zero and keep any sparse structure
-  void zero();
-
   /// Assembly type
   ///   FINAL - corresponds to PETSc MAT_FINAL_ASSEMBLY
   ///   FLUSH - corresponds to PETSc MAT_FLUSH_ASSEMBLY
@@ -73,9 +68,6 @@ public:
   ///   FINAL    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
   ///   FLUSH  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
   void apply(AssemblyType type);
-
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
 
   /// Set block of values using global indices
   void set(const PetscScalar* block, std::size_t m, const PetscInt* rows,
