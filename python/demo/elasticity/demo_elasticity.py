@@ -12,9 +12,8 @@ import numpy as np
 from petsc4py import PETSc
 
 import dolfin
-from dolfin import (DOLFIN_EPS, MPI, BoxMesh, CellType, DirichletBC, Function,
-                    Point, TestFunction, TrialFunction, VectorFunctionSpace,
-                    cpp)
+from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function, Point,
+                    TestFunction, TrialFunction, VectorFunctionSpace, cpp)
 from dolfin.fem.assembling import assemble_system
 from dolfin.io import XDMFFile
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
@@ -70,7 +69,8 @@ mesh.geometry.coord_mapping = cmap
 
 
 def boundary(x, on_boundary):
-    return np.logical_or(x[:, 0] < DOLFIN_EPS, x[:, 0] > 1.0 - DOLFIN_EPS)
+    return np.logical_or(x[:, 0] < np.finfo(float).eps,
+                         x[:, 0] > 1.0 - np.finfo(float).eps)
 
 
 # Rotation rate and mass density

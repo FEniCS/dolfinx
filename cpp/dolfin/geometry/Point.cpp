@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Point.h"
+#include <cfloat>
 #include <cmath>
-#include <dolfin/common/constants.h>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
 
@@ -40,7 +40,7 @@ double Point::dot(const Point& p) const
 //-----------------------------------------------------------------------------
 Point Point::rotate(const Point& k, double theta) const
 {
-  assert(std::abs(k.norm() - 1.0) < DOLFIN_EPS);
+  assert(std::abs(k.norm() - 1.0) < DBL_EPSILON);
 
   const Point& v = *this;
   const double cosTheta = cos(theta);

@@ -12,7 +12,6 @@
 #include "BoundingBoxTree.h"
 #include "CollisionPredicates.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>

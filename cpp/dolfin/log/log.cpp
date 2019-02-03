@@ -10,7 +10,6 @@
 #include <cstdlib>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <iostream>
 #include <memory>
 #include <sstream>
@@ -18,6 +17,9 @@
 #include <stdio.h>
 
 using namespace dolfin;
+
+#define DOLFIN_LINELENGTH 256
+#define DOLFIN_TERM_WIDTH 80
 
 static std::unique_ptr<char[]> buffer;
 static unsigned int buffer_size = 0;
@@ -97,14 +99,15 @@ void dolfin::log::error(std::string msg, ...)
 }
 //-----------------------------------------------------------------------------
 void dolfin::log::dolfin_error(std::string location, std::string task,
-                          std::string reason, ...)
+                               std::string reason, ...)
 {
   read(buffer.get(), reason);
   LogManager::logger().dolfin_error(location, task, buffer.get());
 }
 //-----------------------------------------------------------------------------
-void dolfin::log::deprecation(std::string feature, std::string version_deprecated,
-                         std::string message, ...)
+void dolfin::log::deprecation(std::string feature,
+                              std::string version_deprecated,
+                              std::string message, ...)
 {
   read(buffer.get(), message);
   LogManager::logger().deprecation(feature, version_deprecated, buffer.get());
@@ -161,7 +164,10 @@ void dolfin::log::set_output_stream(std::ostream& out)
   LogManager::logger().set_output_stream(out);
 }
 //-----------------------------------------------------------------------------
-int dolfin::log::get_log_level() { return LogManager::logger().get_log_level(); }
+int dolfin::log::get_log_level()
+{
+  return LogManager::logger().get_log_level();
+}
 //-----------------------------------------------------------------------------
 void dolfin::log::monitor_memory_usage()
 {
@@ -173,15 +179,15 @@ void dolfin::log::not_working_in_parallel(std::string what)
   if (MPI::size(MPI_COMM_WORLD) > 1)
   {
     log::dolfin_error("log.cpp", "perform operation in parallel",
-                 "%s is not yet working in parallel.\n"
-                 "***          Consider filing a bug report at %s",
-                 what.c_str(),
-                 "https://bitbucket.org/fenics-project/dolfin/issues");
+                      "%s is not yet working in parallel.\n"
+                      "***          Consider filing a bug report at %s",
+                      what.c_str(),
+                      "https://bitbucket.org/fenics-project/dolfin/issues");
   }
 }
 //-----------------------------------------------------------------------------
-void dolfin::log::__debug(std::string file, unsigned long line, std::string function,
-                     std::string format, ...)
+void dolfin::log::__debug(std::string file, unsigned long line,
+                          std::string function, std::string format, ...)
 {
   read(buffer.get(), format);
   std::ostringstream ost;

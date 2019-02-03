@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <cfloat>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -470,7 +471,7 @@ void mesh(py::module& m)
   // dolfin::mesh::SubDomain
   py::class_<dolfin::mesh::SubDomain, std::shared_ptr<dolfin::mesh::SubDomain>,
              PySubDomain>(m, "SubDomain", "Sub-domain object")
-      .def(py::init<double>(), py::arg("map_tol") = DOLFIN_EPS)
+      .def(py::init<double>(), py::arg("map_tol") = DBL_EPSILON)
       .def("inside", &dolfin::mesh::SubDomain::inside, py::arg("x").noconvert(),
            py::arg("on_boundary"))
       .def("map", &dolfin::mesh::SubDomain::map, py::arg("x").noconvert(),

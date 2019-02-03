@@ -56,7 +56,7 @@ void PETScKrylovSolver::set_operators(const Mat A, const Mat P)
     petsc_error(ierr, __FILE__, "KSPSetOperators");
 }
 //-----------------------------------------------------------------------------
-std::size_t PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose)
+int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose)
 {
   common::Timer timer("PETSc Krylov solver");
   assert(x);
@@ -160,15 +160,6 @@ std::size_t PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose)
   //  write_report(num_iterations, reason);
 
   return num_iterations;
-}
-//-----------------------------------------------------------------------------
-void PETScKrylovSolver::set_reuse_preconditioner(bool reuse_pc)
-{
-  assert(_ksp);
-  const PetscBool _reuse_pc = reuse_pc ? PETSC_TRUE : PETSC_FALSE;
-  PetscErrorCode ierr = KSPSetReusePreconditioner(_ksp, _reuse_pc);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "KSPSetReusePreconditioner");
 }
 //-----------------------------------------------------------------------------
 void PETScKrylovSolver::set_dm(DM dm)

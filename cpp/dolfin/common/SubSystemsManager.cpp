@@ -16,7 +16,6 @@
 #include <boost/algorithm/string/trim.hpp>
 
 #include "SubSystemsManager.h"
-#include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin::common;

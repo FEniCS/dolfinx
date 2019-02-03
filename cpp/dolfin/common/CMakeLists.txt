@@ -1,5 +1,4 @@
 set(HEADERS
-  constants.h
   defines.h
   dolfin_common.h
   dolfin_doc.h

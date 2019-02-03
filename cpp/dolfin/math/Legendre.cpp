@@ -7,7 +7,6 @@
 #include "Legendre.h"
 #include <boost/math/special_functions/legendre.hpp>
 #include <cmath>
-#include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 
 //-----------------------------------------------------------------------------
