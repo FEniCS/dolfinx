@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <map>
 #include <utility>

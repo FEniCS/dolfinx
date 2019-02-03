@@ -470,7 +470,7 @@ void mesh(py::module& m)
   // dolfin::mesh::SubDomain
   py::class_<dolfin::mesh::SubDomain, std::shared_ptr<dolfin::mesh::SubDomain>,
              PySubDomain>(m, "SubDomain", "Sub-domain object")
-      .def(py::init<double>(), py::arg("map_tol") = DOLFIN_EPS)
+      .def(py::init<double>(), py::arg("map_tol") = DBL_EPSILON)
       .def("inside", &dolfin::mesh::SubDomain::inside, py::arg("x").noconvert(),
            py::arg("on_boundary"))
       .def("map", &dolfin::mesh::SubDomain::map, py::arg("x").noconvert(),

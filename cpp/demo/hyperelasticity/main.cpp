@@ -1,4 +1,5 @@
 #include "HyperElasticity.h"
+#include <cfloat>
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -11,7 +12,7 @@ class Left : public mesh::SubDomain
   {
     EigenArrayXb flags(x.rows());
     for (int i = 0; i < x.rows(); ++i)
-      flags[i] = (std::abs(x(i, 0)) < DOLFIN_EPS) and on_boundary;
+      flags[i] = (std::abs(x(i, 0)) < DBL_EPSILON) and on_boundary;
 
     return flags;
   }
@@ -25,7 +26,7 @@ class Right : public mesh::SubDomain
   {
     EigenArrayXb flags(x.rows());
     for (int i = 0; i < x.rows(); ++i)
-      flags[i] = (std::abs(x(i, 0) - 1.0) < DOLFIN_EPS) and on_boundary;
+      flags[i] = (std::abs(x(i, 0) - 1.0) < DBL_EPSILON) and on_boundary;
 
     return flags;
   }

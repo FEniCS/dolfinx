@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Table.h"
-#include <dolfin/common/constants.h>
+#include <cfloat>
 #include <dolfin/log/LogStream.h>
 #include <dolfin/log/log.h>
 #include <iomanip>
@@ -13,8 +13,6 @@
 #include <sstream>
 
 using namespace dolfin;
-
-typedef std::vector<std::string>::const_iterator iterator;
 
 //-----------------------------------------------------------------------------
 Table::Table(std::string title, bool right_justify)
@@ -53,7 +51,7 @@ void Table::set(std::string row, std::string col, std::size_t value)
 //-----------------------------------------------------------------------------
 void Table::set(std::string row, std::string col, double value)
 {
-  if (std::abs(value) < DOLFIN_EPS)
+  if (std::abs(value) < DBL_EPSILON)
     value = 0.0;
   std::stringstream s;
   s << std::setprecision(5) << value;
@@ -85,14 +83,12 @@ void Table::set(std::string row, std::string col, std::string value)
 std::string Table::get(std::string row, std::string col) const
 {
   std::pair<std::string, std::string> key(row, col);
-  std::map<std::pair<std::string, std::string>, std::string>::const_iterator it
-      = values.find(key);
-
+  auto it = values.find(key);
   if (it == values.end())
   {
     log::dolfin_error("Table.cpp", "access table value",
-                 "Missing table value for entry (\"%s\", \"%s\")", row.c_str(),
-                 col.c_str());
+                      "Missing table value for entry (\"%s\", \"%s\")",
+                      row.c_str(), col.c_str());
   }
 
   return it->second;
@@ -101,14 +97,12 @@ std::string Table::get(std::string row, std::string col) const
 double Table::get_value(std::string row, std::string col) const
 {
   std::pair<std::string, std::string> key(row, col);
-  std::map<std::pair<std::string, std::string>, double>::const_iterator it
-      = dvalues.find(key);
-
+  auto it = dvalues.find(key);
   if (it == dvalues.end())
   {
     log::dolfin_error("Table.cpp", "access table value",
-                 "Missing double value for entry (\"%s\", \"%s\")", row.c_str(),
-                 col.c_str());
+                      "Missing double value for entry (\"%s\", \"%s\")",
+                      row.c_str(), col.c_str());
   }
 
   return it->second;
@@ -127,8 +121,8 @@ Table Table::operator+ (const Table& table) const
 
   // Add tables
   Table t;
-  for (iterator i = rows.begin(); i !=rows.end(); i++)
-    for (iterator j = cols.begin(); j != cols.end(); j++)
+  for (auto i = rows.begin(); i !=rows.end(); i++)
+    for (auto j = cols.begin(); j != cols.end(); j++)
       t.set(*i, *j, get(*i, *j) + table.get(*i, *j));
 
   return t;
@@ -146,8 +140,8 @@ Table Table::operator- (const Table& table) const
 
   // Add tables
   Table t;
-  for (iterator i = rows.begin(); i !=rows.end(); i++)
-    for (iterator j = cols.begin(); j != cols.end(); j++)
+  for (auto i = rows.begin(); i !=rows.end(); i++)
+    for (auto j = cols.begin(); j != cols.end(); j++)
       t.set(*i, *j, get(*i, *j) - table.get(*i, *j));
 
   return t;

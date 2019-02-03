@@ -15,10 +15,9 @@ import pytest
 from petsc4py import PETSc
 
 import ufl
-from dolfin import (DOLFIN_EPS, MPI, Expression, Function, FunctionSpace,
-                    Point, TensorFunctionSpace, UnitCubeMesh,
-                    VectorFunctionSpace, Vertex, cpp, function, interpolate,
-                    lt)
+from dolfin import (MPI, Expression, Function, FunctionSpace, Point,
+                    TensorFunctionSpace, UnitCubeMesh, VectorFunctionSpace,
+                    Vertex, cpp, function, interpolate, lt)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
@@ -64,8 +63,10 @@ def test_compute_point_values(V, W, mesh):
     u.vector().set(1.0)
     v.vector().set(1.0)
 
-    u.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
-    v.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    u.vector().ghostUpdate(
+        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+    v.vector().ghostUpdate(
+        addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     u_values = u.compute_point_values(mesh)
     v_values = v.compute_point_values(mesh)
@@ -214,7 +215,8 @@ def test_call(R, V, W, Q, mesh):
     assert numpy.allclose(u2(x0, tree)[0], u1(p0, tree))
 
     assert numpy.allclose(u2(x0, tree), u2(p0, tree))
-    assert numpy.allclose(u3(x0, tree)[:3], u2(x0, tree), rtol=1e-15, atol=1e-15)
+    assert numpy.allclose(
+        u3(x0, tree)[:3], u2(x0, tree), rtol=1e-15, atol=1e-15)
 
     p0_list = [p for p in p0]
     x0_list = [x for x in x0]
@@ -292,7 +294,7 @@ def test_near_evaluations(R, mesh):
     u0 = Function(R)
     u0.vector().set(1.0)
     a = Vertex(mesh, 0).point().array()
-    offset = 0.99 * DOLFIN_EPS
+    offset = 0.99 * np.finfo(float).eps
 
     a_shift_x = Point(a[0] - offset, a[1], a[2]).array()
     assert round(u0(a, bb_tree)[0] - u0(a_shift_x, bb_tree)[0], 7) == 0
@@ -349,7 +351,8 @@ def test_interpolation_old(V, W, mesh):
     f0 = Expression(expr_eval0)
     f = Function(V)
     f = interpolate(f0, V)
-    assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_vertices(), 7) == 0
+    assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_vertices(),
+                 7) == 0
 
     # Vector interpolation
     f1 = Expression(expr_eval1, shape=(3, ))

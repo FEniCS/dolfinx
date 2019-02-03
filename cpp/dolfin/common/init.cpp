@@ -6,7 +6,6 @@
 
 #include "init.h"
 #include "SubSystemsManager.h"
-#include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 
 //-----------------------------------------------------------------------------
