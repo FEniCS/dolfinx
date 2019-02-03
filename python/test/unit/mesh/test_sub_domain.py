@@ -5,66 +5,66 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import numpy as np
-from dolfin import SubDomain, DOLFIN_EPS, MPI, MeshFunction, UnitSquareMesh, UnitCubeMesh, UnitIntervalMesh
+
+from dolfin import (MPI, MeshFunction, SubDomain, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh)
 
 
 def test_creation_and_marking():
-
     class Left(SubDomain):
         def inside(self, x, on_boundary):
-            return x[:, 0] < DOLFIN_EPS
+            return x[:, 0] < np.finfo(float).eps
 
     class LeftOnBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return np.logical_and(x[:, 0] < DOLFIN_EPS, on_boundary)
+            return np.logical_and(x[:, 0] < np.finfo(float).eps, on_boundary)
 
     class Right(SubDomain):
         def inside(self, x, on_boundary):
-            return x[:, 0] > 1.0 - DOLFIN_EPS
+            return x[:, 0] > 1.0 - np.finfo(float).eps
 
     class RightOnBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return np.logical_and(x[:, 0] > 1.0 - DOLFIN_EPS, on_boundary)
+            return np.logical_and(x[:, 0] > 1.0 - np.finfo(float).eps,
+                                  on_boundary)
 
-    subdomain_pairs = [(Left(), Right()),
-                       (LeftOnBoundary(), RightOnBoundary())]
+    subdomain_pairs = [(Left(), Right()), (LeftOnBoundary(),
+                                           RightOnBoundary())]
 
-    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh,
-                                     UnitCubeMesh]):
+    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
         dim = ind + 1
         args = [10] * dim
         mesh = MeshClass(MPI.comm_world, *args)
         mesh.init()
 
         for left, right in subdomain_pairs:
-            for t_dim, f_dim in [(0, 0),
-                                 (mesh.topology.dim - 1, dim - 1),
+            for t_dim, f_dim in [(0, 0), (mesh.topology.dim - 1, dim - 1),
                                  (mesh.topology.dim, dim)]:
                 f = MeshFunction("size_t", mesh, t_dim, 0)
 
                 left.mark(f, 1)
                 right.mark(f, 2)
 
-                correct = {(1, 0): 1,
-                           (1, 0): 1,
-                           (1, 1): 0,
-                           (2, 0): 11,
-                           (2, 1): 10,
-                           (2, 2): 0,
-                           (3, 0): 121,
-                           (3, 2): 200,
-                           (3, 3): 0}
+                correct = {
+                    (1, 0): 1,
+                    (1, 0): 1,
+                    (1, 1): 0,
+                    (2, 0): 11,
+                    (2, 1): 10,
+                    (2, 2): 0,
+                    (3, 0): 121,
+                    (3, 2): 200,
+                    (3, 3): 0
+                }
 
                 # Check that the number of marked entities are at least the
                 # correct number (it can be larger in parallel)
-                assert all(value >= correct[dim, f_dim]
-                           for value in [
+                assert all(value >= correct[dim, f_dim] for value in [
                     MPI.sum(mesh.mpi_comm(), float((f.array() == 2).sum())),
                     MPI.sum(mesh.mpi_comm(), float((f.array() == 1).sum())),
                 ])
 
-        for t_dim, f_dim in [(0, 0),
-                             (mesh.topology.dim - 1, dim - 1),
+        for t_dim, f_dim in [(0, 0), (mesh.topology.dim - 1, dim - 1),
                              (mesh.topology.dim, dim)]:
             f = MeshFunction("size_t", mesh, t_dim, 0)
 

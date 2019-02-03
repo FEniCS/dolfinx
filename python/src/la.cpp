@@ -91,8 +91,6 @@ void la(py::module& m)
            "Solve linear system", py::arg("x"), py::arg("b"),
            py::arg("transpose") = false)
       .def("set_from_options", &dolfin::la::PETScKrylovSolver::set_from_options)
-      .def("set_reuse_preconditioner",
-           &dolfin::la::PETScKrylovSolver::set_reuse_preconditioner)
       .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
       .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
       .def("ksp", &dolfin::la::PETScKrylovSolver::ksp);

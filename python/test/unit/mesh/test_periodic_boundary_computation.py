@@ -6,8 +6,7 @@
 
 import numpy as np
 
-from dolfin import (DOLFIN_EPS, MPI, PeriodicBoundaryComputation, SubDomain,
-                    UnitSquareMesh)
+from dolfin import MPI, PeriodicBoundaryComputation, SubDomain, UnitSquareMesh
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -16,7 +15,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 def periodic_boundary():
     class PeriodicBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return x[0] < DOLFIN_EPS
+            return x[0] < np.finfo(float).eps
 
         def map(self, x, y):
             y[0] = x[0] - 1.0

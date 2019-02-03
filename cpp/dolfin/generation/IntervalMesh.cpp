@@ -6,10 +6,10 @@
 
 #include "IntervalMesh.h"
 #include "dolfin/common/MPI.h"
-#include "dolfin/common/constants.h"
 #include "dolfin/mesh/CellType.h"
 #include "dolfin/mesh/MeshPartitioning.h"
 #include <Eigen/Dense>
+#include <cfloat>
 #include <cmath>
 
 using namespace dolfin;
@@ -33,7 +33,7 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
   const double b = x[1];
   const double ab = (b - a) / static_cast<double>(nx);
 
-  if (std::abs(a - b) < DOLFIN_EPS)
+  if (std::abs(a - b) < DBL_EPSILON)
   {
     throw std::runtime_error(
         "Length of interval is zero. Check your dimensions.");

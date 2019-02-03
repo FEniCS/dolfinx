@@ -7,11 +7,11 @@
 #include "DirichletBC.h"
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
+#include <cfloat>
 #include <cinttypes>
 #include <cstdlib>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/RangedIndexSet.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -139,7 +139,7 @@ bool on_facet(
 
     // Check if the length of the sum of the two line segments vp0 and
     // vp1 is equal to the total length of the facet
-    if (std::abs(v01.norm() - vp0.norm() - vp1.norm()) < DOLFIN_EPS)
+    if (std::abs(v01.norm() - vp0.norm() - vp1.norm()) < 2.0 * DBL_EPSILON)
       return true;
     else
       return false;
@@ -169,7 +169,7 @@ bool on_facet(
     // total area of the facet
     if (std::abs(v01.cross(v02).norm() - vp0.cross(vp1).norm()
                  - vp1.cross(vp2).norm() - vp2.cross(vp0).norm())
-        < DOLFIN_EPS)
+        < 2.0 * DBL_EPSILON)
     {
       return true;
     }
@@ -385,7 +385,6 @@ void DirichletBC::set(
     if (_dofs(i, 0) < x.rows())
       x[_dofs(i, 0)] = scale * g.x[_dofs(i, 1)];
   }
-
 
   // for (auto& dof : _dofs)
   // {

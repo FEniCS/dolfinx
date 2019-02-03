@@ -7,7 +7,6 @@
 #include "LogStream.h"
 #include "log.h"
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>

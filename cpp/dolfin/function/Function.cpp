@@ -8,10 +8,10 @@
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
+#include <cfloat>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -154,12 +154,12 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
     // If not found, use the closest cell
     if (id == std::numeric_limits<unsigned int>::max())
     {
-      // Check if the closest cell is within DOLFIN_EPS. This we can
+      // Check if the closest cell is within 2*DBL_EPSILON. This we can
       // allow without _allow_extrapolation
       std::pair<unsigned int, double> close
           = bb_tree.compute_closest_entity(point, mesh);
 
-      if (close.second < DOLFIN_EPS)
+      if (close.second < 2.0 * DBL_EPSILON)
         id = close.first;
       else
       {

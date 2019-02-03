@@ -11,7 +11,6 @@
 #include "Vertex.h"
 #include <Eigen/Dense>
 #include <cstddef>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshGeometry.h>

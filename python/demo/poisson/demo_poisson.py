@@ -81,9 +81,9 @@ import numpy as np
 import dolfin
 import dolfin.plotting
 import ufl
-from dolfin import (DOLFIN_EPS, MPI, CellType, DirichletBC, Function,
-                    FunctionSpace, Point, RectangleMesh, SpatialCoordinate,
-                    TestFunction, TrialFunction, solve)
+from dolfin import (MPI, CellType, DirichletBC, Function, FunctionSpace, Point,
+                    RectangleMesh, SpatialCoordinate, TestFunction,
+                    TrialFunction, solve)
 from dolfin.io import XDMFFile
 from ufl import ds, dx, grad, inner
 
@@ -95,9 +95,10 @@ from ufl import ds, dx, grad, inner
 # divided into two triangles, we do as follows ::
 
 # Create mesh and define function space
-mesh = RectangleMesh.create(MPI.comm_world,
-                            [Point(0, 0)._cpp_object, Point(1, 1)._cpp_object], [32, 32],
-                            CellType.Type.triangle, dolfin.cpp.mesh.GhostMode.none)
+mesh = RectangleMesh.create(
+    MPI.comm_world,
+    [Point(0, 0)._cpp_object, Point(1, 1)._cpp_object], [32, 32],
+    CellType.Type.triangle, dolfin.cpp.mesh.GhostMode.none)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
@@ -125,7 +126,9 @@ mesh.geometry.coord_mapping = cmap
 
 
 def boundary(x):
-    return np.logical_or(x[:, 0] < DOLFIN_EPS, x[:, 0] > 1.0 - DOLFIN_EPS)
+    return np.logical_or(x[:, 0] < np.finfo(float).eps,
+                         x[:, 0] > 1.0 - np.finfo(float).eps)
+
 
 # Now, the Dirichlet boundary condition can be created using the class
 # :py:class:`DirichletBC <dolfin.fem.bcs.DirichletBC>`. A
@@ -137,7 +140,6 @@ def boundary(x):
 # :py:class:`Function <dolfin.functions.Function>` and the
 # Dirichlet boundary is defined immediately above. The definition of the
 # Dirichlet boundary condition then looks as follows: ::
-
 
 # Define boundary condition
 u0 = Function(V)
@@ -164,7 +166,7 @@ bc = DirichletBC(V, u0, boundary)
 u = TrialFunction(V)
 v = TestFunction(V)
 x = SpatialCoordinate(mesh)
-f = 10 * ufl.exp(-((x[0] - 0.5) ** 2 + (x[1] - 0.5) ** 2) / 0.02)
+f = 10 * ufl.exp(-((x[0] - 0.5)**2 + (x[1] - 0.5)**2) / 0.02)
 g = ufl.sin(5 * x[0])
 a = inner(grad(u), grad(v)) * dx
 L = inner(f, v) * dx + inner(g, v) * ds
@@ -195,8 +197,9 @@ solve(a == L, u, bc, petsc_options={"ksp_type": "preonly", "pc_type": "lu"})
 # the :py:func:`plot <dolfin.common.plot.plot>` command: ::
 
 # Save solution in XDMF format
-with XDMFFile(MPI.comm_world, "poisson.xdmf",
-              encoding=XDMFFile.Encoding.HDF5) as file:
+with XDMFFile(
+        MPI.comm_world, "poisson.xdmf",
+        encoding=XDMFFile.Encoding.HDF5) as file:
     file.write(u)
 
 # Plot solution
