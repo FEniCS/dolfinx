@@ -38,7 +38,7 @@ PetscScalar dolfin::fem::impl::assemble(const dolfin::fem::Form& M)
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
         = M.integrals().tabulate_tensor_fn_cell(0);
-    value += fem::impl::assemble_cells(M, mesh, fn, coeff_fn, c_offsets);
+    value += fem::impl::assemble_cells(mesh, fn, coeff_fn, c_offsets);
   }
   if (M.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 1)
   {
@@ -50,8 +50,7 @@ PetscScalar dolfin::fem::impl::assemble(const dolfin::fem::Form& M)
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
         = M.integrals().tabulate_tensor_fn_exterior_facet(0);
-    value += fem::impl::assemble_exterior_facets(M, mesh, fn, coeff_fn,
-                                                 c_offsets);
+    value += fem::impl::assemble_exterior_facets(mesh, fn, coeff_fn, c_offsets);
   }
   if (M.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
   {
@@ -66,7 +65,7 @@ PetscScalar dolfin::fem::impl::assemble(const dolfin::fem::Form& M)
 }
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_cells(
-    const Form& M, const mesh::Mesh& mesh,
+    const mesh::Mesh& mesh,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn,
     std::vector<const function::Function*> coefficients,
@@ -105,7 +104,7 @@ PetscScalar fem::impl::assemble_cells(
 }
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_exterior_facets(
-    const Form& M, const mesh::Mesh& mesh,
+    const mesh::Mesh& mesh,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
     std::vector<const function::Function*> coefficients,

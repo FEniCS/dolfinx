@@ -45,8 +45,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
         = a.integrals().tabulate_tensor_fn_cell(0);
-    fem::impl::assemble_cells(A, a, mesh, dofmap0, dofmap1, bc0, bc1, fn,
-                              coeff_fn, c_offsets);
+    fem::impl::assemble_cells(A, mesh, dofmap0, dofmap1, bc0, bc1, fn, coeff_fn,
+                              c_offsets);
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
@@ -59,8 +59,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
         = a.integrals().tabulate_tensor_fn_exterior_facet(0);
-    fem::impl::assemble_exterior_facets(A, a, mesh, dofmap0, dofmap1, bc0, bc1,
-                                        fn, coeff_fn, c_offsets);
+    fem::impl::assemble_exterior_facets(A, mesh, dofmap0, dofmap1, bc0, bc1, fn,
+                                        coeff_fn, c_offsets);
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
@@ -71,7 +71,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_cells(
-    Mat A, const Form& a, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
+    Mat A, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
     const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
@@ -144,7 +144,7 @@ void fem::impl::assemble_cells(
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_exterior_facets(
-    Mat A, const Form& a, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
+    Mat A, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
     const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,

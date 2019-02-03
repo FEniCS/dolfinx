@@ -40,8 +40,7 @@ void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
 
 /// Assemble linear form cell integrals into an Eigen vector
 void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const fem::Form& L, const mesh::Mesh& mesh,
-                    const fem::GenericDofMap& dofmap,
+                    const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
                     const std::function<void(PetscScalar*, const PetscScalar*,
                                              const double*, int)>& fn,
                     std::vector<const function::Function*> coefficients,
@@ -50,8 +49,7 @@ void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
 /// Assemble linear form exterior facet integrals into an Eigen vector
 void assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const fem::Form& L, const mesh::Mesh& mesh,
-    const fem::GenericDofMap& dofmap,
+    const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
     std::vector<const function::Function*> coefficients,

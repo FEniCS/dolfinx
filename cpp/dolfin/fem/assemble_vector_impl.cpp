@@ -277,7 +277,7 @@ void fem::impl::assemble(
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
         = L.integrals().tabulate_tensor_fn_cell(0);
-    fem::impl::assemble_cells(b, L, mesh, dofmap, fn, coeff_fn, c_offsets);
+    fem::impl::assemble_cells(b, mesh, dofmap, fn, coeff_fn, c_offsets);
   }
 
   if (L.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
@@ -285,7 +285,7 @@ void fem::impl::assemble(
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
         = L.integrals().tabulate_tensor_fn_exterior_facet(0);
-    fem::impl::assemble_exterior_facets(b, L, mesh, dofmap, fn, coeff_fn,
+    fem::impl::assemble_exterior_facets(b, mesh, dofmap, fn, coeff_fn,
                                         c_offsets);
   }
 
@@ -300,7 +300,7 @@ void fem::impl::assemble(
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_cells(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn,
@@ -332,7 +332,7 @@ void fem::impl::assemble_cells(
     // Size data structure for assembly
     be.setZero(dmap.size());
 
-    // Update coefficients
+    // Update coefficients and tabulate vector
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
       coefficients[i]->restrict(coeff_array.data() + offsets[i], cell,
@@ -340,14 +340,14 @@ void fem::impl::assemble_cells(
     }
     fn(be.data(), coeff_array.data(), coordinate_dofs.data(), 1);
 
-    // Compute local cell vector and add to global vector
+    // Add local cell vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
       b[dmap[i]] += be[i];
   }
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_exterior_facets(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L,
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
