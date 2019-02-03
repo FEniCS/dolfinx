@@ -48,20 +48,17 @@ class FunctionSpace(ufl.FunctionSpace):
             super().__init__(mesh.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
-        objects, module = jit.ffc_jit(
+        objects = jit.ffc_jit(
             self.ufl_element(),
-            form_compiler_parameters=None)
-#            mpi_comm=mesh.mpi_comm())
+            form_compiler_parameters=None,
+            mpi_comm=mesh.mpi_comm())
 
         objects = list(objects)
 
-        ufc_element = objects[0][0]
-        ufc_dofmap = objects[0][1]
         ffi = cffi.FFI()
-        print(ufc_element, ufc_dofmap)
-
+        ufc_element = objects[0]
+        ufc_dofmap = objects[1]
         ufc_element = dofmap.make_ufc_finite_element(ffi.cast("uint64_t", ufc_element))
-        print(ufc_element, ufc_dofmap)
         dolfin_element = cpp.fem.FiniteElement(ufc_element)
         dolfin_dofmap = dofmap.DofMap.fromufc(ffi.cast("uint64_t", ufc_dofmap), mesh)
 

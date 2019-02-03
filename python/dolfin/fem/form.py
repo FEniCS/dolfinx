@@ -49,16 +49,14 @@ class Form(ufl.Form):
         mesh = domain.ufl_cargo()
 
         # Compile UFL form with JIT
-        objects, module = jit.ffc_jit(
+        ufc_form = jit.ffc_jit(
             form,
-            form_compiler_parameters=self.form_compiler_parameters)
-#            mpi_comm=mesh.mpi_comm())
+            form_compiler_parameters=self.form_compiler_parameters,
+            mpi_comm=mesh.mpi_comm())
+
         # Cast compiled library to pointer to ufc_form
         ffi = cffi.FFI()
-        print(objects[0][0])
-        ufc_form = ffi.addressof(objects[0][0])
-        print("ufc_form = ", ufc_form)
-        print("casting = ", ffi.cast("uint64_t", ufc_form))
+        ufc_form = ffi.addressof(ufc_form[0])
         ufc_form = fem.dofmap.make_ufc_form(ffi.cast("uint64_t", ufc_form))
 
         # For every argument in form extract its function space

@@ -91,14 +91,14 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     # Return the decorated jit function
     return mpi_jit
 
-
-# @mpi_jit_decorator
+@mpi_jit_decorator
 def ffc_jit(ufl_object, form_compiler_parameters=None):
     # Prepare form compiler parameters with overrides from dolfin
     p = ffc.default_jit_parameters()
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters or {})
 
+    # Switch on type and compile, returning cffi object
     if isinstance(ufl_object, ufl.Form):
         r = ffc.codegeneration.jit.compile_forms([ufl_object], parameters=p)
     elif isinstance(ufl_object, ufl.FiniteElementBase):
@@ -108,4 +108,4 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     else:
         raise TypeError(type(ufl_object))
 
-    return r
+    return r[0][0]
