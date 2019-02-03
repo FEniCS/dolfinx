@@ -19,9 +19,13 @@ from dolfin.fem.form import Form
 
 @functools.singledispatch
 def assemble(M: typing.Union[Form, cpp.fem.Form]
-             ) -> typing.Union[float, PETSc.Mat, PETSc.Vec]:
-    """Assemble a variational form over mesh. The returned object is finalised,
-    i.e. accumulated across MPI processes."""
+             ) -> typing.Union[PETSc.ScalarType, PETSc.Mat, PETSc.Vec]:
+    """Assemble a variational form over mesh.
+
+    The returned object is finalised, i.e. accumulated across MPI
+    processes.
+
+    """
     _M = _create_cpp_form(M)
     if _M.rank() == 0:
         return cpp.fem.assemble_scalar(_M)
@@ -39,8 +43,13 @@ def assemble(M: typing.Union[Form, cpp.fem.Form]
 
 @assemble.register(PETSc.Vec)
 def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    """Re-assemble linear form into a vector. The returned vector is finalised,
-    i.e. ghost values accumulated across MPI processes."""
+    """Assemble linear form into an exiting vector.
+
+    The vector must already have the correct size and parallel layout
+    and wll be zeroed. The returned vector is finalised, i.e. ghost
+    values accumulated across MPI processes.
+
+    """
     L_cpp = _create_cpp_form(L)
     with b.localForm() as b_local:
         b_local.set(0.0)
@@ -54,9 +63,13 @@ def _(A: PETSc.Mat,
       a: typing.Union[Form, cpp.fem.Form],
       bcs=[],
       diagonal: float = 1.0) -> PETSc.Mat:
-    """Assemble bilinear form into a vector, with rows and columns with Dirichlet
-    boundary conditions zeroed. The matrix finalised, i.e. ghost values
-    accumulated across MPI processes.
+    """Assemble bilinear form into an exiting matrix. The matrix is
+    zeroed before assembly. Rows and columns of the matrix with
+    Dirichlet boundary conditions zeroed, and ``scalar`` is placed on
+    the diagonal for entries with a Dirichlet boundary condition.
+
+    The matrix finalised, i.e. ghost values accumulated across MPI
+    processes.
 
     """
     A.zeroEntries()
@@ -66,10 +79,15 @@ def _(A: PETSc.Mat,
     return A
 
 
+# -- Vector assembly ---------------------------------------------------------
+
+
 @functools.singledispatch
 def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    """Assemble linear form into a vector. The returned vector is not finalised,
-    i.e. ghost values are not accumulated."""
+    """Assemble linear form into a vector. The returned vector is not
+    finalised, i.e. ghost values are not accumulated.
+
+    """
     L_cpp = _create_cpp_form(L)
     b = cpp.la.create_vector(L_cpp.function_space(0).dofmap().index_map())
     with b.localForm() as b_local:
@@ -80,20 +98,28 @@ def assemble_vector(L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
 
 @assemble_vector.register(PETSc.Vec)
 def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    """Re-assemble linear form into a vector. The vector is not zeroed and
-    it is not finalised, i.e. ghost values are not accumulated."""
+    """Re-assemble linear form into a vector.
+
+    The vector is not zeroed and it is not finalised, i.e. ghost values
+    are not accumulated.
+
+    """
     L_cpp = _create_cpp_form(L)
     cpp.fem.assemble_vector(b, L_cpp)
     return b
 
 
+# FIXME: Revise this interface
 def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
                          a,
                          bcs: typing.List[DirichletBC],
                          x0: typing.Optional[PETSc.Vec] = None,
                          scale: float = 1.0) -> PETSc.Vec:
-    """Assemble linear forms into a nested vector. The vector is not zeroed and
-    it is not finalised, i.e. ghost values are not accumulated."""
+    """Assemble linear forms into a nested (VecNest) vector. The vector is
+    not zeroed and it is not finalised, i.e. ghost values are not
+    accumulated.
+
+    """
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     b = cpp.fem.create_vector_nest(L_cpp)
@@ -101,13 +127,17 @@ def assemble_vector_nest(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     return b
 
 
+# FIXME: Revise this interface
 def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
                           a,
                           bcs: typing.List[DirichletBC],
                           x0: typing.Optional[PETSc.Vec] = None,
                           scale: float = 1.0) -> PETSc.Vec:
-    """Assemble linear forms into a monolithic vector. The vector is not zeroed and
-    it is not finalised, i.e. ghost values are not accumulated."""
+    """Assemble linear forms into a monolithic vector. The vector is not
+    zeroed and it is not finalised, i.e. ghost values are not
+    accumulated.
+
+    """
     L_cpp = [_create_cpp_form(form) for form in L]
     a_cpp = [[_create_cpp_form(form) for form in row] for row in a]
     b = cpp.fem.create_vector(L_cpp)
@@ -115,6 +145,7 @@ def assemble_vector_block(L: typing.List[typing.Union[Form, cpp.fem.Form]],
     return b
 
 
+# FIXME: Revise this interface
 def reassemble_vector(b: PETSc.Vec,
                       L,
                       a=[],
@@ -131,6 +162,37 @@ def reassemble_vector(b: PETSc.Vec,
     return b
 
 
+# -- Matrix assembly ---------------------------------------------------------
+
+
+@functools.singledispatch
+def assemble_matrix(a,
+                    bcs: typing.List[DirichletBC] = [],
+                    diagonal: float = 1.0) -> PETSc.Mat:
+    """Assemble bilinear form into a matrix. The returned matrix is not
+    finalised, i.e. ghost values are not accumulated.
+
+    """
+    a_cpp = _create_cpp_form(a)
+    A = cpp.fem.create_matrix(a_cpp)
+    A.zeroEntries()
+    cpp.fem.assemble_matrix(A, a_cpp, bcs, diagonal)
+    return A
+
+
+@assemble_matrix.register(PETSc.Mat)
+def _(A, a, bcs: typing.List[DirichletBC] = [],
+      diagonal: float = 1.0) -> PETSc.Mat:
+    """Assemble bilinear form into a matrix. The returned matrix is not
+    finalised, i.e. ghost values are not accumulated.
+
+    """
+    a_cpp = _create_cpp_form(a)
+    cpp.fem.assemble_matrix(A, a_cpp, bcs, diagonal)
+    return A
+
+
+# FIXME: Revise this interface
 def assemble_matrix_nest(a,
                          bcs: typing.List[DirichletBC],
                          diagonal: float = 1.0) -> PETSc.Mat:
@@ -142,6 +204,7 @@ def assemble_matrix_nest(a,
     return A
 
 
+# FIXME: Revise this interface
 def assemble_matrix_block(a,
                           bcs: typing.List[DirichletBC],
                           diagonal: float = 1.0) -> PETSc.Mat:
@@ -153,13 +216,7 @@ def assemble_matrix_block(a,
     return A
 
 
-def assemble_matrix(a, bcs: typing.List[DirichletBC],
-                    diagonal: float = 1.0) -> PETSc.Mat:
-    """Assemble bilinear form into matrix."""
-    a_cpp = _create_cpp_form(a)
-    A = cpp.fem.create_matrix(a_cpp)
-    assemble(A, a_cpp, bcs, diagonal)
-    return A
+# -- Modifier for Dirichlet conditions ---------------------------------------
 
 
 def apply_lifting(b: PETSc.Vec,
@@ -167,7 +224,9 @@ def apply_lifting(b: PETSc.Vec,
                   bcs: typing.List[typing.List[DirichletBC]],
                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
                   scale: float = 1.0) -> None:
-    """Modify vector for lifting of boundary conditions."""
+    """Modify vector for lifting of boundary conditions.
+
+    """
     a_cpp = [_create_cpp_form(form) for form in a]
     cpp.fem.apply_lifting(b, a_cpp, bcs, x0, scale)
 
