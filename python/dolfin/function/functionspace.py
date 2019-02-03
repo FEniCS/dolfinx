@@ -58,9 +58,9 @@ class FunctionSpace(ufl.FunctionSpace):
         ffi = cffi.FFI()
         ufc_element = objects[0]
         ufc_dofmap = objects[1]
-        ufc_element = dofmap.make_ufc_finite_element(ffi.cast("uint64_t", ufc_element))
+        ufc_element = dofmap.make_ufc_finite_element(ffi.cast("uintptr_t", ufc_element))
         dolfin_element = cpp.fem.FiniteElement(ufc_element)
-        dolfin_dofmap = dofmap.DofMap.fromufc(ffi.cast("uint64_t", ufc_dofmap), mesh)
+        dolfin_dofmap = dofmap.DofMap.fromufc(ffi.cast("uintptr_t", ufc_dofmap), mesh)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.function.FunctionSpace(

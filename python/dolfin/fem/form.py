@@ -56,8 +56,7 @@ class Form(ufl.Form):
 
         # Cast compiled library to pointer to ufc_form
         ffi = cffi.FFI()
-        ufc_form = ffi.addressof(ufc_form[0])
-        ufc_form = fem.dofmap.make_ufc_form(ffi.cast("uint64_t", ufc_form))
+        ufc_form = fem.dofmap.make_ufc_form(ffi.cast("uintptr_t", ufc_form))
 
         # For every argument in form extract its function space
         function_spaces = [
