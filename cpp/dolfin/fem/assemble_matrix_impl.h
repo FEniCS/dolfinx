@@ -13,6 +13,11 @@
 namespace dolfin
 {
 
+namespace function
+{
+class Function;
+}
+
 namespace mesh
 {
 class Mesh;
@@ -35,19 +40,23 @@ void assemble_matrix(Mat A, const Form& a, const std::vector<bool>& bc0,
                      const std::vector<bool>& bc1);
 
 /// Assemble bilinear form cell integrals into an Eigen vector
-void assemble_cells(Mat A, const Form& a, const mesh::Mesh& mesh,
-                    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
-                    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
+void assemble_cells(Mat A, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
+                    const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
+                    const std::vector<bool>& bc1,
                     const std::function<void(PetscScalar*, const PetscScalar*,
-                                             const double*, int)>& fn);
+                                             const double*, int)>& fn,
+                    std::vector<const function::Function*> coefficients,
+                    const std::vector<int>& offsets);
 
 /// Assemble bilinear form cell integrals into an Eigen vector
 void assemble_exterior_facets(
-    Mat A, const Form& a, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
+    Mat A, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
     const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn);
+                             int, int)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets);
 
 } // namespace impl
 } // namespace fem

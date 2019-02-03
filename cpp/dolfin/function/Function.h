@@ -187,8 +187,7 @@ public:
   /// @param  coordinate_dofs (double *)
   ///         The coordinates
   void
-  restrict(PetscScalar* w, const fem::FiniteElement& element,
-           const mesh::Cell& cell,
+  restrict(PetscScalar* w, const mesh::Cell& cell,
            const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Compute values at all mesh points
