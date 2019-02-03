@@ -188,8 +188,6 @@ void fem::impl::assemble_exterior_facets(
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
         = dofmap1.cell_dofs(cell_index);
 
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {

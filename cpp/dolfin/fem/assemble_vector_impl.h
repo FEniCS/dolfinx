@@ -15,6 +15,11 @@
 namespace dolfin
 {
 
+namespace function
+{
+class Function;
+}
+
 namespace mesh
 {
 class Mesh;
@@ -38,7 +43,9 @@ void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
                     const fem::Form& L, const mesh::Mesh& mesh,
                     const fem::GenericDofMap& dofmap,
                     const std::function<void(PetscScalar*, const PetscScalar*,
-                                             const double*, int)>& fn);
+                                             const double*, int)>& fn,
+                    std::vector<const function::Function*> coefficients,
+                    const std::vector<int>& offsets);
 
 /// Assemble linear form exterior facet integrals into an Eigen vector
 void assemble_exterior_facets(
@@ -46,7 +53,9 @@ void assemble_exterior_facets(
     const fem::Form& L, const mesh::Mesh& mesh,
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn);
+                             int, int)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 void assemble_interior_facets(
