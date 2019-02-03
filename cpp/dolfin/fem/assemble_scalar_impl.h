@@ -42,13 +42,16 @@ PetscScalar
 assemble_cells(const fem::Form& M, const mesh::Mesh& mesh,
                const std::function<void(PetscScalar*, const PetscScalar*,
                                         const double*, int)>& fn,
-               std::vector<const function::Function*> coefficients);
+               std::vector<const function::Function*> coefficients,
+               const std::vector<int>& offsets);
 
 /// Assemble functional over exterior facets
 PetscScalar assemble_exterior_facets(
     const fem::Form& M, const mesh::Mesh& mesh,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn);
+                             int, int)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets);
 
 /// Assemble functional over interior facets
 PetscScalar assemble_interior_facets(const Form& M);

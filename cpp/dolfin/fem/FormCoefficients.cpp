@@ -27,6 +27,18 @@ FormCoefficients::FormCoefficients(const ufc_form& ufc_form)
 //-----------------------------------------------------------------------------
 std::size_t FormCoefficients::size() const { return _coefficients.size(); }
 //-----------------------------------------------------------------------------
+std::vector<int> FormCoefficients::offsets() const
+{
+  std::vector<int> n = {0};
+  for (auto& c : _coefficients)
+  {
+    if (!c)
+      throw std::runtime_error("Not all form coefficients have been set.");
+    n.push_back(n.back() + c->function_space()->element()->space_dimension());
+  }
+  return n;
+}
+//-----------------------------------------------------------------------------
 void FormCoefficients::set(
     std::size_t i, std::shared_ptr<const function::Function> coefficient)
 {

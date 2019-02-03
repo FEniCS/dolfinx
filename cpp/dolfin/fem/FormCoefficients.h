@@ -36,6 +36,11 @@ public:
   /// Get number of coefficients
   std::size_t size() const;
 
+  /// Offset for each coefficient expansion array on a cell. Use to pack
+  /// data for multiple coefficients in a flat array. The last entry is
+  /// the size required to store all coefficients.
+  std::vector<int> offsets() const;
+
   /// Set a coefficient to be a Function
   void set(std::size_t i,
            std::shared_ptr<const function::Function> coefficient);

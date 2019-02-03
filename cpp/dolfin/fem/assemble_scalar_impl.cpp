@@ -25,30 +25,20 @@ PetscScalar dolfin::fem::impl::assemble(const dolfin::fem::Form& M)
   assert(M.mesh());
   const mesh::Mesh& mesh = *M.mesh();
 
-  PetscScalar value = 0.0;
+  // Prepare coefficients
+  const FormCoefficients& coefficients = M.coeffs();
+  std::vector<const function::Function*> coeff_fn(coefficients.size());
+  for (std::size_t i = 0; i < coefficients.size(); ++i)
+    coeff_fn[i] = coefficients.get(i).get();
+  std::vector<int> c_offsets = coefficients.offsets();
 
+  PetscScalar value = 0.0;
   if (M.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
         = M.integrals().tabulate_tensor_fn_cell(0);
-
-    const FormCoefficients& coefficients = M.coeffs();
-    std::vector<std::uint32_t> n = {0};
-    std::vector<const function::Function*> coefficients_ptr(
-        coefficients.size());
-    for (std::uint32_t i = 0; i < coefficients.size(); ++i)
-    {
-      coefficients_ptr[i] = coefficients.get(i).get();
-      n.push_back(n.back()
-                  + coefficients_ptr[i]
-                        ->function_space()
-                        ->element()
-                        ->space_dimension());
-    }
-    Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
-
-    value += fem::impl::assemble_cells(M, mesh, fn, coefficients_ptr);
+    value += fem::impl::assemble_cells(M, mesh, fn, coeff_fn, c_offsets);
   }
   if (M.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 1)
   {
@@ -60,7 +50,8 @@ PetscScalar dolfin::fem::impl::assemble(const dolfin::fem::Form& M)
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
         = M.integrals().tabulate_tensor_fn_exterior_facet(0);
-    value += fem::impl::assemble_exterior_facets(M, mesh, fn);
+    value += fem::impl::assemble_exterior_facets(M, mesh, fn, coeff_fn,
+                                                 c_offsets);
   }
   if (M.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
   {
@@ -78,24 +69,14 @@ PetscScalar fem::impl::assemble_cells(
     const Form& M, const mesh::Mesh& mesh,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn,
-    std::vector<const function::Function*> coefficients)
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets)
 {
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim);
 
-  // TODO: simplify and move elsewhere
-  // Manage coefficients
-  const FormCoefficients& coeffs = M.coeffs();
-  std::vector<std::uint32_t> n = {0};
-  for (std::uint32_t i = 0; i < coeffs.size(); ++i)
-  {
-    n.push_back(
-        n.back()
-        + coefficients[i]->function_space()->element()->space_dimension());
-  }
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
-
   // Create data structures used in assembly
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs;
 
@@ -109,14 +90,13 @@ PetscScalar fem::impl::assemble_cells(
     // Get cell vertex coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
 
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      coefficients[i]->restrict(coeff_array.data() + n[i], cell,
+      coefficients[i]->restrict(coeff_array.data() + offsets[i], cell,
                                 coordinate_dofs);
     }
+
     fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), 1);
     value += cell_value;
   }
@@ -127,30 +107,18 @@ PetscScalar fem::impl::assemble_cells(
 PetscScalar fem::impl::assemble_exterior_facets(
     const Form& M, const mesh::Mesh& mesh,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn)
+                             int, int)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets)
 {
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim - 1);
   mesh.init(tdim - 1, tdim);
 
   // Creat data structures used in assembly
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs;
-
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = M.integrals().enabled_coefficients_exterior_facet(0);
-  const FormCoefficients& coefficients = M.coeffs();
-  std::vector<std::uint32_t> n = {0};
-
-  std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  for (std::uint32_t i = 0; i < coefficients.size(); ++i)
-  {
-    coefficients_ptr[i] = coefficients.get(i).get();
-    n.push_back(
-        n.back()
-        + coefficients_ptr[i]->function_space()->element()->space_dimension());
-  }
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
   // Iterate over all facets
   PetscScalar cell_value, value(0);
@@ -170,16 +138,11 @@ PetscScalar fem::impl::assemble_exterior_facets(
     // Get cell vertex coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
 
-    // TODO: Move gathering of coefficients outside of main assembly
-    // loop
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      if (enabled_coefficients[i])
-      {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
-                                      coordinate_dofs);
-      }
+      coefficients[i]->restrict(coeff_array.data() + offsets[i], cell,
+                                coordinate_dofs);
     }
 
     fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), local_facet, 1);
