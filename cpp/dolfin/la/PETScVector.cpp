@@ -24,8 +24,7 @@ using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const common::IndexMap& map)
-    : PETScVector(map.mpi_comm(), map.local_range(), map.ghosts(),
-                  map.block_size())
+    : _x(la::create_petsc_vector(map))
 {
   // Do nothing
 }
@@ -148,13 +147,6 @@ MPI_Comm PETScVector::mpi_comm() const
   PetscErrorCode ierr = PetscObjectGetComm((PetscObject)(_x), &mpi_comm);
   CHECK_ERROR("PetscObjectGetComm");
   return mpi_comm;
-}
-//-----------------------------------------------------------------------------
-void PETScVector::set(PetscScalar a)
-{
-  assert(_x);
-  PetscErrorCode ierr = VecSet(_x, a);
-  CHECK_ERROR("VecSet");
 }
 //-----------------------------------------------------------------------------
 PetscReal PETScVector::norm(la::Norm norm_type) const

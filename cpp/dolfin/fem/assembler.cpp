@@ -279,9 +279,7 @@ PetscScalar fem::assemble_scalar(const Form& M)
 void fem::assemble_vector(Vec b, const Form& L)
 {
   la::VecWrapper _b(b);
-  _b.x.setZero();
   fem::impl::assemble(_b.x, L);
-  _b.restore();
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(

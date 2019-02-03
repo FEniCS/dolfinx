@@ -6,10 +6,10 @@
 
 #include "BoxMesh.h"
 #include <Eigen/Dense>
+#include <cfloat>
 #include <cmath>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
@@ -75,8 +75,9 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   const double f = z1;
   const double ef = (f - e) / static_cast<double>(nz);
 
-  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS
-      || std::abs(z0 - z1) < DOLFIN_EPS)
+  if (std::abs(x0 - x1) < 2.0 * DBL_EPSILON
+      || std::abs(y0 - y1) < 2.0 * DBL_EPSILON
+      || std::abs(z0 - z1) < 2.0 * DBL_EPSILON)
   {
     throw std::runtime_error(
         "Box seems to have zero width, height or depth. Check dimensions");

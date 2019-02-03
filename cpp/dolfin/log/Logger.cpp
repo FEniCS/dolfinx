@@ -22,8 +22,10 @@
 #include "LogLevel.h"
 #include "Logger.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/defines.h>
+
+#define DOLFIN_LINELENGTH 256
+#define DOLFIN_TERM_WIDTH 80
 
 using namespace dolfin;
 using namespace dolfin::log;

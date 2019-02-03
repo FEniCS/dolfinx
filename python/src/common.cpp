@@ -10,7 +10,6 @@
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/timing.h>
 #include <dolfin/log/Table.h>
@@ -52,9 +51,6 @@ void common(py::module& m)
   m.attr("has_slepc4py") = false;
 #endif
   m.attr("git_commit_hash") = dolfin::git_commit_hash();
-
-  m.attr("DOLFIN_EPS") = DOLFIN_EPS;
-  m.attr("DOLFIN_PI") = DOLFIN_PI;
 
   // dolfin::common::IndexMap
   py::class_<dolfin::common::IndexMap,

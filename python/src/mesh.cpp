@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <cfloat>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -137,7 +138,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Mesh
   py::class_<dolfin::mesh::Mesh, std::shared_ptr<dolfin::mesh::Mesh>,
              dolfin::common::Variable>(m, "Mesh", py::dynamic_attr(),
-                                       "DOLFIN Mesh object")
+                                       "Mesh object")
       .def(py::init(
           [](const MPICommWrapper comm, dolfin::mesh::CellType::Type type,
              const Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
@@ -196,7 +197,7 @@ void mesh(py::module& m)
   // dolfin::mesh::MeshConnectivity class
   py::class_<dolfin::mesh::MeshConnectivity,
              std::shared_ptr<dolfin::mesh::MeshConnectivity>>(
-      m, "MeshConnectivity", "DOLFIN MeshConnectivity object")
+      m, "MeshConnectivity", "MeshConnectivity object")
       .def("__call__",
            [](const dolfin::mesh::MeshConnectivity& self, std::size_t i) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(self(i),
@@ -210,8 +211,8 @@ void mesh(py::module& m)
 
   // dolfin::mesh::MeshEntity class
   py::class_<dolfin::mesh::MeshEntity,
-             std::shared_ptr<dolfin::mesh::MeshEntity>>(
-      m, "MeshEntity", "DOLFIN MeshEntity object")
+             std::shared_ptr<dolfin::mesh::MeshEntity>>(m, "MeshEntity",
+                                                        "MeshEntity object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t, std::size_t>())
       .def_property_readonly("dim", &dolfin::mesh::MeshEntity::dim,
                              "Topological dimension")
@@ -242,27 +243,27 @@ void mesh(py::module& m)
 
   // dolfin::mesh::Vertex
   py::class_<dolfin::mesh::Vertex, std::shared_ptr<dolfin::mesh::Vertex>,
-             dolfin::mesh::MeshEntity>(m, "Vertex", "DOLFIN Vertex object")
+             dolfin::mesh::MeshEntity>(m, "Vertex", "Vertex object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("point", &dolfin::mesh::Vertex::point);
 
   // dolfin::mesh::Edge
   py::class_<dolfin::mesh::Edge, std::shared_ptr<dolfin::mesh::Edge>,
-             dolfin::mesh::MeshEntity>(m, "Edge", "DOLFIN Edge object")
+             dolfin::mesh::MeshEntity>(m, "Edge", "Edge object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("dot", &dolfin::mesh::Edge::dot)
       .def("length", &dolfin::mesh::Edge::length);
 
   // dolfin::mesh::Face
   py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,
-             dolfin::mesh::MeshEntity>(m, "Face", "DOLFIN Face object")
+             dolfin::mesh::MeshEntity>(m, "Face", "Face object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("normal", &dolfin::mesh::Face::normal)
       .def("area", &dolfin::mesh::Face::area);
 
   // dolfin::mesh::Facet
   py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
-             dolfin::mesh::MeshEntity>(m, "Facet", "DOLFIN Facet object")
+             dolfin::mesh::MeshEntity>(m, "Facet", "Facet object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("exterior", &dolfin::mesh::Facet::exterior)
       .def("normal", &dolfin::mesh::Facet::normal);
@@ -434,8 +435,7 @@ void mesh(py::module& m)
 #undef MESHVALUECOLLECTION_MACRO
 
   // dolfin::mesh::MeshQuality
-  py::class_<dolfin::mesh::MeshQuality>(m, "MeshQuality",
-                                        "DOLFIN MeshQuality class")
+  py::class_<dolfin::mesh::MeshQuality>(m, "MeshQuality", "MeshQuality class")
       .def_static("radius_ratios", &dolfin::mesh::MeshQuality::radius_ratios)
       .def_static("radius_ratio_histogram_data",
                   &dolfin::mesh::MeshQuality::radius_ratio_histogram_data,
@@ -470,8 +470,8 @@ void mesh(py::module& m)
 
   // dolfin::mesh::SubDomain
   py::class_<dolfin::mesh::SubDomain, std::shared_ptr<dolfin::mesh::SubDomain>,
-             PySubDomain>(m, "SubDomain", "DOLFIN SubDomain object")
-      .def(py::init<double>(), py::arg("map_tol") = DOLFIN_EPS)
+             PySubDomain>(m, "SubDomain", "Sub-domain object")
+      .def(py::init<double>(), py::arg("map_tol") = DBL_EPSILON)
       .def("inside", &dolfin::mesh::SubDomain::inside, py::arg("x").noconvert(),
            py::arg("on_boundary"))
       .def("map", &dolfin::mesh::SubDomain::map, py::arg("x").noconvert(),

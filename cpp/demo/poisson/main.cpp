@@ -89,6 +89,7 @@
 // .. code-block:: cpp
 
 #include "Poisson.h"
+#include <cfloat>
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -151,7 +152,7 @@ class DirichletBoundary : public mesh::SubDomain
   {
     EigenArrayXb result(x.rows());
     for (unsigned int i = 0; i != x.rows(); ++i)
-      result[i] = (x(i, 0) < DOLFIN_EPS or x(i, 0) > 1.0 - DOLFIN_EPS);
+      result[i] = (x(i, 0) < DBL_EPSILON or x(i, 0) > 1.0 - DBL_EPSILON);
     return result;
   }
 };

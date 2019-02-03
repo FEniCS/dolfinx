@@ -8,10 +8,10 @@
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
+#include <cfloat>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -154,12 +154,12 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
     // If not found, use the closest cell
     if (id == std::numeric_limits<unsigned int>::max())
     {
-      // Check if the closest cell is within DOLFIN_EPS. This we can
+      // Check if the closest cell is within 2*DBL_EPSILON. This we can
       // allow without _allow_extrapolation
       std::pair<unsigned int, double> close
           = bb_tree.compute_closest_entity(point, mesh);
 
-      if (close.second < DOLFIN_EPS)
+      if (close.second < 2.0 * DBL_EPSILON)
         id = close.first;
       else
       {
@@ -410,12 +410,10 @@ la::PETScVector Function::_create_vector(const function::FunctionSpace& V)
                        "collapsing the function space");
   }
 
-  // Get index map
-  std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
-  assert(index_map);
+  assert(dofmap.index_map());
+  la::PETScVector v = la::PETScVector(*dofmap.index_map());
+  VecSet(v.vec(), 0.0);
 
-  la::PETScVector v = la::PETScVector(*index_map);
-  v.set(0.0);
   return v;
 }
 //-----------------------------------------------------------------------------

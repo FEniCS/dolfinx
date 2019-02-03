@@ -11,8 +11,8 @@
 #include "Vertex.h"
 #include <Eigen/Dense>
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
-#include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
@@ -124,7 +124,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     const double copl = m.determinant();
     const double h = std::min(1.0, std::pow(volume, 1.5));
     // Check for coplanarity
-    if (std::abs(copl) > h * DOLFIN_EPS)
+    if (std::abs(copl) > h * DBL_EPSILON)
     {
       log::dolfin_error("QuadrilateralCell.cpp",
                         "compute volume of quadrilateral",
