@@ -32,7 +32,24 @@ PetscScalar dolfin::fem::impl::assemble(const dolfin::fem::Form& M)
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
         = M.integrals().tabulate_tensor_fn_cell(0);
-    value += fem::impl::assemble_cells(M, mesh, fn);
+
+    const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
+        = M.integrals().enabled_coefficients_cell(0);
+    const FormCoefficients& coefficients = M.coeffs();
+    std::vector<std::uint32_t> n = {0};
+    std::vector<const function::Function*> coefficients_ptr(
+        coefficients.size());
+    std::vector<const FiniteElement*> elements_ptr(coefficients.size());
+    for (std::uint32_t i = 0; i < coefficients.size(); ++i)
+    {
+      coefficients_ptr[i] = coefficients.get(i).get();
+      elements_ptr[i] = &coefficients.element(i);
+      const FiniteElement& element = coefficients.element(i);
+      n.push_back(n.back() + element.space_dimension());
+    }
+    Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
+
+    value += fem::impl::assemble_cells(M, mesh, fn, coefficients_ptr);
   }
   if (M.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 1)
   {
@@ -61,7 +78,8 @@ PetscScalar dolfin::fem::impl::assemble(const dolfin::fem::Form& M)
 PetscScalar fem::impl::assemble_cells(
     const Form& M, const mesh::Mesh& mesh,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& fn)
+                             int)>& fn,
+    std::vector<const function::Function*> coefficients)
 {
   const std::size_t tdim = mesh.topology().dim();
   mesh.init(tdim);
@@ -70,16 +88,15 @@ PetscScalar fem::impl::assemble_cells(
   // Manage coefficients
   const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
       = M.integrals().enabled_coefficients_cell(0);
-  const FormCoefficients& coefficients = M.coeffs();
+  const FormCoefficients& coeffs = M.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
-  for (std::uint32_t i = 0; i < coefficients.size(); ++i)
+  for (std::uint32_t i = 0; i < coeffs.size(); ++i)
   {
-    coefficients_ptr[i] = coefficients.get(i).get();
-    elements_ptr[i] = &coefficients.element(i);
-    const FiniteElement& element = coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
+    coefficients_ptr[i] = coeffs.get(i).get();
+    n.push_back(
+        n.back()
+        + coefficients_ptr[i]->function_space()->element()->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -104,8 +121,8 @@ PetscScalar fem::impl::assemble_cells(
     {
       if (enabled_coefficients[i])
       {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
-                                      *elements_ptr[i], cell, coordinate_dofs);
+        coefficients[i]->restrict(coeff_array.data() + n[i], cell,
+                                  coordinate_dofs);
       }
     }
     fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), 1);
@@ -134,13 +151,12 @@ PetscScalar fem::impl::assemble_exterior_facets(
   std::vector<std::uint32_t> n = {0};
 
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
     coefficients_ptr[i] = coefficients.get(i).get();
-    elements_ptr[i] = &coefficients.element(i);
-    const FiniteElement& element = coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
+    n.push_back(
+        n.back()
+        + coefficients_ptr[i]->function_space()->element()->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -169,8 +185,8 @@ PetscScalar fem::impl::assemble_exterior_facets(
     {
       if (enabled_coefficients[i])
       {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
-                                      *elements_ptr[i], cell, coordinate_dofs);
+        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                      coordinate_dofs);
       }
     }
 

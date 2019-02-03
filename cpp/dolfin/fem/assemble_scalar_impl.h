@@ -15,6 +15,11 @@
 namespace dolfin
 {
 
+namespace function
+{
+class Function;
+}
+
 namespace mesh
 {
 class Mesh;
@@ -36,7 +41,8 @@ PetscScalar assemble(const fem::Form& M);
 PetscScalar
 assemble_cells(const fem::Form& M, const mesh::Mesh& mesh,
                const std::function<void(PetscScalar*, const PetscScalar*,
-                                        const double*, int)>& fn);
+                                        const double*, int)>& fn,
+               std::vector<const function::Function*> coefficients);
 
 /// Assemble functional over exterior facets
 PetscScalar assemble_exterior_facets(

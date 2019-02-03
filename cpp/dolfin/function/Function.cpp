@@ -206,8 +206,7 @@ void Function::eval(
   EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
   cell.get_coordinate_dofs(coordinate_dofs);
 
-  // Restrict function to cell
-  restrict(coefficients.data(), element, cell, coordinate_dofs);
+  restrict(coefficients.data(), cell, coordinate_dofs);
 
   // Get coordinate mapping
   std::shared_ptr<const fem::CoordinateMapping> cmap
@@ -299,8 +298,7 @@ std::vector<std::size_t> Function::value_shape() const
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(
-    PetscScalar* w, const fem::FiniteElement& element,
-    const mesh::Cell& dolfin_cell,
+    PetscScalar* w, const mesh::Cell& dolfin_cell,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   assert(w);
@@ -310,26 +308,15 @@ void Function::restrict(
   // Check if we are restricting to an element of this function space
   la::VecReadWrapper v(_vector.vec());
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
-  if (_function_space->has_element(element)
-      && _function_space->has_cell(dolfin_cell))
-  {
-    // Get dofmap for cell
-    const fem::GenericDofMap& dofmap = *_function_space->dofmap();
-    auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
-    // Note: We should have dofmap.max_element_dofs() == dofs.size()
-    // here. Pick values from vector(s)
-    for (Eigen::Index i = 0; i < dofs.size(); ++i)
-      w[i] = _v[dofs[i]];
-  }
-  else
-    dolfin_not_implemented();
+  // Get dofmap for cell
+  const fem::GenericDofMap& dofmap = *_function_space->dofmap();
+  auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
-  //  {
-  //    // Restrict as UFC function (by calling eval)
-  //    element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
-  //                          ufc_cell);
-  //  }
+  // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
+  // Pick values from vector(s)
+  for (Eigen::Index i = 0; i < dofs.size(); ++i)
+    w[i] = _v[dofs[i]];
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

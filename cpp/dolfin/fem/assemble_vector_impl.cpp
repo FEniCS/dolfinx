@@ -53,13 +53,12 @@ void _lift_bc_cells(
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
     coefficients_ptr[i] = coefficients.get(i).get();
-    elements_ptr[i] = &coefficients.element(i);
-    const FiniteElement& element = coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
+    n.push_back(
+        n.back()
+        + coefficients_ptr[i]->function_space()->element()->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -112,8 +111,8 @@ void _lift_bc_cells(
     {
       if (enabled_coefficients[i])
       {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
-                                      *elements_ptr[i], cell, coordinate_dofs);
+        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                      coordinate_dofs);
       }
     }
 
@@ -173,13 +172,12 @@ void _lift_bc_exterior_facets(
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
     coefficients_ptr[i] = coefficients.get(i).get();
-    elements_ptr[i] = &coefficients.element(i);
-    const FiniteElement& element = coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
+    n.push_back(
+        n.back()
+        + coefficients_ptr[i]->function_space()->element()->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -240,8 +238,8 @@ void _lift_bc_exterior_facets(
     {
       if (enabled_coefficients[i])
       {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
-                                      *elements_ptr[i], cell, coordinate_dofs);
+        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                      coordinate_dofs);
       }
     }
 
@@ -318,13 +316,12 @@ void fem::impl::assemble_cells(
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
     coefficients_ptr[i] = coefficients.get(i).get();
-    elements_ptr[i] = &coefficients.element(i);
-    const FiniteElement& element = coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
+    n.push_back(
+        n.back()
+        + coefficients_ptr[i]->function_space()->element()->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -356,8 +353,8 @@ void fem::impl::assemble_cells(
     {
       if (enabled_coefficients[i])
       {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
-                                      *elements_ptr[i], cell, coordinate_dofs);
+        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                      coordinate_dofs);
       }
     }
     fn(be.data(), coeff_array.data(), coordinate_dofs.data(), 1);
@@ -387,15 +384,13 @@ void fem::impl::assemble_exterior_facets(
       = L.integrals().enabled_coefficients_exterior_facet(0);
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<std::uint32_t> n = {0};
-
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  std::vector<const FiniteElement*> elements_ptr(coefficients.size());
   for (std::uint32_t i = 0; i < coefficients.size(); ++i)
   {
     coefficients_ptr[i] = coefficients.get(i).get();
-    elements_ptr[i] = &coefficients.element(i);
-    const FiniteElement& element = coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
+    n.push_back(
+        n.back()
+        + coefficients_ptr[i]->function_space()->element()->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -429,8 +424,8 @@ void fem::impl::assemble_exterior_facets(
     {
       if (enabled_coefficients[i])
       {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i],
-                                      *elements_ptr[i], cell, coordinate_dofs);
+        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                      coordinate_dofs);
       }
     }
 
