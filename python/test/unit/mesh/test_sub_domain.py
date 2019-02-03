@@ -25,13 +25,13 @@ def test_creation_and_marking():
 
     class RightOnBoundary(SubDomain):
         def inside(self, x, on_boundary):
-            return np.logical_and(x[:, 0] > 1.0 - np.finfo(float).eps, on_boundary)
+            return np.logical_and(x[:, 0] > 1.0 - np.finfo(float).eps,
+                                  on_boundary)
 
     subdomain_pairs = [(Left(), Right()), (LeftOnBoundary(),
                                            RightOnBoundary())]
 
-    for ind, MeshClass in enumerate(
-        [UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
+    for ind, MeshClass in enumerate([UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh]):
         dim = ind + 1
         args = [10] * dim
         mesh = MeshClass(MPI.comm_world, *args)
