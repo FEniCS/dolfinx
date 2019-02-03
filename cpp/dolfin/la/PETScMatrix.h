@@ -21,9 +21,8 @@ namespace la
 class SparsityPattern;
 class VectorSpaceBasis;
 
-/// This class provides a simple matrix class based on PETSc. It is a
-/// wrapper for a PETSc matrix pointer (Mat) implementing the
-/// GenericMatrix interface.
+/// It is a simple wrapper for a PETSc matrix pointer (Mat). Its main
+/// purpose is to assist memory management of PETSc Mat objects.
 ///
 /// For advanced usage, access the PETSc Mat pointer using the function
 /// mat() and use the standard PETSc interface.

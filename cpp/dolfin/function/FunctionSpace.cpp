@@ -198,7 +198,7 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
     throw std::runtime_error("Cannot interpolate function into function space. "
                              "Wrong size of vector");
   }
-  expansion_coefficients.set(0.0);
+  VecSet(expansion_coefficients.vec(), 0.0);
 
   std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
   interpolate_from_any(expansion_coefficients, v);
@@ -235,7 +235,7 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
     throw std::runtime_error("Cannot interpolate function into function space. "
                              "Wrong size of vector");
   }
-  expansion_coefficients.set(0.0);
+  VecSet(expansion_coefficients.vec(), 0.0);
 
   interpolate_from_any(expansion_coefficients, expr);
 }

@@ -410,12 +410,10 @@ la::PETScVector Function::_create_vector(const function::FunctionSpace& V)
                        "collapsing the function space");
   }
 
-  // Get index map
-  std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
-  assert(index_map);
+  assert(dofmap.index_map());
+  la::PETScVector v = la::PETScVector(*dofmap.index_map());
+  VecSet(v.vec(), 0.0);
 
-  la::PETScVector v = la::PETScVector(*index_map);
-  v.set(0.0);
   return v;
 }
 //-----------------------------------------------------------------------------
