@@ -91,6 +91,7 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
     # Return the decorated jit function
     return mpi_jit
 
+
 @mpi_jit_decorator
 def ffc_jit(ufl_object, form_compiler_parameters=None):
     # Prepare form compiler parameters with overrides from dolfin
