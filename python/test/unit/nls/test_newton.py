@@ -38,7 +38,6 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
             with self._F.localForm() as f_local:
                 f_local.set(0.0)
             self._F = fem.assemble_vector(self._F, self.L)
-
         dolfin.fem.apply_lifting(self._F, [self.a], [[self.bc]], [x], -1.0)
         self._F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         dolfin.fem.set_bc(self._F, [self.bc], x, -1.0)
