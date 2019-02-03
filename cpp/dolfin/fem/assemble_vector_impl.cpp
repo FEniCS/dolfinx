@@ -48,8 +48,6 @@ void _lift_bc_cells(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = a.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
@@ -109,11 +107,8 @@ void _lift_bc_cells(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      if (enabled_coefficients[i])
-      {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
-                                      coordinate_dofs);
-      }
+      coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                    coordinate_dofs);
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
@@ -167,8 +162,6 @@ void _lift_bc_exterior_facets(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = a.integrals().enabled_coefficients_exterior_facet(0);
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
@@ -236,11 +229,8 @@ void _lift_bc_exterior_facets(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      if (enabled_coefficients[i])
-      {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
-                                      coordinate_dofs);
-      }
+      coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                    coordinate_dofs);
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
@@ -311,8 +301,6 @@ void fem::impl::assemble_cells(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = L.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
@@ -351,11 +339,8 @@ void fem::impl::assemble_cells(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      if (enabled_coefficients[i])
-      {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
-                                      coordinate_dofs);
-      }
+      coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                    coordinate_dofs);
     }
     fn(be.data(), coeff_array.data(), coordinate_dofs.data(), 1);
 
@@ -380,8 +365,6 @@ void fem::impl::assemble_exterior_facets(
       coordinate_dofs;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = L.integrals().enabled_coefficients_exterior_facet(0);
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
@@ -422,11 +405,8 @@ void fem::impl::assemble_exterior_facets(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      if (enabled_coefficients[i])
-      {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
-                                      coordinate_dofs);
-      }
+      coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                    coordinate_dofs);
     }
 
     // Tabulate element vector

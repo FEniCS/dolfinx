@@ -305,16 +305,13 @@ void Function::restrict(
   assert(_function_space);
   assert(_function_space->dofmap());
 
-  // Check if we are restricting to an element of this function space
-  la::VecReadWrapper v(_vector.vec());
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
-
   // Get dofmap for cell
   const fem::GenericDofMap& dofmap = *_function_space->dofmap();
   auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
-  // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
   // Pick values from vector(s)
+  la::VecReadWrapper v(_vector.vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
   for (Eigen::Index i = 0; i < dofs.size(); ++i)
     w[i] = _v[dofs[i]];
 }

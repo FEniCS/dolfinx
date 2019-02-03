@@ -41,13 +41,6 @@ FormCoefficients::get(std::size_t i) const
   return _coefficients[i];
 }
 //-----------------------------------------------------------------------------
-const fem::FiniteElement& FormCoefficients::element(std::size_t i) const
-{
-  assert(i < _coefficients.size());
-  assert(_coefficients[i]->function_space()->element());
-  return *_coefficients[i]->function_space()->element();
-}
-//-----------------------------------------------------------------------------
 std::size_t FormCoefficients::original_position(std::size_t i) const
 {
   assert(i < _original_pos.size());

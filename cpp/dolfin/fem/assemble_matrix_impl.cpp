@@ -73,8 +73,6 @@ void fem::impl::assemble_cells(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = a.integrals().enabled_coefficients_cell(0);
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
@@ -115,11 +113,8 @@ void fem::impl::assemble_cells(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      if (enabled_coefficients[i])
-      {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
-                                      coordinate_dofs);
-      }
+      coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                    coordinate_dofs);
     }
 
     // Tabulate tensor
@@ -164,8 +159,6 @@ void fem::impl::assemble_exterior_facets(
   mesh.init(tdim - 1);
   mesh.init(tdim - 1, tdim);
 
-  const Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients
-      = a.integrals().enabled_coefficients_exterior_facet(0);
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
@@ -214,11 +207,8 @@ void fem::impl::assemble_exterior_facets(
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
-      if (enabled_coefficients[i])
-      {
-        coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
-                                      coordinate_dofs);
-      }
+      coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
+                                    coordinate_dofs);
     }
 
     // Tabulate tensor

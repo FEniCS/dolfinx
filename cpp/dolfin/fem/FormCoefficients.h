@@ -43,9 +43,6 @@ public:
   /// Get the Function coefficient i
   std::shared_ptr<const function::Function> get(std::size_t i) const;
 
-  /// Get the element for coefficient i
-  const fem::FiniteElement& element(std::size_t i) const;
-
   /// Original position of coefficient in UFL form
   std::size_t original_position(std::size_t i) const;
 
