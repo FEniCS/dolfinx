@@ -11,7 +11,6 @@
 #include <memory>
 #include <petscsys.h>
 #include <set>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -93,10 +92,6 @@ class DirichletBC
 {
 
 public:
-  /// map type used by DirichletBC
-  // typedef std::unordered_map<std::size_t, PetscScalar> Map;
-  typedef std::map<std::size_t, PetscScalar> Map;
-
   /// Method of boundary condition application
   enum class Method
   {
@@ -160,13 +155,6 @@ public:
   /// Move assignment operator
   DirichletBC& operator=(DirichletBC&& bc) = default;
 
-  /// Get Dirichlet dofs and values.
-  ///
-  /// @param[in,out] boundary_values (Map&)
-  ///         Map from dof to boundary value.
-  // [[deprecated("Used in deprecated SystemAssembler")]]
-  void get_boundary_values(Map& boundary_values) const;
-
   /// Return function space V
   ///
   /// @return FunctionSpace
@@ -176,7 +164,8 @@ public:
   /// Return boundary value g
   ///
   /// @return Function
-  ///         The boundary values.
+  ///         The boundary values Function. Returns null if it does not
+  ///         exist.
   std::shared_ptr<const function::Function> value() const;
 
   // FIXME: clarify  w.r.t ghosts
@@ -192,22 +181,22 @@ public:
            double scale = 1.0) const;
 
   // FIXME: clarify w.r.t ghosts
-  /// Set bc entries in x to scale*(x0 - x_bc)
+  /// Set bc entries in x to scale*(x0 - x_bc).
   void set(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
       const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
       double scale = 1.0) const;
-
-  // FIXME: clarify w.r.t ghosts
-  /// Set markers[i] = true if dof i has a boundary condition applied.
-  /// Value of markers[i] is not changed otherwise.
-  void mark_dofs(std::vector<bool>& markers) const;
 
   // FIXME: clarify  w.r.t ghosts
   /// Set boundary condition value for entres with an applied boundary
   /// condition. Other entries are not modified.
   void dof_values(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const;
+
+  // FIXME: clarify w.r.t ghosts
+  /// Set markers[i] = true if dof i has a boundary condition applied.
+  /// Value of markers[i] is not changed otherwise.
+  void mark_dofs(std::vector<bool>& markers) const;
 
 private:
   // Build map of shared dofs in V to dofs in Vg
@@ -227,19 +216,16 @@ private:
                             const function::FunctionSpace* Vg,
                             const std::vector<std::int32_t>& facets);
 
-  // Compute boundary values for facet (pointwise approach)
-  // void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
-
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
 
   // The function
   std::shared_ptr<const function::Function> _g;
 
-  // Vector the tuple (dof index in _function_space, dof index in g
-  // space) to which bcs are applied, i.e. u[dofs[i][0]] = g[dofs[i][1]]
-  // where u is in _function_space.
-  std::vector<std::array<PetscInt, 2>> _dofs;
+  // Vector tuples (dof in _function_space, dof in g-space) to which bcs
+  // are applied, i.e. u[dofs[i][0]] = g[dofs[i][1]] where u is in
+  // _function_space.
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor> _dofs;
 
   // Indices in _function_space to which bcs are applied. Must be sorted.
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dof_indices;

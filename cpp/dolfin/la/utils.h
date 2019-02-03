@@ -84,6 +84,7 @@ private:
   PetscScalar* array = nullptr;
   Vec _y;
   Vec _y_local = nullptr;
+  bool _ghosted;
 };
 
 class VecReadWrapper
@@ -102,6 +103,7 @@ private:
   PetscScalar const* array = nullptr;
   Vec _y;
   Vec _y_local = nullptr;
+  bool _ghosted;
 };
 
 } // namespace la
