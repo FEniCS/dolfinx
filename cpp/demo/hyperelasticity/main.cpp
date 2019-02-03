@@ -118,6 +118,10 @@ public:
   Vec F(const Vec x) final
   {
     // Assemble b
+    la::VecWrapper b_wrapper(_b.vec());
+    b_wrapper.x.setZero();
+    b_wrapper.restore();
+
     assemble_vector(_b.vec(), *_l);
     _b.apply_ghosts();
 
