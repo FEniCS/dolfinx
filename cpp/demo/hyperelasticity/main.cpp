@@ -134,7 +134,7 @@ public:
   /// Compute J = F' at current point x
   Mat J(const Vec x) final
   {
-    _matA.zero();
+    MatZeroEntries(_matA.mat());
     assemble_matrix(_matA.mat(), *_j, _bcs);
     _matA.apply(la::PETScMatrix::AssemblyType::FINAL);
     return _matA.mat();

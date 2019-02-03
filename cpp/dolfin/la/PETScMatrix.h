@@ -33,7 +33,6 @@ class PETScMatrix : public PETScOperator
 public:
   PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern);
 
-
   /// Create holder of a PETSc Mat object/pointer. The Mat A object
   /// should already be created. If inc_ref_count is true, the reference
   /// counter of the Mat will be increased. The Mat reference count will
@@ -55,9 +54,6 @@ public:
   /// Move assignment operator
   PETScMatrix& operator=(PETScMatrix&& A) = default;
 
-  /// Set all entries to zero and keep any sparse structure
-  void zero();
-
   /// Assembly type
   ///   FINAL - corresponds to PETSc MAT_FINAL_ASSEMBLY
   ///   FLUSH - corresponds to PETSc MAT_FLUSH_ASSEMBLY
@@ -73,9 +69,6 @@ public:
   ///   FINAL    - corresponds to PETSc MatAssemblyBegin+End(MAT_FINAL_ASSEMBLY)
   ///   FLUSH  - corresponds to PETSc MatAssemblyBegin+End(MAT_FLUSH_ASSEMBLY)
   void apply(AssemblyType type);
-
-  /// Return informal string representation (pretty-print)
-  std::string str(bool verbose) const;
 
   /// Set block of values using global indices
   void set(const PetscScalar* block, std::size_t m, const PetscInt* rows,

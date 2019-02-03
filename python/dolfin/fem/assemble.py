@@ -43,7 +43,7 @@ def assemble(M: typing.Union[Form, cpp.fem.Form]
 
 @assemble.register(PETSc.Vec)
 def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    """Assemble linear form into an exiting vector.
+    """Assemble linear form into an existing vector.
 
     The vector must already have the correct size and parallel layout
     and wll be zeroed. The returned vector is finalised, i.e. ghost
@@ -216,15 +216,16 @@ def assemble_matrix_block(a,
     return A
 
 
-# -- Modifier for Dirichlet conditions ---------------------------------------
+# -- Modifiers for Dirichlet conditions ---------------------------------------
 
-
+# FIXME: Explain in docstring order of calling this function and
+# parallel udpdating w.r.t assembly of L into b.
 def apply_lifting(b: PETSc.Vec,
                   a: typing.List[typing.Union[Form, cpp.fem.Form]],
                   bcs: typing.List[typing.List[DirichletBC]],
                   x0: typing.Optional[typing.List[PETSc.Vec]] = [],
                   scale: float = 1.0) -> None:
-    """Modify vector for lifting of boundary conditions.
+    """Modify vector for lifting of Dirichlet boundary conditions.
 
     """
     a_cpp = [_create_cpp_form(form) for form in a]
@@ -235,5 +236,10 @@ def set_bc(b: PETSc.Vec,
            bcs: typing.List[DirichletBC],
            x0: typing.Optional[PETSc.Vec] = None,
            scale: float = 1.0) -> None:
-    """Insert boundary condition values into vector"""
+    """Insert boundary condition values into vector. Only local (owned)
+    entries are set, hence communication after calling this function is
+    not required the ghost entries need to be updated to the boundary
+    condition value.
+
+    """
     cpp.fem.set_bc(b, bcs, x0, scale)
