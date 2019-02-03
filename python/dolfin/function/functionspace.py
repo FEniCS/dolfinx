@@ -53,8 +53,6 @@ class FunctionSpace(ufl.FunctionSpace):
             form_compiler_parameters=None,
             mpi_comm=mesh.mpi_comm())
 
-        objects = list(objects)
-
         ffi = cffi.FFI()
         ufc_element = objects[0]
         ufc_dofmap = objects[1]
