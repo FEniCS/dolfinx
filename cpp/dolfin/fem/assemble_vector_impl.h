@@ -38,7 +38,7 @@ namespace impl
 void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
               const Form& L);
 
-/// Assemble linear form cell integrals into an Eigen vector
+/// Execute kernel over cells and accumulate result in vector
 void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
                     const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
                     const std::function<void(PetscScalar*, const PetscScalar*,
@@ -46,7 +46,7 @@ void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
                     std::vector<const function::Function*> coefficients,
                     const std::vector<int>& offsets);
 
-/// Assemble linear form exterior facet integrals into an Eigen vector
+/// Execute kernel over cells and accumulate result in vector
 void assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
