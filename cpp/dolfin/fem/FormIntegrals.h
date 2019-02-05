@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include <Eigen/Dense>
-#include <dolfin/common/types.h>
 #include <functional>
 #include <memory>
+#include <petscsys.h>
 #include <vector>
 
 struct ufc_cell_integral;
@@ -60,16 +59,6 @@ public:
                            int)>&
   get_tabulate_tensor_fn_exterior_facet(int i) const;
 
-  /// Get the enabled coefficients on cell integral i
-  /// @param i
-  ///    Integral number
-  /// @returns bool*
-  ///    Pointer to list of enabled coefficients for this integral
-  Eigen::Array<bool, Eigen::Dynamic, 1> enabled_coefficients_cell(int i) const;
-
-  Eigen::Array<bool, Eigen::Dynamic, 1>
-  enabled_coefficients_exterior_facet(int i) const;
-
   /// Set the function for 'tabulate_tensor' for cell integral i
   void set_tabulate_tensor_cell(int i,
                                 void (*fn)(PetscScalar*, const PetscScalar*,
@@ -93,10 +82,6 @@ private:
   std::vector<std::function<void(PetscScalar*, const PetscScalar*,
                                  const double*, int, int)>>
       _tabulate_tensor_exterior_facet;
-
-  // Storage for enabled coefficients, to match the functions
-  Eigen::Array<bool, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      _enabled_coefficients_cell, _enabled_coefficients_exterior_facet;
 };
 } // namespace fem
 } // namespace dolfin

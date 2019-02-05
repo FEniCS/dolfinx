@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FormIntegrals.h"
+#include <dolfin/common/types.h>
 #include <ufc.h>
 
 using namespace dolfin;
@@ -38,16 +39,7 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   std::unique_ptr<ufc_cell_integral> _default_cell_integral(
       ufc_form.create_default_cell_integral());
   if (_default_cell_integral)
-  {
-    // Extract tabulate tensor function
     _tabulate_tensor_cell.push_back(_default_cell_integral->tabulate_tensor);
-
-    // Tabulate enabled coefficients
-    _enabled_coefficients_cell.resize(1, ufc_form.num_coefficients);
-    const bool* e_coeffs_cell = _default_cell_integral->enabled_coefficients;
-    std::copy(e_coeffs_cell, e_coeffs_cell + ufc_form.num_coefficients,
-              _enabled_coefficients_cell.row(0).data());
-  }
 
   // -- Create exterior facet integrals
   std::unique_ptr<ufc_exterior_facet_integral> _default_exterior_facet_integral(
@@ -57,13 +49,6 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
     // Extract tabulate tensor function
     _tabulate_tensor_exterior_facet.push_back(
         _default_exterior_facet_integral->tabulate_tensor);
-
-    // Tabulate enabled coefficients
-    _enabled_coefficients_exterior_facet.resize(1, ufc_form.num_coefficients);
-    const bool* e_coeffs_facet
-        = _default_exterior_facet_integral->enabled_coefficients;
-    std::copy(e_coeffs_facet, e_coeffs_facet + ufc_form.num_coefficients,
-              _enabled_coefficients_exterior_facet.row(0).data());
   }
 }
 //-----------------------------------------------------------------------------
@@ -80,27 +65,11 @@ FormIntegrals::get_tabulate_tensor_fn_exterior_facet(int i) const
   return _tabulate_tensor_exterior_facet[i];
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<bool, Eigen::Dynamic, 1>
-FormIntegrals::enabled_coefficients_cell(int i) const
-{
-  return _enabled_coefficients_cell.row(i);
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<bool, Eigen::Dynamic, 1>
-FormIntegrals::enabled_coefficients_exterior_facet(int i) const
-{
-  return _enabled_coefficients_exterior_facet.row(i);
-}
-//-----------------------------------------------------------------------------
 void FormIntegrals::set_tabulate_tensor_cell(
     int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
 {
   _tabulate_tensor_cell.resize(i + 1);
   _tabulate_tensor_cell[i] = fn;
-
-  // Enable all coefficients for this integral
-  _enabled_coefficients_cell.conservativeResize(i + 1, Eigen::NoChange);
-  _enabled_coefficients_cell.row(i) = true;
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_tabulate_tensor_exterior_facet(
@@ -109,11 +78,6 @@ void FormIntegrals::set_tabulate_tensor_exterior_facet(
 {
   _tabulate_tensor_exterior_facet.resize(i + 1);
   _tabulate_tensor_exterior_facet[i] = fn;
-
-  // Enable all coefficients for this integral
-  _enabled_coefficients_exterior_facet.conservativeResize(i + 1,
-                                                          Eigen::NoChange);
-  _enabled_coefficients_exterior_facet.row(i) = true;
 }
 //-----------------------------------------------------------------------------
 int FormIntegrals::num_integrals(FormIntegrals::Type type) const
