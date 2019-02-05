@@ -87,12 +87,12 @@ public:
 
 private:
   // Integrals
-  std::vector<std::shared_ptr<ufc_cell_integral>> _integrals_cell;
-  std::vector<std::shared_ptr<ufc_exterior_facet_integral>>
+  std::vector<std::unique_ptr<ufc_cell_integral>> _integrals_cell;
+  std::vector<std::unique_ptr<ufc_exterior_facet_integral>>
       _integrals_exterior_facet;
-  std::vector<std::shared_ptr<ufc_interior_facet_integral>>
+  std::vector<std::unique_ptr<ufc_interior_facet_integral>>
       _interior_facet_integrals;
-  std::vector<std::shared_ptr<ufc_vertex_integral>> _vertex_integrals;
+  std::vector<std::unique_ptr<ufc_vertex_integral>> _vertex_integrals;
 
   // Function pointers to cell tabulate_tensor functions
   std::vector<
