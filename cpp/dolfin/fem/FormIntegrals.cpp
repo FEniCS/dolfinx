@@ -171,12 +171,12 @@ int FormIntegrals::num_integrals(FormIntegrals::Type type) const
   {
   case Type::cell:
     return _tabulate_tensor_cell.size();
-  case Type::interior_facet:
+  case Type::exterior_facet:
     return _tabulate_tensor_exterior_facet.size();
-    // case Type::exterior_facet:
-    //   return _integrals_exterior_facet.size();
-    // case Type::vertex:
-    //   return _vertex_integrals.size();
+    case Type::interior_facet:
+      return 0;
+    case Type::vertex:
+      return 0;
   default:
     throw std::runtime_error("FormIntegral type not yet supported.");
   }
