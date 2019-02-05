@@ -51,7 +51,7 @@ void _lift_bc_cells(
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  for (std::uint32_t i = 0; i < coefficients.size(); ++i)
+  for (int i = 0; i < coefficients.size(); ++i)
   {
     coefficients_ptr[i] = coefficients.get(i).get();
     n.push_back(
@@ -105,7 +105,7 @@ void _lift_bc_cells(
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
     // Update coefficients
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
+    for (int i = 0; i < coefficients.size(); ++i)
     {
       coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
                                     coordinate_dofs);
@@ -165,7 +165,7 @@ void _lift_bc_exterior_facets(
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
-  for (std::uint32_t i = 0; i < coefficients.size(); ++i)
+  for (int i = 0; i < coefficients.size(); ++i)
   {
     coefficients_ptr[i] = coefficients.get(i).get();
     n.push_back(
@@ -227,7 +227,7 @@ void _lift_bc_exterior_facets(
     // TODO: Move gathering of coefficients outside of main assembly
     // loop
     // Update coefficients
-    for (std::size_t i = 0; i < coefficients.size(); ++i)
+    for (int i = 0; i < coefficients.size(); ++i)
     {
       coefficients_ptr[i]->restrict(coeff_array.data() + n[i], cell,
                                     coordinate_dofs);
@@ -268,7 +268,7 @@ void fem::impl::assemble(
   // Prepare coefficients
   const FormCoefficients& coefficients = L.coeffs();
   std::vector<const function::Function*> coeff_fn(coefficients.size());
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  for (int i = 0; i < coefficients.size(); ++i)
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
@@ -384,8 +384,6 @@ void fem::impl::assemble_exterior_facets(
     // Get dof map for cell
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap
         = dofmap.cell_dofs(cell.index());
-
-    // Size data structure for assembly
 
     // TODO: Move gathering of coefficients outside of main assembly
     // loop

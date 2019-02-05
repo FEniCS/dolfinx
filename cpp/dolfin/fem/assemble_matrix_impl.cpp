@@ -31,7 +31,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   // Prepare coefficients
   const FormCoefficients& coefficients = a.coeffs();
   std::vector<const function::Function*> coeff_fn(coefficients.size());
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  for (int i = 0; i < coefficients.size(); ++i)
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 

@@ -34,7 +34,7 @@ public:
   FormCoefficients(const ufc_form& ufc_form);
 
   /// Get number of coefficients
-  std::size_t size() const;
+  int size() const;
 
   /// Offset for each coefficient expansion array on a cell. Use to pack
   /// data for multiple coefficients in a flat array. The last entry is
@@ -42,21 +42,20 @@ public:
   std::vector<int> offsets() const;
 
   /// Set a coefficient to be a Function
-  void set(std::size_t i,
-           std::shared_ptr<const function::Function> coefficient);
+  void set(int i, std::shared_ptr<const function::Function> coefficient);
 
   /// Get the Function coefficient i
-  std::shared_ptr<const function::Function> get(std::size_t i) const;
+  std::shared_ptr<const function::Function> get(int i) const;
 
   /// Original position of coefficient in UFL form
-  std::size_t original_position(std::size_t i) const;
+  int original_position(int i) const;
 
 private:
   // Functions for the coefficients
   std::vector<std::shared_ptr<const function::Function>> _coefficients;
 
   // Copy of 'original positions' in UFL form
-  std::vector<std::size_t> _original_pos;
+  std::vector<int> _original_pos;
 };
 } // namespace fem
 } // namespace dolfin

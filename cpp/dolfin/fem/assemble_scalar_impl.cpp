@@ -28,7 +28,7 @@ PetscScalar dolfin::fem::impl::assemble(const dolfin::fem::Form& M)
   // Prepare coefficients
   const FormCoefficients& coefficients = M.coeffs();
   std::vector<const function::Function*> coeff_fn(coefficients.size());
-  for (std::size_t i = 0; i < coefficients.size(); ++i)
+  for (int i = 0; i < coefficients.size(); ++i)
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
