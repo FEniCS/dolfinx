@@ -18,6 +18,15 @@ FormIntegrals::FormIntegrals()
 //-----------------------------------------------------------------------------
 FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
 {
+
+  // Integrals
+  std::vector<std::unique_ptr<ufc_cell_integral>> _integrals_cell;
+  std::vector<std::unique_ptr<ufc_exterior_facet_integral>>
+      _integrals_exterior_facet;
+  std::vector<std::unique_ptr<ufc_interior_facet_integral>>
+      _interior_facet_integrals;
+  std::vector<std::unique_ptr<ufc_vertex_integral>> _vertex_integrals;
+
   // -- Create cell integrals
   ufc_cell_integral* _default_cell_integral
       = ufc_form.create_default_cell_integral();
@@ -163,11 +172,13 @@ int FormIntegrals::num_integrals(FormIntegrals::Type type) const
   case Type::cell:
     return _tabulate_tensor_cell.size();
   case Type::interior_facet:
-    return _interior_facet_integrals.size();
-  case Type::exterior_facet:
-    return _integrals_exterior_facet.size();
-  case Type::vertex:
-    return _vertex_integrals.size();
+    return _tabulate_tensor_exterior_facet.size();
+    // case Type::exterior_facet:
+    //   return _integrals_exterior_facet.size();
+    // case Type::vertex:
+    //   return _vertex_integrals.size();
+  default:
+    throw std::runtime_error("FormIntegral type not yet supported.");
   }
 
   return 0;

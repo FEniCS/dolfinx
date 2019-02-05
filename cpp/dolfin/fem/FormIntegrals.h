@@ -86,19 +86,10 @@ public:
   int num_integrals(FormIntegrals::Type t) const;
 
 private:
-  // Integrals
-  std::vector<std::unique_ptr<ufc_cell_integral>> _integrals_cell;
-  std::vector<std::unique_ptr<ufc_exterior_facet_integral>>
-      _integrals_exterior_facet;
-  std::vector<std::unique_ptr<ufc_interior_facet_integral>>
-      _interior_facet_integrals;
-  std::vector<std::unique_ptr<ufc_vertex_integral>> _vertex_integrals;
-
   // Function pointers to cell tabulate_tensor functions
   std::vector<
       std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>>
       _tabulate_tensor_cell;
-
   std::vector<std::function<void(PetscScalar*, const PetscScalar*,
                                  const double*, int, int)>>
       _tabulate_tensor_exterior_facet;
