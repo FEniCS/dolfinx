@@ -44,7 +44,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
-        = a.integrals().tabulate_tensor_fn_cell(0);
+        = a.integrals().get_tabulate_tensor_fn_cell(0);
     fem::impl::assemble_cells(A, mesh, dofmap0, dofmap1, bc0, bc1, fn, coeff_fn,
                               c_offsets);
   }
@@ -58,7 +58,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
-        = a.integrals().tabulate_tensor_fn_exterior_facet(0);
+        = a.integrals().get_tabulate_tensor_fn_exterior_facet(0);
     fem::impl::assemble_exterior_facets(A, mesh, dofmap0, dofmap1, bc0, bc1, fn,
                                         coeff_fn, c_offsets);
   }

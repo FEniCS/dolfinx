@@ -68,14 +68,14 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
 }
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>&
-FormIntegrals::tabulate_tensor_fn_cell(int i) const
+FormIntegrals::get_tabulate_tensor_fn_cell(int i) const
 {
   return _tabulate_tensor_cell[i];
 }
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
                          int)>&
-FormIntegrals::tabulate_tensor_fn_exterior_facet(int i) const
+FormIntegrals::get_tabulate_tensor_fn_exterior_facet(int i) const
 {
   return _tabulate_tensor_exterior_facet[i];
 }

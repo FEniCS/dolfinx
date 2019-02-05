@@ -54,11 +54,11 @@ public:
   ///    Function to call for tabulate_tensor on a cell
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                            int)>&
-  tabulate_tensor_fn_cell(int i) const;
+  get_tabulate_tensor_fn_cell(int i) const;
 
   const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
                            int)>&
-  tabulate_tensor_fn_exterior_facet(int i) const;
+  get_tabulate_tensor_fn_exterior_facet(int i) const;
 
   /// Get the enabled coefficients on cell integral i
   /// @param i
@@ -86,7 +86,7 @@ public:
   int num_integrals(FormIntegrals::Type t) const;
 
 private:
-  // Function pointers to cell tabulate_tensor functions
+  // Function pointers to tabulate_tensor functions
   std::vector<
       std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>>
       _tabulate_tensor_cell;

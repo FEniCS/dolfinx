@@ -62,7 +62,7 @@ void _lift_bc_cells(
 
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                            int)>& fn
-      = a.integrals().tabulate_tensor_fn_cell(0);
+      = a.integrals().get_tabulate_tensor_fn_cell(0);
 
   // Data structures used in bc application
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -176,7 +176,7 @@ void _lift_bc_exterior_facets(
 
   const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
                            int)>& fn
-      = a.integrals().tabulate_tensor_fn_exterior_facet(0);
+      = a.integrals().get_tabulate_tensor_fn_exterior_facet(0);
 
   // Data structures used in bc application
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -276,7 +276,7 @@ void fem::impl::assemble(
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
-        = L.integrals().tabulate_tensor_fn_cell(0);
+        = L.integrals().get_tabulate_tensor_fn_cell(0);
     fem::impl::assemble_cells(b, mesh, dofmap, fn, coeff_fn, c_offsets);
   }
 
@@ -284,7 +284,7 @@ void fem::impl::assemble(
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
-        = L.integrals().tabulate_tensor_fn_exterior_facet(0);
+        = L.integrals().get_tabulate_tensor_fn_exterior_facet(0);
     fem::impl::assemble_exterior_facets(b, mesh, dofmap, fn, coeff_fn,
                                         c_offsets);
   }
