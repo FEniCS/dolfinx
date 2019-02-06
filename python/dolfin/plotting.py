@@ -382,7 +382,8 @@ def plot(object, *args, **kwargs):
     """
 
     # Return if plotting is disabled
-    if os.environ.get("DOLFIN_NOPLOT_CI", "0") != "0":
+    print('DOLFIN_NOPLOT = ', os.environ.get("DOLFIN_NOPLOT", "0"))
+    if os.environ.get("DOLFIN_NOPLOT", "0") != "0":
         return
 
     # Return if Matplotlib is not available
