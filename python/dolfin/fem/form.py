@@ -30,18 +30,6 @@ class Form(ufl.Form):
         """
         self.form_compiler_parameters = form_compiler_parameters
 
-        # Add DOLFIN include paths (just the Boost path for special
-        # math functions is really required)
-        # FIXME: move getting include paths to elsewhere
-        # if self.form_compiler_parameters is None:
-        #     self.form_compiler_parameters = {
-        #         "external_include_dirs": jit.dolfin_pc["include_dirs"]
-        #     }
-        # else:
-        #     # FIXME: add paths if dict entry already exists
-        #     self.form_compiler_parameters[
-        #         "external_include_dirs"] = jit.dolfin_pc["include_dirs"]
-
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         self._subdomains, = list(sd.values())  # Assuming single domain
