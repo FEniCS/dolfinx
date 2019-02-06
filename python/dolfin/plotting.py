@@ -382,7 +382,6 @@ def plot(object, *args, **kwargs):
     """
 
     # Return if plotting is disabled
-    print('DOLFIN_NOPLOT = ', os.environ.get("DOLFIN_NOPLOT", "0"))
     if os.environ.get("DOLFIN_NOPLOT", "0") != "0":
         return
 
