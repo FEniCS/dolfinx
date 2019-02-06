@@ -64,7 +64,7 @@ unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   command: |
     cd python/test/unit
-    python3 -m pytest -n3 --duration=20 .
+    python3 -m pytest -n3 .
 
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
