@@ -199,6 +199,9 @@ def mplot_function(ax, f, **kwargs):
     elif f.value_rank() == 1:
         # Vector function, interpolated to vertices
         w0 = f.compute_point_values(mesh)
+        if (w0.dtype.type is np.complex128):
+            warnings.warn("Plotting real part of complex data")
+            w0 = np.real(w0)
         nv = mesh.num_vertices()
         if w0.shape[1] != gdim:
             raise AttributeError(
@@ -378,8 +381,8 @@ def plot(object, *args, **kwargs):
 
     """
 
-    # Return if plotting is disables
-    if os.environ.get("DOLFIN_NOPLOT", "0") != "0":
+    # Return if plotting is disabled
+    if os.environ.get("DOLFIN_NOPLOT_CI", "0") != "0":
         return
 
     # Return if Matplotlib is not available
