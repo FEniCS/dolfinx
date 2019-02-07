@@ -32,13 +32,23 @@ la::SparsityPattern SparsityPatternBuilder::build(
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
 
-
-  const std::size_t D = mesh.topology().dim();
-
   // FIXME: Should check that index maps are matching
 
   // Create empty sparsity pattern
   la::SparsityPattern pattern(comm, index_maps);
+  
+  // Build sparsity pattern and return
+  SparsityPatternBuilder::build(pattern, mesh, dofmaps,
+                                cells, interior_facets, exterior_facets);
+  return pattern;
+}
+//-----------------------------------------------------------------------------
+void SparsityPatternBuilder::build(
+    la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+    const std::array<const fem::GenericDofMap*, 2> dofmaps, bool cells,
+    bool interior_facets, bool exterior_facets)
+{
+  const std::size_t D = mesh.topology().dim();
 
   // Array to store macro-dofs, if required (for interior facets)
   std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
@@ -121,7 +131,5 @@ la::SparsityPattern SparsityPatternBuilder::build(
       }
     }
   }
-
-  return pattern;
 }
 //-----------------------------------------------------------------------------

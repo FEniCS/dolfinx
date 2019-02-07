@@ -27,10 +27,16 @@ class GenericDofMap;
 class SparsityPatternBuilder
 {
 public:
-  // FIXME: Simplify
   /// Build sparsity pattern for assembly of given bilinear form
   static la::SparsityPattern
   build(MPI_Comm comm, const mesh::Mesh& mesh,
+        const std::array<const fem::GenericDofMap*, 2> dofmaps, bool cells,
+        bool interior_facets, bool exterior_facets);
+        
+  // FIXME: Simplify
+  /// Build sparsity pattern for assembly of given bilinear form
+  static void
+  build(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
         const std::array<const fem::GenericDofMap*, 2> dofmaps, bool cells,
         bool interior_facets, bool exterior_facets);
 };
