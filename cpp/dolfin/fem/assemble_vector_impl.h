@@ -35,8 +35,8 @@ namespace impl
 {
 
 /// Assemble linear form into an Eigen vector
-void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-              const Form& L);
+void assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                     const Form& L);
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,

@@ -20,7 +20,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-PetscScalar dolfin::fem::impl::assemble(const dolfin::fem::Form& M)
+PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 {
   assert(M.mesh());
   const mesh::Mesh& mesh = *M.mesh();
