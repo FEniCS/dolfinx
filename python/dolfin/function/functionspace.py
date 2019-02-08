@@ -7,6 +7,7 @@
 
 import typing
 
+import cffi
 import ufl
 from dolfin import cpp, jit
 from dolfin.fem import dofmap
@@ -51,9 +52,11 @@ class FunctionSpace(ufl.FunctionSpace):
             self.ufl_element(),
             form_compiler_parameters=None,
             mpi_comm=mesh.mpi_comm())
-        ufc_element = dofmap.make_ufc_finite_element(ufc_element)
+
+        ffi = cffi.FFI()
+        ufc_element = dofmap.make_ufc_finite_element(ffi.cast("uintptr_t", ufc_element))
         dolfin_element = cpp.fem.FiniteElement(ufc_element)
-        dolfin_dofmap = dofmap.DofMap.fromufc(ufc_dofmap, mesh)
+        dolfin_dofmap = dofmap.DofMap.fromufc(ffi.cast("uintptr_t", ufc_dofmap), mesh)
 
         # Initialize the cpp.FunctionSpace
         self._cpp_object = cpp.function.FunctionSpace(

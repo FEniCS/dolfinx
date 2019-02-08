@@ -7,9 +7,10 @@
 
 import functools
 
-import dijitso
 import dolfin.pkgconfig
 import ffc
+import ufl
+import ffc.codegeneration.jit
 from dolfin import common, cpp
 
 if dolfin.pkgconfig.exists("dolfin"):
@@ -92,14 +93,20 @@ def mpi_jit_decorator(local_jit, *args, **kwargs):
 
 
 @mpi_jit_decorator
-def ffc_jit(ufl_form, form_compiler_parameters=None):
+def ffc_jit(ufl_object, form_compiler_parameters=None):
     # Prepare form compiler parameters with overrides from dolfin
     p = ffc.default_jit_parameters()
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
     p.update(form_compiler_parameters or {})
-    return ffc.jit(ufl_form, parameters=p)
 
+    # Switch on type and compile, returning cffi object
+    if isinstance(ufl_object, ufl.Form):
+        r = ffc.codegeneration.jit.compile_forms([ufl_object], parameters=p)
+    elif isinstance(ufl_object, ufl.FiniteElementBase):
+        r = ffc.codegeneration.jit.compile_elements([ufl_object], parameters=p)
+    elif isinstance(ufl_object, ufl.Mesh):
+        r = ffc.codegeneration.jit.compile_coordinate_maps([ufl_object], parameters=p)
+    else:
+        raise TypeError(type(ufl_object))
 
-@mpi_jit_decorator
-def dijitso_jit(*args, **kwargs):
-    return dijitso.jit(*args, **kwargs)
+    return r[0][0]
