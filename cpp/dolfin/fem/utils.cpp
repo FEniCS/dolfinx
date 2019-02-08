@@ -98,13 +98,13 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
-    SparsityPatternBuilder::cells(pattern, mesh, {dofmaps[0], dofmaps[1]});
+    SparsityPatternBuilder::cells(pattern, mesh, {{dofmaps[0], dofmaps[1]}});
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
     SparsityPatternBuilder::interior_facets(pattern, mesh,
-                                            {dofmaps[0], dofmaps[1]});
+                                            {{dofmaps[0], dofmaps[1]}});
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
     SparsityPatternBuilder::exterior_facets(pattern, mesh,
-                                            {dofmaps[0], dofmaps[1]});
+                                            {{dofmaps[0], dofmaps[1]}});
   pattern.assemble();
   t0.stop();
 
@@ -215,7 +215,7 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
         //                                   false, false));
 
         std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-            = {dofmaps[0]->index_map(), dofmaps[1]->index_map()};
+            = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
         auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(),
                                                         index_maps);
         if (a[row][col]->integrals().num_integrals(
