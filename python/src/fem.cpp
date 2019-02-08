@@ -192,20 +192,20 @@ void fem(py::module& m)
       .def(py::init<std::shared_ptr<const ufc_coordinate_mapping>>());
 
   // dolfin::fem::SparsityPatternBuilder
-  py::class_<dolfin::fem::SparsityPatternBuilder>(m, "SparsityPatternBuilder")
-      .def_static(
-          "build",
-          [](const MPICommWrapper comm, const dolfin::mesh::Mesh& mesh,
-             const std::array<const dolfin::fem::GenericDofMap*, 2> dofmaps,
-             bool cells, bool interior_facets, bool exterior_facets) {
-            return dolfin::fem::SparsityPatternBuilder::build(
-                comm.get(), mesh, dofmaps, cells, interior_facets,
-                exterior_facets);
-          },
-          py::arg("mpi_comm"), py::arg("mesh"), py::arg("dofmaps"),
-          py::arg("cells"), py::arg("interior_facets"),
-          py::arg("exterior_facets"),
-          "Create SparsityPattern from pair of dofmaps");
+  // py::class_<dolfin::fem::SparsityPatternBuilder>(m, "SparsityPatternBuilder")
+  //     .def_static(
+  //         "build",
+  //         [](const MPICommWrapper comm, const dolfin::mesh::Mesh& mesh,
+  //            const std::array<const dolfin::fem::GenericDofMap*, 2> dofmaps,
+  //            bool cells, bool interior_facets, bool exterior_facets) {
+  //           return dolfin::fem::SparsityPatternBuilder::build(
+  //               comm.get(), mesh, dofmaps, cells, interior_facets,
+  //               exterior_facets);
+  //         },
+  //         py::arg("mpi_comm"), py::arg("mesh"), py::arg("dofmaps"),
+  //         py::arg("cells"), py::arg("interior_facets"),
+  //         py::arg("exterior_facets"),
+  //         "Create SparsityPattern from pair of dofmaps");
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,
