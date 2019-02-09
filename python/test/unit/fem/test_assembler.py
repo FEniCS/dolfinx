@@ -500,4 +500,4 @@ def test_projection():
     integral = dolfin.fem.assemble(f * dolfin.dx)
 
     integral_analytic = 1.0 / 3
-    assert numpy.isclose(integral_analytic, volume, 1.0e-6)
+    assert numpy.isclose(integral_analytic, integral, 1.0e-6)
