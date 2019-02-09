@@ -114,7 +114,7 @@ def assemble_system(A_form,
 
     fem.assemble(b_tensor, b_form)
     fem.apply_lifting(b_tensor, [A_form], [bcs])
-    b_tensor.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b_tensor.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     fem.set_bc(b_tensor, bcs)
 
     fem.assemble(A_tensor, A_form, bcs)

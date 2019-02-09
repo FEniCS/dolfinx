@@ -487,3 +487,17 @@ def test_assembly_solve_taylor_hood(mesh):
     ksp.solve(b2, x2)
     assert ksp.getConvergedReason() > 0
     assert x0.norm() == pytest.approx(x2.norm(), 1e-8)
+
+
+def test_projection():
+    mesh = dolfin.UnitCubeMesh(dolfin.MPI.comm_world, 4, 4, 4)
+    V = dolfin.function.FunctionSpace(mesh, ("CG", 1))
+
+    x = ufl.SpatialCoordinate(mesh)
+    expr = x[0] ** 2
+
+    f = dolfin.project(expr, V)
+    integral = dolfin.fem.assemble(f * dolfin.dx)
+
+    integral_analytic = 1.0 / 3
+    assert numpy.isclose(integral_analytic, volume, 1.0e-6)
