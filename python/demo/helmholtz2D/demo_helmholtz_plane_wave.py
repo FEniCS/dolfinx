@@ -15,7 +15,8 @@ from dolfin import (MPI, Expression, FacetNormal, Function, FunctionSpace,
                     TestFunction, TrialFunction, UnitSquareMesh, dot, ds, dx,
                     function, grad, has_petsc_complex, inner, interpolate,
                     project, solve)
-from dolfin.fem.assemble import assemble
+from dolfin.fem.assemble import (assemble_matrix, assemble_scalar,
+                                 assemble_vector)
 from dolfin.io import XDMFFile
 
 if not has_petsc_complex:
@@ -81,15 +82,15 @@ u_BA = project(u_exact, V)
 # H1 errors
 diff = u - u_exact
 diff_BA = u_BA - u_exact
-H1_diff = np.sqrt(assemble(inner(grad(diff), grad(diff)) * dx))
-H1_BA = np.sqrt(assemble(inner(grad(diff_BA), grad(diff_BA)) * dx))
-H1_exact = np.sqrt(assemble(inner(grad(u_exact), grad(u_exact)) * dx))
-print('Relative H1 error of best approximation:', H1_BA / H1_exact)
-print('Relative H1 error of FEM solution:', H1_diff / H1_exact)
+H1_diff = MPI.sum(mesh.mpi_comm(), assemble(inner(grad(diff), grad(diff)) * dx))
+H1_BA = MPI.sum(mesh.mpi_comm(), assemble(inner(grad(diff_BA), grad(diff_BA)) * dx))
+H1_exact = MPI.sum(mesh.mpi_comm(), assemble(inner(grad(u_exact), grad(u_exact)) * dx))
+print('Relative H1 error of best approximation:', np.sqrt(H1_BA) / np.sqrt(H1_exact))
+print('Relative H1 error of FEM solution:', np.sqrt(H1_diff) / np.sqrt(H1_exact))
 
 # L2 errors
-L2_diff = np.sqrt(assemble(inner(diff, diff) * dx))
-L2_BA = np.sqrt(assemble(inner(diff_BA, diff_BA) * dx))
-L2_exact = np.sqrt(assemble(inner(u_exact, u_exact) * dx))
-print('Relative L2 error  of best approximation:', L2_BA / L2_exact)
-print('Relative L2 error of FEM solution:', L2_diff / L2_exact)
+L2_diff = MPI.sum(mesh.mpi_comm(), assemble(inner(diff, diff) * dx))
+L2_BA = MPI.sum(mesh.mpi_comm(), assemble(inner(diff_BA, diff_BA) * dx))
+L2_exact = MPI.sum(mesh.mpi_comm(), assemble(inner(u_exact, u_exact) * dx))
+print('Relative L2 error  of best approximation:', np.sqrt(L2_BA) / np.sqrt(L2_exact))
+print('Relative L2 error of FEM solution:', np.sqrt(L2_diff) / np.sqrt(L2_exact))
