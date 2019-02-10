@@ -113,7 +113,7 @@ with u0.vector().localForm() as bc_local:
 bc = DirichletBC(V, u0, boundary)
 
 # Assemble system, applying boundary conditions and preserving symmetry)
-A = assemble_matrix(a)
+A = assemble_matrix(a, [bc])
 A.assemble()
 
 b = assemble_vector(L)
