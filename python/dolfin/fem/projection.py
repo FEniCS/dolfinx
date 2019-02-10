@@ -92,12 +92,12 @@ def project(v,
     L = ufl.inner(v, w) * dx
 
     # Assemble linear system
-    A = fem.assemble_matrix(A, bcs)
+    A = fem.assemble_matrix(a, bcs)
     A.assemble()
-    b = fem.assemble_vector(A)
-    fem.apply_lifting(b, [a], [[bc]])
+    b = fem.assemble_vector(L)
+    fem.apply_lifting(b, [a], [bcs])
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    fem.set_bc(b, [bc])
+    fem.set_bc(b, bcs)
 
     # Solve linear system for projection
     if funct is None:
