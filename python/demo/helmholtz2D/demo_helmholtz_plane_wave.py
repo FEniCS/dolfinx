@@ -3,7 +3,8 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Test Helmholtz problem for which the exact solution is a plane wave
+
+u"""Test Helmholtz problem for which the exact solution is a plane wave
 propagating at angle theta to the postive x-axis. Chosen for
 comparison with results from Ihlenburg\'s book \"Finite Element
 Analysis of Acoustic Scattering\" p138-139"""
