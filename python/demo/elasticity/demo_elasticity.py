@@ -69,8 +69,8 @@ mesh.geometry.coord_mapping = cmap
 
 
 def boundary(x, on_boundary):
-    return np.logical_or(x[:, 0] < np.finfo(float).eps,
-                         x[:, 0] > 1.0 - np.finfo(float).eps)
+    return np.logical_or(x[:, 0] < 10.0*np.finfo(float).eps,
+                         x[:, 0] > 1.0 - 10.0*np.finfo(float).eps)
 
 
 # Rotation rate and mass density
@@ -106,6 +106,9 @@ a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
 u0 = Function(V)
+with u0.vector().localForm() as bc_local:
+    bc_local.set(0.0)
+
 # Set up boundary condition on inner surface
 bc = DirichletBC(V, u0, boundary)
 
