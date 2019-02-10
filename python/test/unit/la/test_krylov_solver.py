@@ -13,7 +13,7 @@ import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, Identity,
                     TestFunction, TrialFunction, UnitSquareMesh,
                     VectorFunctionSpace, dot, dx, grad, inner, sym, tr)
-from dolfin.fem import assemble_matrix, assemble_vector
+from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bcs
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 
 
@@ -95,7 +95,12 @@ def test_krylov_samg_solver_elasticity():
         a, L = inner(sigma(u), grad(v)) * dx, dot(ufl.as_vector((1.0, 1.0)), v) * dx
 
         # Assemble linear algebra objects
-        A, b = assemble_system(a, L, bc)
+        A = assemble_matrix(a, [bc])
+        A.assemble()
+        b = assemble_vector(L)
+        apply_lifting(b, [a], [bc])
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bcs(b, [bc])
 
         # Create solution function
         u = Function(V)

@@ -12,7 +12,7 @@ import typing
 from petsc4py import PETSc
 
 from dolfin import cpp
-# from dolfin.fem.dirichletbc import DirichletBC
+from dolfin.fem.dirichletbc import DirichletBC
 from dolfin.fem.form import Form
 
 
