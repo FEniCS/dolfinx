@@ -14,7 +14,7 @@ from petsc4py import PETSc
 import dolfin
 from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function, Point,
                     TestFunction, TrialFunction, VectorFunctionSpace, cpp)
-from dolfin.fem import assemble_matrix, assemble_vector
+from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bcs
 from dolfin.io import XDMFFile
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 from ufl import Identity, as_vector, dx, grad, inner, sym, tr
@@ -110,8 +110,12 @@ u0 = Function(V)
 bc = DirichletBC(V, u0, boundary)
 
 # Assemble system, applying boundary conditions and preserving symmetry)
-A, b = assemble_system(a, L, bc)
-assert A.block_size == 3
+A = assemble_matrix(a)
+A.assemble()
+b = assemble_vector(L)
+apply_lifting(b, [a], [bc])
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+set_bcs(b, [bc])
 
 # Create solution function
 u = Function(V)
