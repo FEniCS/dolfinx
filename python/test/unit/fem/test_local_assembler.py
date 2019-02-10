@@ -12,7 +12,6 @@ from dolfin import (UnitIntervalMesh, UnitSquareMesh,
                     Cell, TestFunction, TrialFunction, MPI, Cells, dx,
                     ds, dS, dot, Form, FunctionSpace, VectorFunctionSpace,
                     FacetNormal, SpatialCoordinate)
-from dolfin.fem.assembling import assemble_local
 
 
 @pytest.mark.skip

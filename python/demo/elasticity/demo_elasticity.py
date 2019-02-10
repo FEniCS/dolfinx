@@ -14,7 +14,7 @@ from petsc4py import PETSc
 import dolfin
 from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function, Point,
                     TestFunction, TrialFunction, VectorFunctionSpace, cpp)
-from dolfin.fem.assembling import assemble_system
+from dolfin.fem import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 from ufl import Identity, as_vector, dx, grad, inner, sym, tr

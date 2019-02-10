@@ -10,7 +10,6 @@ from dolfin.fem.assemble import (assemble_scalar, assemble_vector_block,
                                  assemble_vector_nest, assemble_matrix,
                                  assemble_matrix_nest, assemble_matrix_block,
                                  set_bc, assemble_vector, apply_lifting)
-from dolfin.fem.assembling import (assemble_local, assemble_system)
 from dolfin.fem.coordinatemapping import create_coordinate_map
 from dolfin.fem.dirichletbc import DirichletBC
 from dolfin.fem.dofmap import DofMap
@@ -23,7 +22,7 @@ from dolfin.fem.solving import solve
 
 
 __all__ = [
-    "apply_lifting", "assemble_local", "assemble_system", "assemble_scalar", "assemble_vector",
+    "apply_lifting", "assemble_scalar", "assemble_vector",
     "assemble_vector_block", "assemble_vector_nest",
     "assemble_matrix_block", "assemble_matrix_nest",
     "assemble_matrix", "set_bc", "create_coordinate_map",
