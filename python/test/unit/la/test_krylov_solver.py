@@ -13,8 +13,7 @@ import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, Identity,
                     TestFunction, TrialFunction, UnitSquareMesh,
                     VectorFunctionSpace, dot, dx, grad, inner, sym, tr)
-from dolfin.fem import assemble
-from dolfin.fem.assembling import assemble_system
+from dolfin.fem import assemble_matrix, assemble_vector
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 
 
@@ -26,8 +25,10 @@ def test_krylov_solver_lu():
 
     a = inner(u, v) * dx
     L = inner(1.0, v) * dx
-    A = assemble(a)
-    b = assemble(L)
+    A = assemble_matrix(a)
+    A.assemble()
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     norm = 13.0
 
