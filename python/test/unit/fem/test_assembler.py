@@ -497,7 +497,7 @@ def test_projection():
     expr = x[0] ** 2
 
     f = dolfin.project(expr, V)
-    integral = dolfin.fem.assemble(f * dolfin.dx)
+    integral = dolfin.fem.assemble(f * ufl.dx)
 
     integral_analytic = 1.0 / 3
-    assert numpy.isclose(integral_analytic, integral, 1.0e-6)
+    assert numpy.isclose(integral_analytic, integral, rtol=1.e-6, atol=1.e-12)
