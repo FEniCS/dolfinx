@@ -28,8 +28,8 @@ class Form;
 
 // -- Scalar ----------------------------------------------------------------
 
-// Assemble functional into scalar. Scalar is summed across all
-// processes.
+/// Assemble functional into scalar. Scalar is summed across all
+/// processes. Caller is for accumulation across processes.
 PetscScalar assemble_scalar(const Form& M);
 
 // -- Vectors ----------------------------------------------------------------
