@@ -1,10 +1,10 @@
-"""Unit tests for the KrylovSolver interface"""
-
+# -*- coding: utf-8 -*-
 # Copyright (C) 2014 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for the KrylovSolver interface"""
 
 import pytest
 from petsc4py import PETSc
@@ -85,6 +85,7 @@ def test_krylov_samg_solver_elasticity():
         # Define problem
         mesh = UnitSquareMesh(MPI.comm_world, N, N)
         V = VectorFunctionSpace(mesh, 'Lagrange', 1)
+        bc0 = Function(V)
         with bc0.vector().localForm() as bc_local:
             bc_local.set(0.0)
         bc = DirichletBC(V.sub(0), bc0,
@@ -99,7 +100,7 @@ def test_krylov_samg_solver_elasticity():
         A = assemble_matrix(a, [bc])
         A.assemble()
         b = assemble_vector(L)
-        apply_lifting(b, [a], [[bc])
+        apply_lifting(b, [a], [[bc]])
         b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         set_bc(b, [bc])
 
