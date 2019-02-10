@@ -63,7 +63,9 @@ def test_complex_assembly():
     A.assemble()
     A2_norm = A.norm(PETSc.NormType.FROBENIUS)
     assert np.isclose(A1_norm, A2_norm / np.sqrt(2))
-    b2_norm = dolfin.fem.assemble(L2).norm(PETSc.NormType.N2)
+    b = dolfin.fem.assemble(L2)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    b2_norm = b.norm(PETSc.NormType.N2)
     assert np.isclose(b2_norm, b1_norm)
 
 
