@@ -19,7 +19,7 @@ from dolfin import cpp, fem, function, la
 
 def project(v,
             V=None,
-            bcs=None,
+            bcs=[],
             mesh=None,
             funct=None,
             solver_type="lu",
