@@ -78,9 +78,9 @@ send an email to the FEniCS support mailing list:
 
 fenics-support@googlegroups.com
 
-For questions about using DOLFIN-X, visit the FEniCS Q&A page:
+For questions about using DOLFIN-X, visit the FEniCS Discourse page:
 
-https://www.allanswered.com/community/s/fenics-project/
+https://fenicsproject.discourse.group/
 
 For bug reports, visit the DOLFIN-X GitHub page:
 
