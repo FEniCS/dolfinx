@@ -62,8 +62,10 @@ def test_numba_assembly():
     L = cpp.fem.Form([V._cpp_object])
     L.set_tabulate_cell(0, tabulate_tensor_b.address)
 
-    A = dolfin.fem.assemble(a)
-    b = dolfin.fem.assemble(L)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
     bnorm = b.norm(PETSc.NormType.N2)
@@ -178,8 +180,10 @@ def test_cffi_assembly():
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
     L.set_tabulate_cell(0, ptrL)
 
-    A = dolfin.fem.assemble(a)
-    b = dolfin.fem.assemble(L)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
     bnorm = b.norm(PETSc.NormType.N2)

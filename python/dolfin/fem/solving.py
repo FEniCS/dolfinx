@@ -126,14 +126,11 @@ def _solve_varproblem(*args, **kwargs):
         a = fem.Form(eq.lhs, form_compiler_parameters=form_compiler_parameters)
         L = fem.Form(eq.rhs, form_compiler_parameters=form_compiler_parameters)
 
-        b = fem.assemble(L._cpp_object)
+        b = fem.assemble_vector(L._cpp_object)
         fem.apply_lifting(b, [a._cpp_object], [bcs])
-        b.ghostUpdate(
-            addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         fem.set_bc(b, bcs)
 
-        A = cpp.fem.create_matrix(a._cpp_object)
-        A.zeroEntries()
         A = fem.assemble_matrix(a._cpp_object, bcs)
         A.assemble()
 
