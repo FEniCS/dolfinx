@@ -192,7 +192,8 @@ void fem(py::module& m)
       .def(py::init<std::shared_ptr<const ufc_coordinate_mapping>>());
 
   // dolfin::fem::SparsityPatternBuilder
-  // py::class_<dolfin::fem::SparsityPatternBuilder>(m, "SparsityPatternBuilder")
+  // py::class_<dolfin::fem::SparsityPatternBuilder>(m,
+  // "SparsityPatternBuilder")
   //     .def_static(
   //         "build",
   //         [](const MPICommWrapper comm, const dolfin::mesh::Mesh& mesh,
@@ -320,7 +321,7 @@ void fem(py::module& m)
                  PetscScalar*, const PetscScalar*, const double*, int))addr;
              self.integrals().set_tabulate_tensor_cell(i, tabulate_tensor_ptr);
            })
-      .def("rank", &dolfin::fem::Form::rank)
+      .def_property_readonly("rank", &dolfin::fem::Form::rank)
       .def("mesh", &dolfin::fem::Form::mesh)
       .def("function_space", &dolfin::fem::Form::function_space)
       .def("coordinate_mapping", &dolfin::fem::Form::coordinate_mapping);

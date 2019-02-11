@@ -12,72 +12,31 @@ import typing
 from petsc4py import PETSc
 
 from dolfin import cpp
-from dolfin.fem.assembling import _create_cpp_form
 from dolfin.fem.dirichletbc import DirichletBC
 from dolfin.fem.form import Form
 
 
-@functools.singledispatch
-def assemble(M: typing.Union[Form, cpp.fem.Form]
-             ) -> typing.Union[PETSc.ScalarType, PETSc.Mat, PETSc.Vec]:
-    """Assemble a variational form over mesh.
-
-    The returned object is finalised, i.e. accumulated across MPI
-    processes.
-
-    """
-    _M = _create_cpp_form(M)
-    if _M.rank() == 0:
-        return cpp.fem.assemble_scalar(_M)
-    elif _M.rank() == 1:
-        b = cpp.la.create_vector(_M.function_space(0).dofmap().index_map())
-        assemble(b, _M)
-        return b
-    elif _M.rank() == 2:
-        A = cpp.fem.create_matrix(_M)
-        assemble(A, _M)
-        return A
+def _create_cpp_form(form: typing.Union[Form, cpp.fem.Form]) -> cpp.fem.Form:
+    """Create a compiled Form from a UFL form"""
+    if form is None:
+        return None
+    elif isinstance(form, cpp.fem.Form):
+        return form
     else:
-        raise RuntimeError("Form rank not supported by assembler.")
+        # FIXME: Attach cpp Form to UFL Form to avoid re-processing
+        form = Form(form)
+        return form._cpp_object
 
 
-@assemble.register(PETSc.Vec)
-def _(b: PETSc.Vec, L: typing.Union[Form, cpp.fem.Form]) -> PETSc.Vec:
-    """Assemble linear form into an existing vector.
+# -- Scalar assembly ---------------------------------------------------------
 
-    The vector must already have the correct size and parallel layout
-    and wll be zeroed. The returned vector is finalised, i.e. ghost
-    values accumulated across MPI processes.
-
-    """
-    L_cpp = _create_cpp_form(L)
-    with b.localForm() as b_local:
-        b_local.set(0.0)
-    cpp.fem.assemble_vector(b, L_cpp)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    return b
-
-
-@assemble.register(PETSc.Mat)
-def _(A: PETSc.Mat,
-      a: typing.Union[Form, cpp.fem.Form],
-      bcs=[],
-      diagonal: float = 1.0) -> PETSc.Mat:
-    """Assemble bilinear form into an exiting matrix. The matrix is
-    zeroed before assembly. Rows and columns of the matrix with
-    Dirichlet boundary conditions zeroed, and ``scalar`` is placed on
-    the diagonal for entries with a Dirichlet boundary condition.
-
-    The matrix finalised, i.e. ghost values accumulated across MPI
-    processes.
+def assemble_scalar(M: typing.Union[Form, cpp.fem.Form]) -> PETSc.ScalarType:
+    """Assemble functional. The returned value is local and not accumulated
+    across processes.
 
     """
-    A.zeroEntries()
-    a_cpp = _create_cpp_form(a)
-    cpp.fem.assemble_matrix(A, a_cpp, bcs, diagonal)
-    A.assemble()
-    return A
-
+    M_cpp = _create_cpp_form(M)
+    return cpp.fem.assemble_scalar(M_cpp)
 
 # -- Vector assembly ---------------------------------------------------------
 

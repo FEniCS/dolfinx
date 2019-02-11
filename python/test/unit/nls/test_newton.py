@@ -82,7 +82,9 @@ class NonlinearPDE_SNESProblem():
 
     def J(self, snes, x, J, P):
         """Assemble Jacobian matrix."""
-        fem.assemble(J, self.a, [self.bc])
+        J.zeroEntries()
+        fem.assemble_matrix(J, self.a, [self.bc])
+        J.assemble()
 
 
 def test_linear_pde():
