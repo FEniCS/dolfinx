@@ -11,7 +11,8 @@ import re
 import sys
 
 import dijitso
-from dolfin import cpp, jit
+from dolfin import cpp
+from dolfin.jit import mpi_jit_decorator, dolfin_pc
 from dolfin.cpp.log import LogLevel, log
 
 
@@ -67,10 +68,10 @@ def compile_cpp_code(cpp_code,
         libpython = [pyversion]
 
     # Include path and library info from DOLFIN (dolfin.pc)
-    params['build']['include_dirs'] = jit.dolfin_pc["include_dirs"] + get_pybind_include() \
+    params['build']['include_dirs'] = dolfin_pc["include_dirs"] + get_pybind_include() \
         + [sysconfig.get_config_var("INCLUDEDIR") + "/" + pyversion]
-    params['build']['libs'] = jit.dolfin_pc["libraries"] + libpython
-    params['build']['lib_dirs'] = jit.dolfin_pc["library_dirs"] + [
+    params['build']['libs'] = dolfin_pc["libraries"] + libpython
+    params['build']['lib_dirs'] = dolfin_pc["library_dirs"] + [
         sysconfig.get_config_var("LIBDIR")
     ]
 
@@ -80,7 +81,7 @@ def compile_cpp_code(cpp_code,
         params['build']['cxxflags'] += ('-undefined', 'dynamic_lookup')
 
     # Enable all macros from dolfin.pc
-    dmacros = ['-D' + dm for dm in jit.dolfin_pc['define_macros']]
+    dmacros = ['-D' + dm for dm in dolfin_pc['define_macros']]
 
     params['build']['cxxflags'] += tuple(dmacros)
 
@@ -94,7 +95,7 @@ def compile_cpp_code(cpp_code,
     module_hash = hashlib.md5(hash_str.encode('utf-8')).hexdigest()
     module_name = "dolfin_cpp_module_" + module_hash
 
-    module, signature = jit.dijitso_jit(
+    module, signature = dijitso_jit(
         cpp_code, module_name, params, generate=jit_generate)
 
     return module
@@ -134,3 +135,8 @@ def _check_pybind_path(root):
         return True
     else:
         return False
+
+
+@mpi_jit_decorator
+def dijitso_jit(*args, **kwargs):
+    return dijitso.jit(*args, **kwargs)
