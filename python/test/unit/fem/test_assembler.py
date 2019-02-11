@@ -33,11 +33,13 @@ def nest_matrix_norm(A):
 def test_assemble_functional():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     M = 1.0 * dx(domain=mesh)
-    value = dolfin.fem.assemble(M)
+    value = dolfin.fem.assemble_scalar(M)
+    value = dolfin.MPI.sum(mesh.mpi_comm(), value)
     assert value == pytest.approx(1.0, 1e-12)
     x = dolfin.SpatialCoordinate(mesh)
     M = x[0] * dx(domain=mesh)
-    value = dolfin.fem.assemble(M)
+    value = dolfin.fem.assemble_scalar(M)
+    value = dolfin.MPI.sum(mesh.mpi_comm(), value)
     assert value == pytest.approx(0.5, 1e-12)
 
 
@@ -53,22 +55,29 @@ def test_basic_assembly():
     L = inner(f, v) * dx + inner(2.0, v) * ds
 
     # Initial assembly
-    A = dolfin.fem.assemble(a)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
     assert isinstance(A, PETSc.Mat)
-    b = dolfin.fem.assemble(L)
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert isinstance(b, PETSc.Vec)
 
     # Second assembly
     normA = A.norm()
-    A = dolfin.fem.assemble(A, a)
+    A.zeroEntries()
+    A = dolfin.fem.assemble_matrix(A, a)
+    A.assemble()
     assert isinstance(A, PETSc.Mat)
     assert normA == pytest.approx(A.norm())
     normb = b.norm()
-    b = dolfin.fem.assemble(b, L)
+    with b.localForm() as b_local:
+        b_local.set(0.0)
+    b = dolfin.fem.assemble_vector(b, L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert isinstance(b, PETSc.Vec)
     assert normb == pytest.approx(b.norm())
 
-    # Vector re-assembly - no zeroing (need to zero ghost entries)
+    # Vector re-assembly - no zeroing (but need to zero ghost entries)
     with b.localForm() as b_local:
         b_local.array[b.local_size:] = 0.0
     dolfin.fem.assemble_vector(b, L)
@@ -97,8 +106,10 @@ def test_assembly_bcs():
     bc = dolfin.fem.dirichletbc.DirichletBC(V, u_bc, boundary)
 
     # Assemble and apply 'global' lifting of bcs
-    A = dolfin.fem.assemble(a)
-    b = dolfin.fem.assemble(L)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     g = A.createVecRight()
     g.set(0.0)
     dolfin.fem.set_bc(g, [bc])
@@ -106,7 +117,8 @@ def test_assembly_bcs():
     dolfin.fem.set_bc(f, [bc])
 
     # Assemble vector and apply lifting of bcs during assembly
-    b = dolfin.fem.assemble(L)
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     b_bc = dolfin.fem.assemble_vector(L)
     dolfin.fem.apply_lifting(b_bc, [a], [[bc]])
     b_bc.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
