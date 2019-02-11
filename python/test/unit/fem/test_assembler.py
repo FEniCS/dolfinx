@@ -509,7 +509,8 @@ def test_projection():
     expr = x[0] ** 2
 
     f = dolfin.project(expr, V)
-    integral = dolfin.fem.assemble(f * ufl.dx)
+    integral = dolfin.fem.assemble_scalar(f * ufl.dx)
+    integral = dolfin.MPI.sum(mesh.mpi_comm(), integral)
 
     integral_analytic = 1.0 / 3
-    assert numpy.isclose(integral_analytic, integral, rtol=1.e-6, atol=1.e-12)
+    assert integral == pytest.approx(integral_analytic, rel=1.e-6, abs=1.e-12)
