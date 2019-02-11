@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <Eigen/Dense>
+#include <complex>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/SubSystemsManager.h>
@@ -104,10 +105,11 @@ void common(py::module& m)
                   (void (*)()) & dolfin::common::SubSystemsManager::init_petsc)
       .def_static("init_petsc",
                   [](std::vector<std::string> args) {
-    std::vector<char*> argv(args.size());
-    for (std::size_t i = 0; i < args.size(); ++i)
-      argv[i] = const_cast<char*>(args[i].data());
-    dolfin::common::SubSystemsManager::init_petsc(args.size(), argv.data());
+                    std::vector<char*> argv(args.size());
+                    for (std::size_t i = 0; i < args.size(); ++i)
+                      argv[i] = const_cast<char*>(args[i].data());
+                    dolfin::common::SubSystemsManager::init_petsc(args.size(),
+                                                                  argv.data());
                   })
       .def_static("finalize", &dolfin::common::SubSystemsManager::finalize)
       .def_static("responsible_mpi",
@@ -198,6 +200,10 @@ void mpi(py::module& m)
                   })
       .def_static("sum",
                   [](const MPICommWrapper comm, double value) {
+                    return dolfin::MPI::sum(comm.get(), value);
+                  })
+      .def_static("sum",
+                  [](const MPICommWrapper comm, std::complex<double> value) {
                     return dolfin::MPI::sum(comm.get(), value);
                   })
       // templated for dolfin::Table

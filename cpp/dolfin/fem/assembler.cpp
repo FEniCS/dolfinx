@@ -271,9 +271,7 @@ void _assemble_vector_block(
 //-----------------------------------------------------------------------------
 PetscScalar fem::assemble_scalar(const Form& M)
 {
-  assert(M.mesh());
-  PetscScalar value = fem::impl::assemble(M);
-  return MPI::sum(M.mesh()->mpi_comm(), value);
+  return fem::impl::assemble(M);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(Vec b, const Form& L)

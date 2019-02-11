@@ -111,8 +111,8 @@
 # First, the modules :py:mod:`random` :py:mod:`matplotlib`
 # :py:mod:`dolfin` module are imported::
 
-import random
 import os
+import random
 
 from petsc4py import PETSc
 
@@ -120,7 +120,7 @@ from dolfin import (MPI, CellType, Expression, FiniteElement, Function,
                     FunctionSpace, NewtonSolver, NonlinearProblem,
                     TestFunctions, TrialFunction, UnitSquareMesh, function,
                     split)
-from dolfin.fem.assemble import assemble
+from dolfin.fem.assemble import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
 from ufl import derivative, diff, dx, grad, inner, variable
 
@@ -147,16 +147,21 @@ class CahnHilliardEquation(NonlinearProblem):
 
     def F(self, x):
         if self._F is None:
-            self._F = assemble(self.L)
+            self._F = assemble_vector(self.L)
         else:
-            self._F = assemble(self._F, self.L)
+            with self._F.localForm() as f_local:
+                f_local.set(0.0)
+            self._F = assemble_vector(self._F, self.L)
+        self._F.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
         return self._F
 
     def J(self, x):
         if self._J is None:
-            self._J = assemble(self.a)
+            self._J = assemble_matrix(self.a)
         else:
-            self._J = assemble(self._J, self.a)
+            self._J.zeroEntries()
+            self._J = assemble_matrix(self._J, self.a)
+        self._J.assemble()
         return self._J
 
 # The constructor (``__init__``) stores references to the bilinear (``a``)

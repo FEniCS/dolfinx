@@ -1,10 +1,10 @@
-"""Unit tests for the KrylovSolver interface"""
-
+# -*- coding: utf-8 -*-
 # Copyright (C) 2014 Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
+"""Unit tests for the KrylovSolver interface"""
 
 import pytest
 from petsc4py import PETSc
@@ -13,8 +13,7 @@ import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, Identity,
                     TestFunction, TrialFunction, UnitSquareMesh,
                     VectorFunctionSpace, dot, dx, grad, inner, sym, tr)
-from dolfin.fem import assemble
-from dolfin.fem.assembling import assemble_system
+from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 
 
@@ -26,8 +25,10 @@ def test_krylov_solver_lu():
 
     a = inner(u, v) * dx
     L = inner(1.0, v) * dx
-    A = assemble(a)
-    b = assemble(L)
+    A = assemble_matrix(a)
+    A.assemble()
+    b = assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     norm = 13.0
 
@@ -85,6 +86,8 @@ def test_krylov_samg_solver_elasticity():
         mesh = UnitSquareMesh(MPI.comm_world, N, N)
         V = VectorFunctionSpace(mesh, 'Lagrange', 1)
         bc0 = Function(V)
+        with bc0.vector().localForm() as bc_local:
+            bc_local.set(0.0)
         bc = DirichletBC(V.sub(0), bc0,
                          lambda x, on_boundary: on_boundary)
         u = TrialFunction(V)
@@ -94,7 +97,12 @@ def test_krylov_samg_solver_elasticity():
         a, L = inner(sigma(u), grad(v)) * dx, dot(ufl.as_vector((1.0, 1.0)), v) * dx
 
         # Assemble linear algebra objects
-        A, b = assemble_system(a, L, bc)
+        A = assemble_matrix(a, [bc])
+        A.assemble()
+        b = assemble_vector(L)
+        apply_lifting(b, [a], [[bc]])
+        b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+        set_bc(b, [bc])
 
         # Create solution function
         u = Function(V)
