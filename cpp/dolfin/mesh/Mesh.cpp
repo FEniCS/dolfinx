@@ -134,7 +134,6 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.init(tdim, num_cells, num_cells_global);
   _topology.init_ghost(tdim, num_local_cells);
   _topology.init_global_indices(tdim, num_cells);
-  // _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);
 
   // Find the max vertex index of non-ghost cells.
   if (num_ghost_cells > 0)
