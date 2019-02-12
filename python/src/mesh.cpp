@@ -122,8 +122,7 @@ void mesh(py::module& m)
                        &dolfin::mesh::MeshTopology::init))
       .def("connectivity",
            py::overload_cast<std::size_t, std::size_t>(
-               &dolfin::mesh::MeshTopology::connectivity, py::const_),
-           py::return_value_policy::reference_internal)
+               &dolfin::mesh::MeshTopology::connectivity, py::const_))
       .def("size", &dolfin::mesh::MeshTopology::size)
       .def("hash", &dolfin::mesh::MeshTopology::hash)
       .def("init_global_indices",
@@ -166,7 +165,7 @@ void mesh(py::module& m)
              return py::array(
                  {(std::int32_t)self.topology().size(tdim),
                   (std::int32_t)self.type().num_vertices(tdim)},
-                 self.topology().connectivity(tdim, 0).connections().data());
+                 self.topology().connectivity(tdim, 0)->connections().data());
            })
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),

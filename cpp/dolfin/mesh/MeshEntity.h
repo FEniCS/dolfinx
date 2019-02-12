@@ -128,7 +128,10 @@ public:
     if (dim == _dim)
       return 1;
     else
-      return _mesh->topology().connectivity(_dim, dim).size(_local_index);
+    {
+      assert(_mesh->topology().connectivity(_dim, dim));
+      return _mesh->topology().connectivity(_dim, dim)->size(_local_index);
+    }
   }
 
   /// Return global number of incident mesh entities of given
@@ -145,7 +148,11 @@ public:
     if (dim == _dim)
       return 1;
     else
-      return _mesh->topology().connectivity(_dim, dim).size_global(_local_index);
+    {
+      assert(_mesh->topology().connectivity(_dim, dim));
+      return _mesh->topology().connectivity(_dim, dim)->size_global(
+          _local_index);
+    }
   }
 
   /// Return array of indices for incident mesh entities of given
@@ -162,8 +169,9 @@ public:
       return &_local_index;
     else
     {
+      assert(_mesh->topology().connectivity(_dim, dim));
       const std::int32_t* initialized_mesh_entities
-        = _mesh->topology().connectivity(_dim, dim)(_local_index);
+          = (*_mesh->topology().connectivity(_dim, dim))(_local_index);
       assert(initialized_mesh_entities);
       return initialized_mesh_entities;
     }
@@ -265,5 +273,5 @@ protected:
   // Local index of entity within topological dimension
   std::int32_t _local_index;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

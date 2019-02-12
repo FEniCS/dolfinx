@@ -1175,7 +1175,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     }
   }
 
-  mesh.topology().connectivity(D - 1, D).set_global_size(num_global_neighbors);
+  assert(mesh.topology().connectivity(D - 1, D));
+  mesh.topology().connectivity(D - 1, D)->set_global_size(num_global_neighbors);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
