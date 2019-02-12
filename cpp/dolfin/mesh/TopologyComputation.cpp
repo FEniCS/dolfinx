@@ -14,11 +14,11 @@
 #include <algorithm>
 #include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
-#include <boost/version.hpp>
 #include <cstdint>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/log/log.h>
+#include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -30,22 +30,25 @@ using namespace dolfin::mesh;
 namespace
 {
 
-// cell-to-enity (tdim, dim). Ths functions builds a list of all entities of
-// Compute mesh entities of given topological dimension, and connectivity
-// dimension dim for every cell, keyed by the sorted lists of vertex indices
-// that make up the entity. Also attached is whether or nor the entity is a
-// ghost, the local entity index (relative to the generating cell) and the
-// generating cell index. This list is then sorted, with matching keys
-// corresponding to a single enity. The entities are numbered such that ghost
-// entities come after al regular enrities.
+// cell-to-entity (tdim, dim). Ths functions builds a list of all
+// entities of Compute mesh entities of given topological dimension, and
+// connectivity dimension dim for every cell, keyed by the sorted lists
+// of vertex indices that make up the entity. Also attached is whether
+// or nor the entity is a ghost, the local entity index (relative to the
+// generating cell) and the generating cell index. This list is then
+// sorted, with matching keys corresponding to a single entity. The
+// entities are numbered such that ghost entities come after al regular
+// entities.
 //
 // Returns the number of entities
 //
 // The function is templated over the number of vertices that make up an
-// entity of dimension dim. This avoid dynamic memoryt allocations, yielding
-// significant performance improvements
+// entity of dimension dim. This avoid dynamic memory allocations,
+// yielding significant performance improvements
 template <int N>
-std::int32_t _compute_entities_by_key_matching(Mesh& mesh, int dim)
+std::tuple<std::shared_ptr<MeshConnectivity>, std::shared_ptr<MeshConnectivity>,
+           std::int32_t>
+compute_entities_by_key_matching(Mesh& mesh, int dim)
 {
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
@@ -64,7 +67,7 @@ std::int32_t _compute_entities_by_key_matching(Mesh& mesh, int dim)
                         "connectivity is missing",
                         dim);
     }
-    return topology.size(dim);
+    return {nullptr, nullptr, topology.size(dim)};
   }
 
   // Make sure connectivity does not already exist
@@ -96,9 +99,8 @@ std::int32_t _compute_entities_by_key_matching(Mesh& mesh, int dim)
 
   assert(N == num_vertices);
 
-  // Create data structure to hold entities
-  // ([vertices key], (cell_local_index, cell index), [entity vertices], entity
-  // index)
+  // Create data structure to hold entities ([vertices key],
+  // (cell_local_index, cell index), [entity vertices], entity index)
   std::vector<std::tuple<std::array<std::int32_t, N>,
                          std::pair<std::int8_t, std::int32_t>,
                          std::array<std::int32_t, N>, std::int32_t>>
@@ -139,13 +141,11 @@ std::int32_t _compute_entities_by_key_matching(Mesh& mesh, int dim)
     }
   }
 
-  // Sort entities by key. For the same key, those beloning to
-  // non-ghost cells will appear before those belonging to ghost
-  // cells.
+  // Sort entities by key. For the same key, those beloning to non-ghost
+  // cells will appear before those belonging to ghost cells.
   std::sort(keyed_entities.begin(), keyed_entities.end());
 
-  // Compute entity indices (using -1, -2, -3, etc, for ghost
-  // entities)
+  // Compute entity indices (using -1, -2, -3, etc, for ghost entities)
   std::int32_t nonghost_index(0), ghost_index(-1);
   std::array<std::int32_t, N> previous_key;
   std::fill(previous_key.begin(), previous_key.end(), -1);
@@ -193,8 +193,8 @@ std::int32_t _compute_entities_by_key_matching(Mesh& mesh, int dim)
   std::int32_t previous_index = std::numeric_limits<std::int32_t>::min();
   for (auto& entity : keyed_entities)
   {
-    // Get entity index, and remap for ghosts (negative entity index)
-    // to true index
+    // Get entity index, and remap for ghosts (negative entity index) to
+    // true index
     auto& e_index = std::get<3>(entity);
     if (e_index < 0)
       e_index = num_nonghost_entities - (e_index + 1);
@@ -216,6 +216,9 @@ std::int32_t _compute_entities_by_key_matching(Mesh& mesh, int dim)
     connectivity_ce[cell_index][local_index] = e_index;
   }
 
+
+  // FIXME: move this out some Mesh can be const
+
   // Initialise connectivity data structure
   topology.init(dim, num_mesh_entities, 0);
 
@@ -227,13 +230,10 @@ std::int32_t _compute_entities_by_key_matching(Mesh& mesh, int dim)
   auto ev = std::make_shared<MeshConnectivity>();
   ce->set(connectivity_ce);
   ev->set(connectivity_ev);
-  topology.set_connectivity(ce, topology.dim(), dim);
-  topology.set_connectivity(ev, dim, 0);
 
-  return connectivity_ev.size();
+  return {ce, ev, connectivity_ev.size()};
 }
 //-----------------------------------------------------------------------------
-
 // Compute connectivity from transpose
 MeshConnectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
                                         std::size_t d1)
@@ -280,7 +280,6 @@ MeshConnectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
 
   return connectivity;
 }
-
 //-----------------------------------------------------------------------------
 // Direct lookup of entity from vertices in a map
 MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
@@ -338,7 +337,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   log::log(TRACE, "Computing mesh entities of dimension %d", dim);
 
   // Check if entities have already been computed
-  const MeshTopology& topology = mesh.topology();
+  MeshTopology& topology = mesh.topology();
   if (topology.size(dim) > 0)
   {
     // Make sure we really have the connectivity
@@ -357,22 +356,38 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   // Call specialised function to compute entities
   const CellType& cell_type = mesh.type();
   const std::int8_t num_entity_vertices = cell_type.num_vertices(dim);
+  std::tuple<std::shared_ptr<MeshConnectivity>,
+             std::shared_ptr<MeshConnectivity>, std::int32_t>
+      data;
   switch (num_entity_vertices)
   {
   case 1:
-    return _compute_entities_by_key_matching<1>(mesh, dim);
+    data = compute_entities_by_key_matching<1>(mesh, dim);
+    break;
   case 2:
-    return _compute_entities_by_key_matching<2>(mesh, dim);
+    data = compute_entities_by_key_matching<2>(mesh, dim);
+    break;
   case 3:
-    return _compute_entities_by_key_matching<3>(mesh, dim);
+    data = compute_entities_by_key_matching<3>(mesh, dim);
+    break;
   case 4:
-    return _compute_entities_by_key_matching<4>(mesh, dim);
+    data = compute_entities_by_key_matching<4>(mesh, dim);
+    break;
   default:
     log::dolfin_error("TopologyComputation.cpp", "compute topological entities",
                       "Entities with %d vertices not supported",
                       num_entity_vertices);
-    return 0;
   }
+
+  // Set cell-entity connectivity
+  if (std::get<0>(data))
+    topology.set_connectivity(std::get<0>(data), topology.dim(), dim);
+
+  // Set entity-vertex connectivity
+  if (std::get<1>(data))
+    topology.set_connectivity(std::get<1>(data), dim, 0);
+
+  return std::get<2>(data);
 }
 //-----------------------------------------------------------------------------
 void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
