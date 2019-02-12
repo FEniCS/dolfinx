@@ -10,6 +10,7 @@
 #include <cmath>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
@@ -43,8 +44,10 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    EigenRowArrayXXd geom(0, 3);
-    EigenRowArrayXXi64 topo(0, 4);
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+        0, 3);
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        topo(0, 4);
 
     return mesh::MeshPartitioning::build_distributed_mesh(
         comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, ghost_mode);
