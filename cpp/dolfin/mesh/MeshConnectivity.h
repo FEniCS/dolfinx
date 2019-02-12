@@ -49,9 +49,6 @@ public:
   // /// Return true if the total number of connections is equal to zero
   bool empty() const { return _connections.size() == 0; }
 
-  /// Return total number of connections
-  inline std::size_t size() const { return _connections.size(); }
-
   /// Return number of connections for given entity
   std::size_t size(std::int32_t entity) const
   {
@@ -79,28 +76,15 @@ public:
                ? &_connections[_index_to_position[entity]]
                : nullptr;
   }
-  // Eigen::Ref<const EigenArrayXi32> operator()(std::size_t entity) const
-  // {
-  //   if ((entity + 1) < _index_to_position.size())
-  //   {
-  //     const std::size_t size
-  //         = _index_to_position[entity + 1] - _index_to_position[entity];
-  //     return Eigen::Map<const EigenArrayXi32>(
-  //         &_connections[_index_to_position[entity]], size);
-  //   }
-  //   else
-  //     return Eigen::Map<const EigenArrayXi32>(nullptr, 0);
-  // }
 
   /// Return contiguous array of connections for all entities
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-  connections() const
-  {
-    return _connections;
-  }
+  connections() const;
 
-  /// Clear all data
-  void clear();
+  /// Position of first connection in connections() for each entity
+  /// (using local index)
+  Eigen::Ref<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+  entity_positions() const;
 
   /// Initialize number of entities and number of connections (equal
   /// for all)
@@ -124,9 +108,6 @@ public:
   template <typename T>
   void set(const T& connections)
   {
-    // Clear old data if any
-    clear();
-
     // Initialize offsets and compute total size
     _index_to_position.resize(connections.size() + 1);
     std::int32_t size = 0;
@@ -136,13 +117,6 @@ public:
       size += connections[e].size();
     }
     _index_to_position[connections.size()] = size;
-
-    // Initialize connections
-    // _connections.reserve(size);
-    // for (auto e = connections.begin(); e != connections.end(); ++e)
-    //   _connections.insert(_connections.end(), e->begin(), e->end());
-
-    // _connections.shrink_to_fit();
 
     std::vector<std::int32_t> c;
     c.reserve(size);
@@ -171,12 +145,12 @@ private:
   // Connections for all entities stored as a contiguous array
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _connections;
 
+  // Position of first connection for each entity (using local index)
+  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _index_to_position;
+
   // Global number of connections for all entities (possibly not
   // computed)
   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _num_global_connections;
-
-  // Position of first connection for each entity (using local index)
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _index_to_position;
 };
 } // namespace mesh
 } // namespace dolfin

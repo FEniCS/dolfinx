@@ -60,7 +60,7 @@ void MeshTopology::clear(std::size_t d0, std::size_t d1)
 {
   assert(d0 < _connectivity.size());
   assert(d1 < _connectivity[d0].size());
-  _connectivity[d0][d1].clear();
+  _connectivity[d0][d1] = MeshConnectivity();
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init(std::size_t dim, std::int32_t local_size,
