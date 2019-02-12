@@ -29,6 +29,54 @@ using namespace dolfin::mesh;
 
 namespace
 {
+// Compute connectivity from transpose
+MeshConnectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
+                                        std::size_t d1)
+{
+  // The transpose is computed in three steps:
+  //
+  //   1. Iterate over entities of dimension d1 and count the number
+  //      of connections for each entity of dimension d0
+  //
+  //   2. Allocate memory / prepare data structures
+  //
+  //   3. Iterate again over entities of dimension d1 and add connections
+  //      for each entity of dimension d0
+
+  log::log(TRACE, "Computing mesh connectivity %d - %d from transpose.", d0,
+           d1);
+
+  // Get mesh topology and connectivity
+  const MeshTopology& topology = mesh.topology();
+
+  // Need connectivity d1 - d0
+  if(!topology.connectivity(d1, d0))
+    throw std::runtime_error("Missing required connectivity d1-d0.");
+
+  // Temporary array
+  std::vector<std::size_t> tmp(topology.size(d0), 0);
+
+  // Count the number of connections
+  for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
+    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
+      tmp[e0.index()]++;
+
+  // Initialize the number of connections
+  MeshConnectivity connectivity;
+  connectivity.init(tmp);
+
+  // Reset current position for each entity
+  std::fill(tmp.begin(), tmp.end(), 0);
+
+  // Add the connections
+  for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
+    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
+      connectivity.set(e0.index(), e1.index(), tmp[e0.index()]++);
+
+  return connectivity;
+}
+
+//-----------------------------------------------------------------------------
 // Direct lookup of entity from vertices in a map
 MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
                                   std::size_t d1)
@@ -39,9 +87,6 @@ MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
   // Get the type of entity d0
   std::unique_ptr<CellType> cell_type(
       CellType::create(mesh.type().entity_type(d0)));
-
-  MeshConnectivity connectivity;
-  connectivity.init(mesh.num_entities(d0), cell_type->num_entities(d1));
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
   boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
@@ -55,6 +100,9 @@ MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
                            key.begin(), key.end());
     entity_to_index.insert({key, e.index()});
   }
+
+  MeshConnectivity connectivity;
+  connectivity.init(mesh.num_entities(d0), cell_type->num_entities(d1));
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;
@@ -76,7 +124,6 @@ MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
   }
 
   return connectivity;
-  // mesh.topology().set_connectivity(connectivity, d0, d1);
 }
 
 } // namespace
@@ -182,7 +229,10 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   {
     // Compute connectivity d1 - d0 and take transpose
     compute_connectivity(mesh, d1, d0);
-    compute_from_transpose(mesh, d0, d1);
+
+    auto c = std::make_shared<MeshConnectivity>(
+        compute_from_transpose(mesh, d0, d1));
+    topology.set_connectivity(c, d0, d1);
   }
   else
   {
@@ -383,50 +433,3 @@ std::int32_t TopologyComputation::compute_entities_by_key_matching(Mesh& mesh,
   return connectivity_ev.size();
 }
 //-----------------------------------------------------------------------------
-void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
-                                                 std::size_t d1)
-{
-  // The transpose is computed in three steps:
-  //
-  //   1. Iterate over entities of dimension d1 and count the number
-  //      of connections for each entity of dimension d0
-  //
-  //   2. Allocate memory / prepare data structures
-  //
-  //   3. Iterate again over entities of dimension d1 and add connections
-  //      for each entity of dimension d0
-
-  log::log(TRACE, "Computing mesh connectivity %d - %d from transpose.", d0,
-           d1);
-
-  // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.topology();
-  // std::shared_ptr<MeshConnectivity> connectivity
-  //     = topology.connectivity(d0, d1);
-
-  // Need connectivity d1 - d0
-  assert(topology.connectivity(d1, d0));
-
-  // Temporary array
-  std::vector<std::size_t> tmp(topology.size(d0), 0);
-
-  // Count the number of connections
-  for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
-    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
-      tmp[e0.index()]++;
-
-  // Initialize the number of connections
-  auto connectivity = std::make_shared<MeshConnectivity>();
-  connectivity->init(tmp);
-
-  // Reset current position for each entity
-  std::fill(tmp.begin(), tmp.end(), 0);
-
-  // Add the connections
-  for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
-    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
-      connectivity->set(e0.index(), e1.index(), tmp[e0.index()]++);
-
-  topology.set_connectivity(connectivity, d0, d1);
-}
-//----------------------------------------------------------------------------

@@ -47,9 +47,6 @@ private:
   template <int N>
   static std::int32_t compute_entities_by_key_matching(Mesh& mesh, int dim);
 
-  // Compute connectivity from transpose
-  static void compute_from_transpose(Mesh& mesh, std::size_t d0,
-                                     std::size_t d1);
 
 };
 }
