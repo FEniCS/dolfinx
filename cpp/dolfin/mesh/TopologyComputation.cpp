@@ -27,6 +27,59 @@
 using namespace dolfin;
 using namespace dolfin::mesh;
 
+namespace
+{
+// Direct lookup of entity from vertices in a map
+MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
+                                  std::size_t d1)
+{
+  assert(d1 > 0);
+  assert(d0 > d1);
+
+  // Get the type of entity d0
+  std::unique_ptr<CellType> cell_type(
+      CellType::create(mesh.type().entity_type(d0)));
+
+  MeshConnectivity connectivity;
+  connectivity.init(mesh.num_entities(d0), cell_type->num_entities(d1));
+
+  // Make a map from the sorted d1 entity vertices to the d1 entity index
+  boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
+  entity_to_index.reserve(mesh.num_entities(d1));
+
+  const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
+  std::vector<std::int32_t> key(num_verts_d1);
+  for (auto& e : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
+  {
+    std::partial_sort_copy(e.entities(0), e.entities(0) + num_verts_d1,
+                           key.begin(), key.end());
+    entity_to_index.insert({key, e.index()});
+  }
+
+  // Search for d1 entities of d0 in map, and recover index
+  std::vector<std::int32_t> entities;
+  boost::multi_array<std::int32_t, 2> keys;
+  for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
+  {
+    entities.clear();
+    cell_type->create_entities(keys, d1, e.entities(0));
+    for (const auto& p : keys)
+    {
+      std::partial_sort_copy(p.begin(), p.end(), key.begin(), key.end());
+      const auto it = entity_to_index.find(key);
+      assert(it != entity_to_index.end());
+      entities.push_back(it->second);
+    }
+    Eigen::Map<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>> _e(
+        entities.data(), entities.size());
+    connectivity.set(e.index(), _e);
+  }
+
+  return connectivity;
+  // mesh.topology().set_connectivity(connectivity, d0, d1);
+}
+
+} // namespace
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
@@ -91,7 +144,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   MeshTopology& topology = mesh.topology();
 
   // Return connectivity has already been computed
- if (topology.connectivity(d0, d1))
+  if (topology.connectivity(d0, d1))
     return;
 
   auto connectivity = std::make_shared<MeshConnectivity>();
@@ -133,9 +186,10 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   }
   else
   {
-    // Compute by mapping vertices from a lower dimension entity
-    // to those of a higher dimension entity
-    compute_from_map(mesh, d0, d1);
+    // Compute by mapping vertices from a lower dimension entity to
+    // those of a higher dimension entity
+    auto c = std::make_shared<MeshConnectivity>(compute_from_map(mesh, d0, d1));
+    topology.set_connectivity(c, d0, d1);
   }
 }
 //--------------------------------------------------------------------------
@@ -376,53 +430,3 @@ void TopologyComputation::compute_from_transpose(Mesh& mesh, std::size_t d0,
   topology.set_connectivity(connectivity, d0, d1);
 }
 //----------------------------------------------------------------------------
-void TopologyComputation::compute_from_map(Mesh& mesh, std::size_t d0,
-                                           std::size_t d1)
-{
-  assert(d1 > 0);
-  assert(d0 > d1);
-
-  // Get the type of entity d0
-  std::unique_ptr<CellType> cell_type(
-      CellType::create(mesh.type().entity_type(d0)));
-
-  // MeshConnectivity& connectivity = mesh.topology().connectivity(d0, d1);
-  // connectivity.init(mesh.num_entities(d0), cell_type->num_entities(d1));
-  auto connectivity = std::make_shared<MeshConnectivity>();
-  connectivity->init(mesh.num_entities(d0), cell_type->num_entities(d1));
-
-  // Make a map from the sorted d1 entity vertices to the d1 entity index
-  boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
-  entity_to_index.reserve(mesh.num_entities(d1));
-
-  const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
-  std::vector<std::int32_t> key(num_verts_d1);
-  for (auto& e : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
-  {
-    std::partial_sort_copy(e.entities(0), e.entities(0) + num_verts_d1,
-                           key.begin(), key.end());
-    entity_to_index.insert({key, e.index()});
-  }
-
-  // Search for d1 entities of d0 in map, and recover index
-  std::vector<std::int32_t> entities;
-  boost::multi_array<std::int32_t, 2> keys;
-  for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
-  {
-    entities.clear();
-    cell_type->create_entities(keys, d1, e.entities(0));
-    for (const auto& p : keys)
-    {
-      std::partial_sort_copy(p.begin(), p.end(), key.begin(), key.end());
-      const auto it = entity_to_index.find(key);
-      assert(it != entity_to_index.end());
-      entities.push_back(it->second);
-    }
-    Eigen::Map<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>> _e(
-        entities.data(), entities.size());
-    connectivity->set(e.index(), _e);
-  }
-
-  mesh.topology().set_connectivity(connectivity, d0, d1);
-}
-//-----------------------------------------------------------------------------

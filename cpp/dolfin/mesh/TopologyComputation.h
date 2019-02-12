@@ -51,8 +51,6 @@ private:
   static void compute_from_transpose(Mesh& mesh, std::size_t d0,
                                      std::size_t d1);
 
-  // Direct lookup of entity from vertices in a map
-  static void compute_from_map(Mesh& mesh, std::size_t d0, std::size_t d1);
 };
 }
 }
