@@ -258,7 +258,7 @@ void _lift_bc_exterior_facets(
 } // namespace
 
 //-----------------------------------------------------------------------------
-void fem::impl::assemble(
+void fem::impl::assemble_vector(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
 {
   assert(L.mesh());

@@ -35,7 +35,7 @@ namespace impl
 {
 
 /// Assemble functional into an scalar
-PetscScalar assemble(const fem::Form& M);
+PetscScalar assemble_scalar(const fem::Form& M);
 
 /// Assemble functional over cells
 PetscScalar

@@ -116,7 +116,7 @@ void _assemble_vector_nest(
     // Assemble
     la::VecWrapper _b(b_sub);
     _b.x.setZero();
-    fem::impl::assemble(_b.x, *L[i]);
+    fem::impl::assemble_vector(_b.x, *L[i]);
 
     // FIXME: sort out x0 \ne nullptr for nested case
     // Apply lifting
@@ -199,7 +199,7 @@ void _assemble_vector_block(
                                                                    + map_size1);
 
     // Assemble and modify for bcs (lifting)
-    fem::impl::assemble(b_vec[i], *L[i]);
+    fem::impl::assemble_vector(b_vec[i], *L[i]);
     fem::impl::apply_lifting(b_vec[i], a[i], bcs1[i], {}, scale);
   }
 
@@ -271,13 +271,13 @@ void _assemble_vector_block(
 //-----------------------------------------------------------------------------
 PetscScalar fem::assemble_scalar(const Form& M)
 {
-  return fem::impl::assemble(M);
+  return fem::impl::assemble_scalar(M);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(Vec b, const Form& L)
 {
   la::VecWrapper _b(b);
-  fem::impl::assemble(_b.x, L);
+  fem::impl::assemble_vector(_b.x, L);
 }
 //-----------------------------------------------------------------------------
 void fem::assemble_vector(
