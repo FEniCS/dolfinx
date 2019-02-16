@@ -216,7 +216,6 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
     connectivity_ce[cell_index][local_index] = e_index;
   }
 
-
   // FIXME: move this out some Mesh can be const
 
   // Initialise connectivity data structure
@@ -226,10 +225,8 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   topology.init_ghost(dim, num_nonghost_entities);
 
   // Set cell-entity connectivity
-  auto ce = std::make_shared<MeshConnectivity>();
-  auto ev = std::make_shared<MeshConnectivity>();
-  ce->set(connectivity_ce);
-  ev->set(connectivity_ev);
+  auto ce = std::make_shared<MeshConnectivity>(connectivity_ce);
+  auto ev = std::make_shared<MeshConnectivity>(connectivity_ev);
 
   return {ce, ev, connectivity_ev.size()};
 }
@@ -267,8 +264,7 @@ MeshConnectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
       tmp[e0.index()]++;
 
   // Initialize the number of connections
-  MeshConnectivity connectivity;
-  connectivity.init(tmp);
+  MeshConnectivity connectivity(tmp);
 
   // Reset current position for each entity
   std::fill(tmp.begin(), tmp.end(), 0);
@@ -305,8 +301,8 @@ MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
     entity_to_index.insert({key, e.index()});
   }
 
-  MeshConnectivity connectivity;
-  connectivity.init(mesh.num_entities(d0), cell_type->num_entities(d1));
+  MeshConnectivity connectivity(mesh.num_entities(d0),
+                                cell_type->num_entities(d1));
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;
@@ -414,8 +410,6 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   if (topology.connectivity(d0, d1))
     return;
 
-  auto connectivity = std::make_shared<MeshConnectivity>();
-
   // Compute entities if they don't exist
   if (topology.size(d0) == 0)
     compute_entities(mesh, d0);
@@ -442,7 +436,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
 
     for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
       connectivity_dd[e.index()][0] = e.index();
-    connectivity->set(connectivity_dd);
+    auto connectivity = std::make_shared<MeshConnectivity>(connectivity_dd);
     topology.set_connectivity(connectivity, d0, d1);
   }
   else if (d0 < d1)

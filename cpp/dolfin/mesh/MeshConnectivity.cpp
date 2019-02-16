@@ -18,20 +18,8 @@ MeshConnectivity::MeshConnectivity()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-MeshConnectivity::connections() const
-{
-  return _connections;
-}
-//-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
-MeshConnectivity::entity_positions() const
-{
-  return _index_to_position;
-}
-//-----------------------------------------------------------------------------
-void MeshConnectivity::init(std::size_t num_entities,
-                            std::size_t num_connections)
+MeshConnectivity::MeshConnectivity(std::size_t num_entities,
+                                   std::size_t num_connections)
 {
   // Compute the total size
   const std::size_t size = num_entities * num_connections;
@@ -46,7 +34,7 @@ void MeshConnectivity::init(std::size_t num_entities,
     _index_to_position[e] = e * num_connections;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
+MeshConnectivity::MeshConnectivity(std::vector<std::size_t>& num_connections)
 {
   // Initialize offsets and compute total size
   const std::size_t num_entities = num_connections.size();
@@ -61,6 +49,18 @@ void MeshConnectivity::init(std::vector<std::size_t>& num_connections)
 
   // Initialize connections
   _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
+}
+//-----------------------------------------------------------------------------
+Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+MeshConnectivity::connections() const
+{
+  return _connections;
+}
+//-----------------------------------------------------------------------------
+Eigen::Ref<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+MeshConnectivity::entity_positions() const
+{
+  return _index_to_position;
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(std::size_t entity, std::size_t connection,

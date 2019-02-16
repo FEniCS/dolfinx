@@ -31,6 +31,39 @@ public:
   /// Create empty connectivity
   MeshConnectivity();
 
+  /// Initialize number of entities and number of connections (equal
+  /// for all)
+  MeshConnectivity(std::size_t num_entities, std::size_t num_connections);
+
+  /// Initialize number of entities and number of connections
+  /// (individually)
+  MeshConnectivity(std::vector<std::size_t>& num_connections);
+
+  /// Set all connections for all entities (T is a '2D' container, e.g.
+  /// a std::vector<<std::vector<std::size_t>>,
+  /// std::vector<<std::set<std::size_t>>, etc)
+  template <typename T>
+  MeshConnectivity(const T& connections)
+  {
+    // Initialize offsets and compute total size
+    _index_to_position.resize(connections.size() + 1);
+    std::int32_t size = 0;
+    for (std::size_t e = 0; e < connections.size(); e++)
+    {
+      _index_to_position[e] = size;
+      size += connections[e].size();
+    }
+    _index_to_position[connections.size()] = size;
+
+    std::vector<std::int32_t> c;
+    c.reserve(size);
+    for (auto e = connections.begin(); e != connections.end(); ++e)
+      c.insert(c.end(), e->begin(), e->end());
+
+    _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>(c.size());
+    std::copy(c.begin(), c.end(), _connections.data());
+  }
+
   /// Copy constructor
   MeshConnectivity(const MeshConnectivity& connectivity) = default;
 
@@ -86,14 +119,6 @@ public:
   Eigen::Ref<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
   entity_positions() const;
 
-  /// Initialize number of entities and number of connections (equal
-  /// for all)
-  void init(std::size_t num_entities, std::size_t num_connections);
-
-  /// Initialize number of entities and number of connections
-  /// (individually)
-  void init(std::vector<std::size_t>& num_connections);
-
   /// Set given connection for given entity
   void set(std::size_t entity, std::size_t connection, std::size_t pos);
 
@@ -101,31 +126,6 @@ public:
   void set(std::uint32_t entity,
            const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
                connections);
-
-  /// Set all connections for all entities (T is a '2D' container, e.g.
-  /// a std::vector<<std::vector<std::size_t>>,
-  /// std::vector<<std::set<std::size_t>>, etc)
-  template <typename T>
-  void set(const T& connections)
-  {
-    // Initialize offsets and compute total size
-    _index_to_position.resize(connections.size() + 1);
-    std::int32_t size = 0;
-    for (std::size_t e = 0; e < connections.size(); e++)
-    {
-      _index_to_position[e] = size;
-      size += connections[e].size();
-    }
-    _index_to_position[connections.size()] = size;
-
-    std::vector<std::int32_t> c;
-    c.reserve(size);
-    for (auto e = connections.begin(); e != connections.end(); ++e)
-      c.insert(c.end(), e->begin(), e->end());
-
-    _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>(c.size());
-    std::copy(c.begin(), c.end(), _connections.data());
-  }
 
   /// Set global number of connections for all local entities
   void set_global_size(const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
