@@ -83,7 +83,6 @@ void MeshConnectivity::set(
             _connections.data() + _index_to_position[entity]);
 }
 //-----------------------------------------------------------------------------
-
 std::size_t MeshConnectivity::hash() const
 {
   return boost::hash_range(_connections.data(),
