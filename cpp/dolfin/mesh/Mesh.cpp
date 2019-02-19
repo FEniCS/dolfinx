@@ -134,7 +134,6 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   _topology.init(tdim, num_cells, num_cells_global);
   _topology.init_ghost(tdim, num_local_cells);
   _topology.init_global_indices(tdim, num_cells);
-  _topology.connectivity(tdim, 0).init(num_cells, num_vertices_per_cell);
 
   // Find the max vertex index of non-ghost cells.
   if (num_ghost_cells > 0)
@@ -152,11 +151,11 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Add cells. Only copies the first few entries on each row corresponding to
   // vertices.
+  auto cv
+      = std::make_shared<MeshConnectivity>(num_cells, num_vertices_per_cell);
   for (std::int32_t i = 0; i < num_cells; ++i)
-  {
-    _topology.connectivity(tdim, 0).set(
-        i, coordinate_dofs.row(i).leftCols(num_vertices_per_cell));
-  }
+    cv->set(i, coordinate_dofs.row(i).leftCols(num_vertices_per_cell));
+  _topology.set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given
   if (global_cell_indices.empty())
@@ -270,7 +269,7 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   }
 
   // Skip if already computed
-  if (!_topology.connectivity(d0, d1).empty())
+  if (_topology.connectivity(d0, d1))
     return;
 
   // Compute connectivity

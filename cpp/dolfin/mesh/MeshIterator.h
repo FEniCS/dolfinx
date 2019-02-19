@@ -100,11 +100,11 @@ public:
     }
 
     // Get connectivity
+    assert(e.mesh().topology().connectivity(e.dim(), _entity.dim()));
     const MeshConnectivity& c
-        = e.mesh().topology().connectivity(e.dim(), _entity.dim());
+        = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    assert(!c.empty());
     _connections = c(e.index()) + pos;
   }
 
@@ -122,11 +122,12 @@ public:
     }
 
     // Get connectivity
+    assert(e.mesh().topology().connectivity(e.dim(), _entity.dim()));
     const MeshConnectivity& c
-        = e.mesh().topology().connectivity(e.dim(), _entity.dim());
+        = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    //assert(!c.empty());
+    // assert(!c.empty());
     _connections = c(e.index()) + pos;
   }
 

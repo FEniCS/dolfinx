@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <dolfin/common/Variable.h>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -138,7 +139,7 @@ public:
   const std::vector<std::uint32_t>& cell_owner() const { return _cell_owner; }
 
   /// Return connectivity for given pair of topological dimensions
-  MeshConnectivity& connectivity(std::size_t d0, std::size_t d1)
+  std::shared_ptr<MeshConnectivity> connectivity(std::size_t d0, std::size_t d1)
   {
     assert(d0 < _connectivity.size());
     assert(d1 < _connectivity[d0].size());
@@ -146,11 +147,21 @@ public:
   }
 
   /// Return connectivity for given pair of topological dimensions
-  const MeshConnectivity& connectivity(std::size_t d0, std::size_t d1) const
+  std::shared_ptr<const MeshConnectivity> connectivity(std::size_t d0,
+                                                       std::size_t d1) const
   {
     assert(d0 < _connectivity.size());
     assert(d1 < _connectivity[d0].size());
     return _connectivity[d0][d1];
+  }
+
+  /// Set connectivity for given pair of topological dimensions
+  void set_connectivity(std::shared_ptr<MeshConnectivity> c, std::size_t d0,
+                        std::size_t d1)
+  {
+    assert(d0 < _connectivity.size());
+    assert(d1 < _connectivity[d0].size());
+    _connectivity[d0][d1] = c;
   }
 
   /// Return hash based on the hash of cell-vertex connectivity
@@ -184,7 +195,7 @@ private:
   std::vector<std::uint32_t> _cell_owner;
 
   // Connectivity for pairs of topological dimensions
-  std::vector<std::vector<MeshConnectivity>> _connectivity;
+  std::vector<std::vector<std::shared_ptr<MeshConnectivity>>> _connectivity;
 };
 } // namespace mesh
 } // namespace dolfin

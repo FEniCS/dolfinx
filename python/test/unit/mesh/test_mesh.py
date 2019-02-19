@@ -472,26 +472,3 @@ def test_mesh_topology_lifetime():
     assert sys.getrefcount(mesh) == rc + 1
     del topology
     assert sys.getrefcount(mesh) == rc
-
-
-def test_mesh_connectivity_lifetime():
-    """Check that lifetime of MeshConnectivity is bound to
-    underlying mesh topology object"""
-    mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
-    mesh.init(1, 2)
-    topology = mesh.topology
-
-    # Refcount checks on the MeshConnectivity object
-    rc = sys.getrefcount(topology)
-    connectivity = topology.connectivity(1, 2)
-    assert sys.getrefcount(topology) == rc + 1
-    del connectivity
-    assert sys.getrefcount(topology) == rc
-
-    # Refcount checks on the returned connectivities array
-    conn = topology.connectivity(1, 2)
-    rc = sys.getrefcount(conn)
-    cells = conn(0)
-    assert sys.getrefcount(conn) == rc + 1
-    del cells
-    assert sys.getrefcount(conn) == rc
