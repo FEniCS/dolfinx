@@ -6,6 +6,8 @@
 
 #include "FormIntegrals.h"
 #include <dolfin/common/types.h>
+
+#include <cstdlib>
 #include <ufc.h>
 
 using namespace dolfin;
@@ -36,14 +38,17 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   }
 
   // -- Create cell integrals
-  std::unique_ptr<ufc_cell_integral> _default_cell_integral(
-      ufc_form.create_cell_integral(-1));
+  std::unique_ptr<ufc_cell_integral, decltype(&std::free)>
+      _default_cell_integral{ufc_form.create_cell_integral(-1), &std::free};
+
   if (_default_cell_integral)
     _tabulate_tensor_cell.push_back(_default_cell_integral->tabulate_tensor);
 
   // -- Create exterior facet integrals
-  std::unique_ptr<ufc_exterior_facet_integral> _default_exterior_facet_integral(
-      ufc_form.create_exterior_facet_integral(-1));
+  std::unique_ptr<ufc_exterior_facet_integral, decltype(&std::free)>
+      _default_exterior_facet_integral{
+          ufc_form.create_exterior_facet_integral(-1), &std::free};
+
   if (_default_exterior_facet_integral)
   {
     // Extract tabulate tensor function
