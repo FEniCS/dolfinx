@@ -21,39 +21,43 @@ FormIntegrals::FormIntegrals()
 //-----------------------------------------------------------------------------
 FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
 {
-  // This function makes many unsupported assumptiosn with regard to the
-  // UFC interface. Rather than overcomplicate the code here, it needs
-  // to be fixed inm UFC/FFC. See
-  // https://github.com/FEniCS/ffcx/issues/103
+  // Get list of integral IDs, and load tabulate tensor into memory for each
+  _cell_integral_ids.resize(ufc_form.num_cell_integrals);
+  ufc_form.get_cell_integral_ids(_cell_integral_ids.data());
+  for (const auto& id : _cell_integral_ids)
+  {
+    std::unique_ptr<ufc_cell_integral, decltype(&std::free)> cell_integral{
+        ufc_form.create_cell_integral(id), &std::free};
+    assert(cell_integral);
+    _tabulate_tensor_cell.push_back(cell_integral->tabulate_tensor);
+  }
 
-  if (ufc_form.num_cell_integrals > 1)
+  _exterior_facet_integral_ids.resize(ufc_form.num_exterior_facet_integrals);
+  ufc_form.get_exterior_facet_integral_ids(_exterior_facet_integral_ids.data());
+  for (const auto& id : _exterior_facet_integral_ids)
+  {
+    std::unique_ptr<ufc_exterior_facet_integral, decltype(&std::free)>
+        exterior_facet_integral{ufc_form.create_exterior_facet_integral(id),
+                                &std::free};
+    assert(exterior_facet_integral);
+    _tabulate_tensor_exterior_facet.push_back(
+        exterior_facet_integral->tabulate_tensor);
+  }
+
+  // At the moment, only accept one integral with index -1 (or none)
+  if (_cell_integral_ids.size() > 1
+      or (_cell_integral_ids.size() == 1 and _cell_integral_ids[0] != -1))
   {
     throw std::runtime_error(
         "Cell integral subdomain not supported. Under development.");
   }
-  if (ufc_form.num_exterior_facet_integrals > 1)
+
+  if (_exterior_facet_integral_ids.size() > 1
+      or (_exterior_facet_integral_ids.size() == 1
+          and _exterior_facet_integral_ids[0] != -1))
   {
     throw std::runtime_error(
         "Exterior facet integral subdomain not supported. Under development.");
-  }
-
-  // -- Create cell integrals
-  std::unique_ptr<ufc_cell_integral, decltype(&std::free)>
-      _default_cell_integral{ufc_form.create_cell_integral(-1), &std::free};
-
-  if (_default_cell_integral)
-    _tabulate_tensor_cell.push_back(_default_cell_integral->tabulate_tensor);
-
-  // -- Create exterior facet integrals
-  std::unique_ptr<ufc_exterior_facet_integral, decltype(&std::free)>
-      _default_exterior_facet_integral{
-          ufc_form.create_exterior_facet_integral(-1), &std::free};
-
-  if (_default_exterior_facet_integral)
-  {
-    // Extract tabulate tensor function
-    _tabulate_tensor_exterior_facet.push_back(
-        _default_exterior_facet_integral->tabulate_tensor);
   }
 }
 //-----------------------------------------------------------------------------
@@ -70,19 +74,47 @@ FormIntegrals::get_tabulate_tensor_fn_exterior_facet(int i) const
   return _tabulate_tensor_exterior_facet[i];
 }
 //-----------------------------------------------------------------------------
-void FormIntegrals::set_tabulate_tensor_cell(
+void FormIntegrals::register_tabulate_tensor_cell(
     int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
 {
-  _tabulate_tensor_cell.resize(i + 1);
-  _tabulate_tensor_cell[i] = fn;
+  if (std::find(_cell_integral_ids.begin(), _cell_integral_ids.end(), i)
+      != _cell_integral_ids.end())
+  {
+    throw std::runtime_error("Cell integral with ID " + std::to_string(i)
+                             + " already exists");
+  }
+
+  // Find insertion position
+  int pos = std::distance(_cell_integral_ids.begin(),
+                          std::upper_bound(_cell_integral_ids.begin(),
+                                           _cell_integral_ids.end(), i));
+
+  _cell_integral_ids.insert(_cell_integral_ids.begin() + pos, i);
+  _tabulate_tensor_cell.insert(_tabulate_tensor_cell.begin() + pos, fn);
 }
 //-----------------------------------------------------------------------------
-void FormIntegrals::set_tabulate_tensor_exterior_facet(
+void FormIntegrals::register_tabulate_tensor_exterior_facet(
     int i,
     void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int))
 {
-  _tabulate_tensor_exterior_facet.resize(i + 1);
-  _tabulate_tensor_exterior_facet[i] = fn;
+  if (std::find(_exterior_facet_integral_ids.begin(),
+                _exterior_facet_integral_ids.end(), i)
+      != _exterior_facet_integral_ids.end())
+  {
+    throw std::runtime_error("Exterior facet integral with ID "
+                             + std::to_string(i) + " already exists");
+  }
+
+  // Find insertion position
+  int pos
+      = std::distance(_exterior_facet_integral_ids.begin(),
+                      std::upper_bound(_exterior_facet_integral_ids.begin(),
+                                       _exterior_facet_integral_ids.end(), i));
+
+  _exterior_facet_integral_ids.insert(
+      _exterior_facet_integral_ids.begin() + pos, i);
+  _tabulate_tensor_exterior_facet.insert(
+      _tabulate_tensor_exterior_facet.begin() + pos, fn);
 }
 //-----------------------------------------------------------------------------
 int FormIntegrals::num_integrals(FormIntegrals::Type type) const

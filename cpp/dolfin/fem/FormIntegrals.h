@@ -59,17 +59,16 @@ public:
                            int)>&
   get_tabulate_tensor_fn_exterior_facet(int i) const;
 
-  /// Set the function for 'tabulate_tensor' for cell integral i
-  void set_tabulate_tensor_cell(int i,
-                                void (*fn)(PetscScalar*, const PetscScalar*,
-                                           const double*, int));
+  /// Register the function for 'tabulate_tensor' for cell integral i
+  void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
+                                                       const PetscScalar*,
+                                                       const double*, int));
 
-  /// Set the function for 'tabulate_tensor' for exterior facet integral
+  /// Register the function for 'tabulate_tensor' for exterior facet integral
   /// i
-  void set_tabulate_tensor_exterior_facet(int i,
-                                          void (*fn)(PetscScalar*,
-                                                     const PetscScalar*,
-                                                     const double*, int, int));
+  void register_tabulate_tensor_exterior_facet(
+      int i,
+      void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int));
 
   /// Number of integrals of given type
   int num_integrals(FormIntegrals::Type t) const;
@@ -82,6 +81,10 @@ private:
   std::vector<std::function<void(PetscScalar*, const PetscScalar*,
                                  const double*, int, int)>>
       _tabulate_tensor_exterior_facet;
+
+  // ID codes for each stored integral
+  std::vector<int> _cell_integral_ids;
+  std::vector<int> _exterior_facet_integral_ids;
 };
 } // namespace fem
 } // namespace dolfin

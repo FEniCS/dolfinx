@@ -316,10 +316,11 @@ void fem(py::module& m)
            &dolfin::fem::Form::set_interior_facet_domains)
       .def("set_vertex_domains", &dolfin::fem::Form::set_vertex_domains)
       .def("set_tabulate_cell",
-           [](dolfin::fem::Form& self, unsigned int i, std::size_t addr) {
+           [](dolfin::fem::Form& self, int i, std::intptr_t addr) {
              auto tabulate_tensor_ptr = (void (*)(
                  PetscScalar*, const PetscScalar*, const double*, int))addr;
-             self.integrals().set_tabulate_tensor_cell(i, tabulate_tensor_ptr);
+             self.integrals().register_tabulate_tensor_cell(
+                 i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfin::fem::Form::rank)
       .def("mesh", &dolfin::fem::Form::mesh)
