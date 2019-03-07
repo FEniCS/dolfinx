@@ -6,6 +6,8 @@
 
 #include "FormIntegrals.h"
 #include <dolfin/common/types.h>
+
+#include <cstdlib>
 #include <ufc.h>
 
 using namespace dolfin;
@@ -24,26 +26,29 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   // to be fixed inm UFC/FFC. See
   // https://github.com/FEniCS/ffcx/issues/103
 
-  if (ufc_form.max_cell_subdomain_id > 0)
+  if (ufc_form.num_cell_integrals > 1)
   {
     throw std::runtime_error(
         "Cell integral subdomain not supported. Under development.");
   }
-  if (ufc_form.max_exterior_facet_subdomain_id > 0)
+  if (ufc_form.num_exterior_facet_integrals > 1)
   {
     throw std::runtime_error(
         "Exterior facet integral subdomain not supported. Under development.");
   }
 
   // -- Create cell integrals
-  std::unique_ptr<ufc_cell_integral> _default_cell_integral(
-      ufc_form.create_default_cell_integral());
+  std::unique_ptr<ufc_cell_integral, decltype(&std::free)>
+      _default_cell_integral{ufc_form.create_cell_integral(-1), &std::free};
+
   if (_default_cell_integral)
     _tabulate_tensor_cell.push_back(_default_cell_integral->tabulate_tensor);
 
   // -- Create exterior facet integrals
-  std::unique_ptr<ufc_exterior_facet_integral> _default_exterior_facet_integral(
-      ufc_form.create_default_exterior_facet_integral());
+  std::unique_ptr<ufc_exterior_facet_integral, decltype(&std::free)>
+      _default_exterior_facet_integral{
+          ufc_form.create_exterior_facet_integral(-1), &std::free};
+
   if (_default_exterior_facet_integral)
   {
     // Extract tabulate tensor function
