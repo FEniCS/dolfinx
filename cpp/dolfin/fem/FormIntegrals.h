@@ -53,11 +53,25 @@ public:
   ///    Function to call for tabulate_tensor on a cell
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                            int)>&
-  get_tabulate_tensor_fn_cell(int i) const;
+  get_tabulate_tensor_fn_cell(unsigned int i) const;
 
+  /// Get the function for 'tabulate_tensor' for exterior facet integral i
+  /// @param i
+  ///    Integral number
+  /// @returns std::function
+  ///    Function to call for tabulate_tensor on an exterior facet
   const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
                            int)>&
-  get_tabulate_tensor_fn_exterior_facet(int i) const;
+  get_tabulate_tensor_fn_exterior_facet(unsigned int i) const;
+
+  /// Get the function for 'tabulate_tensor' for interior facet integral i
+  /// @param i
+  ///    Integral number
+  /// @returns std::function
+  ///    Function to call for tabulate_tensor on an interior facet
+  const std::function<void(PetscScalar*, const PetscScalar* w, const double*,
+                           const double*, int, int, int, int)>&
+  get_tabulate_tensor_fn_interior_facet(unsigned int i) const;
 
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
@@ -70,6 +84,12 @@ public:
       int i,
       void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int));
 
+  /// Register the function for 'tabulate_tensor' for exterior facet integral
+  /// i
+  void register_tabulate_tensor_interior_facet(
+      int i, void (*fn)(PetscScalar*, const PetscScalar* w, const double*,
+                        const double*, int, int, int, int));
+
   /// Number of integrals of given type
   int num_integrals(FormIntegrals::Type t) const;
 
@@ -78,13 +98,21 @@ private:
   std::vector<
       std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>>
       _tabulate_tensor_cell;
+
   std::vector<std::function<void(PetscScalar*, const PetscScalar*,
                                  const double*, int, int)>>
       _tabulate_tensor_exterior_facet;
 
-  // ID codes for each stored integral
+  std::vector<
+      std::function<void(PetscScalar*, const PetscScalar* w, const double*,
+                         const double*, int, int, int, int)>>
+      _tabulate_tensor_interior_facet;
+
+  // ID codes for each stored integral sorted numerically (-1 for default
+  // integral is always first, if present)
   std::vector<int> _cell_integral_ids;
   std::vector<int> _exterior_facet_integral_ids;
+  std::vector<int> _interior_facet_integral_ids;
 };
 } // namespace fem
 } // namespace dolfin
