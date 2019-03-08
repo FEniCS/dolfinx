@@ -162,12 +162,28 @@ int FormIntegrals::num_integrals(FormIntegrals::Type type) const
     return _tabulate_tensor_exterior_facet.size();
   case Type::interior_facet:
     return _tabulate_tensor_interior_facet.size();
-  case Type::vertex:
-    return 0;
   default:
     throw std::runtime_error("FormIntegral type not supported.");
   }
 
   return 0;
+}
+//-----------------------------------------------------------------------------
+const std::vector<int>&
+FormIntegrals::integral_ids(FormIntegrals::Type type) const
+{
+  switch (type)
+  {
+  case Type::cell:
+    return _cell_integral_ids;
+  case Type::exterior_facet:
+    return _exterior_facet_integral_ids;
+  case Type::interior_facet:
+    return _interior_facet_integral_ids;
+  default:
+    throw std::runtime_error("FormIntegral type not supported.");
+  }
+
+  return _cell_integral_ids;
 }
 //-----------------------------------------------------------------------------

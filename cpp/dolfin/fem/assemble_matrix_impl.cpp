@@ -40,13 +40,45 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     throw std::runtime_error(
         "Multiple cell integrals in bilinear form not yet supported.");
   }
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+
+  // Get the cell integral IDs
+  const std::vector<int>& cell_integral_ids
+      = a.integrals().integral_ids(fem::FormIntegrals::Type::cell);
+
+  // List of active cells for each integral (fill all for default integral)
+  std::vector<std::vector<std::int32_t>> active_cells(cell_integral_ids.size());
+  if (cell_integral_ids.size() > 0 and cell_integral_ids[0] == -1)
+  {
+    active_cells[0].resize(mesh.num_cells());
+    std::iota(active_cells[0].begin(), active_cells[0].end(), 0);
+  }
+
+  // Create a reverse map
+  std::map<int, int> cell_id_to_integral;
+  for (int i = 0; i < cell_integral_ids.size(); ++i)
+    cell_id_to_integral[cell_integral_ids[i]] = i;
+
+  // Get the markers
+  std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_marker
+      = a.get_dx();
+
+  for (unsigned int i = 0; i < mesh.num_cells(); ++i)
+  {
+    auto it = cell_id_to_integral.find((*cell_marker)[i]);
+    if (it == cell_id_to_integral.end())
+      throw std::runtime_error("Marker does not correspond to an integral");
+    else
+      active_cells[it->second].push_back(i);
+  }
+
+  for (int i = 0; i < cell_integral_ids.size(); ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
-        = a.integrals().get_tabulate_tensor_fn_cell(0);
-    fem::impl::assemble_cells(A, mesh, dofmap0, dofmap1, bc0, bc1, fn, coeff_fn,
-                              c_offsets);
+        = a.integrals().get_tabulate_tensor_fn_cell(i);
+
+    fem::impl::assemble_cells(A, mesh, active_cells[i], dofmap0, dofmap1, bc0,
+                              bc1, fn, coeff_fn, c_offsets);
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
@@ -71,7 +103,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_cells(
-    Mat A, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
+    Mat A, const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_cells, const GenericDofMap& dofmap0,
     const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
@@ -88,10 +121,12 @@ void fem::impl::assemble_cells(
       Ae;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
-  // Iterate over all cells
+  // Iterate over active cells
   PetscErrorCode ierr;
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (auto& cell_index : active_cells)
   {
+    mesh::Cell cell(mesh, cell_index);
+
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
@@ -99,7 +134,6 @@ void fem::impl::assemble_cells(
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get dof maps for cell
-    const std::size_t cell_index = cell.index();
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
         = dofmap0.cell_dofs(cell_index);
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1

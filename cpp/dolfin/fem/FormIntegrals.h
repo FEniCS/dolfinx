@@ -93,6 +93,9 @@ public:
   /// Number of integrals of given type
   int num_integrals(FormIntegrals::Type t) const;
 
+  const std::vector<int>& integral_ids(FormIntegrals::Type type) const;
+
+
 private:
   // Function pointers to tabulate_tensor functions
   std::vector<
