@@ -55,7 +55,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 
   // Create a reverse map
   std::map<int, int> cell_id_to_integral;
-  for (int i = 0; i < cell_integral_ids.size(); ++i)
+  for (unsigned int i = 0; i < cell_integral_ids.size(); ++i)
     cell_id_to_integral[cell_integral_ids[i]] = i;
 
   // Get the markers
@@ -71,7 +71,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
       active_cells[it->second].push_back(i);
   }
 
-  for (int i = 0; i < cell_integral_ids.size(); ++i)
+  for (unsigned int i = 0; i < cell_integral_ids.size(); ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
