@@ -62,13 +62,18 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_marker
       = a.get_dx();
 
-  for (unsigned int i = 0; i < mesh.num_cells(); ++i)
+  // FIXME: ensure markers exist if there are multiple integrals
+
+  if (cell_marker)
   {
-    auto it = cell_id_to_integral.find((*cell_marker)[i]);
-    if (it == cell_id_to_integral.end())
-      throw std::runtime_error("Marker does not correspond to an integral");
-    else
-      active_cells[it->second].push_back(i);
+    for (unsigned int i = 0; i < mesh.num_cells(); ++i)
+    {
+      auto it = cell_id_to_integral.find((*cell_marker)[i]);
+      if (it == cell_id_to_integral.end())
+        throw std::runtime_error("Marker does not correspond to an integral");
+      else
+        active_cells[it->second].push_back(i);
+    }
   }
 
   for (unsigned int i = 0; i < cell_integral_ids.size(); ++i)
