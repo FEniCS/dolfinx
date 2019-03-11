@@ -259,11 +259,6 @@ public:
     return _coord_mapping;
   }
 
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> get_dx() const
-  {
-    return dx;
-  }
-
 private:
   // Integrals associated with the Form
   FormIntegrals _integrals;

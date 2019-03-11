@@ -19,6 +19,14 @@ struct ufc_form;
 
 namespace dolfin
 {
+namespace mesh
+{
+template <typename T>
+class MeshFunction;
+
+class Mesh;
+} // namespace mesh
+
 namespace fem
 {
 
@@ -93,8 +101,23 @@ public:
   /// Number of integrals of given type
   int num_integrals(FormIntegrals::Type t) const;
 
+  /// Get the IDs of integrals of given type, using -1 for the default integral.
+  /// The IDs correspond to the domains which the integrals are defined for in
+  /// the form.
   const std::vector<int>& integral_ids(FormIntegrals::Type type) const;
 
+  /// Get the list of active entities (cells, facets, etc.) for the given
+  /// integral of the given type, on this process.
+  const std::vector<std::int32_t>& integral_domains(FormIntegrals::Type type,
+                                                    unsigned int i) const;
+
+  // Set the valid domains for the integrals of a given type from a
+  // MeshFunction.
+  void
+  set_domains(FormIntegrals::Type type,
+              std::shared_ptr<const mesh::MeshFunction<std::size_t>> dOmega);
+
+  void set_default_domains_from_mesh(std::shared_ptr<const mesh::Mesh> mesh);
 
 private:
   // Function pointers to tabulate_tensor functions
@@ -114,6 +137,8 @@ private:
   // ID codes for each stored integral sorted numerically (-1 for default
   // integral is always first, if present)
   std::vector<int> _cell_integral_ids;
+  std::vector<std::vector<std::int32_t>> _cell_integral_domains;
+
   std::vector<int> _exterior_facet_integral_ids;
   std::vector<int> _interior_facet_integral_ids;
 };
