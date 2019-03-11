@@ -23,9 +23,9 @@ FormIntegrals::FormIntegrals()
 FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
 {
   // Get list of integral IDs, and load tabulate tensor into memory for each
-  _cell_integral_ids.resize(ufc_form.num_cell_integrals);
-  ufc_form.get_cell_integral_ids(_cell_integral_ids.data());
-  for (const auto& id : _cell_integral_ids)
+  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
+  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
+  for (const auto& id : cell_integral_ids)
   {
     std::unique_ptr<ufc_cell_integral, decltype(&std::free)> cell_integral{
         ufc_form.create_cell_integral(id), &std::free};
@@ -33,9 +33,10 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
     register_tabulate_tensor_cell(id, cell_integral->tabulate_tensor);
   }
 
-  _exterior_facet_integral_ids.resize(ufc_form.num_exterior_facet_integrals);
-  ufc_form.get_exterior_facet_integral_ids(_exterior_facet_integral_ids.data());
-  for (const auto& id : _exterior_facet_integral_ids)
+  std::vector<int> exterior_facet_integral_ids(
+      ufc_form.num_exterior_facet_integrals);
+  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
+  for (const auto& id : exterior_facet_integral_ids)
   {
     std::unique_ptr<ufc_exterior_facet_integral, decltype(&std::free)>
         exterior_facet_integral{ufc_form.create_exterior_facet_integral(id),
@@ -45,9 +46,10 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
         id, exterior_facet_integral->tabulate_tensor);
   }
 
-  _interior_facet_integral_ids.resize(ufc_form.num_interior_facet_integrals);
-  ufc_form.get_interior_facet_integral_ids(_interior_facet_integral_ids.data());
-  for (const auto& id : _interior_facet_integral_ids)
+  std::vector<int> interior_facet_integral_ids(
+      ufc_form.num_interior_facet_integrals);
+  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
+  for (const auto& id : interior_facet_integral_ids)
   {
     std::unique_ptr<ufc_interior_facet_integral, decltype(&std::free)>
         interior_facet_integral{ufc_form.create_interior_facet_integral(id),
@@ -120,10 +122,11 @@ int _insert_ids(std::vector<int>& ids, int new_id)
   }
 
   // Find insertion position
-  auto it = std::upper_bound(ids.begin(), ids.end(), new_id);
-  ids.insert(it, new_id);
+  int pos = std::distance(ids.begin(),
+                          std::upper_bound(ids.begin(), ids.end(), new_id));
+  ids.insert(ids.begin() + pos, new_id);
 
-  return std::distance(ids.begin(), it);
+  return pos;
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::register_tabulate_tensor_cell(
