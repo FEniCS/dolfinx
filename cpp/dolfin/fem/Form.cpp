@@ -62,7 +62,8 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
   }
 
   // Set markers for default integrals
-  _integrals.set_default_domains_from_mesh(_mesh);
+  if (_mesh)
+    _integrals.set_default_domains_from_mesh(_mesh);
 
   // Create CoordinateMapping
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(
@@ -82,6 +83,10 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
     if (_mesh != f->mesh())
       throw std::runtime_error("Incompatible mesh");
   }
+
+  // Set markers for default integrals
+  if (_mesh)
+    _integrals.set_default_domains_from_mesh(_mesh);
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::rank() const { return _function_spaces.size(); }
@@ -228,7 +233,8 @@ void Form::set_cell_domains(
     std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains)
 {
   dx = cell_domains;
-  _integrals.set_domains(FormIntegrals::Type::cell, dx);
+  if (dx)
+    _integrals.set_domains(FormIntegrals::Type::cell, dx);
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains(

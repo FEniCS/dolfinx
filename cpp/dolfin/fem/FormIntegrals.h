@@ -140,6 +140,8 @@ private:
   std::vector<std::vector<std::int32_t>> _cell_integral_domains;
 
   std::vector<int> _exterior_facet_integral_ids;
+  std::vector<std::vector<std::int32_t>> _exterior_facet_integral_domains;
+
   std::vector<int> _interior_facet_integral_ids;
 };
 } // namespace fem

@@ -6,7 +6,9 @@
 
 #include "FormIntegrals.h"
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshIterator.h>
 
 #include <cstdlib>
 #include <ufc.h>
@@ -27,10 +29,10 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
   for (const auto& id : cell_integral_ids)
   {
-    std::unique_ptr<ufc_cell_integral, decltype(&std::free)> cell_integral{
-        ufc_form.create_cell_integral(id), &std::free};
+    ufc_cell_integral* cell_integral = ufc_form.create_cell_integral(id);
     assert(cell_integral);
     register_tabulate_tensor_cell(id, cell_integral->tabulate_tensor);
+    std::free(cell_integral);
   }
 
   std::vector<int> exterior_facet_integral_ids(
@@ -57,23 +59,6 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
     assert(interior_facet_integral);
     register_tabulate_tensor_interior_facet(
         id, interior_facet_integral->tabulate_tensor);
-  }
-
-  // At the moment, only accept one integral with index -1 (or none)
-  if (_cell_integral_ids.size() > 1
-      or (_cell_integral_ids.size() == 1 and _cell_integral_ids[0] != -1))
-  {
-    throw std::runtime_error(
-        "Cell integral subdomain not supported. Under development.");
-  }
-
-  // At the moment, only accept one integral with index -1 (or none)
-  if (_exterior_facet_integral_ids.size() > 1
-      or (_exterior_facet_integral_ids.size() == 1
-          and _exterior_facet_integral_ids[0] != -1))
-  {
-    throw std::runtime_error(
-        "Exterior facet integral subdomain not supported. Under development.");
   }
 
   // Not currently working
@@ -142,9 +127,20 @@ void FormIntegrals::register_tabulate_tensor_exterior_facet(
     int i,
     void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int))
 {
+
+  // At the moment, only accept one integral with index -1
+  if (i != -1)
+  {
+    throw std::runtime_error(
+        "Exterior facet integral subdomain not supported. Under development.");
+  }
+
   int pos = _insert_ids(_exterior_facet_integral_ids, i);
   _tabulate_tensor_exterior_facet.insert(
       _tabulate_tensor_exterior_facet.begin() + pos, fn);
+  _exterior_facet_integral_domains.insert(
+      _exterior_facet_integral_domains.begin() + pos,
+      std::vector<std::int32_t>());
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::register_tabulate_tensor_interior_facet(
@@ -270,11 +266,26 @@ void FormIntegrals::set_domains(
 void FormIntegrals::set_default_domains_from_mesh(
     std::shared_ptr<const mesh::Mesh> mesh)
 {
+  std::cout << "Set default domains\n";
+
   // If there is a default integral, define it on all cells
   if (_cell_integral_ids.size() > 0 and _cell_integral_ids[0] == -1)
   {
     _cell_integral_domains[0].resize(mesh->num_cells());
     std::iota(_cell_integral_domains[0].begin(),
               _cell_integral_domains[0].end(), 0);
+  }
+
+  // If there is a default integral, define it only on surface facets
+  if (_exterior_facet_integral_ids.size() > 0
+      and _exterior_facet_integral_ids[0] == -1)
+  {
+    _exterior_facet_integral_domains[0].clear();
+    const std::size_t tdim = mesh->topology().dim();
+    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(*mesh))
+    {
+      if (facet.num_global_entities(tdim) == 1)
+        _exterior_facet_integral_domains[0].push_back(facet.index());
+    }
   }
 }

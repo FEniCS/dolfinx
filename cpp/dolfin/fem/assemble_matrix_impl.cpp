@@ -35,10 +35,10 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 1)
   {
-    throw std::runtime_error(
-        "Multiple cell integrals in bilinear form not yet supported.");
+    log::warning("Multiple integrals (with coefficients) in bilinear form not "
+                 "yet supported.");
   }
 
   const std::vector<int>& cell_integral_ids
@@ -49,9 +49,11 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
                              int)>& fn
         = a.integrals().get_tabulate_tensor_fn_cell(i);
 
-    const std::vector<std::int32_t> active_cells
+    const std::vector<std::int32_t>& active_cells
         = a.integrals().integral_domains(fem::FormIntegrals::Type::cell, i);
 
+    std::cout << "Integrating over domain: " << cell_integral_ids[i] << " with "
+              << active_cells.size() << " cells\n";
     fem::impl::assemble_cells(A, mesh, active_cells, dofmap0, dofmap1, bc0, bc1,
                               fn, coeff_fn, c_offsets);
   }
