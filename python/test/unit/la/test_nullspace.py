@@ -11,7 +11,7 @@ import pytest
 import ufl
 from dolfin import (MPI, Point, TestFunction, TrialFunction, UnitCubeMesh,
                     UnitSquareMesh, VectorFunctionSpace, cpp, fem, la)
-from dolfin.cpp.generation import BoxMesh
+from dolfin.generation import BoxMesh
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_matrix
 from ufl import dx, grad, inner
