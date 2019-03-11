@@ -266,8 +266,6 @@ void FormIntegrals::set_domains(
 void FormIntegrals::set_default_domains_from_mesh(
     std::shared_ptr<const mesh::Mesh> mesh)
 {
-  std::cout << "Set default domains\n";
-
   // If there is a default integral, define it on all cells
   if (_cell_integral_ids.size() > 0 and _cell_integral_ids[0] == -1)
   {
