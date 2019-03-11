@@ -90,7 +90,7 @@ def test_nullspace_orthogonal(mesh, degree):
 
 @pytest.mark.parametrize("mesh", [
     UnitSquareMesh(MPI.comm_world, 12, 13),
-    BoxMesh.create(
+    BoxMesh(
         MPI.comm_world,
         [Point(0.8, -0.2, 1.2)._cpp_object,
          Point(3.0, 11.0, -5.0)._cpp_object], [12, 18, 25],

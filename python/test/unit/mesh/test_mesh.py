@@ -32,7 +32,7 @@ def mesh1d():
 @fixture
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
-    mesh2d = RectangleMesh.create(
+    mesh2d = RectangleMesh(
         MPI.comm_world, [Point(0, 0)._cpp_object,
                          Point(1, 1)._cpp_object], [1, 1],
         CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
@@ -79,7 +79,7 @@ def square():
 
 @fixture
 def rectangle():
-    return RectangleMesh.create(
+    return RectangleMesh(
         MPI.comm_world, [Point(0, 0)._cpp_object,
                          Point(2, 2)._cpp_object], [5, 5],
         CellType.Type.triangle, cpp.mesh.GhostMode.none)
@@ -92,7 +92,7 @@ def cube():
 
 @fixture
 def box():
-    return BoxMesh.create(
+    return BoxMesh(
         MPI.comm_world,
         [Point(0, 0, 0)._cpp_object,
          Point(2, 2, 2)._cpp_object], [2, 2, 5], CellType.Type.tetrahedron,
