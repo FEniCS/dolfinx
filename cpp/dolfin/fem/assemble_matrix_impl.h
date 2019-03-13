@@ -51,9 +51,10 @@ void assemble_cells(Mat A, const mesh::Mesh& mesh,
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
 void assemble_exterior_facets(
-    Mat A, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
-    const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1,
+    Mat A, const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_facets,
+    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
     std::vector<const function::Function*> coefficients,

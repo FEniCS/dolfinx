@@ -63,13 +63,22 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     throw std::runtime_error("Multiple exterior facet integrals in bilinear "
                              "form not yet supported.");
   }
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+
+  for (int i = 0; i < a.integrals().num_integrals(
+                          fem::FormIntegrals::Type::exterior_facet);
+       ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
-        = a.integrals().get_tabulate_tensor_fn_exterior_facet(0);
-    fem::impl::assemble_exterior_facets(A, mesh, dofmap0, dofmap1, bc0, bc1, fn,
-                                        coeff_fn, c_offsets);
+        = a.integrals().get_tabulate_tensor_fn_exterior_facet(i);
+
+    const std::vector<std::int32_t>& active_facets
+        = a.integrals().integral_domains(
+            fem::FormIntegrals::Type::exterior_facet, i);
+
+    fem::impl::assemble_exterior_facets(A, mesh, active_facets, dofmap0,
+                                        dofmap1, bc0, bc1, fn, coeff_fn,
+                                        c_offsets);
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
@@ -155,9 +164,10 @@ void fem::impl::assemble_cells(
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_exterior_facets(
-    Mat A, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
-    const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1,
+    Mat A, const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_facets,
+    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
     std::vector<const function::Function*> coefficients,
@@ -176,10 +186,11 @@ void fem::impl::assemble_exterior_facets(
 
   // Iterate over all facets
   PetscErrorCode ierr;
-  for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  for (const auto& facet_index : active_facets)
   {
-    if (facet.num_global_entities(tdim) != 1)
-      continue;
+    const mesh::Facet facet(mesh, facet_index);
+
+    assert(facet.num_global_entities(tdim) == 1);
 
     // TODO: check ghosting sanity?
 

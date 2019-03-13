@@ -208,9 +208,9 @@ FormIntegrals::integral_domains(FormIntegrals::Type type, unsigned int i) const
       throw std::runtime_error("Invalid cell integral:" + std::to_string(i));
     return _cell_integral_domains[i];
   case Type::exterior_facet:
-    return _cell_integral_domains[i];
+    return _exterior_facet_integral_domains[i];
   case Type::interior_facet:
-    return _cell_integral_domains[i];
+    return _interior_facet_integral_domains[i];
   default:
     throw std::runtime_error("FormIntegral type not supported.");
   }
