@@ -113,11 +113,11 @@ public:
 
   // Set the valid domains for the integrals of a given type from a
   // MeshFunction.
-  void
-  set_domains(FormIntegrals::Type type,
-              std::shared_ptr<const mesh::MeshFunction<std::size_t>> dOmega);
+  void set_domains(FormIntegrals::Type type,
+                   const mesh::MeshFunction<std::size_t>& dOmega);
 
-  void set_default_domains_from_mesh(std::shared_ptr<const mesh::Mesh> mesh);
+  void set_default_domains_from_mesh(std::shared_ptr<const mesh::Mesh> mesh,
+                                     FormIntegrals::Type type);
 
 private:
   // Function pointers to tabulate_tensor functions

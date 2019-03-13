@@ -63,7 +63,7 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
 
   // Set markers for default integrals
   if (_mesh)
-    _integrals.set_default_domains_from_mesh(_mesh);
+    _integrals.set_default_domains_from_mesh(_mesh, FormIntegrals::Type::cell);
 
   // Create CoordinateMapping
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(
@@ -83,10 +83,6 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
     if (_mesh != f->mesh())
       throw std::runtime_error("Incompatible mesh");
   }
-
-  // Set markers for default integrals
-  if (_mesh)
-    _integrals.set_default_domains_from_mesh(_mesh);
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::rank() const { return _function_spaces.size(); }
@@ -183,7 +179,7 @@ void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
 {
   _mesh = mesh;
   // Set markers for default integrals
-  _integrals.set_default_domains_from_mesh(_mesh);
+  //  _integrals.set_default_domains_from_mesh(_mesh);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> Form::mesh() const
@@ -206,12 +202,6 @@ Form::function_spaces() const
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-Form::cell_domains() const
-{
-  return dx;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshFunction<std::size_t>>
 Form::exterior_facet_domains() const
 {
   return ds;
@@ -229,12 +219,9 @@ Form::vertex_domains() const
   return dP;
 }
 //-----------------------------------------------------------------------------
-void Form::set_cell_domains(
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains)
+void Form::set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains)
 {
-  dx = cell_domains;
-  if (dx)
-    _integrals.set_domains(FormIntegrals::Type::cell, dx);
+  _integrals.set_domains(FormIntegrals::Type::cell, cell_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains(

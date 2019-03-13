@@ -181,12 +181,15 @@ public:
   std::vector<std::shared_ptr<const function::FunctionSpace>>
   function_spaces() const;
 
-  /// Return cell domains (zero pointer if no domains have been
-  /// specified)
-  ///
-  /// @return     _mesh::MeshFunction_ <std::size_t>
-  ///         The cell domains.
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains() const;
+  /// Register the function for 'tabulate_tensor' for cell integral i
+  void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
+                                                       const PetscScalar*,
+                                                       const double*, int))
+  {
+    _integrals.register_tabulate_tensor_cell(i, fn);
+    if (i == -1 and _mesh)
+      _integrals.set_default_domains_from_mesh(_mesh, FormIntegrals::Type::cell);
+  }
 
   /// Return exterior facet domains (zero pointer if no domains have
   /// been specified)
@@ -215,8 +218,7 @@ public:
   ///
   /// @param[in]    cell_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The cell domains.
-  void set_cell_domains(
-      std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains);
+  void set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains);
 
   /// Set exterior facet domains
   ///
@@ -246,9 +248,6 @@ public:
 
   /// Access coefficients (const)
   const FormCoefficients& coeffs() const { return _coefficients; }
-
-  /// Access form integrals (non-const)
-  FormIntegrals& integrals() { return _integrals; }
 
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
