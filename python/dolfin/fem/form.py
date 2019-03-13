@@ -72,13 +72,17 @@ class Form(ufl.Form):
 
         # Attach subdomains to C++ Form if we have them
         subdomains = self._subdomains.get("cell")
-        self._cpp_object.set_cell_domains(subdomains)
+        if subdomains:
+            self._cpp_object.set_cell_domains(subdomains)
 
         subdomains = self._subdomains.get("exterior_facet")
-        self._cpp_object.set_exterior_facet_domains(subdomains)
+        if subdomains:
+            self._cpp_object.set_exterior_facet_domains(subdomains)
 
         subdomains = self._subdomains.get("interior_facet")
-        self._cpp_object.set_interior_facet_domains(subdomains)
+        if subdomains:
+            self._cpp_object.set_interior_facet_domains(subdomains)
 
         subdomains = self._subdomains.get("vertex")
-        self._cpp_object.set_vertex_domains(subdomains)
+        if subdomains:
+            self._cpp_object.set_vertex_domains(subdomains)
