@@ -272,12 +272,23 @@ void fem::impl::assemble_vector(
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  if (L.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+  const std::vector<int>& cell_integral_ids
+      = L.integrals().integral_ids(fem::FormIntegrals::Type::cell);
+
+  for (unsigned int i = 0; i < cell_integral_ids.size(); ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
-        = L.integrals().get_tabulate_tensor_fn_cell(0);
-    fem::impl::assemble_cells(b, mesh, dofmap, fn, coeff_fn, c_offsets);
+        = L.integrals().get_tabulate_tensor_fn_cell(i);
+
+    const std::vector<std::int32_t>& active_cells
+        = L.integrals().integral_domains(fem::FormIntegrals::Type::cell, i);
+
+    std::cout << "Integrating over domain: " << cell_integral_ids[i] << " with "
+              << active_cells.size() << " cells\n";
+
+    fem::impl::assemble_cells(b, mesh, active_cells, dofmap, fn, coeff_fn,
+                              c_offsets);
   }
 
   if (L.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
@@ -301,7 +312,8 @@ void fem::impl::assemble_vector(
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
+    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
+    const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn,
     std::vector<const function::Function*> coefficients,
@@ -316,9 +328,11 @@ void fem::impl::assemble_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
-  // Iterate over all cells
-  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  // Iterate over active cells
+  for (const auto& cell_index : active_cells)
   {
+    const mesh::Cell cell(mesh, cell_index);
+
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
@@ -327,7 +341,7 @@ void fem::impl::assemble_cells(
 
     // Get dof maps for cell
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap
-        = dofmap.cell_dofs(cell.index());
+        = dofmap.cell_dofs(cell_index);
 
     // Size data structure for assembly
     be.setZero(dmap.size());

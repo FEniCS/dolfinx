@@ -62,10 +62,12 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   }
 
   // Not currently working
-  if (_interior_facet_integral_ids.size() > 0)
+  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
+  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
+  if (vertex_integral_ids.size() > 0)
   {
     throw std::runtime_error(
-        "Interior facet integral subdomain not supported. Under development.");
+        "Vertex integrals not supported. Under development.");
   }
 }
 //-----------------------------------------------------------------------------
@@ -147,9 +149,19 @@ void FormIntegrals::register_tabulate_tensor_interior_facet(
     int i, void (*fn)(PetscScalar*, const PetscScalar* w, const double*,
                       const double*, int, int, int, int))
 {
+  // At the moment, only accept one integral with index -1
+  if (i != -1)
+  {
+    throw std::runtime_error(
+        "Interior facet integral subdomain not supported. Under development.");
+  }
+
   int pos = _insert_ids(_interior_facet_integral_ids, i);
   _tabulate_tensor_interior_facet.insert(
       _tabulate_tensor_interior_facet.begin() + pos, fn);
+  _interior_facet_integral_domains.insert(
+      _interior_facet_integral_domains.begin() + pos,
+      std::vector<std::int32_t>());
 }
 //-----------------------------------------------------------------------------
 int FormIntegrals::num_integrals(FormIntegrals::Type type) const
@@ -221,6 +233,8 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     if (_cell_integral_ids.size() == 0)
       throw std::runtime_error("No cell integrals");
 
+    set_default_domains_from_mesh(mesh, FormIntegrals::Type::cell);
+
     // Create a reverse map
     std::map<int, int> cell_id_to_integral;
     for (unsigned int i = 0; i < _cell_integral_ids.size(); ++i)
@@ -231,10 +245,6 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 
     for (unsigned int i = 0; i < dOmega.size(); ++i)
     {
-      // Default domain (all cells)
-      if (_cell_integral_ids[0] == -1)
-        _cell_integral_domains[0].push_back(i);
-
       auto it = cell_id_to_integral.find(dOmega[i]);
       if (it != cell_id_to_integral.end())
         _cell_integral_domains[it->second].push_back(i);
@@ -245,6 +255,25 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     if (mesh->topology().dim() - 1 != dOmega.dim())
       throw std::runtime_error("Invalid MeshFunction dimension:"
                                + std::to_string(dOmega.dim()));
+    if (_exterior_facet_integral_ids.size() == 0)
+      throw std::runtime_error("No exterior facet integrals");
+
+    set_default_domains_from_mesh(mesh, FormIntegrals::Type::exterior_facet);
+
+    // Create a reverse map
+    std::map<int, int> facet_id_to_integral;
+    for (unsigned int i = 0; i < _exterior_facet_integral_ids.size(); ++i)
+    {
+      _exterior_facet_integral_domains[i].clear();
+      facet_id_to_integral[_exterior_facet_integral_ids[i]] = i;
+    }
+
+    for (unsigned int i = 0; i < dOmega.size(); ++i)
+    {
+      auto it = facet_id_to_integral.find(dOmega[i]);
+      if (it != facet_id_to_integral.end())
+        _exterior_facet_integral_domains[it->second].push_back(i);
+    }
   }
   else if (type == Type::interior_facet)
   {
@@ -280,6 +309,20 @@ void FormIntegrals::set_default_domains_from_mesh(
     {
       if (facet.num_global_entities(tdim) == 1)
         _exterior_facet_integral_domains[0].push_back(facet.index());
+    }
+  }
+  else if (type == FormIntegrals::Type::interior_facet
+           and _interior_facet_integral_ids.size() > 0
+           and _interior_facet_integral_ids[0] == -1)
+  {
+    // If there is a default integral, define it only on interior facets
+    _interior_facet_integral_domains[0].clear();
+    _interior_facet_integral_domains[0].reserve(mesh->num_facets());
+    const std::size_t tdim = mesh->topology().dim();
+    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(*mesh))
+    {
+      if (facet.num_global_entities(tdim) != 1)
+        _interior_facet_integral_domains[0].push_back(facet.index());
     }
   }
   else

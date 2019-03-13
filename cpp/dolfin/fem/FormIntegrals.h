@@ -111,11 +111,17 @@ public:
   const std::vector<std::int32_t>& integral_domains(FormIntegrals::Type type,
                                                     unsigned int i) const;
 
-  // Set the valid domains for the integrals of a given type from a
-  // MeshFunction.
+  /// Set the valid domains for the integrals of a given type from a
+  /// MeshFunction dOmega. The MeshFunction should have a value for each cell
+  /// (entity) which corresponds to an integral ID. Note the MeshFunction is not
+  /// stored, so if there any changes to the integration domain this must be
+  /// called again.
   void set_domains(FormIntegrals::Type type,
                    const mesh::MeshFunction<std::size_t>& dOmega);
 
+  /// If there is a default integral of the given type, set the list of entities
+  /// for that integral from the mesh. For cell integrals, this is all cells.
+  /// For facet integrals, it is either all interior or all exterior facets.
   void set_default_domains_from_mesh(std::shared_ptr<const mesh::Mesh> mesh,
                                      FormIntegrals::Type type);
 
@@ -135,7 +141,9 @@ private:
       _tabulate_tensor_interior_facet;
 
   // ID codes for each stored integral sorted numerically (-1 for default
-  // integral is always first, if present)
+  // integral is always first, if present) along with lists of entities which
+  // are active for each integral.
+  // FIXME: these could be consolidated
   std::vector<int> _cell_integral_ids;
   std::vector<std::vector<std::int32_t>> _cell_integral_domains;
 
@@ -143,6 +151,7 @@ private:
   std::vector<std::vector<std::int32_t>> _exterior_facet_integral_domains;
 
   std::vector<int> _interior_facet_integral_ids;
+  std::vector<std::vector<std::int32_t>> _interior_facet_integral_domains;
 };
 } // namespace fem
 } // namespace dolfin

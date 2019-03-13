@@ -40,7 +40,8 @@ void assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b
 
 /// Execute kernel over cells and accumulate result in vector
 void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
+                    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
+                    const fem::GenericDofMap& dofmap,
                     const std::function<void(PetscScalar*, const PetscScalar*,
                                              const double*, int)>& fn,
                     std::vector<const function::Function*> coefficients,
