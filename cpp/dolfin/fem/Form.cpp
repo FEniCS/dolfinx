@@ -63,7 +63,7 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
 
   // Set markers for default integrals
   if (_mesh)
-    _integrals.set_default_domains_from_mesh(_mesh, FormIntegrals::Type::cell);
+    _integrals.set_default_domains_from_mesh(_mesh);
 
   // Create CoordinateMapping
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(
@@ -179,9 +179,7 @@ void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
 {
   _mesh = mesh;
   // Set markers for default integrals
-  if (_integrals.num_integrals(FormIntegrals::Type::cell) > 0
-      and _integrals.integral_ids(FormIntegrals::Type::cell)[0] == -1)
-    _integrals.set_default_domains_from_mesh(_mesh, FormIntegrals::Type::cell);
+  _integrals.set_default_domains_from_mesh(_mesh);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> Form::mesh() const

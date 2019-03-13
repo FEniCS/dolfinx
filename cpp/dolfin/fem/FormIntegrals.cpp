@@ -129,7 +129,6 @@ void FormIntegrals::register_tabulate_tensor_exterior_facet(
     int i,
     void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int))
 {
-
   // At the moment, only accept one integral with index -1
   if (i != -1)
   {
@@ -233,8 +232,6 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     if (_cell_integral_ids.size() == 0)
       throw std::runtime_error("No cell integrals");
 
-    set_default_domains_from_mesh(mesh, FormIntegrals::Type::cell);
-
     // Create a reverse map
     std::map<int, int> cell_id_to_integral;
     for (unsigned int i = 0; i < _cell_integral_ids.size(); ++i)
@@ -257,8 +254,6 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
                                + std::to_string(dOmega.dim()));
     if (_exterior_facet_integral_ids.size() == 0)
       throw std::runtime_error("No exterior facet integrals");
-
-    set_default_domains_from_mesh(mesh, FormIntegrals::Type::exterior_facet);
 
     // Create a reverse map
     std::map<int, int> facet_id_to_integral;
@@ -288,19 +283,18 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_default_domains_from_mesh(
-    std::shared_ptr<const mesh::Mesh> mesh, FormIntegrals::Type type)
+    std::shared_ptr<const mesh::Mesh> mesh)
 {
   // If there is a default integral, define it on all cells
-  if (type == FormIntegrals::Type::cell and _cell_integral_ids.size() > 0
-      and _cell_integral_ids[0] == -1)
+  if (_cell_integral_ids.size() > 0 and _cell_integral_ids[0] == -1)
   {
     _cell_integral_domains[0].resize(mesh->num_cells());
     std::iota(_cell_integral_domains[0].begin(),
               _cell_integral_domains[0].end(), 0);
   }
-  else if (type == FormIntegrals::Type::exterior_facet
-           and _exterior_facet_integral_ids.size() > 0
-           and _exterior_facet_integral_ids[0] == -1)
+
+  if (_exterior_facet_integral_ids.size() > 0
+      and _exterior_facet_integral_ids[0] == -1)
   {
     // If there is a default integral, define it only on surface facets
     _exterior_facet_integral_domains[0].clear();
@@ -311,9 +305,9 @@ void FormIntegrals::set_default_domains_from_mesh(
         _exterior_facet_integral_domains[0].push_back(facet.index());
     }
   }
-  else if (type == FormIntegrals::Type::interior_facet
-           and _interior_facet_integral_ids.size() > 0
-           and _interior_facet_integral_ids[0] == -1)
+
+  if (_interior_facet_integral_ids.size() > 0
+      and _interior_facet_integral_ids[0] == -1)
   {
     // If there is a default integral, define it only on interior facets
     _interior_facet_integral_domains[0].clear();
@@ -324,9 +318,5 @@ void FormIntegrals::set_default_domains_from_mesh(
       if (facet.num_global_entities(tdim) != 1)
         _interior_facet_integral_domains[0].push_back(facet.index());
     }
-  }
-  else
-  {
-    throw std::runtime_error("Cannot set default domain");
   }
 }

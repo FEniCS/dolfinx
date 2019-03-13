@@ -119,11 +119,10 @@ public:
   void set_domains(FormIntegrals::Type type,
                    const mesh::MeshFunction<std::size_t>& dOmega);
 
-  /// If there is a default integral of the given type, set the list of entities
+  /// If there exists a default integral of each type, set the list of entities
   /// for that integral from the mesh. For cell integrals, this is all cells.
   /// For facet integrals, it is either all interior or all exterior facets.
-  void set_default_domains_from_mesh(std::shared_ptr<const mesh::Mesh> mesh,
-                                     FormIntegrals::Type type);
+  void set_default_domains_from_mesh(std::shared_ptr<const mesh::Mesh> mesh);
 
 private:
   // Function pointers to tabulate_tensor functions
