@@ -236,8 +236,11 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     std::map<int, int> cell_id_to_integral;
     for (unsigned int i = 0; i < _cell_integral_ids.size(); ++i)
     {
-      _cell_integral_domains[i].clear();
-      cell_id_to_integral[_cell_integral_ids[i]] = i;
+      if (_cell_integral_ids[i] != -1)
+      {
+        _cell_integral_domains[i].clear();
+        cell_id_to_integral[_cell_integral_ids[i]] = i;
+      }
     }
 
     for (unsigned int i = 0; i < dOmega.size(); ++i)
@@ -259,8 +262,11 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     std::map<int, int> facet_id_to_integral;
     for (unsigned int i = 0; i < _exterior_facet_integral_ids.size(); ++i)
     {
-      _exterior_facet_integral_domains[i].clear();
-      facet_id_to_integral[_exterior_facet_integral_ids[i]] = i;
+      if (_exterior_facet_integral_ids[i] != -1)
+      {
+        _exterior_facet_integral_domains[i].clear();
+        facet_id_to_integral[_exterior_facet_integral_ids[i]] = i;
+      }
     }
 
     for (unsigned int i = 0; i < dOmega.size(); ++i)
@@ -269,12 +275,6 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
       if (it != facet_id_to_integral.end())
         _exterior_facet_integral_domains[it->second].push_back(i);
     }
-  }
-  else if (type == Type::interior_facet)
-  {
-    if (mesh->topology().dim() - 1 != dOmega.dim())
-      throw std::runtime_error("Invalid MeshFunction dimension:"
-                               + std::to_string(dOmega.dim()));
   }
   else
   {
