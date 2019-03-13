@@ -40,8 +40,7 @@ import dolfin.MPI
 
 from dolfin.fem import DofMap
 from dolfin.geometry import BoundingBoxTree, Point
-
-from .cpp.generation import IntervalMesh, BoxMesh, RectangleMesh
+from dolfin.generation import IntervalMesh, BoxMesh, RectangleMesh
 
 from .cpp.mesh import (Mesh, MeshTopology, MeshGeometry, CellType, Cell, Facet,
                        Face, Edge, Vertex, MeshEntity, Cells, Facets, Faces,

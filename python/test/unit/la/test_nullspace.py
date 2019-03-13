@@ -11,7 +11,7 @@ import pytest
 import ufl
 from dolfin import (MPI, Point, TestFunction, TrialFunction, UnitCubeMesh,
                     UnitSquareMesh, VectorFunctionSpace, cpp, fem, la)
-from dolfin.cpp.generation import BoxMesh
+from dolfin.generation import BoxMesh
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_matrix
 from ufl import dx, grad, inner
@@ -90,7 +90,7 @@ def test_nullspace_orthogonal(mesh, degree):
 
 @pytest.mark.parametrize("mesh", [
     UnitSquareMesh(MPI.comm_world, 12, 13),
-    BoxMesh.create(
+    BoxMesh(
         MPI.comm_world,
         [Point(0.8, -0.2, 1.2)._cpp_object,
          Point(3.0, 11.0, -5.0)._cpp_object], [12, 18, 25],

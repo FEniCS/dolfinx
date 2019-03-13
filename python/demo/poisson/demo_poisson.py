@@ -95,7 +95,7 @@ from ufl import ds, dx, grad, inner
 # divided into two triangles, we do as follows ::
 
 # Create mesh and define function space
-mesh = RectangleMesh.create(
+mesh = RectangleMesh(
     MPI.comm_world,
     [Point(0, 0)._cpp_object, Point(1, 1)._cpp_object], [32, 32],
     CellType.Type.triangle, dolfin.cpp.mesh.GhostMode.none)
