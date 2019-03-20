@@ -92,6 +92,7 @@ def geometric_dimension(self):
     """Returns geometric dimension for ufl interface"""
     return self.geometry.dim
 
+
 def num_cells(self):
     """Return number of mesh cells"""
     return self.num_entities(self.topology.dim)
