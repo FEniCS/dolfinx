@@ -6,8 +6,8 @@
 
 #include "timing.h"
 #include "Timer.h"
+#include <dolfin/common/Table.h>
 #include <dolfin/common/TimeLogManager.h>
-#include <dolfin/log/Table.h>
 #include <tuple>
 
 namespace dolfin

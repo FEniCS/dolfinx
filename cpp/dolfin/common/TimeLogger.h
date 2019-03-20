@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfin/log/Table.h>
+#include <dolfin/common/Table.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/timing.h>
 #include <map>
