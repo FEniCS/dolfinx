@@ -7,7 +7,6 @@
 #include "casters.h"
 #include <dolfin/common/Variable.h>
 #include <dolfin/log/Table.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
 #include <pybind11/pybind11.h>
@@ -22,7 +21,7 @@ namespace dolfin_wrappers
 void log(py::module& m)
 {
 
-  // dolfin::LogLevel enums
+  // log level enums
   py::enum_<spdlog::level::level_enum>(m, "LogLevel", py::arithmetic())
       .value("TRACE", spdlog::level::trace)
       .value("DEBUG", spdlog::level::debug)
@@ -51,7 +50,32 @@ void log(py::module& m)
         py::arg("mesh"), py::arg("verbose") = false);
   m.def("set_log_level", &spdlog::set_level);
   m.def("get_log_level", []() { return spdlog::default_logger()->level(); });
-  //  m.def("log", [](spdlog::level level, std::string s) { spdlog(level, s);
-  //  });
+  m.def("log", [](spdlog::level::level_enum level, std::string s) {
+    // FIXME: there must be a better way to do this...
+    switch (level)
+    {
+    case spdlog::level::trace:
+      spdlog::trace(s);
+      break;
+    case spdlog::level::debug:
+      spdlog::debug(s);
+      break;
+    case spdlog::level::info:
+      spdlog::info(s);
+      break;
+    case spdlog::level::warn:
+      spdlog::warn(s);
+      break;
+    case spdlog::level::err:
+      spdlog::error(s);
+      break;
+    case spdlog::level::critical:
+      spdlog::critical(s);
+      break;
+    default:
+      spdlog::warn(s);
+      break;
+    }
+  });
 }
 } // namespace dolfin_wrappers
