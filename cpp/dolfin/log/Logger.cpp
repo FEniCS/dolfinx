@@ -21,6 +21,7 @@
 
 #include "LogLevel.h"
 #include "Logger.h"
+#include "log.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
 

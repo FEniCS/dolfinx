@@ -21,6 +21,7 @@
 #include <dolfin/mesh/Vertex.h>
 #include <memory>
 #include <random>
+#include <spdlog/spdlog.h>
 #include <ufc.h>
 #include <utility>
 
@@ -269,7 +270,7 @@ DofMapBuilder::compute_node_ownership(
     const std::vector<std::size_t>& local_to_global, const mesh::Mesh& mesh,
     const std::size_t global_dim)
 {
-  log::log(TRACE, "Determining node ownership for parallel dof map");
+  spdlog::debug("Determining node ownership for parallel dof map");
 
   // Get number of nodes
   const std::size_t num_nodes_local = local_to_global.size();
@@ -444,7 +445,7 @@ DofMapBuilder::compute_node_ownership(
       ++num_owned_nodes;
   }
 
-  log::log(TRACE, "Finished determining dof ownership for parallel dof map");
+  spdlog::debug("Finished determining dof ownership for parallel dof map");
 
   return std::make_tuple(std::move(num_owned_nodes), std::move(node_ownership),
                          std::move(shared_node_to_processes),
