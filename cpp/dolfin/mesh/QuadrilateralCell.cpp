@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
-#include <dolfin/log/log.h>
 #include <spdlog/spdlog.h>
 
 using namespace dolfin;
@@ -156,14 +155,16 @@ double QuadrilateralCell::circumradius(const MeshEntity& cell) const
                 "Don't know how to compute circumradius");
   throw std::runtime_error("Not supported");
 
-  dolfin_not_implemented();
+  spdlog::error("Not implemented");
+  throw std::runtime_error("");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::squared_distance(const Cell& cell,
                                            const geometry::Point& point) const
 {
-  dolfin_not_implemented();
+  spdlog::error("Not implemented");
+  throw std::runtime_error("");
   return 0.0;
 }
 //-----------------------------------------------------------------------------

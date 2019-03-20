@@ -6,7 +6,6 @@
 
 #include "FiniteElement.h"
 #include <dolfin/common/utils.h>
-#include <dolfin/log/log.h>
 #include <memory>
 #include <spdlog/spdlog.h>
 

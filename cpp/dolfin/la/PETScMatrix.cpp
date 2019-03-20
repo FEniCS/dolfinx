@@ -10,7 +10,6 @@
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/log/log.h>
 #include <iostream>
 #include <sstream>
 

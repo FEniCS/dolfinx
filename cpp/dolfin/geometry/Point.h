@@ -9,7 +9,6 @@
 #include <Eigen/Dense>
 #include <array>
 #include <cmath>
-#include <dolfin/log/log.h>
 #include <iostream>
 
 namespace dolfin

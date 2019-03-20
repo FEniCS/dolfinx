@@ -174,7 +174,8 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
 double HexahedronCell::squared_distance(const mesh::Cell& cell,
                                         const geometry::Point& point) const
 {
-  dolfin_not_implemented();
+  spdlog::error("Not implemented");
+  throw std::runtime_error("");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -187,21 +188,23 @@ double HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet,
 geometry::Point HexahedronCell::normal(const mesh::Cell& cell,
                                        std::size_t facet) const
 {
-  dolfin_not_implemented();
+  spdlog::error("Not implemented");
+  throw std::runtime_error("");
   return geometry::Point();
 }
 //-----------------------------------------------------------------------------
 geometry::Point HexahedronCell::cell_normal(const mesh::Cell& cell) const
 {
-  dolfin_not_implemented();
+  spdlog::error("Not implemented");
+  throw std::runtime_error("");
   return geometry::Point();
 }
 //-----------------------------------------------------------------------------
 double HexahedronCell::facet_area(const mesh::Cell& cell,
                                   std::size_t facet) const
 {
-  dolfin_not_implemented();
-
+  spdlog::error("Not implemented");
+  throw std::runtime_error("");
   return 0.0;
 }
 //-----------------------------------------------------------------------------

@@ -7,7 +7,6 @@
 #include "PETScOperator.h"
 #include "PETScVector.h"
 #include "utils.h"
-#include <dolfin/log/log.h>
 #include <petscvec.h>
 #include <spdlog/spdlog.h>
 

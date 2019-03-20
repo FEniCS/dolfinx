@@ -10,7 +10,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
