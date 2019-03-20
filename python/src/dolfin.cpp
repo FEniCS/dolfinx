@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/log/log.h>
 #include <iostream>
 #include <pybind11/pybind11.h>
 

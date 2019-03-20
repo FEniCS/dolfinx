@@ -9,11 +9,11 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/SubSystemsManager.h>
+#include <dolfin/common/Table.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/timing.h>
-#include <dolfin/log/Table.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
@@ -69,6 +69,12 @@ void common(py::module& m)
       .def("ghosts", &dolfin::common::IndexMap::ghosts,
            py::return_value_policy::reference_internal,
            "Return list of ghost indices");
+
+  // dolfin::Table
+  py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>,
+             dolfin::common::Variable>(m, "Table")
+      .def(py::init<std::string>())
+      .def("str", &dolfin::Table::str);
 
   // dolfin::common::Timer
   py::class_<dolfin::common::Timer, std::shared_ptr<dolfin::common::Timer>>(

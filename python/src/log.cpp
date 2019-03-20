@@ -6,7 +6,6 @@
 
 #include "casters.h"
 #include <dolfin/common/Variable.h>
-#include <dolfin/log/Table.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
 #include <pybind11/pybind11.h>
@@ -29,12 +28,6 @@ void log(py::module& m)
       .value("WARNING", spdlog::level::warn)
       .value("ERROR", spdlog::level::err)
       .value("CRITICAL", spdlog::level::critical);
-
-  // dolfin::Table
-  py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>,
-             dolfin::common::Variable>(m, "Table")
-      .def(py::init<std::string>())
-      .def("str", &dolfin::Table::str);
 
   // dolfin/log free functions
   m.def("info",
