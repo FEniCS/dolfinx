@@ -83,18 +83,22 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   _cell_dimension = _ufc_dofmap->num_element_support_dofs
                     + _ufc_dofmap->num_global_support_dofs;
 
+  const int tdim = mesh.topology().dim();
+
   // Dimension sanity checks
-  assert(dofmap_view._dofmap.size()
-         == (std::size_t)(mesh.num_cells() * dofmap_view._cell_dimension));
+  assert(
+      dofmap_view._dofmap.size()
+      == (std::size_t)(mesh.num_entities(tdim) * dofmap_view._cell_dimension));
   assert(global_dimension() == dofmap_view.global_dimension());
-  assert(_dofmap.size() == (std::size_t)(mesh.num_cells() * _cell_dimension));
+  assert(_dofmap.size()
+         == (std::size_t)(mesh.num_entities(tdim) * _cell_dimension));
 
   // FIXME: Could we use a std::vector instead of std::map if the
   //        collapsed dof map is contiguous (0, . . . , n)?
 
   // Build map from collapsed dof index to original dof index
   collapsed_map.clear();
-  for (std::int64_t i = 0; i < mesh.num_cells(); ++i)
+  for (std::int64_t i = 0; i < mesh.num_entities(tdim); ++i)
   {
     auto view_cell_dofs = dofmap_view.cell_dofs(i);
     auto cell_dofs = this->cell_dofs(i);

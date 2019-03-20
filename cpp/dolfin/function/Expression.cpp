@@ -108,7 +108,7 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
 
   // Resize vertex_values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      vertex_values(mesh.num_vertices(), size);
+      vertex_values(mesh.num_entities(0), size);
 
   // Iterate over cells, overwriting values when repeatedly visiting vertices
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))

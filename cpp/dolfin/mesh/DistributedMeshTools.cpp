@@ -453,7 +453,7 @@ DistributedMeshTools::locate_off_process_entities(
   const std::vector<std::int64_t> global_entity_indices
       = mesh.topology().global_indices(dim);
 
-  assert((std::int64_t)global_entity_indices.size() == mesh.num_cells());
+  assert((std::int64_t)global_entity_indices.size() == mesh.num_entities(D));
 
   // Prepare map to hold process numbers
   std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
@@ -1096,7 +1096,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   // facet. Initially copy over from local values.
 
   Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> num_global_neighbors(
-      mesh.num_facets());
+      mesh.num_entities(D - 1));
 
   std::map<std::int32_t, std::set<std::uint32_t>>& shared_facets
       = mesh.topology().shared_entities(D - 1);

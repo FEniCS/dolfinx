@@ -118,30 +118,6 @@ public:
   ///         Another Mesh object.
   Mesh& operator=(const Mesh& mesh);
 
-  /// Get number of vertices in mesh.
-  ///
-  /// @return std::size_t
-  ///         Number of vertices.
-  ///
-  std::int64_t num_vertices() const { return _topology.size(0); }
-
-  /// Get number of facets in mesh.
-  ///
-  /// @return std::size_t
-  ///         Number of facets.
-  ///
-  std::int64_t num_facets() const
-  {
-    return _topology.size(_topology.dim() - 1);
-  }
-
-  /// Get number of cells in mesh.
-  ///
-  /// @return std::size_t
-  ///         Number of cells.
-  ///
-  std::int64_t num_cells() const { return _topology.size(_topology.dim()); }
-
   /// Get number of entities of given topological dimension.
   ///
   /// @param d (std::size_t)
@@ -150,7 +126,7 @@ public:
   /// @return std::size_t
   ///         Number of entities of topological dimension d.
   ///
-  std::int64_t num_entities(std::size_t d) const { return _topology.size(d); }
+  std::int32_t num_entities(int d) const { return _topology.size(d); }
 
   /// Get cell connectivity.
   ///
@@ -241,9 +217,8 @@ public:
   /// Compute global indices for entity dimension dim
   void init_global(std::size_t dim) const;
 
-  /// Clean out all auxiliary topology data. This clears all
-  /// topological data, except the connectivity between cells and
-  /// vertices.
+  /// Clean out all auxiliary topology data. This clears all topological
+  /// data, except the connectivity between cells and vertices.
   void clean();
 
   /// Compute minimum cell size in mesh, measured greatest distance

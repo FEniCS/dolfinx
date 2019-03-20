@@ -187,10 +187,6 @@ void mesh(py::module& m)
            })
       .def("num_entities", &dolfin::mesh::Mesh::num_entities,
            "Number of mesh entities")
-      .def("num_vertices", &dolfin::mesh::Mesh::num_vertices,
-           "Number of vertices")
-      .def("num_facets", &dolfin::mesh::Mesh::num_facets, "Number of facets")
-      .def("num_cells", &dolfin::mesh::Mesh::num_cells, "Number of cells")
       .def("rmax", &dolfin::mesh::Mesh::rmax)
       .def("rmin", &dolfin::mesh::Mesh::rmin)
       .def("num_entities_global", &dolfin::mesh::Mesh::num_entities_global)

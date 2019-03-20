@@ -230,7 +230,7 @@ std::size_t Mesh::init(std::size_t dim) const
   // create new connectivity.
 
   // Skip if mesh is empty
-  if (num_cells() == 0)
+  if (num_entities(topology().dim()) == 0)
   {
     log::warning("Mesh is empty, unable to create entities of dimension %d.",
                  dim);
@@ -261,7 +261,7 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   // create new connectivity.
 
   // Skip if mesh is empty
-  if (num_cells() == 0)
+  if (num_entities(topology().dim()) == 0)
   {
     log::warning("Mesh is empty, unable to create connectivity %d --> %d.", d0,
                  d1);
@@ -371,12 +371,13 @@ std::string Mesh::str(bool verbose) const
   else
   {
     std::string cell_type("undefined cell type");
+    const int tdim = topology().dim();
     if (_cell_type)
       cell_type = _cell_type->description(true);
 
-    s << "<Mesh of topological dimension " << topology().dim() << " ("
-      << cell_type << ") with " << num_vertices() << " vertices and "
-      << num_cells() << " cells >";
+    s << "<Mesh of topological dimension " << tdim << " (" << cell_type
+      << ") with " << num_entities(0) << " vertices and " << num_entities(tdim)
+      << " cells >";
   }
 
   return s.str();
