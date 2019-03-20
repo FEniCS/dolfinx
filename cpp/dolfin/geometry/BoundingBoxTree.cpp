@@ -48,9 +48,10 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
   // Check dimension
   if (tdim < 1 or tdim > mesh.topology().dim())
   {
-    log::dolfin_error("BoundingBoxTree.cpp", "compute bounding box tree",
-                      "Dimension must be a number between 1 and %d",
-                      mesh.topology().dim());
+    spdlog::error("BoundingBoxTree.cpp", "compute bounding box tree",
+                  "Dimension must be a number between 1 and %d",
+                  mesh.topology().dim());
+    throw std::runtime_error("Illegal dimension");
   }
 
   // Store topological dimension (only used for checking that entity
@@ -76,9 +77,8 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
   // Recursively build the bounding box tree from the leaves
   _build_from_leaf(leaf_bboxes, leaf_partition.begin(), leaf_partition.end());
 
-  log::log(PROGRESS,
-           "Computed bounding box tree with %d nodes for %d entities.",
-           num_bboxes(), num_leaves);
+  spdlog::info("Computed bounding box tree with %d nodes for %d entities.",
+               num_bboxes(), num_leaves);
 
   // Build tree for each process
   const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
@@ -93,8 +93,8 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
     std::iota(global_leaves.begin(), global_leaves.end(), 0);
     _global_tree.reset(new BoundingBoxTree(recv_bbox, global_leaves.begin(),
                                            global_leaves.end(), _gdim));
-    log::info("Computed global bounding box tree with %d boxes.",
-              _global_tree->num_bboxes());
+    spdlog::info("Computed global bounding box tree with %d boxes.",
+                 _global_tree->num_bboxes());
   }
 }
 //-----------------------------------------------------------------------------
@@ -110,8 +110,8 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points,
   // Recursively build the bounding box tree from the leaves
   _build_from_point(points, leaf_partition.begin(), leaf_partition.end());
 
-  log::info("Computed bounding box tree with %d nodes for %d points.",
-            num_bboxes(), num_leaves);
+  spdlog::info("Computed bounding box tree with %d nodes for %d points.",
+               num_bboxes(), num_leaves);
 }
 //-----------------------------------------------------------------------------
 std::vector<unsigned int>
@@ -149,9 +149,10 @@ BoundingBoxTree::compute_entity_collisions(const Point& point,
   // Point in entity only implemented for cells. Consider extending this.
   if (_tdim != mesh.topology().dim())
   {
-    log::dolfin_error("BoundingBoxTree.cpp",
-                      "compute collision between point and mesh entities",
-                      "Point-in-entity is only implemented for cells");
+    spdlog::error("BoundingBoxTree.cpp",
+                  "compute collision between point and mesh entities",
+                  "Point-in-entity is only implemented for cells");
+    throw std::runtime_error("Illegal entity");
   }
 
   // Call recursive find function to compute bounding box candidates
@@ -207,9 +208,10 @@ BoundingBoxTree::compute_first_entity_collision(const Point& point,
   // Point in entity only implemented for cells. Consider extending this.
   if (_tdim != mesh.topology().dim())
   {
-    log::dolfin_error("BoundingBoxTree.cpp",
-                      "compute collision between point and mesh entities",
-                      "Point-in-entity is only implemented for cells");
+    spdlog::error("BoundingBoxTree.cpp",
+                  "compute collision between point and mesh entities",
+                  "Point-in-entity is only implemented for cells");
+    throw std::runtime_error("Illegal entity");
   }
 
   // Call recursive find function
@@ -223,8 +225,9 @@ BoundingBoxTree::compute_closest_entity(const Point& point,
   // Closest entity only implemented for cells. Consider extending this.
   if (_tdim != mesh.topology().dim())
   {
-    log::dolfin_error("BoundingBoxTree.cpp", "compute closest entity of point",
-                      "Closest-entity is only implemented for cells");
+    spdlog::error("BoundingBoxTree.cpp", "compute closest entity of point",
+                  "Closest-entity is only implemented for cells");
+    throw std::runtime_error("Illegal entity");
   }
 
   // Compute point search tree if not already done
@@ -260,8 +263,9 @@ BoundingBoxTree::compute_closest_point(const Point& point) const
   // Closest point only implemented for point cloud
   if (_tdim != 0)
   {
-    log::dolfin_error("BoundingBoxTree.cpp", "compute closest point",
-                      "Search tree has not been built for point cloud");
+    spdlog::error("BoundingBoxTree.cpp", "compute closest point",
+                  "Search tree has not been built for point cloud");
+    throw std::runtime_error("Tree not built");
   }
 
   // Note that we don't compute a point search tree here... That would
@@ -641,7 +645,7 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   if (_point_search_tree)
     return;
 
-  log::info("Building point search tree to accelerate distance queries.");
+  spdlog::info("Building point search tree to accelerate distance queries.");
 
   // Create list of midpoints for all cells
   std::vector<Point> points;

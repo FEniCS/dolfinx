@@ -14,10 +14,10 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <spdlog/spdlog.h>
 #include <vector>
 
 using namespace dolfin;
@@ -186,10 +186,11 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
   {
-    log::dolfin_error(
+    spdlog::error(
         "FunctionSpace.cpp", "interpolate function into function space",
         "Rank of function (%d) does not match rank of function space (%d)",
         v.value_rank(), element()->value_rank());
+    throw std::runtime_error("Incorrect Rank");
   }
 
   // Check that function dims match
@@ -197,11 +198,12 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
-      log::dolfin_error(
-          "FunctionSpace.cpp", "interpolate function into function space",
-          "Dimension %d of function (%d) does not match dimension %d "
-          "of function space (%d)",
-          i, v.value_dimension(i), i, element()->value_dimension(i));
+      spdlog::error("FunctionSpace.cpp",
+                    "interpolate function into function space",
+                    "Dimension %d of function (%d) does not match dimension %d "
+                    "of function space (%d)",
+                    i, v.value_dimension(i), i, element()->value_dimension(i));
+      throw std::runtime_error("Incorrect dimension");
     }
   }
 
@@ -300,8 +302,9 @@ FunctionSpace::collapse() const
   assert(_mesh);
   if (_component.empty())
   {
-    log::dolfin_error("FunctionSpace.cpp", "collapse function space",
-                      "Function space is not a subspace");
+    spdlog::error("FunctionSpace.cpp", "collapse function space",
+                  "Function space is not a subspace");
+    throw std::runtime_error("Not a subspace");
   }
 
   // Create collapsed DofMap
@@ -328,9 +331,10 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 
   if (!_component.empty())
   {
-    log::dolfin_error(
+    spdlog::error(
         "FunctionSpace.cpp", "tabulate_dof_coordinates",
         "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
+    throw std::runtime_error("Cannot tabulate for subspace");
   }
 
   // Get local size
