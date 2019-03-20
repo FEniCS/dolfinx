@@ -9,6 +9,8 @@ set(HEADERS
   Set.h
   SubSystemsManager.h
   Timer.h
+  TimeLogger.h
+  TimeLogManager.h
   timing.h
   types.h
   UniqueIdGenerator.h
@@ -23,6 +25,8 @@ set(SOURCES
   MPI.cpp
   SubSystemsManager.cpp
   Timer.cpp
+  TimeLogger.cpp
+  TimeLogManager.cpp
   timing.cpp
   UniqueIdGenerator.cpp
   utils.cpp

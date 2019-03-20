@@ -21,9 +21,10 @@
 
 #include "LogLevel.h"
 #include "Logger.h"
-#include "log.h"
+
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
+#include <spdlog/spdlog.h>
 
 #define DOLFIN_LINELENGTH 256
 #define DOLFIN_TERM_WIDTH 80
@@ -329,7 +330,8 @@ std::tuple<std::size_t, double, double, double> Logger::timing(std::string task)
   {
     std::stringstream line;
     line << "No timings registered for task \"" << task << "\".";
-    log::dolfin_error("Logger.cpp", "extract timing for task", line.str());
+    spdlog::error("Logger.cpp", "extract timing for task", line.str());
+    throw std::runtime_error("Cannot extract timing");
   }
   // Prepare for return for the case of reset
   const auto result = it->second;
@@ -340,7 +342,7 @@ std::tuple<std::size_t, double, double, double> Logger::timing(std::string task)
 void Logger::monitor_memory_usage()
 {
 #ifndef __linux__
-  log::warning(
+  spdlog::warn(
       "Unable to initialize memory monitor; only available on GNU/Linux.");
   return;
 
