@@ -29,8 +29,9 @@ std::size_t IntervalCell::num_entities(std::size_t dim) const
   default:
     spdlog::error("IntervalCell.cpp: "
                   "access number of entities of interval cell. "
-                  "Illegal topological dimension ({}).", dim);
-    throw std::invalid_argument();
+                  "Illegal topological dimension ({}).",
+                  dim);
+    throw std::invalid_argument("Illegal dimension");
   }
 
   return 0;

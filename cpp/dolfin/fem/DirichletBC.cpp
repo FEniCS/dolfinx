@@ -24,6 +24,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <map>
+#include <spdlog/spdlog.h>
 #include <utility>
 
 using namespace dolfin;

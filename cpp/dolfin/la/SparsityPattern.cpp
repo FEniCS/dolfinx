@@ -9,6 +9,7 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/utils.h>
+#include <dolfin/log/log.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
