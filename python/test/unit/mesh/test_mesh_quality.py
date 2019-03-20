@@ -66,7 +66,7 @@ def test_radius_ratio_min_radius_ratio_max():
     x[4] = mesh1d.geometry.points[3]
 
     # Create 2D mesh with one equilateral triangle
-    mesh2d = RectangleMesh.create(
+    mesh2d = RectangleMesh(
         MPI.comm_world, [Point(0, 0)._cpp_object,
                          Point(1, 1)._cpp_object], [1, 1],
         CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')

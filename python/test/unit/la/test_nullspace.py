@@ -9,12 +9,11 @@
 import pytest
 
 import ufl
-from dolfin import (MPI, Function, Point, TestFunction, TrialFunction,
-                    UnitCubeMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
-                    fem, la)
-from dolfin.cpp.generation import BoxMesh
+from dolfin import (MPI, Point, TestFunction, TrialFunction, UnitCubeMesh,
+                    UnitSquareMesh, VectorFunctionSpace, cpp, fem, la)
+from dolfin.generation import BoxMesh
 from dolfin.cpp.mesh import CellType, GhostMode
-from dolfin.fem import assembling
+from dolfin.fem import assemble_matrix
 from ufl import dx, grad, inner
 
 
@@ -91,7 +90,7 @@ def test_nullspace_orthogonal(mesh, degree):
 
 @pytest.mark.parametrize("mesh", [
     UnitSquareMesh(MPI.comm_world, 12, 13),
-    BoxMesh.create(
+    BoxMesh(
         MPI.comm_world,
         [Point(0.8, -0.2, 1.2)._cpp_object,
          Point(3.0, 11.0, -5.0)._cpp_object], [12, 18, 25],
@@ -114,11 +113,10 @@ def test_nullspace_check(mesh, degree):
             grad(w)) * ufl.Identity(gdim)
 
     a = inner(sigma(u, mesh.geometry.dim), grad(v)) * dx
-    zero = Function(V)
-    L = inner(zero, v) * dx
 
     # Assemble matrix and create compatible vector
-    A, L = assembling.assemble_system(a, L, [])
+    A = assemble_matrix(a)
+    A.assemble()
 
     # Create null space basis and test
     null_space = build_elastic_nullspace(V)

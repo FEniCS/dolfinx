@@ -15,17 +15,49 @@
 namespace dolfin
 {
 
+namespace function
+{
+class Function;
+}
+
+namespace mesh
+{
+class Mesh;
+}
+
 namespace fem
 {
 class DirichletBC;
 class Form;
+class GenericDofMap;
 
 namespace impl
 {
 
 /// Assemble linear form into an Eigen vector
-void assemble(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-              const Form& L);
+void assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                     const Form& L);
+
+/// Execute kernel over cells and accumulate result in vector
+void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                    const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
+                    const std::function<void(PetscScalar*, const PetscScalar*,
+                                             const double*, int)>& fn,
+                    std::vector<const function::Function*> coefficients,
+                    const std::vector<int>& offsets);
+
+/// Execute kernel over cells and accumulate result in vector
+void assemble_exterior_facets(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             int, int)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets);
+
+/// Assemble linear form interior facet integrals into an Eigen vector
+void assemble_interior_facets(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
 
 /// Modify b such that:
 ///

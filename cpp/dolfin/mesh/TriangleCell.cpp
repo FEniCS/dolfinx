@@ -375,9 +375,11 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
   assert(e);
 
   // Look for edge satisfying ordering convention
+  auto connectivity = cell.mesh().topology().connectivity(1, 0);
+  assert(connectivity);
   for (std::size_t j = 0; j < 3; j++)
   {
-    const std::int32_t* ev = cell.mesh().topology().connectivity(1, 0)(e[j]);
+    const std::int32_t* ev = (*connectivity)(e[j]);
     assert(ev);
     if (ev[0] != v[i] && ev[1] != v[i])
       return j;

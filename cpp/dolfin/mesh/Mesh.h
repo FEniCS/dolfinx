@@ -159,7 +159,8 @@ public:
   ///
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cells() const
   {
-    return _topology.connectivity(_topology.dim(), 0).connections();
+    assert(_topology.connectivity(_topology.dim(), 0));
+    return _topology.connectivity(_topology.dim(), 0)->connections();
   }
 
   /// Get global number of entities of given topological dimension.

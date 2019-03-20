@@ -27,7 +27,7 @@ for f in demo_files:
 def test_demos(path, name):
     ret = subprocess.run([sys.executable, name],
                          cwd=str(path),
-                         env={**os.environ, 'MPLBACKEND': 'agg', 'DOLFIN_TEST': '1'},
+                         env={**os.environ, 'MPLBACKEND': 'agg'},
                          check=True)
     assert ret.returncode == 0
 
@@ -39,6 +39,6 @@ def test_demos_mpi(num_proc, mpiexec, path, name):
     print(cmd)
     ret = subprocess.run(cmd,
                          cwd=str(path),
-                         env={**os.environ, 'MPLBACKEND': 'agg', 'DOLFIN_TEST': '1'},
+                         env={**os.environ, 'MPLBACKEND': 'agg'},
                          check=True)
     assert ret.returncode == 0

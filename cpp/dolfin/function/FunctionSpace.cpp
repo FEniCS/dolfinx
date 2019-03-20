@@ -111,17 +111,30 @@ void FunctionSpace::interpolate_from_any(
   // Initialize local arrays
   std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
 
+  if (!v.function_space()->has_element(*_element))
+  {
+    throw std::runtime_error("Restricting finite elements function in "
+                             "different elements not suppoted.");
+  }
+
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs;
   la::VecWrapper coeff(expansion_coefficients.vec());
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
+    // FIXME: Move this out
+    if (!v.function_space()->has_cell(cell))
+    {
+      throw std::runtime_error("Restricting finite elements function in "
+                               "different elements not suppoted.");
+    }
+
     // Get cell coordinate dofs
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Restrict function to cell
-    v.restrict(cell_coefficients.data(), *_element, cell, coordinate_dofs);
+    v.restrict(cell_coefficients.data(), cell, coordinate_dofs);
 
     // Tabulate dofs
     auto cell_dofs = _dofmap->cell_dofs(cell.index());
@@ -198,7 +211,7 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
     throw std::runtime_error("Cannot interpolate function into function space. "
                              "Wrong size of vector");
   }
-  expansion_coefficients.set(0.0);
+  VecSet(expansion_coefficients.vec(), 0.0);
 
   std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
   interpolate_from_any(expansion_coefficients, v);
@@ -235,7 +248,7 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
     throw std::runtime_error("Cannot interpolate function into function space. "
                              "Wrong size of vector");
   }
-  expansion_coefficients.set(0.0);
+  VecSet(expansion_coefficients.vec(), 0.0);
 
   interpolate_from_any(expansion_coefficients, expr);
 }

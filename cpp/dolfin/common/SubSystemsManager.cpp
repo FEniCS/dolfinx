@@ -17,7 +17,6 @@
 #include <boost/algorithm/string/trim.hpp>
 
 #include "SubSystemsManager.h"
-#include <dolfin/common/constants.h>
 
 using namespace dolfin::common;
 
@@ -179,9 +178,9 @@ void SubSystemsManager::finalize_petsc()
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
 {
-// This function not affected if MPI_Finalize has been called. It
-// returns true if MPI_Init has been called at any point, even if
-// MPI_Finalize has been called.
+  // This function not affected if MPI_Finalize has been called. It
+  // returns true if MPI_Init has been called at any point, even if
+  // MPI_Finalize has been called.
 
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
@@ -212,9 +211,10 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorMessage(n, &desc, nullptr);
 
   // Log detailed error info
-  spdlog::error("PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
-                "                       : error code '{}' ({}), message follows:",
-                line, fun, file, n, desc);
+  spdlog::error(
+      "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
+      "                       : error code '{}' ({}), message follows:",
+      line, fun, file, n, desc);
   spdlog::error(_mess);
 
   // Continue with error handling

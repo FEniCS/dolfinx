@@ -6,10 +6,11 @@
 
 #include "BoxMesh.h"
 #include <Eigen/Dense>
+#include <cfloat>
 #include <cmath>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/constants.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 
 using namespace dolfin;
@@ -43,8 +44,10 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    EigenRowArrayXXd geom(0, 3);
-    EigenRowArrayXXi64 topo(0, 4);
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+        0, 3);
+    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        topo(0, 4);
 
     return mesh::MeshPartitioning::build_distributed_mesh(
         comm, mesh::CellType::Type::tetrahedron, geom, topo, {}, ghost_mode);
@@ -75,8 +78,9 @@ mesh::Mesh BoxMesh::build_tet(MPI_Comm comm,
   const double f = z1;
   const double ef = (f - e) / static_cast<double>(nz);
 
-  if (std::abs(x0 - x1) < DOLFIN_EPS || std::abs(y0 - y1) < DOLFIN_EPS
-      || std::abs(z0 - z1) < DOLFIN_EPS)
+  if (std::abs(x0 - x1) < 2.0 * DBL_EPSILON
+      || std::abs(y0 - y1) < 2.0 * DBL_EPSILON
+      || std::abs(z0 - z1) < 2.0 * DBL_EPSILON)
   {
     throw std::runtime_error(
         "Box seems to have zero width, height or depth. Check dimensions");

@@ -6,9 +6,11 @@
 
 #pragma once
 
+#include <dolfin/common/MPI.h>
 #include <petscksp.h>
 #include <petscmat.h>
 #include <petscvec.h>
+#include <string>
 
 namespace dolfin
 {
@@ -19,10 +21,9 @@ class PETScDMCollection;
 
 namespace la
 {
-class VectorSpaceBasis;
 
-/// This class implements Krylov methods for linear systems of the
-/// form Ax = b. It is a wrapper for the Krylov solvers of PETSc.
+/// This class implements Krylov methods for linear systems of the form
+/// Ax = b. It is a wrapper for the Krylov solvers of PETSc.
 
 class PETScKrylovSolver
 {
@@ -32,35 +33,27 @@ public:
   explicit PETScKrylovSolver(MPI_Comm comm);
 
   /// Create solver wrapper of a PETSc KSP object
-  explicit PETScKrylovSolver(KSP ksp);
+  explicit PETScKrylovSolver(KSP ksp, bool inc_ref_count = true);
 
   /// Destructor
   virtual ~PETScKrylovSolver();
 
-  /// Set operator (Mat). This is memory-safe as PETSc will increase the
-  /// reference count to the underlying PETSc object.
+  /// Set operator (Mat)
   void set_operator(const Mat A);
 
-  /// Set operator and preconditioner matrix (Mat). This is memory-safe
-  /// as PETSc will increase the reference count to the underlying PETSc
-  /// objects.
+  /// Set operator and preconditioner matrix (Mat)
   void set_operators(const Mat A, const Mat P);
 
-  /// Solve linear system Ax = b and return number of iterations
-  /// (A^t x = b if transpose is true)
-  std::size_t solve(Vec x, const Vec b, bool transpose = false);
-
-  /// Reuse preconditioner if true, even if matrix operator changes
-  /// (by default preconditioner will be re-built if the matrix
-  /// changes)
-  void set_reuse_preconditioner(bool reuse_pc);
+  /// Solve linear system Ax = b and return number of iterations (A^t x
+  /// = b if transpose is true)
+  int solve(Vec x, const Vec b, bool transpose = false);
 
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
   void set_options_prefix(std::string options_prefix);
 
-  /// Returns the prefix used by PETSc when searching the PETSc
-  /// options database
+  /// Returns the prefix used by PETSc when searching the PETSc options
+  /// database
   std::string get_options_prefix() const;
 
   /// Set options from PETSc options database

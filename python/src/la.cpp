@@ -10,7 +10,6 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/SLEPcEigenSolver.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/VectorSpaceBasis.h>
 #include <dolfin/la/utils.h>
@@ -80,7 +79,8 @@ void la(py::module& m)
              return std::make_unique<dolfin::la::PETScKrylovSolver>(comm.get());
            }),
            py::arg("comm"))
-      .def(py::init<KSP>())
+      .def(py::init<KSP, bool>(), py::arg("comm"),
+           py::arg("inc_ref_count") = true)
       .def("get_options_prefix",
            &dolfin::la::PETScKrylovSolver::get_options_prefix)
       .def("set_options_prefix",
@@ -91,8 +91,6 @@ void la(py::module& m)
            "Solve linear system", py::arg("x"), py::arg("b"),
            py::arg("transpose") = false)
       .def("set_from_options", &dolfin::la::PETScKrylovSolver::set_from_options)
-      .def("set_reuse_preconditioner",
-           &dolfin::la::PETScKrylovSolver::set_reuse_preconditioner)
       .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
       .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
       .def("ksp", &dolfin::la::PETScKrylovSolver::ksp);
@@ -131,20 +129,20 @@ void la(py::module& m)
   // utils
   m.def("create_vector",
         py::overload_cast<const dolfin::common::IndexMap&>(
-            &dolfin::la::create_vector),
+            &dolfin::la::create_petsc_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
   m.def("create_vector",
         [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
            const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
            int block_size) {
-          return dolfin::la::create_vector(comm.get(), range, ghost_indices,
-                                           block_size);
+          return dolfin::la::create_petsc_vector(comm.get(), range,
+                                                 ghost_indices, block_size);
         },
         py::return_value_policy::take_ownership, "Create a PETSc Vec.");
   m.def("create_matrix",
         [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
-          return dolfin::la::create_matrix(comm.get(), p);
+          return dolfin::la::create_petsc_matrix(comm.get(), p);
         },
         py::return_value_policy::take_ownership,
         "Create a PETSc Mat from sparsity pattern.");

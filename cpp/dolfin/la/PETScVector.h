@@ -11,7 +11,6 @@
 #include <Eigen/Dense>
 #include <array>
 #include <cstdint>
-#include <petscsys.h>
 #include <petscvec.h>
 
 namespace dolfin
@@ -46,10 +45,12 @@ public:
   /// Move constructor
   PETScVector(PETScVector&& x);
 
-  /// Create vector wrapper of PETSc Vec pointer. The reference counter
-  /// of the Vec will be increased, and decreased upon destruction of
-  /// this object.
-  explicit PETScVector(Vec x);
+  /// Create holder of a PETSc Vec object/pointer. The Vec x object
+  /// should already be created. If inc_ref_count is true, the reference
+  /// counter of the Vec object will be increased. The Vec reference
+  /// count will always be decreased upon destruction of the the
+  /// PETScVector.
+  explicit PETScVector(Vec x, bool inc_ref_count = true);
 
   /// Destructor
   virtual ~PETScVector();
@@ -71,10 +72,6 @@ public:
 
   /// Return ownership range for process
   std::array<std::int64_t, 2> local_range() const;
-
-  /// Set all entries to 'a' using VecSet. This is local and does not
-  /// update ghost entries.
-  void set(PetscScalar a);
 
   /// Update owned entries owned by this process and which are ghosts on
   /// other processes, i.e., have been added to by a remote process.

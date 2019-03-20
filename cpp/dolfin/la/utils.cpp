@@ -27,13 +27,13 @@
   } while (0)
 
 //-----------------------------------------------------------------------------
-Vec dolfin::la::create_vector(const dolfin::common::IndexMap& map)
+Vec dolfin::la::create_petsc_vector(const dolfin::common::IndexMap& map)
 {
-  return dolfin::la::create_vector(map.mpi_comm(), map.local_range(),
-                                   map.ghosts(), map.block_size());
+  return dolfin::la::create_petsc_vector(map.mpi_comm(), map.local_range(),
+                                         map.ghosts(), map.block_size());
 }
 //-----------------------------------------------------------------------------
-Vec dolfin::la::create_vector(
+Vec dolfin::la::create_petsc_vector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
     int block_size)
@@ -76,7 +76,7 @@ Vec dolfin::la::create_vector(
   return x;
 }
 //-----------------------------------------------------------------------------
-Mat dolfin::la::create_matrix(
+Mat dolfin::la::create_petsc_matrix(
     MPI_Comm comm, const dolfin::la::SparsityPattern& sparsity_pattern)
 {
   PetscErrorCode ierr;
@@ -235,7 +235,7 @@ MatNullSpace dolfin::la::create_petsc_nullspace(
   return petsc_nullspace;
 }
 //-----------------------------------------------------------------------------
-std::vector<IS> dolfin::la::compute_index_sets(
+std::vector<IS> dolfin::la::compute_petsc_index_sets(
     std::vector<const dolfin::common::IndexMap*> maps)
 {
   std::vector<IS> is(maps.size());
@@ -286,13 +286,14 @@ void dolfin::la::petsc_error(int error_code, std::string filename,
                            + std::string(desc));
 }
 //-----------------------------------------------------------------------------
-dolfin::la::VecWrapper::VecWrapper(Vec y, bool ghosted) : x(nullptr, 0), _y(y)
+dolfin::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
+    : x(nullptr, 0), _y(y), _y_local(nullptr), _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)
     VecGhostGetLocalForm(_y, &_y_local);
   else
-    VecGetLocalVector(_y, _y_local);
+    _y_local = _y;
 
   PetscInt n = 0;
   VecGetSize(_y_local, &n);
@@ -303,47 +304,36 @@ dolfin::la::VecWrapper::VecWrapper(Vec y, bool ghosted) : x(nullptr, 0), _y(y)
 //-----------------------------------------------------------------------------
 dolfin::la::VecWrapper::~VecWrapper()
 {
-  if (_y)
+  if (_y_local)
   {
-    assert(_y_local);
     VecRestoreArray(_y_local, &array);
-
-    PetscBool is_ghost_local_form;
-    assert(_y);
-    VecGhostIsLocalForm(_y, _y_local, &is_ghost_local_form);
-    if (is_ghost_local_form == PETSC_TRUE)
+    if (_ghosted)
       VecGhostRestoreLocalForm(_y, &_y_local);
-    else
-      VecRestoreLocalVector(_y, _y_local);
   }
 }
 //-----------------------------------------------------------------------------
 void dolfin::la::VecWrapper::restore()
 {
+  assert(_y);
   assert(_y_local);
   VecRestoreArray(_y_local, &array);
-
-  PetscBool is_ghost_local_form;
-  assert(_y);
-  VecGhostIsLocalForm(_y, _y_local, &is_ghost_local_form);
-  if (is_ghost_local_form == PETSC_TRUE)
+  if (_ghosted)
     VecGhostRestoreLocalForm(_y, &_y_local);
-  else
-    VecRestoreLocalVector(_y, _y_local);
 
   _y = nullptr;
+  _y_local = nullptr;
   new (&x)
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }
 //-----------------------------------------------------------------------------
 dolfin::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
-    : x(nullptr, 0), _y(y)
+    : x(nullptr, 0), _y(y), _y_local(nullptr), _ghosted(ghosted)
 {
   assert(_y);
   if (ghosted)
     VecGhostGetLocalForm(_y, &_y_local);
   else
-    VecGetLocalVector(_y, _y_local);
+    _y_local = _y;
 
   PetscInt n = 0;
   VecGetSize(_y_local, &n);
@@ -354,33 +344,24 @@ dolfin::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
 //-----------------------------------------------------------------------------
 dolfin::la::VecReadWrapper::~VecReadWrapper()
 {
-  if (_y)
+  if (_y_local)
   {
-    assert(_y_local);
     VecRestoreArrayRead(_y_local, &array);
-    PetscBool is_ghost_local_form;
-    VecGhostIsLocalForm(_y, _y_local, &is_ghost_local_form);
-    if (is_ghost_local_form == PETSC_TRUE)
+    if (_ghosted)
       VecGhostRestoreLocalForm(_y, &_y_local);
-    else
-      VecRestoreLocalVector(_y, _y_local);
   }
 }
 //-----------------------------------------------------------------------------
 void dolfin::la::VecReadWrapper::restore()
 {
+  assert(_y);
   assert(_y_local);
   VecRestoreArrayRead(_y_local, &array);
-
-  assert(_y);
-  PetscBool is_ghost_local_form;
-  VecGhostIsLocalForm(_y, _y_local, &is_ghost_local_form);
-  if (is_ghost_local_form == PETSC_TRUE)
+  if (_ghosted)
     VecGhostRestoreLocalForm(_y, &_y_local);
-  else
-    VecRestoreLocalVector(_y, _y_local);
 
   _y = nullptr;
+  _y_local = nullptr;
   new (&x)
       Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(nullptr, 0);
 }

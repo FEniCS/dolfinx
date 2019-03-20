@@ -57,13 +57,15 @@ def test_numba_assembly():
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
-    a.set_cell_tabulate(0, tabulate_tensor_A.address)
+    a.set_tabulate_cell(0, tabulate_tensor_A.address)
 
     L = cpp.fem.Form([V._cpp_object])
-    L.set_cell_tabulate(0, tabulate_tensor_b.address)
+    L.set_tabulate_cell(0, tabulate_tensor_b.address)
 
-    A = dolfin.fem.assemble(a)
-    b = dolfin.fem.assemble(L)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
     bnorm = b.norm(PETSc.NormType.N2)
@@ -172,14 +174,16 @@ def test_cffi_assembly():
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    a.set_cell_tabulate(0, ptrA)
+    a.set_tabulate_cell(0, ptrA)
 
     L = cpp.fem.Form([V._cpp_object])
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    L.set_cell_tabulate(0, ptrL)
+    L.set_tabulate_cell(0, ptrL)
 
-    A = dolfin.fem.assemble(a)
-    b = dolfin.fem.assemble(L)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     Anorm = A.norm(PETSc.NormType.FROBENIUS)
     bnorm = b.norm(PETSc.NormType.N2)

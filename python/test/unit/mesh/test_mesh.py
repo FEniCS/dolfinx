@@ -32,7 +32,7 @@ def mesh1d():
 @fixture
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
-    mesh2d = RectangleMesh.create(
+    mesh2d = RectangleMesh(
         MPI.comm_world, [Point(0, 0)._cpp_object,
                          Point(1, 1)._cpp_object], [1, 1],
         CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
@@ -79,7 +79,7 @@ def square():
 
 @fixture
 def rectangle():
-    return RectangleMesh.create(
+    return RectangleMesh(
         MPI.comm_world, [Point(0, 0)._cpp_object,
                          Point(2, 2)._cpp_object], [5, 5],
         CellType.Type.triangle, cpp.mesh.GhostMode.none)
@@ -92,7 +92,7 @@ def cube():
 
 @fixture
 def box():
-    return BoxMesh.create(
+    return BoxMesh(
         MPI.comm_world,
         [Point(0, 0, 0)._cpp_object,
          Point(2, 2, 2)._cpp_object], [2, 2, 5], CellType.Type.tetrahedron,
@@ -472,26 +472,3 @@ def test_mesh_topology_lifetime():
     assert sys.getrefcount(mesh) == rc + 1
     del topology
     assert sys.getrefcount(mesh) == rc
-
-
-def test_mesh_connectivity_lifetime():
-    """Check that lifetime of MeshConnectivity is bound to
-    underlying mesh topology object"""
-    mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
-    mesh.init(1, 2)
-    topology = mesh.topology
-
-    # Refcount checks on the MeshConnectivity object
-    rc = sys.getrefcount(topology)
-    connectivity = topology.connectivity(1, 2)
-    assert sys.getrefcount(topology) == rc + 1
-    del connectivity
-    assert sys.getrefcount(topology) == rc
-
-    # Refcount checks on the returned connectivities array
-    conn = topology.connectivity(1, 2)
-    rc = sys.getrefcount(conn)
-    cells = conn(0)
-    assert sys.getrefcount(conn) == rc + 1
-    del cells
-    assert sys.getrefcount(conn) == rc

@@ -6,9 +6,8 @@
 
 #include <spdlog/spdlog.h>
 
-#include "init.h"
 #include "SubSystemsManager.h"
-#include <dolfin/common/constants.h>
+#include "init.h"
 
 //-----------------------------------------------------------------------------
 void dolfin::init(int argc, char* argv[])

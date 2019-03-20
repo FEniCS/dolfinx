@@ -8,6 +8,7 @@
 import ufl
 
 from dolfin import cpp, fem, jit
+import cffi
 
 
 class Form(ufl.Form):
@@ -29,18 +30,6 @@ class Form(ufl.Form):
         """
         self.form_compiler_parameters = form_compiler_parameters
 
-        # Add DOLFIN include paths (just the Boost path for special
-        # math functions is really required)
-        # FIXME: move getting include paths to elsewhere
-        if self.form_compiler_parameters is None:
-            self.form_compiler_parameters = {
-                "external_include_dirs": jit.dolfin_pc["include_dirs"]
-            }
-        else:
-            # FIXME: add paths if dict entry already exists
-            self.form_compiler_parameters[
-                "external_include_dirs"] = jit.dolfin_pc["include_dirs"]
-
         # Extract subdomain data from UFL form
         sd = form.subdomain_data()
         self._subdomains, = list(sd.values())  # Assuming single domain
@@ -52,8 +41,10 @@ class Form(ufl.Form):
             form,
             form_compiler_parameters=self.form_compiler_parameters,
             mpi_comm=mesh.mpi_comm())
+
         # Cast compiled library to pointer to ufc_form
-        ufc_form = fem.dofmap.make_ufc_form(ufc_form[0])
+        ffi = cffi.FFI()
+        ufc_form = fem.dofmap.make_ufc_form(ffi.cast("uintptr_t", ufc_form))
 
         # For every argument in form extract its function space
         function_spaces = [

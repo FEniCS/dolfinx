@@ -19,8 +19,6 @@ namespace dolfin
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/fem/LocalAssembler.h>
 #include <dolfin/fem/PETScDMCollection.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
-#include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/fem/utils.h>

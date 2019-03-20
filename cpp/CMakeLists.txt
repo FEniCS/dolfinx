@@ -308,25 +308,6 @@ install(FILES ${CMAKE_BINARY_DIR}/dolfin.conf
         COMPONENT Development)
 
 #------------------------------------------------------------------------------
-# Generate demo files from rst
-
-find_package(PythonInterp 3)
-
-if (PYTHONINTERP_FOUND)
-  message(STATUS "")
-  message(STATUS "Generating demo source files from reStructuredText")
-  message(STATUS "--------------------------------------------------")
-  file(GLOB_RECURSE demo_rst_files "demo/*.py.rst" "demo/*.cpp.rst" "demo/*.ufl.rst")
-  foreach(rst_file ${demo_rst_files})
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ../utils/pylit/pylit.py ${rst_file}
-      WORKING_DIRECTORY ${DOLFIN_SOURCE_DIR})
-    #add_custom_command(TARGET demos_source PRE_BUILD
-    #  COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ../utils/pylit/pylit.py ${rst_file}
-    #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-  endforeach()
-endif()
-
-#------------------------------------------------------------------------------
 # Generate form files for tests and demos and DOLFIN if not exists
 # FIXME: Generate files in Build directory instead, at least for demo
 # and tests
@@ -412,19 +393,6 @@ if ("${CMAKE_GENERATOR}" STREQUAL "Unix Makefiles")
   set(MAKE_PROGRAM "$(MAKE)")
 else()
   set(MAKE_PROGRAM "${CMAKE_MAKE_PROGRAM}")
-endif()
-
-# Add taget to build .py demo files from Python rst input files, and
-# create a target to build source files from .cpp.rst and .py.rst
-# files (using pylit)
-if (PYTHONINTERP_FOUND)
-  file(GLOB_RECURSE demo_rst_files "demo/*.py.rst" "demo/*.cpp.rst" "demo/*.ufl.rst")
-  add_custom_target(demos_source)
-  foreach(rst_file ${rst_files})
-    add_custom_command(TARGET demos_source PRE_BUILD
-      COMMAND ${PYTHON_EXECUTABLE} "-B" "-u" ../utils/pylit/pylit.py ${rst_file}
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-  endforeach()
 endif()
 
 # Install the demo source files

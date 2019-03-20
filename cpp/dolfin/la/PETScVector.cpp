@@ -24,8 +24,7 @@ using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(const common::IndexMap& map)
-    : PETScVector(map.mpi_comm(), map.local_range(), map.ghosts(),
-                  map.block_size())
+    : _x(la::create_petsc_vector(map))
 {
   // Do nothing
 }
@@ -34,16 +33,16 @@ PETScVector::PETScVector(
     MPI_Comm comm, std::array<std::int64_t, 2> range,
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
     int block_size)
-    : _x(nullptr)
+    : _x(la::create_petsc_vector(comm, range, ghost_indices, block_size))
 {
-  _x = la::create_vector(comm, range, ghost_indices, block_size);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScVector::PETScVector(Vec x) : _x(x)
+PETScVector::PETScVector(Vec x, bool inc_ref_count) : _x(x)
 {
-  // Increase reference count to PETSc object
   assert(x);
-  PetscObjectReference((PetscObject)_x);
+  if (inc_ref_count)
+    PetscObjectReference((PetscObject)_x);
 }
 //-----------------------------------------------------------------------------
 PETScVector::PETScVector(PETScVector&& v) : _x(v._x) { v._x = nullptr; }
@@ -148,13 +147,6 @@ MPI_Comm PETScVector::mpi_comm() const
   PetscErrorCode ierr = PetscObjectGetComm((PetscObject)(_x), &mpi_comm);
   CHECK_ERROR("PetscObjectGetComm");
   return mpi_comm;
-}
-//-----------------------------------------------------------------------------
-void PETScVector::set(PetscScalar a)
-{
-  assert(_x);
-  PetscErrorCode ierr = VecSet(_x, a);
-  CHECK_ERROR("VecSet");
 }
 //-----------------------------------------------------------------------------
 PetscReal PETScVector::norm(la::Norm norm_type) const

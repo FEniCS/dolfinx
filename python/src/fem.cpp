@@ -25,7 +25,6 @@
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/PETScDMCollection.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
-#include <dolfin/fem/SystemAssembler.h>
 #include <dolfin/fem/assembler.h>
 #include <dolfin/fem/utils.h>
 #include <dolfin/function/Function.h>
@@ -53,7 +52,7 @@ void fem(py::module& m)
   py::class_<ufc_coordinate_mapping, std::shared_ptr<ufc_coordinate_mapping>>(
       m, "ufc_coordinate_mapping", "UFC coordinate_mapping object");
 
-  // Function to convert pointers (from JIT usually) to UFC objects
+  // Functions to convert pointers (from JIT usually) to UFC objects
   m.def("make_ufc_finite_element",
         [](std::uintptr_t e) {
           ufc_finite_element* p = reinterpret_cast<ufc_finite_element*>(e);
@@ -86,7 +85,7 @@ void fem(py::module& m)
   // utils
   m.def("create_vector", // TODO: change name to create_vector_block
         [](const std::vector<const dolfin::fem::Form*> L) {
-          auto x = dolfin::fem::create_vector_block(L);
+          dolfin::la::PETScVector x = dolfin::fem::create_vector_block(L);
           Vec _x = x.vec();
           PetscObjectReference((PetscObject)_x);
           return _x;
@@ -186,26 +185,28 @@ void fem(py::module& m)
       .def("ownership_range", &dolfin::fem::DofMap::ownership_range)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs);
 
+  // dolfin::fem::CoordinateMapping
   py::class_<dolfin::fem::CoordinateMapping,
              std::shared_ptr<dolfin::fem::CoordinateMapping>>(
       m, "CoordinateMapping", "Coordinate mapping object")
       .def(py::init<std::shared_ptr<const ufc_coordinate_mapping>>());
 
   // dolfin::fem::SparsityPatternBuilder
-  py::class_<dolfin::fem::SparsityPatternBuilder>(m, "SparsityPatternBuilder")
-      .def_static(
-          "build",
-          [](const MPICommWrapper comm, const dolfin::mesh::Mesh& mesh,
-             const std::array<const dolfin::fem::GenericDofMap*, 2> dofmaps,
-             bool cells, bool interior_facets, bool exterior_facets) {
-            return dolfin::fem::SparsityPatternBuilder::build(
-                comm.get(), mesh, dofmaps, cells, interior_facets,
-                exterior_facets);
-          },
-          py::arg("mpi_comm"), py::arg("mesh"), py::arg("dofmaps"),
-          py::arg("cells"), py::arg("interior_facets"),
-          py::arg("exterior_facets"),
-          "Create SparsityPattern from pair of dofmaps");
+  // py::class_<dolfin::fem::SparsityPatternBuilder>(m,
+  // "SparsityPatternBuilder")
+  //     .def_static(
+  //         "build",
+  //         [](const MPICommWrapper comm, const dolfin::mesh::Mesh& mesh,
+  //            const std::array<const dolfin::fem::GenericDofMap*, 2> dofmaps,
+  //            bool cells, bool interior_facets, bool exterior_facets) {
+  //           return dolfin::fem::SparsityPatternBuilder::build(
+  //               comm.get(), mesh, dofmaps, cells, interior_facets,
+  //               exterior_facets);
+  //         },
+  //         py::arg("mpi_comm"), py::arg("mesh"), py::arg("dofmaps"),
+  //         py::arg("cells"), py::arg("interior_facets"),
+  //         py::arg("exterior_facets"),
+  //         "Create SparsityPattern from pair of dofmaps");
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,
@@ -232,12 +233,7 @@ void fem(py::module& m)
                     const std::vector<std::int32_t>&,
                     dolfin::fem::DirichletBC::Method>(),
            py::arg("V"), py::arg("g"), py::arg("facets"), py::arg("method"))
-      .def("function_space", &dolfin::fem::DirichletBC::function_space)
-      .def("get_boundary_values", [](const dolfin::fem::DirichletBC& instance) {
-        dolfin::fem::DirichletBC::Map map;
-        instance.get_boundary_values(map);
-        return map;
-      });
+      .def("function_space", &dolfin::fem::DirichletBC::function_space);
 
   // dolfin::fem::assemble
   m.def("assemble_scalar", &dolfin::fem::assemble_scalar,
@@ -263,14 +259,14 @@ void fem(py::module& m)
       py::overload_cast<
           Mat, const dolfin::fem::Form&,
           std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>, double>(
-          &dolfin::fem::assemble),
+          &dolfin::fem::assemble_matrix),
       py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
       "Assemble bilinear form over mesh into matrix");
   m.def("assemble_blocked_matrix",
         py::overload_cast<
             Mat, const std::vector<std::vector<const dolfin::fem::Form*>>,
             std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>,
-            double, bool>(&dolfin::fem::assemble),
+            double, bool>(&dolfin::fem::assemble_matrix),
         py::arg("A"), py::arg("a"), py::arg("bcs"), py::arg("diagonal"),
         py::arg("use_nest_extract") = true,
         "Re-assemble bilinear forms over mesh into blocked matrix");
@@ -280,48 +276,14 @@ void fem(py::module& m)
   m.def("set_bc", &dolfin::fem::set_bc,
         "Insert boundary condition values into vector");
 
-  // dolfin::fem::SystemAssembler
-  py::class_<dolfin::fem::SystemAssembler,
-             std::shared_ptr<dolfin::fem::SystemAssembler>>(
-      m, "SystemAssembler", "SystemAssembler object")
-      .def(py::init<
-           std::shared_ptr<const dolfin::fem::Form>,
-           std::shared_ptr<const dolfin::fem::Form>,
-           std::vector<std::shared_ptr<const dolfin::fem::DirichletBC>>>())
-      .def("assemble",
-           [](dolfin::fem::SystemAssembler self, Mat A, Vec b) {
-             dolfin::la::PETScMatrix _A(A);
-             dolfin::la::PETScVector _b(b);
-             self.assemble(_A, _b);
-           })
-      .def("assemble",
-           [](dolfin::fem::SystemAssembler self, Mat A) {
-             dolfin::la::PETScMatrix _A(A);
-             self.assemble(_A);
-           })
-      .def("assemble",
-           [](dolfin::fem::SystemAssembler self, Vec b) {
-             dolfin::la::PETScVector _b(b);
-             self.assemble(_b);
-           })
-      .def("assemble",
-           [](dolfin::fem::SystemAssembler self, Mat A, Vec b, Vec x) {
-             dolfin::la::PETScMatrix _A(A);
-             dolfin::la::PETScVector _b(b), _x(x);
-             self.assemble(_A, _b, _x);
-           })
-      .def("assemble", [](dolfin::fem::SystemAssembler self, Vec b, Vec x) {
-        dolfin::la::PETScVector _b(b), _x(x);
-        self.assemble(_b, _x);
-      });
-
   // dolfin::fem::DiscreteOperators
   py::class_<dolfin::fem::DiscreteOperators>(m, "DiscreteOperators")
       .def_static("build_gradient",
                   [](const dolfin::function::FunctionSpace& V0,
                      const dolfin::function::FunctionSpace& V1) {
-                    auto A = dolfin::fem::DiscreteOperators::build_gradient(V0,
-                                                                            V1);
+                    dolfin::la::PETScMatrix A
+                        = dolfin::fem::DiscreteOperators::build_gradient(V0,
+                                                                         V1);
                     Mat _A = A.mat();
                     PetscObjectReference((PetscObject)_A);
                     return _A;
@@ -353,13 +315,13 @@ void fem(py::module& m)
       .def("set_interior_facet_domains",
            &dolfin::fem::Form::set_interior_facet_domains)
       .def("set_vertex_domains", &dolfin::fem::Form::set_vertex_domains)
-      .def("set_cell_tabulate",
+      .def("set_tabulate_cell",
            [](dolfin::fem::Form& self, unsigned int i, std::size_t addr) {
              auto tabulate_tensor_ptr = (void (*)(
                  PetscScalar*, const PetscScalar*, const double*, int))addr;
-             self.integrals().set_cell_tabulate_tensor(i, tabulate_tensor_ptr);
+             self.integrals().set_tabulate_tensor_cell(i, tabulate_tensor_ptr);
            })
-      .def("rank", &dolfin::fem::Form::rank)
+      .def_property_readonly("rank", &dolfin::fem::Form::rank)
       .def("mesh", &dolfin::fem::Form::mesh)
       .def("function_space", &dolfin::fem::Form::function_space)
       .def("coordinate_mapping", &dolfin::fem::Form::coordinate_mapping);

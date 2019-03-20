@@ -5,12 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <Eigen/Dense>
+#include <complex>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/timing.h>
 #include <dolfin/log/Table.h>
@@ -52,9 +52,6 @@ void common(py::module& m)
   m.attr("has_slepc4py") = false;
 #endif
   m.attr("git_commit_hash") = dolfin::git_commit_hash();
-
-  m.attr("DOLFIN_EPS") = DOLFIN_EPS;
-  m.attr("DOLFIN_PI") = DOLFIN_PI;
 
   // dolfin::common::IndexMap
   py::class_<dolfin::common::IndexMap,
@@ -108,10 +105,11 @@ void common(py::module& m)
                   (void (*)()) & dolfin::common::SubSystemsManager::init_petsc)
       .def_static("init_petsc",
                   [](std::vector<std::string> args) {
-    std::vector<char*> argv(args.size());
-    for (std::size_t i = 0; i < args.size(); ++i)
-      argv[i] = const_cast<char*>(args[i].data());
-    dolfin::common::SubSystemsManager::init_petsc(args.size(), argv.data());
+                    std::vector<char*> argv(args.size());
+                    for (std::size_t i = 0; i < args.size(); ++i)
+                      argv[i] = const_cast<char*>(args[i].data());
+                    dolfin::common::SubSystemsManager::init_petsc(args.size(),
+                                                                  argv.data());
                   })
       .def_static("finalize", &dolfin::common::SubSystemsManager::finalize)
       .def_static("responsible_mpi",
@@ -202,6 +200,10 @@ void mpi(py::module& m)
                   })
       .def_static("sum",
                   [](const MPICommWrapper comm, double value) {
+                    return dolfin::MPI::sum(comm.get(), value);
+                  })
+      .def_static("sum",
+                  [](const MPICommWrapper comm, std::complex<double> value) {
                     return dolfin::MPI::sum(comm.get(), value);
                   })
       // templated for dolfin::Table

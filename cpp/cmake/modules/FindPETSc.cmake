@@ -14,6 +14,13 @@
 #  PETSC_INT_SIZE          - sizeof(PetscInt)
 #  PETSC_SCALAR_COMPLEX    - PETSc is complied with complex scalar type
 #
+# Variables used by this module, they can change the default behaviour and
+# need to be set before calling find_package:
+#
+#  PETSC_DEBUG             - Set this to TRUE to enable debugging output
+#                            of FindPETSc.cmake if you are having problems.
+#                            Please enable this before filing any bug reports.
+
 #=============================================================================
 # Copyright (C) 2010-2019 Garth N. Wells, Anders Logg and Johannes Ring
 # All rights reserved.
@@ -129,6 +136,7 @@ int main()
     set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
     set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
     set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
+    set(MPI_LINK_LIBRARIES MPI::MPI_C)
   endif()
 
   # Try to run test program (shared linking)
@@ -140,7 +148,7 @@ int main()
     CMAKE_FLAGS
     "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
     "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-    LINK_LIBRARIES PETSC::petsc
+    LINK_LIBRARIES PETSC::petsc "${MPI_LINK_LIBRARIES}"
     COMPILE_OUTPUT_VARIABLE PETSC_TEST_LIB_COMPILE_OUTPUT
     RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT)
 
@@ -157,11 +165,15 @@ int main()
 
     message(STATUS "Test PETSC_TEST_RUNS with shared library linking - Failed")
 
-    # Add MPI variables if MPI has been found
-    if (MPI_C_FOUND)
-      set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_C_INCLUDE_PATH})
-      set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_C_LIBRARIES})
-      set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_C_COMPILE_FLAGS}")
+    if (PETSC_DEBUG)
+      message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                     "PETSC_TEST_LIB_COMPILED = ${PETSC_TEST_LIB_COMPILED}")
+      message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                     "PETSC_TEST_LIB_COMPILE_OUTPUT = ${PETSC_TEST_LIB_COMPILE_OUTPUT}")
+      message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                     "PETSC_TEST_LIB_EXITCODE = ${PETSC_TEST_LIB_EXITCODE}")
+      message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                     "PETSC_TEST_LIB_OUTPUT = ${PETSC_TEST_LIB_OUTPUT}")
     endif()
 
     # Try to run test program (static linking)
@@ -173,7 +185,7 @@ int main()
       CMAKE_FLAGS
       "-DINCLUDE_DIRECTORIES:STRING=${CMAKE_REQUIRED_INCLUDES}"
       "-DLINK_LIBRARIES:STRING=${CMAKE_REQUIRED_LIBRARIES}"
-      LINK_LIBRARIES PETSC::petsc PETSC::petsc_static
+      LINK_LIBRARIES PETSC::petsc PETSC::petsc_static "${MPI_LINK_LIBRARIES}"
       COMPILE_OUTPUT_VARIABLE PETSC_TEST_LIB_COMPILE_OUTPUT
       RUN_OUTPUT_VARIABLE PETSC_TEST_LIB_OUTPUT)
 
@@ -183,6 +195,17 @@ int main()
     else()
       message(STATUS "Test PETSC_TEST_RUNS static linking - Failed")
       set(PETSC_TEST_RUNS FALSE)
+
+      if (PETSC_DEBUG)
+        message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                       "PETSC_TEST_LIB_COMPILED = ${PETSC_TEST_LIB_COMPILED}")
+        message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                       "PETSC_TEST_LIB_COMPILE_OUTPUT = ${PETSC_TEST_LIB_COMPILE_OUTPUT}")
+        message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                       "PETSC_TEST_LIB_EXITCODE = ${PETSC_TEST_LIB_EXITCODE}")
+        message(STATUS "[ ${CMAKE_CURRENT_LIST_FILE}:${CMAKE_CURRENT_LIST_LINE} ] "
+                       "PETSC_TEST_LIB_OUTPUT = ${PETSC_TEST_LIB_OUTPUT}")
+      endif()
     endif()
 
   endif()

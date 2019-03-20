@@ -1,6 +1,4 @@
 set(HEADERS
-  ArrayView.h
-  constants.h
   defines.h
   dolfin_common.h
   dolfin_doc.h

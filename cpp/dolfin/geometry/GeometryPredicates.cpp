@@ -7,8 +7,8 @@
 #include "GeometryPredicates.h"
 #include "Point.h"
 #include "predicates.h"
+#include <cfloat>
 #include <cmath>
-#include <dolfin/common/constants.h>
 #include <dolfin/log/log.h>
 
 using namespace dolfin;
@@ -156,7 +156,7 @@ bool GeometryPredicates::convex_hull_is_degenerate(
           const Point ij = points[j] - points[i];
           const Point ik = points[k] - points[i];
           if (-(std::abs((ij / ij.norm()).dot(ik / ik.norm())) - 1)
-              > DOLFIN_EPS)
+              > 2.0 * DBL_EPSILON)
           {
             found = true;
             break;

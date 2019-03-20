@@ -89,6 +89,7 @@
 // .. code-block:: cpp
 
 #include "Poisson.h"
+#include <cfloat>
 #include <dolfin.h>
 
 using namespace dolfin;
@@ -151,7 +152,7 @@ class DirichletBoundary : public mesh::SubDomain
   {
     EigenArrayXb result(x.rows());
     for (unsigned int i = 0; i != x.rows(); ++i)
-      result[i] = (x(i, 0) < DOLFIN_EPS or x(i, 0) > 1.0 - DOLFIN_EPS);
+      result[i] = (x(i, 0) < DBL_EPSILON or x(i, 0) > 1.0 - DBL_EPSILON);
     return result;
   }
 };
@@ -255,8 +256,19 @@ int main(int argc, char* argv[])
   la::PETScMatrix A = fem::create_matrix(*a);
   la::PETScVector b(*L->function_space(0)->dofmap()->index_map());
 
-  fem::SystemAssembler assembler(a, L, bc);
-  assembler.assemble(A, b);
+  MatZeroEntries(A.mat());
+  dolfin::fem::assemble_matrix(A.mat(), *a, bc);
+  MatAssemblyBegin(A.mat(), MAT_FINAL_ASSEMBLY);
+  MatAssemblyEnd(A.mat(), MAT_FINAL_ASSEMBLY);
+
+  VecSet(b.vec(), 0.0);
+  VecGhostUpdateBegin(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
+  VecGhostUpdateEnd(b.vec(), INSERT_VALUES, SCATTER_FORWARD);
+  dolfin::fem::assemble_vector(b.vec(), *L);
+  dolfin::fem::apply_lifting(b.vec(), {a}, {{bc}}, {}, 1.0);
+  VecGhostUpdateBegin(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+  VecGhostUpdateEnd(b.vec(), ADD_VALUES, SCATTER_REVERSE);
+  dolfin::fem::set_bc(b.vec(), bc, nullptr);
 
   la::PETScKrylovSolver lu(MPI_COMM_WORLD);
   la::PETScOptions::set("ksp_type", "preonly");

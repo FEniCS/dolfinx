@@ -357,9 +357,11 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
       = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
 
   // Look for edge satisfying ordering convention
+  auto connectivity = cell.mesh().topology().connectivity(1, 0);
+  assert(connectivity);
   for (std::size_t j = 0; j < 6; j++)
   {
-    const std::int32_t* ev = cell.mesh().topology().connectivity(1, 0)(e[j]);
+    const std::int32_t* ev = (*connectivity)(e[j]);
     assert(ev);
     const std::int32_t v0 = v[EV[i][0]];
     const std::int32_t v1 = v[EV[i][1]];

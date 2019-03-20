@@ -12,10 +12,9 @@ import numpy as np
 from petsc4py import PETSc
 
 import dolfin
-from dolfin import (DOLFIN_EPS, MPI, BoxMesh, CellType, DirichletBC, Function,
-                    Point, TestFunction, TrialFunction, VectorFunctionSpace,
-                    cpp)
-from dolfin.fem.assembling import assemble_system
+from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function, Point,
+                    TestFunction, TrialFunction, VectorFunctionSpace, cpp)
+from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.io import XDMFFile
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
 from ufl import Identity, as_vector, dx, grad, inner, sym, tr
@@ -56,7 +55,7 @@ def build_nullspace(V):
 # XDMFFile(MPI.comm_world, "../pulley.xdmf").read(mesh)
 
 # mesh = UnitCubeMesh(2, 2, 2)
-mesh = BoxMesh.create(
+mesh = BoxMesh(
     MPI.comm_world, [Point(0, 0, 0)._cpp_object,
                      Point(2, 1, 1)._cpp_object], [12, 12, 12],
     CellType.Type.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
@@ -70,7 +69,8 @@ mesh.geometry.coord_mapping = cmap
 
 
 def boundary(x, on_boundary):
-    return np.logical_or(x[:, 0] < DOLFIN_EPS, x[:, 0] > 1.0 - DOLFIN_EPS)
+    return np.logical_or(x[:, 0] < 10.0 * np.finfo(float).eps,
+                         x[:, 0] > 1.0 - 10.0 * np.finfo(float).eps)
 
 
 # Rotation rate and mass density
@@ -106,12 +106,20 @@ a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
 u0 = Function(V)
+with u0.vector().localForm() as bc_local:
+    bc_local.set(0.0)
+
 # Set up boundary condition on inner surface
 bc = DirichletBC(V, u0, boundary)
 
 # Assemble system, applying boundary conditions and preserving symmetry)
-A, b = assemble_system(a, L, bc)
-assert A.block_size == 3
+A = assemble_matrix(a, [bc])
+A.assemble()
+
+b = assemble_vector(L)
+apply_lifting(b, [a], [[bc]])
+b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+set_bc(b, [bc])
 
 # Create solution function
 u = Function(V)

@@ -5,246 +5,102 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FormIntegrals.h"
+#include <dolfin/common/types.h>
+
+#include <cstdlib>
 #include <ufc.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
+FormIntegrals::FormIntegrals()
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
 {
-  // Create cell integrals
-  ufc_cell_integral* _default_cell_integral
-      = ufc_form.create_default_cell_integral();
+  // This function makes many unsupported assumptiosn with regard to the
+  // UFC interface. Rather than overcomplicate the code here, it needs
+  // to be fixed inm UFC/FFC. See
+  // https://github.com/FEniCS/ffcx/issues/103
+
+  if (ufc_form.num_cell_integrals > 1)
+  {
+    throw std::runtime_error(
+        "Cell integral subdomain not supported. Under development.");
+  }
+  if (ufc_form.num_exterior_facet_integrals > 1)
+  {
+    throw std::runtime_error(
+        "Exterior facet integral subdomain not supported. Under development.");
+  }
+
+  // -- Create cell integrals
+  std::unique_ptr<ufc_cell_integral, decltype(&std::free)>
+      _default_cell_integral{ufc_form.create_cell_integral(-1), &std::free};
+
   if (_default_cell_integral)
-  {
-    _cell_integrals.push_back(
-        std::shared_ptr<ufc_cell_integral>(_default_cell_integral));
-  }
+    _tabulate_tensor_cell.push_back(_default_cell_integral->tabulate_tensor);
 
-  const std::size_t num_cell_domains = ufc_form.max_cell_subdomain_id;
-  if (num_cell_domains > 0)
-  {
-    _cell_integrals.resize(num_cell_domains + 1);
+  // -- Create exterior facet integrals
+  std::unique_ptr<ufc_exterior_facet_integral, decltype(&std::free)>
+      _default_exterior_facet_integral{
+          ufc_form.create_exterior_facet_integral(-1), &std::free};
 
-    for (std::size_t i = 0; i < num_cell_domains; ++i)
-    {
-      _cell_integrals[i + 1] = std::shared_ptr<ufc_cell_integral>(
-          ufc_form.create_cell_integral(i));
-    }
-  }
-
-  _enabled_coefficients.resize(_cell_integrals.size(),
-                               ufc_form.num_coefficients);
-
-  // Experimental function pointers for tabulate_tensor cell integral
-  for (unsigned int i = 0; i != _cell_integrals.size(); ++i)
-  {
-    const auto ci = _cell_integrals[i];
-    _cell_tabulate_tensor.push_back(ci->tabulate_tensor);
-    std::copy(ci->enabled_coefficients,
-              ci->enabled_coefficients + ufc_form.num_coefficients,
-              _enabled_coefficients.row(i).data());
-  }
-
-  // Exterior facet integrals
-  ufc_exterior_facet_integral* _default_exterior_facet_integral
-      = ufc_form.create_default_exterior_facet_integral();
   if (_default_exterior_facet_integral)
   {
-    _exterior_facet_integrals.push_back(
-        std::shared_ptr<ufc_exterior_facet_integral>(
-            _default_exterior_facet_integral));
+    // Extract tabulate tensor function
+    _tabulate_tensor_exterior_facet.push_back(
+        _default_exterior_facet_integral->tabulate_tensor);
   }
-
-  const std::size_t num_exterior_facet_domains
-      = ufc_form.max_exterior_facet_subdomain_id;
-
-  if (num_exterior_facet_domains > 0)
-  {
-    _exterior_facet_integrals.resize(num_exterior_facet_domains + 1);
-
-    for (std::size_t i = 0; i < num_exterior_facet_domains; ++i)
-    {
-      _exterior_facet_integrals[i + 1]
-          = std::shared_ptr<ufc_exterior_facet_integral>(
-              ufc_form.create_exterior_facet_integral(i));
-    }
-  }
-
-  // Interior facet integrals
-  ufc_interior_facet_integral* _default_interior_facet_integral
-      = ufc_form.create_default_interior_facet_integral();
-  if (_default_interior_facet_integral)
-  {
-    _interior_facet_integrals.push_back(
-        std::shared_ptr<ufc_interior_facet_integral>(
-            _default_interior_facet_integral));
-  }
-
-  const std::size_t num_interior_facet_domains
-      = ufc_form.max_interior_facet_subdomain_id;
-
-  if (num_interior_facet_domains > 0)
-  {
-    _interior_facet_integrals.resize(num_interior_facet_domains + 1);
-    for (std::size_t i = 0; i < num_interior_facet_domains; ++i)
-    {
-      _interior_facet_integrals[i + 1]
-          = std::shared_ptr<ufc_interior_facet_integral>(
-              ufc_form.create_interior_facet_integral(i));
-    }
-  }
-
-  // Vertex integrals
-  ufc_vertex_integral* _default_vertex_integral
-      = ufc_form.create_default_vertex_integral();
-  if (_default_vertex_integral)
-  {
-    _vertex_integrals.push_back(
-        std::shared_ptr<ufc_vertex_integral>(_default_vertex_integral));
-  }
-
-  const std::size_t num_vertex_domains = ufc_form.max_vertex_subdomain_id;
-
-  if (num_vertex_domains > 0)
-  {
-    _vertex_integrals.resize(num_vertex_domains + 1);
-    for (std::size_t i = 0; i < num_vertex_domains; ++i)
-    {
-      _vertex_integrals[i + 1] = std::shared_ptr<ufc_vertex_integral>(
-          ufc_form.create_vertex_integral(i));
-    }
-  }
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_cell_integral> FormIntegrals::cell_integral() const
-{
-  if (_cell_integrals.empty())
-    return std::shared_ptr<const ufc_cell_integral>();
-  else
-    return _cell_integrals[0];
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_cell_integral>
-FormIntegrals::cell_integral(unsigned int i) const
-{
-  if ((i + 1) >= _cell_integrals.size())
-    return std::shared_ptr<const ufc_cell_integral>();
-  else
-    return _cell_integrals[i + 1];
 }
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>&
-FormIntegrals::cell_tabulate_tensor(int i) const
+FormIntegrals::get_tabulate_tensor_fn_cell(int i) const
 {
-  return _cell_tabulate_tensor[i];
+  return _tabulate_tensor_cell[i];
 }
 //-----------------------------------------------------------------------------
-const bool* FormIntegrals::cell_enabled_coefficients(int i) const
+const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
+                         int)>&
+FormIntegrals::get_tabulate_tensor_fn_exterior_facet(int i) const
 {
-  return _enabled_coefficients.row(i).data();
+  return _tabulate_tensor_exterior_facet[i];
 }
 //-----------------------------------------------------------------------------
-void FormIntegrals::set_cell_tabulate_tensor(
+void FormIntegrals::set_tabulate_tensor_cell(
     int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
 {
-  _cell_tabulate_tensor.resize(i + 1);
-  _cell_tabulate_tensor[i] = fn;
-
-  // Enable all coefficients for this integral
-  _enabled_coefficients.conservativeResize(i + 1, Eigen::NoChange);
-  _enabled_coefficients.row(i) = true;
+  _tabulate_tensor_cell.resize(i + 1);
+  _tabulate_tensor_cell[i] = fn;
 }
 //-----------------------------------------------------------------------------
-int FormIntegrals::count(FormIntegrals::Type t) const
+void FormIntegrals::set_tabulate_tensor_exterior_facet(
+    int i,
+    void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int))
 {
-  switch (t)
+  _tabulate_tensor_exterior_facet.resize(i + 1);
+  _tabulate_tensor_exterior_facet[i] = fn;
+}
+//-----------------------------------------------------------------------------
+int FormIntegrals::num_integrals(FormIntegrals::Type type) const
+{
+  switch (type)
   {
   case Type::cell:
-    return _cell_tabulate_tensor.size();
-  case Type::interior_facet:
-    return _interior_facet_integrals.size();
+    return _tabulate_tensor_cell.size();
   case Type::exterior_facet:
-    return _exterior_facet_integrals.size();
+    return _tabulate_tensor_exterior_facet.size();
+  case Type::interior_facet:
+    return 0;
   case Type::vertex:
-    return _vertex_integrals.size();
+    return 0;
+  default:
+    throw std::runtime_error("FormIntegral type not supported.");
   }
 
   return 0;
-}
-//-----------------------------------------------------------------------------
-int FormIntegrals::num_cell_integrals() const
-{
-  return _cell_tabulate_tensor.size();
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_exterior_facet_integral>
-FormIntegrals::exterior_facet_integral() const
-{
-  if (_exterior_facet_integrals.empty())
-    return std::shared_ptr<const ufc_exterior_facet_integral>();
-  else
-    return _exterior_facet_integrals[0];
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_exterior_facet_integral>
-FormIntegrals::exterior_facet_integral(unsigned int i) const
-{
-  if (i + 1 >= _exterior_facet_integrals.size())
-    return std::shared_ptr<const ufc_exterior_facet_integral>();
-  else
-    return _exterior_facet_integrals[i + 1];
-}
-//-----------------------------------------------------------------------------
-int FormIntegrals::num_exterior_facet_integrals() const
-{
-  return _exterior_facet_integrals.size();
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_interior_facet_integral>
-FormIntegrals::interior_facet_integral() const
-{
-  if (_interior_facet_integrals.empty())
-    return std::shared_ptr<const ufc_interior_facet_integral>();
-  else
-    return _interior_facet_integrals[0];
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_interior_facet_integral>
-FormIntegrals::interior_facet_integral(unsigned int i) const
-{
-  if (i + 1 >= _interior_facet_integrals.size())
-    return std::shared_ptr<const ufc_interior_facet_integral>();
-  else
-    return _interior_facet_integrals[i + 1];
-}
-//-----------------------------------------------------------------------------
-int FormIntegrals::num_interior_facet_integrals() const
-{
-  return _interior_facet_integrals.size();
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_vertex_integral>
-FormIntegrals::vertex_integral() const
-{
-  if (_vertex_integrals.empty())
-    return std::shared_ptr<const ufc_vertex_integral>();
-  else
-    return _vertex_integrals[0];
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const ufc_vertex_integral>
-FormIntegrals::vertex_integral(unsigned int i) const
-{
-  if (i + 1 >= _vertex_integrals.size())
-    return std::shared_ptr<const ufc_vertex_integral>();
-  else
-    return _vertex_integrals[i + 1];
-}
-//-----------------------------------------------------------------------------
-int FormIntegrals::num_vertex_integrals() const
-{
-  return _vertex_integrals.size();
 }
 //-----------------------------------------------------------------------------

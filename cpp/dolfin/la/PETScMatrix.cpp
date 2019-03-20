@@ -22,21 +22,15 @@ using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
 PETScMatrix::PETScMatrix(MPI_Comm comm, const SparsityPattern& sparsity_pattern)
+    : PETScOperator(create_petsc_matrix(comm, sparsity_pattern), false)
 {
-  _matA = create_matrix(comm, sparsity_pattern);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(Mat A) : PETScOperator(A)
+PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
+    : PETScOperator(A, inc_ref_count)
 {
   // Reference count to A is incremented in base class
-}
-//-----------------------------------------------------------------------------
-PETScMatrix::PETScMatrix(const PETScMatrix& A) : PETScOperator()
-{
-  assert(A.mat());
-  PetscErrorCode ierr = MatDuplicate(A.mat(), MAT_COPY_VALUES, &_matA);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatDuplicate");
 }
 //-----------------------------------------------------------------------------
 PETScMatrix::~PETScMatrix()
@@ -113,14 +107,6 @@ void PETScMatrix::apply(AssemblyType type)
     petsc_error(ierr, __FILE__, "MatAssemblyEnd");
 }
 //-----------------------------------------------------------------------------
-void PETScMatrix::zero()
-{
-  assert(_matA);
-  PetscErrorCode ierr = MatZeroEntries(_matA);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatZeroEntries");
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::set_options_prefix(std::string options_prefix)
 {
   assert(_matA);
@@ -169,40 +155,5 @@ void PETScMatrix::set_near_nullspace(const la::VectorSpaceBasis& nullspace)
 
   // Decrease reference count for nullspace
   MatNullSpaceDestroy(&petsc_ns);
-}
-//-----------------------------------------------------------------------------
-std::string PETScMatrix::str(bool verbose) const
-{
-  assert(_matA);
-  std::stringstream s;
-  if (verbose)
-  {
-    log::warning(
-        "Verbose output for PETScMatrix not implemented, calling PETSc "
-        "MatView directly.");
-
-    // FIXME: Maybe this could be an option?
-    assert(_matA);
-    PetscErrorCode ierr;
-    if (MPI::size(mpi_comm()) > 1)
-    {
-      ierr = MatView(_matA, PETSC_VIEWER_STDOUT_WORLD);
-      if (ierr != 0)
-        petsc_error(ierr, __FILE__, "MatView");
-    }
-    else
-    {
-      ierr = MatView(_matA, PETSC_VIEWER_STDOUT_SELF);
-      if (ierr != 0)
-        petsc_error(ierr, __FILE__, "MatView");
-    }
-  }
-  else
-  {
-    const std::array<std::int64_t, 2> size = this->size();
-    s << "<PETScMatrix of size " << size[0] << " x " << size[1] << ">";
-  }
-
-  return s.str();
 }
 //-----------------------------------------------------------------------------

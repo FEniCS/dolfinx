@@ -8,10 +8,10 @@
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
+#include <cfloat>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -154,12 +154,12 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
     // If not found, use the closest cell
     if (id == std::numeric_limits<unsigned int>::max())
     {
-      // Check if the closest cell is within DOLFIN_EPS. This we can
+      // Check if the closest cell is within 2*DBL_EPSILON. This we can
       // allow without _allow_extrapolation
       std::pair<unsigned int, double> close
           = bb_tree.compute_closest_entity(point, mesh);
 
-      if (close.second < DOLFIN_EPS)
+      if (close.second < 2.0 * DBL_EPSILON)
         id = close.first;
       else
       {
@@ -206,8 +206,7 @@ void Function::eval(
   EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
   cell.get_coordinate_dofs(coordinate_dofs);
 
-  // Restrict function to cell
-  restrict(coefficients.data(), element, cell, coordinate_dofs);
+  restrict(coefficients.data(), cell, coordinate_dofs);
 
   // Get coordinate mapping
   std::shared_ptr<const fem::CoordinateMapping> cmap
@@ -299,37 +298,22 @@ std::vector<std::size_t> Function::value_shape() const
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(
-    PetscScalar* w, const fem::FiniteElement& element,
-    const mesh::Cell& dolfin_cell,
+    PetscScalar* w, const mesh::Cell& dolfin_cell,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   assert(w);
   assert(_function_space);
   assert(_function_space->dofmap());
 
-  // Check if we are restricting to an element of this function space
+  // Get dofmap for cell
+  const fem::GenericDofMap& dofmap = *_function_space->dofmap();
+  auto dofs = dofmap.cell_dofs(dolfin_cell.index());
+
+  // Pick values from vector(s)
   la::VecReadWrapper v(_vector.vec());
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
-  if (_function_space->has_element(element)
-      && _function_space->has_cell(dolfin_cell))
-  {
-    // Get dofmap for cell
-    const fem::GenericDofMap& dofmap = *_function_space->dofmap();
-    auto dofs = dofmap.cell_dofs(dolfin_cell.index());
-
-    // Note: We should have dofmap.max_element_dofs() == dofs.size()
-    // here. Pick values from vector(s)
-    for (Eigen::Index i = 0; i < dofs.size(); ++i)
-      w[i] = _v[dofs[i]];
-  }
-  else
-    dolfin_not_implemented();
-
-  //  {
-  //    // Restrict as UFC function (by calling eval)
-  //    element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
-  //                          ufc_cell);
-  //  }
+  for (Eigen::Index i = 0; i < dofs.size(); ++i)
+    w[i] = _v[dofs[i]];
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -410,12 +394,10 @@ la::PETScVector Function::_create_vector(const function::FunctionSpace& V)
                        "collapsing the function space");
   }
 
-  // Get index map
-  std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
-  assert(index_map);
+  assert(dofmap.index_map());
+  la::PETScVector v = la::PETScVector(*dofmap.index_map());
+  VecSet(v.vec(), 0.0);
 
-  la::PETScVector v = la::PETScVector(*index_map);
-  v.set(0.0);
   return v;
 }
 //-----------------------------------------------------------------------------
