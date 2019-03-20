@@ -16,6 +16,7 @@
 #include <map>
 #include <memory>
 #include <unordered_set>
+#include <spdlog/spdlog.h>
 
 namespace dolfin
 {
@@ -369,7 +370,7 @@ std::string MeshFunction<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    log::warning(
+    spdlog::warn(
         "Verbose output of MeshFunctions must be implemented manually.");
   }
   else

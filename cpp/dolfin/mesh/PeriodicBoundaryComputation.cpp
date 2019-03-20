@@ -11,9 +11,9 @@
 #include "MeshIterator.h"
 #include "SubDomain.h"
 #include <dolfin/common/types.h>
-#include <dolfin/log/log.h>
 #include <limits>
 #include <map>
+#include <spdlog/spdlog.h>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -54,7 +54,7 @@ struct lt_coordinate
   // Tolerance
   const double TOL;
 };
-}
+} // namespace
 
 //-----------------------------------------------------------------------------
 std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
@@ -148,10 +148,10 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           {
             if (std::isnan(y[i]))
             {
-              log::dolfin_error("PeriodicBoundaryComputation.cpp",
-                                "periodic boundary mapping",
-                                "Need to set coordinate %d in sub_domain.map",
-                                i);
+              spdlog::error("PeriodicBoundaryComputation.cpp",
+                            "periodic boundary mapping",
+                            "Need to set coordinate %d in sub_domain.map", i);
+              throw std::runtime_error("Not set");
             }
           }
 
@@ -303,9 +303,9 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
                      std::vector<std::pair<std::uint32_t, std::uint32_t>>>
       shared_entities_map
       = DistributedMeshTools::compute_shared_entities(*mesh, dim);
-  std::unordered_map<std::uint32_t,
-                     std::vector<std::pair<std::uint32_t, std::uint32_t>>>::
-      const_iterator e;
+  std::unordered_map<
+      std::uint32_t,
+      std::vector<std::pair<std::uint32_t, std::uint32_t>>>::const_iterator e;
   std::vector<std::vector<std::pair<std::uint32_t, std::uint32_t>>>
       shared_entities(mesh->num_entities(dim));
   for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
