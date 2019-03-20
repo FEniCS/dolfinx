@@ -12,6 +12,7 @@
 #include <memory>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <spdlog/spdlog.h>
 #include <string>
 
 namespace py = pybind11;
@@ -22,14 +23,13 @@ void log(py::module& m)
 {
 
   // dolfin::LogLevel enums
-  py::enum_<dolfin::LogLevel>(m, "LogLevel", py::arithmetic())
-      .value("DEBUG", dolfin::LogLevel::DBG)
-      .value("TRACE", dolfin::LogLevel::TRACE)
-      .value("PROGRESS", dolfin::LogLevel::PROGRESS)
-      .value("INFO", dolfin::LogLevel::INFO)
-      .value("WARNING", dolfin::LogLevel::WARNING)
-      .value("ERROR", dolfin::LogLevel::ERROR)
-      .value("CRITICAL", dolfin::LogLevel::CRITICAL);
+  py::enum_<spdlog::level::level_enum>(m, "LogLevel", py::arithmetic())
+      .value("TRACE", spdlog::level::trace)
+      .value("DEBUG", spdlog::level::debug)
+      .value("INFO", spdlog::level::info)
+      .value("WARNING", spdlog::level::warn)
+      .value("ERROR", spdlog::level::err)
+      .value("CRITICAL", spdlog::level::critical);
 
   // dolfin::Table
   py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>,
@@ -39,18 +39,19 @@ void log(py::module& m)
 
   // dolfin/log free functions
   m.def("info",
-        [](const dolfin::common::Variable& v) { dolfin::log::info(v); });
+        [](const dolfin::common::Variable& v) { spdlog::info(v.str(false)); });
   m.def("info", [](const dolfin::common::Variable& v, bool verbose) {
-    dolfin::log::info(v, verbose);
+    spdlog::info(v.str(verbose));
   });
-  m.def("info", [](std::string s) { dolfin::log::info(s); });
-  m.def("info", [](const dolfin::mesh::Mesh& mesh,
-                   bool verbose) { dolfin::log::info(mesh, verbose); },
+  m.def("info", [](std::string s) { spdlog::info(s); });
+  m.def("info",
+        [](const dolfin::mesh::Mesh& mesh, bool verbose) {
+          spdlog::info(mesh.str(verbose));
+        },
         py::arg("mesh"), py::arg("verbose") = false);
-  m.def("set_log_level", &dolfin::log::set_log_level);
-  m.def("get_log_level", &dolfin::log::get_log_level);
-  m.def("log", [](dolfin::LogLevel level, std::string s) {
-    dolfin::log::log(level, s);
-  });
+  m.def("set_log_level", &spdlog::set_level);
+  m.def("get_log_level", []() { return spdlog::default_logger()->level(); });
+  //  m.def("log", [](spdlog::level level, std::string s) { spdlog(level, s);
+  //  });
 }
-}
+} // namespace dolfin_wrappers

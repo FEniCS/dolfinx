@@ -11,8 +11,8 @@
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/log/log.h>
 #include <slepcversion.h>
+#include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
