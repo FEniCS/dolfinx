@@ -90,7 +90,4 @@ PYBIND11_MODULE(cpp, m)
   // Create refinement submodule
   py::module refinement = m.def_submodule("refinement", "Refinement module");
   dolfin_wrappers::refinement(refinement);
-
-  // FIXME: these are just for the transition
-  m.def("warning", [](std::string message) { dolfin::log::warning(message); });
 }
