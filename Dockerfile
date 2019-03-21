@@ -38,6 +38,7 @@ LABEL description="Base image for real and complex FEniCS test environments"
 
 ARG GMSH_VERSION
 ARG PYBIND11_VERSION
+ARG SPDLOG_VERSION
 
 WORKDIR /tmp
 
@@ -108,7 +109,7 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     make install && \
     rm -rf /tmp/*
 
-# Install syslog
+# Install spdlog
 RUN wget -nc --quiet https://github.com/gabime/spdlog/archive/v${SPDLOG_VERSION}.tar.gz && \
     tar -xf v${SPDLOG_VERSION}.tar.gz && \
     cd spdlog-${SPDLOG_VERSION} && \
