@@ -11,13 +11,12 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/log/LogStream.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <memory>
+#include <spdlog/spdlog.h>
 #include <string>
 #include <ufc.h>
 
@@ -44,9 +43,9 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
     if (std::string(ufc_element->signature)
         != function_spaces[i]->element()->signature())
     {
-      log::log(ERROR, "Expected element: %s", ufc_element->signature);
-      log::log(ERROR, "Input element:    %s",
-               function_spaces[i]->element()->signature().c_str());
+      spdlog::error("Expected element: {}", ufc_element->signature);
+      spdlog::error("Input element: {}",
+                    function_spaces[i]->element()->signature());
       throw std::runtime_error(
           "Cannot create form. Wrong type of function space for argument");
     }

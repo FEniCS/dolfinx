@@ -113,7 +113,7 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
         cell = Cell(mesh, 0)
         cell.volume()
 
-    assert "are not coplanar" in str(error.value)
+    assert "Not coplanar" in str(error.value)
 
 
 # Test when |p0-p3| is ~ 1 but |p1-p2| is small
@@ -136,4 +136,4 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
         cell = Cell(mesh, 0)
         cell.volume()
 
-    assert "are not coplanar" in str(error.value)
+    assert "Not coplanar" in str(error.value)

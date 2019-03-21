@@ -7,8 +7,8 @@
 #include "PETScOperator.h"
 #include "PETScVector.h"
 #include "utils.h"
-#include <dolfin/log/log.h>
 #include <petscvec.h>
+#include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
@@ -74,9 +74,10 @@ PETScVector PETScOperator::create_vector(std::size_t dim) const
   }
   else
   {
-    log::dolfin_error("PETScOperator.cpp",
-                      "initialize PETSc vector to match PETSc matrix",
-                      "Dimension must be 0 or 1, not %d", dim);
+    spdlog::error("PETScOperator.cpp",
+                  "initialize PETSc vector to match PETSc matrix",
+                  "Dimension must be 0 or 1, not %d", dim);
+    throw std::runtime_error("Invalid dimension");
   }
 
   return PETScVector(x, false);

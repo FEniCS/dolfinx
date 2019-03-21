@@ -7,6 +7,7 @@
 #include "Face.h"
 #include "Cell.h"
 #include <dolfin/geometry/Point.h>
+#include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -62,7 +63,8 @@ geometry::Point Face::normal() const
   // in R^3
   if (tD == 2 && gD == 3)
   {
-    dolfin_not_implemented();
+    spdlog::error("Not implemented");
+    throw std::runtime_error("");
   }
 
   // Initialize needed connectivity

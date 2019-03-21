@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Timer.h"
-#include <dolfin/log/LogManager.h>
+#include "TimeLogManager.h"
 
 using namespace dolfin;
 using namespace dolfin::common;
@@ -44,8 +44,9 @@ double Timer::stop()
 {
   _timer.stop();
   const auto elapsed = this->elapsed();
+
   if (_task.size() > 0)
-    log::LogManager::logger().register_timing(_task, elapsed);
+    TimeLogManager::logger().register_timing(_task, elapsed);
   return std::get<0>(elapsed);
 }
 //-----------------------------------------------------------------------------

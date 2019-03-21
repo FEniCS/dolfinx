@@ -10,7 +10,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
@@ -145,7 +144,7 @@ dolfin::graph::GraphBuilder::compute_dual_graph(
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type)
 {
-  log::log(PROGRESS, "Build mesh dual graph");
+  spdlog::info("Build mesh dual graph");
 
   std::vector<std::vector<std::size_t>> local_graph;
   std::int32_t num_ghost_nodes;
@@ -177,7 +176,7 @@ dolfin::graph::GraphBuilder::compute_local_dual_graph(
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type)
 {
-  log::log(PROGRESS, "Build local part of mesh dual graph");
+  spdlog::info("Build local part of mesh dual graph");
 
   const std::int8_t tdim = cell_type.dim();
   const std::int8_t num_entity_vertices = cell_type.num_vertices(tdim - 1);
@@ -332,7 +331,7 @@ dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
     const mesh::CellType& cell_type, const FacetCellMap& facet_cell_map,
     std::vector<std::vector<std::size_t>>& local_graph)
 {
-  log::log(PROGRESS, "Build nonlocal part of mesh dual graph");
+  spdlog::info("Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
 
   // Get number of MPI processes, and return if mesh is not distributed

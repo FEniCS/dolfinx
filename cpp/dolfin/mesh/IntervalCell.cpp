@@ -9,7 +9,8 @@
 #include "MeshEntity.h"
 #include "MeshGeometry.h"
 #include <algorithm>
-#include <dolfin/log/log.h>
+#include <spdlog/spdlog.h>
+#include <stdexcept>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -26,9 +27,11 @@ std::size_t IntervalCell::num_entities(std::size_t dim) const
   case 1:
     return 1; // cells
   default:
-    log::dolfin_error("IntervalCell.cpp",
-                      "access number of entities of interval cell",
-                      "Illegal topological dimension (%d)", dim);
+    spdlog::error("IntervalCell.cpp: "
+                  "access number of entities of interval cell. "
+                  "Illegal topological dimension ({}).",
+                  dim);
+    throw std::invalid_argument("Illegal dimension");
   }
 
   return 0;
@@ -43,10 +46,10 @@ std::size_t IntervalCell::num_vertices(std::size_t dim) const
   case 1:
     return 2; // cells
   default:
-    log::dolfin_error(
-        "IntervalCell.cpp",
-        "access number of vertices for subsimplex of interval cell",
-        "Illegal topological dimension (%d)", dim);
+    spdlog::error("IntervalCell.cpp",
+                  "access number of vertices for subsimplex of interval cell",
+                  "Illegal topological dimension (%d)", dim);
+    throw std::invalid_argument("Illegal dimension");
   }
 
   return 0;
@@ -70,9 +73,10 @@ double IntervalCell::volume(const MeshEntity& interval) const
   // Check that we get an interval
   if (interval.dim() != 1)
   {
-    log::dolfin_error("IntervalCell.cpp",
-                      "compute volume (length) of interval cell",
-                      "Illegal mesh entity, not an interval");
+    spdlog::error("IntervalCell.cpp",
+                  "compute volume (length) of interval cell",
+                  "Illegal mesh entity, not an interval");
+    throw std::invalid_argument("Illegal dimension");
   }
 
   // Get mesh geometry
@@ -91,8 +95,9 @@ double IntervalCell::circumradius(const MeshEntity& interval) const
   // Check that we get an interval
   if (interval.dim() != 1)
   {
-    log::dolfin_error("IntervalCell.cpp", "compute diameter of interval cell",
-                      "Illegal mesh entity, not an interval");
+    spdlog::error("IntervalCell.cpp", "compute diameter of interval cell",
+                  "Illegal mesh entity, not an interval");
+    throw std::invalid_argument("Illegal dimension");
   }
 
   // Circumradius is half the volume for an interval (line segment)
@@ -170,8 +175,11 @@ geometry::Point IntervalCell::cell_normal(const Cell& cell) const
   // Cell_normal only defined for gdim = 1, 2 for now
   const std::size_t gdim = geometry.dim();
   if (gdim > 2)
-    log::dolfin_error("IntervalCell.cpp", "compute cell normal",
-                      "Illegal geometric dimension (%d)", gdim);
+  {
+    spdlog::error("IntervalCell.cpp", "compute cell normal",
+                  "Illegal geometric dimension (%d)", gdim);
+    throw std::invalid_argument("Illegal dimension");
+  }
 
   // Get the two vertices as points
   const std::int32_t* vertices = cell.entities(0);

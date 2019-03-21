@@ -8,6 +8,7 @@
 #include <iostream>
 #include <mpi.h>
 #include <petsc.h>
+#include <spdlog/spdlog.h>
 
 #ifdef HAS_SLEPC
 #include <slepc.h>
@@ -16,7 +17,6 @@
 #include <boost/algorithm/string/trim.hpp>
 
 #include "SubSystemsManager.h"
-#include <dolfin/log/log.h>
 
 using namespace dolfin::common;
 
@@ -94,7 +94,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   // Print message if PETSc is initialised with command line arguments
   if (argc > 1)
-    log::log(TRACE, "Initializing PETSc with given command-line arguments.");
+    spdlog::info("Initializing PETSc with given command-line arguments.");
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
@@ -178,9 +178,9 @@ void SubSystemsManager::finalize_petsc()
 //-----------------------------------------------------------------------------
 bool SubSystemsManager::mpi_initialized()
 {
-// This function not affected if MPI_Finalize has been called. It
-// returns true if MPI_Init has been called at any point, even if
-// MPI_Finalize has been called.
+  // This function not affected if MPI_Finalize has been called. It
+  // returns true if MPI_Init has been called at any point, even if
+  // MPI_Finalize has been called.
 
   int mpi_initialized;
   MPI_Initialized(&mpi_initialized);
@@ -211,14 +211,11 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorMessage(n, &desc, nullptr);
 
   // Log detailed error info
-  log::log(TRACE,
-           "PetscDolfinErrorHandler: line '%d', function '%s', file '%s',\n"
-           "                       : error code '%d' (%s), message follows:",
-           line, fun, file, n, desc);
-  // NOTE: don't put _mess as variadic argument; it might get trimmed
-  log::log(TRACE, std::string(78, '-'));
-  log::log(TRACE, _mess);
-  log::log(TRACE, std::string(78, '-'));
+  spdlog::error(
+      "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
+      "                       : error code '{}' ({}), message follows:",
+      line, fun, file, n, desc);
+  spdlog::error(_mess);
 
   // Continue with error handling
   PetscFunctionReturn(n);
