@@ -16,7 +16,6 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
@@ -25,6 +24,7 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <map>
+#include <spdlog/spdlog.h>
 #include <utility>
 
 using namespace dolfin;
@@ -582,9 +582,8 @@ DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
   const FiniteElement& element = *V.element();
 
   // Initialize facets, needed for geometric search
-  log::log(TRACE,
-           "Computing facets, needed for geometric application of boundary "
-           "conditions.");
+  spdlog::info("Computing facets, needed for geometric application of boundary "
+               "conditions.");
   mesh.init(mesh.topology().dim() - 1);
 
   // Speed up the computations by only visiting (most) dofs once

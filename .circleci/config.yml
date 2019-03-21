@@ -6,6 +6,7 @@ install-python-components: &install-python-components
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
             pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
             rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
+            git clone https://github.com/gabime/spdlog.git && cd spdlog && cmake . && make install
 
 flake8-python-code: &flake8-python-code
   name: Flake8 checks on Python code

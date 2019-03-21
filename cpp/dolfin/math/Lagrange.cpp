@@ -8,7 +8,7 @@
 #include <cassert>
 #include <cfloat>
 #include <cmath>
-#include <dolfin/log/log.h>
+#include <spdlog/spdlog.h>
 #include <sstream>
 
 using namespace dolfin;
@@ -138,8 +138,9 @@ void dolfin::math::Lagrange::init()
       {
         if (std::abs(points[i] - points[j]) < DBL_EPSILON)
         {
-          log::dolfin_error("Lagrange.cpp", "create Lagrange polynomial",
-                            "Nodal points are not distinct");
+          spdlog::error("Lagrange.cpp", "create Lagrange polynomial",
+                        "Nodal points are not distinct");
+          throw std::runtime_error("Nodal points are not distinct");
         }
         product *= points[i] - points[j];
       }

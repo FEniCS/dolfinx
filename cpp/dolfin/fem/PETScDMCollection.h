@@ -8,7 +8,6 @@
 
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/log/log.h>
 #include <memory>
 #include <petscdm.h>
 #include <petscvec.h>

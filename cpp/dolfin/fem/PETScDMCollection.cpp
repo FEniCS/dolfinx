@@ -15,11 +15,11 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscdmshell.h>
 #include <petscmat.h>
+#include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -259,10 +259,10 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
-      log::dolfin_error("create_transfer_matrix",
-                        "Creating interpolation matrix",
-                        "Ranks of function spaces do not match: %d, %d.",
-                        el->value_rank(), elf->value_rank());
+      spdlog::error("create_transfer_matrix", "Creating interpolation matrix",
+                    "Ranks of function spaces do not match: %d, %d.",
+                    el->value_rank(), elf->value_rank());
+      throw std::runtime_error("Non matching function space");
     }
 
     // Check that function dims match
@@ -270,11 +270,11 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
-        log::dolfin_error(
-            "create_transfer_matrix", "Creating interpolation matrix",
-            "Dimension %d of function space (%d) does not match "
-            "dimension %d of function space (%d)",
-            i, el->value_dimension(i), i, elf->value_dimension(i));
+        spdlog::error("create_transfer_matrix", "Creating interpolation matrix",
+                      "Dimension %d of function space (%d) does not match "
+                      "dimension %d of function space (%d)",
+                      i, el->value_dimension(i), i, elf->value_dimension(i));
+        throw std::runtime_error("Non matching function dimension");
       }
     }
   }
