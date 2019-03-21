@@ -115,7 +115,7 @@ RUN wget -nc --quiet https://github.com/gabime/spdlog/archive/v${SPDLOG_VERSION}
     cd spdlog-${SPDLOG_VERSION} && \
     mkdir build && \
     cd build && \
-    cmake ../ && \
+    cmake -DSPDLOG_BUILD_BENCH=OFF ../ && \
     make install && \
     rm -rf /tmp/*
 
