@@ -30,14 +30,14 @@ FiniteElement::create_sub_element(std::size_t i) const
 {
   assert(_ufc_element);
   std::shared_ptr<ufc_finite_element> ufc_element(
-      _ufc_element->create_sub_element(i));
+      _ufc_element->create_sub_element(i), free);
   return std::make_unique<FiniteElement>(ufc_element);
 }
 //-----------------------------------------------------------------------------
 std::unique_ptr<FiniteElement> FiniteElement::create() const
 {
   assert(_ufc_element);
-  std::shared_ptr<ufc_finite_element> ufc_element(_ufc_element->create());
+  std::shared_ptr<ufc_finite_element> ufc_element(_ufc_element->create(), free);
   return std::make_unique<FiniteElement>(ufc_element);
 }
 //-----------------------------------------------------------------------------

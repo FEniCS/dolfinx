@@ -37,8 +37,8 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
   for (std::size_t i = 0; i < function_spaces.size(); ++i)
   {
     assert(function_spaces[i]->element());
-    std::unique_ptr<ufc_finite_element> ufc_element(
-        ufc_form->create_finite_element(i));
+    std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
+        ufc_form->create_finite_element(i), free);
 
     if (std::string(ufc_element->signature)
         != function_spaces[i]->element()->signature())

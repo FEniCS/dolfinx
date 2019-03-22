@@ -50,10 +50,12 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 
   // Build sub-dofmap
   assert(parent_dofmap._ufc_dofmap);
-  std::tie(_ufc_dofmap, _ufc_offset, _global_dimension, _dofmap)
+  ufc_dofmap* _ufc_dofmap_ptr = nullptr;
+  std::tie(_ufc_dofmap_ptr, _ufc_offset, _global_dimension, _dofmap)
       = DofMapBuilder::build_sub_map_view(
           parent_dofmap, *parent_dofmap._ufc_dofmap, parent_dofmap.block_size(),
           parent_offset, component, mesh);
+  _ufc_dofmap.reset(_ufc_dofmap_ptr, free);
 
   assert(_ufc_dofmap);
   _cell_dimension = _ufc_dofmap->num_element_support_dofs
