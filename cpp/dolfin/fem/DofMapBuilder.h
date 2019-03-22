@@ -59,8 +59,8 @@ public:
   /// @param[in] parent_dofmap
   /// @param[in] component
   /// @param[in] mesh
-  static std::tuple<std::unique_ptr<const ufc_dofmap>, std::int64_t,
-                    std::int64_t, std::vector<PetscInt>>
+  static std::tuple<ufc_dofmap*, std::int64_t, std::int64_t,
+                    std::vector<PetscInt>>
   build_sub_map_view(const DofMap& parent_dofmap,
                      const ufc_dofmap& parent_ufc_dofmap,
                      const int parent_block_size,
@@ -109,7 +109,7 @@ private:
                       std::size_t offset_local = 0);
 
   // Recursively extract UFC sub-dofmap and cell-wise components for sub-map
-  static std::pair<std::unique_ptr<ufc_dofmap>, int> extract_ufc_sub_dofmap_new(
+  static std::pair<ufc_dofmap*, int> extract_ufc_sub_dofmap_new(
       const ufc_dofmap& ufc_dofmap, const std::vector<std::size_t>& component,
       const std::vector<int>& num_cell_entities, int offset = 0);
 
