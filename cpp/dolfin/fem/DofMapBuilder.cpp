@@ -600,26 +600,25 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   }
 
   // FIXME: Simplify
-  std::vector<std::unique_ptr<const ufc_dofmap>> dofmaps(block_size);
+  std::unique_ptr<const ufc_dofmap> dofmap;
   std::size_t local_size = 0;
   if (block_size > 1)
   {
-    dofmaps[0]
-        = std::unique_ptr<const ufc_dofmap>(ufc_map.create_sub_dofmap(0));
+    dofmap = std::unique_ptr<const ufc_dofmap>(ufc_map.create_sub_dofmap(0));
     unsigned int d = 0;
     for (auto& n : num_mesh_entities_local)
     {
-      local_size += n * dofmaps[0]->num_entity_dofs[d];
+      local_size += n * dofmap->num_entity_dofs[d];
       ++d;
     }
   }
   else
   {
-    dofmaps[0] = std::unique_ptr<const ufc_dofmap>(ufc_map.create());
+    dofmap = std::unique_ptr<const ufc_dofmap>(ufc_map.create());
     unsigned int d = 0;
     for (auto& n : num_mesh_entities_local)
     {
-      local_size += n * dofmaps[0]->num_entity_dofs[d];
+      local_size += n * dofmap->num_entity_dofs[d];
       ++d;
     }
   }
@@ -628,8 +627,8 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   std::vector<std::vector<PetscInt>> node_dofmap(mesh.num_cells());
 
   // Get standard local element dimension
-  const std::size_t local_dim = dofmaps[0]->num_element_support_dofs
-                                + dofmaps[0]->num_global_support_dofs;
+  const std::size_t local_dim
+      = dofmap->num_element_support_dofs + dofmap->num_global_support_dofs;
 
   // Holder for UFC 64-bit dofmap integers
   std::vector<int64_t> ufc_nodes_global(local_dim);
@@ -657,8 +656,8 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
     entity_dofs[d].resize(cell_type.num_entities(d));
     for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
     {
-      entity_dofs[d][i].resize(dofmaps[0]->num_entity_dofs[d]);
-      dofmaps[0]->tabulate_entity_dofs(entity_dofs[d][i].data(), d, i);
+      entity_dofs[d][i].resize(dofmap->num_entity_dofs[d]);
+      dofmap->tabulate_entity_dofs(entity_dofs[d][i].data(), d, i);
     }
   }
 
@@ -683,8 +682,8 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Get the edge and facet permutations of the dofs for this cell,
     // based on global vertex indices.
-    dofmaps[0]->tabulate_dof_permutations(permutation.data(),
-                                          entity_indices_ptr[0]);
+    dofmap->tabulate_dof_permutations(permutation.data(),
+                                      entity_indices_ptr[0]);
 
     // Copy to cell dofs, with permutation
     for (unsigned int i = 0; i < local_dim; ++i)
@@ -698,7 +697,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
     }
   }
 
-  return std::make_tuple(std::move(dofmaps[0]), std::move(node_dofmap),
+  return std::make_tuple(std::move(dofmap), std::move(node_dofmap),
                          std::move(node_local_to_global));
 }
 //-----------------------------------------------------------------------------
