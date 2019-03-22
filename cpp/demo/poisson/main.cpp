@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
       mesh::GhostMode::none));
 
-  auto space = std::unique_ptr<dolfin_function_space>(PoissonFunctionSpace());
+  auto space = std::unique_ptr<ufc_function_space>(PoissonFunctionSpace());
   auto V = std::make_shared<function::FunctionSpace>(
       mesh,
       std::make_shared<fem::FiniteElement>(
