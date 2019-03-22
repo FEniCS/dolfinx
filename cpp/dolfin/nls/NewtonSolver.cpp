@@ -11,7 +11,7 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/log/log.h>
+#include <spdlog/spdlog.h>
 #include <string>
 
 using namespace dolfin;
@@ -64,11 +64,11 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
   }
   else
   {
-    log::dolfin_error(
-        "NewtonSolver.cpp", "check for convergence",
-        "The convergence criterion %s is unknown, known criteria are "
-        "'residual' or 'incremental'",
-        convergence_criterion.c_str());
+    spdlog::error("NewtonSolver.cpp", "check for convergence",
+                  "The convergence criterion %s is unknown, known criteria are "
+                  "'residual' or 'incremental'",
+                  convergence_criterion.c_str());
+    throw std::runtime_error("Unknown convergence criterion");
   }
 
   // Start iterations
@@ -123,9 +123,10 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
   {
     if (_mpi_comm.rank() == 0)
     {
-      log::info("Newton solver finished in %d iterations and %d linear solver "
-                "iterations.",
-                newton_iteration, _krylov_iterations);
+      spdlog::info(
+          "Newton solver finished in %d iterations and %d linear solver "
+          "iterations.",
+          newton_iteration, _krylov_iterations);
     }
   }
   else
@@ -141,7 +142,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
         throw std::runtime_error("Newton solver did not converge");
     }
     else
-      log::warning("Newton solver did not converge.");
+      spdlog::warn("Newton solver did not converge.");
   }
 
   return std::make_pair(newton_iteration, newton_converged);
@@ -170,10 +171,10 @@ bool nls::NewtonSolver::converged(const Vec r,
   // Output iteration number and residual
   if (report && _mpi_comm.rank() == 0)
   {
-    log::info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = "
-              "%.3e (tol "
-              "= %.3e)",
-              newton_iteration, _residual, atol, relative_residual, rtol);
+    spdlog::info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = "
+                 "%.3e (tol "
+                 "= %.3e)",
+                 newton_iteration, _residual, atol, relative_residual, rtol);
   }
 
   // Return true if convergence criterion is met

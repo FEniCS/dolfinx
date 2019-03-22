@@ -7,8 +7,6 @@
 #include "Point.h"
 #include <cfloat>
 #include <cmath>
-#include <dolfin/log/LogStream.h>
-#include <dolfin/log/log.h>
 
 using namespace dolfin;
 using namespace dolfin::geometry;

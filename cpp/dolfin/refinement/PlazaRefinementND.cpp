@@ -8,6 +8,7 @@
 
 #include <limits>
 #include <map>
+#include <spdlog/spdlog.h>
 #include <vector>
 
 #include <dolfin/common/Timer.h>
@@ -30,9 +31,10 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
   {
-    log::dolfin_error("PlazaRefinementND.cpp", "refine mesh",
-                      "Cell type %s not supported",
-                      mesh.type().description(false).c_str());
+    spdlog::error("PlazaRefinementND.cpp", "refine mesh",
+                  "Cell type %s not supported",
+                  mesh.type().description(false).c_str());
+    throw std::runtime_error("Not supported");
   }
 
   common::Timer t0("PLAZA: refine");
@@ -55,9 +57,10 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
   {
-    log::dolfin_error("PlazaRefinementND.cpp", "refine mesh",
-                      "Cell type %s not supported",
-                      mesh.type().description(false).c_str());
+    spdlog::error("PlazaRefinementND.cpp", "refine mesh",
+                  "Cell type %s not supported",
+                  mesh.type().description(false).c_str());
+    throw std::runtime_error("Not supported");
   }
 
   common::Timer t0("PLAZA: refine");

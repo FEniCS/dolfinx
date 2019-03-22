@@ -13,7 +13,7 @@
 // Note: dolfin/common/MPI.h is included before hdf5.h to avoid the
 // MPICH_IGNORE_CXX_SEEK issue
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/log.h>
+#include <spdlog/spdlog.h>
 #include <hdf5.h>
 
 namespace dolfin
@@ -169,8 +169,9 @@ private:
   template <typename T>
   static hid_t hdf5_type()
   {
-    log::dolfin_error("HDF5Interface.cpp", "get HDF5 primitive data type",
-                      "No specialised function for this data type");
+    spdlog::error("HDF5Interface.cpp", "get HDF5 primitive data type",
+                  "No specialised function for this data type");
+    throw std::runtime_error("No function for datatype");
     return 0;
   }
 };
@@ -208,8 +209,9 @@ inline hid_t HDF5Interface::hdf5_type<std::size_t>()
   else if (sizeof(std::size_t) == sizeof(unsigned int))
     return H5T_NATIVE_UINT;
   else
-    log::dolfin_error("HDF5Interface.h", "determine size of std::size_t",
-                      "std::size_t is not the same size as long or int");
+    spdlog::error("HDF5Interface.h", "determine size of std::size_t",
+                  "std::size_t is not the same size as long or int");
+  throw std::runtime_error("Wrong size");
   return 0;
 }
 //---------------------------------------------------------------------------
@@ -225,8 +227,9 @@ inline void HDF5Interface::write_dataset(
 
   if (rank > 2)
   {
-    log::dolfin_error("HDF5Interface.cpp", "write dataset to HDF5 file",
-                      "Only rank 1 and rank 2 dataset are supported");
+    spdlog::error("HDF5Interface.cpp", "write dataset to HDF5 file",
+                  "Only rank 1 and rank 2 dataset are supported");
+    throw std::runtime_error("Invalid rank");
   }
 
   // Get HDF5 data type
@@ -300,8 +303,9 @@ inline void HDF5Interface::write_dataset(
     status = H5Pset_dxpl_mpio(plist_id, H5FD_MPIO_COLLECTIVE);
     assert(status != HDF5_FAIL);
 #else
-    log::dolfin_error("HDF5Interface.h", "use MPI",
+    spdlog::error("HDF5Interface.h", "use MPI",
                       "HDF5 library has not been configured with MPI");
+      throw std::runtime_error("MPI not configured");
 #endif
   }
 
@@ -353,7 +357,7 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   assert(rank >= 0);
 
   if (rank > 2)
-    log::warning("HDF5Interface::read_dataset untested for rank > 2.");
+    spdlog::warn("HDF5Interface::read_dataset untested for rank > 2.");
 
   // Allocate data for shape
   std::vector<hsize_t> shape(rank);
