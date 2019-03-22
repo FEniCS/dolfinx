@@ -170,7 +170,7 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::Type::tetrahedron,
       mesh::GhostMode::none));
 
-  auto space = std::unique_ptr<dolfin_function_space, decltype(free)*>(
+  auto space = std::unique_ptr<ufc_function_space, decltype(free)*>(
       HyperElasticityFunctionSpace(), free);
   auto V = std::make_shared<function::FunctionSpace>(
       mesh,
