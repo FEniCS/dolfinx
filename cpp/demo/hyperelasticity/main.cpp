@@ -171,7 +171,7 @@ int main(int argc, char* argv[])
       mesh::GhostMode::none));
 
   auto space
-      = std::unique_ptr<dolfin_function_space>(HyperElasticityFunctionSpace());
+      = std::unique_ptr<ufc_function_space>(HyperElasticityFunctionSpace());
   auto V = std::make_shared<function::FunctionSpace>(
       mesh,
       std::make_shared<fem::FiniteElement>(
