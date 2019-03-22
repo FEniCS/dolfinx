@@ -170,14 +170,14 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::Type::tetrahedron,
       mesh::GhostMode::none));
 
-  auto space
-      = std::unique_ptr<dolfin_function_space>(HyperElasticityFunctionSpace());
+  auto space = std::unique_ptr<dolfin_function_space, decltype(free)*>(
+      HyperElasticityFunctionSpace(), free);
   auto V = std::make_shared<function::FunctionSpace>(
       mesh,
       std::make_shared<fem::FiniteElement>(
-          std::shared_ptr<ufc_finite_element>(space->element())),
+          std::shared_ptr<ufc_finite_element>(space->element(), free)),
       std::make_shared<fem::DofMap>(
-          std::shared_ptr<ufc_dofmap>(space->dofmap()), *mesh));
+          std::shared_ptr<ufc_dofmap>(space->dofmap(), free), *mesh));
 
   // Define Dirichlet boundaries
   Left left;
@@ -186,14 +186,16 @@ int main(int argc, char* argv[])
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
 
-  auto form_L = std::unique_ptr<dolfin_form>(HyperElasticityLinearForm());
-  auto form_a = std::unique_ptr<dolfin_form>(HyperElasticityBilinearForm());
+  auto form_L = std::unique_ptr<dolfin_form, decltype(free)*>(
+      HyperElasticityLinearForm(), free);
+  auto form_a = std::unique_ptr<dolfin_form, decltype(free)*>(
+      HyperElasticityBilinearForm(), free);
   auto a = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(form_a->form()),
+      std::shared_ptr<ufc_form>(form_a->form(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
                                                                             V});
   auto L = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(form_L->form()),
+      std::shared_ptr<ufc_form>(form_L->form(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
 
   // Attach 'coordinate mapping' to mesh
