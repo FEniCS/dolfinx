@@ -22,6 +22,7 @@
 #include <memory>
 #include <random>
 #include <spdlog/spdlog.h>
+#include <stdlib.h>
 #include <ufc.h>
 #include <utility>
 
@@ -57,7 +58,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   //  - local-to-global node indices (node_local_to_global)
   std::vector<std::size_t> node_local_to_global0;
   std::vector<std::vector<PetscInt>> node_graph0;
-  std::unique_ptr<const ufc_dofmap> ufc_node_dofmap;
+  ufc_dofmap* ufc_node_dofmap;
   std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0)
       = build_ufc_node_graph(ufc_map, mesh, bs);
   assert(ufc_node_dofmap);
@@ -80,6 +81,8 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   // ghost nodes are marked as -3
   std::vector<int> shared_nodes = compute_shared_nodes(
       node_graph0, node_local_to_global0.size(), *ufc_node_dofmap, mesh);
+
+  free(ufc_node_dofmap);
 
   // Compute:
   // (a) owned and shared nodes (and owned and un-owned):
@@ -562,8 +565,8 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc_dofmap& ufc_dofmap,
     return 1;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::unique_ptr<const ufc_dofmap>,
-           std::vector<std::vector<PetscInt>>, std::vector<std::size_t>>
+std::tuple<ufc_dofmap*, std::vector<std::vector<PetscInt>>,
+           std::vector<std::size_t>>
 DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
                                     const mesh::Mesh& mesh,
                                     const std::size_t block_size)
@@ -600,11 +603,11 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   }
 
   // FIXME: Simplify
-  std::unique_ptr<const ufc_dofmap> dofmap;
+  ufc_dofmap* dofmap = nullptr;
   std::size_t local_size = 0;
   if (block_size > 1)
   {
-    dofmap = std::unique_ptr<const ufc_dofmap>(ufc_map.create_sub_dofmap(0));
+    dofmap = ufc_map.create_sub_dofmap(0);
     unsigned int d = 0;
     for (auto& n : num_mesh_entities_local)
     {
@@ -614,7 +617,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   }
   else
   {
-    dofmap = std::unique_ptr<const ufc_dofmap>(ufc_map.create());
+    dofmap = ufc_map.create();
     unsigned int d = 0;
     for (auto& n : num_mesh_entities_local)
     {
@@ -697,7 +700,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
     }
   }
 
-  return std::make_tuple(std::move(dofmap), std::move(node_dofmap),
+  return std::make_tuple(dofmap, std::move(node_dofmap),
                          std::move(node_local_to_global));
 }
 //-----------------------------------------------------------------------------

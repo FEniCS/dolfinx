@@ -119,8 +119,7 @@ private:
 
   // Build graph from UFC 'node' dofmap. Returns (ufc_dofmap,
   // node_dofmap, node_local_to_global)
-  static std::tuple<std::unique_ptr<const ufc_dofmap>,
-                    std::vector<std::vector<PetscInt>>,
+  static std::tuple<ufc_dofmap*, std::vector<std::vector<PetscInt>>,
                     std::vector<std::size_t>>
   build_ufc_node_graph(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh,
                        const std::size_t block_size);
