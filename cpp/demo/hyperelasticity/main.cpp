@@ -186,16 +186,12 @@ int main(int argc, char* argv[])
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
 
-  auto form_L = std::unique_ptr<dolfin_form, decltype(free)*>(
-      HyperElasticityLinearForm(), free);
-  auto form_a = std::unique_ptr<dolfin_form, decltype(free)*>(
-      HyperElasticityBilinearForm(), free);
   auto a = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(form_a->form(), free),
+      std::shared_ptr<ufc_form>(HyperElasticityBilinearForm(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
                                                                             V});
   auto L = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(form_L->form(), free),
+      std::shared_ptr<ufc_form>(HyperElasticityLinearForm(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
 
   // Attach 'coordinate mapping' to mesh
@@ -210,11 +206,7 @@ int main(int argc, char* argv[])
   auto u_clamp = std::make_shared<function::Function>(V);
   u_clamp->interpolate(clamp);
 
-  L->set_coefficient_index_to_name_map(form_L->coefficient_number_map);
-  L->set_coefficient_name_to_index_map(form_L->coefficient_name_map);
   L->set_coefficients({{"u", u}});
-  a->set_coefficient_index_to_name_map(form_a->coefficient_number_map);
-  a->set_coefficient_name_to_index_map(form_a->coefficient_name_map);
   a->set_coefficients({{"u", u}});
 
   // Create Dirichlet boundary conditions

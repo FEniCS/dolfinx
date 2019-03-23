@@ -64,6 +64,10 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(
       std::shared_ptr<const ufc_coordinate_mapping>(
           ufc_form->create_coordinate_mapping()));
+
+  // Set coefficient maps
+  _coefficient_index_map = ufc_form->coefficient_number_map;
+  _coefficient_name_map = ufc_form->coefficient_name_map;
 }
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
@@ -114,18 +118,6 @@ std::string Form::get_coefficient_name(int i) const
   }
 
   return std::string();
-}
-//-----------------------------------------------------------------------------
-void Form::set_coefficient_index_to_name_map(
-    std::function<int(const char*)> coefficient_index_map)
-{
-  _coefficient_index_map = coefficient_index_map;
-}
-//-----------------------------------------------------------------------------
-void Form::set_coefficient_name_to_index_map(
-    std::function<const char*(int)> coefficient_name_map)
-{
-  _coefficient_name_map = coefficient_name_map;
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(

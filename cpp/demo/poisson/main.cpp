@@ -215,18 +215,13 @@ int main(int argc, char* argv[])
   //
   // .. code-block:: cpp
 
-  auto form_L = std::unique_ptr<dolfin_form, decltype(free)*>(
-      PoissonLinearForm(), free);
-  auto form_a = std::unique_ptr<dolfin_form, decltype(free)*>(
-      PoissonBilinearForm(), free);
-
   // Define variational forms
   auto a = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(form_a->form(), free),
+      std::shared_ptr<ufc_form>(PoissonBilinearForm(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
                                                                             V});
   auto L = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(form_L->form(), free),
+      std::shared_ptr<ufc_form>(PoissonLinearForm(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
   auto f_expr = Source();
   auto g_expr = dUdN();
@@ -240,9 +235,6 @@ int main(int argc, char* argv[])
 
   f->interpolate(f_expr);
   g->interpolate(g_expr);
-
-  L->set_coefficient_index_to_name_map(form_L->coefficient_number_map);
-  L->set_coefficient_name_to_index_map(form_L->coefficient_name_map);
   L->set_coefficients({{"f", f}, {"g", g}});
 
   // Now, we have specified the variational forms and can consider the
