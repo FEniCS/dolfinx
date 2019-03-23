@@ -105,12 +105,6 @@ public:
   /// Get the coefficient name for a given coefficient index
   std::string get_coefficient_name(int i) const;
 
-  void set_coefficient_index_to_name_map(
-      std::function<int(const char*)> coefficient_index_map);
-
-  void set_coefficient_name_to_index_map(
-      std::function<const char*(int)> coefficient_name_map);
-
   /// Set coefficient with given number (shared pointer version)
   ///
   /// @param[in]  i (std::size_t)

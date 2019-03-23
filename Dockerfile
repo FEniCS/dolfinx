@@ -24,6 +24,9 @@
 ARG GMSH_VERSION=4.2.2
 ARG PYBIND11_VERSION=2.2.4
 ARG SPDLOG_VERSION=1.3.1
+ARG PETSC_VERSION=3.10.4
+ARG SLEPC_VERSION=3.10.2
+ARG PETSC4PY_VERSION=3.10.1
 ARG SLEPC4PY_VERSION=3.10.0
 ARG TINI_VERSION=v0.18.0
 
@@ -38,6 +41,7 @@ LABEL description="Base image for real and complex FEniCS test environments"
 
 ARG GMSH_VERSION
 ARG PYBIND11_VERSION
+ARG SPDLOG_VERSION
 
 WORKDIR /tmp
 
@@ -108,13 +112,13 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     make install && \
     rm -rf /tmp/*
 
-# Install syslog
+# Install spdlog
 RUN wget -nc --quiet https://github.com/gabime/spdlog/archive/v${SPDLOG_VERSION}.tar.gz && \
     tar -xf v${SPDLOG_VERSION}.tar.gz && \
     cd spdlog-${SPDLOG_VERSION} && \
     mkdir build && \
     cd build && \
-    cmake ../ && \
+    cmake -DSPDLOG_BUILD_BENCH=OFF ../ && \
     make install && \
     rm -rf /tmp/*
 
