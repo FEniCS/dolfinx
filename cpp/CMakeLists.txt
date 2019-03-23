@@ -197,7 +197,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   URL "http://eigen.tuxfamily.org")
 
 # Check for required package spdlog
-find_package(spdlog CONFIG REQUIRED)
+find_package(spdlog HINTS $ENV{SPDLOG_ROOT} ${SPDLOG_ROOT} CONFIG REQUIRED)
 set_package_properties(spdlog PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight fast C++ logging library"
   URL "https://github.com/gabime/spdlog")
