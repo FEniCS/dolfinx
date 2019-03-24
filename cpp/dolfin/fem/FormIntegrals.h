@@ -23,7 +23,6 @@ namespace mesh
 {
 template <typename T>
 class MeshFunction;
-
 class Mesh;
 } // namespace mesh
 
@@ -112,17 +111,17 @@ public:
                                                     unsigned int i) const;
 
   /// Set the valid domains for the integrals of a given type from a
-  /// MeshFunction dOmega. The MeshFunction should have a value for each cell
+  /// MeshFunction "marker". The MeshFunction should have a value for each cell
   /// (entity) which corresponds to an integral ID. Note the MeshFunction is not
   /// stored, so if there any changes to the integration domain this must be
   /// called again.
   void set_domains(FormIntegrals::Type type,
-                   const mesh::MeshFunction<std::size_t>& dOmega);
+                   const mesh::MeshFunction<std::size_t>& marker);
 
   /// If there exists a default integral of each type, set the list of entities
   /// for that integral from the mesh. For cell integrals, this is all cells.
   /// For facet integrals, it is either all interior or all exterior facets.
-  void set_default_domains_from_mesh(std::shared_ptr<const mesh::Mesh> mesh);
+  void set_default_domains_from_mesh(const mesh::Mesh& mesh);
 
 private:
   // Function pointers to tabulate_tensor functions

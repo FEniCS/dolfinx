@@ -27,7 +27,7 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   // Get list of integral IDs, and load tabulate tensor into memory for each
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
-  for (const auto& id : cell_integral_ids)
+  for (auto id : cell_integral_ids)
   {
     ufc_cell_integral* cell_integral = ufc_form.create_cell_integral(id);
     assert(cell_integral);
@@ -38,7 +38,7 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   std::vector<int> exterior_facet_integral_ids(
       ufc_form.num_exterior_facet_integrals);
   ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
-  for (const auto& id : exterior_facet_integral_ids)
+  for (auto id : exterior_facet_integral_ids)
   {
     ufc_exterior_facet_integral* exterior_facet_integral
         = ufc_form.create_exterior_facet_integral(id);
@@ -51,7 +51,7 @@ FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
   std::vector<int> interior_facet_integral_ids(
       ufc_form.num_interior_facet_integrals);
   ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
-  for (const auto& id : interior_facet_integral_ids)
+  for (auto id : interior_facet_integral_ids)
   {
     ufc_interior_facet_integral* interior_facet_integral
         = ufc_form.create_interior_facet_integral(id);
@@ -219,15 +219,17 @@ FormIntegrals::integral_domains(FormIntegrals::Type type, unsigned int i) const
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_domains(FormIntegrals::Type type,
-                                const mesh::MeshFunction<std::size_t>& dOmega)
+                                const mesh::MeshFunction<std::size_t>& marker)
 {
-  std::shared_ptr<const mesh::Mesh> mesh = dOmega.mesh();
+  std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
 
   if (type == Type::cell)
   {
-    if (mesh->topology().dim() != dOmega.dim())
+    if (mesh->topology().dim() != marker.dim())
+    {
       throw std::runtime_error("Invalid MeshFunction dimension:"
-                               + std::to_string(dOmega.dim()));
+                               + std::to_string(marker.dim()));
+    }
 
     if (_cell_integral_ids.size() == 0)
       throw std::runtime_error("No cell integrals");
@@ -243,18 +245,21 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
       }
     }
 
-    for (unsigned int i = 0; i < dOmega.size(); ++i)
+    for (unsigned int i = 0; i < marker.size(); ++i)
     {
-      auto it = cell_id_to_integral.find(dOmega[i]);
+      auto it = cell_id_to_integral.find(marker[i]);
       if (it != cell_id_to_integral.end())
         _cell_integral_domains[it->second].push_back(i);
     }
   }
   else if (type == Type::exterior_facet)
   {
-    if (mesh->topology().dim() - 1 != dOmega.dim())
+    if (mesh->topology().dim() - 1 != marker.dim())
+    {
       throw std::runtime_error("Invalid MeshFunction dimension:"
-                               + std::to_string(dOmega.dim()));
+                               + std::to_string(marker.dim()));
+    }
+
     if (_exterior_facet_integral_ids.size() == 0)
       throw std::runtime_error("No exterior facet integrals");
 
@@ -269,9 +274,9 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
       }
     }
 
-    for (unsigned int i = 0; i < dOmega.size(); ++i)
+    for (unsigned int i = 0; i < marker.size(); ++i)
     {
-      auto it = facet_id_to_integral.find(dOmega[i]);
+      auto it = facet_id_to_integral.find(marker[i]);
       if (it != facet_id_to_integral.end())
         _exterior_facet_integral_domains[it->second].push_back(i);
     }
@@ -282,13 +287,12 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   }
 }
 //-----------------------------------------------------------------------------
-void FormIntegrals::set_default_domains_from_mesh(
-    std::shared_ptr<const mesh::Mesh> mesh)
+void FormIntegrals::set_default_domains_from_mesh(const mesh::Mesh& mesh)
 {
   // If there is a default integral, define it on all cells
   if (_cell_integral_ids.size() > 0 and _cell_integral_ids[0] == -1)
   {
-    _cell_integral_domains[0].resize(mesh->num_cells());
+    _cell_integral_domains[0].resize(mesh.num_cells());
     std::iota(_cell_integral_domains[0].begin(),
               _cell_integral_domains[0].end(), 0);
   }
@@ -298,8 +302,8 @@ void FormIntegrals::set_default_domains_from_mesh(
   {
     // If there is a default integral, define it only on surface facets
     _exterior_facet_integral_domains[0].clear();
-    const std::size_t tdim = mesh->topology().dim();
-    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(*mesh))
+    const std::size_t tdim = mesh.topology().dim();
+    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
       if (facet.num_global_entities(tdim) == 1)
         _exterior_facet_integral_domains[0].push_back(facet.index());
@@ -311,9 +315,9 @@ void FormIntegrals::set_default_domains_from_mesh(
   {
     // If there is a default integral, define it only on interior facets
     _interior_facet_integral_domains[0].clear();
-    _interior_facet_integral_domains[0].reserve(mesh->num_facets());
-    const std::size_t tdim = mesh->topology().dim();
-    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(*mesh))
+    _interior_facet_integral_domains[0].reserve(mesh.num_facets());
+    const std::size_t tdim = mesh.topology().dim();
+    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
       if (facet.num_global_entities(tdim) != 1)
         _interior_facet_integral_domains[0].push_back(facet.index());

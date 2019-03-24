@@ -182,7 +182,7 @@ public:
   {
     _integrals.register_tabulate_tensor_cell(i, fn);
     if (i == -1 and _mesh)
-      _integrals.set_default_domains_from_mesh(_mesh);
+      _integrals.set_default_domains_from_mesh(*_mesh);
   }
 
   /// Return exterior facet domains (zero pointer if no domains have
