@@ -8,7 +8,7 @@
 #include <cfloat>
 #include <iomanip>
 #include <iostream>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 #include <sstream>
 
 using namespace dolfin;
@@ -85,9 +85,9 @@ std::string Table::get(std::string row, std::string col) const
   auto it = values.find(key);
   if (it == values.end())
   {
-    spdlog::error("Table.cpp", "access table value",
-                  "Missing table value for entry (\"%s\", \"%s\")", row.c_str(),
-                  col.c_str());
+    // spdlog::error("Table.cpp", "access table value",
+    //               "Missing table value for entry (\"%s\", \"%s\")", row.c_str(),
+    //               col.c_str());
     throw std::runtime_error("Missing table value");
   }
 
@@ -100,9 +100,9 @@ double Table::get_value(std::string row, std::string col) const
   auto it = dvalues.find(key);
   if (it == dvalues.end())
   {
-    spdlog::error("Table.cpp", "access table value",
-                  "Missing double value for entry (\"%s\", \"%s\")",
-                  row.c_str(), col.c_str());
+    // spdlog::error("Table.cpp", "access table value",
+    //               "Missing double value for entry (\"%s\", \"%s\")",
+    //               row.c_str(), col.c_str());
     throw std::runtime_error("Missing table value");
   }
 

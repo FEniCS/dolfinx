@@ -8,7 +8,7 @@
 #include <iostream>
 #include <mpi.h>
 #include <petsc.h>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
 #ifdef HAS_SLEPC
 #include <slepc.h>
@@ -93,8 +93,8 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   const bool mpi_init_status = mpi_initialized();
 
   // Print message if PETSc is initialised with command line arguments
-  if (argc > 1)
-    spdlog::info("Initializing PETSc with given command-line arguments.");
+  // if (argc > 1)
+  //   spdlog::info("Initializing PETSc with given command-line arguments.");
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
@@ -211,11 +211,11 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorMessage(n, &desc, nullptr);
 
   // Log detailed error info
-  spdlog::error(
-      "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
-      "                       : error code '{}' ({}), message follows:",
-      line, fun, file, n, desc);
-  spdlog::error(_mess);
+  // spdlog::error(
+  //     "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
+  //     "                       : error code '{}' ({}), message follows:",
+  //     line, fun, file, n, desc);
+  // spdlog::error(_mess);
 
   // Continue with error handling
   PetscFunctionReturn(n);
