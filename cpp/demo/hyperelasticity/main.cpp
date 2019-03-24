@@ -187,11 +187,11 @@ int main(int argc, char* argv[])
   auto u = std::make_shared<function::Function>(V);
 
   auto a = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(HyperElasticityBilinearForm(), free),
+      std::shared_ptr<ufc_form>(HyperElasticity_bilinearform_create(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
                                                                             V});
   auto L = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(HyperElasticityLinearForm(), free),
+      std::shared_ptr<ufc_form>(HyperElasticity_linearform_create(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
 
   // Attach 'coordinate mapping' to mesh

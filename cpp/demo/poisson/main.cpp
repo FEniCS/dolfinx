@@ -217,11 +217,11 @@ int main(int argc, char* argv[])
 
   // Define variational forms
   auto a = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(PoissonBilinearForm(), free),
+      std::shared_ptr<ufc_form>(Poisson_bilinearform_create(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
                                                                             V});
   auto L = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(PoissonLinearForm(), free),
+      std::shared_ptr<ufc_form>(Poisson_linearform_create(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
   auto f_expr = Source();
   auto g_expr = dUdN();

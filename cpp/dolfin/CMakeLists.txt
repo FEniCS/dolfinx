@@ -135,7 +135,7 @@ target_link_libraries(dolfin PUBLIC ${HDF5_C_LIBRARIES})
 target_include_directories(dolfin SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
 
 # spdlog
-# target_link_libraries(dolfin PUBLIC spdlog::spdlog)
+target_link_libraries(dolfin PUBLIC spdlog::spdlog)
 
 #------------------------------------------------------------------------------
 # Optional packages
