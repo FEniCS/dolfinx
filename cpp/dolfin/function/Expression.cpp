@@ -11,7 +11,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::function;
@@ -40,9 +40,9 @@ std::size_t Expression::value_dimension(std::size_t i) const
 {
   if (i >= _value_shape.size())
   {
-    spdlog::error("Expression.cpp", "evaluate expression",
-                  "Illegal axis %d for value dimension for value of rank %d", i,
-                  _value_shape.size());
+    // spdlog::error("Expression.cpp", "evaluate expression",
+    //               "Illegal axis %d for value dimension for value of rank %d", i,
+    //               _value_shape.size());
     throw std::runtime_error("Value dimension axis");
   }
   return _value_shape[i];

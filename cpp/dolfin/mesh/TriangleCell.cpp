@@ -11,7 +11,7 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <cmath>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -30,9 +30,9 @@ std::size_t TriangleCell::num_entities(std::size_t dim) const
   case 2:
     return 1; // cells
   default:
-    spdlog::error("TriangleCell.cpp",
-                  "access number of entities of triangle cell",
-                  "Illegal topological dimension (%d)", dim);
+    // spdlog::error("TriangleCell.cpp",
+    //               "access number of entities of triangle cell",
+    //               "Illegal topological dimension (%d)", dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -50,9 +50,9 @@ std::size_t TriangleCell::num_vertices(std::size_t dim) const
   case 2:
     return 3; // cells
   default:
-    spdlog::error("TriangleCell.cpp",
-                  "access number of vertices for subsimplex of triangle cell",
-                  "Illegal topological dimension (%d)", dim);
+    // spdlog::error("TriangleCell.cpp",
+    //               "access number of vertices for subsimplex of triangle cell",
+    //               "Illegal topological dimension (%d)", dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -65,9 +65,9 @@ void TriangleCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
   // We only need to know how to create edges
   if (dim != 1)
   {
-    spdlog::error(
-        "TriangleCell.cpp", "create entities of triangle cell",
-        "Don't know how to create entities of topological dimension %d", dim);
+    // spdlog::error(
+    //     "TriangleCell.cpp", "create entities of triangle cell",
+    //     "Don't know how to create entities of topological dimension %d", dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -88,8 +88,8 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   // Check that we get a triangle
   if (triangle.dim() != 2)
   {
-    spdlog::error("TriangleCell.cpp", "compute volume (area) of triangle cell",
-                  "Illegal mesh entity, not a triangle");
+    // spdlog::error("TriangleCell.cpp", "compute volume (area) of triangle cell",
+    //               "Illegal mesh entity, not a triangle");
     throw std::runtime_error("Illegal mesh entity");
   }
 
@@ -126,9 +126,9 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   }
   else
   {
-    spdlog::error(
-        "TriangleCell.cpp", "compute volume of triangle",
-        "Only know how to compute volume when embedded in R^2 or R^3");
+    // spdlog::error(
+    //     "TriangleCell.cpp", "compute volume of triangle",
+    //     "Only know how to compute volume when embedded in R^2 or R^3");
     throw std::runtime_error("Illegal geometric dimension");
   }
 
@@ -140,8 +140,8 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
   // Check that we get a triangle
   if (triangle.dim() != 2)
   {
-    spdlog::error("TriangleCell.cpp", "compute diameter of triangle cell",
-                  "Illegal mesh entity, not a triangle");
+    // spdlog::error("TriangleCell.cpp", "compute diameter of triangle cell",
+    //               "Illegal mesh entity, not a triangle");
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -151,9 +151,9 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
   // Only know how to compute the diameter when embedded in R^2 or R^3
   if (geometry.dim() != 2 && geometry.dim() != 3)
   {
-    spdlog::error(
-        "TriangleCell.cpp", "compute diameter of triangle",
-        "Only know how to compute diameter when embedded in R^2 or R^3");
+    // spdlog::error(
+    //     "TriangleCell.cpp", "compute diameter of triangle",
+    //     "Only know how to compute diameter when embedded in R^2 or R^3");
     throw std::runtime_error("Illegal geometric dimension");
   }
 
@@ -283,10 +283,10 @@ geometry::Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   // could be removed, unless it is here for some other reason.
   if (cell.mesh().geometry().dim() != 2)
   {
-    spdlog::error("TriangleCell.cpp", "find normal",
-                  "Normal vector is not defined in dimension %d (only defined "
-                  "when the triangle is in R^2",
-                  cell.mesh().geometry().dim());
+    // spdlog::error("TriangleCell.cpp", "find normal",
+    //               "Normal vector is not defined in dimension %d (only defined "
+    //               "when the triangle is in R^2",
+    //               cell.mesh().geometry().dim());
     throw std::runtime_error("Illegal geometric dimension");
   }
 
@@ -326,8 +326,8 @@ geometry::Point TriangleCell::cell_normal(const Cell& cell) const
   const std::size_t gdim = geometry.dim();
   if (gdim > 3)
   {
-    spdlog::error("TriangleCell.cpp", "compute cell normal",
-                  "Illegal geometric dimension (%d)", gdim);
+    // spdlog::error("TriangleCell.cpp", "compute cell normal",
+    //               "Illegal geometric dimension (%d)", gdim);
     throw std::runtime_error("Illegal geometric dimension");
   }
 
@@ -394,8 +394,8 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
   }
 
   // We should not reach this
-  spdlog::error("TriangleCell.cpp", "find specified edge in cell",
-                "Edge really not found");
+  // spdlog::error("TriangleCell.cpp", "find specified edge in cell",
+  //               "Edge really not found");
   throw std::runtime_error("Not found");
 
   return 0;

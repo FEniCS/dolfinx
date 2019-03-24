@@ -8,7 +8,7 @@
 #include "MeshConnectivity.h"
 #include <dolfin/common/utils.h>
 #include <numeric>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 #include <sstream>
 
 using namespace dolfin;
@@ -103,9 +103,9 @@ MeshTopology::shared_entities(std::uint32_t dim) const
   auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
-    spdlog::error("MeshTopology.cpp", "get shared mesh entities",
-                  "Shared mesh entities have not been computed for dim %d",
-                  dim);
+    // spdlog::error("MeshTopology.cpp", "get shared mesh entities",
+    //               "Shared mesh entities have not been computed for dim %d",
+    //               dim);
     throw std::runtime_error("Not computed");
   }
   return e->second;
