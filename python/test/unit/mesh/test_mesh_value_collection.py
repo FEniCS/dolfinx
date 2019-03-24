@@ -4,8 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import UnitSquareMesh, MeshValueCollection, Cells, MPI, MeshFunction, FacetRange, VertexRange
-from dolfin.log import info
+from dolfin import (MPI, Cells, FacetRange, MeshFunction, MeshValueCollection,
+                    UnitSquareMesh, VertexRange)
 
 
 def test_assign_2D_cells():
@@ -109,9 +109,6 @@ def test_mesh_function_assign_2D_cells():
 
     values = f3.array()
     values[values > ncells_global] = 0.
-
-    info(str(values))
-    info(str(values.sum()))
 
     assert MPI.sum(mesh.mpi_comm(), values.sum() * 1.0) == 140.
 
