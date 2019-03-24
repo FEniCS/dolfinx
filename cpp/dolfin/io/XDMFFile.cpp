@@ -1444,7 +1444,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
 
   // Get cell type
   const auto cell_type_str = get_cell_type(topology_node);
-  const int degree = cell_type_str.second;
+  // const int degree = cell_type_str.second;
 
   // if (degree == 2)
   //   spdlog::warn("Caution: reading quadratic mesh");

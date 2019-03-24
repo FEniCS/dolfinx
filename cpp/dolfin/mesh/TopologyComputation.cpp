@@ -18,7 +18,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <memory>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 #include <string>
 #include <tuple>
 #include <utility>

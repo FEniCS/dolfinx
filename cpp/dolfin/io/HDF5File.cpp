@@ -176,9 +176,8 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
   }
 
   // Get dataset rank
-  const std::size_t rank
-      = HDF5Interface::dataset_rank(_hdf5_file_id, dataset_name);
-
+  // const std::size_t rank
+  //     = HDF5Interface::dataset_rank(_hdf5_file_id, dataset_name);
   // if (rank != 1)
   //   spdlog::warn("Reading non-scalar data in HDF5 Vector");
 

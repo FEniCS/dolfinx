@@ -36,7 +36,7 @@ bool GeometryPredicates::is_degenerate_2d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 3)
   {
-    spdlog::info("Degenerate 2D simplex with %d vertices.", simplex.size());
+    // spdlog::info("Degenerate 2D simplex with %d vertices.", simplex.size());
     return true;
   }
 
