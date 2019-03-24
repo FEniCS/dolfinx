@@ -52,14 +52,14 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
 {
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
+  const int tdim = topology.dim();
 
   // Check if entities have already been computed
   if (topology.size(dim) > 0)
   {
     // Make sure we really have the connectivity
-    if ((!topology.connectivity(topology.dim(), dim)
-         && dim != (int)topology.dim())
-        or (!topology.connectivity(dim, 0) && dim != 0))
+    if ((!topology.connectivity(tdim, dim) && dim != (int)topology.dim())
+        || (!topology.connectivity(dim, 0) && dim != 0))
     {
       // spdlog::error("TopologyComputation.cpp", "compute topological entities",
       //               "Entities of topological dimension %d exist but "
@@ -71,8 +71,7 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   }
 
   // Make sure connectivity does not already exist
-  if (topology.connectivity(topology.dim(), dim)
-      || topology.connectivity(dim, 0))
+  if (topology.connectivity(tdim, dim) || topology.connectivity(dim, 0))
   {
     throw std::runtime_error("Connectivity for topological dimension "
                              + std::to_string(dim)
@@ -104,7 +103,7 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   std::vector<std::tuple<std::array<std::int32_t, N>,
                          std::pair<std::int8_t, std::int32_t>,
                          std::array<std::int32_t, N>, std::int32_t>>
-      keyed_entities(num_entities * mesh.num_cells());
+      keyed_entities(num_entities * mesh.num_entities(tdim));
 
   // Loop over cells to build list of keyed (by vertices) entities
   int entity_counter = 0;
@@ -186,7 +185,7 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
 
   // List of entity e indices connected to cell
   boost::multi_array<int, 2> connectivity_ce(
-      boost::extents[mesh.num_cells()][num_entities]);
+      boost::extents[mesh.num_entities(tdim)][num_entities]);
 
   // Build connectivity arrays (with ghost entities at the end)
   // std::int32_t previous_index = -1;

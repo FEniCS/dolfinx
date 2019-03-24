@@ -340,14 +340,14 @@ def test_interpolation_old(V, W, mesh):
     f0 = Expression(expr_eval0)
     f = Function(V)
     f = interpolate(f0, V)
-    assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_vertices(),
+    assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_entities(0),
                  7) == 0
 
     # Vector interpolation
     f1 = Expression(expr_eval1, shape=(3, ))
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector().norm(PETSc.NormType.N1) - 3 * mesh.num_vertices(),
+    assert round(f.vector().norm(PETSc.NormType.N1) - 3 * mesh.num_entities(0),
                  7) == 0
 
 
