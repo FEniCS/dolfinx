@@ -27,7 +27,7 @@ complex_mode = (sys.argv[-1] == "1")
 # UFL files to skip
 skip = set()
 if complex_mode is True:
-    skip.update(["HyperElasticity.ufl"])
+    skip.update(["hyperelasticity.ufl"])
 
 # Directories to scan
 subdirs = ["demo", "test"]
