@@ -163,7 +163,7 @@ class DirichletBoundary : public mesh::SubDomain
 // order to create a mesh consisting of 32 x 32 squares with each square
 // divided into two triangles, and the finite element space (specified in
 // the form file) defined relative to this mesh, we do as follows
-//
+//fuf
 // .. code-block:: cpp
 
 int main(int argc, char* argv[])
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
       mesh::GhostMode::none));
 
   auto space = std::unique_ptr<ufc_function_space, decltype(free)*>(
-      PoissonFunctionSpace(), free);
+      Poisson_functionspace_create(), free);
   auto V = std::make_shared<function::FunctionSpace>(
       mesh,
       std::make_shared<fem::FiniteElement>(
