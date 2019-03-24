@@ -15,7 +15,7 @@
 #include <map>
 #include <memory>
 #include <unordered_set>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
 namespace dolfin
 {
@@ -264,11 +264,11 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   }
 
   // Check that all values have been set, if not issue a debug message
-  if (entities_values_set.size() != _values.size())
-  {
-    spdlog::debug(
-        "Mesh value collection does not contain all values for all entities");
-  }
+  // if (entities_values_set.size() != _values.size())
+  // {
+  //   spdlog::debug(
+  //       "Mesh value collection does not contain all values for all entities");
+  // }
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -369,8 +369,8 @@ std::string MeshFunction<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    spdlog::warn(
-        "Verbose output of MeshFunctions must be implemented manually.");
+    // spdlog::warn(
+    //     "Verbose output of MeshFunctions must be implemented manually.");
   }
   else
   {

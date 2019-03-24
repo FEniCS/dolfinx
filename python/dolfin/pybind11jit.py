@@ -13,13 +13,13 @@ import sys
 import dijitso
 from dolfin import cpp
 from dolfin.jit import mpi_jit_decorator, dolfin_pc
-from dolfin.cpp.log import LogLevel, log
+# from dolfin.cpp.log import LogLevel, log
 
 
 def jit_generate(cpp_code, module_name, signature, parameters):
 
-    log(LogLevel.TRACE,
-        "Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
+    # log(LogLevel.TRACE,
+    #     "Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
 
     # Split code on reserved word "SIGNATURE" which will be replaced
     # by the module signature
