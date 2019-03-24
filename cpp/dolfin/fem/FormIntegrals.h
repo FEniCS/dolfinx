@@ -100,14 +100,16 @@ public:
   /// Number of integrals of given type
   int num_integrals(FormIntegrals::Type t) const;
 
-  /// Get the IDs of integrals of given type, using -1 for the default integral.
+  /// Get the integer IDs of integrals of type t.
   /// The IDs correspond to the domains which the integrals are defined for in
-  /// the form.
-  const std::vector<int>& integral_ids(FormIntegrals::Type type) const;
+  /// the form, except ID -1, which denotes the default integral.
+  const std::vector<int>& integral_ids(FormIntegrals::Type t) const;
 
-  /// Get the list of active entities (cells, facets, etc.) for the given
-  /// integral of the given type, on this process.
-  const std::vector<std::int32_t>& integral_domains(FormIntegrals::Type type,
+  /// Get the list of active entities for the ith integral of type t.
+  /// Note, these are not retrieved by ID, but stored in order. The IDs can
+  /// be obtained with "FormIntegrals::integral_ids()"
+  /// For cell integrals, a list of cells. For facet integrals, a list of facets etc.
+  const std::vector<std::int32_t>& integral_domains(FormIntegrals::Type t,
                                                     unsigned int i) const;
 
   /// Set the valid domains for the integrals of a given type from a
@@ -118,8 +120,8 @@ public:
   void set_domains(FormIntegrals::Type type,
                    const mesh::MeshFunction<std::size_t>& marker);
 
-  /// If there exists a default integral of each type, set the list of entities
-  /// for that integral from the mesh. For cell integrals, this is all cells.
+  /// If there exists a default integral of any type, set the list of entities
+  /// for those integrals from the mesh. For cell integrals, this is all cells.
   /// For facet integrals, it is either all interior or all exterior facets.
   void set_default_domains_from_mesh(const mesh::Mesh& mesh);
 

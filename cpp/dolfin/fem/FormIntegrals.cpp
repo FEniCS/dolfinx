@@ -289,10 +289,12 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_default_domains_from_mesh(const mesh::Mesh& mesh)
 {
+  int tdim = mesh.topology().dim();
+
   // If there is a default integral, define it on all cells
   if (_cell_integral_ids.size() > 0 and _cell_integral_ids[0] == -1)
   {
-    _cell_integral_domains[0].resize(mesh.num_cells());
+    _cell_integral_domains[0].resize(mesh.num_entities(tdim));
     std::iota(_cell_integral_domains[0].begin(),
               _cell_integral_domains[0].end(), 0);
   }
@@ -315,7 +317,7 @@ void FormIntegrals::set_default_domains_from_mesh(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on interior facets
     _interior_facet_integral_domains[0].clear();
-    _interior_facet_integral_domains[0].reserve(mesh.num_facets());
+    _interior_facet_integral_domains[0].reserve(mesh.num_entities(tdim - 1));
     const std::size_t tdim = mesh.topology().dim();
     for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
