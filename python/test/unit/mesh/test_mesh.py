@@ -216,7 +216,7 @@ def test_UnitSquareMeshDistributed():
 def test_UnitSquareMeshLocal():
     """Create mesh of unit square."""
     mesh = UnitSquareMesh(MPI.comm_self, 5, 7)
-    assert mesh.num_vertices() == 48
+    assert mesh.num_entities(0) == 48
     assert mesh.num_cells() == 70
     assert mesh.geometry.dim == 2
 
@@ -232,7 +232,7 @@ def test_UnitCubeMeshDistributed():
 def test_UnitCubeMeshLocal():
     """Create mesh of unit cube."""
     mesh = UnitCubeMesh(MPI.comm_self, 5, 7, 9)
-    assert mesh.num_vertices() == 480
+    assert mesh.num_entities(0) == 480
     assert mesh.num_cells() == 1890
     assert mesh.geometry.dim == 3
 

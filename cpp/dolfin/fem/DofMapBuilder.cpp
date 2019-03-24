@@ -169,7 +169,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
       parent_ufc_dofmap, component, num_cell_entities, parent_cell_offset);
   assert(ufc_sub_dofmap);
 
-  std::vector<std::vector<PetscInt>> sub_dofmap_graph(mesh.num_cells());
+  std::vector<std::vector<PetscInt>> sub_dofmap_graph(mesh.num_entities(D));
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     const int c = cell.index();
@@ -230,7 +230,7 @@ DofMapBuilder::build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap,
   const int num_element_dofs = ufc_dofmap.num_element_support_dofs
                                + ufc_dofmap.num_global_support_dofs;
   std::vector<std::vector<PetscInt>> dofmap(
-      mesh.num_cells(), std::vector<PetscInt>(num_element_dofs));
+      mesh.num_entities(D), std::vector<PetscInt>(num_element_dofs));
   std::vector<int64_t> dof_holder(num_element_dofs);
   std::vector<const int64_t*> _entity_indices(entity_indices.size());
 
@@ -628,7 +628,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   }
 
   // Allocate space for dof map
-  std::vector<std::vector<PetscInt>> node_dofmap(mesh.num_cells());
+  std::vector<std::vector<PetscInt>> node_dofmap(mesh.num_entities(D));
 
   // Get standard local element dimension
   const std::size_t local_dim

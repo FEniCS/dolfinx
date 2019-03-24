@@ -32,7 +32,7 @@ def test_vertex_iterators():
         for j, con in cons:
             assert numpy.all(con(i) == v.entities(j))
 
-    assert n == mesh.num_vertices()
+    assert n == mesh.num_entities(0)
 
 
 def test_edge_iterators():
@@ -93,7 +93,7 @@ def test_facet_iterators():
     n = 0
     for f in Facets(mesh):
         n += 1
-    assert n == mesh.num_facets()
+    assert n == mesh.num_entities(mesh.topology.dim - 1)
 
 
 def test_cell_iterators():
