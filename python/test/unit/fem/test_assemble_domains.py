@@ -35,8 +35,6 @@ def test_basic_assembly_domains():
     A2.assemble()
     norm2 = A2.norm()
 
-    print(A[:, :])
-    print(A2[:, :])
     print(norm1, norm2)
 
     assert numpy.isclose(norm1, norm2 * 2)
