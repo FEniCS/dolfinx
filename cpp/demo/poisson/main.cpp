@@ -88,7 +88,7 @@
 //
 // .. code-block:: cpp
 
-#include "Poisson.h"
+#include "poisson.h"
 #include <cfloat>
 #include <dolfin.h>
 
@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
       mesh::GhostMode::none));
 
   auto space = std::unique_ptr<ufc_function_space, decltype(free)*>(
-      PoissonFunctionSpace(), free);
+      poisson_functionspace_create(), free);
   auto V = std::make_shared<function::FunctionSpace>(
       mesh,
       std::make_shared<fem::FiniteElement>(
@@ -217,11 +217,11 @@ int main(int argc, char* argv[])
 
   // Define variational forms
   auto a = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(PoissonBilinearForm(), free),
+      std::shared_ptr<ufc_form>(poisson_bilinearform_create(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
                                                                             V});
   auto L = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(PoissonLinearForm(), free),
+      std::shared_ptr<ufc_form>(poisson_linearform_create(), free),
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
   auto f_expr = Source();
   auto g_expr = dUdN();
