@@ -112,16 +112,6 @@ RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERS
     make install && \
     rm -rf /tmp/*
 
-# Install spdlog
-RUN wget -nc --quiet https://github.com/gabime/spdlog/archive/v${SPDLOG_VERSION}.tar.gz && \
-    tar -xf v${SPDLOG_VERSION}.tar.gz && \
-    cd spdlog-${SPDLOG_VERSION} && \
-    mkdir build && \
-    cd build && \
-    cmake -DSPDLOG_BUILD_BENCH=OFF ../ && \
-    make install && \
-    rm -rf /tmp/*
-
 WORKDIR /root
 
 ########################################

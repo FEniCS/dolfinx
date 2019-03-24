@@ -12,7 +12,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/PETScVector.h>
 #include <slepcversion.h>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
@@ -88,8 +88,8 @@ void SLEPcEigenSolver::solve(std::int64_t n)
   // Check for convergence
   EPSConvergedReason reason;
   EPSGetConvergedReason(_eps, &reason);
-  if (reason < 0)
-    spdlog::warn("Eigenvalue solver did not converge");
+  // if (reason < 0)
+  //   spdlog::warn("Eigenvalue solver did not converge");
 
   // Report solver status
   PetscInt num_iterations = 0;
@@ -97,8 +97,8 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 
   EPSType eps_type = NULL;
   EPSGetType(_eps, &eps_type);
-  spdlog::info("Eigenvalue solver (%s) converged in %d iterations.", eps_type,
-               num_iterations);
+  // spdlog::info("Eigenvalue solver (%s) converged in %d iterations.", eps_type,
+  //              num_iterations);
 }
 //-----------------------------------------------------------------------------
 std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const

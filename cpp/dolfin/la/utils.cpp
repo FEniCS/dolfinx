@@ -12,7 +12,7 @@
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <memory>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
 #include <petsc.h>
 
@@ -269,15 +269,15 @@ void dolfin::la::petsc_error(int error_code, std::string filename,
   const std::string msg = common::SubSystemsManager::singleton().petsc_err_msg;
   dolfin::common::SubSystemsManager::singleton().petsc_err_msg = "";
 
-  // Log detailed error info
-  spdlog::debug("PETSc error in '%s', '%s'", filename.c_str(),
-                petsc_function.c_str());
-  spdlog::debug("PETSc error code '%d' (%s), message follows:", error_code,
-                desc);
-  // NOTE: don't put msg as variadic argument; it might get trimmed
-  spdlog::debug(std::string(78, '-'));
-  spdlog::debug(msg);
-  spdlog::debug(std::string(78, '-'));
+  // // Log detailed error info
+  // spdlog::debug("PETSc error in '%s', '%s'", filename.c_str(),
+  //               petsc_function.c_str());
+  // spdlog::debug("PETSc error code '%d' (%s), message follows:", error_code,
+  //               desc);
+  // // NOTE: don't put msg as variadic argument; it might get trimmed
+  // spdlog::debug(std::string(78, '-'));
+  // spdlog::debug(msg);
+  // spdlog::debug(std::string(78, '-'));
 
   // Raise exception with standard error message
   throw std::runtime_error("Failed to successfully call PETSc function '"

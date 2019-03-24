@@ -196,12 +196,6 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-# Check for required package spdlog
-find_package(spdlog HINTS $ENV{SPDLOG_ROOT} ${SPDLOG_ROOT} CONFIG REQUIRED)
-set_package_properties(spdlog PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Lightweight fast C++ logging library"
-  URL "https://github.com/gabime/spdlog")
-
 find_package(PETSc 3.9)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"

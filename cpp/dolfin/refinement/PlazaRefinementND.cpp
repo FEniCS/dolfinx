@@ -5,12 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <boost/multi_array.hpp>
-
 #include <limits>
 #include <map>
-#include <spdlog/spdlog.h>
-#include <vector>
-
+// #include <spdlog/spdlog.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
@@ -18,6 +15,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <vector>
 
 #include "ParallelRefinement.h"
 #include "PlazaRefinementND.h"
@@ -31,9 +29,9 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
   {
-    spdlog::error("PlazaRefinementND.cpp", "refine mesh",
-                  "Cell type %s not supported",
-                  mesh.type().description(false).c_str());
+    // spdlog::error("PlazaRefinementND.cpp", "refine mesh",
+    //               "Cell type %s not supported",
+    //               mesh.type().description(false).c_str());
     throw std::runtime_error("Not supported");
   }
 
@@ -57,9 +55,9 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
   {
-    spdlog::error("PlazaRefinementND.cpp", "refine mesh",
-                  "Cell type %s not supported",
-                  mesh.type().description(false).c_str());
+    // spdlog::error("PlazaRefinementND.cpp", "refine mesh",
+    //               "Cell type %s not supported",
+    //               mesh.type().description(false).c_str());
     throw std::runtime_error("Not supported");
   }
 
