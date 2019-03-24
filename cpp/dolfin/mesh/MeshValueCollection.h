@@ -11,7 +11,7 @@
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include <dolfin/common/Variable.h>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 #include <map>
 #include <memory>
 #include <utility>
@@ -320,9 +320,9 @@ bool MeshValueCollection<T>::set_value(std::size_t cell_index,
   assert(_dim >= 0);
   if (!_mesh)
   {
-    spdlog::error(
-        "MeshValueCollection.h", "set value",
-        "A mesh has not been associated with this MeshValueCollection");
+    // spdlog::error(
+    //     "MeshValueCollection.h", "set value",
+    //     "A mesh has not been associated with this MeshValueCollection");
     throw std::runtime_error("A mesh has not been associated with this MeshValueCollection");
   }
 
@@ -344,9 +344,9 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
 {
   if (!_mesh)
   {
-    spdlog::error(
-        "MeshValueCollection.h", "set value",
-        "A mesh has not been associated with this MeshValueCollection");
+    // spdlog::error(
+    //     "MeshValueCollection.h", "set value",
+    //     "A mesh has not been associated with this MeshValueCollection");
     throw std::runtime_error("A mesh has not been associated with this MeshValueCollection");
   }
 
@@ -415,9 +415,9 @@ T MeshValueCollection<T>::get_value(std::size_t cell_index,
 
   if (it == _values.end())
   {
-    spdlog::error("MeshValueCollection.h", "extract value",
-                  "No value stored for cell index: %d and local index: %d",
-                  cell_index, local_entity);
+    // spdlog::error("MeshValueCollection.h", "extract value",
+    //               "No value stored for cell index: %d and local index: %d",
+    //               cell_index, local_entity);
     throw std::runtime_error("A mesh has not been associated with this MeshValueCollection");
   }
 
@@ -451,8 +451,8 @@ std::string MeshValueCollection<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    spdlog::warn(
-        "Verbose output of MeshValueCollection must be implemented manually.");
+    // spdlog::warn(
+    //     "Verbose output of MeshValueCollection must be implemented manually.");
   }
   else
   {

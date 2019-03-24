@@ -13,7 +13,7 @@
 #include <dolfin/common/types.h>
 #include <limits>
 #include <map>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -148,9 +148,9 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           {
             if (std::isnan(y[i]))
             {
-              spdlog::error("PeriodicBoundaryComputation.cpp",
-                            "periodic boundary mapping",
-                            "Need to set coordinate %d in sub_domain.map", i);
+              // spdlog::error("PeriodicBoundaryComputation.cpp",
+              //               "periodic boundary mapping",
+              //               "Need to set coordinate %d in sub_domain.map", i);
               throw std::runtime_error("Not set");
             }
           }

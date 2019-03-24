@@ -18,7 +18,7 @@
 #include <Eigen/Dense>
 #include <boost/multi_array.hpp>
 #include <complex>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -162,9 +162,9 @@ DistributedMeshTools::number_entities(
   // from mesh global numbering, e.g. when computing mesh entity
   // numbering for problems with periodic boundary conditions.
 
-  spdlog::info(
-      "Number mesh entities for distributed mesh (for specified vertex ids).",
-      d);
+  // spdlog::info(
+  //     "Number mesh entities for distributed mesh (for specified vertex ids).",
+  //     d);
   common::Timer timer(
       "Number mesh entities for distributed mesh (for specified vertex ids)");
 
@@ -423,11 +423,11 @@ DistributedMeshTools::locate_off_process_entities(
 {
   common::Timer timer("Locate off-process entities");
 
-  if (dim == 0)
-  {
-    spdlog::warn("DistributedMeshTools::host_processes has not been tested for "
-                 "vertices.");
-  }
+  // if (dim == 0)
+  // {
+  //   spdlog::warn("DistributedMeshTools::host_processes has not been tested for "
+  //                "vertices.");
+  // }
 
   // Mesh topology dim
   const std::size_t D = mesh.topology().dim();
@@ -564,7 +564,7 @@ std::unordered_map<std::uint32_t,
                    std::vector<std::pair<std::uint32_t, std::uint32_t>>>
 DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
-  spdlog::info("Compute shared mesh entities of dimension %d.", d);
+  // spdlog::info("Compute shared mesh entities of dimension %d.", d);
   common::Timer timer("Computed shared mesh entities");
 
   // MPI communicator
@@ -720,7 +720,7 @@ DistributedMeshTools::compute_entity_ownership(
     const std::vector<std::int64_t>& global_vertex_indices, std::size_t d)
 
 {
-  spdlog::info("Compute ownership for mesh entities of dimension %d.", d);
+  // spdlog::info("Compute ownership for mesh entities of dimension %d.", d);
   common::Timer timer("Compute mesh entity ownership");
 
   // Build global-to-local indices map for shared vertices

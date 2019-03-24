@@ -59,12 +59,12 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
     // Make sure we really have the connectivity
     if ((!topology.connectivity(topology.dim(), dim)
          && dim != (int)topology.dim())
-        || (!topology.connectivity(dim, 0) && dim != 0))
+        or (!topology.connectivity(dim, 0) && dim != 0))
     {
-      spdlog::error("TopologyComputation.cpp", "compute topological entities",
-                    "Entities of topological dimension %d exist but "
-                    "connectivity is missing",
-                    dim);
+      // spdlog::error("TopologyComputation.cpp", "compute topological entities",
+      //               "Entities of topological dimension %d exist but "
+      //               "connectivity is missing",
+      //               dim);
       throw std::runtime_error("Missing connectivity");
     }
     return {nullptr, nullptr, topology.size(dim)};
@@ -245,7 +245,7 @@ MeshConnectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
   //   3. Iterate again over entities of dimension d1 and add connections
   //      for each entity of dimension d0
 
-  spdlog::info("Computing mesh connectivity %d - %d from transpose.", d0, d1);
+  // spdlog::info("Computing mesh connectivity %d - %d from transpose.", d0, d1);
 
   // Get mesh topology and connectivity
   const MeshTopology& topology = mesh.topology();
@@ -329,7 +329,7 @@ MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
 //-----------------------------------------------------------------------------
 std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
 {
-  spdlog::info("Computing mesh entities of dimension %d", dim);
+  // spdlog::info("Computing mesh entities of dimension %d", dim);
 
   // Check if entities have already been computed
   MeshTopology& topology = mesh.topology();
@@ -337,12 +337,12 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   {
     // Make sure we really have the connectivity
     if ((!topology.connectivity(topology.dim(), dim) && dim != topology.dim())
-        || (!topology.connectivity(dim, 0) && dim != 0))
+        or (!topology.connectivity(dim, 0) && dim != 0))
     {
-      spdlog::error("TopologyComputation.cpp", "compute topological entities",
-                    "Entities of topological dimension %d exist but "
-                    "connectivity is missing",
-                    dim);
+      // spdlog::error("TopologyComputation.cpp", "compute topological entities",
+      //               "Entities of topological dimension %d exist but "
+      //               "connectivity is missing",
+      //               dim);
       throw std::runtime_error("Missing connectivity");
     }
     return topology.size(dim);
@@ -369,9 +369,9 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
     data = compute_entities_by_key_matching<4>(mesh, dim);
     break;
   default:
-    spdlog::error("TopologyComputation.cpp", "compute topological entities",
-                  "Entities with %d vertices not supported",
-                  num_entity_vertices);
+    // spdlog::error("TopologyComputation.cpp", "compute topological entities",
+    //               "Entities with %d vertices not supported",
+    //               num_entity_vertices);
     throw std::runtime_error("Not supported");
   }
 
@@ -401,7 +401,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.
 
-  spdlog::info("Requesting connectivity %d - %d.", d0, d1);
+  // spdlog::info("Requesting connectivity %d - %d.", d0, d1);
 
   // Get mesh topology and connectivity
   MeshTopology& topology = mesh.topology();
