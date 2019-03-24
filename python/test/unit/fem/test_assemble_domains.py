@@ -12,8 +12,8 @@ import ufl
 
 
 def test_basic_assembly_domains():
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
-    V = dolfin.FunctionSpace(mesh, ("DG", 0))
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 5, 5)
+    V = dolfin.FunctionSpace(mesh, ("CG", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
     marker = dolfin.MeshFunction("size_t", mesh, mesh.topology.dim, 1)
