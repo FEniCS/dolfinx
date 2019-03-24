@@ -5,15 +5,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for assembly over domains"""
 
-import math
-
 import numpy
-import pytest
-from petsc4py import PETSc
 
 import dolfin
 import ufl
-from ufl import ds, dx, inner
 
 
 def test_basic_assembly_domains():
@@ -24,7 +19,7 @@ def test_basic_assembly_domains():
     marker = dolfin.MeshFunction("size_t", mesh, mesh.topology.dim, 1)
     dx = dolfin.Measure('dx', subdomain_data=marker)
 
-    a = inner(u, v) * dx + inner(u, v) * dx(1)
+    a = ufl.inner(u, v) * dx + ufl.inner(u, v) * dx(1)
     print(a.subdomain_data())
 
     # Initial assembly
@@ -40,7 +35,7 @@ def test_basic_assembly_domains():
     A2.assemble()
     norm2 = A2.norm()
 
-    print(A[:,:])
+    print(A[:, :])
     print(A2[:, :])
     print(norm1, norm2)
 
