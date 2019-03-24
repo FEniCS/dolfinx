@@ -246,7 +246,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
     if (d != D)
     {
       // Get global (local to to process) entity index
-      assert(cell_index < _mesh->num_cells());
+      assert(cell_index < _mesh->num_entities(D));
       entity_index = connectivity(cell_index)[local_entity];
     }
     else

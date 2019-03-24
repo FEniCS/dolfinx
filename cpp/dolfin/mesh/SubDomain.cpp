@@ -71,10 +71,10 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
   // Speed up the computation by only checking each vertex once (or
   // twice if it is on the boundary for some but not all facets).
-  common::RangedIndexSet boundary_visited{{{0, mesh.num_vertices()}}};
-  common::RangedIndexSet interior_visited{{{0, mesh.num_vertices()}}};
-  std::vector<bool> boundary_inside(mesh.num_vertices());
-  std::vector<bool> interior_inside(mesh.num_vertices());
+  common::RangedIndexSet boundary_visited{{{0, mesh.num_entities(0)}}};
+  common::RangedIndexSet interior_visited{{{0, mesh.num_entities(0)}}};
+  std::vector<bool> boundary_inside(mesh.num_entities(0));
+  std::vector<bool> interior_inside(mesh.num_entities(0));
 
   // Always false when marking cells
   bool on_boundary = false;
