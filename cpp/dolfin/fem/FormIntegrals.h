@@ -121,9 +121,9 @@ public:
                    const mesh::MeshFunction<std::size_t>& marker);
 
   /// If there exists a default integral of any type, set the list of entities
-  /// for those integrals from the mesh. For cell integrals, this is all cells.
+  /// for those integrals from the mesh topology. For cell integrals, this is all cells.
   /// For facet integrals, it is either all interior or all exterior facets.
-  void set_default_domains_from_mesh(const mesh::Mesh& mesh);
+  void set_default_domains(const mesh::Mesh& mesh);
 
 private:
   // Function pointers to tabulate_tensor functions
