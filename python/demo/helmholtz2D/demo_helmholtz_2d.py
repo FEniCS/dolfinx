@@ -4,10 +4,13 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-u"""Test Helmholtz problem for which the exact solution is a plane wave
-propagating at angle theta to the postive x-axis. Chosen for
-comparison with results from Ihlenburg\'s book \"Finite Element
-Analysis of Acoustic Scattering\" p138-139"""
+u"""Test Helmholtz problem in both complex and real modes
+In the complex mode, the exact solution is a plane wave propagating at an angle
+theta to the positive x-axis. Chosen for comparison with results from Ihlenburg\'s
+book \"Finite Element Analysis of Acoustic Scattering\" p138-139.
+In real mode, the Method of Manufactured Solutions is used to produce the exact
+solution and source term."""
+
 
 import numpy as np
 
@@ -18,13 +21,9 @@ from dolfin import (MPI, Expression, FacetNormal, Function, FunctionSpace,
 from dolfin.fem.assemble import assemble_scalar
 from dolfin.io import XDMFFile
 
-if not has_petsc_complex:
-    print('This demo only works with PETSc-complex')
-    exit()
-
 
 # Wavenumber
-k0 = 20
+k0 = 4 * np.pi
 
 # approximation space polynomial degree
 deg = 1
@@ -35,27 +34,36 @@ n_elem = 128
 mesh = UnitSquareMesh(MPI.comm_world, n_elem, n_elem)
 n = FacetNormal(mesh)
 
-# Incident plane wave
-theta = np.pi / 8
 
+if has_petsc_complex:
+    # Incident plane wave direction
+    theta = np.pi / 8
 
-@function.expression.numba_eval
-def ui_eval(values, x, cell_idx):
-    values[:, 0] = np.exp(1.0j * k0 * (np.cos(theta) * x[:, 0] + np.sin(theta) * x[:, 1]))
+    @function.expression.numba_eval
+    def source(values, x, cell_idx):
+        values[:, 0] = np.exp(1.0j * k0 * (np.cos(theta) * x[:, 0] + np.sin(theta) * x[:, 1]))
+else:
+    @function.expression.numba_eval
+    def source(values, x, cell_idx):
+        values[:, 0] = k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 
 
 # Test and trial function space
 V = FunctionSpace(mesh, ("Lagrange", deg))
 
-# Prepare Expression as FE function
-ui = interpolate(Expression(ui_eval), V)
-
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-g = dot(grad(ui), n) + 1j * k0 * ui
-a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx + 1j * k0 * inner(u, v) * ds
-L = inner(g, v) * ds
+if has_petsc_complex:
+    ui = interpolate(Expression(source), V)
+    g = dot(grad(ui), n) + 1j * k0 * ui
+    a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx +\
+        1j * k0 * inner(u, v) * ds
+    L = inner(g, v) * ds
+else:
+    f = interpolate(Expression(source), V)
+    a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
+    L = inner(f, v) * dx
 
 # Compute solution
 u = Function(V)
@@ -69,11 +77,23 @@ with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
 """Calculate L2 and H1 errors of FEM solution and best approximation.
 This demonstrates the error bounds given in Ihlenburg. Pollution errors
 are evident for high wavenumbers."""
+
+# "Exact" solution expression
+if has_petsc_complex:
+    @function.expression.numba_eval
+    def solution(values, x, cell_idx):
+        values[:, 0] = np.exp(1.0j * k0 * (np.cos(theta) * x[:, 0] + np.sin(theta) * x[:, 1]))
+else:
+    @function.expression.numba_eval
+    def solution(values, x, cell_idx):
+        values[:, 0] = np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
+
+
 # Function space for exact solution - need it to be higher than deg
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 
 # "exact" solution
-u_exact = interpolate(Expression(ui_eval), V_exact)
+u_exact = interpolate(Expression(solution), V_exact)
 
 # best approximation from V
 u_BA = project(u_exact, V)
