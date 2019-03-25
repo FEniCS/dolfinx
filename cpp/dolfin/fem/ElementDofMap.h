@@ -57,7 +57,7 @@ public:
   }
 
   /// Tabulate dofs on a specific entity i of dimension dim
-  std::vector<int> tabulate_entity_dofs(int dim, int i) const;
+  std::vector<int> tabulate_entity_dofs(unsigned int dim, unsigned int i) const;
 
   /// Get number of sub-dofmaps
   unsigned int num_sub_dofmaps() const { return sub_dofmaps.size(); }

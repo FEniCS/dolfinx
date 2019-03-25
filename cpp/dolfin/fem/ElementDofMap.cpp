@@ -35,16 +35,25 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
   }
 
   // Fill all subdofmaps
-  if (dofmap.num_sub_dofmaps > 0)
+  for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
-    ufc_dofmap* sub_dofmap = dofmap.create_sub_dofmap(0);
+    ufc_dofmap* sub_dofmap = dofmap.create_sub_dofmap(i);
     sub_dofmaps.push_back(
         std::make_unique<ElementDofMap>(*sub_dofmap, cell_type));
     std::free(sub_dofmap);
   }
+
+  // Get sizes of all sub_dofmaps
+  std::vector<int> sub_dofmap_sizes;
+  for (const auto& dm : sub_dofmaps)
+    sub_dofmap_sizes.push_back(dm->_cell_dimension);
 }
 //-----------------------------------------------------------------------------
-std::vector<int> ElementDofMap::tabulate_entity_dofs(int dim, int i) const
+std::vector<int> ElementDofMap::tabulate_entity_dofs(unsigned int dim,
+                                                     unsigned int i) const
 {
+  assert(dim < _entity_dofs.size());
+  assert(i < _entity_dofs[dim].size());
+
   return _entity_dofs[dim][i];
 }
