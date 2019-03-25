@@ -70,6 +70,12 @@ public:
   }
 
 private:
+
+  // try to figure out block size. FIXME - replace elsewhere
+  int analyse_block_structure();
+
+  int _block_size;
+
   // Total number of dofs in this element dofmap
   int _cell_dimension;
 

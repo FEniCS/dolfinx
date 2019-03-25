@@ -603,28 +603,18 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
     }
   }
 
-  // FIXME: Simplify
   ufc_dofmap* dofmap = nullptr;
-  std::size_t local_size = 0;
   if (block_size > 1)
-  {
     dofmap = ufc_map.create_sub_dofmap(0);
-    unsigned int d = 0;
-    for (auto& n : num_mesh_entities_local)
-    {
-      local_size += n * dofmap->num_entity_dofs[d];
-      ++d;
-    }
-  }
   else
-  {
     dofmap = ufc_map.create();
-    unsigned int d = 0;
-    for (auto& n : num_mesh_entities_local)
-    {
-      local_size += n * dofmap->num_entity_dofs[d];
-      ++d;
-    }
+
+  unsigned int d = 0;
+  std::size_t local_size = 0;
+  for (auto& n : num_mesh_entities_local)
+  {
+    local_size += n * dofmap->num_entity_dofs[d];
+    ++d;
   }
 
   // Allocate space for dof map

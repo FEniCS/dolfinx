@@ -7,6 +7,7 @@
 #include "ElementDofMap.h"
 #include <cstdlib>
 #include <dolfin/mesh/CellType.h>
+#include <iostream>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -43,10 +44,30 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
     std::free(sub_dofmap);
   }
 
-  // Get sizes of all sub_dofmaps
-  std::vector<int> sub_dofmap_sizes;
-  for (const auto& dm : sub_dofmaps)
-    sub_dofmap_sizes.push_back(dm->_cell_dimension);
+  // Check for "block structure".
+  // This should ultimately be replaced, but keep
+  // for now to mimic existing code
+  _block_size = analyse_block_structure();
+}
+//-----------------------------------------------------------------------------
+int ElementDofMap::analyse_block_structure()
+{
+  if (sub_dofmaps.size() < 2)
+    return 1;
+
+  for (const auto& dmi : sub_dofmaps)
+  {
+    if (dmi->sub_dofmaps.size() > 0)
+      return 1;
+
+    for (std::size_t d = 0; d < 4; ++d)
+    {
+      if (sub_dofmaps[0]->_num_entity_dofs[d] != dmi->_num_entity_dofs[d])
+        return 1;
+    }
+  }
+
+  return sub_dofmaps.size();
 }
 //-----------------------------------------------------------------------------
 std::vector<int> ElementDofMap::tabulate_entity_dofs(unsigned int dim,
