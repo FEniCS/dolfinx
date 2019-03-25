@@ -35,6 +35,7 @@ class SubDomain;
 namespace fem
 {
 class DofMap;
+class ElementDofMap;
 class UFC;
 
 /// Builds a DofMap on a mesh::Mesh
@@ -121,7 +122,9 @@ private:
   // node_dofmap, node_local_to_global)
   static std::tuple<ufc_dofmap*, std::vector<std::vector<PetscInt>>,
                     std::vector<std::size_t>>
-  build_ufc_node_graph(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh,
+  build_ufc_node_graph(const ufc_dofmap& ufc_map,
+                       const ElementDofMap& el_dm,
+                       const mesh::Mesh& mesh,
                        const std::size_t block_size);
 
   // Mark shared nodes. Boundary nodes are assigned a random

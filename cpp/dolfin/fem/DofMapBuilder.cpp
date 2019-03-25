@@ -6,6 +6,7 @@
 
 #include "DofMapBuilder.h"
 #include "DofMap.h"
+#include "ElementDofMap.h"
 #include <cstdlib>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
@@ -59,8 +60,12 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   std::vector<std::size_t> node_local_to_global0;
   std::vector<std::vector<PetscInt>> node_graph0;
   ufc_dofmap* ufc_node_dofmap;
+
+  // Create element dofmap from ufc_dofmap
+  ElementDofMap el_dm(ufc_map, mesh.type());
+
   std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0)
-      = build_ufc_node_graph(ufc_map, mesh, bs);
+      = build_ufc_node_graph(ufc_map, el_dm, mesh, bs);
   assert(ufc_node_dofmap);
 
   // Set global dofmap dimension
@@ -569,6 +574,7 @@ std::size_t DofMapBuilder::compute_blocksize(const ufc_dofmap& ufc_dofmap,
 std::tuple<ufc_dofmap*, std::vector<std::vector<PetscInt>>,
            std::vector<std::size_t>>
 DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
+                                    const ElementDofMap& el_dm,
                                     const mesh::Mesh& mesh,
                                     const std::size_t block_size)
 {
@@ -581,7 +587,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = (ufc_map.num_entity_dofs[d] > 0);
+    needs_entities[d] = (el_dm.num_entity_dofs(d) > 0);
 
   std::vector<int> num_cell_entities(D + 1);
   const mesh::CellType& cell_type = mesh.type();
@@ -609,11 +615,14 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   else
     dofmap = ufc_map.create();
 
+  const ElementDofMap& el_dm2 = (block_size > 1) ? el_dm.sub_dofmap(0) : el_dm;
+
   unsigned int d = 0;
   std::size_t local_size = 0;
   for (auto& n : num_mesh_entities_local)
   {
-    local_size += n * dofmap->num_entity_dofs[d];
+    //    local_size += n * dofmap->num_entity_dofs[d];
+    local_size += n * el_dm2.num_entity_dofs(d);
     ++d;
   }
 
