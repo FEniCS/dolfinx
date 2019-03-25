@@ -16,6 +16,11 @@ struct ufc_dofmap;
 namespace dolfin
 {
 
+namespace mesh
+{
+class CellType;
+}
+
 namespace fem
 {
 
@@ -27,7 +32,7 @@ class ElementDofMap
 {
 public:
   /// Constructor from UFC dofmap
-  ElementDofMap(const ufc_dofmap& ufc_dofmap);
+  ElementDofMap(const ufc_dofmap& ufc_dofmap, const mesh::CellType& cell_type);
 
 public:
   // Copy constructor
@@ -51,7 +56,18 @@ public:
     return _num_entity_dofs[dim];
   }
 
+  /// Tabulate dofs on a specific entity i of dimension dim
   std::vector<int> tabulate_entity_dofs(int dim, int i) const;
+
+  /// Get number of sub-dofmaps
+  unsigned int num_sub_dofmaps() const { return sub_dofmaps.size(); }
+
+  /// Get subdofmap i
+  const ElementDofMap& sub_dofmap(unsigned int i) const
+  {
+    assert(i < sub_dofmaps.size());
+    return *sub_dofmaps[i];
+  }
 
 private:
   // Total number of dofs in this element dofmap

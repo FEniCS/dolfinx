@@ -118,12 +118,7 @@ std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
   return _cell_dimension;
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::max_element_dofs() const
-{
-  assert(_ufc_dofmap);
-  return _ufc_dofmap->num_element_support_dofs
-         + _ufc_dofmap->num_global_support_dofs;
-}
+std::size_t DofMap::max_element_dofs() const { return _cell_dimension; }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {

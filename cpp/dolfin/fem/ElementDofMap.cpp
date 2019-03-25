@@ -6,12 +6,14 @@
 
 #include "ElementDofMap.h"
 #include <cstdlib>
+#include <dolfin/mesh/CellType.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap)
+ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
+                             const mesh::CellType& cell_type)
 {
   _cell_dimension
       = dofmap.num_element_support_dofs + dofmap.num_global_support_dofs;
@@ -23,13 +25,21 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap)
   // Fill entity dof indices
   for (unsigned int dim = 0; dim < 4; ++dim)
   {
-    _entity_dofs[dim].resize(_num_entity_dofs[dim]);
+    unsigned int num_entities = cell_type.num_entities(dim);
+    _entity_dofs[dim].resize(num_entities);
+    for (unsigned int i = 0; i < num_entities; ++i)
+    {
+      _entity_dofs[dim][i].resize(_num_entity_dofs[dim]);
+      dofmap.tabulate_entity_dofs(_entity_dofs[dim][i].data(), dim, i);
+    }
   }
 
+  // Fill all subdofmaps
   if (dofmap.num_sub_dofmaps > 0)
   {
     ufc_dofmap* sub_dofmap = dofmap.create_sub_dofmap(0);
-    sub_dofmaps.push_back(std::make_unique<ElementDofMap>(*sub_dofmap));
+    sub_dofmaps.push_back(
+        std::make_unique<ElementDofMap>(*sub_dofmap, cell_type));
     std::free(sub_dofmap);
   }
 }
