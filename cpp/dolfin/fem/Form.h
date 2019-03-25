@@ -175,12 +175,15 @@ public:
   std::vector<std::shared_ptr<const function::FunctionSpace>>
   function_spaces() const;
 
-  /// Return cell domains (zero pointer if no domains have been
-  /// specified)
-  ///
-  /// @return     _mesh::MeshFunction_ <std::size_t>
-  ///         The cell domains.
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains() const;
+  /// Register the function for 'tabulate_tensor' for cell integral i
+  void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
+                                                       const PetscScalar*,
+                                                       const double*, int))
+  {
+    _integrals.register_tabulate_tensor_cell(i, fn);
+    if (i == -1 and _mesh)
+      _integrals.set_default_domains(*_mesh);
+  }
 
   /// Return exterior facet domains (zero pointer if no domains have
   /// been specified)
@@ -209,40 +212,34 @@ public:
   ///
   /// @param[in]    cell_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The cell domains.
-  void set_cell_domains(
-      std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains);
+  void set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains);
 
   /// Set exterior facet domains
   ///
   ///  @param[in]   exterior_facet_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The exterior facet domains.
   void set_exterior_facet_domains(
-      std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-          exterior_facet_domains);
+      const mesh::MeshFunction<std::size_t>& exterior_facet_domains);
 
   /// Set interior facet domains
   ///
   ///  @param[in]   interior_facet_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The interior facet domains.
   void set_interior_facet_domains(
-      std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-          interior_facet_domains);
+      const mesh::MeshFunction<std::size_t>& interior_facet_domains);
 
   /// Set vertex domains
   ///
   ///  @param[in]   vertex_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The vertex domains.
-  void set_vertex_domains(
-      std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains);
+  void
+  set_vertex_domains(const mesh::MeshFunction<std::size_t>& vertex_domains);
 
   /// Access coefficients (non-const)
   FormCoefficients& coeffs() { return _coefficients; }
 
   /// Access coefficients (const)
   const FormCoefficients& coeffs() const { return _coefficients; }
-
-  /// Access form integrals (non-const)
-  FormIntegrals& integrals() { return _integrals; }
 
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
@@ -265,10 +262,6 @@ private:
 
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const mesh::Mesh> _mesh;
-
-  // Domain markers for cells (dx), exterior facets (ds), interior
-  // facets (dS) and vertices (dP)
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dx, ds, dS, dP;
 
   // Coordinate_mapping
   std::shared_ptr<const fem::CoordinateMapping> _coord_mapping;

@@ -60,6 +60,10 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
       throw std::runtime_error("Incompatible mesh");
   }
 
+  // Set markers for default integrals
+  if (_mesh)
+    _integrals.set_default_domains(*_mesh);
+
   // Create CoordinateMapping
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(
       std::shared_ptr<const ufc_coordinate_mapping>(
@@ -162,7 +166,12 @@ std::size_t Form::max_element_tensor_size() const
   return num_entries;
 }
 //-----------------------------------------------------------------------------
-void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh) { _mesh = mesh; }
+void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
+{
+  _mesh = mesh;
+  // Set markers for default integrals
+  _integrals.set_default_domains(*_mesh);
+}
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> Form::mesh() const
 {
@@ -183,53 +192,28 @@ Form::function_spaces() const
   return _function_spaces;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-Form::cell_domains() const
+void Form::set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains)
 {
-  return dx;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-Form::exterior_facet_domains() const
-{
-  return ds;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-Form::interior_facet_domains() const
-{
-  return dS;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-Form::vertex_domains() const
-{
-  return dP;
-}
-//-----------------------------------------------------------------------------
-void Form::set_cell_domains(
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains)
-{
-  dx = cell_domains;
+  _integrals.set_domains(FormIntegrals::Type::cell, cell_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains(
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-        exterior_facet_domains)
+    const mesh::MeshFunction<std::size_t>& exterior_facet_domains)
 {
-  ds = exterior_facet_domains;
+  _integrals.set_domains(FormIntegrals::Type::exterior_facet,
+                         exterior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_interior_facet_domains(
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-        interior_facet_domains)
+    const mesh::MeshFunction<std::size_t>& interior_facet_domains)
 {
-  dS = interior_facet_domains;
+  _integrals.set_domains(FormIntegrals::Type::interior_facet,
+                         interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_vertex_domains(
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains)
+    const mesh::MeshFunction<std::size_t>& vertex_domains)
 {
-  dP = vertex_domains;
+  _integrals.set_domains(FormIntegrals::Type::vertex, vertex_domains);
 }
 //-----------------------------------------------------------------------------

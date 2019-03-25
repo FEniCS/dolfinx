@@ -57,10 +57,12 @@ def test_numba_assembly():
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
-    a.set_tabulate_cell(0, tabulate_tensor_A.address)
+    a.set_tabulate_cell(-1, tabulate_tensor_A.address)
+    a.set_tabulate_cell(12, tabulate_tensor_A.address)
+    a.set_tabulate_cell(2, tabulate_tensor_A.address)
 
     L = cpp.fem.Form([V._cpp_object])
-    L.set_tabulate_cell(0, tabulate_tensor_b.address)
+    L.set_tabulate_cell(-1, tabulate_tensor_b.address)
 
     A = dolfin.fem.assemble_matrix(a)
     A.assemble()
@@ -174,11 +176,11 @@ def test_cffi_assembly():
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    a.set_tabulate_cell(0, ptrA)
+    a.set_tabulate_cell(-1, ptrA)
 
     L = cpp.fem.Form([V._cpp_object])
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    L.set_tabulate_cell(0, ptrL)
+    L.set_tabulate_cell(-1, ptrL)
 
     A = dolfin.fem.assemble_matrix(a)
     A.assemble()
