@@ -100,26 +100,22 @@ FormIntegrals::get_tabulate_tensor_fn_interior_facet(unsigned int i) const
   return _tabulate_tensor_interior_facet[i];
 }
 //-----------------------------------------------------------------------------
-int _insert_ids(std::vector<int>& ids, int new_id)
+void FormIntegrals::register_tabulate_tensor_cell(
+    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
 {
-  if (std::find(ids.begin(), ids.end(), new_id) != ids.end())
+  if (std::find(_cell_integral_ids.begin(), _cell_integral_ids.end(), i)
+      != _cell_integral_ids.end())
   {
-    throw std::runtime_error("Integral with ID " + std::to_string(new_id)
+    throw std::runtime_error("Integral with ID " + std::to_string(i)
                              + " already exists");
   }
 
   // Find insertion position
-  int pos = std::distance(ids.begin(),
-                          std::upper_bound(ids.begin(), ids.end(), new_id));
-  ids.insert(ids.begin() + pos, new_id);
+  int pos = std::distance(_cell_integral_ids.begin(),
+                          std::upper_bound(_cell_integral_ids.begin(),
+                                           _cell_integral_ids.end(), i));
 
-  return pos;
-}
-//-----------------------------------------------------------------------------
-void FormIntegrals::register_tabulate_tensor_cell(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
-{
-  int pos = _insert_ids(_cell_integral_ids, i);
+  _cell_integral_ids.insert(_cell_integral_ids.begin() + pos, i);
   _tabulate_tensor_cell.insert(_tabulate_tensor_cell.begin() + pos, fn);
   _cell_integral_domains.insert(_cell_integral_domains.begin() + pos,
                                 std::vector<std::int32_t>());
@@ -136,7 +132,22 @@ void FormIntegrals::register_tabulate_tensor_exterior_facet(
         "Exterior facet integral subdomain not supported. Under development.");
   }
 
-  int pos = _insert_ids(_exterior_facet_integral_ids, i);
+  if (std::find(_exterior_facet_integral_ids.begin(),
+                _exterior_facet_integral_ids.end(), i)
+      != _exterior_facet_integral_ids.end())
+  {
+    throw std::runtime_error("Integral with ID " + std::to_string(i)
+                             + " already exists");
+  }
+
+  // Find insertion position
+  int pos
+      = std::distance(_exterior_facet_integral_ids.begin(),
+                      std::upper_bound(_exterior_facet_integral_ids.begin(),
+                                       _exterior_facet_integral_ids.end(), i));
+
+  _exterior_facet_integral_ids.insert(
+      _exterior_facet_integral_ids.begin() + pos, i);
   _tabulate_tensor_exterior_facet.insert(
       _tabulate_tensor_exterior_facet.begin() + pos, fn);
   _exterior_facet_integral_domains.insert(
@@ -155,7 +166,22 @@ void FormIntegrals::register_tabulate_tensor_interior_facet(
         "Interior facet integral subdomain not supported. Under development.");
   }
 
-  int pos = _insert_ids(_interior_facet_integral_ids, i);
+  if (std::find(_interior_facet_integral_ids.begin(),
+                _interior_facet_integral_ids.end(), i)
+      != _interior_facet_integral_ids.end())
+  {
+    throw std::runtime_error("Integral with ID " + std::to_string(i)
+                             + " already exists");
+  }
+
+  // Find insertion position
+  int pos
+      = std::distance(_interior_facet_integral_ids.begin(),
+                      std::upper_bound(_interior_facet_integral_ids.begin(),
+                                       _interior_facet_integral_ids.end(), i));
+
+  _interior_facet_integral_ids.insert(
+      _interior_facet_integral_ids.begin() + pos, i);
   _tabulate_tensor_interior_facet.insert(
       _tabulate_tensor_interior_facet.begin() + pos, fn);
   _interior_facet_integral_domains.insert(
