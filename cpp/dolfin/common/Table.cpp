@@ -6,6 +6,7 @@
 
 #include "Table.h"
 #include <cfloat>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 // #include <spdlog/spdlog.h>
@@ -86,8 +87,8 @@ std::string Table::get(std::string row, std::string col) const
   if (it == values.end())
   {
     // spdlog::error("Table.cpp", "access table value",
-    //               "Missing table value for entry (\"%s\", \"%s\")", row.c_str(),
-    //               col.c_str());
+    //               "Missing table value for entry (\"%s\", \"%s\")",
+    //               row.c_str(), col.c_str());
     throw std::runtime_error("Missing table value");
   }
 
