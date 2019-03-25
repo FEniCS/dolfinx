@@ -69,10 +69,6 @@ public:
                      const mesh::Mesh& mesh);
 
 private:
-  // Build simple local UFC-based dofmap data structure
-  static std::vector<std::vector<PetscInt>>
-  build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
-
   // Compute which process 'owns' each node (point at which dofs live)
   //   - node_ownership = -1 -> dof shared but not 'owned' by this
   //     process
@@ -109,7 +105,7 @@ private:
                       std::size_t offset_local = 0);
 
   // Recursively extract UFC sub-dofmap and cell-wise components for sub-map
-  static std::pair<ufc_dofmap*, int> extract_ufc_sub_dofmap_new(
+  static std::pair<ufc_dofmap*, int> extract_ufc_sub_dofmap(
       const ufc_dofmap& ufc_dofmap, const std::vector<std::size_t>& component,
       const std::vector<int>& num_cell_entities, int offset = 0);
 
