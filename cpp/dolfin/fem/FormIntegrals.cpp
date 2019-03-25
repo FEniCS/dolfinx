@@ -313,7 +313,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   }
 }
 //-----------------------------------------------------------------------------
-void FormIntegrals::set_default_domains_from_mesh(const mesh::Mesh& mesh)
+void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 {
   int tdim = mesh.topology().dim();
 
