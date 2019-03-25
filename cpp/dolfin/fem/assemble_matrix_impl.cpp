@@ -15,6 +15,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscsys.h>
+#include <spdlog/spdlog.h>
 
 using namespace dolfin;
 
@@ -35,18 +36,27 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
+  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 1)
   {
-    throw std::runtime_error(
-        "Multiple cell integrals in bilinear form not yet supported.");
+    spdlog::warn("Multiple integrals (with coefficients) in bilinear form not "
+                 "yet supported.");
   }
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+
+  const std::vector<int>& cell_integral_ids
+      = a.integrals().integral_ids(fem::FormIntegrals::Type::cell);
+  for (unsigned int i = 0; i < cell_integral_ids.size(); ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
-        = a.integrals().get_tabulate_tensor_fn_cell(0);
-    fem::impl::assemble_cells(A, mesh, dofmap0, dofmap1, bc0, bc1, fn, coeff_fn,
-                              c_offsets);
+        = a.integrals().get_tabulate_tensor_fn_cell(i);
+
+    const std::vector<std::int32_t>& active_cells
+        = a.integrals().integral_domains(fem::FormIntegrals::Type::cell, i);
+
+    std::cout << "Integrating over domain: " << cell_integral_ids[i] << " with "
+              << active_cells.size() << " cells\n";
+    fem::impl::assemble_cells(A, mesh, active_cells, dofmap0, dofmap1, bc0, bc1,
+                              fn, coeff_fn, c_offsets);
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
@@ -54,13 +64,22 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     throw std::runtime_error("Multiple exterior facet integrals in bilinear "
                              "form not yet supported.");
   }
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+
+  for (int i = 0; i < a.integrals().num_integrals(
+                          fem::FormIntegrals::Type::exterior_facet);
+       ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
-        = a.integrals().get_tabulate_tensor_fn_exterior_facet(0);
-    fem::impl::assemble_exterior_facets(A, mesh, dofmap0, dofmap1, bc0, bc1, fn,
-                                        coeff_fn, c_offsets);
+        = a.integrals().get_tabulate_tensor_fn_exterior_facet(i);
+
+    const std::vector<std::int32_t>& active_facets
+        = a.integrals().integral_domains(
+            fem::FormIntegrals::Type::exterior_facet, i);
+
+    fem::impl::assemble_exterior_facets(A, mesh, active_facets, dofmap0,
+                                        dofmap1, bc0, bc1, fn, coeff_fn,
+                                        c_offsets);
   }
 
   if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
@@ -71,7 +90,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_cells(
-    Mat A, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
+    Mat A, const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_cells, const GenericDofMap& dofmap0,
     const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
@@ -88,10 +108,12 @@ void fem::impl::assemble_cells(
       Ae;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
-  // Iterate over all cells
+  // Iterate over active cells
   PetscErrorCode ierr;
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (auto& cell_index : active_cells)
   {
+    mesh::Cell cell(mesh, cell_index);
+
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
@@ -99,7 +121,6 @@ void fem::impl::assemble_cells(
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Get dof maps for cell
-    const std::size_t cell_index = cell.index();
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
         = dofmap0.cell_dofs(cell_index);
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
@@ -144,9 +165,10 @@ void fem::impl::assemble_cells(
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_exterior_facets(
-    Mat A, const mesh::Mesh& mesh, const GenericDofMap& dofmap0,
-    const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
-    const std::vector<bool>& bc1,
+    Mat A, const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_facets,
+    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
     std::vector<const function::Function*> coefficients,
@@ -165,10 +187,11 @@ void fem::impl::assemble_exterior_facets(
 
   // Iterate over all facets
   PetscErrorCode ierr;
-  for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  for (const auto& facet_index : active_facets)
   {
-    if (facet.num_global_entities(tdim) != 1)
-      continue;
+    const mesh::Facet facet(mesh, facet_index);
+
+    assert(facet.num_global_entities(tdim) == 1);
 
     // TODO: check ghosting sanity?
 
