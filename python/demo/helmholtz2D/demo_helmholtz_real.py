@@ -40,8 +40,6 @@ f = interpolate(Expression(source), V)
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-
-
 a = inner(grad(u), grad(v)) * dx - k**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
