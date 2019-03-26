@@ -49,6 +49,9 @@ public:
   /// Move assignment
   ElementDofMap& operator=(ElementDofMap&& dofmap) = default;
 
+  /// Total number of dofs on element
+  int num_dofs() const { return _num_dofs; }
+
   /// Number of dofs associated with entities of dimension dim
   int num_entity_dofs(int dim) const
   {
@@ -79,7 +82,7 @@ private:
   int _block_size;
 
   // Total number of dofs in this element dofmap
-  int _cell_dimension;
+  int _num_dofs;
 
   // The number of dofs associated with each entity type
   int _num_entity_dofs[4];

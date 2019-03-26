@@ -16,16 +16,16 @@ using namespace dolfin::fem;
 ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
                              const mesh::CellType& cell_type)
 {
-  _cell_dimension
-      = dofmap.num_element_support_dofs + dofmap.num_global_support_dofs;
+  _num_dofs = dofmap.num_element_support_dofs + dofmap.num_global_support_dofs;
 
   // Copy over number of dofs per entity
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
             _num_entity_dofs);
 
   // Fill entity dof indices
-  _entity_dofs.resize(cell_type.dim());
-  for (unsigned int dim = 0; dim < cell_type.dim(); ++dim)
+  const unsigned int cell_dim = cell_type.dim();
+  _entity_dofs.resize(cell_dim + 1);
+  for (unsigned int dim = 0; dim < cell_dim + 1; ++dim)
   {
     unsigned int num_entities = cell_type.num_entities(dim);
     _entity_dofs[dim].resize(num_entities);

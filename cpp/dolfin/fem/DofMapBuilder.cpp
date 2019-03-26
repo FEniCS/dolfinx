@@ -630,8 +630,10 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   std::vector<std::vector<PetscInt>> node_dofmap(mesh.num_entities(D));
 
   // Get standard local element dimension
-  const std::size_t local_dim
-      = dofmap->num_element_support_dofs + dofmap->num_global_support_dofs;
+  //  const std::size_t local_dim
+  //      = dofmap->num_element_support_dofs + dofmap->num_global_support_dofs;
+
+  const std::size_t local_dim = el_dm2.num_dofs();
 
   // Holder for UFC 64-bit dofmap integers
   std::vector<int64_t> ufc_nodes_global(local_dim);
@@ -659,7 +661,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
     entity_dofs[d].resize(cell_type.num_entities(d));
     for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
     {
-      entity_dofs[d][i].resize(dofmap->num_entity_dofs[d]);
+      entity_dofs[d][i].resize(el_dm2.num_entity_dofs(d));
       dofmap->tabulate_entity_dofs(entity_dofs[d][i].data(), d, i);
     }
   }
