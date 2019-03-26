@@ -15,14 +15,13 @@ solution and source term."""
 import numpy as np
 
 from dolfin import (MPI, Expression, FacetNormal, Function, FunctionSpace,
-                    TestFunction, TrialFunction, UnitSquareMesh, dot, ds, dx,
+                    TestFunction, TrialFunction, UnitSquareMesh, dx,
                     function, grad, has_petsc_complex, inner, interpolate,
                     project, solve)
 from dolfin.fem.assemble import assemble_scalar
 from dolfin.io import XDMFFile
 
-
-# Wavenumber
+# wavenumber
 k0 = 4 * np.pi
 
 # approximation space polynomial degree
@@ -34,18 +33,16 @@ n_elem = 128
 mesh = UnitSquareMesh(MPI.comm_world, n_elem, n_elem)
 n = FacetNormal(mesh)
 
-
+# Source amplitude
 if has_petsc_complex:
-    # Incident plane wave direction
-    theta = np.pi / 8
-
-    @function.expression.numba_eval
-    def source(values, x, cell_idx):
-        values[:, 0] = np.exp(1.0j * k0 * (np.cos(theta) * x[:, 0] + np.sin(theta) * x[:, 1]))
+    A = 1 + 1j
 else:
-    @function.expression.numba_eval
-    def source(values, x, cell_idx):
-        values[:, 0] = k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
+    A = 1
+
+
+@function.expression.numba_eval
+def source(values, x, cell_idx):
+    values[:, 0] = A * k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 
 
 # Test and trial function space
@@ -54,16 +51,9 @@ V = FunctionSpace(mesh, ("Lagrange", deg))
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-if has_petsc_complex:
-    ui = interpolate(Expression(source), V)
-    g = dot(grad(ui), n) + 1j * k0 * ui
-    a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx +\
-        1j * k0 * inner(u, v) * ds
-    L = inner(g, v) * ds
-else:
-    f = interpolate(Expression(source), V)
-    a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
-    L = inner(f, v) * dx
+f = interpolate(Expression(source), V)
+a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
+L = inner(f, v) * dx
 
 # Compute solution
 u = Function(V)
@@ -78,15 +68,11 @@ with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
 This demonstrates the error bounds given in Ihlenburg. Pollution errors
 are evident for high wavenumbers."""
 
+
 # "Exact" solution expression
-if has_petsc_complex:
-    @function.expression.numba_eval
-    def solution(values, x, cell_idx):
-        values[:, 0] = np.exp(1.0j * k0 * (np.cos(theta) * x[:, 0] + np.sin(theta) * x[:, 1]))
-else:
-    @function.expression.numba_eval
-    def solution(values, x, cell_idx):
-        values[:, 0] = np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
+@function.expression.numba_eval
+def solution(values, x, cell_idx):
+    values[:, 0] = A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 
 
 # Function space for exact solution - need it to be higher than deg
@@ -104,12 +90,12 @@ diff_BA = u_BA - u_exact
 H1_diff = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(grad(diff), grad(diff)) * dx))
 H1_BA = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(grad(diff_BA), grad(diff_BA)) * dx))
 H1_exact = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(grad(u_exact), grad(u_exact)) * dx))
-print("Relative H1 error of best approximation:", np.sqrt(H1_BA) / np.sqrt(H1_exact))
-print("Relative H1 error of FEM solution:", np.sqrt(H1_diff) / np.sqrt(H1_exact))
+print("Relative H1 error of best approximation:", abs(np.sqrt(H1_BA) / np.sqrt(H1_exact)))
+print("Relative H1 error of FEM solution:", abs(np.sqrt(H1_diff) / np.sqrt(H1_exact)))
 
 # L2 errors
 L2_diff = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(diff, diff) * dx))
 L2_BA = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(diff_BA, diff_BA) * dx))
 L2_exact = MPI.sum(mesh.mpi_comm(), assemble_scalar(inner(u_exact, u_exact) * dx))
-print("Relative L2 error  of best approximation:", np.sqrt(L2_BA) / np.sqrt(L2_exact))
-print("Relative L2 error of FEM solution:", np.sqrt(L2_diff) / np.sqrt(L2_exact))
+print("Relative L2 error  of best approximation:", abs(np.sqrt(L2_BA) / np.sqrt(L2_exact)))
+print("Relative L2 error of FEM solution:", abs(np.sqrt(L2_diff) / np.sqrt(L2_exact)))
