@@ -82,8 +82,11 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   // positive integer, interior nodes are marked as -1, interior
   // nodes in ghost layer of other processes are marked -2, and
   // ghost nodes are marked as -3
+
+  const ElementDofMap& el_dm2
+      = (el_dm.block_size() > 1) ? el_dm.sub_dofmap(0) : el_dm;
   std::vector<int> shared_nodes = compute_shared_nodes(
-      node_graph0, node_local_to_global0.size(), *ufc_node_dofmap, mesh);
+      node_graph0, node_local_to_global0.size(), el_dm2, mesh);
 
   free(ufc_node_dofmap);
 
@@ -573,7 +576,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 //-----------------------------------------------------------------------------
 std::vector<int> DofMapBuilder::compute_shared_nodes(
     const std::vector<std::vector<PetscInt>>& node_dofmap,
-    const std::size_t num_nodes_local, const ufc_dofmap& ufc_dofmap,
+    const std::size_t num_nodes_local, const ElementDofMap& el_dm,
     const mesh::Mesh& mesh)
 {
   // Initialise mesh
@@ -585,7 +588,8 @@ std::vector<int> DofMapBuilder::compute_shared_nodes(
   // owned and not shared)
   std::vector<int> shared_nodes(num_nodes_local, -1);
 
-  std::vector<int> facet_nodes(ufc_dofmap.num_entity_closure_dofs[D - 1]);
+  const std::vector<std::vector<std::int32_t>>& facet_table
+      = el_dm.entity_closure_dofs()[D - 1];
 
   // Mark dofs associated ghost cells as ghost dofs (provisionally)
   bool has_ghost_cells = false;
@@ -611,8 +615,9 @@ std::vector<int> DofMapBuilder::compute_shared_nodes(
       {
         if (!f.is_ghost())
         {
-          ufc_dofmap.tabulate_entity_closure_dofs(facet_nodes.data(), D - 1,
-                                                  c.index(f));
+          const std::vector<std::int32_t>& facet_nodes
+              = facet_table[c.index(f)];
+
           for (std::size_t i = 0; i < facet_nodes.size(); ++i)
           {
             std::size_t facet_node_local = cell_nodes[facet_nodes[i]];
@@ -641,8 +646,7 @@ std::vector<int> DofMapBuilder::compute_shared_nodes(
     const std::vector<PetscInt>& cell_nodes = node_dofmap[cell0.index()];
 
     // Tabulate which dofs are on the facet
-    ufc_dofmap.tabulate_entity_closure_dofs(facet_nodes.data(), D - 1,
-                                            cell0.index(f));
+    const std::vector<std::int32_t>& facet_nodes = facet_table[cell0.index(f)];
 
     // Mark boundary nodes and insert into map
     for (std::size_t i = 0; i < facet_nodes.size(); ++i)

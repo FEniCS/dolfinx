@@ -59,6 +59,14 @@ public:
     return _num_entity_dofs[dim];
   }
 
+  /// Number of dofs associated with entities of dimension dim (plus
+  /// connected entities of lower dim)
+  int num_entity_closure_dofs(int dim) const
+  {
+    assert(dim < 4);
+    return _num_entity_closure_dofs[dim];
+  }
+
   /// Tabulate dofs on a specific entity i of dimension dim
   std::vector<int> tabulate_entity_dofs(unsigned int dim, unsigned int i) const;
 
@@ -66,6 +74,12 @@ public:
   const std::vector<std::vector<std::vector<int>>>& entity_dofs() const
   {
     return _entity_dofs;
+  }
+
+  /// Direct access to all entity closure dofs
+  const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs() const
+  {
+    return _entity_closure_dofs;
   }
 
   /// Get number of sub-dofmaps
@@ -83,7 +97,9 @@ public:
 
 private:
 
+  // work out closure dofs... needs more work
   void calculate_closure_dofs(const mesh::CellType& cell_type);
+  void get_cell_entity_map(const mesh::CellType& cell_type);
 
   // try to figure out block size. FIXME - replace elsewhere
   int analyse_block_structure() const;
@@ -96,9 +112,16 @@ private:
   // The number of dofs associated with each entity type
   int _num_entity_dofs[4];
 
+  // The number of dofs associated with each entity type, including
+  // all connected entities of lower dimension.
+  int _num_entity_closure_dofs[4];
+
   // List of dofs per entity, ordered by dimension.
   // dof = _entity_dofs[dim][entity][i]
   std::vector<std::vector<std::vector<int>>> _entity_dofs;
+
+  // List of dofs with connected entities of lower dimension
+  std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
   std::vector<std::unique_ptr<ElementDofMap>> sub_dofmaps;

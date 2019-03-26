@@ -126,7 +126,8 @@ private:
   static std::vector<int>
   compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
                        const std::size_t num_nodes_local,
-                       const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
+                       const ElementDofMap& el_dm,
+                       const mesh::Mesh& mesh);
 
   // FIXME: document better
   // Return (old-to-new_local, local_to_global_unowned) maps
