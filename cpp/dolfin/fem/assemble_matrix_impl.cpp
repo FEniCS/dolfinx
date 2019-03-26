@@ -15,7 +15,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscsys.h>
-#include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 
@@ -36,11 +36,11 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 1)
-  {
-    spdlog::warn("Multiple integrals (with coefficients) in bilinear form not "
-                 "yet supported.");
-  }
+  // if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 1)
+  // {
+  //   spdlog::warn("Multiple integrals (with coefficients) in bilinear form not "
+  //                "yet supported.");
+  // }
 
   const std::vector<int>& cell_integral_ids
       = a.integrals().integral_ids(fem::FormIntegrals::Type::cell);
