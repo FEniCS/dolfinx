@@ -24,7 +24,8 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
             _num_entity_dofs);
 
   // Fill entity dof indices
-  for (unsigned int dim = 0; dim < 4; ++dim)
+  _entity_dofs.resize(cell_type.dim());
+  for (unsigned int dim = 0; dim < cell_type.dim(); ++dim)
   {
     unsigned int num_entities = cell_type.num_entities(dim);
     _entity_dofs[dim].resize(num_entities);
