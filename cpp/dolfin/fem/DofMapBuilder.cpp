@@ -168,7 +168,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   // Extract local UFC sub-dofmap from parent and update offset
   ufc_dofmap* ufc_sub_dofmap = nullptr;
   std::int64_t ufc_cell_offset;
-  std::tie(ufc_sub_dofmap, ufc_cell_offset) = extract_ufc_sub_dofmap_new(
+  std::tie(ufc_sub_dofmap, ufc_cell_offset) = extract_ufc_sub_dofmap(
       parent_ufc_dofmap, component, num_cell_entities, parent_cell_offset);
   assert(ufc_sub_dofmap);
 
@@ -199,72 +199,6 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
 
   return std::make_tuple(ufc_sub_dofmap, std::move(ufc_cell_offset),
                          std::move(global_dimension), std::move(cell_dofmap));
-}
-//-----------------------------------------------------------------------------
-std::vector<std::vector<PetscInt>>
-DofMapBuilder::build_local_ufc_dofmap(const ufc_dofmap& ufc_dofmap,
-                                      const mesh::Mesh& mesh)
-{
-  // Topological dimension
-  const std::size_t D = mesh.topology().dim();
-
-  // Extract needs_entities as vector
-  std::vector<bool> needs_entities(D + 1);
-  for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = (ufc_dofmap.num_entity_dofs[d] > 0);
-
-  // Generate and number required mesh entities (locally)
-  std::vector<int64_t> num_mesh_entities(D + 1, 0);
-  for (std::size_t d = 0; d <= D; ++d)
-  {
-    if (needs_entities[d])
-    {
-      mesh.init(d);
-      num_mesh_entities[d] = mesh.num_entities(d);
-    }
-  }
-
-  // Allocate entity indices array
-  std::vector<std::vector<int64_t>> entity_indices(D + 1);
-  for (std::size_t d = 0; d <= D; ++d)
-    entity_indices[d].resize(mesh.type().num_entities(d));
-
-  // Build dofmap from ufc_dofmap
-  const int num_element_dofs = ufc_dofmap.num_element_support_dofs
-                               + ufc_dofmap.num_global_support_dofs;
-  std::vector<std::vector<PetscInt>> dofmap(
-      mesh.num_entities(D), std::vector<PetscInt>(num_element_dofs));
-  std::vector<int64_t> dof_holder(num_element_dofs);
-  std::vector<const int64_t*> _entity_indices(entity_indices.size());
-
-  const mesh::CellType& cell_type = mesh.type();
-  std::vector<std::vector<std::vector<int>>> entity_dofs(D + 1);
-  for (std::size_t d = 0; d < entity_dofs.size(); ++d)
-  {
-    entity_dofs[d].resize(cell_type.num_entities(d));
-    for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
-    {
-      entity_dofs[d][i].resize(ufc_dofmap.num_entity_dofs[d]);
-      ufc_dofmap.tabulate_entity_dofs(entity_dofs[d][i].data(), d, i);
-    }
-  }
-
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
-  {
-    // Fill entity indices array
-    get_cell_entities_local(entity_indices, cell, needs_entities);
-
-    // Tabulate dofs for cell
-    for (std::size_t i = 0; i < entity_indices.size(); ++i)
-      _entity_indices[i] = entity_indices[i].data();
-    GenericDofMap::ufc_tabulate_dofs(dof_holder.data(), entity_dofs,
-                                     num_mesh_entities.data(),
-                                     _entity_indices.data());
-    std::copy(dof_holder.begin(), dof_holder.end(),
-              dofmap[cell.index()].begin());
-  }
-
-  return dofmap;
 }
 //-----------------------------------------------------------------------------
 std::tuple<int, std::vector<short int>,
@@ -457,7 +391,7 @@ DofMapBuilder::compute_node_ownership(
                          std::move(neighbours));
 }
 //-----------------------------------------------------------------------------
-std::pair<ufc_dofmap*, int> DofMapBuilder::extract_ufc_sub_dofmap_new(
+std::pair<ufc_dofmap*, int> DofMapBuilder::extract_ufc_sub_dofmap(
     const ufc_dofmap& ufc_map, const std::vector<std::size_t>& component,
     const std::vector<int>& num_cell_entities, int offset)
 {
@@ -515,7 +449,7 @@ std::pair<ufc_dofmap*, int> DofMapBuilder::extract_ufc_sub_dofmap_new(
     for (std::size_t i = 1; i < component.size(); ++i)
       sub_component.push_back(component[i]);
 
-    std::pair<ufc_dofmap*, int> p = extract_ufc_sub_dofmap_new(
+    std::pair<ufc_dofmap*, int> p = extract_ufc_sub_dofmap(
         *sub_dofmap, sub_component, num_cell_entities, offset);
     free(sub_dofmap);
     return p;
