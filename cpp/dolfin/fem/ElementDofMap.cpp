@@ -16,11 +16,12 @@ using namespace dolfin::fem;
 ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
                              const mesh::CellType& cell_type)
 {
+  // Copy total number of dofs from ufc
   _num_dofs = dofmap.num_element_support_dofs + dofmap.num_global_support_dofs;
 
   // Copy over number of dofs per entity type (and also closure dofs per entity
   // type)
-  // FIXME: can we generate closure dofs automatically here (see below)
+  // FIXME: can we generate closure dofs automatically here (see below)?
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
             _num_entity_dofs);
   std::copy(dofmap.num_entity_closure_dofs, dofmap.num_entity_closure_dofs + 4,
@@ -55,26 +56,26 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
     std::free(sub_dofmap);
   }
 
-  // Compute closure dofs in DOLFIN - needs more work...
-  //  calculate_closure_dofs(cell_type);
-  //  get_cell_entity_map(cell_type);
-
   // Check for "block structure".
-  // This should ultimately be replaced, but keep
-  // for now to mimic existing code
+  // This should ultimately be replaced, but keep for now to mimic existing
+  // code
   _block_size = analyse_block_structure();
 }
 //-----------------------------------------------------------------------------
 int ElementDofMap::analyse_block_structure() const
 {
+  // Must be at least two subdofmaps
   if (sub_dofmaps.size() < 2)
     return 1;
 
   for (const auto& dmi : sub_dofmaps)
   {
+    // If any subdofmaps have subdofmaps themselves, ignore any potential block
+    // structure
     if (dmi->sub_dofmaps.size() > 0)
       return 1;
 
+    // Check number of dofs are the same for all subdofmaps
     for (std::size_t d = 0; d < 4; ++d)
     {
       if (sub_dofmaps[0]->_num_entity_dofs[d] != dmi->_num_entity_dofs[d])
@@ -82,20 +83,14 @@ int ElementDofMap::analyse_block_structure() const
     }
   }
 
+  // All subdofmaps are simple, and have the same number of dofs.
   return sub_dofmaps.size();
-}
-//-----------------------------------------------------------------------------
-std::vector<int> ElementDofMap::tabulate_entity_dofs(unsigned int dim,
-                                                     unsigned int i) const
-{
-  assert(dim < _entity_dofs.size());
-  assert(i < _entity_dofs[dim].size());
-
-  return _entity_dofs[dim][i];
 }
 //-----------------------------------------------------------------------------
 void ElementDofMap::calculate_closure_dofs(const mesh::CellType& cell_type)
 {
+  // FIXME: this calculates the number of dofs, but still need to
+  // work out actual dofs
 
   // Copy entity dofs, and add to them
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs
@@ -121,6 +116,9 @@ void ElementDofMap::calculate_closure_dofs(const mesh::CellType& cell_type)
 //-----------------------------------------------------------------------------
 void ElementDofMap::get_cell_entity_map(const mesh::CellType& cell_type)
 {
+  // FIXME: this calculates some connectivity within a cell, needed
+  // to work out closure dofs.
+
   const int nv = cell_type.num_vertices();
 
   std::vector<boost::multi_array<std::int32_t, 2>> entity_vertices(

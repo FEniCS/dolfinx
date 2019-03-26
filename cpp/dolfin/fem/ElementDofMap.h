@@ -67,9 +67,6 @@ public:
     return _num_entity_closure_dofs[dim];
   }
 
-  /// Tabulate dofs on a specific entity i of dimension dim
-  std::vector<int> tabulate_entity_dofs(unsigned int dim, unsigned int i) const;
-
   /// Direct access to all entity dofs
   const std::vector<std::vector<std::vector<int>>>& entity_dofs() const
   {

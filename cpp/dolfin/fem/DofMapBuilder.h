@@ -110,12 +110,12 @@ private:
       const ufc_dofmap& ufc_dofmap, const std::vector<std::size_t>& component,
       const std::vector<int>& num_cell_entities, int offset = 0);
 
-  // Build graph from UFC 'node' dofmap. Returns (ufc_dofmap,
-  // node_dofmap, node_local_to_global)
+  // Build graph from ElementDofmap. Returns (node_dofmap,
+  // node_local_to_global)
   static std::tuple<std::vector<std::vector<PetscInt>>,
                     std::vector<std::size_t>>
-  build_ufc_node_graph(const ElementDofMap& el_dm, const mesh::Mesh& mesh,
-                       const std::size_t block_size);
+  build_ufc_node_graph(const ElementDofMap& el_dm_blocked,
+                       const mesh::Mesh& mesh);
 
   // Mark shared nodes. Boundary nodes are assigned a random
   // positive integer, interior nodes are marked as -1, interior

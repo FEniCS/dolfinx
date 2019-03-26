@@ -38,7 +38,8 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 {
   common::Timer t0("Init dofmap");
 
-  // Create element dofmap from ufc_dofmap and cell type
+  // Create element dofmap (and all elemental subdofmaps)
+  // from ufc_dofmap and cell type
   ElementDofMap el_dm(ufc_map, mesh.type());
 
   // Extract needs_entities as vector of bool
@@ -59,10 +60,12 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   std::vector<std::size_t> node_local_to_global0;
   std::vector<std::vector<PetscInt>> node_graph0;
 
+  // If block size is not 1, use first sub-dofmap instead.
   const std::size_t bs = el_dm.block_size();
+  const ElementDofMap& el_dm_blocked = (bs > 1) ? el_dm.sub_dofmap(0) : el_dm;
 
   std::tie(node_graph0, node_local_to_global0)
-      = build_ufc_node_graph(el_dm, mesh, bs);
+      = build_ufc_node_graph(el_dm_blocked, mesh);
 
   // Set global dofmap dimension
   std::size_t global_dimension = 0;
@@ -81,11 +84,8 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   // nodes in ghost layer of other processes are marked -2, and
   // ghost nodes are marked as -3
 
-  const ElementDofMap& el_dm2
-      = (el_dm.block_size() > 1) ? el_dm.sub_dofmap(0) : el_dm;
-
   std::vector<int> shared_nodes = compute_shared_nodes(
-      node_graph0, node_local_to_global0.size(), el_dm2, mesh);
+      node_graph0, node_local_to_global0.size(), el_dm_blocked, mesh);
 
   // Compute:
   // (a) owned and shared nodes (and owned and un-owned):
@@ -457,9 +457,8 @@ std::pair<ufc_dofmap*, int> DofMapBuilder::extract_ufc_sub_dofmap(
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::vector<PetscInt>>, std::vector<std::size_t>>
-DofMapBuilder::build_ufc_node_graph(const ElementDofMap& el_dm,
-                                    const mesh::Mesh& mesh,
-                                    const std::size_t block_size)
+DofMapBuilder::build_ufc_node_graph(const ElementDofMap& el_dm_blocked,
+                                    const mesh::Mesh& mesh)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -470,7 +469,7 @@ DofMapBuilder::build_ufc_node_graph(const ElementDofMap& el_dm,
   // Extract needs_entities as vector
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = (el_dm.num_entity_dofs(d) > 0);
+    needs_entities[d] = (el_dm_blocked.num_entity_dofs(d) > 0);
 
   // Generate and number required mesh entities (local & global, and
   // constrained global)
@@ -487,20 +486,18 @@ DofMapBuilder::build_ufc_node_graph(const ElementDofMap& el_dm,
     }
   }
 
-  const ElementDofMap& el_dm2 = (block_size > 1) ? el_dm.sub_dofmap(0) : el_dm;
-
   unsigned int d = 0;
   std::size_t local_size = 0;
   for (auto& n : num_mesh_entities_local)
   {
-    local_size += n * el_dm2.num_entity_dofs(d);
+    local_size += n * el_dm_blocked.num_entity_dofs(d);
     ++d;
   }
 
   // Allocate space for dof map
   std::vector<std::vector<PetscInt>> node_dofmap(mesh.num_entities(D));
 
-  const std::size_t local_dim = el_dm2.num_dofs();
+  const std::size_t local_dim = el_dm_blocked.num_dofs();
 
   // Holder for UFC 64-bit dofmap integers
   std::vector<int64_t> ufc_nodes_global(local_dim);
@@ -531,13 +528,13 @@ DofMapBuilder::build_ufc_node_graph(const ElementDofMap& el_dm,
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
     GenericDofMap::ufc_tabulate_dofs(
-        ufc_nodes_local.data(), el_dm2.entity_dofs(),
+        ufc_nodes_local.data(), el_dm_blocked.entity_dofs(),
         num_mesh_entities_local.data(), entity_indices_ptr.data());
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
     GenericDofMap::ufc_tabulate_dofs(
-        ufc_nodes_global.data(), el_dm2.entity_dofs(),
+        ufc_nodes_global.data(), el_dm_blocked.entity_dofs(),
         num_mesh_entities_global.data(), entity_indices_ptr.data());
 
     // Get the edge and facet permutations of the dofs for this cell,
