@@ -38,20 +38,19 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 {
   common::Timer t0("Init dofmap");
 
+  // Create element dofmap from ufc_dofmap and cell type
+  ElementDofMap el_dm(ufc_map, mesh.type());
+
   // Extract needs_entities as vector of bool
   const std::size_t D = mesh.topology().dim();
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = ufc_map.num_entity_dofs[d] > 0;
+    needs_entities[d] = el_dm.num_entity_dofs(d) > 0;
 
   // For mesh entities required by UFC dofmap, compute number of
   // mesh entities on this process
   const std::vector<int64_t> num_mesh_entities_local
       = compute_num_mesh_entities_local(mesh, needs_entities);
-
-  // Determine block size (this reverse-engineers UFC output, would better to
-  // support 'natively' in generated code)
-  //  const std::size_t bs = compute_blocksize(ufc_map, D);
 
   // Compute a 'node' dofmap based on a UFC dofmap (node is a point with a fixed
   // number of dofs). Returns:
@@ -61,8 +60,6 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   std::vector<std::vector<PetscInt>> node_graph0;
   ufc_dofmap* ufc_node_dofmap;
 
-  // Create element dofmap from ufc_dofmap
-  ElementDofMap el_dm(ufc_map, mesh.type());
   const std::size_t bs = el_dm.block_size();
 
   std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0)
@@ -74,7 +71,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
   for (std::size_t d = 0; d < D + 1; ++d)
   {
     const std::int64_t n = mesh.num_entities_global(d);
-    global_dimension += n * ufc_map.num_entity_dofs[d];
+    global_dimension += n * el_dm.num_entity_dofs(d);
   }
   assert(global_dimension % bs == 0);
 
@@ -598,7 +595,7 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   std::vector<std::size_t> node_local_to_global(local_size);
 
   // Vector for dof permutation
-  std::vector<int> permutation(local_dim);
+  //  std::vector<int> permutation(local_dim);
 
   // Build dofmaps from ufc_dofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -621,12 +618,12 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Get the edge and facet permutations of the dofs for this cell,
     // based on global vertex indices.
-    dofmap->tabulate_dof_permutations(permutation.data(),
-                                      entity_indices_ptr[0]);
+    //    dofmap->tabulate_dof_permutations(permutation.data(),
+    //                                      entity_indices_ptr[0]);
 
     // Copy to cell dofs, with permutation
     for (unsigned int i = 0; i < local_dim; ++i)
-      cell_nodes[i] = ufc_nodes_local[permutation[i]];
+      cell_nodes[i] = ufc_nodes_local[i];
 
     // Build local-to-global map for nodes
     for (std::size_t i = 0; i < local_dim; ++i)

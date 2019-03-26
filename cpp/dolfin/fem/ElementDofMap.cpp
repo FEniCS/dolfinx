@@ -45,13 +45,16 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
     std::free(sub_dofmap);
   }
 
+  // Closure dofs
+  calculate_closure_dofs(cell_type);
+
   // Check for "block structure".
   // This should ultimately be replaced, but keep
   // for now to mimic existing code
   _block_size = analyse_block_structure();
 }
 //-----------------------------------------------------------------------------
-int ElementDofMap::analyse_block_structure()
+int ElementDofMap::analyse_block_structure() const
 {
   if (sub_dofmaps.size() < 2)
     return 1;
@@ -78,4 +81,29 @@ std::vector<int> ElementDofMap::tabulate_entity_dofs(unsigned int dim,
   assert(i < _entity_dofs[dim].size());
 
   return _entity_dofs[dim][i];
+}
+//-----------------------------------------------------------------------------
+void ElementDofMap::calculate_closure_dofs(const mesh::CellType& cell_type)
+{
+
+  // Copy entity dofs, and add to them
+  std::vector<std::vector<std::vector<int>>> _entity_closure_dofs
+      = _entity_dofs;
+
+  std::vector<int> num_closure_dofs(_entity_dofs.size());
+
+  for (unsigned int dim = 0; dim < num_closure_dofs.size(); ++dim)
+  {
+    std::unique_ptr<mesh::CellType> entity_cell_type(
+        mesh::CellType::create(cell_type.entity_type(dim)));
+
+    num_closure_dofs[dim] = _num_entity_dofs[dim];
+    for (unsigned int j = 0; j < dim; ++j)
+    {
+      const unsigned int num_entities_j = entity_cell_type->num_entities(j);
+      num_closure_dofs[dim] += num_entities_j * _num_entity_dofs[j];
+    }
+    std::cout << "closure [" << dim << "] = " << num_closure_dofs[dim]
+              << std::endl;
+  }
 }
