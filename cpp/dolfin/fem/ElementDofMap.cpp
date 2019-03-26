@@ -107,3 +107,40 @@ void ElementDofMap::calculate_closure_dofs(const mesh::CellType& cell_type)
               << std::endl;
   }
 }
+//-----------------------------------------------------------------------------
+void get_cell_entity_map(const mesh::CellType& cell_type)
+{
+  const int nv = cell_type.num_vertices();
+
+  std::vector<boost::multi_array<std::int32_t, 2>> entity_vertices(
+      cell_type.dim());
+
+  // Create list of vertices
+  entity_vertices[0].resize(boost::extents[nv][1]);
+  std::iota(entity_vertices[0].data(), entity_vertices[0].data() + nv, 0);
+
+  // Get entity->vertex mapping
+  for (unsigned int dim = 1; dim < cell_type.dim(); ++dim)
+  {
+    std::cout << "Creating entities of dim = " << dim << "\n";
+    cell_type.create_entities(entity_vertices[dim], dim,
+                              entity_vertices[0].data());
+  }
+
+  // Work out the face->edge relation in 3D.
+  boost::multi_array<std::int32_t, 2> face_edges;
+  if (cell_type.dim() == 3)
+  {
+    std::unique_ptr<mesh::CellType> facet_type(
+        mesh::CellType::create(cell_type.facet_type()));
+
+    face_edges.resize(
+        boost::extents[cell_type.num_entities(2)][facet_type->num_entities(1)]);
+
+    for (unsigned int i = 0; i < entity_vertices[2].shape()[0]; ++i)
+    {
+      facet_type->create_entities(edge_vertices, 1,
+                                  entity_vertices[2][i].data());
+    }
+  }
+}
