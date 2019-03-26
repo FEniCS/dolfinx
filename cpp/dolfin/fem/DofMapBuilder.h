@@ -112,11 +112,9 @@ private:
 
   // Build graph from UFC 'node' dofmap. Returns (ufc_dofmap,
   // node_dofmap, node_local_to_global)
-  static std::tuple<ufc_dofmap*, std::vector<std::vector<PetscInt>>,
+  static std::tuple<std::vector<std::vector<PetscInt>>,
                     std::vector<std::size_t>>
-  build_ufc_node_graph(const ufc_dofmap& ufc_map,
-                       const ElementDofMap& el_dm,
-                       const mesh::Mesh& mesh,
+  build_ufc_node_graph(const ElementDofMap& el_dm, const mesh::Mesh& mesh,
                        const std::size_t block_size);
 
   // Mark shared nodes. Boundary nodes are assigned a random
@@ -126,8 +124,7 @@ private:
   static std::vector<int>
   compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
                        const std::size_t num_nodes_local,
-                       const ElementDofMap& el_dm,
-                       const mesh::Mesh& mesh);
+                       const ElementDofMap& el_dm, const mesh::Mesh& mesh);
 
   // FIXME: document better
   // Return (old-to-new_local, local_to_global_unowned) maps
