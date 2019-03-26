@@ -51,7 +51,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 
   // Determine block size (this reverse-engineers UFC output, would better to
   // support 'natively' in generated code)
-  const std::size_t bs = compute_blocksize(ufc_map, D);
+  //  const std::size_t bs = compute_blocksize(ufc_map, D);
 
   // Compute a 'node' dofmap based on a UFC dofmap (node is a point with a fixed
   // number of dofs). Returns:
@@ -63,6 +63,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 
   // Create element dofmap from ufc_dofmap
   ElementDofMap el_dm(ufc_map, mesh.type());
+  const std::size_t bs = el_dm.block_size();
 
   std::tie(ufc_node_dofmap, node_graph0, node_local_to_global0)
       = build_ufc_node_graph(ufc_map, el_dm, mesh, bs);
@@ -524,53 +525,6 @@ std::pair<ufc_dofmap*, int> DofMapBuilder::extract_ufc_sub_dofmap_new(
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMapBuilder::compute_blocksize(const ufc_dofmap& ufc_dofmap,
-                                             std::size_t tdim)
-{
-  // return 1;
-  bool has_block_structure = false;
-  if (ufc_dofmap.num_sub_dofmaps > 1)
-  {
-    // Create UFC first sub-dofmap
-    std::unique_ptr<struct ufc_dofmap, decltype(free)*> ufc_sub_dofmap0(
-        ufc_dofmap.create_sub_dofmap(0), free);
-    assert(ufc_sub_dofmap0);
-
-    // Create UFC sub-dofmaps and check if all sub dofmaps have the
-    // same number of dofs per entity
-    if (ufc_sub_dofmap0->num_sub_dofmaps != 0)
-      has_block_structure = false;
-    else
-    {
-      // Assume dof map has block structure, then check
-      has_block_structure = true;
-
-      // Create UFC sub-dofmaps and check that all sub dofmaps have
-      // the same number of dofs per entity
-      for (int i = 1; i < ufc_dofmap.num_sub_dofmaps; ++i)
-      {
-        std::unique_ptr<struct ufc_dofmap, decltype(free)*> ufc_sub_dofmap(
-            ufc_dofmap.create_sub_dofmap(i), free);
-        assert(ufc_sub_dofmap);
-        for (std::size_t d = 0; d <= tdim; ++d)
-        {
-          if (ufc_sub_dofmap->num_entity_dofs[d]
-              != ufc_sub_dofmap0->num_entity_dofs[d])
-          {
-            has_block_structure = false;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  if (has_block_structure)
-    return ufc_dofmap.num_sub_dofmaps;
-  else
-    return 1;
-}
-//-----------------------------------------------------------------------------
 std::tuple<ufc_dofmap*, std::vector<std::vector<PetscInt>>,
            std::vector<std::size_t>>
 DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
@@ -589,11 +543,6 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   for (std::size_t d = 0; d <= D; ++d)
     needs_entities[d] = (el_dm.num_entity_dofs(d) > 0);
 
-  std::vector<int> num_cell_entities(D + 1);
-  const mesh::CellType& cell_type = mesh.type();
-  for (std::size_t d = 0; d <= D; ++d)
-    num_cell_entities[d] = cell_type.num_entities(d);
-
   // Generate and number required mesh entities (local & global, and
   // constrained global)
   std::vector<int64_t> num_mesh_entities_local(D + 1, 0);
@@ -609,11 +558,13 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
     }
   }
 
+  // remove
   ufc_dofmap* dofmap = nullptr;
   if (block_size > 1)
     dofmap = ufc_map.create_sub_dofmap(0);
   else
     dofmap = ufc_map.create();
+  // remove
 
   const ElementDofMap& el_dm2 = (block_size > 1) ? el_dm.sub_dofmap(0) : el_dm;
 
@@ -621,17 +572,12 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   std::size_t local_size = 0;
   for (auto& n : num_mesh_entities_local)
   {
-    //    local_size += n * dofmap->num_entity_dofs[d];
     local_size += n * el_dm2.num_entity_dofs(d);
     ++d;
   }
 
   // Allocate space for dof map
   std::vector<std::vector<PetscInt>> node_dofmap(mesh.num_entities(D));
-
-  // Get standard local element dimension
-  //  const std::size_t local_dim
-  //      = dofmap->num_element_support_dofs + dofmap->num_global_support_dofs;
 
   const std::size_t local_dim = el_dm2.num_dofs();
 
@@ -654,18 +600,6 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
   // Vector for dof permutation
   std::vector<int> permutation(local_dim);
 
-  // const mesh::CellType& cell_type = mesh.type();
-  std::vector<std::vector<std::vector<int>>> entity_dofs(D + 1);
-  for (std::size_t d = 0; d < entity_dofs.size(); ++d)
-  {
-    entity_dofs[d].resize(cell_type.num_entities(d));
-    for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
-    {
-      entity_dofs[d][i].resize(el_dm2.num_entity_dofs(d));
-      dofmap->tabulate_entity_dofs(entity_dofs[d][i].data(), d, i);
-    }
-  }
-
   // Build dofmaps from ufc_dofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
@@ -675,15 +609,15 @@ DofMapBuilder::build_ufc_node_graph(const ufc_dofmap& ufc_map,
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
-    GenericDofMap::ufc_tabulate_dofs(ufc_nodes_local.data(), entity_dofs,
-                                     num_mesh_entities_local.data(),
-                                     entity_indices_ptr.data());
+    GenericDofMap::ufc_tabulate_dofs(
+        ufc_nodes_local.data(), el_dm2.entity_dofs(),
+        num_mesh_entities_local.data(), entity_indices_ptr.data());
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
-    GenericDofMap::ufc_tabulate_dofs(ufc_nodes_global.data(), entity_dofs,
-                                     num_mesh_entities_global.data(),
-                                     entity_indices_ptr.data());
+    GenericDofMap::ufc_tabulate_dofs(
+        ufc_nodes_global.data(), el_dm2.entity_dofs(),
+        num_mesh_entities_global.data(), entity_indices_ptr.data());
 
     // Get the edge and facet permutations of the dofs for this cell,
     // based on global vertex indices.
