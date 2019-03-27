@@ -8,6 +8,7 @@
 
 #include <dolfin/common/types.h>
 #include <set>
+#include <memory>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
