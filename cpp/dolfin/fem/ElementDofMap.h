@@ -95,9 +95,6 @@ public:
   int block_size() const { return _block_size; }
 
 private:
-  // work out closure dofs... needs more work
-  void calculate_closure_dofs(const mesh::CellType& cell_type);
-  void get_cell_entity_map(const mesh::CellType& cell_type);
 
   // try to figure out block size. FIXME - replace elsewhere
   int analyse_block_structure() const;
