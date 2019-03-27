@@ -34,13 +34,9 @@ using namespace dolfin::fem;
 std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
            std::unordered_map<int, std::vector<int>>, std::set<int>,
            std::vector<PetscInt>>
-DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
+DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
 {
   common::Timer t0("Init dofmap");
-
-  // Create element dofmap (and all elemental subdofmaps)
-  // from ufc_dofmap and cell type
-  ElementDofMap el_dm(ufc_map, mesh.type());
 
   // Extract needs_entities as vector of bool
   const std::size_t D = mesh.topology().dim();

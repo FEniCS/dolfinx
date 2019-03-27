@@ -32,7 +32,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                     + _ufc_dofmap->num_global_support_dofs;
 
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(*_ufc_dofmap, mesh);
+      = DofMapBuilder::build(*_element_dofmap, mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -78,18 +78,18 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const mesh::Mesh& mesh)
     : _cell_dimension(-1), _ufc_dofmap(dofmap_view._ufc_dofmap),
-      _global_dimension(-1), _ufc_offset(-1)
+      _global_dimension(-1), _ufc_offset(-1),
+      _element_dofmap(dofmap_view._element_dofmap)
 {
   assert(_ufc_dofmap);
 
-  // Check dimensional consistency between UFC dofmap and the mesh
-  check_provided_entities(*_ufc_dofmap, mesh);
+  // Check dimensional consistency between ElementDofMap and the mesh
+  check_provided_entities(*_element_dofmap, mesh);
 
   // Build new dof map
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(*_ufc_dofmap, mesh);
-  _cell_dimension = _ufc_dofmap->num_element_support_dofs
-                    + _ufc_dofmap->num_global_support_dofs;
+      = DofMapBuilder::build(*_element_dofmap, mesh);
+  _cell_dimension = _element_dofmap->num_dofs();
 
   const int tdim = mesh.topology().dim();
 
@@ -220,13 +220,13 @@ void DofMap::set(Vec x, PetscScalar value) const
     x_array[index] = value;
 }
 //-----------------------------------------------------------------------------
-void DofMap::check_provided_entities(const ufc_dofmap& dofmap,
+void DofMap::check_provided_entities(const ElementDofMap& dofmap,
                                      const mesh::Mesh& mesh)
 {
   // Check that we have all mesh entities
   for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
   {
-    if (dofmap.num_entity_dofs[d] > 0 && mesh.num_entities(d) == 0)
+    if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
     {
       throw std::runtime_error("Missing entities of dimension "
                                + std::to_string(d) + " in dofmap construction");

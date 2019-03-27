@@ -247,7 +247,7 @@ public:
 
 private:
   // Check that mesh provides the entities needed by dofmap
-  static void check_provided_entities(const ufc_dofmap& dofmap,
+  static void check_provided_entities(const ElementDofMap& dofmap,
                                       const mesh::Mesh& mesh);
 
   // Cell-local-to-dof map (dofs for cell dofmap[i])

@@ -52,7 +52,7 @@ public:
   static std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
                     std::unordered_map<int, std::vector<int>>, std::set<int>,
                     std::vector<PetscInt>>
-  build(const ufc_dofmap& ufc_map, const mesh::Mesh& dolfin_mesh);
+  build(const ElementDofMap& el_dm, const mesh::Mesh& dolfin_mesh);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
   ///
