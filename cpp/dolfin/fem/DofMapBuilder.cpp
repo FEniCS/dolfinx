@@ -874,7 +874,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
 
   // Store number of global mesh entities and set global dimension
   std::size_t global_dimension = 0;
-  for (std::size_t d = 0; d < D + 1; ++d)
+  for (int d = 0; d < D + 1; ++d)
   {
     const std::int64_t n = mesh.num_entities_global(d);
     global_dimension += n * sub_el_dm->num_entity_dofs(d);
