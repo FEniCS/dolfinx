@@ -24,13 +24,12 @@ using namespace dolfin::fem;
 DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                const mesh::Mesh& mesh)
     : _cell_dimension(-1), _ufc_dofmap(ufc_dofmap), _global_dimension(0),
-      _ufc_offset(-1)
+      _ufc_offset(-1),
+      _element_dofmap(new ElementDofMap(*ufc_dofmap, mesh.type()))
 {
   assert(_ufc_dofmap);
   _cell_dimension = _ufc_dofmap->num_element_support_dofs
                     + _ufc_dofmap->num_global_support_dofs;
-
-  ElementDofMap element_dofmap(*ufc_dofmap, mesh.type());
 
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
       = DofMapBuilder::build(*_ufc_dofmap, mesh);
@@ -51,17 +50,18 @@ DofMap::DofMap(const DofMap& parent_dofmap,
   const std::int64_t parent_offset
       = parent_dofmap._ufc_offset > 0 ? parent_dofmap._ufc_offset : 0;
 
-  // Copy over from parent dofmap
-  ElementDofMap parent_element_dofmap(*parent_dofmap._ufc_dofmap, mesh.type());
+  std::shared_ptr<const ElementDofMap> parent_element_dofmap(
+      parent_dofmap._element_dofmap);
 
   // Build sub-dofmap
   assert(parent_dofmap._ufc_dofmap);
   ufc_dofmap* _ufc_dofmap_ptr = nullptr;
   std::tie(_ufc_dofmap_ptr, _ufc_offset, _global_dimension, _dofmap)
       = DofMapBuilder::build_sub_map_view(
-          parent_dofmap, *parent_dofmap._ufc_dofmap, parent_element_dofmap,
+          parent_dofmap, *parent_dofmap._ufc_dofmap, *parent_element_dofmap,
           parent_dofmap.block_size(), parent_offset, component, mesh);
   _ufc_dofmap.reset(_ufc_dofmap_ptr, free);
+  _element_dofmap = parent_element_dofmap->sub_dofmap(component);
 
   assert(_ufc_dofmap);
   _cell_dimension = _ufc_dofmap->num_element_support_dofs

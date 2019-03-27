@@ -52,7 +52,7 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
   {
     ufc_dofmap* sub_dofmap = dofmap.create_sub_dofmap(i);
     sub_dofmaps.push_back(
-        std::make_unique<ElementDofMap>(*sub_dofmap, cell_type));
+        std::make_shared<ElementDofMap>(*sub_dofmap, cell_type));
     std::free(sub_dofmap);
   }
 
@@ -97,17 +97,24 @@ int ElementDofMap::analyse_block_structure() const
   return sub_dofmaps.size();
 }
 //-----------------------------------------------------------------------------
-const ElementDofMap&
+std::shared_ptr<const ElementDofMap>
 ElementDofMap::sub_dofmap(const std::vector<std::size_t>& component) const
 {
-  const ElementDofMap* current(this);
-  for (auto i : component)
+  if (component.size() == 0)
+    throw std::runtime_error("No sub dofmap specified");
+  if (component[0] >= sub_dofmaps.size())
+    throw std::runtime_error("Invalid sub dofmap specified");
+
+  std::shared_ptr<const ElementDofMap> current = sub_dofmaps[component[0]];
+
+  for (unsigned int i = 1; i < component.size(); ++i)
   {
-    if (i >= current->sub_dofmaps.size())
+    const std::size_t idx = component[i];
+    if (idx >= current->sub_dofmaps.size())
       throw std::runtime_error("Invalid component");
-    current = &*sub_dofmaps[i];
+    current = sub_dofmaps[idx];
   }
-  return *current;
+  return current;
 }
 //-----------------------------------------------------------------------------
 std::vector<int> ElementDofMap::sub_dofmap_mapping(

@@ -83,7 +83,7 @@ public:
   unsigned int num_sub_dofmaps() const { return sub_dofmaps.size(); }
 
   /// Get subdofmap given by list of components, one for each level.
-  const ElementDofMap&
+  std::shared_ptr<const ElementDofMap>
   sub_dofmap(const std::vector<std::size_t>& component) const;
 
   /// Get mapping from a child dofmap, referenced by
@@ -126,7 +126,7 @@ private:
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
-  std::vector<std::unique_ptr<ElementDofMap>> sub_dofmaps;
+  std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps;
 };
 } // namespace fem
 } // namespace dolfin

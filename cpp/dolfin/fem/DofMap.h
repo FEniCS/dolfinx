@@ -7,6 +7,7 @@
 #pragma once
 
 #include "GenericDofMap.h"
+#include "ElementDofMap.h"
 #include "petscsys.h"
 #include <Eigen/Dense>
 #include <array>
@@ -276,6 +277,8 @@ private:
 
   // Processes that this dofmap shares dofs with
   std::set<int> _neighbours;
+
+  std::shared_ptr<const ElementDofMap> _element_dofmap;
 };
 } // namespace fem
 } // namespace dolfin

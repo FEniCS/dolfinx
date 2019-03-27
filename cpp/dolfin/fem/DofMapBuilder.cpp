@@ -62,8 +62,12 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 
   // If block size is not 1, use first sub-dofmap instead.
   const std::size_t bs = el_dm.block_size();
-  const ElementDofMap& el_dm_blocked
-      = (bs > 1) ? el_dm.sub_dofmap({{0}}) : el_dm;
+
+  // FIXME: clean this up somehow
+  std::shared_ptr<const ElementDofMap> el_dm_b;
+  if (bs > 1)
+    el_dm_b = el_dm.sub_dofmap({{0}});
+  const ElementDofMap& el_dm_blocked = (bs > 1) ? *el_dm_b : el_dm;
 
   std::tie(node_graph0, node_local_to_global0)
       = build_ufc_node_graph(el_dm_blocked, mesh);
@@ -175,7 +179,8 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   assert(ufc_sub_dofmap);
 
   // Alternative with ElementDofMap
-  const ElementDofMap& sub_el_dm = parent_element_dofmap.sub_dofmap(component);
+  std::shared_ptr<const ElementDofMap> sub_el_dm
+      = parent_element_dofmap.sub_dofmap(component);
   const std::vector<int> sub_el_map
       = parent_element_dofmap.sub_dofmap_mapping(component);
 
@@ -184,7 +189,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   {
     const int c = cell.index();
     // FIXME: count global dofs
-    const int num_sub_dofs = sub_el_dm.num_dofs();
+    const int num_sub_dofs = sub_el_dm->num_dofs();
     auto dmap_parent = parent_dofmap.cell_dofs(c);
     sub_dofmap_graph[c].resize(num_sub_dofs);
     for (int i = 0; i < num_sub_dofs; ++i)
@@ -196,7 +201,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   for (std::size_t d = 0; d < D + 1; ++d)
   {
     const std::int64_t n = mesh.num_entities_global(d);
-    global_dimension += n * sub_el_dm.num_entity_dofs(d);
+    global_dimension += n * sub_el_dm->num_entity_dofs(d);
   }
 
   // Flatten new dofmap
