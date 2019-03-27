@@ -62,7 +62,7 @@ DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
   // FIXME: clean this up somehow
   std::shared_ptr<const ElementDofMap> el_dm_b;
   if (bs > 1)
-    el_dm_b = el_dm.sub_dofmap({{0}});
+    el_dm_b = el_dm.sub_dofmap({0});
   const ElementDofMap& el_dm_blocked = (bs > 1) ? *el_dm_b : el_dm;
 
   std::tie(node_graph0, node_local_to_global0)
