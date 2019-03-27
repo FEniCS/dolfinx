@@ -28,8 +28,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
       _element_dofmap(new ElementDofMap(*ufc_dofmap, mesh.type()))
 {
   assert(_ufc_dofmap);
-  _cell_dimension = _ufc_dofmap->num_element_support_dofs
-                    + _ufc_dofmap->num_global_support_dofs;
+  _cell_dimension = _element_dofmap->num_dofs();
 
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
       = DofMapBuilder::build(*_element_dofmap, mesh);
@@ -61,11 +60,9 @@ DofMap::DofMap(const DofMap& parent_dofmap,
           parent_dofmap, *parent_dofmap._ufc_dofmap, *parent_element_dofmap,
           parent_dofmap.block_size(), parent_offset, component, mesh);
   _ufc_dofmap.reset(_ufc_dofmap_ptr, free);
-  _element_dofmap = parent_element_dofmap->sub_dofmap(component);
 
-  assert(_ufc_dofmap);
-  _cell_dimension = _ufc_dofmap->num_element_support_dofs
-                    + _ufc_dofmap->num_global_support_dofs;
+  _element_dofmap = parent_element_dofmap->sub_dofmap(component);
+  _cell_dimension = _element_dofmap->num_dofs();
 
   // FIXME: this will be wrong
   _shared_nodes = parent_dofmap._shared_nodes;
@@ -81,8 +78,6 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
       _global_dimension(-1), _ufc_offset(-1),
       _element_dofmap(dofmap_view._element_dofmap)
 {
-  assert(_ufc_dofmap);
-
   // Check dimensional consistency between ElementDofMap and the mesh
   check_provided_entities(*_element_dofmap, mesh);
 
@@ -128,14 +123,14 @@ std::size_t DofMap::max_element_dofs() const { return _cell_dimension; }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
-  assert(_ufc_dofmap);
-  return _ufc_dofmap->num_entity_dofs[entity_dim];
+  assert(_element_dofmap);
+  return _element_dofmap->num_entity_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 {
-  assert(_ufc_dofmap);
-  return _ufc_dofmap->num_entity_closure_dofs[entity_dim];
+  assert(_element_dofmap);
+  return _element_dofmap->num_entity_closure_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
@@ -157,12 +152,17 @@ Eigen::Array<int, Eigen::Dynamic, 1>
 DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
                                      std::size_t cell_entity_index) const
 {
-  assert(_ufc_dofmap);
+  const std::vector<std::vector<std::vector<int>>>& dofs
+      = _element_dofmap->entity_closure_dofs();
+
+  assert(entity_dim < dofs.size());
+  assert(cell_entity_index < dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
-      _ufc_dofmap->num_entity_closure_dofs[entity_dim]);
-  assert(_ufc_dofmap->tabulate_entity_closure_dofs);
-  _ufc_dofmap->tabulate_entity_closure_dofs(element_dofs.data(), entity_dim,
-                                            cell_entity_index);
+      dofs[entity_dim][cell_entity_index].size());
+
+  std::copy(dofs[entity_dim][cell_entity_index].begin(),
+            dofs[entity_dim][cell_entity_index].end(), element_dofs.data());
+
   return element_dofs;
 }
 //-----------------------------------------------------------------------------
@@ -170,15 +170,17 @@ Eigen::Array<int, Eigen::Dynamic, 1>
 DofMap::tabulate_entity_dofs(std::size_t entity_dim,
                              std::size_t cell_entity_index) const
 {
-  assert(_ufc_dofmap);
-  if (_ufc_dofmap->num_entity_dofs[entity_dim] == 0)
-    return Eigen::Array<int, Eigen::Dynamic, 1>();
+  const std::vector<std::vector<std::vector<int>>>& dofs
+      = _element_dofmap->entity_dofs();
 
+  assert(entity_dim < dofs.size());
+  assert(cell_entity_index < dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
-      _ufc_dofmap->num_entity_dofs[entity_dim]);
-  assert(_ufc_dofmap->tabulate_entity_dofs);
-  _ufc_dofmap->tabulate_entity_dofs(element_dofs.data(), entity_dim,
-                                    cell_entity_index);
+      dofs[entity_dim][cell_entity_index].size());
+
+  std::copy(dofs[entity_dim][cell_entity_index].begin(),
+            dofs[entity_dim][cell_entity_index].end(), element_dofs.data());
+
   return element_dofs;
 }
 //-----------------------------------------------------------------------------
