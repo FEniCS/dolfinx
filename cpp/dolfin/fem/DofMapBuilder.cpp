@@ -182,7 +182,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   {
     const int c = cell.index();
     // FIXME: count global dofs
-    const int num_sub_dofs = ufc_sub_dofmap->num_element_support_dofs;
+    const int num_sub_dofs = sub_el_dm.num_dofs();
     auto dmap_parent = parent_dofmap.cell_dofs(c);
     sub_dofmap_graph[c].resize(num_sub_dofs);
     for (int i = 0; i < num_sub_dofs; ++i)

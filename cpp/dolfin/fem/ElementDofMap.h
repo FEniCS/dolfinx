@@ -83,13 +83,13 @@ public:
   unsigned int num_sub_dofmaps() const { return sub_dofmaps.size(); }
 
   /// Get subdofmap i
-  const ElementDofMap& sub_dofmap(const std::vector<std::size_t>& component) const;
+  const ElementDofMap&
+  sub_dofmap(const std::vector<std::size_t>& component) const;
 
   // Block size
   int block_size() const { return _block_size; }
 
 private:
-
   // work out closure dofs... needs more work
   void calculate_closure_dofs(const mesh::CellType& cell_type);
   void get_cell_entity_map(const mesh::CellType& cell_type);
@@ -97,6 +97,10 @@ private:
   // try to figure out block size. FIXME - replace elsewhere
   int analyse_block_structure() const;
 
+  // Mapping of dofs to this ElementDofMap's immediate parent
+  std::vector<int> _parent_map;
+
+  // Block size, as deduced in from UFC
   int _block_size;
 
   // Total number of dofs in this element dofmap

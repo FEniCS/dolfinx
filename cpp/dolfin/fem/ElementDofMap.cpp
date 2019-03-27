@@ -56,6 +56,15 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
     std::free(sub_dofmap);
   }
 
+  // UFC dofmaps just use simple offset for each field
+  int offset = 0;
+  for (auto& sub_dm : sub_dofmaps)
+  {
+    sub_dm->_parent_map.resize(sub_dm->num_dofs());
+    std::iota(sub_dm->_parent_map.begin(), sub_dm->_parent_map.end(), offset);
+    offset += sub_dm->_parent_map.size();
+  }
+
   // Check for "block structure".
   // This should ultimately be replaced, but keep for now to mimic existing
   // code
