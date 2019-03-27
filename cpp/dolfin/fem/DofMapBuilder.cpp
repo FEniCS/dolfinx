@@ -810,7 +810,7 @@ DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
   auto index_map = std::make_unique<common::IndexMap>(
       mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, bs);
   assert(index_map);
-  assert(MPI::sum(mesh.mpi_comm(), bs * index_map->size_local())
+  assert(dolfin::MPI::sum(mesh.mpi_comm(), bs * index_map->size_local())
          == global_dimension);
 
   // Update shared_nodes for node reordering
