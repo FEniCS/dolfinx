@@ -259,9 +259,6 @@ private:
   // Cell dimension (fixed for all cells)
   int _cell_dimension;
 
-  // UFC dof map
-  std::shared_ptr<const ufc_dofmap> _ufc_dofmap;
-
   // Global dimension
   std::int64_t _global_dimension;
 

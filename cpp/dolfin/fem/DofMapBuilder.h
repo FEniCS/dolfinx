@@ -93,16 +93,6 @@ private:
                const std::vector<int>& old_to_new_node_local,
                const std::size_t block_size);
 
-  // Compute set of global dofs (e.g. Reals associated with global
-  // Lagrange multipliers) based on UFC numbering. Global dofs are
-  // not associated with any mesh entity. The returned indices are
-  // local to the process.
-  static std::pair<std::set<std::size_t>, std::size_t>
-  extract_global_dofs(const ufc_dofmap& ufc_map,
-                      const std::vector<int64_t>& num_mesh_entities_local,
-                      std::set<std::size_t> global_dofs = {},
-                      std::size_t offset_local = 0);
-
   // Build graph from ElementDofmap. Returns (node_dofmap,
   // node_local_to_global)
   static std::tuple<std::vector<std::vector<PetscInt>>,

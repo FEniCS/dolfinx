@@ -23,8 +23,7 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _ufc_dofmap(ufc_dofmap), _global_dimension(0),
-      _ufc_offset(-1),
+    : _cell_dimension(-1), _global_dimension(0), _ufc_offset(-1),
       _element_dofmap(new ElementDofMap(*ufc_dofmap, mesh.type()))
 {
   _cell_dimension = _element_dofmap->num_dofs();
@@ -64,8 +63,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _ufc_dofmap(dofmap_view._ufc_dofmap),
-      _global_dimension(-1), _ufc_offset(-1),
+    : _cell_dimension(-1), _global_dimension(-1), _ufc_offset(-1),
       _element_dofmap(dofmap_view._element_dofmap)
 {
   // Check dimensional consistency between ElementDofMap and the mesh
