@@ -16,6 +16,8 @@ using namespace dolfin::fem;
 ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
                              const mesh::CellType& cell_type)
 {
+  // Initialise an "ElementDofMap" from a ufc_dofmap
+
   // Copy total number of dofs from ufc
   _num_dofs = dofmap.num_element_support_dofs + dofmap.num_global_support_dofs;
 

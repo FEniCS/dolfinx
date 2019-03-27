@@ -145,12 +145,9 @@ DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
                          std::move(cell_dofmap));
 }
 //-----------------------------------------------------------------------------
-std::tuple<ufc_dofmap*, std::int64_t, std::int64_t, std::vector<PetscInt>>
+std::tuple<std::int64_t, std::vector<PetscInt>>
 DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
-                                  const ufc_dofmap& parent_ufc_dofmap,
                                   const ElementDofMap& parent_element_dofmap,
-                                  const int parent_block_size,
-                                  const std::int64_t parent_cell_offset,
                                   const std::vector<std::size_t>& component,
                                   const mesh::Mesh& mesh)
 {
@@ -166,13 +163,6 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
     needs_entities[d] = parent_element_dofmap.num_entity_dofs(d) > 0;
-
-  // Extract local UFC sub-dofmap from parent and update offset
-  ufc_dofmap* ufc_sub_dofmap = nullptr;
-  std::int64_t ufc_cell_offset;
-  std::tie(ufc_sub_dofmap, ufc_cell_offset) = extract_ufc_sub_dofmap(
-      parent_ufc_dofmap, component, num_cell_entities, parent_cell_offset);
-  assert(ufc_sub_dofmap);
 
   // Alternative with ElementDofMap
   std::shared_ptr<const ElementDofMap> sub_el_dm
@@ -205,8 +195,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   for (auto const& cell_dofs : sub_dofmap_graph)
     cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
 
-  return std::make_tuple(ufc_sub_dofmap, std::move(ufc_cell_offset),
-                         std::move(global_dimension), std::move(cell_dofmap));
+  return std::make_tuple(std::move(global_dimension), std::move(cell_dofmap));
 }
 //-----------------------------------------------------------------------------
 std::tuple<int, std::vector<short int>,
@@ -397,71 +386,6 @@ DofMapBuilder::compute_node_ownership(
   return std::make_tuple(std::move(num_owned_nodes), std::move(node_ownership),
                          std::move(shared_node_to_processes),
                          std::move(neighbours));
-}
-//-----------------------------------------------------------------------------
-std::pair<ufc_dofmap*, int> DofMapBuilder::extract_ufc_sub_dofmap(
-    const ufc_dofmap& ufc_map, const std::vector<std::size_t>& component,
-    const std::vector<int>& num_cell_entities, int offset)
-{
-  // Check that a sub system has been specified
-  if (component.empty())
-  {
-    throw std::runtime_error("Extracting subsystem of degree of freedom "
-                             "mapping - no system was specified");
-  }
-
-  // Check if there are any sub systems, and for available sub systems
-  const std::size_t num_sub_dofmaps = ufc_map.num_sub_dofmaps;
-  if (num_sub_dofmaps == 0)
-  {
-    throw std::runtime_error("Extracting subsystem of degree of freedom "
-                             "mapping - there are no subsystems");
-  }
-  else if (component[0] >= num_sub_dofmaps)
-  {
-    throw std::runtime_error("Requested subsystem ("
-                             + std::to_string(component[0])
-                             + ") out of range [0, "
-                             + std::to_string(ufc_map.num_sub_dofmaps) + ")");
-  }
-
-  // Add to offset if necessary
-  for (std::size_t i = 0; i < component[0]; i++)
-  {
-    // Extract sub dofmap
-    ufc_dofmap* ufc_tmp_dofmap = ufc_map.create_sub_dofmap(i);
-    assert(ufc_tmp_dofmap);
-
-    // Get offset
-    unsigned int d = 0;
-    for (auto& n : num_cell_entities)
-    {
-      offset += n * ufc_tmp_dofmap->num_entity_dofs[d];
-      ++d;
-    }
-
-    free(ufc_tmp_dofmap);
-  }
-
-  // Create UFC sub-system
-  ufc_dofmap* sub_dofmap = ufc_map.create_sub_dofmap(component[0]);
-  assert(sub_dofmap);
-
-  // Return sub-system if sub-sub-system should not be extracted,
-  // otherwise recursively extract the sub sub system
-  if (component.size() == 1)
-    return std::make_pair(sub_dofmap, std::move(offset));
-  else
-  {
-    std::vector<std::size_t> sub_component;
-    for (std::size_t i = 1; i < component.size(); ++i)
-      sub_component.push_back(component[i]);
-
-    std::pair<ufc_dofmap*, int> p = extract_ufc_sub_dofmap(
-        *sub_dofmap, sub_component, num_cell_entities, offset);
-    free(sub_dofmap);
-    return p;
-  }
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::vector<PetscInt>>, std::vector<std::size_t>>

@@ -27,7 +27,6 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
       _ufc_offset(-1),
       _element_dofmap(new ElementDofMap(*ufc_dofmap, mesh.type()))
 {
-  assert(_ufc_dofmap);
   _cell_dimension = _element_dofmap->num_dofs();
 
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
@@ -45,21 +44,12 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 
   // FIXME: the index map block size will be wrong here???
 
-  // Convenience reference to parent UFC dofmap
-  const std::int64_t parent_offset
-      = parent_dofmap._ufc_offset > 0 ? parent_dofmap._ufc_offset : 0;
-
   std::shared_ptr<const ElementDofMap> parent_element_dofmap(
       parent_dofmap._element_dofmap);
 
   // Build sub-dofmap
-  assert(parent_dofmap._ufc_dofmap);
-  ufc_dofmap* _ufc_dofmap_ptr = nullptr;
-  std::tie(_ufc_dofmap_ptr, _ufc_offset, _global_dimension, _dofmap)
-      = DofMapBuilder::build_sub_map_view(
-          parent_dofmap, *parent_dofmap._ufc_dofmap, *parent_element_dofmap,
-          parent_dofmap.block_size(), parent_offset, component, mesh);
-  _ufc_dofmap.reset(_ufc_dofmap_ptr, free);
+  std::tie(_global_dimension, _dofmap) = DofMapBuilder::build_sub_map_view(
+      parent_dofmap, *parent_element_dofmap, component, mesh);
 
   _element_dofmap = parent_element_dofmap->sub_dofmap(component);
   _cell_dimension = _element_dofmap->num_dofs();
