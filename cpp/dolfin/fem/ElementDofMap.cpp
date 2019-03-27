@@ -7,7 +7,7 @@
 #include "ElementDofMap.h"
 #include <cstdlib>
 #include <dolfin/mesh/CellType.h>
-#include <iostream>
+#include <ufc.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -51,19 +51,19 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
   // Copy total number of dofs from ufc
   _num_dofs = dofmap.num_element_support_dofs + dofmap.num_global_support_dofs;
 
-  // Copy over number of dofs per entity type (and also closure dofs per entity
-  // type)
+  // Copy over number of dofs per entity type (and also closure dofs per
+  // entity type)
   // FIXME: can we generate closure dofs automatically here (see below)?
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
-            _num_entity_dofs);
+            _num_entity_dofs.data());
   std::copy(dofmap.num_entity_closure_dofs, dofmap.num_entity_closure_dofs + 4,
-            _num_entity_closure_dofs);
+            _num_entity_closure_dofs.data());
 
   // Fill entity dof indices
   const int cell_dim = cell_type.dim();
   _entity_dofs.resize(cell_dim + 1);
   _entity_closure_dofs.resize(cell_dim + 1);
-  for (int dim = 0; dim < cell_dim + 1; ++dim)
+  for (int dim = 0; dim <= cell_dim; ++dim)
   {
     int num_entities = cell_type.num_entities(dim);
     _entity_dofs[dim].resize(num_entities);
@@ -103,6 +103,34 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
   _block_size = analyse_block_structure(_sub_dofmaps);
 }
 //-----------------------------------------------------------------------------
+int ElementDofMap::num_dofs() const { return _num_dofs; }
+//-----------------------------------------------------------------------------
+int ElementDofMap::num_entity_dofs(int dim) const
+{
+  assert(dim < 4);
+  return _num_entity_dofs[dim];
+}
+//-----------------------------------------------------------------------------
+int ElementDofMap::num_entity_closure_dofs(int dim) const
+{
+  assert(dim < 4);
+  return _num_entity_closure_dofs[dim];
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::vector<std::vector<int>>>&
+ElementDofMap::entity_dofs() const
+{
+  return _entity_dofs;
+}
+//-----------------------------------------------------------------------------
+const std::vector<std::vector<std::vector<int>>>&
+ElementDofMap::entity_closure_dofs() const
+{
+  return _entity_closure_dofs;
+}
+//-----------------------------------------------------------------------------
+int ElementDofMap::num_sub_dofmaps() const { return _sub_dofmaps.size(); }
+//-----------------------------------------------------------------------------
 std::shared_ptr<const ElementDofMap>
 ElementDofMap::sub_dofmap(const std::vector<std::size_t>& component) const
 {
@@ -129,10 +157,11 @@ std::vector<int> ElementDofMap::sub_dofmap_mapping(
   std::vector<int> doflist(_num_dofs);
   std::iota(doflist.begin(), doflist.end(), 0);
 
-  const ElementDofMap* current(this);
+  const ElementDofMap* current = this;
   for (auto i : component)
   {
     // Switch to sub-dofmap
+    assert(curent);
     if (i >= current->_sub_dofmaps.size())
       throw std::runtime_error("Invalid component");
     current = _sub_dofmaps[i].get();
@@ -142,6 +171,9 @@ std::vector<int> ElementDofMap::sub_dofmap_mapping(
       new_doflist[j] = doflist[current->_parent_map[j]];
     doflist = new_doflist;
   }
+
   return doflist;
 }
+//-----------------------------------------------------------------------------
+int ElementDofMap::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------

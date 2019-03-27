@@ -4,12 +4,12 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#pragma once
+
+#include <array>
 #include <dolfin/common/types.h>
 #include <memory>
-#include <ufc.h>
 #include <vector>
-
-#pragma once
 
 struct ufc_dofmap;
 
@@ -23,10 +23,8 @@ class CellType;
 
 namespace fem
 {
-
-/// Element degree-of-freedom map
-
-/// This class handles the mapping of degrees of freedom on an element.
+/// Element degree-of-freedom map. This class handles the mapping of
+/// degrees of freedom on an element.
 
 class ElementDofMap
 {
@@ -49,37 +47,23 @@ public:
   ElementDofMap& operator=(ElementDofMap&& dofmap) = default;
 
   /// Total number of dofs on element
-  int num_dofs() const { return _num_dofs; }
+  int num_dofs() const;
 
   /// Number of dofs associated with entities of dimension dim
-  int num_entity_dofs(int dim) const
-  {
-    assert(dim < 4);
-    return _num_entity_dofs[dim];
-  }
+  int num_entity_dofs(int dim) const;
 
   /// Number of dofs associated with entities of dimension dim (plus
   /// connected entities of lower dim)
-  int num_entity_closure_dofs(int dim) const
-  {
-    assert(dim < 4);
-    return _num_entity_closure_dofs[dim];
-  }
+  int num_entity_closure_dofs(int dim) const;
 
   /// Direct access to all entity dofs
-  const std::vector<std::vector<std::vector<int>>>& entity_dofs() const
-  {
-    return _entity_dofs;
-  }
+  const std::vector<std::vector<std::vector<int>>>& entity_dofs() const;
 
   /// Direct access to all entity closure dofs
-  const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs() const
-  {
-    return _entity_closure_dofs;
-  }
+  const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs() const;
 
   /// Get number of sub-dofmaps
-  int num_sub_dofmaps() const { return _sub_dofmaps.size(); }
+  int num_sub_dofmaps() const;
 
   /// Get subdofmap given by list of components, one for each level.
   std::shared_ptr<const ElementDofMap>
@@ -91,7 +75,7 @@ public:
   sub_dofmap_mapping(const std::vector<std::size_t>& component) const;
 
   // Block size
-  int block_size() const { return _block_size; }
+  int block_size() const;
 
 private:
   // Mapping of dofs to this ElementDofMap's immediate parent
@@ -104,11 +88,11 @@ private:
   int _num_dofs;
 
   // The number of dofs associated with each entity type
-  int _num_entity_dofs[4];
+  std::array<int, 4> _num_entity_dofs;
 
   // The number of dofs associated with each entity type, including
   // all connected entities of lower dimension.
-  int _num_entity_closure_dofs[4];
+  std::array<int, 4> _num_entity_closure_dofs;
 
   // List of dofs per entity, ordered by dimension.
   // dof = _entity_dofs[dim][entity][i]
