@@ -428,7 +428,7 @@ build_ufc_node_graph(const ElementDofMap& el_dm_blocked, const mesh::Mesh& mesh)
       cell_nodes[i] = ufc_nodes_local[i];
 
     // Build local-to-global map for nodes
-    for (std::size_t i = 0; i < local_dim; ++i)
+    for (int i = 0; i < local_dim; ++i)
     {
       assert(ufc_nodes_local[i] < (int)node_local_to_global.size());
       node_local_to_global[ufc_nodes_local[i]] = ufc_nodes_global[i];
@@ -808,7 +808,7 @@ DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
   auto index_map = std::make_unique<common::IndexMap>(
       mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, bs);
   assert(index_map);
-  assert(dolfin::MPI::sum(mesh.mpi_comm(), bs * index_map->size_local())
+  assert(dolfin::MPI::sum(mesh.mpi_comm(), (std::size_t) bs * index_map->size_local())
          == global_dimension);
 
   // Update shared_nodes for node reordering
