@@ -6,16 +6,11 @@
 
 #pragma once
 
-#include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <memory>
 #include <set>
 #include <tuple>
 #include <unordered_map>
-#include <utility>
 #include <vector>
-
-struct ufc_dofmap;
 
 namespace dolfin
 {
@@ -27,16 +22,13 @@ class IndexMap;
 
 namespace mesh
 {
-class Cell;
 class Mesh;
-class SubDomain;
 } // namespace mesh
 
 namespace fem
 {
 class DofMap;
 class ElementDofMap;
-class UFC;
 
 /// Builds a DofMap on a mesh::Mesh
 

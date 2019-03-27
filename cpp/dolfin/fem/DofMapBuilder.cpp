@@ -9,6 +9,7 @@
 #include "ElementDofMap.h"
 #include <cstdlib>
 #include <dolfin/common/IndexMap.h>
+#include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/graph/BoostGraphOrdering.h>
@@ -24,7 +25,6 @@
 #include <random>
 // #include <spdlog/spdlog.h>
 #include <stdlib.h>
-#include <ufc.h>
 #include <utility>
 
 using namespace dolfin;
@@ -37,15 +37,13 @@ void get_cell_entities_local(std::vector<std::vector<int64_t>>& entity_indices,
                              const mesh::Cell& cell,
                              const std::vector<bool>& needs_mesh_entities)
 {
-  const std::size_t D = cell.mesh().topology().dim();
+  const int D = cell.mesh().topology().dim();
+  for (int d = 0; d < D; ++d)
   {
-    for (std::size_t d = 0; d < D; ++d)
+    if (needs_mesh_entities[d])
     {
-      if (needs_mesh_entities[d])
-      {
-        for (std::size_t i = 0; i < cell.num_entities(d); ++i)
-          entity_indices[d][i] = cell.entities(d)[i];
-      }
+      for (std::size_t i = 0; i < cell.num_entities(d); ++i)
+        entity_indices[d][i] = cell.entities(d)[i];
     }
   }
 
@@ -59,15 +57,16 @@ void get_cell_entities_global(std::vector<std::vector<int64_t>>& entity_indices,
                               const std::vector<bool>& needs_mesh_entities)
 {
   const mesh::MeshTopology& topology = cell.mesh().topology();
-  const std::size_t D = topology.dim();
-  for (std::size_t d = 0; d < D; ++d)
+  const int D = topology.dim();
+  for (int d = 0; d < D; ++d)
   {
     if (needs_mesh_entities[d])
     {
       // TODO: Check if this ever will be false in here
       if (topology.have_global_indices(d))
       {
-        const auto& global_indices = topology.global_indices(d);
+        const std::vector<std::int64_t>& global_indices
+            = topology.global_indices(d);
         for (std::size_t i = 0; i < cell.num_entities(d); ++i)
           entity_indices[d][i] = global_indices[cell.entities(d)[i]];
       }
@@ -370,7 +369,7 @@ build_ufc_node_graph(const ElementDofMap& el_dm_blocked, const mesh::Mesh& mesh)
 
   unsigned int d = 0;
   std::size_t local_size = 0;
-  for (auto& n : num_mesh_entities_local)
+  for (auto n : num_mesh_entities_local)
   {
     local_size += n * el_dm_blocked.num_entity_dofs(d);
     ++d;
@@ -379,7 +378,7 @@ build_ufc_node_graph(const ElementDofMap& el_dm_blocked, const mesh::Mesh& mesh)
   // Allocate space for dof map
   std::vector<std::vector<PetscInt>> node_dofmap(mesh.num_entities(D));
 
-  const std::size_t local_dim = el_dm_blocked.num_dofs();
+  const int local_dim = el_dm_blocked.num_dofs();
 
   // Holder for UFC 64-bit dofmap integers
   std::vector<int64_t> ufc_nodes_global(local_dim);
@@ -425,7 +424,7 @@ build_ufc_node_graph(const ElementDofMap& el_dm_blocked, const mesh::Mesh& mesh)
     //                                      entity_indices_ptr[0]);
 
     // Copy to cell dofs, with permutation
-    for (unsigned int i = 0; i < local_dim; ++i)
+    for (int i = 0; i < local_dim; ++i)
       cell_nodes[i] = ufc_nodes_local[i];
 
     // Build local-to-global map for nodes
@@ -450,7 +449,7 @@ compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
                      const ElementDofMap& el_dm, const mesh::Mesh& mesh)
 {
   // Initialise mesh
-  const std::size_t D = mesh.topology().dim();
+  const int D = mesh.topology().dim();
   mesh.init(D - 1);
   mesh.init(D - 1, D);
 
@@ -543,11 +542,11 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
   // Count number of locally owned nodes
   std::size_t owned_local_size = 0;
   std::size_t unowned_local_size = 0;
-  for (auto node = node_ownership.begin(); node != node_ownership.end(); ++node)
+  for (short int node : node_ownership)
   {
-    if (*node >= 0)
+    if (node >= 0)
       ++owned_local_size;
-    else if (*node == -1)
+    else if (node == -1)
       ++unowned_local_size;
     else
     {
@@ -692,7 +691,6 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
     {
       const std::size_t received_old_node_index_global = *q;
       const std::size_t received_new_node_index_global = *(q + 1);
-
       auto it
           = global_to_local_nodes_unowned.find(received_old_node_index_global);
       assert(it != global_to_local_nodes_unowned.end());
@@ -710,7 +708,7 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
   }
 
   // Sanity check
-  for (auto it : old_to_new_local)
+  for (int it : old_to_new_local)
   {
     assert(it != -1);
   }
@@ -731,9 +729,9 @@ DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
   common::Timer t0("Init dofmap");
 
   // Extract needs_entities as vector of bool
-  const std::size_t D = mesh.topology().dim();
+  const int D = mesh.topology().dim();
   std::vector<bool> needs_entities(D + 1);
-  for (std::size_t d = 0; d <= D; ++d)
+  for (int d = 0; d <= D; ++d)
     needs_entities[d] = el_dm.num_entity_dofs(d) > 0;
 
   // For mesh entities required by UFC dofmap, compute number of
@@ -749,7 +747,7 @@ DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
   std::vector<std::vector<PetscInt>> node_graph0;
 
   // If block size is not 1, use first sub-dofmap instead.
-  const std::size_t bs = el_dm.block_size();
+  const int bs = el_dm.block_size();
 
   // FIXME: clean this up somehow
   std::shared_ptr<const ElementDofMap> el_dm_b;
@@ -762,7 +760,7 @@ DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
 
   // Set global dofmap dimension
   std::size_t global_dimension = 0;
-  for (std::size_t d = 0; d < D + 1; ++d)
+  for (int d = 0; d < D + 1; ++d)
   {
     const std::int64_t n = mesh.num_entities_global(d);
     global_dimension += n * el_dm.num_entity_dofs(d);
@@ -844,16 +842,16 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
                                   const mesh::Mesh& mesh)
 {
   assert(!component.empty());
-  const std::size_t D = mesh.topology().dim();
+  const int D = mesh.topology().dim();
 
   std::vector<int> num_cell_entities(D + 1);
   const mesh::CellType& cell_type = mesh.type();
-  for (std::size_t d = 0; d <= D; ++d)
+  for (int d = 0; d <= D; ++d)
     num_cell_entities[d] = cell_type.num_entities(d);
 
   // Extract mesh entities that require initialisation
   std::vector<bool> needs_entities(D + 1);
-  for (std::size_t d = 0; d <= D; ++d)
+  for (int d = 0; d <= D; ++d)
     needs_entities[d] = parent_element_dofmap.num_entity_dofs(d) > 0;
 
   // Alternative with ElementDofMap
