@@ -143,7 +143,7 @@ ElementDofMap::sub_dofmap(const std::vector<std::size_t>& component) const
   for (unsigned int i = 1; i < component.size(); ++i)
   {
     const int idx = component[i];
-    if (idx >= current->_sub_dofmaps.size())
+    if (idx >= (int) current->_sub_dofmaps.size())
       throw std::runtime_error("Invalid component");
     current = _sub_dofmaps[idx];
   }
