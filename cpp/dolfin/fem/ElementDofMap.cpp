@@ -161,7 +161,7 @@ std::vector<int> ElementDofMap::sub_dofmap_mapping(
   for (auto i : component)
   {
     // Switch to sub-dofmap
-    assert(curent);
+    assert(current);
     if (i >= current->_sub_dofmaps.size())
       throw std::runtime_error("Invalid component");
     current = _sub_dofmaps[i].get();
