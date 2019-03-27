@@ -64,6 +64,7 @@ public:
                     std::vector<PetscInt>>
   build_sub_map_view(const DofMap& parent_dofmap,
                      const ufc_dofmap& parent_ufc_dofmap,
+                     const ElementDofMap& parent_element_dofmap,
                      const int parent_block_size,
                      const std::int64_t parent_offset,
                      const std::vector<std::size_t>& component,

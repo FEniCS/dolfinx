@@ -87,6 +87,19 @@ int ElementDofMap::analyse_block_structure() const
   return sub_dofmaps.size();
 }
 //-----------------------------------------------------------------------------
+const ElementDofMap&
+ElementDofMap::sub_dofmap(const std::vector<std::size_t>& component) const
+{
+  const ElementDofMap* current(this);
+  for (auto i : component)
+  {
+    if (i >= current->sub_dofmaps.size())
+      throw std::runtime_error("Invalid component");
+    current = &*sub_dofmaps[i];
+  }
+  return *current;
+}
+//-----------------------------------------------------------------------------
 void ElementDofMap::calculate_closure_dofs(const mesh::CellType& cell_type)
 {
   // FIXME: this calculates the number of dofs, but still need to
@@ -172,3 +185,4 @@ void ElementDofMap::get_cell_entity_map(const mesh::CellType& cell_type)
     }
   }
 }
+//-----------------------------------------------------------------------------

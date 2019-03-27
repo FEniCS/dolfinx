@@ -83,11 +83,7 @@ public:
   unsigned int num_sub_dofmaps() const { return sub_dofmaps.size(); }
 
   /// Get subdofmap i
-  const ElementDofMap& sub_dofmap(unsigned int i) const
-  {
-    assert(i < sub_dofmaps.size());
-    return *sub_dofmaps[i];
-  }
+  const ElementDofMap& sub_dofmap(const std::vector<std::size_t>& component) const;
 
   // Block size
   int block_size() const { return _block_size; }

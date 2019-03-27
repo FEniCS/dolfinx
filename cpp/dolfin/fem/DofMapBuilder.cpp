@@ -62,7 +62,8 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 
   // If block size is not 1, use first sub-dofmap instead.
   const std::size_t bs = el_dm.block_size();
-  const ElementDofMap& el_dm_blocked = (bs > 1) ? el_dm.sub_dofmap(0) : el_dm;
+  const ElementDofMap& el_dm_blocked
+      = (bs > 1) ? el_dm.sub_dofmap({{0}}) : el_dm;
 
   std::tie(node_graph0, node_local_to_global0)
       = build_ufc_node_graph(el_dm_blocked, mesh);
@@ -147,6 +148,7 @@ DofMapBuilder::build(const ufc_dofmap& ufc_map, const mesh::Mesh& mesh)
 std::tuple<ufc_dofmap*, std::int64_t, std::int64_t, std::vector<PetscInt>>
 DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
                                   const ufc_dofmap& parent_ufc_dofmap,
+                                  const ElementDofMap& parent_element_dofmap,
                                   const int parent_block_size,
                                   const std::int64_t parent_cell_offset,
                                   const std::vector<std::size_t>& component,
@@ -163,7 +165,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   // Extract mesh entities that require initialisation
   std::vector<bool> needs_entities(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = parent_ufc_dofmap.num_entity_dofs[d] > 0;
+    needs_entities[d] = parent_element_dofmap.num_entity_dofs(d) > 0;
 
   // Extract local UFC sub-dofmap from parent and update offset
   ufc_dofmap* ufc_sub_dofmap = nullptr;
@@ -171,6 +173,9 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   std::tie(ufc_sub_dofmap, ufc_cell_offset) = extract_ufc_sub_dofmap(
       parent_ufc_dofmap, component, num_cell_entities, parent_cell_offset);
   assert(ufc_sub_dofmap);
+
+  // Alternative with ElementDofMap
+  const ElementDofMap& sub_el_dm = parent_element_dofmap.sub_dofmap(component);
 
   std::vector<std::vector<PetscInt>> sub_dofmap_graph(mesh.num_entities(D));
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -189,7 +194,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   for (std::size_t d = 0; d < D + 1; ++d)
   {
     const std::int64_t n = mesh.num_entities_global(d);
-    global_dimension += n * ufc_sub_dofmap->num_entity_dofs[d];
+    global_dimension += n * sub_el_dm.num_entity_dofs(d);
   }
 
   // Flatten new dofmap
