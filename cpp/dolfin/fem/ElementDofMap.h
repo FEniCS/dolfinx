@@ -23,8 +23,9 @@ class CellType;
 
 namespace fem
 {
-/// Element degree-of-freedom map. This class handles the mapping of
-/// degrees of freedom on an element.
+/// The class represents the degree-of-freedom (dofs) for an element.
+/// Dofs are associated with a mesh entity. This class also handles
+/// sub-space dofs, which are views into the parent dofs.
 
 class ElementDofMap
 {
@@ -46,7 +47,7 @@ public:
   /// Move assignment
   ElementDofMap& operator=(ElementDofMap&& dofmap) = default;
 
-  /// Total number of dofs on element
+  /// Number of dofs on element
   int num_dofs() const;
 
   /// Number of dofs associated with entities of dimension dim
@@ -65,12 +66,12 @@ public:
   /// Get number of sub-dofmaps
   int num_sub_dofmaps() const;
 
-  /// Get subdofmap given by list of components, one for each level.
+  /// Get sub-dofmap given by list of components, one for each level
   std::shared_ptr<const ElementDofMap>
   sub_dofmap(const std::vector<std::size_t>& component) const;
 
   /// Get mapping from a child dofmap, referenced by the component list
-  /// (as for sub_dofmap()), back to this dofmap.
+  /// (as for sub_dofmap()), back to this dofmap
   std::vector<int>
   sub_dofmap_mapping(const std::vector<std::size_t>& component) const;
 

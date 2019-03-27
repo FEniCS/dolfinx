@@ -22,17 +22,19 @@ int analyse_block_structure(
   if (sub_dofmaps.size() < 2)
     return 1;
 
-  for (const auto& dmi : sub_dofmaps)
+  for (auto dmap : sub_dofmaps)
   {
+    assert(dmap);
+
     // If any subdofmaps have subdofmaps themselves, ignore any
     // potential block structure
-    if (dmi->num_sub_dofmaps() > 0)
+    if (dmap->num_sub_dofmaps() > 0)
       return 1;
 
     // Check number of dofs are the same for all subdofmaps
     for (int d = 0; d < 4; ++d)
     {
-      if (sub_dofmaps[0]->num_entity_dofs(d) != dmi->num_entity_dofs(d))
+      if (sub_dofmaps[0]->num_entity_dofs(d) != dmap->num_entity_dofs(d))
         return 1;
     }
   }
@@ -46,9 +48,7 @@ int analyse_block_structure(
 ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
                              const mesh::CellType& cell_type)
 {
-  // Initialise an "ElementDofMap" from a ufc_dofmap
-
-  // Copy total number of dofs from ufc
+  // Get total number of dofs from ufc
   _num_dofs = dofmap.num_element_support_dofs + dofmap.num_global_support_dofs;
 
   // Copy over number of dofs per entity type (and also closure dofs per
@@ -60,10 +60,10 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
             _num_entity_closure_dofs.data());
 
   // Fill entity dof indices
-  const int cell_dim = cell_type.dim();
-  _entity_dofs.resize(cell_dim + 1);
-  _entity_closure_dofs.resize(cell_dim + 1);
-  for (int dim = 0; dim <= cell_dim; ++dim)
+  const int tdim = cell_type.dim();
+  _entity_dofs.resize(tdim + 1);
+  _entity_closure_dofs.resize(tdim + 1);
+  for (int dim = 0; dim <= tdim; ++dim)
   {
     int num_entities = cell_type.num_entities(dim);
     _entity_dofs[dim].resize(num_entities);
@@ -91,11 +91,12 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
   // UFC dofmaps just use simple offset for each field but this could be
   // different for custom dofmaps
   int offset = 0;
-  for (auto& sub_dm : _sub_dofmaps)
+  for (auto& sub_dofmap : _sub_dofmaps)
   {
-    sub_dm->_parent_map.resize(sub_dm->num_dofs());
-    std::iota(sub_dm->_parent_map.begin(), sub_dm->_parent_map.end(), offset);
-    offset += sub_dm->_parent_map.size();
+    sub_dofmap->_parent_map.resize(sub_dofmap->num_dofs());
+    std::iota(sub_dofmap->_parent_map.begin(), sub_dofmap->_parent_map.end(),
+              offset);
+    offset += sub_dofmap->_parent_map.size();
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -143,7 +144,7 @@ ElementDofMap::sub_dofmap(const std::vector<std::size_t>& component) const
   for (unsigned int i = 1; i < component.size(); ++i)
   {
     const int idx = component[i];
-    if (idx >= (int) current->_sub_dofmaps.size())
+    if (idx >= (int)current->_sub_dofmaps.size())
       throw std::runtime_error("Invalid component");
     current = _sub_dofmaps[idx];
   }
@@ -154,25 +155,25 @@ std::vector<int> ElementDofMap::sub_dofmap_mapping(
     const std::vector<std::size_t>& component) const
 {
   // Fill up a list of parent dofs, from which subdofmap will select
-  std::vector<int> doflist(_num_dofs);
-  std::iota(doflist.begin(), doflist.end(), 0);
+  std::vector<int> dof_list(_num_dofs);
+  std::iota(dof_list.begin(), dof_list.end(), 0);
 
-  const ElementDofMap* current = this;
+  const ElementDofMap* element_dofmap_current = this;
   for (auto i : component)
   {
     // Switch to sub-dofmap
-    assert(current);
-    if (i >= current->_sub_dofmaps.size())
+    assert(element_dofmap_current);
+    if (i >= element_dofmap_current->_sub_dofmaps.size())
       throw std::runtime_error("Invalid component");
-    current = _sub_dofmaps[i].get();
+    element_dofmap_current = _sub_dofmaps[i].get();
 
-    std::vector<int> new_doflist(current->_num_dofs);
-    for (unsigned int j = 0; j < new_doflist.size(); ++j)
-      new_doflist[j] = doflist[current->_parent_map[j]];
-    doflist = new_doflist;
+    std::vector<int> dof_list_new(element_dofmap_current->_num_dofs);
+    for (unsigned int j = 0; j < dof_list_new.size(); ++j)
+      dof_list_new[j] = dof_list[element_dofmap_current->_parent_map[j]];
+    dof_list = dof_list_new;
   }
 
-  return doflist;
+  return dof_list;
 }
 //-----------------------------------------------------------------------------
 int ElementDofMap::block_size() const { return _block_size; }
