@@ -176,6 +176,8 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
 
   // Alternative with ElementDofMap
   const ElementDofMap& sub_el_dm = parent_element_dofmap.sub_dofmap(component);
+  const std::vector<int> sub_el_map
+      = parent_element_dofmap.sub_dofmap_mapping(component);
 
   std::vector<std::vector<PetscInt>> sub_dofmap_graph(mesh.num_entities(D));
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -186,7 +188,7 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
     auto dmap_parent = parent_dofmap.cell_dofs(c);
     sub_dofmap_graph[c].resize(num_sub_dofs);
     for (int i = 0; i < num_sub_dofs; ++i)
-      sub_dofmap_graph[c][i] = dmap_parent[ufc_cell_offset + i];
+      sub_dofmap_graph[c][i] = dmap_parent[sub_el_map[i]];
   }
 
   // Store number of global mesh entities and set global dimension

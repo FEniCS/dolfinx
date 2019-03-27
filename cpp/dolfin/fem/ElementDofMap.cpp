@@ -57,6 +57,7 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
   }
 
   // UFC dofmaps just use simple offset for each field
+  // but this could be different for custom dofmaps
   int offset = 0;
   for (auto& sub_dm : sub_dofmaps)
   {
@@ -107,6 +108,29 @@ ElementDofMap::sub_dofmap(const std::vector<std::size_t>& component) const
     current = &*sub_dofmaps[i];
   }
   return *current;
+}
+//-----------------------------------------------------------------------------
+std::vector<int> ElementDofMap::sub_dofmap_mapping(
+    const std::vector<std::size_t>& component) const
+{
+  // Fill up a list of parent dofs, from which subdofmap will select
+  std::vector<int> doflist(_num_dofs);
+  std::iota(doflist.begin(), doflist.end(), 0);
+
+  const ElementDofMap* current(this);
+  for (auto i : component)
+  {
+    // Switch to sub-dofmap
+    if (i >= current->sub_dofmaps.size())
+      throw std::runtime_error("Invalid component");
+    current = &*sub_dofmaps[i];
+
+    std::vector<int> new_doflist(current->_num_dofs);
+    for (unsigned int j = 0; j < new_doflist.size(); ++j)
+      new_doflist[j] = doflist[current->_parent_map[j]];
+    doflist = new_doflist;
+  }
+  return doflist;
 }
 //-----------------------------------------------------------------------------
 void ElementDofMap::calculate_closure_dofs(const mesh::CellType& cell_type)

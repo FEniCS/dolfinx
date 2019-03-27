@@ -82,9 +82,14 @@ public:
   /// Get number of sub-dofmaps
   unsigned int num_sub_dofmaps() const { return sub_dofmaps.size(); }
 
-  /// Get subdofmap i
+  /// Get subdofmap given by list of components, one for each level.
   const ElementDofMap&
   sub_dofmap(const std::vector<std::size_t>& component) const;
+
+  /// Get mapping from a child dofmap, referenced by
+  /// the component list (as for sub_dofmap()), back to this dofmap.
+  std::vector<int>
+  sub_dofmap_mapping(const std::vector<std::size_t>& component) const;
 
   // Block size
   int block_size() const { return _block_size; }
