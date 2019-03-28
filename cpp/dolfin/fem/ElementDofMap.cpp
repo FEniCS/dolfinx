@@ -119,3 +119,8 @@ std::vector<int> ElementDofMap::sub_dofmap_mapping(
 //-----------------------------------------------------------------------------
 int ElementDofMap::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
+bool ElementDofMap::is_view() const
+{
+  return !_parent_map.empty();
+}
+//-----------------------------------------------------------------------------

@@ -23,7 +23,7 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _global_dimension(0), _ufc_offset(-1)
+    : _cell_dimension(-1), _global_dimension(0)
 {
   _element_dofmap = std::make_shared<ElementDofMap>(
       create_element_dofmap(*ufc_dofmap, mesh.type()));
@@ -35,7 +35,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
 DofMap::DofMap(const DofMap& parent_dofmap,
                const std::vector<std::size_t>& component,
                const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _global_dimension(-1), _ufc_offset(0),
+    : _cell_dimension(-1), _global_dimension(-1),
       _index_map(parent_dofmap._index_map)
 {
   // FIXME: large objects could be shared (using std::shared_ptr)
@@ -63,7 +63,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _global_dimension(-1), _ufc_offset(-1),
+    : _cell_dimension(-1), _global_dimension(-1),
       _element_dofmap(dofmap_view._element_dofmap)
 {
   // Check dimensional consistency between ElementDofMap and the mesh

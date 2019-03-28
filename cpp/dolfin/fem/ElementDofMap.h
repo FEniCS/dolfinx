@@ -83,8 +83,11 @@ public:
   std::vector<int>
   sub_dofmap_mapping(const std::vector<std::size_t>& component) const;
 
-  // Block size
+  /// Block size
   int block_size() const;
+
+  /// Is view, i.e. has a parent dofmap
+  bool is_view() const;
 
 private:
 public:

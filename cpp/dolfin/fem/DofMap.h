@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "GenericDofMap.h"
 #include "ElementDofMap.h"
+#include "GenericDofMap.h"
 #include "petscsys.h"
 #include <Eigen/Dense>
 #include <array>
@@ -40,9 +40,9 @@ namespace fem
 /// Degree-of-freedom map
 
 /// This class handles the mapping of degrees of freedom. It builds a
-/// dof map based on a ufc_dofmap on a specific mesh. It will reorder
-/// the dofs when running in parallel. Sub-dofmaps, both views and
-/// copies, are supported.
+/// dof map based on an ElementDofMap on a specific mesh. It will
+/// reorder the dofs when running in parallel. Sub-dofmaps, both views
+/// and copies, are supported.
 
 class DofMap : public GenericDofMap
 {
@@ -84,7 +84,11 @@ public:
   /// @returns bool
   ///         True if the dof map is a sub-dof map (a view into
   ///         another map).
-  bool is_view() const { return _ufc_offset >= 0; }
+  bool is_view() const
+  {
+    assert(_element_dofmap);
+    return _element_dofmap->is_view();
+  }
 
   /// Return the dimension of the global finite element function
   /// space. Use index_map()->size() to get the local dimension.
@@ -261,9 +265,6 @@ private:
 
   // Global dimension
   std::int64_t _global_dimension;
-
-  // UFC dof map offset (< 0 if not a view)
-  std::int64_t _ufc_offset;
 
   // Object containing information about dof distribution across
   // processes
