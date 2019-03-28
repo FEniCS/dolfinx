@@ -16,20 +16,19 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 ElementDofMap::ElementDofMap(
-    int block_size, std::array<int, 4> num_entity_closure_dofs,
-    std::vector<std::vector<std::vector<int>>> entity_dofs,
+    int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
     std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
     std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps)
-    : _block_size(block_size), _num_dofs(0),
-      _num_entity_closure_dofs(num_entity_closure_dofs),
-      _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
-      _sub_dofmaps(sub_dofmaps)
+    : _block_size(block_size), _num_dofs(0), _entity_dofs(entity_dofs),
+      _entity_closure_dofs(entity_closure_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
 
-  _num_entity_dofs.fill(0);
+  // TODO: Add reference cell class to allow entity_closure_dofs to be
+  //       removed as argument to constructor
 
   // dof = _entity_dofs[dim][entity_index][i]
+  _num_entity_dofs.fill(0);
   for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
   {
     assert(!entity_dofs[dim].empty());
@@ -41,51 +40,25 @@ ElementDofMap::ElementDofMap(
     }
   }
 
-  std::array<int, 4> num_entity_closure_dofs_test = {0, 0, 0, 0};
-  for (std::size_t e = 0; e < 4; ++e)
+  _num_entity_closure_dofs.fill(0);
+  for (std::size_t dim = 0; dim < entity_closure_dofs.size(); ++dim)
   {
-    for (std::size_t e_sub = 0; e_sub < e; ++e_sub)
-    {
-      // FIXME: Need number of enties of dim e_sub that belong to entity of dim
-      // e. Get from CellType.
-      num_entity_closure_dofs_test[e] += _num_entity_dofs[e_sub];
-    }
-    // std::cout << "Test: " << num_entity_closure_dofs_test << ", "
-    //           << num_entity_closure_dofs[e] << std::endl;
+    assert(!entity_closure_dofs[dim].empty());
+    _num_entity_closure_dofs[dim] = entity_closure_dofs[dim][0].size();
   }
-
-  // assert(num_entity_closure_dofs_test == num_entity_closure_dofs);
-
-  // std::array<int, 4> num_entity_dofs_test;
-
-  // const int tdim = cell_type.dim();
-  // for (int dim = 0; dim <= tdim; ++dim)
-  // {
-  //   const int num_entities = cell_type.num_entities(dim);
-  //   entity_dofs[dim].resize(num_entities);
-  //   entity_closure_dofs[dim].resize(num_entities);
-  //   for (int i = 0; i < num_entities; ++i)
-  //   {
-  //     entity_dofs[dim][i].resize(num_entity_dofs[dim]);
-  //     entity_closure_dofs[dim][i].resize(num_entity_closure_dofs[dim]);
-  //     dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
-  //     dofmap.tabulate_entity_closure_dofs(entity_closure_dofs[dim][i].data(),
-  //                                         dim, i);
-  //   }
-  // }
 }
 //-----------------------------------------------------------------------------
 int ElementDofMap::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
 int ElementDofMap::num_entity_dofs(int dim) const
 {
-  assert(dim < 4);
+  assert(dim < _num_entity_dofs.size());
   return _num_entity_dofs[dim];
 }
 //-----------------------------------------------------------------------------
 int ElementDofMap::num_entity_closure_dofs(int dim) const
 {
-  assert(dim < 4);
+  assert(dim < _num_entity_closure_dofs.size());
   return _num_entity_closure_dofs[dim];
 }
 //-----------------------------------------------------------------------------

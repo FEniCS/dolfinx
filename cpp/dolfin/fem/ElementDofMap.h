@@ -36,7 +36,7 @@ class ElementDofMap
 public:
   // FIXME: Remove redundant arguments
   /// Constructor
-  ElementDofMap(int block_size, std::array<int, 4> num_entity_closure_dofs,
+  ElementDofMap(int block_size,
                 std::vector<std::vector<std::vector<int>>> entity_dofs,
                 std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
                 std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps);

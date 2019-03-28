@@ -501,7 +501,6 @@ fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
 {
   // Copy over number of dofs per entity type (and also closure dofs per
   // entity type)
-  // FIXME: can we generate closure dofs automatically here (see below)?
   std::array<int, 4> num_entity_dofs, num_entity_closure_dofs;
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
             num_entity_dofs.data());
@@ -556,7 +555,7 @@ fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
-  return fem::ElementDofMap(block_size, num_entity_closure_dofs, entity_dofs,
-                            entity_closure_dofs, sub_dofmaps);
+  return fem::ElementDofMap(block_size, entity_dofs, entity_closure_dofs,
+                            sub_dofmaps);
 }
 //-----------------------------------------------------------------------------
