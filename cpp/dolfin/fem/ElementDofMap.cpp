@@ -88,6 +88,8 @@ ElementDofMap::ElementDofMap(const ufc_dofmap& dofmap,
     std::free(sub_dofmap);
   }
 
+  // TODO: This data should come directly from the UFC interface in
+  //       place of the the implicit assumption
   // UFC dofmaps just use simple offset for each field but this could be
   // different for custom dofmaps
   int offset = 0;

@@ -27,6 +27,9 @@ namespace fem
 /// Dofs are associated with a mesh entity. This class also handles
 /// sub-space dofs, which are views into the parent dofs.
 
+// TODO: For this class/concept to be robust, the topology of the
+// reference cell needs to be defined.
+
 class ElementDofMap
 {
 public:
