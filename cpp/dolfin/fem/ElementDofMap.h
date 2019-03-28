@@ -34,9 +34,9 @@ namespace fem
 class ElementDofMap
 {
 public:
-  /// Constructor from UFC dofmap
-  ElementDofMap(const ufc_dofmap& dofmap, const mesh::CellType& cell_type);
 
+  // FIXME: Remove redundant arguments
+  /// Constructor
   ElementDofMap(int block_size, int num_dofs,
                 std::array<int, 4> num_entity_dofs,
                 std::array<int, 4> num_entity_closure_dofs,

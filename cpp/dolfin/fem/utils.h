@@ -34,6 +34,7 @@ class FunctionSpace;
 
 namespace mesh
 {
+class CellType;
 class Mesh;
 class MeshGeometry;
 } // namespace mesh

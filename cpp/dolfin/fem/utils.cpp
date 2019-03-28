@@ -496,8 +496,8 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   return index + offset;
 }
 //-----------------------------------------------------------------------------
-fem::ElementDofMap create_element_dofmap(const ufc_dofmap& dofmap,
-                                         const mesh::CellType& cell_type)
+fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
+                                              const mesh::CellType& cell_type)
 {
   // Get total number of dofs from ufc
   const int num_dofs
@@ -540,6 +540,8 @@ fem::ElementDofMap create_element_dofmap(const ufc_dofmap& dofmap,
         create_element_dofmap(*sub_dofmap, cell_type)));
     std::free(sub_dofmap);
   }
+
+  // FIXME: avoid direct access access to _parent_map
 
   // TODO: This data should come directly from the UFC interface in
   //       place of the the implicit assumption
