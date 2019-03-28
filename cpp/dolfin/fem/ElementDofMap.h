@@ -11,8 +11,6 @@
 #include <memory>
 #include <vector>
 
-struct ufc_dofmap;
-
 namespace dolfin
 {
 
