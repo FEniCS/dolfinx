@@ -28,13 +28,29 @@ namespace fem
 /// sub-space dofs, which are views into the parent dofs.
 
 // TODO: For this class/concept to be robust, the topology of the
-// reference cell needs to be defined.
+//       reference cell needs to be defined.
+// TODO: Handle block dofmaps properly
 
 class ElementDofMap
 {
 public:
   /// Constructor from UFC dofmap
-  ElementDofMap(const ufc_dofmap& ufc_dofmap, const mesh::CellType& cell_type);
+  ElementDofMap(const ufc_dofmap& dofmap, const mesh::CellType& cell_type);
+
+  ElementDofMap(int block_size, int num_dofs,
+                std::array<int, 4> num_entity_dofs,
+                std::array<int, 4> num_entity_closure_dofs,
+                std::vector<std::vector<std::vector<int>>> entity_dofs,
+                std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
+                std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps)
+      : _block_size(block_size), _num_dofs(num_dofs),
+        _num_entity_dofs(num_entity_dofs),
+        _num_entity_closure_dofs(num_entity_closure_dofs),
+        _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
+        _sub_dofmaps(sub_dofmaps)
+  {
+    // Do nothing
+  }
 
   // Copy constructor
   ElementDofMap(const ElementDofMap& dofmap) = delete;
@@ -82,9 +98,11 @@ public:
   int block_size() const;
 
 private:
+public:
   // Mapping of dofs to this ElementDofMap's immediate parent
   std::vector<int> _parent_map;
 
+private:
   // Block size, as deduced in from UFC
   int _block_size;
 

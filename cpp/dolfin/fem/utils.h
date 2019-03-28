@@ -6,10 +6,13 @@
 
 #pragma once
 
+#include "ElementDofMap.h"
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
 #include <memory>
 #include <vector>
+
+struct ufc_dofmap;
 
 namespace dolfin
 {
@@ -64,5 +67,9 @@ la::PETScVector create_vector_nest(std::vector<const fem::Form*> L);
 /// Get new global index in 'spliced' indices
 std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
                              const unsigned int field, const unsigned int n);
+
+ElementDofMap create_element_dofmap(const ufc_dofmap& dofmap,
+                                    const mesh::CellType& cell_type);
+
 } // namespace fem
 } // namespace dolfin

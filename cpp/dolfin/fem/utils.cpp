@@ -21,8 +21,41 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <memory>
+#include <ufc.h>
 
 using namespace dolfin;
+
+namespace
+{
+// Try to figure out block size. FIXME - replace elsewhere
+int analyse_block_structure(
+    const std::vector<std::shared_ptr<fem::ElementDofMap>> sub_dofmaps)
+{
+  // Must be at least two subdofmaps
+  if (sub_dofmaps.size() < 2)
+    return 1;
+
+  for (auto dmap : sub_dofmaps)
+  {
+    assert(dmap);
+
+    // If any subdofmaps have subdofmaps themselves, ignore any
+    // potential block structure
+    if (dmap->num_sub_dofmaps() > 0)
+      return 1;
+
+    // Check number of dofs are the same for all subdofmaps
+    for (int d = 0; d < 4; ++d)
+    {
+      if (sub_dofmaps[0]->num_entity_dofs(d) != dmap->num_entity_dofs(d))
+        return 1;
+    }
+  }
+
+  // All subdofmaps are simple, and have the same number of dofs
+  return sub_dofmaps.size();
+}
+} // namespace
 
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
@@ -461,5 +494,73 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   }
 
   return index + offset;
+}
+//-----------------------------------------------------------------------------
+fem::ElementDofMap create_element_dofmap(const ufc_dofmap& dofmap,
+                                         const mesh::CellType& cell_type)
+{
+  // Get total number of dofs from ufc
+  const int num_dofs
+      = dofmap.num_element_support_dofs + dofmap.num_global_support_dofs;
+
+  // Copy over number of dofs per entity type (and also closure dofs per
+  // entity type)
+  // FIXME: can we generate closure dofs automatically here (see below)?
+  std::array<int, 4> num_entity_dofs, num_entity_closure_dofs;
+  std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
+            num_entity_dofs.data());
+  std::copy(dofmap.num_entity_closure_dofs, dofmap.num_entity_closure_dofs + 4,
+            num_entity_closure_dofs.data());
+
+  // Fill entity dof indices
+  const int tdim = cell_type.dim();
+  std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
+  std::vector<std::vector<std::vector<int>>> entity_closure_dofs(tdim + 1);
+  for (int dim = 0; dim <= tdim; ++dim)
+  {
+    const int num_entities = cell_type.num_entities(dim);
+    entity_dofs[dim].resize(num_entities);
+    entity_closure_dofs[dim].resize(num_entities);
+    for (int i = 0; i < num_entities; ++i)
+    {
+      entity_dofs[dim][i].resize(num_entity_dofs[dim]);
+      entity_closure_dofs[dim][i].resize(num_entity_closure_dofs[dim]);
+      dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
+      dofmap.tabulate_entity_closure_dofs(entity_closure_dofs[dim][i].data(),
+                                          dim, i);
+    }
+  }
+
+  // Fill all subdofmaps
+  std::vector<std::shared_ptr<fem::ElementDofMap>> sub_dofmaps;
+  for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
+  {
+    ufc_dofmap* sub_dofmap = dofmap.create_sub_dofmap(i);
+    sub_dofmaps.push_back(std::make_shared<fem::ElementDofMap>(
+        create_element_dofmap(*sub_dofmap, cell_type)));
+    std::free(sub_dofmap);
+  }
+
+  // TODO: This data should come directly from the UFC interface in
+  //       place of the the implicit assumption
+  // UFC dofmaps just use simple offset for each field but this could be
+  // different for custom dofmaps
+  int offset = 0;
+  for (auto& sub_dofmap : sub_dofmaps)
+  {
+    sub_dofmap->_parent_map.resize(sub_dofmap->num_dofs());
+    std::iota(sub_dofmap->_parent_map.begin(), sub_dofmap->_parent_map.end(),
+              offset);
+    offset += sub_dofmap->_parent_map.size();
+  }
+
+  // Check for "block structure". This should ultimately be replaced,
+  // but keep for now to mimic existing code
+  const int block_size = analyse_block_structure(sub_dofmaps);
+  std::cout << block_size << std::endl;
+
+  return fem::ElementDofMap(block_size, num_dofs, num_entity_dofs,
+                            num_entity_closure_dofs, entity_dofs,
+                            entity_closure_dofs, sub_dofmaps);
 }
 //-----------------------------------------------------------------------------
