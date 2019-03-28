@@ -26,8 +26,8 @@ namespace fem
 /// sub-space dofs, which are views into the parent dofs.
 
 // TODO: For this class/concept to be robust, the topology of the
-//       reference cell needs to be defined.
-// TODO: Handle block dofmaps properly
+//       reference cell needs to be defined. TODO: Handle block dofmaps
+//       properly
 
 class ElementDofLayout
 {
