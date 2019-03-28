@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "ElementDofLayout.h"
 #include "GenericDofMap.h"
 #include "petscsys.h"
 #include <Eigen/Dense>
@@ -39,9 +40,9 @@ namespace fem
 /// Degree-of-freedom map
 
 /// This class handles the mapping of degrees of freedom. It builds a
-/// dof map based on a ufc_dofmap on a specific mesh. It will reorder
-/// the dofs when running in parallel. Sub-dofmaps, both views and
-/// copies, are supported.
+/// dof map based on an ElementDofLayout on a specific mesh. It will
+/// reorder the dofs when running in parallel. Sub-dofmaps, both views
+/// and copies, are supported.
 
 class DofMap : public GenericDofMap
 {
@@ -52,7 +53,7 @@ public:
   ///         The ufc_dofmap.
   /// @param[in] mesh (mesh::Mesh&)
   ///         The mesh.
-  DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh);
+  DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
 
 private:
   // Create a sub-dofmap (a view) from parent_dofmap
@@ -83,7 +84,7 @@ public:
   /// @returns bool
   ///         True if the dof map is a sub-dof map (a view into
   ///         another map).
-  bool is_view() const { return _ufc_offset >= 0; }
+  bool is_view() const;
 
   /// Return the dimension of the global finite element function
   /// space. Use index_map()->size() to get the local dimension.
@@ -246,7 +247,7 @@ public:
 
 private:
   // Check that mesh provides the entities needed by dofmap
-  static void check_provided_entities(const ufc_dofmap& dofmap,
+  static void check_provided_entities(const ElementDofLayout& dofmap,
                                       const mesh::Mesh& mesh);
 
   // Cell-local-to-dof map (dofs for cell dofmap[i])
@@ -258,14 +259,8 @@ private:
   // Cell dimension (fixed for all cells)
   int _cell_dimension;
 
-  // UFC dof map
-  std::shared_ptr<const ufc_dofmap> _ufc_dofmap;
-
   // Global dimension
   std::int64_t _global_dimension;
-
-  // UFC dof map offset (< 0 if not a view)
-  std::int64_t _ufc_offset;
 
   // Object containing information about dof distribution across
   // processes
@@ -276,6 +271,8 @@ private:
 
   // Processes that this dofmap shares dofs with
   std::set<int> _neighbours;
+
+  std::shared_ptr<const ElementDofLayout> _element_dof_layout;
 };
 } // namespace fem
 } // namespace dolfin
