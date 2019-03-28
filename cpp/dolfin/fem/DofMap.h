@@ -53,7 +53,7 @@ public:
   ///         The ufc_dofmap.
   /// @param[in] mesh (mesh::Mesh&)
   ///         The mesh.
-  DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap, const mesh::Mesh& mesh);
+  DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
 
 private:
   // Create a sub-dofmap (a view) from parent_dofmap
@@ -84,11 +84,7 @@ public:
   /// @returns bool
   ///         True if the dof map is a sub-dof map (a view into
   ///         another map).
-  bool is_view() const
-  {
-    assert(_element_dofmap);
-    return _element_dofmap->is_view();
-  }
+  bool is_view() const;
 
   /// Return the dimension of the global finite element function
   /// space. Use index_map()->size() to get the local dimension.
@@ -276,7 +272,7 @@ private:
   // Processes that this dofmap shares dofs with
   std::set<int> _neighbours;
 
-  std::shared_ptr<const ElementDofLayout> _element_dofmap;
+  std::shared_ptr<const ElementDofLayout> _element_dof_layout;
 };
 } // namespace fem
 } // namespace dolfin

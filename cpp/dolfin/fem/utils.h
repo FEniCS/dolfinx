@@ -70,9 +70,9 @@ std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
                              const unsigned int field, const unsigned int n);
 
 /// Create an ElementDofLayout from a ufc_dofmap
-ElementDofLayout create_element_dofmap(const ufc_dofmap& dofmap,
-                                       const std::vector<int>& parent_map,
-                                       const mesh::CellType& cell_type);
+ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
+                                           const std::vector<int>& parent_map,
+                                           const mesh::CellType& cell_type);
 
 } // namespace fem
 } // namespace dolfin

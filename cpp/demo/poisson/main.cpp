@@ -179,12 +179,13 @@ int main(int argc, char* argv[])
 
   auto space = std::unique_ptr<ufc_function_space, decltype(free)*>(
       poisson_functionspace_create(), free);
+
+  auto ufc_map = std::shared_ptr<ufc_dofmap>(space->dofmap(), free);
   auto V = std::make_shared<function::FunctionSpace>(
       mesh,
       std::make_shared<fem::FiniteElement>(
           std::shared_ptr<ufc_finite_element>(space->element(), free)),
-      std::make_shared<fem::DofMap>(
-          std::shared_ptr<ufc_dofmap>(space->dofmap(), free), *mesh));
+      std::make_shared<fem::DofMap>(*ufc_map, *mesh));
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`

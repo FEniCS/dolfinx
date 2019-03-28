@@ -21,15 +21,15 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
-               const mesh::Mesh& mesh)
+DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
     : _cell_dimension(-1), _global_dimension(0)
 {
-  _element_dofmap = std::make_shared<ElementDofLayout>(
-      create_element_dofmap(*ufc_dofmap, {}, mesh.type()));
-  _cell_dimension = _element_dofmap->num_dofs();
+  _element_dof_layout = std::make_shared<ElementDofLayout>(
+      create_element_dof_layout(ufc_dofmap, {}, mesh.type()));
+
+  _cell_dimension = _element_dof_layout->num_dofs();
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(*_element_dofmap, mesh);
+      = DofMapBuilder::build(*_element_dof_layout, mesh);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -43,15 +43,15 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 
   // FIXME: the index map block size will be wrong here???
 
-  std::shared_ptr<const ElementDofLayout> parent_element_dofmap(
-      parent_dofmap._element_dofmap);
+  std::shared_ptr<const ElementDofLayout> parent_element_dof_layout(
+      parent_dofmap._element_dof_layout);
 
   // Build sub-dofmap
   std::tie(_global_dimension, _dofmap) = DofMapBuilder::build_sub_map_view(
-      parent_dofmap, *parent_element_dofmap, component, mesh);
+      parent_dofmap, *parent_element_dof_layout, component, mesh);
 
-  _element_dofmap = parent_element_dofmap->sub_dofmap(component);
-  _cell_dimension = _element_dofmap->num_dofs();
+  _element_dof_layout = parent_element_dof_layout->sub_dofmap(component);
+  _cell_dimension = _element_dof_layout->num_dofs();
 
   // FIXME: this will be wrong
   _shared_nodes = parent_dofmap._shared_nodes;
@@ -64,15 +64,15 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const mesh::Mesh& mesh)
     : _cell_dimension(-1), _global_dimension(-1),
-      _element_dofmap(dofmap_view._element_dofmap)
+      _element_dof_layout(dofmap_view._element_dof_layout)
 {
   // Check dimensional consistency between ElementDofLayout and the mesh
-  check_provided_entities(*_element_dofmap, mesh);
+  check_provided_entities(*_element_dof_layout, mesh);
 
   // Build new dof map
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(*_element_dofmap, mesh);
-  _cell_dimension = _element_dofmap->num_dofs();
+      = DofMapBuilder::build(*_element_dof_layout, mesh);
+  _cell_dimension = _element_dof_layout->num_dofs();
 
   const int tdim = mesh.topology().dim();
 
@@ -100,6 +100,12 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   }
 }
 //-----------------------------------------------------------------------------
+bool DofMap::is_view() const
+{
+  assert(_element_dof_layout);
+  return _element_dof_layout->is_view();
+}
+//-----------------------------------------------------------------------------
 std::int64_t DofMap::global_dimension() const { return _global_dimension; }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
@@ -111,14 +117,14 @@ std::size_t DofMap::max_element_dofs() const { return _cell_dimension; }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
-  assert(_element_dofmap);
-  return _element_dofmap->num_entity_dofs(entity_dim);
+  assert(_element_dof_layout);
+  return _element_dof_layout->num_entity_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 {
-  assert(_element_dofmap);
-  return _element_dofmap->num_entity_closure_dofs(entity_dim);
+  assert(_element_dof_layout);
+  return _element_dof_layout->num_entity_closure_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
@@ -141,7 +147,7 @@ DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
                                      std::size_t cell_entity_index) const
 {
   const std::vector<std::vector<std::vector<int>>>& dofs
-      = _element_dofmap->entity_closure_dofs();
+      = _element_dof_layout->entity_closure_dofs();
 
   assert(entity_dim < dofs.size());
   assert(cell_entity_index < dofs[entity_dim].size());
@@ -159,7 +165,7 @@ DofMap::tabulate_entity_dofs(std::size_t entity_dim,
                              std::size_t cell_entity_index) const
 {
   const std::vector<std::vector<std::vector<int>>>& dofs
-      = _element_dofmap->entity_dofs();
+      = _element_dof_layout->entity_dofs();
 
   assert(entity_dim < dofs.size());
   assert(cell_entity_index < dofs[entity_dim].size());

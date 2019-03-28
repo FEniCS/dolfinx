@@ -497,9 +497,9 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
 }
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
-fem::create_element_dofmap(const ufc_dofmap& dofmap,
-                           const std::vector<int>& parent_map,
-                           const mesh::CellType& cell_type)
+fem::create_element_dof_layout(const ufc_dofmap& dofmap,
+                               const std::vector<int>& parent_map,
+                               const mesh::CellType& cell_type)
 {
   // Copy over number of dofs per entity type (and also closure dofs per
   // entity type)
@@ -552,8 +552,9 @@ fem::create_element_dofmap(const ufc_dofmap& dofmap,
     assert(ufc_sub_dofmap);
     std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs);
     std::iota(parent_map_sub.begin(), parent_map_sub.end(), offsets[i]);
-    sub_dofmaps.push_back(std::make_shared<fem::ElementDofLayout>(
-        create_element_dofmap(*ufc_sub_dofmaps[i], parent_map_sub, cell_type)));
+    sub_dofmaps.push_back(
+        std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
+            *ufc_sub_dofmaps[i], parent_map_sub, cell_type)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -561,6 +562,6 @@ fem::create_element_dofmap(const ufc_dofmap& dofmap,
   const int block_size = analyse_block_structure(sub_dofmaps);
 
   return fem::ElementDofLayout(block_size, entity_dofs, entity_closure_dofs,
-                            parent_map, sub_dofmaps);
+                               parent_map, sub_dofmaps);
 }
 //-----------------------------------------------------------------------------
