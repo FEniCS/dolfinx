@@ -30,16 +30,16 @@ ElementDofMap::ElementDofMap(
   _num_entity_dofs.fill(0);
 
   // dof = _entity_dofs[dim][entity_index][i]
-  int i = 0;
-  for (const auto& dofs_dim : entity_dofs)
+  for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
   {
-    assert(!dofs_dim.empty());
-    _num_entity_dofs[i] = dofs_dim[0].size();
-    for (auto& dofs_entities : dofs_dim)
-      _num_dofs += dofs_entities.size();
-    ++i;
+    assert(!entity_dofs[dim].empty());
+    _num_entity_dofs[dim] = entity_dofs[dim][0].size();
+    for (std::size_t entity_index = 0; entity_index < entity_dofs[dim].size();
+         ++entity_index)
+    {
+      _num_dofs += entity_dofs[dim][entity_index].size();
+    }
   }
-
   // std::array<int, 4> num_entity_dofs_test;
 
   // const int tdim = cell_type.dim();
