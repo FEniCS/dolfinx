@@ -47,13 +47,13 @@ ElementDofMap::ElementDofMap(
 //-----------------------------------------------------------------------------
 int ElementDofMap::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
-int ElementDofMap::num_entity_dofs(int dim) const
+int ElementDofMap::num_entity_dofs(unsigned int dim) const
 {
   assert(dim < _num_entity_dofs.size());
   return _num_entity_dofs[dim];
 }
 //-----------------------------------------------------------------------------
-int ElementDofMap::num_entity_closure_dofs(int dim) const
+int ElementDofMap::num_entity_closure_dofs(unsigned int dim) const
 {
   assert(dim < _num_entity_closure_dofs.size());
   return _num_entity_closure_dofs[dim];
@@ -119,8 +119,5 @@ std::vector<int> ElementDofMap::sub_dofmap_mapping(
 //-----------------------------------------------------------------------------
 int ElementDofMap::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
-bool ElementDofMap::is_view() const
-{
-  return !_parent_map.empty();
-}
+bool ElementDofMap::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------

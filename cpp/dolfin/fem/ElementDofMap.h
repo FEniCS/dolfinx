@@ -59,11 +59,11 @@ public:
   int num_dofs() const;
 
   /// Number of dofs associated with entities of dimension dim
-  int num_entity_dofs(int dim) const;
+  int num_entity_dofs(unsigned int dim) const;
 
   /// Number of dofs associated with entities of dimension dim (plus
   /// connected entities of lower dim)
-  int num_entity_closure_dofs(int dim) const;
+  int num_entity_closure_dofs(unsigned int dim) const;
 
   /// Direct access to all entity dofs
   const std::vector<std::vector<std::vector<int>>>& entity_dofs() const;

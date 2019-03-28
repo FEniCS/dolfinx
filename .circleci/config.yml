@@ -70,7 +70,7 @@ unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
   command: |
     cd python/test/unit
-    mpirun -n 3 python3 -m pytest -s -v .
+    mpirun -n 3 python3 -m pytest .
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
