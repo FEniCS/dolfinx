@@ -34,23 +34,12 @@ namespace fem
 class ElementDofMap
 {
 public:
-
   // FIXME: Remove redundant arguments
   /// Constructor
-  ElementDofMap(int block_size, int num_dofs,
-                std::array<int, 4> num_entity_dofs,
-                std::array<int, 4> num_entity_closure_dofs,
+  ElementDofMap(int block_size, std::array<int, 4> num_entity_closure_dofs,
                 std::vector<std::vector<std::vector<int>>> entity_dofs,
                 std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
-                std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps)
-      : _block_size(block_size), _num_dofs(num_dofs),
-        _num_entity_dofs(num_entity_dofs),
-        _num_entity_closure_dofs(num_entity_closure_dofs),
-        _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
-        _sub_dofmaps(sub_dofmaps)
-  {
-    // Do nothing
-  }
+                std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps);
 
   // Copy constructor
   ElementDofMap(const ElementDofMap& dofmap) = delete;

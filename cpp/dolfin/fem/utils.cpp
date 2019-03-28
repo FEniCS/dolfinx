@@ -499,10 +499,6 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
 fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
                                               const mesh::CellType& cell_type)
 {
-  // Get total number of dofs from ufc
-  const int num_dofs
-      = dofmap.num_element_support_dofs + dofmap.num_global_support_dofs;
-
   // Copy over number of dofs per entity type (and also closure dofs per
   // entity type)
   // FIXME: can we generate closure dofs automatically here (see below)?
@@ -559,10 +555,8 @@ fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
-  std::cout << block_size << std::endl;
 
-  return fem::ElementDofMap(block_size, num_dofs, num_entity_dofs,
-                            num_entity_closure_dofs, entity_dofs,
+  return fem::ElementDofMap(block_size, num_entity_closure_dofs, entity_dofs,
                             entity_closure_dofs, sub_dofmaps);
 }
 //-----------------------------------------------------------------------------

@@ -9,10 +9,55 @@
 #include <dolfin/mesh/CellType.h>
 #include <ufc.h>
 
+#include <iostream>
+
 using namespace dolfin;
 using namespace dolfin::fem;
 
+//-----------------------------------------------------------------------------
+ElementDofMap::ElementDofMap(
+    int block_size, std::array<int, 4> num_entity_closure_dofs,
+    std::vector<std::vector<std::vector<int>>> entity_dofs,
+    std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
+    std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps)
+    : _block_size(block_size), _num_dofs(0),
+      _num_entity_closure_dofs(num_entity_closure_dofs),
+      _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
+      _sub_dofmaps(sub_dofmaps)
+{
+  // TODO: Handle global support dofs
 
+  _num_entity_dofs.fill(0);
+
+  // dof = _entity_dofs[dim][entity_index][i]
+  int i = 0;
+  for (const auto& dofs_dim : entity_dofs)
+  {
+    assert(!dofs_dim.empty());
+    _num_entity_dofs[i] = dofs_dim[0].size();
+    for (auto& dofs_entities : dofs_dim)
+      _num_dofs += dofs_entities.size();
+    ++i;
+  }
+
+  // std::array<int, 4> num_entity_dofs_test;
+
+  // const int tdim = cell_type.dim();
+  // for (int dim = 0; dim <= tdim; ++dim)
+  // {
+  //   const int num_entities = cell_type.num_entities(dim);
+  //   entity_dofs[dim].resize(num_entities);
+  //   entity_closure_dofs[dim].resize(num_entities);
+  //   for (int i = 0; i < num_entities; ++i)
+  //   {
+  //     entity_dofs[dim][i].resize(num_entity_dofs[dim]);
+  //     entity_closure_dofs[dim][i].resize(num_entity_closure_dofs[dim]);
+  //     dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
+  //     dofmap.tabulate_entity_closure_dofs(entity_closure_dofs[dim][i].data(),
+  //                                         dim, i);
+  //   }
+  // }
+}
 //-----------------------------------------------------------------------------
 int ElementDofMap::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
