@@ -527,13 +527,41 @@ fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
   }
 
   // Fill all subdofmaps
-  std::vector<std::shared_ptr<fem::ElementDofMap>> sub_dofmaps;
+  // std::vector<std::shared_ptr<fem::ElementDofMap>> sub_dofmaps;
+  // for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
+  // {
+  //   ufc_dofmap* sub_dofmap = dofmap.create_sub_dofmap(i);
+  //   sub_dofmaps.push_back(std::make_shared<fem::ElementDofMap>(
+  //       create_element_dofmap(*sub_dofmap, cell_type)));
+  //   std::free(sub_dofmap);
+  // }
+
+  std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
+  std::vector<int> offsets(1, 0);
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
   {
-    ufc_dofmap* sub_dofmap = dofmap.create_sub_dofmap(i);
+    auto ufc_sub_dofmap
+        = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i));
+    ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
+    const int num_dofs = ufc_sub_dofmap->num_element_support_dofs;
+    offsets.push_back(offsets.back() +  num_dofs);
+  }
+
+  std::vector<std::shared_ptr<fem::ElementDofMap>> sub_dofmaps;
+  for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
+  {
+    // auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
+    // assert(ufc_sub_dofmap);
+    // std::vector<int> parent_map(ufc_sub_dofmap->num_element_support_dofs);
+    // std::iota(parent_map.begin(), parent_map.end(), offsets[i]);
+
     sub_dofmaps.push_back(std::make_shared<fem::ElementDofMap>(
-        create_element_dofmap(*sub_dofmap, cell_type)));
-    std::free(sub_dofmap);
+        create_element_dofmap(*ufc_sub_dofmaps[i], cell_type)));
+
+    auto sub_dofmap = sub_dofmaps.back();
+    sub_dofmap->_parent_map.resize(sub_dofmap->num_dofs());
+    std::iota(sub_dofmap->_parent_map.begin(), sub_dofmap->_parent_map.end(),
+              offsets[i]);
   }
 
   // FIXME: avoid direct access access to _parent_map
@@ -542,14 +570,23 @@ fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
   //       place of the the implicit assumption
   // UFC dofmaps just use simple offset for each field but this could be
   // different for custom dofmaps
-  int offset = 0;
-  for (auto& sub_dofmap : sub_dofmaps)
-  {
-    sub_dofmap->_parent_map.resize(sub_dofmap->num_dofs());
-    std::iota(sub_dofmap->_parent_map.begin(), sub_dofmap->_parent_map.end(),
-              offset);
-    offset += sub_dofmap->_parent_map.size();
-  }
+  // int offset = 0;
+  // for (auto& sub_dofmap : sub_dofmaps)
+  // {
+  //   sub_dofmap->_parent_map.resize(sub_dofmap->num_dofs());
+  //   std::iota(sub_dofmap->_parent_map.begin(), sub_dofmap->_parent_map.end(),
+  //             offset);
+  //   offset += sub_dofmap->_parent_map.size();
+  // }
+
+  // int offset = 0;
+  // for (auto& sub_dofmap : sub_dofmaps)
+  // {
+  //   sub_dofmap->_parent_map.resize(sub_dofmap->num_dofs());
+  //   std::iota(sub_dofmap->_parent_map.begin(), sub_dofmap->_parent_map.end(),
+  //             offset);
+  //   offset += sub_dofmap->_parent_map.size();
+  // }
 
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
