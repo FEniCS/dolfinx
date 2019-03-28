@@ -5,11 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ElementDofMap.h"
-#include <cstdlib>
 #include <dolfin/mesh/CellType.h>
 #include <ufc.h>
-
-#include <iostream>
 
 using namespace dolfin;
 using namespace dolfin::fem;
