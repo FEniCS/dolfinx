@@ -40,6 +40,22 @@ ElementDofMap::ElementDofMap(
       _num_dofs += entity_dofs[dim][entity_index].size();
     }
   }
+
+  std::array<int, 4> num_entity_closure_dofs_test = {0, 0, 0, 0};
+  for (std::size_t e = 0; e < 4; ++e)
+  {
+    for (std::size_t e_sub = 0; e_sub < e; ++e_sub)
+    {
+      // FIXME: Need number of enties of dim e_sub that belong to entity of dim
+      // e. Get from CellType.
+      num_entity_closure_dofs_test[e] += _num_entity_dofs[e_sub];
+    }
+    // std::cout << "Test: " << num_entity_closure_dofs_test << ", "
+    //           << num_entity_closure_dofs[e] << std::endl;
+  }
+
+  // assert(num_entity_closure_dofs_test == num_entity_closure_dofs);
+
   // std::array<int, 4> num_entity_dofs_test;
 
   // const int tdim = cell_type.dim();
