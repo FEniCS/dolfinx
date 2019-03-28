@@ -15,9 +15,11 @@ using namespace dolfin::fem;
 ElementDofMap::ElementDofMap(
     int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
     std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
+    std::vector<int> parent_map,
     std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps)
-    : _block_size(block_size), _num_dofs(0), _entity_dofs(entity_dofs),
-      _entity_closure_dofs(entity_closure_dofs), _sub_dofmaps(sub_dofmaps)
+    : _parent_map(parent_map), _block_size(block_size), _num_dofs(0),
+      _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
+      _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
 

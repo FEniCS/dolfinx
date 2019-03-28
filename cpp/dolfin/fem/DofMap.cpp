@@ -26,7 +26,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
     : _cell_dimension(-1), _global_dimension(0)
 {
   _element_dofmap = std::make_shared<ElementDofMap>(
-      create_element_dofmap(*ufc_dofmap, mesh.type()));
+      create_element_dofmap(*ufc_dofmap, {}, mesh.type()));
   _cell_dimension = _element_dofmap->num_dofs();
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
       = DofMapBuilder::build(*_element_dofmap, mesh);

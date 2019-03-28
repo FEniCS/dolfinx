@@ -37,6 +37,7 @@ public:
   ElementDofMap(int block_size,
                 std::vector<std::vector<std::vector<int>>> entity_dofs,
                 std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
+                std::vector<int> parent_map,
                 std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps);
 
   // Copy constructor
@@ -88,7 +89,6 @@ public:
   bool is_view() const;
 
 private:
-public:
   // Mapping of dofs to this ElementDofMap's immediate parent
   std::vector<int> _parent_map;
 

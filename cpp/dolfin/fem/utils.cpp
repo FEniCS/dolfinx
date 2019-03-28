@@ -496,8 +496,10 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   return index + offset;
 }
 //-----------------------------------------------------------------------------
-fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
-                                              const mesh::CellType& cell_type)
+fem::ElementDofMap
+fem::create_element_dofmap(const ufc_dofmap& dofmap,
+                           const std::vector<int>& parent_map,
+                           const mesh::CellType& cell_type)
 {
   // Copy over number of dofs per entity type (and also closure dofs per
   // entity type)
@@ -526,16 +528,12 @@ fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
     }
   }
 
-  // Fill all subdofmaps
-  // std::vector<std::shared_ptr<fem::ElementDofMap>> sub_dofmaps;
-  // for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
-  // {
-  //   ufc_dofmap* sub_dofmap = dofmap.create_sub_dofmap(i);
-  //   sub_dofmaps.push_back(std::make_shared<fem::ElementDofMap>(
-  //       create_element_dofmap(*sub_dofmap, cell_type)));
-  //   std::free(sub_dofmap);
-  // }
+  // TODO:  UFC dofmaps just use simple offset for each field but this
+  // could be different for custom dofmaps This data should come
+  // directly from the UFC interface in place of the the implicit
+  // assumption
 
+  // Create UFC subdofmaps and compute offset
   std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
   std::vector<int> offsets(1, 0);
   for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
@@ -544,55 +542,25 @@ fem::ElementDofMap fem::create_element_dofmap(const ufc_dofmap& dofmap,
         = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i));
     ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
     const int num_dofs = ufc_sub_dofmap->num_element_support_dofs;
-    offsets.push_back(offsets.back() +  num_dofs);
+    offsets.push_back(offsets.back() + num_dofs);
   }
 
   std::vector<std::shared_ptr<fem::ElementDofMap>> sub_dofmaps;
   for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
   {
-    // auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
-    // assert(ufc_sub_dofmap);
-    // std::vector<int> parent_map(ufc_sub_dofmap->num_element_support_dofs);
-    // std::iota(parent_map.begin(), parent_map.end(), offsets[i]);
-
+    auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
+    assert(ufc_sub_dofmap);
+    std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs);
+    std::iota(parent_map_sub.begin(), parent_map_sub.end(), offsets[i]);
     sub_dofmaps.push_back(std::make_shared<fem::ElementDofMap>(
-        create_element_dofmap(*ufc_sub_dofmaps[i], cell_type)));
-
-    auto sub_dofmap = sub_dofmaps.back();
-    sub_dofmap->_parent_map.resize(sub_dofmap->num_dofs());
-    std::iota(sub_dofmap->_parent_map.begin(), sub_dofmap->_parent_map.end(),
-              offsets[i]);
+        create_element_dofmap(*ufc_sub_dofmaps[i], parent_map_sub, cell_type)));
   }
-
-  // FIXME: avoid direct access access to _parent_map
-
-  // TODO: This data should come directly from the UFC interface in
-  //       place of the the implicit assumption
-  // UFC dofmaps just use simple offset for each field but this could be
-  // different for custom dofmaps
-  // int offset = 0;
-  // for (auto& sub_dofmap : sub_dofmaps)
-  // {
-  //   sub_dofmap->_parent_map.resize(sub_dofmap->num_dofs());
-  //   std::iota(sub_dofmap->_parent_map.begin(), sub_dofmap->_parent_map.end(),
-  //             offset);
-  //   offset += sub_dofmap->_parent_map.size();
-  // }
-
-  // int offset = 0;
-  // for (auto& sub_dofmap : sub_dofmaps)
-  // {
-  //   sub_dofmap->_parent_map.resize(sub_dofmap->num_dofs());
-  //   std::iota(sub_dofmap->_parent_map.begin(), sub_dofmap->_parent_map.end(),
-  //             offset);
-  //   offset += sub_dofmap->_parent_map.size();
-  // }
 
   // Check for "block structure". This should ultimately be replaced,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
   return fem::ElementDofMap(block_size, entity_dofs, entity_closure_dofs,
-                            sub_dofmaps);
+                            parent_map, sub_dofmaps);
 }
 //-----------------------------------------------------------------------------

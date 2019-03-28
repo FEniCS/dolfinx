@@ -69,7 +69,9 @@ la::PETScVector create_vector_nest(std::vector<const fem::Form*> L);
 std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
                              const unsigned int field, const unsigned int n);
 
+/// Create an ElementDofMap from a ufc_dofmap
 ElementDofMap create_element_dofmap(const ufc_dofmap& dofmap,
+                                    const std::vector<int>& parent_map,
                                     const mesh::CellType& cell_type);
 
 } // namespace fem
