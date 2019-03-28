@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Chris Richardson
+// Copyright (C) 2019 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -29,30 +29,30 @@ namespace fem
 //       reference cell needs to be defined.
 // TODO: Handle block dofmaps properly
 
-class ElementDofMap
+class ElementDofLayout
 {
 public:
   // FIXME: Remove redundant arguments
   /// Constructor
-  ElementDofMap(int block_size,
-                std::vector<std::vector<std::vector<int>>> entity_dofs,
-                std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
-                std::vector<int> parent_map,
-                std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps);
+  ElementDofLayout(
+      int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
+      std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
+      std::vector<int> parent_map,
+      std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps);
 
   // Copy constructor
-  ElementDofMap(const ElementDofMap& dofmap) = delete;
+  ElementDofLayout(const ElementDofLayout& dofmap) = delete;
 
   /// Move constructor
-  ElementDofMap(ElementDofMap&& dofmap) = default;
+  ElementDofLayout(ElementDofLayout&& dofmap) = default;
 
   /// Destructor
-  ~ElementDofMap() = default;
+  ~ElementDofLayout() = default;
 
-  ElementDofMap& operator=(const ElementDofMap& dofmap) = delete;
+  ElementDofLayout& operator=(const ElementDofLayout& dofmap) = delete;
 
   /// Move assignment
-  ElementDofMap& operator=(ElementDofMap&& dofmap) = default;
+  ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
 
   /// Number of dofs on element
   int num_dofs() const;
@@ -74,7 +74,7 @@ public:
   int num_sub_dofmaps() const;
 
   /// Get sub-dofmap given by list of components, one for each level
-  std::shared_ptr<const ElementDofMap>
+  std::shared_ptr<const ElementDofLayout>
   sub_dofmap(const std::vector<std::size_t>& component) const;
 
   /// Get mapping from a child dofmap, referenced by the component list
@@ -89,7 +89,7 @@ public:
   bool is_view() const;
 
 private:
-  // Mapping of dofs to this ElementDofMap's immediate parent
+  // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
 
 private:
@@ -114,7 +114,7 @@ private:
   std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
-  std::vector<std::shared_ptr<ElementDofMap>> _sub_dofmaps;
+  std::vector<std::shared_ptr<ElementDofLayout>> _sub_dofmaps;
 };
 } // namespace fem
 } // namespace dolfin

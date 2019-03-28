@@ -29,7 +29,7 @@ class Mesh;
 namespace fem
 {
 class DofMap;
-class ElementDofMap;
+class ElementDofLayout;
 
 /// Builds a DofMap on a mesh::Mesh
 
@@ -45,7 +45,7 @@ public:
   static std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
                     std::unordered_map<int, std::vector<int>>, std::set<int>,
                     std::vector<PetscInt>>
-  build(const ElementDofMap& el_dm, const mesh::Mesh& dolfin_mesh);
+  build(const ElementDofLayout& el_dm, const mesh::Mesh& dolfin_mesh);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
   ///
@@ -54,7 +54,7 @@ public:
   /// @param[in] component
   /// @param[in] mesh
   static std::tuple<std::int64_t, std::vector<PetscInt>> build_sub_map_view(
-      const DofMap& parent_dofmap, const ElementDofMap& parent_element_dofmap,
+      const DofMap& parent_dofmap, const ElementDofLayout& parent_element_dofmap,
       const std::vector<std::size_t>& component, const mesh::Mesh& mesh);
 
 };

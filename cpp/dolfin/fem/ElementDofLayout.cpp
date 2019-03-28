@@ -1,10 +1,10 @@
-// Copyright (C) 2019 Chris Richardson
+// Copyright (C) 2019 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "ElementDofMap.h"
+#include "ElementDofLayout.h"
 #include <dolfin/mesh/CellType.h>
 #include <ufc.h>
 
@@ -12,11 +12,11 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-ElementDofMap::ElementDofMap(
+ElementDofLayout::ElementDofLayout(
     int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
     std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
     std::vector<int> parent_map,
-    std::vector<std::shared_ptr<ElementDofMap>> sub_dofmaps)
+    std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps)
     : _parent_map(parent_map), _block_size(block_size), _num_dofs(0),
       _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
       _sub_dofmaps(sub_dofmaps)
@@ -47,43 +47,43 @@ ElementDofMap::ElementDofMap(
   }
 }
 //-----------------------------------------------------------------------------
-int ElementDofMap::num_dofs() const { return _num_dofs; }
+int ElementDofLayout::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
-int ElementDofMap::num_entity_dofs(unsigned int dim) const
+int ElementDofLayout::num_entity_dofs(unsigned int dim) const
 {
   assert(dim < _num_entity_dofs.size());
   return _num_entity_dofs[dim];
 }
 //-----------------------------------------------------------------------------
-int ElementDofMap::num_entity_closure_dofs(unsigned int dim) const
+int ElementDofLayout::num_entity_closure_dofs(unsigned int dim) const
 {
   assert(dim < _num_entity_closure_dofs.size());
   return _num_entity_closure_dofs[dim];
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::vector<std::vector<int>>>&
-ElementDofMap::entity_dofs() const
+ElementDofLayout::entity_dofs() const
 {
   return _entity_dofs;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::vector<std::vector<int>>>&
-ElementDofMap::entity_closure_dofs() const
+ElementDofLayout::entity_closure_dofs() const
 {
   return _entity_closure_dofs;
 }
 //-----------------------------------------------------------------------------
-int ElementDofMap::num_sub_dofmaps() const { return _sub_dofmaps.size(); }
+int ElementDofLayout::num_sub_dofmaps() const { return _sub_dofmaps.size(); }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const ElementDofMap>
-ElementDofMap::sub_dofmap(const std::vector<std::size_t>& component) const
+std::shared_ptr<const ElementDofLayout>
+ElementDofLayout::sub_dofmap(const std::vector<std::size_t>& component) const
 {
   if (component.size() == 0)
     throw std::runtime_error("No sub dofmap specified");
   if (component[0] >= _sub_dofmaps.size())
     throw std::runtime_error("Invalid sub dofmap specified");
 
-  std::shared_ptr<const ElementDofMap> current = _sub_dofmaps[component[0]];
+  std::shared_ptr<const ElementDofLayout> current = _sub_dofmaps[component[0]];
   for (unsigned int i = 1; i < component.size(); ++i)
   {
     const int idx = component[i];
@@ -94,14 +94,14 @@ ElementDofMap::sub_dofmap(const std::vector<std::size_t>& component) const
   return current;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> ElementDofMap::sub_dofmap_mapping(
+std::vector<int> ElementDofLayout::sub_dofmap_mapping(
     const std::vector<std::size_t>& component) const
 {
   // Fill up a list of parent dofs, from which subdofmap will select
   std::vector<int> dof_list(_num_dofs);
   std::iota(dof_list.begin(), dof_list.end(), 0);
 
-  const ElementDofMap* element_dofmap_current = this;
+  const ElementDofLayout* element_dofmap_current = this;
   for (auto i : component)
   {
     // Switch to sub-dofmap
@@ -119,7 +119,7 @@ std::vector<int> ElementDofMap::sub_dofmap_mapping(
   return dof_list;
 }
 //-----------------------------------------------------------------------------
-int ElementDofMap::block_size() const { return _block_size; }
+int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
-bool ElementDofMap::is_view() const { return !_parent_map.empty(); }
+bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------

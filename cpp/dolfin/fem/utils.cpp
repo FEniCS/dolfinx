@@ -29,7 +29,7 @@ namespace
 {
 // Try to figure out block size. FIXME - replace elsewhere
 int analyse_block_structure(
-    const std::vector<std::shared_ptr<fem::ElementDofMap>> sub_dofmaps)
+    const std::vector<std::shared_ptr<fem::ElementDofLayout>> sub_dofmaps)
 {
   // Must be at least two subdofmaps
   if (sub_dofmaps.size() < 2)
@@ -496,7 +496,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   return index + offset;
 }
 //-----------------------------------------------------------------------------
-fem::ElementDofMap
+fem::ElementDofLayout
 fem::create_element_dofmap(const ufc_dofmap& dofmap,
                            const std::vector<int>& parent_map,
                            const mesh::CellType& cell_type)
@@ -545,14 +545,14 @@ fem::create_element_dofmap(const ufc_dofmap& dofmap,
     offsets.push_back(offsets.back() + num_dofs);
   }
 
-  std::vector<std::shared_ptr<fem::ElementDofMap>> sub_dofmaps;
+  std::vector<std::shared_ptr<fem::ElementDofLayout>> sub_dofmaps;
   for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
   {
     auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
     assert(ufc_sub_dofmap);
     std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs);
     std::iota(parent_map_sub.begin(), parent_map_sub.end(), offsets[i]);
-    sub_dofmaps.push_back(std::make_shared<fem::ElementDofMap>(
+    sub_dofmaps.push_back(std::make_shared<fem::ElementDofLayout>(
         create_element_dofmap(*ufc_sub_dofmaps[i], parent_map_sub, cell_type)));
   }
 
@@ -560,7 +560,7 @@ fem::create_element_dofmap(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
-  return fem::ElementDofMap(block_size, entity_dofs, entity_closure_dofs,
+  return fem::ElementDofLayout(block_size, entity_dofs, entity_closure_dofs,
                             parent_map, sub_dofmaps);
 }
 //-----------------------------------------------------------------------------

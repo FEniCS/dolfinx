@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "ElementDofMap.h"
+#include "ElementDofLayout.h"
 #include "GenericDofMap.h"
 #include "petscsys.h"
 #include <Eigen/Dense>
@@ -40,7 +40,7 @@ namespace fem
 /// Degree-of-freedom map
 
 /// This class handles the mapping of degrees of freedom. It builds a
-/// dof map based on an ElementDofMap on a specific mesh. It will
+/// dof map based on an ElementDofLayout on a specific mesh. It will
 /// reorder the dofs when running in parallel. Sub-dofmaps, both views
 /// and copies, are supported.
 
@@ -251,7 +251,7 @@ public:
 
 private:
   // Check that mesh provides the entities needed by dofmap
-  static void check_provided_entities(const ElementDofMap& dofmap,
+  static void check_provided_entities(const ElementDofLayout& dofmap,
                                       const mesh::Mesh& mesh);
 
   // Cell-local-to-dof map (dofs for cell dofmap[i])
@@ -276,7 +276,7 @@ private:
   // Processes that this dofmap shares dofs with
   std::set<int> _neighbours;
 
-  std::shared_ptr<const ElementDofMap> _element_dofmap;
+  std::shared_ptr<const ElementDofLayout> _element_dofmap;
 };
 } // namespace fem
 } // namespace dolfin

@@ -6,7 +6,7 @@
 
 #include "DofMapBuilder.h"
 #include "DofMap.h"
-#include "ElementDofMap.h"
+#include "ElementDofLayout.h"
 #include <cstdlib>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
@@ -339,7 +339,7 @@ build_dofmap(const std::vector<std::vector<PetscInt>>& node_dofmap,
 // Build graph from ElementDofmap. Returns (node_dofmap,
 // node_local_to_global)
 std::tuple<std::vector<std::vector<PetscInt>>, std::vector<std::size_t>>
-build_ufc_node_graph(const ElementDofMap& el_dm_blocked, const mesh::Mesh& mesh)
+build_ufc_node_graph(const ElementDofLayout& el_dm_blocked, const mesh::Mesh& mesh)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -446,7 +446,7 @@ build_ufc_node_graph(const ElementDofMap& el_dm_blocked, const mesh::Mesh& mesh)
 std::vector<int>
 compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
                      const std::size_t num_nodes_local,
-                     const ElementDofMap& el_dm, const mesh::Mesh& mesh)
+                     const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
 {
   // Initialise mesh
   const int D = mesh.topology().dim();
@@ -724,7 +724,7 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
 std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
            std::unordered_map<int, std::vector<int>>, std::set<int>,
            std::vector<PetscInt>>
-DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
+DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
 {
   common::Timer t0("Init dofmap");
 
@@ -750,10 +750,10 @@ DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
   const int bs = el_dm.block_size();
 
   // FIXME: clean this up somehow
-  std::shared_ptr<const ElementDofMap> el_dm_b;
+  std::shared_ptr<const ElementDofLayout> el_dm_b;
   if (bs > 1)
     el_dm_b = el_dm.sub_dofmap({0});
-  const ElementDofMap& el_dm_blocked = (bs > 1) ? *el_dm_b : el_dm;
+  const ElementDofLayout& el_dm_blocked = (bs > 1) ? *el_dm_b : el_dm;
 
   std::tie(node_graph0, node_local_to_global0)
       = build_ufc_node_graph(el_dm_blocked, mesh);
@@ -837,7 +837,7 @@ DofMapBuilder::build(const ElementDofMap& el_dm, const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 std::tuple<std::int64_t, std::vector<PetscInt>>
 DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
-                                  const ElementDofMap& parent_element_dofmap,
+                                  const ElementDofLayout& parent_element_dofmap,
                                   const std::vector<std::size_t>& component,
                                   const mesh::Mesh& mesh)
 {
@@ -854,8 +854,8 @@ DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
   for (int d = 0; d <= D; ++d)
     needs_entities[d] = parent_element_dofmap.num_entity_dofs(d) > 0;
 
-  // Alternative with ElementDofMap
-  std::shared_ptr<const ElementDofMap> sub_el_dm
+  // Alternative with ElementDofLayout
+  std::shared_ptr<const ElementDofLayout> sub_el_dm
       = parent_element_dofmap.sub_dofmap(component);
   const std::vector<int> sub_el_map
       = parent_element_dofmap.sub_dofmap_mapping(component);

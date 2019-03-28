@@ -6,7 +6,7 @@
 
 #include "DofMap.h"
 #include "DofMapBuilder.h"
-#include "ElementDofMap.h"
+#include "ElementDofLayout.h"
 #include "utils.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
@@ -25,7 +25,7 @@ DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
                const mesh::Mesh& mesh)
     : _cell_dimension(-1), _global_dimension(0)
 {
-  _element_dofmap = std::make_shared<ElementDofMap>(
+  _element_dofmap = std::make_shared<ElementDofLayout>(
       create_element_dofmap(*ufc_dofmap, {}, mesh.type()));
   _cell_dimension = _element_dofmap->num_dofs();
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
@@ -43,7 +43,7 @@ DofMap::DofMap(const DofMap& parent_dofmap,
 
   // FIXME: the index map block size will be wrong here???
 
-  std::shared_ptr<const ElementDofMap> parent_element_dofmap(
+  std::shared_ptr<const ElementDofLayout> parent_element_dofmap(
       parent_dofmap._element_dofmap);
 
   // Build sub-dofmap
@@ -66,7 +66,7 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
     : _cell_dimension(-1), _global_dimension(-1),
       _element_dofmap(dofmap_view._element_dofmap)
 {
-  // Check dimensional consistency between ElementDofMap and the mesh
+  // Check dimensional consistency between ElementDofLayout and the mesh
   check_provided_entities(*_element_dofmap, mesh);
 
   // Build new dof map
@@ -210,7 +210,7 @@ void DofMap::set(Vec x, PetscScalar value) const
     x_array[index] = value;
 }
 //-----------------------------------------------------------------------------
-void DofMap::check_provided_entities(const ElementDofMap& dofmap,
+void DofMap::check_provided_entities(const ElementDofLayout& dofmap,
                                      const mesh::Mesh& mesh)
 {
   // Check that we have all mesh entities
