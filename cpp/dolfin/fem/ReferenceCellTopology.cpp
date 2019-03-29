@@ -103,3 +103,35 @@ CellType ReferenceCellTopology::facet_type(CellType cell_type)
   return CellType::point;
 }
 //-----------------------------------------------------------------------------
+const ReferenceCellTopology::Edge*
+ReferenceCellTopology::get_edges(CellType cell_type)
+{
+  static const int triangle[][2] = {{1, 2}, {0, 2}, {0, 1}};
+  static const int quadrilateral[][2] = {{0, 1}, {2, 3}, {0, 2}, {1, 3}};
+  static const int tetrahedron[][2]
+      = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
+  static const int hexahedron[][2]
+      = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3},
+         {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
+
+  switch (cell_type)
+  {
+  case CellType::point:
+    return nullptr;
+  case CellType::interval:
+    return nullptr;
+  case CellType::triangle:
+    return triangle;
+  case CellType::quadrilateral:
+    return quadrilateral;
+  case CellType::tetrahedron:
+    return tetrahedron;
+  case CellType::hexahedron:
+    return hexahedron;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+
+  return nullptr;
+}
+//-----------------------------------------------------------------------------

@@ -31,6 +31,11 @@ public:
   static int num_facets(CellType cell_type);
 
   static CellType facet_type(CellType cell_type);
+
+  typedef int Edge[2];
+  static const Edge* get_edges(CellType cell_type);
+
+
 };
 } // namespace fem
 } // namespace dolfin
