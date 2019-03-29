@@ -6,29 +6,19 @@
 
 #pragma once
 
-#include <array>
-#include <dolfin/common/types.h>
-#include <memory>
-#include <vector>
 
 namespace dolfin
 {
 
 enum class CellType : short int
-  {
-    point,
-    interval,
-    triangle,
-    quadrilateral,
-    tetrahedron,
-    hexahedron
-  };
-
-
-// namespace mesh
-// {
-// class CellType;
-// }
+{
+  point,
+  interval,
+  triangle,
+  quadrilateral,
+  tetrahedron,
+  hexahedron
+};
 
 namespace fem
 {
@@ -37,7 +27,6 @@ class ReferenceCellTopology
 {
 public:
   static int num_vertices(CellType cell_type);
-
 };
 } // namespace fem
 } // namespace dolfin
