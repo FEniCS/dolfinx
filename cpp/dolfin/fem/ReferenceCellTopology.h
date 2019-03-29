@@ -27,6 +27,9 @@ class ReferenceCellTopology
 {
 public:
   static int num_vertices(CellType cell_type);
+  static int num_edges(CellType cell_type);
+
+  static CellType facet_type(CellType cell_type);
 };
 } // namespace fem
 } // namespace dolfin
