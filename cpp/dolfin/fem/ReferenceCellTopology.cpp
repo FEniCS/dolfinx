@@ -57,6 +57,29 @@ int ReferenceCellTopology::num_edges(CellType cell_type)
   return -1;
 }
 //-----------------------------------------------------------------------------
+int ReferenceCellTopology::num_facets(CellType cell_type)
+{
+  switch (cell_type)
+  {
+  case CellType::point:
+    return 0;
+  case CellType::interval:
+    return 2;
+  case CellType::triangle:
+    return 3;
+  case CellType::quadrilateral:
+    return 4;
+  case CellType::tetrahedron:
+    return 4;
+  case CellType::hexahedron:
+    return 6;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+
+  return -1;
+}
+//-----------------------------------------------------------------------------
 CellType ReferenceCellTopology::facet_type(CellType cell_type)
 {
   switch (cell_type)
