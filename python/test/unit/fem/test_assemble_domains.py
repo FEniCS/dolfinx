@@ -135,8 +135,30 @@ def test_assembly_ds_domains(mesh):
 
     assert norm1 == pytest.approx(norm2, 1.0e-12)
 
-    # L = 1.0 * ds(1)
-    # s = dolfin.fem.assemble_scalar(L)
-    # s = dolfin.MPI.sum(mesh.mpi_comm(), s)
+    #
+    # Assemble vector
+    #
 
-    # assert 1.0 == pytest.approx(1.0, 1.0e-12)
+    L = v * ds(111) + v * ds(222)
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    L2 = conditional_marker * v * ds
+    b2 = dolfin.fem.assemble_vector(L2)
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
+
+    #
+    # Assemble scalar
+    #
+
+    L = 1.0 * ds(111) + 1.0 * ds(222)
+    s = dolfin.fem.assemble_scalar(L)
+    s = dolfin.MPI.sum(mesh.mpi_comm(), s)
+
+    L2 = conditional_marker * 1.0 * ds
+    s2 = dolfin.fem.assemble_scalar(L2)
+    s2 = dolfin.MPI.sum(mesh.mpi_comm(), s2)
+
+    assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
