@@ -7,6 +7,7 @@
 
 import numpy
 import pytest
+from petsc4py import PETSc
 
 import dolfin
 import ufl
@@ -67,9 +68,11 @@ def test_assembly_dx_domains(mesh):
 
     L = v * dx(111) + v * dx(222)
     b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     L2 = conditional_marker * v * dx
     b2 = dolfin.fem.assemble_vector(L2)
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     assert b.norm() == pytest.approx(b2.norm(), 1.0e-12)
 
