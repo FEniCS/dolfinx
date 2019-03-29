@@ -129,10 +129,13 @@ target_link_libraries(dolfin PUBLIC PETSC::petsc)
 target_link_libraries(dolfin PRIVATE PETSC::petsc_static)
 
 # HDF5
-target_compile_definitions(dolfin PUBLIC HAS_HDF5)
 target_compile_definitions(dolfin PUBLIC ${HDF5_DEFINITIONS})
 target_link_libraries(dolfin PUBLIC ${HDF5_C_LIBRARIES})
 target_include_directories(dolfin SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
+
+# SCOTCH
+target_link_libraries(dolfin PRIVATE ${SCOTCH_LIBRARIES})
+target_include_directories(dolfin SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 
 #------------------------------------------------------------------------------
 # Optional packages
@@ -142,13 +145,6 @@ if (DOLFIN_ENABLE_SLEPC AND SLEPC_FOUND)
   target_compile_definitions(dolfin PUBLIC HAS_SLEPC)
   target_link_libraries(dolfin PUBLIC SLEPC::slepc)
   target_link_libraries(dolfin PRIVATE SLEPC::slepc_static)
-endif()
-
-# SCOTCH
-if (DOLFIN_ENABLE_SCOTCH AND SCOTCH_FOUND)
-  target_compile_definitions(dolfin PUBLIC HAS_SCOTCH)
-  target_link_libraries(dolfin PRIVATE ${SCOTCH_LIBRARIES})
-  target_include_directories(dolfin SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 endif()
 
 # ParMETIS
