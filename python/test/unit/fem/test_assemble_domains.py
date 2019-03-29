@@ -52,8 +52,8 @@ def test_assembly_dx_domains(mesh):
     # Integration over whole domain, but effectively zeroing
     # with contitional
     x = ufl.SpatialCoordinate(mesh)
-    conditional_marker = ufl.conditional(ufl.Or(ufl.sqrt(ufl.conj(x[1])*x[1]) <= 0.2,
-                                                ufl.sqrt(ufl.conj(x[1])*x[1]) <= 0.8), 1.0, 0.0)
+    conditional_marker = ufl.conditional(ufl.Or(ufl.sqrt(ufl.conj(x[1]) * x[1]) <= 0.2,
+                                                ufl.sqrt(ufl.conj(x[1]) * x[1]) >= 0.8), 1.0, 0.0)
 
     a2 = conditional_marker * ufl.inner(u, v) * dx
 
