@@ -80,7 +80,7 @@ int ReferenceCellTopology::num_facets(CellType cell_type)
   return -1;
 }
 //-----------------------------------------------------------------------------
-CellType ReferenceCellTopology::facet_type(CellType cell_type)
+CellType ReferenceCellTopology::facet_type(CellType cell_type, int k)
 {
   switch (cell_type)
   {
@@ -120,6 +120,69 @@ ReferenceCellTopology::get_edges(CellType cell_type)
     return nullptr;
   case CellType::interval:
     return nullptr;
+  case CellType::triangle:
+    return triangle;
+  case CellType::quadrilateral:
+    return quadrilateral;
+  case CellType::tetrahedron:
+    return tetrahedron;
+  case CellType::hexahedron:
+    return hexahedron;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+
+  return nullptr;
+}
+//-----------------------------------------------------------------------------
+const ReferenceCellTopology::Face*
+ReferenceCellTopology::get_faces(CellType cell_type)
+{
+  static const int tetrahedron[][4]
+      = {{1, 2, 3, -1}, {0, 2, 3, -1}, {0, 1, 3, -1}, {0, 1, 2, -1}};
+  static const int hexahedron[][4] = {{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 4, 5},
+                                      {2, 3, 6, 7}, {0, 2, 4, 6}, {1, 3, 5, 7}};
+
+  switch (cell_type)
+  {
+  case CellType::point:
+    return nullptr;
+  case CellType::interval:
+    return nullptr;
+  case CellType::triangle:
+    return nullptr;
+  case CellType::quadrilateral:
+    return nullptr;
+  case CellType::tetrahedron:
+    return tetrahedron;
+  case CellType::hexahedron:
+    return hexahedron;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+
+  return nullptr;
+}
+//-----------------------------------------------------------------------------
+const ReferenceCellTopology::Point*
+ReferenceCellTopology::get_vertices(CellType cell_type)
+{
+  static const double interval[][3] = {{0.0}, {1.0}};
+  static const double triangle[][3] = {{0.0, 0.0}, {1.0, 0.0}, {0.0, 1.0}};
+  static const double quadrilateral[][3]
+      = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
+  static const double tetrahedron[][3]
+      = {{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
+  static const double hexahedron[][3]
+      = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 1.0, 1.0},
+         {1.0, 0.0, 0.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 0.0}, {1.0, 1.0, 1.0}};
+
+  switch (cell_type)
+  {
+  case CellType::point:
+    return nullptr;
+  case CellType::interval:
+    return interval;
   case CellType::triangle:
     return triangle;
   case CellType::quadrilateral:

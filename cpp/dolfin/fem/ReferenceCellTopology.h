@@ -6,7 +6,6 @@
 
 #pragma once
 
-
 namespace dolfin
 {
 
@@ -30,12 +29,16 @@ public:
   static int num_edges(CellType cell_type);
   static int num_facets(CellType cell_type);
 
-  static CellType facet_type(CellType cell_type);
+  static CellType facet_type(CellType cell_type, int k=0);
 
   typedef int Edge[2];
   static const Edge* get_edges(CellType cell_type);
 
+  typedef int Face[4];
+  static const Face* get_faces(CellType cell_type);
 
+  typedef double Point[3];
+  static const Point* get_vertices(CellType cell_type);
 };
 } // namespace fem
 } // namespace dolfin
