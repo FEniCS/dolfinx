@@ -164,6 +164,28 @@ ReferenceCellTopology::get_faces(CellType cell_type)
   return nullptr;
 }
 //-----------------------------------------------------------------------------
+const int* ReferenceCellTopology::get_entities(CellType cell_type, int d0,
+                                               int d1)
+{
+  // Tetrahedron face-edge connectivity
+  static const int tetrahedron_fe[4][3]
+      = {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}};
+
+  // FIXME: fill
+  static const int hexahedron_fe[6][4] = {0};
+
+  if (d0 == 2 and d1 == 0)
+    return (int*)get_faces(cell_type);
+  else if (d0 == 1 and d1 == 0)
+    return (int*)get_edges(cell_type);
+  else if (cell_type == CellType::tetrahedron and d0 == 2 and d1 == 1)
+    return (int*)tetrahedron_fe;
+  else if (cell_type == CellType::hexahedron and d0 == 2 and d1 == 1)
+    return (int*)hexahedron_fe;
+
+  return nullptr;
+}
+//-----------------------------------------------------------------------------
 const ReferenceCellTopology::Point*
 ReferenceCellTopology::get_vertices(CellType cell_type)
 {

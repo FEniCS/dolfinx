@@ -37,6 +37,9 @@ public:
   typedef int Face[4];
   static const Face* get_faces(CellType cell_type);
 
+  // Get connectivity from entities of dimension d0 to d1.
+  static const int* get_entities(CellType cell_type, int d0, int d1);
+
   typedef double Point[3];
   static const Point* get_vertices(CellType cell_type);
 };
