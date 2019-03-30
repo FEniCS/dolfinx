@@ -23,18 +23,12 @@ def test_assembly_dx_domains(mesh):
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
     marker = dolfin.MeshFunction("size_t", mesh, mesh.topology.dim, 0)
-
-    def bottom_fifth(x):
-        return numpy.less_equal(x[:, 1], 0.2)
-
-    def upper_fifth(x):
-        return numpy.greater_equal(x[:, 1], 0.8)
-
-    bottom_fifth_subdomain = dolfin.mesh.create_subdomain(bottom_fifth)
-    bottom_fifth_subdomain.mark(marker, 111)
-
-    upper_fifth_subdomain = dolfin.mesh.create_subdomain(upper_fifth)
-    upper_fifth_subdomain.mark(marker, 222)
+    values = marker.array()
+    # Mark first, second and all other
+    # Their union is the whole domain
+    values[0] = 111
+    values[1] = 222
+    values[2:] = 333
 
     dx = dolfin.Measure('dx', subdomain_data=marker, domain=mesh)
 
@@ -42,20 +36,13 @@ def test_assembly_dx_domains(mesh):
     # Assemble matrix
     #
 
-    # Integration just over marked cells
-    a = ufl.inner(u, v) * dx(111) + ufl.inner(u, v) * dx(222)
+    a = ufl.inner(u, v) * (dx(111) + dx(222) + dx(333))
 
     A = dolfin.fem.assemble_matrix(a)
     A.assemble()
     norm1 = A.norm()
 
-    # Integration over whole domain, but effectively zeroing
-    # with contitional
-    x = ufl.SpatialCoordinate(mesh)
-    conditional_marker = ufl.conditional(ufl.Or(ufl.sqrt(ufl.conj(x[1]) * x[1]) <= 0.2,
-                                                ufl.sqrt(ufl.conj(x[1]) * x[1]) >= 0.8), 1.0, 0.0)
-
-    a2 = conditional_marker * ufl.inner(u, v) * dx
+    a2 = ufl.inner(u, v) * dx
 
     A2 = dolfin.fem.assemble_matrix(a2)
     A2.assemble()
@@ -67,11 +54,11 @@ def test_assembly_dx_domains(mesh):
     # Assemble vector
     #
 
-    L = v * dx(111) + v * dx(222)
+    L = v * (dx(111) + dx(222) + dx(333))
     b = dolfin.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    L2 = conditional_marker * v * dx
+    L2 = v * dx
     b2 = dolfin.fem.assemble_vector(L2)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
@@ -81,15 +68,15 @@ def test_assembly_dx_domains(mesh):
     # Assemble scalar
     #
 
-    L = 1.0 * dx(111) + 1.0 * dx(222)
+    L = 1.0 * (dx(111) + dx(222) + dx(333))
     s = dolfin.fem.assemble_scalar(L)
     s = dolfin.MPI.sum(mesh.mpi_comm(), s)
 
-    L2 = conditional_marker * 1.0 * dx
+    L2 = 1.0 * dx
     s2 = dolfin.fem.assemble_scalar(L2)
     s2 = dolfin.MPI.sum(mesh.mpi_comm(), s2)
 
-    assert (s == pytest.approx(s2, 1.0e-12) and 0.4 == pytest.approx(s, 1.0e-12))
+    assert (s == pytest.approx(s2, 1.0e-12) and 1.0 == pytest.approx(s, 1.0e-12))
 
 
 def test_assembly_ds_domains(mesh):
@@ -104,11 +91,23 @@ def test_assembly_ds_domains(mesh):
     def top(x):
         return numpy.isclose(x[:, 1], 1.0)
 
+    def left(x):
+        return numpy.isclose(x[:, 0], 0.0)
+
+    def right(x):
+        return numpy.isclose(x[:, 0], 1.0)
+
     bottom_subdomain = dolfin.mesh.create_subdomain(bottom)
     bottom_subdomain.mark(marker, 111)
 
     top_subdomain = dolfin.mesh.create_subdomain(top)
     top_subdomain.mark(marker, 222)
+
+    left_subdomain = dolfin.mesh.create_subdomain(left)
+    left_subdomain.mark(marker, 333)
+
+    right_subdomain = dolfin.mesh.create_subdomain(right)
+    right_subdomain.mark(marker, 444)
 
     ds = dolfin.Measure('ds', subdomain_data=marker, domain=mesh)
 
@@ -116,19 +115,13 @@ def test_assembly_ds_domains(mesh):
     # Assemble matrix
     #
 
-    # Integration just over marked cells
-    a = ufl.inner(u, v) * ds(111) + ufl.inner(u, v) * ds(222)
+    a = ufl.inner(u, v) * (ds(111) + ds(222) + ds(333) + ds(444))
 
     A = dolfin.fem.assemble_matrix(a)
     A.assemble()
     norm1 = A.norm()
 
-    # Integration over whole domain, but effectively zeroing
-    # with contitional
-    x = ufl.SpatialCoordinate(mesh)
-    conditional_marker = ufl.conditional(ufl.Or(ufl.eq(x[0], 0.0), ufl.eq(x[0], 1.0)), 1.0, 0.0)
-
-    a2 = conditional_marker * ufl.inner(u, v) * ds
+    a2 = ufl.inner(u, v) * ds
 
     A2 = dolfin.fem.assemble_matrix(a2)
     A2.assemble()
@@ -140,11 +133,11 @@ def test_assembly_ds_domains(mesh):
     # Assemble vector
     #
 
-    L = v * ds(111) + v * ds(222)
+    L = v * (ds(111) + ds(222) + ds(333) + ds(444))
     b = dolfin.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    L2 = conditional_marker * v * ds
+    L2 = v * ds
     b2 = dolfin.fem.assemble_vector(L2)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
@@ -154,12 +147,12 @@ def test_assembly_ds_domains(mesh):
     # Assemble scalar
     #
 
-    L = 1.0 * ds(111) + 1.0 * ds(222)
+    L = 1.0 * (ds(111) + ds(222) + ds(333) + ds(444))
     s = dolfin.fem.assemble_scalar(L)
     s = dolfin.MPI.sum(mesh.mpi_comm(), s)
 
-    L2 = conditional_marker * 1.0 * ds
+    L2 = 1.0 * ds
     s2 = dolfin.fem.assemble_scalar(L2)
     s2 = dolfin.MPI.sum(mesh.mpi_comm(), s2)
 
-    assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
+    assert (s == pytest.approx(s2, 1.0e-12) and 4.0 == pytest.approx(s, 1.0e-12))
