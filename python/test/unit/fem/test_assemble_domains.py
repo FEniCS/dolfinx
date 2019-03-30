@@ -54,11 +54,11 @@ def test_assembly_dx_domains(mesh):
     # Assemble vector
     #
 
-    L = v * (dx(111) + dx(222) + dx(333))
+    L = ufl.inner(1.0, v) * (dx(111) + dx(222) + dx(333))
     b = dolfin.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    L2 = v * dx
+    L2 = ufl.inner(1.0, v) * dx
     b2 = dolfin.fem.assemble_vector(L2)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
@@ -133,11 +133,11 @@ def test_assembly_ds_domains(mesh):
     # Assemble vector
     #
 
-    L = v * (ds(111) + ds(222) + ds(333) + ds(444))
+    L = ufl.inner(1.0, v) * (ds(111) + ds(222) + ds(333) + ds(444))
     b = dolfin.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    L2 = v * ds
+    L2 = ufl.inner(1.0, v) * ds
     b2 = dolfin.fem.assemble_vector(L2)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
