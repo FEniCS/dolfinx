@@ -11,6 +11,36 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
+const int* ReferenceCellTopology::num_entities(CellType cell_type)
+{
+  static const int point[4] = {1, 0, 0, 0};
+  static const int interval[4] = {2, 1, 0, 0};
+  static const int triangle[4] = {3, 3, 1, 0};
+  static const int quadrilateral[4] = {4, 4, 1, 0};
+  static const int tetrahedron[4] = {4, 6, 4, 1};
+  static const int hexahedron[4] = {8, 12, 6, 1};
+
+  switch (cell_type)
+  {
+  case CellType::point:
+    return point;
+  case CellType::interval:
+    return interval;
+  case CellType::triangle:
+    return triangle;
+  case CellType::quadrilateral:
+    return quadrilateral;
+  case CellType::tetrahedron:
+    return tetrahedron;
+  case CellType::hexahedron:
+    return hexahedron;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+
+  return nullptr;
+}
+//---------------------------------------------------------------------//-----------------------------------------------------------------------------
 int ReferenceCellTopology::num_vertices(CellType cell_type)
 {
   switch (cell_type)
