@@ -116,25 +116,25 @@ ElementDofLayout::ElementDofLayout(
 
       if (dim == 2)
       {
-        std::cout << "--------------------------- " << std::endl;
+        // std::cout << "--------------------------- " << std::endl;
         entity_closure[{dim, entity}][2].insert(entity);
         CellType face_type = ReferenceCellTopology::entity_type(_cell, 2);
         const int num_edges = ReferenceCellTopology::num_edges(face_type);
-        if (entity == 3)
-          std::cout << "Num edges: " << num_edges << std::endl;
+        // if (entity == 3)
+        //   std::cout << "Num edges: " << num_edges << std::endl;
         for (int e = 0; e < num_edges; ++e)
         {
           const int edge_index = face_edges[entity][e];
-          if (entity == 3)
-            std::cout << "   edge index: " << edge_index << std::endl;
+          // if (entity == 3)
+          //   std::cout << "   edge index: " << edge_index << std::endl;
           entity_closure[{dim, entity}][1].insert(face_edges[edge_index][e]);
           for (int v = 0; v < 2; ++v)
           {
-            if (entity == 3)
-            {
-              std::cout << "     Testing: " << edge_vertices[edge_index][v]
-                        << std::endl;
-            }
+            // if (entity == 3)
+            // {
+            //   std::cout << "     Testing: " << edge_vertices[edge_index][v]
+            //             << std::endl;
+            // }
             entity_closure[{dim, entity}][0].insert(
                 edge_vertices[edge_index][v]);
           }
@@ -153,17 +153,84 @@ ElementDofLayout::ElementDofLayout(
     }
   }
 
-  for (auto entry : entity_closure)
+  // dof = _entity_dofs[dim][entity_index][i]
+  std::vector<std::vector<std::vector<int>>> entity_closure_dofs_test
+      = entity_dofs;
+  // std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure;
+  for (auto entity : entity_closure)
   {
-    std::cout << "Dim, entity: " << entry.first[0] << ", " << entry.first[1]
-              << std::endl;
-    for (auto value : entry.second)
+    const int dim = entity.first[0];
+    const int index = entity.first[1];
+    for (auto sub_entity : entity.second)
     {
-      std::cout << "  sub-dim: " << value.first << std::endl;
-      for (auto value1 : value.second)
-        std::cout << "          " << value1 << std::endl;
+      const int subdim = sub_entity.first;
+      for (auto sub_index : sub_entity.second)
+      {
+        // Add entity[subdim][sub_index] to entity_closure_dofs_test
+        entity_closure_dofs_test[dim][index].insert(
+            entity_closure_dofs_test[dim][index].end(),
+            entity_dofs[subdim][sub_index].begin(),
+            entity_dofs[subdim][sub_index].begin());
+      }
     }
   }
+
+  for (std::size_t d = 0; d < entity_closure_dofs_test.size(); ++d)
+  {
+    for (std::size_t e = 0; e < entity_closure_dofs_test[d].size(); ++e)
+    {
+      std::set<int> tmp(entity_closure_dofs_test[d][e].begin(),
+                        entity_closure_dofs_test[d][e].end());
+      entity_closure_dofs_test[d][e] = std::vector<int>(tmp.begin(), tmp.end());
+    }
+  }
+
+  // for (auto& ed0 : entity_closure_dofs_test)
+  // {
+  //   for (auto& ed1 : ed0)
+  //   {
+  //     std::set<int> tmp(ed1.begin(), ed1.end());
+  //     ed1 = std::vector<int>(tmp.begin(), tmp.end());
+  //   }
+  // }
+
+  std::cout << "Size check (0): " << entity_closure_dofs.size() << ", "
+            << entity_closure_dofs_test.size() << std::endl;
+  for (std::size_t d = 0; d < entity_closure_dofs.size(); ++d)
+  {
+    std::cout << "    Size check (1): " << entity_closure_dofs[d].size() << ", "
+              << entity_closure_dofs_test[d].size() << std::endl;
+    for (std::size_t e = 0; e < entity_closure_dofs[d].size(); ++e)
+    {
+      for (std::size_t i = 0; i < entity_closure_dofs[d][e].size(); ++i)
+      {
+        std::cout << "        Testing (old): " << entity_closure_dofs[d][e][i]
+                  << std::endl;
+      }
+      for (std::size_t i = 0; i < entity_closure_dofs_test[d][e].size(); ++i)
+      {
+        std::cout << "        Testing (new): "
+                  << entity_closure_dofs_test[d][e][i] << std::endl;
+      }
+    }
+  }
+
+  if (entity_closure_dofs_test == entity_closure_dofs)
+    std::cout << "Closure dofs equal" << std::endl;
+  else
+    std::cout << "Closure dofs not equal" << std::endl;
+
+  // for (auto entry : entity_closure)
+  // {
+  //   std::cout << "Dim, entity: " << entry.first[0] << ", " << entry.first[1]
+  //             << std::endl;
+  //   for (auto value : entry.second)
+  //   {
+  //     std::cout << "  sub-dim: " << value.first << std::endl;
+  //     for (auto value1 : value.second)
+  //       std::cout << "          " << value1 << std::endl;
+  //   }
+  // }
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
