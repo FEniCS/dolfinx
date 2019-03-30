@@ -25,21 +25,32 @@ namespace fem
 class ReferenceCellTopology
 {
 public:
+  static int dim(CellType cell_type);
+
+  // Returns number of enties of dimension d1 that make up an entity of
+  // dimension d0
+  // static int num_entities(CellType cell_type, int d0, d1);
+
   static const int* num_entities(CellType cell_type);
+
   static int num_vertices(CellType cell_type);
   static int num_edges(CellType cell_type);
   static int num_faces(CellType cell_type);
 
-  static CellType facet_type(CellType cell_type, int k=0);
+  // Get entity type of dimension d
+  static CellType entity_type(CellType cell_type, int dim, int k = 0);
+
+  static CellType facet_type(CellType cell_type, int k = 0);
 
   typedef int Edge[2];
-  static const Edge* get_edges(CellType cell_type);
+  static const Edge* get_edge_vertices(CellType cell_type);
 
   typedef int Face[4];
-  static const Face* get_faces(CellType cell_type);
+  static const Face* get_face_vertices(CellType cell_type);
+  static const Face* get_face_edges(CellType cell_type);
 
   // Get connectivity from entities of dimension d0 to d1.
-  static const int* get_entities(CellType cell_type, int d0, int d1);
+  // static const int* get_entities(CellType cell_type, int d0, int d1);
 
   typedef double Point[3];
   static const Point* get_vertices(CellType cell_type);

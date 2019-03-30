@@ -6,13 +6,38 @@
 
 #include "ElementDofLayout.h"
 #include "ReferenceCellTopology.h"
+#include <array>
 #include <dolfin/mesh/CellType.h>
+#include <map>
+#include <set>
 #include <ufc.h>
 
 #include <iostream>
 
 using namespace dolfin;
 using namespace dolfin::fem;
+
+// namespace
+// {
+// std::vector<std::vector<std::vector<int>>>
+// extract_sub_entities(dolfin::CellType cell, int e,
+//                      std::vector<std::vector<std::vector<int>>>& d)
+// {
+//   const int dim = ReferenceCellTopology::dim(cell);
+//   // d[dim].push_back(e);
+
+//   // Add entities of current dimension
+//   // dolfin::CellType facet_cell = ReferenceCellTopology::facet_cell(cell);
+//   // const int facet_dim = facet_cell.dim();
+
+//   // const int* num_face_entities
+//   //     = ReferenceCellTopology::num_entities(facet_cell);
+//   // for (int = 0; i < *num_facet_entities; ++i)
+//   // {
+//   // }
+//   return std::vector<std::vector<std::vector<int>>>();
+// }
+// } // namespace
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
@@ -66,53 +91,77 @@ ElementDofLayout::ElementDofLayout(
   else
     throw std::runtime_error("Ooops");
 
-  const int num_edges = ReferenceCellTopology::num_edges(_cell);
-  const int num_faces = ReferenceCellTopology::num_faces(_cell);
-  std::cout << "Num edges: " << num_edges << std::endl;
-  std::cout << "Num faces: " << num_faces << std::endl;
+  const int* num_entities = ReferenceCellTopology::num_entities(_cell);
+  const ReferenceCellTopology::Edge* edge_vertices
+      = ReferenceCellTopology::get_edge_vertices(_cell);
+  const ReferenceCellTopology::Face* face_edges
+      = ReferenceCellTopology::get_face_edges(_cell);
 
-  // Closure dofs (testing)
-  std::vector<std::vector<std::vector<int>>> entity_closure_dofs_test;
-  for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
+  // [dim, entity] -> closure{(sub_dim, sub_entity)}
+  std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure;
+  for (int dim = 0; dim < (int)entity_dofs.size(); ++dim)
   {
-    // Iterate over each entity of dimension dim
-    for (std::size_t e = 0; e < entity_dofs[dim].size(); ++e)
+    for (int entity = 0; entity < (int)entity_dofs[dim].size(); ++entity)
     {
-      // Iterate over attached lower dimensional entities
-      for (std::size_t sub_dim = 0; sub_dim < dim; ++sub_dim)
+      if (dim == 3)
       {
-        // Get local entities (entity[ ])
-        // if (dim1 == 0)
-        // {
-        //   // Do nothing?
-        // }
-
-        if (sub_dim == 1)
-        {
-          // Get edge indices for this entity
-          const ReferenceCellTopology::Edge* edges
-              = ReferenceCellTopology::get_edges(_cell);
-          for (int i = 0; i < num_edges; ++i)
-          {
-            std::cout << "Edge: " << edges[i][0] << ", " << edges[i][1]
-                      << std::endl;
-          }
-        }
-
-        if (sub_dim == 2)
-        {
-          // Get face indices for this entity
-          const ReferenceCellTopology::Face* faces
-              = ReferenceCellTopology::get_faces(_cell);
-          for (int i = 0; i < num_faces; ++i)
-          {
-            std::cout << "Face: " << faces[i][0] << ", " << faces[i][1] << ", "
-                      << faces[i][2] << std::endl;
-          }
-        }
-
-        // entity_closure_dofs_test[dim0][e][????] +=
+        entity_closure[{dim, entity}][3].insert(entity);
+        for (int f = 0; f < num_entities[2]; ++f)
+          entity_closure[{dim, entity}][2].insert(f);
+        for (int e = 0; e < num_entities[1]; ++e)
+          entity_closure[{dim, entity}][1].insert(e);
+        for (int v = 0; v < num_entities[0]; ++v)
+          entity_closure[{dim, entity}][0].insert(v);
       }
+
+      if (dim == 2)
+      {
+        std::cout << "--------------------------- " << std::endl;
+        entity_closure[{dim, entity}][2].insert(entity);
+        CellType face_type = ReferenceCellTopology::entity_type(_cell, 2);
+        const int num_edges = ReferenceCellTopology::num_edges(face_type);
+        if (entity == 3)
+          std::cout << "Num edges: " << num_edges << std::endl;
+        for (int e = 0; e < num_edges; ++e)
+        {
+          const int edge_index = face_edges[entity][e];
+          if (entity == 3)
+            std::cout << "   edge index: " << edge_index << std::endl;
+          entity_closure[{dim, entity}][1].insert(face_edges[edge_index][e]);
+          for (int v = 0; v < 2; ++v)
+          {
+            if (entity == 3)
+            {
+              std::cout << "     Testing: " << edge_vertices[edge_index][v]
+                        << std::endl;
+            }
+            entity_closure[{dim, entity}][0].insert(
+                edge_vertices[edge_index][v]);
+          }
+        }
+      }
+
+      if (dim == 1)
+      {
+        entity_closure[{dim, entity}][1].insert(entity);
+        for (int v = 0; v < 2; ++v)
+          entity_closure[{dim, entity}][0].insert(edge_vertices[entity][v]);
+      }
+
+      if (dim == 0)
+        entity_closure[{dim, entity}][0].insert(entity);
+    }
+  }
+
+  for (auto entry : entity_closure)
+  {
+    std::cout << "Dim, entity: " << entry.first[0] << ", " << entry.first[1]
+              << std::endl;
+    for (auto value : entry.second)
+    {
+      std::cout << "  sub-dim: " << value.first << std::endl;
+      for (auto value1 : value.second)
+        std::cout << "          " << value1 << std::endl;
     }
   }
 }
