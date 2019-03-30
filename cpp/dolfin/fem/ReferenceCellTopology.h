@@ -25,14 +25,9 @@ namespace fem
 class ReferenceCellTopology
 {
 public:
+
   static int dim(CellType cell_type);
-
-  // Returns number of enties of dimension d1 that make up an entity of
-  // dimension d0
-  // static int num_entities(CellType cell_type, int d0, d1);
-
   static const int* num_entities(CellType cell_type);
-
   static int num_vertices(CellType cell_type);
   static int num_edges(CellType cell_type);
   static int num_faces(CellType cell_type);

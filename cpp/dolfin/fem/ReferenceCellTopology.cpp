@@ -63,7 +63,7 @@ const int* ReferenceCellTopology::num_entities(CellType cell_type)
 
   return nullptr;
 }
-//---------------------------------------------------------------------//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------
 int ReferenceCellTopology::num_vertices(CellType cell_type)
 {
   switch (cell_type)
