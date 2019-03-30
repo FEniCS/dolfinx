@@ -27,7 +27,7 @@ class ReferenceCellTopology
 public:
   static int num_vertices(CellType cell_type);
   static int num_edges(CellType cell_type);
-  static int num_facets(CellType cell_type);
+  static int num_faces(CellType cell_type);
 
   static CellType facet_type(CellType cell_type, int k=0);
 

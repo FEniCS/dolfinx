@@ -562,6 +562,6 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   const int block_size = analyse_block_structure(sub_dofmaps);
 
   return fem::ElementDofLayout(block_size, entity_dofs, entity_closure_dofs,
-                               parent_map, sub_dofmaps);
+                               parent_map, sub_dofmaps, cell_type);
 }
 //-----------------------------------------------------------------------------

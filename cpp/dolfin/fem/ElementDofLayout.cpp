@@ -5,8 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ElementDofLayout.h"
+#include "ReferenceCellTopology.h"
 #include <dolfin/mesh/CellType.h>
 #include <ufc.h>
+
+#include <iostream>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -16,7 +19,8 @@ ElementDofLayout::ElementDofLayout(
     int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
     std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
     std::vector<int> parent_map,
-    std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps)
+    std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
+    const mesh::CellType& cell_type)
     : _parent_map(parent_map), _block_size(block_size), _num_dofs(0),
       _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
       _sub_dofmaps(sub_dofmaps)
@@ -44,6 +48,72 @@ ElementDofLayout::ElementDofLayout(
   {
     assert(!entity_closure_dofs[dim].empty());
     _num_entity_closure_dofs[dim] = entity_closure_dofs[dim][0].size();
+  }
+
+  // dof = _entity_dofs[dim][entity_index][i]
+
+  dolfin::CellType _cell = dolfin::CellType::point;
+  if (cell_type.cell_type() == mesh::CellType::Type::interval)
+    _cell = dolfin::CellType::interval;
+  else if (cell_type.cell_type() == mesh::CellType::Type::triangle)
+    _cell = dolfin::CellType::triangle;
+  else if (cell_type.cell_type() == mesh::CellType::Type::quadrilateral)
+    _cell = dolfin::CellType::quadrilateral;
+  else if (cell_type.cell_type() == mesh::CellType::Type::tetrahedron)
+    _cell = dolfin::CellType::tetrahedron;
+  else if (cell_type.cell_type() == mesh::CellType::Type::hexahedron)
+    _cell = dolfin::CellType::hexahedron;
+  else
+    throw std::runtime_error("Ooops");
+
+  const int num_edges = ReferenceCellTopology::num_edges(_cell);
+  const int num_faces = ReferenceCellTopology::num_faces(_cell);
+  std::cout << "Num edges: " << num_edges << std::endl;
+  std::cout << "Num faces: " << num_faces << std::endl;
+
+  // Closure dofs (testing)
+  std::vector<std::vector<std::vector<int>>> entity_closure_dofs_test;
+  for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
+  {
+    // Iterate over each entity of dimension dim
+    for (std::size_t e = 0; e < entity_dofs[dim].size(); ++e)
+    {
+      // Iterate over attached lower dimensional entities
+      for (std::size_t sub_dim = 0; sub_dim < dim; ++sub_dim)
+      {
+        // Get local entities (entity[ ])
+        // if (dim1 == 0)
+        // {
+        //   // Do nothing?
+        // }
+
+        if (sub_dim == 1)
+        {
+          // Get edge indices for this entity
+          const ReferenceCellTopology::Edge* edges
+              = ReferenceCellTopology::get_edges(_cell);
+          for (int i = 0; i < num_edges; ++i)
+          {
+            std::cout << "Edge: " << edges[i][0] << ", " << edges[i][1]
+                      << std::endl;
+          }
+        }
+
+        if (sub_dim == 2)
+        {
+          // Get face indices for this entity
+          const ReferenceCellTopology::Face* faces
+              = ReferenceCellTopology::get_faces(_cell);
+          for (int i = 0; i < num_faces; ++i)
+          {
+            std::cout << "Face: " << faces[i][0] << ", " << faces[i][1] << ", "
+                      << faces[i][2] << std::endl;
+          }
+        }
+
+        // entity_closure_dofs_test[dim0][e][????] +=
+      }
+    }
   }
 }
 //-----------------------------------------------------------------------------
