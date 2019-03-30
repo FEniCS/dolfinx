@@ -46,15 +46,6 @@ bool dolfin::has_slepc()
 #endif
 }
 //-------------------------------------------------------------------------
-bool dolfin::has_scotch()
-{
-#ifdef HAS_SCOTCH
-  return true;
-#else
-  return false;
-#endif
-}
-//-------------------------------------------------------------------------
 bool dolfin::has_parmetis()
 {
 #ifdef HAS_PARMETIS

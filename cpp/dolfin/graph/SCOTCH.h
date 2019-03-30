@@ -16,12 +16,10 @@
 #include <string>
 #include <vector>
 
-#ifdef HAS_SCOTCH
 extern "C"
 {
 #include <ptscotch.h>
 }
-#endif
 
 
 namespace dolfin

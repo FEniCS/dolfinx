@@ -154,7 +154,6 @@ mesh::Mesh MeshPartitioning::build(
     shared_cells.clear();
   }
 
-#ifdef HAS_SCOTCH
   // if (parameter::parameters["reorder_cells_gps"])
   // {
   //   // Allocate objects to hold re-ordering
@@ -174,7 +173,6 @@ mesh::Mesh MeshPartitioning::build(
   //   new_cell_vertices = reordered_cell_vertices;
   //   std::swap(new_global_cell_indices, reordered_global_cell_indices);
   // }
-#endif
 
   timer.stop();
 
