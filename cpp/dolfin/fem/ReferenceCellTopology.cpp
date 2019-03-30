@@ -40,7 +40,30 @@ const int* ReferenceCellTopology::num_entities(CellType cell_type)
 
   return nullptr;
 }
-//---------------------------------------------------------------------//-----------------------------------------------------------------------------
+//---------------------------------------------------------------------
+int ReferenceCellTopology::dim(CellType cell_type)
+{
+  switch (cell_type)
+  {
+  case CellType::point:
+    return 0;
+  case CellType::interval:
+    return 1;
+  case CellType::triangle:
+    return 2;
+  case CellType::quadrilateral:
+    return 2;
+  case CellType::tetrahedron:
+    return 3;
+  case CellType::hexahedron:
+    return 3;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+
+  return -1;
+}
+//-----------------------------------------------------------------------------
 int ReferenceCellTopology::num_vertices(CellType cell_type)
 {
   switch (cell_type)

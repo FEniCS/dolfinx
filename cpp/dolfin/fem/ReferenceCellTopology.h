@@ -26,6 +26,7 @@ class ReferenceCellTopology
 {
 public:
   static const int* num_entities(CellType cell_type);
+  static int dim(CellType cell_type);
   static int num_vertices(CellType cell_type);
   static int num_edges(CellType cell_type);
   static int num_facets(CellType cell_type);
