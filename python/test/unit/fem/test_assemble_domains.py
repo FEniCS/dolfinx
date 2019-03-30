@@ -32,17 +32,22 @@ def test_assembly_dx_domains(mesh):
 
     dx = dolfin.Measure('dx', subdomain_data=marker, domain=mesh)
 
+    w = dolfin.Function(V)
+    w.vector().set(0.5)
+    w.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                           mode=PETSc.ScatterMode.FORWARD)
+
     #
     # Assemble matrix
     #
 
-    a = ufl.inner(u, v) * (dx(111) + dx(222) + dx(333))
+    a = w * ufl.inner(u, v) * (dx(111) + dx(222) + dx(333))
 
     A = dolfin.fem.assemble_matrix(a)
     A.assemble()
     norm1 = A.norm()
 
-    a2 = ufl.inner(u, v) * dx
+    a2 = w * ufl.inner(u, v) * dx
 
     A2 = dolfin.fem.assemble_matrix(a2)
     A2.assemble()
@@ -54,11 +59,11 @@ def test_assembly_dx_domains(mesh):
     # Assemble vector
     #
 
-    L = ufl.inner(1.0, v) * (dx(111) + dx(222) + dx(333))
+    L = ufl.inner(w, v) * (dx(111) + dx(222) + dx(333))
     b = dolfin.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    L2 = ufl.inner(1.0, v) * dx
+    L2 = ufl.inner(w, v) * dx
     b2 = dolfin.fem.assemble_vector(L2)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
@@ -68,15 +73,15 @@ def test_assembly_dx_domains(mesh):
     # Assemble scalar
     #
 
-    L = 1.0 * (dx(111) + dx(222) + dx(333))
+    L = w * (dx(111) + dx(222) + dx(333))
     s = dolfin.fem.assemble_scalar(L)
     s = dolfin.MPI.sum(mesh.mpi_comm(), s)
 
-    L2 = 1.0 * dx
+    L2 = w * dx
     s2 = dolfin.fem.assemble_scalar(L2)
     s2 = dolfin.MPI.sum(mesh.mpi_comm(), s2)
 
-    assert (s == pytest.approx(s2, 1.0e-12) and 1.0 == pytest.approx(s, 1.0e-12))
+    assert (s == pytest.approx(s2, 1.0e-12) and 0.5 == pytest.approx(s, 1.0e-12))
 
 
 def test_assembly_ds_domains(mesh):
@@ -111,17 +116,22 @@ def test_assembly_ds_domains(mesh):
 
     ds = dolfin.Measure('ds', subdomain_data=marker, domain=mesh)
 
+    w = dolfin.Function(V)
+    w.vector().set(0.5)
+    w.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT,
+                           mode=PETSc.ScatterMode.FORWARD)
+
     #
     # Assemble matrix
     #
 
-    a = ufl.inner(u, v) * (ds(111) + ds(222) + ds(333) + ds(444))
+    a = w * ufl.inner(u, v) * (ds(111) + ds(222) + ds(333) + ds(444))
 
     A = dolfin.fem.assemble_matrix(a)
     A.assemble()
     norm1 = A.norm()
 
-    a2 = ufl.inner(u, v) * ds
+    a2 = w * ufl.inner(u, v) * ds
 
     A2 = dolfin.fem.assemble_matrix(a2)
     A2.assemble()
@@ -133,11 +143,11 @@ def test_assembly_ds_domains(mesh):
     # Assemble vector
     #
 
-    L = ufl.inner(1.0, v) * (ds(111) + ds(222) + ds(333) + ds(444))
+    L = ufl.inner(w, v) * (ds(111) + ds(222) + ds(333) + ds(444))
     b = dolfin.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    L2 = ufl.inner(1.0, v) * ds
+    L2 = ufl.inner(w, v) * ds
     b2 = dolfin.fem.assemble_vector(L2)
     b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
@@ -147,12 +157,12 @@ def test_assembly_ds_domains(mesh):
     # Assemble scalar
     #
 
-    L = 1.0 * (ds(111) + ds(222) + ds(333) + ds(444))
+    L = w * (ds(111) + ds(222) + ds(333) + ds(444))
     s = dolfin.fem.assemble_scalar(L)
     s = dolfin.MPI.sum(mesh.mpi_comm(), s)
 
-    L2 = 1.0 * ds
+    L2 = w * ds
     s2 = dolfin.fem.assemble_scalar(L2)
     s2 = dolfin.MPI.sum(mesh.mpi_comm(), s2)
 
-    assert (s == pytest.approx(s2, 1.0e-12) and 4.0 == pytest.approx(s, 1.0e-12))
+    assert (s == pytest.approx(s2, 1.0e-12) and 2.0 == pytest.approx(s, 1.0e-12))
