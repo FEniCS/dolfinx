@@ -290,7 +290,7 @@ ReferenceCellTopology::get_face_vertices(CellType cell_type)
 const ReferenceCellTopology::Face*
 ReferenceCellTopology::get_face_edges(CellType cell_type)
 {
-  static const int triangle[][4] = {{0, 1, 2, -1}};
+  static const int triangle[][4] = {{0, 1, 2, -1}, };
   static const int tetrahedron[][4]
       = {{0, 1, 2, -1}, {0, 3, 4, -1}, {1, 3, 5, -1}, {2, 4, 5, -1}};
   static const int hexahedron[][4]

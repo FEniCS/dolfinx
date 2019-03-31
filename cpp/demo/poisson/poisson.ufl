@@ -5,7 +5,7 @@
 # the variational problem in UFL terms in a separate form file
 # :download:`Poisson.ufl`.  We begin by defining the finite element::
 
-element = FiniteElement("Lagrange", triangle, 1)
+element = FiniteElement("Lagrange", triangle, 4)
 
 # The first argument to :py:class:`FiniteElement` is the finite element
 # family, the second argument specifies the domain, while the third
