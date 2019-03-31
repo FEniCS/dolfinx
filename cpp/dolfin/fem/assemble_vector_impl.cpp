@@ -385,7 +385,7 @@ void fem::impl::assemble_exterior_facets(
     // TODO: check ghosting sanity?
 
     // Create attached cell
-    mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);

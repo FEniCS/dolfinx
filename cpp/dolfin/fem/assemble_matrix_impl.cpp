@@ -97,7 +97,7 @@ void fem::impl::assemble_cells(
   PetscErrorCode ierr;
   for (auto& cell_index : active_cells)
   {
-    mesh::Cell cell(mesh, cell_index);
+    const mesh::Cell cell(mesh, cell_index);
 
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
@@ -181,7 +181,7 @@ void fem::impl::assemble_exterior_facets(
     // TODO: check ghosting sanity?
 
     // Create attached cell
-    mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
