@@ -295,8 +295,8 @@ ReferenceCellTopology::get_face_edges(CellType cell_type)
       = {{0, 1, 2, -1}, {0, 3, 4, -1}, {1, 3, 5, -1}, {2, 4, 5, -1}};
   static const int quadrilateral[][4] = {{0, 3, 1, 2}};
   static const int hexahedron[][4]
-      = {{1, 2, 4, 5},   {2, 3, 6, 7},  {1, 2, 7, 9},
-         {2, 3, 10, 11}, {4, 6, 8, 10}, {5, 7, 9, 1}};
+      = {{0, 1, 4, 5},   {2, 3, 6, 7},  {0, 2, 8, 9},
+         {1, 3, 10, 11}, {4, 6, 8, 10}, {5, 7, 9, 11}};
 
   switch (cell_type)
   {

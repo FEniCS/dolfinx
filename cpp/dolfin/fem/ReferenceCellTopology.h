@@ -49,6 +49,10 @@ public:
 
   typedef double Point[3];
   static const Point* get_vertices(CellType cell_type);
+
+  // Map from entity {dim_e, entity_e} to map {dim_c, (entities_c)}
+  // static std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure;
+
 };
 } // namespace fem
 } // namespace dolfin
