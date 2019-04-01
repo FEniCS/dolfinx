@@ -92,20 +92,27 @@ ElementDofLayout::ElementDofLayout(
     throw std::runtime_error("Ooops");
 
   const int* num_entities = ReferenceCellTopology::num_entities(_cell);
-  const ReferenceCellTopology::Edge* edge_vertices
+  assert(num_entities);
+  const ReferenceCellTopology::Edge* edge_v
       = ReferenceCellTopology::get_edge_vertices(_cell);
-  const ReferenceCellTopology::Face* face_edges
+  assert(edge_v);
+  const ReferenceCellTopology::Face* face_e
       = ReferenceCellTopology::get_face_edges(_cell);
+  assert(face_e);
 
+  // Compute closure entities
   // [dim, entity] -> closure{(sub_dim, sub_entity)}
   std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure;
   for (int dim = 0; dim < (int)entity_dofs.size(); ++dim)
   {
     for (int entity = 0; entity < (int)entity_dofs[dim].size(); ++entity)
     {
+      // Add self
+      entity_closure[{dim, entity}][dim].insert(entity);
+
       if (dim == 3)
       {
-        entity_closure[{dim, entity}][3].insert(entity);
+        // Add all sub-entities
         for (int f = 0; f < num_entities[2]; ++f)
           entity_closure[{dim, entity}][2].insert(f);
         for (int e = 0; e < num_entities[1]; ++e)
@@ -116,44 +123,26 @@ ElementDofLayout::ElementDofLayout(
 
       if (dim == 2)
       {
-        // std::cout << "--------------------------- " << std::endl;
-        entity_closure[{dim, entity}][2].insert(entity);
         CellType face_type = ReferenceCellTopology::entity_type(_cell, 2);
         const int num_edges = ReferenceCellTopology::num_edges(face_type);
-        // if (entity == 3)
-        // std::cout << "Num edges: " << num_edges << std::endl;
         for (int e = 0; e < num_edges; ++e)
         {
-          const int edge_index = face_edges[entity][e];
-          // // if (entity == 3)
-          // std::cout << "** entity: " << entity << ", " << e << std::endl;
-          // std::cout << "** edge index: " << edge_index << ", "
-          //           << face_edges[edge_index][e] << std::endl;
-          // std::cout << "** test: " << face_edges[0][2] << ", "
-          //           << face_edges[0][3] << std::endl;
+          // Add edge
+          const int edge_index = face_e[entity][e];
           entity_closure[{dim, entity}][1].insert(edge_index);
           for (int v = 0; v < 2; ++v)
           {
-            // if (entity == 3)
-            // {
-            //   std::cout << "     Testing: " << edge_vertices[edge_index][v]
-            //             << std::endl;
-            // }
-            entity_closure[{dim, entity}][0].insert(
-                edge_vertices[edge_index][v]);
+            // Add vertex connected to edge
+            entity_closure[{dim, entity}][0].insert(edge_v[edge_index][v]);
           }
         }
       }
 
       if (dim == 1)
       {
-        entity_closure[{dim, entity}][1].insert(entity);
-        for (int v = 0; v < 2; ++v)
-          entity_closure[{dim, entity}][0].insert(edge_vertices[entity][v]);
+        entity_closure[{dim, entity}][0].insert(edge_v[entity][0]);
+        entity_closure[{dim, entity}][0].insert(edge_v[entity][1]);
       }
-
-      if (dim == 0)
-        entity_closure[{dim, entity}][0].insert(entity);
     }
   }
 

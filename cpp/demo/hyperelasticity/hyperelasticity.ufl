@@ -10,7 +10,7 @@
 # trial and test functions on this space::
 
 # Function spaces
-element = VectorElement("Lagrange", tetrahedron, 2)
+element = VectorElement("Lagrange", tetrahedron, 3)
 
 # Trial and test functions
 du = TrialFunction(element)     # Incremental displacement
