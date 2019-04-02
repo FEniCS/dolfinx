@@ -17,38 +17,14 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
-// namespace
-// {
-// std::vector<std::vector<std::vector<int>>>
-// extract_sub_entities(dolfin::CellType cell, int e,
-//                      std::vector<std::vector<std::vector<int>>>& d)
-// {
-//   const int dim = ReferenceCellTopology::dim(cell);
-//   // d[dim].push_back(e);
-
-//   // Add entities of current dimension
-//   // dolfin::CellType facet_cell = ReferenceCellTopology::facet_cell(cell);
-//   // const int facet_dim = facet_cell.dim();
-
-//   // const int* num_face_entities
-//   //     = ReferenceCellTopology::num_entities(facet_cell);
-//   // for (int = 0; i < *num_facet_entities; ++i)
-//   // {
-//   // }
-//   return std::vector<std::vector<std::vector<int>>>();
-// }
-// } // namespace
-
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
     int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
-    std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
     std::vector<int> parent_map,
     std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
     const mesh::CellType& cell_type)
     : _parent_map(parent_map), _block_size(block_size), _num_dofs(0),
-      _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
-      _sub_dofmaps(sub_dofmaps)
+      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
 
@@ -68,12 +44,6 @@ ElementDofLayout::ElementDofLayout(
     }
   }
 
-  _num_entity_closure_dofs.fill(0);
-  for (std::size_t dim = 0; dim < entity_closure_dofs.size(); ++dim)
-  {
-    assert(!entity_closure_dofs[dim].empty());
-    _num_entity_closure_dofs[dim] = entity_closure_dofs[dim][0].size();
-  }
 
   // dof = _entity_dofs[dim][entity_index][i]
 
@@ -147,8 +117,7 @@ ElementDofLayout::ElementDofLayout(
   }
 
   // dof = _entity_dofs[dim][entity_index][i]
-  std::vector<std::vector<std::vector<int>>> entity_closure_dofs_test
-      = entity_dofs;
+  _entity_closure_dofs = entity_dofs;
   for (auto entity : entity_closure)
   {
     const int dim = entity.first[0];
@@ -158,22 +127,29 @@ ElementDofLayout::ElementDofLayout(
       const int subdim = sub_entity.first;
       for (auto sub_index : sub_entity.second)
       {
-        entity_closure_dofs_test[dim][index].insert(
-            entity_closure_dofs_test[dim][index].end(),
+        _entity_closure_dofs[dim][index].insert(
+            _entity_closure_dofs[dim][index].end(),
             entity_dofs[subdim][sub_index].begin(),
             entity_dofs[subdim][sub_index].end());
       }
     }
   }
 
-  for (std::size_t d = 0; d < entity_closure_dofs_test.size(); ++d)
+  for (std::size_t d = 0; d < _entity_closure_dofs.size(); ++d)
   {
-    for (std::size_t e = 0; e < entity_closure_dofs_test[d].size(); ++e)
+    for (std::size_t e = 0; e < _entity_closure_dofs[d].size(); ++e)
     {
-      std::set<int> tmp(entity_closure_dofs_test[d][e].begin(),
-                        entity_closure_dofs_test[d][e].end());
-      entity_closure_dofs_test[d][e] = std::vector<int>(tmp.begin(), tmp.end());
+      std::set<int> tmp(_entity_closure_dofs[d][e].begin(),
+                        _entity_closure_dofs[d][e].end());
+      _entity_closure_dofs[d][e] = std::vector<int>(tmp.begin(), tmp.end());
     }
+  }
+
+  _num_entity_closure_dofs.fill(0);
+  for (std::size_t dim = 0; dim < _entity_closure_dofs.size(); ++dim)
+  {
+    assert(!_entity_closure_dofs[dim].empty());
+    _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
   }
 
   // for (auto& ed0 : entity_closure_dofs_test)
@@ -213,10 +189,10 @@ ElementDofLayout::ElementDofLayout(
   //   }
   // }
 
-  if (entity_closure_dofs_test == entity_closure_dofs)
-    std::cout << "Closure dofs equal" << std::endl;
-  else
-    std::cout << "Closure dofs not equal" << std::endl;
+  // if (entity_closure_dofs_test == entity_closure_dofs)
+  //   std::cout << "Closure dofs equal" << std::endl;
+  // else
+  //   std::cout << "Closure dofs not equal" << std::endl;
 
   // std::cout << "Entity closure" << std::endl;
   // for (auto entry : entity_closure)

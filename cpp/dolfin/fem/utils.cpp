@@ -501,30 +501,22 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
                                const std::vector<int>& parent_map,
                                const mesh::CellType& cell_type)
 {
-  // Copy over number of dofs per entity type (and also closure dofs per
-  // entity type)
-  std::array<int, 4> num_entity_dofs, num_entity_closure_dofs;
+  // Copy over number of dofs per entity type
+  std::array<int, 4> num_entity_dofs;
   std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
             num_entity_dofs.data());
-  std::copy(dofmap.num_entity_closure_dofs, dofmap.num_entity_closure_dofs + 4,
-            num_entity_closure_dofs.data());
 
   // Fill entity dof indices
   const int tdim = cell_type.dim();
   std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
-  std::vector<std::vector<std::vector<int>>> entity_closure_dofs(tdim + 1);
   for (int dim = 0; dim <= tdim; ++dim)
   {
     const int num_entities = cell_type.num_entities(dim);
     entity_dofs[dim].resize(num_entities);
-    entity_closure_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
       entity_dofs[dim][i].resize(num_entity_dofs[dim]);
-      entity_closure_dofs[dim][i].resize(num_entity_closure_dofs[dim]);
       dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
-      dofmap.tabulate_entity_closure_dofs(entity_closure_dofs[dim][i].data(),
-                                          dim, i);
     }
   }
 
@@ -561,7 +553,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
-  return fem::ElementDofLayout(block_size, entity_dofs, entity_closure_dofs,
+  return fem::ElementDofLayout(block_size, entity_dofs,
                                parent_map, sub_dofmaps, cell_type);
 }
 //-----------------------------------------------------------------------------

@@ -36,7 +36,6 @@ public:
   /// Constructor
   ElementDofLayout(
       int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
-      std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
       std::vector<int> parent_map,
       std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
       const mesh::CellType& cell_type);
