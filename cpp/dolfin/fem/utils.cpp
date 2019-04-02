@@ -508,15 +508,17 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 
   // Fill entity dof indices
   const int tdim = cell_type.dim();
-  std::vector<std::vector<std::vector<int>>> entity_dofs(tdim + 1);
+  std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
+  std::vector<int> work_array;
   for (int dim = 0; dim <= tdim; ++dim)
   {
     const int num_entities = cell_type.num_entities(dim);
     entity_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
-      entity_dofs[dim][i].resize(num_entity_dofs[dim]);
-      dofmap.tabulate_entity_dofs(entity_dofs[dim][i].data(), dim, i);
+      work_array.resize(num_entity_dofs[dim]);
+      dofmap.tabulate_entity_dofs(work_array.data(), dim, i);
+      entity_dofs[dim][i] = std::set<int>(work_array.begin(), work_array.end());
     }
   }
 

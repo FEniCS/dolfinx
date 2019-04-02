@@ -19,7 +19,7 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
-    int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
+    int block_size, std::vector<std::vector<std::set<int>>> entity_dofs,
     std::vector<int> parent_map,
     std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
     const mesh::CellType& cell_type)
@@ -43,7 +43,6 @@ ElementDofLayout::ElementDofLayout(
       _num_dofs += entity_dofs[dim][entity_index].size();
     }
   }
-
 
   // dof = _entity_dofs[dim][entity_index][i]
 
@@ -127,20 +126,9 @@ ElementDofLayout::ElementDofLayout(
       for (auto sub_index : sub_entity.second)
       {
         _entity_closure_dofs[dim][index].insert(
-            _entity_closure_dofs[dim][index].end(),
             entity_dofs[subdim][sub_index].begin(),
             entity_dofs[subdim][sub_index].end());
       }
-    }
-  }
-
-  for (std::size_t d = 0; d < _entity_closure_dofs.size(); ++d)
-  {
-    for (std::size_t e = 0; e < _entity_closure_dofs[d].size(); ++e)
-    {
-      std::set<int> tmp(_entity_closure_dofs[d][e].begin(),
-                        _entity_closure_dofs[d][e].end());
-      _entity_closure_dofs[d][e] = std::vector<int>(tmp.begin(), tmp.end());
     }
   }
 
@@ -150,61 +138,6 @@ ElementDofLayout::ElementDofLayout(
     assert(!_entity_closure_dofs[dim].empty());
     _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
   }
-
-  // for (auto& ed0 : entity_closure_dofs_test)
-  // {
-  //   for (auto& ed1 : ed0)
-  //   {
-  //     std::set<int> tmp(ed1.begin(), ed1.end());
-  //     ed1 = std::vector<int>(tmp.begin(), tmp.end());
-  //   }
-  // }
-
-  // std::cout << "Size check (0): " << entity_closure_dofs.size() << ", "
-  //           << entity_closure_dofs_test.size() << std::endl;
-  // assert(entity_closure_dofs_test.size() ==  entity_closure_dofs.size());
-  // for (std::size_t d = 0; d < entity_closure_dofs.size(); ++d)
-  // {
-  //   assert(entity_closure_dofs_test[d].size() ==
-  //   entity_closure_dofs[d].size());
-
-  //   std::cout << "    Size check (1): " << entity_closure_dofs[d].size() <<
-  //   ", "
-  //             << entity_closure_dofs_test[d].size() << std::endl;
-  //   for (std::size_t e = 0; e < entity_closure_dofs[d].size(); ++e)
-  //   {
-  //     std::cout << "      Testing (d, e): " << d << ", " << e << std::endl;
-  //     for (std::size_t i = 0; i < entity_closure_dofs[d][e].size(); ++i)
-  //     {
-  //       std::cout << "        Testing (old): " <<
-  //       entity_closure_dofs[d][e][i]
-  //                 << std::endl;
-  //     }
-  //     for (std::size_t i = 0; i < entity_closure_dofs_test[d][e].size(); ++i)
-  //     {
-  //       std::cout << "        Testing (new): "
-  //                 << entity_closure_dofs_test[d][e][i] << std::endl;
-  //     }
-  //   }
-  // }
-
-  // if (entity_closure_dofs_test == entity_closure_dofs)
-  //   std::cout << "Closure dofs equal" << std::endl;
-  // else
-  //   std::cout << "Closure dofs not equal" << std::endl;
-
-  // std::cout << "Entity closure" << std::endl;
-  // for (auto entry : entity_closure)
-  // {
-  //   std::cout << "Dim, entity: " << entry.first[0] << ", " << entry.first[1]
-  //             << std::endl;
-  //   for (auto value : entry.second)
-  //   {
-  //     std::cout << "  sub-dim: " << value.first << std::endl;
-  //     for (auto value1 : value.second)
-  //       std::cout << "          " << value1 << std::endl;
-  //   }
-  // }
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
@@ -221,13 +154,13 @@ int ElementDofLayout::num_entity_closure_dofs(unsigned int dim) const
   return _num_entity_closure_dofs[dim];
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::vector<int>>>&
+const std::vector<std::vector<std::set<int>>>&
 ElementDofLayout::entity_dofs() const
 {
   return _entity_dofs;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::vector<int>>>&
+const std::vector<std::vector<std::set<int>>>&
 ElementDofLayout::entity_closure_dofs() const
 {
   return _entity_closure_dofs;

@@ -203,8 +203,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
 }
 //-----------------------------------------------------------------------------
 void GenericDofMap::ufc_tabulate_dofs(
-    int64_t* dofs,
-    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
+    int64_t* dofs, const std::vector<std::vector<std::set<int>>>& entity_dofs,
     const int64_t* num_global_entities, const int64_t** entity_indices)
 {
   // Loop over cell entity types (vertex, edge, etc)
@@ -217,13 +216,14 @@ void GenericDofMap::ufc_tabulate_dofs(
       const int num_entity_dofs = entity_dofs[d][i].size();
 
       // Loop over dofs belong to entity e of dimension d (d, e)
-      for (std::size_t dof = 0; dof < entity_dofs[d][i].size(); ++dof)
+      // d: topological dimension
+      // i: local entity index
+      // dof: local index of dof at (d, i)
+      for (auto dof = entity_dofs[d][i].begin(); dof != entity_dofs[d][i].end();
+           ++dof)
       {
-        // d: topological dimension
-        // i: local entity index
-        // dof: local index of dof at (d, i)
-        dofs[entity_dofs[d][i][dof]]
-            = offset + num_entity_dofs * entity_indices[d][i] + dof;
+        const int count = std::distance(entity_dofs[d][i].begin(), dof);
+        dofs[*dof] = offset + num_entity_dofs * entity_indices[d][i] + count;
       }
     }
     offset += entity_dofs[d][0].size() * num_global_entities[d];
