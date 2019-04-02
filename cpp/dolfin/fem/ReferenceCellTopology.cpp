@@ -229,6 +229,7 @@ CellType ReferenceCellTopology::facet_type(CellType cell_type, int k)
 const ReferenceCellTopology::Edge*
 ReferenceCellTopology::get_edge_vertices(CellType cell_type)
 {
+  static const int interval[][2] = {{0, 1}};
   static const int triangle[][2] = {{1, 2}, {0, 2}, {0, 1}};
   static const int quadrilateral[][2] = {{0, 1}, {2, 3}, {0, 2}, {1, 3}};
   static const int tetrahedron[][2]
@@ -242,7 +243,7 @@ ReferenceCellTopology::get_edge_vertices(CellType cell_type)
   case CellType::point:
     return nullptr;
   case CellType::interval:
-    return nullptr;
+    return interval;
   case CellType::triangle:
     return triangle;
   case CellType::quadrilateral:

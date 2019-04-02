@@ -65,10 +65,8 @@ ElementDofLayout::ElementDofLayout(
   assert(num_entities);
   const ReferenceCellTopology::Edge* edge_v
       = ReferenceCellTopology::get_edge_vertices(_cell);
-  assert(edge_v);
   const ReferenceCellTopology::Face* face_e
       = ReferenceCellTopology::get_face_edges(_cell);
-  assert(face_e);
 
   // Compute closure entities
   // [dim, entity] -> closure{(sub_dim, sub_entity)}
@@ -93,6 +91,7 @@ ElementDofLayout::ElementDofLayout(
 
       if (dim == 2)
       {
+        assert(face_e);
         CellType face_type = ReferenceCellTopology::entity_type(_cell, 2);
         const int num_edges = ReferenceCellTopology::num_edges(face_type);
         for (int e = 0; e < num_edges; ++e)
