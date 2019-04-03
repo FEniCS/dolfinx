@@ -9,6 +9,7 @@
 #include <array>
 #include <dolfin/common/types.h>
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace dolfin
@@ -34,11 +35,11 @@ class ElementDofLayout
 public:
   // FIXME: Remove redundant arguments
   /// Constructor
-  ElementDofLayout(
-      int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
-      std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
-      std::vector<int> parent_map,
-      std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps);
+  ElementDofLayout(int block_size,
+                   std::vector<std::vector<std::set<int>>> entity_dofs,
+                   std::vector<int> parent_map,
+                   std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
+                   const mesh::CellType& cell_type);
 
   // Copy constructor
   ElementDofLayout(const ElementDofLayout& dofmap) = delete;
@@ -65,10 +66,10 @@ public:
   int num_entity_closure_dofs(unsigned int dim) const;
 
   /// Direct access to all entity dofs
-  const std::vector<std::vector<std::vector<int>>>& entity_dofs() const;
+  const std::vector<std::vector<std::set<int>>>& entity_dofs() const;
 
   /// Direct access to all entity closure dofs
-  const std::vector<std::vector<std::vector<int>>>& entity_closure_dofs() const;
+  const std::vector<std::vector<std::set<int>>>& entity_closure_dofs() const;
 
   /// Get number of sub-dofmaps
   int num_sub_dofmaps() const;
@@ -108,10 +109,10 @@ private:
 
   // List of dofs per entity, ordered by dimension.
   // dof = _entity_dofs[dim][entity][i]
-  std::vector<std::vector<std::vector<int>>> _entity_dofs;
+  std::vector<std::vector<std::set<int>>> _entity_dofs;
 
   // List of dofs with connected entities of lower dimension
-  std::vector<std::vector<std::vector<int>>> _entity_closure_dofs;
+  std::vector<std::vector<std::set<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
   std::vector<std::shared_ptr<ElementDofLayout>> _sub_dofmaps;

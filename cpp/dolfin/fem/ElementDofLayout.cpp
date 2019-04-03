@@ -5,45 +5,82 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ElementDofLayout.h"
+#include "ReferenceCellTopology.h"
+#include <array>
 #include <dolfin/mesh/CellType.h>
-#include <ufc.h>
+#include <map>
+#include <set>
 
 using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
-    int block_size, std::vector<std::vector<std::vector<int>>> entity_dofs,
-    std::vector<std::vector<std::vector<int>>> entity_closure_dofs,
+    int block_size, std::vector<std::vector<std::set<int>>> entity_dofs,
     std::vector<int> parent_map,
-    std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps)
+    std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
+    const mesh::CellType& cell_type)
     : _parent_map(parent_map), _block_size(block_size), _num_dofs(0),
-      _entity_dofs(entity_dofs), _entity_closure_dofs(entity_closure_dofs),
-      _sub_dofmaps(sub_dofmaps)
+      _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
 
-  // TODO: Add reference cell class to allow entity_closure_dofs to be
-  //       removed as argument to constructor
+  dolfin::CellType _cell = dolfin::CellType::point;
+  if (cell_type.cell_type() == mesh::CellType::Type::interval)
+    _cell = dolfin::CellType::interval;
+  else if (cell_type.cell_type() == mesh::CellType::Type::triangle)
+    _cell = dolfin::CellType::triangle;
+  else if (cell_type.cell_type() == mesh::CellType::Type::quadrilateral)
+    _cell = dolfin::CellType::quadrilateral;
+  else if (cell_type.cell_type() == mesh::CellType::Type::tetrahedron)
+    _cell = dolfin::CellType::tetrahedron;
+  else if (cell_type.cell_type() == mesh::CellType::Type::hexahedron)
+    _cell = dolfin::CellType::hexahedron;
+  else
+    throw std::runtime_error("Ooops");
+
+  const int* num_entities = ReferenceCellTopology::num_entities(_cell);
+  assert(num_entities);
+
+  // Compute closure entities
+  // [dim, entity] -> closure{sub_dim, (sub_entities)}
+  std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
+      = ReferenceCellTopology::entity_closure(_cell);
+
+  // dof = _entity_dofs[dim][entity_index][i]
+  _entity_closure_dofs = entity_dofs;
+  for (auto entity : entity_closure)
+  {
+    const int dim = entity.first[0];
+    const int index = entity.first[1];
+    int subdim = 0;
+    for (auto sub_entity : entity.second)
+    {
+      for (auto sub_index : sub_entity)
+      {
+        _entity_closure_dofs[dim][index].insert(
+            entity_dofs[subdim][sub_index].begin(),
+            entity_dofs[subdim][sub_index].end());
+      }
+      ++subdim;
+    }
+  }
 
   // dof = _entity_dofs[dim][entity_index][i]
   _num_entity_dofs.fill(0);
+  _num_entity_closure_dofs.fill(0);
+  assert(entity_dofs.size() == _entity_closure_dofs.size());
   for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
   {
     assert(!entity_dofs[dim].empty());
+    assert(!_entity_closure_dofs[dim].empty());
     _num_entity_dofs[dim] = entity_dofs[dim][0].size();
+    _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
     for (std::size_t entity_index = 0; entity_index < entity_dofs[dim].size();
          ++entity_index)
     {
       _num_dofs += entity_dofs[dim][entity_index].size();
     }
-  }
-
-  _num_entity_closure_dofs.fill(0);
-  for (std::size_t dim = 0; dim < entity_closure_dofs.size(); ++dim)
-  {
-    assert(!entity_closure_dofs[dim].empty());
-    _num_entity_closure_dofs[dim] = entity_closure_dofs[dim][0].size();
   }
 }
 //-----------------------------------------------------------------------------
@@ -61,13 +98,13 @@ int ElementDofLayout::num_entity_closure_dofs(unsigned int dim) const
   return _num_entity_closure_dofs[dim];
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::vector<int>>>&
+const std::vector<std::vector<std::set<int>>>&
 ElementDofLayout::entity_dofs() const
 {
   return _entity_dofs;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::vector<std::vector<int>>>&
+const std::vector<std::vector<std::set<int>>>&
 ElementDofLayout::entity_closure_dofs() const
 {
   return _entity_closure_dofs;

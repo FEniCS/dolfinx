@@ -339,7 +339,8 @@ build_dofmap(const std::vector<std::vector<PetscInt>>& node_dofmap,
 // Build graph from ElementDofmap. Returns (node_dofmap,
 // node_local_to_global)
 std::tuple<std::vector<std::vector<PetscInt>>, std::vector<std::size_t>>
-build_ufc_node_graph(const ElementDofLayout& el_dm_blocked, const mesh::Mesh& mesh)
+build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
+                     const mesh::Mesh& mesh)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -457,7 +458,7 @@ compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
   // owned and not shared)
   std::vector<int> shared_nodes(num_nodes_local, -1);
 
-  const std::vector<std::vector<std::int32_t>>& facet_table
+  const std::vector<std::set<int>>& facet_table
       = el_dm.entity_closure_dofs()[D - 1];
 
   // Mark dofs associated ghost cells as ghost dofs (provisionally)
@@ -484,12 +485,10 @@ compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
       {
         if (!f.is_ghost())
         {
-          const std::vector<std::int32_t>& facet_nodes
-              = facet_table[c.index(f)];
-
-          for (std::size_t i = 0; i < facet_nodes.size(); ++i)
+          const std::set<int>& facet_nodes = facet_table[c.index(f)];
+          for (auto facet_node : facet_nodes)
           {
-            std::size_t facet_node_local = cell_nodes[facet_nodes[i]];
+            std::size_t facet_node_local = cell_nodes[facet_node];
             shared_nodes[facet_node_local] = 0;
           }
         }
@@ -515,14 +514,14 @@ compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
     const std::vector<PetscInt>& cell_nodes = node_dofmap[cell0.index()];
 
     // Tabulate which dofs are on the facet
-    const std::vector<std::int32_t>& facet_nodes = facet_table[cell0.index(f)];
+    const std::set<int>& facet_nodes = facet_table[cell0.index(f)];
 
     // Mark boundary nodes and insert into map
-    for (std::size_t i = 0; i < facet_nodes.size(); ++i)
+    for (auto facet_node : facet_nodes)
     {
       // Get facet node local index and assign "0" - shared, owner
       // unassigned
-      size_t facet_node_local = cell_nodes[facet_nodes[i]];
+      size_t facet_node_local = cell_nodes[facet_node];
       if (shared_nodes[facet_node_local] < 0)
         shared_nodes[facet_node_local] = 0;
     }
@@ -808,7 +807,8 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   auto index_map = std::make_unique<common::IndexMap>(
       mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, bs);
   assert(index_map);
-  assert(dolfin::MPI::sum(mesh.mpi_comm(), (std::size_t) bs * index_map->size_local())
+  assert(dolfin::MPI::sum(mesh.mpi_comm(),
+                          (std::size_t)bs * index_map->size_local())
          == global_dimension);
 
   // Update shared_nodes for node reordering

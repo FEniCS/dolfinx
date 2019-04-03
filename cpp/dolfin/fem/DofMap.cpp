@@ -146,7 +146,7 @@ Eigen::Array<int, Eigen::Dynamic, 1>
 DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
                                      std::size_t cell_entity_index) const
 {
-  const std::vector<std::vector<std::vector<int>>>& dofs
+  const std::vector<std::vector<std::set<int>>>& dofs
       = _element_dof_layout->entity_closure_dofs();
 
   assert(entity_dim < dofs.size());
@@ -164,7 +164,7 @@ Eigen::Array<int, Eigen::Dynamic, 1>
 DofMap::tabulate_entity_dofs(std::size_t entity_dim,
                              std::size_t cell_entity_index) const
 {
-  const std::vector<std::vector<std::vector<int>>>& dofs
+  const std::vector<std::vector<std::set<int>>>& dofs
       = _element_dof_layout->entity_dofs();
 
   assert(entity_dim < dofs.size());
