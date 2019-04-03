@@ -6,6 +6,10 @@
 
 #pragma once
 
+#include <array>
+#include <map>
+#include <set>
+
 namespace dolfin
 {
 
@@ -25,7 +29,6 @@ namespace fem
 class ReferenceCellTopology
 {
 public:
-
   static int dim(CellType cell_type);
   static const int* num_entities(CellType cell_type);
   static int num_vertices(CellType cell_type);
@@ -51,8 +54,8 @@ public:
   static const Point* get_vertices(CellType cell_type);
 
   // Map from entity {dim_e, entity_e} to map {dim_c, (entities_c)}
-  // static std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure;
-
+  static std::map<std::array<int, 2>, std::map<int, std::set<int>>>
+  entity_closure(CellType cell_type);
 };
 } // namespace fem
 } // namespace dolfin

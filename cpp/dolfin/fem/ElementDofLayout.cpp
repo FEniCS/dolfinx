@@ -10,9 +10,6 @@
 #include <dolfin/mesh/CellType.h>
 #include <map>
 #include <set>
-#include <ufc.h>
-
-#include <iostream>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -27,24 +24,6 @@ ElementDofLayout::ElementDofLayout(
       _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
-
-  // TODO: Add reference cell class to allow entity_closure_dofs to be
-  //       removed as argument to constructor
-
-  // dof = _entity_dofs[dim][entity_index][i]
-  _num_entity_dofs.fill(0);
-  for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
-  {
-    assert(!entity_dofs[dim].empty());
-    _num_entity_dofs[dim] = entity_dofs[dim][0].size();
-    for (std::size_t entity_index = 0; entity_index < entity_dofs[dim].size();
-         ++entity_index)
-    {
-      _num_dofs += entity_dofs[dim][entity_index].size();
-    }
-  }
-
-  // dof = _entity_dofs[dim][entity_index][i]
 
   dolfin::CellType _cell = dolfin::CellType::point;
   if (cell_type.cell_type() == mesh::CellType::Type::interval)
@@ -62,57 +41,11 @@ ElementDofLayout::ElementDofLayout(
 
   const int* num_entities = ReferenceCellTopology::num_entities(_cell);
   assert(num_entities);
-  const ReferenceCellTopology::Edge* edge_v
-      = ReferenceCellTopology::get_edge_vertices(_cell);
-  const ReferenceCellTopology::Face* face_e
-      = ReferenceCellTopology::get_face_edges(_cell);
 
   // Compute closure entities
-  // [dim, entity] -> closure{(sub_dim, sub_entity)}
-  std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure;
-  for (int dim = 0; dim < (int)entity_dofs.size(); ++dim)
-  {
-    for (int entity = 0; entity < (int)entity_dofs[dim].size(); ++entity)
-    {
-      // Add self
-      entity_closure[{dim, entity}][dim].insert(entity);
-
-      if (dim == 3)
-      {
-        // Add all sub-entities
-        for (int f = 0; f < num_entities[2]; ++f)
-          entity_closure[{dim, entity}][2].insert(f);
-        for (int e = 0; e < num_entities[1]; ++e)
-          entity_closure[{dim, entity}][1].insert(e);
-        for (int v = 0; v < num_entities[0]; ++v)
-          entity_closure[{dim, entity}][0].insert(v);
-      }
-
-      if (dim == 2)
-      {
-        assert(face_e);
-        CellType face_type = ReferenceCellTopology::entity_type(_cell, 2);
-        const int num_edges = ReferenceCellTopology::num_edges(face_type);
-        for (int e = 0; e < num_edges; ++e)
-        {
-          // Add edge
-          const int edge_index = face_e[entity][e];
-          entity_closure[{dim, entity}][1].insert(edge_index);
-          for (int v = 0; v < 2; ++v)
-          {
-            // Add vertex connected to edge
-            entity_closure[{dim, entity}][0].insert(edge_v[edge_index][v]);
-          }
-        }
-      }
-
-      if (dim == 1)
-      {
-        entity_closure[{dim, entity}][0].insert(edge_v[entity][0]);
-        entity_closure[{dim, entity}][0].insert(edge_v[entity][1]);
-      }
-    }
-  }
+  // [dim, entity] -> closure{sub_dim, (sub_entities)}
+  std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure
+      = ReferenceCellTopology::entity_closure(_cell);
 
   // dof = _entity_dofs[dim][entity_index][i]
   _entity_closure_dofs = entity_dofs;
@@ -132,11 +65,21 @@ ElementDofLayout::ElementDofLayout(
     }
   }
 
+  // dof = _entity_dofs[dim][entity_index][i]
+  _num_entity_dofs.fill(0);
   _num_entity_closure_dofs.fill(0);
-  for (std::size_t dim = 0; dim < _entity_closure_dofs.size(); ++dim)
+  assert(entity_dofs.size() == _entity_closure_dofs.size());
+  for (std::size_t dim = 0; dim < entity_dofs.size(); ++dim)
   {
+    assert(!entity_dofs[dim].empty());
     assert(!_entity_closure_dofs[dim].empty());
+    _num_entity_dofs[dim] = entity_dofs[dim][0].size();
     _num_entity_closure_dofs[dim] = _entity_closure_dofs[dim][0].size();
+    for (std::size_t entity_index = 0; entity_index < entity_dofs[dim].size();
+         ++entity_index)
+    {
+      _num_dofs += entity_dofs[dim][entity_index].size();
+    }
   }
 }
 //-----------------------------------------------------------------------------

@@ -291,7 +291,9 @@ ReferenceCellTopology::get_face_vertices(CellType cell_type)
 const ReferenceCellTopology::Face*
 ReferenceCellTopology::get_face_edges(CellType cell_type)
 {
-  static const int triangle[][4] = {{0, 1, 2, -1}, };
+  static const int triangle[][4] = {
+      {0, 1, 2, -1},
+  };
   static const int tetrahedron[][4]
       = {{0, 1, 2, -1}, {0, 3, 4, -1}, {1, 3, 5, -1}, {2, 4, 5, -1}};
   static const int quadrilateral[][4] = {{0, 3, 1, 2}};
@@ -374,5 +376,65 @@ ReferenceCellTopology::get_vertices(CellType cell_type)
   }
 
   return nullptr;
+}
+//-----------------------------------------------------------------------------
+std::map<std::array<int, 2>, std::map<int, std::set<int>>>
+ReferenceCellTopology::entity_closure(CellType cell_type)
+{
+  const int* num_entities = ReferenceCellTopology::num_entities(cell_type);
+  assert(num_entities);
+  const ReferenceCellTopology::Edge* edge_v
+      = ReferenceCellTopology::get_edge_vertices(cell_type);
+  const ReferenceCellTopology::Face* face_e
+      = ReferenceCellTopology::get_face_edges(cell_type);
+
+
+  std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure;
+  const int cell_dim = ReferenceCellTopology::dim(cell_type);
+  for (int dim = 0; dim <= cell_dim; ++dim)
+  {
+    for (int entity = 0; entity < num_entities[dim]; ++entity)
+    {
+      // Add self
+      entity_closure[{dim, entity}][dim].insert(entity);
+
+      if (dim == 3)
+      {
+        // Add all sub-entities
+        for (int f = 0; f < num_entities[2]; ++f)
+          entity_closure[{dim, entity}][2].insert(f);
+        for (int e = 0; e < num_entities[1]; ++e)
+          entity_closure[{dim, entity}][1].insert(e);
+        for (int v = 0; v < num_entities[0]; ++v)
+          entity_closure[{dim, entity}][0].insert(v);
+      }
+
+      if (dim == 2)
+      {
+        assert(face_e);
+        CellType face_type = ReferenceCellTopology::entity_type(cell_type, 2);
+        const int num_edges = ReferenceCellTopology::num_edges(face_type);
+        for (int e = 0; e < num_edges; ++e)
+        {
+          // Add edge
+          const int edge_index = face_e[entity][e];
+          entity_closure[{dim, entity}][1].insert(edge_index);
+          for (int v = 0; v < 2; ++v)
+          {
+            // Add vertex connected to edge
+            entity_closure[{dim, entity}][0].insert(edge_v[edge_index][v]);
+          }
+        }
+      }
+
+      if (dim == 1)
+      {
+        entity_closure[{dim, entity}][0].insert(edge_v[entity][0]);
+        entity_closure[{dim, entity}][0].insert(edge_v[entity][1]);
+      }
+    }
+  }
+
+  return entity_closure;
 }
 //-----------------------------------------------------------------------------
