@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ReferenceCellTopology.h"
+#include <cassert>
 #include <stdexcept>
 
 using namespace dolfin;
@@ -387,7 +388,6 @@ ReferenceCellTopology::entity_closure(CellType cell_type)
       = ReferenceCellTopology::get_edge_vertices(cell_type);
   const ReferenceCellTopology::Face* face_e
       = ReferenceCellTopology::get_face_edges(cell_type);
-
 
   std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure;
   const int cell_dim = ReferenceCellTopology::dim(cell_type);
