@@ -17,6 +17,7 @@ set(HEADERS
   FormIntegrals.h
   GenericDofMap.h
   PETScDMCollection.h
+  ReferenceCellTopology.h
   SparsityPatternBuilder.h
   PARENT_SCOPE)
 
@@ -37,5 +38,6 @@ set(SOURCES
   FormIntegrals.cpp
   GenericDofMap.cpp
   PETScDMCollection.cpp
+  ReferenceCellTopology.cpp
   SparsityPatternBuilder.cpp
   PARENT_SCOPE)
