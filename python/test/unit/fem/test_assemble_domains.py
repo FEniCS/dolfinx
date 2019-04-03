@@ -33,9 +33,8 @@ def test_assembly_dx_domains(mesh):
     dx = dolfin.Measure('dx', subdomain_data=marker, domain=mesh)
 
     w = dolfin.Function(V)
-    w.vector().set(0.5)
-    w.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                           mode=PETSc.ScatterMode.FORWARD)
+    with w.vector().localForm() as w_local:
+        w_local.set(0.5)
 
     #
     # Assemble matrix
@@ -117,9 +116,8 @@ def test_assembly_ds_domains(mesh):
     ds = dolfin.Measure('ds', subdomain_data=marker, domain=mesh)
 
     w = dolfin.Function(V)
-    w.vector().set(0.5)
-    w.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT,
-                           mode=PETSc.ScatterMode.FORWARD)
+    with w.vector().localForm() as w_local:
+        w_local.set(0.5)
 
     #
     # Assemble matrix
