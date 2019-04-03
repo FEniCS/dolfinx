@@ -327,17 +327,17 @@ ReferenceCellTopology::entity_closure(CellType cell_type)
     for (int entity = 0; entity < num_entities[dim]; ++entity)
     {
       // Add self
-      entity_closure[{dim, entity}][dim].insert(entity);
+      entity_closure[{{dim, entity}}][dim].insert(entity);
 
       if (dim == 3)
       {
         // Add all sub-entities
         for (int f = 0; f < num_entities[2]; ++f)
-          entity_closure[{dim, entity}][2].insert(f);
+          entity_closure[{{dim, entity}}][2].insert(f);
         for (int e = 0; e < num_entities[1]; ++e)
-          entity_closure[{dim, entity}][1].insert(e);
+          entity_closure[{{dim, entity}}][1].insert(e);
         for (int v = 0; v < num_entities[0]; ++v)
-          entity_closure[{dim, entity}][0].insert(v);
+          entity_closure[{{dim, entity}}][0].insert(v);
       }
 
       if (dim == 2)
@@ -349,19 +349,19 @@ ReferenceCellTopology::entity_closure(CellType cell_type)
         {
           // Add edge
           const int edge_index = face_e[entity][e];
-          entity_closure[{dim, entity}][1].insert(edge_index);
+          entity_closure[{{dim, entity}}][1].insert(edge_index);
           for (int v = 0; v < 2; ++v)
           {
             // Add vertex connected to edge
-            entity_closure[{dim, entity}][0].insert(edge_v[edge_index][v]);
+            entity_closure[{{dim, entity}}][0].insert(edge_v[edge_index][v]);
           }
         }
       }
 
       if (dim == 1)
       {
-        entity_closure[{dim, entity}][0].insert(edge_v[entity][0]);
-        entity_closure[{dim, entity}][0].insert(edge_v[entity][1]);
+        entity_closure[{{dim, entity}}][0].insert(edge_v[entity][0]);
+        entity_closure[{{dim, entity}}][0].insert(edge_v[entity][1]);
       }
     }
   }

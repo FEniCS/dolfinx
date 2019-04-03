@@ -213,16 +213,17 @@ void GenericDofMap::ufc_tabulate_dofs(
     // Loop over each entity of dimension d
     for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
     {
-      const int num_entity_dofs = entity_dofs[d][i].size();
+      const std::set<int>& entity_dof_set = entity_dofs[d][i];
+      const int num_entity_dofs = entity_dof_set.size();
 
       // Loop over dofs belong to entity e of dimension d (d, e)
       // d: topological dimension
       // i: local entity index
       // dof: local index of dof at (d, i)
-      for (auto dof = entity_dofs[d][i].begin(); dof != entity_dofs[d][i].end();
+      for (auto dof = entity_dof_set.begin(); dof != entity_dof_set.end();
            ++dof)
       {
-        const int count = std::distance(entity_dofs[d][i].begin(), dof);
+        const int count = std::distance(entity_dof_set.begin(), dof);
         dofs[*dof] = offset + num_entity_dofs * entity_indices[d][i] + count;
       }
     }
