@@ -31,9 +31,6 @@ class ReferenceCellTopology
 public:
   static int dim(CellType cell_type);
   static const int* num_entities(CellType cell_type);
-  static int num_vertices(CellType cell_type);
-  static int num_edges(CellType cell_type);
-  static int num_faces(CellType cell_type);
 
   // Get entity type of dimension d
   static CellType entity_type(CellType cell_type, int dim, int k = 0);

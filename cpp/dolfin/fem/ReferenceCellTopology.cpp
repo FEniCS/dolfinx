@@ -65,75 +65,6 @@ const int* ReferenceCellTopology::num_entities(CellType cell_type)
   return nullptr;
 }
 //---------------------------------------------------------------------
-int ReferenceCellTopology::num_vertices(CellType cell_type)
-{
-  switch (cell_type)
-  {
-  case CellType::point:
-    return 1;
-  case CellType::interval:
-    return 2;
-  case CellType::triangle:
-    return 3;
-  case CellType::quadrilateral:
-    return 4;
-  case CellType::tetrahedron:
-    return 4;
-  case CellType::hexahedron:
-    return 8;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return -1;
-}
-//-----------------------------------------------------------------------------
-int ReferenceCellTopology::num_edges(CellType cell_type)
-{
-  switch (cell_type)
-  {
-  case CellType::point:
-    return 0;
-  case CellType::interval:
-    return 0;
-  case CellType::triangle:
-    return 3;
-  case CellType::quadrilateral:
-    return 4;
-  case CellType::tetrahedron:
-    return 6;
-  case CellType::hexahedron:
-    return 12;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return -1;
-}
-//-----------------------------------------------------------------------------
-int ReferenceCellTopology::num_faces(CellType cell_type)
-{
-  switch (cell_type)
-  {
-  case CellType::point:
-    return 0;
-  case CellType::interval:
-    return 0;
-  case CellType::triangle:
-    return 0;
-  case CellType::quadrilateral:
-    return 0;
-  case CellType::tetrahedron:
-    return 4;
-  case CellType::hexahedron:
-    return 6;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return -1;
-}
-//-----------------------------------------------------------------------------
 CellType ReferenceCellTopology::entity_type(CellType cell_type, int dim, int k)
 {
   switch (cell_type)
@@ -413,7 +344,7 @@ ReferenceCellTopology::entity_closure(CellType cell_type)
       {
         assert(face_e);
         CellType face_type = ReferenceCellTopology::entity_type(cell_type, 2);
-        const int num_edges = ReferenceCellTopology::num_edges(face_type);
+        const int num_edges = ReferenceCellTopology::num_entities(face_type)[1];
         for (int e = 0; e < num_edges; ++e)
         {
           // Add edge
