@@ -44,7 +44,7 @@ ElementDofLayout::ElementDofLayout(
 
   // Compute closure entities
   // [dim, entity] -> closure{sub_dim, (sub_entities)}
-  std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure
+  std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
       = ReferenceCellTopology::entity_closure(_cell);
 
   // dof = _entity_dofs[dim][entity_index][i]
@@ -53,15 +53,16 @@ ElementDofLayout::ElementDofLayout(
   {
     const int dim = entity.first[0];
     const int index = entity.first[1];
+    int subdim = 0;
     for (auto sub_entity : entity.second)
     {
-      const int subdim = sub_entity.first;
-      for (auto sub_index : sub_entity.second)
+      for (auto sub_index : sub_entity)
       {
         _entity_closure_dofs[dim][index].insert(
             entity_dofs[subdim][sub_index].begin(),
             entity_dofs[subdim][sub_index].end());
       }
+      ++subdim;
     }
   }
 

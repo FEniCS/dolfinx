@@ -254,28 +254,6 @@ ReferenceCellTopology::get_face_edges(CellType cell_type)
   return nullptr;
 }
 //-----------------------------------------------------------------------------
-// const int* ReferenceCellTopology::get_entities(CellType cell_type, int d0,
-//                                                int d1)
-// {
-//   // Tetrahedron face-edge connectivity
-//   static const int tetrahedron_fe[4][3]
-//       = {{0, 1, 2}, {0, 3, 4}, {1, 3, 5}, {2, 4, 5}};
-
-//   // FIXME: fill
-//   static const int hexahedron_fe[6][4] = {0};
-
-//   if (d0 == 2 and d1 == 0)
-//     return (int*)get_faces(cell_type);
-//   else if (d0 == 1 and d1 == 0)
-//     return (int*)get_edges(cell_type);
-//   else if (cell_type == CellType::tetrahedron and d0 == 2 and d1 == 1)
-//     return (int*)tetrahedron_fe;
-//   else if (cell_type == CellType::hexahedron and d0 == 2 and d1 == 1)
-//     return (int*)hexahedron_fe;
-
-//   return nullptr;
-// }
-//-----------------------------------------------------------------------------
 const ReferenceCellTopology::Point*
 ReferenceCellTopology::get_vertices(CellType cell_type)
 {
@@ -310,7 +288,7 @@ ReferenceCellTopology::get_vertices(CellType cell_type)
   return nullptr;
 }
 //-----------------------------------------------------------------------------
-std::map<std::array<int, 2>, std::map<int, std::set<int>>>
+std::map<std::array<int, 2>, std::vector<std::set<int>>>
 ReferenceCellTopology::entity_closure(CellType cell_type)
 {
   const int* num_entities = ReferenceCellTopology::num_entities(cell_type);
@@ -320,13 +298,14 @@ ReferenceCellTopology::entity_closure(CellType cell_type)
   const ReferenceCellTopology::Face* face_e
       = ReferenceCellTopology::get_face_edges(cell_type);
 
-  std::map<std::array<int, 2>, std::map<int, std::set<int>>> entity_closure;
+  std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;
   const int cell_dim = ReferenceCellTopology::dim(cell_type);
   for (int dim = 0; dim <= cell_dim; ++dim)
   {
     for (int entity = 0; entity < num_entities[dim]; ++entity)
     {
       // Add self
+      entity_closure[{{dim, entity}}].resize(cell_dim + 1);
       entity_closure[{{dim, entity}}][dim].insert(entity);
 
       if (dim == 3)
