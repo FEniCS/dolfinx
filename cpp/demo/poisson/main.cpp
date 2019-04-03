@@ -177,15 +177,15 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
       mesh::GhostMode::none));
 
-  auto space = std::unique_ptr<ufc_function_space, decltype(free)*>(
-      poisson_functionspace_create(), free);
-
-  auto ufc_map = std::shared_ptr<ufc_dofmap>(space->dofmap(), free);
+  ufc_function_space* space = poisson_functionspace_create();
+  ufc_dofmap* ufc_map = space->dofmap();
   auto V = std::make_shared<function::FunctionSpace>(
       mesh,
       std::make_shared<fem::FiniteElement>(
           std::shared_ptr<ufc_finite_element>(space->element(), free)),
       std::make_shared<fem::DofMap>(*ufc_map, *mesh));
+  std::free(ufc_map);
+  std::free(space);
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`
@@ -217,13 +217,19 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Define variational forms
+  ufc_form* bilinear_form = poisson_bilinearform_create();
   auto a = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(poisson_bilinearform_create(), free),
+      *bilinear_form,
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
                                                                             V});
+  std::free(bilinear_form);
+
+  ufc_form* linear_form = poisson_linearform_create();
   auto L = std::make_shared<fem::Form>(
-      std::shared_ptr<ufc_form>(poisson_linearform_create(), free),
+      *linear_form,
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
+  std::free(linear_form);
+
   auto f_expr = Source();
   auto g_expr = dUdN();
 

@@ -77,7 +77,7 @@ public:
   ///         The UFC form.
   /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
   ///         Vector of function spaces.
-  Form(std::shared_ptr<const ufc_form> ufc_form,
+  Form(const ufc_form& ufc_form,
        const std::vector<std::shared_ptr<const function::FunctionSpace>>
            function_spaces);
 
