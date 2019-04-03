@@ -36,15 +36,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  // if (a.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 1)
-  // {
-  //   spdlog::warn("Multiple integrals (with coefficients) in bilinear form not "
-  //                "yet supported.");
-  // }
-
-  const std::vector<int>& cell_integral_ids
-      = a.integrals().integral_ids(fem::FormIntegrals::Type::cell);
-  for (unsigned int i = 0; i < cell_integral_ids.size(); ++i)
+  for (int i = 0;
+       i < a.integrals().num_integrals(fem::FormIntegrals::Type::cell); ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
@@ -53,16 +46,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     const std::vector<std::int32_t>& active_cells
         = a.integrals().integral_domains(fem::FormIntegrals::Type::cell, i);
 
-    std::cout << "Integrating over domain: " << cell_integral_ids[i] << " with "
-              << active_cells.size() << " cells\n";
     fem::impl::assemble_cells(A, mesh, active_cells, dofmap0, dofmap1, bc0, bc1,
                               fn, coeff_fn, c_offsets);
-  }
-
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
-  {
-    throw std::runtime_error("Multiple exterior facet integrals in bilinear "
-                             "form not yet supported.");
   }
 
   for (int i = 0; i < a.integrals().num_integrals(
@@ -112,7 +97,7 @@ void fem::impl::assemble_cells(
   PetscErrorCode ierr;
   for (auto& cell_index : active_cells)
   {
-    mesh::Cell cell(mesh, cell_index);
+    const mesh::Cell cell(mesh, cell_index);
 
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
@@ -196,7 +181,7 @@ void fem::impl::assemble_exterior_facets(
     // TODO: check ghosting sanity?
 
     // Create attached cell
-    mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
