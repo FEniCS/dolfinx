@@ -125,12 +125,6 @@ void FormIntegrals::register_tabulate_tensor_exterior_facet(
     int i,
     void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int))
 {
-  // At the moment, only accept one integral with index -1
-  if (i != -1)
-  {
-    throw std::runtime_error(
-        "Exterior facet integral subdomain not supported. Under development.");
-  }
 
   if (std::find(_exterior_facet_integral_ids.begin(),
                 _exterior_facet_integral_ids.end(), i)

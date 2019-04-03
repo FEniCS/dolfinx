@@ -33,29 +33,34 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   std::vector<int> c_offsets = coefficients.offsets();
 
   PetscScalar value = 0.0;
-  if (M.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 0)
+
+  for (int i = 0;
+       i < M.integrals().num_integrals(fem::FormIntegrals::Type::cell); ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
-        = M.integrals().get_tabulate_tensor_fn_cell(0);
-    value += fem::impl::assemble_cells(mesh, fn, coeff_fn, c_offsets);
-  }
-  if (M.integrals().num_integrals(fem::FormIntegrals::Type::cell) > 1)
-  {
-    throw std::runtime_error("Multiple cell integrals not supported yet.");
+        = M.integrals().get_tabulate_tensor_fn_cell(i);
+
+    const std::vector<std::int32_t>& active_cells
+        = M.integrals().integral_domains(fem::FormIntegrals::Type::cell, i);
+
+    value += fem::impl::assemble_cells(mesh, active_cells, fn, coeff_fn,
+                                       c_offsets);
   }
 
-  if (M.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+  for (int i = 0; i < M.integrals().num_integrals(
+                          fem::FormIntegrals::Type::exterior_facet);
+       ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
-        = M.integrals().get_tabulate_tensor_fn_exterior_facet(0);
-    value += fem::impl::assemble_exterior_facets(mesh, fn, coeff_fn, c_offsets);
-  }
-  if (M.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
-  {
-    throw std::runtime_error(
-        "Multiple exterior facet integrals not supported yet.");
+        = M.integrals().get_tabulate_tensor_fn_exterior_facet(i);
+
+    const std::vector<std::int32_t>& active_facets
+        = M.integrals().integral_domains(fem::FormIntegrals::Type::exterior_facet, i);
+
+    value += fem::impl::assemble_exterior_facets(mesh, active_facets, fn,
+                                                 coeff_fn, c_offsets);
   }
 
   if (M.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
@@ -66,6 +71,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_cells(
     const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_cells,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn,
     std::vector<const function::Function*> coefficients,
@@ -81,8 +87,11 @@ PetscScalar fem::impl::assemble_cells(
 
   // Iterate over all cells
   PetscScalar cell_value, value(0);
-  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
+
+  for (const auto& cell_index : active_cells)
   {
+    const mesh::Cell cell(mesh, cell_index);
+
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
@@ -105,6 +114,7 @@ PetscScalar fem::impl::assemble_cells(
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_exterior_facets(
     const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_facets,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
     std::vector<const function::Function*> coefficients,
@@ -121,15 +131,17 @@ PetscScalar fem::impl::assemble_exterior_facets(
 
   // Iterate over all facets
   PetscScalar cell_value, value(0);
-  for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+
+  for (const auto& facet_index : active_facets)
   {
-    if (facet.num_global_entities(tdim) != 1)
-      continue;
+    const mesh::Facet facet(mesh, facet_index);
+
+    assert(facet.num_global_entities(tdim) == 1);
 
     // TODO: check ghosting sanity?
 
     // Create attached cell
-    mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
