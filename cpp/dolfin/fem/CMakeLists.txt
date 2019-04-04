@@ -8,6 +8,7 @@ set(HEADERS
   DiscreteOperators.h
   DofMapBuilder.h
   DofMap.h
+  ElementDofLayout.h
   dolfin_fem.h
   utils.h
   FiniteElement.h
@@ -16,6 +17,7 @@ set(HEADERS
   FormIntegrals.h
   GenericDofMap.h
   PETScDMCollection.h
+  ReferenceCellTopology.h
   SparsityPatternBuilder.h
   PARENT_SCOPE)
 
@@ -28,6 +30,7 @@ set(SOURCES
   DiscreteOperators.cpp
   DofMapBuilder.cpp
   DofMap.cpp
+  ElementDofLayout.cpp
   utils.cpp
   FiniteElement.cpp
   Form.cpp
@@ -35,5 +38,6 @@ set(SOURCES
   FormIntegrals.cpp
   GenericDofMap.cpp
   PETScDMCollection.cpp
+  ReferenceCellTopology.cpp
   SparsityPatternBuilder.cpp
   PARENT_SCOPE)

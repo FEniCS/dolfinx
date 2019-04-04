@@ -21,8 +21,41 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <memory>
+#include <ufc.h>
 
 using namespace dolfin;
+
+namespace
+{
+// Try to figure out block size. FIXME - replace elsewhere
+int analyse_block_structure(
+    const std::vector<std::shared_ptr<fem::ElementDofLayout>> sub_dofmaps)
+{
+  // Must be at least two subdofmaps
+  if (sub_dofmaps.size() < 2)
+    return 1;
+
+  for (auto dmap : sub_dofmaps)
+  {
+    assert(dmap);
+
+    // If any subdofmaps have subdofmaps themselves, ignore any
+    // potential block structure
+    if (dmap->num_sub_dofmaps() > 0)
+      return 1;
+
+    // Check number of dofs are the same for all subdofmaps
+    for (int d = 0; d < 4; ++d)
+    {
+      if (sub_dofmaps[0]->num_entity_dofs(d) != dmap->num_entity_dofs(d))
+        return 1;
+    }
+  }
+
+  // All subdofmaps are simple, and have the same number of dofs
+  return sub_dofmaps.size();
+}
+} // namespace
 
 //-----------------------------------------------------------------------------
 std::vector<std::vector<std::shared_ptr<const common::IndexMap>>>
@@ -461,5 +494,68 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   }
 
   return index + offset;
+}
+//-----------------------------------------------------------------------------
+fem::ElementDofLayout
+fem::create_element_dof_layout(const ufc_dofmap& dofmap,
+                               const std::vector<int>& parent_map,
+                               const mesh::CellType& cell_type)
+{
+  // Copy over number of dofs per entity type
+  std::array<int, 4> num_entity_dofs;
+  std::copy(dofmap.num_entity_dofs, dofmap.num_entity_dofs + 4,
+            num_entity_dofs.data());
+
+  // Fill entity dof indices
+  const int tdim = cell_type.dim();
+  std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
+  std::vector<int> work_array;
+  for (int dim = 0; dim <= tdim; ++dim)
+  {
+    const int num_entities = cell_type.num_entities(dim);
+    entity_dofs[dim].resize(num_entities);
+    for (int i = 0; i < num_entities; ++i)
+    {
+      work_array.resize(num_entity_dofs[dim]);
+      dofmap.tabulate_entity_dofs(work_array.data(), dim, i);
+      entity_dofs[dim][i] = std::set<int>(work_array.begin(), work_array.end());
+    }
+  }
+
+  // TODO:  UFC dofmaps just use simple offset for each field but this
+  // could be different for custom dofmaps This data should come
+  // directly from the UFC interface in place of the the implicit
+  // assumption
+
+  // Create UFC subdofmaps and compute offset
+  std::vector<std::shared_ptr<ufc_dofmap>> ufc_sub_dofmaps;
+  std::vector<int> offsets(1, 0);
+  for (int i = 0; i < dofmap.num_sub_dofmaps; ++i)
+  {
+    auto ufc_sub_dofmap
+        = std::shared_ptr<ufc_dofmap>(dofmap.create_sub_dofmap(i));
+    ufc_sub_dofmaps.push_back(ufc_sub_dofmap);
+    const int num_dofs = ufc_sub_dofmap->num_element_support_dofs;
+    offsets.push_back(offsets.back() + num_dofs);
+  }
+
+  std::vector<std::shared_ptr<fem::ElementDofLayout>> sub_dofmaps;
+  for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
+  {
+    auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
+    assert(ufc_sub_dofmap);
+    std::vector<int> parent_map_sub(ufc_sub_dofmap->num_element_support_dofs);
+    std::iota(parent_map_sub.begin(), parent_map_sub.end(), offsets[i]);
+    sub_dofmaps.push_back(
+        std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
+            *ufc_sub_dofmaps[i], parent_map_sub, cell_type)));
+  }
+
+  // Check for "block structure". This should ultimately be replaced,
+  // but keep for now to mimic existing code
+  const int block_size = analyse_block_structure(sub_dofmaps);
+
+  return fem::ElementDofLayout(block_size, entity_dofs,
+                               parent_map, sub_dofmaps, cell_type);
 }
 //-----------------------------------------------------------------------------

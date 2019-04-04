@@ -1,10 +1,10 @@
 # UFL input for hyperleasticity
 # =============================
-# 
+#
 # The first step is to define the variational problem at hand. We define
 # the variational problem in UFL terms in a separate form file
 # :download:`HyperElasticity.ufl`.
-# 
+#
 # We are interested in solving for a discrete vector field in three
 # dimensions, so first we need the appropriate finite element space and
 # trial and test functions on this space::
@@ -20,7 +20,7 @@ v  = TestFunction(element)      # Test function
 # fields. The dimension of the vector field (the number of components)
 # is assumed to be the same as the spatial dimension (in this case 3),
 # unless otherwise specified.
-# 
+#
 # Next, we will be needing functions for the boundary source ``B``, the
 # traction ``T`` and the displacement solution itself ``u``::
 
@@ -73,10 +73,10 @@ J = derivative(F, u, du)
 # to be differentiated, the variable (function) we are supposed to
 # differentiate with respect too, and the direction the derivative is
 # taken in.
-# 
+#
 # Before the form file can be used in the C++ program, it must be
 # compiled using FFC by running (on the command-line):
-# 
+#
 # .. code-block:: sh
-# 
+#
 #     ffc HyperElasticity.ufl

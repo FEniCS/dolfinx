@@ -19,7 +19,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 
 
 @skip_in_parallel
-def test_p4_scalar_vector():
+def xtest_p4_scalar_vector():
 
     perms = itertools.permutations([1, 2, 3, 4])
 
@@ -75,7 +75,7 @@ def test_p4_scalar_vector():
             assert numpy.isclose(0.0, result[2])
 
 
-def test_p4_parallel_2d():
+def xtest_p4_parallel_2d():
     mesh = UnitSquareMesh(MPI.comm_world, 5, 8)
     Q = FunctionSpace(mesh, ("CG", 4))
     F = Function(Q)
@@ -101,7 +101,7 @@ def test_p4_parallel_2d():
         assert numpy.isclose(F(p, tree)[0], p[0])
 
 
-def test_p4_parallel_3d():
+def xtest_p4_parallel_3d():
     mesh = UnitCubeMesh(MPI.comm_world, 3, 5, 8)
     Q = FunctionSpace(mesh, ("CG", 5))
     F = Function(Q)
@@ -128,7 +128,7 @@ def test_p4_parallel_3d():
         assert numpy.isclose(F(p, tree)[0], p[0])
 
 
-def test_mixed_parallel():
+def xtest_mixed_parallel():
     mesh = UnitSquareMesh(MPI.comm_world, 5, 8)
     V = VectorElement("Lagrange", triangle, 4)
     Q = FiniteElement("Lagrange", triangle, 5)

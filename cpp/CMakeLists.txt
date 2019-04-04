@@ -89,7 +89,6 @@ add_feature_info(CMAKE_INSTALL_RPATH_USE_LINK_PATH CMAKE_INSTALL_RPATH_USE_LINK_
 # List optional packages
 set(OPTIONAL_PACKAGES "")
 list(APPEND OPTIONAL_PACKAGES "SLEPc")
-list(APPEND OPTIONAL_PACKAGES "SCOTCH")
 list(APPEND OPTIONAL_PACKAGES "ParMETIS")
 
 # Add options
@@ -218,6 +217,12 @@ set_package_properties(HDF5 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Hierarchical Data Format 5 (HDF5)"
   URL "https://www.hdfgroup.org/HDF5")
 
+find_package(SCOTCH REQUIRED)
+set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
+  DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
+  URL "https://www.labri.fr/perso/pelegrin/scotch"
+  PURPOSE "Enables parallel graph partitioning")
+
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 
@@ -230,20 +235,12 @@ if (DOLFIN_ENABLE_SLEPC)
     URL "http://slepc.upv.es/")
 endif()
 
-# Check for ParMETIS and SCOTCH
+# Check for ParMETIS
 if (DOLFIN_ENABLE_PARMETIS)
   find_package(ParMETIS 4.0.2)
   set_package_properties(ParMETIS PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Parallel Graph Partitioning and Fill-reducing Matrix Ordering"
     URL "http://glaros.dtc.umn.edu/gkhome/metis/parmetis/overview"
-    PURPOSE "Enables parallel graph partitioning")
-endif()
-
-if (DOLFIN_ENABLE_SCOTCH)
-  find_package(SCOTCH)
-  set_package_properties(SCOTCH PROPERTIES TYPE OPTIONAL
-    DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
-    URL "https://www.labri.fr/perso/pelegrin/scotch"
     PURPOSE "Enables parallel graph partitioning")
 endif()
 

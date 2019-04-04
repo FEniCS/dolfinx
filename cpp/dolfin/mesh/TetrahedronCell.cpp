@@ -112,7 +112,8 @@ void TetrahedronCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
   default:
     // spdlog::error(
     //     "TetrahedronCell.cpp", "create entities of tetrahedron cell",
-    //     "Don't know how to create entities of topological dimension %d", dim);
+    //     "Don't know how to create entities of topological dimension %d",
+    //     dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 }
@@ -122,7 +123,8 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
   {
-    // spdlog::error("TetrahedronCell.cpp", "compute volume of tetrahedron cell",
+    // spdlog::error("TetrahedronCell.cpp", "compute volume of tetrahedron
+    // cell",
     //               "Illegal mesh entity, not a tetrahedron");
     throw std::runtime_error("Illegal topological dimension");
   }
@@ -167,7 +169,8 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
   {
-    // spdlog::error("TetrahedronCell.cpp", "compute diameter of tetrahedron cell",
+    // spdlog::error("TetrahedronCell.cpp", "compute diameter of tetrahedron
+    // cell",
     //               "Illegal mesh entity, not a tetrahedron");
     throw std::runtime_error("Illegal topological dimension");
   }

@@ -43,7 +43,6 @@ void common(py::module& m)
   // From dolfin/common/defines.h
   m.attr("has_debug") = dolfin::has_debug();
   m.attr("has_parmetis") = dolfin::has_parmetis();
-  m.attr("has_scotch") = dolfin::has_scotch();
   m.attr("has_petsc_complex") = dolfin::has_petsc_complex();
   m.attr("has_slepc") = dolfin::has_slepc();
 #ifdef HAS_PYBIND11_SLEPC4PY

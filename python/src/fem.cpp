@@ -180,8 +180,7 @@ void fem(py::module& m)
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
              dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
-      .def(py::init<std::shared_ptr<const ufc_dofmap>,
-                    const dolfin::mesh::Mesh&>())
+      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>())
       .def("ownership_range", &dolfin::fem::DofMap::ownership_range)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs);
 
@@ -293,7 +292,7 @@ void fem(py::module& m)
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
       m, "Form", "Variational form object")
-      .def(py::init<std::shared_ptr<const ufc_form>,
+      .def(py::init<const ufc_form&,
                     std::vector<std::shared_ptr<
                         const dolfin::function::FunctionSpace>>>())
       .def(py::init<std::vector<

@@ -272,10 +272,8 @@ void fem::impl::assemble_vector(
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  const std::vector<int>& cell_integral_ids
-      = L.integrals().integral_ids(fem::FormIntegrals::Type::cell);
-
-  for (unsigned int i = 0; i < cell_integral_ids.size(); ++i)
+  for (int i = 0;
+       i < L.integrals().num_integrals(fem::FormIntegrals::Type::cell); ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn
@@ -284,26 +282,24 @@ void fem::impl::assemble_vector(
     const std::vector<std::int32_t>& active_cells
         = L.integrals().integral_domains(fem::FormIntegrals::Type::cell, i);
 
-    std::cout << "Integrating over domain: " << cell_integral_ids[i] << " with "
-              << active_cells.size() << " cells\n";
-
     fem::impl::assemble_cells(b, mesh, active_cells, dofmap, fn, coeff_fn,
                               c_offsets);
   }
 
-  if (L.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 0)
+  for (int i = 0; i < L.integrals().num_integrals(
+                          fem::FormIntegrals::Type::exterior_facet);
+       ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn
-        = L.integrals().get_tabulate_tensor_fn_exterior_facet(0);
-    fem::impl::assemble_exterior_facets(b, mesh, dofmap, fn, coeff_fn,
-                                        c_offsets);
-  }
+        = L.integrals().get_tabulate_tensor_fn_exterior_facet(i);
 
-  if (L.integrals().num_integrals(fem::FormIntegrals::Type::exterior_facet) > 1)
-  {
-    throw std::runtime_error(
-        "Multiple exterior facet integrals not supported yet.");
+    const std::vector<std::int32_t>& active_facets
+        = L.integrals().integral_domains(
+            fem::FormIntegrals::Type::exterior_facet, i);
+
+    fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
+                                        coeff_fn, c_offsets);
   }
 
   if (L.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
@@ -362,7 +358,9 @@ void fem::impl::assemble_cells(
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const mesh::Mesh& mesh, const fem::GenericDofMap& dofmap,
+    const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_facets,
+    const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
     std::vector<const function::Function*> coefficients,
@@ -378,16 +376,16 @@ void fem::impl::assemble_exterior_facets(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
-  // Iterate over all facets
-  for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  for (const auto& facet_index : active_facets)
   {
-    if (facet.num_global_entities(tdim) != 1)
-      continue;
+    const mesh::Facet facet(mesh, facet_index);
+
+    assert(facet.num_global_entities(tdim) == 1);
 
     // TODO: check ghosting sanity?
 
     // Create attached cell
-    mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
