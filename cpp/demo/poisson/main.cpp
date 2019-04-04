@@ -178,11 +178,11 @@ int main(int argc, char* argv[])
       mesh::GhostMode::none));
 
   ufc_function_space* space = poisson_functionspace_create();
-  ufc_dofmap* ufc_map = space->dofmap();
+  ufc_dofmap* ufc_map = space->create_dofmap();
   auto V = std::make_shared<function::FunctionSpace>(
       mesh,
       std::make_shared<fem::FiniteElement>(
-          std::shared_ptr<ufc_finite_element>(space->element(), free)),
+          std::shared_ptr<ufc_finite_element>(space->create_element(), free)),
       std::make_shared<fem::DofMap>(*ufc_map, *mesh));
   std::free(ufc_map);
   std::free(space);
