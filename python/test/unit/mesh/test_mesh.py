@@ -145,7 +145,8 @@ def test_mesh_construction_pygmsh():
     if MPI.rank(MPI.comm_world) == 0:
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-        points, cells, _, _, _ = pygmsh.generate_mesh(geom)
+        pygmsh_mesh = pygmsh.generate_mesh(geom)
+        points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
     else:
         points = numpy.zeros([0, 3])
         cells = {
@@ -179,8 +180,9 @@ def test_mesh_construction_pygmsh():
         print("Generate mesh")
         geom = pygmsh.opencascade.Geometry()
         geom.add_ball([0.0, 0.0, 0.0], 1.0, char_length=0.2)
-        points, cells, _, _, _ = pygmsh.generate_mesh(
+        pygmsh_mesh = pygmsh.generate_mesh(
             geom, extra_gmsh_arguments=['-order', '2'])
+        points, cells = pygmsh_mesh.points, pygmsh_mesh.cells
         print("End Generate mesh", cells.keys())
     else:
         points = numpy.zeros([0, 3])
