@@ -292,7 +292,7 @@ void fem(py::module& m)
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
       m, "Form", "Variational form object")
-      .def(py::init<std::shared_ptr<const ufc_form>,
+      .def(py::init<const ufc_form&,
                     std::vector<std::shared_ptr<
                         const dolfin::function::FunctionSpace>>>())
       .def(py::init<std::vector<

@@ -24,21 +24,20 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-Form::Form(std::shared_ptr<const ufc_form> ufc_form,
+Form::Form(const ufc_form& ufc_form,
            const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
-    : _integrals(*ufc_form), _coefficients(*ufc_form),
+    : _integrals(ufc_form), _coefficients(ufc_form),
       _function_spaces(function_spaces)
 {
-  assert(ufc_form);
-  assert(ufc_form->rank == (int)function_spaces.size());
+  assert(ufc_form.rank == (int)function_spaces.size());
 
   // Check argument function spaces
   for (std::size_t i = 0; i < function_spaces.size(); ++i)
   {
     assert(function_spaces[i]->element());
     std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
-        ufc_form->create_finite_element(i), free);
+        ufc_form.create_finite_element(i), free);
 
     if (std::string(ufc_element->signature)
         != function_spaces[i]->element()->signature())
@@ -67,11 +66,11 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
   // Create CoordinateMapping
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(
       std::shared_ptr<const ufc_coordinate_mapping>(
-          ufc_form->create_coordinate_mapping()));
+          ufc_form.create_coordinate_mapping()));
 
   // Set coefficient maps
-  _coefficient_index_map = ufc_form->coefficient_number_map;
-  _coefficient_name_map = ufc_form->coefficient_name_map;
+  _coefficient_index_map = ufc_form.coefficient_number_map;
+  _coefficient_name_map = ufc_form.coefficient_name_map;
 }
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
