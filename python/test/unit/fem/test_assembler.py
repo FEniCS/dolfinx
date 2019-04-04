@@ -110,8 +110,9 @@ def test_assembly_bcs():
     A.assemble()
     b = dolfin.fem.assemble_vector(L)
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    g = A.createVecRight()
-    g.set(0.0)
+    g = b.duplicate()
+    with g.localForm() as g_local:
+        g_local.set(0.0)
     dolfin.fem.set_bc(g, [bc])
     f = b - A * g
     dolfin.fem.set_bc(f, [bc])
