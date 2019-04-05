@@ -28,11 +28,11 @@ public:
   /// shared)
   /// @param cm (ufc::coordinate_mapping)
   ///  UFC coordinate mapping
-  CoordinateMapping(std::shared_ptr<const ufc_coordinate_mapping> cm)
-      : _tdim(cm->topological_dimension), _gdim(cm->geometric_dimension),
-        _signature(cm->signature),
-        _compute_physical_coordinates(cm->compute_physical_coordinates),
-        _compute_reference_geometry(cm->compute_reference_geometry)
+  CoordinateMapping(const ufc_coordinate_mapping& cm)
+      : _tdim(cm.topological_dimension), _gdim(cm.geometric_dimension),
+        _signature(cm.signature),
+        _compute_physical_coordinates(cm.compute_physical_coordinates),
+        _compute_reference_geometry(cm.compute_reference_geometry)
   {
     static const std::map<ufc_shape, CellType> ufc_to_cell
         = {{vertex, CellType::point},
@@ -41,7 +41,7 @@ public:
            {tetrahedron, CellType::tetrahedron},
            {quadrilateral, CellType::quadrilateral},
            {hexahedron, CellType::hexahedron}};
-    const auto it = ufc_to_cell.find(cm->cell_shape);
+    const auto it = ufc_to_cell.find(cm.cell_shape);
     assert(it != ufc_to_cell.end());
 
     _cell = it->second;

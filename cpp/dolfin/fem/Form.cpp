@@ -64,9 +64,9 @@ Form::Form(const ufc_form& ufc_form,
     _integrals.set_default_domains(*_mesh);
 
   // Create CoordinateMapping
-  _coord_mapping = std::make_shared<fem::CoordinateMapping>(
-      std::shared_ptr<const ufc_coordinate_mapping>(
-          ufc_form.create_coordinate_mapping()));
+  ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
+  _coord_mapping = std::make_shared<fem::CoordinateMapping>(*cmap);
+  std::free(cmap);
 
   // Set coefficient maps
   _coefficient_index_map = ufc_form.coefficient_number_map;
