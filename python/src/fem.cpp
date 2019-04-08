@@ -188,7 +188,7 @@ void fem(py::module& m)
   py::class_<dolfin::fem::CoordinateMapping,
              std::shared_ptr<dolfin::fem::CoordinateMapping>>(
       m, "CoordinateMapping", "Coordinate mapping object")
-      .def(py::init<std::shared_ptr<const ufc_coordinate_mapping>>());
+      .def(py::init<const ufc_coordinate_mapping&>());
 
   // dolfin::fem::SparsityPatternBuilder
   // py::class_<dolfin::fem::SparsityPatternBuilder>(m,
