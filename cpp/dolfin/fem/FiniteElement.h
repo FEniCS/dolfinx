@@ -135,6 +135,13 @@ public:
   extract_sub_element(const std::vector<std::size_t>& component) const;
 
 private:
+  std::string _signature, _family;
+
+  CellType _cell_shape;
+
+  int _tdim, _space_dim, _value_size, _reference_value_size, _value_rank,
+      _degree, _num_sub_elements;
+
   // UFC finite element
   std::shared_ptr<const ufc_finite_element> _ufc_element;
 

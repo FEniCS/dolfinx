@@ -15,7 +15,13 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 FiniteElement::FiniteElement(std::shared_ptr<const ufc_finite_element> element)
-    : _ufc_element(element), _hash(common::hash_local(signature()))
+    : _signature(element->signature), _family(element->family),
+      _tdim(element->topological_dimension),
+      _space_dim(element->space_dimension), _value_size(element->value_size),
+      _reference_value_size(element->reference_value_size),
+      _value_rank(element->value_rank), _degree(element->degree),
+      _num_sub_elements(element->num_sub_elements), _ufc_element(element),
+      _hash(common::hash_local(signature()))
 {
   // Store dof coordinates on reference element
   assert(_ufc_element);
@@ -26,65 +32,41 @@ FiniteElement::FiniteElement(std::shared_ptr<const ufc_finite_element> element)
     throw std::runtime_error(
         "Generated code returned error in tabulate_reference_dof_coordinates");
   }
-}
-//-----------------------------------------------------------------------------
-std::string FiniteElement::signature() const
-{
-  assert(_ufc_element);
-  assert(_ufc_element->signature);
-  return _ufc_element->signature;
-}
-//-----------------------------------------------------------------------------
-CellType FiniteElement::cell_shape() const
-{
-  assert(_ufc_element);
-  const ufc_shape _shape = _ufc_element->cell_shape;
+
+  const ufc_shape _shape = element->cell_shape;
   switch (_shape)
   {
   case interval:
-    return CellType::interval;
+    _cell_shape = CellType::interval;
   case triangle:
-    return CellType::triangle;
+    _cell_shape = CellType::triangle;
   case quadrilateral:
-    return CellType::quadrilateral;
+    _cell_shape = CellType::quadrilateral;
   case tetrahedron:
-    return CellType::tetrahedron;
+    _cell_shape = CellType::tetrahedron;
   case hexahedron:
-    return CellType::hexahedron;
+    _cell_shape = CellType::hexahedron;
   default:
     throw std::runtime_error("Unknown UFC cell type");
-    return CellType::interval;
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::topological_dimension() const
-{
-  assert(_ufc_element);
-  return _ufc_element->topological_dimension;
-}
+std::string FiniteElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::space_dimension() const
-{
-  assert(_ufc_element);
-  return _ufc_element->space_dimension;
-}
+CellType FiniteElement::cell_shape() const { return _cell_shape; }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::value_size() const
-{
-  assert(_ufc_element);
-  return _ufc_element->value_size;
-}
+std::size_t FiniteElement::topological_dimension() const { return _tdim; }
+//-----------------------------------------------------------------------------
+std::size_t FiniteElement::space_dimension() const { return _space_dim; }
+//-----------------------------------------------------------------------------
+std::size_t FiniteElement::value_size() const { return _value_size; }
+//-----------------------------------------------------------------------------
 std::size_t FiniteElement::reference_value_size() const
 {
-  assert(_ufc_element);
-  return _ufc_element->reference_value_size;
+  return _reference_value_size;
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::value_rank() const
-{
-  assert(_ufc_element);
-  return _ufc_element->value_rank;
-}
+std::size_t FiniteElement::value_rank() const { return _value_rank; }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::value_dimension(std::size_t i) const
 {
@@ -92,17 +74,9 @@ std::size_t FiniteElement::value_dimension(std::size_t i) const
   return _ufc_element->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::degree() const
-{
-  assert(_ufc_element);
-  return _ufc_element->degree;
-}
+std::size_t FiniteElement::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::family() const
-{
-  assert(_ufc_element);
-  return _ufc_element->family;
-}
+std::string FiniteElement::family() const { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
     Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
@@ -113,8 +87,10 @@ void FiniteElement::evaluate_reference_basis(
   int ret = _ufc_element->evaluate_reference_basis(reference_values.data(),
                                                    num_points, X.data());
   if (ret == -1)
+  {
     throw std::runtime_error("Generated code returned error "
                              "in evaluate_reference_basis");
+  }
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
@@ -159,7 +135,6 @@ const EigenRowArrayXXd& FiniteElement::dof_reference_coordinates() const
 {
   return _refX;
 }
-
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_values(
     PetscScalar* reference_values,
@@ -176,10 +151,8 @@ void FiniteElement::transform_values(
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::num_sub_elements() const
 {
-  assert(_ufc_element);
-  return _ufc_element->num_sub_elements;
+  return _num_sub_elements;
 }
-
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::hash() const { return _hash; }
 //-----------------------------------------------------------------------------
