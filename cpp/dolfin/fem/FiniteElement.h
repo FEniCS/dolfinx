@@ -6,12 +6,14 @@
 
 #pragma once
 
+#include "ReferenceCellTopology.h"
 #include <dolfin/common/types.h>
 #include <memory>
 #include <petscsys.h>
-#include <ufc.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
+
+struct ufc_finite_element;
 
 namespace dolfin
 {
@@ -30,104 +32,53 @@ public:
   FiniteElement(std::shared_ptr<const ufc_finite_element> element);
 
   /// Destructor
-  virtual ~FiniteElement() {}
+  virtual ~FiniteElement() = default;
 
   //--- Direct wrappers for ufc::finite_element ---
 
   /// Return a string identifying the finite element
   /// @return std::string
-  std::string signature() const
-  {
-    assert(_ufc_element);
-    assert(_ufc_element->signature);
-    return _ufc_element->signature;
-  }
+  std::string signature() const;
 
-  // FIXME: Avoid exposing UFC enum
   /// Return the cell shape
-  /// @return ufc::shape
-  ufc_shape cell_shape() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->cell_shape;
-  }
+  /// @return CellShape
+  CellType cell_shape() const;
 
   /// Return the topological dimension of the cell shape
   /// @return std::size_t
-  std::size_t topological_dimension() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->topological_dimension;
-  }
+  std::size_t topological_dimension() const;
 
   /// Return the dimension of the finite element function space
   /// @return std::size_t
-  std::size_t space_dimension() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->space_dimension;
-  }
+  std::size_t space_dimension() const;
 
   /// Return the value size, e.g. 1 for a scalar function, 2 for a 2D
   /// vector
-  std::size_t value_size() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->value_size;
-  }
+  std::size_t value_size() const;
 
   /// Return the value size, e.g. 1 for a scalar function, 2 for a 2D
   /// vector
-  std::size_t reference_value_size() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->reference_value_size;
-  }
+  std::size_t reference_value_size() const;
 
   /// Return the rank of the value space
-  std::size_t value_rank() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->value_rank;
-  }
+  std::size_t value_rank() const;
 
   /// Return the dimension of the value space for axis i
-  std::size_t value_dimension(std::size_t i) const
-  {
-    assert(_ufc_element);
-    return _ufc_element->value_dimension(i);
-  }
+  std::size_t value_dimension(std::size_t i) const;
 
   // FIXME: Is this well-defined? What does it do on non-simplex
   // elements?
   /// Return the maximum polynomial degree
-  std::size_t degree() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->degree;
-  }
+  std::size_t degree() const;
 
-  /// Return the finite elemeent family
-  std::string family() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->family;
-  }
+  /// Return the finite element family
+  std::string family() const;
 
   /// Evaluate all basis functions at given point in reference cell
   // reference_values[num_points][num_dofs][reference_value_size]
   void evaluate_reference_basis(
       Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
-      const Eigen::Ref<const EigenRowArrayXXd> X) const
-  {
-    assert(_ufc_element);
-    std::size_t num_points = X.rows();
-    int ret = _ufc_element->evaluate_reference_basis(reference_values.data(),
-                                                     num_points, X.data());
-    if (ret == -1)
-      throw std::runtime_error("Generated code returned error "
-                               "in evaluate_reference_basis");
-  }
+      const Eigen::Ref<const EigenRowArrayXXd> X) const;
 
   /// Push basis functions forward to physical element
   void transform_reference_basis(
@@ -136,17 +87,7 @@ public:
       const Eigen::Ref<const EigenRowArrayXXd> X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const EigenArrayXd> detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
-  {
-    assert(_ufc_element);
-    std::size_t num_points = X.rows();
-    int ret = _ufc_element->transform_reference_basis_derivatives(
-        values.data(), 0, num_points, reference_values.data(), X.data(),
-        J.data(), detJ.data(), K.data(), 1);
-    if (ret == -1)
-      throw std::runtime_error("Generated code returned error "
-                               "in transform_reference_basis_derivatives");
-  }
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Push basis function (derivatives) forward to physical element
   void transform_reference_basis_derivatives(
@@ -155,23 +96,13 @@ public:
       const Eigen::Ref<const EigenRowArrayXXd> X,
       const Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
       const Eigen::Ref<const EigenArrayXd> detJ,
-      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
-  {
-    assert(_ufc_element);
-    std::size_t num_points = X.rows();
-    int ret = _ufc_element->transform_reference_basis_derivatives(
-        values.data(), order, num_points, reference_values.data(), X.data(),
-        J.data(), detJ.data(), K.data(), 1);
-    if (ret == -1)
-      throw std::runtime_error("Generated code returned error "
-                               "in transform_reference_basis_derivatives");
-  }
+      const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const;
 
   /// Tabulate the reference coordinates of all dofs on an element
   ///
   /// @return    reference_coordinates (EigenRowArrayXXd)
   ///         The coordinates of all dofs on the reference cell.
-  const EigenRowArrayXXd& dof_reference_coordinates() const { return _refX; }
+  const EigenRowArrayXXd& dof_reference_coordinates() const;
 
   /// Map values of field from physical to reference space which has
   /// been evaluated at points given by dof_reference_coordinates()
@@ -180,26 +111,17 @@ public:
       const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           physical_values,
-      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
-  {
-    assert(_ufc_element);
-    _ufc_element->transform_values(reference_values, physical_values.data(),
-                                   coordinate_dofs.data(), 1, nullptr);
-  }
+      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Return the number of sub elements (for a mixed element)
   /// @return std::size_t
   ///   number of sub-elements
-  std::size_t num_sub_elements() const
-  {
-    assert(_ufc_element);
-    return _ufc_element->num_sub_elements;
-  }
+  std::size_t num_sub_elements() const;
 
   //--- DOLFIN-specific extensions of the interface ---
 
   /// Return simple hash of the signature string
-  std::size_t hash() const { return _hash; }
+  std::size_t hash() const;
 
   /// Create a new finite element for sub element i (for a mixed
   /// element)
@@ -217,7 +139,7 @@ private:
   std::shared_ptr<const ufc_finite_element> _ufc_element;
 
   // Dof coordinates on the reference element
-  EigenRowArrayXXd _refX;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
 
   // Recursively extract sub finite element
   static std::shared_ptr<FiniteElement>

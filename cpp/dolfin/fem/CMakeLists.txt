@@ -26,6 +26,7 @@ set(SOURCES
   assemble_matrix_impl.cpp
   assemble_scalar_impl.cpp
   assemble_vector_impl.cpp
+  CoordinateMapping.cpp
   DirichletBC.cpp
   DiscreteOperators.cpp
   DofMapBuilder.cpp
