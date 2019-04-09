@@ -18,6 +18,7 @@
 #include <dolfin/common/defines.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/ReferenceCellTopology.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
@@ -214,7 +215,8 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   }
   else
   {
-    // spdlog::info("XDMF time series for function \"%s\" not empty. Appending.",
+    // spdlog::info("XDMF time series for function \"%s\" not empty.
+    // Appending.",
     //              function_name.c_str());
   }
 
@@ -1248,7 +1250,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   std::string element_family = u.function_space()->element()->family();
   const std::size_t element_degree = u.function_space()->element()->degree();
-  const ufc_shape ufc_element_cell
+  const CellType element_cell_type
       = u.function_space()->element()->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
@@ -1263,34 +1265,25 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
          {"Q", "Q"},
          {"DQ", "DQ"}};
 
-  const std::map<ufc_shape, std::string> cell_shape_repr
-      = {{interval, "interval"},
-         {triangle, "triangle"},
-         {tetrahedron, "tetrahedron"},
-         {quadrilateral, "quadrilateral"},
-         {hexahedron, "hexahedron"}};
+  const std::map<CellType, std::string> cell_shape_repr
+      = {{CellType::interval, "interval"},
+         {CellType::triangle, "triangle"},
+         {CellType::tetrahedron, "tetrahedron"},
+         {CellType::quadrilateral, "quadrilateral"},
+         {CellType::hexahedron, "hexahedron"}};
 
   // Check that element is supported
   auto const it = family_abbr.find(element_family);
   if (it == family_abbr.end())
-  {
-    // spdlog::error("XDMFFile.cpp", "find element family",
-    //               "Element %s not yet supported", element_family.c_str());
-    throw std::runtime_error("IO Error");
-  }
+    throw std::runtime_error("Element type not supported for XDMF output.");
   element_family = it->second;
 
   // Check that cell shape is supported
-  auto it_shape = cell_shape_repr.find(ufc_element_cell);
+  auto it_shape = cell_shape_repr.find(element_cell_type);
   if (it_shape == cell_shape_repr.end())
-  {
-    // spdlog::error(
-    //     "XDMFFile.cpp", "find element shape",
-    //     "Element shape not yet supported. Currently supported element shapes"
-    //     "are \"interval, triangle, tetrahedron, quadrilateral, hexahedron\"");
-    throw std::runtime_error("IO Error");
-  }
+    throw std::runtime_error("Cell type not supported for XDMF output.");
   const std::string element_cell = it_shape->second;
+
   // Prepare main Attribute for the FiniteElementFunction type
   std::string attr_name;
   if (component.empty())
@@ -1312,8 +1305,8 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   fe_attribute_node.append_attribute("AttributeType")
       = rank_to_string(u.value_rank()).c_str();
 
-  // Prepare and save number of dofs per cell (x_cell_dofs) and
-  // cell dofmaps (cell_dofs)
+  // Prepare and save number of dofs per cell (x_cell_dofs) and cell
+  // dofmaps (cell_dofs)
 
   assert(u.function_space()->dofmap());
   const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
@@ -1409,17 +1402,14 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
                                const mesh::GhostMode ghost_mode) const
 {
-  // Extract parent filepath (required by HDF5 when XDMF stores relative path
-  // of the HDF5 files(s) and the XDMF is not opened from its own directory)
+  // Extract parent filepath (required by HDF5 when XDMF stores relative
+  // path of the HDF5 files(s) and the XDMF is not opened from its own
+  // directory)
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
 
   if (!boost::filesystem::exists(xdmf_filename))
-  {
-    // spdlog::error("XDMFFile.cpp", "open XDMF file",
-    //               "XDMF file \"%s\" does not exist", _filename.c_str());
-    throw std::runtime_error("IO Error");
-  }
+    throw std::runtime_error("Cannot open XDMF file. File does not exists.");
 
   // Load XML doc from file
   pugi::xml_document xml_doc;
@@ -1471,8 +1461,8 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
   else
   {
     // spdlog::error("XDMFFile.cpp", "determine geometric dimension",
-    //               "GeometryType \"%s\" in XDMF file is unknown or unsupported",
-    //               geometry_type.c_str());
+    //               "GeometryType \"%s\" in XDMF file is unknown or
+    //               unsupported", geometry_type.c_str());
     throw std::runtime_error("IO Error");
   }
 
@@ -2046,7 +2036,8 @@ XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
   auto it = xdmf_to_dolfin.find(cell_type);
   if (it == xdmf_to_dolfin.end())
   {
-    // spdlog::error("XDMFFile.cpp", "recognise cell type", "Unknown value \"%s\"",
+    // spdlog::error("XDMFFile.cpp", "recognise cell type", "Unknown value
+    // \"%s\"",
     //               cell_type.c_str());
     throw std::runtime_error("IO Error");
   }
@@ -2554,7 +2545,8 @@ std::string XDMFFile::get_hdf5_filename(std::string xdmf_filename)
   p.replace_extension(".h5");
   if (p.string() == xdmf_filename)
   {
-    // spdlog::error("XDMFile.cpp", "deduce name of HDF5 file from XDMF filename",
+    // spdlog::error("XDMFile.cpp", "deduce name of HDF5 file from XDMF
+    // filename",
     //               "Filename clash. Check XDMF filename");
     throw std::runtime_error("IO Error");
   }
@@ -2647,8 +2639,8 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
         != cell_type_str.first)
     {
       // spdlog::error("XDMFFile.cpp", "add mesh::MeshFunction to XDMF",
-      //               "Incompatible mesh::Mesh type. Try writing the mesh::Mesh "
-      //               "to XDMF first");
+      //               "Incompatible mesh::Mesh type. Try writing the mesh::Mesh
+      //               " "to XDMF first");
       throw std::runtime_error("IO Error");
     }
   }
