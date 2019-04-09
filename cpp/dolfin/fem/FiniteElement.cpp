@@ -164,13 +164,13 @@ std::unique_ptr<FiniteElement>
 FiniteElement::create_sub_element(std::size_t i) const
 {
   std::shared_ptr<ufc_finite_element> ufc_element(_create_sub_element(i), free);
-  return std::make_unique<FiniteElement>(ufc_element);
+  return std::make_unique<FiniteElement>(*ufc_element);
 }
 //-----------------------------------------------------------------------------
 std::unique_ptr<FiniteElement> FiniteElement::create() const
 {
   std::shared_ptr<ufc_finite_element> ufc_element(_create(), free);
-  return std::make_unique<FiniteElement>(ufc_element);
+  return std::make_unique<FiniteElement>(*ufc_element);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(

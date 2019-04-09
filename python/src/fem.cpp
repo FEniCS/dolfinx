@@ -133,7 +133,7 @@ void fem(py::module& m)
   py::class_<dolfin::fem::FiniteElement,
              std::shared_ptr<dolfin::fem::FiniteElement>>(
       m, "FiniteElement", "Finite element object")
-      .def(py::init<const ufc_finite_elemen>&>())
+      .def(py::init<const ufc_finite_element&>())
       .def("num_sub_elements", &dolfin::fem::FiniteElement::num_sub_elements)
       .def("dof_reference_coordinates",
            &dolfin::fem::FiniteElement::dof_reference_coordinates)
