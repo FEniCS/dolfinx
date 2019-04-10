@@ -221,7 +221,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::size_t Mesh::init(std::size_t dim) const
+std::size_t Mesh::init(int dim) const
 {
   // This function is obviously not const since it may potentially
   // compute new connectivity. However, in a sense all connectivity of
@@ -263,7 +263,8 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   // Skip if mesh is empty
   if (num_entities(topology().dim()) == 0)
   {
-    // spdlog::warn("Mesh is empty, unable to create connectivity %d --> %d.", d0,
+    // spdlog::warn("Mesh is empty, unable to create connectivity %d --> %d.",
+    // d0,
     //              d1);
     return;
   }
@@ -280,12 +281,12 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
 void Mesh::init() const
 {
   // Compute all entities
-  for (std::size_t d = 0; d <= topology().dim(); d++)
+  for (int d = 0; d <= topology().dim(); d++)
     init(d);
 
   // Compute all connectivity
-  for (std::size_t d0 = 0; d0 <= topology().dim(); d0++)
-    for (std::size_t d1 = 0; d1 <= topology().dim(); d1++)
+  for (int d0 = 0; d0 <= topology().dim(); d0++)
+    for (int d1 = 0; d1 <= topology().dim(); d1++)
       init(d0, d1);
 }
 //-----------------------------------------------------------------------------

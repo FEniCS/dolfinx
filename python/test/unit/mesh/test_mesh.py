@@ -457,13 +457,6 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
                            == entity_vertices)
 
 
-def test_mesh_topology_reference():
-    """Check that Mesh.topology returns a reference rather
-    than copy"""
-    mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
-    assert mesh.topology.id == mesh.topology.id
-
-
 def test_mesh_topology_lifetime():
     """Check that lifetime of Mesh.topology is bound to
     underlying mesh object"""

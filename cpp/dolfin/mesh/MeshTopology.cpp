@@ -8,7 +8,6 @@
 #include "MeshConnectivity.h"
 #include <dolfin/common/utils.h>
 #include <numeric>
-// #include <spdlog/spdlog.h>
 #include <sstream>
 
 using namespace dolfin;
@@ -16,34 +15,36 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(std::size_t dim)
-    : common::Variable("topology"), _num_entities(dim + 1, 0),
-      _ghost_offset_index(dim + 1, 0), _global_num_entities(dim + 1, 0),
-      _global_indices(dim + 1),
+    : _num_entities(dim + 1, 0), _ghost_offset_index(dim + 1, 0),
+      _global_num_entities(dim + 1, 0), _global_indices(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<MeshConnectivity>>(dim + 1))
-
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::uint32_t MeshTopology::dim() const { return _num_entities.size() - 1; }
+int MeshTopology::dim() const { return _num_entities.size() - 1; }
 //-----------------------------------------------------------------------------
-std::uint32_t MeshTopology::size(std::uint32_t dim) const
+std::int32_t MeshTopology::size(int dim) const
 {
   if (_num_entities.empty())
     return 0;
-
-  assert(dim < _num_entities.size());
-  return _num_entities[dim];
+  else
+  {
+    assert(dim < (int)_num_entities.size());
+    return _num_entities[dim];
+  }
 }
 //-----------------------------------------------------------------------------
-std::uint64_t MeshTopology::size_global(std::uint32_t dim) const
+std::int64_t MeshTopology::size_global(int dim) const
 {
   if (_global_num_entities.empty())
     return 0;
-
-  assert(dim < _global_num_entities.size());
-  return _global_num_entities[dim];
+  else
+  {
+    assert(dim < (int)_global_num_entities.size());
+    return _global_num_entities[dim];
+  }
 }
 //-----------------------------------------------------------------------------
 /*
@@ -57,10 +58,10 @@ std::uint32_t MeshTopology::ghost_offset(std::uint32_t dim) const
 }
 */
 //-----------------------------------------------------------------------------
-void MeshTopology::clear(std::size_t d0, std::size_t d1)
+void MeshTopology::clear(int d0, int d1)
 {
-  assert(d0 < _connectivity.size());
-  assert(d1 < _connectivity[d0].size());
+  assert(d0 < (int)_connectivity.size());
+  assert(d1 < (int)_connectivity[d0].size());
   _connectivity[d0][d1].reset();
 }
 //-----------------------------------------------------------------------------
@@ -91,22 +92,21 @@ void MeshTopology::init_global_indices(std::size_t dim, std::int64_t size)
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::uint32_t>>&
-MeshTopology::shared_entities(std::uint32_t dim)
+MeshTopology::shared_entities(int dim)
 {
   assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
 const std::map<std::int32_t, std::set<std::uint32_t>>&
-MeshTopology::shared_entities(std::uint32_t dim) const
+MeshTopology::shared_entities(int dim) const
 {
   auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
   {
-    // spdlog::error("MeshTopology.cpp", "get shared mesh entities",
-    //               "Shared mesh entities have not been computed for dim %d",
-    //               dim);
-    throw std::runtime_error("Not computed");
+    throw std::runtime_error(
+        "Shared mesh entities have not been computed for dim "
+        + std::to_string(dim));
   }
   return e->second;
 }

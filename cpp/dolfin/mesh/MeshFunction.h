@@ -91,9 +91,9 @@ public:
 
   /// Return topological dimension
   ///
-  /// @return std::size_t
+  /// @return int
   ///         The dimension.
-  std::size_t dim() const;
+  int dim() const;
 
   /// Return size (number of entities)
   ///
@@ -186,7 +186,7 @@ private:
   std::shared_ptr<const Mesh> _mesh;
 
   // Topological dimension
-  std::size_t _dim;
+  int _dim;
 };
 
 template <>
@@ -279,7 +279,7 @@ std::shared_ptr<const Mesh> MeshFunction<T>::mesh() const
 }
 //---------------------------------------------------------------------------
 template <typename T>
-std::size_t MeshFunction<T>::dim() const
+int MeshFunction<T>::dim() const
 {
   return _dim;
 }

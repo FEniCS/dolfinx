@@ -220,7 +220,7 @@ void DofMap::check_provided_entities(const ElementDofLayout& dofmap,
                                      const mesh::Mesh& mesh)
 {
   // Check that we have all mesh entities
-  for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
+  for (int d = 0; d <= mesh.topology().dim(); ++d)
   {
     if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
     {

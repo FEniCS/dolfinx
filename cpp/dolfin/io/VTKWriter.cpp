@@ -77,8 +77,8 @@ void VTKWriter::write_cell_data(const function::Function& u,
     if (!(data_dim == 2 || data_dim == 3))
     {
       // spdlog::error("VTKWriter.cpp", "write data to VTK file",
-      //               "Don't know how to handle vector function with dimension "
-      //               "other than 2 or 3");
+      //               "Don't know how to handle vector function with dimension
+      //               " "other than 2 or 3");
       throw std::runtime_error("Invalid dimension");
     }
     fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
@@ -90,8 +90,8 @@ void VTKWriter::write_cell_data(const function::Function& u,
     if (!(data_dim == 4 || data_dim == 9))
     {
       // spdlog::error("VTKFile.cpp", "write data to VTK file",
-      //               "Don't know how to handle tensor function with dimension "
-      //               "other than 4 or 9");
+      //               "Don't know how to handle tensor function with dimension
+      //               " "other than 4 or 9");
       throw std::runtime_error("Invalid dimension");
     }
     fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
@@ -141,8 +141,7 @@ std::string VTKWriter::ascii_cell_data(const mesh::Mesh& mesh,
   ss << std::scientific;
   ss << std::setprecision(16);
   std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
-  for (std::uint32_t i = 0;
-       i != mesh.topology().ghost_offset(mesh.topology().dim()); ++i)
+  for (int i = 0; i < mesh.topology().ghost_offset(mesh.topology().dim()); ++i)
   {
     if (rank == 1 && data_dim == 2)
     {
