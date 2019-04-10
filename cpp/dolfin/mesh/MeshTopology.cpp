@@ -15,12 +15,10 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 MeshTopology::MeshTopology(std::size_t dim)
-    : common::Variable("topology"), _num_entities(dim + 1, 0),
-      _ghost_offset_index(dim + 1, 0), _global_num_entities(dim + 1, 0),
-      _global_indices(dim + 1),
+    : _num_entities(dim + 1, 0), _ghost_offset_index(dim + 1, 0),
+      _global_num_entities(dim + 1, 0), _global_indices(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<MeshConnectivity>>(dim + 1))
-
 {
   // Do nothing
 }

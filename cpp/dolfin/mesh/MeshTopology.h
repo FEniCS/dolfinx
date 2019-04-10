@@ -8,7 +8,6 @@
 
 #include "MeshConnectivity.h"
 #include <cstdint>
-#include <dolfin/common/Variable.h>
 #include <map>
 #include <memory>
 #include <set>
@@ -30,7 +29,7 @@ namespace mesh
 /// i), where dim is the topological dimension and i is the index of
 /// the entity within that topological dimension.
 
-class MeshTopology : public common::Variable
+class MeshTopology
 {
 public:
   /// Create empty mesh topology

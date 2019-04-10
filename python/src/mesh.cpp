@@ -113,9 +113,8 @@ void mesh(py::module& m)
 
   // dolfin::mesh::MeshTopology class
   py::class_<dolfin::mesh::MeshTopology,
-             std::shared_ptr<dolfin::mesh::MeshTopology>,
-             dolfin::common::Variable>(m, "MeshTopology",
-                                       "DOLFIN MeshTopology object")
+             std::shared_ptr<dolfin::mesh::MeshTopology>>(
+      m, "MeshTopology", "DOLFIN MeshTopology object")
       .def_property_readonly("dim", &dolfin::mesh::MeshTopology::dim,
                              "Topological dimension")
       .def("init", py::overload_cast<std::size_t, std::int32_t, std::int64_t>(
