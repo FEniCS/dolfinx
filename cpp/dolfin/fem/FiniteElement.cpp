@@ -14,107 +14,98 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(std::shared_ptr<const ufc_finite_element> element)
-    : _ufc_element(element), _hash(common::hash_local(signature()))
+FiniteElement::FiniteElement(const ufc_finite_element& element)
+    : _signature(element.signature), _family(element.family),
+      _tdim(element.topological_dimension), _space_dim(element.space_dimension),
+      _value_size(element.value_size),
+      _reference_value_size(element.reference_value_size),
+      _value_rank(element.value_rank), _degree(element.degree),
+      _num_sub_elements(element.num_sub_elements),
+      _hash(common::hash_local(signature())),
+      _value_dimension(element.value_dimension),
+      _evaluate_reference_basis(element.evaluate_reference_basis),
+      _evaluate_reference_basis_derivatives(
+          element.evaluate_reference_basis_derivatives),
+      _transform_reference_basis_derivatives(
+          element.transform_reference_basis_derivatives),
+      _transform_values(element.transform_values),
+      _create_sub_element(element.create_sub_element), _create(element.create)
 {
   // Store dof coordinates on reference element
-  assert(_ufc_element);
   _refX.resize(this->space_dimension(), this->topological_dimension());
-  int ret = _ufc_element->tabulate_reference_dof_coordinates(_refX.data());
+  // assert(_tabulate_reference_dof_coordinates);
+  // int ret = _tabulate_reference_dof_coordinates(_refX.data());
+  assert(element.tabulate_reference_dof_coordinates);
+  int ret = element.tabulate_reference_dof_coordinates(_refX.data());
   if (ret == -1)
   {
     throw std::runtime_error(
         "Generated code returned error in tabulate_reference_dof_coordinates");
   }
-}
-//-----------------------------------------------------------------------------
-std::string FiniteElement::signature() const
-{
-  assert(_ufc_element);
-  assert(_ufc_element->signature);
-  return _ufc_element->signature;
-}
-//-----------------------------------------------------------------------------
-CellType FiniteElement::cell_shape() const
-{
-  assert(_ufc_element);
-  const ufc_shape _shape = _ufc_element->cell_shape;
+
+  const ufc_shape _shape = element.cell_shape;
   switch (_shape)
   {
   case interval:
-    return CellType::interval;
+    _cell_shape = CellType::interval;
+    break;
   case triangle:
-    return CellType::triangle;
+    _cell_shape = CellType::triangle;
+    break;
   case quadrilateral:
-    return CellType::quadrilateral;
+    _cell_shape = CellType::quadrilateral;
+    break;
   case tetrahedron:
-    return CellType::tetrahedron;
+    _cell_shape = CellType::tetrahedron;
+    break;
   case hexahedron:
-    return CellType::hexahedron;
+    _cell_shape = CellType::hexahedron;
+    break;
   default:
     throw std::runtime_error("Unknown UFC cell type");
-    return CellType::interval;
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::topological_dimension() const
-{
-  assert(_ufc_element);
-  return _ufc_element->topological_dimension;
-}
+std::string FiniteElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::space_dimension() const
-{
-  assert(_ufc_element);
-  return _ufc_element->space_dimension;
-}
+CellType FiniteElement::cell_shape() const { return _cell_shape; }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::value_size() const
-{
-  assert(_ufc_element);
-  return _ufc_element->value_size;
-}
+std::size_t FiniteElement::topological_dimension() const { return _tdim; }
+//-----------------------------------------------------------------------------
+std::size_t FiniteElement::space_dimension() const { return _space_dim; }
+//-----------------------------------------------------------------------------
+std::size_t FiniteElement::value_size() const { return _value_size; }
+//-----------------------------------------------------------------------------
 std::size_t FiniteElement::reference_value_size() const
 {
-  assert(_ufc_element);
-  return _ufc_element->reference_value_size;
+  return _reference_value_size;
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::value_rank() const
-{
-  assert(_ufc_element);
-  return _ufc_element->value_rank;
-}
+std::size_t FiniteElement::value_rank() const { return _value_rank; }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::value_dimension(std::size_t i) const
 {
-  assert(_ufc_element);
-  return _ufc_element->value_dimension(i);
+  assert(_value_dimension);
+  return _value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::degree() const
-{
-  assert(_ufc_element);
-  return _ufc_element->degree;
-}
+std::size_t FiniteElement::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
-std::string FiniteElement::family() const
-{
-  assert(_ufc_element);
-  return _ufc_element->family;
-}
+std::string FiniteElement::family() const { return _family; }
 //-----------------------------------------------------------------------------
 void FiniteElement::evaluate_reference_basis(
     Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
     const Eigen::Ref<const EigenRowArrayXXd> X) const
 {
-  assert(_ufc_element);
   std::size_t num_points = X.rows();
-  int ret = _ufc_element->evaluate_reference_basis(reference_values.data(),
-                                                   num_points, X.data());
+  assert( _evaluate_reference_basis);
+  int ret = _evaluate_reference_basis(reference_values.data(), num_points,
+                                      X.data());
   if (ret == -1)
+  {
     throw std::runtime_error("Generated code returned error "
                              "in evaluate_reference_basis");
+  }
 }
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis(
@@ -125,16 +116,17 @@ void FiniteElement::transform_reference_basis(
     const Eigen::Ref<const EigenArrayXd> detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
-  assert(_ufc_element);
   std::size_t num_points = X.rows();
-  int ret = _ufc_element->transform_reference_basis_derivatives(
+  assert(_transform_reference_basis_derivatives);
+  int ret = _transform_reference_basis_derivatives(
       values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
       detJ.data(), K.data(), 1);
   if (ret == -1)
+  {
     throw std::runtime_error("Generated code returned error "
                              "in transform_reference_basis_derivatives");
+  }
 }
-
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_reference_basis_derivatives(
     Eigen::Tensor<double, 4, Eigen::RowMajor>& values, std::size_t order,
@@ -144,22 +136,22 @@ void FiniteElement::transform_reference_basis_derivatives(
     const Eigen::Ref<const EigenArrayXd> detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
-  assert(_ufc_element);
   std::size_t num_points = X.rows();
-  int ret = _ufc_element->transform_reference_basis_derivatives(
+  assert(_transform_reference_basis_derivatives);
+  int ret = _transform_reference_basis_derivatives(
       values.data(), order, num_points, reference_values.data(), X.data(),
       J.data(), detJ.data(), K.data(), 1);
   if (ret == -1)
+  {
     throw std::runtime_error("Generated code returned error "
                              "in transform_reference_basis_derivatives");
+  }
 }
-
 //-----------------------------------------------------------------------------
 const EigenRowArrayXXd& FiniteElement::dof_reference_coordinates() const
 {
   return _refX;
 }
-
 //-----------------------------------------------------------------------------
 void FiniteElement::transform_values(
     PetscScalar* reference_values,
@@ -168,35 +160,32 @@ void FiniteElement::transform_values(
         physical_values,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
-  assert(_ufc_element);
-  _ufc_element->transform_values(reference_values, physical_values.data(),
-                                 coordinate_dofs.data(), 1, nullptr);
+  assert(_transform_values);
+  _transform_values(reference_values, physical_values.data(),
+                    coordinate_dofs.data(), 1, nullptr);
 }
 
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::num_sub_elements() const
 {
-  assert(_ufc_element);
-  return _ufc_element->num_sub_elements;
+  return _num_sub_elements;
 }
-
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::hash() const { return _hash; }
 //-----------------------------------------------------------------------------
 std::unique_ptr<FiniteElement>
 FiniteElement::create_sub_element(std::size_t i) const
 {
-  assert(_ufc_element);
-  std::shared_ptr<ufc_finite_element> ufc_element(
-      _ufc_element->create_sub_element(i), free);
-  return std::make_unique<FiniteElement>(ufc_element);
+  assert(_create_sub_element);
+  std::shared_ptr<ufc_finite_element> ufc_element(_create_sub_element(i), free);
+  return std::make_unique<FiniteElement>(*ufc_element);
 }
 //-----------------------------------------------------------------------------
 std::unique_ptr<FiniteElement> FiniteElement::create() const
 {
-  assert(_ufc_element);
-  std::shared_ptr<ufc_finite_element> ufc_element(_ufc_element->create(), free);
-  return std::make_unique<FiniteElement>(ufc_element);
+  assert(_create);
+  std::shared_ptr<ufc_finite_element> ufc_element(_create(), free);
+  return std::make_unique<FiniteElement>(*ufc_element);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(

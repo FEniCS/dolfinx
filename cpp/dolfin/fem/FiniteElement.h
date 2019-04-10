@@ -8,11 +8,13 @@
 
 #include "ReferenceCellTopology.h"
 #include <dolfin/common/types.h>
+#include <functional>
 #include <memory>
 #include <petscsys.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 
+struct ufc_coordinate_mapping;
 struct ufc_finite_element;
 
 namespace dolfin
@@ -29,7 +31,7 @@ public:
   /// Create finite element from UFC finite element (data may be shared)
   /// @param element (ufc::finite_element)
   ///  UFC finite element
-  FiniteElement(std::shared_ptr<const ufc_finite_element> element);
+  FiniteElement(const ufc_finite_element& element);
 
   /// Destructor
   virtual ~FiniteElement() = default;
@@ -135,8 +137,12 @@ public:
   extract_sub_element(const std::vector<std::size_t>& component) const;
 
 private:
-  // UFC finite element
-  std::shared_ptr<const ufc_finite_element> _ufc_element;
+  std::string _signature, _family;
+
+  CellType _cell_shape;
+
+  int _tdim, _space_dim, _value_size, _reference_value_size, _value_rank,
+      _degree, _num_sub_elements;
 
   // Dof coordinates on the reference element
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
@@ -148,6 +154,20 @@ private:
 
   // Simple hash of the signature string
   std::size_t _hash;
+
+  std::function<int(int)> _value_dimension;
+  std::function<int(double*, int, const double*)> _evaluate_reference_basis;
+  std::function<int(double*, int, int, const double*)>
+      _evaluate_reference_basis_derivatives;
+  std::function<int(double*, int, int, const double*, const double*,
+                    const double*, const double*, const double*, int)>
+      _transform_reference_basis_derivatives;
+  std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*, int,
+                    const ufc_coordinate_mapping*)>
+      _transform_values;
+
+  std::function<ufc_finite_element*(int i)> _create_sub_element;
+  std::function<ufc_finite_element*()> _create;
 };
 } // namespace fem
 } // namespace dolfin
