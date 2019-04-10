@@ -59,13 +59,14 @@ void order_simplex(
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
   // const MeshTopology& topology = cell.mesh().topology();
-  // const int tdim = topology.dim();
+  const int tdim = topology.dim();
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   std::shared_ptr<const MeshConnectivity> connect_1_0
       = topology.connectivity(1, 0);
-  if (connect_1_0)
+  if (connect_1_0 and !connect_1_0->empty())
   {
+    std::cout << "Sorting vertices on edges: " << num_edges << std::endl;
     // assert(!topology(tdim, 1).empty());
 
     // Sort vertices on each edge
@@ -81,8 +82,9 @@ void order_simplex(
   // Sort local vertices on faces in ascending order, connectivity 2 - 0
   std::shared_ptr<const MeshConnectivity> connect_2_0
       = topology.connectivity(2, 0);
-  if (connect_2_0)
+  if (connect_2_0 and !connect_2_0->empty())
   {
+    // std::cout << "Sorting vertices on faces: " << num_faces << std::endl;
     // assert(!topology(3, 2).empty());
 
     // Sort vertices on each facet
@@ -99,7 +101,7 @@ void order_simplex(
   // connectivity 2 - 1
   std::shared_ptr<const MeshConnectivity> connect_2_1
       = topology.connectivity(2, 1);
-  if (connect_2_1)
+  if (connect_2_1 and !connect_2_1->empty())
   {
     // dolfin_assert(!topology(3, 2).empty());
     // dolfin_assert(!topology(2, 0).empty());
@@ -143,10 +145,13 @@ void order_simplex(
     }
   }
 
+  if (tdim < 3)
+    return;
+
   // Sort local vertices on cell in ascending order, connectivity 3 - 0
   std::shared_ptr<const MeshConnectivity> connect_3_0
       = topology.connectivity(3, 0);
-  if (connect_3_0)
+  if (connect_3_0 and !connect_3_0->empty())
   {
     std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
     sort_entities(4, cell_vertices, local_to_global_vertex_indices);
@@ -156,7 +161,7 @@ void order_simplex(
   // connectivity 3-1
   std::shared_ptr<const MeshConnectivity> connect_3_1
       = topology.connectivity(3, 1);
-  if (connect_3_1)
+  if (connect_3_1 and !connect_3_1->empty())
   {
     // assert(!topology(1, 0).empty());
 
@@ -199,7 +204,7 @@ void order_simplex(
   // - 2
   std::shared_ptr<const MeshConnectivity> connect_3_2
       = topology.connectivity(3, 2);
-  if (connect_3_2)
+  if (connect_3_2 and !connect_3_2->empty())
   {
     // assert(!topology(2, 0).empty());
 

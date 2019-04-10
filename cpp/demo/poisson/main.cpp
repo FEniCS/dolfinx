@@ -91,6 +91,7 @@
 #include "poisson.h"
 #include <cfloat>
 #include <dolfin.h>
+#include <dolfin/mesh/MeshOrdering.h>
 
 using namespace dolfin;
 
@@ -176,6 +177,9 @@ int main(int argc, char* argv[])
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
       mesh::GhostMode::none));
+
+
+  mesh::MeshOrdering::order(*mesh);
 
   ufc_function_space* space = poisson_functionspace_create();
   ufc_dofmap* ufc_map = space->create_dofmap();
