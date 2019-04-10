@@ -51,27 +51,29 @@ public:
   MeshTopology& operator=(const MeshTopology& topology) = default;
 
   /// Return topological dimension
-  std::uint32_t dim() const;
+  std::int32_t dim() const;
 
   /// Return number of entities for given dimension (local to process)
-  std::uint32_t size(std::uint32_t dim) const;
+  std::int32_t size(int dim) const;
 
   /// Return global number of entities for given dimension
-  std::uint64_t size_global(std::uint32_t dim) const;
+  std::int64_t size_global(int dim) const;
 
   /// Return number of regular (non-ghost) entities or equivalently,
   /// the offset of where ghost entities begin
-  inline std::uint32_t ghost_offset(std::uint32_t dim) const
+  inline std::uint32_t ghost_offset(int dim) const
   {
     if (_ghost_offset_index.empty())
       return 0;
-
-    assert(dim < _ghost_offset_index.size());
-    return _ghost_offset_index[dim];
+    else
+    {
+      assert(dim < _ghost_offset_index.size());
+      return _ghost_offset_index[dim];
+    }
   }
 
   /// Clear data for given pair of topological dimensions
-  void clear(std::size_t d0, std::size_t d1);
+  void clear(int d0, int d1);
 
   /// Set number of local entities (local_size) and global entities
   /// (global_size) for given topological dimension dim
