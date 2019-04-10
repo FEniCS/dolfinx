@@ -84,7 +84,7 @@ public:
 
   /// Write Mesh of given cell dimension to file in a format
   /// suitable for re-reading
-  void write(const mesh::Mesh& mesh, const std::size_t cell_dim,
+  void write(const mesh::Mesh& mesh, const int cell_dim,
              const std::string name);
 
   /// Write function::Function to file in a format suitable for re-reading

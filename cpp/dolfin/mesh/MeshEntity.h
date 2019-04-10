@@ -91,7 +91,7 @@ public:
   ///
   /// @return     std::size_t
   ///         The dimension.
-  inline std::size_t dim() const { return _dim; }
+  inline int dim() const { return _dim; }
 
   /// Return index of mesh entity
   ///
@@ -117,13 +117,13 @@ public:
   /// Return local number of incident mesh entities of given
   /// topological dimension
   ///
-  /// @param     dim (std::size_t)
+  /// @param     dim (int)
   ///         The topological dimension.
   ///
   /// @return     std::size_t
   /// The number of local incident MeshEntity objects of given
   /// dimension.
-  inline std::size_t num_entities(std::size_t dim) const
+  inline std::size_t num_entities(int dim) const
   {
     if (dim == _dim)
       return 1;
@@ -137,13 +137,13 @@ public:
   /// Return global number of incident mesh entities of given
   /// topological dimension
   ///
-  /// @param     dim (std::size_t)
+  /// @param     dim (int)
   ///         The topological dimension.
   ///
   /// @return     std::size_t
   ///         The number of global incident MeshEntity objects of given
   ///         dimension.
-  std::size_t num_global_entities(std::size_t dim) const
+  std::size_t num_global_entities(int dim) const
   {
     if (dim == _dim)
       return 1;
@@ -163,7 +163,7 @@ public:
   ///
   /// @return     std::size_t
   ///         The index for incident mesh entities of given dimension.
-  const std::int32_t* entities(std::size_t dim) const
+  const std::int32_t* entities(int dim) const
   {
     if (dim == _dim)
       return &_local_index;
@@ -268,7 +268,7 @@ protected:
   Mesh const* _mesh;
 
   // Topological dimension
-  std::uint32_t _dim;
+  int _dim;
 
   // Local index of entity within topological dimension
   std::int32_t _local_index;

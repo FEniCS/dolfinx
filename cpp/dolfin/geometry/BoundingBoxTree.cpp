@@ -36,13 +36,13 @@ bool is_leaf(const BoundingBoxTree::BBox& bbox, unsigned int node)
 BoundingBoxTree::BoundingBoxTree(
     const std::vector<double>& leaf_bboxes,
     const std::vector<unsigned int>::iterator& begin,
-    const std::vector<unsigned int>::iterator& end, std::size_t gdim)
+    const std::vector<unsigned int>::iterator& end, int gdim)
     : _tdim(0), _gdim(gdim)
 {
   _build_from_leaf(leaf_bboxes, begin, end);
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
+BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
     : _tdim(tdim), _gdim(mesh.topology().dim())
 {
   // Check dimension
@@ -99,7 +99,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim)
 }
 //-----------------------------------------------------------------------------
 BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points,
-                                 std::size_t gdim)
+                                 int gdim)
     : _tdim(0), _gdim(gdim)
 {
   // Create leaf partition (to be sorted)
@@ -659,7 +659,7 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox_of_entity(double* b,
                                              const mesh::MeshEntity& entity,
-                                             std::size_t gdim)
+                                             int gdim)
 {
   // Get bounding box coordinates
   double* xmin = b;
@@ -667,21 +667,21 @@ void BoundingBoxTree::compute_bbox_of_entity(double* b,
 
   // Get mesh entity data
   const mesh::MeshGeometry& geometry = entity.mesh().geometry();
-  const std::size_t num_vertices = entity.num_entities(0);
+  const int num_vertices = entity.num_entities(0);
   const std::int32_t* vertices = entity.entities(0);
   assert(num_vertices >= 2);
 
   // Get coordinates for first vertex
   const Eigen::Ref<const EigenVectorXd> x = geometry.x(vertices[0]);
-  for (std::size_t j = 0; j < gdim; ++j)
+  for (int j = 0; j < gdim; ++j)
     xmin[j] = xmax[j] = x[j];
 
   // Compute min and max over remaining vertices
-  for (unsigned int i = 1; i < num_vertices; ++i)
+  for (int i = 1; i < num_vertices; ++i)
   {
     // const double* x = geometry.x(vertices[i]);
     const Eigen::Ref<const EigenVectorXd> x = geometry.x(vertices[i]);
-    for (std::size_t j = 0; j < gdim; ++j)
+    for (int j = 0; j < gdim; ++j)
     {
       xmin[j] = std::min(xmin[j], x[j]);
       xmax[j] = std::max(xmax[j], x[j]);
@@ -737,7 +737,7 @@ void BoundingBoxTree::sort_bboxes(
     std::size_t axis, const std::vector<double>& leaf_bboxes,
     const std::vector<unsigned int>::iterator& begin,
     const std::vector<unsigned int>::iterator& middle,
-    const std::vector<unsigned int>::iterator& end, std::size_t gdim)
+    const std::vector<unsigned int>::iterator& end, int gdim)
 {
   // Comparison lambda function with capture
   auto cmp = [& dim = gdim, &leaf_bboxes, &axis](unsigned int i,
@@ -753,12 +753,12 @@ void BoundingBoxTree::sort_bboxes(
 void BoundingBoxTree::compute_bbox_of_points(
     double* bbox, std::size_t& axis, const std::vector<Point>& points,
     const std::vector<unsigned int>::iterator& begin,
-    const std::vector<unsigned int>::iterator& end, std::size_t gdim)
+    const std::vector<unsigned int>::iterator& end, int gdim)
 {
   // Get coordinates for first point
   auto it = begin;
   const double* p = points[*it].coordinates();
-  for (unsigned int i = 0; i != gdim; ++i)
+  for (int i = 0; i < gdim; ++i)
   {
     bbox[i] = p[i];
     bbox[i + gdim] = p[i];
@@ -768,7 +768,7 @@ void BoundingBoxTree::compute_bbox_of_points(
   for (; it != end; ++it)
   {
     const double* p = points[*it].coordinates();
-    for (unsigned int i = 0; i != gdim; ++i)
+    for (int i = 0; i < gdim; ++i)
     {
       bbox[i] = std::min(p[i], bbox[i]);
       bbox[i + gdim] = std::max(p[i], bbox[i + gdim]);
@@ -778,18 +778,20 @@ void BoundingBoxTree::compute_bbox_of_points(
   // Compute longest axis
   axis = 0;
   double max_axis = bbox[gdim] - bbox[0];
-  for (unsigned int i = 1; i != gdim; ++i)
+  for (int i = 1; i < gdim; ++i)
+  {
     if ((bbox[gdim + i] - bbox[i]) > max_axis)
     {
       max_axis = bbox[gdim + i] - bbox[i];
       axis = i;
     }
+  }
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox_of_bboxes(
     double* bbox, std::size_t& axis, const std::vector<double>& leaf_bboxes,
     const std::vector<unsigned int>::iterator& begin,
-    const std::vector<unsigned int>::iterator& end, std::size_t gdim)
+    const std::vector<unsigned int>::iterator& end, int gdim)
 {
   // Get coordinates for first box
   auto it = begin;
@@ -800,9 +802,9 @@ void BoundingBoxTree::compute_bbox_of_bboxes(
   for (; it != end; ++it)
   {
     const double* b = leaf_bboxes.data() + 2 * gdim * (*it);
-    for (unsigned int i = 0; i != gdim; ++i)
+    for (int i = 0; i < gdim; ++i)
       bbox[i] = std::min(bbox[i], b[i]);
-    for (unsigned int i = gdim; i != 2 * gdim; ++i)
+    for (int i = gdim; i < 2 * gdim; ++i)
       bbox[i] = std::max(bbox[i], b[i]);
   }
 
@@ -838,7 +840,7 @@ double BoundingBoxTree::compute_squared_distance_point(const double* x,
 {
   const double* p = _bbox_coordinates.data() + 2 * _gdim * node;
   double d = 0.0;
-  for (unsigned int i = 0; i != _gdim; ++i)
+  for (int i = 0; i < _gdim; ++i)
     d += (x[i] - p[i]) * (x[i] - p[i]);
 
   return d;
@@ -855,12 +857,12 @@ double BoundingBoxTree::compute_squared_distance_bbox(const double* x,
   const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
   double r2 = 0.0;
 
-  for (unsigned int i = 0; i != _gdim; ++i)
+  for (int i = 0; i < _gdim; ++i)
   {
     if (x[i] < b[i])
       r2 += (x[i] - b[i]) * (x[i] - b[i]);
   }
-  for (unsigned int i = 0; i != _gdim; ++i)
+  for (int i = 0; i < _gdim; ++i)
   {
     if (x[i] > b[i + _gdim])
       r2 += (x[i] - b[i + _gdim]) * (x[i] - b[i + _gdim]);
@@ -873,7 +875,7 @@ bool BoundingBoxTree::bbox_in_bbox(const double* a, unsigned int node,
                                    double rtol) const
 {
   const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
-  for (unsigned int i = 0; i != _gdim; ++i)
+  for (int i = 0; i < _gdim; ++i)
   {
     const double eps = rtol * (b[i + _gdim] - b[i]);
     if (b[i] - eps > a[i + _gdim] or a[i] > b[i + _gdim] + eps)
@@ -886,7 +888,7 @@ bool BoundingBoxTree::point_in_bbox(const double* x, const unsigned int node,
                                     double rtol) const
 {
   const double* b = _bbox_coordinates.data() + 2 * _gdim * node;
-  for (unsigned int i = 0; i != _gdim; ++i)
+  for (int i = 0; i < _gdim; ++i)
   {
     const double eps = rtol * (b[i + _gdim] - b[i]);
     if (b[i] - eps > x[i] or x[i] > b[i + _gdim] + eps)

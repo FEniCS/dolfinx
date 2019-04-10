@@ -113,9 +113,8 @@ void mesh(py::module& m)
 
   // dolfin::mesh::MeshTopology class
   py::class_<dolfin::mesh::MeshTopology,
-             std::shared_ptr<dolfin::mesh::MeshTopology>,
-             dolfin::common::Variable>(m, "MeshTopology",
-                                       "DOLFIN MeshTopology object")
+             std::shared_ptr<dolfin::mesh::MeshTopology>>(
+      m, "MeshTopology", "DOLFIN MeshTopology object")
       .def_property_readonly("dim", &dolfin::mesh::MeshTopology::dim,
                              "Topological dimension")
       .def("init", py::overload_cast<std::size_t, std::int32_t, std::int64_t>(
@@ -141,8 +140,8 @@ void mesh(py::module& m)
            })
       .def("have_shared_entities",
            &dolfin::mesh::MeshTopology::have_shared_entities)
-      .def("shared_entities", py::overload_cast<std::uint32_t>(
-                                  &dolfin::mesh::MeshTopology::shared_entities))
+      .def("shared_entities",
+           py::overload_cast<int>(&dolfin::mesh::MeshTopology::shared_entities))
       .def("str", &dolfin::mesh::MeshTopology::str);
 
   // dolfin::mesh::Mesh
@@ -177,8 +176,8 @@ void mesh(py::module& m)
       .def("hmin", &dolfin::mesh::Mesh::hmin)
       .def("init_global", &dolfin::mesh::Mesh::init_global)
       .def("init", py::overload_cast<>(&dolfin::mesh::Mesh::init, py::const_))
-      .def("init", py::overload_cast<std::size_t>(&dolfin::mesh::Mesh::init,
-                                                  py::const_))
+      .def("init",
+           py::overload_cast<int>(&dolfin::mesh::Mesh::init, py::const_))
       .def("init", py::overload_cast<std::size_t, std::size_t>(
                        &dolfin::mesh::Mesh::init, py::const_))
       .def("mpi_comm",

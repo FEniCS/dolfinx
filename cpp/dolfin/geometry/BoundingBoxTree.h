@@ -35,14 +35,14 @@ private:
   BoundingBoxTree(const std::vector<double>& leaf_bboxes,
                   const std::vector<unsigned int>::iterator& begin,
                   const std::vector<unsigned int>::iterator& end,
-                  std::size_t gdim);
+                  int gdim);
 
 public:
   /// Constructor
-  BoundingBoxTree(const mesh::Mesh& mesh, std::size_t tdim);
+  BoundingBoxTree(const mesh::Mesh& mesh, int tdim);
 
   /// Constructor
-  BoundingBoxTree(const std::vector<Point>& points, std::size_t gdim);
+  BoundingBoxTree(const std::vector<Point>& points, int gdim);
 
   /// Move constructor
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
@@ -186,7 +186,7 @@ private:
 
   // Compute bounding box of mesh entity
   static void compute_bbox_of_entity(double* b, const mesh::MeshEntity& entity,
-                                     std::size_t gdim);
+                                     int gdim);
 
   // Sort points along given axis
   static void sort_points(std::size_t axis, const std::vector<Point>& points,
@@ -214,9 +214,9 @@ private:
 
     // Add point coordinates (twice)
     const double* x = point.coordinates();
-    for (std::size_t i = 0; i < _gdim; ++i)
+    for (int i = 0; i < _gdim; ++i)
       _bbox_coordinates.push_back(x[i]);
-    for (std::size_t i = 0; i < _gdim; ++i)
+    for (int i = 0; i < _gdim; ++i)
       _bbox_coordinates.push_back(x[i]);
 
     return _bboxes.size() - 1;
@@ -248,13 +248,13 @@ private:
   static void compute_bbox_of_bboxes(
       double* bbox, std::size_t& axis, const std::vector<double>& leaf_bboxes,
       const std::vector<unsigned int>::iterator& begin,
-      const std::vector<unsigned int>::iterator& end, std::size_t gdim);
+      const std::vector<unsigned int>::iterator& end, int gdim);
 
   // Compute bounding box of points
   static void compute_bbox_of_points(
       double* bbox, std::size_t& axis, const std::vector<Point>& points,
       const std::vector<unsigned int>::iterator& begin,
-      const std::vector<unsigned int>::iterator& end, std::size_t gdim);
+      const std::vector<unsigned int>::iterator& end, int gdim);
 
   // Sort leaf bounding boxes along given axis
   static void sort_bboxes(std::size_t axis,
@@ -262,7 +262,7 @@ private:
                           const std::vector<unsigned int>::iterator& begin,
                           const std::vector<unsigned int>::iterator& middle,
                           const std::vector<unsigned int>::iterator& end,
-                          std::size_t gdim);
+                          int gdim);
 
   // Print out recursively, for debugging
   void tree_print(std::stringstream& s, unsigned int i);
@@ -270,10 +270,10 @@ private:
   //-----------------------------------------------------------------------------
 
   // Topological dimension of leaf entities
-  std::size_t _tdim;
+  int _tdim;
 
   // Geometric dimension of the BBT
-  std::size_t _gdim;
+  int _gdim;
 
   // List of bounding boxes (parent-child-entity relations)
   std::vector<BBox> _bboxes;

@@ -1870,13 +1870,13 @@ XDMFFile::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   // order cell_dim so we can get shared_entities
   mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
 
-  const std::size_t mpi_rank = MPI::rank(mesh.mpi_comm());
+  const int mpi_rank = MPI::rank(mesh.mpi_comm());
   const std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
   std::set<std::uint32_t> non_local_entities;
 
-  const std::size_t tdim = mesh.topology().dim();
+  const int tdim = mesh.topology().dim();
   bool ghosted
       = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
 
@@ -1886,19 +1886,19 @@ XDMFFile::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
     // which are on lower rank processes
     for (const auto& e : shared_entities)
     {
-      const std::uint32_t lowest_rank_owner = *(e.second.begin());
+      const int lowest_rank_owner = *(e.second.begin());
       if (lowest_rank_owner < mpi_rank)
         non_local_entities.insert(e.first);
     }
   }
   else
   {
-    // Iterate through ghost cells, adding non-ghost entities
-    // which are in lower rank process cells
+    // Iterate through ghost cells, adding non-ghost entities which are
+    // in lower rank process cells
     for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
              mesh, tdim, mesh::MeshRangeType::GHOST))
     {
-      const std::uint32_t cell_owner = c.owner();
+      const int cell_owner = c.owner();
       for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
         if (!e.is_ghost() && cell_owner < mpi_rank)
           non_local_entities.insert(e.index());

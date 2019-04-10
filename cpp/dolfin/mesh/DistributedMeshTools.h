@@ -31,7 +31,7 @@ class DistributedMeshTools
 {
 public:
   /// Create global entity indices for entities of dimension d
-  static void number_entities(const Mesh& mesh, std::size_t d);
+  static void number_entities(const Mesh& mesh, int d);
 
   /// Create global entity indices for entities of dimension d for
   /// given global vertex indices. Returns  global_entity_indices,
@@ -43,7 +43,7 @@ public:
       const Mesh& mesh,
       const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
           slave_entities,
-      std::size_t d);
+      int d);
 
   /// Compute number of cells connected to each facet
   /// (globally). Facets on internal boundaries will be connected to
