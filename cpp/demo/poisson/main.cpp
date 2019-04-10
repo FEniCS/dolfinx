@@ -91,7 +91,7 @@
 #include "poisson.h"
 #include <cfloat>
 #include <dolfin.h>
-#include <dolfin/mesh/MeshOrdering.h>
+#include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
 
