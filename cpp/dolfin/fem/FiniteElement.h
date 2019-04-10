@@ -165,7 +165,6 @@ private:
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*, int,
                     const ufc_coordinate_mapping*)>
       _transform_values;
-  std::function<int(double*)> _tabulate_reference_dof_coordinates;
 
   std::function<ufc_finite_element*(int i)> _create_sub_element;
   std::function<ufc_finite_element*()> _create;

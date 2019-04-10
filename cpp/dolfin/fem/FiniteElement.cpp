@@ -33,7 +33,10 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
 {
   // Store dof coordinates on reference element
   _refX.resize(this->space_dimension(), this->topological_dimension());
-  int ret = _tabulate_reference_dof_coordinates(_refX.data());
+  // assert(_tabulate_reference_dof_coordinates);
+  // int ret = _tabulate_reference_dof_coordinates(_refX.data());
+  assert(element.tabulate_reference_dof_coordinates);
+  int ret = element.tabulate_reference_dof_coordinates(_refX.data());
   if (ret == -1)
   {
     throw std::runtime_error(
@@ -45,14 +48,19 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
   {
   case interval:
     _cell_shape = CellType::interval;
+    break;
   case triangle:
     _cell_shape = CellType::triangle;
+    break;
   case quadrilateral:
     _cell_shape = CellType::quadrilateral;
+    break;
   case tetrahedron:
     _cell_shape = CellType::tetrahedron;
+    break;
   case hexahedron:
     _cell_shape = CellType::hexahedron;
+    break;
   default:
     throw std::runtime_error("Unknown UFC cell type");
   }
@@ -77,6 +85,7 @@ std::size_t FiniteElement::value_rank() const { return _value_rank; }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::value_dimension(std::size_t i) const
 {
+  assert(_value_dimension);
   return _value_dimension(i);
 }
 //-----------------------------------------------------------------------------
@@ -89,6 +98,7 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const EigenRowArrayXXd> X) const
 {
   std::size_t num_points = X.rows();
+  assert( _evaluate_reference_basis);
   int ret = _evaluate_reference_basis(reference_values.data(), num_points,
                                       X.data());
   if (ret == -1)
@@ -107,6 +117,7 @@ void FiniteElement::transform_reference_basis(
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
   std::size_t num_points = X.rows();
+  assert(_transform_reference_basis_derivatives);
   int ret = _transform_reference_basis_derivatives(
       values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
       detJ.data(), K.data(), 1);
@@ -126,6 +137,7 @@ void FiniteElement::transform_reference_basis_derivatives(
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
   std::size_t num_points = X.rows();
+  assert(_transform_reference_basis_derivatives);
   int ret = _transform_reference_basis_derivatives(
       values.data(), order, num_points, reference_values.data(), X.data(),
       J.data(), detJ.data(), K.data(), 1);
@@ -148,6 +160,7 @@ void FiniteElement::transform_values(
         physical_values,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
+  assert(_transform_values);
   _transform_values(reference_values, physical_values.data(),
                     coordinate_dofs.data(), 1, nullptr);
 }
@@ -163,12 +176,14 @@ std::size_t FiniteElement::hash() const { return _hash; }
 std::unique_ptr<FiniteElement>
 FiniteElement::create_sub_element(std::size_t i) const
 {
+  assert(_create_sub_element);
   std::shared_ptr<ufc_finite_element> ufc_element(_create_sub_element(i), free);
   return std::make_unique<FiniteElement>(*ufc_element);
 }
 //-----------------------------------------------------------------------------
 std::unique_ptr<FiniteElement> FiniteElement::create() const
 {
+  assert(_create);
   std::shared_ptr<ufc_finite_element> ufc_element(_create(), free);
   return std::make_unique<FiniteElement>(*ufc_element);
 }
