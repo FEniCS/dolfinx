@@ -102,6 +102,14 @@ public:
   }
 
   /// Return array of connections for given entity
+  std::int32_t* operator()(std::int32_t entity)
+  {
+    return (entity + 1) < _index_to_position.size()
+               ? &_connections[_index_to_position[entity]]
+               : nullptr;
+  }
+
+  /// Return array of connections for given entity (const version)
   const std::int32_t* operator()(std::int32_t entity) const
   {
     return (entity + 1) < _index_to_position.size()

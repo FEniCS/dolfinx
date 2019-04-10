@@ -15,24 +15,6 @@ using namespace dolfin;
 namespace
 {
 //-----------------------------------------------------------------------------
-class GlobalSort
-{
-  // Comparison operator for sorting based on global indices
-
-public:
-  GlobalSort(const std::vector<std::int64_t>& local_to_global_vertex_indices)
-      : g(local_to_global_vertex_indices)
-  {
-  }
-
-  bool operator()(const std::size_t& l, const std::size_t& r)
-  {
-    return g[l] < g[r];
-  }
-
-  const std::vector<std::int64_t>& g;
-};
-//-----------------------------------------------------------------------------
 void sort_entities(
     int num_vertices, std::int32_t* local_vertices,
     const std::vector<std::int64_t>& local_to_global_vertex_indices)
@@ -42,8 +24,6 @@ void sort_entities(
   // parallel)
 
   // Sort on global vertex indices
-  // GlobalSort global_sort(local_to_global_vertex_indices);
-  // std::sort(local_vertices, local_vertices + num_vertices, global_sort);
   std::sort(local_vertices, local_vertices + num_vertices,
             [& map = local_to_global_vertex_indices](auto a, auto b) {
               return map[a] > map[b];
