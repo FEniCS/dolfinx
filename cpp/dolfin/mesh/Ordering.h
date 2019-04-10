@@ -23,7 +23,7 @@ public:
   static void order_simplex(Mesh& mesh);
 
   /// Check if mesh is ordered
-  static bool ordered_simplex(const Mesh& mesh);
+  static bool is_ordered_simplex(const Mesh& mesh);
 };
 
 } // namespace mesh

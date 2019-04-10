@@ -15,6 +15,90 @@ using namespace dolfin;
 namespace
 {
 //-----------------------------------------------------------------------------
+bool increasing(int num_vertices, const std::int32_t* local_vertices,
+                const std::vector<std::int64_t>& local_to_global_vertex_indices)
+{
+  // Two cases here, either check vertices directly (when running in serial)
+  // or check based on the global indices (when running in parallel)
+
+  for (int v = 1; v < num_vertices; v++)
+  {
+    if (local_to_global_vertex_indices[local_vertices[v - 1]]
+        >= local_to_global_vertex_indices[local_vertices[v]])
+    {
+      return false;
+    }
+  }
+  return true;
+}
+//-----------------------------------------------------------------------------
+bool increasing(int n0, const std::int32_t* v0, int n1, const std::int32_t* v1,
+                int num_vertices, const std::int32_t* local_vertices,
+                const std::vector<std::int64_t>& local_to_global_vertex_indices)
+{
+  assert(n0 == n1);
+  assert(num_vertices > n0);
+  const int num_non_incident = num_vertices - n0;
+
+  // Compute non-incident vertices for first entity
+  std::vector<int> w0(num_non_incident);
+  int k = 0;
+  for (int i = 0; i < num_vertices; i++)
+  {
+    const int v = local_vertices[i];
+    bool incident = false;
+    for (int j = 0; j < n0; j++)
+    {
+      if (v0[j] == v)
+      {
+        incident = true;
+        break;
+      }
+    }
+    if (!incident)
+      w0[k++] = v;
+  }
+  assert(k == num_non_incident);
+
+  // Compute non-incident vertices for second entity
+  std::vector<int> w1(num_non_incident);
+  k = 0;
+  for (int i = 0; i < num_vertices; i++)
+  {
+    const int v = local_vertices[i];
+    bool incident = false;
+    for (int j = 0; j < n1; j++)
+    {
+      if (v1[j] == v)
+      {
+        incident = true;
+        break;
+      }
+    }
+
+    if (!incident)
+      w1[k++] = v;
+  }
+  assert(k == num_non_incident);
+
+  // Compare lexicographic ordering of w0 and w1
+  for (int i = 0; i < num_non_incident; i++)
+  {
+    if (local_to_global_vertex_indices[w0[i]]
+        < local_to_global_vertex_indices[w1[i]])
+    {
+      return true;
+    }
+    else if (local_to_global_vertex_indices[w0[i]]
+             > local_to_global_vertex_indices[w1[i]])
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+//-----------------------------------------------------------------------------
 void sort_entities(
     int num_vertices, std::int32_t* local_vertices,
     const std::vector<std::int64_t>& local_to_global_vertex_indices)
@@ -220,6 +304,72 @@ void order_cell_simplex(
   }
 }
 //-----------------------------------------------------------------------------
+bool ordered_cell_simplex(
+    const std::vector<std::int64_t>& local_to_global_vertex_indices,
+    const dolfin::mesh::Cell& cell)
+{
+  // Get mesh topology
+  const mesh::MeshTopology& topology = cell.mesh().topology();
+  const int tdim = topology.dim();
+  const int c = cell.index();
+
+  // Get vertices
+  std::shared_ptr<const mesh::MeshConnectivity> connect_tdim_0
+      = topology.connectivity(tdim, 0);
+  assert(connect_tdim_0);
+
+  const int num_vertices = connect_tdim_0->size(c);
+  const std::int32_t* vertices = (*connect_tdim_0)(c);
+  assert(vertices);
+
+  // Check that vertices are in ascending order
+  if (!increasing(num_vertices, vertices, local_to_global_vertex_indices))
+    return false;
+
+  // Note the comparison below: d + 1 < dim, not d < dim - 1
+  // Otherwise, d < dim - 1 will evaluate to true for dim = 0 with std::size_t
+
+  // Check numbering of entities of positive dimension and codimension
+  for (int d = 1; d + 1 < tdim; ++d)
+  {
+    // Check if entities exist, otherwise skip
+    std::shared_ptr<const mesh::MeshConnectivity> connect_d_0
+        = topology.connectivity(d, 0);
+    if (!connect_d_0 or connect_d_0->empty())
+      continue;
+
+    // Get entities
+    std::shared_ptr<const mesh::MeshConnectivity> connect_tdim_d
+        = topology.connectivity(tdim, d);
+    assert(connect_tdim_d);
+    const int num_entities = connect_tdim_d->size(c);
+    const std::int32_t* entities = (*connect_tdim_d)(c);
+
+    // Iterate over entities
+    for (int e = 1; e < num_entities; ++e)
+    {
+      // Get vertices for first entity
+      const int e0 = entities[e - 1];
+      const int n0 = connect_d_0->size(e0);
+      const std::int32_t* v0 = (*connect_d_0)(e0);
+
+      // Get vertices for second entity
+      const int e1 = entities[e];
+      const int n1 = connect_d_0->size(e1);
+      const std::int32_t* v1 = (*connect_d_0)(e1);
+
+      // Check ordering of entities
+      if (!increasing(n0, v0, n1, v1, num_vertices, vertices,
+                      local_to_global_vertex_indices))
+      {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+//-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -247,30 +397,26 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   // Iterate over all cells
   for (mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
     order_cell_simplex(local_to_global_vertex_indices, cell);
-
-  // std::cout << "Post call ordering" << std::endl;
-  // // // Iterate over all cells and order the mesh entities locally
-  // // for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
-  // //   cell->order(local_to_global_vertex_indices);
 }
 //-----------------------------------------------------------------------------
-bool mesh::Ordering::ordered_simplex(const mesh::Mesh& mesh)
+bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
 {
   const int tdim = mesh.topology().dim();
   if (mesh.num_entities(tdim) == 0)
     return true;
 
-  // // Get global vertex numbering
-  // dolfin_assert(mesh.topology().have_global_indices(0));
-  // const auto& local_to_global_vertex_indices
-  //     = mesh.topology().global_indices(0);
+  // Get global vertex numbering
+  if (!mesh.topology().have_global_indices(0))
+    throw std::runtime_error("Mesh does not have global vertex indices.");
+  const std::vector<std::int64_t>& local_to_global_vertex_indices
+      = mesh.topology().global_indices(0);
 
-  // // Check if all cells are ordered
-  // for (CellIterator cell(mesh, "all"); !cell.end(); ++cell)
-  // {
-  //   if (!cell->ordered(local_to_global_vertex_indices))
-  //     return false;
-  // }
+  // Check if all cells are ordered
+  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  {
+    if (ordered_cell_simplex(local_to_global_vertex_indices, cell))
+      return false;
+  }
 
   return true;
 }
