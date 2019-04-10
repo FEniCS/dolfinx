@@ -10,12 +10,28 @@
 #include "MeshIterator.h"
 #include <vector>
 
-#include <iostream>
-
 using namespace dolfin;
 
 namespace
 {
+//-----------------------------------------------------------------------------
+class GlobalSort
+{
+  // Comparison operator for sorting based on global indices
+
+public:
+  GlobalSort(const std::vector<std::int64_t>& local_to_global_vertex_indices)
+      : g(local_to_global_vertex_indices)
+  {
+  }
+
+  bool operator()(const std::size_t& l, const std::size_t& r)
+  {
+    return g[l] < g[r];
+  }
+
+  const std::vector<std::int64_t>& g;
+};
 //-----------------------------------------------------------------------------
 void sort_entities(
     int num_vertices, std::int32_t* local_vertices,
@@ -25,49 +41,36 @@ void sort_entities(
   // serial) or sort based on the global indices (when running in
   // parallel)
 
-  // Comparison operator for sorting based on global indices
-  class GlobalSort
-  {
-  public:
-    GlobalSort(const std::vector<std::int64_t>& local_to_global_vertex_indices)
-        : g(local_to_global_vertex_indices)
-    {
-    }
-
-    bool operator()(const std::size_t& l, const std::size_t& r)
-    {
-      return g[l] < g[r];
-    }
-
-    const std::vector<std::int64_t>& g;
-  };
-
   // Sort on global vertex indices
-  GlobalSort global_sort(local_to_global_vertex_indices);
-  std::sort(local_vertices, local_vertices + num_vertices, global_sort);
+  // GlobalSort global_sort(local_to_global_vertex_indices);
+  // std::sort(local_vertices, local_vertices + num_vertices, global_sort);
+  std::sort(local_vertices, local_vertices + num_vertices,
+            [& map = local_to_global_vertex_indices](auto a, auto b) {
+              return map[a] > map[b];
+            });
 }
 //-----------------------------------------------------------------------------
 void order_cell_simplex(
     const std::vector<std::int64_t>& local_to_global_vertex_indices,
     dolfin::mesh::Cell& cell)
 {
-  const mesh::CellType& cell_type = cell.mesh().type();
   const mesh::MeshTopology& topology = cell.mesh().topology();
+  const int tdim = topology.dim();
 
+  if (tdim < 1)
+    return;
+
+  const mesh::CellType& cell_type = cell.mesh().type();
   const int num_edges = cell_type.num_entities(1);
-  const int num_faces = cell_type.num_entities(2);
 
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
-
-  // const MeshTopology& topology = cell.mesh().topology();
-  const int tdim = topology.dim();
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   std::shared_ptr<const mesh::MeshConnectivity> connect_1_0
       = topology.connectivity(1, 0);
   if (connect_1_0 and !connect_1_0->empty())
   {
-    std::cout << "Sorting vertices on edges: " << num_edges << std::endl;
+    // std::cout << "Sorting vertices on edges: " << num_edges << std::endl;
     // assert(!topology(tdim, 1).empty());
 
     // Sort vertices on each edge
@@ -82,6 +85,8 @@ void order_cell_simplex(
 
   if (tdim < 2)
     return;
+
+  const int num_faces = cell_type.num_entities(2);
 
   // Sort local vertices on faces in ascending order, connectivity 2 - 0
   std::shared_ptr<const mesh::MeshConnectivity> connect_2_0
@@ -138,9 +143,7 @@ void order_cell_simplex(
           if (!std::count(edge_vertices, edge_vertices + 2, face_vertices[j]))
           {
             // Swap face numbers
-            int tmp = cell_edges[m];
-            cell_edges[m] = cell_edges[k];
-            cell_edges[k] = tmp;
+            std::swap(cell_edges[m], cell_edges[k]);
             m++;
             break;
           }
@@ -193,9 +196,7 @@ void order_cell_simplex(
                               cell_vertices[j]))
           {
             // Swap edge numbers
-            std::int32_t tmp = cell_edges[m];
-            cell_edges[m] = cell_edges[k];
-            cell_edges[k] = tmp;
+            std::swap(cell_edges[m], cell_edges[k]);
             m++;
             break;
           }
@@ -231,9 +232,7 @@ void order_cell_simplex(
         if (!std::count(face_vertices, face_vertices + 3, cell_vertices[i]))
         {
           // Swap facet numbers
-          std::int32_t tmp = cell_faces[i];
-          cell_faces[i] = cell_faces[j];
-          cell_faces[j] = tmp;
+          std::swap(cell_faces[i], cell_faces[j]);
           break;
         }
       }

@@ -346,10 +346,7 @@ def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
 # - Facilities to run tests on combination of meshes
 
 mesh_factories = [
-    (UnitIntervalMesh, (
-        MPI.comm_world,
-        8,
-    )),
+    (UnitIntervalMesh, (MPI.comm_world,8)),
     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
     (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
@@ -428,10 +425,8 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     if not mesh.type().is_simplex:
         return
 
-    print(mesh, func, *args)
-    print(type(mesh))
+    # Order mesh
     cpp.mesh.Ordering.order_simplex(mesh)
-    print("*****")
 
     # Create FIAT cell
     cell_name = CellType.type2string(mesh.type().cell_type())
