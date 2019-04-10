@@ -1,7 +1,7 @@
 #include "hyperelasticity.h"
 #include <cfloat>
 #include <dolfin.h>
-#include <dolfin/mesh/MeshOrdering.h>
+#include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
 
@@ -168,9 +168,9 @@ int main(int argc, char* argv[])
   std::array<geometry::Point, 2> pt
       = {geometry::Point(0.0, 0.0, 0.0), geometry::Point(1.0, 1.0, 1.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
-      MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::Type::tetrahedron,
+      MPI_COMM_WORLD, pt, {{2, 2, 2}}, mesh::CellType::Type::tetrahedron,
       mesh::GhostMode::none));
-  mesh::MeshOrdering::order(*mesh);
+  mesh::Ordering::order_simplex(*mesh);
 
   ufc_function_space* space = hyperelasticity_functionspace_create();
   ufc_dofmap* ufc_map = space->create_dofmap();

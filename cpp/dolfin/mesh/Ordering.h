@@ -16,14 +16,14 @@ class Mesh;
 /// This class implements the ordering of simples mesh entities
 /// according to the UFC specification.
 
-class MeshOrdering
+class Ordering
 {
 public:
   /// Order mesh
-  static void order(Mesh& mesh);
+  static void order_simplex(Mesh& mesh);
 
   /// Check if mesh is ordered
-  static bool ordered(const Mesh& mesh);
+  static bool ordered_simplex(const Mesh& mesh);
 };
 
 } // namespace mesh

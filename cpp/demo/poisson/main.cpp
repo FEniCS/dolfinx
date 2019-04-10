@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
       mesh::GhostMode::none));
 
 
-  mesh::MeshOrdering::order(*mesh);
+  mesh::Ordering::order_simplex(*mesh);
 
   ufc_function_space* space = poisson_functionspace_create();
   ufc_dofmap* ufc_map = space->create_dofmap();

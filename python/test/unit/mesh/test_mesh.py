@@ -416,15 +416,22 @@ def test_shared_entities(mesh_factory):
 
 
 # Skipping test after removing mesh.order()
-@pytest.mark.skip
+# @pytest.mark.skip
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
-def test_mesh_topology_against_fiat(mesh_factory, ghost_mode):
+def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.none):
     """Test that mesh cells have topology matching to FIAT reference
     cell they were created from.
     """
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
+    if not mesh.type().is_simplex:
+        return
+
+    print(mesh, func, *args)
+    print(type(mesh))
+    cpp.mesh.Ordering.order_simplex(mesh)
+    print("*****")
 
     # Create FIAT cell
     cell_name = CellType.type2string(mesh.type().cell_type())

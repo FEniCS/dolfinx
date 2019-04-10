@@ -15,11 +15,11 @@ set(HEADERS
   MeshFunction.h
   MeshGeometry.h
   MeshIterator.h
-  MeshOrdering.h
   MeshPartitioning.h
   MeshQuality.h
   MeshTopology.h
   MeshValueCollection.h
+  Ordering.h
   PartitionData.h
   PeriodicBoundaryComputation.h
   PointCell.h
@@ -45,10 +45,10 @@ set(SOURCES
   MeshEntity.cpp
   MeshFunction.cpp
   MeshGeometry.cpp
-  MeshOrdering.cpp
   MeshPartitioning.cpp
   MeshQuality.cpp
   MeshTopology.cpp
+  Ordering.cpp
   PartitionData.cpp
   PeriodicBoundaryComputation.cpp
   PointCell.cpp
