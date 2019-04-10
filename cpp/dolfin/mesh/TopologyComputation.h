@@ -24,7 +24,7 @@ class TopologyComputation
 public:
   /// Compute mesh entities of given topological dimension, and connectivity
   /// cell-to-enity (tdim, dim)
-  static std::size_t compute_entities(Mesh& mesh, std::size_t dim);
+  static std::size_t compute_entities(Mesh& mesh, int dim);
 
   /// Compute connectivity for given pair of topological dimensions
   static void compute_connectivity(Mesh& mesh, std::size_t d0, std::size_t d1);

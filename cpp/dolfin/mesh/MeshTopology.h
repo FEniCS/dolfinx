@@ -50,7 +50,7 @@ public:
   MeshTopology& operator=(const MeshTopology& topology) = default;
 
   /// Return topological dimension
-  std::int32_t dim() const;
+  int dim() const;
 
   /// Return number of entities for given dimension (local to process)
   std::int32_t size(int dim) const;
@@ -60,13 +60,13 @@ public:
 
   /// Return number of regular (non-ghost) entities or equivalently,
   /// the offset of where ghost entities begin
-  inline std::uint32_t ghost_offset(int dim) const
+  inline std::int32_t ghost_offset(int dim) const
   {
     if (_ghost_offset_index.empty())
       return 0;
     else
     {
-      assert(dim < _ghost_offset_index.size());
+      assert(dim < (int)_ghost_offset_index.size());
       return _ghost_offset_index[dim];
     }
   }
@@ -120,13 +120,12 @@ public:
 
   /// Return map from shared entities (local index) to processes
   /// that share the entity
-  std::map<std::int32_t, std::set<std::uint32_t>>&
-  shared_entities(std::uint32_t dim);
+  std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities(int dim);
 
   /// Return map from shared entities (local index) to process that
   /// share the entity (const version)
   const std::map<std::int32_t, std::set<std::uint32_t>>&
-  shared_entities(std::uint32_t dim) const;
+  shared_entities(int dim) const;
 
   /// Return mapping from local ghost cell index to owning process
   /// Since ghost cells are at the end of the range, this is just

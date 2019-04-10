@@ -246,15 +246,15 @@ void HDF5File::write(const mesh::Mesh& mesh, const std::string name)
   write(mesh, mesh.topology().dim(), name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
+void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
                      const std::string name)
 {
   // FIXME: break up this function
 
   common::Timer t0("HDF5: write mesh to file");
 
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+  const int gdim = mesh.geometry().dim();
 
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   assert(_hdf5_file_id > 0);
@@ -697,7 +697,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     throw std::runtime_error("Cannot save empty mesh::MeshFunction.");
 
   const mesh::Mesh& mesh = *meshfunction.mesh();
-  const std::size_t cell_dim = meshfunction.dim();
+  const int cell_dim = meshfunction.dim();
 
   // Write a mesh for the mesh::MeshFunction - this will also globally
   // number the entities if needed

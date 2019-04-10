@@ -31,7 +31,7 @@ std::int32_t MeshTopology::size(int dim) const
     return 0;
   else
   {
-    assert(dim < _num_entities.size());
+    assert(dim < (int)_num_entities.size());
     return _num_entities[dim];
   }
 }
@@ -42,7 +42,7 @@ std::int64_t MeshTopology::size_global(int dim) const
     return 0;
   else
   {
-    assert(dim < _global_num_entities.size());
+    assert(dim < (int)_global_num_entities.size());
     return _global_num_entities[dim];
   }
 }
@@ -92,14 +92,14 @@ void MeshTopology::init_global_indices(std::size_t dim, std::int64_t size)
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::uint32_t>>&
-MeshTopology::shared_entities(std::uint32_t dim)
+MeshTopology::shared_entities(int dim)
 {
   assert(dim <= this->dim());
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
 const std::map<std::int32_t, std::set<std::uint32_t>>&
-MeshTopology::shared_entities(std::uint32_t dim) const
+MeshTopology::shared_entities(int dim) const
 {
   auto e = _shared_entities.find(dim);
   if (e == _shared_entities.end())
