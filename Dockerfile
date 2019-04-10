@@ -304,7 +304,7 @@ WORKDIR /root
 ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
-    pip3 install jupyter
+    pip3 install --no-cache-dir jupyter jupyterlab
 
 ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
 
@@ -316,7 +316,23 @@ LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
 ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
-    pip3 install jupyter
+    pip3 install --no-cache-dir jupyter jupyterlab
 
 WORKDIR /root
 ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+
+########################################
+
+FROM notebook as lab
+LABEL description="DOLFIN-X Jupyter Lab"
+
+WORKDIR /root
+ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+
+########################################
+
+FROM notebook-complex as lab-complex
+LABEL description="DOLFIN-X (complex mode) Jupyter Lab"
+
+WORKDIR /root
+ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
