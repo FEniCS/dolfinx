@@ -472,9 +472,10 @@ void mesh(py::module& m)
     }
   };
 
-  py::class_<dolfin::mesh::Ordering, std::shared_ptr<dolfin::mesh::Ordering>>(
-      m, "Ordering", "Order mesh cell entities")
-      .def_static("order_simplex", &dolfin::mesh::Ordering::order_simplex);
+  py::class_<dolfin::mesh::Ordering>(m, "Ordering", "Order mesh cell entities")
+      .def_static("order_simplex", &dolfin::mesh::Ordering::order_simplex)
+      .def_static("is_ordered_simplex",
+                  &dolfin::mesh::Ordering::is_ordered_simplex);
 
   // dolfin::mesh::SubDomain
   py::class_<dolfin::mesh::SubDomain, std::shared_ptr<dolfin::mesh::SubDomain>,

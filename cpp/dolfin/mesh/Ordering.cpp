@@ -375,7 +375,10 @@ bool ordered_cell_simplex(
 //-----------------------------------------------------------------------------
 void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
 {
-  // std::cout << "Call ordering" << std::endl;
+  const mesh::CellType& cell_type = mesh.type();
+  if (!cell_type.is_simplex())
+    throw std::runtime_error("Mesh ordering is for simplex cell types only.");
+
   const int tdim = mesh.topology().dim();
   if (mesh.num_entities(tdim) == 0)
     return;
@@ -383,10 +386,6 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   // Skip ordering for dimension 0
   if (tdim == 0)
     return;
-
-  const mesh::CellType& cell_type = mesh.type();
-  if (!cell_type.is_simplex())
-    throw std::runtime_error("Mesh ordering is for simplex cell types only.");
 
   // Get global vertex numbering
   if (!mesh.topology().have_global_indices(0))
@@ -401,6 +400,10 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
 {
+  const mesh::CellType& cell_type = mesh.type();
+  if (!cell_type.is_simplex())
+    throw std::runtime_error("Mesh ordering check is for simplex cell types only.");
+
   const int tdim = mesh.topology().dim();
   if (mesh.num_entities(tdim) == 0)
     return true;
