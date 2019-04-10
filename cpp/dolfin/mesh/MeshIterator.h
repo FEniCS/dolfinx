@@ -29,7 +29,7 @@ class MeshIterator : public std::iterator<std::forward_iterator_tag, T>
 {
 public:
   /// Constructor for entities of dimension d
-  MeshIterator(const Mesh& mesh, std::size_t dim, std::size_t pos)
+  MeshIterator(const Mesh& mesh, int dim, std::size_t pos)
       : _entity(mesh, dim, pos)
   {
   }
@@ -87,7 +87,7 @@ class MeshEntityIterator : public std::iterator<std::forward_iterator_tag, T>
 {
 public:
   /// Constructor from MeshEntity and dimension
-  MeshEntityIterator(const MeshEntity& e, std::size_t dim, std::size_t pos)
+  MeshEntityIterator(const MeshEntity& e, int dim, std::size_t pos)
       : _entity(e.mesh(), dim, 0), _connections(nullptr)
   {
     // FIXME: Handle case when number of attached entities is zero?
@@ -376,7 +376,7 @@ private:
   const MeshEntity& _entity;
 
   // Dimension of incident entities
-  const std::uint32_t _dim;
+  const int _dim;
 };
 } // namespace mesh
 } // namespace dolfin

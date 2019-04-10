@@ -326,7 +326,7 @@ MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
+std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
 {
   // spdlog::info("Computing mesh entities of dimension %d", dim);
 
@@ -335,8 +335,8 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, std::size_t dim)
   if (topology.size(dim) > 0)
   {
     // Make sure we really have the connectivity
-    if ((!topology.connectivity(topology.dim(), dim) && dim != topology.dim())
-        or (!topology.connectivity(dim, 0) && dim != 0))
+    if ((!topology.connectivity(topology.dim(), dim) and dim != topology.dim())
+        or (!topology.connectivity(dim, 0) and dim != 0))
     {
       // spdlog::error("TopologyComputation.cpp", "compute topological entities",
       //               "Entities of topological dimension %d exist but "

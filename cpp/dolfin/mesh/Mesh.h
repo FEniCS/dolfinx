@@ -195,12 +195,12 @@ public:
 
   /// Compute entities of given topological dimension.
   ///
-  /// @param  dim (std::size_t)
+  /// @param  dim (int)
   ///         Topological dimension.
   ///
   /// @return std::size_t
   ///         Number of created entities.
-  std::size_t init(std::size_t dim) const;
+  std::size_t init(int dim) const;
 
   /// Compute connectivity between given pair of dimensions.
   ///

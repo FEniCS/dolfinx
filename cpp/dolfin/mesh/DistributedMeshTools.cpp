@@ -100,7 +100,7 @@ reorder_values_by_global_indices(
 }
 } // namespace
 //-----------------------------------------------------------------------------
-void DistributedMeshTools::number_entities(const Mesh& mesh, std::size_t d)
+void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
 {
   common::Timer timer("Number distributed mesh entities");
 
@@ -154,7 +154,7 @@ DistributedMeshTools::number_entities(
     const Mesh& mesh,
     const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
         slave_entities,
-    std::size_t d)
+    int d)
 {
   // Developer note: This function should use global_vertex_indices
   // for the global mesh indices and *not* access these through the
@@ -1075,7 +1075,7 @@ DistributedMeshTools::compute_num_global_entities(
 void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 {
   // Topological dimension
-  const std::size_t D = mesh.topology().dim();
+  const int D = mesh.topology().dim();
 
   // Initialize entities of dimension d
   mesh.init(D - 1);
