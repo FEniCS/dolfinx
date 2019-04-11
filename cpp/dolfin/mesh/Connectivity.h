@@ -24,25 +24,25 @@ namespace mesh
 /// which may either be equal for all entities or different, or by
 /// giving the entire (sparse) connectivity pattern.
 
-class MeshConnectivity
+class Connectivity
 {
 public:
   /// Create empty connectivity
-  MeshConnectivity();
+  Connectivity();
 
   /// Initialize number of entities and number of connections (equal
   /// for all)
-  MeshConnectivity(std::size_t num_entities, std::size_t num_connections);
+  Connectivity(std::size_t num_entities, std::size_t num_connections);
 
   /// Initialize number of entities and number of connections
   /// (individually)
-  MeshConnectivity(std::vector<std::size_t>& num_connections);
+  Connectivity(std::vector<std::size_t>& num_connections);
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a std::vector<<std::vector<std::size_t>>,
   /// std::vector<<std::set<std::size_t>>, etc)
   template <typename T>
-  MeshConnectivity(const T& connections)
+  Connectivity(const T& connections)
   {
     // Initialize offsets and compute total size
     _index_to_position.resize(connections.size() + 1);
@@ -64,19 +64,19 @@ public:
   }
 
   /// Copy constructor
-  MeshConnectivity(const MeshConnectivity& connectivity) = default;
+  Connectivity(const Connectivity& connectivity) = default;
 
   /// Move constructor
-  MeshConnectivity(MeshConnectivity&& connectivity) = default;
+  Connectivity(Connectivity&& connectivity) = default;
 
   /// Destructor
-  ~MeshConnectivity() = default;
+  ~Connectivity() = default;
 
   /// Assignment
-  MeshConnectivity& operator=(const MeshConnectivity& connectivity) = default;
+  Connectivity& operator=(const Connectivity& connectivity) = default;
 
   /// Move assignment
-  MeshConnectivity& operator=(MeshConnectivity&& connectivity) = default;
+  Connectivity& operator=(Connectivity&& connectivity) = default;
 
   // /// Return true if the total number of connections is equal to zero
   bool empty() const { return _connections.size() == 0; }

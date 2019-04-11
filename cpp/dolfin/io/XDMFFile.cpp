@@ -27,7 +27,7 @@
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshConnectivity.h>
+#include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -1715,7 +1715,7 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
     }
 
     const auto& global_points = mesh.geometry().global_indices();
-    const mesh::MeshConnectivity& cell_points
+    const mesh::Connectivity& cell_points
         = mesh.coordinate_dofs().entity_points(tdim);
 
     // Adjust num_nodes_per_cell to appropriate size

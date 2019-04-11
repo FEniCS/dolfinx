@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "MeshTopology.h"
-#include "MeshConnectivity.h"
+#include "Connectivity.h"
 #include <dolfin/common/utils.h>
 #include <numeric>
 #include <sstream>
@@ -18,7 +18,7 @@ MeshTopology::MeshTopology(std::size_t dim)
     : _num_entities(dim + 1, 0), _ghost_offset_index(dim + 1, 0),
       _global_num_entities(dim + 1, 0), _global_indices(dim + 1),
       _connectivity(dim + 1,
-                    std::vector<std::shared_ptr<MeshConnectivity>>(dim + 1))
+                    std::vector<std::shared_ptr<Connectivity>>(dim + 1))
 {
   // Do nothing
 }

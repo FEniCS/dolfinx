@@ -7,8 +7,8 @@
 #pragma once
 
 #include "CellType.h"
+#include "Connectivity.h"
 #include "CoordinateDofs.h"
-#include "MeshConnectivity.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
 #include <dolfin/common/MPI.h>

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "MeshConnectivity.h"
+#include "Connectivity.h"
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -139,7 +139,7 @@ public:
   const std::vector<std::uint32_t>& cell_owner() const { return _cell_owner; }
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<MeshConnectivity> connectivity(std::size_t d0, std::size_t d1)
+  std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1)
   {
     assert(d0 < _connectivity.size());
     assert(d1 < _connectivity[d0].size());
@@ -147,8 +147,8 @@ public:
   }
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<const MeshConnectivity> connectivity(std::size_t d0,
-                                                       std::size_t d1) const
+  std::shared_ptr<const Connectivity> connectivity(std::size_t d0,
+                                                   std::size_t d1) const
   {
     assert(d0 < _connectivity.size());
     assert(d1 < _connectivity[d0].size());
@@ -156,7 +156,7 @@ public:
   }
 
   /// Set connectivity for given pair of topological dimensions
-  void set_connectivity(std::shared_ptr<MeshConnectivity> c, std::size_t d0,
+  void set_connectivity(std::shared_ptr<Connectivity> c, std::size_t d0,
                         std::size_t d1)
   {
     assert(d0 < _connectivity.size());
@@ -195,7 +195,7 @@ private:
   std::vector<std::uint32_t> _cell_owner;
 
   // Connectivity for pairs of topological dimensions
-  std::vector<std::vector<std::shared_ptr<MeshConnectivity>>> _connectivity;
+  std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
 };
 } // namespace mesh
 } // namespace dolfin

@@ -348,7 +348,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
       values(num_cell_vertices, value_size_loc);
 
   const std::size_t tdim = mesh.topology().dim();
-  const mesh::MeshConnectivity& cell_dofs
+  const mesh::Connectivity& cell_dofs
       = mesh.coordinate_dofs().entity_points(tdim);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))

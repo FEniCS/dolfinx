@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MeshConnectivity.h"
+#include "Connectivity.h"
 #include <boost/functional/hash.hpp>
 #include <sstream>
 
@@ -12,13 +12,13 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshConnectivity::MeshConnectivity()
+Connectivity::Connectivity()
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-MeshConnectivity::MeshConnectivity(std::size_t num_entities,
-                                   std::size_t num_connections)
+Connectivity::Connectivity(std::size_t num_entities,
+                           std::size_t num_connections)
 {
   // Compute the total size
   const std::size_t size = num_entities * num_connections;
@@ -33,7 +33,7 @@ MeshConnectivity::MeshConnectivity(std::size_t num_entities,
     _index_to_position[e] = e * num_connections;
 }
 //-----------------------------------------------------------------------------
-MeshConnectivity::MeshConnectivity(std::vector<std::size_t>& num_connections)
+Connectivity::Connectivity(std::vector<std::size_t>& num_connections)
 {
   // Initialize offsets and compute total size
   const std::size_t num_entities = num_connections.size();
@@ -51,31 +51,31 @@ MeshConnectivity::MeshConnectivity(std::vector<std::size_t>& num_connections)
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-MeshConnectivity::connections()
+Connectivity::connections()
 {
   return _connections;
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-MeshConnectivity::connections() const
+Connectivity::connections() const
 {
   return _connections;
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-MeshConnectivity::entity_positions()
+Connectivity::entity_positions()
 {
   return _index_to_position;
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-MeshConnectivity::entity_positions() const
+Connectivity::entity_positions() const
 {
   return _index_to_position;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(std::size_t entity, std::size_t connection,
-                           std::size_t pos)
+void Connectivity::set(std::size_t entity, std::size_t connection,
+                       std::size_t pos)
 {
   assert((Eigen::Index)(entity + 1) < _index_to_position.size());
   assert((std::int32_t)pos
@@ -83,7 +83,7 @@ void MeshConnectivity::set(std::size_t entity, std::size_t connection,
   _connections[_index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
-void MeshConnectivity::set(
+void Connectivity::set(
     std::int32_t entity,
     const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
         connections)
@@ -95,13 +95,13 @@ void MeshConnectivity::set(
             _connections.data() + _index_to_position[entity]);
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshConnectivity::hash() const
+std::size_t Connectivity::hash() const
 {
   return boost::hash_range(_connections.data(),
                            _connections.data() + _connections.size());
 }
 //-----------------------------------------------------------------------------
-std::string MeshConnectivity::str(bool verbose) const
+std::string Connectivity::str(bool verbose) const
 {
   std::stringstream s;
 
@@ -121,7 +121,7 @@ std::string MeshConnectivity::str(bool verbose) const
   }
   else
   {
-    s << "<MeshConnectivity of size " << _connections.size() << ">";
+    s << "<Connectivity of size " << _connections.size() << ">";
   }
 
   return s.str();

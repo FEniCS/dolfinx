@@ -68,8 +68,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
-  std::shared_ptr<mesh::MeshConnectivity> connect_1_0
-      = topology.connectivity(1, 0);
+  std::shared_ptr<mesh::Connectivity> connect_1_0 = topology.connectivity(1, 0);
   if (connect_1_0 and !connect_1_0->empty())
   {
     // assert(!topology(tdim, 1).empty());
@@ -91,8 +90,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   const int num_faces = cell_type.num_entities(2);
 
   // Sort local vertices on faces in ascending order, connectivity 2 - 0
-  std::shared_ptr<mesh::MeshConnectivity> connect_2_0
-      = topology.connectivity(2, 0);
+  std::shared_ptr<mesh::Connectivity> connect_2_0 = topology.connectivity(2, 0);
   if (connect_2_0 and !connect_2_0->empty())
   {
     // assert(!topology(3, 2).empty());
@@ -110,8 +108,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort local edges on local faces after non-incident vertex,
   // connectivity 2 - 1
-  std::shared_ptr<mesh::MeshConnectivity> connect_2_1
-      = topology.connectivity(2, 1);
+  std::shared_ptr<mesh::Connectivity> connect_2_1 = topology.connectivity(2, 1);
   if (connect_2_1 and !connect_2_1->empty())
   {
     // dolfin_assert(!topology(3, 2).empty());
@@ -157,8 +154,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
     return;
 
   // Sort local vertices on cell in ascending order, connectivity 3 - 0
-  std::shared_ptr<mesh::MeshConnectivity> connect_3_0
-      = topology.connectivity(3, 0);
+  std::shared_ptr<mesh::Connectivity> connect_3_0 = topology.connectivity(3, 0);
   if (connect_3_0 and !connect_3_0->empty())
   {
     std::int32_t* cell_vertices = connect_3_0->connections(cell.index());
@@ -169,8 +165,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort local edges on cell after non-incident vertex tuble,
   // connectivity 3-1
-  std::shared_ptr<mesh::MeshConnectivity> connect_3_1
-      = topology.connectivity(3, 1);
+  std::shared_ptr<mesh::Connectivity> connect_3_1 = topology.connectivity(3, 1);
   if (connect_3_1 and !connect_3_1->empty())
   {
     // assert(!topology(1, 0).empty());
@@ -211,8 +206,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort local facets on cell after non-incident vertex, connectivity 3
   // - 2
-  std::shared_ptr<mesh::MeshConnectivity> connect_3_2
-      = topology.connectivity(3, 2);
+  std::shared_ptr<mesh::Connectivity> connect_3_2 = topology.connectivity(3, 2);
   if (connect_3_2 and !connect_3_2->empty())
   {
     // assert(!topology(2, 0).empty());
@@ -251,7 +245,7 @@ bool ordered_cell_simplex(
   const int c = cell.index();
 
   // Get vertices
-  std::shared_ptr<const mesh::MeshConnectivity> connect_tdim_0
+  std::shared_ptr<const mesh::Connectivity> connect_tdim_0
       = topology.connectivity(tdim, 0);
   assert(connect_tdim_0);
 
@@ -273,13 +267,13 @@ bool ordered_cell_simplex(
   for (int d = 1; d + 1 < tdim; ++d)
   {
     // Check if entities exist, otherwise skip
-    std::shared_ptr<const mesh::MeshConnectivity> connect_d_0
+    std::shared_ptr<const mesh::Connectivity> connect_d_0
         = topology.connectivity(d, 0);
     if (!connect_d_0 or connect_d_0->empty())
       continue;
 
     // Get entities
-    std::shared_ptr<const mesh::MeshConnectivity> connect_tdim_d
+    std::shared_ptr<const mesh::Connectivity> connect_tdim_d
         = topology.connectivity(tdim, d);
     assert(connect_tdim_d);
     const int num_entities = connect_tdim_d->size(c);

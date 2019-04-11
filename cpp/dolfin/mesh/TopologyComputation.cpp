@@ -7,8 +7,8 @@
 #include "TopologyComputation.h"
 #include "Cell.h"
 #include "CellType.h"
+#include "Connectivity.h"
 #include "Mesh.h"
-#include "MeshConnectivity.h"
 #include "MeshIterator.h"
 #include "MeshTopology.h"
 #include <algorithm>
@@ -46,7 +46,7 @@ namespace
 // entity of dimension dim. This avoid dynamic memory allocations,
 // yielding significant performance improvements
 template <int N>
-std::tuple<std::shared_ptr<MeshConnectivity>, std::shared_ptr<MeshConnectivity>,
+std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
            std::int32_t>
 compute_entities_by_key_matching(Mesh& mesh, int dim)
 {
@@ -61,7 +61,8 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
     if ((!topology.connectivity(tdim, dim) && dim != (int)topology.dim())
         || (!topology.connectivity(dim, 0) && dim != 0))
     {
-      // spdlog::error("TopologyComputation.cpp", "compute topological entities",
+      // spdlog::error("TopologyComputation.cpp", "compute topological
+      // entities",
       //               "Entities of topological dimension %d exist but "
       //               "connectivity is missing",
       //               dim);
@@ -224,15 +225,15 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   topology.init_ghost(dim, num_nonghost_entities);
 
   // Set cell-entity connectivity
-  auto ce = std::make_shared<MeshConnectivity>(connectivity_ce);
-  auto ev = std::make_shared<MeshConnectivity>(connectivity_ev);
+  auto ce = std::make_shared<Connectivity>(connectivity_ce);
+  auto ev = std::make_shared<Connectivity>(connectivity_ev);
 
   return {ce, ev, connectivity_ev.size()};
 }
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
-MeshConnectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
-                                        std::size_t d1)
+Connectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
+                                    std::size_t d1)
 {
   // The transpose is computed in three steps:
   //
@@ -244,7 +245,8 @@ MeshConnectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
   //   3. Iterate again over entities of dimension d1 and add connections
   //      for each entity of dimension d0
 
-  // spdlog::info("Computing mesh connectivity %d - %d from transpose.", d0, d1);
+  // spdlog::info("Computing mesh connectivity %d - %d from transpose.", d0,
+  // d1);
 
   // Get mesh topology and connectivity
   const MeshTopology& topology = mesh.topology();
@@ -262,7 +264,7 @@ MeshConnectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
       tmp[e0.index()]++;
 
   // Initialize the number of connections
-  MeshConnectivity connectivity(tmp);
+  Connectivity connectivity(tmp);
 
   // Reset current position for each entity
   std::fill(tmp.begin(), tmp.end(), 0);
@@ -276,8 +278,7 @@ MeshConnectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
 }
 //-----------------------------------------------------------------------------
 // Direct lookup of entity from vertices in a map
-MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
-                                  std::size_t d1)
+Connectivity compute_from_map(const Mesh& mesh, std::size_t d0, std::size_t d1)
 {
   assert(d1 > 0);
   assert(d0 > d1);
@@ -299,8 +300,7 @@ MeshConnectivity compute_from_map(const Mesh& mesh, std::size_t d0,
     entity_to_index.insert({key, e.index()});
   }
 
-  MeshConnectivity connectivity(mesh.num_entities(d0),
-                                cell_type->num_entities(d1));
+  Connectivity connectivity(mesh.num_entities(d0), cell_type->num_entities(d1));
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;
@@ -338,7 +338,8 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
     if ((!topology.connectivity(topology.dim(), dim) and dim != topology.dim())
         or (!topology.connectivity(dim, 0) and dim != 0))
     {
-      // spdlog::error("TopologyComputation.cpp", "compute topological entities",
+      // spdlog::error("TopologyComputation.cpp", "compute topological
+      // entities",
       //               "Entities of topological dimension %d exist but "
       //               "connectivity is missing",
       //               dim);
@@ -350,8 +351,8 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
   // Call specialised function to compute entities
   const CellType& cell_type = mesh.type();
   const std::int8_t num_entity_vertices = cell_type.num_vertices(dim);
-  std::tuple<std::shared_ptr<MeshConnectivity>,
-             std::shared_ptr<MeshConnectivity>, std::int32_t>
+  std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
+             std::int32_t>
       data;
   switch (num_entity_vertices)
   {
@@ -435,22 +436,22 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
 
     for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
       connectivity_dd[e.index()][0] = e.index();
-    auto connectivity = std::make_shared<MeshConnectivity>(connectivity_dd);
+    auto connectivity = std::make_shared<Connectivity>(connectivity_dd);
     topology.set_connectivity(connectivity, d0, d1);
   }
   else if (d0 < d1)
   {
     // Compute connectivity d1 - d0 and take transpose
     compute_connectivity(mesh, d1, d0);
-    auto c = std::make_shared<MeshConnectivity>(
-        compute_from_transpose(mesh, d0, d1));
+    auto c
+        = std::make_shared<Connectivity>(compute_from_transpose(mesh, d0, d1));
     topology.set_connectivity(c, d0, d1);
   }
   else
   {
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
-    auto c = std::make_shared<MeshConnectivity>(compute_from_map(mesh, d0, d1));
+    auto c = std::make_shared<Connectivity>(compute_from_map(mesh, d0, d1));
     topology.set_connectivity(c, d0, d1);
   }
 }
