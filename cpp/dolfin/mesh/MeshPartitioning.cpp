@@ -185,7 +185,7 @@ mesh::Mesh MeshPartitioning::build(
     return mesh;
 
   // Copy cell ownership (only needed for ghost cells)
-  std::vector<std::uint32_t>& cell_owner = mesh.topology().cell_owner();
+  std::vector<std::int32_t>& cell_owner = mesh.topology().cell_owner();
   cell_owner.clear();
   cell_owner.insert(cell_owner.begin(),
                     new_cell_partition.begin() + num_regular_cells,

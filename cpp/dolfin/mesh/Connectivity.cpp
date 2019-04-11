@@ -20,10 +20,10 @@ Connectivity::Connectivity(std::size_t num_entities,
 
   // Allocate
   _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
-  _index_to_position
-      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>(num_entities + 1);
 
   // Initialize data
+  _index_to_position
+      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>(num_entities + 1);
   for (Eigen::Index e = 0; e < _index_to_position.size(); e++)
     _index_to_position[e] = e * num_connections;
 }
@@ -88,6 +88,13 @@ void Connectivity::set(
          == _index_to_position[entity + 1] - _index_to_position[entity]);
   std::copy(connections.data(), connections.data() + connections.size(),
             _connections.data() + _index_to_position[entity]);
+}
+//-----------------------------------------------------------------------------
+void Connectivity::set_global_size(
+    const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& num_global_connections)
+{
+  assert(num_global_connections.size() == _index_to_position.size() - 1);
+  _num_global_connections = num_global_connections;
 }
 //-----------------------------------------------------------------------------
 std::size_t Connectivity::hash() const

@@ -27,10 +27,12 @@ namespace mesh
 class Connectivity
 {
 public:
+  // TOOD: remove this constructor
   /// Initialize number of entities and number of connections (equal
   /// for all)
   Connectivity(std::size_t num_entities, std::size_t num_connections);
 
+  // TOOD: remove this constructor
   /// Initialize number of entities and number of connections
   /// (individually)
   Connectivity(std::vector<std::size_t>& num_connections);
@@ -75,7 +77,7 @@ public:
   /// Move assignment
   Connectivity& operator=(Connectivity&& connectivity) = default;
 
-  // /// Return true if the total number of connections is equal to zero
+  /// Return true if the total number of connections is equal to zero
   bool empty() const { return _connections.size() == 0; }
 
   /// Return number of connections for given entity
@@ -141,11 +143,7 @@ public:
 
   /// Set global number of connections for all local entities
   void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
-                           num_global_connections)
-  {
-    assert(num_global_connections.size() == _index_to_position.size() - 1);
-    _num_global_connections = num_global_connections;
-  }
+                           num_global_connections);
 
   /// Hash of connections
   std::size_t hash() const;

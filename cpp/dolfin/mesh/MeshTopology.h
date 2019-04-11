@@ -103,16 +103,15 @@ public:
   const std::map<std::int32_t, std::set<std::uint32_t>>&
   shared_entities(int dim) const;
 
-  /// Return mapping from local ghost cell index to owning process
-  /// Since ghost cells are at the end of the range, this is just
-  /// a vector over those cells
-  std::vector<std::uint32_t>& cell_owner();
+  /// Return mapping from local ghost cell index to owning process Since
+  /// ghost cells are at the end of the range, this is just a vector
+  /// over those cells
+  std::vector<std::int32_t>& cell_owner();
 
-  /// Return mapping from local ghost cell index to owning process (const
-  /// version)
-  /// Since ghost cells are at the end of the range, this is just
-  /// a vector over those cells
-  const std::vector<std::uint32_t>& cell_owner() const;
+  /// Return mapping from local ghost cell index to owning process
+  /// (const version). Since ghost cells are at the end of the range,
+  /// this is just a vector over those cells
+  const std::vector<std::int32_t>& cell_owner() const;
 
   /// Return connectivity for given pair of topological dimensions
   std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1);
@@ -150,10 +149,10 @@ private:
   std::map<std::uint32_t, std::map<std::int32_t, std::set<std::uint32_t>>>
       _shared_entities;
 
-  // For cells which are "ghosted", locate the owning process,
-  // using a vector rather than a map,
-  // since ghost cells are always at the end of the range.
-  std::vector<std::uint32_t> _cell_owner;
+  // For cells which are "ghosted", locate the owning process, using a
+  // vector rather than a map, since ghost cells are always at the end
+  // of the range.
+  std::vector<std::int32_t> _cell_owner;
 
   // Connectivity for pairs of topological dimensions
   std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;

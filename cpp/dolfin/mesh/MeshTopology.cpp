@@ -124,9 +124,9 @@ MeshTopology::shared_entities(int dim)
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::vector<std::uint32_t>& MeshTopology::cell_owner() { return _cell_owner; }
+std::vector<std::int32_t>& MeshTopology::cell_owner() { return _cell_owner; }
 //-----------------------------------------------------------------------------
-const std::vector<std::uint32_t>& MeshTopology::cell_owner() const
+const std::vector<std::int32_t>& MeshTopology::cell_owner() const
 {
   return _cell_owner;
 }
