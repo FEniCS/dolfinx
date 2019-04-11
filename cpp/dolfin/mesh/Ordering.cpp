@@ -10,21 +10,25 @@
 #include "MeshIterator.h"
 #include <vector>
 
+#include <iostream>
+
 using namespace dolfin;
 
 namespace
 {
 //-----------------------------------------------------------------------------
 bool increasing(int num_vertices, const std::int32_t* local_vertices,
-                const std::vector<std::int64_t>& local_to_global_vertex_indices)
+                const std::vector<std::int64_t>& global_vertex_indices)
 {
-  // Two cases here, either check vertices directly (when running in serial)
-  // or check based on the global indices (when running in parallel)
+  // return std::is_sorted(local_vertices, local_vertices + num_vertices,
+  //                       [&map = global_vertex_indices](auto& a, auto& b) {
+  //                         return map[a] < map[b];
+  //                       });
 
   for (int v = 1; v < num_vertices; v++)
   {
-    if (local_to_global_vertex_indices[local_vertices[v - 1]]
-        >= local_to_global_vertex_indices[local_vertices[v]])
+    if (global_vertex_indices[local_vertices[v - 1]]
+        >= global_vertex_indices[local_vertices[v]])
     {
       return false;
     }
@@ -34,7 +38,7 @@ bool increasing(int num_vertices, const std::int32_t* local_vertices,
 //-----------------------------------------------------------------------------
 bool increasing(int n0, const std::int32_t* v0, int n1, const std::int32_t* v1,
                 int num_vertices, const std::int32_t* local_vertices,
-                const std::vector<std::int64_t>& local_to_global_vertex_indices)
+                const std::vector<std::int64_t>& global_vertex_indices)
 {
   assert(n0 == n1);
   assert(num_vertices > n0);
@@ -84,39 +88,17 @@ bool increasing(int n0, const std::int32_t* v0, int n1, const std::int32_t* v1,
   // Compare lexicographic ordering of w0 and w1
   for (int i = 0; i < num_non_incident; i++)
   {
-    if (local_to_global_vertex_indices[w0[i]]
-        < local_to_global_vertex_indices[w1[i]])
-    {
+    if (global_vertex_indices[w0[i]] < global_vertex_indices[w1[i]])
       return true;
-    }
-    else if (local_to_global_vertex_indices[w0[i]]
-             > local_to_global_vertex_indices[w1[i]])
-    {
+    else if (global_vertex_indices[w0[i]] > global_vertex_indices[w1[i]])
       return false;
-    }
   }
 
   return true;
 }
 //-----------------------------------------------------------------------------
-void sort_entities(
-    int num_vertices, std::int32_t* local_vertices,
-    const std::vector<std::int64_t>& local_to_global_vertex_indices)
-{
-  // Two cases here, either sort vertices directly (when running in
-  // serial) or sort based on the global indices (when running in
-  // parallel)
-
-  // Sort on global vertex indices
-  std::sort(local_vertices, local_vertices + num_vertices,
-            [& map = local_to_global_vertex_indices](auto a, auto b) {
-              return map[a] > map[b];
-            });
-}
-//-----------------------------------------------------------------------------
-void order_cell_simplex(
-    const std::vector<std::int64_t>& local_to_global_vertex_indices,
-    dolfin::mesh::Cell& cell)
+void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
+                        dolfin::mesh::Cell& cell)
 {
   const mesh::MeshTopology& topology = cell.mesh().topology();
   const int tdim = topology.dim();
@@ -143,7 +125,10 @@ void order_cell_simplex(
     {
       std::int32_t* edge_vertices
           = const_cast<std::int32_t*>((*connect_1_0)(cell_edges[i]));
-      sort_entities(2, edge_vertices, local_to_global_vertex_indices);
+      // sort_entities(2, edge_vertices, global_vertex_indices);
+      std::sort(edge_vertices, edge_vertices + 2, [&](auto& a, auto& b) {
+        return global_vertex_indices[a] < global_vertex_indices[b];
+      });
     }
   }
 
@@ -166,7 +151,9 @@ void order_cell_simplex(
     {
       std::int32_t* face_vertices
           = const_cast<std::int32_t*>((*connect_2_0)(cell_faces[i]));
-      sort_entities(3, face_vertices, local_to_global_vertex_indices);
+      std::sort(face_vertices, face_vertices + 3, [&](auto& a, auto& b) {
+        return global_vertex_indices[a] < global_vertex_indices[b];
+      });
     }
   }
 
@@ -225,7 +212,9 @@ void order_cell_simplex(
   if (connect_3_0 and !connect_3_0->empty())
   {
     std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
-    sort_entities(4, cell_vertices, local_to_global_vertex_indices);
+    std::sort(cell_vertices, cell_vertices + 4, [&](auto& a, auto& b) {
+      return global_vertex_indices[a] < global_vertex_indices[b];
+    });
   }
 
   // Sort local edges on cell after non-incident vertex tuble,
@@ -305,7 +294,7 @@ void order_cell_simplex(
 }
 //-----------------------------------------------------------------------------
 bool ordered_cell_simplex(
-    const std::vector<std::int64_t>& local_to_global_vertex_indices,
+    const std::vector<std::int64_t>& global_vertex_indices,
     const dolfin::mesh::Cell& cell)
 {
   // Get mesh topology
@@ -323,7 +312,7 @@ bool ordered_cell_simplex(
   assert(vertices);
 
   // Check that vertices are in ascending order
-  if (!increasing(num_vertices, vertices, local_to_global_vertex_indices))
+  if (!increasing(num_vertices, vertices, global_vertex_indices))
     return false;
 
   // Note the comparison below: d + 1 < dim, not d < dim - 1
@@ -360,7 +349,7 @@ bool ordered_cell_simplex(
 
       // Check ordering of entities
       if (!increasing(n0, v0, n1, v1, num_vertices, vertices,
-                      local_to_global_vertex_indices))
+                      global_vertex_indices))
       {
         return false;
       }
@@ -390,19 +379,20 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   // Get global vertex numbering
   if (!mesh.topology().have_global_indices(0))
     throw std::runtime_error("Mesh does not have global vertex indices.");
-  const std::vector<std::int64_t>& local_to_global_vertex_indices
+  const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
 
   // Iterate over all cells
   for (mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
-    order_cell_simplex(local_to_global_vertex_indices, cell);
+    order_cell_simplex(global_vertex_indices, cell);
 }
 //-----------------------------------------------------------------------------
 bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
 {
   const mesh::CellType& cell_type = mesh.type();
   if (!cell_type.is_simplex())
-    throw std::runtime_error("Mesh ordering check is for simplex cell types only.");
+    throw std::runtime_error(
+        "Mesh ordering check is for simplex cell types only.");
 
   const int tdim = mesh.topology().dim();
   if (mesh.num_entities(tdim) == 0)
@@ -411,13 +401,13 @@ bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
   // Get global vertex numbering
   if (!mesh.topology().have_global_indices(0))
     throw std::runtime_error("Mesh does not have global vertex indices.");
-  const std::vector<std::int64_t>& local_to_global_vertex_indices
+  const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
 
   // Check if all cells are ordered
   for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    if (ordered_cell_simplex(local_to_global_vertex_indices, cell))
+    if (ordered_cell_simplex(global_vertex_indices, cell))
       return false;
   }
 
