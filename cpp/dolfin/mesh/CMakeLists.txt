@@ -9,16 +9,17 @@ set(HEADERS
   Facet.h
   HexahedronCell.h
   IntervalCell.h
+  Mesh.h
   MeshConnectivity.h
   MeshEntity.h
   MeshFunction.h
   MeshGeometry.h
   MeshIterator.h
-  Mesh.h
   MeshPartitioning.h
   MeshQuality.h
   MeshTopology.h
   MeshValueCollection.h
+  Ordering.h
   PartitionData.h
   PeriodicBoundaryComputation.h
   PointCell.h
@@ -39,14 +40,15 @@ set(SOURCES
   Facet.cpp
   HexahedronCell.cpp
   IntervalCell.cpp
-  MeshConnectivity.cpp
   Mesh.cpp
+  MeshConnectivity.cpp
   MeshEntity.cpp
   MeshFunction.cpp
   MeshGeometry.cpp
   MeshPartitioning.cpp
   MeshQuality.cpp
   MeshTopology.cpp
+  Ordering.cpp
   PartitionData.cpp
   PeriodicBoundaryComputation.cpp
   PointCell.cpp
