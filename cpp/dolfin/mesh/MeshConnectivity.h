@@ -127,11 +127,11 @@ public:
 
   /// Position of first connection in connections() for each entity
   /// (using local index)
-  Eigen::Ref<Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> entity_positions();
+  Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> entity_positions();
 
   /// Position of first connection in connections() for each entity
   /// (using local index) (const version)
-  Eigen::Ref<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   entity_positions() const;
 
   /// Set given connection for given entity
@@ -161,7 +161,7 @@ private:
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _connections;
 
   // Position of first connection for each entity (using local index)
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _index_to_position;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _index_to_position;
 
   // Global number of connections for all entities (possibly not
   // computed)

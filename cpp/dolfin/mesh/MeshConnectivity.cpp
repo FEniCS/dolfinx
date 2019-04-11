@@ -26,7 +26,7 @@ MeshConnectivity::MeshConnectivity(std::size_t num_entities,
   // Allocate
   _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
   _index_to_position
-      = Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>(num_entities + 1);
+      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>(num_entities + 1);
 
   // Initialize data
   for (Eigen::Index e = 0; e < _index_to_position.size(); e++)
@@ -62,13 +62,13 @@ MeshConnectivity::connections() const
   return _connections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 MeshConnectivity::entity_positions()
 {
   return _index_to_position;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 MeshConnectivity::entity_positions() const
 {
   return _index_to_position;
@@ -78,7 +78,8 @@ void MeshConnectivity::set(std::size_t entity, std::size_t connection,
                            std::size_t pos)
 {
   assert((Eigen::Index)(entity + 1) < _index_to_position.size());
-  assert(pos < _index_to_position[entity + 1] - _index_to_position[entity]);
+  assert((std::int32_t)pos
+         < _index_to_position[entity + 1] - _index_to_position[entity]);
   _connections[_index_to_position[entity] + pos] = connection;
 }
 //-----------------------------------------------------------------------------
@@ -110,8 +111,8 @@ std::string MeshConnectivity::str(bool verbose) const
     for (Eigen::Index e = 0; e < _index_to_position.size() - 1; e++)
     {
       s << "  " << e << ":";
-      for (std::size_t i = _index_to_position[e]; i < _index_to_position[e + 1];
-           i++)
+      for (std::int32_t i = _index_to_position[e];
+           i < _index_to_position[e + 1]; i++)
       {
         s << " " << _connections[i];
       }
