@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Anders Logg
+// Copyright (C) 2007-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -21,16 +21,15 @@ bool increasing(const int n, const std::int32_t* v0, const std::int32_t* v1,
                 const std::vector<std::int64_t>& global_indices)
 {
   assert(num_vertices > n);
+  assert(num_vertices <= 4);
   const int num_non_incident = num_vertices - n;
   assert(num_non_incident <= 3);
-  assert(num_vertices <= 4);
 
-  // FIXME: Can we guarantee that local_vertices is sorted?
   // Array of global vertices
   std::array<std::int64_t, 4> v = {-1};
   for (int i = 0; i < num_vertices; ++i)
     v[i] = global_indices[vertices[i]];
-  std::sort(v.begin(), v.begin() + num_vertices);
+  assert(std::is_sorted(v.begin(), v.begin() + num_vertices));
 
   // Compute non-incident vertices for first entity
   std::array<std::int64_t, 3> _v0 = {-1};
@@ -73,7 +72,6 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
       = topology.connectivity(1, 0);
   if (connect_1_0 and !connect_1_0->empty())
   {
-    // std::cout << "Sorting vertices on edges: " << num_edges << std::endl;
     // assert(!topology(tdim, 1).empty());
 
     // Sort vertices on each edge
@@ -99,7 +97,6 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
       = topology.connectivity(2, 0);
   if (connect_2_0 and !connect_2_0->empty())
   {
-    // std::cout << "Sorting vertices on faces: " << num_faces << std::endl;
     // assert(!topology(3, 2).empty());
 
     // Sort vertices on each facet
@@ -124,10 +121,8 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
     // dolfin_assert(!topology(2, 0).empty());
     // dolfin_assert(!topology(1, 0).empty());
 
-    // Get face numbers
-    const std::int32_t* cell_faces = cell.entities(2);
-
     // Loop over faces on cell
+    const std::int32_t* cell_faces = cell.entities(2);
     for (int i = 0; i < num_faces; ++i)
     {
       // For each face number get the global vertex numbers
@@ -221,8 +216,6 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
       = topology.connectivity(3, 2);
   if (connect_3_2 and !connect_3_2->empty())
   {
-    // std::cout << "Sorting final: " << num_edges << std::endl;
-
     // assert(!topology(2, 0).empty());
 
     // Get cell vertices and facet numbers
