@@ -8,74 +8,50 @@
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshIterator.h"
+#include <array>
 #include <vector>
-
-#include <iostream>
 
 using namespace dolfin;
 
 namespace
 {
 //-----------------------------------------------------------------------------
-bool increasing(int n0, const std::int32_t* v0, int n1, const std::int32_t* v1,
-                int num_vertices, const std::int32_t* local_vertices,
-                const std::vector<std::int64_t>& global_vertex_indices)
+bool increasing(const int n, const std::int32_t* v0, const std::int32_t* v1,
+                int num_vertices, const std::int32_t* vertices,
+                const std::vector<std::int64_t>& global_indices)
 {
-  assert(n0 == n1);
-  assert(num_vertices > n0);
-  const int num_non_incident = num_vertices - n0;
+  assert(num_vertices > n);
+  const int num_non_incident = num_vertices - n;
+  assert(num_non_incident <= 3);
+  assert(num_vertices <= 4);
+
+  // FIXME: Can we guarantee that local_vertices is sorted?
+  // Array of global vertices
+  std::array<std::int64_t, 4> v = {-1};
+  for (int i = 0; i < num_vertices; ++i)
+    v[i] = global_indices[vertices[i]];
+  std::sort(v.begin(), v.begin() + num_vertices);
 
   // Compute non-incident vertices for first entity
-  std::vector<int> w0(num_non_incident);
-  int k = 0;
-  for (int i = 0; i < num_vertices; i++)
-  {
-    const int v = local_vertices[i];
-    bool incident = false;
-    for (int j = 0; j < n0; j++)
-    {
-      if (v0[j] == v)
-      {
-        incident = true;
-        break;
-      }
-    }
-    if (!incident)
-      w0[k++] = v;
-  }
-  assert(k == num_non_incident);
+  std::array<std::int64_t, 3> _v0 = {-1};
+  for (int i = 0; i < n; ++i)
+    _v0[i] = global_indices[v0[i]];
+  std::sort(_v0.begin(), _v0.begin() + n);
+  std::array<std::int64_t, 3> w0 = {-1};
+  auto it = std::set_difference(v.begin(), v.begin() + num_vertices,
+                                _v0.begin(), _v0.begin() + n, w0.begin());
+  assert(std::distance(w0.begin(), it) == num_non_incident);
 
-  // Compute non-incident vertices for second entity
-  std::vector<int> w1(num_non_incident);
-  k = 0;
-  for (int i = 0; i < num_vertices; i++)
-  {
-    const int v = local_vertices[i];
-    bool incident = false;
-    for (int j = 0; j < n1; j++)
-    {
-      if (v1[j] == v)
-      {
-        incident = true;
-        break;
-      }
-    }
+  std::array<std::int64_t, 3> _v1 = {-1};
+  for (int i = 0; i < n; ++i)
+    _v1[i] = global_indices[v1[i]];
+  std::sort(_v1.begin(), _v1.begin() + n);
+  std::array<std::int64_t, 3> w1 = {-1};
+  auto it1 = std::set_difference(v.begin(), v.begin() + num_vertices,
+                                 _v1.begin(), _v1.begin() + n, w1.begin());
+  assert(std::distance(w1.begin(), it1) == num_non_incident);
 
-    if (!incident)
-      w1[k++] = v;
-  }
-  assert(k == num_non_incident);
-
-  // Compare lexicographic ordering of w0 and w1
-  for (int i = 0; i < num_non_incident; i++)
-  {
-    if (global_vertex_indices[w0[i]] < global_vertex_indices[w1[i]])
-      return true;
-    else if (global_vertex_indices[w0[i]] > global_vertex_indices[w1[i]])
-      return false;
-  }
-
-  return true;
+  return w0 < w1;
 }
 //-----------------------------------------------------------------------------
 void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
@@ -332,10 +308,10 @@ bool ordered_cell_simplex(
       const std::int32_t* v1 = (*connect_d_0)(e1);
 
       // Check ordering of entities
-      if (!increasing(n0, v0, n1, v1, num_vertices, vertices,
+      assert(n0 == n1);
+      if (!increasing(n0, v0, v1, num_vertices, vertices,
                       global_vertex_indices))
       {
-        std::cout << "Complicated check not ordered" << std::endl;
         return false;
       }
     }
