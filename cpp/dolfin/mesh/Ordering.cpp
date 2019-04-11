@@ -345,8 +345,10 @@ bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
 {
   const mesh::CellType& cell_type = mesh.type();
   if (!cell_type.is_simplex())
+  {
     throw std::runtime_error(
         "Mesh ordering check is for simplex cell types only.");
+  }
 
   const int tdim = mesh.topology().dim();
   if (mesh.num_entities(tdim) == 0)
