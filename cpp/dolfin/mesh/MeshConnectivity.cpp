@@ -50,10 +50,22 @@ MeshConnectivity::MeshConnectivity(std::vector<std::size_t>& num_connections)
   _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
 }
 //-----------------------------------------------------------------------------
+Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+MeshConnectivity::connections()
+{
+  return _connections;
+}
+//-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 MeshConnectivity::connections() const
 {
   return _connections;
+}
+//-----------------------------------------------------------------------------
+Eigen::Ref<Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+MeshConnectivity::entity_positions()
+{
+  return _index_to_position;
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>

@@ -102,6 +102,14 @@ public:
   }
 
   /// Return array of connections for given entity
+  std::int32_t* connections(int entity)
+  {
+    return (entity + 1) < _index_to_position.size()
+               ? &_connections[_index_to_position[entity]]
+               : nullptr;
+  }
+
+  /// Return array of connections for given entity (const version)
   const std::int32_t* connections(int entity) const
   {
     return (entity + 1) < _index_to_position.size()
@@ -110,11 +118,19 @@ public:
   }
 
   /// Return contiguous array of connections for all entities
+  Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> connections();
+
+  /// Return contiguous array of connections for all entities (const
+  /// version)
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   connections() const;
 
   /// Position of first connection in connections() for each entity
   /// (using local index)
+  Eigen::Ref<Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>> entity_positions();
+
+  /// Position of first connection in connections() for each entity
+  /// (using local index) (const version)
   Eigen::Ref<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
   entity_positions() const;
 
