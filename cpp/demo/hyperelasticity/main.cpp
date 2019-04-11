@@ -168,24 +168,9 @@ int main(int argc, char* argv[])
   std::array<geometry::Point, 2> pt
       = {geometry::Point(0.0, 0.0, 0.0), geometry::Point(1.0, 1.0, 1.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
-      MPI_COMM_WORLD, pt, {{2, 2, 2}}, mesh::CellType::Type::tetrahedron,
+      MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::Type::tetrahedron,
       mesh::GhostMode::none));
-
-  mesh->init();
-  bool is_orderedA = mesh::Ordering::is_ordered_simplex(*mesh);
-
   mesh::Ordering::order_simplex(*mesh);
-  bool is_orderedB = mesh::Ordering::is_ordered_simplex(*mesh);
-
-
-  if (is_orderedA)
-    std::cout << "A: Is ordered: " << std::endl;
-  else
-    std::cout << "A: Is NOT ordered: " << std::endl;
-  if (is_orderedB)
-    std::cout << "B: Is ordered: " << std::endl;
-  else
-    std::cout << "B: Is NOT ordered: " << std::endl;
 
   ufc_function_space* space = hyperelasticity_functionspace_create();
   ufc_dofmap* ufc_map = space->create_dofmap();
