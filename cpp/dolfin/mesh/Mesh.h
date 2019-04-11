@@ -7,7 +7,6 @@
 #pragma once
 
 #include "CellType.h"
-#include "Connectivity.h"
 #include "CoordinateDofs.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
@@ -127,17 +126,6 @@ public:
   ///         Number of entities of topological dimension d.
   ///
   std::int32_t num_entities(int d) const { return _topology.size(d); }
-
-  /// Get cell connectivity.
-  ///
-  /// @return std::vector<std::uint32_t>&
-  ///         Connectivity for all cells.
-  ///
-  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cells() const
-  {
-    assert(_topology.connectivity(_topology.dim(), 0));
-    return _topology.connectivity(_topology.dim(), 0)->connections();
-  }
 
   /// Get global number of entities of given topological dimension.
   ///

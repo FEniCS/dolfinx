@@ -11,6 +11,7 @@
 #include <dolfin/function/Expression.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
@@ -203,8 +204,8 @@ void mesh(py::module& m)
 
   // dolfin::mesh::Connectivity class
   py::class_<dolfin::mesh::Connectivity,
-             std::shared_ptr<dolfin::mesh::Connectivity>>(
-      m, "Connectivity", "Connectivity object")
+             std::shared_ptr<dolfin::mesh::Connectivity>>(m, "Connectivity",
+                                                          "Connectivity object")
       .def("connections",
            [](const dolfin::mesh::Connectivity& self, std::size_t i) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(

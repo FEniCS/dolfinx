@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "Connectivity.h"
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -17,6 +16,8 @@ namespace dolfin
 {
 namespace mesh
 {
+
+class Connectivity;
 
 /// MeshTopology stores the topology of a mesh, consisting of mesh
 /// entities and connectivity (incidence relations for the mesh
@@ -60,16 +61,7 @@ public:
 
   /// Return number of regular (non-ghost) entities or equivalently,
   /// the offset of where ghost entities begin
-  inline std::int32_t ghost_offset(int dim) const
-  {
-    if (_ghost_offset_index.empty())
-      return 0;
-    else
-    {
-      assert(dim < (int)_ghost_offset_index.size());
-      return _ghost_offset_index[dim];
-    }
-  }
+  std::int32_t ghost_offset(int dim) const;
 
   /// Clear data for given pair of topological dimensions
   void clear(int d0, int d1);
@@ -88,35 +80,19 @@ public:
   /// Set global index for entity of dimension dim and with local
   /// index
   void set_global_index(std::size_t dim, std::int32_t local_index,
-                        std::int64_t global_index)
-  {
-    assert(dim < _global_indices.size());
-    assert(local_index < (std::int32_t)_global_indices[dim].size());
-    _global_indices[dim][local_index] = global_index;
-  }
+                        std::int64_t global_index);
 
   /// Get local-to-global index map for entities of topological
   /// dimension d
-  const std::vector<std::int64_t>& global_indices(std::size_t d) const
-  {
-    assert(d < _global_indices.size());
-    return _global_indices[d];
-  }
+  const std::vector<std::int64_t>& global_indices(std::size_t d) const;
 
   /// Check if global indices are available for entities of
   /// dimension dim
-  bool have_global_indices(std::size_t dim) const
-  {
-    assert(dim < _global_indices.size());
-    return !_global_indices[dim].empty();
-  }
+  bool have_global_indices(std::size_t dim) const;
 
-  /// Check whether there are any shared entities calculated
-  /// of dimension dim
-  bool have_shared_entities(std::uint32_t dim) const
-  {
-    return (_shared_entities.find(dim) != _shared_entities.end());
-  }
+  /// Check whether there are any shared entities calculated of
+  /// dimension dim
+  bool have_shared_entities(std::uint32_t dim) const;
 
   /// Return map from shared entities (local index) to processes
   /// that share the entity
@@ -130,39 +106,24 @@ public:
   /// Return mapping from local ghost cell index to owning process
   /// Since ghost cells are at the end of the range, this is just
   /// a vector over those cells
-  std::vector<std::uint32_t>& cell_owner() { return _cell_owner; }
+  std::vector<std::uint32_t>& cell_owner();
 
   /// Return mapping from local ghost cell index to owning process (const
   /// version)
   /// Since ghost cells are at the end of the range, this is just
   /// a vector over those cells
-  const std::vector<std::uint32_t>& cell_owner() const { return _cell_owner; }
+  const std::vector<std::uint32_t>& cell_owner() const;
 
   /// Return connectivity for given pair of topological dimensions
-  std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1)
-  {
-    assert(d0 < _connectivity.size());
-    assert(d1 < _connectivity[d0].size());
-    return _connectivity[d0][d1];
-  }
+  std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1);
 
   /// Return connectivity for given pair of topological dimensions
   std::shared_ptr<const Connectivity> connectivity(std::size_t d0,
-                                                   std::size_t d1) const
-  {
-    assert(d0 < _connectivity.size());
-    assert(d1 < _connectivity[d0].size());
-    return _connectivity[d0][d1];
-  }
+                                                   std::size_t d1) const;
 
   /// Set connectivity for given pair of topological dimensions
   void set_connectivity(std::shared_ptr<Connectivity> c, std::size_t d0,
-                        std::size_t d1)
-  {
-    assert(d0 < _connectivity.size());
-    assert(d1 < _connectivity[d0].size());
-    _connectivity[d0][d1] = c;
-  }
+                        std::size_t d1);
 
   /// Return hash based on the hash of cell-vertex connectivity
   size_t hash() const;
@@ -196,6 +157,6 @@ private:
 
   // Connectivity for pairs of topological dimensions
   std::vector<std::vector<std::shared_ptr<Connectivity>>> _connectivity;
-};
+}; // namespace mesh
 } // namespace mesh
 } // namespace dolfin

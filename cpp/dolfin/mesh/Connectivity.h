@@ -27,9 +27,6 @@ namespace mesh
 class Connectivity
 {
 public:
-  /// Create empty connectivity
-  Connectivity();
-
   /// Initialize number of entities and number of connections (equal
   /// for all)
   Connectivity(std::size_t num_entities, std::size_t num_connections);

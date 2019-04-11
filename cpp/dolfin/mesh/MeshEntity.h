@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Connectivity.h"
 #include "Mesh.h"
 #include <dolfin/geometry/Point.h>
 
@@ -171,7 +172,8 @@ public:
     {
       assert(_mesh->topology().connectivity(_dim, dim));
       const std::int32_t* initialized_mesh_entities
-          = (*_mesh->topology().connectivity(_dim, dim)).connections(_local_index);
+          = _mesh->topology().connectivity(_dim, dim)->connections(
+              _local_index);
       assert(initialized_mesh_entities);
       return initialized_mesh_entities;
     }

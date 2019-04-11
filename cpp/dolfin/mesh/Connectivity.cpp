@@ -12,11 +12,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-Connectivity::Connectivity()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 Connectivity::Connectivity(std::size_t num_entities,
                            std::size_t num_connections)
 {
