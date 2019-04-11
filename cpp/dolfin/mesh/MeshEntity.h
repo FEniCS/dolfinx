@@ -216,13 +216,13 @@ public:
   /// Return set of sharing processes
   /// @return std::set<std::uint32_t>
   ///   List of sharing processes
-  std::set<std::uint32_t> sharing_processes() const
+  std::set<std::int32_t> sharing_processes() const
   {
-    const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
+    const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
         = _mesh->topology().shared_entities(_dim);
     const auto map_it = sharing_map.find(_local_index);
     if (map_it == sharing_map.end())
-      return std::set<std::uint32_t>();
+      return std::set<std::int32_t>();
     else
       return map_it->second;
   }
@@ -234,7 +234,7 @@ public:
   {
     if (_mesh->topology().have_shared_entities(_dim))
     {
-      const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
+      const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
           = _mesh->topology().shared_entities(_dim);
       return (sharing_map.find(_local_index) != sharing_map.end());
     }

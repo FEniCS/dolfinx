@@ -24,10 +24,10 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
@@ -1871,7 +1871,7 @@ XDMFFile::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
 
   const int mpi_rank = MPI::rank(mesh.mpi_comm());
-  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
       = mesh.topology().shared_entities(cell_dim);
 
   std::set<std::uint32_t> non_local_entities;

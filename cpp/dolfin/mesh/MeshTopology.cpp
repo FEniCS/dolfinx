@@ -106,7 +106,7 @@ bool MeshTopology::have_global_indices(std::size_t dim) const
   return !_global_indices[dim].empty();
 }
 //-----------------------------------------------------------------------------
-bool MeshTopology::have_shared_entities(std::uint32_t dim) const
+bool MeshTopology::have_shared_entities(int dim) const
 {
   return (_shared_entities.find(dim) != _shared_entities.end());
 }
@@ -117,7 +117,7 @@ void MeshTopology::init_global_indices(std::size_t dim, std::int64_t size)
   _global_indices[dim] = std::vector<std::int64_t>(size, -1);
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<std::uint32_t>>&
+std::map<std::int32_t, std::set<std::int32_t>>&
 MeshTopology::shared_entities(int dim)
 {
   assert(dim <= this->dim());
@@ -155,7 +155,7 @@ void MeshTopology::set_connectivity(std::shared_ptr<Connectivity> c,
   _connectivity[d0][d1] = c;
 }
 //-----------------------------------------------------------------------------
-const std::map<std::int32_t, std::set<std::uint32_t>>&
+const std::map<std::int32_t, std::set<std::int32_t>>&
 MeshTopology::shared_entities(int dim) const
 {
   auto e = _shared_entities.find(dim);

@@ -91,7 +91,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Distribute the points across processes and calculate shared points
   EigenRowArrayXXd distributed_points;
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_points;
+  std::map<std::int32_t, std::set<std::int32_t>> shared_points;
   std::tie(distributed_points, shared_points)
       = MeshPartitioning::distribute_points(comm, points, global_point_indices);
 
@@ -102,7 +102,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // Get global vertex information
   std::uint64_t num_vertices_global;
   std::vector<std::int64_t> global_vertex_indices;
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
+  std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
 
   if (_degree == 1)
   {

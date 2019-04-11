@@ -92,15 +92,15 @@ public:
 
   /// Check whether there are any shared entities calculated of
   /// dimension dim
-  bool have_shared_entities(std::uint32_t dim) const;
+  bool have_shared_entities(int dim) const;
 
   /// Return map from shared entities (local index) to processes
   /// that share the entity
-  std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities(int dim);
+  std::map<std::int32_t, std::set<std::int32_t>>& shared_entities(int dim);
 
   /// Return map from shared entities (local index) to process that
   /// share the entity (const version)
-  const std::map<std::int32_t, std::set<std::uint32_t>>&
+  const std::map<std::int32_t, std::set<std::int32_t>>&
   shared_entities(int dim) const;
 
   /// Return mapping from local ghost cell index to owning process Since
@@ -146,7 +146,7 @@ private:
 
   // For entities of a given dimension d, maps each shared entity
   // (local index) to a list of the processes sharing the vertex
-  std::map<std::uint32_t, std::map<std::int32_t, std::set<std::uint32_t>>>
+  std::map<std::int32_t, std::map<std::int32_t, std::set<std::int32_t>>>
       _shared_entities;
 
   // For cells which are "ghosted", locate the owning process, using a

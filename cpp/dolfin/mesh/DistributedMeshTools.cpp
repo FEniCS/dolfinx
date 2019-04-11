@@ -125,7 +125,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   }
 
   // Get shared entities map
-  std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities
+  std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
       = _mesh.topology().shared_entities(d);
 
   // Number entities
@@ -135,7 +135,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   // const std::size_t num_global_entities = number_entities(
   //     mesh, slave_entities, global_entity_indices, shared_entities, d);
   std::vector<std::int64_t> global_entity_indices;
-  const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
+  const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
       slave_entities;
   std::size_t num_global_entities;
   std::tie(global_entity_indices, shared_entities, num_global_entities)
@@ -152,7 +152,7 @@ std::tuple<std::vector<std::int64_t>,
            std::map<std::int32_t, std::set<std::uint32_t>>, std::size_t>
 DistributedMeshTools::number_entities(
     const Mesh& mesh,
-    const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
+    const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>&
         slave_entities,
     int d)
 {
@@ -163,8 +163,8 @@ DistributedMeshTools::number_entities(
   // numbering for problems with periodic boundary conditions.
 
   // spdlog::info(
-  //     "Number mesh entities for distributed mesh (for specified vertex ids).",
-  //     d);
+  //     "Number mesh entities for distributed mesh (for specified vertex
+  //     ids).", d);
   common::Timer timer(
       "Number mesh entities for distributed mesh (for specified vertex ids)");
 
@@ -230,7 +230,7 @@ DistributedMeshTools::number_entities(
       = mesh.topology().global_indices(0);
 
   // Get shared vertices (local index, [sharing processes])
-  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices_local
       = mesh.topology().shared_entities(0);
 
   // Compute ownership of entities of dimension d ([entity vertices], data):
@@ -425,7 +425,8 @@ DistributedMeshTools::locate_off_process_entities(
 
   // if (dim == 0)
   // {
-  //   spdlog::warn("DistributedMeshTools::host_processes has not been tested for "
+  //   spdlog::warn("DistributedMeshTools::host_processes has not been tested
+  //   for "
   //                "vertices.");
   // }
 
@@ -471,7 +472,7 @@ DistributedMeshTools::locate_off_process_entities(
     std::set<std::size_t> set_of_my_entities(entity_indices.begin(),
                                              entity_indices.end());
 
-    const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
+    const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
         = mesh.topology().shared_entities(D);
 
     // FIXME: This can be made more efficient by exploiting fact that
@@ -585,7 +586,7 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   number_entities(mesh, d);
 
   // Get shared entities to processes map
-  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
       = mesh.topology().shared_entities(d);
 
   // Get local-to-global indices map
@@ -599,7 +600,7 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   // Pack global indices for sending to sharing processes
   std::vector<std::vector<std::size_t>> send_indices(comm_size);
   std::vector<std::vector<std::size_t>> local_sent_indices(comm_size);
-  std::map<std::int32_t, std::set<std::uint32_t>>::const_iterator shared_entity;
+  std::map<std::int32_t, std::set<std::int32_t>>::const_iterator shared_entity;
   for (shared_entity = shared_entities.begin();
        shared_entity != shared_entities.end(); ++shared_entity)
   {
@@ -611,10 +612,10 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
     std::size_t global_index = global_indices_map[local_index];
 
     // Destination process
-    const std::set<std::uint32_t>& sharing_processes = shared_entity->second;
+    const std::set<std::int32_t>& sharing_processes = shared_entity->second;
 
     // Pack data for sending and build global-to-local map
-    std::set<std::uint32_t>::const_iterator dest;
+    std::set<std::int32_t>::const_iterator dest;
     for (dest = sharing_processes.begin(); dest != sharing_processes.end();
          ++dest)
     {
@@ -1097,7 +1098,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_global_neighbors(
       mesh.num_entities(D - 1));
 
-  std::map<std::int32_t, std::set<std::uint32_t>>& shared_facets
+  std::map<std::int32_t, std::set<std::int32_t>>& shared_facets
       = mesh.topology().shared_entities(D - 1);
 
   // Check if no ghost cells
