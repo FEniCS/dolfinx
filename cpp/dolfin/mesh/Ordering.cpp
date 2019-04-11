@@ -17,25 +17,6 @@ using namespace dolfin;
 namespace
 {
 //-----------------------------------------------------------------------------
-bool increasing(int num_vertices, const std::int32_t* local_vertices,
-                const std::vector<std::int64_t>& global_vertex_indices)
-{
-  // return std::is_sorted(local_vertices, local_vertices + num_vertices,
-  //                       [&map = global_vertex_indices](auto& a, auto& b) {
-  //                         return map[a] < map[b];
-  //                       });
-
-  for (int v = 1; v < num_vertices; v++)
-  {
-    if (global_vertex_indices[local_vertices[v - 1]]
-        >= global_vertex_indices[local_vertices[v]])
-    {
-      return false;
-    }
-  }
-  return true;
-}
-//-----------------------------------------------------------------------------
 bool increasing(int n0, const std::int32_t* v0, int n1, const std::int32_t* v1,
                 int num_vertices, const std::int32_t* local_vertices,
                 const std::vector<std::int64_t>& global_vertex_indices)
@@ -312,9 +293,12 @@ bool ordered_cell_simplex(
   assert(vertices);
 
   // Check that vertices are in ascending order
-  if (!increasing(num_vertices, vertices, global_vertex_indices))
+  if (!std::is_sorted(vertices, vertices + num_vertices, [&](auto& a, auto& b) {
+        return global_vertex_indices[a] < global_vertex_indices[b];
+      }))
+  {
     return false;
-
+  }
   // Note the comparison below: d + 1 < dim, not d < dim - 1
   // Otherwise, d < dim - 1 will evaluate to true for dim = 0 with std::size_t
 
@@ -351,6 +335,7 @@ bool ordered_cell_simplex(
       if (!increasing(n0, v0, n1, v1, num_vertices, vertices,
                       global_vertex_indices))
       {
+        std::cout << "Complicated check not ordered" << std::endl;
         return false;
       }
     }
@@ -407,7 +392,7 @@ bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
   // Check if all cells are ordered
   for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    if (ordered_cell_simplex(global_vertex_indices, cell))
+    if (!ordered_cell_simplex(global_vertex_indices, cell))
       return false;
   }
 

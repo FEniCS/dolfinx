@@ -171,6 +171,11 @@ int main(int argc, char* argv[])
       MPI_COMM_WORLD, pt, {{2, 2, 2}}, mesh::CellType::Type::tetrahedron,
       mesh::GhostMode::none));
   mesh::Ordering::order_simplex(*mesh);
+  bool is_ordered = mesh::Ordering::is_ordered_simplex(*mesh);
+  if (is_ordered)
+    std::cout << "Is ordered: " << std::endl;
+  else
+    std::cout << "Is NOT ordered: " << std::endl;
 
   ufc_function_space* space = hyperelasticity_functionspace_create();
   ufc_dofmap* ufc_map = space->create_dofmap();
