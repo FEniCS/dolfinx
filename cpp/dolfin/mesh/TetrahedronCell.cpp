@@ -369,7 +369,7 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   assert(connectivity);
   for (std::size_t j = 0; j < 6; j++)
   {
-    const std::int32_t* ev = (*connectivity)(e[j]);
+    const std::int32_t* ev = connectivity->connections(e[j]);
     assert(ev);
     const std::int32_t v0 = v[EV[i][0]];
     const std::int32_t v1 = v[EV[i][1]];

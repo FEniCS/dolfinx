@@ -105,7 +105,7 @@ public:
         = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    _connections = c(e.index()) + pos;
+    _connections = c.connections(e.index()) + pos;
   }
 
   /// Constructor from MeshEntity
@@ -128,7 +128,7 @@ public:
 
     // Pointer to array of connections
     // assert(!c.empty());
-    _connections = c(e.index()) + pos;
+    _connections = c.connections(e.index()) + pos;
   }
 
   /// Copy constructor

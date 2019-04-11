@@ -219,7 +219,8 @@ MeshValueCollection<T>::MeshValueCollection(
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
         // Create cell
-        const mesh::Cell cell(*_mesh, connectivity(entity_index)[i]);
+        const mesh::Cell cell(*_mesh,
+                              connectivity.connections(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -271,7 +272,8 @@ operator=(const MeshFunction<T>& mesh_function)
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
         // Create cell
-        const mesh::Cell cell(*_mesh, connectivity(entity_index)[i]);
+        const mesh::Cell cell(*_mesh,
+                              connectivity.connections(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -323,7 +325,8 @@ bool MeshValueCollection<T>::set_value(std::size_t cell_index,
     // spdlog::error(
     //     "MeshValueCollection.h", "set value",
     //     "A mesh has not been associated with this MeshValueCollection");
-    throw std::runtime_error("A mesh has not been associated with this MeshValueCollection");
+    throw std::runtime_error(
+        "A mesh has not been associated with this MeshValueCollection");
   }
 
   const std::pair<std::size_t, std::size_t> pos(cell_index, local_entity);
@@ -347,7 +350,8 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
     // spdlog::error(
     //     "MeshValueCollection.h", "set value",
     //     "A mesh has not been associated with this MeshValueCollection");
-    throw std::runtime_error("A mesh has not been associated with this MeshValueCollection");
+    throw std::runtime_error(
+        "A mesh has not been associated with this MeshValueCollection");
   }
 
   assert(_dim >= 0);
@@ -382,7 +386,8 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   assert(!connectivity.empty());
   assert(connectivity.size(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
-  const mesh::Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
+  const mesh::Cell cell(
+      *_mesh, connectivity.connections(entity_index)[0]); // choose first
 
   // Find the local entity index
   const std::size_t local_entity = cell.index(entity);
@@ -418,7 +423,8 @@ T MeshValueCollection<T>::get_value(std::size_t cell_index,
     // spdlog::error("MeshValueCollection.h", "extract value",
     //               "No value stored for cell index: %d and local index: %d",
     //               cell_index, local_entity);
-    throw std::runtime_error("A mesh has not been associated with this MeshValueCollection");
+    throw std::runtime_error(
+        "A mesh has not been associated with this MeshValueCollection");
   }
 
   return it->second;
@@ -452,7 +458,8 @@ std::string MeshValueCollection<T>::str(bool verbose) const
   {
     s << str(false) << std::endl << std::endl;
     // spdlog::warn(
-    //     "Verbose output of MeshValueCollection must be implemented manually.");
+    //     "Verbose output of MeshValueCollection must be implemented
+    //     manually.");
   }
   else
   {

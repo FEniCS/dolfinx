@@ -203,10 +203,10 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::MeshConnectivity,
              std::shared_ptr<dolfin::mesh::MeshConnectivity>>(
       m, "MeshConnectivity", "MeshConnectivity object")
-      .def("__call__",
+      .def("connections",
            [](const dolfin::mesh::MeshConnectivity& self, std::size_t i) {
-             return Eigen::Map<const dolfin::EigenArrayXi32>(self(i),
-                                                             self.size(i));
+             return Eigen::Map<const dolfin::EigenArrayXi32>(
+                 self.connections(i), self.size(i));
            },
            py::return_value_policy::reference_internal)
       .def("size", &dolfin::mesh::MeshConnectivity::size);

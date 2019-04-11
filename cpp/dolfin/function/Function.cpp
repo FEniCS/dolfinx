@@ -361,7 +361,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
     eval(values, x, cell);
 
     // Copy values to array of point values
-    const std::int32_t* dofs = cell_dofs(cell.index());
+    const std::int32_t* dofs = cell_dofs.connections(cell.index());
     for (unsigned int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }

@@ -86,7 +86,7 @@ def test_ghost_connectivities(mode):
         fidx = facet.index()
         facet_mp = tuple(facet.midpoint()[:])
         reference[facet_mp] = []
-        for cidx in meshR.topology.connectivity(1, 2)(fidx):
+        for cidx in meshR.topology.connectivity(1, 2).connections(fidx):
             cell = Cell(meshR, cidx)
             cell_mp = tuple(cell.midpoint()[:])
             reference[facet_mp].append(cell_mp)
@@ -98,7 +98,7 @@ def test_ghost_connectivities(mode):
         facet_mp = tuple(facet.midpoint()[:])
         assert facet_mp in reference
 
-        for cidx in meshG.topology.connectivity(1, 2)(fidx):
+        for cidx in meshG.topology.connectivity(1, 2).connections(fidx):
             assert cidx in allowable_cell_indices
             cell = Cell(meshG, cidx)
             cell_mp = tuple(cell.midpoint()[:])
