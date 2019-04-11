@@ -84,7 +84,7 @@ void MeshConnectivity::set(std::size_t entity, std::size_t connection,
 }
 //-----------------------------------------------------------------------------
 void MeshConnectivity::set(
-    std::uint32_t entity,
+    std::int32_t entity,
     const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
         connections)
 {

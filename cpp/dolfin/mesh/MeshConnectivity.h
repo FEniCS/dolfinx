@@ -138,12 +138,12 @@ public:
   void set(std::size_t entity, std::size_t connection, std::size_t pos);
 
   /// Set all connections for given entity
-  void set(std::uint32_t entity,
+  void set(std::int32_t entity,
            const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
                connections);
 
   /// Set global number of connections for all local entities
-  void set_global_size(const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
+  void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
                            num_global_connections)
   {
     assert(num_global_connections.size() == _index_to_position.size() - 1);
@@ -165,7 +165,7 @@ private:
 
   // Global number of connections for all entities (possibly not
   // computed)
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _num_global_connections;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _num_global_connections;
 };
 } // namespace mesh
 } // namespace dolfin
