@@ -100,25 +100,25 @@ private:
   const mesh::Mesh& _mesh;
 
   // Shared edges between processes. In R^2, vector size is 1
-  std::unordered_map<unsigned int,
-                     std::vector<std::pair<unsigned int, unsigned int>>>
-      shared_edges;
+  std::unordered_map<std::int32_t,
+                     std::vector<std::pair<std::int32_t, std::int32_t>>>
+      _shared_edges;
 
   // Mapping from old local edge index to new global vertex, needed
   // to create new topology
-  std::map<std::size_t, std::size_t> local_edge_to_new_vertex;
+  std::map<std::size_t, std::size_t> _local_edge_to_new_vertex;
 
   // New storage for all coordinates when creating new vertices
   std::vector<double> _new_vertex_coordinates;
 
   // New storage for all cells when creating new topology
-  std::vector<std::int64_t> new_cell_topology;
+  std::vector<std::int64_t> _new_cell_topology;
 
   // Management of marked edges
-  std::vector<bool> marked_edges;
+  std::vector<bool> _marked_edges;
 
   // Temporary storage for edges that have been recently marked
-  std::vector<std::vector<std::size_t>> marked_for_update;
+  std::vector<std::vector<std::size_t>> _marked_for_update;
 };
 } // namespace refinement
 } // namespace dolfin

@@ -108,7 +108,7 @@ public:
   ///   topology in local indexing (EigenRowArrayXXi32)
   static std::tuple<std::uint64_t, std::vector<std::int64_t>,
                     EigenRowArrayXXi32>
-  compute_point_mapping(std::uint32_t num_cell_vertices,
+  compute_point_mapping(std::int32_t num_cell_vertices,
                         const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
                         const std::vector<std::uint8_t>& cell_permutation);
 
@@ -117,7 +117,7 @@ public:
   // at the vertex nodes
   static std::pair<std::int64_t, std::vector<std::int64_t>>
   build_global_vertex_indices(
-      MPI_Comm mpi_comm, std::uint32_t num_vertices,
+      MPI_Comm mpi_comm, std::int32_t num_vertices,
       const std::vector<std::int64_t>& global_point_indices,
       const std::map<std::int32_t, std::set<std::int32_t>>& shared_points);
 
@@ -159,7 +159,7 @@ private:
   static std::tuple<std::map<std::int32_t, std::set<std::int32_t>>,
                     EigenRowArrayXXi64, std::vector<std::int64_t>>
   reorder_cells_gps(
-      MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
+      MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
       const mesh::CellType& cell_type,
       const std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
       const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
@@ -189,7 +189,7 @@ private:
       MPI_Comm mpi_comm,
       const std::vector<std::vector<std::size_t>>& received_point_indices,
       const std::pair<std::size_t, std::size_t> local_point_range,
-      const std::vector<std::vector<std::uint32_t>>& local_indexing);
+      const std::vector<std::vector<std::int32_t>>& local_indexing);
 };
 } // namespace mesh
 } // namespace dolfin

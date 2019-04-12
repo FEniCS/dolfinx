@@ -103,8 +103,7 @@ public:
   /// Return global index of mesh entity
   ///
   /// @return     std::size_t
-  ///         The global index. Set to
-  ///         std::numerical_limits<std::size_t>::max() if global index
+  ///         The global index. Set to -1  if global index
   ///         has not been computed
   std::int64_t global_index() const
   {
