@@ -28,11 +28,6 @@ namespace mesh
 class Connectivity
 {
 public:
-  // TOOD: remove this constructor
-  /// Initialize number of entities and number of connections (equal
-  /// for all)
-  Connectivity(std::size_t num_entities, std::size_t num_connections);
-
   /// Initialize with all connections and pointer to each entity
   /// position
   Connectivity(const std::vector<std::int32_t>& connections,
@@ -140,12 +135,6 @@ public:
   /// (using local index) (const version)
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   entity_positions() const;
-
-  // TODO: remove
-  /// Set all connections for given entity
-  void set(std::int32_t entity,
-           const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
-               connections);
 
   /// Set global number of connections for all local entities
   void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&

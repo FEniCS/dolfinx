@@ -12,22 +12,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-Connectivity::Connectivity(std::size_t num_entities,
-                           std::size_t num_connections)
-{
-  // Compute the total size
-  const std::size_t size = num_entities * num_connections;
-
-  // Allocate
-  _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
-
-  // Initialize data
-  _index_to_position
-      = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>(num_entities + 1);
-  for (Eigen::Index e = 0; e < _index_to_position.size(); e++)
-    _index_to_position[e] = e * num_connections;
-}
-//-----------------------------------------------------------------------------
 Connectivity::Connectivity(const std::vector<std::int32_t>& connections,
                            const std::vector<std::int32_t>& positions)
     : _connections(connections.size()), _index_to_position(positions.size())
@@ -80,18 +64,6 @@ Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 Connectivity::entity_positions() const
 {
   return _index_to_position;
-}
-//-----------------------------------------------------------------------------
-void Connectivity::set(
-    std::int32_t entity,
-    const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
-        connections)
-{
-  assert((entity + 1) < _index_to_position.size());
-  assert(connections.size()
-         == _index_to_position[entity + 1] - _index_to_position[entity]);
-  std::copy(connections.data(), connections.data() + connections.size(),
-            _connections.data() + _index_to_position[entity]);
 }
 //-----------------------------------------------------------------------------
 void Connectivity::set_global_size(
