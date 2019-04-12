@@ -27,7 +27,7 @@ Connectivity::Connectivity(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>
         connections)
-    : _connections(connections.rows()*connections.cols()),
+    : _connections(connections.rows() * connections.cols()),
       _index_to_position(connections.rows() + 1)
 {
   // NOTE: cannot directly copy data from connections because it may be

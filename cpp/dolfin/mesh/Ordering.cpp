@@ -69,7 +69,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   std::shared_ptr<mesh::Connectivity> connect_1_0 = topology.connectivity(1, 0);
-  if (connect_1_0 and !connect_1_0->empty())
+  if (connect_1_0)
   {
     // assert(!topology(tdim, 1).empty());
 
@@ -91,7 +91,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort local vertices on faces in ascending order, connectivity 2 - 0
   std::shared_ptr<mesh::Connectivity> connect_2_0 = topology.connectivity(2, 0);
-  if (connect_2_0 and !connect_2_0->empty())
+  if (connect_2_0)
   {
     // assert(!topology(3, 2).empty());
 
@@ -109,7 +109,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   // Sort local edges on local faces after non-incident vertex,
   // connectivity 2 - 1
   std::shared_ptr<mesh::Connectivity> connect_2_1 = topology.connectivity(2, 1);
-  if (connect_2_1 and !connect_2_1->empty())
+  if (connect_2_1)
   {
     // dolfin_assert(!topology(3, 2).empty());
     // dolfin_assert(!topology(2, 0).empty());
@@ -155,7 +155,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort local vertices on cell in ascending order, connectivity 3 - 0
   std::shared_ptr<mesh::Connectivity> connect_3_0 = topology.connectivity(3, 0);
-  if (connect_3_0 and !connect_3_0->empty())
+  if (connect_3_0)
   {
     std::int32_t* cell_vertices = connect_3_0->connections(cell.index());
     std::sort(cell_vertices, cell_vertices + 4, [&](auto& a, auto& b) {
@@ -166,7 +166,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   // Sort local edges on cell after non-incident vertex tuble,
   // connectivity 3-1
   std::shared_ptr<mesh::Connectivity> connect_3_1 = topology.connectivity(3, 1);
-  if (connect_3_1 and !connect_3_1->empty())
+  if (connect_3_1)
   {
     // assert(!topology(1, 0).empty());
 
@@ -207,7 +207,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   // Sort local facets on cell after non-incident vertex, connectivity 3
   // - 2
   std::shared_ptr<mesh::Connectivity> connect_3_2 = topology.connectivity(3, 2);
-  if (connect_3_2 and !connect_3_2->empty())
+  if (connect_3_2)
   {
     // assert(!topology(2, 0).empty());
 
@@ -269,7 +269,7 @@ bool ordered_cell_simplex(
     // Check if entities exist, otherwise skip
     std::shared_ptr<const mesh::Connectivity> connect_d_0
         = topology.connectivity(d, 0);
-    if (!connect_d_0 or connect_d_0->empty())
+    if (!connect_d_0)
       continue;
 
     // Get entities

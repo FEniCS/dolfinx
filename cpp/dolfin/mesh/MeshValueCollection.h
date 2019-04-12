@@ -208,7 +208,6 @@ MeshValueCollection<T>::MeshValueCollection(
   {
     _mesh->init(_dim, D);
     const Connectivity& connectivity = _mesh->topology().connectivity(_dim, D);
-    assert(!connectivity.empty());
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
          ++entity_index)
     {
@@ -260,7 +259,6 @@ operator=(const MeshFunction<T>& mesh_function)
     _mesh->init(_dim, D);
     assert(_mesh->topology().connectivity(_dim, D));
     const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
-    assert(!connectivity.empty());
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
          ++entity_index)
     {
@@ -380,7 +378,6 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
 
   // Find the cell
-  assert(!connectivity.empty());
   assert(connectivity.size(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
   const mesh::Cell cell(

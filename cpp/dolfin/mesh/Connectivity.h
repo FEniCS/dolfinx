@@ -80,9 +80,6 @@ public:
   /// Move assignment
   Connectivity& operator=(Connectivity&& connectivity) = default;
 
-  /// Return true if the total number of connections is equal to zero
-  bool empty() const { return _connections.size() == 0; }
-
   /// Return number of connections for given entity
   std::size_t size(std::int32_t entity) const
   {
