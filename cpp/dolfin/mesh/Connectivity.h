@@ -8,6 +8,7 @@
 
 #include <Eigen/Dense>
 #include <cassert>
+#include <numeric>
 #include <vector>
 
 namespace dolfin
@@ -32,9 +33,8 @@ public:
   /// for all)
   Connectivity(std::size_t num_entities, std::size_t num_connections);
 
-  // TOOD: remove this constructor
-  /// Initialize number of entities and number of connections
-  /// (individually)
+  /// Initialize with all connections and pointer to each entity
+  /// position
   Connectivity(const std::vector<std::int32_t>& connections,
                const std::vector<std::int32_t>& positions);
 
@@ -43,9 +43,9 @@ public:
   /// std::vector<<std::set<std::size_t>>, etc)
   template <typename T>
   Connectivity(const T& connections)
+      : _index_to_position(connections.size() + 1)
   {
     // Initialize offsets and compute total size
-    _index_to_position.resize(connections.size() + 1);
     std::int32_t size = 0;
     for (std::size_t e = 0; e < connections.size(); e++)
     {

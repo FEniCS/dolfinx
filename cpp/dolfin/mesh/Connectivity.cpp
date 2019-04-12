@@ -32,7 +32,7 @@ Connectivity::Connectivity(const std::vector<std::int32_t>& connections,
                            const std::vector<std::int32_t>& positions)
     : _connections(connections.size()), _index_to_position(positions.size())
 {
-  assert(positions.size() <= connections.size());
+  assert(positions.back() == (std::int32_t)connections.size());
   for (std::size_t i = 0; i < connections.size(); ++i)
     _connections[i] = connections[i];
   for (std::size_t i = 0; i < positions.size(); ++i)
