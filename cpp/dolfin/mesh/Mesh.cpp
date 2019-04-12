@@ -152,9 +152,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Add cells. Only copies the first few entries on each row corresponding to
   // vertices.
-  auto cv = std::make_shared<Connectivity>(num_cells, num_vertices_per_cell);
-  for (std::int32_t i = 0; i < num_cells; ++i)
-    cv->set(i, coordinate_dofs.row(i).leftCols(num_vertices_per_cell));
+  auto cv = std::make_shared<Connectivity>(
+      coordinate_dofs.leftCols(num_vertices_per_cell));
   _topology.set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given

@@ -43,13 +43,18 @@ Connectivity::Connectivity(
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>
         connections)
-    : _connections(connections.size()),
+    : _connections(connections.rows()*connections.cols()),
       _index_to_position(connections.rows() + 1)
 {
-  std::copy(connections.data(), connections.data() + connections.size(),
-            _connections.data());
+  // NOTE: cannot directly copy data from connections because it may be
+  // a view into a larger array, e.g. for non-affine cells
+  Eigen::Index k = 0;
+  for (Eigen::Index i = 0; i < connections.rows(); ++i)
+    for (Eigen::Index j = 0; j < connections.cols(); ++j)
+      _connections[k++] = connections(i, j);
+
   const std::int32_t num_connections_per_entity = connections.cols();
-  for (Eigen::Index e = 0; e < _index_to_position.size(); e++)
+  for (Eigen::Index e = 0; e < _index_to_position.rows(); e++)
     _index_to_position[e] = e * num_connections_per_entity;
 }
 //-----------------------------------------------------------------------------
