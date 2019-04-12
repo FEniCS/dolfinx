@@ -49,7 +49,7 @@ public:
   /// a std::vector<<std::vector<std::size_t>>,
   /// std::vector<<std::set<std::size_t>>, etc)
   template <typename T>
-  Connectivity(const T& connections)
+  Connectivity(const std::vector<T>& connections)
       : _index_to_position(connections.size() + 1)
   {
     // Initialize offsets and compute total size

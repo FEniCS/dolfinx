@@ -186,8 +186,8 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   std::vector<std::array<int, N>> connectivity_ev(num_mesh_entities);
 
   // List of entity e indices connected to cell
-  boost::multi_array<int, 2> connectivity_ce(
-      boost::extents[mesh.num_entities(tdim)][num_entities]);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      connectivity_ce(mesh.num_entities(tdim), num_entities);
 
   // Build connectivity arrays (with ghost entities at the end)
   // std::int32_t previous_index = -1;
@@ -214,7 +214,7 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
     const auto& cell = std::get<1>(entity);
     const auto local_index = cell.first;
     const auto cell_index = cell.second;
-    connectivity_ce[cell_index][local_index] = e_index;
+    connectivity_ce(cell_index, local_index) = e_index;
   }
 
   // FIXME: move this out some Mesh can be const
@@ -299,7 +299,8 @@ Connectivity compute_from_map(const Mesh& mesh, std::size_t d0, std::size_t d1)
     entity_to_index.insert({key, e.index()});
   }
 
-  Connectivity connectivity(mesh.num_entities(d0), cell_type->num_entities(d1));
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      connections(mesh.num_entities(d0), cell_type->num_entities(d1));
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;
@@ -315,12 +316,11 @@ Connectivity compute_from_map(const Mesh& mesh, std::size_t d0, std::size_t d1)
       assert(it != entity_to_index.end());
       entities.push_back(it->second);
     }
-    Eigen::Map<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>> _e(
-        entities.data(), entities.size());
-    connectivity.set(e.index(), _e);
+    for (std::size_t k = 0; k < entities.size(); ++k)
+      connections(e.index(), k) = entities[k];
   }
 
-  return connectivity;
+  return Connectivity(connections);
 }
 } // namespace
 
