@@ -42,6 +42,38 @@ Connectivity::Connectivity(
     _index_to_position[e] = e * num_connections_per_entity;
 }
 //-----------------------------------------------------------------------------
+std::size_t Connectivity::size(std::int32_t entity) const
+{
+  return (entity + 1) < _index_to_position.size()
+             ? _index_to_position[entity + 1] - _index_to_position[entity]
+             : 0;
+}
+//-----------------------------------------------------------------------------
+std::size_t Connectivity::size_global(std::int32_t entity) const
+{
+  if (_num_global_connections.size() == 0)
+    return size(entity);
+  else
+  {
+    assert(entity < _num_global_connections.size());
+    return _num_global_connections[entity];
+  }
+}
+//-----------------------------------------------------------------------------
+std::int32_t* Connectivity::connections(int entity)
+{
+  return (entity + 1) < _index_to_position.size()
+             ? &_connections[_index_to_position[entity]]
+             : nullptr;
+}
+//-----------------------------------------------------------------------------
+const std::int32_t* Connectivity::connections(int entity) const
+{
+  return (entity + 1) < _index_to_position.size()
+             ? &_connections[_index_to_position[entity]]
+             : nullptr;
+}
+//-----------------------------------------------------------------------------
 Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 Connectivity::connections()
 {

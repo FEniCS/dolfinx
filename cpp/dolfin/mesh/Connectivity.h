@@ -81,40 +81,16 @@ public:
   Connectivity& operator=(Connectivity&& connectivity) = default;
 
   /// Return number of connections for given entity
-  std::size_t size(std::int32_t entity) const
-  {
-    return (entity + 1) < _index_to_position.size()
-               ? _index_to_position[entity + 1] - _index_to_position[entity]
-               : 0;
-  }
+  std::size_t size(std::int32_t entity) const;
 
   /// Return global number of connections for given entity
-  std::size_t size_global(std::int32_t entity) const
-  {
-    if (_num_global_connections.size() == 0)
-      return size(entity);
-    else
-    {
-      assert(entity < _num_global_connections.size());
-      return _num_global_connections[entity];
-    }
-  }
+  std::size_t size_global(std::int32_t entity) const;
 
   /// Return array of connections for given entity
-  std::int32_t* connections(int entity)
-  {
-    return (entity + 1) < _index_to_position.size()
-               ? &_connections[_index_to_position[entity]]
-               : nullptr;
-  }
+  std::int32_t* connections(int entity);
 
   /// Return array of connections for given entity (const version)
-  const std::int32_t* connections(int entity) const
-  {
-    return (entity + 1) < _index_to_position.size()
-               ? &_connections[_index_to_position[entity]]
-               : nullptr;
-  }
+  const std::int32_t* connections(int entity) const;
 
   /// Return contiguous array of connections for all entities
   Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> connections();
