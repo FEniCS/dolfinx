@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FiniteElement.h"
-#include <dolfin/common/utils.h>
+#include <functional>
 #include <memory>
 #include <ufc.h>
 // #include <spdlog/spdlog.h>
@@ -19,7 +19,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
       _tdim(element.topological_dimension), _space_dim(element.space_dimension),
       _value_size(element.value_size),
       _reference_value_size(element.reference_value_size),
-      _degree(element.degree), _hash(common::hash_local(signature())),
+      _degree(element.degree), _hash(std::hash<std::string>{}(_signature)),
       _evaluate_reference_basis(element.evaluate_reference_basis),
       _evaluate_reference_basis_derivatives(
           element.evaluate_reference_basis_derivatives),
