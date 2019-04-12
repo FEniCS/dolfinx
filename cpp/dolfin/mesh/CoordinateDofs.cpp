@@ -21,10 +21,7 @@ void CoordinateDofs::init(std::size_t dim,
                           const std::vector<std::uint8_t>& cell_permutation)
 {
   assert(dim < _coord_dofs.size());
-  _coord_dofs[dim]
-      = std::make_shared<Connectivity>(point_dofs.rows(), point_dofs.cols());
-  for (std::uint32_t i = 0; i < point_dofs.rows(); ++i)
-    _coord_dofs[dim]->set(i, point_dofs.row(i));
+  _coord_dofs[dim] = std::make_shared<Connectivity>(point_dofs);
   _cell_permutation = cell_permutation;
 }
 //-----------------------------------------------------------------------------

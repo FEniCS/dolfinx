@@ -38,6 +38,13 @@ public:
   Connectivity(const std::vector<std::int32_t>& connections,
                const std::vector<std::int32_t>& positions);
 
+  /// Initialize with all connections for case where each entity has the
+  /// same number of connections
+  Connectivity(
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>
+          connections);
+
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a std::vector<<std::vector<std::size_t>>,
   /// std::vector<<std::set<std::size_t>>, etc)
@@ -134,6 +141,7 @@ public:
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   entity_positions() const;
 
+  // TODO: remove
   /// Set all connections for given entity
   void set(std::int32_t entity,
            const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>

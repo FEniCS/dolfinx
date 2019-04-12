@@ -39,6 +39,20 @@ Connectivity::Connectivity(const std::vector<std::int32_t>& connections,
     _index_to_position[i] = positions[i];
 }
 //-----------------------------------------------------------------------------
+Connectivity::Connectivity(
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>
+        connections)
+    : _connections(connections.size()),
+      _index_to_position(connections.rows() + 1)
+{
+  std::copy(connections.data(), connections.data() + connections.size(),
+            _connections.data());
+  const std::int32_t num_connections_per_entity = connections.cols();
+  for (Eigen::Index e = 0; e < _index_to_position.size(); e++)
+    _index_to_position[e] = e * num_connections_per_entity;
+}
+//-----------------------------------------------------------------------------
 Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
 Connectivity::connections()
 {
