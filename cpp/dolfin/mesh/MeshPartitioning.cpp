@@ -131,7 +131,7 @@ mesh::Mesh MeshPartitioning::build(
   EigenRowArrayXXi64 new_cell_vertices;
   std::vector<std::int64_t> new_global_cell_indices;
   std::vector<int> new_cell_partition;
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_cells;
+  std::map<std::int32_t, std::set<std::int32_t>> shared_cells;
   std::int32_t num_regular_cells;
   std::tie(new_cell_vertices, new_global_cell_indices, new_cell_partition,
            shared_cells, num_regular_cells)
@@ -157,7 +157,7 @@ mesh::Mesh MeshPartitioning::build(
   // if (parameter::parameters["reorder_cells_gps"])
   // {
   //   // Allocate objects to hold re-ordering
-  //   std::map<std::int32_t, std::set<std::uint32_t>> reordered_shared_cells;
+  //   std::map<std::int32_t, std::set<std::int32_t>> reordered_shared_cells;
   //   EigenRowArrayXXi64 reordered_cell_vertices;
   //   std::vector<std::int64_t> reordered_global_cell_indices;
 
@@ -185,7 +185,7 @@ mesh::Mesh MeshPartitioning::build(
     return mesh;
 
   // Copy cell ownership (only needed for ghost cells)
-  std::vector<std::uint32_t>& cell_owner = mesh.topology().cell_owner();
+  std::vector<std::int32_t>& cell_owner = mesh.topology().cell_owner();
   cell_owner.clear();
   cell_owner.insert(cell_owner.begin(),
                     new_cell_partition.begin() + num_regular_cells,
@@ -197,12 +197,12 @@ mesh::Mesh MeshPartitioning::build(
   return mesh;
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::map<std::int32_t, std::set<std::uint32_t>>, EigenRowArrayXXi64,
+std::tuple<std::map<std::int32_t, std::set<std::int32_t>>, EigenRowArrayXXi64,
            std::vector<std::int64_t>>
 MeshPartitioning::reorder_cells_gps(
-    MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
+    MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
     const CellType& cell_type,
-    const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
+    const std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
     const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices)
 {
@@ -233,7 +233,7 @@ MeshPartitioning::reorder_cells_gps(
   dolfin::graph::Graph g_dual;
   // Ignore the ghost cells - they will not be reordered
   // FIXME: reorder ghost cells too
-  for (std::uint32_t i = 0; i != num_regular_cells; ++i)
+  for (std::int32_t i = 0; i < num_regular_cells; ++i)
   {
     dolfin::common::Set<int> conn_set;
     for (auto q = local_graph[i].begin(); q != local_graph[i].end(); ++q)
@@ -257,18 +257,18 @@ MeshPartitioning::reorder_cells_gps(
   EigenRowArrayXXi64 reordered_cell_vertices(global_cell_vertices.rows(),
                                              global_cell_vertices.cols());
   std::vector<std::int64_t> reordered_global_cell_indices(g_dual.size());
-  for (std::uint32_t i = 0; i != g_dual.size(); ++i)
+  for (std::size_t i = 0; i < g_dual.size(); ++i)
   {
     // Remap data
-    const std::uint32_t j = remap[i];
+    const int j = remap[i];
     reordered_cell_vertices.row(j) = global_cell_vertices.row(i);
     reordered_global_cell_indices[j] = global_cell_indices[i];
   }
 
-  std::map<std::int32_t, std::set<std::uint32_t>> reordered_shared_cells;
+  std::map<std::int32_t, std::set<std::int32_t>> reordered_shared_cells;
   for (auto p = shared_cells.begin(); p != shared_cells.end(); ++p)
   {
-    const std::uint32_t cell_index = p->first;
+    const std::int32_t cell_index = p->first;
     if (cell_index < num_regular_cells)
       reordered_shared_cells.insert({remap[cell_index], p->second});
     else
@@ -282,7 +282,7 @@ MeshPartitioning::reorder_cells_gps(
 //-----------------------------------------------------------------------------
 void MeshPartitioning::distribute_cell_layer(
     MPI_Comm mpi_comm, const int num_regular_cells,
-    std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
+    std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
     EigenRowArrayXXi64& cell_vertices,
     std::vector<std::int64_t>& global_cell_indices,
     std::vector<int>& cell_partition)
@@ -355,7 +355,7 @@ void MeshPartitioning::distribute_cell_layer(
 
   MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
 
-  const std::uint32_t num_cell_vertices = cell_vertices.cols();
+  const std::int32_t num_cell_vertices = cell_vertices.cols();
 
   // Collect up cells on common vertices
 
@@ -399,8 +399,8 @@ void MeshPartitioning::distribute_cell_layer(
   // Count up new cells, assign local index, set owner
   // and initialise shared_cells
 
-  const std::uint32_t num_cells = cell_vertices.rows();
-  std::uint32_t count = num_cells;
+  const std::int32_t num_cells = cell_vertices.rows();
+  std::int32_t count = num_cells;
 
   for (const auto& p : recv_vertcells)
   {
@@ -412,7 +412,7 @@ void MeshPartitioning::distribute_cell_layer(
       auto cell_insert = cell_global_to_local.insert({cell_index, count});
       if (cell_insert.second)
       {
-        shared_cells.insert({count, std::set<std::uint32_t>()});
+        shared_cells.insert({count, std::set<std::int32_t>()});
         global_cell_indices.push_back(cell_index);
         cell_partition.push_back(owner);
         ++count;
@@ -424,7 +424,7 @@ void MeshPartitioning::distribute_cell_layer(
   cell_vertices.conservativeResize(count, num_cell_vertices);
 
   // Set of processes and cells sharing the same vertex
-  std::set<std::uint32_t> sharing_procs;
+  std::set<std::int32_t> sharing_procs;
   std::vector<std::size_t> sharing_cells;
 
   std::size_t last_vertex = std::numeric_limits<std::size_t>::max();
@@ -435,13 +435,13 @@ void MeshPartitioning::distribute_cell_layer(
       const int owner = *q;
       const std::size_t cell_index = *(q + 1);
       const std::size_t shared_vertex = *(q + 2);
-      const std::size_t local_index
+      const std::int32_t local_index
           = cell_global_to_local.find(cell_index)->second;
 
       // Add vertices to new cells
       if (local_index >= num_cells)
       {
-        for (std::uint32_t j = 0; j != num_cell_vertices; ++j)
+        for (std::int32_t j = 0; j != num_cell_vertices; ++j)
           cell_vertices(local_index, j) = *(q + j + 2);
       }
 
@@ -477,7 +477,7 @@ void MeshPartitioning::distribute_cell_layer(
 }
 //-----------------------------------------------------------------------------
 std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
-           std::map<std::int32_t, std::set<std::uint32_t>>, std::int32_t>
+           std::map<std::int32_t, std::set<std::int32_t>>, std::int32_t>
 MeshPartitioning::distribute_cells(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
@@ -503,8 +503,8 @@ MeshPartitioning::distribute_cells(
   bool build_global_index = global_cell_indices.empty();
 
   // Get dimensions
-  const std::size_t num_local_cells = cell_vertices.rows();
-  const std::size_t num_cell_vertices = cell_vertices.cols();
+  const std::int32_t num_local_cells = cell_vertices.rows();
+  const std::int32_t num_cell_vertices = cell_vertices.cols();
   assert(mp.size() == num_local_cells);
 
   // Send all cells to their destinations including their global
@@ -513,12 +513,11 @@ MeshPartitioning::distribute_cells(
   std::vector<std::vector<std::size_t>> send_cell_vertices(
       mpi_size, std::vector<std::size_t>(2, 0));
 
-  for (std::uint32_t i = 0; i != mp.size(); ++i)
+  for (std::int32_t i = 0; i < mp.size(); ++i)
   {
-    std::uint32_t num_procs = mp.num_procs(i);
-
-    const std::uint32_t* sharing_procs = mp.procs(i);
-    for (std::uint32_t j = 0; j < num_procs; ++j)
+    std::int32_t num_procs = mp.num_procs(i);
+    const std::int32_t* sharing_procs = mp.procs(i);
+    for (std::int32_t j = 0; j < num_procs; ++j)
     {
       // Create reference to destination vector
       std::vector<std::size_t>& send_cell_dest
@@ -579,7 +578,7 @@ MeshPartitioning::distribute_cells(
   // which share them - corral ghost cells to end of range
   std::size_t c = 0;
   std::size_t gc = local_count;
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_cells;
+  std::map<std::int32_t, std::set<std::int32_t>> shared_cells;
   for (std::size_t p = 0; p < mpi_size; ++p)
   {
     std::vector<std::size_t>& received_data = received_cell_vertices[p];
@@ -587,7 +586,7 @@ MeshPartitioning::distribute_cells(
          it += (*it + num_cell_vertices + 2))
     {
       auto tmp_it = it;
-      const std::uint32_t num_ghosts = *tmp_it++;
+      const std::int32_t num_ghosts = *tmp_it++;
 
       // Determine owner, and indexing.
       // Note that *tmp_it may be equal to mpi_rank
@@ -598,7 +597,7 @@ MeshPartitioning::distribute_cells(
       new_cell_partition[idx] = owner;
       if (num_ghosts != 0)
       {
-        std::set<std::uint32_t> proc_set(tmp_it, tmp_it + num_ghosts);
+        std::set<std::int32_t> proc_set(tmp_it, tmp_it + num_ghosts);
 
         // Remove self from set of sharing processes
         proc_set.erase(mpi_rank);
@@ -607,7 +606,7 @@ MeshPartitioning::distribute_cells(
       }
 
       new_global_cell_indices[idx] = *tmp_it++;
-      for (std::size_t j = 0; j < num_cell_vertices; ++j)
+      for (std::int32_t j = 0; j < num_cell_vertices; ++j)
         new_cell_vertices(idx, j) = *tmp_it++;
 
       if (owner == mpi_rank)
@@ -627,12 +626,12 @@ MeshPartitioning::distribute_cells(
 //-----------------------------------------------------------------------------
 std::tuple<std::uint64_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
 MeshPartitioning::compute_point_mapping(
-    std::uint32_t num_cell_vertices,
+    std::int32_t num_cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
     const std::vector<std::uint8_t>& cell_permutation)
 {
-  const std::uint32_t num_cells = cell_points.rows();
-  const std::uint32_t num_cell_points = cell_points.cols();
+  const std::int32_t num_cells = cell_points.rows();
+  const std::int32_t num_cell_points = cell_points.cols();
 
   // Cell points in local indexing
   EigenRowArrayXXi32 local_cell_points(num_cells, num_cell_points);
@@ -647,10 +646,10 @@ MeshPartitioning::compute_point_mapping(
   // Loop over cells mapping vertices (but not other points)
   std::int32_t nv = 0;
   std::map<std::int64_t, std::int32_t> point_global_to_local;
-  for (std::uint32_t c = 0; c < num_cells; ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Loop over cell points
-    for (std::uint32_t v = 0; v < num_cell_vertices; ++v)
+    for (std::int32_t v = 0; v < num_cell_vertices; ++v)
     {
       // Get global cell index
       std::int64_t q = cell_points(c, v);
@@ -670,13 +669,13 @@ MeshPartitioning::compute_point_mapping(
     }
   }
 
-  const std::uint32_t num_local_vertices = nv;
+  const std::int32_t num_local_vertices = nv;
 
   // Repeat and map non-vertex points
-  for (std::uint32_t c = 0; c < num_cells; ++c)
+  for (std::int32_t c = 0; c < num_cells; ++c)
   {
     // Loop over cell points
-    for (std::uint32_t v = num_cell_vertices; v < num_cell_points; ++v)
+    for (std::int32_t v = num_cell_vertices; v < num_cell_points; ++v)
     {
       // Get global cell index
       std::int64_t q = cell_points(c, v);
@@ -700,7 +699,7 @@ MeshPartitioning::compute_point_mapping(
                          std::move(local_cell_points));
 }
 //-----------------------------------------------------------------------------
-std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::uint32_t>>>
+std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::int32_t>>>
 MeshPartitioning::distribute_points(
     const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& points,
     const std::vector<std::int64_t>& global_point_indices)
@@ -730,14 +729,14 @@ MeshPartitioning::distribute_points(
   // Compute where (process number) the points we need are located
   std::vector<std::size_t> ranges(mpi_size);
   MPI::all_gather(mpi_comm, (std::size_t)points.rows(), ranges);
-  for (std::uint32_t i = 1; i != ranges.size(); ++i)
+  for (std::size_t i = 1; i < ranges.size(); ++i)
     ranges[i] += ranges[i - 1];
   ranges.insert(ranges.begin(), 0);
 
   // Send global indices to the processes that own them, also recording
   // in local_indexing the original position on this process
   std::vector<std::vector<std::size_t>> send_point_indices(mpi_size);
-  std::vector<std::vector<std::uint32_t>> local_indexing(mpi_size);
+  std::vector<std::vector<std::int32_t>> local_indexing(mpi_size);
   for (unsigned int i = 0; i != global_point_indices.size(); ++i)
   {
     const std::size_t required_point = global_point_indices[i];
@@ -823,7 +822,7 @@ MeshPartitioning::distribute_points(
 
   // Meanwhile, redistribute received_point_indices as point sharing
   // information
-  const std::map<std::int32_t, std::set<std::uint32_t>> shared_points_local
+  const std::map<std::int32_t, std::set<std::int32_t>> shared_points_local
       = build_shared_points(mpi_comm, received_point_indices, local_point_range,
                             local_indexing);
 
@@ -845,27 +844,29 @@ MeshPartitioning::distribute_points(
   return {std::move(point_coordinates), std::move(shared_points_local)};
 }
 //-----------------------------------------------------------------------------
-std::map<std::int32_t, std::set<std::uint32_t>>
+std::map<std::int32_t, std::set<std::int32_t>>
 MeshPartitioning::build_shared_points(
     MPI_Comm mpi_comm,
     const std::vector<std::vector<std::size_t>>& received_point_indices,
     const std::pair<std::size_t, std::size_t> local_point_range,
-    const std::vector<std::vector<std::uint32_t>>& local_indexing)
+    const std::vector<std::vector<std::int32_t>>& local_indexing)
 {
   // spdlog::info("Build shared points during distributed mesh construction");
 
-  const std::uint32_t mpi_size = MPI::size(mpi_comm);
+  const std::int32_t mpi_size = MPI::size(mpi_comm);
 
   // Count number sharing each local point
   std::vector<std::int32_t> n_sharing(
       local_point_range.second - local_point_range.first, 0);
   for (const auto& p : received_point_indices)
+  {
     for (const auto& q : p)
     {
       assert(q >= local_point_range.first and q < local_point_range.second);
       const std::size_t local_index = q - local_point_range.first;
       ++n_sharing[local_index];
     }
+  }
 
   // Create an array of 'pointers' to shared entries
   // (where number shared, p > 1).
@@ -886,7 +887,7 @@ MeshPartitioning::build_shared_points(
   // Fill with list of sharing processes and position in
   // received_point_indices to send back to originating process
   std::vector<std::int32_t> process_list(index);
-  for (std::uint32_t p = 0; p < mpi_size; ++p)
+  for (std::int32_t p = 0; p < mpi_size; ++p)
     for (unsigned int i = 0; i < received_point_indices[p].size(); ++i)
     {
       // Convert global to local index
@@ -928,16 +929,16 @@ MeshPartitioning::build_shared_points(
   MPI::all_to_all(mpi_comm, send_sharing, recv_sharing);
 
   // Unpack and store to shared_points_local
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_points_local;
-  for (unsigned int p = 0; p < mpi_size; ++p)
+  std::map<std::int32_t, std::set<std::int32_t>> shared_points_local;
+  for (std::int32_t p = 0; p < mpi_size; ++p)
   {
-    const std::vector<std::uint32_t>& local_index_p = local_indexing[p];
+    const std::vector<std::int32_t>& local_index_p = local_indexing[p];
     for (auto q = recv_sharing[p].begin(); q != recv_sharing[p].end();
          q += (*q + 2))
     {
       const std::size_t num_sharing = *q;
-      const std::uint32_t local_index = local_index_p[*(q + 1)];
-      std::set<std::uint32_t> sharing_processes(q + 2, q + 2 + num_sharing);
+      const std::int32_t local_index = local_index_p[*(q + 1)];
+      std::set<std::int32_t> sharing_processes(q + 2, q + 2 + num_sharing);
 
       auto it = shared_points_local.insert({local_index, sharing_processes});
       assert(it.second);
@@ -949,19 +950,19 @@ MeshPartitioning::build_shared_points(
 //-----------------------------------------------------------------------------
 std::pair<std::int64_t, std::vector<std::int64_t>>
 MeshPartitioning::build_global_vertex_indices(
-    MPI_Comm mpi_comm, std::uint32_t num_vertices,
+    MPI_Comm mpi_comm, std::int32_t num_vertices,
     const std::vector<std::int64_t>& global_point_indices,
-    const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points)
+    const std::map<std::int32_t, std::set<std::int32_t>>& shared_points)
 {
   // Find out how many vertices are locally 'owned' and number them
   std::vector<std::int64_t> global_vertex_indices(num_vertices);
-  const std::uint32_t mpi_rank = MPI::rank(mpi_comm);
-  const std::uint32_t mpi_size = MPI::size(mpi_comm);
+  const std::int32_t mpi_rank = MPI::rank(mpi_comm);
+  const std::int32_t mpi_size = MPI::size(mpi_comm);
   std::vector<std::vector<std::int64_t>> send_data(mpi_size);
   std::vector<std::int64_t> recv_data(mpi_size);
 
   std::int64_t v = 0;
-  for (std::uint32_t i = 0; i < num_vertices; ++i)
+  for (std::int32_t i = 0; i < num_vertices; ++i)
   {
     const auto it = shared_points.find(i);
     if (it == shared_points.end())
@@ -1007,7 +1008,7 @@ MeshPartitioning::build_global_vertex_indices(
 
   // Adjust global_vertex_indices either by adding offset
   // or inserting remote index
-  for (std::uint32_t i = 0; i < num_vertices; ++i)
+  for (std::int32_t i = 0; i < num_vertices; ++i)
   {
     const auto it = global_point_to_vertex.find(global_point_indices[i]);
     if (it == global_point_to_vertex.end())

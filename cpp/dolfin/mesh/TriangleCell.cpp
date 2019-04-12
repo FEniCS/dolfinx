@@ -51,8 +51,8 @@ std::size_t TriangleCell::num_vertices(std::size_t dim) const
     return 3; // cells
   default:
     // spdlog::error("TriangleCell.cpp",
-    //               "access number of vertices for subsimplex of triangle cell",
-    //               "Illegal topological dimension (%d)", dim);
+    //               "access number of vertices for subsimplex of triangle
+    //               cell", "Illegal topological dimension (%d)", dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -67,7 +67,8 @@ void TriangleCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
   {
     // spdlog::error(
     //     "TriangleCell.cpp", "create entities of triangle cell",
-    //     "Don't know how to create entities of topological dimension %d", dim);
+    //     "Don't know how to create entities of topological dimension %d",
+    //     dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -88,7 +89,8 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   // Check that we get a triangle
   if (triangle.dim() != 2)
   {
-    // spdlog::error("TriangleCell.cpp", "compute volume (area) of triangle cell",
+    // spdlog::error("TriangleCell.cpp", "compute volume (area) of triangle
+    // cell",
     //               "Illegal mesh entity, not a triangle");
     throw std::runtime_error("Illegal mesh entity");
   }
@@ -284,8 +286,8 @@ geometry::Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   if (cell.mesh().geometry().dim() != 2)
   {
     // spdlog::error("TriangleCell.cpp", "find normal",
-    //               "Normal vector is not defined in dimension %d (only defined "
-    //               "when the triangle is in R^2",
+    //               "Normal vector is not defined in dimension %d (only defined
+    //               " "when the triangle is in R^2",
     //               cell.mesh().geometry().dim());
     throw std::runtime_error("Illegal geometric dimension");
   }
@@ -387,7 +389,7 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
   assert(connectivity);
   for (std::size_t j = 0; j < 3; j++)
   {
-    const std::int32_t* ev = (*connectivity)(e[j]);
+    const std::int32_t* ev = connectivity->connections(e[j]);
     assert(ev);
     if (ev[0] != v[i] && ev[1] != v[i])
       return j;

@@ -11,6 +11,7 @@
 #include <dolfin/function/Expression.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
@@ -76,7 +77,7 @@ void mesh(py::module& m)
       m, "CoordinateDofs", "CoordinateDofs object")
       .def("entity_points",
            [](const dolfin::mesh::CoordinateDofs& self, std::size_t dim) {
-             const dolfin::mesh::MeshConnectivity& connectivity
+             const dolfin::mesh::Connectivity& connectivity
                  = self.entity_points(dim);
              Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
                  connections = connectivity.connections();
@@ -201,17 +202,17 @@ void mesh(py::module& m)
         return dolfin::mesh::CellType::type2string(self.type().cell_type());
       });
 
-  // dolfin::mesh::MeshConnectivity class
-  py::class_<dolfin::mesh::MeshConnectivity,
-             std::shared_ptr<dolfin::mesh::MeshConnectivity>>(
-      m, "MeshConnectivity", "MeshConnectivity object")
-      .def("__call__",
-           [](const dolfin::mesh::MeshConnectivity& self, std::size_t i) {
-             return Eigen::Map<const dolfin::EigenArrayXi32>(self(i),
-                                                             self.size(i));
+  // dolfin::mesh::Connectivity class
+  py::class_<dolfin::mesh::Connectivity,
+             std::shared_ptr<dolfin::mesh::Connectivity>>(m, "Connectivity",
+                                                          "Connectivity object")
+      .def("connections",
+           [](const dolfin::mesh::Connectivity& self, std::size_t i) {
+             return Eigen::Map<const dolfin::EigenArrayXi32>(
+                 self.connections(i), self.size(i));
            },
            py::return_value_policy::reference_internal)
-      .def("size", &dolfin::mesh::MeshConnectivity::size);
+      .def("size", &dolfin::mesh::Connectivity::size);
 
   // dolfin::mesh::MeshEntity class
   py::class_<dolfin::mesh::MeshEntity,

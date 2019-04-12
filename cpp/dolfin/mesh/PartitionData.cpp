@@ -16,7 +16,7 @@ PartitionData::PartitionData(
     : _offset(1)
 
 {
-  for (std::uint32_t i = 0; i != cell_partition.size(); ++i)
+  for (std::size_t i = 0; i != cell_partition.size(); ++i)
   {
     const auto it = ghost_procs.find(i);
     if (it == ghost_procs.end())
@@ -32,22 +32,23 @@ PartitionData::PartitionData(
 //-----------------------------------------------------------------------------
 PartitionData::PartitionData(
     const std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>&
-        data) : PartitionData(data.first, data.second)
+        data)
+    : PartitionData(data.first, data.second)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::uint32_t PartitionData::num_procs(std::uint32_t i) const
+std::int32_t PartitionData::num_procs(std::int32_t i) const
 {
   return _offset[i + 1] - _offset[i];
 }
 //-----------------------------------------------------------------------------
-const std::uint32_t* PartitionData::procs(std::uint32_t i) const
+const std::int32_t* PartitionData::procs(std::int32_t i) const
 {
   return _dest_processes.data() + _offset[i];
 }
 //-----------------------------------------------------------------------------
-std::uint32_t PartitionData::size() const { return _offset.size() - 1; }
+std::int32_t PartitionData::size() const { return _offset.size() - 1; }
 //-----------------------------------------------------------------------------
 int PartitionData::num_ghosts() const
 {

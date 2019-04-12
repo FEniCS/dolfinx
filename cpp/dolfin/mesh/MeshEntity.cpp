@@ -48,8 +48,9 @@ bool MeshEntity::incident(const MeshEntity& entity) const
     return false;
 
   // Get list of entities for given topological dimension
-  const std::int32_t* entities
-      = (*_mesh->topology().connectivity(_dim, entity._dim))(_local_index);
+  const std::int32_t* entities = _mesh->topology()
+                                     .connectivity(_dim, entity._dim)
+                                     ->connections(_local_index);
   const std::size_t num_entities
       = _mesh->topology().connectivity(_dim, entity._dim)->size(_local_index);
 
@@ -73,8 +74,9 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   }
 
   // Get list of entities for given topological dimension
-  const std::int32_t* entities
-      = (*_mesh->topology().connectivity(_dim, entity._dim))(_local_index);
+  const std::int32_t* entities = _mesh->topology()
+                                     .connectivity(_dim, entity._dim)
+                                     ->connections(_local_index);
   const std::size_t num_entities
       = _mesh->topology().connectivity(_dim, entity._dim)->size(_local_index);
 

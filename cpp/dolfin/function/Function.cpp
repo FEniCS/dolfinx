@@ -348,7 +348,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
       values(num_cell_vertices, value_size_loc);
 
   const std::size_t tdim = mesh.topology().dim();
-  const mesh::MeshConnectivity& cell_dofs
+  const mesh::Connectivity& cell_dofs
       = mesh.coordinate_dofs().entity_points(tdim);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -361,7 +361,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
     eval(values, x, cell);
 
     // Copy values to array of point values
-    const std::int32_t* dofs = cell_dofs(cell.index());
+    const std::int32_t* dofs = cell_dofs.connections(cell.index());
     for (unsigned int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }
