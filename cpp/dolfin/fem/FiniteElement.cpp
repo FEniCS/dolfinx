@@ -29,8 +29,6 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
 {
   // Store dof coordinates on reference element
   _refX.resize(this->space_dimension(), this->topological_dimension());
-  // assert(_tabulate_reference_dof_coordinates);
-  // int ret = _tabulate_reference_dof_coordinates(_refX.data());
   assert(element.tabulate_reference_dof_coordinates);
   int ret = element.tabulate_reference_dof_coordinates(_refX.data());
   if (ret == -1)
