@@ -63,15 +63,6 @@ Connectivity::entity_positions() const
   return _index_to_position;
 }
 //-----------------------------------------------------------------------------
-void Connectivity::set(std::size_t entity, std::size_t connection,
-                       std::size_t pos)
-{
-  assert((Eigen::Index)(entity + 1) < _index_to_position.size());
-  assert((std::int32_t)pos
-         < _index_to_position[entity + 1] - _index_to_position[entity]);
-  _connections[_index_to_position[entity] + pos] = connection;
-}
-//-----------------------------------------------------------------------------
 void Connectivity::set(
     std::int32_t entity,
     const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>

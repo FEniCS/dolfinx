@@ -134,9 +134,6 @@ public:
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   entity_positions() const;
 
-  /// Set given connection for given entity
-  void set(std::size_t entity, std::size_t connection, std::size_t pos);
-
   /// Set all connections for given entity
   void set(std::int32_t entity,
            const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
