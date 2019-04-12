@@ -19,6 +19,7 @@
 #include <dolfin/common/utils.h>
 #include <memory>
 // #include <spdlog/spdlog.h>
+#include <numeric>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -255,26 +256,24 @@ Connectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
   if (!topology.connectivity(d1, d0))
     throw std::runtime_error("Missing required connectivity d1-d0.");
 
-  // Temporary array
-  std::vector<std::size_t> tmp(topology.size(d0), 0);
-
-  // Count the number of connections
+  // Compute number of connections for each e0
+  std::vector<std::int32_t> num_connections(topology.size(d0), 0);
   for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
     for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
-      tmp[e0.index()]++;
+      num_connections[e0.index()]++;
 
-  // Initialize the number of connections
-  Connectivity connectivity(tmp);
+  // Compute offsets
+  std::vector<std::int32_t> offsets(num_connections.size() + 1, 0);
+  std::partial_sum(num_connections.begin(), num_connections.end(),
+                   offsets.begin() + 1);
 
-  // Reset current position for each entity
-  std::fill(tmp.begin(), tmp.end(), 0);
-
-  // Add the connections
+  std::vector<std::int32_t> counter(num_connections.size(), 0);
+  std::vector<std::int32_t> connections(offsets.back());
   for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
     for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
-      connectivity.set(e0.index(), e1.index(), tmp[e0.index()]++);
+      connections[offsets[e0.index()] + counter[e0.index()]++] = e1.index();
 
-  return connectivity;
+  return Connectivity(connections, offsets);
 }
 //-----------------------------------------------------------------------------
 // Direct lookup of entity from vertices in a map

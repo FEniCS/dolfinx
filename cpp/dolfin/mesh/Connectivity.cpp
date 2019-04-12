@@ -28,21 +28,15 @@ Connectivity::Connectivity(std::size_t num_entities,
     _index_to_position[e] = e * num_connections;
 }
 //-----------------------------------------------------------------------------
-Connectivity::Connectivity(std::vector<std::size_t>& num_connections)
+Connectivity::Connectivity(const std::vector<std::int32_t>& connections,
+                           const std::vector<std::int32_t>& positions)
+    : _connections(connections.size()), _index_to_position(positions.size())
 {
-  // Initialize offsets and compute total size
-  const std::size_t num_entities = num_connections.size();
-  _index_to_position.resize(num_entities + 1);
-  std::size_t size = 0;
-  for (std::size_t e = 0; e < num_entities; e++)
-  {
-    _index_to_position[e] = size;
-    size += num_connections[e];
-  }
-  _index_to_position[num_entities] = size;
-
-  // Initialize connections
-  _connections = Eigen::Array<std::int32_t, Eigen::Dynamic, 1>::Zero(size);
+  assert(positions.size() <= connections.size());
+  for (std::size_t i = 0; i < connections.size(); ++i)
+    _connections[i] = connections[i];
+  for (std::size_t i = 0; i < positions.size(); ++i)
+    _index_to_position[i] = positions[i];
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>

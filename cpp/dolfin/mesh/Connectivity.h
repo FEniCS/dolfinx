@@ -35,7 +35,8 @@ public:
   // TOOD: remove this constructor
   /// Initialize number of entities and number of connections
   /// (individually)
-  Connectivity(std::vector<std::size_t>& num_connections);
+  Connectivity(const std::vector<std::int32_t>& connections,
+               const std::vector<std::int32_t>& positions);
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a std::vector<<std::vector<std::size_t>>,
