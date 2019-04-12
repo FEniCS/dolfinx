@@ -28,15 +28,13 @@ namespace fem
 class FiniteElement
 {
 public:
-  /// Create finite element from UFC finite element (data may be shared)
+  /// Create finite element from UFC finite element
   /// @param element (ufc::finite_element)
   ///  UFC finite element
   FiniteElement(const ufc_finite_element& element);
 
   /// Destructor
   virtual ~FiniteElement() = default;
-
-  //--- Direct wrappers for ufc::finite_element ---
 
   /// Return a string identifying the finite element
   /// @return std::string
@@ -119,8 +117,6 @@ public:
   /// @return std::size_t
   ///   number of sub-elements
   std::size_t num_sub_elements() const;
-
-  //--- DOLFIN-specific extensions of the interface ---
 
   /// Return simple hash of the signature string
   std::size_t hash() const;
