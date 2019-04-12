@@ -1,6 +1,7 @@
 set(HEADERS
   Cell.h
   CellType.h
+  Connectivity.h
   CoordinateDofs.h
   DistributedMeshTools.h
   dolfin_mesh.h
@@ -10,7 +11,6 @@ set(HEADERS
   HexahedronCell.h
   IntervalCell.h
   Mesh.h
-  MeshConnectivity.h
   MeshEntity.h
   MeshFunction.h
   MeshGeometry.h
@@ -33,6 +33,7 @@ set(HEADERS
 
 set(SOURCES
   CellType.cpp
+  Connectivity.cpp
   CoordinateDofs.cpp
   DistributedMeshTools.cpp
   Edge.cpp
@@ -41,7 +42,6 @@ set(SOURCES
   HexahedronCell.cpp
   IntervalCell.cpp
   Mesh.cpp
-  MeshConnectivity.cpp
   MeshEntity.cpp
   MeshFunction.cpp
   MeshGeometry.cpp

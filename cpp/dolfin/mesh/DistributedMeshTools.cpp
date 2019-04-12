@@ -125,17 +125,17 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   }
 
   // Get shared entities map
-  std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities
+  std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
       = _mesh.topology().shared_entities(d);
 
   // Number entities
   // std::vector<std::int64_t> global_entity_indices;
-  // const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
+  // const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
   //     slave_entities;
   // const std::size_t num_global_entities = number_entities(
   //     mesh, slave_entities, global_entity_indices, shared_entities, d);
   std::vector<std::int64_t> global_entity_indices;
-  const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
+  const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
       slave_entities;
   std::size_t num_global_entities;
   std::tie(global_entity_indices, shared_entities, num_global_entities)
@@ -149,10 +149,10 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int64_t>,
-           std::map<std::int32_t, std::set<std::uint32_t>>, std::size_t>
+           std::map<std::int32_t, std::set<std::int32_t>>, std::size_t>
 DistributedMeshTools::number_entities(
     const Mesh& mesh,
-    const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>&
+    const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>&
         slave_entities,
     int d)
 {
@@ -163,13 +163,13 @@ DistributedMeshTools::number_entities(
   // numbering for problems with periodic boundary conditions.
 
   // spdlog::info(
-  //     "Number mesh entities for distributed mesh (for specified vertex ids).",
-  //     d);
+  //     "Number mesh entities for distributed mesh (for specified vertex
+  //     ids).", d);
   common::Timer timer(
       "Number mesh entities for distributed mesh (for specified vertex ids)");
 
   std::vector<std::int64_t> global_entity_indices;
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_entities;
+  std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
 
   // Check that we're not re-numbering vertices (these are fixed at
   // mesh construction)
@@ -202,15 +202,15 @@ DistributedMeshTools::number_entities(
 
   // Build list of slave entities to exclude from ownership computation
   std::vector<bool> exclude(mesh.num_entities(d), false);
-  std::map<std::uint32_t,
-           std::pair<std::uint32_t, std::uint32_t>>::const_iterator s;
+  std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>::const_iterator
+      s;
   for (s = slave_entities.begin(); s != slave_entities.end(); ++s)
     exclude[s->first] = true;
 
   // Build entity global [vertex list]-to-[local entity index]
   // map. Exclude any slave entities.
-  std::map<std::vector<std::size_t>, std::uint32_t> entities;
-  std::pair<std::vector<std::size_t>, std::uint32_t> entity;
+  std::map<std::vector<std::size_t>, std::int32_t> entities;
+  std::pair<std::vector<std::size_t>, std::int32_t> entity;
   for (auto& e : mesh::MeshRange<MeshEntity>(mesh, d, mesh::MeshRangeType::ALL))
   {
     const std::size_t local_index = e.index();
@@ -230,7 +230,7 @@ DistributedMeshTools::number_entities(
       = mesh.topology().global_indices(0);
 
   // Get shared vertices (local index, [sharing processes])
-  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_vertices_local
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices_local
       = mesh.topology().shared_entities(0);
 
   // Compute ownership of entities of dimension d ([entity vertices], data):
@@ -287,13 +287,13 @@ DistributedMeshTools::number_entities(
        ++it1)
   {
     // Get entity index
-    const std::uint32_t local_entity_index = it1->second.local_index;
+    const std::int32_t local_entity_index = it1->second.local_index;
     const std::int64_t global_entity_index
         = global_entity_indices[local_entity_index];
     assert(global_entity_index != -1);
 
     // Get entity processes (processes sharing the entity)
-    const std::vector<std::uint32_t>& entity_processes = it1->second.processes;
+    const std::vector<std::int32_t>& entity_processes = it1->second.processes;
 
     // Get entity vertices (global vertex indices)
     const Entity& e = it1->first;
@@ -401,14 +401,14 @@ DistributedMeshTools::number_entities(
   {
     const EntityData& ed = e->second;
     shared_entities[ed.local_index]
-        = std::set<std::uint32_t>(ed.processes.begin(), ed.processes.end());
+        = std::set<std::int32_t>(ed.processes.begin(), ed.processes.end());
   }
   for (e = unowned_shared_entities.begin(); e != unowned_shared_entities.end();
        ++e)
   {
     const EntityData& ed = e->second;
     shared_entities[ed.local_index]
-        = std::set<std::uint32_t>(ed.processes.begin(), ed.processes.end());
+        = std::set<std::int32_t>(ed.processes.begin(), ed.processes.end());
   }
 
   // Return
@@ -425,7 +425,8 @@ DistributedMeshTools::locate_off_process_entities(
 
   // if (dim == 0)
   // {
-  //   spdlog::warn("DistributedMeshTools::host_processes has not been tested for "
+  //   spdlog::warn("DistributedMeshTools::host_processes has not been tested
+  //   for "
   //                "vertices.");
   // }
 
@@ -471,7 +472,7 @@ DistributedMeshTools::locate_off_process_entities(
     std::set<std::size_t> set_of_my_entities(entity_indices.begin(),
                                              entity_indices.end());
 
-    const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
+    const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
         = mesh.topology().shared_entities(D);
 
     // FIXME: This can be made more efficient by exploiting fact that
@@ -560,8 +561,8 @@ DistributedMeshTools::locate_off_process_entities(
   return processes;
 }
 //-----------------------------------------------------------------------------
-std::unordered_map<std::uint32_t,
-                   std::vector<std::pair<std::uint32_t, std::uint32_t>>>
+std::unordered_map<std::int32_t,
+                   std::vector<std::pair<std::int32_t, std::int32_t>>>
 DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
 {
   // spdlog::info("Compute shared mesh entities of dimension %d.", d);
@@ -575,7 +576,7 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   if (MPI::size(mpi_comm) == 1)
   {
     return std::unordered_map<
-        std::uint32_t, std::vector<std::pair<std::uint32_t, std::uint32_t>>>();
+        std::int32_t, std::vector<std::pair<std::int32_t, std::int32_t>>>();
   }
 
   // Initialize entities of dimension d
@@ -585,7 +586,7 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   number_entities(mesh, d);
 
   // Get shared entities to processes map
-  const std::map<std::int32_t, std::set<std::uint32_t>>& shared_entities
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
       = mesh.topology().shared_entities(d);
 
   // Get local-to-global indices map
@@ -599,22 +600,22 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   // Pack global indices for sending to sharing processes
   std::vector<std::vector<std::size_t>> send_indices(comm_size);
   std::vector<std::vector<std::size_t>> local_sent_indices(comm_size);
-  std::map<std::int32_t, std::set<std::uint32_t>>::const_iterator shared_entity;
+  std::map<std::int32_t, std::set<std::int32_t>>::const_iterator shared_entity;
   for (shared_entity = shared_entities.begin();
        shared_entity != shared_entities.end(); ++shared_entity)
   {
     // Local index
-    const std::uint32_t local_index = shared_entity->first;
+    const std::int32_t local_index = shared_entity->first;
 
     // Global index
-    assert(local_index < global_indices_map.size());
+    assert(local_index < (std::int32_t)global_indices_map.size());
     std::size_t global_index = global_indices_map[local_index];
 
     // Destination process
-    const std::set<std::uint32_t>& sharing_processes = shared_entity->second;
+    const std::set<std::int32_t>& sharing_processes = shared_entity->second;
 
     // Pack data for sending and build global-to-local map
-    std::set<std::uint32_t>::const_iterator dest;
+    std::set<std::int32_t>::const_iterator dest;
     for (dest = sharing_processes.begin(); dest != sharing_processes.end();
          ++dest)
     {
@@ -673,8 +674,8 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   MPI::all_to_all(mpi_comm, send_indices, recv_entities);
 
   // Build map
-  std::unordered_map<std::uint32_t,
-                     std::vector<std::pair<std::uint32_t, std::uint32_t>>>
+  std::unordered_map<std::int32_t,
+                     std::vector<std::pair<std::int32_t, std::int32_t>>>
       shared_local_indices_map;
 
   // Loop over data received from each process
@@ -714,9 +715,8 @@ std::pair<std::vector<std::size_t>,
                      2>>
 DistributedMeshTools::compute_entity_ownership(
     const MPI_Comm mpi_comm,
-    const std::map<std::vector<std::size_t>, std::uint32_t>& entities,
-    const std::map<std::int32_t, std::set<std::uint32_t>>&
-        shared_vertices_local,
+    const std::map<std::vector<std::size_t>, std::int32_t>& entities,
+    const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices_local,
     const std::vector<std::int64_t>& global_vertex_indices, std::size_t d)
 
 {
@@ -724,8 +724,8 @@ DistributedMeshTools::compute_entity_ownership(
   common::Timer timer("Compute mesh entity ownership");
 
   // Build global-to-local indices map for shared vertices
-  std::map<std::size_t, std::set<std::uint32_t>> shared_vertices;
-  std::map<std::int32_t, std::set<std::uint32_t>>::const_iterator v;
+  std::map<std::size_t, std::set<std::int32_t>> shared_vertices;
+  std::map<std::int32_t, std::set<std::int32_t>>::const_iterator v;
   for (v = shared_vertices_local.begin(); v != shared_vertices_local.end(); ++v)
   {
     //    assert(v->first < (int)global_vertex_indices.size());
@@ -763,8 +763,8 @@ std::pair<std::vector<std::size_t>,
                      2>>
 DistributedMeshTools::compute_preliminary_entity_ownership(
     const MPI_Comm mpi_comm,
-    const std::map<std::size_t, std::set<std::uint32_t>>& shared_vertices,
-    const std::map<Entity, std::uint32_t>& entities)
+    const std::map<std::size_t, std::set<std::int32_t>>& shared_vertices,
+    const std::map<Entity, std::int32_t>& entities)
 {
   // Create  maps
   std::vector<std::size_t> owned_entities;
@@ -775,17 +775,17 @@ DistributedMeshTools::compute_preliminary_entity_ownership(
   std::map<Entity, EntityData>& unowned_shared_entities = shared_entities[1];
 
   // Get my process number
-  const std::size_t process_number = MPI::rank(mpi_comm);
+  const std::int32_t process_number = MPI::rank(mpi_comm);
 
   // Iterate over all local entities
-  std::map<std::vector<std::size_t>, std::uint32_t>::const_iterator it;
+  std::map<std::vector<std::size_t>, std::int32_t>::const_iterator it;
   for (it = entities.begin(); it != entities.end(); ++it)
   {
     const Entity& entity = it->first;
     const std::size_t local_entity_index = it->second;
 
     // Compute which processes entity is shared with
-    std::vector<std::uint32_t> entity_processes;
+    std::vector<std::int32_t> entity_processes;
     if (is_shared(entity, shared_vertices))
     {
       // Processes sharing first vertex of entity
@@ -801,7 +801,7 @@ DistributedMeshTools::compute_preliminary_entity_ownership(
         const std::size_t v = entity[i];
 
         // Sharing processes
-        const std::set<std::uint32_t>& shared_vertices_v
+        const std::set<std::int32_t>& shared_vertices_v
             = shared_vertices.find(v)->second;
 
         intersection_end = std::set_intersection(
@@ -809,7 +809,7 @@ DistributedMeshTools::compute_preliminary_entity_ownership(
             shared_vertices_v.end(), intersection.begin());
       }
       entity_processes
-          = std::vector<std::uint32_t>(intersection.begin(), intersection_end);
+          = std::vector<std::int32_t>(intersection.begin(), intersection_end);
     }
 
     // Check if entity is master, slave or shared but not owned (shared
@@ -852,8 +852,8 @@ void DistributedMeshTools::compute_final_entity_ownership(
   std::map<Entity, EntityData>& unowned_shared_entities = shared_entities[1];
 
   // Get MPI number of processes and process number
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  const std::size_t process_number = MPI::rank(mpi_comm);
+  const std::int32_t num_processes = MPI::size(mpi_comm);
+  const std::int32_t process_number = MPI::rank(mpi_comm);
 
   // Communicate common entities, starting with the entities we think
   // are shared but not owned
@@ -867,7 +867,7 @@ void DistributedMeshTools::compute_final_entity_ownership(
     const Entity& entity = it->first;
 
     // Get entity processes (processes that might share the entity)
-    const std::vector<std::uint32_t>& entity_processes = it->second.processes;
+    const std::vector<std::int32_t>& entity_processes = it->second.processes;
 
     // Prepare data for sending
     for (std::size_t j = 0; j < entity_processes.size(); ++j)
@@ -889,12 +889,12 @@ void DistributedMeshTools::compute_final_entity_ownership(
     const Entity& entity = it->first;
 
     // Get entity processes (processes that might share the entity)
-    const std::vector<std::uint32_t>& entity_processes = it->second.processes;
+    const std::vector<std::int32_t>& entity_processes = it->second.processes;
 
     // Prepare data for sending
     for (std::size_t j = 0; j < entity_processes.size(); ++j)
     {
-      const std::uint32_t p = entity_processes[j];
+      const std::int32_t p = entity_processes[j];
       assert(process_number < p);
       send_common_entity_values[p].push_back(entity.size());
       send_common_entity_values[p].insert(send_common_entity_values[p].end(),
@@ -909,7 +909,7 @@ void DistributedMeshTools::compute_final_entity_ownership(
 
   // Check if entities received are really entities
   std::vector<std::vector<std::size_t>> send_is_entity_values(num_processes);
-  for (std::size_t p = 0; p < num_processes; ++p)
+  for (std::int32_t p = 0; p < num_processes; ++p)
   {
     for (std::size_t i = 0; i < received_common_entity_values[p].size();)
     {
@@ -943,8 +943,8 @@ void DistributedMeshTools::compute_final_entity_ownership(
   MPI::all_to_all(mpi_comm, send_is_entity_values, received_is_entity_values);
 
   // Create map from entities to processes where it is an entity
-  std::map<Entity, std::vector<std::uint32_t>> entity_processes;
-  for (std::size_t p = 0; p < num_processes; ++p)
+  std::map<Entity, std::vector<std::int32_t>> entity_processes;
+  for (std::int32_t p = 0; p < num_processes; ++p)
   {
     for (std::size_t i = 0; i < received_is_entity_values[p].size();)
     {
@@ -970,13 +970,13 @@ void DistributedMeshTools::compute_final_entity_ownership(
   {
     const Entity& entity_vertices = entity->first;
     EntityData& entity_data = entity->second;
-    const std::uint32_t local_entity_index = entity_data.local_index;
+    const std::int32_t local_entity_index = entity_data.local_index;
     if (entity_processes.find(entity_vertices) != entity_processes.end())
     {
-      const std::vector<std::uint32_t>& common_processes
+      const std::vector<std::int32_t>& common_processes
           = entity_processes[entity_vertices];
       assert(!common_processes.empty());
-      const std::size_t min_proc = *(
+      const std::int32_t min_proc = *(
           std::min_element(common_processes.begin(), common_processes.end()));
 
       if (process_number < min_proc)
@@ -1014,7 +1014,7 @@ void DistributedMeshTools::compute_final_entity_ownership(
        it != owned_shared_entities.end(); ++it)
   {
     const Entity& e = it->first;
-    const std::uint32_t local_entity_index = it->second.local_index;
+    const std::int32_t local_entity_index = it->second.local_index;
     if (entity_processes.find(e) == entity_processes.end())
     {
       // Move from shared to owned elusively
@@ -1035,7 +1035,7 @@ void DistributedMeshTools::compute_final_entity_ownership(
 //-----------------------------------------------------------------------------
 bool DistributedMeshTools::is_shared(
     const Entity& entity,
-    const std::map<std::size_t, std::set<std::uint32_t>>& shared_vertices)
+    const std::map<std::size_t, std::set<std::int32_t>>& shared_vertices)
 {
   // Iterate over entity vertices
   Entity::const_iterator e;
@@ -1094,10 +1094,10 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   // Create vector to hold number of cells connected to each
   // facet. Initially copy over from local values.
 
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> num_global_neighbors(
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> num_global_neighbors(
       mesh.num_entities(D - 1));
 
-  std::map<std::int32_t, std::set<std::uint32_t>>& shared_facets
+  std::map<std::int32_t, std::set<std::int32_t>>& shared_facets
       = mesh.topology().shared_entities(D - 1);
 
   // Check if no ghost cells
@@ -1116,7 +1116,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // With ghost cells, shared facets may be on an external edge,
     // so need to check connectivity with the cell owner.
 
-    const std::size_t mpi_size = MPI::size(mesh.mpi_comm());
+    const std::int32_t mpi_size = MPI::size(mesh.mpi_comm());
     std::vector<std::vector<std::size_t>> send_facet(mpi_size);
     std::vector<std::vector<std::size_t>> recv_facet(mpi_size);
 
@@ -1148,7 +1148,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Convert received global facet index into number of attached
     // cells and return to sender
     std::vector<std::vector<std::size_t>> send_response(mpi_size);
-    for (std::uint32_t p = 0; p != mpi_size; ++p)
+    for (std::int32_t p = 0; p != mpi_size; ++p)
     {
       for (auto r = recv_facet[p].begin(); r != recv_facet[p].end(); ++r)
       {
@@ -1163,9 +1163,9 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     MPI::all_to_all(mesh.mpi_comm(), send_response, recv_facet);
 
     // Insert received result into same facet that it came from
-    for (std::uint32_t p = 0; p != mpi_size; ++p)
+    for (std::int32_t p = 0; p < mpi_size; ++p)
     {
-      for (std::uint32_t i = 0; i != recv_facet[p].size(); ++i)
+      for (std::size_t i = 0; i < recv_facet[p].size(); ++i)
       {
         auto f_it = global_to_local_facet.find(send_facet[p][i]);
         assert(f_it != global_to_local_facet.end());

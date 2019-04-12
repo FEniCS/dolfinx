@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include "Connectivity.h"
 #include "Mesh.h"
-#include "MeshConnectivity.h"
 #include "MeshEntity.h"
 #include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
@@ -211,8 +211,7 @@ template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                               const MeshValueCollection<T>& value_collection,
                               const T& default_value)
-    : common::Variable("f"), _mesh(mesh),
-      _dim(value_collection.dim())
+    : common::Variable("f"), _mesh(mesh), _dim(value_collection.dim())
 {
   assert(_mesh);
   _mesh->init(_dim);
@@ -228,7 +227,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   // Generate connectivity if it does not exist
   _mesh->init(D, d);
   assert(_mesh->topology().connectivity(D, d));
-  const MeshConnectivity& connectivity = *_mesh->topology().connectivity(D, d);
+  const Connectivity& connectivity = *_mesh->topology().connectivity(D, d);
 
   // Iterate over all values
   std::unordered_set<std::size_t> entities_values_set;
@@ -247,7 +246,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
     {
       // Get global (local to to process) entity index
       assert(cell_index < _mesh->num_entities(D));
-      entity_index = connectivity(cell_index)[local_entity];
+      entity_index = connectivity.connections(cell_index)[local_entity];
     }
     else
     {
@@ -267,7 +266,8 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   // if (entities_values_set.size() != _values.size())
   // {
   //   spdlog::debug(
-  //       "Mesh value collection does not contain all values for all entities");
+  //       "Mesh value collection does not contain all values for all
+  //       entities");
   // }
 }
 //---------------------------------------------------------------------------
@@ -381,5 +381,5 @@ std::string MeshFunction<T>::str(bool verbose) const
   return s.str();
 }
 //---------------------------------------------------------------------------
-}
-}
+} // namespace mesh
+} // namespace dolfin

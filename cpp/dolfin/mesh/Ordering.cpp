@@ -54,9 +54,9 @@ bool increasing(const int n, const std::int32_t* v0, const std::int32_t* v1,
 }
 //-----------------------------------------------------------------------------
 void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
-                        dolfin::mesh::Cell& cell)
+                        mesh::Mesh& mesh, mesh::Cell& cell)
 {
-  const mesh::MeshTopology& topology = cell.mesh().topology();
+  mesh::MeshTopology& topology = mesh.topology();
   const int tdim = topology.dim();
 
   if (tdim < 1)
@@ -68,19 +68,16 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
-  std::shared_ptr<const mesh::MeshConnectivity> connect_1_0
-      = topology.connectivity(1, 0);
-  if (connect_1_0 and !connect_1_0->empty())
+  std::shared_ptr<mesh::Connectivity> connect_1_0 = topology.connectivity(1, 0);
+  if (connect_1_0)
   {
-    // assert(!topology(tdim, 1).empty());
-
     // Sort vertices on each edge
     const std::int32_t* cell_edges = cell.entities(1);
+    assert(cell_edges);
     for (int i = 0; i < num_edges; ++i)
     {
-      std::int32_t* edge_vertices
-          = const_cast<std::int32_t*>((*connect_1_0)(cell_edges[i]));
-      // sort_entities(2, edge_vertices, global_vertex_indices);
+      std::int32_t* edge_vertices = connect_1_0->connections(cell_edges[i]);
+      assert(edge_vertices);
       std::sort(edge_vertices, edge_vertices + 2, [&](auto& a, auto& b) {
         return global_vertex_indices[a] < global_vertex_indices[b];
       });
@@ -93,18 +90,16 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   const int num_faces = cell_type.num_entities(2);
 
   // Sort local vertices on faces in ascending order, connectivity 2 - 0
-  std::shared_ptr<const mesh::MeshConnectivity> connect_2_0
-      = topology.connectivity(2, 0);
-  if (connect_2_0 and !connect_2_0->empty())
+  std::shared_ptr<mesh::Connectivity> connect_2_0 = topology.connectivity(2, 0);
+  if (connect_2_0)
   {
-    // assert(!topology(3, 2).empty());
-
     // Sort vertices on each facet
     const std::int32_t* cell_faces = cell.entities(2);
+    assert(cell_faces);
     for (int i = 0; i < num_faces; ++i)
     {
-      std::int32_t* face_vertices
-          = const_cast<std::int32_t*>((*connect_2_0)(cell_faces[i]));
+      std::int32_t* face_vertices = connect_2_0->connections(cell_faces[i]);
+      assert(face_vertices);
       std::sort(face_vertices, face_vertices + 3, [&](auto& a, auto& b) {
         return global_vertex_indices[a] < global_vertex_indices[b];
       });
@@ -113,24 +108,22 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort local edges on local faces after non-incident vertex,
   // connectivity 2 - 1
-  std::shared_ptr<const mesh::MeshConnectivity> connect_2_1
-      = topology.connectivity(2, 1);
-  if (connect_2_1 and !connect_2_1->empty())
+  std::shared_ptr<mesh::Connectivity> connect_2_1 = topology.connectivity(2, 1);
+  if (connect_2_1)
   {
-    // dolfin_assert(!topology(3, 2).empty());
-    // dolfin_assert(!topology(2, 0).empty());
-    // dolfin_assert(!topology(1, 0).empty());
-
     // Loop over faces on cell
     const std::int32_t* cell_faces = cell.entities(2);
+    assert(cell_faces);
     for (int i = 0; i < num_faces; ++i)
     {
       // For each face number get the global vertex numbers
-      const std::int32_t* face_vertices = (*connect_2_0)(cell_faces[i]);
+      const std::int32_t* face_vertices
+          = connect_2_0->connections(cell_faces[i]);
+      assert(face_vertices);
 
       // For each facet number get the global edge number
-      std::int32_t* cell_edges
-          = const_cast<std::int32_t*>((*connect_2_1)(cell_faces[i]));
+      std::int32_t* cell_edges = connect_2_1->connections(cell_faces[i]);
+      assert(cell_edges);
 
       // Loop over vertices on face
       std::size_t m = 0;
@@ -140,7 +133,9 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
         for (int k = m; k < 3; ++k)
         {
           // For each edge number get the global vertex numbers
-          const std::int32_t* edge_vertices = (*connect_1_0)(cell_edges[k]);
+          const std::int32_t* edge_vertices
+              = connect_1_0->connections(cell_edges[k]);
+          assert(edge_vertices);
 
           // Check if the jth vertex of facet i is non-incident on edge k
           if (!std::count(edge_vertices, edge_vertices + 2, face_vertices[j]))
@@ -159,11 +154,11 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
     return;
 
   // Sort local vertices on cell in ascending order, connectivity 3 - 0
-  std::shared_ptr<const mesh::MeshConnectivity> connect_3_0
-      = topology.connectivity(3, 0);
-  if (connect_3_0 and !connect_3_0->empty())
+  std::shared_ptr<mesh::Connectivity> connect_3_0 = topology.connectivity(3, 0);
+  if (connect_3_0)
   {
-    std::int32_t* cell_vertices = const_cast<std::int32_t*>(cell.entities(0));
+    std::int32_t* cell_vertices = connect_3_0->connections(cell.index());
+    assert(cell_vertices);
     std::sort(cell_vertices, cell_vertices + 4, [&](auto& a, auto& b) {
       return global_vertex_indices[a] < global_vertex_indices[b];
     });
@@ -171,15 +166,14 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort local edges on cell after non-incident vertex tuble,
   // connectivity 3-1
-  std::shared_ptr<const mesh::MeshConnectivity> connect_3_1
-      = topology.connectivity(3, 1);
-  if (connect_3_1 and !connect_3_1->empty())
+  std::shared_ptr<mesh::Connectivity> connect_3_1 = topology.connectivity(3, 1);
+  if (connect_3_1)
   {
-    // assert(!topology(1, 0).empty());
-
     // Get cell vertices and edge numbers
     const std::int32_t* cell_vertices = cell.entities(0);
-    std::int32_t* cell_edges = const_cast<std::int32_t*>(cell.entities(1));
+    assert(cell_vertices);
+    std::int32_t* cell_edges = connect_3_1->connections(cell.index());
+    assert(cell_edges);
 
     // Loop two vertices on cell as a lexicographical tuple
     // (i, j): (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
@@ -192,7 +186,9 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
         for (int k = m; k < 6; ++k)
         {
           // Get local vertices on edge
-          const std::int32_t* edge_vertices = (*connect_1_0)(cell_edges[k]);
+          const std::int32_t* edge_vertices
+              = connect_1_0->connections(cell_edges[k]);
+          assert(edge_vertices);
 
           // Check if the ith and jth vertex of the cell are
           // non-incident on edge k
@@ -212,15 +208,14 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort local facets on cell after non-incident vertex, connectivity 3
   // - 2
-  std::shared_ptr<const mesh::MeshConnectivity> connect_3_2
-      = topology.connectivity(3, 2);
-  if (connect_3_2 and !connect_3_2->empty())
+  std::shared_ptr<mesh::Connectivity> connect_3_2 = topology.connectivity(3, 2);
+  if (connect_3_2)
   {
-    // assert(!topology(2, 0).empty());
-
     // Get cell vertices and facet numbers
     const std::int32_t* cell_vertices = cell.entities(0);
-    std::int32_t* cell_faces = const_cast<std::int32_t*>(cell.entities(2));
+    assert(cell_vertices);
+    std::int32_t* cell_faces = connect_3_2->connections(cell.index());
+    assert(cell_faces);
 
     // Loop vertices on cell
     for (int i = 0; i < 4; ++i)
@@ -228,8 +223,8 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
       // Loop facets on cell
       for (int j = i; j < 4; ++j)
       {
-        std::int32_t* face_vertices
-            = const_cast<std::int32_t*>((*connect_2_0)(cell_faces[j]));
+        std::int32_t* face_vertices = connect_2_0->connections(cell_faces[j]);
+        assert(face_vertices);
 
         // Check if the ith vertex of the cell is non-incident on facet j
         if (!std::count(face_vertices, face_vertices + 3, cell_vertices[i]))
@@ -245,7 +240,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 //-----------------------------------------------------------------------------
 bool ordered_cell_simplex(
     const std::vector<std::int64_t>& global_vertex_indices,
-    const dolfin::mesh::Cell& cell)
+    const mesh::Cell& cell)
 {
   // Get mesh topology
   const mesh::MeshTopology& topology = cell.mesh().topology();
@@ -253,12 +248,12 @@ bool ordered_cell_simplex(
   const int c = cell.index();
 
   // Get vertices
-  std::shared_ptr<const mesh::MeshConnectivity> connect_tdim_0
+  std::shared_ptr<const mesh::Connectivity> connect_tdim_0
       = topology.connectivity(tdim, 0);
   assert(connect_tdim_0);
 
   const int num_vertices = connect_tdim_0->size(c);
-  const std::int32_t* vertices = (*connect_tdim_0)(c);
+  const std::int32_t* vertices = connect_tdim_0->connections(c);
   assert(vertices);
 
   // Check that vertices are in ascending order
@@ -275,17 +270,17 @@ bool ordered_cell_simplex(
   for (int d = 1; d + 1 < tdim; ++d)
   {
     // Check if entities exist, otherwise skip
-    std::shared_ptr<const mesh::MeshConnectivity> connect_d_0
+    std::shared_ptr<const mesh::Connectivity> connect_d_0
         = topology.connectivity(d, 0);
-    if (!connect_d_0 or connect_d_0->empty())
+    if (!connect_d_0)
       continue;
 
     // Get entities
-    std::shared_ptr<const mesh::MeshConnectivity> connect_tdim_d
+    std::shared_ptr<const mesh::Connectivity> connect_tdim_d
         = topology.connectivity(tdim, d);
     assert(connect_tdim_d);
     const int num_entities = connect_tdim_d->size(c);
-    const std::int32_t* entities = (*connect_tdim_d)(c);
+    const std::int32_t* entities = connect_tdim_d->connections(c);
 
     // Iterate over entities
     for (int e = 1; e < num_entities; ++e)
@@ -293,12 +288,12 @@ bool ordered_cell_simplex(
       // Get vertices for first entity
       const int e0 = entities[e - 1];
       const int n0 = connect_d_0->size(e0);
-      const std::int32_t* v0 = (*connect_d_0)(e0);
+      const std::int32_t* v0 = connect_d_0->connections(e0);
 
       // Get vertices for second entity
       const int e1 = entities[e];
       const int n1 = connect_d_0->size(e1);
-      const std::int32_t* v1 = (*connect_d_0)(e1);
+      const std::int32_t* v1 = connect_d_0->connections(e1);
 
       // Check ordering of entities
       assert(n0 == n1);
@@ -338,7 +333,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
 
   // Iterate over all cells
   for (mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
-    order_cell_simplex(global_vertex_indices, cell);
+    order_cell_simplex(global_vertex_indices, mesh, cell);
 }
 //-----------------------------------------------------------------------------
 bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)

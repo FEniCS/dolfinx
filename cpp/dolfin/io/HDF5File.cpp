@@ -328,7 +328,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       // dimension
 
       const std::size_t mpi_rank = _mpi_comm.rank();
-      const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+      const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
           = mesh.topology().shared_entities(cell_dim);
 
       std::set<unsigned int> non_local_entities;
@@ -721,7 +721,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     // Drop duplicate data
     const std::size_t tdim = mesh.topology().dim();
     const std::size_t mpi_rank = _mpi_comm.rank();
-    const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+    const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
     std::set<unsigned int> non_local_entities;
@@ -1375,15 +1375,15 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
   if (coords_shape.size() == 1)
   {
     // spdlog::error("HDF5File.cpp", "get geometric dimension",
-    //               "Cannot determine geometric dimension from one-dimensional "
-    //               "array storage in HDF5 file");
+    //               "Cannot determine geometric dimension from one-dimensional
+    //               " "array storage in HDF5 file");
     throw std::runtime_error("IO Error");
   }
   else if (coords_shape.size() > 2)
   {
     // spdlog::error("HDF5File.cpp", "get geometric dimension",
-    //               "Cannot determine geometric dimension from high-rank array "
-    //               "storage in HDF5 file");
+    //               "Cannot determine geometric dimension from high-rank array
+    //               " "storage in HDF5 file");
     throw std::runtime_error("IO Error");
   }
 

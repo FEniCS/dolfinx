@@ -8,6 +8,7 @@
 
 #include <Eigen/Dense>
 #include <cassert>
+#include <numeric>
 #include <vector>
 
 namespace dolfin
@@ -24,28 +25,29 @@ namespace mesh
 /// which may either be equal for all entities or different, or by
 /// giving the entire (sparse) connectivity pattern.
 
-class MeshConnectivity
+class Connectivity
 {
 public:
-  /// Create empty connectivity
-  MeshConnectivity();
+  /// Initialize with all connections and pointer to each entity
+  /// position
+  Connectivity(const std::vector<std::int32_t>& connections,
+               const std::vector<std::int32_t>& positions);
 
-  /// Initialize number of entities and number of connections (equal
-  /// for all)
-  MeshConnectivity(std::size_t num_entities, std::size_t num_connections);
-
-  /// Initialize number of entities and number of connections
-  /// (individually)
-  MeshConnectivity(std::vector<std::size_t>& num_connections);
+  /// Initialize with all connections for case where each entity has the
+  /// same number of connections
+  Connectivity(
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>
+          connections);
 
   /// Set all connections for all entities (T is a '2D' container, e.g.
   /// a std::vector<<std::vector<std::size_t>>,
   /// std::vector<<std::set<std::size_t>>, etc)
   template <typename T>
-  MeshConnectivity(const T& connections)
+  Connectivity(const std::vector<T>& connections)
+      : _index_to_position(connections.size() + 1)
   {
     // Initialize offsets and compute total size
-    _index_to_position.resize(connections.size() + 1);
     std::int32_t size = 0;
     for (std::size_t e = 0; e < connections.size(); e++)
     {
@@ -64,83 +66,52 @@ public:
   }
 
   /// Copy constructor
-  MeshConnectivity(const MeshConnectivity& connectivity) = default;
+  Connectivity(const Connectivity& connectivity) = default;
 
   /// Move constructor
-  MeshConnectivity(MeshConnectivity&& connectivity) = default;
+  Connectivity(Connectivity&& connectivity) = default;
 
   /// Destructor
-  ~MeshConnectivity() = default;
+  ~Connectivity() = default;
 
   /// Assignment
-  MeshConnectivity& operator=(const MeshConnectivity& connectivity) = default;
+  Connectivity& operator=(const Connectivity& connectivity) = default;
 
   /// Move assignment
-  MeshConnectivity& operator=(MeshConnectivity&& connectivity) = default;
-
-  // /// Return true if the total number of connections is equal to zero
-  bool empty() const { return _connections.size() == 0; }
+  Connectivity& operator=(Connectivity&& connectivity) = default;
 
   /// Return number of connections for given entity
-  std::size_t size(std::int32_t entity) const
-  {
-    return (entity + 1) < _index_to_position.size()
-               ? _index_to_position[entity + 1] - _index_to_position[entity]
-               : 0;
-  }
+  std::size_t size(std::int32_t entity) const;
 
   /// Return global number of connections for given entity
-  std::size_t size_global(std::int32_t entity) const
-  {
-    if (_num_global_connections.size() == 0)
-      return size(entity);
-    else
-    {
-      assert(entity < _num_global_connections.size());
-      return _num_global_connections[entity];
-    }
-  }
+  std::size_t size_global(std::int32_t entity) const;
 
   /// Return array of connections for given entity
-  std::int32_t* operator()(std::int32_t entity)
-  {
-    return (entity + 1) < _index_to_position.size()
-               ? &_connections[_index_to_position[entity]]
-               : nullptr;
-  }
+  std::int32_t* connections(int entity);
 
   /// Return array of connections for given entity (const version)
-  const std::int32_t* operator()(std::int32_t entity) const
-  {
-    return (entity + 1) < _index_to_position.size()
-               ? &_connections[_index_to_position[entity]]
-               : nullptr;
-  }
+  const std::int32_t* connections(int entity) const;
 
   /// Return contiguous array of connections for all entities
+  Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> connections();
+
+  /// Return contiguous array of connections for all entities (const
+  /// version)
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   connections() const;
 
   /// Position of first connection in connections() for each entity
   /// (using local index)
-  Eigen::Ref<const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>>
+  Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> entity_positions();
+
+  /// Position of first connection in connections() for each entity
+  /// (using local index) (const version)
+  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   entity_positions() const;
 
-  /// Set given connection for given entity
-  void set(std::size_t entity, std::size_t connection, std::size_t pos);
-
-  /// Set all connections for given entity
-  void set(std::uint32_t entity,
-           const Eigen::Ref<const Eigen::Array<std::int32_t, 1, Eigen::Dynamic>>
-               connections);
-
   /// Set global number of connections for all local entities
-  void set_global_size(const Eigen::Array<std::uint32_t, Eigen::Dynamic, 1>&
-                           num_global_connections)
-  {
-    assert(num_global_connections.size() == _index_to_position.size() - 1);
-    _num_global_connections = num_global_connections;
-  }
+  void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
+                           num_global_connections);
 
   /// Hash of connections
   std::size_t hash() const;
@@ -153,11 +124,11 @@ private:
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _connections;
 
   // Position of first connection for each entity (using local index)
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _index_to_position;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _index_to_position;
 
   // Global number of connections for all entities (possibly not
   // computed)
-  Eigen::Array<std::uint32_t, Eigen::Dynamic, 1> _num_global_connections;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _num_global_connections;
 };
 } // namespace mesh
 } // namespace dolfin

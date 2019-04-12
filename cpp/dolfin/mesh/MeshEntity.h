@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Connectivity.h"
 #include "Mesh.h"
 #include <dolfin/geometry/Point.h>
 
@@ -102,8 +103,7 @@ public:
   /// Return global index of mesh entity
   ///
   /// @return     std::size_t
-  ///         The global index. Set to
-  ///         std::numerical_limits<std::size_t>::max() if global index
+  ///         The global index. Set to -1  if global index
   ///         has not been computed
   std::int64_t global_index() const
   {
@@ -171,7 +171,8 @@ public:
     {
       assert(_mesh->topology().connectivity(_dim, dim));
       const std::int32_t* initialized_mesh_entities
-          = (*_mesh->topology().connectivity(_dim, dim))(_local_index);
+          = _mesh->topology().connectivity(_dim, dim)->connections(
+              _local_index);
       assert(initialized_mesh_entities);
       return initialized_mesh_entities;
     }
@@ -214,13 +215,13 @@ public:
   /// Return set of sharing processes
   /// @return std::set<std::uint32_t>
   ///   List of sharing processes
-  std::set<std::uint32_t> sharing_processes() const
+  std::set<std::int32_t> sharing_processes() const
   {
-    const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
+    const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
         = _mesh->topology().shared_entities(_dim);
     const auto map_it = sharing_map.find(_local_index);
     if (map_it == sharing_map.end())
-      return std::set<std::uint32_t>();
+      return std::set<std::int32_t>();
     else
       return map_it->second;
   }
@@ -232,7 +233,7 @@ public:
   {
     if (_mesh->topology().have_shared_entities(_dim))
     {
-      const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
+      const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
           = _mesh->topology().shared_entities(_dim);
       return (sharing_map.find(_local_index) != sharing_map.end());
     }

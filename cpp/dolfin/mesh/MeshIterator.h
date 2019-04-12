@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include "Connectivity.h"
 #include "Mesh.h"
-#include "MeshConnectivity.h"
 #include "MeshEntity.h"
 #include "MeshTopology.h"
 #include <iterator>
@@ -101,11 +101,11 @@ public:
 
     // Get connectivity
     assert(e.mesh().topology().connectivity(e.dim(), _entity.dim()));
-    const MeshConnectivity& c
+    const Connectivity& c
         = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    _connections = c(e.index()) + pos;
+    _connections = c.connections(e.index()) + pos;
   }
 
   /// Constructor from MeshEntity
@@ -123,12 +123,12 @@ public:
 
     // Get connectivity
     assert(e.mesh().topology().connectivity(e.dim(), _entity.dim()));
-    const MeshConnectivity& c
+    const Connectivity& c
         = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
     // assert(!c.empty());
-    _connections = c(e.index()) + pos;
+    _connections = c.connections(e.index()) + pos;
   }
 
   /// Copy constructor
