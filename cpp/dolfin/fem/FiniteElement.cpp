@@ -19,17 +19,13 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
       _tdim(element.topological_dimension), _space_dim(element.space_dimension),
       _value_size(element.value_size),
       _reference_value_size(element.reference_value_size),
-      _value_rank(element.value_rank), _degree(element.degree),
-      _num_sub_elements(element.num_sub_elements),
-      _hash(common::hash_local(signature())),
-      _value_dimension(element.value_dimension),
+      _degree(element.degree), _hash(common::hash_local(signature())),
       _evaluate_reference_basis(element.evaluate_reference_basis),
       _evaluate_reference_basis_derivatives(
           element.evaluate_reference_basis_derivatives),
       _transform_reference_basis_derivatives(
           element.transform_reference_basis_derivatives),
-      _transform_values(element.transform_values),
-      _create_sub_element(element.create_sub_element), _create(element.create)
+      _transform_values(element.transform_values)
 {
   // Store dof coordinates on reference element
   _refX.resize(this->space_dimension(), this->topological_dimension());
@@ -64,6 +60,19 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
   default:
     throw std::runtime_error("Unknown UFC cell type");
   }
+  assert(ReferenceCellTopology::dim(_cell_shape) == _tdim);
+
+  // Fill value dimension
+  for (int i = 0; i < element.value_rank; ++i)
+    _value_dimension.push_back(element.value_dimension(i));
+
+  // Create all sub-elements
+  for (int i = 0; i < element.num_sub_elements; ++i)
+  {
+    ufc_finite_element* ufc_sub_element = element.create_sub_element(i);
+    _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
+    std::free(ufc_sub_element);
+  }
 }
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const { return _signature; }
@@ -81,12 +90,16 @@ std::size_t FiniteElement::reference_value_size() const
   return _reference_value_size;
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::value_rank() const { return _value_rank; }
+std::size_t FiniteElement::value_rank() const
+{
+  return _value_dimension.size();
+}
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::value_dimension(std::size_t i) const
 {
-  assert(_value_dimension);
-  return _value_dimension(i);
+  if (i >= _value_dimension.size())
+    return 1;
+  return _value_dimension[i];
 }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::degree() const { return _degree; }
@@ -98,7 +111,7 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const EigenRowArrayXXd> X) const
 {
   std::size_t num_points = X.rows();
-  assert( _evaluate_reference_basis);
+  assert(_evaluate_reference_basis);
   int ret = _evaluate_reference_basis(reference_values.data(), num_points,
                                       X.data());
   if (ret == -1)
@@ -168,25 +181,10 @@ void FiniteElement::transform_values(
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::num_sub_elements() const
 {
-  return _num_sub_elements;
+  return _sub_elements.size();
 }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::hash() const { return _hash; }
-//-----------------------------------------------------------------------------
-std::unique_ptr<FiniteElement>
-FiniteElement::create_sub_element(std::size_t i) const
-{
-  assert(_create_sub_element);
-  std::shared_ptr<ufc_finite_element> ufc_element(_create_sub_element(i), free);
-  return std::make_unique<FiniteElement>(*ufc_element);
-}
-//-----------------------------------------------------------------------------
-std::unique_ptr<FiniteElement> FiniteElement::create() const
-{
-  assert(_create);
-  std::shared_ptr<ufc_finite_element> ufc_element(_create(), free);
-  return std::make_unique<FiniteElement>(*ufc_element);
-}
 //-----------------------------------------------------------------------------
 std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(
     const std::vector<std::size_t>& component) const
@@ -226,9 +224,9 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
         "subsystem out of range.");
   }
 
-  // Create sub system
+  // Get sub system
   std::shared_ptr<FiniteElement> sub_element
-      = finite_element.create_sub_element(component[0]);
+      = finite_element._sub_elements[component[0]];
   assert(sub_element);
 
   // Return sub system if sub sub system should not be extracted
