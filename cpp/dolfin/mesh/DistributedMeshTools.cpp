@@ -16,7 +16,6 @@
 #include "dolfin/graph/Graph.h"
 #include "dolfin/graph/SCOTCH.h"
 #include <Eigen/Dense>
-#include <boost/multi_array.hpp>
 #include <complex>
 // #include <spdlog/spdlog.h>
 

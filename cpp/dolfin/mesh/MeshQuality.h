@@ -8,7 +8,6 @@
 
 #include "MeshFunction.h"
 #include <array>
-#include <boost/multi_array.hpp>
 #include <memory>
 #include <string>
 #include <utility>
