@@ -30,10 +30,7 @@ ParallelRefinement::ParallelRefinement(const mesh::Mesh& mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-ParallelRefinement::~ParallelRefinement()
-{
-  // Do nothing
-}
+const mesh::Mesh& ParallelRefinement::mesh() const { return _mesh; }
 //-----------------------------------------------------------------------------
 bool ParallelRefinement::is_marked(std::int32_t edge_index) const
 {
