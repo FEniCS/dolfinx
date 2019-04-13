@@ -40,6 +40,7 @@ struct DofMapStructure
   std::vector<std::int32_t> cell_ptr;
   std::vector<std::int64_t> global_indices;
 
+  std::int32_t num_cells() const { return cell_ptr.size() - 1; }
   std::int32_t num_dofs(std::int32_t cell) const
   {
     return cell_ptr[cell + 1] - cell_ptr[cell];
@@ -360,7 +361,7 @@ build_dofmap(const DofMapStructure<PetscInt>& node_dofmap,
              const std::size_t block_size)
 {
   // Build dofmap looping over nodes
-  std::vector<std::vector<PetscInt>> dofmap(node_dofmap.cell_ptr.size() - 1);
+  std::vector<std::vector<PetscInt>> dofmap(node_dofmap.num_cells());
   for (std::size_t i = 0; i < dofmap.size(); ++i)
   {
     const std::size_t local_dim0 = node_dofmap.num_dofs(i);
@@ -601,7 +602,7 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
 
   // Build local graph, based on old dof map, with contiguous
   // numbering
-  for (std::size_t cell = 0; cell < node_dofmap.cell_ptr.size() - 1; ++cell)
+  for (std::int32_t cell = 0; cell < node_dofmap.num_cells(); ++cell)
   {
     // Cell dofmaps with old local indices
     // const std::vector<PetscInt>& nodes = node_dofmap[cell];
