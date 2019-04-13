@@ -131,12 +131,6 @@ if (HAVE_PEDANTIC)
   set(DOLFIN_CXX_DEVELOPER_FLAGS "-Wall -Werror -pedantic ${DOLFIN_CXX_DEVELOPER_FLAGS}")
 endif()
 
-# Adjust strict flags for Clang
-CHECK_CXX_COMPILER_FLAG("-Wno-missing-braces -Wmissing-field-initializers" HAVE_BRACE_CHECK)
-if (HAVE_BRACE_CHECK)
-  set(DOLFIN_CXX_DEVELOPER_FLAGS "${DOLFIN_CXX_DEVELOPER_FLAGS} -Wno-missing-braces -Wmissing-field-initializers")
-endif()
-
 # Debug flags
 CHECK_CXX_COMPILER_FLAG(-g HAVE_DEBUG)
 if (HAVE_DEBUG)
