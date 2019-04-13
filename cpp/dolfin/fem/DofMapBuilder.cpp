@@ -32,8 +32,9 @@ using namespace dolfin::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
+template <typename T>
 void tabulate_cell_dofs(
-    int64_t* dofs,
+    T* dofs,
     const std::vector<std::vector<std::set<std::int32_t>>>& entity_dofs,
     const std::vector<std::int64_t>& num_entities,
     const std::vector<std::vector<int64_t>>& entity_indices)
@@ -362,8 +363,7 @@ build_dofmap(const std::vector<std::vector<PetscInt>>& node_dofmap,
   return dofmap;
 }
 //-----------------------------------------------------------------------------
-// Build graph from ElementDofmap. Returns (node_dofmap,
-// node_local_to_global)
+// Build graph from ElementDofmap. Returns (dofmap, local_to_global)
 std::tuple<std::vector<std::vector<PetscInt>>, std::vector<std::size_t>>
 build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
                      const mesh::Mesh& mesh)
@@ -408,8 +408,7 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
   const int local_dim = el_dm_blocked.num_dofs();
 
   // Holder for UFC 64-bit dofmap integers
-  std::vector<int64_t> ufc_nodes_global(local_dim);
-  std::vector<int64_t> ufc_nodes_local(local_dim);
+  std::vector<std::size_t> ufc_nodes_global(local_dim);
 
   // Allocate entity indices array
   std::vector<std::vector<int64_t>> entity_indices(D + 1);
@@ -422,13 +421,12 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    // Get reference to container for cell dofs
-    std::vector<PetscInt>& cell_nodes = dofmap[cell.index()];
-    cell_nodes.resize(local_dim);
+    const std::int32_t cell_index = cell.index();
+    dofmap[cell_index].resize(local_dim);
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
-    tabulate_cell_dofs(ufc_nodes_local.data(), el_dm_blocked.entity_dofs(),
+    tabulate_cell_dofs(dofmap[cell_index].data(), el_dm_blocked.entity_dofs(),
                        num_mesh_entities_local, entity_indices);
 
     // Tabulate standard UFC dof map for first space (global)
@@ -436,20 +434,15 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
     tabulate_cell_dofs(ufc_nodes_global.data(), el_dm_blocked.entity_dofs(),
                        num_mesh_entities_global, entity_indices);
 
-    // Copy to cell dofs
-    for (int i = 0; i < local_dim; ++i)
-      cell_nodes[i] = ufc_nodes_local[i];
-
     // Build local-to-global map for nodes
     for (int i = 0; i < local_dim; ++i)
     {
-      assert(ufc_nodes_local[i] < (int)local_to_global.size());
-      local_to_global[ufc_nodes_local[i]] = ufc_nodes_global[i];
+      assert(dofmap[cell_index][i] < (int)local_to_global.size());
+      local_to_global[dofmap[cell_index][i]] = ufc_nodes_global[i];
     }
   }
 
-  return std::make_tuple(std::move(dofmap),
-                         std::move(local_to_global));
+  return std::make_tuple(std::move(dofmap), std::move(local_to_global));
 }
 //-----------------------------------------------------------------------------
 // Mark shared nodes. Boundary nodes are assigned a random
