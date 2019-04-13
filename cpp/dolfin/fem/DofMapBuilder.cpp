@@ -23,7 +23,6 @@
 #include <dolfin/mesh/Vertex.h>
 #include <memory>
 #include <random>
-// #include <spdlog/spdlog.h>
 #include <stdlib.h>
 #include <utility>
 
@@ -34,19 +33,20 @@ namespace
 {
 //-----------------------------------------------------------------------------
 void tabulate_cell_dofs(
-    int64_t* dofs, const std::vector<std::vector<std::set<int>>>& entity_dofs,
+    int64_t* dofs,
+    const std::vector<std::vector<std::set<std::int32_t>>>& entity_dofs,
     const std::vector<std::int64_t>& num_entities,
     const std::vector<std::vector<int64_t>>& entity_indices)
 {
   // Loop over cell entity types (vertex, edge, etc)
-  std::size_t offset = 0;
+  std::int64_t offset = 0;
   for (std::size_t d = 0; d < entity_dofs.size(); ++d)
   {
     // Loop over each entity of dimension d
     for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
     {
-      const std::set<int>& entity_dof_set = entity_dofs[d][i];
-      const int num_entity_dofs = entity_dof_set.size();
+      const std::set<std::int32_t>& entity_dof_set = entity_dofs[d][i];
+      const std::int32_t num_entity_dofs = entity_dof_set.size();
 
       // Loop over dofs belong to entity e of dimension d (d, e)
       // d: topological dimension
@@ -55,7 +55,7 @@ void tabulate_cell_dofs(
       for (auto dof = entity_dof_set.begin(); dof != entity_dof_set.end();
            ++dof)
       {
-        const int count = std::distance(entity_dof_set.begin(), dof);
+        const std::int32_t count = std::distance(entity_dof_set.begin(), dof);
         dofs[*dof] = offset + num_entity_dofs * entity_indices[d][i] + count;
       }
     }
@@ -157,8 +157,6 @@ compute_node_ownership(const std::vector<std::vector<PetscInt>>& dofmap,
                        const std::vector<std::size_t>& local_to_global,
                        const mesh::Mesh& mesh, const std::size_t global_dim)
 {
-  // spdlog::debug("Determining node ownership for parallel dof map");
-
   // Get number of nodes
   const std::size_t num_nodes_local = local_to_global.size();
 
@@ -332,8 +330,6 @@ compute_node_ownership(const std::vector<std::vector<PetscInt>>& dofmap,
       ++num_owned_nodes;
   }
 
-  // spdlog::debug("Finished determining dof ownership for parallel dof map");
-
   return std::make_tuple(std::move(num_owned_nodes), std::move(node_ownership),
                          std::move(shared_node_to_processes),
                          std::move(neighbours));
@@ -433,12 +429,12 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
     tabulate_cell_dofs(ufc_nodes_local.data(), el_dm_blocked.entity_dofs(),
-                      num_mesh_entities_local, entity_indices);
+                       num_mesh_entities_local, entity_indices);
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
     tabulate_cell_dofs(ufc_nodes_global.data(), el_dm_blocked.entity_dofs(),
-                      num_mesh_entities_global, entity_indices);
+                       num_mesh_entities_global, entity_indices);
 
     // Get the edge and facet permutations of the dofs for this cell,
     // based on global vertex indices.
