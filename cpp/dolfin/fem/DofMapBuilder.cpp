@@ -22,6 +22,7 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <memory>
+#include <numeric>
 #include <random>
 #include <stdlib.h>
 #include <utility>
@@ -31,6 +32,25 @@ using namespace dolfin::fem;
 
 namespace
 {
+//-----------------------------------------------------------------------------
+template <typename T>
+struct DofMapStructure
+{
+  std::vector<T> data;
+  std::vector<std::int32_t> cell_ptr;
+  std::vector<std::int64_t> global_indices;
+
+  std::int32_t num_dofs(std::int32_t cell) const
+  {
+    return cell_ptr[cell + 1] - cell_ptr[cell];
+  }
+  const T& dof(int cell, int i) const { return data[cell_ptr[cell] + i]; }
+  T& dof(int cell, int i) { return data[cell_ptr[cell] + i]; }
+
+  const T* dofs(int cell) const { return &data[cell_ptr[cell]]; }
+  T* dofs(int cell) { return &data[cell_ptr[cell]]; }
+};
+
 //-----------------------------------------------------------------------------
 template <typename T>
 void tabulate_cell_dofs(
@@ -120,7 +140,6 @@ void get_cell_entities_global(std::vector<std::vector<int64_t>>& entity_indices,
 // TODO: The above and below functions are _very_ similar, can they be
 // combined?
 //-----------------------------------------------------------------------------
-// Compute number of mesh entities for dimensions required by dofmap
 std::vector<int64_t>
 compute_num_mesh_entities_local(const mesh::Mesh& mesh,
                                 const std::vector<bool>& needs_mesh_entities)
@@ -152,16 +171,12 @@ compute_num_mesh_entities_local(const mesh::Mesh& mesh,
 // shared_node_to_processes, neighbours)
 std::tuple<int, std::vector<short int>,
            std::unordered_map<int, std::vector<int>>, std::set<int>>
-compute_node_ownership(
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>
-        dofmap,
-    const std::vector<int>& shared_nodes,
-    const std::vector<std::size_t>& local_to_global, const mesh::Mesh& mesh,
-    const std::size_t global_dim)
+compute_node_ownership(const DofMapStructure<PetscInt>& dofmap,
+                       const std::vector<int>& shared_nodes,
+                       const mesh::Mesh& mesh, const std::size_t global_dim)
 {
   // Get number of nodes
-  const std::size_t num_nodes_local = local_to_global.size();
+  const std::size_t num_nodes_local = dofmap.global_indices.size();
 
   // Global-to-local node map for nodes on boundary
   std::map<std::size_t, int> global_to_local;
@@ -192,7 +207,7 @@ compute_node_ownership(
       // ownership and other sharing processes
 
       // Send global index
-      const std::size_t global_index = local_to_global[i];
+      const std::size_t global_index = dofmap.global_indices[i];
       const std::size_t dest
           = dolfin::MPI::index_owner(mpi_comm, global_index, global_dim);
       send_buffer[dest].push_back(global_index);
@@ -212,7 +227,7 @@ compute_node_ownership(
     if (shared_nodes[i] == -3 or shared_nodes[i] == -2)
     {
       // Send global index
-      const std::size_t global_index = local_to_global[i];
+      const std::size_t global_index = dofmap.global_indices[i];
       const std::size_t dest
           = dolfin::MPI::index_owner(mpi_comm, global_index, global_dim);
       send_buffer[dest].push_back(global_index);
@@ -339,21 +354,20 @@ compute_node_ownership(
 }
 //-----------------------------------------------------------------------------
 // Build dofmap based on re-ordered nodes
-std::vector<std::vector<PetscInt>> build_dofmap(
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>
-        node_dofmap,
-    const std::vector<int>& old_to_new_node_local, const std::size_t block_size)
+std::vector<std::vector<PetscInt>>
+build_dofmap(const DofMapStructure<PetscInt>& node_dofmap,
+             const std::vector<int>& old_to_new_node_local,
+             const std::size_t block_size)
 {
   // Build dofmap looping over nodes
-  std::vector<std::vector<PetscInt>> dofmap(node_dofmap.size());
-  for (std::size_t i = 0; i < node_dofmap.rows(); ++i)
+  std::vector<std::vector<PetscInt>> dofmap(node_dofmap.cell_ptr.size() - 1);
+  for (std::size_t i = 0; i < dofmap.size(); ++i)
   {
-    const std::size_t local_dim0 = node_dofmap.cols();
+    const std::size_t local_dim0 = node_dofmap.num_dofs(i);
     dofmap[i].resize(block_size * local_dim0);
     for (std::size_t j = 0; j < local_dim0; ++j)
     {
-      const int old_node = node_dofmap(i, j);
+      const int old_node = node_dofmap.dof(i, j);
       assert(old_node < (int)old_to_new_node_local.size());
       const int new_node = old_to_new_node_local[old_node];
       for (std::size_t block = 0; block < block_size; ++block)
@@ -367,9 +381,7 @@ std::vector<std::vector<PetscInt>> build_dofmap(
 }
 //-----------------------------------------------------------------------------
 // Build graph from ElementDofmap. Returns (dofmap, local_to_global)
-std::tuple<
-    Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
-    std::vector<std::size_t>>
+DofMapStructure<PetscInt>
 build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
                      const mesh::Mesh& mesh)
 {
@@ -407,12 +419,12 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
   const int local_dim = el_dm_blocked.num_dofs();
 
   // Allocate space for dof map
-  // std::vector<std::vector<PetscInt>> dofmap(mesh.num_entities(D));
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      dofmap(mesh.num_entities(D), local_dim);
-
-  // Holder for UFC 64-bit dofmap integers
-  std::vector<std::size_t> ufc_nodes_global(local_dim);
+  DofMapStructure<PetscInt> dofmap;
+  dofmap.data.resize(mesh.num_entities(D) * local_dim);
+  dofmap.cell_ptr.resize(mesh.num_entities(D) + 1, local_dim);
+  dofmap.cell_ptr[0] = 0;
+  std::partial_sum(dofmap.cell_ptr.begin() + 1, dofmap.cell_ptr.end(),
+                   dofmap.cell_ptr.begin() + 1);
 
   // Allocate entity indices array
   std::vector<std::vector<int64_t>> entity_indices(D + 1);
@@ -420,18 +432,18 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
     entity_indices[d].resize(mesh.type().num_entities(d));
 
   // Resize local-to-global map
-  std::vector<std::size_t> local_to_global(local_size);
+  dofmap.global_indices.resize(local_size);
 
   // Build dofmaps from ElementDofmap
+  std::vector<std::size_t> ufc_nodes_global(local_dim);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     const std::int32_t cell_index = cell.index();
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
-    tabulate_cell_dofs(dofmap.row(cell_index).data(),
-                       el_dm_blocked.entity_dofs(), num_mesh_entities_local,
-                       entity_indices);
+    tabulate_cell_dofs(dofmap.dofs(cell_index), el_dm_blocked.entity_dofs(),
+                       num_mesh_entities_local, entity_indices);
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
@@ -440,25 +452,19 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
 
     // Build local-to-global map for nodes
     for (int i = 0; i < local_dim; ++i)
-    {
-      assert(dofmap(cell_index, i) < (int)local_to_global.size());
-      local_to_global[dofmap(cell_index, i)] = ufc_nodes_global[i];
-    }
+      dofmap.global_indices[dofmap.dof(cell_index, i)] = ufc_nodes_global[i];
   }
 
-  return std::make_tuple(std::move(dofmap), std::move(local_to_global));
+  return dofmap;
 }
 //-----------------------------------------------------------------------------
 // Mark shared nodes. Boundary nodes are assigned a random
 // positive integer, interior nodes are marked as -1, interior
 // nodes in ghost layer of other processes are marked -2, and
 // ghost nodes are marked as -3
-std::vector<int> compute_shared_nodes(
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>
-        node_dofmap,
-    const std::size_t num_nodes_local, const ElementDofLayout& el_dm,
-    const mesh::Mesh& mesh)
+std::vector<int>
+compute_shared_nodes(const DofMapStructure<PetscInt>& node_dofmap,
+                     const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
 {
   // Initialise mesh
   const int D = mesh.topology().dim();
@@ -467,7 +473,7 @@ std::vector<int> compute_shared_nodes(
 
   // Allocate data and initialise all facets to -1 (provisionally,
   // owned and not shared)
-  std::vector<int> shared_nodes(num_nodes_local, -1);
+  std::vector<int> shared_nodes(node_dofmap.global_indices.size(), -1);
 
   const std::vector<std::set<int>>& facet_table
       = el_dm.entity_closure_dofs()[D - 1];
@@ -477,11 +483,11 @@ std::vector<int> compute_shared_nodes(
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // const std::vector<PetscInt>& cell_nodes = node_dofmap[c.index()];
-    auto cell_nodes = node_dofmap.row(c.index());
+    const PetscInt* cell_nodes = node_dofmap.dofs(c.index());
     if (c.is_shared())
     {
       const int status = (c.is_ghost()) ? -3 : -2;
-      for (std::size_t i = 0; i < cell_nodes.cols(); ++i)
+      for (std::size_t i = 0; i < node_dofmap.num_dofs(c.index()); ++i)
       {
         // Ensure not already set (for R space)
         if (shared_nodes[cell_nodes[i]] == -1)
@@ -524,7 +530,7 @@ std::vector<int> compute_shared_nodes(
 
     // Tabulate dofs (local) on cell
     // const std::vector<PetscInt>& cell_nodes = node_dofmap[cell0.index()];
-    auto cell_nodes = node_dofmap.row(cell0.index());
+    const PetscInt* cell_nodes = node_dofmap.dofs(cell0.index());
 
     // Tabulate which dofs are on the facet
     const std::set<int>& facet_nodes = facet_table[cell0.index(f)];
@@ -547,10 +553,7 @@ std::vector<int> compute_shared_nodes(
 // Return (old-to-new_local, local_to_global_unowned) maps
 std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
     const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
-    const std::vector<std::size_t>& old_local_to_global,
-    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic,
-                                        Eigen::Dynamic, Eigen::RowMajor>>
-        node_dofmap,
+    const DofMapStructure<PetscInt>& node_dofmap,
     const std::vector<short int>& node_ownership, MPI_Comm mpi_comm)
 {
   // Count number of locally owned nodes
@@ -568,7 +571,8 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
     }
   }
   assert((unowned_local_size + owned_local_size) == node_ownership.size());
-  assert((unowned_local_size + owned_local_size) == old_local_to_global.size());
+  assert((unowned_local_size + owned_local_size)
+         == node_dofmap.global_indices.size());
 
   // Create global-to-local index map for local un-owned nodes
   std::vector<std::pair<std::size_t, int>> node_pairs;
@@ -576,7 +580,7 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
   for (std::size_t i = 0; i < node_ownership.size(); ++i)
   {
     if (node_ownership[i] == -1)
-      node_pairs.push_back(std::make_pair(old_local_to_global[i], i));
+      node_pairs.push_back(std::make_pair(node_dofmap.global_indices[i], i));
   }
   std::map<std::size_t, int> global_to_local_nodes_unowned(node_pairs.begin(),
                                                            node_pairs.end());
@@ -597,15 +601,15 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
 
   // Build local graph, based on old dof map, with contiguous
   // numbering
-  for (std::size_t cell = 0; cell < node_dofmap.rows(); ++cell)
+  for (std::size_t cell = 0; cell < node_dofmap.cell_ptr.size() - 1; ++cell)
   {
     // Cell dofmaps with old local indices
     // const std::vector<PetscInt>& nodes = node_dofmap[cell];
-    auto nodes = node_dofmap.row(cell);
+    const PetscInt* nodes = node_dofmap.dofs(cell);
     std::vector<int> local_old;
 
     // Loop over nodes collecting valid local nodes
-    for (std::size_t i = 0; i < nodes.size(); ++i)
+    for (std::size_t i = 0; i < node_dofmap.num_dofs(cell); ++i)
     {
       // Old node index (0)
       const int n0_old = nodes[i];
@@ -687,7 +691,8 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
         for (auto p = it->second.begin(); p != it->second.end(); ++p)
         {
           // Buffer old and new global indices to send
-          send_buffer[*p].push_back(old_local_to_global[old_node_index_local]);
+          send_buffer[*p].push_back(
+              node_dofmap.global_indices[old_node_index_local]);
           send_buffer[*p].push_back(process_offset + node_remap[counter]);
         }
       }
@@ -757,9 +762,6 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   // number of dofs). Returns:
   //  - node dofmap (node_dofmap)
   //  - local-to-global node indices (node_local_to_global)
-  std::vector<std::size_t> node_local_to_global0;
-  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      node_graph0;
 
   // If block size is not 1, use first sub-dofmap instead.
   const int bs = el_dm.block_size();
@@ -770,7 +772,7 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
     el_dm_b = el_dm.sub_dofmap({0});
   const ElementDofLayout& el_dm_blocked = (bs > 1) ? *el_dm_b : el_dm;
 
-  std::tie(node_graph0, node_local_to_global0)
+  DofMapStructure<PetscInt> node_graph0
       = build_ufc_node_graph(el_dm_blocked, mesh);
 
   // Set global dofmap dimension
@@ -790,8 +792,8 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   // nodes in ghost layer of other processes are marked -2, and
   // ghost nodes are marked as -3
 
-  std::vector<int> shared_nodes = compute_shared_nodes(
-      node_graph0, node_local_to_global0.size(), el_dm_blocked, mesh);
+  std::vector<int> shared_nodes
+      = compute_shared_nodes(node_graph0, el_dm_blocked, mesh);
 
   // Compute:
   // (a) owned and shared nodes (and owned and un-owned):
@@ -804,8 +806,8 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   std::set<int> neighbours;
   std::tie(num_owned_nodes, node_ownership0, shared_node_to_processes0,
            neighbours)
-      = compute_node_ownership(node_graph0, shared_nodes, node_local_to_global0,
-                               mesh, global_dimension / bs);
+      = compute_node_ownership(node_graph0, shared_nodes, mesh,
+                               global_dimension / bs);
 
   // Compute node re-ordering for process index locality, and spatial
   // locality within a process, including
@@ -816,8 +818,7 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   std::vector<int> node_old_to_new_local;
   std::vector<std::size_t> local_to_global_unowned;
   std::tie(node_old_to_new_local, local_to_global_unowned)
-      = compute_node_reordering(shared_node_to_processes0,
-                                node_local_to_global0, node_graph0,
+      = compute_node_reordering(shared_node_to_processes0, node_graph0,
                                 node_ownership0, mesh.mpi_comm());
 
   auto index_map = std::make_unique<common::IndexMap>(

@@ -37,8 +37,7 @@ class DofMapBuilder
 {
 
 public:
-  /// Build dofmap. The constrained domain may be a null pointer, in
-  /// which case it is ignored.
+  /// Build dofmap.
   ///
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
