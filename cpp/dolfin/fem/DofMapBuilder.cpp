@@ -33,6 +33,36 @@ using namespace dolfin::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
+void tabulate_cell_dofs(
+    int64_t* dofs, const std::vector<std::vector<std::set<int>>>& entity_dofs,
+    const std::vector<std::int64_t>& num_entities,
+    const std::vector<std::vector<int64_t>>& entity_indices)
+{
+  // Loop over cell entity types (vertex, edge, etc)
+  std::size_t offset = 0;
+  for (std::size_t d = 0; d < entity_dofs.size(); ++d)
+  {
+    // Loop over each entity of dimension d
+    for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
+    {
+      const std::set<int>& entity_dof_set = entity_dofs[d][i];
+      const int num_entity_dofs = entity_dof_set.size();
+
+      // Loop over dofs belong to entity e of dimension d (d, e)
+      // d: topological dimension
+      // i: local entity index
+      // dof: local index of dof at (d, i)
+      for (auto dof = entity_dof_set.begin(); dof != entity_dof_set.end();
+           ++dof)
+      {
+        const int count = std::distance(entity_dof_set.begin(), dof);
+        dofs[*dof] = offset + num_entity_dofs * entity_indices[d][i] + count;
+      }
+    }
+    offset += entity_dofs[d][0].size() * num_entities[d];
+  }
+}
+//-----------------------------------------------------------------------------
 void get_cell_entities_local(std::vector<std::vector<int64_t>>& entity_indices,
                              const mesh::Cell& cell,
                              const std::vector<bool>& needs_mesh_entities)
@@ -387,18 +417,11 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
 
   // Allocate entity indices array
   std::vector<std::vector<int64_t>> entity_indices(D + 1);
-  std::vector<const int64_t*> entity_indices_ptr(entity_indices.size());
   for (std::size_t d = 0; d <= D; ++d)
-  {
     entity_indices[d].resize(mesh.type().num_entities(d));
-    entity_indices_ptr[d] = entity_indices[d].data();
-  }
 
   // Resize local-to-global map
   std::vector<std::size_t> node_local_to_global(local_size);
-
-  // Vector for dof permutation
-  //  std::vector<int> permutation(local_dim);
 
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -409,15 +432,13 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
-    GenericDofMap::ufc_tabulate_dofs(
-        ufc_nodes_local.data(), el_dm_blocked.entity_dofs(),
-        num_mesh_entities_local.data(), entity_indices_ptr.data());
+    tabulate_cell_dofs(ufc_nodes_local.data(), el_dm_blocked.entity_dofs(),
+                      num_mesh_entities_local, entity_indices);
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
-    GenericDofMap::ufc_tabulate_dofs(
-        ufc_nodes_global.data(), el_dm_blocked.entity_dofs(),
-        num_mesh_entities_global.data(), entity_indices_ptr.data());
+    tabulate_cell_dofs(ufc_nodes_global.data(), el_dm_blocked.entity_dofs(),
+                      num_mesh_entities_global, entity_indices);
 
     // Get the edge and facet permutations of the dofs for this cell,
     // based on global vertex indices.
