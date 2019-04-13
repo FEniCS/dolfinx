@@ -28,15 +28,13 @@ namespace fem
 class FiniteElement
 {
 public:
-  /// Create finite element from UFC finite element (data may be shared)
+  /// Create finite element from UFC finite element
   /// @param element (ufc::finite_element)
   ///  UFC finite element
   FiniteElement(const ufc_finite_element& element);
 
   /// Destructor
   virtual ~FiniteElement() = default;
-
-  //--- Direct wrappers for ufc::finite_element ---
 
   /// Return a string identifying the finite element
   /// @return std::string
@@ -120,17 +118,8 @@ public:
   ///   number of sub-elements
   std::size_t num_sub_elements() const;
 
-  //--- DOLFIN-specific extensions of the interface ---
-
   /// Return simple hash of the signature string
   std::size_t hash() const;
-
-  /// Create a new finite element for sub element i (for a mixed
-  /// element)
-  std::unique_ptr<FiniteElement> create_sub_element(std::size_t i) const;
-
-  /// Create a new class instance
-  std::unique_ptr<FiniteElement> create() const;
 
   /// Extract sub finite element for component
   std::shared_ptr<FiniteElement>
@@ -141,11 +130,14 @@ private:
 
   CellType _cell_shape;
 
-  int _tdim, _space_dim, _value_size, _reference_value_size, _value_rank,
-      _degree, _num_sub_elements;
+  int _tdim, _space_dim, _value_size, _reference_value_size,
+      _degree;
 
   // Dof coordinates on the reference element
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
+
+  // List of sub-elements (if any)
+  std::vector<std::shared_ptr<FiniteElement>> _sub_elements;
 
   // Recursively extract sub finite element
   static std::shared_ptr<FiniteElement>
@@ -155,19 +147,23 @@ private:
   // Simple hash of the signature string
   std::size_t _hash;
 
-  std::function<int(int)> _value_dimension;
+  // Dimension of each value space
+  std::vector<int> _value_dimension;
+
+  // Functions for basis and derivatives evaluation
   std::function<int(double*, int, const double*)> _evaluate_reference_basis;
+
   std::function<int(double*, int, int, const double*)>
       _evaluate_reference_basis_derivatives;
+
   std::function<int(double*, int, int, const double*, const double*,
                     const double*, const double*, const double*, int)>
       _transform_reference_basis_derivatives;
+
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*, int,
                     const ufc_coordinate_mapping*)>
       _transform_values;
 
-  std::function<ufc_finite_element*(int i)> _create_sub_element;
-  std::function<ufc_finite_element*()> _create;
 };
 } // namespace fem
 } // namespace dolfin
