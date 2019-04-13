@@ -16,6 +16,8 @@ namespace dolfin
 namespace mesh
 {
 class Mesh;
+template<typename T>
+class MeshFunction;
 }
 
 namespace refinement
@@ -74,9 +76,9 @@ public:
   /// @param uniform
   ///   Make a "uniform" subdivision with all triangles being similar shape
   ///
-  static std::vector<std::size_t>
+  static std::vector<std::int32_t>
   get_simplices(const std::vector<bool>& marked_edges,
-                const std::vector<std::int32_t>& longest_edge, std::size_t tdim,
+                const std::vector<std::int32_t>& longest_edge, std::int32_t tdim,
                 bool uniform);
 
 private:
@@ -85,12 +87,12 @@ private:
   face_long_edge(const mesh::Mesh& mesh);
 
   // 2D version of subdivision allowing for uniform subdivision (flag)
-  static std::vector<std::size_t>
+  static std::vector<std::int32_t>
   get_triangles(const std::vector<bool>& marked_edges,
                 const std::int32_t longest_edge, bool uniform);
 
   // 3D version of subdivision
-  static std::vector<std::size_t>
+  static std::vector<std::int32_t>
   get_tetrahedra(const std::vector<bool>& marked_edges,
                  const std::vector<std::int32_t>& longest_edge);
 

@@ -275,7 +275,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
       global_cell_indices, _mesh.get_ghost_mode());
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::new_cells(const std::vector<std::size_t>& idx)
+void ParallelRefinement::new_cells(const std::vector<std::int64_t>& idx)
 {
   _new_cell_topology.insert(_new_cell_topology.end(), idx.begin(), idx.end());
 }

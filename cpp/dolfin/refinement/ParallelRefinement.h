@@ -84,7 +84,7 @@ public:
 
   /// Add new cells with vertex indices
   /// @param idx (const std::vector<std::size_t>)
-  void new_cells(const std::vector<std::size_t>& idx);
+  void new_cells(const std::vector<std::int64_t>& idx);
 
   /// Use vertex and topology data to partition new mesh across processes
   /// @param redistribute (bool)
