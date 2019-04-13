@@ -403,7 +403,7 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
   }
 
   // Allocate space for dof map
-  std::vector<std::vector<PetscInt>> node_dofmap(mesh.num_entities(D));
+  std::vector<std::vector<PetscInt>> dofmap(mesh.num_entities(D));
 
   const int local_dim = el_dm_blocked.num_dofs();
 
@@ -417,13 +417,13 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
     entity_indices[d].resize(mesh.type().num_entities(d));
 
   // Resize local-to-global map
-  std::vector<std::size_t> node_local_to_global(local_size);
+  std::vector<std::size_t> local_to_global(local_size);
 
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Get reference to container for cell dofs
-    std::vector<PetscInt>& cell_nodes = node_dofmap[cell.index()];
+    std::vector<PetscInt>& cell_nodes = dofmap[cell.index()];
     cell_nodes.resize(local_dim);
 
     // Tabulate standard UFC dof map for first space (local)
@@ -436,25 +436,20 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
     tabulate_cell_dofs(ufc_nodes_global.data(), el_dm_blocked.entity_dofs(),
                        num_mesh_entities_global, entity_indices);
 
-    // Get the edge and facet permutations of the dofs for this cell,
-    // based on global vertex indices.
-    //    dofmap->tabulate_dof_permutations(permutation.data(),
-    //                                      entity_indices_ptr[0]);
-
-    // Copy to cell dofs, with permutation
+    // Copy to cell dofs
     for (int i = 0; i < local_dim; ++i)
       cell_nodes[i] = ufc_nodes_local[i];
 
     // Build local-to-global map for nodes
     for (int i = 0; i < local_dim; ++i)
     {
-      assert(ufc_nodes_local[i] < (int)node_local_to_global.size());
-      node_local_to_global[ufc_nodes_local[i]] = ufc_nodes_global[i];
+      assert(ufc_nodes_local[i] < (int)local_to_global.size());
+      local_to_global[ufc_nodes_local[i]] = ufc_nodes_global[i];
     }
   }
 
-  return std::make_tuple(std::move(node_dofmap),
-                         std::move(node_local_to_global));
+  return std::make_tuple(std::move(dofmap),
+                         std::move(local_to_global));
 }
 //-----------------------------------------------------------------------------
 // Mark shared nodes. Boundary nodes are assigned a random

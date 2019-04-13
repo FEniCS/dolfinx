@@ -27,8 +27,9 @@ namespace fem
 /// sub-space dofs, which are views into the parent dofs.
 
 // TODO: For this class/concept to be robust, the topology of the
-//       reference cell needs to be defined. TODO: Handle block dofmaps
-//       properly
+//       reference cell needs to be defined.
+
+// TODO: Handle block dofmaps properly
 
 class ElementDofLayout
 {
@@ -65,10 +66,10 @@ public:
   /// connected entities of lower dim)
   int num_entity_closure_dofs(unsigned int dim) const;
 
-  /// Direct access to all entity dofs
+  /// Direct access to all entity dofs (dof = _entity_dofs[dim][entity][i])
   const std::vector<std::vector<std::set<int>>>& entity_dofs() const;
 
-  /// Direct access to all entity closure dofs
+  /// Direct access to all entity closure dofs (dof = _entity_dofs[dim][entity][i])
   const std::vector<std::vector<std::set<int>>>& entity_closure_dofs() const;
 
   /// Get number of sub-dofmaps
@@ -93,7 +94,6 @@ private:
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
 
-private:
   // Block size, as deduced in from UFC
   int _block_size;
 
