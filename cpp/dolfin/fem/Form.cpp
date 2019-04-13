@@ -69,7 +69,7 @@ Form::Form(const ufc_form& ufc_form,
   std::free(cmap);
 
   // Save coefficient maps
-  for (std::size_t i = 0; i < ufc_form.num_coefficients; ++i)
+  for (int i = 0; i < ufc_form.num_coefficients; ++i)
     _coefficient_names.push_back(ufc_form.coefficient_name_map(i));
 }
 //-----------------------------------------------------------------------------
