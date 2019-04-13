@@ -24,9 +24,8 @@ namespace refinement
 {
 class ParallelRefinement;
 
-/// Implementation of the refinement method described in
-/// Plaza and Carey "Local refinement of simplicial grids
-/// based on the skeleton"
+/// Implementation of the refinement method described in Plaza and Carey
+/// "Local refinement of simplicial grids based on the skeleton"
 /// (Applied Numerical Mathematics 32 (2000) 195-218)
 ///
 class PlazaRefinementND
@@ -102,8 +101,8 @@ private:
                      const std::vector<std::int32_t>& long_edge,
                      const std::vector<bool>& edge_ratio_ok, bool redistribute);
 
-  // Propagate edge markers according to rules (longest edge
-  // of each face must be marked, if any edge of face is marked)
+  // Propagate edge markers according to rules (longest edge of each
+  // face must be marked, if any edge of face is marked)
   static void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
                             const std::vector<std::int32_t>& long_edge);
 };
