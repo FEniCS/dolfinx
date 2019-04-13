@@ -120,8 +120,7 @@ void get_cell_entities_global(std::vector<std::vector<int64_t>>& entity_indices,
 // TODO: The above and below functions are _very_ similar, can they be
 // combined?
 //-----------------------------------------------------------------------------
-// Compute number of mesh entities for dimensions required by
-// dofmap
+// Compute number of mesh entities for dimensions required by dofmap
 std::vector<int64_t>
 compute_num_mesh_entities_local(const mesh::Mesh& mesh,
                                 const std::vector<bool>& needs_mesh_entities)
@@ -153,10 +152,13 @@ compute_num_mesh_entities_local(const mesh::Mesh& mesh,
 // shared_node_to_processes, neighbours)
 std::tuple<int, std::vector<short int>,
            std::unordered_map<int, std::vector<int>>, std::set<int>>
-compute_node_ownership(const std::vector<std::vector<PetscInt>>& dofmap,
-                       const std::vector<int>& shared_nodes,
-                       const std::vector<std::size_t>& local_to_global,
-                       const mesh::Mesh& mesh, const std::size_t global_dim)
+compute_node_ownership(
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>
+        dofmap,
+    const std::vector<int>& shared_nodes,
+    const std::vector<std::size_t>& local_to_global, const mesh::Mesh& mesh,
+    const std::size_t global_dim)
 {
   // Get number of nodes
   const std::size_t num_nodes_local = local_to_global.size();
@@ -337,20 +339,21 @@ compute_node_ownership(const std::vector<std::vector<PetscInt>>& dofmap,
 }
 //-----------------------------------------------------------------------------
 // Build dofmap based on re-ordered nodes
-std::vector<std::vector<PetscInt>>
-build_dofmap(const std::vector<std::vector<PetscInt>>& node_dofmap,
-             const std::vector<int>& old_to_new_node_local,
-             const std::size_t block_size)
+std::vector<std::vector<PetscInt>> build_dofmap(
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>
+        node_dofmap,
+    const std::vector<int>& old_to_new_node_local, const std::size_t block_size)
 {
   // Build dofmap looping over nodes
   std::vector<std::vector<PetscInt>> dofmap(node_dofmap.size());
-  for (std::size_t i = 0; i < node_dofmap.size(); ++i)
+  for (std::size_t i = 0; i < node_dofmap.rows(); ++i)
   {
-    const std::size_t local_dim0 = node_dofmap[i].size();
+    const std::size_t local_dim0 = node_dofmap.cols();
     dofmap[i].resize(block_size * local_dim0);
     for (std::size_t j = 0; j < local_dim0; ++j)
     {
-      const int old_node = node_dofmap[i][j];
+      const int old_node = node_dofmap(i, j);
       assert(old_node < (int)old_to_new_node_local.size());
       const int new_node = old_to_new_node_local[old_node];
       for (std::size_t block = 0; block < block_size; ++block)
@@ -364,7 +367,9 @@ build_dofmap(const std::vector<std::vector<PetscInt>>& node_dofmap,
 }
 //-----------------------------------------------------------------------------
 // Build graph from ElementDofmap. Returns (dofmap, local_to_global)
-std::tuple<std::vector<std::vector<PetscInt>>, std::vector<std::size_t>>
+std::tuple<
+    Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>,
+    std::vector<std::size_t>>
 build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
                      const mesh::Mesh& mesh)
 {
@@ -374,19 +379,16 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
   // Topological dimension
   const std::size_t D = mesh.topology().dim();
 
-  // Extract needs_entities as vector
-  std::vector<bool> needs_entities(D + 1);
-  for (std::size_t d = 0; d <= D; ++d)
-    needs_entities[d] = (el_dm_blocked.num_entity_dofs(d) > 0);
-
   // Generate and number required mesh entities (local & global, and
   // constrained global)
-  std::vector<int64_t> num_mesh_entities_local(D + 1, 0);
-  std::vector<int64_t> num_mesh_entities_global(D + 1, 0);
+  std::vector<bool> needs_entities(D + 1, false);
+  std::vector<int64_t> num_mesh_entities_local(D + 1, 0),
+      num_mesh_entities_global(D + 1, 0);
   for (std::size_t d = 0; d <= D; ++d)
   {
-    if (needs_entities[d])
+    if (el_dm_blocked.num_entity_dofs(d) > 0)
     {
+      needs_entities[d] = true;
       mesh.init(d);
       mesh::DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d] = mesh.num_entities(d);
@@ -402,10 +404,12 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
     ++d;
   }
 
-  // Allocate space for dof map
-  std::vector<std::vector<PetscInt>> dofmap(mesh.num_entities(D));
-
   const int local_dim = el_dm_blocked.num_dofs();
+
+  // Allocate space for dof map
+  // std::vector<std::vector<PetscInt>> dofmap(mesh.num_entities(D));
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      dofmap(mesh.num_entities(D), local_dim);
 
   // Holder for UFC 64-bit dofmap integers
   std::vector<std::size_t> ufc_nodes_global(local_dim);
@@ -422,12 +426,12 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     const std::int32_t cell_index = cell.index();
-    dofmap[cell_index].resize(local_dim);
 
     // Tabulate standard UFC dof map for first space (local)
     get_cell_entities_local(entity_indices, cell, needs_entities);
-    tabulate_cell_dofs(dofmap[cell_index].data(), el_dm_blocked.entity_dofs(),
-                       num_mesh_entities_local, entity_indices);
+    tabulate_cell_dofs(dofmap.row(cell_index).data(),
+                       el_dm_blocked.entity_dofs(), num_mesh_entities_local,
+                       entity_indices);
 
     // Tabulate standard UFC dof map for first space (global)
     get_cell_entities_global(entity_indices, cell, needs_entities);
@@ -437,8 +441,8 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
     // Build local-to-global map for nodes
     for (int i = 0; i < local_dim; ++i)
     {
-      assert(dofmap[cell_index][i] < (int)local_to_global.size());
-      local_to_global[dofmap[cell_index][i]] = ufc_nodes_global[i];
+      assert(dofmap(cell_index, i) < (int)local_to_global.size());
+      local_to_global[dofmap(cell_index, i)] = ufc_nodes_global[i];
     }
   }
 
@@ -449,10 +453,12 @@ build_ufc_node_graph(const ElementDofLayout& el_dm_blocked,
 // positive integer, interior nodes are marked as -1, interior
 // nodes in ghost layer of other processes are marked -2, and
 // ghost nodes are marked as -3
-std::vector<int>
-compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
-                     const std::size_t num_nodes_local,
-                     const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
+std::vector<int> compute_shared_nodes(
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>
+        node_dofmap,
+    const std::size_t num_nodes_local, const ElementDofLayout& el_dm,
+    const mesh::Mesh& mesh)
 {
   // Initialise mesh
   const int D = mesh.topology().dim();
@@ -470,11 +476,12 @@ compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
   bool has_ghost_cells = false;
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    const std::vector<PetscInt>& cell_nodes = node_dofmap[c.index()];
+    // const std::vector<PetscInt>& cell_nodes = node_dofmap[c.index()];
+    auto cell_nodes = node_dofmap.row(c.index());
     if (c.is_shared())
     {
       const int status = (c.is_ghost()) ? -3 : -2;
-      for (std::size_t i = 0; i < cell_nodes.size(); ++i)
+      for (std::size_t i = 0; i < cell_nodes.cols(); ++i)
       {
         // Ensure not already set (for R space)
         if (shared_nodes[cell_nodes[i]] == -1)
@@ -516,7 +523,8 @@ compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
     const mesh::Cell cell0(mesh, f.entities(D)[0]);
 
     // Tabulate dofs (local) on cell
-    const std::vector<PetscInt>& cell_nodes = node_dofmap[cell0.index()];
+    // const std::vector<PetscInt>& cell_nodes = node_dofmap[cell0.index()];
+    auto cell_nodes = node_dofmap.row(cell0.index());
 
     // Tabulate which dofs are on the facet
     const std::set<int>& facet_nodes = facet_table[cell0.index(f)];
@@ -540,12 +548,13 @@ compute_shared_nodes(const std::vector<std::vector<PetscInt>>& node_dofmap,
 std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
     const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
     const std::vector<std::size_t>& old_local_to_global,
-    const std::vector<std::vector<PetscInt>>& node_dofmap,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>
+        node_dofmap,
     const std::vector<short int>& node_ownership, MPI_Comm mpi_comm)
 {
   // Count number of locally owned nodes
-  std::size_t owned_local_size = 0;
-  std::size_t unowned_local_size = 0;
+  std::size_t owned_local_size(0), unowned_local_size(0);
   for (short int node : node_ownership)
   {
     if (node >= 0)
@@ -588,10 +597,11 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
 
   // Build local graph, based on old dof map, with contiguous
   // numbering
-  for (std::size_t cell = 0; cell < node_dofmap.size(); ++cell)
+  for (std::size_t cell = 0; cell < node_dofmap.rows(); ++cell)
   {
     // Cell dofmaps with old local indices
-    const std::vector<PetscInt>& nodes = node_dofmap[cell];
+    // const std::vector<PetscInt>& nodes = node_dofmap[cell];
+    auto nodes = node_dofmap.row(cell);
     std::vector<int> local_old;
 
     // Loop over nodes collecting valid local nodes
@@ -748,7 +758,8 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   //  - node dofmap (node_dofmap)
   //  - local-to-global node indices (node_local_to_global)
   std::vector<std::size_t> node_local_to_global0;
-  std::vector<std::vector<PetscInt>> node_graph0;
+  Eigen::Array<PetscInt, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      node_graph0;
 
   // If block size is not 1, use first sub-dofmap instead.
   const int bs = el_dm.block_size();
