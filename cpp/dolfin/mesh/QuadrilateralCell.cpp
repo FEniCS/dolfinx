@@ -62,31 +62,33 @@ std::size_t QuadrilateralCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void QuadrilateralCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
-                                        std::size_t dim,
-                                        const std::int32_t* v) const
+void QuadrilateralCell::create_entities(
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        e,
+    std::size_t dim, const std::int32_t* v) const
 {
   // We only need to know how to create edges
   if (dim != 1)
   {
     // spdlog::error(
     //     "QuadrilateralCell.cpp", "create entities of quadrilateral cell",
-    //     "Don't know how to create entities of topological dimension %d", dim);
+    //     "Don't know how to create entities of topological dimension %d",
+    //     dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
   // Resize data structure
-  e.resize(boost::extents[4][2]);
+  e.resize(4, 2);
 
   // Create the four edges
-  e[0][0] = v[0];
-  e[0][1] = v[1];
-  e[1][0] = v[2];
-  e[1][1] = v[3];
-  e[2][0] = v[0];
-  e[2][1] = v[2];
-  e[3][0] = v[1];
-  e[3][1] = v[3];
+  e(0, 0) = v[0];
+  e(0, 1) = v[1];
+  e(1, 0) = v[2];
+  e(1, 1) = v[3];
+  e(2, 0) = v[0];
+  e(2, 1) = v[2];
+  e(3, 0) = v[1];
+  e(3, 1) = v[3];
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::volume(const MeshEntity& cell) const
@@ -130,7 +132,8 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     // Check for coplanarity
     if (std::abs(copl) > h * DBL_EPSILON)
     {
-      // spdlog::error("QuadrilateralCell.cpp", "compute volume of quadrilateral",
+      // spdlog::error("QuadrilateralCell.cpp", "compute volume of
+      // quadrilateral",
       //               "Vertices of the quadrilateral are not coplanar");
       throw std::runtime_error("Not coplanar");
     }
@@ -186,8 +189,8 @@ geometry::Point QuadrilateralCell::normal(const Cell& cell,
   if (cell.mesh().geometry().dim() != 2)
   {
     // spdlog::error("QuadrilateralCell.cpp", "find normal",
-    //               "Normal vector is not defined in dimension %d (only defined "
-    //               "when the triangle is in R^2",
+    //               "Normal vector is not defined in dimension %d (only defined
+    //               " "when the triangle is in R^2",
     //               cell.mesh().geometry().dim());
     throw std::runtime_error("Illegal geometric dimension");
   }

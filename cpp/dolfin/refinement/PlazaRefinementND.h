@@ -16,15 +16,16 @@ namespace dolfin
 namespace mesh
 {
 class Mesh;
+template<typename T>
+class MeshFunction;
 }
 
 namespace refinement
 {
 class ParallelRefinement;
 
-/// Implementation of the refinement method described in
-/// Plaza and Carey "Local refinement of simplicial grids
-/// based on the skeleton"
+/// Implementation of the refinement method described in Plaza and Carey
+/// "Local refinement of simplicial grids based on the skeleton"
 /// (Applied Numerical Mathematics 32 (2000) 195-218)
 ///
 class PlazaRefinementND
@@ -74,9 +75,9 @@ public:
   /// @param uniform
   ///   Make a "uniform" subdivision with all triangles being similar shape
   ///
-  static std::vector<std::size_t>
+  static std::vector<std::int32_t>
   get_simplices(const std::vector<bool>& marked_edges,
-                const std::vector<std::int32_t>& longest_edge, std::size_t tdim,
+                const std::vector<std::int32_t>& longest_edge, std::int32_t tdim,
                 bool uniform);
 
 private:
@@ -85,12 +86,12 @@ private:
   face_long_edge(const mesh::Mesh& mesh);
 
   // 2D version of subdivision allowing for uniform subdivision (flag)
-  static std::vector<std::size_t>
+  static std::vector<std::int32_t>
   get_triangles(const std::vector<bool>& marked_edges,
                 const std::int32_t longest_edge, bool uniform);
 
   // 3D version of subdivision
-  static std::vector<std::size_t>
+  static std::vector<std::int32_t>
   get_tetrahedra(const std::vector<bool>& marked_edges,
                  const std::vector<std::int32_t>& longest_edge);
 
@@ -100,8 +101,8 @@ private:
                      const std::vector<std::int32_t>& long_edge,
                      const std::vector<bool>& edge_ratio_ok, bool redistribute);
 
-  // Propagate edge markers according to rules (longest edge
-  // of each face must be marked, if any edge of face is marked)
+  // Propagate edge markers according to rules (longest edge of each
+  // face must be marked, if any edge of face is marked)
   static void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
                             const std::vector<std::int32_t>& long_edge);
 };

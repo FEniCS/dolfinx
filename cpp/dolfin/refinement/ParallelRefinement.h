@@ -7,7 +7,7 @@
 #pragma once
 
 #include <cstdint>
-#include <dolfin/mesh/Mesh.h>
+#include <map>
 #include <unordered_map>
 #include <vector>
 
@@ -16,8 +16,8 @@ namespace dolfin
 
 namespace mesh
 {
-// Forward declarations
 class Mesh;
+class MeshEntity;
 template <typename T>
 class MeshFunction;
 } // namespace mesh
@@ -26,10 +26,9 @@ namespace refinement
 {
 /// Data structure and methods for refining meshes in parallel
 
-/// ParallelRefinement encapsulates two main features:
-/// a distributed MeshFunction defined over the mesh edges,
-/// which can be updated across processes,
-/// and storage for local mesh data, which can be used
+/// ParallelRefinement encapsulates two main features: a distributed
+/// MeshFunction defined over the mesh edges, which can be updated
+/// across processes, and storage for local mesh data, which can be used
 /// to construct the new Mesh
 
 class ParallelRefinement
@@ -39,10 +38,10 @@ public:
   ParallelRefinement(const mesh::Mesh& mesh);
 
   /// Destructor
-  ~ParallelRefinement();
+  ~ParallelRefinement() = default;
 
   /// Original mesh associated with this refinement
-  const mesh::Mesh& mesh() const { return _mesh; }
+  const mesh::Mesh& mesh() const;
 
   /// Return marked status of edge
   /// @param edge_index (std::int32_t)
@@ -78,13 +77,13 @@ public:
   /// Communicate new vertices with MPI to all affected processes.
   void create_new_vertices();
 
-  /// Mapping of old edge (to be removed) to new global vertex
-  /// number. Useful for forming new topology
+  /// Mapping of old edge (to be removed) to new global vertex number.
+  /// Useful for forming new topology
   const std::map<std::size_t, std::size_t>& edge_to_new_vertex() const;
 
   /// Add new cells with vertex indices
   /// @param idx (const std::vector<std::size_t>)
-  void new_cells(const std::vector<std::size_t>& idx);
+  void new_cells(const std::vector<std::int64_t>& idx);
 
   /// Use vertex and topology data to partition new mesh across processes
   /// @param redistribute (bool)
@@ -104,8 +103,8 @@ private:
                      std::vector<std::pair<std::int32_t, std::int32_t>>>
       _shared_edges;
 
-  // Mapping from old local edge index to new global vertex, needed
-  // to create new topology
+  // Mapping from old local edge index to new global vertex, needed to
+  // create new topology
   std::map<std::size_t, std::size_t> _local_edge_to_new_vertex;
 
   // New storage for all coordinates when creating new vertices

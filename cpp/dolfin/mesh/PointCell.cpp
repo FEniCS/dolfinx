@@ -49,8 +49,10 @@ std::size_t PointCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
-                                std::size_t dim, const std::int32_t* v) const
+void PointCell::create_entities(
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        e,
+    std::size_t dim, const std::int32_t* v) const
 {
   // spdlog::error("PointCell.cpp", "create entities",
   //               "Entities on a point cell are not defined");

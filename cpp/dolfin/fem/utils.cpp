@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <Eigen/Dense>
 #include <array>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
@@ -366,23 +367,26 @@ fem::create_matrix_nest(std::vector<std::vector<const fem::Form*>> a)
     }
   }
 
-  // Block shape
-  const auto shape = boost::extents[a.size()][a[0].size()];
-
   // Loop over each form and create matrix
-  boost::multi_array<std::shared_ptr<la::PETScMatrix>, 2> mats(shape);
-  boost::multi_array<Mat, 2> petsc_mats(shape);
+  Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic, Eigen::Dynamic,
+               Eigen::RowMajor>
+      mats(a.size(), a[0].size());
+  Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> petsc_mats(
+      a.size(), a[0].size());
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
       if (a[i][j])
       {
-        mats[i][j] = std::make_shared<la::PETScMatrix>(create_matrix(*a[i][j]));
-        petsc_mats[i][j] = mats[i][j]->mat();
+        mats(i, j) = std::make_shared<la::PETScMatrix>(create_matrix(*a[i][j]));
+        petsc_mats(i, j) = mats(i, j)->mat();
+        // mats[i][j] =
+        // std::make_shared<la::PETScMatrix>(create_matrix(*a[i][j]));
+        // petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
-        petsc_mats[i][j] = nullptr;
+        petsc_mats(i, j) = nullptr;
     }
   }
 
@@ -390,8 +394,8 @@ fem::create_matrix_nest(std::vector<std::vector<const fem::Form*>> a)
   Mat _A;
   MatCreate(a[0][0]->mesh()->mpi_comm(), &_A);
   MatSetType(_A, MATNEST);
-  MatNestSetSubMats(_A, petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
-                    NULL, petsc_mats.data());
+  MatNestSetSubMats(_A, petsc_mats.rows(), NULL, petsc_mats.cols(), NULL,
+                    petsc_mats.data());
   MatSetUp(_A);
 
   return la::PETScMatrix(_A);
@@ -555,7 +559,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
-  return fem::ElementDofLayout(block_size, entity_dofs,
-                               parent_map, sub_dofmaps, cell_type);
+  return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
+                               cell_type);
 }
 //-----------------------------------------------------------------------------

@@ -4,10 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <boost/multi_array.hpp>
-#include <limits>
-#include <map>
-// #include <spdlog/spdlog.h>
+#include "PlazaRefinementND.h"
+#include "ParallelRefinement.h"
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Edge.h>
@@ -15,10 +13,9 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <limits>
+#include <map>
 #include <vector>
-
-#include "ParallelRefinement.h"
-#include "PlazaRefinementND.h"
 
 using namespace dolfin;
 using namespace dolfin::refinement;
@@ -75,10 +72,10 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
                             redistribute);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t>
+std::vector<std::int32_t>
 PlazaRefinementND::get_simplices(const std::vector<bool>& marked_edges,
                                  const std::vector<std::int32_t>& longest_edge,
-                                 std::size_t tdim, bool uniform)
+                                 std::int32_t tdim, bool uniform)
 {
   if (tdim == 2)
   {
@@ -93,32 +90,32 @@ PlazaRefinementND::get_simplices(const std::vector<bool>& marked_edges,
   else
   {
     throw std::runtime_error("Topological dimension not supported");
-    return std::vector<std::size_t>();
+    return std::vector<std::int32_t>();
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t>
+std::vector<std::int32_t>
 PlazaRefinementND::get_triangles(const std::vector<bool>& marked_edges,
                                  const std::int32_t longest_edge, bool uniform)
 {
   // Longest edge must be marked
   assert(marked_edges[longest_edge]);
 
-  // v0 and v1 are at ends of longest_edge (e2)
-  // opposite vertex has same index as longest_edge
-  const unsigned int v0 = (longest_edge + 1) % 3;
-  const unsigned int v1 = (longest_edge + 2) % 3;
-  const unsigned int v2 = longest_edge;
-  const unsigned int e0 = v0 + 3;
-  const unsigned int e1 = v1 + 3;
-  const unsigned int e2 = v2 + 3;
+  // v0 and v1 are at ends of longest_edge (e2) opposite vertex has same
+  // index as longest_edge
+  const std::int32_t v0 = (longest_edge + 1) % 3;
+  const std::int32_t v1 = (longest_edge + 2) % 3;
+  const std::int32_t v2 = longest_edge;
+  const std::int32_t e0 = v0 + 3;
+  const std::int32_t e1 = v1 + 3;
+  const std::int32_t e2 = v2 + 3;
 
   // If all edges marked, consider uniform refinement
   if (uniform and marked_edges[v0] and marked_edges[v1])
     return {e0, e1, v2, e1, e2, v0, e2, e0, v1, e2, e1, e0};
 
   // Break each half of triangle into one or two sub-triangles
-  std::vector<std::size_t> tri_set;
+  std::vector<std::int32_t> tri_set;
   if (marked_edges[v0])
     tri_set = {e2, v2, e0, e2, e0, v1};
   else
@@ -135,7 +132,7 @@ PlazaRefinementND::get_triangles(const std::vector<bool>& marked_edges,
   return tri_set;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t>
+std::vector<std::int32_t>
 PlazaRefinementND::get_tetrahedra(const std::vector<bool>& marked_edges,
                                   const std::vector<std::int32_t>& longest_edge)
 {
@@ -143,21 +140,17 @@ PlazaRefinementND::get_tetrahedra(const std::vector<bool>& marked_edges,
   // ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5}
   // Only need upper triangle, but sometimes it is easier just to insert
   // both entries (j,i) and (i,j).
-  boost::multi_array<bool, 2> conn(boost::extents[10][10]);
-  std::fill(conn.data(), conn.data() + 100, false);
+  bool conn[10][10] = {};
 
   // Edge connectivity to vertices (and by extension facets)
   static const std::int32_t edges[6][2]
       = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
 
-  std::vector<std::size_t> tet_set;
-
   // Iterate through cell edges
-  for (unsigned int ei = 0; ei != 6; ++ei)
+  for (std::int32_t ei = 0; ei < 6; ++ei)
   {
-    const unsigned int v0 = edges[ei][0];
-    const unsigned int v1 = edges[ei][1];
-
+    const std::int32_t v0 = edges[ei][0];
+    const std::int32_t v1 = edges[ei][1];
     if (marked_edges[ei])
     {
       // Connect edge midpoint to its end vertices
@@ -166,30 +159,27 @@ PlazaRefinementND::get_tetrahedra(const std::vector<bool>& marked_edges,
       conn[v1][ei + 4] = true;
       conn[v0][ei + 4] = true;
 
-      // Each edge has two attached facets, in the original cell.
-      // The numbering of the attached facets is the same as the
-      // two vertices which are not in the edge
+      // Each edge has two attached facets, in the original cell. The
+      // numbering of the attached facets is the same as the two
+      // vertices which are not in the edge
 
-      // Opposite edge indices sum to 5
-      // Get index of opposite edge
-      const std::size_t e_opp = 5 - ei;
+      // Opposite edge indices sum to 5. Get index of opposite edge.
+      const std::int32_t e_opp = 5 - ei;
 
       // For each facet attached to the edge
-      for (unsigned int j = 0; j != 2; ++j)
+      for (std::int32_t j = 0; j < 2; ++j)
       {
-        const std::size_t fj = edges[e_opp][j];
-        const std::size_t le_j = longest_edge[fj];
-
+        const std::int32_t fj = edges[e_opp][j];
+        const std::int32_t le_j = longest_edge[fj];
         if (le_j == ei)
         {
-          const std::size_t fk = edges[e_opp][1 - j];
-          const std::size_t le_k = longest_edge[fk];
+          const std::int32_t fk = edges[e_opp][1 - j];
+          const std::int32_t le_k = longest_edge[fk];
           // This is longest edge - connect to opposite vertex
 
           // Only add upper-triangular connection
           conn[fk][ei + 4] = true;
-
-          if (le_k == ei && marked_edges[e_opp])
+          if (le_k == ei and marked_edges[e_opp])
           {
             // Longest edge of two adjacent facets
             // Join to opposite edge (through centre of tetrahedron)
@@ -216,20 +206,20 @@ PlazaRefinementND::get_tetrahedra(const std::vector<bool>& marked_edges,
   }
 
   // Iterate through all possible new vertices
-  std::vector<std::size_t> facet_set;
-  for (std::size_t i = 0; i < 10; ++i)
+  std::vector<std::int32_t> facet_set, tet_set;
+  for (std::int32_t i = 0; i < 10; ++i)
   {
-    for (std::size_t j = i + 1; j < 10; ++j)
+    for (std::int32_t j = i + 1; j < 10; ++j)
     {
       if (conn[i][j])
       {
         facet_set.clear();
-        for (std::size_t k = j + 1; k < 10; ++k)
+        for (std::int32_t k = j + 1; k < 10; ++k)
         {
           if (conn[i][k] && conn[j][k])
           {
             // Note that i < j < m < k
-            for (const auto& m : facet_set)
+            for (const std::int32_t& m : facet_set)
               if (conn[m][k])
                 tet_set.insert(tet_set.end(), {i, j, m, k});
             facet_set.push_back(k);
@@ -245,7 +235,7 @@ PlazaRefinementND::get_tetrahedra(const std::vector<bool>& marked_edges,
 std::pair<std::vector<std::int32_t>, std::vector<bool>>
 PlazaRefinementND::face_long_edge(const mesh::Mesh& mesh)
 {
-  const std::size_t tdim = mesh.topology().dim();
+  const std::int32_t tdim = mesh.topology().dim();
   mesh.init(1);
   mesh.init(2);
   mesh.init(2, 1);
@@ -270,7 +260,7 @@ PlazaRefinementND::face_long_edge(const mesh::Mesh& mesh)
   {
     const std::int32_t* face_edges = f.entities(1);
 
-    std::size_t imax = 0;
+    std::int32_t imax = 0;
     double max_len = 0.0;
     double min_len = std::numeric_limits<double>::max();
 
@@ -316,7 +306,7 @@ void PlazaRefinementND::enforce_rules(
   // Enforce rule, that if any edge of a face is marked, longest edge
   // must also be marked
 
-  std::size_t update_count = 1;
+  std::int32_t update_count = 1;
   while (update_count != 0)
   {
     update_count = 0;
@@ -324,7 +314,7 @@ void PlazaRefinementND::enforce_rules(
 
     for (const auto& f : mesh::MeshRange<mesh::Face>(mesh))
     {
-      const std::size_t long_e = long_edge[f.index()];
+      const std::int32_t long_e = long_edge[f.index()];
       if (p_ref.is_marked(long_e))
         continue;
       bool any_marked = false;
@@ -345,9 +335,9 @@ mesh::Mesh PlazaRefinementND::compute_refinement(
     const std::vector<std::int32_t>& long_edge,
     const std::vector<bool>& edge_ratio_ok, bool redistribute)
 {
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t num_cell_edges = tdim * 3 - 3;
-  const std::size_t num_cell_vertices = tdim + 1;
+  const std::int32_t tdim = mesh.topology().dim();
+  const std::int32_t num_cell_edges = tdim * 3 - 3;
+  const std::int32_t num_cell_vertices = tdim + 1;
 
   // Make new vertices in parallel
   p_ref.create_new_vertices();
@@ -355,15 +345,15 @@ mesh::Mesh PlazaRefinementND::compute_refinement(
       = p_ref.edge_to_new_vertex();
 
   std::vector<std::size_t> parent_cell;
-  std::vector<std::size_t> indices(num_cell_vertices + num_cell_edges);
+  std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
   std::vector<std::size_t> marked_edge_list;
-  std::vector<std::size_t> simplex_set;
+  std::vector<std::int32_t> simplex_set;
 
   for (const auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
-    unsigned int j = 0;
+    std::int32_t j = 0;
     for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
       indices[j++] = v.global_index();
 
@@ -371,7 +361,7 @@ mesh::Mesh PlazaRefinementND::compute_refinement(
     if (marked_edge_list.size() == 0)
     {
       // Copy over existing Cell to new topology
-      std::vector<std::size_t> cell_topology;
+      std::vector<std::int64_t> cell_topology;
       for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
         cell_topology.push_back(v.global_index());
       p_ref.new_cells(cell_topology);
@@ -385,7 +375,7 @@ mesh::Mesh PlazaRefinementND::compute_refinement(
       for (auto& p : marked_edge_list)
       {
         markers[p] = true;
-        const std::size_t edge_index = cell.entities(1)[p];
+        const std::int32_t edge_index = cell.entities(1)[p];
 
         auto it = new_vertex_map.find(edge_index);
         assert(it != new_vertex_map.end());
@@ -418,14 +408,15 @@ mesh::Mesh PlazaRefinementND::compute_refinement(
       simplex_set = get_simplices(markers, longest_edge, tdim, uniform);
 
       // Save parent index
-      const std::size_t ncells = simplex_set.size() / num_cell_vertices;
-      for (std::size_t i = 0; i != ncells; ++i)
+      const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
+      for (std::int32_t i = 0; i != ncells; ++i)
         parent_cell.push_back(cell.index());
 
       // Convert from cell local index to mesh index and add to cells
-      for (auto& it : simplex_set)
-        it = indices[it];
-      p_ref.new_cells(simplex_set);
+      std::vector<std::int64_t> simplex_set_global(simplex_set.size());
+      for (std::size_t i = 0; i< simplex_set_global.size(); ++i)
+        simplex_set_global[i] = indices[simplex_set[i]];
+      p_ref.new_cells(simplex_set_global);
     }
   }
 
