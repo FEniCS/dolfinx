@@ -579,7 +579,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   std::vector<std::vector<std::size_t>> send_topology(num_processes);
   std::vector<std::vector<T>> send_values(num_processes);
-  for (std::size_t i = 0; i < topology_array.rows(); ++i)
+  for (Eigen::Index i = 0; i < topology_array.rows(); ++i)
   {
     std::sort(topology_array.row(i).data(),
               topology_array.row(i).data() + topology_array.row(i).cols());
