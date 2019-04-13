@@ -68,9 +68,9 @@ Form::Form(const ufc_form& ufc_form,
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(*cmap);
   std::free(cmap);
 
-  // Set coefficient maps
-  _coefficient_index_map = ufc_form.coefficient_number_map;
-  _coefficient_name_map = ufc_form.coefficient_name_map;
+  // Save coefficient maps
+  for (std::size_t i = 0; i < ufc_form.num_coefficients; ++i)
+    _coefficient_names.push_back(ufc_form.coefficient_name_map(i));
 }
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
@@ -91,42 +91,25 @@ std::size_t Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
 int Form::get_coefficient_index(std::string name) const
 {
-  try
-  {
-    return _coefficient_index_map(name.c_str());
-  }
-  catch (const std::bad_function_call& e)
-  {
-    std::cerr
-        << "Unable to get coefficient index. Name-to-index map not set on Form."
-        << std::endl;
-    throw e;
-  }
+  auto it
+      = std::find(_coefficient_names.begin(), _coefficient_names.end(), name);
+  if (it == _coefficient_names.end())
+    throw std::runtime_error("Cannot find coefficient name:" + name);
 
-  return -1;
+  return std::distance(_coefficient_names.begin(), it);
 }
 //-----------------------------------------------------------------------------
 std::string Form::get_coefficient_name(int i) const
 {
-  try
-  {
-    return _coefficient_name_map(i);
-  }
-  catch (const std::bad_function_call& e)
-  {
-    std::cerr
-        << "Unable to get coefficient name. Index-to-name map not set on Form."
-        << std::endl;
-    throw e;
-  }
+  if (i >= (int)_coefficient_names.size())
+    throw std::runtime_error("Invalid coefficient index");
 
-  return std::string();
+  return _coefficient_names[i];
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(
     std::map<std::size_t, std::shared_ptr<const function::Function>>
         coefficients)
-
 {
   for (auto c : coefficients)
     _coefficients.set(c.first, c.second);
@@ -138,13 +121,7 @@ void Form::set_coefficients(
 {
   for (auto c : coefficients)
   {
-    // Get index
     int index = this->get_coefficient_index(c.first);
-    if (index < 0)
-    {
-      throw std::runtime_error("Cannot find coefficient index for \"" + c.first
-                               + "\"");
-    }
     _coefficients.set(index, c.second);
   }
 }

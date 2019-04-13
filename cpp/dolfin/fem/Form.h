@@ -266,9 +266,9 @@ private:
   // Coordinate_mapping
   std::shared_ptr<const fem::CoordinateMapping> _coord_mapping;
 
-  // Function pointers for coeffiecient name <-> index mapping
-  std::function<int(const char*)> _coefficient_index_map;
-  std::function<const char*(int)> _coefficient_name_map;
+  // Coefficient names
+  std::vector<std::string> _coefficient_names;
+
 };
 } // namespace fem
 } // namespace dolfin
