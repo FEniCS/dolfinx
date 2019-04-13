@@ -7,7 +7,6 @@
 #pragma once
 
 #include "Graph.h"
-#include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfin/common/MPI.h>

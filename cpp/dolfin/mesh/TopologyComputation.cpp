@@ -11,8 +11,8 @@
 #include "Mesh.h"
 #include "MeshIterator.h"
 #include "MeshTopology.h"
+#include <Eigen/Dense>
 #include <algorithm>
-#include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfin/common/Timer.h>
@@ -91,8 +91,9 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   const int num_vertices = cell_type.num_vertices(dim);
 
   // Create map from cell vertices to entity vertices
-  boost::multi_array<std::int32_t, 2> e_vertices(
-      boost::extents[num_entities][num_vertices]);
+
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      e_vertices(num_entities, num_vertices);
   const int num_vertices_per_cell = cell_type.num_vertices();
   std::vector<std::int32_t> v(num_vertices_per_cell);
   std::iota(v.begin(), v.end(), 0);
@@ -122,7 +123,7 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
       // Get entity vertices
       auto& entity = std::get<2>(keyed_entities[entity_counter]);
       for (std::int8_t j = 0; j < num_vertices; ++j)
-        entity[j] = vertices[e_vertices[i][j]];
+        entity[j] = vertices[e_vertices(i, j)];
 
       // Sort entity vertices to create key
       auto& entity_key = std::get<0>(keyed_entities[entity_counter]);
@@ -304,14 +305,17 @@ Connectivity compute_from_map(const Mesh& mesh, std::size_t d0, std::size_t d1)
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;
-  boost::multi_array<std::int32_t, 2> keys;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      keys;
   for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
   {
     entities.clear();
     cell_type->create_entities(keys, d1, e.entities(0));
-    for (const auto& p : keys)
+    for (Eigen::Index i = 0; i < keys.rows(); ++i)
     {
-      std::partial_sort_copy(p.begin(), p.end(), key.begin(), key.end());
+      std::partial_sort_copy(keys.row(i).data(),
+                             keys.row(i).data() + keys.row(i).cols(),
+                             key.begin(), key.end());
       const auto it = entity_to_index.find(key);
       assert(it != entity_to_index.end());
       entities.push_back(it->second);

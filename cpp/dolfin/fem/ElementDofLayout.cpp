@@ -9,6 +9,7 @@
 #include <array>
 #include <dolfin/mesh/CellType.h>
 #include <map>
+#include <numeric>
 #include <set>
 
 using namespace dolfin;

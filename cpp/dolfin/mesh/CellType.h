@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <boost/multi_array.hpp>
+#include <Eigen/Dense>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -87,7 +87,8 @@ public:
 
   /// Create entities e of given topological dimension from
   /// vertices v
-  virtual void create_entities(boost::multi_array<std::int32_t, 2>& e,
+  virtual void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>& e,
                                std::size_t dim,
                                const std::int32_t* v) const = 0;
 
@@ -151,5 +152,5 @@ private:
              const std::int32_t* vertices,
              const std::vector<std::int64_t>& local_to_global_vertex_indices);
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

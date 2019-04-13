@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include <array>
+#include <boost/multi_array.hpp>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
@@ -555,7 +556,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
-  return fem::ElementDofLayout(block_size, entity_dofs,
-                               parent_map, sub_dofmaps, cell_type);
+  return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
+                               cell_type);
 }
 //-----------------------------------------------------------------------------
