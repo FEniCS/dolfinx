@@ -199,7 +199,7 @@ int main() {
 
   # Set version number
   if (SCOTCH_CONFIG_TEST_VERSION_EXITCODE EQUAL 0)
-    set(SCOTCH_VERSION ${OUTPUT} CACHE TYPE STRING)
+    set(SCOTCH_VERSION ${OUTPUT})
     message(STATUS "Found SCOTCH (version ${SCOTCH_VERSION})")
   endif()
 
