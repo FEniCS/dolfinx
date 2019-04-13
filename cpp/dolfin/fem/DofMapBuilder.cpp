@@ -487,7 +487,7 @@ compute_shared_nodes(const DofMapStructure<PetscInt>& node_dofmap,
     if (c.is_shared())
     {
       const int status = (c.is_ghost()) ? -3 : -2;
-      for (std::size_t i = 0; i < node_dofmap.num_dofs(c.index()); ++i)
+      for (std::int32_t i = 0; i < node_dofmap.num_dofs(c.index()); ++i)
       {
         // Ensure not already set (for R space)
         if (shared_nodes[cell_nodes[i]] == -1)
@@ -609,7 +609,7 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
     std::vector<int> local_old;
 
     // Loop over nodes collecting valid local nodes
-    for (std::size_t i = 0; i < node_dofmap.num_dofs(cell); ++i)
+    for (std::int32_t i = 0; i < node_dofmap.num_dofs(cell); ++i)
     {
       // Old node index (0)
       const int n0_old = nodes[i];
