@@ -667,7 +667,7 @@ std::vector<std::size_t> compute_global_indices(
       const int received_old_index_local = it->second;
       const int pos = old_to_new[received_old_index_local] - owned_local_size;
       assert(pos >= 0);
-      assert(pos < owned_local_size);
+      assert(pos < unowned_local_size);
       local_to_global_unowned[pos] = received_new_index_global;
     }
   }
