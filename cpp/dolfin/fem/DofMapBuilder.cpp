@@ -96,10 +96,10 @@ void get_cell_entities(
 // set of process that share dofs on this process.
 // Returns: (number of locally owned nodes, node_ownership,
 // shared_node_to_processes, neighbours)
-std::tuple<int, std::vector<short int>,
+std::tuple<int, std::vector<std::int8_t>,
            std::unordered_map<int, std::vector<int>>, std::set<int>>
 compute_node_ownership(const DofMapStructure& dofmap,
-                       const std::vector<int>& shared_nodes,
+                       const std::vector<std::int8_t>& shared_nodes,
                        const mesh::Mesh& mesh, const std::size_t global_dim)
 {
   // Get number of nodes
@@ -109,7 +109,7 @@ compute_node_ownership(const DofMapStructure& dofmap,
   std::map<std::size_t, int> global_to_local;
 
   // Initialise node ownership array, provisionally all owned
-  std::vector<short int> node_ownership(num_nodes_local, 1);
+  std::vector<std::int8_t> node_ownership(num_nodes_local, 1);
 
   // Communication buffers
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -413,31 +413,30 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   return dofmap;
 }
 //-----------------------------------------------------------------------------
-// Mark shared nodes. Boundary nodes are assigned a random
-// positive integer, interior nodes are marked as -1, interior
-// nodes in ghost layer of other processes are marked -2, and
-// ghost nodes are marked as -3
-std::vector<int> compute_shared_nodes(const DofMapStructure& node_dofmap,
-                                      const ElementDofLayout& el_dm,
-                                      const mesh::Mesh& mesh)
+// Compute sharing marker for each node. Boundary nodes are assigned a
+// positive integer, interior nodes are marked as -1, interior nodes in
+// ghost layer of other processes are marked -2, and ghost nodes are
+// marked as -3
+std::vector<std::int8_t>
+compute_sharing_markers(const DofMapStructure& node_dofmap,
+                        const ElementDofLayout& element_dof_layout,
+                        const mesh::Mesh& mesh)
 {
   // Initialise mesh
   const int D = mesh.topology().dim();
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
 
-  // Allocate data and initialise all facets to -1 (provisionally,
-  // owned and not shared)
-  std::vector<int> shared_nodes(node_dofmap.global_indices.size(), -1);
+  // Allocate data and initialise all nodes to -1 (provisionally, owned
+  // and not shared)
+  std::vector<std::int8_t> shared_nodes(node_dofmap.global_indices.size(), -1);
 
+  // Get facet closure dofs
   const std::vector<std::set<int>>& facet_table
-      = el_dm.entity_closure_dofs()[D - 1];
+      = element_dof_layout.entity_closure_dofs()[D - 1];
 
-  // Mark dofs associated ghost cells as ghost dofs (provisionally)
+  // Mark dofs associated ghost cells as ghost dofs (-3), provisionally
   bool has_ghost_cells = false;
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    // const std::vector<PetscInt>& cell_nodes = node_dofmap[c.index()];
     const PetscInt* cell_nodes = node_dofmap.dofs(c.index());
     if (c.is_shared())
     {
@@ -461,7 +460,7 @@ std::vector<int> compute_shared_nodes(const DofMapStructure& node_dofmap,
           const std::set<int>& facet_nodes = facet_table[c.index(f)];
           for (auto facet_node : facet_nodes)
           {
-            std::size_t facet_node_local = cell_nodes[facet_node];
+            const int facet_node_local = cell_nodes[facet_node];
             shared_nodes[facet_node_local] = 0;
           }
         }
@@ -483,11 +482,10 @@ std::vector<int> compute_shared_nodes(const DofMapStructure& node_dofmap,
     // Get cell to which facet belongs (pick first)
     const mesh::Cell cell0(mesh, f.entities(D)[0]);
 
-    // Tabulate dofs (local) on cell
-    // const std::vector<PetscInt>& cell_nodes = node_dofmap[cell0.index()];
+    // Get dofs (process-wise indices) on cell
     const PetscInt* cell_nodes = node_dofmap.dofs(cell0.index());
 
-    // Tabulate which dofs are on the facet
+    // Get dofs which are on the facet
     const std::set<int>& facet_nodes = facet_table[cell0.index(f)];
 
     // Mark boundary nodes and insert into map
@@ -495,7 +493,7 @@ std::vector<int> compute_shared_nodes(const DofMapStructure& node_dofmap,
     {
       // Get facet node local index and assign "0" - shared, owner
       // unassigned
-      size_t facet_node_local = cell_nodes[facet_node];
+      PetscInt facet_node_local = cell_nodes[facet_node];
       if (shared_nodes[facet_node_local] < 0)
         shared_nodes[facet_node_local] = 0;
     }
@@ -509,11 +507,11 @@ std::vector<int> compute_shared_nodes(const DofMapStructure& node_dofmap,
 std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
     const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
     const DofMapStructure& node_dofmap,
-    const std::vector<short int>& node_ownership, MPI_Comm mpi_comm)
+    const std::vector<std::int8_t>& node_ownership, MPI_Comm mpi_comm)
 {
   // Count number of locally owned nodes
   std::size_t owned_local_size(0), unowned_local_size(0);
-  for (short int node : node_ownership)
+  for (std::int8_t node : node_ownership)
   {
     if (node >= 0)
       ++owned_local_size;
@@ -721,19 +719,22 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // Re-order and switch to local indexing in dofmap when distributed
   // for process locality and set local_range
 
-  // Mark shared nodes. Boundary nodes are assigned a random positive
-  // integer, interior nodes are marked as -1, interior nodes in ghost
-  // layer of other processes are marked -2, and ghost nodes are marked
-  // as -3
-  std::vector<int> shared_nodes
-      = compute_shared_nodes(node_graph0, element_dof_layout, mesh);
+  // Mark shared and non-shared nodes. Boundary nodes are assigned a
+  // random positive integer, interior nodes are marked as -1, interior
+  // nodes in ghost layer of other processes are marked -2, and ghost
+  // nodes are marked as -3,
+  mesh.init(D - 1);
+  mesh.init(D - 1, D);
+  std::vector<std::int8_t> shared_nodes
+      = compute_sharing_markers(node_graph0, element_dof_layout, mesh);
 
-  // Compute:
-  // (a) owned and shared nodes (and owned and un-owned):
+  // Compute node ownership:
+  // (a) Number of owned nodes;
+  // (b) owned and shared nodes (and owned and un-owned):
   //    -1: unowned, 0: owned and shared, 1: owned and not shared;
-  // (b) map from shared node to sharing processes; and
-  // (c) set of all processes that share dofs with this process
-  std::vector<short int> node_ownership0;
+  // (c) map from shared node to sharing processes; and
+  // (d) set of all processes that share dofs with this process
+  std::vector<std::int8_t> node_ownership0;
   std::unordered_map<int, std::vector<int>> shared_node_to_processes0;
   int num_owned_nodes;
   std::set<int> neighbours;
@@ -754,6 +755,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
       = compute_node_reordering(shared_node_to_processes0, node_graph0,
                                 node_ownership0, mesh.mpi_comm());
 
+  // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
       mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, block_size);
   assert(index_map);
