@@ -349,10 +349,10 @@ build_dofmap(const DofMapStructure<PetscInt>& node_dofmap,
   return dofmap;
 }
 //-----------------------------------------------------------------------------
-// Build graph from ElementDofmap
+// Build a simple dofmap from ElementDofmap based on mesh entity indicesq
 DofMapStructure<PetscInt>
-build_ufc_node_graph(const ElementDofLayout& element_dof_layout,
-                     const mesh::Mesh& mesh)
+build_basic_dofmap(const ElementDofLayout& element_dof_layout,
+                   const mesh::Mesh& mesh)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -406,40 +406,45 @@ build_ufc_node_graph(const ElementDofLayout& element_dof_layout,
   std::vector<std::size_t> ufc_nodes_global(local_dim);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    const std::int32_t cell_index = cell.index();
-
-    // TODO: Can these calls be removed?
+    // TODO: Can these calls be removed/combined?
     get_cell_entities_local(entity_indices_local, cell, needs_entities);
     get_cell_entities_global(entity_indices_global, cell, needs_entities);
 
-    std::int32_t offset_local = 0;
-    std::int64_t offset_global = 0;
-
-    // Entity dofs on cell (dof = entity_dofs[dim][entity][i])
+    // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
     const std::vector<std::vector<std::set<int>>>& entity_dofs
         = element_dof_layout.entity_dofs();
-    for (std::size_t d = 0; d < entity_dofs.size(); ++d)
+
+    // Iterate over topological dimensions
+    std::int32_t offset_local = 0;
+    std::int64_t offset_global = 0;
+    for (auto e_dofs_d = entity_dofs.begin(); e_dofs_d != entity_dofs.end();
+         ++e_dofs_d)
     {
-      // const std::int32_t i = std::distance(e_dofs.begin(), dof);
-      // Loop over each entity of dimension d
-      for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
+      const std::int32_t d = std::distance(entity_dofs.begin(), e_dofs_d);
+
+      // Iterate over each entity of current dimension d
+      for (auto e_dofs = e_dofs_d->begin(); e_dofs != e_dofs_d->end(); ++e_dofs)
       {
-        // const std::int32_t i = std::distance(e_dofs.begin(), dof);
+        // Get entity indices (local to cell, local to process, and
+        // global)
+        const std::int32_t e = std::distance(e_dofs_d->begin(), e_dofs);
+        const std::int32_t e_index_local = entity_indices_local[d][e];
+        const std::int64_t e_index_global = entity_indices_global[d][e];
+
         // Loop over dofs belong to entity e of dimension d (d, e)
         // d: topological dimension
-        // i: local entity index
-        // dof: local index of dof at (d, i)
-        const std::set<std::int32_t>& e_dofs = entity_dofs[d][i];
-        const std::int32_t num_entity_dofs = e_dofs.size();
-        for (auto dof = e_dofs.begin(); dof != e_dofs.end(); ++dof)
+        // e: local entity index
+        // dof_local: local index of dof at (d, e)
+        const std::int32_t num_entity_dofs = e_dofs->size();
+        for (auto dof_local = e_dofs->begin(); dof_local != e_dofs->end();
+             ++dof_local)
         {
-          const std::int32_t count = std::distance(e_dofs.begin(), dof);
-          dofmap.dof(cell_index, *dof)
-              = offset_local + num_entity_dofs * entity_indices_local[d][i]
-                + count;
-          dofmap.global_indices[dofmap.dof(cell_index, *dof)]
-              = offset_global + num_entity_dofs * entity_indices_global[d][i]
-                + count;
+          const std::int32_t count = std::distance(e_dofs->begin(), dof_local);
+          const std::int32_t dof
+              = offset_local + num_entity_dofs * e_index_local + count;
+          dofmap.dof(cell.index(), *dof_local) = dof;
+          dofmap.global_indices[dof]
+              = offset_global + num_entity_dofs * e_index_global + count;
         }
       }
       offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];
@@ -765,7 +770,7 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   const ElementDofLayout& el_dm_blocked = (bs > 1) ? *el_dm_b : el_dm;
 
   DofMapStructure<PetscInt> node_graph0
-      = build_ufc_node_graph(el_dm_blocked, mesh);
+      = build_basic_dofmap(el_dm_blocked, mesh);
 
   // Set global dofmap dimension
   std::size_t global_dimension = 0;
