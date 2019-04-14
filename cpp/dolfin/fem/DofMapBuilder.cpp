@@ -33,10 +33,9 @@ using namespace dolfin::fem;
 namespace
 {
 //-----------------------------------------------------------------------------
-template <typename T>
 struct DofMapStructure
 {
-  std::vector<T> data;
+  std::vector<PetscInt> data;
   std::vector<std::int32_t> cell_ptr;
   std::vector<std::int64_t> global_indices;
 
@@ -45,11 +44,14 @@ struct DofMapStructure
   {
     return cell_ptr[cell + 1] - cell_ptr[cell];
   }
-  const T& dof(int cell, int i) const { return data[cell_ptr[cell] + i]; }
-  T& dof(int cell, int i) { return data[cell_ptr[cell] + i]; }
+  const PetscInt& dof(int cell, int i) const
+  {
+    return data[cell_ptr[cell] + i];
+  }
+  PetscInt& dof(int cell, int i) { return data[cell_ptr[cell] + i]; }
 
-  const T* dofs(int cell) const { return &data[cell_ptr[cell]]; }
-  T* dofs(int cell) { return &data[cell_ptr[cell]]; }
+  const PetscInt* dofs(int cell) const { return &data[cell_ptr[cell]]; }
+  PetscInt* dofs(int cell) { return &data[cell_ptr[cell]]; }
 };
 
 //-----------------------------------------------------------------------------
@@ -140,7 +142,7 @@ compute_num_mesh_entities_local(const mesh::Mesh& mesh,
 // shared_node_to_processes, neighbours)
 std::tuple<int, std::vector<short int>,
            std::unordered_map<int, std::vector<int>>, std::set<int>>
-compute_node_ownership(const DofMapStructure<PetscInt>& dofmap,
+compute_node_ownership(const DofMapStructure& dofmap,
                        const std::vector<int>& shared_nodes,
                        const mesh::Mesh& mesh, const std::size_t global_dim)
 {
@@ -324,7 +326,7 @@ compute_node_ownership(const DofMapStructure<PetscInt>& dofmap,
 //-----------------------------------------------------------------------------
 // Build dofmap based on re-ordered nodes
 std::vector<std::vector<PetscInt>>
-build_dofmap(const DofMapStructure<PetscInt>& node_dofmap,
+build_dofmap(const DofMapStructure& node_dofmap,
              const std::vector<int>& old_to_new_node_local,
              const std::size_t block_size)
 {
@@ -350,9 +352,8 @@ build_dofmap(const DofMapStructure<PetscInt>& node_dofmap,
 }
 //-----------------------------------------------------------------------------
 // Build a simple dofmap from ElementDofmap based on mesh entity indicesq
-DofMapStructure<PetscInt>
-build_basic_dofmap(const ElementDofLayout& element_dof_layout,
-                   const mesh::Mesh& mesh)
+DofMapStructure build_basic_dofmap(const ElementDofLayout& element_dof_layout,
+                                   const mesh::Mesh& mesh)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -385,7 +386,7 @@ build_basic_dofmap(const ElementDofLayout& element_dof_layout,
   const int local_dim = element_dof_layout.num_dofs();
 
   // Allocate dofmap memory
-  DofMapStructure<PetscInt> dofmap;
+  DofMapStructure dofmap;
   dofmap.global_indices.resize(local_size);
   dofmap.data.resize(mesh.num_entities(D) * local_dim);
   dofmap.cell_ptr.resize(mesh.num_entities(D) + 1, local_dim);
@@ -459,9 +460,9 @@ build_basic_dofmap(const ElementDofLayout& element_dof_layout,
 // positive integer, interior nodes are marked as -1, interior
 // nodes in ghost layer of other processes are marked -2, and
 // ghost nodes are marked as -3
-std::vector<int>
-compute_shared_nodes(const DofMapStructure<PetscInt>& node_dofmap,
-                     const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
+std::vector<int> compute_shared_nodes(const DofMapStructure& node_dofmap,
+                                      const ElementDofLayout& el_dm,
+                                      const mesh::Mesh& mesh)
 {
   // Initialise mesh
   const int D = mesh.topology().dim();
@@ -550,7 +551,7 @@ compute_shared_nodes(const DofMapStructure<PetscInt>& node_dofmap,
 // Return (old-to-new_local, local_to_global_unowned) maps
 std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
     const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
-    const DofMapStructure<PetscInt>& node_dofmap,
+    const DofMapStructure& node_dofmap,
     const std::vector<short int>& node_ownership, MPI_Comm mpi_comm)
 {
   // Count number of locally owned nodes
@@ -769,8 +770,7 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
     el_dm_b = el_dm.sub_dofmap({0});
   const ElementDofLayout& el_dm_blocked = (bs > 1) ? *el_dm_b : el_dm;
 
-  DofMapStructure<PetscInt> node_graph0
-      = build_basic_dofmap(el_dm_blocked, mesh);
+  DofMapStructure node_graph0 = build_basic_dofmap(el_dm_blocked, mesh);
 
   // Set global dofmap dimension
   std::size_t global_dimension = 0;
