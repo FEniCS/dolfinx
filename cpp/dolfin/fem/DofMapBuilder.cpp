@@ -505,8 +505,8 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
 // Compute re-ordering map of owned indices. New index is negative for dofs that
 // are not owned.
 std::vector<std::int32_t>
-compute_reordering(const DofMapStructure& node_dofmap,
-                   const std::vector<std::int8_t>& node_ownership)
+compute_reordering_map(const DofMapStructure& node_dofmap,
+                       const std::vector<std::int8_t>& node_ownership)
 {
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs.
@@ -827,7 +827,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // TEST: local re-ordering. Old-to-new has negative entries for
   // non-owned dofs.
   const std::vector<std::int32_t> old_to_new
-      = compute_reordering(node_graph0, node_ownership0);
+      = compute_reordering_map(node_graph0, node_ownership0);
 
   // Compute node re-ordering for process index locality, and spatial
   // locality within a process, including
