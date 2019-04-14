@@ -260,11 +260,11 @@ compute_node_ownership(const DofMapStructure& dofmap,
   }
 
   // Build set of neighbouring processes
-  std::set<int> neighbours;
+  std::set<int> neighbouring_procs;
   for (auto it = shared_node_to_processes.begin();
        it != shared_node_to_processes.end(); ++it)
   {
-    neighbours.insert(it->second.begin(), it->second.end());
+    neighbouring_procs.insert(it->second.begin(), it->second.end());
   }
 
   // Count number of owned nodes
@@ -277,7 +277,7 @@ compute_node_ownership(const DofMapStructure& dofmap,
 
   return std::make_tuple(std::move(num_owned_nodes), std::move(node_ownership),
                          std::move(shared_node_to_processes),
-                         std::move(neighbours));
+                         std::move(neighbouring_procs));
 }
 //-----------------------------------------------------------------------------
 // TODO: Make clear what is being assumed on the dof order for an
@@ -502,6 +502,114 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
   return shared_nodes;
 }
 //-----------------------------------------------------------------------------
+// Return old-to-new indices. New index is negative for dofs that are
+// not owned.
+std::vector<std::int32_t>
+compute_reordering(const DofMapStructure& node_dofmap,
+                   const std::vector<std::int8_t>& node_ownership)
+{
+  // Count number of locally owned nodes
+  std::int32_t owned_local_size(0), unowned_local_size(0);
+  for (std::int8_t node : node_ownership)
+  {
+    if (node >= 0)
+      ++owned_local_size;
+    else if (node == -1)
+      ++unowned_local_size;
+    else
+    {
+      throw std::runtime_error(
+          "Compute node reordering - invalid node ownership index.");
+    }
+  }
+  assert((unowned_local_size + owned_local_size)
+         == (std::int32_t)node_ownership.size());
+  assert((unowned_local_size + owned_local_size)
+         == (std::int32_t)node_dofmap.global_indices.size());
+
+  // Build graph for re-ordering. Below block is scoped to clear working
+  // data structures once graph is constructed.
+  dolfin::graph::Graph graph(owned_local_size);
+
+  // Create map from old index to new contiguous numbering for locally
+  // owned dofs. Set to -1 for unowned dofs.
+  std::int32_t my_counter = 0;
+  std::vector<int> original_to_contiguous(node_ownership.size(), -1);
+  for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
+  {
+    if (node_ownership[i] >= 0)
+      original_to_contiguous[i] = my_counter++;
+  }
+
+  // Build local graph, based on dof map, with contiguous numbering
+  // (unowned dofs excluded)
+  std::vector<int> local_old;
+  for (std::int32_t cell = 0; cell < node_dofmap.num_cells(); ++cell)
+  {
+    // Cell dofmaps with old local indices
+    const PetscInt* nodes = node_dofmap.dofs(cell);
+    local_old.clear();
+
+    // Loop over nodes collecting valid local nodes
+    for (std::int32_t i = 0; i < node_dofmap.num_dofs(cell); ++i)
+    {
+      // Add to graph if node n0_local is owned
+      assert(nodes[i] < (int)original_to_contiguous.size());
+      const int n = original_to_contiguous[nodes[i]];
+      if (n != -1)
+      {
+        assert(n < (int)graph.size());
+        local_old.push_back(n);
+      }
+    }
+
+    for (std::size_t i = 0; i < local_old.size(); ++i)
+      for (std::size_t j = 0; j < local_old.size(); ++j)
+        if (i != j)
+          graph[local_old[i]].insert(local_old[j]);
+  }
+
+  // Reorder nodes
+  const std::string ordering_library = "SCOTCH";
+  std::vector<int> node_remap;
+  if (ordering_library == "Boost")
+    node_remap = graph::BoostGraphOrdering::compute_cuthill_mckee(graph, true);
+  else if (ordering_library == "SCOTCH")
+    std::tie(node_remap, std::ignore) = graph::SCOTCH::compute_gps(graph);
+  else if (ordering_library == "random")
+  {
+    // NOTE: Randomised dof ordering should only be used for
+    // testing/benchmarking
+    node_remap.resize(graph.size());
+    for (std::size_t i = 0; i < node_remap.size(); ++i)
+      node_remap[i] = i;
+    std::random_shuffle(node_remap.begin(), node_remap.end());
+  }
+  else
+  {
+    throw std::runtime_error("Requested library '" + ordering_library
+                             + "' is unknown");
+  }
+
+  // Reconstruct remaped nodes, with -1 for unowned
+  std::vector<int> old_to_new_local(node_ownership.size(), -1);
+  for (std::size_t old_index = 0; old_index < node_ownership.size();
+       ++old_index)
+  {
+    std::int32_t index = original_to_contiguous[old_index];
+
+    // Skip nodes that are not owned
+    if (index < 0)
+      continue;
+
+    // Set new node number
+    assert(old_index < old_to_new_local.size());
+    old_to_new_local[old_index] = node_remap[index];
+  }
+
+  return old_to_new_local;
+}
+//-----------------------------------------------------------------------------
 // FIXME: document better
 // Return (old-to-new_local, local_to_global_unowned) maps
 std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
@@ -537,7 +645,6 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
   }
   std::map<std::size_t, int> global_to_local_nodes_unowned(node_pairs.begin(),
                                                            node_pairs.end());
-  std::vector<std::pair<std::size_t, int>>().swap(node_pairs);
 
   // Build graph for re-ordering. Below block is scoped to clear working
   // data structures once graph is constructed.
@@ -552,12 +659,10 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
       old_to_contiguous_node_index[i] = my_counter++;
   }
 
-  // Build local graph, based on old dof map, with contiguous
-  // numbering
+  // Build local graph, based on old dof map, with contiguous numbering
   for (std::int32_t cell = 0; cell < node_dofmap.num_cells(); ++cell)
   {
     // Cell dofmaps with old local indices
-    // const std::vector<PetscInt>& nodes = node_dofmap[cell];
     const PetscInt* nodes = node_dofmap.dofs(cell);
     std::vector<int> local_old;
 
@@ -616,7 +721,7 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
   // Allocate space
   std::vector<int> old_to_new_local(node_ownership.size(), -1);
 
-  // Renumber owned nodes, and buffer nodes that are owned but shared
+  // Renumber owned nodes, and buffer nodes that are owned and shared
   // with another process
   const std::size_t mpi_size = dolfin::MPI::size(mpi_comm);
   std::vector<std::vector<std::size_t>> send_buffer(mpi_size);
@@ -725,7 +830,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // nodes are marked as -3,
   mesh.init(D - 1);
   mesh.init(D - 1, D);
-  std::vector<std::int8_t> shared_nodes
+  const std::vector<std::int8_t> shared_nodes
       = compute_sharing_markers(node_graph0, element_dof_layout, mesh);
 
   // Compute node ownership:
@@ -737,11 +842,16 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   std::vector<std::int8_t> node_ownership0;
   std::unordered_map<int, std::vector<int>> shared_node_to_processes0;
   int num_owned_nodes;
-  std::set<int> neighbours;
+  std::set<int> neighbouring_procs;
   std::tie(num_owned_nodes, node_ownership0, shared_node_to_processes0,
-           neighbours)
+           neighbouring_procs)
       = compute_node_ownership(node_graph0, shared_nodes, mesh,
                                global_dimension);
+
+  // TEST: local re-ordering. Old-to-new has negative entries for
+  // non-owned dofs.
+  const std::vector<std::int32_t> old_to_new
+      = compute_reordering(node_graph0, node_ownership0);
 
   // Compute node re-ordering for process index locality, and spatial
   // locality within a process, including
@@ -783,7 +893,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 
   return std::make_tuple(std::move(block_size * global_dimension),
                          std::move(index_map), std::move(shared_nodes_foo),
-                         std::move(neighbours), std::move(cell_dofmap));
+                         std::move(neighbouring_procs), std::move(cell_dofmap));
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::int64_t, std::vector<PetscInt>>
