@@ -84,23 +84,6 @@ void get_cell_entities(
   }
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-compute_num_mesh_entities_local(const mesh::Mesh& mesh,
-                                const std::vector<bool>& needs_mesh_entities)
-{
-  const std::size_t D = mesh.topology().dim();
-  std::vector<std::int32_t> num_mesh_entities_local(D + 1);
-  for (std::size_t d = 0; d <= D; ++d)
-  {
-    if (needs_mesh_entities[d])
-    {
-      mesh.init(d);
-      num_mesh_entities_local[d] = mesh.num_entities(d);
-    }
-  }
-  return num_mesh_entities_local;
-}
-//-----------------------------------------------------------------------------
 // Compute which process 'owns' each node (point at which dofs live)
 //   - node_ownership = -1 -> dof shared but not 'owned' by this
 //     process
@@ -725,11 +708,6 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   std::vector<bool> needs_entities(D + 1);
   for (int d = 0; d <= D; ++d)
     needs_entities[d] = el_dm.num_entity_dofs(d) > 0;
-
-  // For mesh entities required by UFC dofmap, compute number of
-  // mesh entities on this process
-  const std::vector<std::int32_t> num_mesh_entities_local
-      = compute_num_mesh_entities_local(mesh, needs_entities);
 
   // Compute a 'node' dofmap based on a UFC dofmap (node is a point with a fixed
   // number of dofs). Returns:
