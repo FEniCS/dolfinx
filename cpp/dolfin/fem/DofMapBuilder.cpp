@@ -502,8 +502,7 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
   return shared_nodes;
 }
 //-----------------------------------------------------------------------------
-// Compute re-ordering map of owned indices. New index is negative for dofs that
-// are not owned.
+// Compute re-ordering map of indices.
 std::vector<std::int32_t>
 compute_reordering_map(const DofMapStructure& node_dofmap,
                        const std::vector<std::int8_t>& node_ownership)
@@ -545,7 +544,7 @@ compute_reordering_map(const DofMapStructure& node_dofmap,
           graph[local_old[i]].insert(local_old[j]);
   }
 
-  // Reorder nodes
+  // Reorder owned nodes
   const std::string ordering_library = "SCOTCH";
   std::vector<int> node_remap;
   if (ordering_library == "Boost")
@@ -569,6 +568,7 @@ compute_reordering_map(const DofMapStructure& node_dofmap,
 
   // Reconstruct remaped nodes, with -1 for unowned
   std::vector<int> old_to_new(node_ownership.size(), -1);
+  std::int32_t unowned_pos = owned_size;
   for (std::size_t old_index = 0; old_index < node_ownership.size();
        ++old_index)
   {
@@ -576,14 +576,103 @@ compute_reordering_map(const DofMapStructure& node_dofmap,
 
     // Skip nodes that are not owned
     if (index < 0)
-      continue;
-
-    // Set new node number
-    assert(old_index < old_to_new.size());
-    old_to_new[old_index] = node_remap[index];
+    {
+      assert(old_index < old_to_new.size());
+      old_to_new[old_index] = unowned_pos++;
+    }
+    else
+    {
+      // Set new node number
+      assert(old_index < old_to_new.size());
+      old_to_new[old_index] = node_remap[index];
+    }
   }
 
   return old_to_new;
+}
+//-----------------------------------------------------------------------------
+// Compute global indices for unowned dofs
+std::vector<std::size_t> compute_global_indices(
+    const std::size_t process_offset,
+    const std::vector<std::int32_t>& old_to_new,
+    const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
+    const DofMapStructure& node_dofmap,
+    const std::vector<std::int8_t>& node_ownership, MPI_Comm mpi_comm)
+{
+  // Count number of locally owned and unowned nodes
+  std::int32_t owned_local_size(0), unowned_local_size(0);
+  for (std::int8_t node : node_ownership)
+  {
+    if (node >= 0)
+      ++owned_local_size;
+    else if (node == -1)
+      ++unowned_local_size;
+    else
+    {
+      throw std::runtime_error(
+          "Compute node reordering - invalid node ownership index.");
+    }
+  }
+  // assert((unowned_local_size + owned_local_size) == node_ownership.size());
+  // assert((unowned_local_size + owned_local_size)
+  //        == node_dofmap.global_indices.size());
+
+  // Create global-to-local index map for local un-owned nodes
+  std::vector<std::pair<std::size_t, int>> node_pairs;
+  node_pairs.reserve(unowned_local_size);
+  for (std::size_t i = 0; i < node_ownership.size(); ++i)
+  {
+    if (node_ownership[i] == -1)
+      node_pairs.push_back(std::make_pair(node_dofmap.global_indices[i], i));
+  }
+  std::map<std::size_t, int> global_to_local_nodes_unowned(node_pairs.begin(),
+                                                           node_pairs.end());
+
+  // Buffer nodes that are owned and shared with another process
+  const std::size_t mpi_size = dolfin::MPI::size(mpi_comm);
+  std::vector<std::vector<std::size_t>> send_buffer(mpi_size);
+  for (std::size_t old_index = 0; old_index < node_ownership.size();
+       ++old_index)
+  {
+    // If this node is shared and owned, buffer old and new (global)
+    // node index for sending
+    if (node_ownership[old_index] == 0)
+    {
+      auto it = node_to_sharing_processes.find(old_index);
+      if (it != node_to_sharing_processes.end())
+      {
+        for (auto p = it->second.begin(); p != it->second.end(); ++p)
+        {
+          // Buffer old and new global indices to send
+          send_buffer[*p].push_back(node_dofmap.global_indices[old_index]);
+          send_buffer[*p].push_back(process_offset + old_to_new[old_index]);
+        }
+      }
+    }
+  }
+
+  std::vector<std::vector<std::size_t>> recv_buffer(mpi_size);
+  dolfin::MPI::all_to_all(mpi_comm, send_buffer, recv_buffer);
+
+  std::vector<std::size_t> local_to_global_unowned(unowned_local_size);
+  for (std::size_t src = 0; src < mpi_size; ++src)
+  {
+    for (auto q = recv_buffer[src].begin(); q != recv_buffer[src].end(); q += 2)
+    {
+      const std::size_t received_old_index_global = *q;
+      const std::size_t received_new_index_global = *(q + 1);
+      auto it = global_to_local_nodes_unowned.find(received_old_index_global);
+      assert(it != global_to_local_nodes_unowned.end());
+
+      const int received_old_index_local = it->second;
+      const int pos = old_to_new[received_old_index_local] - owned_local_size;
+      assert(pos >= 0);
+      assert(pos < owned_local_size);
+      local_to_global_unowned[pos] = received_new_index_global;
+    }
+  }
+
+  return local_to_global_unowned;
 }
 //-----------------------------------------------------------------------------
 // FIXME: document better
@@ -824,10 +913,19 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
       = compute_node_ownership(node_graph0, shared_nodes, mesh,
                                global_dimension);
 
-  // TEST: local re-ordering. Old-to-new has negative entries for
-  // non-owned dofs.
+  // TEST: local re-ordering
   const std::vector<std::int32_t> old_to_new
       = compute_reordering_map(node_graph0, node_ownership0);
+
+  // Compute process offset for owned nodes
+  const std::size_t process_offset
+      = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned_nodes, true);
+
+  // TEST: local-to-global for unowned dofs
+  const std::vector<std::size_t> local_to_global_unowned_test
+      = compute_global_indices(process_offset, old_to_new,
+                               shared_node_to_processes0, node_graph0,
+                               node_ownership0, mesh.mpi_comm());
 
   // Compute node re-ordering for process index locality, and spatial
   // locality within a process, including
