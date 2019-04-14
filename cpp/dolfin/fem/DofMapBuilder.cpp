@@ -308,8 +308,8 @@ build_dofmap(const DofMapStructure& node_dofmap,
 }
 //-----------------------------------------------------------------------------
 // Build a simple dofmap from ElementDofmap based on mesh entity indicesq
-DofMapStructure build_basic_dofmap(const ElementDofLayout& element_dof_layout,
-                                   const mesh::Mesh& mesh)
+DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
+                                   const ElementDofLayout& element_dof_layout)
 {
   // Start timer for dofmap initialization
   common::Timer t0("Init dofmap from element dofmap");
@@ -697,7 +697,8 @@ std::pair<std::vector<int>, std::vector<std::size_t>> compute_node_reordering(
 std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
            std::unordered_map<int, std::vector<int>>, std::set<int>,
            std::vector<PetscInt>>
-DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
+DofMapBuilder::build(const mesh::Mesh& mesh,
+                     const ElementDofLayout& element_dof_layout, int block_size)
 {
   common::Timer t0("Init dofmap");
 
@@ -708,37 +709,27 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   //  - node dofmap (node_dofmap)
   //  - local-to-global node indices (node_local_to_global)
 
-  // If block size is not 1, use first sub-dofmap instead.
-  const int bs = el_dm.block_size();
-
-  // FIXME: clean this up somehow
-  std::shared_ptr<const ElementDofLayout> el_dm_b;
-  if (bs > 1)
-    el_dm_b = el_dm.sub_dofmap({0});
-  const ElementDofLayout& el_dm_blocked = (bs > 1) ? *el_dm_b : el_dm;
-
   // Build simple dofmap based on dof layout on an element and mesh
   // entity numbering
-  DofMapStructure node_graph0 = build_basic_dofmap(el_dm_blocked, mesh);
+  DofMapStructure node_graph0 = build_basic_dofmap(mesh, element_dof_layout);
 
   // Compute global dofmap dimension
   std::size_t global_dimension = 0;
   for (int d = 0; d < D + 1; ++d)
   {
     const std::int64_t n = mesh.num_entities_global(d);
-    global_dimension += n * el_dm.num_entity_dofs(d);
+    global_dimension += n * element_dof_layout.num_entity_dofs(d);
   }
-  assert(global_dimension % bs == 0);
 
   // Re-order and switch to local indexing in dofmap when distributed
   // for process locality and set local_range
 
-  // Mark shared nodes. Boundary nodes are assigned a random
-  // positive integer, interior nodes are marked as -1, interior
-  // nodes in ghost layer of other processes are marked -2, and
-  // ghost nodes are marked as -3
+  // Mark shared nodes. Boundary nodes are assigned a random positive
+  // integer, interior nodes are marked as -1, interior nodes in ghost
+  // layer of other processes are marked -2, and ghost nodes are marked
+  // as -3
   std::vector<int> shared_nodes
-      = compute_shared_nodes(node_graph0, el_dm_blocked, mesh);
+      = compute_shared_nodes(node_graph0, element_dof_layout, mesh);
 
   // Compute:
   // (a) owned and shared nodes (and owned and un-owned):
@@ -752,7 +743,7 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   std::tie(num_owned_nodes, node_ownership0, shared_node_to_processes0,
            neighbours)
       = compute_node_ownership(node_graph0, shared_nodes, mesh,
-                               global_dimension / bs);
+                               global_dimension);
 
   // Compute node re-ordering for process index locality, and spatial
   // locality within a process, including
@@ -767,13 +758,12 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
                                 node_ownership0, mesh.mpi_comm());
 
   auto index_map = std::make_unique<common::IndexMap>(
-      mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, bs);
+      mesh.mpi_comm(), num_owned_nodes, local_to_global_unowned, block_size);
   assert(index_map);
-  assert(dolfin::MPI::sum(mesh.mpi_comm(),
-                          (std::size_t)bs * index_map->size_local())
+  assert(dolfin::MPI::sum(mesh.mpi_comm(), (std::size_t)index_map->size_local())
          == global_dimension);
 
-  // Update shared_nodes for node reordering
+  // Update shared_nodes following reordering
   std::unordered_map<int, std::vector<int>> shared_nodes_foo;
   for (auto it = shared_node_to_processes0.begin();
        it != shared_node_to_processes0.end(); ++it)
@@ -785,16 +775,16 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   // Build dofmap from original node 'dof' map, and applying the
   // 'old_to_new_local' map for the re-ordered node indices
   const std::vector<std::vector<PetscInt>> dofmap_graph
-      = build_dofmap(node_graph0, node_old_to_new_local, bs);
+      = build_dofmap(node_graph0, node_old_to_new_local, block_size);
 
   // Build flattened dofmap graph
   std::vector<PetscInt> cell_dofmap;
   for (auto const& cell_dofs : dofmap_graph)
     cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
 
-  return std::make_tuple(std::move(global_dimension), std::move(index_map),
-                         std::move(shared_nodes_foo), std::move(neighbours),
-                         std::move(cell_dofmap));
+  return std::make_tuple(std::move(block_size * global_dimension),
+                         std::move(index_map), std::move(shared_nodes_foo),
+                         std::move(neighbours), std::move(cell_dofmap));
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::int64_t, std::vector<PetscInt>>

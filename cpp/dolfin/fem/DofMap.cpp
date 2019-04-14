@@ -28,8 +28,17 @@ DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
       create_element_dof_layout(ufc_dofmap, {}, mesh.type()));
 
   _cell_dimension = _element_dof_layout->num_dofs();
+
+  // FIXME: clean this up
+  const int bs = _element_dof_layout->block_size();
+  std::shared_ptr<const ElementDofLayout> el_dm_b = _element_dof_layout;
+  if (bs > 1)
+    el_dm_b = _element_dof_layout->sub_dofmap({0});
+  const ElementDofLayout& el_dm_blocked
+      = (bs > 1) ? *el_dm_b : *_element_dof_layout;
+
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(*_element_dof_layout, mesh);
+      = DofMapBuilder::build(mesh, el_dm_blocked, bs);
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -69,9 +78,17 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   // Check dimensional consistency between ElementDofLayout and the mesh
   check_provided_entities(*_element_dof_layout, mesh);
 
+  // FIXME: clean this up
+  const int bs = _element_dof_layout->block_size();
+  std::shared_ptr<const ElementDofLayout> el_dm_b = _element_dof_layout;
+  if (bs > 1)
+    el_dm_b = _element_dof_layout->sub_dofmap({0});
+  const ElementDofLayout& el_dm_blocked
+      = (bs > 1) ? *el_dm_b : *_element_dof_layout;
+
   // Build new dof map
   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(*_element_dof_layout, mesh);
+      = DofMapBuilder::build(mesh, el_dm_blocked, bs);
   _cell_dimension = _element_dof_layout->num_dofs();
 
   const int tdim = mesh.topology().dim();
