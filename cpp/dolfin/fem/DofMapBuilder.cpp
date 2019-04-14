@@ -280,13 +280,14 @@ compute_node_ownership(const DofMapStructure& dofmap,
                          std::move(neighbours));
 }
 //-----------------------------------------------------------------------------
+// TODO: Make clear what is being assumed on the dof order for an
+// element
 // Build dofmap based on re-ordered nodes
 std::vector<std::vector<PetscInt>>
 build_dofmap(const DofMapStructure& node_dofmap,
              const std::vector<int>& old_to_new_node_local,
              const std::size_t block_size)
 {
-  // Build dofmap looping over nodes
   std::vector<std::vector<PetscInt>> dofmap(node_dofmap.num_cells());
   for (std::size_t i = 0; i < dofmap.size(); ++i)
   {
@@ -307,7 +308,7 @@ build_dofmap(const DofMapStructure& node_dofmap,
   return dofmap;
 }
 //-----------------------------------------------------------------------------
-// Build a simple dofmap from ElementDofmap based on mesh entity indicesq
+// Build a simple dofmap from ElementDofmap based on mesh entity indices
 DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
                                    const ElementDofLayout& element_dof_layout)
 {
@@ -704,13 +705,9 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 
   const int D = mesh.topology().dim();
 
-  // Compute a 'node' dofmap based on a UFC dofmap (node is a point with a fixed
-  // number of dofs). Returns:
-  //  - node dofmap (node_dofmap)
-  //  - local-to-global node indices (node_local_to_global)
-
-  // Build simple dofmap based on dof layout on an element and mesh
-  // entity numbering
+  // Build a simple dofmap based on mesh entity numbering.  Returns:
+  //  - dofmap (local indices)
+  //  - local-to-global dof index map)
   DofMapStructure node_graph0 = build_basic_dofmap(mesh, element_dof_layout);
 
   // Compute global dofmap dimension
@@ -763,7 +760,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   assert(dolfin::MPI::sum(mesh.mpi_comm(), (std::size_t)index_map->size_local())
          == global_dimension);
 
-  // Update shared_nodes following reordering
+  // Update shared_nodes following the reordering
   std::unordered_map<int, std::vector<int>> shared_nodes_foo;
   for (auto it = shared_node_to_processes0.begin();
        it != shared_node_to_processes0.end(); ++it)
