@@ -265,10 +265,6 @@ private:
 
   // Coordinate_mapping
   std::shared_ptr<const fem::CoordinateMapping> _coord_mapping;
-
-  // Coefficient names
-  std::vector<std::string> _coefficient_names;
-
 };
 } // namespace fem
 } // namespace dolfin

@@ -27,7 +27,19 @@ using namespace dolfin::fem;
 Form::Form(const ufc_form& ufc_form,
            const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
-    : _integrals(ufc_form), _coefficients(ufc_form),
+    : _integrals(ufc_form), _coefficients([ufc_form]() {
+        std::vector<
+            std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+            coeffs;
+        for (int i = 0; i < ufc_form.num_coefficients; ++i)
+        {
+          coeffs.push_back(std::make_tuple<int, std::string,
+                                           std::shared_ptr<function::Function>>(
+              ufc_form.original_coefficient_position(i),
+              ufc_form.coefficient_name_map(i), nullptr));
+        }
+        return coeffs;
+      }()),
       _function_spaces(function_spaces)
 {
   assert(ufc_form.rank == (int)function_spaces.size());
@@ -67,10 +79,6 @@ Form::Form(const ufc_form& ufc_form,
   ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
   _coord_mapping = std::make_shared<fem::CoordinateMapping>(*cmap);
   std::free(cmap);
-
-  // Save coefficient maps
-  for (int i = 0; i < ufc_form.num_coefficients; ++i)
-    _coefficient_names.push_back(ufc_form.coefficient_name_map(i));
 }
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
@@ -91,20 +99,12 @@ std::size_t Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
 int Form::get_coefficient_index(std::string name) const
 {
-  auto it
-      = std::find(_coefficient_names.begin(), _coefficient_names.end(), name);
-  if (it == _coefficient_names.end())
-    throw std::runtime_error("Cannot find coefficient name:" + name);
-
-  return std::distance(_coefficient_names.begin(), it);
+  return _coefficients.get_index(name);
 }
 //-----------------------------------------------------------------------------
 std::string Form::get_coefficient_name(int i) const
 {
-  if (i >= (int)_coefficient_names.size())
-    throw std::runtime_error("Invalid coefficient index");
-
-  return _coefficient_names[i];
+  return _coefficients.get_name(i);
 }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(

@@ -31,7 +31,9 @@ class FormCoefficients
 public:
   /// Initialise the FormCoefficients from a ufc_form, instantiating all
   /// the required elements
-  FormCoefficients(const ufc_form& ufc_form);
+  FormCoefficients(const std::vector<
+                   std::tuple<int, std::string, std::shared_ptr<function::Function>>>&
+                       coefficients);
 
   /// Get number of coefficients
   int size() const;
@@ -50,12 +52,21 @@ public:
   /// Original position of coefficient in UFL form
   int original_position(int i) const;
 
+  /// Get index from name of coefficient
+  int get_index(std::string name) const;
+
+  /// Get name from index of coefficient
+  std::string get_name(int index) const;
+
 private:
   // Functions for the coefficients
   std::vector<std::shared_ptr<const function::Function>> _coefficients;
 
   // Copy of 'original positions' in UFL form
   std::vector<int> _original_pos;
+
+  // Names of coefficients
+  std::vector<std::string> _names;
 };
 } // namespace fem
 } // namespace dolfin
