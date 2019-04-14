@@ -951,8 +951,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   for (auto it = shared_node_to_processes0.begin();
        it != shared_node_to_processes0.end(); ++it)
   {
-    const int new_node = node_old_to_new_local[it->first];
-    shared_nodes_foo[new_node] = it->second;
+    shared_nodes_foo.insert({node_old_to_new_local[it->first], it->second});
   }
 
   // Build dofmap from original node 'dof' map, and applying the
