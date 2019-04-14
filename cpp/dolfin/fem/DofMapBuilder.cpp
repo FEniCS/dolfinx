@@ -717,9 +717,11 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
     el_dm_b = el_dm.sub_dofmap({0});
   const ElementDofLayout& el_dm_blocked = (bs > 1) ? *el_dm_b : el_dm;
 
+  // Build simple dofmap based on dof layout on an element and mesh
+  // entity numbering
   DofMapStructure node_graph0 = build_basic_dofmap(el_dm_blocked, mesh);
 
-  // Set global dofmap dimension
+  // Compute global dofmap dimension
   std::size_t global_dimension = 0;
   for (int d = 0; d < D + 1; ++d)
   {
@@ -735,7 +737,6 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
   // positive integer, interior nodes are marked as -1, interior
   // nodes in ghost layer of other processes are marked -2, and
   // ghost nodes are marked as -3
-
   std::vector<int> shared_nodes
       = compute_shared_nodes(node_graph0, el_dm_blocked, mesh);
 
