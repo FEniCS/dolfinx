@@ -26,19 +26,19 @@ DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
 {
   _element_dof_layout = std::make_shared<ElementDofLayout>(
       create_element_dof_layout(ufc_dofmap, {}, mesh.type()));
-
   _cell_dimension = _element_dof_layout->num_dofs();
 
-  // FIXME: clean this up
   const int bs = _element_dof_layout->block_size();
-  std::shared_ptr<const ElementDofLayout> el_dm_b = _element_dof_layout;
-  if (bs > 1)
-    el_dm_b = _element_dof_layout->sub_dofmap({0});
-  const ElementDofLayout& el_dm_blocked
-      = (bs > 1) ? *el_dm_b : *_element_dof_layout;
-
-  std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(mesh, el_dm_blocked, bs);
+  if (bs == 1)
+  {
+    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+        = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
+  }
+  else
+  {
+    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+        = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
+  }
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& parent_dofmap,
@@ -75,21 +75,23 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
     : _cell_dimension(-1), _global_dimension(-1),
       _element_dof_layout(dofmap_view._element_dof_layout)
 {
+  _cell_dimension = _element_dof_layout->num_dofs();
+
   // Check dimensional consistency between ElementDofLayout and the mesh
   check_provided_entities(*_element_dof_layout, mesh);
 
-  // FIXME: clean this up
-  const int bs = _element_dof_layout->block_size();
-  std::shared_ptr<const ElementDofLayout> el_dm_b = _element_dof_layout;
-  if (bs > 1)
-    el_dm_b = _element_dof_layout->sub_dofmap({0});
-  const ElementDofLayout& el_dm_blocked
-      = (bs > 1) ? *el_dm_b : *_element_dof_layout;
-
   // Build new dof map
-  std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(mesh, el_dm_blocked, bs);
-  _cell_dimension = _element_dof_layout->num_dofs();
+  const int bs = _element_dof_layout->block_size();
+  if (bs == 1)
+  {
+    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+        = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
+  }
+  else
+  {
+    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+        = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
+  }
 
   const int tdim = mesh.topology().dim();
 
@@ -165,15 +167,12 @@ DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
 {
   const std::vector<std::vector<std::set<int>>>& dofs
       = _element_dof_layout->entity_closure_dofs();
-
   assert(entity_dim < dofs.size());
   assert(cell_entity_index < dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
       dofs[entity_dim][cell_entity_index].size());
-
   std::copy(dofs[entity_dim][cell_entity_index].begin(),
             dofs[entity_dim][cell_entity_index].end(), element_dofs.data());
-
   return element_dofs;
 }
 //-----------------------------------------------------------------------------
@@ -183,15 +182,12 @@ DofMap::tabulate_entity_dofs(std::size_t entity_dim,
 {
   const std::vector<std::vector<std::set<int>>>& dofs
       = _element_dof_layout->entity_dofs();
-
   assert(entity_dim < dofs.size());
   assert(cell_entity_index < dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
       dofs[entity_dim][cell_entity_index].size());
-
   std::copy(dofs[entity_dim][cell_entity_index].begin(),
             dofs[entity_dim][cell_entity_index].end(), element_dofs.data());
-
   return element_dofs;
 }
 //-----------------------------------------------------------------------------
@@ -199,12 +195,10 @@ Eigen::Array<std::size_t, Eigen::Dynamic, 1>
 DofMap::tabulate_global_dofs() const
 {
   assert(_global_nodes.empty() or block_size() == 1);
-
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> dofs(_global_nodes.size());
   std::size_t i = 0;
   for (auto d : _global_nodes)
     dofs[i++] = d;
-
   return dofs;
 }
 //-----------------------------------------------------------------------------
