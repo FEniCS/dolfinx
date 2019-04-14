@@ -502,58 +502,34 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
   return shared_nodes;
 }
 //-----------------------------------------------------------------------------
-// Return old-to-new indices. New index is negative for dofs that are
-// not owned.
+// Compute re-ordering map of owned indices. New index is negative for dofs that
+// are not owned.
 std::vector<std::int32_t>
 compute_reordering(const DofMapStructure& node_dofmap,
                    const std::vector<std::int8_t>& node_ownership)
 {
-  // Count number of locally owned nodes
-  std::int32_t owned_local_size(0), unowned_local_size(0);
-  for (std::int8_t node : node_ownership)
-  {
-    if (node >= 0)
-      ++owned_local_size;
-    else if (node == -1)
-      ++unowned_local_size;
-    else
-    {
-      throw std::runtime_error(
-          "Compute node reordering - invalid node ownership index.");
-    }
-  }
-  assert((unowned_local_size + owned_local_size)
-         == (std::int32_t)node_ownership.size());
-  assert((unowned_local_size + owned_local_size)
-         == (std::int32_t)node_dofmap.global_indices.size());
-
-  // Build graph for re-ordering. Below block is scoped to clear working
-  // data structures once graph is constructed.
-  dolfin::graph::Graph graph(owned_local_size);
-
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs.
-  std::int32_t my_counter = 0;
+  std::int32_t owned_size = 0;
   std::vector<int> original_to_contiguous(node_ownership.size(), -1);
   for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
   {
     if (node_ownership[i] >= 0)
-      original_to_contiguous[i] = my_counter++;
+      original_to_contiguous[i] = owned_size++;
   }
 
-  // Build local graph, based on dof map, with contiguous numbering
+  // Build local graph, based on dof map with contiguous numbering
   // (unowned dofs excluded)
+  dolfin::graph::Graph graph(owned_size);
   std::vector<int> local_old;
   for (std::int32_t cell = 0; cell < node_dofmap.num_cells(); ++cell)
   {
-    // Cell dofmaps with old local indices
-    const PetscInt* nodes = node_dofmap.dofs(cell);
-    local_old.clear();
-
     // Loop over nodes collecting valid local nodes
+    local_old.clear();
+    const PetscInt* nodes = node_dofmap.dofs(cell);
     for (std::int32_t i = 0; i < node_dofmap.num_dofs(cell); ++i)
     {
-      // Add to graph if node n0_local is owned
+      // Add to graph if node is owned
       assert(nodes[i] < (int)original_to_contiguous.size());
       const int n = original_to_contiguous[nodes[i]];
       if (n != -1)
@@ -592,7 +568,7 @@ compute_reordering(const DofMapStructure& node_dofmap,
   }
 
   // Reconstruct remaped nodes, with -1 for unowned
-  std::vector<int> old_to_new_local(node_ownership.size(), -1);
+  std::vector<int> old_to_new(node_ownership.size(), -1);
   for (std::size_t old_index = 0; old_index < node_ownership.size();
        ++old_index)
   {
@@ -603,11 +579,11 @@ compute_reordering(const DofMapStructure& node_dofmap,
       continue;
 
     // Set new node number
-    assert(old_index < old_to_new_local.size());
-    old_to_new_local[old_index] = node_remap[index];
+    assert(old_index < old_to_new.size());
+    old_to_new[old_index] = node_remap[index];
   }
 
-  return old_to_new_local;
+  return old_to_new;
 }
 //-----------------------------------------------------------------------------
 // FIXME: document better
