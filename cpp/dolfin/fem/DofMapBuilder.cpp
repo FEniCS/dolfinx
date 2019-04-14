@@ -363,9 +363,7 @@ DofMapStructure build_basic_dofmap(const ElementDofLayout& element_dof_layout,
   std::vector<std::size_t> ufc_nodes_global(local_dim);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    // TODO: Can these calls be removed/combined?
-    // get_cell_entities_local(entity_indices_local, cell, needs_entities);
-    // get_cell_entities_global(entity_indices_global, cell, needs_entities);
+    // Get local (process) and global cell entity indices
     get_cell_entities(entity_indices_local, entity_indices_global, cell,
                       needs_entities);
 
@@ -703,11 +701,7 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
 {
   common::Timer t0("Init dofmap");
 
-  // Extract needs_entities as vector of bool
   const int D = mesh.topology().dim();
-  std::vector<bool> needs_entities(D + 1);
-  for (int d = 0; d <= D; ++d)
-    needs_entities[d] = el_dm.num_entity_dofs(d) > 0;
 
   // Compute a 'node' dofmap based on a UFC dofmap (node is a point with a fixed
   // number of dofs). Returns:
