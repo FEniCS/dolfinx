@@ -11,7 +11,6 @@
 #include <dolfin/mesh/MeshIterator.h>
 
 #include <cstdlib>
-#include <ufc.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -20,55 +19,6 @@ using namespace dolfin::fem;
 FormIntegrals::FormIntegrals()
 {
   // Do nothing
-}
-//-----------------------------------------------------------------------------
-FormIntegrals::FormIntegrals(const ufc_form& ufc_form)
-{
-  // Get list of integral IDs, and load tabulate tensor into memory for each
-  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
-  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
-  for (auto id : cell_integral_ids)
-  {
-    ufc_cell_integral* cell_integral = ufc_form.create_cell_integral(id);
-    assert(cell_integral);
-    register_tabulate_tensor_cell(id, cell_integral->tabulate_tensor);
-    std::free(cell_integral);
-  }
-
-  std::vector<int> exterior_facet_integral_ids(
-      ufc_form.num_exterior_facet_integrals);
-  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
-  for (auto id : exterior_facet_integral_ids)
-  {
-    ufc_exterior_facet_integral* exterior_facet_integral
-        = ufc_form.create_exterior_facet_integral(id);
-    assert(exterior_facet_integral);
-    register_tabulate_tensor_exterior_facet(
-        id, exterior_facet_integral->tabulate_tensor);
-    std::free(exterior_facet_integral);
-  }
-
-  std::vector<int> interior_facet_integral_ids(
-      ufc_form.num_interior_facet_integrals);
-  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
-  for (auto id : interior_facet_integral_ids)
-  {
-    ufc_interior_facet_integral* interior_facet_integral
-        = ufc_form.create_interior_facet_integral(id);
-    assert(interior_facet_integral);
-    register_tabulate_tensor_interior_facet(
-        id, interior_facet_integral->tabulate_tensor);
-    std::free(interior_facet_integral);
-  }
-
-  // Not currently working
-  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
-  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
-  if (vertex_integral_ids.size() > 0)
-  {
-    throw std::runtime_error(
-        "Vertex integrals not supported. Under development.");
-  }
 }
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>&

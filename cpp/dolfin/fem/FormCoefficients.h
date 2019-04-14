@@ -9,8 +9,6 @@
 #include <memory>
 #include <vector>
 
-struct ufc_form;
-
 namespace dolfin
 {
 
@@ -29,11 +27,14 @@ class FiniteElement;
 class FormCoefficients
 {
 public:
-  /// Initialise the FormCoefficients from a ufc_form, instantiating all
-  /// the required elements
-  FormCoefficients(const std::vector<
-                   std::tuple<int, std::string, std::shared_ptr<function::Function>>>&
-                       coefficients);
+  /// Initialise the FormCoefficients, using tuples of
+  /// (original_coeff_position, name, shared_ptr<function::Function>). The
+  /// shared_ptr<Function> may be a nullptr and assigned later.
+
+  FormCoefficients(
+      const std::vector<
+          std::tuple<int, std::string, std::shared_ptr<function::Function>>>&
+          coefficients);
 
   /// Get number of coefficients
   int size() const;
