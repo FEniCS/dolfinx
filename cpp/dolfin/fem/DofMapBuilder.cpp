@@ -53,30 +53,11 @@ struct DofMapStructure
   const PetscInt* dofs(int cell) const { return &data[cell_ptr[cell]]; }
   PetscInt* dofs(int cell) { return &data[cell_ptr[cell]]; }
 };
-
 //-----------------------------------------------------------------------------
-void get_cell_entities_local(std::vector<std::vector<int32_t>>& entity_indices,
-                             const mesh::Cell& cell,
-                             const std::vector<bool>& needs_mesh_entities)
-{
-  const int D = cell.mesh().topology().dim();
-  for (int d = 0; d < D; ++d)
-  {
-    if (needs_mesh_entities[d])
-    {
-      for (std::size_t i = 0; i < cell.num_entities(d); ++i)
-        entity_indices[d][i] = cell.entities(d)[i];
-    }
-  }
-
-  // Handle cell index separately because cell.entities(D) doesn't work.
-  if (needs_mesh_entities[D])
-    entity_indices[D][0] = cell.index();
-}
-//-----------------------------------------------------------------------------
-void get_cell_entities_global(std::vector<std::vector<int64_t>>& entity_indices,
-                              const mesh::Cell& cell,
-                              const std::vector<bool>& needs_mesh_entities)
+void get_cell_entities(
+    std::vector<std::vector<std::int32_t>>& entity_indices_local,
+    std::vector<std::vector<std::int64_t>>& entity_indices_global,
+    const mesh::Cell& cell, const std::vector<bool>& needs_mesh_entities)
 {
   const mesh::MeshTopology& topology = cell.mesh().topology();
   const int D = topology.dim();
@@ -84,39 +65,31 @@ void get_cell_entities_global(std::vector<std::vector<int64_t>>& entity_indices,
   {
     if (needs_mesh_entities[d])
     {
-      // TODO: Check if this ever will be false in here
-      if (topology.have_global_indices(d))
+      assert(topology.have_global_indices(d));
+      const std::vector<std::int64_t>& global_indices
+          = topology.global_indices(d);
+      const std::int32_t* entities = cell.entities(d);
+      for (std::size_t i = 0; i < cell.num_entities(d); ++i)
       {
-        const std::vector<std::int64_t>& global_indices
-            = topology.global_indices(d);
-        for (std::size_t i = 0; i < cell.num_entities(d); ++i)
-          entity_indices[d][i] = global_indices[cell.entities(d)[i]];
-      }
-      else
-      {
-        for (std::size_t i = 0; i < cell.num_entities(d); ++i)
-          entity_indices[d][i] = cell.entities(d)[i];
+        entity_indices_local[d][i] = entities[i];
+        entity_indices_global[d][i] = global_indices[entities[i]];
       }
     }
   }
   // Handle cell index separately because cell.entities(D) doesn't work.
   if (needs_mesh_entities[D])
   {
-    if (topology.have_global_indices(D))
-      entity_indices[D][0] = cell.global_index();
-    else
-      entity_indices[D][0] = cell.index();
+    entity_indices_global[D][0] = cell.global_index();
+    entity_indices_local[D][0] = cell.index();
   }
 }
-// TODO: The above and below functions are _very_ similar, can they be
-// combined?
 //-----------------------------------------------------------------------------
-std::vector<int64_t>
+std::vector<std::int32_t>
 compute_num_mesh_entities_local(const mesh::Mesh& mesh,
                                 const std::vector<bool>& needs_mesh_entities)
 {
   const std::size_t D = mesh.topology().dim();
-  std::vector<int64_t> num_mesh_entities_local(D + 1);
+  std::vector<std::int32_t> num_mesh_entities_local(D + 1);
   for (std::size_t d = 0; d <= D; ++d)
   {
     if (needs_mesh_entities[d])
@@ -408,8 +381,10 @@ DofMapStructure build_basic_dofmap(const ElementDofLayout& element_dof_layout,
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // TODO: Can these calls be removed/combined?
-    get_cell_entities_local(entity_indices_local, cell, needs_entities);
-    get_cell_entities_global(entity_indices_global, cell, needs_entities);
+    // get_cell_entities_local(entity_indices_local, cell, needs_entities);
+    // get_cell_entities_global(entity_indices_global, cell, needs_entities);
+    get_cell_entities(entity_indices_local, entity_indices_global, cell,
+                      needs_entities);
 
     // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
     const std::vector<std::vector<std::set<int>>>& entity_dofs
@@ -753,7 +728,7 @@ DofMapBuilder::build(const ElementDofLayout& el_dm, const mesh::Mesh& mesh)
 
   // For mesh entities required by UFC dofmap, compute number of
   // mesh entities on this process
-  const std::vector<int64_t> num_mesh_entities_local
+  const std::vector<std::int32_t> num_mesh_entities_local
       = compute_num_mesh_entities_local(mesh, needs_entities);
 
   // Compute a 'node' dofmap based on a UFC dofmap (node is a point with a fixed
