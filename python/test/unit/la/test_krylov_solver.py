@@ -8,6 +8,7 @@
 
 from contextlib import ExitStack
 
+import numpy as np
 import pytest
 from petsc4py import PETSc
 
