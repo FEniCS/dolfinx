@@ -787,55 +787,43 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::int64_t, std::vector<PetscInt>>
-DofMapBuilder::build_sub_map_view(const DofMap& parent_dofmap,
-                                  const ElementDofLayout& parent_element_dofmap,
-                                  const std::vector<std::size_t>& component,
-                                  const mesh::Mesh& mesh)
+DofMapBuilder::build_sub_map_view(
+    const DofMap& dofmap_parent,
+    const ElementDofLayout& element_dof_layout_parent,
+    const std::vector<std::size_t>& component, const mesh::Mesh& mesh)
 {
   assert(!component.empty());
   const int D = mesh.topology().dim();
 
-  std::vector<int> num_cell_entities(D + 1);
-  const mesh::CellType& cell_type = mesh.type();
-  for (int d = 0; d <= D; ++d)
-    num_cell_entities[d] = cell_type.num_entities(d);
+  // Get components in parent map that correspond to sub-dofs
+  const std::vector<int> element_sub_map_view
+      = element_dof_layout_parent.sub_dofmap_mapping(component);
 
-  // Extract mesh entities that require initialisation
-  std::vector<bool> needs_entities(D + 1);
-  for (int d = 0; d <= D; ++d)
-    needs_entities[d] = parent_element_dofmap.num_entity_dofs(d) > 0;
-
-  // Alternative with ElementDofLayout
-  std::shared_ptr<const ElementDofLayout> sub_el_dm
-      = parent_element_dofmap.sub_dofmap(component);
-  const std::vector<int> sub_el_map
-      = parent_element_dofmap.sub_dofmap_mapping(component);
-
-  std::vector<std::vector<PetscInt>> sub_dofmap_graph(mesh.num_entities(D));
+  std::vector<std::vector<PetscInt>> dofmap(mesh.num_entities(D));
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     const int c = cell.index();
-    // FIXME: count global dofs
-    const int num_sub_dofs = sub_el_dm->num_dofs();
-    auto dmap_parent = parent_dofmap.cell_dofs(c);
-    sub_dofmap_graph[c].resize(num_sub_dofs);
-    for (int i = 0; i < num_sub_dofs; ++i)
-      sub_dofmap_graph[c][i] = dmap_parent[sub_el_map[i]];
+    auto cell_dmap_parent = dofmap_parent.cell_dofs(c);
+    dofmap[c].resize(element_sub_map_view.size());
+    for (std::size_t i = 0; i < element_sub_map_view.size(); ++i)
+      dofmap[c][i] = cell_dmap_parent[element_sub_map_view[i]];
   }
 
-  // Store number of global mesh entities and set global dimension
+  // Compute global dimension of sub-map
+  std::shared_ptr<const ElementDofLayout> element_dof_layout
+      = element_dof_layout_parent.sub_dofmap(component);
   std::int64_t global_dimension = 0;
-  for (int d = 0; d < D + 1; ++d)
+  for (int d = 0; d <= D; ++d)
   {
     const std::int64_t n = mesh.num_entities_global(d);
-    global_dimension += n * sub_el_dm->num_entity_dofs(d);
+    global_dimension += n * element_dof_layout->num_entity_dofs(d);
   }
 
   // Flatten new dofmap
-  std::vector<PetscInt> cell_dofmap;
-  for (auto const& cell_dofs : sub_dofmap_graph)
-    cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
+  std::vector<PetscInt> dofmap_flat;
+  for (auto const& cell_dofs : dofmap)
+    dofmap_flat.insert(dofmap_flat.end(), cell_dofs.begin(), cell_dofs.end());
 
-  return std::make_tuple(std::move(global_dimension), std::move(cell_dofmap));
+  return std::make_tuple(std::move(global_dimension), std::move(dofmap_flat));
 }
 //-----------------------------------------------------------------------------

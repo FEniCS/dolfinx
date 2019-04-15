@@ -41,33 +41,34 @@ DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
   }
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& parent_dofmap,
+DofMap::DofMap(const DofMap& dofmap_parent,
                const std::vector<std::size_t>& component,
                const mesh::Mesh& mesh)
     : _cell_dimension(-1), _global_dimension(-1),
-      _index_map(parent_dofmap._index_map)
+      _index_map(dofmap_parent._index_map)
 {
   // FIXME: large objects could be shared (using std::shared_ptr)
   // between parent and view
 
-  // FIXME: the index map block size will be wrong here???
+  // FIXME: the index map block size will likely be wrong?
 
-  std::shared_ptr<const ElementDofLayout> parent_element_dof_layout(
-      parent_dofmap._element_dof_layout);
+  std::shared_ptr<const ElementDofLayout> element_dof_layout_parent(
+      dofmap_parent._element_dof_layout);
+
+  _element_dof_layout = element_dof_layout_parent->sub_dofmap(component);
+  _cell_dimension = _element_dof_layout->num_dofs();
 
   // Build sub-dofmap
   std::tie(_global_dimension, _dofmap) = DofMapBuilder::build_sub_map_view(
-      parent_dofmap, *parent_element_dof_layout, component, mesh);
+      dofmap_parent, *element_dof_layout_parent, component, mesh);
 
-  _element_dof_layout = parent_element_dof_layout->sub_dofmap(component);
-  _cell_dimension = _element_dof_layout->num_dofs();
-
-  // FIXME: this will be wrong
-  _shared_nodes = parent_dofmap._shared_nodes;
+  // FIXME: This stores more than is required. Compress, or share with
+  // parent.
+  _shared_nodes = dofmap_parent._shared_nodes;
 
   // FIXME: this set may be larger than it should be, e.g. if subdofmap
   // has only facets dofs and parent included vertex dofs.
-  _neighbours = parent_dofmap._neighbours;
+  _neighbours = dofmap_parent._neighbours;
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,

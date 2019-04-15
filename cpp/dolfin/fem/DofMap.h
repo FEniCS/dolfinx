@@ -57,7 +57,7 @@ public:
 
 private:
   // Create a sub-dofmap (a view) from parent_dofmap
-  DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
+  DofMap(const DofMap& dofmap_parent, const std::vector<std::size_t>& component,
          const mesh::Mesh& mesh);
 
   // Create a collapsed dofmap from parent_dofmap

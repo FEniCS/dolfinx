@@ -526,7 +526,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     }
   }
 
-  // TODO:  UFC dofmaps just use simple offset for each field but this
+  // TODO: UFC dofmaps just use simple offset for each field but this
   // could be different for custom dofmaps This data should come
   // directly from the UFC interface in place of the the implicit
   // assumption
