@@ -797,7 +797,7 @@ DofMapBuilder::build_sub_map_view(
 
   // Get components in parent map that correspond to sub-dofs
   const std::vector<int> element_sub_map_view
-      = element_dof_layout_parent.sub_dofmap_mapping(component);
+      = element_dof_layout_parent.sub_view(component);
 
   const std::int32_t dofs_per_cell = element_sub_map_view.size();
   std::vector<PetscInt> dofmap(dofs_per_cell * mesh.num_entities(D));
