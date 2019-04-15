@@ -7,8 +7,8 @@
 #pragma once
 
 #include <dolfin/common/types.h>
-#include <set>
 #include <memory>
+#include <set>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -37,15 +37,16 @@ class DofMapBuilder
 {
 
 public:
-  /// Build dofmap. The constrained domain may be a null pointer, in
-  /// which case it is ignored.
+  /// Build dofmap.
   ///
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
-  static std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
-                    std::unordered_map<int, std::vector<int>>, std::set<int>,
-                    std::vector<PetscInt>>
-  build(const ElementDofLayout& el_dm, const mesh::Mesh& dolfin_mesh);
+  static std::tuple<std::int64_t, std::unique_ptr<common::IndexMap>,
+                    std::unordered_map<std::int32_t, std::vector<std::int32_t>>,
+                    std::set<std::int32_t>, std::vector<PetscInt>>
+  build(const mesh::Mesh& dolfin_mesh,
+        const ElementDofLayout& element_dof_layout,
+        const std::int32_t block_size);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
   ///
@@ -53,10 +54,11 @@ public:
   /// @param[in] parent_dofmap
   /// @param[in] component
   /// @param[in] mesh
-  static std::tuple<std::int64_t, std::vector<PetscInt>> build_sub_map_view(
-      const DofMap& parent_dofmap, const ElementDofLayout& parent_element_dofmap,
-      const std::vector<std::size_t>& component, const mesh::Mesh& mesh);
-
+  static std::tuple<std::int64_t, std::vector<PetscInt>>
+  build_sub_map_view(const DofMap& parent_dofmap,
+                     const ElementDofLayout& parent_element_dofmap,
+                     const std::vector<std::size_t>& component,
+                     const mesh::Mesh& mesh);
 };
 } // namespace fem
 } // namespace dolfin
