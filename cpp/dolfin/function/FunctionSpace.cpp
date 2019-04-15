@@ -200,9 +200,9 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
     {
       // spdlog::error("FunctionSpace.cpp",
       //               "interpolate function into function space",
-      //               "Dimension %d of function (%d) does not match dimension %d "
-      //               "of function space (%d)",
-      //               i, v.value_dimension(i), i, element()->value_dimension(i));
+      //               "Dimension %d of function (%d) does not match dimension
+      //               %d " "of function space (%d)", i, v.value_dimension(i),
+      //               i, element()->value_dimension(i));
       throw std::runtime_error("Incorrect dimension");
     }
   }
@@ -333,7 +333,8 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   {
     // spdlog::error(
     //     "FunctionSpace.cpp", "tabulate_dof_coordinates",
-    //     "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
+    //     "Cannot tabulate coordinates for a FunctionSpace that is a
+    //     subspace.");
     throw std::runtime_error("Cannot tabulate for subspace");
   }
 
@@ -383,7 +384,9 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   return x;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::set_x(Vec x, PetscScalar value, int component) const
+void FunctionSpace::set_x(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+    PetscScalar value, int component) const
 {
   assert(_mesh);
   assert(_dofmap);
@@ -404,8 +407,6 @@ void FunctionSpace::set_x(Vec x, PetscScalar value, int component) const
   }
   const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
 
-  la::VecWrapper _x(x);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_array = _x.x;
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinates(_element->space_dimension(), _mesh->geometry().dim());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -427,7 +428,7 @@ void FunctionSpace::set_x(Vec x, PetscScalar value, int component) const
 
     // Copy coordinate (it may be possible to avoid this)
     for (Eigen::Index i = 0; i < coordinates.rows(); ++i)
-      x_array[dofs[i]] = value * coordinates(i, component);
+      x[dofs[i]] = value * coordinates(i, component);
   }
 }
 //-----------------------------------------------------------------------------
