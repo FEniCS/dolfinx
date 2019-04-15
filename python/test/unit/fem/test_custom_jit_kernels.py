@@ -51,6 +51,7 @@ def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
     b[:] = Ae / 6.0
 
+
 @numba.cfunc(c_signature, nopython=True)
 def tabulate_tensor_b_coeff(b_, w_, coords_, cell_orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
@@ -89,6 +90,7 @@ def test_numba_assembly():
 
     list_timings([TimingType.wall])
 
+
 def test_coefficient():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
@@ -105,7 +107,7 @@ def test_coefficient():
 
     bnorm = b.norm(PETSc.NormType.N2)
     print(bnorm)
-    assert (np.isclose(bnorm, 2.0*0.0739710713711999))
+    assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
 
 
 @skip_if_complex
