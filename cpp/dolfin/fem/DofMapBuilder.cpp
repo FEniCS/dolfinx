@@ -572,9 +572,9 @@ compute_reordering_map(const DofMapStructure& node_dofmap,
   for (std::size_t old_index = 0; old_index < node_ownership.size();
        ++old_index)
   {
-    std::int32_t index = original_to_contiguous[old_index];
+    const std::int32_t index = original_to_contiguous[old_index];
 
-    // Skip nodes that are not owned
+    // Put nodes that are not owned at the end, otherwise re-number
     if (index < 0)
     {
       assert(old_index < old_to_new.size());
@@ -582,7 +582,6 @@ compute_reordering_map(const DofMapStructure& node_dofmap,
     }
     else
     {
-      // Set new node number
       assert(old_index < old_to_new.size());
       old_to_new[old_index] = node_remap[index];
     }
@@ -938,6 +937,9 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   std::tie(node_old_to_new_local, local_to_global_unowned)
       = compute_node_reordering(shared_node_to_processes0, node_graph0,
                                 node_ownership0, mesh.mpi_comm());
+
+  node_old_to_new_local = old_to_new;
+  local_to_global_unowned = local_to_global_unowned_test;
 
   // Create IndexMap for dofs range on this process
   auto index_map = std::make_unique<common::IndexMap>(
