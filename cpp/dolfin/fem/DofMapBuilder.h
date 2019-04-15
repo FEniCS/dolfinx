@@ -41,11 +41,12 @@ public:
   ///
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
-  static std::tuple<std::size_t, std::unique_ptr<common::IndexMap>,
-                    std::unordered_map<int, std::vector<int>>, std::set<int>,
-                    std::vector<PetscInt>>
+  static std::tuple<std::int64_t, std::unique_ptr<common::IndexMap>,
+                    std::unordered_map<std::int32_t, std::vector<std::int32_t>>,
+                    std::set<std::int32_t>, std::vector<PetscInt>>
   build(const mesh::Mesh& dolfin_mesh,
-        const ElementDofLayout& element_dof_layout, int block_size);
+        const ElementDofLayout& element_dof_layout,
+        const std::int32_t block_size);
 
   /// Build sub-dofmap. This is a view into the parent dofmap.
   ///
