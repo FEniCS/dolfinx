@@ -12,7 +12,7 @@ from petsc4py import PETSc
 
 import dolfin
 from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
-                    list_timings)
+                    list_timings, Function)
 from dolfin_utils.test.skips import skip_if_complex
 
 c_signature = numba.types.void(
@@ -51,6 +51,19 @@ def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
     b[:] = Ae / 6.0
 
+@numba.cfunc(c_signature, nopython=True)
+def tabulate_tensor_b_coeff(b_, w_, coords_, cell_orientation):
+    b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
+    w = numba.carray(w_, (1), dtype=PETSc.ScalarType)
+    coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
+    x0, y0 = coordinate_dofs[0, :]
+    x1, y1 = coordinate_dofs[1, :]
+    x2, y2 = coordinate_dofs[2, :]
+
+    # 2x Element area Ae
+    Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
+    b[:] = w[0] * Ae / 6.0
+
 
 def test_numba_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
@@ -75,6 +88,24 @@ def test_numba_assembly():
     assert (np.isclose(bnorm, 0.0739710713711999))
 
     list_timings([TimingType.wall])
+
+def test_coefficient():
+    mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    DG0 = FunctionSpace(mesh, ("DG", 0))
+    vals = Function(DG0)
+    vals.vector().set(2.0)
+
+    L = cpp.fem.Form([V._cpp_object])
+    L.set_tabulate_cell(-1, tabulate_tensor_b_coeff.address)
+    L.set_coefficient(0, vals._cpp_object)
+
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    bnorm = b.norm(PETSc.NormType.N2)
+    print(bnorm)
+    assert (np.isclose(bnorm, 2.0*0.0739710713711999))
 
 
 @skip_if_complex
