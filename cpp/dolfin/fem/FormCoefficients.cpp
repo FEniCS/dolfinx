@@ -10,17 +10,21 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <memory>
 #include <string>
-#include <ufc.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-FormCoefficients::FormCoefficients(const ufc_form& ufc_form)
-    : _coefficients(ufc_form.num_coefficients)
+FormCoefficients::FormCoefficients(
+    const std::vector<std::tuple<int, std::string,
+                                 std::shared_ptr<function::Function>>>& coeffs)
 {
-  for (int i = 0; i < ufc_form.num_coefficients; i++)
-    _original_pos.push_back(ufc_form.original_coefficient_position(i));
+  for (const auto& coeff : coeffs)
+  {
+    _original_pos.push_back(std::get<0>(coeff));
+    _names.push_back(std::get<1>(coeff));
+    _coefficients.push_back(std::get<2>(coeff));
+  }
 }
 //-----------------------------------------------------------------------------
 int FormCoefficients::size() const { return _coefficients.size(); }
@@ -40,7 +44,19 @@ std::vector<int> FormCoefficients::offsets() const
 void FormCoefficients::set(
     int i, std::shared_ptr<const function::Function> coefficient)
 {
-  assert(i < (int)_coefficients.size());
+  if (i >= (int)_coefficients.size())
+    _coefficients.resize(i + 1);
+
+  _coefficients[i] = coefficient;
+}
+//-----------------------------------------------------------------------------
+void FormCoefficients::set(
+    std::string name, std::shared_ptr<const function::Function> coefficient)
+{
+  int i = get_index(name);
+  if (i >= (int)_coefficients.size())
+    _coefficients.resize(i + 1);
+
   _coefficients[i] = coefficient;
 }
 //-----------------------------------------------------------------------------
@@ -54,5 +70,22 @@ int FormCoefficients::original_position(int i) const
 {
   assert(i < (int)_original_pos.size());
   return _original_pos[i];
+}
+//-----------------------------------------------------------------------------
+int FormCoefficients::get_index(std::string name) const
+{
+  auto it = std::find(_names.begin(), _names.end(), name);
+  if (it == _names.end())
+    throw std::runtime_error("Cannot find coefficient name:" + name);
+
+  return std::distance(_names.begin(), it);
+}
+//-----------------------------------------------------------------------------
+std::string FormCoefficients::get_name(int i) const
+{
+  if (i >= (int)_names.size())
+    throw std::runtime_error("Invalid coefficient index");
+
+  return _names[i];
 }
 //-----------------------------------------------------------------------------
