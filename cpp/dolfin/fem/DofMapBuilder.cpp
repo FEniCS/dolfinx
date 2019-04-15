@@ -32,12 +32,21 @@ using namespace dolfin::fem;
 
 namespace
 {
+// Sharing marker for a node
+enum sharing_marker : std::int8_t
+{
+  boundary,
+  interior,
+  interior_ghost_layer,
+  ghost
+};
 
+// Ownership marker for a node
 enum ownership : std::int8_t
 {
-  not_owned,      // -1
-  owned_shared,   // 0
-  owned_exclusive // 1
+  not_owned,
+  owned_shared,
+  owned_exclusive
 };
 
 //-----------------------------------------------------------------------------
@@ -107,7 +116,7 @@ void get_cell_entities(
 std::tuple<int, std::vector<ownership>,
            std::unordered_map<int, std::vector<int>>, std::set<int>>
 compute_ownership(const DofMapStructure& dofmap,
-                  const std::vector<std::int8_t>& shared_nodes,
+                  const std::vector<sharing_marker>& shared_nodes,
                   const mesh::Mesh& mesh, const std::size_t global_dim)
 {
   // Get number of nodes
@@ -156,7 +165,8 @@ compute_ownership(const DofMapStructure& dofmap,
   // sharing (but not ownership)
   for (std::size_t i = 0; i < num_nodes_local; ++i)
   {
-    if (shared_nodes[i] == -3 or shared_nodes[i] == -2)
+    if (shared_nodes[i] == sharing_marker::ghost
+        or shared_nodes[i] == sharing_marker::interior_ghost_layer)
     {
       // Send global index
       const std::size_t global_index = dofmap.global_indices[i];
@@ -428,7 +438,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
 // positive integer, interior nodes are marked as -1, interior nodes in
 // ghost layer of other processes are marked -2, and ghost nodes are
 // marked as -3
-std::vector<std::int8_t>
+std::vector<sharing_marker>
 compute_sharing_markers(const DofMapStructure& node_dofmap,
                         const ElementDofLayout& element_dof_layout,
                         const mesh::Mesh& mesh)
@@ -438,7 +448,8 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
 
   // Allocate data and initialise all nodes to -1 (provisionally, owned
   // and not shared)
-  std::vector<std::int8_t> shared_nodes(node_dofmap.global_indices.size(), -1);
+  std::vector<sharing_marker> shared_nodes(node_dofmap.global_indices.size(),
+                                           sharing_marker::interior);
 
   // Get facet closure dofs
   const std::vector<std::set<int>>& facet_table
@@ -451,11 +462,14 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
     const PetscInt* cell_nodes = node_dofmap.dofs(c.index());
     if (c.is_shared())
     {
-      const int status = (c.is_ghost()) ? -3 : -2;
+      // const int status = (c.is_ghost()) ? -3 : -2;
+      const sharing_marker status = (c.is_ghost())
+                                        ? sharing_marker::ghost
+                                        : sharing_marker::interior_ghost_layer;
       for (std::int32_t i = 0; i < node_dofmap.num_dofs(c.index()); ++i)
       {
         // Ensure not already set (for R space)
-        if (shared_nodes[cell_nodes[i]] == -1)
+        if (shared_nodes[cell_nodes[i]] == sharing_marker::interior)
           shared_nodes[cell_nodes[i]] = status;
       }
     }
@@ -472,7 +486,7 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
           for (auto facet_node : facet_nodes)
           {
             const int facet_node_local = cell_nodes[facet_node];
-            shared_nodes[facet_node_local] = 0;
+            shared_nodes[facet_node_local] = sharing_marker::boundary;
           }
         }
       }
@@ -506,7 +520,7 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
       // unassigned
       PetscInt facet_node_local = cell_nodes[facet_node];
       if (shared_nodes[facet_node_local] < 0)
-        shared_nodes[facet_node_local] = 0;
+        shared_nodes[facet_node_local] = sharing_marker::boundary;
     }
   }
 
@@ -615,30 +629,13 @@ std::vector<std::int64_t> compute_global_indices(
   {
     switch (node)
     {
-    case owned_shared:
-      ++owned_local_size;
-      break;
-    case owned_exclusive:
-      ++owned_local_size;
-      break;
     case not_owned:
       ++unowned_local_size;
       break;
     default:
-      throw std::runtime_error(
-          "Compute node reordering - invalid node ownership index.");
+      ++owned_local_size;
     }
   }
-  // if (node >= 0)
-  //   ++owned_local_size;
-  // else if (node == -1)
-  //   ++unowned_local_size;
-  // else
-  // {
-  //   throw std::runtime_error(
-  //       "Compute node reordering - invalid node ownership index.");
-  // }
-
   // assert((unowned_local_size + owned_local_size) == node_ownership.size());
   // assert((unowned_local_size + owned_local_size)
   //        == node_dofmap.global_indices.size());
@@ -739,7 +736,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // nodes are marked as -3,
   mesh.init(D - 1);
   mesh.init(D - 1, D);
-  const std::vector<std::int8_t> shared_nodes
+  const std::vector<sharing_marker> shared_nodes
       = compute_sharing_markers(node_graph0, element_dof_layout, mesh);
 
   // Compute node ownership:
