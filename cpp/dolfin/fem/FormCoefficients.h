@@ -7,6 +7,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace dolfin
@@ -48,7 +49,8 @@ public:
   void set(int i, std::shared_ptr<const function::Function> coefficient);
 
   /// Set coefficient with name to be a Function
-  void set(std::string name, std::shared_ptr<const function::Function> coefficient);
+  void set(std::string name,
+           std::shared_ptr<const function::Function> coefficient);
 
   /// Get the Function coefficient i
   std::shared_ptr<const function::Function> get(int i) const;

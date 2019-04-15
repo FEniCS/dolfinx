@@ -8,7 +8,6 @@
 
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
-#include <dolfin/common/types.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -172,12 +171,7 @@ public:
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
                                                        const PetscScalar*,
-                                                       const double*, int))
-  {
-    _integrals.register_tabulate_tensor_cell(i, fn);
-    if (i == -1 and _mesh)
-      _integrals.set_default_domains(*_mesh);
-  }
+                                                       const double*, int));
 
   /// Return exterior facet domains (zero pointer if no domains have
   /// been specified)
@@ -239,11 +233,7 @@ public:
   const FormIntegrals& integrals() const { return _integrals; }
 
   /// Get coordinate_mapping (experimental)
-  std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const
-  {
-    return _coord_mapping;
-  }
-
+  std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const;
 private:
   // Integrals associated with the Form
   FormIntegrals _integrals;

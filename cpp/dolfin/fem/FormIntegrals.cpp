@@ -5,12 +5,11 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FormIntegrals.h"
+#include <cstdlib>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-
-#include <cstdlib>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -252,9 +251,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
   }
   else
-  {
     throw std::runtime_error("FormIntegral type not supported.");
-  }
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
@@ -274,7 +271,6 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on surface facets
     _exterior_facet_integral_domains[0].clear();
-    const std::size_t tdim = mesh.topology().dim();
     for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
       if (facet.num_global_entities(tdim) == 1)
@@ -288,7 +284,6 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // If there is a default integral, define it only on interior facets
     _interior_facet_integral_domains[0].clear();
     _interior_facet_integral_domains[0].reserve(mesh.num_entities(tdim - 1));
-    const std::size_t tdim = mesh.topology().dim();
     for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
       if (facet.num_global_entities(tdim) != 1)
@@ -296,3 +291,4 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     }
   }
 }
+//-----------------------------------------------------------------------------

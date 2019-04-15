@@ -17,7 +17,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <memory>
-// #include <spdlog/spdlog.h>
 #include <string>
 #include <ufc.h>
 
@@ -43,11 +42,8 @@ Form::Form(const ufc_form& ufc_form,
     if (std::string(ufc_element->signature)
         != function_spaces[i]->element()->signature())
     {
-      // spdlog::error("Expected element: {}", ufc_element->signature);
-      // spdlog::error("Input element: {}",
-      //               function_spaces[i]->element()->signature());
       throw std::runtime_error(
-          "Cannot create form. Wrong type of function space for argument");
+          "Cannot create form. Wrong type of function space for argument.");
     }
   }
 
@@ -63,7 +59,7 @@ Form::Form(const ufc_form& ufc_form,
   // Get list of integral IDs, and load tabulate tensor into memory for each
   std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
-  for (auto id : cell_integral_ids)
+  for (int id : cell_integral_ids)
   {
     ufc_cell_integral* cell_integral = ufc_form.create_cell_integral(id);
     assert(cell_integral);
@@ -75,7 +71,7 @@ Form::Form(const ufc_form& ufc_form,
   std::vector<int> exterior_facet_integral_ids(
       ufc_form.num_exterior_facet_integrals);
   ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
-  for (auto id : exterior_facet_integral_ids)
+  for (int id : exterior_facet_integral_ids)
   {
     ufc_exterior_facet_integral* exterior_facet_integral
         = ufc_form.create_exterior_facet_integral(id);
@@ -88,7 +84,7 @@ Form::Form(const ufc_form& ufc_form,
   std::vector<int> interior_facet_integral_ids(
       ufc_form.num_interior_facet_integrals);
   ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
-  for (auto id : interior_facet_integral_ids)
+  for (int id : interior_facet_integral_ids)
   {
     ufc_interior_facet_integral* interior_facet_integral
         = ufc_form.create_interior_facet_integral(id);
@@ -191,6 +187,15 @@ Form::function_spaces() const
   return _function_spaces;
 }
 //-----------------------------------------------------------------------------
+void Form::register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
+                                                           const PetscScalar*,
+                                                           const double*, int))
+{
+  _integrals.register_tabulate_tensor_cell(i, fn);
+  if (i == -1 and _mesh)
+    _integrals.set_default_domains(*_mesh);
+}
+//-----------------------------------------------------------------------------
 void Form::set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains)
 {
   _integrals.set_domains(FormIntegrals::Type::cell, cell_domains);
@@ -214,5 +219,10 @@ void Form::set_vertex_domains(
     const mesh::MeshFunction<std::size_t>& vertex_domains)
 {
   _integrals.set_domains(FormIntegrals::Type::vertex, vertex_domains);
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const fem::CoordinateMapping> Form::coordinate_mapping() const
+{
+  return _coord_mapping;
 }
 //-----------------------------------------------------------------------------
