@@ -32,6 +32,14 @@ using namespace dolfin::fem;
 
 namespace
 {
+
+enum ownership : std::int8_t
+{
+  not_owned,      // -1
+  owned_shared,   // 0
+  owned_exclusive // 1
+};
+
 //-----------------------------------------------------------------------------
 struct DofMapStructure
 {
@@ -96,7 +104,7 @@ void get_cell_entities(
 // set of process that share dofs on this process.
 // Returns: (number of locally owned nodes, node_ownership,
 // shared_node_to_processes, neighbours)
-std::tuple<int, std::vector<std::int8_t>,
+std::tuple<int, std::vector<ownership>,
            std::unordered_map<int, std::vector<int>>, std::set<int>>
 compute_ownership(const DofMapStructure& dofmap,
                   const std::vector<std::int8_t>& shared_nodes,
@@ -107,9 +115,6 @@ compute_ownership(const DofMapStructure& dofmap,
 
   // Global-to-local node map for nodes on boundary
   std::map<std::size_t, int> global_to_local;
-
-  // Initialise node ownership array, provisionally all owned
-  std::vector<std::int8_t> node_ownership(num_nodes_local, 1);
 
   // Communication buffers
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -209,6 +214,7 @@ compute_ownership(const DofMapStructure& dofmap,
   // Send response back to originators in same order
   std::vector<std::vector<std::size_t>> send_response(num_processes);
   for (std::uint32_t i = 0; i != num_processes; ++i)
+  {
     for (auto q = recv_buffer[i].begin() + 1; q != recv_buffer[i].end(); ++q)
     {
       std::vector<std::uint32_t>& gprocs = global_to_procs[*q];
@@ -216,6 +222,11 @@ compute_ownership(const DofMapStructure& dofmap,
       send_response[i].insert(send_response[i].end(), gprocs.begin(),
                               gprocs.end());
     }
+  }
+
+  // Initialise node ownership array, provisionally all owned exclusively
+  std::vector<ownership> node_ownership(num_nodes_local,
+                                        ownership::owned_exclusive);
 
   dolfin::MPI::all_to_all(mpi_comm, send_response, recv_buffer);
   // [n_sharing, owner, others]
@@ -243,13 +254,13 @@ compute_ownership(const DofMapStructure& dofmap,
         // set ownership accordingly. Otherwise use the ownership from
         // the sorting process
         if (node_status == -2)
-          node_ownership[received_node_local] = 0;
+          node_ownership[received_node_local] = ownership::owned_shared;
         else if (node_status == -3)
-          node_ownership[received_node_local] = -1;
+          node_ownership[received_node_local] = ownership::not_owned;
         else if (owner == process_number)
-          node_ownership[received_node_local] = 0;
+          node_ownership[received_node_local] = ownership::owned_shared;
         else
-          node_ownership[received_node_local] = -1;
+          node_ownership[received_node_local] = ownership::not_owned;
 
         shared_node_to_processes[received_node_local]
             = std::vector<int>(sharing_procs.begin(), sharing_procs.end());
@@ -271,7 +282,7 @@ compute_ownership(const DofMapStructure& dofmap,
   int num_owned_nodes = 0;
   for (std::size_t i = 0; i < node_ownership.size(); ++i)
   {
-    if (node_ownership[i] >= 0)
+    if (node_ownership[i] != ownership::not_owned)
       ++num_owned_nodes;
   }
 
@@ -505,7 +516,7 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
 // Compute re-ordering map of indices.
 std::vector<std::int32_t>
 compute_reordering_map(const DofMapStructure& node_dofmap,
-                       const std::vector<std::int8_t>& node_ownership)
+                       const std::vector<ownership>& node_ownership)
 {
   // Create map from old index to new contiguous numbering for locally
   // owned dofs. Set to -1 for unowned dofs.
@@ -513,7 +524,7 @@ compute_reordering_map(const DofMapStructure& node_dofmap,
   std::vector<int> original_to_contiguous(node_ownership.size(), -1);
   for (std::size_t i = 0; i < original_to_contiguous.size(); ++i)
   {
-    if (node_ownership[i] >= 0)
+    if (node_ownership[i] != ownership::not_owned)
       original_to_contiguous[i] = owned_size++;
   }
 
@@ -596,22 +607,38 @@ std::vector<std::int64_t> compute_global_indices(
     const std::vector<std::int32_t>& old_to_new,
     const std::unordered_map<int, std::vector<int>>& node_to_sharing_processes,
     const DofMapStructure& node_dofmap,
-    const std::vector<std::int8_t>& node_ownership, MPI_Comm mpi_comm)
+    const std::vector<ownership>& node_ownership, MPI_Comm mpi_comm)
 {
   // Count number of locally owned and unowned nodes
   std::int32_t owned_local_size(0), unowned_local_size(0);
-  for (std::int8_t node : node_ownership)
+  for (auto node : node_ownership)
   {
-    if (node >= 0)
-      ++owned_local_size;
-    else if (node == -1)
-      ++unowned_local_size;
-    else
+    switch (node)
     {
+    case owned_shared:
+      ++owned_local_size;
+      break;
+    case owned_exclusive:
+      ++owned_local_size;
+      break;
+    case not_owned:
+      ++unowned_local_size;
+      break;
+    default:
       throw std::runtime_error(
           "Compute node reordering - invalid node ownership index.");
     }
   }
+  // if (node >= 0)
+  //   ++owned_local_size;
+  // else if (node == -1)
+  //   ++unowned_local_size;
+  // else
+  // {
+  //   throw std::runtime_error(
+  //       "Compute node reordering - invalid node ownership index.");
+  // }
+
   // assert((unowned_local_size + owned_local_size) == node_ownership.size());
   // assert((unowned_local_size + owned_local_size)
   //        == node_dofmap.global_indices.size());
@@ -621,7 +648,8 @@ std::vector<std::int64_t> compute_global_indices(
   node_pairs.reserve(unowned_local_size);
   for (std::size_t i = 0; i < node_ownership.size(); ++i)
   {
-    if (node_ownership[i] == -1)
+    // if (node_ownership[i] == -1)
+    if (node_ownership[i] == ownership::not_owned)
       node_pairs.push_back(std::make_pair(node_dofmap.global_indices[i], i));
   }
   std::map<std::size_t, int> global_to_local_nodes_unowned(node_pairs.begin(),
@@ -635,7 +663,8 @@ std::vector<std::int64_t> compute_global_indices(
   {
     // If this node is shared and owned, buffer old and new (global)
     // node index for sending
-    if (node_ownership[old_index] == 0)
+    // if (node_ownership[old_index] == 0)
+    if (node_ownership[old_index] == ownership::owned_shared)
     {
       auto it = node_to_sharing_processes.find(old_index);
       if (it != node_to_sharing_processes.end())
@@ -719,7 +748,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   //    -1: unowned, 0: owned and shared, 1: owned and not shared;
   // (c) map from shared node to sharing processes; and
   // (d) set of all processes that share dofs with this process
-  std::vector<std::int8_t> node_ownership0;
+  std::vector<ownership> node_ownership0;
   std::unordered_map<int, std::vector<int>> shared_node_to_processes0;
   int num_owned_nodes;
   std::set<int> neighbouring_procs;
