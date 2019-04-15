@@ -52,6 +52,7 @@ public:
   /// Destructor
   ~ElementDofLayout() = default;
 
+  // Copy assignment
   ElementDofLayout& operator=(const ElementDofLayout& dofmap) = delete;
 
   /// Move assignment
@@ -117,7 +118,7 @@ private:
   std::vector<std::vector<std::set<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
-  std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
+  const std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 };
 } // namespace fem
 } // namespace dolfin
