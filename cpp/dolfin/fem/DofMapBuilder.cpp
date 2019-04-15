@@ -799,14 +799,14 @@ DofMapBuilder::build_sub_map_view(
   const std::vector<int> element_sub_map_view
       = element_dof_layout_parent.sub_dofmap_mapping(component);
 
-  std::vector<std::vector<PetscInt>> dofmap(mesh.num_entities(D));
+  const std::int32_t dofs_per_cell = element_sub_map_view.size();
+  std::vector<PetscInt> dofmap(dofs_per_cell * mesh.num_entities(D));
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     const int c = cell.index();
     auto cell_dmap_parent = dofmap_parent.cell_dofs(c);
-    dofmap[c].resize(element_sub_map_view.size());
-    for (std::size_t i = 0; i < element_sub_map_view.size(); ++i)
-      dofmap[c][i] = cell_dmap_parent[element_sub_map_view[i]];
+    for (std::int32_t i = 0; i < dofs_per_cell; ++i)
+      dofmap[c * dofs_per_cell + i] = cell_dmap_parent[element_sub_map_view[i]];
   }
 
   // Compute global dimension of sub-map
@@ -819,11 +819,6 @@ DofMapBuilder::build_sub_map_view(
     global_dimension += n * element_dof_layout->num_entity_dofs(d);
   }
 
-  // Flatten new dofmap
-  std::vector<PetscInt> dofmap_flat;
-  for (auto const& cell_dofs : dofmap)
-    dofmap_flat.insert(dofmap_flat.end(), cell_dofs.begin(), cell_dofs.end());
-
-  return std::make_tuple(std::move(global_dimension), std::move(dofmap_flat));
+  return std::make_tuple(std::move(global_dimension), std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
