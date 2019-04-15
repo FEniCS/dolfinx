@@ -8,7 +8,6 @@
 
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
-#include <dolfin/common/types.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -99,12 +98,6 @@ public:
   ///         The rank of the form.
   std::size_t rank() const;
 
-  /// Get the coefficient index for a named coefficient
-  int get_coefficient_index(std::string name) const;
-
-  /// Get the coefficient name for a given coefficient index
-  std::string get_coefficient_name(int i) const;
-
   /// Set coefficient with given number (shared pointer version)
   ///
   /// @param[in]  i (std::size_t)
@@ -178,12 +171,7 @@ public:
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
                                                        const PetscScalar*,
-                                                       const double*, int))
-  {
-    _integrals.register_tabulate_tensor_cell(i, fn);
-    if (i == -1 and _mesh)
-      _integrals.set_default_domains(*_mesh);
-  }
+                                                       const double*, int));
 
   /// Return exterior facet domains (zero pointer if no domains have
   /// been specified)
@@ -245,11 +233,7 @@ public:
   const FormIntegrals& integrals() const { return _integrals; }
 
   /// Get coordinate_mapping (experimental)
-  std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const
-  {
-    return _coord_mapping;
-  }
-
+  std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const;
 private:
   // Integrals associated with the Form
   FormIntegrals _integrals;
@@ -265,10 +249,6 @@ private:
 
   // Coordinate_mapping
   std::shared_ptr<const fem::CoordinateMapping> _coord_mapping;
-
-  // Function pointers for coeffiecient name <-> index mapping
-  std::function<int(const char*)> _coefficient_index_map;
-  std::function<const char*(int)> _coefficient_name_map;
 };
 } // namespace fem
 } // namespace dolfin

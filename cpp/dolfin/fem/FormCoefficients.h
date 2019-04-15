@@ -7,9 +7,8 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
-
-struct ufc_form;
 
 namespace dolfin
 {
@@ -29,9 +28,14 @@ class FiniteElement;
 class FormCoefficients
 {
 public:
-  /// Initialise the FormCoefficients from a ufc_form, instantiating all
-  /// the required elements
-  FormCoefficients(const ufc_form& ufc_form);
+  /// Initialise the FormCoefficients, using tuples of
+  /// (original_coeff_position, name, shared_ptr<function::Function>). The
+  /// shared_ptr<Function> may be a nullptr and assigned later.
+
+  FormCoefficients(
+      const std::vector<
+          std::tuple<int, std::string, std::shared_ptr<function::Function>>>&
+          coefficients);
 
   /// Get number of coefficients
   int size() const;
@@ -41,8 +45,12 @@ public:
   /// the size required to store all coefficients.
   std::vector<int> offsets() const;
 
-  /// Set a coefficient to be a Function
+  /// Set coefficient with index i to be a Function
   void set(int i, std::shared_ptr<const function::Function> coefficient);
+
+  /// Set coefficient with name to be a Function
+  void set(std::string name,
+           std::shared_ptr<const function::Function> coefficient);
 
   /// Get the Function coefficient i
   std::shared_ptr<const function::Function> get(int i) const;
@@ -50,12 +58,21 @@ public:
   /// Original position of coefficient in UFL form
   int original_position(int i) const;
 
+  /// Get index from name of coefficient
+  int get_index(std::string name) const;
+
+  /// Get name from index of coefficient
+  std::string get_name(int index) const;
+
 private:
   // Functions for the coefficients
   std::vector<std::shared_ptr<const function::Function>> _coefficients;
 
   // Copy of 'original positions' in UFL form
   std::vector<int> _original_pos;
+
+  // Names of coefficients
+  std::vector<std::string> _names;
 };
 } // namespace fem
 } // namespace dolfin

@@ -11,12 +11,6 @@
 #include <petscsys.h>
 #include <vector>
 
-struct ufc_cell_integral;
-struct ufc_exterior_facet_integral;
-struct ufc_interior_facet_integral;
-struct ufc_vertex_integral;
-struct ufc_form;
-
 namespace dolfin
 {
 namespace mesh
@@ -48,10 +42,6 @@ public:
 
   /// Initialise the FormIntegrals as empty
   FormIntegrals();
-
-  /// Initialise the FormIntegrals from a ufc::form instantiating all
-  /// the required integrals
-  FormIntegrals(const ufc_form& ufc_form);
 
   /// Get the function for 'tabulate_tensor' for cell integral i
   /// @param i
@@ -108,7 +98,8 @@ public:
   /// Get the list of active entities for the ith integral of type t.
   /// Note, these are not retrieved by ID, but stored in order. The IDs can
   /// be obtained with "FormIntegrals::integral_ids()"
-  /// For cell integrals, a list of cells. For facet integrals, a list of facets etc.
+  /// For cell integrals, a list of cells. For facet integrals, a list of facets
+  /// etc.
   const std::vector<std::int32_t>& integral_domains(FormIntegrals::Type t,
                                                     unsigned int i) const;
 
@@ -121,8 +112,9 @@ public:
                    const mesh::MeshFunction<std::size_t>& marker);
 
   /// If there exists a default integral of any type, set the list of entities
-  /// for those integrals from the mesh topology. For cell integrals, this is all cells.
-  /// For facet integrals, it is either all interior or all exterior facets.
+  /// for those integrals from the mesh topology. For cell integrals, this is
+  /// all cells. For facet integrals, it is either all interior or all exterior
+  /// facets.
   void set_default_domains(const mesh::Mesh& mesh);
 
 private:
