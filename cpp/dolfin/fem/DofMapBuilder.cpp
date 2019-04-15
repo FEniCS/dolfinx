@@ -200,7 +200,7 @@ compute_ownership(const DofMapStructure& dofmap,
     const std::vector<std::int64_t>& recv_i = recv_buffer[i];
     const std::int32_t num_boundary_nodes = recv_i[0];
 
-    for (std::int32_t j = num_boundary_nodes + 1; j < recv_i.size(); ++j)
+    for (std::size_t j = num_boundary_nodes + 1; j < recv_i.size(); ++j)
     {
       auto map_it = global_to_procs.find(recv_i[j]);
       if (map_it == global_to_procs.end())
@@ -310,7 +310,7 @@ build_dofmap(const DofMapStructure& node_dofmap,
       const std::int32_t new_node = old_to_new_node_local[old_node];
       for (std::int32_t block = 0; block < block_size; ++block)
       {
-        assert((block * local_dim0 + j) < dofmap[i].size());
+        assert((block * local_dim0 + j) < (std::int32_t)dofmap[i].size());
         dofmap[i][block * local_dim0 + j] = block_size * new_node + block;
       }
     }
@@ -619,9 +619,8 @@ std::vector<std::int64_t> compute_global_indices(
       ++owned_local_size;
     }
   }
-  assert((unowned_local_size + owned_local_size) == node_ownership.size());
   assert((unowned_local_size + owned_local_size)
-         == dofmap.global_indices.size());
+         == (std::int32_t)dofmap.global_indices.size());
 
   // Create global-to-local index map for local un-owned nodes
   std::vector<std::pair<std::int64_t, int>> node_pairs;
