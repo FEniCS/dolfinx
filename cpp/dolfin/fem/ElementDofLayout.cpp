@@ -19,7 +19,7 @@ using namespace dolfin::fem;
 ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
     const std::vector<int>& parent_map,
-    const std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
+    const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
     const mesh::CellType& cell_type)
     : _parent_map(parent_map), _block_size(block_size), _num_dofs(0),
       _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)

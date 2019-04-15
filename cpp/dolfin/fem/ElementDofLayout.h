@@ -22,6 +22,7 @@ class CellType;
 
 namespace fem
 {
+
 /// The class represents the degree-of-freedom (dofs) for an element.
 /// Dofs are associated with a mesh entity. This class also handles
 /// sub-space dofs, which are views into the parent dofs.
@@ -39,7 +40,7 @@ public:
       int block_size,
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
       const std::vector<int>& parent_map,
-      const std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
+      const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
       const mesh::CellType& cell_type);
 
   // Copy constructor
@@ -116,7 +117,7 @@ private:
   std::vector<std::vector<std::set<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
-  std::vector<std::shared_ptr<ElementDofLayout>> _sub_dofmaps;
+  std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 };
 } // namespace fem
 } // namespace dolfin
