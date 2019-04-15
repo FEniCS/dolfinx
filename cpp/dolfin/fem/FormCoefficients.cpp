@@ -44,7 +44,19 @@ std::vector<int> FormCoefficients::offsets() const
 void FormCoefficients::set(
     int i, std::shared_ptr<const function::Function> coefficient)
 {
-  assert(i < (int)_coefficients.size());
+  if (i >= (int)_coefficients.size())
+    _coefficients.resize(i + 1);
+
+  _coefficients[i] = coefficient;
+}
+//-----------------------------------------------------------------------------
+void FormCoefficients::set(
+    std::string name, std::shared_ptr<const function::Function> coefficient)
+{
+  int i = get_index(name);
+  if (i >= (int)_coefficients.size())
+    _coefficients.resize(i + 1);
+
   _coefficients[i] = coefficient;
 }
 //-----------------------------------------------------------------------------

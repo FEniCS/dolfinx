@@ -44,8 +44,11 @@ public:
   /// the size required to store all coefficients.
   std::vector<int> offsets() const;
 
-  /// Set a coefficient to be a Function
+  /// Set coefficient with index i to be a Function
   void set(int i, std::shared_ptr<const function::Function> coefficient);
+
+  /// Set coefficient with name to be a Function
+  void set(std::string name, std::shared_ptr<const function::Function> coefficient);
 
   /// Get the Function coefficient i
   std::shared_ptr<const function::Function> get(int i) const;

@@ -9,6 +9,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/fem/utils.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Cell.h>
@@ -27,20 +28,7 @@ using namespace dolfin::fem;
 Form::Form(const ufc_form& ufc_form,
            const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
-    : _coefficients([ufc_form]() {
-        // FIXME: using lambda for now.
-        std::vector<
-            std::tuple<int, std::string, std::shared_ptr<function::Function>>>
-            coeffs;
-        for (int i = 0; i < ufc_form.num_coefficients; ++i)
-        {
-          coeffs.push_back(std::make_tuple<int, std::string,
-                                           std::shared_ptr<function::Function>>(
-              ufc_form.original_coefficient_position(i),
-              ufc_form.coefficient_name_map(i), nullptr));
-        }
-        return coeffs;
-      }()),
+    : _coefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
       _function_spaces(function_spaces)
 {
   assert(ufc_form.rank == (int)function_spaces.size());
@@ -145,16 +133,6 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
 //-----------------------------------------------------------------------------
 std::size_t Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
-int Form::get_coefficient_index(std::string name) const
-{
-  return _coefficients.get_index(name);
-}
-//-----------------------------------------------------------------------------
-std::string Form::get_coefficient_name(int i) const
-{
-  return _coefficients.get_name(i);
-}
-//-----------------------------------------------------------------------------
 void Form::set_coefficients(
     std::map<std::size_t, std::shared_ptr<const function::Function>>
         coefficients)
@@ -168,10 +146,7 @@ void Form::set_coefficients(
         coefficients)
 {
   for (auto c : coefficients)
-  {
-    int index = _coefficients.get_index(c.first);
-    _coefficients.set(index, c.second);
-  }
+    _coefficients.set(c.first, c.second);
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::original_coefficient_position(std::size_t i) const

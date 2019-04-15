@@ -99,12 +99,6 @@ public:
   ///         The rank of the form.
   std::size_t rank() const;
 
-  /// Get the coefficient index for a named coefficient
-  int get_coefficient_index(std::string name) const;
-
-  /// Get the coefficient name for a given coefficient index
-  std::string get_coefficient_name(int i) const;
-
   /// Set coefficient with given number (shared pointer version)
   ///
   /// @param[in]  i (std::size_t)

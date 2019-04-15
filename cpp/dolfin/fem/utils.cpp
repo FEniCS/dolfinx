@@ -563,3 +563,17 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
                                cell_type);
 }
 //-----------------------------------------------------------------------------
+std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
+{
+  std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+      coeffs;
+  for (int i = 0; i < ufc_form.num_coefficients; ++i)
+  {
+    coeffs.push_back(
+        std::make_tuple<int, std::string, std::shared_ptr<function::Function>>(
+            ufc_form.original_coefficient_position(i),
+            ufc_form.coefficient_name_map(i), nullptr));
+  }
+  return coeffs;
+}
