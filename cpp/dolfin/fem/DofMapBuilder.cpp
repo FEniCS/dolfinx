@@ -434,10 +434,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   return dofmap;
 }
 //-----------------------------------------------------------------------------
-// Compute sharing marker for each node. Boundary nodes are assigned a
-// positive integer, interior nodes are marked as -1, interior nodes in
-// ghost layer of other processes are marked -2, and ghost nodes are
-// marked as -3
+// Compute sharing marker for each node
 std::vector<sharing_marker>
 compute_sharing_markers(const DofMapStructure& node_dofmap,
                         const ElementDofLayout& element_dof_layout,
@@ -446,8 +443,8 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
   // Initialise mesh
   const int D = mesh.topology().dim();
 
-  // Allocate data and initialise all nodes to -1 (provisionally, owned
-  // and not shared)
+  // Allocate data and initialise all nodes to 'interior'
+  // (provisionally, owned and not shared)
   std::vector<sharing_marker> shared_nodes(node_dofmap.global_indices.size(),
                                            sharing_marker::interior);
 
@@ -455,14 +452,13 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
   const std::vector<std::set<int>>& facet_table
       = element_dof_layout.entity_closure_dofs()[D - 1];
 
-  // Mark dofs associated ghost cells as ghost dofs (-3), provisionally
+  // Mark dofs associated ghost cells as ghost dofs, provisionally
   bool has_ghost_cells = false;
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     const PetscInt* cell_nodes = node_dofmap.dofs(c.index());
     if (c.is_shared())
     {
-      // const int status = (c.is_ghost()) ? -3 : -2;
       const sharing_marker status = (c.is_ghost())
                                         ? sharing_marker::ghost
                                         : sharing_marker::interior_ghost_layer;
@@ -474,7 +470,7 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
       }
     }
 
-    // Change all non-ghost facet dofs of ghost cells to '0'
+    // Change all non-ghost facet dofs of ghost cells to boundary dofs
     if (c.is_ghost())
     {
       has_ghost_cells = true;
@@ -516,11 +512,10 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
     // Mark boundary nodes and insert into map
     for (auto facet_node : facet_nodes)
     {
-      // Get facet node local index and assign "0" - shared, owner
-      // unassigned
+      // Get facet node local index and assign "boundary"  - shared,
+      // owner unassigned
       PetscInt facet_node_local = cell_nodes[facet_node];
-      if (shared_nodes[facet_node_local] != sharing_marker::boundary)
-        shared_nodes[facet_node_local] = sharing_marker::boundary;
+      shared_nodes[facet_node_local] = sharing_marker::boundary;
     }
   }
 
