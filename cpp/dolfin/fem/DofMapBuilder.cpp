@@ -33,7 +33,7 @@ using namespace dolfin::fem;
 namespace
 {
 // Sharing marker for a node
-enum sharing_marker : std::int8_t
+enum class sharing_marker : std::int8_t
 {
   boundary,
   interior,
@@ -42,7 +42,7 @@ enum sharing_marker : std::int8_t
 };
 
 // Ownership marker for a node
-enum ownership : std::int8_t
+enum class ownership : std::int8_t
 {
   not_owned,
   owned_shared,
@@ -142,7 +142,7 @@ compute_ownership(const DofMapStructure& dofmap,
   // Loop over nodes and buffer nodes on process boundaries
   for (std::size_t i = 0; i < num_nodes_local; ++i)
   {
-    if (shared_nodes[i] == 0)
+    if (shared_nodes[i] == sharing_marker::boundary)
     {
       // Shared node - send out to matching process to determine
       // ownership and other sharing processes
@@ -257,15 +257,15 @@ compute_ownership(const DofMapStructure& dofmap,
         auto it = global_to_local.find(global_index);
         assert(it != global_to_local.end());
         const int received_node_local = it->second;
-        const int node_status = shared_nodes[received_node_local];
-        assert(node_status != -1);
+        const sharing_marker node_status = shared_nodes[received_node_local];
+        assert(node_status != sharing_marker::interior);
 
         // First check to see if this is a ghost/ghost-shared node, and
         // set ownership accordingly. Otherwise use the ownership from
         // the sorting process
-        if (node_status == -2)
+        if (node_status == sharing_marker::interior_ghost_layer)
           node_ownership[received_node_local] = ownership::owned_shared;
-        else if (node_status == -3)
+        else if (node_status == sharing_marker::ghost)
           node_ownership[received_node_local] = ownership::not_owned;
         else if (owner == process_number)
           node_ownership[received_node_local] = ownership::owned_shared;
@@ -519,7 +519,7 @@ compute_sharing_markers(const DofMapStructure& node_dofmap,
       // Get facet node local index and assign "0" - shared, owner
       // unassigned
       PetscInt facet_node_local = cell_nodes[facet_node];
-      if (shared_nodes[facet_node_local] < 0)
+      if (shared_nodes[facet_node_local] != sharing_marker::boundary)
         shared_nodes[facet_node_local] = sharing_marker::boundary;
     }
   }
@@ -629,7 +629,7 @@ std::vector<std::int64_t> compute_global_indices(
   {
     switch (node)
     {
-    case not_owned:
+    case ownership::not_owned:
       ++unowned_local_size;
       break;
     default:
