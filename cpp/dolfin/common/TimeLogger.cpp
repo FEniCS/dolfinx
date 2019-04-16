@@ -9,9 +9,6 @@
 // #include <spdlog/spdlog.h>
 #include <vector>
 
-#define DOLFIN_LINELENGTH 256
-#define DOLFIN_TERM_WIDTH 80
-
 using namespace dolfin;
 using namespace dolfin::common;
 
@@ -56,9 +53,9 @@ void TimeLogger::list_timings(std::set<TimingType> type)
   timings = MPI::avg(_mpi_comm, timings);
   const std::string str = "\n" + timings.str(true);
 
-  // // Print just on rank 0
-  // if (dolfin::MPI::rank(_mpi_comm) == 0)
-  //   spdlog::info(str);
+  // Print just on rank 0
+  if (dolfin::MPI::rank(_mpi_comm) == 0)
+    std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------
 std::map<TimingType, std::string> TimeLogger::_TimingType_descr

@@ -8,7 +8,6 @@
 
 #include "CellType.h"
 #include "CoordinateDofs.h"
-#include "MeshConnectivity.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
 #include <dolfin/common/MPI.h>
@@ -128,17 +127,6 @@ public:
   ///
   std::int32_t num_entities(int d) const { return _topology.size(d); }
 
-  /// Get cell connectivity.
-  ///
-  /// @return std::vector<std::uint32_t>&
-  ///         Connectivity for all cells.
-  ///
-  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cells() const
-  {
-    assert(_topology.connectivity(_topology.dim(), 0));
-    return _topology.connectivity(_topology.dim(), 0)->connections();
-  }
-
   /// Get global number of entities of given topological dimension.
   ///
   /// @param dim (std::size_t)
@@ -195,12 +183,12 @@ public:
 
   /// Compute entities of given topological dimension.
   ///
-  /// @param  dim (std::size_t)
+  /// @param  dim (int)
   ///         Topological dimension.
   ///
   /// @return std::size_t
   ///         Number of created entities.
-  std::size_t init(std::size_t dim) const;
+  std::size_t init(int dim) const;
 
   /// Compute connectivity between given pair of dimensions.
   ///

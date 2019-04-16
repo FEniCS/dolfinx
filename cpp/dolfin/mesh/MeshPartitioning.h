@@ -89,7 +89,7 @@ public:
   ///   distribution) and shared_vertices_local (map from local index to set of
   ///   sharing processes for each shared vertex)
   static std::pair<EigenRowArrayXXd,
-                   std::map<std::int32_t, std::set<std::uint32_t>>>
+                   std::map<std::int32_t, std::set<std::int32_t>>>
   distribute_points(const MPI_Comm mpi_comm,
                     const Eigen::Ref<const EigenRowArrayXXd>& points,
                     const std::vector<std::int64_t>& global_point_indices);
@@ -108,7 +108,7 @@ public:
   ///   topology in local indexing (EigenRowArrayXXi32)
   static std::tuple<std::uint64_t, std::vector<std::int64_t>,
                     EigenRowArrayXXi32>
-  compute_point_mapping(std::uint32_t num_cell_vertices,
+  compute_point_mapping(std::int32_t num_cell_vertices,
                         const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
                         const std::vector<std::uint8_t>& cell_permutation);
 
@@ -117,9 +117,9 @@ public:
   // at the vertex nodes
   static std::pair<std::int64_t, std::vector<std::int64_t>>
   build_global_vertex_indices(
-      MPI_Comm mpi_comm, std::uint32_t num_vertices,
+      MPI_Comm mpi_comm, std::int32_t num_vertices,
       const std::vector<std::int64_t>& global_point_indices,
-      const std::map<std::int32_t, std::set<std::uint32_t>>& shared_points);
+      const std::map<std::int32_t, std::set<std::int32_t>>& shared_points);
 
 private:
   // Compute cell partitioning from local mesh data. Returns a
@@ -147,7 +147,7 @@ private:
   // are all modified by this function.
   static void distribute_cell_layer(
       MPI_Comm mpi_comm, const int num_regular_cells,
-      std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
+      std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
       EigenRowArrayXXi64& cell_vertices,
       std::vector<std::int64_t>& global_cell_indices,
       std::vector<int>& cell_partition);
@@ -156,12 +156,12 @@ private:
   // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns
   // the tuple (reordered_shared_cells, reordered_cell_vertices,
   // reordered_global_cell_indices)
-  static std::tuple<std::map<std::int32_t, std::set<std::uint32_t>>,
+  static std::tuple<std::map<std::int32_t, std::set<std::int32_t>>,
                     EigenRowArrayXXi64, std::vector<std::int64_t>>
   reorder_cells_gps(
-      MPI_Comm mpi_comm, const std::uint32_t num_regular_cells,
+      MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
       const mesh::CellType& cell_type,
-      const std::map<std::int32_t, std::set<std::uint32_t>>& shared_cells,
+      const std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
       const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
       const std::vector<std::int64_t>& global_cell_indices);
 
@@ -176,7 +176,7 @@ private:
   // process).
   static std::tuple<
       EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
-      std::map<std::int32_t, std::set<std::uint32_t>>, std::int32_t>
+      std::map<std::int32_t, std::set<std::int32_t>>, std::int32_t>
   distribute_cells(const MPI_Comm mpi_comm,
                    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                    const std::vector<std::int64_t>& global_cell_indices,
@@ -185,11 +185,11 @@ private:
   // FIXME: Improve explanation
   // Utility to convert received_point_indices into
   // point sharing information
-  static std::map<std::int32_t, std::set<std::uint32_t>> build_shared_points(
+  static std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
       MPI_Comm mpi_comm,
       const std::vector<std::vector<std::size_t>>& received_point_indices,
       const std::pair<std::size_t, std::size_t> local_point_range,
-      const std::vector<std::vector<std::uint32_t>>& local_indexing);
+      const std::vector<std::vector<std::int32_t>>& local_indexing);
 };
 } // namespace mesh
 } // namespace dolfin

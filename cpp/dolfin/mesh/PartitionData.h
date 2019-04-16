@@ -58,17 +58,17 @@ public:
   PartitionData& operator=(PartitionData&&) = default;
 
   /// The number of sharing processes of a given cell
-  /// @return std::uint32_t
-  std::uint32_t num_procs(std::uint32_t i) const;
+  /// @return std::int32_t
+  std::int32_t num_procs(std::int32_t i) const;
 
   /// Pointer to sharing processes of a given cell
-  /// @return std::uint32_t*
-  const std::uint32_t* procs(std::uint32_t i) const;
+  /// @return std::int32_t*
+  const std::int32_t* procs(std::int32_t i) const;
 
   /// Number of cells which this partition is defined for
   /// on this process
-  /// @return std::uint32_t
-  std::uint32_t size() const;
+  /// @return std::int32_t
+  std::int32_t size() const;
 
   /// Return the total number of ghosts cells in this partition on this
   /// process. Useful for testing
@@ -77,10 +77,10 @@ public:
 
 private:
   // Contiguous list of processes, indexed with offset, below
-  std::vector<std::uint32_t> _dest_processes;
+  std::vector<std::int32_t> _dest_processes;
 
   // Index offset for each cell into list
-  std::vector<std::uint32_t> _offset;
+  std::vector<std::int32_t> _offset;
 };
 } // namespace mesh
 } // namespace dolfin

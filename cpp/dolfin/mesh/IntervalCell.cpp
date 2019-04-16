@@ -47,25 +47,27 @@ std::size_t IntervalCell::num_vertices(std::size_t dim) const
     return 2; // cells
   default:
     // spdlog::error("IntervalCell.cpp",
-    //               "access number of vertices for subsimplex of interval cell",
-    //               "Illegal topological dimension (%d)", dim);
+    //               "access number of vertices for subsimplex of interval
+    //               cell", "Illegal topological dimension (%d)", dim);
     throw std::invalid_argument("Illegal dimension");
   }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
-                                   std::size_t dim, const std::int32_t* v) const
+void IntervalCell::create_entities(
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        e,
+    std::size_t dim, const std::int32_t* v) const
 {
   // For completeness, IntervalCell has two 'edges'
   assert(dim == 0);
 
   // Resize data structure
-  e.resize(boost::extents[2][1]);
+  e.resize(2, 1);
   // Create the three edges
-  e[0][0] = v[0];
-  e[1][0] = v[1];
+  e(0, 0) = v[0];
+  e(1, 0) = v[1];
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::volume(const MeshEntity& interval) const

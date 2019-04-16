@@ -6,6 +6,7 @@
 
 #include "Mesh.h"
 #include "Cell.h"
+#include "Connectivity.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "MeshIterator.h"
@@ -78,8 +79,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   const std::int32_t num_local_cells = num_cells - num_ghost_cells;
   const std::uint64_t num_cells_global = MPI::sum(comm, num_local_cells);
 
-  // Compute point local-to-global map from global indices, and compute cell
-  // topology using new local indices.
+  // Compute point local-to-global map from global indices, and compute
+  // cell topology using new local indices.
   std::int32_t num_vertices;
   std::vector<std::int64_t> global_point_indices;
   EigenRowArrayXXi32 coordinate_dofs;
@@ -90,18 +91,18 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Distribute the points across processes and calculate shared points
   EigenRowArrayXXd distributed_points;
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_points;
+  std::map<std::int32_t, std::set<std::int32_t>> shared_points;
   std::tie(distributed_points, shared_points)
       = MeshPartitioning::distribute_points(comm, points, global_point_indices);
 
-  // Initialise geometry with global size, actual points,
-  // and local to global map
+  // Initialise geometry with global size, actual points, and local to
+  // global map
   _geometry.init(num_points_global, distributed_points, global_point_indices);
 
   // Get global vertex information
   std::uint64_t num_vertices_global;
   std::vector<std::int64_t> global_vertex_indices;
-  std::map<std::int32_t, std::set<std::uint32_t>> shared_vertices;
+  std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
 
   if (_degree == 1)
   {
@@ -111,8 +112,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   }
   else
   {
-    // For higher order meshes, vertices are a subset of points,
-    // so need to build a distinct global indexing for vertices.
+    // For higher order meshes, vertices are a subset of points, so need
+    // to build a distinct global indexing for vertices.
     std::tie(num_vertices_global, global_vertex_indices)
         = MeshPartitioning::build_global_vertex_indices(
             comm, num_vertices, global_point_indices, shared_points);
@@ -149,12 +150,10 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   else
     _topology.init_ghost(0, num_vertices);
 
-  // Add cells. Only copies the first few entries on each row corresponding to
-  // vertices.
-  auto cv
-      = std::make_shared<MeshConnectivity>(num_cells, num_vertices_per_cell);
-  for (std::int32_t i = 0; i < num_cells; ++i)
-    cv->set(i, coordinate_dofs.row(i).leftCols(num_vertices_per_cell));
+  // Add cells. Only copies the first few entries on each row
+  // corresponding to vertices.
+  auto cv = std::make_shared<Connectivity>(
+      coordinate_dofs.leftCols(num_vertices_per_cell));
   _topology.set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given
@@ -221,11 +220,11 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   return *this;
 }
 //-----------------------------------------------------------------------------
-std::size_t Mesh::init(std::size_t dim) const
+std::size_t Mesh::init(int dim) const
 {
   // This function is obviously not const since it may potentially
-  // compute new connectivity. However, in a sense all connectivity of
-  // a mesh always exists, it just hasn't been computed yet. The
+  // compute new connectivity. However, in a sense all connectivity of a
+  // mesh always exists, it just hasn't been computed yet. The
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
 
@@ -255,15 +254,16 @@ std::size_t Mesh::init(std::size_t dim) const
 void Mesh::init(std::size_t d0, std::size_t d1) const
 {
   // This function is obviously not const since it may potentially
-  // compute new connectivity. However, in a sense all connectivity of
-  // a mesh always exists, it just hasn't been computed yet. The
+  // compute new connectivity. However, in a sense all connectivity of a
+  // mesh always exists, it just hasn't been computed yet. The
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
 
   // Skip if mesh is empty
   if (num_entities(topology().dim()) == 0)
   {
-    // spdlog::warn("Mesh is empty, unable to create connectivity %d --> %d.", d0,
+    // spdlog::warn("Mesh is empty, unable to create connectivity %d --> %d.",
+    // d0,
     //              d1);
     return;
   }
@@ -280,12 +280,12 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
 void Mesh::init() const
 {
   // Compute all entities
-  for (std::size_t d = 0; d <= topology().dim(); d++)
+  for (int d = 0; d <= topology().dim(); d++)
     init(d);
 
   // Compute all connectivity
-  for (std::size_t d0 = 0; d0 <= topology().dim(); d0++)
-    for (std::size_t d1 = 0; d1 <= topology().dim(); d1++)
+  for (int d0 = 0; d0 <= topology().dim(); d0++)
+    for (int d1 = 0; d1 <= topology().dim(); d1++)
       init(d0, d1);
 }
 //-----------------------------------------------------------------------------

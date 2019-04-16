@@ -11,9 +11,9 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <cmath>
-// #include <spdlog/spdlog.h>
+   // #include <spdlog/spdlog.h>
 
-using namespace dolfin;
+    using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
@@ -51,36 +51,39 @@ std::size_t TriangleCell::num_vertices(std::size_t dim) const
     return 3; // cells
   default:
     // spdlog::error("TriangleCell.cpp",
-    //               "access number of vertices for subsimplex of triangle cell",
-    //               "Illegal topological dimension (%d)", dim);
+    //               "access number of vertices for subsimplex of triangle
+    //               cell", "Illegal topological dimension (%d)", dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-void TriangleCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
-                                   std::size_t dim, const std::int32_t* v) const
+void TriangleCell::create_entities(
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        e,
+    std::size_t dim, const std::int32_t* v) const
 {
   // We only need to know how to create edges
   if (dim != 1)
   {
     // spdlog::error(
     //     "TriangleCell.cpp", "create entities of triangle cell",
-    //     "Don't know how to create entities of topological dimension %d", dim);
+    //     "Don't know how to create entities of topological dimension %d",
+    //     dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
   // Resize data structure
-  e.resize(boost::extents[3][2]);
+  e.resize(3, 2);
 
   // Create the three edges
-  e[0][0] = v[1];
-  e[0][1] = v[2];
-  e[1][0] = v[0];
-  e[1][1] = v[2];
-  e[2][0] = v[0];
-  e[2][1] = v[1];
+  e(0, 0) = v[1];
+  e(0, 1) = v[2];
+  e(1, 0) = v[0];
+  e(1, 1) = v[2];
+  e(2, 0) = v[0];
+  e(2, 1) = v[1];
 }
 //-----------------------------------------------------------------------------
 double TriangleCell::volume(const MeshEntity& triangle) const
@@ -88,7 +91,8 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   // Check that we get a triangle
   if (triangle.dim() != 2)
   {
-    // spdlog::error("TriangleCell.cpp", "compute volume (area) of triangle cell",
+    // spdlog::error("TriangleCell.cpp", "compute volume (area) of triangle
+    // cell",
     //               "Illegal mesh entity, not a triangle");
     throw std::runtime_error("Illegal mesh entity");
   }
@@ -284,8 +288,8 @@ geometry::Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   if (cell.mesh().geometry().dim() != 2)
   {
     // spdlog::error("TriangleCell.cpp", "find normal",
-    //               "Normal vector is not defined in dimension %d (only defined "
-    //               "when the triangle is in R^2",
+    //               "Normal vector is not defined in dimension %d (only defined
+    //               " "when the triangle is in R^2",
     //               cell.mesh().geometry().dim());
     throw std::runtime_error("Illegal geometric dimension");
   }
@@ -387,7 +391,7 @@ std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
   assert(connectivity);
   for (std::size_t j = 0; j < 3; j++)
   {
-    const std::int32_t* ev = (*connectivity)(e[j]);
+    const std::int32_t* ev = connectivity->connections(e[j]);
     assert(ev);
     if (ev[0] != v[i] && ev[1] != v[i])
       return j;

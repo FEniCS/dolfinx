@@ -57,7 +57,7 @@ public:
 
 private:
   // Create a sub-dofmap (a view) from parent_dofmap
-  DofMap(const DofMap& parent_dofmap, const std::vector<std::size_t>& component,
+  DofMap(const DofMap& dofmap_parent, const std::vector<std::size_t>& component,
          const mesh::Mesh& mesh);
 
   // Create a collapsed dofmap from parent_dofmap
@@ -223,11 +223,12 @@ public:
   /// function is typically used to construct the null space of a
   /// matrix operator.
   ///
-  /// @param  x (Vec)
+  /// @param  x
   ///         The vector to set.
   /// @param  value (PetscScalar)
   ///         The value to set.
-  void set(Vec x, PetscScalar value) const;
+  void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+           PetscScalar value) const;
 
   /// Return the map (const access)
   std::shared_ptr<const common::IndexMap> index_map() const;

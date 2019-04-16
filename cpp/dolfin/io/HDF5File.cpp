@@ -7,8 +7,8 @@
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
+#include <Eigen/Dense>
 #include <boost/filesystem.hpp>
-#include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdio>
 #include <dolfin/common/MPI.h>
@@ -246,15 +246,15 @@ void HDF5File::write(const mesh::Mesh& mesh, const std::string name)
   write(mesh, mesh.topology().dim(), name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
+void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
                      const std::string name)
 {
   // FIXME: break up this function
 
   common::Timer t0("HDF5: write mesh to file");
 
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+  const int gdim = mesh.geometry().dim();
 
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   assert(_hdf5_file_id > 0);
@@ -328,7 +328,7 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
       // dimension
 
       const std::size_t mpi_rank = _mpi_comm.rank();
-      const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+      const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
           = mesh.topology().shared_entities(cell_dim);
 
       std::set<unsigned int> non_local_entities;
@@ -564,8 +564,10 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
       = HDF5Interface::read_dataset<std::size_t>(_hdf5_file_id, topology_name,
                                                  cell_range);
 
-  boost::multi_array_ref<std::size_t, 2> topology_array(
-      topology_data.data(), boost::extents[num_read_cells][vertices_per_cell]);
+  // Wrap data as 2D array
+  Eigen::Map<Eigen::Array<std::size_t, Eigen::Dynamic, Eigen::Dynamic,
+                          Eigen::RowMajor>>
+      topology_array(topology_data.data(), num_read_cells, vertices_per_cell);
 
   std::vector<T> value_data
       = HDF5Interface::read_dataset<T>(_hdf5_file_id, values_name, cell_range);
@@ -577,19 +579,20 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   std::vector<std::vector<std::size_t>> send_topology(num_processes);
   std::vector<std::vector<T>> send_values(num_processes);
-  for (std::size_t i = 0; i < num_read_cells; ++i)
+  for (Eigen::Index i = 0; i < topology_array.rows(); ++i)
   {
-    std::vector<std::size_t> cell_topology(topology_array[i].begin(),
-                                           topology_array[i].end());
-    std::sort(cell_topology.begin(), cell_topology.end());
+    std::sort(topology_array.row(i).data(),
+              topology_array.row(i).data() + topology_array.row(i).cols());
 
     // Use first vertex to decide where to send this data
+    assert(topology_array.row(i).cols() > 0);
     const std::size_t send_to_process
-        = MPI::index_owner(_mpi_comm.comm(), cell_topology.front(), max_vertex);
+        = MPI::index_owner(_mpi_comm.comm(), topology_array(i, 0), max_vertex);
 
-    send_topology[send_to_process].insert(send_topology[send_to_process].end(),
-                                          cell_topology.begin(),
-                                          cell_topology.end());
+    send_topology[send_to_process].insert(
+        send_topology[send_to_process].end(), topology_array.row(i).data(),
+        topology_array.row(i).data() + topology_array.row(i).cols());
+
     send_values[send_to_process].push_back(value_data[i]);
   }
 
@@ -697,7 +700,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     throw std::runtime_error("Cannot save empty mesh::MeshFunction.");
 
   const mesh::Mesh& mesh = *meshfunction.mesh();
-  const std::size_t cell_dim = meshfunction.dim();
+  const int cell_dim = meshfunction.dim();
 
   // Write a mesh for the mesh::MeshFunction - this will also globally
   // number the entities if needed
@@ -721,7 +724,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     // Drop duplicate data
     const std::size_t tdim = mesh.topology().dim();
     const std::size_t mpi_rank = _mpi_comm.rank();
-    const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+    const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
     std::set<unsigned int> non_local_entities;
@@ -1375,15 +1378,15 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
   if (coords_shape.size() == 1)
   {
     // spdlog::error("HDF5File.cpp", "get geometric dimension",
-    //               "Cannot determine geometric dimension from one-dimensional "
-    //               "array storage in HDF5 file");
+    //               "Cannot determine geometric dimension from one-dimensional
+    //               " "array storage in HDF5 file");
     throw std::runtime_error("IO Error");
   }
   else if (coords_shape.size() > 2)
   {
     // spdlog::error("HDF5File.cpp", "get geometric dimension",
-    //               "Cannot determine geometric dimension from high-rank array "
-    //               "storage in HDF5 file");
+    //               "Cannot determine geometric dimension from high-rank array
+    //               " "storage in HDF5 file");
     throw std::runtime_error("IO Error");
   }
 

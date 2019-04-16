@@ -9,6 +9,7 @@
 #include <array>
 #include <dolfin/mesh/CellType.h>
 #include <map>
+#include <numeric>
 #include <set>
 
 using namespace dolfin;
@@ -16,9 +17,9 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 ElementDofLayout::ElementDofLayout(
-    int block_size, std::vector<std::vector<std::set<int>>> entity_dofs,
-    std::vector<int> parent_map,
-    std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
+    int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
+    const std::vector<int>& parent_map,
+    const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
     const mesh::CellType& cell_type)
     : _parent_map(parent_map), _block_size(block_size), _num_dofs(0),
       _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
@@ -131,8 +132,8 @@ ElementDofLayout::sub_dofmap(const std::vector<std::size_t>& component) const
   return current;
 }
 //-----------------------------------------------------------------------------
-std::vector<int> ElementDofLayout::sub_dofmap_mapping(
-    const std::vector<std::size_t>& component) const
+std::vector<int>
+ElementDofLayout::sub_view(const std::vector<std::size_t>& component) const
 {
   // Fill up a list of parent dofs, from which subdofmap will select
   std::vector<int> dof_list(_num_dofs);

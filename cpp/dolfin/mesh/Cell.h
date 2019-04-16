@@ -205,9 +205,9 @@ public:
   {
     const MeshGeometry& geom = _mesh->geometry();
     const std::uint32_t tdim = _mesh->topology().dim();
-    const MeshConnectivity& conn = _mesh->coordinate_dofs().entity_points(tdim);
+    const Connectivity& conn = _mesh->coordinate_dofs().entity_points(tdim);
     const std::size_t ndofs = conn.size(_local_index);
-    const std::int32_t* dofs = conn(_local_index);
+    const std::int32_t* dofs = conn.connections(_local_index);
 
     const EigenRowArrayXXd& x = geom.points();
     const std::size_t gdim = geom.dim();

@@ -11,7 +11,6 @@
 #include "TriangleCell.h"
 #include "Vertex.h"
 #include <algorithm>
-#include <boost/multi_array.hpp>
 #include <cmath>
 // #include <spdlog/spdlog.h>
 
@@ -66,48 +65,49 @@ std::size_t TetrahedronCell::num_vertices(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void TetrahedronCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
-                                      std::size_t dim,
-                                      const std::int32_t* v) const
+void TetrahedronCell::create_entities(
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        e,
+    std::size_t dim, const std::int32_t* v) const
 {
   // We only need to know how to create edges and faces
   switch (dim)
   {
   case 1:
     // Resize data structure
-    e.resize(boost::extents[6][2]);
+    e.resize(6, 2);
 
     // Create the six edges
-    e[0][0] = v[2];
-    e[0][1] = v[3];
-    e[1][0] = v[1];
-    e[1][1] = v[3];
-    e[2][0] = v[1];
-    e[2][1] = v[2];
-    e[3][0] = v[0];
-    e[3][1] = v[3];
-    e[4][0] = v[0];
-    e[4][1] = v[2];
-    e[5][0] = v[0];
-    e[5][1] = v[1];
+    e(0, 0) = v[2];
+    e(0, 1) = v[3];
+    e(1, 0) = v[1];
+    e(1, 1) = v[3];
+    e(2, 0) = v[1];
+    e(2, 1) = v[2];
+    e(3, 0) = v[0];
+    e(3, 1) = v[3];
+    e(4, 0) = v[0];
+    e(4, 1) = v[2];
+    e(5, 0) = v[0];
+    e(5, 1) = v[1];
     break;
   case 2:
     // Resize data structure
-    e.resize(boost::extents[4][3]);
+    e.resize(4, 3);
 
     // Create the four faces
-    e[0][0] = v[1];
-    e[0][1] = v[2];
-    e[0][2] = v[3];
-    e[1][0] = v[0];
-    e[1][1] = v[2];
-    e[1][2] = v[3];
-    e[2][0] = v[0];
-    e[2][1] = v[1];
-    e[2][2] = v[3];
-    e[3][0] = v[0];
-    e[3][1] = v[1];
-    e[3][2] = v[2];
+    e(0, 0) = v[1];
+    e(0, 1) = v[2];
+    e(0, 2) = v[3];
+    e(1, 0) = v[0];
+    e(1, 1) = v[2];
+    e(1, 2) = v[3];
+    e(2, 0) = v[0];
+    e(2, 1) = v[1];
+    e(2, 2) = v[3];
+    e(3, 0) = v[0];
+    e(3, 1) = v[1];
+    e(3, 2) = v[2];
     break;
   default:
     // spdlog::error(
@@ -369,7 +369,7 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   assert(connectivity);
   for (std::size_t j = 0; j < 6; j++)
   {
-    const std::int32_t* ev = (*connectivity)(e[j]);
+    const std::int32_t* ev = connectivity->connections(e[j]);
     assert(ev);
     const std::int32_t v0 = v[EV[i][0]];
     const std::int32_t v1 = v[EV[i][1]];

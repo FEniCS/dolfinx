@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "PETScDMCollection.h"
-#include <boost/multi_array.hpp>
+#include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -19,6 +19,7 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscdmshell.h>
 #include <petscmat.h>
+
 // #include <spdlog/spdlog.h>
 
 using namespace dolfin;
@@ -259,7 +260,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
-      // spdlog::error("create_transfer_matrix", "Creating interpolation matrix",
+      // spdlog::error("create_transfer_matrix", "Creating interpolation
+      // matrix",
       //               "Ranks of function spaces do not match: %d, %d.",
       //               el->value_rank(), elf->value_rank());
       throw std::runtime_error("Non matching function space");
@@ -270,7 +272,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
-        // spdlog::error("create_transfer_matrix", "Creating interpolation matrix",
+        // spdlog::error("create_transfer_matrix", "Creating interpolation
+        // matrix",
         //               "Dimension %d of function space (%d) does not match "
         //               "dimension %d of function space (%d)",
         //               i, el->value_dimension(i), i, elf->value_dimension(i));
@@ -444,24 +447,26 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     assert(npoints == recv_found[p].size() / gdim);
     assert(npoints == recv_found_global_row_indices[p].size() / data_size);
 
-    const boost::multi_array_ref<double, 2> point_p(
-        recv_found[p].data(), boost::extents[npoints][gdim]);
-    const boost::multi_array_ref<int, 2> global_idx_p(
-        recv_found_global_row_indices[p].data(),
-        boost::extents[npoints][data_size]);
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        point_p(recv_found[p].data(), npoints, gdim);
 
+    Eigen::Map<const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        global_idx_p(recv_found_global_row_indices[p].data(), npoints,
+                     data_size);
     for (unsigned int i = 0; i < npoints; ++i)
     {
       if (id_p[i] != std::numeric_limits<unsigned int>::max()
-          and global_idx_p[i][0] != -1)
+          and global_idx_p(i, 0) != -1)
       {
         found_ids.push_back(id_p[i]);
-        global_row_indices.insert(global_row_indices.end(),
-                                  global_idx_p[i].begin(),
-                                  global_idx_p[i].end());
+        global_row_indices.insert(
+            global_row_indices.end(), global_idx_p.row(i).data(),
+            global_idx_p.row(i).data() + global_idx_p.cols());
 
-        found_points.insert(found_points.end(), point_p[i].begin(),
-                            point_p[i].end());
+        found_points.insert(found_points.end(), point_p.row(i).data(),
+                            point_p.row(i).data() + point_p.cols());
       }
     }
   }
@@ -639,10 +644,10 @@ void PETScDMCollection::find_exterior_points(
     std::vector<std::size_t>& cell_ids, std::vector<double>& points)
 {
   assert(send_indices.size() / data_size == send_points.size() / dim);
-  const boost::const_multi_array_ref<int, 2> send_indices_arr(
-      send_indices.data(),
-      boost::extents[send_indices.size() / data_size][data_size]);
-
+  Eigen::Map<
+      const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+      send_indices_arr(send_indices.data(), send_indices.size() / data_size,
+                       data_size);
   unsigned int mpi_rank = MPI::rank(mpi_comm);
   unsigned int mpi_size = MPI::size(mpi_comm);
 
@@ -661,7 +666,6 @@ void PETScDMCollection::find_exterior_points(
 
   send_distance.reserve(num_recv_points);
   ids.reserve(num_recv_points);
-
   for (const auto& p : recv_points)
   {
     unsigned int n_points = p.size() / dim;
@@ -687,8 +691,10 @@ void PETScDMCollection::find_exterior_points(
   for (unsigned int p = 0; p != mpi_size; ++p)
   {
     unsigned int n_points = recv_points[p].size() / dim;
-    boost::multi_array_ref<double, 2> point_arr(recv_points[p].data(),
-                                                boost::extents[n_points][dim]);
+
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        point_arr(recv_points[p].data(), n_points, dim);
     for (unsigned int i = 0; i < n_points; ++i)
     {
       unsigned int min_proc = 0;
@@ -706,14 +712,15 @@ void PETScDMCollection::find_exterior_points(
       if (min_proc == mpi_rank)
       {
         // If this process has closest cell, save the information
-        points.insert(points.end(), point_arr[i].begin(), point_arr[i].end());
+        points.insert(points.end(), point_arr.row(i).data(),
+                      point_arr.row(i).data() + point_arr.cols());
         cell_ids.push_back(ids[ct]);
       }
       if (p == mpi_rank)
       {
         send_global_indices[min_proc].insert(
-            send_global_indices[min_proc].end(), send_indices_arr[i].begin(),
-            send_indices_arr[i].end());
+            send_global_indices[min_proc].end(), send_indices_arr.row(i).data(),
+            send_indices_arr.row(i).data() + send_indices_arr.cols());
       }
       ++ct;
     }

@@ -13,6 +13,7 @@
 #include <vector>
 
 struct ufc_dofmap;
+struct ufc_form;
 
 namespace dolfin
 {
@@ -73,6 +74,11 @@ std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
                                            const std::vector<int>& parent_map,
                                            const mesh::CellType& cell_type);
+
+/// Extract coefficients from UFC form
+std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+  get_coeffs_from_ufc_form(const ufc_form& ufc_form);
+
 
 } // namespace fem
 } // namespace dolfin

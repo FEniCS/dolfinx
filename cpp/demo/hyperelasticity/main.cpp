@@ -1,6 +1,7 @@
 #include "hyperelasticity.h"
 #include <cfloat>
 #include <dolfin.h>
+#include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
 
@@ -169,14 +170,15 @@ int main(int argc, char* argv[])
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
       MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::Type::tetrahedron,
       mesh::GhostMode::none));
+  mesh::Ordering::order_simplex(*mesh);
 
   ufc_function_space* space = hyperelasticity_functionspace_create();
   ufc_dofmap* ufc_map = space->create_dofmap();
+  ufc_finite_element* ufc_element = space->create_element();
   auto V = std::make_shared<function::FunctionSpace>(
-      mesh,
-      std::make_shared<fem::FiniteElement>(
-          std::shared_ptr<ufc_finite_element>(space->create_element(), free)),
+      mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
       std::make_shared<fem::DofMap>(*ufc_map, *mesh));
+  std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);
 
