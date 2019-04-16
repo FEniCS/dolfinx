@@ -1,28 +1,13 @@
-// Copyright (C) 2018 Chris N. Richardson
+// Copyright (C) 2018 Chris Richardson
 //
-// This file is part of DOLFIN.
+// This file is part of DOLFIN (https://www.fenicsproject.org)
 //
-// DOLFIN is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// DOLFIN is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public License
-// along with DOLFIN. If not, see <http://www.gnu.org/licenses/>.
-//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <catch.hpp>
-#include <dolfin.h>
 #include <dolfin/common/IndexMap.h>
-#include <petscvec.h>
-
-#include <iostream>
-#include <sstream>
+#include <dolfin/common/MPI.h>
+#include <vector>
 
 using namespace dolfin;
 
@@ -48,26 +33,31 @@ void test_scatter()
 
   common::IndexMap idx_map(MPI_COMM_WORLD, nlocal, ghosts, 1);
 
-  idx_map.scatter_fwd(data_local, data_ghost);
-
   // Check value has been pushed over from other processes
-  for (int i = 0; i < nghost; ++i)
+  idx_map.scatter_fwd(data_local, data_ghost);
+  for (std::size_t i = 0; i < data_ghost.size(); ++i)
   {
-    assert(data_ghost[i] == val * ((mpi_rank + 1) % mpi_size));
+    if (data_ghost[i] == val * ((mpi_rank + 1) % mpi_size))
+      continue;
+    else
+      throw std::runtime_error("Received data incorrect.");
   }
 
-  // // Send ghost values back to origin
-  // idx_map.scatter_rev(data);
+  std::vector<PetscScalar> data;
+  data.insert(data.end(), data_local.begin(), data_local.end());
+  data.insert(data.end(), data_ghost.begin(), data_ghost.end());
 
-  // std::stringstream s;
-  // for (int i = 0; i < nghost; ++i)
-  // {
-  //   assert(data[i] == 2 * val * mpi_rank);
-  //   s << mpi_rank << "] " << i << " " << data[i] << "\n";
-  // }
+  // Send ghost values back to origin
+  idx_map.scatter_rev(data);
+  for (int i = 0; i < nghost; ++i)
+  {
+    if (data[i] == 2 * val * mpi_rank)
+      continue;
+    else
+      throw std::runtime_error("Received unexpected data (2).");
+  }
 
-  // std::cout << s.str() << "\n";
-}
+} // namespace
 } // namespace
 
 TEST_CASE("Scatter using IndexMap", "[index_map_scatter]")
