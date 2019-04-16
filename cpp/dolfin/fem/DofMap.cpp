@@ -31,32 +31,10 @@ DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
 {
   // Do nothing
 }
-// DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
-//     : _cell_dimension(-1), _global_dimension(0)
-// {
-//   _element_dof_layout = std::make_shared<ElementDofLayout>(
-//       create_element_dof_layout(ufc_dofmap, {}, mesh.type()));
-//   _cell_dimension = _element_dof_layout->num_dofs();
-
-//   const int bs = _element_dof_layout->block_size();
-//   if (bs == 1)
-//   {
-//     std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours,
-//     _dofmap)
-//         = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
-//   }
-//   else
-//   {
-//     std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours,
-//     _dofmap)
-//         = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}),
-//         bs);
-//   }
-// }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                const mesh::Mesh& mesh)
-    : _cell_dimension(element_dof_layout->num_dofs()), _global_dimension(0),
+    : _cell_dimension(element_dof_layout->num_dofs()), _global_dimension(-1),
       _element_dof_layout(element_dof_layout)
 {
   const int bs = _element_dof_layout->block_size();
@@ -135,8 +113,6 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   if (dofmap_view._index_map->block_size() != 1)
     throw std::runtime_error("Block size greater than 1 not supported yet.");
 
-  // -- New
-
   // Build set of dofs that are in the new dofmap
   std::vector<std::int32_t> dofs_view;
   for (std::int64_t i = 0; i < mesh.num_entities(tdim); ++i)
@@ -149,6 +125,7 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   dofs_view.erase(std::unique(dofs_view.begin(), dofs_view.end()),
                   dofs_view.end());
 
+  // Compute sizes
   const std::int32_t num_owned_view = dofmap_view._index_map->size_local();
   const auto it_unowned0
       = std::lower_bound(dofs_view.begin(), dofs_view.end(), num_owned_view);
@@ -157,11 +134,11 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   const std::int64_t num_unowned_new
       = std::distance(it_unowned0, dofs_view.end());
 
-  // Get new offset
+  // Get process offset for new dofmap
   const std::int64_t process_offset
       = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned_new, true);
 
-  // // For owned dofs, compute new global index
+  // For owned dofs, compute new global index
   std::vector<std::int64_t> global_index_new(
       dofmap_view._index_map->size_local(), -1);
   for (auto it = dofs_view.begin(); it != it_unowned0; ++it)
@@ -170,13 +147,14 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
     global_index_new[*it] = pos + process_offset;
   }
 
-  // Send new global indices to non-owning process, and receive new
-  // global indices from owner
+  // Send new global indices for owned dofs to non-owning process, and
+  // receive new global indices from owner
   std::vector<std::int64_t> global_index_new_remote(
       dofmap_view._index_map->num_ghosts(), -1);
   dofmap_view._index_map->scatter_fwd(global_index_new,
                                       global_index_new_remote);
 
+  // Compute ghosts for collapsed dofmap
   std::vector<std::int64_t> ghosts_new(num_unowned_new);
   for (auto it = it_unowned0; it != dofs_view.end(); ++it)
   {
@@ -189,15 +167,11 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   _index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
                                                   num_owned_new, ghosts_new, 1);
 
-  // Array from dofs in view to new dof indices
-  // std::cout << "Testing end: " << *dofs_view.rbegin() << std::endl;
+  // Creat array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(*dofs_view.rbegin() + 1, -1);
   PetscInt count = 0;
   for (auto& dof : dofs_view)
-  {
-    // assert(dof < (int)old_to_new.size());
     old_to_new[dof] = count++;
-  }
 
   // Build new dofmap
   _dofmap.resize(dofmap_view._dofmap.size());
@@ -207,39 +181,20 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
     _dofmap[i] = old_to_new[dof_view];
   }
 
-  // // // FIXME:
-  // // // Set shared nodes
+  // FIXME:
+  // Set shared nodes
 
-  // // FIXME: This could well be smaller for the collapsed dofmap
-  // // Set neighbours
-  // _neighbours = dofmap_view._neighbours;
+  // FIXME: This could well be smaller for the collapsed dofmap
+  // Set neighbours
+  _neighbours = dofmap_view._neighbours;
 
-  // Old
-
-  // // Build new dof map
-  // const int bs = _element_dof_layout->block_size();
-  // if (bs == 1)
-  // {
-  //   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours,
-  //   _dofmap)
-  //       = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
-  // }
-  // else
-  // {
-  //   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours,
-  //   _dofmap)
-  //       = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}),
-  //       bs);
-  // }
-
-  // // Dimension sanity checks
-  // assert(
-  //     dofmap_view._dofmap.size()
-  //     == (std::size_t)(mesh.num_entities(tdim) *
-  //     dofmap_view._cell_dimension));
-  // assert(global_dimension() == dofmap_view.global_dimension());
-  // assert(_dofmap.size()
-  //        == (std::size_t)(mesh.num_entities(tdim) * _cell_dimension));
+  // Dimension sanity checks
+  assert(
+      dofmap_view._dofmap.size()
+      == (std::size_t)(mesh.num_entities(tdim) * dofmap_view._cell_dimension));
+  assert(global_dimension() == dofmap_view.global_dimension());
+  assert(_dofmap.size()
+         == (std::size_t)(mesh.num_entities(tdim) * _cell_dimension));
 }
 //-----------------------------------------------------------------------------
 bool DofMap::is_view() const
