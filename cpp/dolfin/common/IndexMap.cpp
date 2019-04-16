@@ -93,7 +93,7 @@ const EigenArrayXi32& IndexMap::ghost_owners() const { return _ghost_owners; }
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
 void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
-                           std::vector<std::int64_t>& remote_data)
+                           std::vector<std::int64_t>& remote_data) const
 {
   // // local_data should be the size of owned + ghost
   // // Make the owned data available for reading by remote processes

@@ -61,8 +61,7 @@ private:
          const mesh::Mesh& mesh);
 
   // Create a collapsed dofmap from parent_dofmap
-  DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
-         const DofMap& dofmap_view, const mesh::Mesh& mesh);
+  DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh);
 
 public:
   // Copy constructor
