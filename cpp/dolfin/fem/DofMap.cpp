@@ -25,12 +25,40 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _global_dimension(0)
+    : DofMap(std::make_shared<ElementDofLayout>(
+                 create_element_dof_layout(ufc_dofmap, {}, mesh.type())),
+             mesh)
 {
-  _element_dof_layout = std::make_shared<ElementDofLayout>(
-      create_element_dof_layout(ufc_dofmap, {}, mesh.type()));
-  _cell_dimension = _element_dof_layout->num_dofs();
+  // Do nothing
+}
+// DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
+//     : _cell_dimension(-1), _global_dimension(0)
+// {
+//   _element_dof_layout = std::make_shared<ElementDofLayout>(
+//       create_element_dof_layout(ufc_dofmap, {}, mesh.type()));
+//   _cell_dimension = _element_dof_layout->num_dofs();
 
+//   const int bs = _element_dof_layout->block_size();
+//   if (bs == 1)
+//   {
+//     std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours,
+//     _dofmap)
+//         = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
+//   }
+//   else
+//   {
+//     std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours,
+//     _dofmap)
+//         = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}),
+//         bs);
+//   }
+// }
+//-----------------------------------------------------------------------------
+DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
+               const mesh::Mesh& mesh)
+    : _cell_dimension(element_dof_layout->num_dofs()), _global_dimension(0),
+      _element_dof_layout(element_dof_layout)
+{
   const int bs = _element_dof_layout->block_size();
   if (bs == 1)
   {
@@ -42,30 +70,6 @@ DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
     std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
   }
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
-               const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _global_dimension(0)
-{
-  // _element_dof_layout = std::make_shared<ElementDofLayout>(
-  //     create_element_dof_layout(ufc_dofmap, {}, mesh.type()));
-  // _cell_dimension = _element_dof_layout->num_dofs();
-
-  // const int bs = _element_dof_layout->block_size();
-  // if (bs == 1)
-  // {
-  //   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours,
-  //   _dofmap)
-  //       = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
-  // }
-  // else
-  // {
-  //   std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours,
-  //   _dofmap)
-  //       = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}),
-  //       bs);
-  // }
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_parent,
