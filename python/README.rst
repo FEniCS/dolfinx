@@ -10,7 +10,8 @@ Building the DOLFIN Python interface uses pybind11.
      tar -xf v2.2.1.tar.gz
      cd pybind11-2.2.1
      mkdir build-dir
-     cmake -DPYBIND11_TEST=off -DCMAKE_INSTALL_PREFIX=/path/to/pybind11/install ../
+     cd build-dir
+     cmake -DPYBIND11_TEST=off -DCMAKE_INSTALL_PREFIX=/path/to/pybind11/install ..
      make install
 
    The FEniCS Docker images are configured with pybind11.

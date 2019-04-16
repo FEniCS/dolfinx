@@ -5,16 +5,16 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "HDF5Utility.h"
-#include <boost/multi_array.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/log/log.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <iostream>
+#include <petscvec.h>
 
 using namespace dolfin;
 using namespace dolfin::io;
@@ -70,9 +70,9 @@ HDF5Utility::map_gdof_to_cell(const MPI_Comm mpi_comm,
   MPI::all_to_all(mpi_comm, send_dofs, receive_dofs);
   MPI::all_to_all(mpi_comm, send_cell_dofs, receive_cell_dofs);
 
-  // Unpack associated cell and local_dofs into vector
-  // There may be some overwriting due to receiving an
-  // index for the same DOF from multiple cells on different processes
+  // Unpack associated cell and local_dofs into vector There may be some
+  // overwriting due to receiving an index for the same DOF from
+  // multiple cells on different processes
 
   std::vector<std::size_t> global_cells(vector_range[1] - vector_range[0]);
   std::vector<std::size_t> remote_local_dofi(vector_range[1] - vector_range[0]);
@@ -285,6 +285,7 @@ void HDF5Utility::set_local_vector_values(
     const std::array<std::int64_t, 2> input_vector_range,
     const fem::GenericDofMap& dofmap)
 {
+  // FIXME: Revise to avoid data copying. Set directly in PETSc Vec.
 
   // Calculate one (global cell, local_dof_index) to associate with
   // each item in the vector on this process
@@ -355,7 +356,14 @@ void HDF5Utility::set_local_vector_values(
     }
   }
 
-  x.set_local(vector_values);
-  x.apply();
+  PetscErrorCode ierr;
+  PetscScalar* x_ptr = nullptr;
+  ierr = VecGetArray(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecGetArray");
+  std::copy(vector_values.begin(), vector_values.end(), x_ptr);
+  ierr = VecRestoreArray(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecRestoreArray");
 }
 //-----------------------------------------------------------------------------

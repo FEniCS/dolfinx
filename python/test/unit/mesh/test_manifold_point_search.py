@@ -15,10 +15,7 @@ def test_manifold_point_search():
                 numpy.array(cells, dtype=numpy.int32), [],
                 cpp.mesh.GhostMode.none)
 
-    bb = BoundingBoxTree()
-    bb_cpp = mesh.bounding_box_tree()
-    bb._cpp_object = bb_cpp
-
+    bb = BoundingBoxTree(mesh, mesh.topology.dim)
     p = Point(0.5, 0.25, 0.75)
     assert bb.compute_first_entity_collision(p, mesh) == 0
 

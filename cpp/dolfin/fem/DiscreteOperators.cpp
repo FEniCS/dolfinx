@@ -21,7 +21,7 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-std::shared_ptr<la::PETScMatrix>
+la::PETScMatrix
 DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
                                   const function::FunctionSpace& V1)
 {
@@ -106,10 +106,10 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   Eigen::Map<const EigenArrayXpetscint> _rows(rows.data(), rows.size());
   Eigen::Map<const EigenArrayXpetscint> _cols(cols.data(), cols.size());
   pattern.insert_global(_rows, _cols);
-  pattern.apply();
+  pattern.assemble();
 
-  // Initialise matrix
-  auto A = std::make_shared<la::PETScMatrix>(mesh.mpi_comm(), pattern);
+  // Create matrix
+  la::PETScMatrix A(mesh.mpi_comm(), pattern);
 
   // Build discrete gradient operator/matrix
   for (auto& edge : mesh::MeshRange<mesh::Edge>(mesh))
@@ -137,11 +137,11 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
     }
 
     // Set values in matrix
-    A->set(values, 1, &row, 2, cols);
+    A.set(values, 1, &row, 2, cols);
   }
 
   // Finalise matrix
-  A->apply(la::PETScMatrix::AssemblyType::FINAL);
+  A.apply(la::PETScMatrix::AssemblyType::FINAL);
 
   return A;
 }

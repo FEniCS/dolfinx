@@ -18,9 +18,6 @@
 *.nbc
 dolfin/libdolfin.so*
 
-# FFC generated code in library
-/cpp//dolfin/ale/Poisson*D.h
-
 # Log files
 *.log
 
@@ -52,11 +49,8 @@ dolfin-config-version.cmake
 # Demos
 build_demo.*
 test_*_tempdir
-/python/demo/**/*.py
+/python/demo/**/*.py.rst
 /python/demo/**/*.xml
-/python/demo/undocumented/mesh-quality/mesh-quality.pdf
-/cpp/demo/**/*.ufl
-/cpp/demo/**/*.cpp
 /cpp/demo/**/*.c
 
 # Tests
@@ -98,7 +92,6 @@ CMakeLists.txt
 !dolfin/CMakeLists.txt
 !dolfin/*/CMakeLists.txt
 !bench/CMakeLists.txt
-!dolfin/swig/CMakeLists.txt
 !doc/CMakeLists.txt
 !demo/CMakeLists.txt
 !test/unit/CMakeLists.txt

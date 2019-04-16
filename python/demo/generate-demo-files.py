@@ -6,13 +6,14 @@
 
 import os
 import sys
+import glob
 
 
 # Get directory of this file
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 # Directories to scan
-subdirs = [dir_path]
+subdirs = glob.glob(dir_path + "/*/")
 
 # Check that we can find pylint.py
 parser = dir_path + "/../../utils/pylit/pylit.py"
@@ -30,18 +31,17 @@ for subdir in subdirs:
     for root, dirs, files in os.walk(subdir):
 
         # Check for .py.rst files
-        rstfiles = [f for f in files if len(f) > 7 and f[-7:] == ".py.rst"]
+        rstfiles = [f for f in files if len(f) > 7 and f[-3:] == ".py"]
         if len(rstfiles) == 0:
             continue
 
         # Compile files
         os.chdir(root)
-        print("Converting rst files in in {} ...".format(root))
+        print("Converting py files in in {} ...".format(root))
         for f in rstfiles:
-            command = sys.executable + " " + parser + " " + os.path.abspath(f)
-            #print("  " + command)
+            command = sys.executable + " " + parser + " -c " + os.path.abspath(f) + " " + os.path.abspath(f) + ".rst"
             ret = os.system(command)
             if not ret == 0:
-                raise RuntimeError("Unable to convert rst file to a .py ({})".format(f))
+                raise RuntimeError("Unable to convert .py file to a .py.rst ({})".format(f))
 
         os.chdir(topdir)

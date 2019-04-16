@@ -9,7 +9,7 @@
 #include "MeshIterator.h"
 #include "MeshTopology.h"
 #include "Vertex.h"
-#include <dolfin/log/log.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -34,10 +34,11 @@ void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
     return;
 
   // Illegal index range
-  log::dolfin_error(
-      "MeshEntity.cpp", "create mesh entity",
-      "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
-      index, _mesh->num_entities(dim), dim);
+  // spdlog::error(
+  //     "MeshEntity.cpp", "create mesh entity",
+  //     "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
+  //     index, _mesh->num_entities(dim), dim);
+  throw std::runtime_error("Out of range");
 }
 //-----------------------------------------------------------------------------
 bool MeshEntity::incident(const MeshEntity& entity) const
@@ -47,10 +48,11 @@ bool MeshEntity::incident(const MeshEntity& entity) const
     return false;
 
   // Get list of entities for given topological dimension
-  const std::int32_t* entities
-      = _mesh->topology().connectivity(_dim, entity._dim)(_local_index);
+  const std::int32_t* entities = _mesh->topology()
+                                     .connectivity(_dim, entity._dim)
+                                     ->connections(_local_index);
   const std::size_t num_entities
-      = _mesh->topology().connectivity(_dim, entity._dim).size(_local_index);
+      = _mesh->topology().connectivity(_dim, entity._dim)->size(_local_index);
 
   // Check if any entity matches
   for (std::size_t i = 0; i < num_entities; ++i)
@@ -66,15 +68,17 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   // Must be in the same mesh to be incident
   if (_mesh != entity._mesh)
   {
-    log::dolfin_error("MeshEntity.cpp", "compute index of mesh entity",
-                      "Mesh entity is defined on a different mesh");
+    // spdlog::error("MeshEntity.cpp", "compute index of mesh entity",
+    //               "Mesh entity is defined on a different mesh");
+    throw std::runtime_error("Wrong mesh");
   }
 
   // Get list of entities for given topological dimension
-  const std::int32_t* entities
-      = _mesh->topology().connectivity(_dim, entity._dim)(_local_index);
+  const std::int32_t* entities = _mesh->topology()
+                                     .connectivity(_dim, entity._dim)
+                                     ->connections(_local_index);
   const std::size_t num_entities
-      = _mesh->topology().connectivity(_dim, entity._dim).size(_local_index);
+      = _mesh->topology().connectivity(_dim, entity._dim)->size(_local_index);
 
   // Check if any entity matches
   for (std::size_t i = 0; i < num_entities; ++i)
@@ -82,8 +86,9 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
       return i;
 
   // Entity was not found
-  log::dolfin_error("MeshEntity.cpp", "compute index of mesh entity",
-                    "Mesh entity was not found");
+  // spdlog::error("MeshEntity.cpp", "compute index of mesh entity",
+  //               "Mesh entity was not found");
+  throw std::runtime_error("Mesh entity was not found");
 
   return 0;
 }
@@ -123,26 +128,27 @@ std::uint32_t MeshEntity::owner() const
 {
   if (_dim != _mesh->topology().dim())
   {
-    log::dolfin_error("MeshEntity.cpp", "get ownership of entity",
-                      "Entity ownership is only defined for cells");
+    // spdlog::error("MeshEntity.cpp", "get ownership of entity",
+    //               "Entity ownership is only defined for cells");
+    throw std::runtime_error("Entity ownership is only defined for cells");
   }
 
   const std::int32_t offset = _mesh->topology().ghost_offset(_dim);
   if (_local_index < offset)
   {
-    log::dolfin_error("MeshEntity.cpp", "get ownership of entity",
-                      "Ownership of non-ghost cells is local process");
+    // spdlog::error("MeshEntity.cpp", "get ownership of entity",
+    //               "Ownership of non-ghost cells is local process");
+    throw std::runtime_error("Ownership of non-ghost cells is local process");
   }
 
-  assert((int)_mesh->topology().cell_owner().size()
-                > _local_index - offset);
+  assert((int)_mesh->topology().cell_owner().size() > _local_index - offset);
   return _mesh->topology().cell_owner()[_local_index - offset];
 }
 //-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const
 {
-  if (verbose)
-    log::warning("Verbose output for MeshEntityIterator not implemented.");
+  // if (verbose)
+  //   spdlog::warn("Verbose output for MeshEntityIterator not implemented.");
 
   std::stringstream s;
   s << "<Mesh entity " << index() << " of topological dimension " << dim()

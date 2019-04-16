@@ -6,11 +6,15 @@
 
 #pragma once
 
-#include <dolfin/common/types.h>
-#include <memory>
-#include <ufc.h>
+#include "ReferenceCellTopology.h"
+#include <Eigen/Dense>
+#include <cstdint>
+#include <dolfin/mesh/CellType.h>
+#include <functional>
+#include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
-#include <vector>
+
+struct ufc_coordinate_mapping;
 
 namespace dolfin
 {
@@ -18,117 +22,75 @@ namespace dolfin
 namespace fem
 {
 
-/// This is a wrapper for a UFC coordinate mapping (ufc_coordinate_mapping).
+/// This class manages coordinate mappings for isoparametric cells.
 
 class CoordinateMapping
 {
 public:
-  /// Create coordinate mapping from UFC coordinate mapping (data may be
-  /// shared)
+  /// Create coordinate mapping from UFC coordinate mapping
   /// @param cm (ufc::coordinate_mapping)
   ///  UFC coordinate mapping
-  CoordinateMapping(std::shared_ptr<const ufc_coordinate_mapping> cm)
-      : _ufc_cm(cm)
-  {
-    // Do nothing
-  }
+  CoordinateMapping(const ufc_coordinate_mapping& cm);
 
   /// Destructor
-  virtual ~CoordinateMapping() {}
+  virtual ~CoordinateMapping() = default;
 
   //--- Direct wrappers for ufc_coordinate_mapping ---
 
   /// Return a string identifying the finite element
   /// @return std::string
-  std::string signature() const
-  {
-    assert(_ufc_cm);
-    return _ufc_cm->signature;
-  }
+  std::string signature() const;
 
   /// Return the cell shape
-  /// @return ufc_shape
-  ufc_shape cell_shape() const
-  {
-    assert(_ufc_cm);
-    return _ufc_cm->cell_shape;
-  }
+  /// @return CellType
+  CellType cell_shape() const;
 
   /// Return the topological dimension of the cell shape
   /// @return std::size_t
-  std::uint32_t topological_dimension() const
-  {
-    assert(_ufc_cm);
-    return _ufc_cm->topological_dimension;
-  }
+  std::uint32_t topological_dimension() const;
 
   /// Return the geometric dimension of the cell shape
   /// @return std::uint32_t
-  std::uint32_t geometric_dimension() const
-  {
-    assert(_ufc_cm);
-    return _ufc_cm->geometric_dimension;
-  }
+  std::uint32_t geometric_dimension() const;
 
   /// Compute physical coordinates x for points X  in the reference
   /// configuration
   void compute_physical_coordinates(
-      Eigen::Ref<EigenRowArrayXXd> x,
-      const Eigen::Ref<const EigenRowArrayXXd>& X,
-      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
-  {
-    assert(_ufc_cm);
-    assert(x.rows() == X.rows());
-    assert(x.cols() == _ufc_cm->geometric_dimension);
-    assert(X.cols() == _ufc_cm->topological_dimension);
-    _ufc_cm->compute_physical_coordinates(x.data(), X.rows(), X.data(),
-                                          coordinate_dofs.data());
-  }
+      Eigen::Ref<
+          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+          x,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& X,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          coordinate_dofs) const;
 
   /// Compute reference coordinates X, and J, detJ and K for physical
   /// coordinates x
   void compute_reference_geometry(
-      EigenRowArrayXXd& X, Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
-      EigenArrayXd& detJ, Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
-      const Eigen::Ref<const EigenRowArrayXXd>& x,
-      const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
-  {
-    // Number of points
-    int num_points = x.rows();
-
-    // in-argument checks
-    assert(x.cols() == this->geometric_dimension());
-    // assert(coordinate_dofs.rows() == space_dimension);
-    assert(coordinate_dofs.cols() == this->geometric_dimension());
-
-    // In/out size checks
-    assert(X.rows() == num_points);
-    assert(X.cols() == this->topological_dimension());
-    assert(J.dimension(0) == num_points);
-    assert(J.dimension(1) == this->geometric_dimension());
-    assert(J.dimension(2) == this->topological_dimension());
-    assert(detJ.rows() == num_points);
-    assert(K.dimension(0) == num_points);
-    assert(K.dimension(1) == this->topological_dimension());
-    assert(K.dimension(2) == this->geometric_dimension());
-
-    assert(_ufc_cm);
-    _ufc_cm->compute_reference_geometry(X.data(), J.data(), detJ.data(),
-                                        K.data(), num_points, x.data(),
-                                        coordinate_dofs.data(), 1);
-  }
-
-  // /// Return underlying UFC coordinate_mapping. Intended for libray usage
-  // only
-  // /// and may change.
-  // std::shared_ptr<const ufc::finite_element> ufc_element() const
-  // {
-  //   return _ufc_element;
-  // }
+      Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X,
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& J,
+      Eigen::Array<double, Eigen::Dynamic, 1>& detJ,
+      Eigen::Tensor<double, 3, Eigen::RowMajor>& K,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>& x,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>&
+          coordinate_dofs) const;
 
 private:
-  // UFC finite element
-  std::shared_ptr<const ufc_coordinate_mapping> _ufc_cm;
+  int _tdim, _gdim;
+
+  CellType _cell;
+
+  std::string _signature;
+
+  std::function<void(double*, int, const double*, const double*)>
+      _compute_physical_coordinates;
+
+  std::function<void(double*, double*, double*, double*, int, const double*,
+                     const double*, int)>
+      _compute_reference_geometry;
 };
 } // namespace fem
 } // namespace dolfin

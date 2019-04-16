@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfin/common/types.h>
+#include <Eigen/Dense>
 #include <dolfin/geometry/Point.h>
 #include <memory>
 #include <string>
@@ -24,13 +24,16 @@ namespace mesh
 
 /// MeshGeometry stores the geometry imposed on a mesh.
 
-/// Currently, the geometry is represented by the set of coordinates for the
-/// vertices of a mesh, but other representations are possible.
+/// Currently, the geometry is represented by the set of coordinates for
+/// the vertices of a mesh, but other representations are possible.
+
 class MeshGeometry
 {
 public:
   /// Create set of coordinates
-  MeshGeometry(const Eigen::Ref<const EigenRowArrayXXd>& points);
+  MeshGeometry(const Eigen::Ref<const Eigen::Array<
+                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+                   points);
 
   /// Copy constructor
   MeshGeometry(const MeshGeometry&) = default;
@@ -57,7 +60,8 @@ public:
   std::size_t num_points_global() const { return _num_points_global; }
 
   /// Return coordinate array for point with local index n
-  Eigen::Ref<const EigenRowArrayXd> x(std::size_t n) const
+  Eigen::Ref<const Eigen::Array<double, 1, Eigen::Dynamic>>
+  x(std::size_t n) const
   {
     return _coordinates.row(n);
   }
@@ -67,11 +71,19 @@ public:
 
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points
-  EigenRowArrayXXd& points() { return _coordinates; }
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  points()
+  {
+    return _coordinates;
+  }
 
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points (const version)
-  const EigenRowArrayXXd& points() const { return _coordinates; }
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  points() const
+  {
+    return _coordinates;
+  }
 
   /// Global indices for points (const)
   const std::vector<std::int64_t>& global_indices() const
@@ -80,7 +92,9 @@ public:
   }
 
   /// Initialise MeshGeometry data
-  void init(std::uint64_t num_points_global, const EigenRowArrayXXd& coordinates,
+  void init(std::uint64_t num_points_global,
+            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>& coordinates,
             const std::vector<std::int64_t>& global_indices)
   {
     _num_points_global = num_points_global;
@@ -103,7 +117,8 @@ public:
 
 private:
   // Coordinates for all points stored as a contiguous array
-  EigenRowArrayXXd _coordinates;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      _coordinates;
 
   // Global indices for points
   std::vector<std::int64_t> _global_indices;

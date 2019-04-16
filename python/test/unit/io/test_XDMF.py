@@ -14,8 +14,7 @@ from dolfin import (MPI, Cells, CellType, Edges, Expression, Facets,
                     MeshFunction, MeshValueCollection, TensorFunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     VectorElement, VectorFunctionSpace, Vertices, cpp,
-                    has_petsc_complex, interpolate)
-from dolfin import function
+                    function, has_petsc_complex, interpolate)
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 
@@ -141,7 +140,7 @@ def test_save_1d_scalar(tempdir, encoding):
     # FIXME: This randomly hangs in parallel
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
+    u.vector().set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename2, encoding=encoding) as file:
         file.write(u)
 
@@ -181,7 +180,7 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
         u_in = file.read_checkpoint(V, "u_out", 0)
 
     u_in.vector().axpy(-1.0, u_out.vector())
-    assert u_in.vector().norm(cpp.la.Norm.l2) < 1.0e-12
+    assert u_in.vector().norm() < 1.0e-12
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -251,7 +250,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
         u_in = file.read_checkpoint(V, "u_out", 0)
 
     u_in.vector().axpy(-1.0, u_out.vector())
-    assert u_in.vector().norm(cpp.la.Norm.l2) < 1.0e-12
+    assert u_in.vector().norm() < 1.0e-12
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -282,14 +281,14 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     for i, p in enumerate(times):
         u_in[i].vector().axpy(-1.0, u_out[i].vector())
-        assert u_in[i].vector().norm(cpp.la.Norm.l2) < 1.0e-12
+        assert u_in[i].vector().norm() < 1.0e-12
 
     # test reading last
     with XDMFFile(mesh.mpi_comm(), filename) as file:
         u_in_last = file.read_checkpoint(V, "u_out", -1)
 
     u_out[-1].vector().axpy(-1.0, u_in_last.vector())
-    assert u_out[-1].vector().norm(cpp.la.Norm.l2) < 1.0e-12
+    assert u_out[-1].vector().norm() < 1.0e-12
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -299,8 +298,7 @@ def test_save_2d_scalar(tempdir, encoding):
     # FIXME: This randomly hangs in parallel
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
-
+    u.vector().set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
 
@@ -311,8 +309,7 @@ def test_save_3d_scalar(tempdir, encoding):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     V = FunctionSpace(mesh, ("Lagrange", 2))
     u = Function(V)
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
-
+    u.vector().set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
 
@@ -344,13 +341,11 @@ def test_save_3d_vector_series(tempdir, encoding):
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     u = Function(VectorFunctionSpace(mesh, ("Lagrange", 2)))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
-        u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
+        u.vector().set(1.0 + (1j if has_petsc_complex else 0))
         file.write(u, 0.1)
-
-        u.vector()[:] = 2.0 + (2j if has_petsc_complex else 0)
+        u.vector().set(2.0 + (2j if has_petsc_complex else 0))
         file.write(u, 0.2)
-
-        u.vector()[:] = 3.0 + (3j if has_petsc_complex else 0)
+        u.vector().set(3.0 + (3j if has_petsc_complex else 0))
         file.write(u, 0.3)
 
 
@@ -359,7 +354,7 @@ def test_save_2d_tensor(tempdir, encoding):
     filename = os.path.join(tempdir, "tensor.xdmf")
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
+    u.vector().set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
 
@@ -369,7 +364,7 @@ def test_save_3d_tensor(tempdir, encoding):
     filename = os.path.join(tempdir, "u3t.xdmf")
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector()[:] = 1.0 + (1j if has_petsc_complex else 0)
+    u.vector().set(1.0 + (1j if has_petsc_complex else 0))
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(u)
 

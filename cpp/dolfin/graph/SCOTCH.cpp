@@ -15,19 +15,16 @@
 #include <map>
 #include <numeric>
 #include <set>
+// #include <spdlog/spdlog.h>
 #include <string>
 
-#ifdef HAS_SCOTCH
 extern "C"
 {
 #include <ptscotch.h>
 #include <stdint.h>
 }
-#endif
 
 using namespace dolfin;
-
-#ifdef HAS_SCOTCH
 
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::vector<int>>
@@ -145,7 +142,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
                                  const std::vector<std::size_t>& node_weights,
                                  std::int32_t num_ghost_nodes)
 {
-  log::log(PROGRESS, "Compute graph partition using PT-SCOTCH");
+  // spdlog::info("Compute graph partition using PT-SCOTCH");
   common::Timer timer("Compute graph partition (SCOTCH)");
 
   // C-style array indexing
@@ -333,40 +330,3 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
                         std::move(ghost_procs));
 }
 //-----------------------------------------------------------------------------
-#else
-//-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-dolfin::graph::SCOTCH::compute_partition(
-    const MPI_Comm mpi_comm,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const std::vector<std::size_t>& cell_weight,
-    const std::int64_t num_global_vertices, const mesh::CellType& cell_type)
-{
-  throw std::runtime_error(
-      "DOLFIN has been configured without support for SCOTCH");
-  return std::pair<std::vector<int>,
-                   std::map<std::int64_t, std::vector<int>>>();
-}
-//-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::vector<int>>
-dolfin::graph::SCOTCH::compute_gps(const Graph& graph, std::size_t num_passes)
-{
-  throw std::runtime_error(
-      "DOLFIN has been configured without support for SCOTCH");
-  return std::make_pair(std::vector<int>(), std::vector<int>());
-}
-//-----------------------------------------------------------------------------
-std::pair<std::vector<int>, std::vector<int>>
-dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
-                                          std::vector<int>& permutation,
-                                          std::vector<int>& inverse_permutation,
-                                          std::string scotch_strategy)
-
-{
-  throw std::runtime_error(
-      "DOLFIN has been configured without support for SCOTCH");
-  return std::make_pair(std::vector<int>(), std::vector<int>());
-}
-//-----------------------------------------------------------------------------
-
-#endif

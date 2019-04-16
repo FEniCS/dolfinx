@@ -11,7 +11,7 @@
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include <dolfin/common/Variable.h>
-#include <dolfin/log/log.h>
+// #include <spdlog/spdlog.h>
 #include <map>
 #include <memory>
 #include <utility>
@@ -180,8 +180,7 @@ private:
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
                                             std::size_t dim)
-    : common::Variable("m"), _mesh(mesh),
-      _dim(dim)
+    : common::Variable("m"), _mesh(mesh), _dim(dim)
 {
   // Do nothing
 }
@@ -189,8 +188,8 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
     const MeshFunction<T>& mesh_function)
-    : common::Variable("m"),
-      _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
+    : common::Variable("m"), _mesh(mesh_function.mesh()),
+      _dim(mesh_function.dim())
 {
   assert(_mesh);
   const std::size_t D = _mesh->topology().dim();
@@ -208,9 +207,7 @@ MeshValueCollection<T>::MeshValueCollection(
   else
   {
     _mesh->init(_dim, D);
-    const MeshConnectivity& connectivity
-        = _mesh->topology().connectivity(_dim, D);
-    assert(!connectivity.empty());
+    const Connectivity& connectivity = _mesh->topology().connectivity(_dim, D);
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
          ++entity_index)
     {
@@ -220,7 +217,8 @@ MeshValueCollection<T>::MeshValueCollection(
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
         // Create cell
-        const mesh::Cell cell(*_mesh, connectivity(entity_index)[i]);
+        const mesh::Cell cell(*_mesh,
+                              connectivity.connections(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -259,9 +257,8 @@ operator=(const MeshFunction<T>& mesh_function)
   else
   {
     _mesh->init(_dim, D);
-    const MeshConnectivity& connectivity
-        = _mesh->topology().connectivity(_dim, D);
-    assert(!connectivity.empty());
+    assert(_mesh->topology().connectivity(_dim, D));
+    const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
          ++entity_index)
     {
@@ -271,7 +268,8 @@ operator=(const MeshFunction<T>& mesh_function)
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
       {
         // Create cell
-        const mesh::Cell cell(*_mesh, connectivity(entity_index)[i]);
+        const mesh::Cell cell(*_mesh,
+                              connectivity.connections(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -320,8 +318,10 @@ bool MeshValueCollection<T>::set_value(std::size_t cell_index,
   assert(_dim >= 0);
   if (!_mesh)
   {
-    log::dolfin_error(
-        "MeshValueCollection.h", "set value",
+    // spdlog::error(
+    //     "MeshValueCollection.h", "set value",
+    //     "A mesh has not been associated with this MeshValueCollection");
+    throw std::runtime_error(
         "A mesh has not been associated with this MeshValueCollection");
   }
 
@@ -343,8 +343,10 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
 {
   if (!_mesh)
   {
-    log::dolfin_error(
-        "MeshValueCollection.h", "set value",
+    // spdlog::error(
+    //     "MeshValueCollection.h", "set value",
+    //     "A mesh has not been associated with this MeshValueCollection");
+    throw std::runtime_error(
         "A mesh has not been associated with this MeshValueCollection");
   }
 
@@ -372,14 +374,14 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
 
   // Get mesh connectivity d --> D
   _mesh->init(_dim, D);
-  const MeshConnectivity& connectivity
-      = _mesh->topology().connectivity(_dim, D);
+  assert(_mesh->topology().connectivity(_dim, D));
+  const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
 
   // Find the cell
-  assert(!connectivity.empty());
   assert(connectivity.size(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
-  const mesh::Cell cell(*_mesh, connectivity(entity_index)[0]); // choose first
+  const mesh::Cell cell(
+      *_mesh, connectivity.connections(entity_index)[0]); // choose first
 
   // Find the local entity index
   const std::size_t local_entity = cell.index(entity);
@@ -412,9 +414,11 @@ T MeshValueCollection<T>::get_value(std::size_t cell_index,
 
   if (it == _values.end())
   {
-    log::dolfin_error("MeshValueCollection.h", "extract value",
-                      "No value stored for cell index: %d and local index: %d",
-                      cell_index, local_entity);
+    // spdlog::error("MeshValueCollection.h", "extract value",
+    //               "No value stored for cell index: %d and local index: %d",
+    //               cell_index, local_entity);
+    throw std::runtime_error(
+        "A mesh has not been associated with this MeshValueCollection");
   }
 
   return it->second;
@@ -447,8 +451,9 @@ std::string MeshValueCollection<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    log::warning(
-        "Verbose output of MeshValueCollection must be implemented manually.");
+    // spdlog::warn(
+    //     "Verbose output of MeshValueCollection must be implemented
+    //     manually.");
   }
   else
   {
@@ -459,5 +464,5 @@ std::string MeshValueCollection<T>::str(bool verbose) const
   return s.str();
 }
 //---------------------------------------------------------------------------
-}
-}
+} // namespace mesh
+} // namespace dolfin

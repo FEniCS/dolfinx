@@ -4,8 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import UnitSquareMesh, MeshValueCollection, Cells, MPI, MeshFunction, FacetRange, VertexRange
-from dolfin.log import info
+from dolfin import (MPI, Cells, FacetRange, MeshFunction, MeshValueCollection,
+                    UnitSquareMesh, VertexRange)
 
 
 def test_assign_2D_cells():
@@ -110,23 +110,21 @@ def test_mesh_function_assign_2D_cells():
     values = f3.array()
     values[values > ncells_global] = 0.
 
-    info(str(values))
-    info(str(values.sum()))
-
     assert MPI.sum(mesh.mpi_comm(), values.sum() * 1.0) == 140.
 
 
 def test_mesh_function_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.init(1)
-    f = MeshFunction("int", mesh, mesh.topology.dim - 1, 25)
+    tdim = mesh.topology.dim
+    f = MeshFunction("int", mesh, tdim - 1, 25)
     for cell in Cells(mesh):
         for i, facet in enumerate(FacetRange(cell)):
             assert 25 == f[facet]
 
     g = MeshValueCollection("int", mesh, 1)
     g.assign(f)
-    assert mesh.num_facets() == f.size()
+    assert mesh.num_entities(tdim - 1) == f.size()
     assert mesh.num_cells() * 3 == g.size()
     for cell in Cells(mesh):
         for i, facet in enumerate(FacetRange(cell)):
@@ -145,7 +143,7 @@ def test_mesh_function_assign_2D_vertices():
     f = MeshFunction("int", mesh, 0, 25)
     g = MeshValueCollection("int", mesh, 0)
     g.assign(f)
-    assert mesh.num_vertices() == f.size()
+    assert mesh.num_entities(0) == f.size()
     assert mesh.num_cells() * 3 == g.size()
 
     f2 = MeshFunction("int", mesh, g, 0)

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <array>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
@@ -32,8 +33,15 @@ public:
   /// have size block_size.
   ///
   /// Collective
-  IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
+  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<std::size_t>& ghosts, std::size_t block_size);
+
+  /// Create Index map with local_size owned blocks on this process, and blocks
+  /// have size block_size.
+  ///
+  /// Collective
+  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+           const std::vector<std::int64_t>& ghosts, std::size_t block_size);
 
   /// Copy constructor
   IndexMap(const IndexMap& map) = default;
@@ -64,25 +72,25 @@ public:
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts() const;
 
   /// Get global index for local index i (index of the block)
-  std::size_t local_to_global(std::size_t i) const
+  std::int64_t local_to_global(std::int64_t i) const
   {
-    const std::size_t local_size
+    const std::int64_t local_size
         = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
 
     if (i < local_size)
     {
-      const std::size_t global_offset = _all_ranges[_myrank];
+      const std::int64_t global_offset = _all_ranges[_myrank];
       return (i + global_offset);
     }
     else
       return _ghosts[i - local_size];
   }
 
-  /// Owners of ghost entries
-  const EigenArrayXi32& ghost_owners() const;
+  /// Owner rank of each ghost entry
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& ghost_owners() const;
 
   /// Get process that owns index (global block index)
-  int owner(std::size_t global_index) const;
+  int owner(std::int64_t global_index) const;
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
@@ -105,14 +113,14 @@ private:
 public:
   // FIXME: This could get big for large process counts
   // Range of ownership of index for all processes
-  std::vector<std::size_t> _all_ranges;
+  std::vector<std::int64_t> _all_ranges;
 
 private:
   // Local-to-global map for ghost indices
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _ghosts;
 
   // Owning process for each ghost index
-  EigenArrayXi32 _ghost_owners;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
 
   // Block size
   int _block_size;

@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <dolfin/common/constants.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <map>
 #include <utility>
@@ -28,7 +27,7 @@ public:
   /// on this process (local index) to its master entity (owning
   /// process, local index on owner). If a master entity is shared
   /// by processes, only one of the owning processes is returned.
-  static std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
+  static std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
   compute_periodic_pairs(const Mesh& mesh, const mesh::SubDomain& sub_domain,
                          const std::size_t dim);
 

@@ -6,14 +6,17 @@
 
 #include "MeshGeometry.h"
 #include <boost/functional/hash.hpp>
-#include <dolfin/log/log.h>
+#include <dolfin/geometry/Point.h>
 #include <sstream>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshGeometry::MeshGeometry(const Eigen::Ref<const EigenRowArrayXXd>& points)
+MeshGeometry::MeshGeometry(
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>
+        points)
     : _coordinates(points)
 {
   // Do nothing

@@ -15,26 +15,6 @@ void PETScOptions::set(std::string option)
   PETScOptions::set<std::string>(option, "");
 }
 //-----------------------------------------------------------------------------
-void PETScOptions::set(std::string option, bool value)
-{
-  PETScOptions::set<bool>(option, value);
-}
-//-----------------------------------------------------------------------------
-void PETScOptions::set(std::string option, int value)
-{
-  PETScOptions::set<int>(option, value);
-}
-//-----------------------------------------------------------------------------
-void PETScOptions::set(std::string option, double value)
-{
-  PETScOptions::set<double>(option, value);
-}
-//-----------------------------------------------------------------------------
-void PETScOptions::set(std::string option, std::string value)
-{
-  PETScOptions::set<std::string>(option, value);
-}
-//-----------------------------------------------------------------------------
 void PETScOptions::clear(std::string option)
 {
   if (option[0] != '-')

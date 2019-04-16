@@ -54,7 +54,7 @@ def f(cube):
 def test_size(tp, name, funcs, mesh):
     if name == 0:
         a = len(funcs[(tp, name)])
-        b = mesh.num_vertices()
+        b = mesh.num_entities(0)
         assert a == b
     else:
         a = len(funcs[(tp, name)])
@@ -83,13 +83,13 @@ def test_Create(cube):
     """Create MeshFunctions."""
 
     v = MeshFunction("size_t", cube, 0, 0)
-    assert v.size() == cube.num_vertices()
+    assert v.size() == cube.num_entities(0)
 
     v = MeshFunction("size_t", cube, 1, 0)
     assert v.size() == cube.num_entities(1)
 
     v = MeshFunction("size_t", cube, 2, 0)
-    assert v.size() == cube.num_facets()
+    assert v.size() == cube.num_entities(2)
 
     v = MeshFunction("size_t", cube, 3, 0)
     assert v.size() == cube.num_cells()
@@ -99,7 +99,7 @@ def test_CreateAssign(cube):
     """Create MeshFunctions with value."""
     i = 10
     v = MeshFunction("size_t", cube, 0, i)
-    assert v.size() == cube.num_vertices()
+    assert v.size() == cube.num_entities(0)
     assert v[0] == i
 
     v = MeshFunction("size_t", cube, 1, i)
@@ -107,7 +107,7 @@ def test_CreateAssign(cube):
     assert v[0] == i
 
     v = MeshFunction("size_t", cube, 2, i)
-    assert v.size() == cube.num_facets()
+    assert v.size() == cube.num_entities(2)
     assert v[0] == i
 
     v = MeshFunction("size_t", cube, 3, i)

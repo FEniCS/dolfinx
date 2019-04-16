@@ -7,19 +7,18 @@
 #include "HDF5File.h"
 #include "HDF5Interface.h"
 #include "HDF5Utility.h"
+#include <Eigen/Dense>
 #include <boost/filesystem.hpp>
-#include <boost/multi_array.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdio>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/log/log.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
@@ -30,6 +29,8 @@
 #include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <petscvec.h>
+// #include <spdlog/spdlog.h>
 #include <string>
 
 using namespace dolfin;
@@ -132,15 +133,22 @@ void HDF5File::write(const la::PETScVector& x, const std::string dataset_name)
   assert(_hdf5_file_id > 0);
 
   // Get all local data
-  std::vector<PetscScalar> local_data;
-  x.get_local(local_data);
+  PetscErrorCode ierr;
+  const PetscScalar* x_ptr = nullptr;
+  ierr = VecGetArrayRead(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecGetArrayRead");
 
   // Write data to file
   const auto local_range = x.local_range();
   const std::vector<std::int64_t> global_size(1, x.size());
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
-  HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, local_data.data(),
-                               local_range, global_size, mpi_io, chunking);
+  HDF5Interface::write_dataset(_hdf5_file_id, dataset_name, x_ptr, local_range,
+                               global_size, mpi_io, chunking);
+
+  ierr = VecRestoreArrayRead(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecRestoreArrayRead");
 
   // Add partitioning attribute to dataset
   std::vector<std::size_t> partitions;
@@ -161,17 +169,17 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
   // Check for data set exists
   if (!HDF5Interface::has_dataset(_hdf5_file_id, dataset_name))
   {
-    log::dolfin_error("HDF5File.cpp", "read vector from file",
-                      "Data set with name \"%s\" does not exist",
-                      dataset_name.c_str());
+    // spdlog::error("HDF5File.cpp", "read vector from file",
+    //               "Data set with name \"%s\" does not exist",
+    //               dataset_name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   // Get dataset rank
-  const std::size_t rank
-      = HDF5Interface::dataset_rank(_hdf5_file_id, dataset_name);
-
-  if (rank != 1)
-    log::warning("Reading non-scalar data in HDF5 Vector");
+  // const std::size_t rank
+  //     = HDF5Interface::dataset_rank(_hdf5_file_id, dataset_name);
+  // if (rank != 1)
+  //   spdlog::warn("Reading non-scalar data in HDF5 Vector");
 
   // Get global dataset size
   const std::vector<std::int64_t> data_shape
@@ -182,7 +190,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
          or (data_shape.size() == 2 and data_shape[1] == 1));
 
   // Initialize vector
-  la::PETScVector x;
+  std::array<std::int64_t, 2> range;
   if (use_partition_from_file)
   {
     // Get partition from file
@@ -202,17 +210,15 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
 
     // Initialise vector
     const std::size_t process_num = _mpi_comm.rank();
-    x = la::PETScVector(comm,
-                        {{(std::int64_t)partitions[process_num],
-                          (std::int64_t)partitions[process_num + 1]}},
-                        Eigen::Array<PetscInt, Eigen::Dynamic, 1>(), 1);
+    range = {{(std::int64_t)partitions[process_num],
+              (std::int64_t)partitions[process_num + 1]}};
   }
   else
   {
-    std::array<std::int64_t, 2> local_range
-        = MPI::local_range(comm, data_shape[0]);
-    x = la::PETScVector(comm, local_range, {}, 1);
+    range = MPI::local_range(comm, data_shape[0]);
   }
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> ghosts;
+  la::PETScVector x(comm, range, ghosts, 1);
 
   // Get local range
   const std::array<std::int64_t, 2> local_range = x.local_range();
@@ -222,8 +228,15 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
       _hdf5_file_id, dataset_name, local_range);
 
   // Set data
-  x.set_local(data);
-  x.apply();
+  PetscErrorCode ierr;
+  PetscScalar* x_ptr = nullptr;
+  ierr = VecGetArray(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecGetArray");
+  std::copy(data.begin(), data.end(), x_ptr);
+  ierr = VecRestoreArray(x.vec(), &x_ptr);
+  if (ierr != 0)
+    la::petsc_error(ierr, __FILE__, "VecRestoreArray");
 
   return x;
 }
@@ -233,15 +246,15 @@ void HDF5File::write(const mesh::Mesh& mesh, const std::string name)
   write(mesh, mesh.topology().dim(), name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
+void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
                      const std::string name)
 {
   // FIXME: break up this function
 
   common::Timer t0("HDF5: write mesh to file");
 
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+  const int gdim = mesh.geometry().dim();
 
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   assert(_hdf5_file_id > 0);
@@ -315,7 +328,7 @@ void HDF5File::write(const mesh::Mesh& mesh, std::size_t cell_dim,
       // dimension
 
       const std::size_t mpi_rank = _mpi_comm.rank();
-      const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+      const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
           = mesh.topology().shared_entities(cell_dim);
 
       std::set<unsigned int> non_local_entities;
@@ -496,24 +509,27 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, topology_name))
   {
-    log::dolfin_error("HDF5File.cpp", "read topology dataset",
-                      "Dataset \"%s\" not found", topology_name.c_str());
+    // spdlog::error("HDF5File.cpp", "read topology dataset",
+    //               "Dataset \"%s\" not found", topology_name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   // Look for Coordinates dataset - but not used
   const std::string coordinates_name = mesh_name + "/coordinates";
   if (!HDF5Interface::has_dataset(_hdf5_file_id, coordinates_name))
   {
-    log::dolfin_error("HDF5File.cpp", "read coordinates dataset",
-                      "Dataset \"%s\" not found", coordinates_name.c_str());
+    // spdlog::error("HDF5File.cpp", "read coordinates dataset",
+    //               "Dataset \"%s\" not found", coordinates_name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   // Look for Values dataset
   const std::string values_name = mesh_name + "/values";
   if (!HDF5Interface::has_dataset(_hdf5_file_id, values_name))
   {
-    log::dolfin_error("HDF5File.cpp", "read values dataset",
-                      "Dataset \"%s\" not found", values_name.c_str());
+    // spdlog::error("HDF5File.cpp", "read values dataset",
+    //               "Dataset \"%s\" not found", values_name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   // --- Topology ---
@@ -548,8 +564,10 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
       = HDF5Interface::read_dataset<std::size_t>(_hdf5_file_id, topology_name,
                                                  cell_range);
 
-  boost::multi_array_ref<std::size_t, 2> topology_array(
-      topology_data.data(), boost::extents[num_read_cells][vertices_per_cell]);
+  // Wrap data as 2D array
+  Eigen::Map<Eigen::Array<std::size_t, Eigen::Dynamic, Eigen::Dynamic,
+                          Eigen::RowMajor>>
+      topology_array(topology_data.data(), num_read_cells, vertices_per_cell);
 
   std::vector<T> value_data
       = HDF5Interface::read_dataset<T>(_hdf5_file_id, values_name, cell_range);
@@ -561,19 +579,20 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   std::vector<std::vector<std::size_t>> send_topology(num_processes);
   std::vector<std::vector<T>> send_values(num_processes);
-  for (std::size_t i = 0; i < num_read_cells; ++i)
+  for (Eigen::Index i = 0; i < topology_array.rows(); ++i)
   {
-    std::vector<std::size_t> cell_topology(topology_array[i].begin(),
-                                           topology_array[i].end());
-    std::sort(cell_topology.begin(), cell_topology.end());
+    std::sort(topology_array.row(i).data(),
+              topology_array.row(i).data() + topology_array.row(i).cols());
 
     // Use first vertex to decide where to send this data
+    assert(topology_array.row(i).cols() > 0);
     const std::size_t send_to_process
-        = MPI::index_owner(_mpi_comm.comm(), cell_topology.front(), max_vertex);
+        = MPI::index_owner(_mpi_comm.comm(), topology_array(i, 0), max_vertex);
 
-    send_topology[send_to_process].insert(send_topology[send_to_process].end(),
-                                          cell_topology.begin(),
-                                          cell_topology.end());
+    send_topology[send_to_process].insert(
+        send_topology[send_to_process].end(), topology_array.row(i).data(),
+        topology_array.row(i).data() + topology_array.row(i).cols());
+
     send_values[send_to_process].push_back(value_data[i]);
   }
 
@@ -681,7 +700,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     throw std::runtime_error("Cannot save empty mesh::MeshFunction.");
 
   const mesh::Mesh& mesh = *meshfunction.mesh();
-  const std::size_t cell_dim = meshfunction.dim();
+  const int cell_dim = meshfunction.dim();
 
   // Write a mesh for the mesh::MeshFunction - this will also globally
   // number the entities if needed
@@ -705,7 +724,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     // Drop duplicate data
     const std::size_t tdim = mesh.topology().dim();
     const std::size_t mpi_rank = _mpi_comm.rank();
-    const std::map<std::int32_t, std::set<unsigned int>>& shared_entities
+    const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
         = mesh.topology().shared_entities(cell_dim);
 
     std::set<unsigned int> non_local_entities;
@@ -797,7 +816,7 @@ void HDF5File::write(const function::Function& u, const std::string name,
     HDF5Interface::add_attribute(_hdf5_file_id, name, "count", vec_count);
 
     // Write new vector and save timestamp
-    write(*u.vector(), vec_name);
+    write(u.vector(), vec_name);
     if (HDF5Interface::has_attribute(_hdf5_file_id, vec_name, "timestamp"))
       HDF5Interface::delete_attribute(_hdf5_file_id, vec_name, "timestamp");
     HDF5Interface::add_attribute(_hdf5_file_id, vec_name, "timestamp",
@@ -873,7 +892,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
                                u.function_space()->element()->signature());
 
   // Save vector
-  write(*u.vector(), name + "/vector_0");
+  write(u.vector(), name + "/vector_0");
 }
 //-----------------------------------------------------------------------------
 function::Function
@@ -908,29 +927,33 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
   // Check datasets exist
   if (!HDF5Interface::has_group(_hdf5_file_id, basename))
   {
-    log::dolfin_error("HDF5File.cpp", "read function from file",
-                      "Group with name \"%s\" does not exist", name.c_str());
+    // spdlog::error("HDF5File.cpp", "read function from file",
+    //               "Group with name \"%s\" does not exist", name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, cells_dataset_name))
   {
-    log::dolfin_error("HDF5File.cpp", "read function from file",
-                      "Dataset with name \"%s\" does not exist",
-                      cells_dataset_name.c_str());
+    // spdlog::error("HDF5File.cpp", "read function from file",
+    //               "Dataset with name \"%s\" does not exist",
+    //               cells_dataset_name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, cell_dofs_dataset_name))
   {
-    log::dolfin_error("HDF5File.cpp", "read function from file",
-                      "Dataset with name \"%s\" does not exist",
-                      cell_dofs_dataset_name.c_str());
+    // spdlog::error("HDF5File.cpp", "read function from file",
+    //               "Dataset with name \"%s\" does not exist",
+    //               cell_dofs_dataset_name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, x_cell_dofs_dataset_name))
   {
-    log::dolfin_error("HDF5File.cpp", "read function from file",
-                      "Dataset with name \"%s\" does not exist",
-                      x_cell_dofs_dataset_name.c_str());
+    // spdlog::error("HDF5File.cpp", "read function from file",
+    //               "Dataset with name \"%s\" does not exist",
+    //               x_cell_dofs_dataset_name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   // Check if it has the vector_0-dataset. If not, it may be stored
@@ -944,9 +967,10 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
 
     if (!HDF5Interface::has_dataset(_hdf5_file_id, vector_dataset_name))
     {
-      log::dolfin_error("HDF5File.cpp", "read function from file",
-                        "Dataset with name \"%s\" does not exist",
-                        tmp_name.c_str());
+      // spdlog::error("HDF5File.cpp", "read function from file",
+      //               "Dataset with name \"%s\" does not exist",
+      //               tmp_name.c_str());
+      throw std::runtime_error("IO Error");
     }
   }
 
@@ -991,7 +1015,7 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
       _hdf5_file_id, cell_dofs_dataset_name,
       {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
-  la::PETScVector& x = *u.vector();
+  la::PETScVector& x = u.vector();
 
   const std::vector<std::int64_t> vector_shape
       = HDF5Interface::get_dataset_shape(_hdf5_file_id, vector_dataset_name);
@@ -1142,8 +1166,9 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
   if (!HDF5Interface::has_group(_hdf5_file_id, name))
   {
-    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
-                      "Group \"%s\" not found in file", name.c_str());
+    // spdlog::error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    //               "Group \"%s\" not found in file", name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   std::size_t dim = HDF5Interface::get_attribute<std::size_t>(
@@ -1158,15 +1183,16 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, values_name))
   {
-    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
-                      "Dataset \"%s\" not found in file", values_name.c_str());
+    // spdlog::error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    //               "Dataset \"%s\" not found in file", values_name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   if (!HDF5Interface::has_dataset(_hdf5_file_id, topology_name))
   {
-    log::dolfin_error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
-                      "Dataset \"%s\" not found in file",
-                      topology_name.c_str());
+    // spdlog::error("HDF5File.cpp", "open mesh::MeshValueCollection dataset",
+    //               "Dataset \"%s\" not found in file", topology_name.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   // Check both datasets have the same number of entries
@@ -1318,8 +1344,9 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
   const std::string topology_path = data_path + "/topology";
   if (!HDF5Interface::has_dataset(_hdf5_file_id, topology_path))
   {
-    log::dolfin_error("HDF5File.cpp", "read topology dataset",
-                      "Dataset \"%s\" not found", topology_path.c_str());
+    // spdlog::error("HDF5File.cpp", "read topology dataset",
+    //               "Dataset \"%s\" not found", topology_path.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   // Get topology data
@@ -1339,8 +1366,9 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
   const std::string geometry_path = data_path + "/coordinates";
   if (!HDF5Interface::has_dataset(_hdf5_file_id, geometry_path))
   {
-    log::dolfin_error("HDF5File.cpp", "read coordinates dataset",
-                      "Dataset \"%s\" not found", geometry_path.c_str());
+    // spdlog::error("HDF5File.cpp", "read coordinates dataset",
+    //               "Dataset \"%s\" not found", geometry_path.c_str());
+    throw std::runtime_error("IO Error");
   }
 
   // Get dimensions of coordinate dataset
@@ -1349,17 +1377,17 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
   assert(coords_shape.size() < 3);
   if (coords_shape.size() == 1)
   {
-    log::dolfin_error(
-        "HDF5File.cpp", "get geometric dimension",
-        "Cannot determine geometric dimension from one-dimensional "
-        "array storage in HDF5 file");
+    // spdlog::error("HDF5File.cpp", "get geometric dimension",
+    //               "Cannot determine geometric dimension from one-dimensional
+    //               " "array storage in HDF5 file");
+    throw std::runtime_error("IO Error");
   }
   else if (coords_shape.size() > 2)
   {
-    log::dolfin_error(
-        "HDF5File.cpp", "get geometric dimension",
-        "Cannot determine geometric dimension from high-rank array "
-        "storage in HDF5 file");
+    // spdlog::error("HDF5File.cpp", "get geometric dimension",
+    //               "Cannot determine geometric dimension from high-rank array
+    //               " "storage in HDF5 file");
+    throw std::runtime_error("IO Error");
   }
 
   // Extract geometric dimension
@@ -1400,10 +1428,10 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
         _hdf5_file_id, topology_path, "celltype");
     if (cell_type.cell_type() != mesh::CellType::string2type(cell_type_str))
     {
-      log::dolfin_error(
-          "HDF5File.cpp", "read topology data",
-          "Inconsistency between expected cell type and cell type "
-          "attribie in HDF file");
+      // spdlog::error("HDF5File.cpp", "read topology data",
+      //               "Inconsistency between expected cell type and cell type "
+      //               "attribie in HDF file");
+      throw std::runtime_error("IO Error");
     }
   }
 
@@ -1420,14 +1448,16 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
     num_global_cells = topology_shape[0];
     if (topology_shape[1] != num_vertices_per_cell)
     {
-      log::dolfin_error("HDF5File.cpp", "read topology data",
-                        "Topology in HDF5 file has inconsistent size");
+      // spdlog::error("HDF5File.cpp", "read topology data",
+      //               "Topology in HDF5 file has inconsistent size");
+      throw std::runtime_error("IO Error");
     }
   }
   else
   {
-    log::dolfin_error("HDF5File.cpp", "read coordinate data",
-                      "Topology in HDF5 file has wrong shape");
+    // spdlog::error("HDF5File.cpp", "read coordinate data",
+    //               "Topology in HDF5 file has wrong shape");
+    throw std::runtime_error("IO Error");
   }
 
   // Check number of cells (global)
@@ -1436,10 +1466,11 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
     // Check number of cells for consistency with expected number of cells
     if (num_global_cells != expected_num_global_cells)
     {
-      log::dolfin_error(
-          "HDF5File.cpp", "read cell data",
-          "Inconsistentcy between expected number of cells and number "
-          "of cells in topology in HDF5 file");
+      // spdlog::error(
+      //     "HDF5File.cpp", "read cell data",
+      //     "Inconsistentcy between expected number of cells and number "
+      //     "of cells in topology in HDF5 file");
+      throw std::runtime_error("IO Error");
     }
   }
 
@@ -1465,8 +1496,8 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   }
   else
   {
-    if (use_partition_from_file)
-      log::warning("Could not use partition from file: wrong size");
+    // if (use_partition_from_file)
+    //   spdlog::warn("Could not use partition from file: wrong size");
 
     // Divide up cells approximately equally between processes
     cell_range = MPI::local_range(_mpi_comm.comm(), num_global_cells);
@@ -1532,17 +1563,19 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   }
   else
   {
-    log::dolfin_error("HDF5File.cpp", "read coordinate data",
-                      "Topology in HDF5 file has wrong shape");
+    // spdlog::error("HDF5File.cpp", "read coordinate data",
+    //               "Topology in HDF5 file has wrong shape");
+    throw std::runtime_error("IO Error");
   }
 
   // Check number of vertices (global) against expected number
   if (expected_num_global_points >= 0
       and num_global_points != expected_num_global_points)
   {
-    log::dolfin_error("HDF5File.cpp", "read vertex data",
-                      "Inconsistentcy between expected number of vertices and "
-                      "number of vertices in geometry in HDF5 file");
+    // spdlog::error("HDF5File.cpp", "read vertex data",
+    //               "Inconsistentcy between expected number of vertices and "
+    //               "number of vertices in geometry in HDF5 file");
+    throw std::runtime_error("IO Error");
   }
 
   // Divide point range into equal blocks for each process

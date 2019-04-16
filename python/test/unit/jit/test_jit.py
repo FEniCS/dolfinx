@@ -5,12 +5,12 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the JIT compiler"""
 
+import numpy as np
 import pytest
 
 import dolfin
-from dolfin import MPI, compile_cpp_code
-from dolfin.la import PETScVector
-from dolfin_utils.test.skips import (skip_if_not_SLEPc, skip_in_serial)
+from dolfin import MPI, compile_cpp_code, cpp
+from dolfin_utils.test.skips import skip_in_serial
 
 
 def test_mpi_pybind11():
@@ -56,10 +56,11 @@ def test_petsc():
     #include <dolfin.h>
     namespace dolfin
     {
-        std::shared_ptr<la::PETScMatrix> create_matrix(void) {
+        la::PETScMatrix create_matrix(void)
+        {
             Mat I;
-            std::shared_ptr<la::PETScMatrix> ptr = std::make_shared<la::PETScMatrix>(I);
-            return ptr;
+            la::PETScMatrix A = la::PETScMatrix(I);
+            return A;
         }
     }
 
@@ -72,35 +73,7 @@ def test_petsc():
     assert (module)
 
 
-@pytest.mark.skip
-@skip_if_not_SLEPc
-def test_slepc():
-    create_eps_code = r'''
-    #include <pybind11/pybind11.h>
-    #include <dolfin.h>
-    #include <slepc.h>
-    namespace dolfin
-    {
-        std::shared_ptr<EPS> create_matrix(MPI_Comm comm) {
-            EPS eps;
-            EPSCreate(comm, &eps);
-            std::shared_ptr<EPS> ptr = std::make_shared<EPS>(eps);
-            return ptr;
-        }
-    }
-
-    PYBIND11_MODULE(SIGNATURE, m)
-    {
-      m.def("create_matrix", &dolfin::create_matrix);
-    }
-
-    '''
-    compile_cpp_code(create_eps_code)
-
-
 def test_pass_array_int():
-    import numpy
-
     code = """
     #include <Eigen/Core>
     #include <pybind11/pybind11.h>
@@ -116,14 +89,12 @@ def test_pass_array_int():
     }
     """
     module = compile_cpp_code(code)
-    arr = numpy.array([1, 2, 4, 8], dtype=numpy.intc)
+    arr = np.array([1, 2, 4, 8], dtype=np.intc)
     ans = module.test_int_array(arr)
     assert ans == arr.sum() == 15
 
 
 def test_pass_array_double():
-    import numpy
-
     code = """
     #include <Eigen/Core>
     #include <pybind11/pybind11.h>
@@ -139,28 +110,25 @@ def test_pass_array_double():
     }
     """
     module = compile_cpp_code(code)
-    arr = numpy.array([1, 2, 4, 8], dtype=float)
+    arr = np.array([1, 2, 4, 8], dtype=float)
     ans = module.test_double_array(arr)
     assert abs(arr.sum() - 15) < 1e-15
     assert abs(ans - 15) < 1e-15
 
 
+@pytest.mark.skip(reason="FIXME: does this need pybind11 petsc_caster.h to be included?")
 def test_compile_extension_module():
-
     # This test should do basically the same as the docstring of the
     # compile_extension_module function in compilemodule.py.  Remember
     # to update the docstring if the test is modified!
 
-    from numpy import arange, exp
     code = """
       #include <pybind11/pybind11.h>
-
       #include <petscvec.h>
       #include <dolfin/la/PETScVector.h>
 
-      void PETSc_exp(std::shared_ptr<dolfin::la::PETScVector> vec)
+      void PETSc_exp(Vec x)
       {
-        Vec x = vec->vec();
         assert(x);
         VecExp(x);
       }
@@ -172,15 +140,17 @@ def test_compile_extension_module():
     """
 
     ext_module = compile_cpp_code(code)
-
     local_range = MPI.local_range(MPI.comm_world, 10)
-    vec = PETScVector(MPI.comm_world, local_range, [], 1)
-    np_vec = vec.get_local()
-    np_vec[:] = arange(len(np_vec))
-    vec[:] = np_vec
-    ext_module.PETSc_exp(vec)
-    np_vec[:] = exp(np_vec)
-    assert (np_vec == vec.get_local()).all()
+    x = cpp.la.create_vector(MPI.comm_world, local_range, [], 1)
+    x_np = np.arange(float(local_range[1] - local_range[0]))
+    with x.localForm() as lf:
+        lf[:] = x_np
+
+    ext_module.PETSc_exp(x)
+    x_np = np.exp(x_np)
+
+    x = x.getArray()
+    assert (x == x_np).all()
 
 
 @pytest.mark.xfail
@@ -200,7 +170,7 @@ def test_mpi_dependent_jiting():
                         Form, FunctionSpace, dx, CompiledSubDomain,
                         SubSystemsManager)
 
-    # Init petsc (needed to initalize petsc and slepc collectively on
+    # Init petsc (needed to initalize petsc collectively on
     # all processes)
     SubSystemsManager.init_petsc()
 

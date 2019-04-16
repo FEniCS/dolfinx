@@ -13,11 +13,10 @@
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/la/PETScVector.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
+// #include <spdlog/spdlog.h>
 #include <vector>
 
 using namespace dolfin;
@@ -102,7 +101,9 @@ std::int64_t FunctionSpace::dim() const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
-    la::PETScVector& expansion_coefficients, const Function& v) const
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        expansion_coefficients,
+    const Function& v) const
 {
   assert(_mesh);
 
@@ -111,29 +112,42 @@ void FunctionSpace::interpolate_from_any(
   // Initialize local arrays
   std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
 
+  if (!v.function_space()->has_element(*_element))
+  {
+    throw std::runtime_error("Restricting finite elements function in "
+                             "different elements not suppoted.");
+  }
+
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
+    // FIXME: Move this out
+    if (!v.function_space()->has_cell(cell))
+    {
+      throw std::runtime_error("Restricting finite elements function in "
+                               "different elements not suppoted.");
+    }
+
     // Get cell coordinate dofs
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
     // Restrict function to cell
-    v.restrict(cell_coefficients.data(), *_element, cell, coordinate_dofs);
+    v.restrict(cell_coefficients.data(), cell, coordinate_dofs);
 
     // Tabulate dofs
     auto cell_dofs = _dofmap->cell_dofs(cell.index());
 
-    // Copy dofs to vector
-    expansion_coefficients.set_local(cell_coefficients.data(),
-                                     _dofmap->num_element_dofs(cell.index()),
-                                     cell_dofs.data());
+    for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
+      expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
   }
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
-    la::PETScVector& expansion_coefficients, const Expression& expr) const
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        expansion_coefficients,
+    const Expression& expr) const
 {
   assert(_mesh);
 
@@ -158,14 +172,15 @@ void FunctionSpace::interpolate_from_any(
         = _dofmap->cell_dofs(cell.index());
 
     // Copy dofs to vector
-    expansion_coefficients.set_local(cell_coefficients.data(),
-                                     _dofmap->num_element_dofs(cell.index()),
-                                     cell_dofs.data());
+    for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
+      expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
   }
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
-                                const Function& v) const
+void FunctionSpace::interpolate(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        expansion_coefficients,
+    const Function& v) const
 {
   assert(_mesh);
   assert(_element);
@@ -174,42 +189,35 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
   {
-    log::dolfin_error(
-        "FunctionSpace.cpp", "interpolate function into function space",
-        "Rank of function (%d) does not match rank of function space (%d)",
-        v.value_rank(), element()->value_rank());
+    // spdlog::error(
+    //     "FunctionSpace.cpp", "interpolate function into function space",
+    //     "Rank of function (%d) does not match rank of function space (%d)",
+    //     v.value_rank(), element()->value_rank());
+    throw std::runtime_error("Incorrect Rank");
   }
 
-  // Check that function dims match
+  // Check that function dimension match
   for (std::size_t i = 0; i < _element->value_rank(); ++i)
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
-      log::dolfin_error(
-          "FunctionSpace.cpp", "interpolate function into function space",
-          "Dimension %d of function (%d) does not match dimension %d "
-          "of function space (%d)",
-          i, v.value_dimension(i), i, element()->value_dimension(i));
+      // spdlog::error("FunctionSpace.cpp",
+      //               "interpolate function into function space",
+      //               "Dimension %d of function (%d) does not match dimension
+      //               %d " "of function space (%d)", i, v.value_dimension(i),
+      //               i, element()->value_dimension(i));
+      throw std::runtime_error("Incorrect dimension");
     }
   }
 
-  // Initialize vector of expansion coefficients
-  if (expansion_coefficients.size() != _dofmap->global_dimension())
-  {
-    throw std::runtime_error("Cannot interpolate function into function space. "
-                             "Wrong size of vector");
-  }
-  expansion_coefficients.set(0.0);
-
   std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
   interpolate_from_any(expansion_coefficients, v);
-
-  // Finalise changes
-  expansion_coefficients.apply();
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
-                                const Expression& expr) const
+void FunctionSpace::interpolate(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        expansion_coefficients,
+    const Expression& expr) const
 {
   assert(_mesh);
   assert(_element);
@@ -234,17 +242,14 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   }
 
   // Initialize vector of expansion coefficients
-  if (expansion_coefficients.size() != _dofmap->global_dimension())
-  {
-    throw std::runtime_error("Cannot interpolate function into function space. "
-                             "Wrong size of vector");
-  }
-  expansion_coefficients.set(0.0);
+  // if (expansion_coefficients.size() != _dofmap->global_dimension())
+  // {
+  //   throw std::runtime_error("Cannot interpolate function into function space. "
+  //                            "Wrong size of vector");
+  // }
+  // VecSet(expansion_coefficients.vec(), 0.0);
 
   interpolate_from_any(expansion_coefficients, expr);
-
-  // Finalise changes
-  expansion_coefficients.apply();
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
@@ -255,35 +260,36 @@ FunctionSpace::sub(const std::vector<std::size_t>& component) const
   assert(_dofmap);
 
   // Check if sub space is already in the cache and not expired
-  auto subspace = _subspaces.find(component);
-  if (subspace != _subspaces.end())
-    if (auto s = subspace->second.lock())
+  auto subspace_it = _subspaces.find(component);
+  if (subspace_it != _subspaces.end())
+  {
+    if (auto s = subspace_it->second.lock())
       return s;
+  }
 
   // Extract sub-element
-  auto element = _element->extract_sub_element(component);
+  std::shared_ptr<fem::FiniteElement> element
+      = _element->extract_sub_element(component);
 
   // Extract sub dofmap
   std::shared_ptr<fem::GenericDofMap> dofmap(
       _dofmap->extract_sub_dofmap(component, *_mesh));
 
   // Create new sub space
-  auto new_sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
+  auto sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
 
   // Set root space id and component w.r.t. root
-  new_sub_space->_root_space_id = _root_space_id;
-  auto& new_component = new_sub_space->_component;
-  new_component.clear();
-  new_component.insert(new_component.end(), _component.begin(),
-                       _component.end());
-  new_component.insert(new_component.end(), component.begin(), component.end());
+  sub_space->_root_space_id = _root_space_id;
+  sub_space->_component = _component;
+  sub_space->_component.insert(sub_space->_component.end(), component.begin(),
+                               component.end());
 
   // Insert new subspace into cache
   _subspaces.insert(
       std::pair<std::vector<std::size_t>, std::shared_ptr<FunctionSpace>>(
-          component, new_sub_space));
+          sub_space->_component, sub_space));
 
-  return new_sub_space;
+  return sub_space;
 }
 //-----------------------------------------------------------------------------
 std::pair<std::shared_ptr<FunctionSpace>,
@@ -293,8 +299,9 @@ FunctionSpace::collapse() const
   assert(_mesh);
   if (_component.empty())
   {
-    log::dolfin_error("FunctionSpace.cpp", "collapse function space",
-                      "Function space is not a subspace");
+    // spdlog::error("FunctionSpace.cpp", "collapse function space",
+    //               "Function space is not a subspace");
+    throw std::runtime_error("Not a subspace");
   }
 
   // Create collapsed DofMap
@@ -321,9 +328,11 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 
   if (!_component.empty())
   {
-    log::dolfin_error(
-        "FunctionSpace.cpp", "tabulate_dof_coordinates",
-        "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
+    // spdlog::error(
+    //     "FunctionSpace.cpp", "tabulate_dof_coordinates",
+    //     "Cannot tabulate coordinates for a FunctionSpace that is a
+    //     subspace.");
+    throw std::runtime_error("Cannot tabulate for subspace");
   }
 
   // Get local size
@@ -350,7 +359,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   EigenRowArrayXXd coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
-    // Update UFC cell
+    // Update cell
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 
@@ -372,8 +381,9 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   return x;
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::set_x(la::PETScVector& x, PetscScalar value,
-                          std::size_t component) const
+void FunctionSpace::set_x(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+    PetscScalar value, int component) const
 {
   assert(_mesh);
   assert(_dofmap);
@@ -383,7 +393,8 @@ void FunctionSpace::set_x(la::PETScVector& x, PetscScalar value,
   std::vector<PetscScalar> x_values;
 
   // Dof coordinate on reference element
-  const EigenRowArrayXXd& X = _element->dof_reference_coordinates();
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
+      = _element->dof_reference_coordinates();
 
   // Get coordinate mapping
   if (!_mesh->geometry().coord_mapping)
@@ -393,9 +404,10 @@ void FunctionSpace::set_x(la::PETScVector& x, PetscScalar value,
   }
   const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
 
-  EigenRowArrayXXd coordinates(_element->space_dimension(),
-                               _mesh->geometry().dim());
-  EigenRowArrayXXd coordinate_dofs;
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinates(_element->space_dimension(), _mesh->geometry().dim());
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
@@ -409,15 +421,11 @@ void FunctionSpace::set_x(la::PETScVector& x, PetscScalar value,
     cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
 
     assert(coordinates.rows() == dofs.size());
-    assert(component < (std::size_t)coordinates.cols());
+    assert(component < (int)coordinates.cols());
 
     // Copy coordinate (it may be possible to avoid this)
-    x_values.resize(dofs.size());
     for (Eigen::Index i = 0; i < coordinates.rows(); ++i)
-      x_values[i] = value * coordinates(i, component);
-
-    // Set x[component] values in vector
-    x.set_local(x_values.data(), dofs.size(), dofs.data());
+      x[dofs[i]] = value * coordinates(i, component);
   }
 }
 //-----------------------------------------------------------------------------

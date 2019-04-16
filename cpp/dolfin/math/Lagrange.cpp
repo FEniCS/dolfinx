@@ -6,9 +6,9 @@
 
 #include "Lagrange.h"
 #include <cassert>
+#include <cfloat>
 #include <cmath>
-#include <dolfin/common/constants.h>
-#include <dolfin/log/log.h>
+// #include <spdlog/spdlog.h>
 #include <sstream>
 
 using namespace dolfin;
@@ -75,7 +75,7 @@ double dolfin::math::Lagrange::ddx(std::size_t i, double x)
     if (j != i)
     {
       double t = x - points[j];
-      if (std::abs(t) < DOLFIN_EPS)
+      if (std::abs(t) < DBL_EPSILON)
         x_equals_point = true;
       else
       {
@@ -136,16 +136,17 @@ void dolfin::math::Lagrange::init()
     {
       if (j != i)
       {
-        if (std::abs(points[i] - points[j]) < DOLFIN_EPS)
+        if (std::abs(points[i] - points[j]) < DBL_EPSILON)
         {
-          log::dolfin_error("Lagrange.cpp", "create Lagrange polynomial",
-                            "Nodal points are not distinct");
+          // spdlog::error("Lagrange.cpp", "create Lagrange polynomial",
+          //               "Nodal points are not distinct");
+          throw std::runtime_error("Nodal points are not distinct");
         }
         product *= points[i] - points[j];
       }
     }
 
-    // if (std::abs(product) < DOLFIN_EPS)
+    // if (std::abs(product) < DBL_EPSILON)
     //  instability_detected();
 
     constants[i] = 1.0 / product;

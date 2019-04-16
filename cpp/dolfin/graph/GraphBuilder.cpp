@@ -10,7 +10,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/log/log.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
@@ -145,7 +144,7 @@ dolfin::graph::GraphBuilder::compute_dual_graph(
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type)
 {
-  log::log(PROGRESS, "Build mesh dual graph");
+  // spdlog::info("Build mesh dual graph");
 
   std::vector<std::vector<std::size_t>> local_graph;
   std::int32_t num_ghost_nodes;
@@ -177,7 +176,7 @@ dolfin::graph::GraphBuilder::compute_local_dual_graph(
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type)
 {
-  log::log(PROGRESS, "Build local part of mesh dual graph");
+  // spdlog::info("Build local part of mesh dual graph");
 
   const std::int8_t tdim = cell_type.dim();
   const std::int8_t num_entity_vertices = cell_type.num_vertices(tdim - 1);
@@ -238,8 +237,8 @@ dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
       = MPI::global_offset(mpi_comm, num_local_cells, true);
 
   // Create map from cell vertices to entity vertices
-  boost::multi_array<std::int32_t, 2> facet_vertices(
-      boost::extents[num_facets_per_cell][num_vertices_per_facet]);
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      facet_vertices(num_facets_per_cell, num_vertices_per_facet);
   std::vector<std::int32_t> v(num_vertices_per_cell);
   std::iota(v.begin(), v.end(), 0);
   cell_type.create_entities(facet_vertices, tdim - 1, v.data());
@@ -260,7 +259,7 @@ dolfin::graph::GraphBuilder::compute_local_dual_graph_keyed(
       // Get list of facet vertices
       auto& facet = facets[counter].first;
       for (std::int8_t k = 0; k < N; ++k)
-        facet[k] = cell_vertices(i, facet_vertices[j][k]);
+        facet[k] = cell_vertices(i, facet_vertices(j, k));
 
       // Sort facet vertices
       std::sort(facet.begin(), facet.end());
@@ -332,7 +331,7 @@ dolfin::graph::GraphBuilder::compute_nonlocal_dual_graph(
     const mesh::CellType& cell_type, const FacetCellMap& facet_cell_map,
     std::vector<std::vector<std::size_t>>& local_graph)
 {
-  log::log(PROGRESS, "Build nonlocal part of mesh dual graph");
+  // spdlog::info("Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
 
   // Get number of MPI processes, and return if mesh is not distributed

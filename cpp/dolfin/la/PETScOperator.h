@@ -25,12 +25,9 @@ class PETScOperator
 {
 public:
   /// Constructor
-  PETScOperator();
+  PETScOperator(Mat A, bool inc_ref_count);
 
-  /// Constructor
-  explicit PETScOperator(Mat A);
-
-  /// Copy constructor (deleted)
+  // Copy constructor (deleted)
   PETScOperator(const PETScOperator& A) = delete;
 
   /// Move constructor
@@ -49,25 +46,18 @@ public:
   /// returns -1 if size has not been set.
   std::array<std::int64_t, 2> size() const;
 
-  // FIXME: Remove? Not appropriate for operator?
-  /// Return local range along dimension dim
-  std::array<std::int64_t, 2> local_range(std::size_t dim) const;
-
   /// Initialize vector to be compatible with the matrix-vector product
   /// y = Ax. In the parallel case, size and layout are both important.
   ///
   /// @param      dim (std::size_t) The dimension (axis): dim = 0 --> z
   ///         = y, dim = 1 --> z = x
-  PETScVector init_vector(std::size_t dim) const;
+  PETScVector create_vector(std::size_t dim) const;
 
   /// Return the MPI communicator
   MPI_Comm mpi_comm() const;
 
   /// Return PETSc Mat pointer
   Mat mat() const;
-
-  /// Return informal string representation (pretty-print)
-  virtual std::string str(bool verbose) const;
 
 protected:
   // PETSc Mat pointer

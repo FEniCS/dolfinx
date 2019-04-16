@@ -21,7 +21,7 @@
 # The bilinear form a(v, u) and linear form L(v) for
 # projection onto piecewise quadratics.
 #
-# Compile this form with FFC: ffc -l dolfin Projection.form.
+# Compile this form with FFC: ffc Projection.ufl
 
 element = FiniteElement("Lagrange", tetrahedron, 2)
 
@@ -29,5 +29,5 @@ v = TestFunction(element)
 u = TrialFunction(element)
 f = Coefficient(element)
 
-a = v*u*dx
-L = v*f*dx
+a = inner(u, v)*dx
+L = inner(f, v)*dx

@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2012 Anders Logg and Garth N. Wells
+// Copyright (C) 2007-2018 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -7,13 +7,12 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
-#include <dolfin/common/types.h>
 #include <map>
 #include <memory>
-#include <unordered_map>
+#include <petscsys.h>
+#include <set>
 #include <utility>
+#include <vector>
 
 namespace dolfin
 {
@@ -26,9 +25,6 @@ class FunctionSpace;
 
 namespace mesh
 {
-class Facet;
-template <typename T>
-class MeshFunction;
 class SubDomain;
 } // namespace mesh
 
@@ -36,74 +32,66 @@ namespace fem
 {
 
 /// Interface for setting (strong) Dirichlet boundary conditions.
-
 ///
 ///     u = g on G,
 ///
-/// where u is the solution to be computed, g is a function
-/// and G is a sub domain of the mesh.
+/// where u is the solution to be computed, g is a function and G is a
+/// sub domain of the mesh.
 ///
 /// A DirichletBC is specified by the function g, the function space
 /// (trial space) and boundary indicators on (a subset of) the mesh
 /// boundary.
 ///
-/// The boundary indicators may be specified in a number of
-/// different ways.
+/// The boundary indicators may be specified in a number of different
+/// ways:
 ///
-/// The simplest approach is to specify the boundary by a _SubDomain_
-/// object, using the inside() function to specify on which facets
-/// the boundary conditions should be applied. The boundary facets
-/// will then be searched for and marked *only* on the first call to
-/// apply. This means that the mesh could be moved after the first
-/// apply and the boundary markers would still remain intact.
+/// 1. Providing a_SubDomain_ object, using the inside() function to
+///    specify on which facets the boundary conditions should be
+///    applied.
+/// 2. Providing list of facets (by index, local to a process).
 ///
-/// Alternatively, the boundary may be specified by a _mesh::MeshFunction_
-/// over facets labeling all mesh facets together with a number that
-/// specifies which facets should be included in the boundary.
+/// The degrees-of-freedom to which boundary conditions are applied are
+/// computed at construction and cannot be changed afterwards.
 ///
-/// The 'method' variable may be used to specify the type of method
-/// used to identify degrees of freedom on the boundary. Available
-/// methods are: topological approach (default), geometric approach,
-/// and pointwise approach. The topological approach is faster, but
-/// will only identify degrees of freedom that are located on a
-/// facet that is entirely on the boundary. In particular, the
-/// topological approach will not identify degrees of freedom for
-/// discontinuous elements (which are all internal to the cell). A
-/// remedy for this is to use the geometric approach. In the
-/// geometric approach, each dof on each facet that matches the
-/// boundary condition will be checked. To apply pointwise boundary
-/// conditions e.g. pointloads, one will have to use the pointwise
-/// approach. The three possibilities are "topological", "geometric"
-/// and "pointwise".
+/// The 'method' variable may be used to specify the type of method used
+/// to identify degrees of freedom on the boundary. Available methods
+/// are:
 ///
-/// Note: when using "pointwise", the boolean argument `on_boundary`
-/// in SubDomain::inside will always be false.
+/// 1. topological approach (default)
 ///
-/// The 'check_midpoint' variable can be used to decide whether or
-/// not the midpoint of each facet should be checked when a
-/// user-defined _SubDomain_ is used to define the domain of the
-/// boundary condition. By default, midpoints are always checked.
-/// Note that this variable may be of importance close to corners,
-/// in which case it is sometimes important to check the midpoint to
-/// avoid including facets "on the diagonal close" to a corner. This
-/// variable is also of importance for curved boundaries (like on a
-/// sphere or cylinder), in which case it is important *not* to
-/// check the midpoint which will be located in the interior of a
-/// domain defined relative to a radius.
+///    Fastest, but will only identify degrees of freedom that are
+///    located on a facet that is entirely on the / boundary. In
+///    particular, the topological approach will not identify degrees of
+///    freedom for discontinuous elements (which are all internal to the
+///    cell).
 ///
-/// Note that there may be caching employed in BC computation for
-/// performance reasons. In particular, applicable DOFs are cached
-/// by some methods on a first apply(). This means that changing a
-/// supplied object (defining boundary subdomain) after first use may
-/// have no effect. But this is implementation and method specific.
+/// 2. geometric approach
+///
+///    Each dof on each facet that matches the boundary condition will
+///    be checked.
+///
+/// 3. pointwise approach.
+///
+///    For pointwise boundary conditions e.g. pointloads..
+///
+///    Note: when using "pointwise", the boolean argument `on_boundary`
+///    in SubDomain::inside will always be false.
+///
+/// The 'check_midpoint' variable can be used to decide whether or not
+/// the midpoint of each facet should be checked when a user-defined
+/// _SubDomain_ is used to define the domain of the boundary condition.
+/// By default, midpoints are always checked. Note that this variable
+/// may be of importance close to corners, in which case it is sometimes
+/// important to check the midpoint to avoid including facets "on the
+/// diagonal close" to a corner. This variable is also of importance for
+/// curved boundaries (like on a sphere or cylinder), in which case it
+/// is important *not* to check the midpoint which will be located in
+/// the interior of a domain defined relative to a radius.
 
-class DirichletBC : public common::Variable
+class DirichletBC
 {
 
 public:
-  /// map type used by DirichletBC
-  typedef std::unordered_map<std::size_t, PetscScalar> Map;
-
   /// Method of boundary condition application
   enum class Method
   {
@@ -126,29 +114,11 @@ public:
   /// @param[in] check_midpoint (bool)
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
-              std::shared_ptr<const mesh::SubDomain> sub_domain,
+              const mesh::SubDomain& sub_domain,
               Method method = Method::topological, bool check_midpoint = true);
 
-  /// Create boundary condition for subdomain specified by index
-  ///
-  /// @param[in] V (FunctionSpace)
-  ///         The function space.
-  /// @param[in] g (Function)
-  ///         The value.
-  /// @param[in] sub_domains (std::pair<mesh::MeshFunction<std::size_t>, std::size_t)
-  ///         Subdomain marker
-  /// @param[in] method (std::string)
-  ///         Optional argument: A string specifying the
-  ///         method to identify dofs.
-  DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
-              std::shared_ptr<const function::Function> g,
-              std::pair<std::shared_ptr<const mesh::MeshFunction<std::size_t>>,
-                        std::size_t>
-                  sub_domain,
-              Method method = Method::topological);
-
-  /// Create boundary condition for subdomain by boundary markers
-  /// (cells, local facet numbers)
+  /// Create boundary condition for subdomain by boundary markers (facet
+  /// numbers)
   ///
   /// @param[in] V (FunctionSpace)
   ///         The function space.
@@ -161,7 +131,7 @@ public:
   ///         method to identify dofs.
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
-              const std::vector<std::size_t>& markers,
+              const std::vector<std::int32_t>& facet_indices,
               Method method = Method::topological);
 
   /// Copy constructor. Either cached DOF data are copied.
@@ -185,111 +155,66 @@ public:
   /// Move assignment operator
   DirichletBC& operator=(DirichletBC&& bc) = default;
 
-  /// Get Dirichlet dofs and values. If a method other than 'pointwise' is
-  /// used in parallel, the map may not be complete for local vertices since
-  /// a vertex can have a bc applied, but the partition might not have a
-  /// facet on the boundary. To ensure all local boundary dofs are marked,
-  /// it is necessary to call gather() on the returned boundary values.
-  ///
-  /// @param[in,out] boundary_values (Map&)
-  ///         Map from dof to boundary value.
-  void get_boundary_values(Map& boundary_values) const;
-
-  /// Get boundary values from neighbour processes. If a method other than
-  /// "pointwise" is used, this is necessary to ensure all boundary dofs are
-  /// marked on all processes.
-  ///
-  /// @param[in,out] boundary_values (Map&)
-  ///         Map from dof to boundary value.
-  void gather(Map& boundary_values) const;
-
-  /// Return boundary markers
-  ///
-  /// @return std::vector<std::size_t>&
-  ///         Boundary markers (facets stored as pairs of cells and
-  ///         local facet numbers).
-  const std::vector<std::size_t>& markers() const;
-
   /// Return function space V
   ///
   /// @return FunctionSpace
   ///         The function space to which boundary conditions are applied.
-  std::shared_ptr<const function::FunctionSpace> function_space() const
-  {
-    return _function_space;
-  }
+  std::shared_ptr<const function::FunctionSpace> function_space() const;
 
   /// Return boundary value g
   ///
   /// @return Function
-  ///         The boundary values.
+  ///         The boundary values Function. Returns null if it does not
+  ///         exist.
   std::shared_ptr<const function::Function> value() const;
 
-  /// Return shared pointer to subdomain
-  ///
-  /// @return mesh::SubDomain
-  ///         Shared pointer to subdomain.
-  std::shared_ptr<const mesh::SubDomain> user_sub_domain() const;
+  // FIXME: clarify  w.r.t ghosts
+  // FIXME: clarify length of returned array
+  /// Get array of dof indices to which a Dirichlet BC is applied. The
+  /// array is sorted.
+  const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+  dof_indices() const;
 
-  /// Set value g for boundary condition, domain remains unchanged
-  ///
-  /// @param[in] g (GenericFucntion)
-  ///         The value.
-  void set_value(std::shared_ptr<const function::Function> g);
+  // FIXME: clarify w.r.t ghosts
+  /// Set bc entries in x to scale*x_bc
+  void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+           double scale = 1.0) const;
 
-  /// Return method used for computing Dirichlet dofs
-  ///
-  /// @return std::string
-  ///         Method used for computing Dirichlet dofs ("topological",
-  ///         "geometric" or "pointwise").
-  Method method() const;
+  // FIXME: clarify w.r.t ghosts
+  /// Set bc entries in x to scale*(x0 - x_bc).
+  void set(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+      const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
+      double scale = 1.0) const;
 
-  // FIXME: What about ghost indices?
-  // FIXME: Consider return a reference and caching this data
-  /// Return array of indices with dofs applied. Indices are local to the
-  /// process
-  ///
-  /// @return Eigen::Array<PetscInt, Eigen::Dynamic, 1>
-  ///         Dof indices with boundary condition applied.
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dof_indices() const;
+  // FIXME: clarify  w.r.t ghosts
+  /// Set boundary condition value for entres with an applied boundary
+  /// condition. Other entries are not modified.
+  void dof_values(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> values) const;
 
-  // FIXME: What about ghost indices?
-  // FIXME: Consider return a reference and caching this data
-  /// Return array of indices and dof values. Indices are local to the
-  /// process
-  std::pair<Eigen::Array<PetscInt, Eigen::Dynamic, 1>,
-            Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>
-  bcs() const;
+  // FIXME: clarify w.r.t ghosts
+  /// Set markers[i] = true if dof i has a boundary condition applied.
+  /// Value of markers[i] is not changed otherwise.
+  void mark_dofs(std::vector<bool>& markers) const;
 
 private:
-  class LocalData;
+  // Build map of shared dofs in V to dofs in Vg
+  static std::map<PetscInt, PetscInt>
+  shared_bc_to_g(const function::FunctionSpace& V,
+                 const function::FunctionSpace& Vg);
 
-  // Check input data to constructor
-  void check() const;
+  // Compute boundary value dofs (topological approach)
+  static std::set<std::array<PetscInt, 2>>
+  compute_bc_dofs_topological(const function::FunctionSpace& V,
+                              const function::FunctionSpace* Vg,
+                              const std::vector<std::int32_t>& facets);
 
-  // Initialize facets (from sub domain, mesh, etc)
-  void init_facets(const MPI_Comm mpi_comm) const;
-
-  // Initialize sub domain markers from sub domain
-  void
-  init_from_sub_domain(std::shared_ptr<const mesh::SubDomain> sub_domain) const;
-
-  // Initialize sub domain markers from mesh::MeshFunction
-  void
-  init_from_mesh_function(const mesh::MeshFunction<std::size_t>& sub_domains,
-                          std::size_t sub_domain) const;
-
-  // Compute boundary values for facet (topological approach)
-  void compute_bc_topological(Map& boundary_values, LocalData& data) const;
-
-  // Compute boundary values for facet (geometrical approach)
-  void compute_bc_geometric(Map& boundary_values, LocalData& data) const;
-
-  // Compute boundary values for facet (pointwise approach)
-  void compute_bc_pointwise(Map& boundary_values, LocalData& data) const;
-
-  // Check if the point is in the same plane as the given facet
-  bool on_facet(const Eigen::Ref<EigenArrayXd>, const mesh::Facet& facet) const;
+  // Compute boundary values dofs (geometrical approach)
+  static std::set<PetscInt>
+  compute_bc_dofs_geometric(const function::FunctionSpace& V,
+                            const function::FunctionSpace* Vg,
+                            const std::vector<std::int32_t>& facets);
 
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
@@ -297,44 +222,13 @@ private:
   // The function
   std::shared_ptr<const function::Function> _g;
 
-  // Search method
-  Method _method;
+  // Vector tuples (dof in _function_space, dof in g-space) to which bcs
+  // are applied, i.e. u[dofs[i][0]] = g[dofs[i][1]] where u is in
+  // _function_space.
+  Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor> _dofs;
 
-  // User defined sub domain
-  std::shared_ptr<const mesh::SubDomain> _user_sub_domain;
-
-  // Cached number of bc dofs, used for memory allocation on second use
-  mutable std::size_t _num_dofs;
-
-  // Boundary facets, stored by facet index (local to process)
-  mutable std::vector<std::size_t> _facets;
-
-  // Cells attached to boundary, stored by cell index with map to
-  // local dof number
-  mutable std::map<std::size_t, std::vector<std::size_t>> _cells_to_localdofs;
-
-  // User defined mesh function
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> _user_mesh_function;
-
-  // User defined sub domain marker for mesh or mesh function
-  std::size_t _user_sub_domain_marker;
-
-  // Flag for whether midpoints should be checked
-  bool _check_midpoint;
-
-  // Local data for application of boundary conditions
-  class LocalData
-  {
-  public:
-    // Constructor
-    LocalData(const function::FunctionSpace& V);
-
-    // Coefficients
-    std::vector<PetscScalar> w;
-
-    // Coordinates for dofs
-    EigenRowArrayXXd coordinates;
-  };
+  // Indices in _function_space to which bcs are applied. Must be sorted.
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dof_indices;
 };
 } // namespace fem
 } // namespace dolfin

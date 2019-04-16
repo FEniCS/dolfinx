@@ -6,10 +6,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import numpy as np
+import pytest
 
-from dolfin import Point, DOLFIN_EPS
+from dolfin import Point
 
 
 def test_point_getitem():
@@ -68,6 +68,6 @@ def test_point_array():
 def test_point_equality():
     p = Point(1.23, 2, np.pi)
     q = Point(1.23, 2, np.pi)
-    r = Point(1.23 + DOLFIN_EPS, 2, np.pi)
+    r = Point(1.23 + np.finfo(float).eps, 2, np.pi)
     assert p == q
     assert p != r

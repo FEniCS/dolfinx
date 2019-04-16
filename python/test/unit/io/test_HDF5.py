@@ -6,13 +6,13 @@
 
 import os
 
-import dolfin
+from petsc4py import PETSc
+
 from dolfin import (MPI, Cell, Expression, Function, FunctionSpace,
                     MeshEntities, MeshEntity, MeshFunction,
-                    MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
-from dolfin import function
+                    MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp,
+                    function)
 from dolfin.io import HDF5File
-from dolfin.la import PETScVector
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import xfail_if_complex
 
@@ -26,31 +26,25 @@ def test_parallel(tempdir):
 
 
 @xfail_if_complex
-def test_save_vector(tempdir):
-    filename = os.path.join(tempdir, "x.h5")
-    x = PETScVector(MPI.comm_world, [0, 305], [], 1)
-    x[:] = 1.0
-    with HDF5File(MPI.comm_world, filename, "w") as vector_file:
-        vector_file.write(x, "/my_vector")
-
-
-@xfail_if_complex
 def test_save_and_read_vector(tempdir):
     filename = os.path.join(tempdir, "vector.h5")
 
     # Write to file
     local_range = MPI.local_range(MPI.comm_world, 305)
-    x = PETScVector(MPI.comm_world, local_range, [], 1)
-    x[:] = 1.2
+    x = PETSc.Vec()
+    x.create(MPI.comm_world)
+    x.setSizes((local_range[1] - local_range[0], None))
+    x.setFromOptions()
+    x.set(1.2)
     with HDF5File(MPI.comm_world, filename, "w") as vector_file:
         vector_file.write(x, "/my_vector")
 
     # Read from file
     with HDF5File(MPI.comm_world, filename, "r") as vector_file:
         y = vector_file.read_vector(MPI.comm_world, "/my_vector", False)
-        assert y.size() == x.size()
+        assert y.getSize() == x.getSize()
         x.axpy(-1.0, y)
-        assert x.norm(dolfin.cpp.la.Norm.l2) == 0.0
+        assert x.norm() == 0.0
 
 
 def test_save_and_read_meshfunction_2D(tempdir):
@@ -187,7 +181,7 @@ def test_save_and_read_function(tempdir):
     hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
     F1 = hdf5_file.read_function(Q, "/function")
     F0.vector().axpy(-1.0, F1.vector())
-    assert F0.vector().norm(dolfin.cpp.la.Norm.l2) < 1.0e-12
+    assert F0.vector().norm() < 1.0e-12
     hdf5_file.close()
 
 

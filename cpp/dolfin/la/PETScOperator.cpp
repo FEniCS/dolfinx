@@ -7,25 +7,18 @@
 #include "PETScOperator.h"
 #include "PETScVector.h"
 #include "utils.h"
-#include <dolfin/log/log.h>
 #include <petscvec.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
-PETScOperator::PETScOperator() : _matA(nullptr) {}
-//-----------------------------------------------------------------------------
-PETScOperator::PETScOperator(Mat A) : _matA(A)
+PETScOperator::PETScOperator(Mat A, bool inc_ref_count) : _matA(A)
 {
-  // Increase reference count, and throw error if Mat pointer is NULL
-  if (_matA)
+  assert(A);
+  if (inc_ref_count)
     PetscObjectReference((PetscObject)_matA);
-  else
-  {
-    throw std::runtime_error(
-        "Cannot wrap PETSc Mat objects that have not been initialized");
-  }
 }
 //-----------------------------------------------------------------------------
 PETScOperator::PETScOperator(PETScOperator&& A) : _matA(nullptr)
@@ -36,8 +29,8 @@ PETScOperator::PETScOperator(PETScOperator&& A) : _matA(nullptr)
 //-----------------------------------------------------------------------------
 PETScOperator::~PETScOperator()
 {
-  // Decrease reference count (PETSc will destroy object once
-  // reference counts reached zero)
+  // Decrease reference count (PETSc will destroy object once reference
+  // counts reached zero)
   if (_matA)
     MatDestroy(&_matA);
 }
@@ -61,24 +54,7 @@ std::array<std::int64_t, 2> PETScOperator::size() const
   return {{m, n}};
 }
 //-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> PETScOperator::local_range(std::size_t dim) const
-{
-  assert(dim <= 1);
-  if (dim == 1)
-  {
-    throw std::runtime_error(
-        "Only local row range is available for PETSc matrices");
-  }
-
-  assert(_matA);
-  PetscInt m(0), n(0);
-  PetscErrorCode ierr = MatGetOwnershipRange(_matA, &m, &n);
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "MatGetOwnershipRange");
-  return {{m, n}};
-}
-//-----------------------------------------------------------------------------
-PETScVector PETScOperator::init_vector(std::size_t dim) const
+PETScVector PETScOperator::create_vector(std::size_t dim) const
 {
   assert(_matA);
   PetscErrorCode ierr;
@@ -98,19 +74,13 @@ PETScVector PETScOperator::init_vector(std::size_t dim) const
   }
   else
   {
-    log::dolfin_error("PETScOperator.cpp",
-                      "initialize PETSc vector to match PETSc matrix",
-                      "Dimension must be 0 or 1, not %d", dim);
+    // spdlog::error("PETScOperator.cpp",
+    //               "initialize PETSc vector to match PETSc matrix",
+    //               "Dimension must be 0 or 1, not %d", dim);
+    throw std::runtime_error("Invalid dimension");
   }
 
-  // Associate new PETSc Vec with z (this will increase the reference
-  // count to x)
-  PETScVector z(x);
-
-  // Decrease reference count
-  VecDestroy(&x);
-
-  return z;
+  return PETScVector(x, false);
 }
 //-----------------------------------------------------------------------------
 MPI_Comm PETScOperator::mpi_comm() const
@@ -122,9 +92,4 @@ MPI_Comm PETScOperator::mpi_comm() const
 }
 //-----------------------------------------------------------------------------
 Mat PETScOperator::mat() const { return _matA; }
-//-----------------------------------------------------------------------------
-std::string PETScOperator::str(bool verbose) const
-{
-  return "No str function for this PETSc matrix operator.";
-}
 //-----------------------------------------------------------------------------

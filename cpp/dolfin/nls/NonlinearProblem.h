@@ -6,14 +6,11 @@
 
 #pragma once
 
+#include <petscmat.h>
+#include <petscvec.h>
+
 namespace dolfin
 {
-
-namespace la
-{
-class PETScMatrix;
-class PETScVector;
-} // namespace la
 
 namespace nls
 {
@@ -32,21 +29,23 @@ public:
 
   /// Function called by Newton solver before requesting F, J or J_pc.
   /// This can be used to compute F, J and J_pc together.
-  virtual void form(const la::PETScVector& x)
+  /// Note: the vector x is not const as this function is commonly used
+  /// to update ghost entries before assembly.
+  virtual void form(Vec x)
   {
     // Do nothing if not supplied by the user
   }
 
   /// Compute F at current point x
-  virtual la::PETScVector* F(const la::PETScVector& x) = 0;
+  virtual Vec F(const Vec x) = 0;
 
   /// Compute J = F' at current point x
-  virtual la::PETScMatrix* J(const la::PETScVector& x) = 0;
+  virtual Mat J(const Vec x) = 0;
 
   /// Compute J_pc used to precondition J. Not implementing this
   /// or leaving P empty results in system matrix A being used
   /// to construct preconditioner.
-  virtual la::PETScMatrix* P(const la::PETScVector& x) { return nullptr; }
+  virtual Mat P(const Vec x) { return nullptr; }
 };
 } // namespace nls
 } // namespace dolfin

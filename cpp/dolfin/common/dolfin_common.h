@@ -16,8 +16,8 @@ namespace dolfin
 #include <dolfin/common/Set.h>
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/Table.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/init.h>
 #include <dolfin/common/timing.h>

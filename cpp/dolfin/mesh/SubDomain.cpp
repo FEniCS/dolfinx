@@ -13,7 +13,7 @@
 #include "MeshValueCollection.h"
 #include "Vertex.h"
 #include <dolfin/common/RangedIndexSet.h>
-#include <dolfin/log/log.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -32,17 +32,19 @@ SubDomain::~SubDomain()
 EigenArrayXb SubDomain::inside(Eigen::Ref<const EigenRowArrayXXd> x,
                                bool on_boundary) const
 {
-  throw std::runtime_error("SubDomain::inside function not implemented by user");
+  throw std::runtime_error(
+      "SubDomain::inside function not implemented by user");
   return EigenArrayXb();
 }
 //-----------------------------------------------------------------------------
 void SubDomain::map(Eigen::Ref<const EigenArrayXd> x,
                     Eigen::Ref<EigenArrayXd> y) const
 {
-  log::dolfin_error(
-      "SubDomain.cpp", "map points within subdomain",
-      "Function map() not implemented by user. (Required for periodic "
-      "boundary conditions)");
+  // spdlog::error(
+  //     "SubDomain.cpp", "map points within subdomain",
+  //     "Function map() not implemented by user. (Required for periodic "
+  //     "boundary conditions)");
+  throw std::runtime_error("Unimplemented by user");
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -53,8 +55,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   // FIXME: This function can probably be folded into the above
   //        function operator[] in std::map and MeshFunction.
 
-  log::log(TRACE, "Computing sub domain markers for sub domain %d.",
-           sub_domain);
+  // spdlog::debug("Computing sub domain markers for sub domain %d.", sub_domain);
 
   auto gdim = mesh.geometry().dim();
 
@@ -70,10 +71,10 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
   // Speed up the computation by only checking each vertex once (or
   // twice if it is on the boundary for some but not all facets).
-  common::RangedIndexSet boundary_visited{{{0, mesh.num_vertices()}}};
-  common::RangedIndexSet interior_visited{{{0, mesh.num_vertices()}}};
-  std::vector<bool> boundary_inside(mesh.num_vertices());
-  std::vector<bool> interior_inside(mesh.num_vertices());
+  common::RangedIndexSet boundary_visited{{{0, mesh.num_entities(0)}}};
+  common::RangedIndexSet interior_visited{{{0, mesh.num_entities(0)}}};
+  std::vector<bool> boundary_inside(mesh.num_entities(0));
+  std::vector<bool> interior_inside(mesh.num_entities(0));
 
   // Always false when marking cells
   bool on_boundary = false;

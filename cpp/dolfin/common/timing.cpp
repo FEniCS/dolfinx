@@ -6,9 +6,8 @@
 
 #include "timing.h"
 #include "Timer.h"
-#include <dolfin/log/LogManager.h>
-#include <dolfin/log/Table.h>
-#include <dolfin/log/log.h>
+#include <dolfin/common/Table.h>
+#include <dolfin/common/TimeLogManager.h>
 #include <tuple>
 
 namespace dolfin
@@ -32,16 +31,16 @@ double dolfin::time() { return std::get<0>(__global_timer.elapsed()); }
 //-----------------------------------------------------------------------------
 Table dolfin::timings(std::set<TimingType> type)
 {
-  return log::LogManager::logger().timings(type);
+  return TimeLogManager::logger().timings(type);
 }
 //-----------------------------------------------------------------------------
 void dolfin::list_timings(std::set<TimingType> type)
 {
-  log::LogManager::logger().list_timings(type);
+  TimeLogManager::logger().list_timings(type);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::size_t, double, double, double> dolfin::timing(std::string task)
 {
-  return log::LogManager::logger().timing(task);
+  return TimeLogManager::logger().timing(task);
 }
 //-----------------------------------------------------------------------------

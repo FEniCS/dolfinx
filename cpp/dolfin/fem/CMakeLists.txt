@@ -1,13 +1,14 @@
 set(HEADERS
   assembler.h
   assemble_matrix_impl.h
+  assemble_scalar_impl.h
   assemble_vector_impl.h
-  AssemblerBase.h
   CoordinateMapping.h
   DirichletBC.h
   DiscreteOperators.h
   DofMapBuilder.h
   DofMap.h
+  ElementDofLayout.h
   dolfin_fem.h
   utils.h
   FiniteElement.h
@@ -15,33 +16,29 @@ set(HEADERS
   FormCoefficients.h
   FormIntegrals.h
   GenericDofMap.h
-  LocalAssembler.h
-  NonlinearVariationalProblem.h
   PETScDMCollection.h
+  ReferenceCellTopology.h
   SparsityPatternBuilder.h
-  SystemAssembler.h
-  UFC.h
   PARENT_SCOPE)
 
 set(SOURCES
   assembler.cpp
   assemble_matrix_impl.cpp
+  assemble_scalar_impl.cpp
   assemble_vector_impl.cpp
-  AssemblerBase.cpp
+  CoordinateMapping.cpp
   DirichletBC.cpp
   DiscreteOperators.cpp
   DofMapBuilder.cpp
   DofMap.cpp
+  ElementDofLayout.cpp
   utils.cpp
   FiniteElement.cpp
   Form.cpp
   FormCoefficients.cpp
   FormIntegrals.cpp
   GenericDofMap.cpp
-  LocalAssembler.cpp
-  NonlinearVariationalProblem.cpp
   PETScDMCollection.cpp
+  ReferenceCellTopology.cpp
   SparsityPatternBuilder.cpp
-  SystemAssembler.cpp
-  UFC.cpp
   PARENT_SCOPE)

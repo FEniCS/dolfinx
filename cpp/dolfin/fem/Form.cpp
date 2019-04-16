@@ -1,4 +1,4 @@
-// Copyright (C) 2007-2011 Garth N. Wells
+// Copyright (C) 2007-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -9,10 +9,11 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/fem/utils.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/log/LogStream.h>
-#include <dolfin/log/log.h>
+#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <memory>
@@ -23,32 +24,26 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-Form::Form(std::shared_ptr<const ufc_form> ufc_form,
+Form::Form(const ufc_form& ufc_form,
            const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
-    : _integrals(*ufc_form), _coefficients(*ufc_form),
+    : _coefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
       _function_spaces(function_spaces)
 {
-  assert(ufc_form);
-  assert(ufc_form->rank == (int)function_spaces.size());
-
-  init_coeff_scratch_space();
+  assert(ufc_form.rank == (int)function_spaces.size());
 
   // Check argument function spaces
   for (std::size_t i = 0; i < function_spaces.size(); ++i)
   {
     assert(function_spaces[i]->element());
-    std::unique_ptr<ufc_finite_element> ufc_element(
-        ufc_form->create_finite_element(i));
+    std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
+        ufc_form.create_finite_element(i), free);
 
     if (std::string(ufc_element->signature)
         != function_spaces[i]->element()->signature())
     {
-      log::log(ERROR, "Expected element: %s", ufc_element->signature);
-      log::log(ERROR, "Input element:    %s",
-               function_spaces[i]->element()->signature().c_str());
       throw std::runtime_error(
-          "Cannot create form. Wrong type of function space for argument");
+          "Cannot create form. Wrong type of function space for argument.");
     }
   }
 
@@ -61,18 +56,67 @@ Form::Form(std::shared_ptr<const ufc_form> ufc_form,
       throw std::runtime_error("Incompatible mesh");
   }
 
+  // Get list of integral IDs, and load tabulate tensor into memory for each
+  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
+  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
+  for (int id : cell_integral_ids)
+  {
+    ufc_cell_integral* cell_integral = ufc_form.create_cell_integral(id);
+    assert(cell_integral);
+    _integrals.register_tabulate_tensor_cell(id,
+                                             cell_integral->tabulate_tensor);
+    std::free(cell_integral);
+  }
+
+  std::vector<int> exterior_facet_integral_ids(
+      ufc_form.num_exterior_facet_integrals);
+  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
+  for (int id : exterior_facet_integral_ids)
+  {
+    ufc_exterior_facet_integral* exterior_facet_integral
+        = ufc_form.create_exterior_facet_integral(id);
+    assert(exterior_facet_integral);
+    _integrals.register_tabulate_tensor_exterior_facet(
+        id, exterior_facet_integral->tabulate_tensor);
+    std::free(exterior_facet_integral);
+  }
+
+  std::vector<int> interior_facet_integral_ids(
+      ufc_form.num_interior_facet_integrals);
+  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
+  for (int id : interior_facet_integral_ids)
+  {
+    ufc_interior_facet_integral* interior_facet_integral
+        = ufc_form.create_interior_facet_integral(id);
+    assert(interior_facet_integral);
+    _integrals.register_tabulate_tensor_interior_facet(
+        id, interior_facet_integral->tabulate_tensor);
+    std::free(interior_facet_integral);
+  }
+
+  // Not currently working
+  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
+  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
+  if (vertex_integral_ids.size() > 0)
+  {
+    throw std::runtime_error(
+        "Vertex integrals not supported. Under development.");
+  }
+
+  // Set markers for default integrals
+  if (_mesh)
+    _integrals.set_default_domains(*_mesh);
+
   // Create CoordinateMapping
-  _coord_mapping = std::make_shared<fem::CoordinateMapping>(
-      std::shared_ptr<const ufc_coordinate_mapping>(
-          ufc_form->create_coordinate_mapping()));
+  ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
+  _coord_mapping = std::make_shared<fem::CoordinateMapping>(*cmap);
+  std::free(cmap);
 }
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
                function_spaces)
     : _coefficients({}), _function_spaces(function_spaces)
 {
-  init_coeff_scratch_space();
-
   // Set _mesh from function::FunctionSpace and check they are the same
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
@@ -83,63 +127,11 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
   }
 }
 //-----------------------------------------------------------------------------
-Form::~Form()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 std::size_t Form::rank() const { return _function_spaces.size(); }
-//-----------------------------------------------------------------------------
-int Form::get_coefficient_index(std::string name) const
-{
-  try
-  {
-    return _coefficient_index_map(name.c_str());
-  }
-  catch (const std::bad_function_call& e)
-  {
-    std::cerr
-        << "Unable to get coefficient index. Name-to-index map not set on Form."
-        << std::endl;
-    throw e;
-  }
-
-  return -1;
-}
-//-----------------------------------------------------------------------------
-std::string Form::get_coefficient_name(int i) const
-{
-  try
-  {
-    return _coefficient_name_map(i);
-  }
-  catch (const std::bad_function_call& e)
-  {
-    std::cerr
-        << "Unable to get coefficient name. Index-to-name map not set on Form."
-        << std::endl;
-    throw e;
-  }
-
-  return std::string();
-}
-//-----------------------------------------------------------------------------
-void Form::set_coefficient_index_to_name_map(
-    std::function<int(const char*)> coefficient_index_map)
-{
-  _coefficient_index_map = coefficient_index_map;
-}
-//-----------------------------------------------------------------------------
-void Form::set_coefficient_name_to_index_map(
-    std::function<const char*(int)> coefficient_name_map)
-{
-  _coefficient_name_map = coefficient_name_map;
-}
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(
     std::map<std::size_t, std::shared_ptr<const function::Function>>
         coefficients)
-
 {
   for (auto c : coefficients)
     _coefficients.set(c.first, c.second);
@@ -150,17 +142,7 @@ void Form::set_coefficients(
         coefficients)
 {
   for (auto c : coefficients)
-  {
-    // Get index
-    int index = this->get_coefficient_index(c.first);
-    if (index < 0)
-    {
-      throw std::runtime_error("Cannot find coefficient index for \"" + c.first
-                               + "\"");
-    }
-
-    _coefficients.set(index, c.second);
-  }
+    _coefficients.set(c.first, c.second);
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::original_coefficient_position(std::size_t i) const
@@ -179,7 +161,12 @@ std::size_t Form::max_element_tensor_size() const
   return num_entries;
 }
 //-----------------------------------------------------------------------------
-void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh) { _mesh = mesh; }
+void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
+{
+  _mesh = mesh;
+  // Set markers for default integrals
+  _integrals.set_default_domains(*_mesh);
+}
 //-----------------------------------------------------------------------------
 std::shared_ptr<const mesh::Mesh> Form::mesh() const
 {
@@ -200,108 +187,42 @@ Form::function_spaces() const
   return _function_spaces;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-Form::cell_domains() const
+void Form::register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
+                                                           const PetscScalar*,
+                                                           const double*, int))
 {
-  return dx;
+  _integrals.register_tabulate_tensor_cell(i, fn);
+  if (i == -1 and _mesh)
+    _integrals.set_default_domains(*_mesh);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-Form::exterior_facet_domains() const
+void Form::set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains)
 {
-  return ds;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-Form::interior_facet_domains() const
-{
-  return dS;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-Form::vertex_domains() const
-{
-  return dP;
-}
-//-----------------------------------------------------------------------------
-void Form::set_cell_domains(
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains)
-{
-  dx = cell_domains;
+  _integrals.set_domains(FormIntegrals::Type::cell, cell_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_exterior_facet_domains(
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-        exterior_facet_domains)
+    const mesh::MeshFunction<std::size_t>& exterior_facet_domains)
 {
-  ds = exterior_facet_domains;
+  _integrals.set_domains(FormIntegrals::Type::exterior_facet,
+                         exterior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_interior_facet_domains(
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-        interior_facet_domains)
+    const mesh::MeshFunction<std::size_t>& interior_facet_domains)
 {
-  dS = interior_facet_domains;
+  _integrals.set_domains(FormIntegrals::Type::interior_facet,
+                         interior_facet_domains);
 }
 //-----------------------------------------------------------------------------
 void Form::set_vertex_domains(
-    std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains)
+    const mesh::MeshFunction<std::size_t>& vertex_domains)
 {
-  dP = vertex_domains;
+  _integrals.set_domains(FormIntegrals::Type::vertex, vertex_domains);
 }
 //-----------------------------------------------------------------------------
-void Form::tabulate_tensor(
-    PetscScalar* A, const mesh::Cell& cell,
-    const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const
+std::shared_ptr<const fem::CoordinateMapping> Form::coordinate_mapping() const
 {
-  // Switch integral based on domain from dx MeshFunction
-  std::uint32_t idx = 0;
-  if (dx)
-  {
-    // FIXME: check on idx validity
-    idx = (*dx)[cell] + 1;
-  }
-
-  // Restrict coefficients to cell
-  const bool* enabled_coefficients = _integrals.cell_enabled_coefficients(idx);
-  for (std::size_t i = 0; i < _coefficients.size(); ++i)
-  {
-    if (enabled_coefficients[i])
-    {
-      const function::Function* coefficient = _coefficients.get(i);
-      const FiniteElement& element = _coefficients.element(i);
-      coefficient->restrict(_wpointer[i], element, cell, coordinate_dofs);
-    }
-  }
-
-  // Compute cell matrix
-  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                           int)>& tab_fn
-      = _integrals.cell_tabulate_tensor(idx);
-  tab_fn(A, _wpointer.data()[0], coordinate_dofs.data(), 1);
-}
-//-----------------------------------------------------------------------------
-void Form::init_coeff_scratch_space()
-{
-  const std::size_t num_coeffs = _coefficients.size();
-
-  // Calculate space needed for each coefficient's values and create a
-  // vector of offsets from zero. Allowing double space here, so that
-  // the same scratch space can be also used for "macro" elements (two
-  // neighbouring cells) for interior facet integrals.
-  std::vector<std::uint32_t> n = {0};
-  for (std::uint32_t i = 0; i < num_coeffs; ++i)
-  {
-    const FiniteElement& element = _coefficients.element(i);
-    n.push_back(n.back() + element.space_dimension());
-  }
-  // Allocate memory capable of storing all coefficient values in a
-  // contiguous block
-  _w.resize(n.back());
-
-  // Create pointers into _w for each coefficient
-  _wpointer.resize(n.size());
-  for (std::uint32_t i = 0; i < n.size(); ++i)
-    _wpointer[i] = _w.data() + n[i];
+  return _coord_mapping;
 }
 //-----------------------------------------------------------------------------

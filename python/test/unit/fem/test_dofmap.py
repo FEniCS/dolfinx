@@ -11,10 +11,10 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (DOLFIN_EPS, MPI, Cells, CellType, FiniteElement,
-                    FunctionSpace, MixedElement, Point, SubDomain,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorElement, VectorFunctionSpace)
+from dolfin import (MPI, Cells, CellType, FiniteElement, FunctionSpace,
+                    MixedElement, Point, SubDomain, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh, VectorElement,
+                    VectorFunctionSpace)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel, skip_in_serial
 
@@ -133,7 +133,7 @@ def test_tabulate_dofs(mesh_factory):
 def test_tabulate_coord_periodic(mesh_factory):
     class PeriodicBoundary2(SubDomain):
         def inside(self, x, on_boundary):
-            return x[0] < DOLFIN_EPS
+            return x[0] < np.finfo(float).eps
 
         def map(self, x, y):
             y[0] = x[0] - 1.0
@@ -185,7 +185,7 @@ def test_tabulate_coord_periodic(mesh_factory):
 def test_tabulate_dofs_periodic(mesh_factory):
     class PeriodicBoundary2(SubDomain):
         def inside(self, x, on_boundary):
-            return x[0] < DOLFIN_EPS
+            return x[0] < np.finfo(float).eps
 
         def map(self, x, y):
             y[0] = x[0] - 1.0

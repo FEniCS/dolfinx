@@ -1,19 +1,19 @@
-// Copyright (C) 2017 Chris Richardson and Garth N. Wells
+// Copyright (C) 2017-2019 Chris Richardson and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <Eigen/Dense>
+#include <complex>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/SubSystemsManager.h>
+#include <dolfin/common/Table.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/timing.h>
-#include <dolfin/log/Table.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/pybind11.h>
@@ -36,32 +36,21 @@ void common(py::module& m)
   py::class_<dolfin::common::Variable,
              std::shared_ptr<dolfin::common::Variable>>(m, "Variable",
                                                         "Variable base class")
-      .def("id", &dolfin::common::Variable::id)
+      .def_property_readonly("id", &dolfin::common::Variable::id)
       .def("name", &dolfin::common::Variable::name)
       .def("rename", &dolfin::common::Variable::rename);
 
   // From dolfin/common/defines.h
-  m.def("has_debug", &dolfin::has_debug);
-  m.def("has_parmetis", &dolfin::has_parmetis);
-  m.def("has_scotch", &dolfin::has_scotch);
-  m.def("has_petsc_complex", &dolfin::has_petsc_complex,
-        "Return True if PETSc scalar is complex.");
-  m.def("has_slepc", &dolfin::has_slepc,
-        "Return `True` if DOLFIN is configured with SLEPc");
-  m.def("has_slepc4py",
-        []() {
+  m.attr("has_debug") = dolfin::has_debug();
+  m.attr("has_parmetis") = dolfin::has_parmetis();
+  m.attr("has_petsc_complex") = dolfin::has_petsc_complex();
+  m.attr("has_slepc") = dolfin::has_slepc();
 #ifdef HAS_PYBIND11_SLEPC4PY
-          return true;
+  m.attr("has_slepc4py") = true;
 #else
-          return false;
+  m.attr("has_slepc4py") = false;
 #endif
-        },
-        "Return `True` if DOLFIN is configured with slepc4py");
-  m.def("git_commit_hash", &dolfin::git_commit_hash,
-        "Returns git hash for this build.");
-
-  m.attr("DOLFIN_EPS") = DOLFIN_EPS;
-  m.attr("DOLFIN_PI") = DOLFIN_PI;
+  m.attr("git_commit_hash") = dolfin::git_commit_hash();
 
   // dolfin::common::IndexMap
   py::class_<dolfin::common::IndexMap,
@@ -79,6 +68,12 @@ void common(py::module& m)
       .def("ghosts", &dolfin::common::IndexMap::ghosts,
            py::return_value_policy::reference_internal,
            "Return list of ghost indices");
+
+  // dolfin::Table
+  py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>,
+             dolfin::common::Variable>(m, "Table")
+      .def(py::init<std::string>())
+      .def("str", &dolfin::Table::str);
 
   // dolfin::common::Timer
   py::class_<dolfin::common::Timer, std::shared_ptr<dolfin::common::Timer>>(
@@ -130,7 +125,7 @@ void common(py::module& m)
                   &dolfin::common::SubSystemsManager::mpi_initialized)
       .def_static("mpi_finalized",
                   &dolfin::common::SubSystemsManager::mpi_finalized);
-}
+} // namespace dolfin_wrappers
 
 // Interface for MPI
 void mpi(py::module& m)
@@ -210,6 +205,10 @@ void mpi(py::module& m)
                   })
       .def_static("sum",
                   [](const MPICommWrapper comm, double value) {
+                    return dolfin::MPI::sum(comm.get(), value);
+                  })
+      .def_static("sum",
+                  [](const MPICommWrapper comm, std::complex<double> value) {
                     return dolfin::MPI::sum(comm.get(), value);
                   })
       // templated for dolfin::Table

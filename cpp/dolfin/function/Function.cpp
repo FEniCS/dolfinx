@@ -8,19 +8,18 @@
 #include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
+#include <cfloat>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/constants.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/log/log.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
@@ -34,7 +33,7 @@ using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : common::Variable("u"), _function_space(V)
+    : common::Variable("u"), _function_space(V), _vector(_create_vector(*V))
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -42,13 +41,9 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
     throw std::runtime_error("Cannot create Function from subspace. Consider "
                              "collapsing the function space");
   }
-
-  // Initialize vector
-  init_vector();
 }
 //-----------------------------------------------------------------------------
-Function::Function(std::shared_ptr<const FunctionSpace> V,
-                   std::shared_ptr<la::PETScVector> x)
+Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
     : _function_space(V), _vector(x)
 {
   // We do not check for a subspace since this constructor is used for
@@ -56,22 +51,21 @@ Function::Function(std::shared_ptr<const FunctionSpace> V,
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap());
-  assert(V->dofmap()->global_dimension() <= x->size());
+  assert(V->dofmap()->global_dimension() <= _vector.size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v)
+Function::Function(const Function& v) : _vector(v.vector().vec())
 {
   // Make a copy of all the data, or if v is a sub-function, then we
   // collapse the dof map and copy only the relevant entries from the
   // vector of v.
-  assert(v._vector);
-  if (v._vector->size() == v._function_space->dim())
+  if (v._vector.size() == v._function_space->dim())
   {
     // Copy function space pointer
     this->_function_space = v._function_space;
 
     // Copy vector
-    this->_vector = std::make_shared<la::PETScVector>(*v._vector);
+    this->_vector = v._vector.copy();
   }
   else
   {
@@ -91,82 +85,26 @@ Function::Function(const Function& v)
     }
 
     // Gather values into a vector
-    assert(v.vector());
+    la::VecReadWrapper v_wrap(v.vector().vec());
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
+        = v_wrap.x;
     std::vector<PetscScalar> gathered_values(collapsed_map.size());
-    v.vector()->get_local(gathered_values.data(), gathered_values.size(),
-                          old_rows.data());
+    for (std::size_t j = 0; j < gathered_values.size(); ++j)
+      gathered_values[j] = x[old_rows[j]];
 
     // Initial new vector (global)
-    init_vector();
+    _vector = _create_vector(*_function_space);
     assert(_function_space->dofmap());
-    assert(_vector->size() == _function_space->dofmap()->global_dimension());
+    assert(_vector.size() == _function_space->dofmap()->global_dimension());
 
     // FIXME (local): Check this for local or global
     // Set values in vector
-    this->_vector->set_local(gathered_values.data(), collapsed_map.size(),
-                             new_rows.data());
-    this->_vector->apply();
+    la::VecWrapper v(this->_vector.vec());
+    for (std::size_t i = 0; i < collapsed_map.size(); ++i)
+      v.x[new_rows[i]] = gathered_values[i];
+    v.restore();
   }
 }
-//-----------------------------------------------------------------------------
-/*
-const Function& Function::operator= (const Function& v)
-{
-  assert(v._vector);
-
-  // Make a copy of all the data, or if v is a sub-function, then we
-  // collapse the dof map and copy only the relevant entries from the
-  // vector of v.
-  if (v._vector->size() == v._function_space->dim())
-  {
-    // Copy function space
-    _function_space = v._function_space;
-
-    // Copy vector
-    _vector = v._vector->copy();
-
-    // Clear subfunction cache
-    _sub_functions.clear();
-  }
-  else
-  {
-    // Create new collapsed FunctionSpace
-    std::unordered_map<std::size_t, std::size_t> collapsed_map;
-    _function_space = v._function_space->collapse(collapsed_map);
-
-    // Get row indices of original and new vectors
-    std::unordered_map<std::size_t, std::size_t>::const_iterator entry;
-    std::vector<PetscInt> new_rows(collapsed_map.size());
-    std::vector<PetscInt> old_rows(collapsed_map.size());
-    std::size_t i = 0;
-    for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
-    {
-      new_rows[i]   = entry->first;
-      old_rows[i++] = entry->second;
-    }
-
-    // Gather values into a vector
-    assert(v.vector());
-    std::vector<double> gathered_values(collapsed_map.size());
-    v.vector()->get_local(gathered_values.data(), gathered_values.size(),
-                          old_rows.data());
-
-    // Initial new vector (global)
-    init_vector();
-    assert(_function_space->dofmap());
-    assert(_vector->size()
-                  == _function_space->dofmap()->global_dimension());
-
-    // FIXME (local): Check this for local or global
-    // Set values in vector
-    this->_vector->set_local(gathered_values.data(), collapsed_map.size(),
-                             new_rows.data());
-    this->_vector->apply("insert");
-  }
-
-  return *this;
-}
-*/
 //-----------------------------------------------------------------------------
 Function Function::sub(std::size_t i) const
 {
@@ -175,17 +113,15 @@ Function Function::sub(std::size_t i) const
 
   // Return sub-function
   assert(sub_space);
-  assert(_vector);
-  return Function(sub_space, _vector);
+  return Function(sub_space, _vector.vec());
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<la::PETScVector> Function::vector()
+la::PETScVector& Function::vector()
 {
-  assert(_vector);
   assert(_function_space->dofmap());
 
   // Check that this is not a sub function.
-  if (_vector->size() != _function_space->dofmap()->global_dimension())
+  if (_vector.size() != _function_space->dofmap()->global_dimension())
   {
     throw std::runtime_error(
         "Cannot access a non-const vector from a subfunction");
@@ -194,16 +130,13 @@ std::shared_ptr<la::PETScVector> Function::vector()
   return _vector;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const la::PETScVector> Function::vector() const
-{
-  assert(_vector);
-  return _vector;
-}
+const la::PETScVector& Function::vector() const { return _vector; }
 //-----------------------------------------------------------------------------
 void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>
                         values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x) const
+                    const Eigen::Ref<const EigenRowArrayXXd> x,
+                    const geometry::BoundingBoxTree& bb_tree) const
 {
   assert(_function_space);
   assert(_function_space->mesh());
@@ -216,18 +149,17 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
     const geometry::Point point(mesh.geometry().dim(), _x);
 
     // Get index of first cell containing point
-    unsigned int id
-        = mesh.bounding_box_tree()->compute_first_entity_collision(point, mesh);
+    unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
 
     // If not found, use the closest cell
     if (id == std::numeric_limits<unsigned int>::max())
     {
-      // Check if the closest cell is within DOLFIN_EPS. This we can
+      // Check if the closest cell is within 2*DBL_EPSILON. This we can
       // allow without _allow_extrapolation
       std::pair<unsigned int, double> close
-          = mesh.bounding_box_tree()->compute_closest_entity(point, mesh);
+          = bb_tree.compute_closest_entity(point, mesh);
 
-      if (close.second < DOLFIN_EPS)
+      if (close.second < 2.0 * DBL_EPSILON)
         id = close.first;
       else
       {
@@ -244,21 +176,22 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   }
 }
 //-----------------------------------------------------------------------------
-void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x,
-                    const mesh::Cell& cell) const
+void Function::eval(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        values,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>
+        x,
+    const mesh::Cell& cell) const
 {
   assert(_function_space);
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
-
-  // FIXME: Should this throw an error instead?
   if (cell.mesh().id() != mesh.id())
   {
-    eval(values, x);
-    return;
+    throw std::runtime_error(
+        "Cell passed to Function::eval is from a different mesh.");
   }
 
   assert(x.rows() == values.rows());
@@ -273,8 +206,7 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
   cell.get_coordinate_dofs(coordinate_dofs);
 
-  // Restrict function to cell
-  restrict(coefficients.data(), element, cell, coordinate_dofs);
+  restrict(coefficients.data(), cell, coordinate_dofs);
 
   // Get coordinate mapping
   std::shared_ptr<const fem::CoordinateMapping> cmap
@@ -331,20 +263,16 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Function& v)
 {
-  assert(_vector);
   assert(_function_space);
-
-  // Interpolate
-  _function_space->interpolate(*_vector, v);
+  la::VecWrapper x(_vector.vec());
+  _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Expression& expr)
 {
-  assert(_vector);
   assert(_function_space);
-
-  // Interpolate
-  _function_space->interpolate(*_vector, expr);
+  la::VecWrapper x(_vector.vec());
+  _function_space->interpolate(x.x, expr);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const
@@ -372,34 +300,22 @@ std::vector<std::size_t> Function::value_shape() const
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(
-    PetscScalar* w, const fem::FiniteElement& element,
-    const mesh::Cell& dolfin_cell,
+    PetscScalar* w, const mesh::Cell& dolfin_cell,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   assert(w);
   assert(_function_space);
   assert(_function_space->dofmap());
 
-  // Check if we are restricting to an element of this function space
-  if (_function_space->has_element(element)
-      && _function_space->has_cell(dolfin_cell))
-  {
-    // Get dofmap for cell
-    const fem::GenericDofMap& dofmap = *_function_space->dofmap();
-    auto dofs = dofmap.cell_dofs(dolfin_cell.index());
+  // Get dofmap for cell
+  const fem::GenericDofMap& dofmap = *_function_space->dofmap();
+  auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
-    // Note: We should have dofmap.max_element_dofs() == dofs.size() here.
-    // Pick values from vector(s)
-    _vector->get_local(w, dofs.size(), dofs.data());
-  }
-  else
-    dolfin_not_implemented();
-
-  //  {
-  //    // Restrict as UFC function (by calling eval)
-  //    element.evaluate_dofs(w, *this, coordinate_dofs, ufc_cell.orientation,
-  //                          ufc_cell);
-  //  }
+  // Pick values from vector(s)
+  la::VecReadWrapper v(_vector.vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _v = v.x;
+  for (Eigen::Index i = 0; i < dofs.size(); ++i)
+    w[i] = _v[dofs[i]];
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -435,7 +351,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
       values(num_cell_vertices, value_size_loc);
 
   const std::size_t tdim = mesh.topology().dim();
-  const mesh::MeshConnectivity& cell_dofs
+  const mesh::Connectivity& cell_dofs
       = mesh.coordinate_dofs().entity_points(tdim);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -448,7 +364,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
     eval(values, x, cell);
 
     // Copy values to array of point values
-    const std::int32_t* dofs = cell_dofs(cell.index());
+    const std::int32_t* dofs = cell_dofs.connections(cell.index());
     for (unsigned int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }
@@ -464,14 +380,13 @@ Function::compute_point_values() const
   return compute_point_values(*_function_space->mesh());
 }
 //-----------------------------------------------------------------------------
-void Function::init_vector()
+la::PETScVector Function::_create_vector(const function::FunctionSpace& V)
 {
   common::Timer timer("Init dof vector");
 
   // Get dof map
-  assert(_function_space);
-  assert(_function_space->dofmap());
-  const fem::GenericDofMap& dofmap = *(_function_space->dofmap());
+  assert(V.dofmap());
+  const fem::GenericDofMap& dofmap = *(V.dofmap());
 
   // Check that function space is not a subspace (view)
   if (dofmap.is_view())
@@ -481,13 +396,11 @@ void Function::init_vector()
                        "collapsing the function space");
   }
 
-  // Get index map
-  std::shared_ptr<const common::IndexMap> index_map = dofmap.index_map();
-  assert(index_map);
+  assert(dofmap.index_map());
+  la::PETScVector v = la::PETScVector(*dofmap.index_map());
+  VecSet(v.vec(), 0.0);
 
-  _vector = std::make_shared<la::PETScVector>(*index_map);
-  assert(_vector);
-  _vector->set(0.0);
+  return v;
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_size() const

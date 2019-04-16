@@ -1,4 +1,4 @@
-// Copyright (C) 2013 Patrick E. Farrell
+// Copyright (C) 2013-2019 Patrick E. Farrell and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -8,7 +8,6 @@
 #include "PETScMatrix.h"
 #include "PETScVector.h"
 #include <cmath>
-#include <dolfin/common/constants.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
@@ -26,20 +25,23 @@ void VectorSpaceBasis::orthonormalize(double tol)
   // Loop over each vector in basis
   for (std::size_t i = 0; i < _basis.size(); ++i)
   {
+    assert(_basis[i]);
     // Orthogonalize vector i with respect to previously orthonormalized
     // vectors
     for (std::size_t j = 0; j < i; ++j)
     {
-      const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
-      _basis[i]->axpy(-dot_ij, *_basis[j]);
+      PetscScalar dot_ij = 0.0;
+      VecDot(_basis[i]->vec(), _basis[j]->vec(), &dot_ij);
+      VecAXPY(_basis[i]->vec(), -dot_ij, _basis[j]->vec());
     }
 
     // Normalise basis function
-    const PetscReal norm = _basis[i]->normalize();
+    PetscReal norm = 0.0;
+    VecNormalize(_basis[i]->vec(), &norm);
     if (norm < tol)
     {
       throw std::runtime_error(
-          "VectorSpaceBasis has linear dependency. Cannot orthogonalize");
+          "VectorSpaceBasis has linear dependency. Cannot orthogonalize.");
     }
   }
 }
@@ -53,7 +55,9 @@ bool VectorSpaceBasis::is_orthonormal(double tol) const
       assert(_basis[i]);
       assert(_basis[j]);
       const double delta_ij = (i == j) ? 1.0 : 0.0;
-      const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
+      PetscScalar dot_ij = 0.0;
+      VecDot(_basis[i]->vec(), _basis[j]->vec(), &dot_ij);
+
       if (std::abs(delta_ij - dot_ij) > tol)
         return false;
     }
@@ -72,7 +76,8 @@ bool VectorSpaceBasis::is_orthogonal(double tol) const
       assert(_basis[j]);
       if (i != j)
       {
-        const PetscScalar dot_ij = _basis[i]->dot(*_basis[j]);
+        PetscScalar dot_ij = 0.0;
+        VecDot(_basis[i]->vec(), _basis[j]->vec(), &dot_ij);
         if (std::abs(dot_ij) > tol)
           return false;
       }
@@ -84,10 +89,10 @@ bool VectorSpaceBasis::is_orthogonal(double tol) const
 //-----------------------------------------------------------------------------
 bool VectorSpaceBasis::in_nullspace(const PETScMatrix& A, double tol) const
 {
-  PETScVector y = A.init_vector(0);
+  PETScVector y = A.create_vector(0);
   for (auto x : _basis)
   {
-    A.mult(*x, y);
+    MatMult(A.mat(), x->vec(), y.vec());
     const double norm = y.norm(la::Norm::l2);
     if (norm > tol)
       return false;
@@ -101,8 +106,9 @@ void VectorSpaceBasis::orthogonalize(PETScVector& x) const
   for (std::size_t i = 0; i < _basis.size(); i++)
   {
     assert(_basis[i]);
-    const PetscScalar dot = _basis[i]->dot(x);
-    x.axpy(-dot, *_basis[i]);
+    PetscScalar dot = 0.0;
+    VecDot(_basis[i]->vec(), x.vec(), &dot);
+    VecAXPY(x.vec(), -dot, _basis[i]->vec());
   }
 }
 //-----------------------------------------------------------------------------

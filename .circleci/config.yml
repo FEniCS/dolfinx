@@ -4,7 +4,7 @@ install-python-components: &install-python-components
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/dijitso.git --upgrade
-            pip3 install git+https://github.com/FEniCS/ffcx --upgrade
+            pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
             rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
 flake8-python-code: &flake8-python-code
@@ -12,6 +12,7 @@ flake8-python-code: &flake8-python-code
   command: |
             python3 -m flake8 python/dolfin
             python3 -m flake8 python/dolfin_utils
+            python3 -m flake8 python/demo
             python3 -m flake8 python/test
 
 build-documentation-cpp: &build-documentation-cpp
@@ -27,39 +28,25 @@ build-install-cpp: &build-install-cpp
   command: cd build && ninja -j3 install
 
 unit-tests-cpp: &unit-tests-cpp
-  name: Build and run unit tests (C++, serial)
-  command: cd build && ninja -j3 unittests && ctest -R unittests
+  name: Build and run C++ unit tests (serial)
+  command: |
+    cd build
+    ninja -j3 unittests
+    ctest -R unittests
 
 regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
-  command: cd build && make -j2 demos && ctest -j2 -R demo -R serial
+  command: |
+    cd build
+    ninja -j3 demos
+    ctest -j3 -R demo -R serial
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
-  command: cd build && make -j2 demos && ctest -R demo -R mpi
-
-demos-cpp: &demos-cpp
-  name: Build and run demos (C++)
   command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    ./demo_poisson
-    cd ../hyperelasticity
-    python3 -m ffc -l dolfin HyperElasticity.ufl
-    cmake -G Ninja .
-    ninja
-    ./demo_hyperelasticity
-
-demos-cpp-complex: &demos-cpp-complex
-  name: Build and run demos (C++)
-  command: |
-    cd cpp/demo/documented/poisson
-    python3 -m ffc -l dolfin -f 'scalar_type' 'double complex' Poisson.ufl
-    cmake -G Ninja .
-    ninja
-    ./demo_poisson
+    cd build
+    ninja -j3 demos
+    ctest --verbose -R demo -R mpi
 
 build-python-interface: &build-python-interface
   name: Build Python/pybind11 interface
@@ -77,35 +64,27 @@ unit-tests-python: &unit-tests-python
   name: Run unit tests (Python, serial)
   command: |
     cd python/test/unit
-    python3 -m pytest -n 3 .
+    python3 -m pytest -n3 .
 
 unit-tests-python-mpi: &unit-tests-python-mpi
   name: Run unit tests (Python, MPI)
   command: |
     cd python/test/unit
-    mpirun --allow-run-as-root -n 3 python3 -m pytest .
+    mpirun -n 3 python3 -m pytest .
 
 demos-python: &demos-python
   name: Run demos (Python, serial)
   command: |
     cd python/demo
     python3 ./generate-demo-files.py
-    python3 documented/poisson/demo_poisson.py
-    python3 documented/cahn-hilliard/demo_cahn-hilliard.py
-    python3 undocumented/elasticity/demo_elasticity.py
-    python3 undocumented/helmholtz2D/demo_helmholtz_plane_wave.py
-    cd documented/stokes-taylor-hood
-    python3 demo_stokes-taylor-hood.py
+    python3 -m pytest -n3 -v -m serial test.py
 
 demos-python-mpi: &demos-python-mpi
   name: Run demos (Python, MPI)
   command: |
     cd python/demo
-    mpirun --allow-run-as-root -np 3 python3 documented/poisson/demo_poisson.py
-    mpirun --allow-run-as-root -np 3 python3 documented/cahn-hilliard/demo_cahn-hilliard.py
-    mpirun --allow-run-as-root -np 3 python3 undocumented/elasticity/demo_elasticity.py
-    cd documented/stokes-taylor-hood
-    mpirun --allow-run-as-root -np 3 python3 demo_stokes-taylor-hood.py
+    python3 ./generate-demo-files.py
+    python3 -m pytest -n2 -v -m mpi test.py --num-proc=3
 
 version: 2
 
@@ -123,10 +102,14 @@ jobs:
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
+
       - run: *unit-tests-cpp
-      - run: *demos-cpp
+      - run: *regression-tests-cpp
+      - run: *regression-tests-cpp-mpi
+
       - run: *build-python-interface
       - run: *build-documentation-python
+
       - run: *unit-tests-python
       - run: *unit-tests-python-mpi
       - run: *demos-python
@@ -150,8 +133,11 @@ jobs:
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp
+
       - run: *unit-tests-cpp
-      - run: *demos-cpp-complex
+      - run: *regression-tests-cpp
+      - run: *regression-tests-cpp-mpi
+
       - run: *build-python-interface
       - run: *build-documentation-python
       - run: *unit-tests-python
@@ -178,10 +164,10 @@ jobs:
 
   build-and-push-docker-images:
     docker:
-      - image: docker:18.05.0-git
+      - image: docker:18.09-git
     steps:
       - setup_remote_docker:
-          version: 18.05.0-ce
+          version: 18.09.3
       - checkout
       - run:
           name: Login to quay.io
@@ -190,21 +176,26 @@ jobs:
           name: Build and push dev-env-real Docker image tag dev-env-real
           command: docker build --build-arg MAKEFLAGS='-j3' --target dev-env-real -t quay.io/fenicsproject/dolfinx:dev-env-real . && docker push quay.io/fenicsproject/dolfinx:dev-env-real
       - run:
-          name: Build dev-env-complex Docker image tag dev-env-complex
+          name: Build and push dev-env-complex Docker image tag dev-env-complex
           command: docker build --build-arg MAKEFLAGS='-j3' --target dev-env-complex -t quay.io/fenicsproject/dolfinx:dev-env-complex . && docker push quay.io/fenicsproject/dolfinx:dev-env-complex
       - run:
-          name: Build real Docker image tags latest, real
+          name: Build and push real Docker image tags latest, real
           command: docker build --build-arg MAKEFLAGS='-j3' --target real -t quay.io/fenicsproject/dolfinx:latest . && docker tag quay.io/fenicsproject/dolfinx:latest quay.io/fenicsproject/dolfinx:real && docker push quay.io/fenicsproject/dolfinx:latest && docker push quay.io/fenicsproject/dolfinx:real
       - run:
-          name: Build complex Docker image tag complex
+          name: Build and push complex Docker image tag complex
           command: docker build --build-arg MAKEFLAGS='-j3' --target complex -t quay.io/fenicsproject/dolfinx:complex . && docker push quay.io/fenicsproject/dolfinx:complex
       - run:
-          name: Build real notebook Docker image tag notebook
-          command: docker build --build-arg MAKEFLAGS='-j3' --target notebook -t quay.io/fenicsproject/dolfinx:notebook . && docker push quay.io/fenicsproject/dolfinx:notebook
+          name: Build and push real notebook Docker image tag notebook
+          command: docker build --target notebook -t quay.io/fenicsproject/dolfinx:notebook . && docker push quay.io/fenicsproject/dolfinx:notebook
       - run:
-          name: Build complex notebook Docker image tag notebook-complex
-          command: docker build --build-arg MAKEFLAGS='-j3' --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex . && docker push quay.io/fenicsproject/dolfinx:notebook-complex
-
+          name: Build and push complex notebook Docker image tag notebook-complex
+          command: docker build --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex . && docker push quay.io/fenicsproject/dolfinx:notebook-complex
+      - run:
+          name: Build and push real lab Docker image tag lab
+          command: docker build --target lab -t quay.io/fenicsproject/dolfinx:lab . && docker push quay.io/fenicsproject/dolfinx:lab
+      - run:
+          name: Build and push complex lab Docker image tag lab-complex
+          command: docker build --target lab-complex -t quay.io/fenicsproject/dolfinx:lab-complex . && docker push quay.io/fenicsproject/dolfinx:lab-complex
 workflows:
   version: 2
   build-and-pushdoc:

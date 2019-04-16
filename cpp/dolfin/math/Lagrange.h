@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfin/common/Variable.h>
+#include <string>
 #include <vector>
 
 namespace dolfin
@@ -32,7 +32,7 @@ namespace math
 ///   p(1,x) = x       (zero at x = 0, one at x = 1)
 ///
 
-class Lagrange : public common::Variable
+class Lagrange
 {
 public:
   /// Constructor
@@ -89,5 +89,5 @@ private:
   std::vector<double> points;
   std::vector<double> constants;
 };
-}
-}
+} // namespace math
+} // namespace dolfin

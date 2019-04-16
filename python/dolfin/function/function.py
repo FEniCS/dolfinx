@@ -9,6 +9,7 @@
 import typing
 
 import numpy as np
+from petsc4py import PETSc
 
 import ufl
 from dolfin import common, cpp, function
@@ -24,7 +25,7 @@ class Function(ufl.Coefficient):
 
     def __init__(self,
                  V: functionspace.FunctionSpace,
-                 x: typing.Optional[cpp.la.PETScVector] = None,
+                 x: typing.Optional[PETSc.Vec] = None,
                  name: typing.Optional[str] = None):
         """Initialize finite element Function."""
 
@@ -35,7 +36,7 @@ class Function(ufl.Coefficient):
             self._cpp_object = cpp.function.Function(V._cpp_object)
 
         # Initialize the ufl.FunctionSpace
-        super().__init__(V.ufl_function_space(), count=self._cpp_object.id())
+        super().__init__(V.ufl_function_space(), count=self._cpp_object.id)
 
         # Set name
         if name is None:
@@ -79,7 +80,7 @@ class Function(ufl.Coefficient):
             # Scalar evaluation
             return self(*x)
 
-    def __call__(self, x: np.ndarray) -> np.ndarray:
+    def __call__(self, x: np.ndarray, bb_tree: cpp.geometry.BoundingBoxTree) -> np.ndarray:
         """Evaluate Function at points x, where x has shape (num_points, gdim)"""
         _x = np.asarray(x, dtype=np.float)
         num_points = _x.shape[0] if len(_x.shape) > 1 else 1
@@ -94,7 +95,7 @@ class Function(ufl.Coefficient):
             values = np.empty((num_points, value_size))
 
         # Call the evaluation
-        self._cpp_object.eval(values, _x)
+        self._cpp_object.eval(values, _x, bb_tree)
         if num_points == 1:
             values = np.reshape(values, (-1, ))
 
@@ -103,8 +104,8 @@ class Function(ufl.Coefficient):
     def eval_cell(self, u, x, cell):
         return self._cpp_object.eval(u, x, cell)
 
-    def eval(self, u, x):
-        return self._cpp_object.eval(u, x)
+    def eval(self, u, x, bb_tree: cpp.geometry.BoundingBoxTree):
+        return self._cpp_object.eval(u, x, bb_tree)
 
     def interpolate(self, u):
         try:
@@ -138,9 +139,10 @@ class Function(ufl.Coefficient):
         """Re-name Function."""
         self._cpp_object.rename(name)
 
+    @property
     def id(self) -> int:
         """Return object id index."""
-        return self._cpp_object.id()
+        return self._cpp_object.id
 
     def __str__(self):
         """Return a pretty print representation of it self."""

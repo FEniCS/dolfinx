@@ -12,14 +12,14 @@ using namespace dolfin;
 using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
+IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::size_t>& ghosts,
                    std::size_t block_size)
     : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts.size()),
-      _block_size(block_size)
+      _ghost_owners(ghosts.size()), _block_size(block_size)
 {
   // Calculate offsets
-  MPI::all_gather(_mpi_comm, local_size, _all_ranges);
+  MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
 
   const std::size_t mpi_size = dolfin::MPI::size(_mpi_comm);
   for (std::size_t i = 1; i < mpi_size; ++i)
@@ -27,7 +27,30 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::size_t local_size,
 
   _all_ranges.insert(_all_ranges.begin(), 0);
 
-  _ghost_owners.resize(ghosts.size());
+  for (std::size_t i = 0; i < ghosts.size(); ++i)
+  {
+    _ghosts[i] = ghosts[i];
+    _ghost_owners[i] = owner(ghosts[i]);
+    assert(_ghost_owners[i] != _myrank);
+  }
+}
+//-----------------------------------------------------------------------------
+IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+                   const std::vector<std::int64_t>& ghosts,
+                   std::size_t block_size)
+    : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts.size()),
+      _ghost_owners(ghosts.size()), _block_size(block_size)
+{
+  // Calculate offsets
+  MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
+
+  // const std::size_t mpi_size = _mpi_comm.size();
+  const std::int32_t mpi_size = dolfin::MPI::size(_mpi_comm);
+  for (std::int32_t i = 1; i < mpi_size; ++i)
+    _all_ranges[i] += _all_ranges[i - 1];
+
+  _all_ranges.insert(_all_ranges.begin(), 0);
+
   for (std::size_t i = 0; i < ghosts.size(); ++i)
   {
     _ghosts[i] = ghosts[i];
@@ -58,7 +81,7 @@ const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& IndexMap::ghosts() const
   return _ghosts;
 }
 //-----------------------------------------------------------------------------
-int IndexMap::owner(std::size_t global_index) const
+int IndexMap::owner(std::int64_t global_index) const
 {
   return std::upper_bound(_all_ranges.begin(), _all_ranges.end(), global_index)
          - _all_ranges.begin() - 1;
@@ -131,3 +154,4 @@ void IndexMap::scatter_rev(std::vector<PetscScalar>& local_data)
   MPI_Win_fence(0, win);
   MPI_Win_free(&win);
 }
+//-----------------------------------------------------------------------------

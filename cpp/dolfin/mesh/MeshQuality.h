@@ -8,8 +8,6 @@
 
 #include "MeshFunction.h"
 #include <array>
-#include <boost/multi_array.hpp>
-#include <dolfin/common/constants.h>
 #include <memory>
 #include <string>
 #include <utility>

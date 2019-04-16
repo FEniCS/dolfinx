@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "Connectivity.h"
 #include "Mesh.h"
 #include <dolfin/geometry/Point.h>
 
@@ -91,7 +92,7 @@ public:
   ///
   /// @return     std::size_t
   ///         The dimension.
-  inline std::size_t dim() const { return _dim; }
+  inline int dim() const { return _dim; }
 
   /// Return index of mesh entity
   ///
@@ -102,8 +103,7 @@ public:
   /// Return global index of mesh entity
   ///
   /// @return     std::size_t
-  ///         The global index. Set to
-  ///         std::numerical_limits<std::size_t>::max() if global index
+  ///         The global index. Set to -1  if global index
   ///         has not been computed
   std::int64_t global_index() const
   {
@@ -117,35 +117,42 @@ public:
   /// Return local number of incident mesh entities of given
   /// topological dimension
   ///
-  /// @param     dim (std::size_t)
+  /// @param     dim (int)
   ///         The topological dimension.
   ///
   /// @return     std::size_t
   /// The number of local incident MeshEntity objects of given
   /// dimension.
-  inline std::size_t num_entities(std::size_t dim) const
+  inline std::size_t num_entities(int dim) const
   {
     if (dim == _dim)
       return 1;
     else
-      return _mesh->topology().connectivity(_dim, dim).size(_local_index);
+    {
+      assert(_mesh->topology().connectivity(_dim, dim));
+      return _mesh->topology().connectivity(_dim, dim)->size(_local_index);
+    }
   }
 
   /// Return global number of incident mesh entities of given
   /// topological dimension
   ///
-  /// @param     dim (std::size_t)
+  /// @param     dim (int)
   ///         The topological dimension.
   ///
   /// @return     std::size_t
   ///         The number of global incident MeshEntity objects of given
   ///         dimension.
-  std::size_t num_global_entities(std::size_t dim) const
+  std::size_t num_global_entities(int dim) const
   {
     if (dim == _dim)
       return 1;
     else
-      return _mesh->topology().connectivity(_dim, dim).size_global(_local_index);
+    {
+      assert(_mesh->topology().connectivity(_dim, dim));
+      return _mesh->topology().connectivity(_dim, dim)->size_global(
+          _local_index);
+    }
   }
 
   /// Return array of indices for incident mesh entities of given
@@ -156,14 +163,16 @@ public:
   ///
   /// @return     std::size_t
   ///         The index for incident mesh entities of given dimension.
-  const std::int32_t* entities(std::size_t dim) const
+  const std::int32_t* entities(int dim) const
   {
     if (dim == _dim)
       return &_local_index;
     else
     {
+      assert(_mesh->topology().connectivity(_dim, dim));
       const std::int32_t* initialized_mesh_entities
-        = _mesh->topology().connectivity(_dim, dim)(_local_index);
+          = _mesh->topology().connectivity(_dim, dim)->connections(
+              _local_index);
       assert(initialized_mesh_entities);
       return initialized_mesh_entities;
     }
@@ -206,13 +215,13 @@ public:
   /// Return set of sharing processes
   /// @return std::set<std::uint32_t>
   ///   List of sharing processes
-  std::set<std::uint32_t> sharing_processes() const
+  std::set<std::int32_t> sharing_processes() const
   {
-    const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
+    const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
         = _mesh->topology().shared_entities(_dim);
     const auto map_it = sharing_map.find(_local_index);
     if (map_it == sharing_map.end())
-      return std::set<std::uint32_t>();
+      return std::set<std::int32_t>();
     else
       return map_it->second;
   }
@@ -224,7 +233,7 @@ public:
   {
     if (_mesh->topology().have_shared_entities(_dim))
     {
-      const std::map<std::int32_t, std::set<std::uint32_t>>& sharing_map
+      const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
           = _mesh->topology().shared_entities(_dim);
       return (sharing_map.find(_local_index) != sharing_map.end());
     }
@@ -260,10 +269,10 @@ protected:
   Mesh const* _mesh;
 
   // Topological dimension
-  std::uint32_t _dim;
+  int _dim;
 
   // Local index of entity within topological dimension
   std::int32_t _local_index;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

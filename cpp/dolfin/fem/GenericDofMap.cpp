@@ -1,3 +1,8 @@
+// Copyright (C) 2010-2015 Anders Logg and Garth N. Wells
+//
+// This file is part of DOLFIN (https://www.fenicsproject.org)
+//
+// SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "GenericDofMap.h"
 #include <dolfin/common/IndexMap.h>
@@ -193,34 +198,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
       entity_to_dofs[dofs_per_entity * entity.index() + local_dof] = global_dof;
     }
   }
-  return entity_to_dofs;
-}
-//-----------------------------------------------------------------------------
-void GenericDofMap::ufc_tabulate_dofs(
-    int64_t* dofs,
-    const std::vector<std::vector<std::vector<int>>>& entity_dofs,
-    const int64_t* num_global_entities, const int64_t** entity_indices)
-{
-  // Loop over cell entity types (vertex, edge, etc)
-  std::size_t offset = 0;
-  for (std::size_t d = 0; d < entity_dofs.size(); ++d)
-  {
-    // Loop over each entity of dimension d
-    for (std::size_t i = 0; i < entity_dofs[d].size(); ++i)
-    {
-      const int num_entity_dofs = entity_dofs[d][i].size();
 
-      // Loop over dofs belong to entity e of dimension d (d, e)
-      for (std::size_t dof = 0; dof < entity_dofs[d][i].size(); ++dof)
-      {
-        // d: topological dimension
-        // i: local entity index
-        // dof: local index of dof at (d, i)
-        dofs[entity_dofs[d][i][dof]]
-            = offset + num_entity_dofs * entity_indices[d][i] + dof;
-      }
-    }
-    offset += entity_dofs[d][0].size() * num_global_entities[d];
-  }
+  return entity_to_dofs;
 }
 //-----------------------------------------------------------------------------

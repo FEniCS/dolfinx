@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/common/Variable.h>
 #include <memory>
 #include <petscsys.h>
 #include <set>
@@ -17,11 +16,6 @@
 
 namespace dolfin
 {
-
-namespace la
-{
-class PETScVector;
-}
 
 namespace common
 {
@@ -39,9 +33,12 @@ namespace fem
 
 /// This class provides a generic interface for dof maps
 
-class GenericDofMap : public common::Variable
+class GenericDofMap
 {
 public:
+  /// Destructor
+  virtual ~GenericDofMap() = default;
+
   /// True if dof map is a view into another map (is a sub-dofmap)
   virtual bool is_view() const = 0;
 
@@ -111,11 +108,11 @@ public:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
                                                  std::size_t dim) const;
 
-  /// Set dof entries in vector to a specified value. Parallel
-  /// layout of vector must be consistent with dof map range. This
-  /// function is typically used to construct the null space of a
-  /// matrix operator
-  virtual void set(la::PETScVector& x, PetscScalar value) const = 0;
+  /// Set dof entries in vector to a specified value. Vector size must
+  /// be consistent with dof map range. This function is typically used
+  /// to construct the null space of a matrix operator
+  virtual void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+                   PetscScalar value) const = 0;
 
   /// Index map (const access)
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
@@ -137,12 +134,6 @@ public:
 
   /// Get block size
   virtual int block_size() const = 0;
-
-  /// UFC dofmap (temporary replacement for generated dofmap)
-  static void ufc_tabulate_dofs(
-      int64_t* dofs,
-      const std::vector<std::vector<std::vector<int>>>& entity_dofs,
-      const int64_t* num_global_entities, const int64_t** entity_indices);
 };
 } // namespace fem
 } // namespace dolfin

@@ -89,8 +89,8 @@ class DofMap:
     def block_size(self):
         return self._cpp_object.block_size()
 
-    def set(self, petscvec, value):
-        self._cpp_object.set(petscvec, value)
+    def set(self, x, value):
+        self._cpp_object.set(x, value)
 
     def index_map(self):
         return self._cpp_object.index_map()

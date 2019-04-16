@@ -11,18 +11,19 @@ finite element space.
 
 """
 
+from petsc4py import PETSc
+
 import ufl
 from dolfin import cpp, fem, function, la
 
 
 def project(v,
             V=None,
-            bcs=None,
+            bcs=[],
             mesh=None,
             funct=None,
             solver_type="lu",
-            preconditioner_type="default",
-            form_compiler_parameters=None):
+            preconditioner_type="default"):
     """Return projection of given expression *v* onto the finite element
     space *V*.
 
@@ -91,8 +92,12 @@ def project(v,
     L = ufl.inner(v, w) * dx
 
     # Assemble linear system
-    A, b = fem.assemble_system(
-        a, L, bcs=bcs, form_compiler_parameters=form_compiler_parameters)
+    A = fem.assemble_matrix(a, bcs)
+    A.assemble()
+    b = fem.assemble_vector(L)
+    fem.apply_lifting(b, [a], [bcs])
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    fem.set_bc(b, bcs)
 
     # Solve linear system for projection
     if funct is None:

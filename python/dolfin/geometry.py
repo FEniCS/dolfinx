@@ -9,20 +9,9 @@ from dolfin import cpp
 
 
 class BoundingBoxTree:
-    def __init__(self, gdim=None):
-        """Initialise from geometric dimension"""
-        if gdim is not None:
-            self._cpp_object = cpp.geometry.BoundingBoxTree(gdim)
-
-    def build_points(self, points: list):
-        """Build from cloud of points"""
-        # Unpack to cpp points
-        points_cpp = (point._cpp_object for point in points)
-        self._cpp_object.build(points_cpp)
-
-    def build_mesh(self, mesh, tdim: int):
-        """Build from mesh entities of given topological dimension"""
-        self._cpp_object.build(mesh, tdim)
+    def __init__(self, obj, dim):
+        """Create bounding box tree"""
+        self._cpp_object = cpp.geometry.BoundingBoxTree(obj, dim)
 
     def compute_collisions_point(self, point: "Point"):
         """Compute collisions with the point"""
@@ -57,12 +46,12 @@ class BoundingBoxTree:
         return self._cpp_object.compute_closest_entity(point._cpp_object, mesh)
 
     def str(self):
-        """Print for debbuging"""
+        """Print for debugging"""
         return self._cpp_object.str()
 
 
 class Point:
-    """Point represents a point in 3D euclidean space"""
+    """Point represents a point in 3D Euclidean space"""
 
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0):
         """Initialise from coordinates"""

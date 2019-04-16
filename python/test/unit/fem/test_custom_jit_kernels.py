@@ -12,7 +12,8 @@ from petsc4py import PETSc
 
 import dolfin
 from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
-                    list_timings)
+                    list_timings, Function)
+from dolfin_utils.test.skips import skip_if_complex
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
@@ -51,28 +52,66 @@ def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
     b[:] = Ae / 6.0
 
 
+@numba.cfunc(c_signature, nopython=True)
+def tabulate_tensor_b_coeff(b_, w_, coords_, cell_orientation):
+    b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
+    w = numba.carray(w_, (1), dtype=PETSc.ScalarType)
+    coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
+    x0, y0 = coordinate_dofs[0, :]
+    x1, y1 = coordinate_dofs[1, :]
+    x2, y2 = coordinate_dofs[2, :]
+
+    # 2x Element area Ae
+    Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
+    b[:] = w[0] * Ae / 6.0
+
+
 def test_numba_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
-    a.set_cell_tabulate(0, tabulate_tensor_A.address)
+    a.set_tabulate_cell(-1, tabulate_tensor_A.address)
+    a.set_tabulate_cell(12, tabulate_tensor_A.address)
+    a.set_tabulate_cell(2, tabulate_tensor_A.address)
 
     L = cpp.fem.Form([V._cpp_object])
-    L.set_cell_tabulate(0, tabulate_tensor_b.address)
+    L.set_tabulate_cell(-1, tabulate_tensor_b.address)
 
-    A = dolfin.cpp.fem.assemble(a)
-    b = dolfin.cpp.fem.assemble(L)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    Anorm = A.norm(cpp.la.Norm.frobenius)
-    bnorm = b.norm(cpp.la.Norm.l2)
+    Anorm = A.norm(PETSc.NormType.FROBENIUS)
+    bnorm = b.norm(PETSc.NormType.N2)
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 
     list_timings([TimingType.wall])
 
 
-def xtest_cffi_assembly():
+def test_coefficient():
+    mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    DG0 = FunctionSpace(mesh, ("DG", 0))
+    vals = Function(DG0)
+    vals.vector().set(2.0)
+
+    L = cpp.fem.Form([V._cpp_object])
+    L.set_tabulate_cell(-1, tabulate_tensor_b_coeff.address)
+    L.set_coefficient(0, vals._cpp_object)
+
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    bnorm = b.norm(PETSc.NormType.N2)
+    print(bnorm)
+    assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
+
+
+@skip_if_complex
+def test_cffi_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
     V = FunctionSpace(mesh, ("Lagrange", 1))
 
@@ -170,18 +209,19 @@ def xtest_cffi_assembly():
 
     a = cpp.fem.Form([V._cpp_object, V._cpp_object])
     ptrA = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonA"))
-    a.set_cell_tabulate(0, ptrA)
+    a.set_tabulate_cell(-1, ptrA)
 
     L = cpp.fem.Form([V._cpp_object])
     ptrL = ffi.cast("intptr_t", ffi.addressof(lib, "tabulate_tensor_poissonL"))
-    L.set_cell_tabulate(0, ptrL)
+    L.set_tabulate_cell(-1, ptrL)
 
-    assembler = cpp.fem.Assembler([[a]], [L], [])
-    A = assembler.assemble_matrix(cpp.fem.Assembler.BlockType.monolithic)
-    b = assembler.assemble_vector(cpp.fem.Assembler.BlockType.monolithic)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
-    Anorm = A.norm(cpp.la.Norm.frobenius)
-    bnorm = b.norm(cpp.la.Norm.l2)
+    Anorm = A.norm(PETSc.NormType.FROBENIUS)
+    bnorm = b.norm(PETSc.NormType.N2)
     assert (np.isclose(Anorm, 56.124860801609124))
     assert (np.isclose(bnorm, 0.0739710713711999))
 

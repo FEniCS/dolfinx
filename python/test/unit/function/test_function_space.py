@@ -69,8 +69,8 @@ def test_python_interface(V, V2, W, W2, Q):
     assert W.dolfin_element().signature() == W2.dolfin_element().signature()
     assert V.ufl_element() == V2.ufl_element()
     assert W.ufl_element() == W2.ufl_element()
-    assert W.id() == W2.id()
-    assert V.id() == V2.id()
+    assert W.id == W2.id
+    assert V.id == V2.id
 
 
 def test_component(V, W, Q):
@@ -134,7 +134,7 @@ def test_collapse(W, V):
     assert Vc.dofmap().cell_dofs(0)[0] == V.dofmap().cell_dofs(0)[0]
     f0 = Function(V)
     f1 = Function(Vc)
-    assert f0.vector().size() == f1.vector().size()
+    assert f0.vector().getSize() == f1.vector().getSize()
 
 
 def test_argument_equality(mesh, V, V2, W, W2):

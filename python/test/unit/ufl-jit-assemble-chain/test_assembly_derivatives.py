@@ -130,7 +130,8 @@ def test_diff_then_integrate():
         # Apply integration with DOLFIN
         # (also passes through form compilation and jit)
         M = f * dx
-        f_integral = assemble(M)  # noqa
+        f_integral = assemble_scalar(M)  # noqa
+        f_integral = MPI.sum(mesh.mpi_comm(), f_integral)
 
         # Compute integral of f manually from anti-derivative F
         # (passes through PyDOLFIN interface and uses UFL evaluation)

@@ -11,6 +11,7 @@
 #include "MeshIterator.h"
 #include "Vertex.h"
 #include <dolfin/common/MPI.h>
+#include <math.h>
 #include <sstream>
 
 using namespace dolfin;
@@ -109,7 +110,7 @@ std::array<double, 6> MeshQuality::dihedral_angles(const Cell& cell)
 std::array<double, 2> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
 {
   // Get start min/max
-  double d_ang_min = DOLFIN_PI + 1.0;
+  double d_ang_min = 3.14 + 1.0;
   double d_ang_max = -1.0;
 
   for (auto& cell : MeshRange<Cell>(mesh))
@@ -137,8 +138,8 @@ MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh,
   std::vector<double> bins(num_bins);
   std::vector<std::size_t> values(num_bins, 0);
 
-  // Currently min value is 0.0 and max is DOLFIN_PI
-  const double interval = DOLFIN_PI / (static_cast<double>(num_bins));
+  // Currently min value is 0.0 and max is Pi
+  const double interval = M_PI / (static_cast<double>(num_bins));
 
   for (std::size_t i = 0; i < num_bins; ++i)
     bins[i] = static_cast<double>(i) * interval + interval / 2.0;
@@ -151,7 +152,7 @@ MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh,
     // Iterate through the collected vector
     for (std::size_t i = 0; i < angles.size(); i++)
     {
-      // Compute 'bin' index, and handle special case that angle = DOLFIN_PI
+      // Compute 'bin' index, and handle special case that angle = Pi
       const std::size_t slot = std::min(
           static_cast<std::size_t>(angles[i] / interval), num_bins - 1);
 

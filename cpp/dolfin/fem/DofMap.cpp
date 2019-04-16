@@ -6,6 +6,8 @@
 
 #include "DofMap.h"
 #include "DofMapBuilder.h"
+#include "ElementDofLayout.h"
+#include "utils.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
@@ -13,88 +15,123 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <ufc.h>
 #include <unordered_map>
 
 using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ufc_dofmap> ufc_dofmap,
-               const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _ufc_dofmap(ufc_dofmap), _global_dimension(0),
-      _ufc_offset(-1)
+DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
+    : _cell_dimension(-1), _global_dimension(0)
 {
-  assert(_ufc_dofmap);
-  _cell_dimension = _ufc_dofmap->num_element_support_dofs
-                    + _ufc_dofmap->num_global_support_dofs;
+  _element_dof_layout = std::make_shared<ElementDofLayout>(
+      create_element_dof_layout(ufc_dofmap, {}, mesh.type()));
+  _cell_dimension = _element_dof_layout->num_dofs();
 
-  std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(*_ufc_dofmap, mesh);
+  const int bs = _element_dof_layout->block_size();
+  if (bs == 1)
+  {
+    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+        = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
+  }
+  else
+  {
+    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+        = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
+  }
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& parent_dofmap,
+DofMap::DofMap(const DofMap& dofmap_parent,
                const std::vector<std::size_t>& component,
                const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _global_dimension(-1), _ufc_offset(0),
-      _index_map(parent_dofmap._index_map)
+    : _cell_dimension(-1), _global_dimension(-1),
+      _index_map(dofmap_parent._index_map)
 {
-  // FIXME: large objects could be shared (using std::shared_ptr)
-  // between parent and view
+  // FIXME: Large objects could be shared (using std::shared_ptr)
+  //        between parent and view
+  //
+  // FIXME: The index map block size will likely be wrong?
 
-  // FIXME: the index map block size will be wrong here.
+  assert(!component.empty());
+  const int D = mesh.topology().dim();
 
-  // Convenience reference to parent UFC dofmap
-  const std::int64_t parent_offset
-      = parent_dofmap._ufc_offset > 0 ? parent_dofmap._ufc_offset : 0;
+  // Set element dof layout and cell dimension
+  _element_dof_layout
+      = dofmap_parent._element_dof_layout->sub_dofmap(component);
+  _cell_dimension = _element_dof_layout->num_dofs();
 
-  // Build sub-dofmap
-  assert(parent_dofmap._ufc_dofmap);
-  std::tie(_ufc_dofmap, _ufc_offset, _global_dimension, _dofmap)
-      = DofMapBuilder::build_sub_map_view(
-          parent_dofmap, *parent_dofmap._ufc_dofmap, parent_dofmap.block_size(),
-          parent_offset, component, mesh);
+  // Get components in parent map that correspond to sub-dofs
+  assert(dofmap_parent._element_dof_layout);
+  const std::vector<int> element_map_view
+      = dofmap_parent._element_dof_layout->sub_view(component);
 
-  assert(_ufc_dofmap);
-  _cell_dimension = _ufc_dofmap->num_element_support_dofs
-                    + _ufc_dofmap->num_global_support_dofs;
+  // Build dofmap by extracting from parent
+  const std::int32_t dofs_per_cell = element_map_view.size();
+  _dofmap.resize(dofs_per_cell * mesh.num_entities(D));
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  {
+    const int c = cell.index();
+    auto cell_dmap_parent = dofmap_parent.cell_dofs(c);
+    for (std::int32_t i = 0; i < dofs_per_cell; ++i)
+      _dofmap[c * dofs_per_cell + i] = cell_dmap_parent[element_map_view[i]];
+  }
 
-  // FIXME: this will be wrong
-  _shared_nodes = parent_dofmap._shared_nodes;
+  // Compute global dimension of sub-map
+  _global_dimension = 0;
+  for (int d = 0; d <= D; ++d)
+  {
+    const std::int64_t n = mesh.num_entities_global(d);
+    _global_dimension += n * _element_dof_layout->num_entity_dofs(d);
+  }
+
+  // FIXME: This stores more than is required. Compress, or share with
+  // parent.
+  _shared_nodes = dofmap_parent._shared_nodes;
 
   // FIXME: this set may be larger than it should be, e.g. if subdofmap
   // has only facets dofs and parent included vertex dofs.
-  _neighbours = parent_dofmap._neighbours;
+  _neighbours = dofmap_parent._neighbours;
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
                const DofMap& dofmap_view, const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _ufc_dofmap(dofmap_view._ufc_dofmap),
-      _global_dimension(-1), _ufc_offset(-1)
+    : _cell_dimension(-1), _global_dimension(-1),
+      _element_dof_layout(dofmap_view._element_dof_layout)
 {
-  assert(_ufc_dofmap);
+  _cell_dimension = _element_dof_layout->num_dofs();
 
-  // Check dimensional consistency between UFC dofmap and the mesh
-  check_provided_entities(*_ufc_dofmap, mesh);
+  // Check dimensional consistency between ElementDofLayout and the mesh
+  check_provided_entities(*_element_dof_layout, mesh);
 
   // Build new dof map
-  std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
-      = DofMapBuilder::build(*_ufc_dofmap, mesh);
-  _cell_dimension = _ufc_dofmap->num_element_support_dofs
-                    + _ufc_dofmap->num_global_support_dofs;
+  const int bs = _element_dof_layout->block_size();
+  if (bs == 1)
+  {
+    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+        = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
+  }
+  else
+  {
+    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+        = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
+  }
+
+  const int tdim = mesh.topology().dim();
 
   // Dimension sanity checks
-  assert(dofmap_view._dofmap.size()
-         == (std::size_t)(mesh.num_cells() * dofmap_view._cell_dimension));
+  assert(
+      dofmap_view._dofmap.size()
+      == (std::size_t)(mesh.num_entities(tdim) * dofmap_view._cell_dimension));
   assert(global_dimension() == dofmap_view.global_dimension());
-  assert(_dofmap.size() == (std::size_t)(mesh.num_cells() * _cell_dimension));
+  assert(_dofmap.size()
+         == (std::size_t)(mesh.num_entities(tdim) * _cell_dimension));
 
   // FIXME: Could we use a std::vector instead of std::map if the
   //        collapsed dof map is contiguous (0, . . . , n)?
 
   // Build map from collapsed dof index to original dof index
   collapsed_map.clear();
-  for (std::int64_t i = 0; i < mesh.num_cells(); ++i)
+  for (std::int64_t i = 0; i < mesh.num_entities(tdim); ++i)
   {
     auto view_cell_dofs = dofmap_view.cell_dofs(i);
     auto cell_dofs = this->cell_dofs(i);
@@ -105,6 +142,12 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
   }
 }
 //-----------------------------------------------------------------------------
+bool DofMap::is_view() const
+{
+  assert(_element_dof_layout);
+  return _element_dof_layout->is_view();
+}
+//-----------------------------------------------------------------------------
 std::int64_t DofMap::global_dimension() const { return _global_dimension; }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
@@ -112,23 +155,18 @@ std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
   return _cell_dimension;
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::max_element_dofs() const
-{
-  assert(_ufc_dofmap);
-  return _ufc_dofmap->num_element_support_dofs
-         + _ufc_dofmap->num_global_support_dofs;
-}
+std::size_t DofMap::max_element_dofs() const { return _cell_dimension; }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
-  assert(_ufc_dofmap);
-  return _ufc_dofmap->num_entity_dofs[entity_dim];
+  assert(_element_dof_layout);
+  return _element_dof_layout->num_entity_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 {
-  assert(_ufc_dofmap);
-  return _ufc_dofmap->num_entity_closure_dofs[entity_dim];
+  assert(_element_dof_layout);
+  return _element_dof_layout->num_entity_closure_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
@@ -150,12 +188,14 @@ Eigen::Array<int, Eigen::Dynamic, 1>
 DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
                                      std::size_t cell_entity_index) const
 {
-  assert(_ufc_dofmap);
+  const std::vector<std::vector<std::set<int>>>& dofs
+      = _element_dof_layout->entity_closure_dofs();
+  assert(entity_dim < dofs.size());
+  assert(cell_entity_index < dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
-      _ufc_dofmap->num_entity_closure_dofs[entity_dim]);
-  assert(_ufc_dofmap->tabulate_entity_closure_dofs);
-  _ufc_dofmap->tabulate_entity_closure_dofs(element_dofs.data(), entity_dim,
-                                            cell_entity_index);
+      dofs[entity_dim][cell_entity_index].size());
+  std::copy(dofs[entity_dim][cell_entity_index].begin(),
+            dofs[entity_dim][cell_entity_index].end(), element_dofs.data());
   return element_dofs;
 }
 //-----------------------------------------------------------------------------
@@ -163,15 +203,14 @@ Eigen::Array<int, Eigen::Dynamic, 1>
 DofMap::tabulate_entity_dofs(std::size_t entity_dim,
                              std::size_t cell_entity_index) const
 {
-  assert(_ufc_dofmap);
-  if (_ufc_dofmap->num_entity_dofs[entity_dim] == 0)
-    return Eigen::Array<int, Eigen::Dynamic, 1>();
-
+  const std::vector<std::vector<std::set<int>>>& dofs
+      = _element_dof_layout->entity_dofs();
+  assert(entity_dim < dofs.size());
+  assert(cell_entity_index < dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
-      _ufc_dofmap->num_entity_dofs[entity_dim]);
-  assert(_ufc_dofmap->tabulate_entity_dofs);
-  _ufc_dofmap->tabulate_entity_dofs(element_dofs.data(), entity_dim,
-                                    cell_entity_index);
+      dofs[entity_dim][cell_entity_index].size());
+  std::copy(dofs[entity_dim][cell_entity_index].begin(),
+            dofs[entity_dim][cell_entity_index].end(), element_dofs.data());
   return element_dofs;
 }
 //-----------------------------------------------------------------------------
@@ -179,12 +218,10 @@ Eigen::Array<std::size_t, Eigen::Dynamic, 1>
 DofMap::tabulate_global_dofs() const
 {
   assert(_global_nodes.empty() or block_size() == 1);
-
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> dofs(_global_nodes.size());
   std::size_t i = 0;
   for (auto d : _global_nodes)
     dofs[i++] = d;
-
   return dofs;
 }
 //-----------------------------------------------------------------------------
@@ -204,28 +241,20 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   return std::make_pair(dofmap, std::move(collapsed_map));
 }
 //-----------------------------------------------------------------------------
-void DofMap::set(la::PETScVector& x, PetscScalar value) const
+void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+                 PetscScalar value) const
 {
-  assert(_dofmap.size() % _cell_dimension == 0);
-  const std::size_t num_cells = _dofmap.size() / _cell_dimension;
-
-  std::vector<PetscScalar> _value(_cell_dimension, value);
-  for (std::size_t i = 0; i < num_cells; ++i)
-  {
-    auto dofs = cell_dofs(i);
-    x.set_local(_value.data(), dofs.size(), dofs.data());
-  }
-
-  x.apply();
+  for (auto index : _dofmap)
+    x[index] = value;
 }
 //-----------------------------------------------------------------------------
-void DofMap::check_provided_entities(const ufc_dofmap& dofmap,
+void DofMap::check_provided_entities(const ElementDofLayout& dofmap,
                                      const mesh::Mesh& mesh)
 {
   // Check that we have all mesh entities
-  for (std::size_t d = 0; d <= mesh.topology().dim(); ++d)
+  for (int d = 0; d <= mesh.topology().dim(); ++d)
   {
-    if (dofmap.num_entity_dofs[d] > 0 && mesh.num_entities(d) == 0)
+    if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
     {
       throw std::runtime_error("Missing entities of dimension "
                                + std::to_string(d) + " in dofmap construction");

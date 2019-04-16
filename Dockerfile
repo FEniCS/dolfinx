@@ -21,12 +21,13 @@
 #    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
 #
 
+ARG GMSH_VERSION=4.2.2
 ARG PYBIND11_VERSION=2.2.4
-ARG PETSC_VERSION=3.10.2
-ARG SLEPC_VERSION=3.10.1
-ARG PETSC4PY_VERSION=3.10.0
-ARG SLEPC4PY_VERSION=3.10.0
-ARG TINI_VERSION=v0.18.0 
+ARG PETSC_VERSION=3.11.1
+ARG SLEPC_VERSION=3.11.0
+ARG PETSC4PY_VERSION=3.11.0
+ARG SLEPC4PY_VERSION=3.11.0
+ARG TINI_VERSION=v0.18.0
 
 ARG MAKEFLAGS
 ARG PETSC_SLEPC_OPTFLAGS="-02 -g"
@@ -36,6 +37,8 @@ FROM ubuntu:18.04 as base
 LABEL maintainer="fenics-project <fenics-support@googlegroups.org>"
 LABEL description="Base image for real and complex FEniCS test environments"
 
+
+ARG GMSH_VERSION
 ARG PYBIND11_VERSION
 
 WORKDIR /tmp
@@ -46,7 +49,7 @@ ENV OPENBLAS_NUM_THREADS=1 \
 
 # Install dependencies available via apt-get.
 # First set of packages are required to build and run FEniCS.
-# Second set of packages are recommended and/or required to build documentation or tests. 
+# Second set of packages are recommended and/or required to build documentation or tests.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -63,12 +66,12 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         libboost-thread-dev \
         libboost-timer-dev \
         libeigen3-dev \
-        libhdf5-openmpi-dev \
+        libhdf5-mpich-dev \
         liblapack-dev \
-        libopenmpi-dev \
+        libmpich-dev \
         libopenblas-dev \
+        mpich \
         ninja-build \
-        openmpi-bin \
         pkg-config \
         python3-dev \
         python3-matplotlib \
@@ -79,16 +82,21 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
         doxygen \
         git \
-        gmsh \
         graphviz \
         valgrind \
         wget && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# Download Install gmsh
+RUN cd /usr/local && \
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64.tgz && \
+    tar -xf gmsh-${GMSH_VERSION}-Linux64.tgz
+ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64/bin:$PATH
+
 # Install Python packages (via pip)
 # First set of packages are required to build and run FEniCS.
-# Second set of packages are recommended and/or required to build documentation or run tests. 
+# Second set of packages are recommended and/or required to build documentation or run tests.
 RUN pip3 install --no-cache-dir mpi4py numba && \
     pip3 install --no-cache-dir cffi decorator flake8 pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
 
@@ -234,7 +242,7 @@ WORKDIR /root
 FROM dev-env-real as real
 LABEL description="DOLFIN-X in real mode"
 
-ARG MAKEFLAGS 
+ARG MAKEFLAGS
 
 WORKDIR /tmp
 
@@ -294,7 +302,7 @@ WORKDIR /root
 ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
-    pip3 install jupyter
+    pip3 install --no-cache-dir jupyter jupyterlab
 
 ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
 
@@ -303,10 +311,26 @@ ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-brows
 FROM complex as notebook-complex
 LABEL description="DOLFIN-X (complex mode) Jupyter Notebook"
 
-ARG TINI_VERSION 
+ARG TINI_VERSION
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
 RUN chmod +x /tini && \
-    pip3 install jupyter
+    pip3 install --no-cache-dir jupyter jupyterlab
 
 WORKDIR /root
 ENTRYPOINT ["/tini", "--", "jupyter", "notebook", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+
+########################################
+
+FROM notebook as lab
+LABEL description="DOLFIN-X Jupyter Lab"
+
+WORKDIR /root
+ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]
+
+########################################
+
+FROM notebook-complex as lab-complex
+LABEL description="DOLFIN-X (complex mode) Jupyter Lab"
+
+WORKDIR /root
+ENTRYPOINT ["/tini", "--", "jupyter", "lab", "--ip", "0.0.0.0", "--no-browser", "--allow-root"]

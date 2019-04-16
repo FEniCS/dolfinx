@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Garth N. Wells
+// Copyright (C) 2018-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -9,98 +9,93 @@
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <memory>
-#include <petscvec.h>
+#include <petscsys.h>
 #include <vector>
 
 namespace dolfin
 {
 
+namespace function
+{
+class Function;
+}
+
+namespace mesh
+{
+class Mesh;
+}
+
 namespace fem
 {
 class DirichletBC;
 class Form;
+class GenericDofMap;
 
 namespace impl
 {
 
-/// Assemble linear form into a ghosted PETSc Vec. The vector is
-/// modified such that:
-///
-/// 1. If x0 is null b <- b - scale*A x_bc; or
-///
-/// 2. If x0 is not null b <- b - scale * A (x_bc - x0).
-///
-/// Essential bc dofs entries are *not* set.
-///
-/// This function essentially unwraps the pointer to the PETSc Vec data
-/// and calls the Eigen-based functions for assembly.
-void assemble_ghosted(Vec b, const Form& L,
-                      const std::vector<std::shared_ptr<const Form>> a,
-                      const std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                      const Vec x0, double scale);
+/// Assemble linear form into an Eigen vector
+void assemble_vector(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                     const Form& L);
 
-/// Set bc values in owned (local) part of the PETSc Vec to scale*x_bc
-/// value
-void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
-            double scale);
+/// Execute kernel over cells and accumulate result in vector
+void assemble_cells(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+                    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
+                    const fem::GenericDofMap& dofmap,
+                    const std::function<void(PetscScalar*, const PetscScalar*,
+                                             const double*, int)>& fn,
+                    std::vector<const function::Function*> coefficients,
+                    const std::vector<int>& offsets);
 
-/// Set bc values in owned (local) part of the PETSc Vec to scale*(x0 -
-/// x_bc)
-void set_bc(Vec b, std::vector<std::shared_ptr<const DirichletBC>> bcs,
-            const Vec x0, double scale);
+/// Execute kernel over cells and accumulate result in vector
+void assemble_exterior_facets(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_facets,
+    const fem::GenericDofMap& dofmap,
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             int, int)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets);
 
-/// Assemble linear form into an Eigen vector. Assembly is performed
-/// over the portion of the mesh belonging to the process. No
-/// communication is performed. The Eigen vector must be passed in with
-/// the correct size.
-// FIXME: Clarify docstring regarding ghosts
-void assemble_eigen(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-                    const Form& L);
+/// Assemble linear form interior facet integrals into an Eigen vector
+void assemble_interior_facets(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
+
+/// Modify b such that:
+///
+///   b <- b - scale * A_j (g_j - x0_j)
+///
+/// where j is a block (nest) index. For non-blocked probelem j = 1. The
+/// boundary conditions bc1 are on the trial spaces V_j. The forms in
+/// [a] must have the same test space as L (from b was built), but the
+/// trial space may differ. If x0 is not supplied, then it is treated as
+/// zero.
+void apply_lifting(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const std::vector<std::shared_ptr<const Form>> a,
+    std::vector<std::vector<std::shared_ptr<const DirichletBC>>> bcs1,
+    std::vector<Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>>
+        x0,
+    double scale);
 
 /// Modify RHS vector to account for boundary condition b <- b - scale*Ax_bc
-void modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-               const Form& a,
-               std::vector<std::shared_ptr<const DirichletBC>> bcs,
-               double scale);
+void lift_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        bc_values1,
+    const std::vector<bool>& bc_markers1, double scale);
 
 /// Modify RHS vector to account for boundary condition such that b <- b
 /// - scale*A (x_bc - x0)
-void
-    modify_bc(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-              const Form& a,
-              std::vector<std::shared_ptr<const DirichletBC>> bcs,
-              Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
-              double scale);
-
-/// Set bc entries in b. Does not set ghosts and size of b must be same
-/// as owned length.
-///
-/// - If length of x0 is zero, then b = scale* x_bc (bc dofs only)
-///
-/// - If length of x0 is equal to length of b, then b <- scale*(x0 -
-///   x_bc) (bc dofs only)
-void set_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    const Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
+void lift_bc(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
+    const Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        bc_values1,
+    const std::vector<bool>& bc_markers1,
+    Eigen::Ref<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x0,
     double scale);
 
-// Implementation of bc application
-void _modify_bc(
-    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> b, const Form& a,
-    std::vector<std::shared_ptr<const DirichletBC>> bcs,
-    Eigen::Ref<const Eigen::Array<PetscScalar, Eigen::Dynamic, 1>> x0,
-    double scale);
-
-// Assemble linear form into a local PETSc Vec. The vector b is modified
-// to account for essential (Dirichlet) boundary conditions.
-//
-// The implementation of this function unwraps the PETSc Vec as a plain
-// pointer, and call the Eigen-based assembly interface.
-void _assemble_local(Vec b, const Form& L,
-                     const std::vector<std::shared_ptr<const Form>> a,
-                     const std::vector<std::shared_ptr<const DirichletBC>> bcs,
-                     const Vec x0, double scale);
 } // namespace impl
 } // namespace fem
 } // namespace dolfin

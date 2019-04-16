@@ -37,8 +37,9 @@ public:
   std::size_t num_vertices(std::size_t dim) const;
 
   /// Create entities e of given topological dimension from vertices v
-  void create_entities(boost::multi_array<std::int32_t, 2>& e, std::size_t dim,
-                       const std::int32_t* v) const;
+  void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                    Eigen::Dynamic, Eigen::RowMajor>& e,
+                       std::size_t dim, const std::int32_t* v) const;
 
   /// Compute (generalized) volume (area) of triangle
   double volume(const MeshEntity& triangle) const;
@@ -68,5 +69,5 @@ public:
   /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
   std::vector<std::int8_t> vtk_mapping() const { return {0, 1, 3, 2}; }
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

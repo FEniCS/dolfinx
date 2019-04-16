@@ -7,13 +7,12 @@
 #ifdef HAS_SLEPC
 
 #include "SLEPcEigenSolver.h"
-#include "PETScMatrix.h"
-#include "PETScVector.h"
 #include "VectorSpaceBasis.h"
 #include "utils.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/log.h>
+#include <dolfin/la/PETScVector.h>
 #include <slepcversion.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
@@ -44,15 +43,11 @@ SLEPcEigenSolver::~SLEPcEigenSolver()
     EPSDestroy(&_eps);
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_operators(std::shared_ptr<const PETScMatrix> A,
-                                     std::shared_ptr<const PETScMatrix> B)
+void SLEPcEigenSolver::set_operators(const Mat A, const Mat B)
 {
   // Set operators
   assert(_eps);
-  if (B)
-    EPSSetOperators(_eps, A->mat(), B->mat());
-  else
-    EPSSetOperators(_eps, A->mat(), NULL);
+  EPSSetOperators(_eps, A, B);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve()
@@ -62,9 +57,9 @@ void SLEPcEigenSolver::solve()
   assert(_eps);
   EPSGetOperators(_eps, &A, &B);
 
-  // Wrap operator as short-cut to get size
-  PETScMatrix A_wrapped(A);
-  solve(A_wrapped.size()[0]);
+  PetscInt m(0), n(0);
+  MatGetSize(A, &m, &n);
+  solve(m);
 }
 //-----------------------------------------------------------------------------
 void SLEPcEigenSolver::solve(std::int64_t n)
@@ -75,9 +70,9 @@ void SLEPcEigenSolver::solve(std::int64_t n)
   assert(_eps);
   EPSGetOperators(_eps, &A, &B);
 
-  // Wrap operator as short-cut to get size
-  PETScMatrix A_wrapped(A);
-  assert(n <= A_wrapped.size()[0]);
+  PetscInt _m(0), _n(0);
+  MatGetSize(A, &_m, &_n);
+  assert(n <= _n);
 #endif
 
   // Set number of eigenpairs to compute
@@ -93,8 +88,8 @@ void SLEPcEigenSolver::solve(std::int64_t n)
   // Check for convergence
   EPSConvergedReason reason;
   EPSGetConvergedReason(_eps, &reason);
-  if (reason < 0)
-    log::warning("Eigenvalue solver did not converge");
+  // if (reason < 0)
+  //   spdlog::warn("Eigenvalue solver did not converge");
 
   // Report solver status
   PetscInt num_iterations = 0;
@@ -102,8 +97,8 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 
   EPSType eps_type = NULL;
   EPSGetType(_eps, &eps_type);
-  log::log(PROGRESS, "Eigenvalue solver (%s) converged in %d iterations.",
-           eps_type, num_iterations);
+  // spdlog::info("Eigenvalue solver (%s) converged in %d iterations.", eps_type,
+  //              num_iterations);
 }
 //-----------------------------------------------------------------------------
 std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const
@@ -134,9 +129,8 @@ std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const
   }
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc,
-                                     PETScVector& r, PETScVector& c,
-                                     std::size_t i) const
+void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc, Vec r,
+                                     Vec c, std::size_t i) const
 {
   assert(_eps);
   const PetscInt ii = static_cast<PetscInt>(i);
@@ -144,22 +138,8 @@ void SLEPcEigenSolver::get_eigenpair(PetscScalar& lr, PetscScalar& lc,
   // Get number of computed eigenvectors/values
   PetscInt num_computed_eigenvalues;
   EPSGetConverged(_eps, &num_computed_eigenvalues);
-
   if (ii < num_computed_eigenvalues)
-  {
-    // Get operators
-    Mat A, B;
-    assert(_eps);
-    EPSGetOperators(_eps, &A, &B);
-
-    // Wrap operator and initialize r and c
-    PETScMatrix A_wrapped(A);
-    r = A_wrapped.init_vector(0);
-    c = A_wrapped.init_vector(0);
-
-    // Get eigen pairs
-    EPSGetEigenpair(_eps, ii, &lr, &lc, r.vec(), c.vec());
-  }
+    EPSGetEigenpair(_eps, ii, &lr, &lc, r, c);
   else
   {
     throw std::runtime_error("Requested eigenpair (" + std::to_string(i)

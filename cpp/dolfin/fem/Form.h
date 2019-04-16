@@ -8,8 +8,6 @@
 
 #include "FormCoefficients.h"
 #include "FormIntegrals.h"
-#include "UFC.h"
-#include <dolfin/common/types.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -39,6 +37,7 @@ class Mesh;
 template <typename T>
 class MeshFunction;
 class Cell;
+class Facet;
 } // namespace mesh
 
 namespace fem
@@ -49,8 +48,8 @@ namespace fem
 /// A note on the order of trial and test spaces: FEniCS numbers
 /// argument spaces starting with the leading dimension of the
 /// corresponding tensor (matrix). In other words, the test space is
-/// numbered 0 and the trial space is numbered 1. However, in order
-/// to have a notation that agrees with most existing finite element
+/// numbered 0 and the trial space is numbered 1. However, in order to
+/// have a notation that agrees with most existing finite element
 /// literature, in particular
 ///
 ///  \f[   a = a(u, v)        \f]
@@ -59,15 +58,14 @@ namespace fem
 ///
 ///  \f[   a: V_1 \times V_0 \rightarrow \mathbb{R}  \f]
 ///
-///
 /// This is reflected in the ordering of the spaces that should be
 /// supplied to generated subclasses. In particular, when a bilinear
-/// form is initialized, it should be initialized as `a(V_1, V_0) = ...`,
-/// where `V_1` is the trial space and `V_0` is the test space.
+/// form is initialized, it should be initialized as `a(V_1, V_0) =
+/// ...`, where `V_1` is the trial space and `V_0` is the test space.
 /// However, when a form is initialized by a list of argument spaces
-/// (the variable `function_spaces` in the constructors below), the
-/// list of spaces should start with space number 0 (the test space)
-/// and then space number 1 (the trial space).
+/// (the variable `function_spaces` in the constructors below), the list
+/// of spaces should start with space number 0 (the test space) and then
+/// space number 1 (the trial space).
 
 class Form
 {
@@ -78,7 +76,7 @@ public:
   ///         The UFC form.
   /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
   ///         Vector of function spaces.
-  Form(std::shared_ptr<const ufc_form> ufc_form,
+  Form(const ufc_form& ufc_form,
        const std::vector<std::shared_ptr<const function::FunctionSpace>>
            function_spaces);
 
@@ -91,7 +89,7 @@ public:
            function_spaces);
 
   /// Destructor
-  virtual ~Form();
+  virtual ~Form() = default;
 
   /// Return rank of form (bilinear form = 2, linear form = 1,
   /// functional = 0, etc)
@@ -99,18 +97,6 @@ public:
   /// @return std::size_t
   ///         The rank of the form.
   std::size_t rank() const;
-
-  /// Get the coefficient index for a named coefficient
-  int get_coefficient_index(std::string name) const;
-
-  /// Get the coefficient name for a given coefficient index
-  std::string get_coefficient_name(int i) const;
-
-  void set_coefficient_index_to_name_map(
-      std::function<int(const char*)> coefficient_index_map);
-
-  void set_coefficient_name_to_index_map(
-      std::function<const char*(int)> coefficient_name_map);
 
   /// Set coefficient with given number (shared pointer version)
   ///
@@ -140,16 +126,16 @@ public:
   ///         coefficients.
   std::size_t original_coefficient_position(std::size_t i) const;
 
-  /// Return the size of the element tensor, needed to create temporary space
-  /// for assemblers. If the largest number of per-element dofs in
-  /// function::FunctionSpace
-  /// i is N_i, then for a linear form this is N_0, and for a bilinear form,
-  /// N_0*N_1.
+  // FIXME: remove this function. Assembler should calculate or put in
+  // utils.
+
+  /// Return the size of the element tensor, needed to create temporary
+  /// space for assemblers. If the largest number of per-element dofs in
+  /// function::FunctionSpace i is N_i, then for a linear form this is
+  /// N_0, and for a bilinear form, N_0*N_1.
   ///
-  /// @return std::size_t
-  ///         The maximum number of values in a local element tensor
-  ///
-  /// FIXME: remove this, Assembler should calculate or put in utils
+  /// @return std::size_t The maximum number of values in a local
+  ///         element tensor
   std::size_t max_element_tensor_size() const;
 
   /// Set mesh, necessary for functionals when there are no function
@@ -182,12 +168,10 @@ public:
   std::vector<std::shared_ptr<const function::FunctionSpace>>
   function_spaces() const;
 
-  /// Return cell domains (zero pointer if no domains have been
-  /// specified)
-  ///
-  /// @return     _mesh::MeshFunction_ <std::size_t>
-  ///         The cell domains.
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains() const;
+  /// Register the function for 'tabulate_tensor' for cell integral i
+  void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
+                                                       const PetscScalar*,
+                                                       const double*, int));
 
   /// Return exterior facet domains (zero pointer if no domains have
   /// been specified)
@@ -216,31 +200,28 @@ public:
   ///
   /// @param[in]    cell_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The cell domains.
-  void set_cell_domains(
-      std::shared_ptr<const mesh::MeshFunction<std::size_t>> cell_domains);
+  void set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains);
 
   /// Set exterior facet domains
   ///
   ///  @param[in]   exterior_facet_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The exterior facet domains.
   void set_exterior_facet_domains(
-      std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-          exterior_facet_domains);
+      const mesh::MeshFunction<std::size_t>& exterior_facet_domains);
 
   /// Set interior facet domains
   ///
   ///  @param[in]   interior_facet_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The interior facet domains.
   void set_interior_facet_domains(
-      std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-          interior_facet_domains);
+      const mesh::MeshFunction<std::size_t>& interior_facet_domains);
 
   /// Set vertex domains
   ///
   ///  @param[in]   vertex_domains (_mesh::MeshFunction_ <std::size_t>)
   ///         The vertex domains.
-  void set_vertex_domains(
-      std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains);
+  void
+  set_vertex_domains(const mesh::MeshFunction<std::size_t>& vertex_domains);
 
   /// Access coefficients (non-const)
   FormCoefficients& coeffs() { return _coefficients; }
@@ -248,30 +229,11 @@ public:
   /// Access coefficients (const)
   const FormCoefficients& coeffs() const { return _coefficients; }
 
-  /// Access form integrals (non-const)
-  FormIntegrals& integrals() { return _integrals; }
-
   /// Access form integrals (const)
   const FormIntegrals& integrals() const { return _integrals; }
 
   /// Get coordinate_mapping (experimental)
-  std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const
-  {
-    return _coord_mapping;
-  }
-
-  /// Call tabulate_tensor on a cell, returning the local element matrix
-  /// @param A
-  ///    Local element tensor (to be calculated)
-  /// @param cell
-  ///    Cell on which to calculate
-  /// @param coordinate_dofs
-  ///    Coordinates of the cell
-  ///
-  void tabulate_tensor(
-      PetscScalar* A, const mesh::Cell& cell,
-      const Eigen::Ref<const EigenRowArrayXXd> coordinate_dofs) const;
-
+  std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const;
 private:
   // Integrals associated with the Form
   FormIntegrals _integrals;
@@ -285,31 +247,8 @@ private:
   // The mesh (needed for functionals when we don't have any spaces)
   std::shared_ptr<const mesh::Mesh> _mesh;
 
-  // Domain markers for cells
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dx;
-
-  // Domain markers for exterior facets
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> ds;
-
-  // Domain markers for interior facets
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dS;
-
-  // Domain markers for vertices
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> dP;
-
   // Coordinate_mapping
   std::shared_ptr<const fem::CoordinateMapping> _coord_mapping;
-
-  std::function<int(const char*)> _coefficient_index_map;
-  std::function<const char*(int)> _coefficient_name_map;
-
-  // Initialise temporary storage for coefficient values
-  // needed for interface with UFC integrals
-  void init_coeff_scratch_space();
-
-  // Temporary storage for coefficient values
-  std::vector<PetscScalar> _w;
-  std::vector<PetscScalar*> _wpointer;
 };
 } // namespace fem
 } // namespace dolfin

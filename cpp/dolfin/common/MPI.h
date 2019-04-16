@@ -19,8 +19,7 @@
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 
-#include <dolfin/log/Table.h>
-#include <dolfin/log/log.h>
+#include <dolfin/common/Table.h>
 
 namespace dolfin
 {
@@ -278,17 +277,17 @@ inline MPI_Datatype MPI::mpi_type<int>()
   return MPI_INT;
 }
 template <>
+inline MPI_Datatype MPI::mpi_type<unsigned int>()
+{
+  return MPI_UNSIGNED;
+}
+template <>
 inline MPI_Datatype MPI::mpi_type<long int>()
 {
   return MPI_LONG;
 }
 template <>
-inline MPI_Datatype MPI::mpi_type<std::uint32_t>()
-{
-  return MPI_UNSIGNED;
-}
-template <>
-inline MPI_Datatype MPI::mpi_type<unsigned long int>()
+inline MPI_Datatype MPI::mpi_type<unsigned long>()
 {
   return MPI_UNSIGNED_LONG;
 }

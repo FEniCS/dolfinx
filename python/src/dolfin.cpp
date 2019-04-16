@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <dolfin/log/log.h>
 #include <iostream>
 #include <pybind11/pybind11.h>
 
@@ -90,7 +89,4 @@ PYBIND11_MODULE(cpp, m)
   // Create refinement submodule
   py::module refinement = m.def_submodule("refinement", "Refinement module");
   dolfin_wrappers::refinement(refinement);
-
-  // FIXME: these are just for the transition
-  m.def("warning", [](std::string message) { dolfin::log::warning(message); });
 }

@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "casters.h"
 #include <cstdint>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -11,10 +12,12 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SpecialFunctions.h>
+#include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
+#include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
 #include <pybind11/numpy.h>
@@ -66,8 +69,7 @@ void function(py::module& m)
                                        "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")
-      .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>,
-                    std::shared_ptr<dolfin::la::PETScVector>>())
+      .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
       .def("collapse",
@@ -83,12 +85,10 @@ void function(py::module& m)
            py::overload_cast<const dolfin::function::Expression&>(
                &dolfin::function::Function::interpolate),
            py::arg("expr"))
-      // FIXME: A lot of error when using non-const version - misused
-      // by Python interface?
       .def("vector",
-           (std::shared_ptr<const dolfin::la::PETScVector>(
-               dolfin::function::Function::*)() const)
-               & dolfin::function::Function::vector,
+           [](const dolfin::function::Function& self) {
+             return self.vector().vec();
+           },
            "Return the vector associated with the finite element Function")
       .def("value_dimension", &dolfin::function::Function::value_dimension)
       .def("value_size", &dolfin::function::Function::value_size)
@@ -107,9 +107,11 @@ void function(py::module& m)
            py::overload_cast<
                Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                        Eigen::Dynamic, Eigen::RowMajor>>,
-               const Eigen::Ref<const dolfin::EigenRowArrayXXd>>(
+               const Eigen::Ref<const dolfin::EigenRowArrayXXd>,
+               const dolfin::geometry::BoundingBoxTree&>(
                &dolfin::function::Function::eval, py::const_),
-           py::arg("values"), py::arg("x"), "Evaluate Function")
+           py::arg("values"), py::arg("x"), py::arg("bb_tree"),
+           "Evaluate Function")
       .def("compute_point_values",
            py::overload_cast<const dolfin::mesh::Mesh&>(
                &dolfin::function::Function::compute_point_values, py::const_),

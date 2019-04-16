@@ -11,9 +11,9 @@
 #include "Vertex.h"
 #include <Eigen/Dense>
 #include <algorithm>
+#include <cfloat>
 #include <cmath>
-#include <dolfin/common/constants.h>
-#include <dolfin/log/log.h>
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -32,9 +32,10 @@ std::size_t QuadrilateralCell::num_entities(std::size_t dim) const
   case 2:
     return 1; // cells
   default:
-    log::dolfin_error("QuadrilateralCell.cpp",
-                      "access number of entities of quadrilateral cell",
-                      "Illegal topological dimension (%d)", dim);
+    // spdlog::error("QuadrilateralCell.cpp",
+    //               "access number of entities of quadrilateral cell",
+    //               "Illegal topological dimension (%d)", dim);
+    throw std::runtime_error("Illegal topological dimension");
   }
 
   return 0;
@@ -51,47 +52,52 @@ std::size_t QuadrilateralCell::num_vertices(std::size_t dim) const
   case 2:
     return 4; // cells
   default:
-    log::dolfin_error(
-        "QuadrilateralCell.cpp",
-        "access number of vertices for subsimplex of quadrilateral cell",
-        "Illegal topological dimension (%d)", dim);
+    // spdlog::error(
+    //     "QuadrilateralCell.cpp",
+    //     "access number of vertices for subsimplex of quadrilateral cell",
+    //     "Illegal topological dimension (%d)", dim);
+    throw std::runtime_error("Illegal topological dimension");
   }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-void QuadrilateralCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
-                                        std::size_t dim,
-                                        const std::int32_t* v) const
+void QuadrilateralCell::create_entities(
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        e,
+    std::size_t dim, const std::int32_t* v) const
 {
   // We only need to know how to create edges
   if (dim != 1)
   {
-    log::dolfin_error(
-        "QuadrilateralCell.cpp", "create entities of quadrilateral cell",
-        "Don't know how to create entities of topological dimension %d", dim);
+    // spdlog::error(
+    //     "QuadrilateralCell.cpp", "create entities of quadrilateral cell",
+    //     "Don't know how to create entities of topological dimension %d",
+    //     dim);
+    throw std::runtime_error("Illegal topological dimension");
   }
 
   // Resize data structure
-  e.resize(boost::extents[4][2]);
+  e.resize(4, 2);
 
   // Create the four edges
-  e[0][0] = v[0];
-  e[0][1] = v[1];
-  e[1][0] = v[2];
-  e[1][1] = v[3];
-  e[2][0] = v[0];
-  e[2][1] = v[2];
-  e[3][0] = v[1];
-  e[3][1] = v[3];
+  e(0, 0) = v[0];
+  e(0, 1) = v[1];
+  e(1, 0) = v[2];
+  e(1, 1) = v[3];
+  e(2, 0) = v[0];
+  e(2, 1) = v[2];
+  e(3, 0) = v[1];
+  e(3, 1) = v[3];
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
   {
-    log::dolfin_error("QuadrilateralCell.cpp", "compute volume (area) of cell",
-                      "Illegal mesh entity");
+    // spdlog::error("QuadrilateralCell.cpp", "compute volume (area) of cell",
+    //               "Illegal mesh entity");
+    throw std::runtime_error("Illegal topological dimension");
   }
 
   // Get mesh geometry
@@ -106,9 +112,9 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
 
   if (geometry.dim() != 2 && geometry.dim() != 3)
   {
-    log::dolfin_error("QuadrilateralCell.cpp",
-                      "compute volume of quadrilateral",
-                      "Only know how to compute volume in R^2 or R^3");
+    // spdlog::error("QuadrilateralCell.cpp", "compute volume of quadrilateral",
+    //               "Only know how to compute volume in R^2 or R^3");
+    throw std::runtime_error("Illegal geometric dimension");
   }
 
   const geometry::Point c = (p0 - p3).cross(p1 - p2);
@@ -124,11 +130,12 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     const double copl = m.determinant();
     const double h = std::min(1.0, std::pow(volume, 1.5));
     // Check for coplanarity
-    if (std::abs(copl) > h * DOLFIN_EPS)
+    if (std::abs(copl) > h * DBL_EPSILON)
     {
-      log::dolfin_error("QuadrilateralCell.cpp",
-                        "compute volume of quadrilateral",
-                        "Vertices of the quadrilateral are not coplanar");
+      // spdlog::error("QuadrilateralCell.cpp", "compute volume of
+      // quadrilateral",
+      //               "Vertices of the quadrilateral are not coplanar");
+      throw std::runtime_error("Not coplanar");
     }
   }
 
@@ -140,23 +147,27 @@ double QuadrilateralCell::circumradius(const MeshEntity& cell) const
   // Check that we get a cell
   if (cell.dim() != 2)
   {
-    log::dolfin_error("QuadrilateralCell.cpp",
-                      "compute circumradius of quadrilateral cell",
-                      "Illegal mesh entity");
+    // spdlog::error("QuadrilateralCell.cpp",
+    //               "compute circumradius of quadrilateral cell",
+    //               "Illegal mesh entity");
+    throw std::runtime_error("Illegal topological dimension");
   }
 
-  log::dolfin_error("QuadrilateralCell.cpp",
-                    "compute cirumradius of quadrilateral cell",
-                    "Don't know how to compute circumradius");
+  // spdlog::error("QuadrilateralCell.cpp",
+  //               "compute cirumradius of quadrilateral cell",
+  //               "Don't know how to compute circumradius");
+  throw std::runtime_error("Not supported");
 
-  dolfin_not_implemented();
+  // spdlog::error("Not implemented");
+  throw std::runtime_error("");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::squared_distance(const Cell& cell,
                                            const geometry::Point& point) const
 {
-  dolfin_not_implemented();
+  // spdlog::error("Not implemented");
+  throw std::runtime_error("");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -169,7 +180,6 @@ double QuadrilateralCell::normal(const Cell& cell, std::size_t facet,
 geometry::Point QuadrilateralCell::normal(const Cell& cell,
                                           std::size_t facet) const
 {
-
   // Make sure we have facets
   cell.mesh().init(2, 1);
 
@@ -177,11 +187,13 @@ geometry::Point QuadrilateralCell::normal(const Cell& cell,
   Facet f(cell.mesh(), cell.entities(1)[facet]);
 
   if (cell.mesh().geometry().dim() != 2)
-    log::dolfin_error(
-        "QuadrilateralCell.cpp", "find normal",
-        "Normal vector is not defined in dimension %d (only defined "
-        "when the triangle is in R^2",
-        cell.mesh().geometry().dim());
+  {
+    // spdlog::error("QuadrilateralCell.cpp", "find normal",
+    //               "Normal vector is not defined in dimension %d (only defined
+    //               " "when the triangle is in R^2",
+    //               cell.mesh().geometry().dim());
+    throw std::runtime_error("Illegal geometric dimension");
+  }
 
   // Get global index of opposite vertex
   const std::size_t v0 = cell.entities(0)[facet];
@@ -218,8 +230,11 @@ geometry::Point QuadrilateralCell::cell_normal(const Cell& cell) const
   // Cell_normal only defined for gdim = 2, 3:
   const std::size_t gdim = geometry.dim();
   if (gdim > 3)
-    log::dolfin_error("QuadrilateralCell.cpp", "compute cell normal",
-                      "Illegal geometric dimension (%d)", gdim);
+  {
+    // spdlog::error("QuadrilateralCell.cpp", "compute cell normal",
+    //               "Illegal geometric dimension (%d)", gdim);
+    throw std::runtime_error("Illegal geometric dimension");
+  }
 
   // Get the three vertices as points
   const std::int32_t* vertices = cell.entities(0);

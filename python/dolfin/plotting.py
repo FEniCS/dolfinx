@@ -98,7 +98,7 @@ def mplot_function(ax, f, **kwargs):
             return
         fvec = fem.interpolate(f, fspace).vector()
 
-    if fvec.size() == mesh.num_cells():
+    if fvec.getSize() == mesh.num_entities(tdim):
         # DG0 cellwise function
         C = fvec.get_local()
         if (C.dtype.type is np.complex128):
@@ -199,7 +199,10 @@ def mplot_function(ax, f, **kwargs):
     elif f.value_rank() == 1:
         # Vector function, interpolated to vertices
         w0 = f.compute_point_values(mesh)
-        nv = mesh.num_vertices()
+        if (w0.dtype.type is np.complex128):
+            warnings.warn("Plotting real part of complex data")
+            w0 = np.real(w0)
+        nv = mesh.num_entities(0)
         if w0.shape[1] != gdim:
             raise AttributeError(
                 'Vector length must match geometric dimension.')
@@ -378,7 +381,7 @@ def plot(object, *args, **kwargs):
 
     """
 
-    # Return if plotting is disables
+    # Return if plotting is disabled
     if os.environ.get("DOLFIN_NOPLOT", "0") != "0":
         return
 

@@ -5,21 +5,21 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the Function class"""
 
+import importlib
 import math
 
 import cffi
-import importlib
 import numba
-import numpy
+import numpy as np
 import pytest
+from petsc4py import PETSc
 
 import ufl
-from dolfin import (DOLFIN_EPS, MPI, Expression, Function, FunctionSpace,
-                    Point, TensorFunctionSpace, UnitCubeMesh,
-                    VectorFunctionSpace, Vertex, cpp, function, interpolate,
-                    lt)
+from dolfin import (MPI, Expression, Function, FunctionSpace, Point,
+                    TensorFunctionSpace, UnitCubeMesh, VectorFunctionSpace,
+                    Vertex, cpp, function, interpolate, lt)
 from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel, skip_if_complex
+from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
 @fixture
@@ -56,27 +56,19 @@ def test_name_argument(W):
 
 
 def test_compute_point_values(V, W, mesh):
-    from numpy import all
     u = Function(V)
     v = Function(W)
-
-    u.vector()[:] = 1.
-    v.vector()[:] = 1.
-
-    u.vector().update_ghosts()
-    v.vector().update_ghosts()
-
+    with u.vector().localForm() as u_local, v.vector().localForm() as v_local:
+        u_local.set(1.0)
+        v_local.set(1.0)
     u_values = u.compute_point_values(mesh)
     v_values = v.compute_point_values(mesh)
 
-    u_ones = numpy.ones_like(u_values, dtype=numpy.float64)
-    assert all(numpy.isclose(u_values, u_ones))
-
-    v_ones = numpy.ones_like(v_values, dtype=numpy.float64)
-    assert all(numpy.isclose(v_values, v_ones))
-
+    u_ones = np.ones_like(u_values, dtype=np.float64)
+    assert np.all(np.isclose(u_values, u_ones))
+    v_ones = np.ones_like(v_values, dtype=np.float64)
+    assert np.all(np.isclose(v_values, v_ones))
     u_values2 = u.compute_point_values()
-
     assert all(u_values == u_values2)
 
 
@@ -196,7 +188,7 @@ def test_call(R, V, W, Q, mesh):
 
     e3 = Expression(expr_eval3, shape=(3, 3))
 
-    u0.vector()[:] = 1.0
+    u0.vector().set(1.0)
     u1.interpolate(e1)
     u2.interpolate(e2)
     u3.interpolate(e3)
@@ -204,29 +196,31 @@ def test_call(R, V, W, Q, mesh):
     p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0).array()
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
 
-    assert numpy.allclose(u0(x0), u0(x0))
-    assert numpy.allclose(u0(x0), u0(p0))
-    assert numpy.allclose(u1(x0), u1(x0))
-    assert numpy.allclose(u1(x0), u1(p0))
-    assert numpy.allclose(u2(x0)[0], u1(p0))
+    tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
 
-    assert numpy.allclose(u2(x0), u2(p0))
-    assert numpy.allclose(u3(x0)[:3], u2(x0), rtol=1e-15, atol=1e-15)
+    assert np.allclose(u0(x0, tree), u0(x0, tree))
+    assert np.allclose(u0(x0, tree), u0(p0, tree))
+    assert np.allclose(u1(x0, tree), u1(x0, tree))
+    assert np.allclose(u1(x0, tree), u1(p0, tree))
+    assert np.allclose(u2(x0, tree)[0], u1(p0, tree))
+
+    assert np.allclose(u2(x0, tree), u2(p0, tree))
+    assert np.allclose(u3(x0, tree)[:3], u2(x0, tree), rtol=1e-15, atol=1e-15)
 
     p0_list = [p for p in p0]
     x0_list = [x for x in x0]
-    assert numpy.allclose(u0(x0_list), u0(x0_list))
-    assert numpy.allclose(u0(x0_list), u0(p0_list))
+    assert np.allclose(u0(x0_list, tree), u0(x0_list, tree))
+    assert np.allclose(u0(x0_list, tree), u0(p0_list, tree))
 
     with pytest.raises(ValueError):
-        u0([0, 0, 0, 0])
+        u0([0, 0, 0, 0], tree)
     with pytest.raises(ValueError):
-        u0([0, 0])
+        u0([0, 0], tree)
 
 
 def test_scalar_conditions(R):
     c = Function(R)
-    c.vector()[:] = 1.5
+    c.vector().set(1.5)
 
     # Float conversion does not interfere with boolean ufl expressions
     assert isinstance(lt(c, 3), ufl.classes.LT)
@@ -278,26 +272,26 @@ def test_interpolation_rank0(V):
     f = Expression(expr_eval, shape=())
     w = interpolate(f, V)
     x = w.vector()
-    assert MPI.max(MPI.comm_world, abs(x.get_local()).max()) == 1
-    assert MPI.min(MPI.comm_world, abs(x.get_local()).min()) == 1
+    assert MPI.max(MPI.comm_world, abs(x.max()[1])) == 1
+    assert MPI.min(MPI.comm_world, abs(x.min()[1])) == 1
 
 
 @skip_in_parallel
 def test_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
-
+    bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)
-    u0.vector()[:] = 1.0
+    u0.vector().set(1.0)
     a = Vertex(mesh, 0).point().array()
-    offset = 0.99 * DOLFIN_EPS
+    offset = 0.99 * np.finfo(float).eps
 
     a_shift_x = Point(a[0] - offset, a[1], a[2]).array()
-    assert round(u0(a)[0] - u0(a_shift_x)[0], 7) == 0
+    assert round(u0(a, bb_tree)[0] - u0(a_shift_x, bb_tree)[0], 7) == 0
 
     a_shift_xyz = Point(a[0] - offset / math.sqrt(3),
                         a[1] - offset / math.sqrt(3),
                         a[2] - offset / math.sqrt(3)).array()
-    assert round(u0(a)[0] - u0(a_shift_xyz)[0], 7) == 0
+    assert round(u0(a, bb_tree)[0] - u0(a_shift_xyz, bb_tree)[0], 7) == 0
 
 
 def test_interpolation_rank1(W):
@@ -310,8 +304,8 @@ def test_interpolation_rank1(W):
     f = Expression(expr_eval, shape=(3, ))
     w = interpolate(f, W)
     x = w.vector()
-    assert abs(x.get_local()).max() == 1
-    assert abs(x.get_local()).min() == 1
+    assert x.max()[1] == 1.0
+    assert x.min()[1] == 1.0
 
 
 @pytest.mark.xfail(raises=numba.errors.TypingError)
@@ -346,13 +340,14 @@ def test_interpolation_old(V, W, mesh):
     f0 = Expression(expr_eval0)
     f = Function(V)
     f = interpolate(f0, V)
-    assert round(f.vector().norm(cpp.la.Norm.l1) - mesh.num_vertices(), 7) == 0
+    assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_entities(0),
+                 7) == 0
 
     # Vector interpolation
     f1 = Expression(expr_eval1, shape=(3, ))
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector().norm(cpp.la.Norm.l1) - 3 * mesh.num_vertices(),
+    assert round(f.vector().norm(PETSc.NormType.N1) - 3 * mesh.num_entities(0),
                  7) == 0
 
 
@@ -366,12 +361,12 @@ def test_numba_expression_address(V):
     f = Function(V)
 
     f.interpolate(f1)
-    assert (f.vector().get_local() == 1.0).all()
+    with f.vector().localForm() as lf:
+        assert (lf[:] == 1.0).all()
 
 
 @skip_if_complex
 def test_cffi_expression(V):
-
     code_h = """
     void eval(double* values, const double* x, const int64_t* cell_idx,
             int num_points, int value_size, int gdim, int num_cells);
@@ -414,5 +409,4 @@ def test_cffi_expression(V):
     ex2 = Expression(expr_eval2)
     f2 = Function(V)
     f2.interpolate(ex2)
-
-    assert (f1.vector().get_local() == f2.vector().get_local()).all()
+    assert (f1.vector() - f2.vector()).norm() < 1.0e-12

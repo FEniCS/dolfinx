@@ -19,10 +19,6 @@
 
 namespace dolfin
 {
-namespace la
-{
-class PETScVector;
-}
 
 namespace fem
 {
@@ -137,11 +133,12 @@ public:
   /// Interpolate function v into function space, returning the
   /// vector of expansion coefficients
   ///
-  /// @param   expansion_coefficients (_la::PETScVector_)
+  /// @param   expansion_coefficients
   ///         The expansion coefficients.
   /// @param    v (_Function_)
   ///         The function to be interpolated.
-  void interpolate(la::PETScVector& expansion_coefficients,
+  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+                       expansion_coefficients,
                    const Function& v) const;
 
   /// Interpolate expression into function space, returning the
@@ -151,7 +148,8 @@ public:
   ///         The expansion coefficients.
   /// @param   expr (_Expression_)
   ///         The expression to be interpolated.
-  void interpolate(la::PETScVector& expansion_coefficients,
+  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+                       expansion_coefficients,
                    const Expression& expr) const;
 
   /// Extract subspace for component
@@ -228,17 +226,17 @@ public:
   /// Set dof entries in vector to value*x[i], where [x][i] is the
   /// coordinate of the dof spatial coordinate. Parallel layout of
   /// vector must be consistent with dof map range This function is
-  /// typically used to construct the null space of a matrix
-  /// operator, e.g. rigid body rotations.
+  /// typically used to construct the null space of a matrix operator,
+  /// e.g. rigid body rotations.
   ///
-  /// @param x (_la::PETScVector_)
+  /// @param x
   ///         The vector to set.
   /// @param value (double)
   ///         The value to multiply to coordinate by.
-  /// @param component (std::size_t)
+  /// @param component (int)
   ///         The coordinate index.
-  void set_x(la::PETScVector& x, PetscScalar value,
-             std::size_t component) const;
+  void set_x(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+             PetscScalar value, int component) const;
 
   /// Return informal string representation (pretty-print)
   ///
@@ -254,12 +252,16 @@ public:
 
 private:
   // General interpolation from any Function on any mesh
-  void interpolate_from_any(la::PETScVector& expansion_coefficients,
-                            const Function& v) const;
+  void interpolate_from_any(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          expansion_coefficients,
+      const Function& v) const;
 
   // General interpolation from any Expression on any mesh
-  void interpolate_from_any(la::PETScVector& expansion_coefficients,
-                            const Expression& expr) const;
+  void interpolate_from_any(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          expansion_coefficients,
+      const Expression& expr) const;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;

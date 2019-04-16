@@ -1,4 +1,4 @@
-// Copyright (C) 2007 Garth N. Wells
+// Copyright (C) 2007-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -7,11 +7,15 @@
 #pragma once
 
 #include <array>
-#include <dolfin/common/MPI.h>
 #include <dolfin/la/SparsityPattern.h>
 
 namespace dolfin
 {
+namespace la
+{
+class SparsityPattern;
+}
+
 namespace mesh
 {
 class Mesh;
@@ -27,13 +31,19 @@ class GenericDofMap;
 class SparsityPatternBuilder
 {
 public:
-  // FIXME: Simplify
-  /// Build sparsity pattern for assembly of given bilinear form
-  static la::SparsityPattern
-  build(MPI_Comm comm, const mesh::Mesh& mesh,
-        const std::array<const fem::GenericDofMap*, 2> dofmaps, bool cells,
-        bool interior_facets, bool exterior_facets, bool vertices,
-        bool diagonal, bool finalize = true);
+  /// Iterate over cells and insert entries into sparsity pattern
+  static void cells(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+                    const std::array<const fem::GenericDofMap*, 2> dofmaps);
+
+  /// Iterate over interior facets and insert entries into sparsity pattern
+  static void
+  interior_facets(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+                  const std::array<const fem::GenericDofMap*, 2> dofmaps);
+
+  /// Iterate over exterior facets and insert entries into sparsity pattern
+  static void
+  exterior_facets(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
+                  const std::array<const fem::GenericDofMap*, 2> dofmaps);
 };
 } // namespace fem
 } // namespace dolfin

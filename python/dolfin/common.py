@@ -8,18 +8,8 @@
 import functools
 
 from dolfin import cpp
-
-# FIXME: replace possibly with numpy.finfo
-DOLFIN_EPS = cpp.common.DOLFIN_EPS
-
-has_debug = cpp.common.has_debug()
-has_parmetis = cpp.common.has_parmetis()
-has_scotch = cpp.common.has_scotch()
-has_petsc_complex = cpp.common.has_petsc_complex()
-has_slepc = cpp.common.has_slepc()
-has_slepc4py = cpp.common.has_slepc4py()
-
-git_commit_hash = cpp.common.git_commit_hash()
+from dolfin.cpp.common import (git_commit_hash, has_debug,  # noqa
+                               has_parmetis, has_petsc_complex)
 
 TimingType = cpp.common.TimingType
 

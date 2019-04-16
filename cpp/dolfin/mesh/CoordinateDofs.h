@@ -7,14 +7,14 @@
 #pragma once
 
 #include <dolfin/common/types.h>
+#include <memory>
 #include <vector>
-
-#include "MeshConnectivity.h"
 
 namespace dolfin
 {
 namespace mesh
 {
+class Connectivity;
 
 /// CoordinateDofs contains the connectivity from MeshEntities to the geometric
 /// points which make up the mesh.
@@ -60,16 +60,16 @@ public:
   ///
   /// @param dim
   ///   Entity dimension
-  /// @return MeshConnectivity
+  /// @return Connectivity
   ///   Connections from entities of given dimension to points
-  const MeshConnectivity& entity_points(std::uint32_t dim) const;
+  const Connectivity& entity_points(std::uint32_t dim) const;
 
   const std::vector<std::uint8_t>& cell_permutation() const;
 
 private:
   // Connectivity from entities to points. Initially only defined for
   // cells
-  std::vector<MeshConnectivity> _coord_dofs;
+  std::vector<std::shared_ptr<Connectivity>> _coord_dofs;
 
   // Permutation required to transform to/from VTK/gmsh ordering to
   // DOLFIN ordering needed for higher order elements

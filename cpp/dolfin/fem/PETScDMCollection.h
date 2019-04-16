@@ -7,7 +7,7 @@
 #pragma once
 
 #include <dolfin/common/MPI.h>
-#include <dolfin/log/log.h>
+#include <dolfin/la/PETScMatrix.h>
 #include <memory>
 #include <petscdm.h>
 #include <petscvec.h>
@@ -19,11 +19,6 @@ namespace dolfin
 namespace geometry
 {
 class BoundingBoxTree;
-}
-
-namespace la
-{
-class PETScMatrix;
 }
 
 namespace function
@@ -71,18 +66,20 @@ public:
 
   /// Create the interpolation matrix from the coarse to the fine
   /// space (prolongation matrix)
-  static std::shared_ptr<la::PETScMatrix>
+  static la::PETScMatrix
   create_transfer_matrix(const function::FunctionSpace& coarse_space,
                          const function::FunctionSpace& fine_space);
 
 private:
   // Find the nearest cells to points which lie outside the domain
-  static void find_exterior_points(
-      MPI_Comm mpi_comm, const mesh::Mesh& meshc,
-      std::shared_ptr<const geometry::BoundingBoxTree> treec, int dim,
-      int data_size, const std::vector<double>& send_points,
-      const std::vector<int>& send_indices, std::vector<int>& indices,
-      std::vector<std::size_t>& cell_ids, std::vector<double>& points);
+  static void find_exterior_points(MPI_Comm mpi_comm, const mesh::Mesh& meshc,
+                                   const geometry::BoundingBoxTree& treec,
+                                   int dim, int data_size,
+                                   const std::vector<double>& send_points,
+                                   const std::vector<int>& send_indices,
+                                   std::vector<int>& indices,
+                                   std::vector<std::size_t>& cell_ids,
+                                   std::vector<double>& points);
 
   // Pointers to functions that are used in PETSc DM call-backs
   static PetscErrorCode create_global_vector(DM dm, Vec* vec);

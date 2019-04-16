@@ -8,7 +8,6 @@
 
 #include "CellType.h"
 #include "CoordinateDofs.h"
-#include "MeshConnectivity.h"
 #include "MeshGeometry.h"
 #include "MeshTopology.h"
 #include <dolfin/common/MPI.h>
@@ -21,11 +20,6 @@
 
 namespace dolfin
 {
-
-namespace geometry
-{
-class BoundingBoxTree;
-}
 
 namespace function
 {
@@ -123,30 +117,6 @@ public:
   ///         Another Mesh object.
   Mesh& operator=(const Mesh& mesh);
 
-  /// Get number of vertices in mesh.
-  ///
-  /// @return std::size_t
-  ///         Number of vertices.
-  ///
-  std::int64_t num_vertices() const { return _topology.size(0); }
-
-  /// Get number of facets in mesh.
-  ///
-  /// @return std::size_t
-  ///         Number of facets.
-  ///
-  std::int64_t num_facets() const
-  {
-    return _topology.size(_topology.dim() - 1);
-  }
-
-  /// Get number of cells in mesh.
-  ///
-  /// @return std::size_t
-  ///         Number of cells.
-  ///
-  std::int64_t num_cells() const { return _topology.size(_topology.dim()); }
-
   /// Get number of entities of given topological dimension.
   ///
   /// @param d (std::size_t)
@@ -155,18 +125,7 @@ public:
   /// @return std::size_t
   ///         Number of entities of topological dimension d.
   ///
-  std::int64_t num_entities(std::size_t d) const { return _topology.size(d); }
-
-  /// Get cell connectivity.
-  ///
-  /// @return std::vector<std::uint32_t>&
-  ///         Connectivity for all cells.
-  ///
-  Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-  cells() const
-  {
-    return _topology.connectivity(_topology.dim(), 0).connections();
-  }
+  std::int32_t num_entities(int d) const { return _topology.size(d); }
 
   /// Get global number of entities of given topological dimension.
   ///
@@ -205,17 +164,6 @@ public:
   ///         The geometry object associated with the mesh.
   const MeshGeometry& geometry() const { return _geometry; }
 
-  /// Get bounding box tree for mesh. The bounding box tree is
-  /// initialized and built upon the first call to this
-  /// function. The bounding box tree can be used to compute
-  /// collisions between the mesh and other objects. It is the
-  /// responsibility of the caller to use (and possibly rebuild) the
-  /// tree. It is stored as a (mutable) member of the mesh to enable
-  /// sharing of the bounding box tree data structure.
-  ///
-  /// @return std::shared_ptr<BoundingBoxTree>
-  std::shared_ptr<geometry::BoundingBoxTree> bounding_box_tree() const;
-
   /// Get mesh cell type.
   ///
   /// @return CellType&
@@ -235,12 +183,12 @@ public:
 
   /// Compute entities of given topological dimension.
   ///
-  /// @param  dim (std::size_t)
+  /// @param  dim (int)
   ///         Topological dimension.
   ///
   /// @return std::size_t
   ///         Number of created entities.
-  std::size_t init(std::size_t dim) const;
+  std::size_t init(int dim) const;
 
   /// Compute connectivity between given pair of dimensions.
   ///
@@ -257,9 +205,8 @@ public:
   /// Compute global indices for entity dimension dim
   void init_global(std::size_t dim) const;
 
-  /// Clean out all auxiliary topology data. This clears all
-  /// topological data, except the connectivity between cells and
-  /// vertices.
+  /// Clean out all auxiliary topology data. This clears all topological
+  /// data, except the connectivity between cells and vertices.
   void clean();
 
   /// Compute minimum cell size in mesh, measured greatest distance
@@ -346,11 +293,6 @@ private:
   // FXIME: This shouldn't be here
   // Mesh geometric degree (in Lagrange basis) describing coordinate dofs
   std::uint32_t _degree;
-
-  // Bounding box tree used to compute collisions between the mesh
-  // and other objects. The tree is initialized to a zero pointer
-  // and is allocated and built when bounding_box_tree() is called.
-  mutable std::shared_ptr<geometry::BoundingBoxTree> _tree;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;

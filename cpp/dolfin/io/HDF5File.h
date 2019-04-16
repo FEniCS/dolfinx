@@ -8,7 +8,6 @@
 
 #include "HDF5Interface.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -47,7 +46,7 @@ namespace io
 
 /// Interface to HDF5 files
 
-class HDF5File : public common::Variable
+class HDF5File
 {
 
 public:
@@ -85,7 +84,7 @@ public:
 
   /// Write Mesh of given cell dimension to file in a format
   /// suitable for re-reading
-  void write(const mesh::Mesh& mesh, const std::size_t cell_dim,
+  void write(const mesh::Mesh& mesh, const int cell_dim,
              const std::string name);
 
   /// Write function::Function to file in a format suitable for re-reading
