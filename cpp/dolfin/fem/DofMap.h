@@ -47,13 +47,22 @@ namespace fem
 class DofMap : public GenericDofMap
 {
 public:
-  /// Create dof map on mesh (mesh is not stored)
+  /// Create dof map on mesh
   ///
   /// @param[in] ufc_dofmap (ufc_dofmap)
   ///         The ufc_dofmap.
   /// @param[in] mesh (mesh::Mesh&)
   ///         The mesh.
   DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
+
+  /// Create dof map on mesh
+  ///
+  /// @param[in] ElementDofLayout
+  ///         The layout of dofs on an element.
+  /// @param[in] mesh (mesh::Mesh&)
+  ///         The mesh.
+  DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
+         const mesh::Mesh& mesh);
 
 private:
   // Create a sub-dofmap (a view) from parent_dofmap

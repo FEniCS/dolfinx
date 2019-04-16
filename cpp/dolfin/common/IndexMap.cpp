@@ -55,6 +55,11 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   {
     _ghosts[i] = ghosts[i];
     _ghost_owners[i] = owner(ghosts[i]);
+    if (_ghost_owners[i] == _myrank)
+    {
+      std::cout << "*Ghost: " << i << ", " << _ghosts[i] << std::endl;
+      std::cout << "  oops, " << _myrank << std::endl;
+    }
     assert(_ghost_owners[i] != _myrank);
   }
 }
