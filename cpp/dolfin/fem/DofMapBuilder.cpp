@@ -290,34 +290,6 @@ compute_ownership(const DofMapStructure& dofmap,
                          std::move(neighbouring_procs));
 }
 //-----------------------------------------------------------------------------
-// TODO: Make clear what is being assumed on the dof order for an
-// element
-// Build dofmap based on re-ordered nodes
-std::vector<std::vector<PetscInt>>
-build_dofmap(const DofMapStructure& node_dofmap,
-             const std::vector<std::int32_t>& old_to_new_node_local,
-             const std::int32_t block_size)
-{
-  std::vector<std::vector<PetscInt>> dofmap(node_dofmap.num_cells());
-  for (std::size_t i = 0; i < dofmap.size(); ++i)
-  {
-    const std::int32_t local_dim0 = node_dofmap.num_dofs(i);
-    dofmap[i].resize(block_size * local_dim0);
-    for (std::int32_t j = 0; j < local_dim0; ++j)
-    {
-      const std::int32_t old_node = node_dofmap.dof(i, j);
-      assert(old_node < (int)old_to_new_node_local.size());
-      const std::int32_t new_node = old_to_new_node_local[old_node];
-      for (std::int32_t block = 0; block < block_size; ++block)
-      {
-        assert((block * local_dim0 + j) < (std::int32_t)dofmap[i].size());
-        dofmap[i][block * local_dim0 + j] = block_size * new_node + block;
-      }
-    }
-  }
-  return dofmap;
-}
-//-----------------------------------------------------------------------------
 // Build a simple dofmap from ElementDofmap based on mesh entity indices
 DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
                                    const ElementDofLayout& element_dof_layout)
@@ -771,18 +743,27 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
     shared_nodes1.insert({old_to_new[it->first], it->second});
   }
 
-  // Build dofmap from original node 'dof' map, and applying the
-  // 'old_to_new_local' map for the re-ordered node indices
-  const std::vector<std::vector<PetscInt>> dofmap_graph
-      = build_dofmap(node_graph0, old_to_new, block_size);
-
-  // Build flattened dofmap graph
-  std::vector<PetscInt> cell_dofmap;
-  for (auto const& cell_dofs : dofmap_graph)
-    cell_dofmap.insert(cell_dofmap.end(), cell_dofs.begin(), cell_dofs.end());
+  // FIXME: There is an assumption here on the dof order for an element.
+  //        It should come from the ElementDofLayout.
+  // Build re-ordered dofmap, accounting for block size
+  std::vector<PetscInt> dofmap(node_graph0.data.size() * block_size);
+  for (std::size_t cell = 0; cell < node_graph0.num_cells(); ++cell)
+  {
+    const std::int32_t local_dim0 = node_graph0.num_dofs(cell);
+    for (std::int32_t j = 0; j < local_dim0; ++j)
+    {
+      const std::int32_t old_node = node_graph0.dof(cell, j);
+      const std::int32_t new_node = old_to_new[old_node];
+      for (std::int32_t block = 0; block < block_size; ++block)
+      {
+        dofmap[cell * block_size * local_dim0 + block * local_dim0 + j]
+            = block_size * new_node + block;
+      }
+    }
+  }
 
   return std::make_tuple(std::move(block_size * global_dimension),
                          std::move(index_map), std::move(shared_nodes1),
-                         std::move(neighbouring_procs), std::move(cell_dofmap));
+                         std::move(neighbouring_procs), std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
