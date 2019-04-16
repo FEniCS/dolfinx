@@ -13,7 +13,6 @@
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -102,7 +101,9 @@ std::int64_t FunctionSpace::dim() const
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
-    la::PETScVector& expansion_coefficients, const Function& v) const
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        expansion_coefficients,
+    const Function& v) const
 {
   assert(_mesh);
 
@@ -119,7 +120,6 @@ void FunctionSpace::interpolate_from_any(
 
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs;
-  la::VecWrapper coeff(expansion_coefficients.vec());
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // FIXME: Move this out
@@ -140,12 +140,14 @@ void FunctionSpace::interpolate_from_any(
     auto cell_dofs = _dofmap->cell_dofs(cell.index());
 
     for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
-      coeff.x[cell_dofs[i]] = cell_coefficients[i];
+      expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
   }
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
-    la::PETScVector& expansion_coefficients, const Expression& expr) const
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        expansion_coefficients,
+    const Expression& expr) const
 {
   assert(_mesh);
 
@@ -156,7 +158,6 @@ void FunctionSpace::interpolate_from_any(
 
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs;
-  la::VecWrapper coeff(expansion_coefficients.vec());
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Get cell coordinate dofs
@@ -172,12 +173,14 @@ void FunctionSpace::interpolate_from_any(
 
     // Copy dofs to vector
     for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
-      coeff.x[cell_dofs[i]] = cell_coefficients[i];
+      expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
   }
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
-                                const Function& v) const
+void FunctionSpace::interpolate(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        expansion_coefficients,
+    const Function& v) const
 {
   assert(_mesh);
   assert(_element);
@@ -193,7 +196,7 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
     throw std::runtime_error("Incorrect Rank");
   }
 
-  // Check that function dims match
+  // Check that function dimension match
   for (std::size_t i = 0; i < _element->value_rank(); ++i)
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
@@ -207,20 +210,14 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
     }
   }
 
-  // Initialize vector of expansion coefficients
-  if (expansion_coefficients.size() != _dofmap->global_dimension())
-  {
-    throw std::runtime_error("Cannot interpolate function into function space. "
-                             "Wrong size of vector");
-  }
-  VecSet(expansion_coefficients.vec(), 0.0);
-
   std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
   interpolate_from_any(expansion_coefficients, v);
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
-                                const Expression& expr) const
+void FunctionSpace::interpolate(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        expansion_coefficients,
+    const Expression& expr) const
 {
   assert(_mesh);
   assert(_element);
@@ -245,12 +242,12 @@ void FunctionSpace::interpolate(la::PETScVector& expansion_coefficients,
   }
 
   // Initialize vector of expansion coefficients
-  if (expansion_coefficients.size() != _dofmap->global_dimension())
-  {
-    throw std::runtime_error("Cannot interpolate function into function space. "
-                             "Wrong size of vector");
-  }
-  VecSet(expansion_coefficients.vec(), 0.0);
+  // if (expansion_coefficients.size() != _dofmap->global_dimension())
+  // {
+  //   throw std::runtime_error("Cannot interpolate function into function space. "
+  //                            "Wrong size of vector");
+  // }
+  // VecSet(expansion_coefficients.vec(), 0.0);
 
   interpolate_from_any(expansion_coefficients, expr);
 }

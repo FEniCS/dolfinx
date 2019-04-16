@@ -19,6 +19,7 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
@@ -263,13 +264,15 @@ void Function::eval(
 void Function::interpolate(const Function& v)
 {
   assert(_function_space);
-  _function_space->interpolate(_vector, v);
+  la::VecWrapper x(_vector.vec());
+  _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(const Expression& expr)
 {
   assert(_function_space);
-  _function_space->interpolate(_vector, expr);
+  la::VecWrapper x(_vector.vec());
+  _function_space->interpolate(x.x, expr);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const
