@@ -14,6 +14,7 @@ target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 set(TEST_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/common/SubSystemsManager.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/common/IndexMap.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/function/Expression.cpp
   )
 
