@@ -70,9 +70,6 @@ def test_krylov_samg_solver_elasticity():
             V.sub(0).set_x(basis[2], -1.0, 1)
             V.sub(1).set_x(basis[2], 1.0, 0)
 
-        for x in nullspace_basis:
-            x.apply("insert")
-
         null_space = VectorSpaceBasis(nullspace_basis)
         null_space.orthonormalize()
         return null_space
