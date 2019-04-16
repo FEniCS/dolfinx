@@ -568,12 +568,12 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
 {
   std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
       coeffs;
+  const char** names = ufc_form.coefficient_name_map();
   for (int i = 0; i < ufc_form.num_coefficients; ++i)
   {
     coeffs.push_back(
         std::make_tuple<int, std::string, std::shared_ptr<function::Function>>(
-            ufc_form.original_coefficient_position(i),
-            ufc_form.coefficient_name_map(i), nullptr));
+            ufc_form.original_coefficient_position(i), names[i], nullptr));
   }
   return coeffs;
 }
