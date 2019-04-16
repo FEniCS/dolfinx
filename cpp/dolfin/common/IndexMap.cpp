@@ -92,8 +92,8 @@ const EigenArrayXi32& IndexMap::ghost_owners() const { return _ghost_owners; }
 // MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
-void IndexMap::scatter_fwd(const std::vector<PetscScalar>& local_data,
-                           std::vector<PetscScalar>& remote_data)
+void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
+                           std::vector<std::int64_t>& remote_data)
 {
   // // local_data should be the size of owned + ghost
   // // Make the owned data available for reading by remote processes
@@ -105,12 +105,12 @@ void IndexMap::scatter_fwd(const std::vector<PetscScalar>& local_data,
 
   // Open window into owned data
   MPI_Win win;
-  MPI_Win_create(const_cast<PetscScalar*>(local_data.data()),
-                 sizeof(PetscScalar) * _size_local, sizeof(PetscScalar),
+  MPI_Win_create(const_cast<std::int64_t*>(local_data.data()),
+                 sizeof(std::int64_t) * _size_local, sizeof(std::int64_t),
                  MPI_INFO_NULL, _mpi_comm, &win);
   MPI_Win_fence(0, win);
 
-  // Fetch ghost data
+  // Fetch ghost data from owner
   for (std::int32_t i = 0; i < num_ghosts(); ++i)
   {
     // Remote process rank
@@ -120,8 +120,8 @@ void IndexMap::scatter_fwd(const std::vector<PetscScalar>& local_data,
     std::int64_t remote_data_offset = _ghosts[i] - _all_ranges[p];
 
     // Stack up requests
-    MPI_Get(remote_data.data() + i, 1, dolfin::MPI::mpi_type<PetscScalar>(), p,
-            remote_data_offset, 1, dolfin::MPI::mpi_type<PetscScalar>(), win);
+    MPI_Get(remote_data.data() + i, 1, dolfin::MPI::mpi_type<std::int64_t>(), p,
+            remote_data_offset, 1, dolfin::MPI::mpi_type<std::int64_t>(), win);
   }
 
   // Synchronise
@@ -129,35 +129,36 @@ void IndexMap::scatter_fwd(const std::vector<PetscScalar>& local_data,
   MPI_Win_free(&win);
 }
 //-----------------------------------------------------------------------------
-void IndexMap::scatter_rev(std::vector<PetscScalar>& local_data)
-{
-  // local_data should be the size of owned + ghost
-  // Make the owned data available for writing by remote processes
-  // and then send the ghost values from other processes (adding values)
+// void IndexMap::scatter_rev(std::vector<PetscScalar>& local_data,
+//                            const std::vector<PetscScalar>& remote_data)
+// {
+//   // local_data should be the size of owned + ghost
+//   // Make the owned data available for writing by remote processes
+//   // and then send the ghost values from other processes (adding values)
 
-  const std::size_t nlocal = size_local();
-  assert(local_data.size() == nlocal + num_ghosts());
+//   const std::size_t nlocal = size_local();
+//   assert(local_data.size() == nlocal + num_ghosts());
 
-  MPI_Win win;
-  MPI_Win_create(local_data.data(), sizeof(PetscScalar) * nlocal,
-                 sizeof(PetscScalar), MPI_INFO_NULL, _mpi_comm, &win);
-  MPI_Win_fence(0, win);
+//   MPI_Win win;
+//   MPI_Win_create(local_data.data(), sizeof(PetscScalar) * nlocal,
+//                  sizeof(PetscScalar), MPI_INFO_NULL, _mpi_comm, &win);
+//   MPI_Win_fence(0, win);
 
-  for (int i = 0; i < num_ghosts(); ++i)
-  {
-    // Remote process
-    int p = _ghost_owners[i];
-    // Index on remote process
-    int remote_data_offset = _ghosts[i] - _all_ranges[p];
+//   for (int i = 0; i < num_ghosts(); ++i)
+//   {
+//     // Remote process
+//     int p = _ghost_owners[i];
+//     // Index on remote process
+//     int remote_data_offset = _ghosts[i] - _all_ranges[p];
 
-    // Stack up requests
-    MPI_Accumulate(local_data.data() + nlocal + i, 1,
-                   MPI::mpi_type<PetscScalar>(), p, remote_data_offset, 1,
-                   MPI::mpi_type<PetscScalar>(), MPI_SUM, win);
-  }
+//     // Stack up requests
+//     MPI_Accumulate(local_data.data() + nlocal + i, 1,
+//                    MPI::mpi_type<PetscScalar>(), p, remote_data_offset, 1,
+//                    MPI::mpi_type<PetscScalar>(), MPI_SUM, win);
+//   }
 
-  // Sync
-  MPI_Win_fence(0, win);
-  MPI_Win_free(&win);
-}
+//   // Sync
+//   MPI_Win_fence(0, win);
+//   MPI_Win_free(&win);
+// }
 //-----------------------------------------------------------------------------
