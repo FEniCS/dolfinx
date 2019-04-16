@@ -747,7 +747,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap, accounting for block size
   std::vector<PetscInt> dofmap(node_graph0.data.size() * block_size);
-  for (std::size_t cell = 0; cell < node_graph0.num_cells(); ++cell)
+  for (std::int32_t cell = 0; cell < node_graph0.num_cells(); ++cell)
   {
     const std::int32_t local_dim0 = node_graph0.num_dofs(cell);
     for (std::int32_t j = 0; j < local_dim0; ++j)
