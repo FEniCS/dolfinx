@@ -30,7 +30,7 @@ namespace
 {
 // Try to figure out block size. FIXME - replace elsewhere
 int analyse_block_structure(
-    const std::vector<std::shared_ptr<fem::ElementDofLayout>> sub_dofmaps)
+    const std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps)
 {
   // Must be at least two subdofmaps
   if (sub_dofmaps.size() < 2)
@@ -526,7 +526,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     }
   }
 
-  // TODO:  UFC dofmaps just use simple offset for each field but this
+  // TODO: UFC dofmaps just use simple offset for each field but this
   // could be different for custom dofmaps This data should come
   // directly from the UFC interface in place of the the implicit
   // assumption
@@ -543,7 +543,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     offsets.push_back(offsets.back() + num_dofs);
   }
 
-  std::vector<std::shared_ptr<fem::ElementDofLayout>> sub_dofmaps;
+  std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
   for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
   {
     auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
