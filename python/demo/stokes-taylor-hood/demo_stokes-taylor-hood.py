@@ -223,4 +223,4 @@ plot(u, title="velocity")
 plot(p, title="pressure" + str(MPI.rank(mesh.mpi_comm())))
 
 # Display plots
-plt.show()
+# plt.show()

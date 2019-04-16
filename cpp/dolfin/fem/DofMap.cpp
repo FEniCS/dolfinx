@@ -8,6 +8,7 @@
 #include "DofMapBuilder.h"
 #include "ElementDofLayout.h"
 #include "utils.h"
+#include <cstdint>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
@@ -100,8 +101,95 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
 {
   _cell_dimension = _element_dof_layout->num_dofs();
 
+  const int tdim = mesh.topology().dim();
+
   // Check dimensional consistency between ElementDofLayout and the mesh
   check_provided_entities(*_element_dof_layout, mesh);
+
+  // Build set of dofs that are in the new dofmap, owned vs not owned
+  std::set<std::int32_t> dofs_view;
+  for (std::int64_t i = 0; i < mesh.num_entities(tdim); ++i)
+  {
+    // Dofs in view map
+    auto cell_dofs = dofmap_view.cell_dofs(i);
+    for (Eigen::Index dof = 0; dof < cell_dofs.rows(); ++dof)
+      dofs_view.insert(cell_dofs[dof]);
+  }
+
+  // Find first unowned dof, and get number of owned dofs in new map.
+  auto it_unowned0 = dofs_view.lower_bound(num_owned_view);
+  std::int64_t num_owned_new std::distance(dofs_view.begin() - it_unowned0);
+  const std::int64_t process_offset
+      = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned_new, true);
+
+  // Send old-global to new-global to neighbouring processes
+  const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
+  // const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
+  std::vector<std::vector<std::int64_t>> send_buffer(num_processes);
+  //std::vector<std::int64_t> send_buffer(num_processes);
+  for (auto it = it_unowned0; it != dofs_view.end(); ++it)
+  {
+
+  }
+
+  int map_bs = dofmap_view._index_map->block_size();
+  const std::int32_t num_owned_view
+      = dofmap_view._index_map->size_local() * map_bs;
+
+  // // Get offset for new dofmap
+  // const std::int64_t process_offset
+  //     = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned_view, true);
+
+  // Run over all owned dofs, and store local-to-(global_old, global_new)
+  std::vector<std::int64_t> local_to_global;
+  for (std::int32_t)
+
+    // // const std::int32_t num_ghosts_view =
+    // dofmap_view._index_map->num_ghosts()
+    // //                                      *
+    // dofmap_view._index_map->block_size();
+
+    // Get iterator pointing to first unowned dof index
+    auto it_unowned = dofs_view.lower_bound(num_owned_view);
+  for (auto it = it_unowned; it != dofs_view.end(); ++it)
+  {
+    std::int32_t block_index = (*it) / map_bs;
+    std::int32_t remainder = *it / map_bs;
+    std::int64_t global_index_block
+        = dofmap_view._index_map->local_to_global(block_index);
+    std::int64_t global_index = global_index_block * map_bs + remainder;
+    // std::cout << "Unowned dof (local): " << *it << std::endl;
+    // std::cout << "           (global): " << global_index << std::endl;
+  }
+
+  // // const std::int32_t num_owned = dofmap_view._index_map->size_local()
+  // //                                * dofmap_view._index_map->block_size();
+  // // const std::int32_t num_ghosts_view =
+  // dofmap_view._index_map->num_ghosts()
+  // //                                      *
+  // // dofmap_view._index_map->block_size();
+
+  // // Array from dof in view to new index
+  // std::vector<std::int32_t> old_to_new(*dofs_view.rbegin(), -1);
+  // PetscInt count = 0;
+  // for (auto dof : dofs_view)
+  //   old_to_new[dof] = count++;
+
+  // Allocate new dofmap
+  // _dofmap.resize(dofmap_view._dofmap.size());
+  // for (std::size_t i = 0; i < _dofmap.size(); ++i)
+  // {
+  //   PetscInt dof_view = dofmap_view._dofmap[i];
+  //   _dofmap[i] = old_to_new[dof_view];
+  // }
+
+  // Fix index set for off-process dofs
+
+  // Set global dimension
+
+  // Set shared nodes
+
+  // Set neighbours
 
   // Build new dof map
   const int bs = _element_dof_layout->block_size();
@@ -115,8 +203,6 @@ DofMap::DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
     std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
   }
-
-  const int tdim = mesh.topology().dim();
 
   // Dimension sanity checks
   assert(
