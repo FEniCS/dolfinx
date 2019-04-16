@@ -359,7 +359,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   EigenRowArrayXXd coordinate_dofs;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
-    // Update UFC cell
+    // Update cell
     coordinate_dofs.resize(cell.num_vertices(), gdim);
     cell.get_coordinate_dofs(coordinate_dofs);
 

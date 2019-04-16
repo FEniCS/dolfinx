@@ -23,8 +23,6 @@ namespace dolfin
 namespace fem
 {
 
-/// This is a wrapper for a UFC finite element (ufc::finite_element).
-
 class FiniteElement
 {
 public:
