@@ -8,6 +8,8 @@
 # pulley subjected to centripetal accelerations. The solver uses
 # smoothed aggregation algerbaric multigrid.
 
+from contextlib import ExitStack
+
 import numpy as np
 from petsc4py import PETSc
 
@@ -27,18 +29,22 @@ def build_nullspace(V):
     index_map = V.dofmap().index_map()
     nullspace_basis = [cpp.la.create_vector(index_map) for i in range(6)]
 
-    # Build translational null space basis
-    V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
-    V.sub(1).dofmap().set(nullspace_basis[1], 1.0)
-    V.sub(2).dofmap().set(nullspace_basis[2], 1.0)
+    with ExitStack() as stack:
+        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        basis = [np.asarray(x) for x in vec_local]
 
-    # Build rotational null space basis
-    V.sub(0).set_x(nullspace_basis[3], -1.0, 1)
-    V.sub(1).set_x(nullspace_basis[3], 1.0, 0)
-    V.sub(0).set_x(nullspace_basis[4], 1.0, 2)
-    V.sub(2).set_x(nullspace_basis[4], -1.0, 0)
-    V.sub(2).set_x(nullspace_basis[5], 1.0, 1)
-    V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
+        # Build translational null space basis
+        V.sub(0).dofmap().set(basis[0], 1.0)
+        V.sub(1).dofmap().set(basis[1], 1.0)
+        V.sub(2).dofmap().set(basis[2], 1.0)
+
+        # Build rotational null space basis
+        V.sub(0).set_x(basis[3], -1.0, 1)
+        V.sub(1).set_x(basis[3], 1.0, 0)
+        V.sub(0).set_x(basis[4], 1.0, 2)
+        V.sub(2).set_x(basis[4], -1.0, 0)
+        V.sub(2).set_x(basis[5], 1.0, 1)
+        V.sub(1).set_x(basis[5], -1.0, 2)
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)

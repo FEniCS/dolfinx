@@ -9,7 +9,6 @@
 #include <Eigen/Dense>
 #include <memory>
 #include <petscsys.h>
-#include <petscvec.h>
 #include <set>
 #include <unordered_map>
 #include <utility>
@@ -109,11 +108,11 @@ public:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
                                                  std::size_t dim) const;
 
-  /// Set dof entries in vector to a specified value. Parallel
-  /// layout of vector must be consistent with dof map range. This
-  /// function is typically used to construct the null space of a
-  /// matrix operator
-  virtual void set(Vec x, PetscScalar value) const = 0;
+  /// Set dof entries in vector to a specified value. Vector size must
+  /// be consistent with dof map range. This function is typically used
+  /// to construct the null space of a matrix operator
+  virtual void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+                   PetscScalar value) const = 0;
 
   /// Index map (const access)
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;

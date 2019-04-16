@@ -241,13 +241,11 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   return std::make_pair(dofmap, std::move(collapsed_map));
 }
 //-----------------------------------------------------------------------------
-void DofMap::set(Vec x, PetscScalar value) const
+void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+                 PetscScalar value) const
 {
-  assert(x);
-  la::VecWrapper _x(x);
-  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_array = _x.x;
   for (auto index : _dofmap)
-    x_array[index] = value;
+    x[index] = value;
 }
 //-----------------------------------------------------------------------------
 void DofMap::check_provided_entities(const ElementDofLayout& dofmap,
