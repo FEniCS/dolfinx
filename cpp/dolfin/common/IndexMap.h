@@ -98,7 +98,8 @@ public:
   /// Scatter/gather data between processes
   /// local_data contains data with length owned+ghost
   /// The ghost data is filled in with the owned values from other processes
-  void scatter_fwd(std::vector<PetscScalar>& local_data);
+  void scatter_fwd(const std::vector<PetscScalar>& local_data,
+                   std::vector<PetscScalar>& remote_data);
   void scatter_rev(std::vector<PetscScalar>& local_data);
 
 private:

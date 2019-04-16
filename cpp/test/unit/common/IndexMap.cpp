@@ -43,27 +43,30 @@ void test_scatter()
 
   // Create some local data
   const double val = 1.23;
-  std::vector<PetscScalar> data(nlocal + nghost, val * mpi_rank);
+  std::vector<PetscScalar> data_local(nlocal, val * mpi_rank);
+  std::vector<PetscScalar> data_ghost(nghost);
 
   common::IndexMap idx_map(MPI_COMM_WORLD, nlocal, ghosts, 1);
 
-  idx_map.scatter_fwd(data);
+  idx_map.scatter_fwd(data_local, data_ghost);
 
   // Check value has been pushed over from other processes
   for (int i = 0; i < nghost; ++i)
-    assert(data[nlocal + i] == val * ((mpi_rank + 1) % mpi_size));
-
-  // Send ghost values back to origin
-  idx_map.scatter_rev(data);
-
-  std::stringstream s;
-  for (int i = 0; i < nghost; ++i)
   {
-    assert(data[i] == 2 * val * mpi_rank);
-    s << mpi_rank << "] " << i << " " << data[i] << "\n";
+    assert(data_ghost[i] == val * ((mpi_rank + 1) % mpi_size));
   }
 
-  std::cout << s.str() << "\n";
+  // // Send ghost values back to origin
+  // idx_map.scatter_rev(data);
+
+  // std::stringstream s;
+  // for (int i = 0; i < nghost; ++i)
+  // {
+  //   assert(data[i] == 2 * val * mpi_rank);
+  //   s << mpi_rank << "] " << i << " " << data[i] << "\n";
+  // }
+
+  // std::cout << s.str() << "\n";
 }
 } // namespace
 
