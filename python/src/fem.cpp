@@ -150,7 +150,6 @@ void fem(py::module& m)
       .def("global_dimension", &dolfin::fem::GenericDofMap::global_dimension,
            "The dimension of the global finite element function space")
       .def("index_map", &dolfin::fem::GenericDofMap::index_map)
-      .def("neighbours", &dolfin::fem::GenericDofMap::neighbours)
       .def("shared_nodes", &dolfin::fem::GenericDofMap::shared_nodes)
       .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
       .def("dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(

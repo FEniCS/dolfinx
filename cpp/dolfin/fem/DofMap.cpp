@@ -40,12 +40,12 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
   const int bs = _element_dof_layout->block_size();
   if (bs == 1)
   {
-    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+    std::tie(_global_dimension, _index_map, _shared_nodes, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
   }
   else
   {
-    std::tie(_global_dimension, _index_map, _shared_nodes, _neighbours, _dofmap)
+    std::tie(_global_dimension, _index_map, _shared_nodes, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
   }
 }
@@ -94,10 +94,6 @@ DofMap::DofMap(const DofMap& dofmap_parent,
   // FIXME: This stores more than is required. Compress, or share with
   // parent.
   _shared_nodes = dofmap_parent._shared_nodes;
-
-  // FIXME: this set may be larger than it should be, e.g. if subdofmap
-  // has only facets dofs and parent included vertex dofs.
-  _neighbours = dofmap_parent._neighbours;
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
@@ -184,10 +180,6 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   // FIXME:
   // Set shared nodes
 
-  // FIXME: This could well be smaller for the collapsed dofmap
-  // Set neighbours
-  _neighbours = dofmap_view._neighbours;
-
   // Dimension sanity checks
   assert(
       dofmap_view._dofmap.size()
@@ -236,8 +228,6 @@ const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
 {
   return _shared_nodes;
 }
-//-----------------------------------------------------------------------------
-const std::set<int>& DofMap::neighbours() const { return _neighbours; }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1>
 DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,

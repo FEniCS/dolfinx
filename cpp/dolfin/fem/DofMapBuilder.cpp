@@ -103,8 +103,7 @@ void get_cell_entities(
 // Also computes map from shared node to sharing processes and a set of
 // process that share dofs on this process.
 std::tuple<std::int32_t, std::vector<ownership>,
-           std::unordered_map<std::int32_t, std::vector<std::int32_t>>,
-           std::set<std::int32_t>>
+           std::unordered_map<std::int32_t, std::vector<std::int32_t>>>
 compute_ownership(const DofMapStructure& dofmap,
                   const std::vector<sharing_marker>& shared_nodes,
                   const mesh::Mesh& mesh, const std::int64_t global_dim)
@@ -269,14 +268,6 @@ compute_ownership(const DofMapStructure& dofmap,
     }
   }
 
-  // Build set of neighbouring processes
-  std::set<std::int32_t> neighbouring_procs;
-  for (auto it = shared_node_to_processes.begin();
-       it != shared_node_to_processes.end(); ++it)
-  {
-    neighbouring_procs.insert(it->second.begin(), it->second.end());
-  }
-
   // Count number of owned nodes
   int num_owned_nodes = 0;
   for (std::size_t i = 0; i < node_ownership.size(); ++i)
@@ -286,8 +277,7 @@ compute_ownership(const DofMapStructure& dofmap,
   }
 
   return std::make_tuple(std::move(num_owned_nodes), std::move(node_ownership),
-                         std::move(shared_node_to_processes),
-                         std::move(neighbouring_procs));
+                         std::move(shared_node_to_processes));
 }
 //-----------------------------------------------------------------------------
 // Build a simple dofmap from ElementDofmap based on mesh entity indices
@@ -660,7 +650,7 @@ std::vector<std::int64_t> compute_global_indices(
 //-----------------------------------------------------------------------------
 std::tuple<std::int64_t, std::unique_ptr<common::IndexMap>,
            std::unordered_map<std::int32_t, std::vector<std::int32_t>>,
-           std::set<std::int32_t>, std::vector<PetscInt>>
+           std::vector<PetscInt>>
 DofMapBuilder::build(const mesh::Mesh& mesh,
                      const ElementDofLayout& element_dof_layout,
                      const std::int32_t block_size)
@@ -705,8 +695,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
       shared_node_to_processes0;
   std::int32_t num_owned_nodes;
   std::set<std::int32_t> neighbouring_procs;
-  std::tie(num_owned_nodes, node_ownership0, shared_node_to_processes0,
-           neighbouring_procs)
+  std::tie(num_owned_nodes, node_ownership0, shared_node_to_processes0)
       = compute_ownership(node_graph0, shared_nodes, mesh, global_dimension);
 
   // Build re-ordering map for data locality. Owned dofs are re-ordred
@@ -764,6 +753,6 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 
   return std::make_tuple(std::move(block_size * global_dimension),
                          std::move(index_map), std::move(shared_nodes1),
-                         std::move(neighbouring_procs), std::move(dofmap));
+                         std::move(dofmap));
 }
 //-----------------------------------------------------------------------------

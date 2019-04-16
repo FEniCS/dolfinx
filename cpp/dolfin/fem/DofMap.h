@@ -151,12 +151,6 @@ public:
   ///         The map from dofs to list of processes
   const std::unordered_map<int, std::vector<int>>& shared_nodes() const;
 
-  /// Return set of processes that share dofs with this process
-  ///
-  /// @return     std::set<int>
-  ///         The set of processes
-  const std::set<int>& neighbours() const;
-
   /// Local-to-global mapping of dofs on a cell
   ///
   /// @param     cell_index (std::size_t)

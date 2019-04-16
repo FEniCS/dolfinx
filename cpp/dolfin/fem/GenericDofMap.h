@@ -126,9 +126,6 @@ public:
   virtual const std::unordered_map<int, std::vector<int>>&
   shared_nodes() const = 0;
 
-  /// Return set of processes that share dofs with the this process
-  virtual const std::set<int>& neighbours() const = 0;
-
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const = 0;
 
