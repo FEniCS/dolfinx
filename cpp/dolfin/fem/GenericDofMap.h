@@ -60,10 +60,6 @@ public:
   /// Return the number of closure dofs for a given entity dimension
   virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const = 0;
 
-  /// Return the ownership range (dofs in this range are owned by
-  /// this process)
-  virtual std::array<std::int64_t, 2> ownership_range() const = 0;
-
   /// Local-to-global mapping of dofs on a cell
   virtual Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   cell_dofs(std::size_t cell_index) const = 0;

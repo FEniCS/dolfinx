@@ -52,12 +52,9 @@ class DofMap:
         cpp_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh)
         return cls(cpp_dofmap)
 
+    @property
     def global_dimension(self):
-        return self._cpp_object.global_dimension()
-
-    def ownership_range(self):
-        map = self.index_map()
-        return tuple(x * map.block_size for x in map.local_range())
+        return self._cpp_object.global_dimension
 
     def cell_dofs(self, cell_index: int):
         return self._cpp_object.cell_dofs(cell_index)
@@ -84,5 +81,6 @@ class DofMap:
     def set(self, x, value):
         self._cpp_object.set(x, value)
 
+    @property
     def index_map(self):
-        return self._cpp_object.index_map()
+        return self._cpp_object.index_map

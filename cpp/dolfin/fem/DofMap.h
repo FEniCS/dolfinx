@@ -137,13 +137,6 @@ public:
   ///         Number of dofs associated with closure of given entity dimension
   virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const;
 
-  /// Return the ownership range (dofs in this range are owned by
-  /// this process)
-  ///
-  /// @return   std::array<std::size_t, 2>
-  ///         The ownership range.
-  std::array<std::int64_t, 2> ownership_range() const;
-
   // TODO: Remove and work via teh index_map
   /// Return map from all shared nodes to the sharing processes (not
   /// including the current process) that share it.

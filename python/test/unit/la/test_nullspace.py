@@ -31,7 +31,7 @@ def build_elastic_nullspace(V):
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map()) for i in range(dim)]
+    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map) for i in range(dim)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
@@ -62,7 +62,7 @@ def build_broken_elastic_nullspace(V):
     """Function to build incorrect null space for 2D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map()) for i in range(4)]
+    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map) for i in range(4)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]

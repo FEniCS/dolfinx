@@ -139,25 +139,23 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   const std::int32_t num_owned_view = dofmap_view._index_map->size_local();
   const auto it_unowned0 = std::lower_bound(dofs_view.begin(), dofs_view.end(),
                                             num_owned_view * bs_view);
-  const std::int64_t num_owned_new
+  const std::int64_t num_owned
       = std::distance(dofs_view.begin(), it_unowned0) / bs;
   assert(std::distance(dofs_view.begin(), it_unowned0) % bs == 0);
 
-  const std::int64_t num_unowned_new
+  const std::int64_t num_unowned
       = std::distance(it_unowned0, dofs_view.end()) / bs;
   assert(std::distance(it_unowned0, dofs_view.end()) % bs == 0);
 
   // Get process offset for new dofmap
   const std::int64_t process_offset
-      = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned_new, true);
+      = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
 
   // For owned dofs, compute new global index
   std::vector<std::int64_t> global_index(dofmap_view._index_map->size_local(),
                                          -1);
   for (auto it = dofs_view.begin(); it != it_unowned0; ++it)
   {
-    // const std::int64_t pos = std::distance(dofs_view.begin(), it);
-    // global_index_new[*it] = pos + process_offset;
     const std::int64_t block = std::distance(dofs_view.begin(), it) / bs;
     const std::int32_t block_parent = *it / bs_view;
     global_index[block_parent] = block + process_offset;
@@ -170,7 +168,7 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   dofmap_view._index_map->scatter_fwd(global_index, global_index_remote);
 
   // Compute ghosts for collapsed dofmap
-  std::vector<std::int64_t> ghosts(num_unowned_new);
+  std::vector<std::int64_t> ghosts(num_unowned);
   for (auto it = it_unowned0; it != dofs_view.end(); ++it)
   {
     const std::int32_t index = std::distance(it_unowned0, it) / bs;
@@ -191,8 +189,8 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   }
 
   // Create new index map
-  _index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
-                                                  num_owned_new, ghosts, bs);
+  _index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(), num_owned,
+                                                  ghosts, bs);
 
   // Creat array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
@@ -209,10 +207,6 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   }
 
   // Dimension sanity checks
-  assert(
-      dofmap_view._dofmap.size()
-      == (std::size_t)(mesh.num_entities(tdim) * dofmap_view._cell_dimension));
-  assert(global_dimension() == dofmap_view.global_dimension());
   assert(_dofmap.size()
          == (std::size_t)(mesh.num_entities(tdim) * _cell_dimension));
 }
@@ -242,14 +236,6 @@ std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 {
   assert(_element_dof_layout);
   return _element_dof_layout->num_entity_closure_dofs(entity_dim);
-}
-//-----------------------------------------------------------------------------
-std::array<std::int64_t, 2> DofMap::ownership_range() const
-{
-  assert(_index_map);
-  std::array<std::int64_t, 2> block_range = _index_map->local_range();
-  std::int64_t bs = _index_map->block_size();
-  return {{bs * block_range[0], bs * block_range[1]}};
 }
 //-----------------------------------------------------------------------------
 const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const

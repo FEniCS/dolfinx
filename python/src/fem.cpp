@@ -147,9 +147,11 @@ void fem(py::module& m)
   py::class_<dolfin::fem::GenericDofMap,
              std::shared_ptr<dolfin::fem::GenericDofMap>>(m, "GenericDofMap",
                                                           "DofMap object")
-      .def("global_dimension", &dolfin::fem::GenericDofMap::global_dimension,
-           "The dimension of the global finite element function space")
-      .def("index_map", &dolfin::fem::GenericDofMap::index_map)
+      .def_property_readonly(
+          "global_dimension", &dolfin::fem::GenericDofMap::global_dimension,
+          "The dimension of the global finite element function space")
+      .def_property_readonly("index_map",
+                             &dolfin::fem::GenericDofMap::index_map)
       .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
       .def("dofs", &dolfin::fem::GenericDofMap::dofs)
       .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(

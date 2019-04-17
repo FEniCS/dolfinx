@@ -60,8 +60,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
 {
-  return {{(std::int64_t)_all_ranges[_myrank],
-           (std::int64_t)_all_ranges[_myrank + 1]}};
+  return {{_all_ranges[_myrank], _all_ranges[_myrank + 1]}};
 }
 //-----------------------------------------------------------------------------
 int IndexMap::block_size() const { return _block_size; }

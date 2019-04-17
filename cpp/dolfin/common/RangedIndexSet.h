@@ -33,6 +33,15 @@ public:
   {
   }
 
+  /// Create a ranged set with range given as a (lower, upper) pair and block
+  /// size
+  explicit RangedIndexSet(std::array<std::int64_t, 2> range, int bs)
+      : _range(range), _is_set(bs * (range[1] - range[0]), false)
+  {
+    range[0] *= bs;
+    range[1] *= bs;
+  }
+
   /// Return true if a given index is within range, i.e., if it can
   /// be stored in the set.
   bool in_range(std::int64_t i) const
@@ -73,5 +82,5 @@ private:
   const std::array<std::int64_t, 2> _range;
   std::vector<bool> _is_set;
 };
-}
-}
+} // namespace common
+} // namespace dolfin
