@@ -69,13 +69,11 @@ include(FeatureSummary)
 
 option(BUILD_SHARED_LIBS "Build DOLFIN with shared libraries." ON)
 option(CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects." OFF)
-#option(DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage." OFF)
 option(DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages." OFF)
 option(DOLFIN_WITH_LIBRARY_VERSION "Build with library version information." ON)
 
 add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "Build DOLFIN with shared libraries.")
 add_feature_info(CMAKE_USE_RELATIVE_PATHS CMAKE_USE_RELATIVE_PATHS "Use relative paths in makefiles and projects.")
-#add_feature_info(DOLFIN_ENABLE_CODE_COVERAGE DOLFIN_ENABLE_CODE_COVERAGE "Enable code coverage.")
 add_feature_info(DOLFIN_WITH_LIBRARY_VERSION DOLFIN_WITH_LIBRARY_VERSION "Build with library version information.")
 add_feature_info(DOLFIN_SKIP_BUILD_TESTS DOLFIN_SKIP_BUILD_TESTS "Skip build tests for testing usability of dependency packages.")
 
@@ -146,12 +144,6 @@ endif()
 set(CMAKE_CXX_FLAGS_DEVELOPER "${DOLFIN_CXX_DEVELOPER_FLAGS}" CACHE STRING
   "Flags used by the compiler during development." FORCE)
 
-# Add flags for generating code coverage reports
-#if (DOLFIN_ENABLE_CODE_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
-#  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage")
-#  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
-#endif()
-
 #------------------------------------------------------------------------------
 # Run tests to find required packages
 
@@ -195,7 +187,7 @@ set_package_properties(Eigen3 PROPERTIES TYPE REQUIRED
   DESCRIPTION "Lightweight C++ template library for linear algebra"
   URL "http://eigen.tuxfamily.org")
 
-find_package(PETSc 3.9)
+find_package(PETSc 3.10)
 set_package_properties(PETSc PROPERTIES TYPE REQUIRED
   DESCRIPTION "Portable, Extensible Toolkit for Scientific Computation (PETSc)"
   URL "https://www.mcs.anl.gov/petsc/"
@@ -229,7 +221,7 @@ set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
 # Check for SLEPc
 set(SLEPC_FOUND FALSE)
 if (DOLFIN_ENABLE_SLEPC)
-  find_package(SLEPc 3.9)
+  find_package(SLEPc 3.10)
   set_package_properties(SLEPc PROPERTIES TYPE OPTIONAL
     DESCRIPTION "Scalable Library for Eigenvalue Problem Computations"
     URL "http://slepc.upv.es/")
@@ -248,13 +240,6 @@ endif()
 # Print summary of found and not found optional packages
 
 feature_summary(WHAT ALL)
-
-#------------------------------------------------------------------------------
-# Installation of docstrings
-
-#install(DIRECTORY ${CMAKE_SOURCE_DIR}/site-packages/dolfin/docstrings
-#        DESTINATION ${DOLFIN_INSTALL_PYTHON_MODULE_DIR}/dolfin
-#        USE_SOURCE_PERMISSIONS)
 
 #------------------------------------------------------------------------------
 # Installation of DOLFIN library

@@ -40,7 +40,7 @@ std::set<PetscInt> gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap,
   std::size_t comm_size = MPI::size(mpi_comm);
 
   const auto& shared_nodes = dofmap.shared_nodes();
-  const int bs = dofmap.block_size();
+  const int bs = dofmap.index_map()->block_size();
   assert(dofmap.index_map());
 
   // Create list of boundary values to send to each processor
@@ -70,8 +70,10 @@ std::set<PetscInt> gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap,
   std::vector<PetscInt> received_bvc;
   MPI::all_to_all(mpi_comm, proc_map, received_bvc);
 
-  const std::int64_t n0 = dofmap.ownership_range()[0];
-  const std::int64_t n1 = dofmap.ownership_range()[1];
+  auto index_map = dofmap.index_map();
+  assert(index_map);
+  const std::int64_t n0 = index_map->local_range()[0] * index_map->block_size();
+  const std::int64_t n1 = index_map->local_range()[1] * index_map->block_size();
   const std::int64_t owned_size = n1 - n0;
 
   // Add the received boundary values to the local boundary values
@@ -582,14 +584,16 @@ DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
   const FiniteElement& element = *V.element();
 
   // Initialize facets, needed for geometric search
-  // spdlog::info("Computing facets, needed for geometric application of boundary "
+  // spdlog::info("Computing facets, needed for geometric application of
+  // boundary "
   //              "conditions.");
   mesh.init(mesh.topology().dim() - 1);
 
   // Speed up the computations by only visiting (most) dofs once
   common::RangedIndexSet already_visited(
       dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
-                       : dofmap.ownership_range());
+                       : dofmap.index_map()->local_range(),
+      dofmap.index_map()->block_size());
 
   // Topological and geometric dimensions
   const std::size_t tdim = mesh.topology().dim();

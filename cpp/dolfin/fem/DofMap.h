@@ -47,7 +47,7 @@ namespace fem
 class DofMap : public GenericDofMap
 {
 public:
-  /// Create dof map on mesh (mesh is not stored)
+  /// Create dof map on mesh
   ///
   /// @param[in] ufc_dofmap (ufc_dofmap)
   ///         The ufc_dofmap.
@@ -55,14 +55,22 @@ public:
   ///         The mesh.
   DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
 
+  /// Create dof map on mesh
+  ///
+  /// @param[in] ElementDofLayout
+  ///         The layout of dofs on an element.
+  /// @param[in] mesh (mesh::Mesh&)
+  ///         The mesh.
+  DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
+         const mesh::Mesh& mesh);
+
 private:
   // Create a sub-dofmap (a view) from parent_dofmap
   DofMap(const DofMap& dofmap_parent, const std::vector<std::size_t>& component,
          const mesh::Mesh& mesh);
 
   // Create a collapsed dofmap from parent_dofmap
-  DofMap(std::unordered_map<std::size_t, std::size_t>& collapsed_map,
-         const DofMap& dofmap_view, const mesh::Mesh& mesh);
+  DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh);
 
 public:
   // Copy constructor
@@ -129,25 +137,13 @@ public:
   ///         Number of dofs associated with closure of given entity dimension
   virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const;
 
-  /// Return the ownership range (dofs in this range are owned by
-  /// this process)
-  ///
-  /// @return   std::array<std::size_t, 2>
-  ///         The ownership range.
-  std::array<std::int64_t, 2> ownership_range() const;
-
+  // TODO: Remove and work via teh index_map
   /// Return map from all shared nodes to the sharing processes (not
   /// including the current process) that share it.
   ///
   /// @return     std::unordered_map<std::size_t, std::vector<std::uint32_t>>
   ///         The map from dofs to list of processes
   const std::unordered_map<int, std::vector<int>>& shared_nodes() const;
-
-  /// Return set of processes that share dofs with this process
-  ///
-  /// @return     std::set<int>
-  ///         The set of processes
-  const std::set<int>& neighbours() const;
 
   /// Local-to-global mapping of dofs on a cell
   ///
@@ -230,12 +226,8 @@ public:
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
            PetscScalar value) const;
 
-  /// Return the map (const access)
+  /// Return the map
   std::shared_ptr<const common::IndexMap> index_map() const;
-
-  /// Return the block size for dof maps with components, typically
-  /// used for vector valued functions.
-  int block_size() const;
 
   /// Return informal string representation (pretty-print)
   ///
@@ -267,7 +259,7 @@ private:
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;
 
-  // Processes that share a given dof
+  // Processes that share a given node
   std::unordered_map<int, std::vector<int>> _shared_nodes;
 
   // Processes that this dofmap shares dofs with

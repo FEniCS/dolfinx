@@ -52,7 +52,7 @@ public:
   /// Destructor
   ~IndexMap() = default;
 
-  /// Range of indices owned by this process
+  /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const;
 
   /// Block size
@@ -94,6 +94,12 @@ public:
 
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
+
+  /// Send a value for each index that is owned to processes that have
+  /// the index as a ghost. The size of the input array local_data must
+  /// be the same as size_local().
+  void scatter_fwd(const std::vector<std::int64_t>& local_data,
+                   std::vector<std::int64_t>& remote_data) const;
 
 private:
   // MPI Communicator

@@ -21,7 +21,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Calculate offsets
   MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
 
-  // const std::size_t mpi_size = _mpi_comm.size();
   const std::size_t mpi_size = dolfin::MPI::size(_mpi_comm);
   for (std::size_t i = 1; i < mpi_size; ++i)
     _all_ranges[i] += _all_ranges[i - 1];
@@ -45,7 +44,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Calculate offsets
   MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
 
-  // const std::size_t mpi_size = _mpi_comm.size();
   const std::int32_t mpi_size = dolfin::MPI::size(_mpi_comm);
   for (std::int32_t i = 1; i < mpi_size; ++i)
     _all_ranges[i] += _all_ranges[i - 1];
@@ -62,8 +60,7 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> IndexMap::local_range() const
 {
-  return {{(std::int64_t)_all_ranges[_myrank],
-           (std::int64_t)_all_ranges[_myrank + 1]}};
+  return {{_all_ranges[_myrank], _all_ranges[_myrank + 1]}};
 }
 //-----------------------------------------------------------------------------
 int IndexMap::block_size() const { return _block_size; }
@@ -93,3 +90,36 @@ const EigenArrayXi32& IndexMap::ghost_owners() const { return _ghost_owners; }
 // MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
+void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
+                           std::vector<std::int64_t>& remote_data) const
+{
+  const std::size_t _size_local = size_local();
+  assert(local_data.size() == _size_local);
+  remote_data.resize(num_ghosts());
+
+  // Open window into owned data
+  MPI_Win win;
+  MPI_Win_create(const_cast<std::int64_t*>(local_data.data()),
+                 sizeof(std::int64_t) * _size_local, sizeof(std::int64_t),
+                 MPI_INFO_NULL, _mpi_comm, &win);
+  MPI_Win_fence(0, win);
+
+  // Fetch ghost data from owner
+  for (std::int32_t i = 0; i < num_ghosts(); ++i)
+  {
+    // Remote process rank
+    std::int32_t p = _ghost_owners[i];
+
+    // Index on remote process
+    std::int64_t remote_data_offset = _ghosts[i] - _all_ranges[p];
+
+    // Stack up requests
+    MPI_Get(remote_data.data() + i, 1, dolfin::MPI::mpi_type<std::int64_t>(), p,
+            remote_data_offset, 1, dolfin::MPI::mpi_type<std::int64_t>(), win);
+  }
+
+  // Synchronise
+  MPI_Win_fence(0, win);
+  MPI_Win_free(&win);
+}
+//-----------------------------------------------------------------------------

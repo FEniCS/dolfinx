@@ -185,7 +185,7 @@ def test_nonlinear_pde_snes():
     u.vector().set(0.9)
     u.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
-    b = dolfin.cpp.la.create_vector(V.dofmap().index_map())
+    b = dolfin.cpp.la.create_vector(V.dofmap().index_map)
     J = dolfin.cpp.fem.create_matrix(problem.a_comp._cpp_object)
 
     # Create Newton solver and solve

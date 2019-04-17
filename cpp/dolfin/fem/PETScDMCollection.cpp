@@ -94,7 +94,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
-      = dofmap.ownership_range()[1] - dofmap.ownership_range()[0];
+      = dofmap.index_map()->size_local() * dofmap.index_map()->block_size();
   common::RangedIndexSet already_visited(
       std::array<std::int64_t, 2>{{0, local_size}});
 
@@ -247,8 +247,12 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   std::size_t N = coarse_space.dim();
 
   // Local dimension of the dofs and of the transfer matrix
-  std::array<std::int64_t, 2> m = finemap->ownership_range();
-  std::array<std::int64_t, 2> n = coarsemap->ownership_range();
+  std::array<std::int64_t, 2> m = finemap->index_map()->local_range();
+  std::array<std::int64_t, 2> n = coarsemap->index_map()->local_range();
+  m[0] *= finemap->index_map()->block_size();
+  m[1] *= finemap->index_map()->block_size();
+  n[0] *= coarsemap->index_map()->block_size();
+  n[1] *= coarsemap->index_map()->block_size();
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
