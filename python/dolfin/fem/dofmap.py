@@ -55,12 +55,6 @@ class DofMap:
     def global_dimension(self):
         return self._cpp_object.global_dimension()
 
-    def neighbours(self):
-        return self._cpp_object.neighbours()
-
-    def shared_nodes(self):
-        return self._cpp_object.shared_nodes()
-
     def ownership_range(self):
         return self._cpp_object.ownership_range()
 

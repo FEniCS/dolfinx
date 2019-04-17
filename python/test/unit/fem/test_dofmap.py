@@ -416,29 +416,6 @@ def test_block_size_real(mesh):
     assert X.dofmap().block_size() == 1
 
 
-@skip_in_serial
-@pytest.mark.parametrize(
-    'mesh_factory',
-    [(UnitIntervalMesh, (MPI.comm_world, 8)),
-     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
-     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
-     (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
-     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron))])
-def test_mpi_dofmap_stats(mesh_factory):
-    func, args = mesh_factory
-    mesh = func(*args)
-
-    V = FunctionSpace(mesh, ("CG", 1))
-    assert len(V.dofmap().shared_nodes()) > 0
-    neighbours = V.dofmap().neighbours()
-    for processes in V.dofmap().shared_nodes().values():
-        for process in processes:
-            assert process in neighbours
-
-    for owner in V.dofmap().index_map().ghost_owners():
-        assert owner in neighbours
-
-
 @pytest.mark.skip
 @pytest.mark.parametrize(
     'mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 4, 4)),
