@@ -246,8 +246,8 @@ std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 //-----------------------------------------------------------------------------
 std::array<std::int64_t, 2> DofMap::ownership_range() const
 {
-  // assert(_index_map);
-  auto block_range = _index_map->local_range();
+  assert(_index_map);
+  std::array<std::int64_t, 2> block_range = _index_map->local_range();
   std::int64_t bs = _index_map->block_size();
   return {{bs * block_range[0], bs * block_range[1]}};
 }

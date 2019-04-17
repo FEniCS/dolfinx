@@ -150,7 +150,6 @@ void fem(py::module& m)
       .def("global_dimension", &dolfin::fem::GenericDofMap::global_dimension,
            "The dimension of the global finite element function space")
       .def("index_map", &dolfin::fem::GenericDofMap::index_map)
-      .def("shared_nodes", &dolfin::fem::GenericDofMap::shared_nodes)
       .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
       .def("dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
                        dolfin::fem::GenericDofMap::*)() const)
@@ -179,9 +178,7 @@ void fem(py::module& m)
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
              dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
-      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>())
-      .def("ownership_range", &dolfin::fem::DofMap::ownership_range)
-      .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs);
+      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>());
 
   // dolfin::fem::CoordinateMapping
   py::class_<dolfin::fem::CoordinateMapping,
