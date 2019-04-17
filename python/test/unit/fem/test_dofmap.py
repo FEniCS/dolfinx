@@ -16,7 +16,7 @@ from dolfin import (MPI, Cells, CellType, FiniteElement, FunctionSpace,
                     UnitIntervalMesh, UnitSquareMesh, VectorElement,
                     VectorFunctionSpace)
 from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel, skip_in_serial
+from dolfin_utils.test.skips import skip_in_parallel
 
 xfail = pytest.mark.xfail(strict=True)
 
