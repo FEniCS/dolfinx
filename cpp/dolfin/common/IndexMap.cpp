@@ -44,7 +44,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   // Calculate offsets
   MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
 
-  // const std::size_t mpi_size = _mpi_comm.size();
   const std::int32_t mpi_size = dolfin::MPI::size(_mpi_comm);
   for (std::int32_t i = 1; i < mpi_size; ++i)
     _all_ranges[i] += _all_ranges[i - 1];
@@ -55,11 +54,6 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
   {
     _ghosts[i] = ghosts[i];
     _ghost_owners[i] = owner(ghosts[i]);
-    if (_ghost_owners[i] == _myrank)
-    {
-      std::cout << "*Ghost: " << i << ", " << _ghosts[i] << std::endl;
-      std::cout << "  oops, " << _myrank << std::endl;
-    }
     assert(_ghost_owners[i] != _myrank);
   }
 }
