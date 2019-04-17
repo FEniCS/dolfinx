@@ -172,7 +172,6 @@ void fem(py::module& m)
            &dolfin::fem::GenericDofMap::tabulate_local_to_global_dofs)
       .def("tabulate_entity_dofs",
            &dolfin::fem::GenericDofMap::tabulate_entity_dofs)
-      .def("block_size", &dolfin::fem::GenericDofMap::block_size)
       .def("set", &dolfin::fem::GenericDofMap::set);
 
   // dolfin::fem::DofMap

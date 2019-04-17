@@ -57,7 +57,7 @@ class DofMap:
 
     def ownership_range(self):
         map = self.index_map()
-        return tuple(x*map.block_size for x in  map.local_range())
+        return tuple(x * map.block_size for x in map.local_range())
 
     def cell_dofs(self, cell_index: int):
         return self._cpp_object.cell_dofs(cell_index)
@@ -80,9 +80,6 @@ class DofMap:
     def tabulate_entity_dofs(self, entity_dim: int, cell_entity_index: int):
         return self._cpp_object.tabulate_entity_dofs(entity_dim,
                                                      cell_entity_index)
-
-    def block_size(self):
-        return self._cpp_object.block_size()
 
     def set(self, x, value):
         self._cpp_object.set(x, value)

@@ -290,7 +290,7 @@ DofMap::tabulate_entity_dofs(std::size_t entity_dim,
 Eigen::Array<std::size_t, Eigen::Dynamic, 1>
 DofMap::tabulate_global_dofs() const
 {
-  assert(_global_nodes.empty() or block_size() == 1);
+  assert(_global_nodes.empty() or _index_map->block_size() == 1);
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> dofs(_global_nodes.size());
   std::size_t i = 0;
   for (auto d : _global_nodes)
@@ -373,13 +373,6 @@ void DofMap::check_provided_entities(const ElementDofLayout& dofmap,
 std::shared_ptr<const common::IndexMap> DofMap::index_map() const
 {
   return _index_map;
-}
-//-----------------------------------------------------------------------------
-int DofMap::block_size() const
-{
-  // FIXME: this will almost always be wrong for a sub-dofmap because
-  // it shares the  index map with the  parent.
-  return _index_map->block_size();
 }
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const

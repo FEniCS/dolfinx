@@ -244,7 +244,8 @@ void FunctionSpace::interpolate(
   // Initialize vector of expansion coefficients
   // if (expansion_coefficients.size() != _dofmap->global_dimension())
   // {
-  //   throw std::runtime_error("Cannot interpolate function into function space. "
+  //   throw std::runtime_error("Cannot interpolate function into function
+  //   space. "
   //                            "Wrong size of vector");
   // }
   // VecSet(expansion_coefficients.vec(), 0.0);
@@ -337,7 +338,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 
   // Get local size
   assert(_dofmap);
-  std::size_t bs = _dofmap->block_size();
+  std::size_t bs = _dofmap->index_map()->block_size();
   std::size_t local_size = bs * _dofmap->index_map()->size_local();
 
   // Dof coordinate on reference element

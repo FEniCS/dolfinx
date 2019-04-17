@@ -128,9 +128,6 @@ public:
 
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const = 0;
-
-  /// Get block size
-  virtual int block_size() const = 0;
 };
 } // namespace fem
 } // namespace dolfin

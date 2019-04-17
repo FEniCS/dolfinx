@@ -40,7 +40,7 @@ std::set<PetscInt> gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap,
   std::size_t comm_size = MPI::size(mpi_comm);
 
   const auto& shared_nodes = dofmap.shared_nodes();
-  const int bs = dofmap.block_size();
+  const int bs = dofmap.index_map()->block_size();
   assert(dofmap.index_map());
 
   // Create list of boundary values to send to each processor
@@ -582,7 +582,8 @@ DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
   const FiniteElement& element = *V.element();
 
   // Initialize facets, needed for geometric search
-  // spdlog::info("Computing facets, needed for geometric application of boundary "
+  // spdlog::info("Computing facets, needed for geometric application of
+  // boundary "
   //              "conditions.");
   mesh.init(mesh.topology().dim() - 1);
 

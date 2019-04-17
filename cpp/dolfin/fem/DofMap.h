@@ -236,10 +236,6 @@ public:
   /// Return the map (const access)
   std::shared_ptr<const common::IndexMap> index_map() const;
 
-  /// Return the block size for dof maps with components, typically
-  /// used for vector valued functions.
-  int block_size() const;
-
   /// Return informal string representation (pretty-print)
   ///
   /// @param     verbose (bool)

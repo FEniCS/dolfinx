@@ -60,7 +60,7 @@ def test_tabulate_all_coordinates(mesh_factory):
     all_coords_V = V.tabulate_dof_coordinates()
     all_coords_W = W.tabulate_dof_coordinates()
     local_size_V = V_dofmap.ownership_range()[1] - V_dofmap.ownership_range()[0]
-    local_size_W = W_dofmap.ownership_range()[1] - W_dofmap.ownership_range())[0]
+    local_size_W = W_dofmap.ownership_range()[1] - W_dofmap.ownership_range()[0]
 
     all_coords_V = all_coords_V.reshape(local_size_V, D)
     all_coords_W = all_coords_W.reshape(local_size_W, D)
@@ -369,7 +369,7 @@ def test_clear_sub_map_data_vector(mesh):
     W = FunctionSpace(mesh, P1 * P1)
 
     # Check block size
-    assert W.dofmap().block_size() == 2
+    assert W.dofmap().index_map().block_size == 2
 
     W.dofmap().clear_sub_map_data()
     with pytest.raises(RuntimeError):
@@ -395,14 +395,14 @@ def test_block_size(mesh):
         assert V.dofmap().block_size() == 1
 
         V = FunctionSpace(mesh, P2 * P2)
-        assert V.dofmap().block_size() == 2
+        assert V.dofmap().index_map().block_size == 2
 
         for i in range(1, 6):
             W = FunctionSpace(mesh, MixedElement(i * [P2]))
-            assert W.dofmap().block_size() == i
+            assert W.dofmap().index_map().block_size == i
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 2))
-        assert V.dofmap().block_size() == mesh.geometry.dim
+        assert V.dofmap().index_map().block_size == mesh.geometry.dim
 
 
 @pytest.mark.skip
@@ -411,7 +411,7 @@ def test_block_size_real(mesh):
     V = FiniteElement('DG', mesh.ufl_cell(), 0)
     R = FiniteElement('R', mesh.ufl_cell(), 0)
     X = FunctionSpace(mesh, V * R)
-    assert X.dofmap().block_size() == 1
+    assert X.dofmap().index_map().block_size == 1
 
 
 @pytest.mark.skip
