@@ -110,7 +110,7 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   }
 
   if (dofmap_view._index_map->block_size() > 1
-      and and dofmap_view._element_dof_layout->block_size() > 1)
+      and dofmap_view._element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot (yet) collapse dofmap with block size greater "
@@ -298,7 +298,17 @@ std::pair<std::shared_ptr<GenericDofMap>,
           std::unordered_map<std::size_t, std::size_t>>
 DofMap::collapse(const mesh::Mesh& mesh) const
 {
-  std::shared_ptr<GenericDofMap> dofmap(new DofMap(*this, mesh));
+  std::shared_ptr<GenericDofMap> dofmap;
+  if (this->_index_map->block_size() == 1
+      and this->_element_dof_layout->block_size() > 1)
+  {
+    // Parent does not have block structure but sub-map does, so build new
+    // submap to get block structure.
+    dofmap = std::shared_ptr<GenericDofMap>(
+        new DofMap(this->_element_dof_layout, mesh));
+  }
+  else
+    dofmap = std::shared_ptr<GenericDofMap>(new DofMap(*this, mesh));
 
   // FIXME: Could we use a std::vector instead of std::map if the
   //        collapsed dof map is contiguous (0, . . . , n)?
