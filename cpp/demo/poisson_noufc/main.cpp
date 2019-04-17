@@ -101,6 +101,61 @@ using namespace dolfin;
 //
 // .. code-block:: cpp
 
+class P1Element
+{
+public:
+  static int evaluate_basis_derivs(double* ref_vals, int order, int npoints,
+                                   const double* X)
+  {
+    if (order == 0)
+    {
+      for (int ip = 0; ip < npoints; ++ip)
+      {
+        const double X0 = X[2 * ip];
+        const double X1 = X[2 * ip + 1];
+
+        ref_vals[3 * ip] = (1.0 - X0 - X1);
+        ref_vals[3 * ip + 1] = X0;
+        ref_vals[3 * ip + 2] = X1;
+      }
+    }
+    else if (order == 1)
+    {
+      for (int ip = 0; ip < npoints; ++ip)
+      {
+        ref_vals[6 * ip] = -1.0;
+        ref_vals[6 * ip + 1] = 1.0;
+        ref_vals[6 * ip + 2] = 0.0;
+        ref_vals[6 * ip + 3] = -1.0;
+        ref_vals[6 * ip + 4] = 0.0;
+        ref_vals[6 * ip + 5] = 1.0;
+      }
+    }
+    return 0;
+  }
+
+  static int transform_basis_derivs(double* values, int order, int num_points,
+                                    const double* reference_values,
+                                    const double* X, const double* J,
+                                    const double* detJ, const double* K,
+                                    int cell_orientation)
+  {
+    return -1;
+  }
+
+  static int transform_values(ufc_scalar_t* reference_values,
+                              const ufc_scalar_t* physical_values,
+                              const double* coordinate_dofs,
+                              int cell_orientation,
+                              const ufc_coordinate_mapping* cm)
+  {
+    reference_values[0] = physical_values[0];
+    reference_values[1] = physical_values[1];
+    reference_values[2] = physical_values[2];
+    return 0;
+  }
+};
+
 class LinearTriangleCoordinateMap
 {
 public:
@@ -227,10 +282,16 @@ int main(int argc, char* argv[])
 
   mesh::Ordering::order_simplex(*mesh);
 
+  // Custom DofMap
   auto layout
       = std::shared_ptr<fem::ElementDofLayout>(new fem::ElementDofLayout(
           1, {{{0}, {1}, {2}}, {{}, {}, {}}, {{}}}, {}, {}, mesh->type()));
   auto dm = std::make_shared<fem::DofMap>(layout, *mesh);
+
+  // Custom FiniteElement
+  auto fe = std::shared_ptr<fem::FiniteElement>(new fem::FiniteElement(
+      "P1", "Lagrange", 2, 3, {1}, 1, 1, 1, P1Element::evaluate_basis_derivs,
+      P1Element::transform_basis_derivs, P1Element::transform_values));
 
   ufc_function_space* space = poisson_functionspace_create();
   ufc_dofmap* ufc_map = space->create_dofmap();

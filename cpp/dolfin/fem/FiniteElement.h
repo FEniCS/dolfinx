@@ -31,6 +31,19 @@ public:
   ///  UFC finite element
   FiniteElement(const ufc_finite_element& element);
 
+  /// Create finite element directly
+  FiniteElement(
+    std::string signature, std::string family, int topological_dimension,
+    int space_dimension, const std::vector<int>& value_dimension, int value_size, int reference_value_size, int degree,
+    std::function<int(double*, int, int, const double*)>
+        evaluate_reference_basis_derivatives,
+    std::function<int(double*, int, int, const double*, const double*,
+                      const double*, const double*, const double*, int)>
+        transform_reference_basis_derivatives,
+    std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*, int,
+                      const ufc_coordinate_mapping*)>
+    transform_values);
+
   /// Destructor
   virtual ~FiniteElement() = default;
 

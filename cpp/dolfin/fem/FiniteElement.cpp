@@ -73,6 +73,30 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
   }
 }
 //-----------------------------------------------------------------------------
+FiniteElement::FiniteElement(
+    std::string signature, std::string family, int topological_dimension,
+    int space_dimension, const std::vector<int>& value_dimension,
+    int value_size, int reference_value_size, int degree,
+    std::function<int(double*, int, int, const double*)>
+        evaluate_reference_basis_derivatives,
+    std::function<int(double*, int, int, const double*, const double*,
+                      const double*, const double*, const double*, int)>
+        transform_reference_basis_derivatives,
+    std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*, int,
+                      const ufc_coordinate_mapping*)>
+        transform_values)
+    : _signature(signature), _family(family), _tdim(topological_dimension),
+      _space_dim(space_dimension), _value_size(value_size),
+      _reference_value_size(reference_value_size), _degree(degree),
+      _value_dimension(value_dimension),
+      _evaluate_reference_basis_derivatives(
+          evaluate_reference_basis_derivatives),
+      _transform_reference_basis_derivatives(
+          transform_reference_basis_derivatives),
+      _transform_values(transform_values)
+{
+}
+//-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
 CellType FiniteElement::cell_shape() const { return _cell_shape; }
@@ -109,9 +133,9 @@ void FiniteElement::evaluate_reference_basis(
     const Eigen::Ref<const EigenRowArrayXXd> X) const
 {
   std::size_t num_points = X.rows();
-  assert(_evaluate_reference_basis);
-  int ret = _evaluate_reference_basis(reference_values.data(), num_points,
-                                      X.data());
+  assert(_evaluate_reference_basis_derivatives);
+  int ret = _evaluate_reference_basis_derivatives(reference_values.data(), 0,
+                                                  num_points, X.data());
   if (ret == -1)
   {
     throw std::runtime_error("Generated code returned error "
