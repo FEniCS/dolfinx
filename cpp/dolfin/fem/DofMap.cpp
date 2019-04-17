@@ -106,17 +106,25 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
-        "than 1 from parent with block of 1. Create new dofmap first.");
+        "than 1 from parent with block size of 1. Create new dofmap first.");
   }
-  // throw std::runtime_error("Block size greater than 1 not supported yet.");
+
+  if (dofmap_view._index_map->block_size() > 1
+      and and dofmap_view._element_dof_layout->block_size() > 1)
+  {
+    throw std::runtime_error(
+        "Cannot (yet) collapse dofmap with block size greater "
+        "than 1 from parent with block size greater than 1. Create new dofmap "
+        "first.");
+  }
+
+  if (dofmap_view._index_map->block_size() != 1)
+    throw std::runtime_error("Block size greater than 1 not supported yet.");
 
   boost::timer::auto_cpu_timer t;
 
   // Get topological dimension
   const int tdim = mesh.topology().dim();
-
-  if (dofmap_view._index_map->block_size() != 1)
-    throw std::runtime_error("Block size greater than 1 not supported yet.");
 
   // Build set of dofs that are in the new dofmap
   std::vector<std::int32_t> dofs_view;
