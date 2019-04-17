@@ -123,36 +123,3 @@ void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
   MPI_Win_free(&win);
 }
 //-----------------------------------------------------------------------------
-// void IndexMap::scatter_rev(std::vector<PetscScalar>& local_data,
-//                            const std::vector<PetscScalar>& remote_data)
-// {
-//   // local_data should be the size of owned + ghost
-//   // Make the owned data available for writing by remote processes
-//   // and then send the ghost values from other processes (adding values)
-
-//   const std::size_t nlocal = size_local();
-//   assert(local_data.size() == nlocal + num_ghosts());
-
-//   MPI_Win win;
-//   MPI_Win_create(local_data.data(), sizeof(PetscScalar) * nlocal,
-//                  sizeof(PetscScalar), MPI_INFO_NULL, _mpi_comm, &win);
-//   MPI_Win_fence(0, win);
-
-//   for (int i = 0; i < num_ghosts(); ++i)
-//   {
-//     // Remote process
-//     int p = _ghost_owners[i];
-//     // Index on remote process
-//     int remote_data_offset = _ghosts[i] - _all_ranges[p];
-
-//     // Stack up requests
-//     MPI_Accumulate(local_data.data() + nlocal + i, 1,
-//                    MPI::mpi_type<PetscScalar>(), p, remote_data_offset, 1,
-//                    MPI::mpi_type<PetscScalar>(), MPI_SUM, win);
-//   }
-
-//   // Sync
-//   MPI_Win_fence(0, win);
-//   MPI_Win_free(&win);
-// }
-//-----------------------------------------------------------------------------
