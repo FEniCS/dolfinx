@@ -288,7 +288,7 @@ std::unique_ptr<GenericDofMap>
 DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                            const mesh::Mesh& mesh) const
 {
-  return std::unique_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
+  return std::unique_ptr<DofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
 std::pair<std::shared_ptr<GenericDofMap>, std::vector<PetscInt>>
