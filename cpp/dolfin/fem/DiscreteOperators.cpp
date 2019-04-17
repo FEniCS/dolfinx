@@ -77,7 +77,10 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{V0.dofmap()->index_map(), V1.dofmap()->index_map()}};
   std::vector<std::array<std::int64_t, 2>> local_range
-      = {V0.dofmap()->ownership_range(), V1.dofmap()->ownership_range()};
+      = {{index_maps[0]->block_size() * index_maps[0]->local_range()[0],
+          index_maps[0]->block_size() * index_maps[0]->local_range()[1]},
+         {index_maps[1]->block_size() * index_maps[1]->local_range()[0],
+          index_maps[1]->block_size() * index_maps[1]->local_range()[1]}};
 
   // Initialise sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);

@@ -60,10 +60,6 @@ public:
   /// Return the number of closure dofs for a given entity dimension
   virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const = 0;
 
-  /// Return the ownership range (dofs in this range are owned by
-  /// this process)
-  virtual std::array<std::int64_t, 2> ownership_range() const = 0;
-
   /// Local-to-global mapping of dofs on a cell
   virtual Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   cell_dofs(std::size_t cell_index) const = 0;
@@ -114,7 +110,7 @@ public:
   virtual void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
                    PetscScalar value) const = 0;
 
-  /// Index map (const access)
+  /// Index map
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
 
   /// Tabulate map between local (process) and global dof indices
@@ -126,14 +122,8 @@ public:
   virtual const std::unordered_map<int, std::vector<int>>&
   shared_nodes() const = 0;
 
-  /// Return set of processes that share dofs with the this process
-  virtual const std::set<int>& neighbours() const = 0;
-
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const = 0;
-
-  /// Get block size
-  virtual int block_size() const = 0;
 };
 } // namespace fem
 } // namespace dolfin

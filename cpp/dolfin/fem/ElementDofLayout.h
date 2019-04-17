@@ -43,8 +43,12 @@ public:
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
       const mesh::CellType& cell_type);
 
+  // Copy-like constructor with option to reset (clear) parent map
+  ElementDofLayout(const ElementDofLayout& element_dof_layout,
+                   bool reset_parent);
+
   // Copy constructor
-  ElementDofLayout(const ElementDofLayout& dofmap) = delete;
+  ElementDofLayout(const ElementDofLayout& dofmap) = default;
 
   /// Move constructor
   ElementDofLayout(ElementDofLayout&& dofmap) = default;
@@ -53,7 +57,7 @@ public:
   ~ElementDofLayout() = default;
 
   // Copy assignment
-  ElementDofLayout& operator=(const ElementDofLayout& dofmap) = delete;
+  ElementDofLayout& operator=(const ElementDofLayout& dofmap) = default;
 
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
@@ -95,7 +99,7 @@ public:
 
 private:
   // Mapping of dofs to this ElementDofLayout's immediate parent
-  const std::vector<int> _parent_map;
+  std::vector<int> _parent_map;
 
   // Block size
   const int _block_size;

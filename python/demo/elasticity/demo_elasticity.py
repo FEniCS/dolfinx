@@ -26,7 +26,7 @@ def build_nullspace(V):
     """Function to build null space for 3D elasticity"""
 
     # Create list of vectors for null space
-    index_map = V.dofmap().index_map()
+    index_map = V.dofmap().index_map
     nullspace_basis = [cpp.la.create_vector(index_map) for i in range(6)]
 
     with ExitStack() as stack:

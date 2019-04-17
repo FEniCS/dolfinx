@@ -32,7 +32,7 @@ def V(mesh):
 
 def xtest_str(mesh, V):
     dm = V.dofmap()
-    index_map = dm.index_map()
+    index_map = dm.index_map
     assert index_map
 
     # Build sparse tensor layout (for assembly of matrix)
@@ -48,7 +48,7 @@ def xtest_str(mesh, V):
 @pytest.mark.xfail
 def test_insert_local(mesh, V):
     dm = V.dofmap()
-    index_map = dm.index_map()
+    index_map = dm.index_map
     assert index_map
 
     sp = cpp.fem.SparsityPatternBuilder.build(mesh.mpi_comm(), mesh,
@@ -74,7 +74,7 @@ def test_insert_local(mesh, V):
 
 def xtest_insert_global(mesh, V):
     dm = V.dofmap()
-    index_map = dm.index_map()
+    index_map = dm.index_map
     local_range = index_map.local_range()
 
     # Build sparse tensor layout
@@ -122,7 +122,7 @@ def xtest_insert_global(mesh, V):
 
 def xtest_insert_local_global(mesh, V):
     dm = V.dofmap()
-    index_map = dm.index_map()
+    index_map = dm.index_map
     local_range = index_map.local_range()
 
     # Build sparse tensor layout

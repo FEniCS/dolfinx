@@ -85,6 +85,14 @@ ElementDofLayout::ElementDofLayout(
   }
 }
 //-----------------------------------------------------------------------------
+ElementDofLayout::ElementDofLayout(const ElementDofLayout& element_dof_layout,
+                                   bool reset_parent)
+    : ElementDofLayout(element_dof_layout)
+{
+  _parent_map.clear();
+}
+//-----------------------------------------------------------------------------
+
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_entity_dofs(unsigned int dim) const

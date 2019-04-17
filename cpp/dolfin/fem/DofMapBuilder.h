@@ -8,7 +8,6 @@
 
 #include <dolfin/common/types.h>
 #include <memory>
-#include <set>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -43,7 +42,7 @@ public:
   /// @param[in] dolfin_mesh
   static std::tuple<std::int64_t, std::unique_ptr<common::IndexMap>,
                     std::unordered_map<std::int32_t, std::vector<std::int32_t>>,
-                    std::set<std::int32_t>, std::vector<PetscInt>>
+                    std::vector<PetscInt>>
   build(const mesh::Mesh& dolfin_mesh,
         const ElementDofLayout& element_dof_layout,
         const std::int32_t block_size);

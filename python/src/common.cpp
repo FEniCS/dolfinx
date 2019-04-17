@@ -55,19 +55,25 @@ void common(py::module& m)
   // dolfin::common::IndexMap
   py::class_<dolfin::common::IndexMap,
              std::shared_ptr<dolfin::common::IndexMap>>(m, "IndexMap")
-      .def("size_local", &dolfin::common::IndexMap::size_local)
-      .def("size_global", &dolfin::common::IndexMap::size_global)
-      .def("num_ghosts", &dolfin::common::IndexMap::num_ghosts)
-      .def("block_size", &dolfin::common::IndexMap::block_size,
-           "Return block size")
-      .def("local_range", &dolfin::common::IndexMap::local_range,
-           "Range of indices owned by this map")
-      .def("ghost_owners", &dolfin::common::IndexMap::ghost_owners,
-           py::return_value_policy::reference_internal,
-           "Return owning process for each ghost index")
-      .def("ghosts", &dolfin::common::IndexMap::ghosts,
-           py::return_value_policy::reference_internal,
-           "Return list of ghost indices");
+      .def_property_readonly("size_local",
+                             &dolfin::common::IndexMap::size_local)
+      .def_property_readonly("size_global",
+                             &dolfin::common::IndexMap::size_global)
+      .def_property_readonly("num_ghosts",
+                             &dolfin::common::IndexMap::num_ghosts)
+      .def_property_readonly("block_size",
+                             &dolfin::common::IndexMap::block_size,
+                             "Return block size")
+      .def_property_readonly("local_range",
+                             &dolfin::common::IndexMap::local_range,
+                             "Range of indices owned by this map")
+      .def_property_readonly("ghost_owners",
+                             &dolfin::common::IndexMap::ghost_owners,
+                             py::return_value_policy::reference_internal,
+                             "Return owning process for each ghost index")
+      .def_property_readonly("ghosts", &dolfin::common::IndexMap::ghosts,
+                             py::return_value_policy::reference_internal,
+                             "Return list of ghost indices");
 
   // dolfin::Table
   py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>,

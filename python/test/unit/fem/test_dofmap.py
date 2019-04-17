@@ -16,7 +16,7 @@ from dolfin import (MPI, Cells, CellType, FiniteElement, FunctionSpace,
                     UnitIntervalMesh, UnitSquareMesh, VectorElement,
                     VectorFunctionSpace)
 from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel, skip_in_serial
+from dolfin_utils.test.skips import skip_in_parallel
 
 xfail = pytest.mark.xfail(strict=True)
 
@@ -59,10 +59,8 @@ def test_tabulate_all_coordinates(mesh_factory):
 
     all_coords_V = V.tabulate_dof_coordinates()
     all_coords_W = W.tabulate_dof_coordinates()
-    local_size_V = V_dofmap.ownership_range()[1] - V_dofmap.ownership_range(
-    )[0]
-    local_size_W = W_dofmap.ownership_range()[1] - W_dofmap.ownership_range(
-    )[0]
+    local_size_V = V_dofmap().index_map.size_local * V_dofmap().index_map.block_size
+    local_size_W = W_dofmap().index_map.size_local * W_dofmap().index_map.block_size
 
     all_coords_V = all_coords_V.reshape(local_size_V, D)
     all_coords_W = all_coords_W.reshape(local_size_W, D)
@@ -371,7 +369,7 @@ def test_clear_sub_map_data_vector(mesh):
     W = FunctionSpace(mesh, P1 * P1)
 
     # Check block size
-    assert W.dofmap().block_size() == 2
+    assert W.dofmap().index_map.block_size == 2
 
     W.dofmap().clear_sub_map_data()
     with pytest.raises(RuntimeError):
@@ -397,14 +395,14 @@ def test_block_size(mesh):
         assert V.dofmap().block_size() == 1
 
         V = FunctionSpace(mesh, P2 * P2)
-        assert V.dofmap().block_size() == 2
+        assert V.dofmap().index_map.block_size == 2
 
         for i in range(1, 6):
             W = FunctionSpace(mesh, MixedElement(i * [P2]))
-            assert W.dofmap().block_size() == i
+            assert W.dofmap().index_map.block_size == i
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 2))
-        assert V.dofmap().block_size() == mesh.geometry.dim
+        assert V.dofmap().index_map.block_size == mesh.geometry.dim
 
 
 @pytest.mark.skip
@@ -413,30 +411,7 @@ def test_block_size_real(mesh):
     V = FiniteElement('DG', mesh.ufl_cell(), 0)
     R = FiniteElement('R', mesh.ufl_cell(), 0)
     X = FunctionSpace(mesh, V * R)
-    assert X.dofmap().block_size() == 1
-
-
-@skip_in_serial
-@pytest.mark.parametrize(
-    'mesh_factory',
-    [(UnitIntervalMesh, (MPI.comm_world, 8)),
-     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
-     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
-     (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
-     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron))])
-def test_mpi_dofmap_stats(mesh_factory):
-    func, args = mesh_factory
-    mesh = func(*args)
-
-    V = FunctionSpace(mesh, ("CG", 1))
-    assert len(V.dofmap().shared_nodes()) > 0
-    neighbours = V.dofmap().neighbours()
-    for processes in V.dofmap().shared_nodes().values():
-        for process in processes:
-            assert process in neighbours
-
-    for owner in V.dofmap().index_map().ghost_owners():
-        assert owner in neighbours
+    assert X.dofmap().index_map.block_size == 1
 
 
 @pytest.mark.skip
@@ -459,13 +434,13 @@ def test_local_dimension(mesh_factory):
     for space in [V, Q, W]:
         dofmap = space.dofmap()
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
-        ownership_range = dofmap.ownership_range()
-        dim1 = dofmap.index_map().size_local()
-        dim2 = dofmap.index_map().num_ghosts()
+        ownership_range = dofmap.index_set.size_local * dofmap.index_set.block_size
+        dim1 = dofmap().index_map.size_local()
+        dim2 = dofmap().index_map.num_ghosts()
         assert dim1 == ownership_range[1] - ownership_range[0]
         assert dim1 + dim2 == local_to_global_map.size
         # with pytest.raises(RuntimeError):
-        #    dofmap.index_map().size('foo')
+        #    dofmap().index_map.size('foo')
 
 
 # Failures in FFC on quads/hexes
@@ -545,7 +520,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     owner"""
     V = FunctionSpace(mesh, "P", 1)
     dofmap = V.dofmap()
-    index_map = dofmap.index_map()
+    index_map = dofmap().index_map
 
     rc = sys.getrefcount(dofmap)
     l2gu = dofmap.local_to_global_unowned()
