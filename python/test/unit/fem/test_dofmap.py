@@ -59,10 +59,8 @@ def test_tabulate_all_coordinates(mesh_factory):
 
     all_coords_V = V.tabulate_dof_coordinates()
     all_coords_W = W.tabulate_dof_coordinates()
-    local_size_V = V_dofmap.ownership_range()[1] - V_dofmap.ownership_range(
-    )[0]
-    local_size_W = W_dofmap.ownership_range()[1] - W_dofmap.ownership_range(
-    )[0]
+    local_size_V = V_dofmap.ownership_range()[1] - V_dofmap.ownership_range()[0]
+    local_size_W = W_dofmap.ownership_range()[1] - W_dofmap.ownership_range())[0]
 
     all_coords_V = all_coords_V.reshape(local_size_V, D)
     all_coords_W = all_coords_W.reshape(local_size_W, D)

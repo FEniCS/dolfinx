@@ -56,7 +56,8 @@ class DofMap:
         return self._cpp_object.global_dimension()
 
     def ownership_range(self):
-        return self._cpp_object.ownership_range()
+        map = self.index_map()
+        return tuple(x*map.block_size for x in  map.local_range())
 
     def cell_dofs(self, cell_index: int):
         return self._cpp_object.cell_dofs(cell_index)

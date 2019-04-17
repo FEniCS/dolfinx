@@ -52,7 +52,7 @@ public:
   /// Destructor
   ~IndexMap() = default;
 
-  /// Range of indices owned by this process
+  /// Range of indices (global) owned by this process
   std::array<std::int64_t, 2> local_range() const;
 
   /// Block size
