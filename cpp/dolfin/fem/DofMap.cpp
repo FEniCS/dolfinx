@@ -316,7 +316,11 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   assert(dofmap_new);
 
   // Build map from collapsed dof index to original dof index
-  std::vector<PetscInt> collapsed_map(dofmap_new->_dofmap.size());
+  auto index_map_new = dofmap_new->index_map();
+  std::int32_t size
+      = (index_map_new->size_local() + index_map_new->num_ghosts())
+        * index_map_new->block_size();
+  std::vector<PetscInt> collapsed_map(size);
   const int tdim = mesh.topology().dim();
   for (std::int64_t c = 0; c < mesh.num_entities(tdim); ++c)
   {
@@ -324,7 +328,7 @@ DofMap::collapse(const mesh::Mesh& mesh) const
     const auto cell_dofs = dofmap_new->cell_dofs(c);
     assert(view_cell_dofs.size() == cell_dofs.size());
 
-    for (Eigen::Index j = 0; j < view_cell_dofs.size(); ++j)
+    for (Eigen::Index j = 0; j < cell_dofs.size(); ++j)
     {
       assert(cell_dofs[j] < (int)collapsed_map.size());
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];

@@ -54,7 +54,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
   assert(V->dofmap()->global_dimension() <= _vector.size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v) : _vector(nullptr)
+Function::Function(const Function& v) : _vector(v._vector.vec())
 {
   // Make a copy of all the data, or if v is a sub-function, then we
   // collapse the dof map and copy only the relevant entries from the
@@ -86,7 +86,11 @@ Function::Function(const Function& v) : _vector(nullptr)
 
     // Copy values into new vector
     for (std::size_t i = 0; i < collapsed_map.size(); ++i)
+    {
+      assert((int)i < x_new.size());
+      assert(collapsed_map[i] < x_old.size());
       x_new[i] = x_old[collapsed_map[i]];
+    }
   }
 }
 //-----------------------------------------------------------------------------
