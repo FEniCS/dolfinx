@@ -15,47 +15,32 @@ namespace
 {
 void test_scatter()
 {
-  // const std::size_t mpi_size = dolfin::MPI::size(MPI_COMM_WORLD);
-  // const std::size_t mpi_rank = dolfin::MPI::rank(MPI_COMM_WORLD);
+  const int mpi_size = dolfin::MPI::size(MPI_COMM_WORLD);
+  const int mpi_rank = dolfin::MPI::rank(MPI_COMM_WORLD);
 
-  // int nlocal = 100;
+  int size_local = 100;
 
-  // // Create some ghost entries on next process
-  // int nghost = (mpi_size - 1) * 3;
-  // std::vector<std::size_t> ghosts(nghost);
-  // for (int i = 0; i < nghost; ++i)
-  //   ghosts[i] = (mpi_rank + 1) % mpi_size * nlocal + i;
+  // Create some ghost entries on next process
+  int num_ghosts = (mpi_size - 1) * 3;
+  std::vector<std::size_t> ghosts(num_ghosts);
+  for (int i = 0; i < num_ghosts; ++i)
+    ghosts[i] = (mpi_rank + 1) % mpi_size * size_local + i;
 
-  // // Create some local data
-  // const std::int64_t val = 11;
-  // std::vector<std::int64_t> data_local(nlocal, val * mpi_rank);
-  // std::vector<std::int64_t> data_ghost(nghost);
+  // Create an IndexMap with some local data
+  const std::int64_t val = 11;
+  std::vector<std::int64_t> data_local(size_local, val * mpi_rank);
+  std::vector<std::int64_t> data_ghost(num_ghosts, -1);
+  common::IndexMap idx_map(MPI_COMM_WORLD, size_local, ghosts, 1);
 
-  // common::IndexMap idx_map(MPI_COMM_WORLD, nlocal, ghosts, 1);
-
-  // // Check value has been pushed over from other processes
-  // idx_map.scatter_fwd(data_local, data_ghost);
-  // for (std::size_t i = 0; i < data_ghost.size(); ++i)
-  // {
-  //   if (data_ghost[i] == val * ((mpi_rank + 1) % mpi_size))
-  //     continue;
-  //   else
-  //     throw std::runtime_error("Received data incorrect.");
-  // }
-
-  // std::vector<PetscScalar> data;
-  // data.insert(data.end(), data_local.begin(), data_local.end());
-  // data.insert(data.end(), data_ghost.begin(), data_ghost.end());
-
-  // // Send ghost values back to origin
-  // idx_map.scatter_rev(data);
-  // for (int i = 0; i < nghost; ++i)
-  // {
-  //   if (data[i] == 2 * val * mpi_rank)
-  //     continue;
-  //   else
-  //     throw std::runtime_error("Received unexpected data (2).");
-  // }
+  // Scatter values to ghost and check value is correctly received
+  idx_map.scatter_fwd(data_local, data_ghost);
+  for (std::int64_t data : data_ghost)
+  {
+    if (data == val * ((mpi_rank + 1) % mpi_size))
+      continue;
+    else
+      throw std::runtime_error("Received data incorrect.");
+  }
 
 } // namespace
 } // namespace
