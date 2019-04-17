@@ -4,17 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <Eigen/Dense>
-#include <memory>
-#include <petsc4py/petsc4py.h>
-#include <pybind11/eigen.h>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
-#include <string>
-
 #include "casters.h"
+#include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -24,16 +15,22 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/PETScDMCollection.h>
-#include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/fem/assembler.h>
 #include <dolfin/fem/utils.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/SubDomain.h>
+#include <memory>
+#include <petsc4py/petsc4py.h>
+#include <pybind11/eigen.h>
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
+#include <pybind11/stl.h>
+#include <string>
 #include <ufc.h>
 
 namespace py = pybind11;
@@ -180,23 +177,6 @@ void fem(py::module& m)
              std::shared_ptr<dolfin::fem::CoordinateMapping>>(
       m, "CoordinateMapping", "Coordinate mapping object")
       .def(py::init<const ufc_coordinate_mapping&>());
-
-  // dolfin::fem::SparsityPatternBuilder
-  // py::class_<dolfin::fem::SparsityPatternBuilder>(m,
-  // "SparsityPatternBuilder")
-  //     .def_static(
-  //         "build",
-  //         [](const MPICommWrapper comm, const dolfin::mesh::Mesh& mesh,
-  //            const std::array<const dolfin::fem::GenericDofMap*, 2> dofmaps,
-  //            bool cells, bool interior_facets, bool exterior_facets) {
-  //           return dolfin::fem::SparsityPatternBuilder::build(
-  //               comm.get(), mesh, dofmaps, cells, interior_facets,
-  //               exterior_facets);
-  //         },
-  //         py::arg("mpi_comm"), py::arg("mesh"), py::arg("dofmaps"),
-  //         py::arg("cells"), py::arg("interior_facets"),
-  //         py::arg("exterior_facets"),
-  //         "Create SparsityPattern from pair of dofmaps");
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,
