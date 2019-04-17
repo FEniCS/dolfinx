@@ -18,7 +18,7 @@ void test_scatter()
   const int mpi_size = dolfin::MPI::size(MPI_COMM_WORLD);
   const int mpi_rank = dolfin::MPI::rank(MPI_COMM_WORLD);
 
-  int size_local = 100;
+  const int size_local = 100;
 
   // Create some ghost entries on next process
   int num_ghosts = (mpi_size - 1) * 3;

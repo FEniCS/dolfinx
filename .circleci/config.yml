@@ -28,11 +28,12 @@ build-install-cpp: &build-install-cpp
   command: cd build && ninja -j3 install
 
 unit-tests-cpp: &unit-tests-cpp
-  name: Build and run C++ unit tests (serial)
+  name: Build and run C++ unit tests (serial and MPI)
   command: |
     cd build
     ninja -j3 unittests
     ctest -R unittests
+    mpirun -np 3 ctest -R unittests
 
 regression-tests-cpp: &regression-tests-cpp
   name: Build and run C++ regressions tests (serial)
