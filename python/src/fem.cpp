@@ -167,10 +167,22 @@ void fem(py::module& m)
            &dolfin::fem::GenericDofMap::tabulate_entity_dofs)
       .def("set", &dolfin::fem::GenericDofMap::set);
 
+  // dolfin::fem::ElementDofLayout
+  py::class_<dolfin::fem::ElementDofLayout,
+             std::shared_ptr<dolfin::fem::ElementDofLayout>>(
+      m, "ElementDofLayout", "ElementDofLayout object")
+      .def(py::init<int, const std::vector<std::vector<std::set<int>>>&,
+                    const std::vector<int>&,
+                    const std::vector<
+                        std::shared_ptr<const dolfin::fem::ElementDofLayout>>,
+                    const dolfin::mesh::CellType&>());
+
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
              dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
-      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>());
+      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>())
+      .def(py::init<std::shared_ptr<const dolfin::fem::ElementDofLayout>,
+                    const dolfin::mesh::Mesh&>());
 
   // dolfin::fem::CoordinateMapping
   py::class_<dolfin::fem::CoordinateMapping,
