@@ -54,55 +54,39 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
   assert(V->dofmap()->global_dimension() <= _vector.size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v) : _vector(v.vector().vec())
+Function::Function(const Function& v) : _vector(nullptr)
 {
   // Make a copy of all the data, or if v is a sub-function, then we
   // collapse the dof map and copy only the relevant entries from the
   // vector of v.
+
   if (v._vector.size() == v._function_space->dim())
   {
-    // Copy function space pointer
-    this->_function_space = v._function_space;
-
-    // Copy vector
-    this->_vector = v._vector.copy();
+    // Copy function space pointer and copy vector
+    _function_space = v._function_space;
+    _vector = v._vector.copy();
   }
   else
   {
     // Create new collapsed FunctionSpace
-    std::unordered_map<std::size_t, std::size_t> collapsed_map;
+    std::vector<PetscInt> collapsed_map;
     std::tie(_function_space, collapsed_map) = v._function_space->collapse();
 
-    // Get row indices of original and new vectors
-    std::unordered_map<std::size_t, std::size_t>::const_iterator entry;
-    std::vector<PetscInt> new_rows(collapsed_map.size());
-    std::vector<PetscInt> old_rows(collapsed_map.size());
-    std::size_t i = 0;
-    for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
-    {
-      new_rows[i] = entry->first;
-      old_rows[i++] = entry->second;
-    }
-
-    // Gather values into a vector
-    la::VecReadWrapper v_wrap(v.vector().vec());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
-        = v_wrap.x;
-    std::vector<PetscScalar> gathered_values(collapsed_map.size());
-    for (std::size_t j = 0; j < gathered_values.size(); ++j)
-      gathered_values[j] = x[old_rows[j]];
-
-    // Initial new vector (global)
+    // Create new vector
     _vector = _create_vector(*_function_space);
     assert(_function_space->dofmap());
     assert(_vector.size() == _function_space->dofmap()->global_dimension());
 
-    // FIXME (local): Check this for local or global
-    // Set values in vector
-    la::VecWrapper v(this->_vector.vec());
+    // Wrap PETSc vectors using Eigen
+    la::VecReadWrapper v_wrap(v.vector().vec());
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_old
+        = v_wrap.x;
+    la::VecWrapper v_new(this->_vector.vec());
+    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_new = v_new.x;
+
+    // Copy values into new vector
     for (std::size_t i = 0; i < collapsed_map.size(); ++i)
-      v.x[new_rows[i]] = gathered_values[i];
-    v.restore();
+      x_new[i] = x_old[collapsed_map[i]];
   }
 }
 //-----------------------------------------------------------------------------

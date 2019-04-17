@@ -291,13 +291,12 @@ DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
   return std::unique_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<GenericDofMap>,
-          std::unordered_map<std::size_t, std::size_t>>
+std::pair<std::shared_ptr<GenericDofMap>, std::vector<PetscInt>>
 DofMap::collapse(const mesh::Mesh& mesh) const
 {
   assert(_element_dof_layout);
   assert(_index_map);
-  std::shared_ptr<GenericDofMap> dofmap_new;
+  std::shared_ptr<DofMap> dofmap_new;
   if (this->_index_map->block_size() == 1
       and this->_element_dof_layout->block_size() > 1)
   {
@@ -307,29 +306,29 @@ DofMap::collapse(const mesh::Mesh& mesh) const
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
-    dofmap_new = std::shared_ptr<GenericDofMap>(
-        new DofMap(collapsed_dof_layout, mesh));
+    dofmap_new = std::make_shared<DofMap>(collapsed_dof_layout, mesh);
   }
   else
   {
     // Collapse dof map without build and re-ordering from scratch
-    dofmap_new = std::shared_ptr<GenericDofMap>(new DofMap(*this, mesh));
+    dofmap_new = std::shared_ptr<DofMap>(new DofMap(*this, mesh));
   }
-
-  // FIXME: Could we use a std::vector instead of std::map if the
-  //        collapsed dof map is contiguous (0, . . . , n)?
+  assert(dofmap_new);
 
   // Build map from collapsed dof index to original dof index
-  std::unordered_map<std::size_t, std::size_t> collapsed_map;
+  std::vector<PetscInt> collapsed_map(dofmap_new->_dofmap.size());
   const int tdim = mesh.topology().dim();
-  for (std::int64_t i = 0; i < mesh.num_entities(tdim); ++i)
+  for (std::int64_t c = 0; c < mesh.num_entities(tdim); ++c)
   {
-    auto view_cell_dofs = this->cell_dofs(i);
-    auto cell_dofs = dofmap_new->cell_dofs(i);
+    const auto view_cell_dofs = this->cell_dofs(c);
+    const auto cell_dofs = dofmap_new->cell_dofs(c);
     assert(view_cell_dofs.size() == cell_dofs.size());
 
     for (Eigen::Index j = 0; j < view_cell_dofs.size(); ++j)
+    {
+      assert(cell_dofs[j] < (int)collapsed_map.size());
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
+    }
   }
 
   return std::make_pair(dofmap_new, std::move(collapsed_map));
