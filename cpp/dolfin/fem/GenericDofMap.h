@@ -114,7 +114,7 @@ public:
   virtual void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
                    PetscScalar value) const = 0;
 
-  /// Index map (const access)
+  /// Index map
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
 
   /// Tabulate map between local (process) and global dof indices

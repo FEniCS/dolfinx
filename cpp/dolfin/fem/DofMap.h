@@ -233,7 +233,7 @@ public:
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
            PetscScalar value) const;
 
-  /// Return the map (const access)
+  /// Return the map
   std::shared_ptr<const common::IndexMap> index_map() const;
 
   /// Return informal string representation (pretty-print)

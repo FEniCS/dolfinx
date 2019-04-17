@@ -151,13 +151,7 @@ void fem(py::module& m)
            "The dimension of the global finite element function space")
       .def("index_map", &dolfin::fem::GenericDofMap::index_map)
       .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
-      .def("dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
-                       dolfin::fem::GenericDofMap::*)() const)
-                       & dolfin::fem::GenericDofMap::dofs)
-      .def("dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
-                       dolfin::fem::GenericDofMap::*)(const dolfin::mesh::Mesh&,
-                                                      std::size_t) const)
-                       & dolfin::fem::GenericDofMap::dofs)
+      .def("dofs", &dolfin::fem::GenericDofMap::dofs)
       .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
                               dolfin::fem::GenericDofMap::*)(
                               const dolfin::mesh::Mesh&, std::size_t) const)
