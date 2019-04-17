@@ -95,13 +95,11 @@ public:
   /// Return MPI communicator
   MPI_Comm mpi_comm() const;
 
-  /// Scatter/gather data between processes
-  /// local_data contains data with length owned+ghost
-  /// The ghost data is filled in with the owned values from other processes
+  /// Send a value for each index that is owned to processes that have
+  /// the index as a ghost. The size of the input array local_data must
+  /// be the same as size_local().
   void scatter_fwd(const std::vector<std::int64_t>& local_data,
                    std::vector<std::int64_t>& remote_data) const;
-  // void scatter_rev(std::vector<PetscScalar>& local_data,
-  //                  const std::vector<PetscScalar>& remote_data);
 
 private:
   // MPI Communicator

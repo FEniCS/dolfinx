@@ -12,13 +12,10 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <unordered_map>
-
-#include <boost/timer/timer.hpp>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -119,11 +116,6 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
         "first.");
   }
 
-  // if (dofmap_view._index_map->block_size() != 1)
-  //   throw std::runtime_error("Block size greater than 1 not supported yet.");
-
-  // boost::timer::auto_cpu_timer t;
-
   // Get topological dimension
   const int tdim = mesh.topology().dim();
 
@@ -189,7 +181,6 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
 
   // FIXME: remove
   // Set shared nodes
-  // std::unordered_map<int, std::vector<int>> _shared_nodes;
   for (auto it = it_unowned0; it != dofs_view.end(); ++it)
   {
     const std::int32_t index = std::distance(dofs_view.begin(), it) / bs;

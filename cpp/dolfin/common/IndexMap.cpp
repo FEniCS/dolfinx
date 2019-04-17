@@ -94,10 +94,6 @@ MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
                            std::vector<std::int64_t>& remote_data) const
 {
-  // // local_data should be the size of owned + ghost
-  // // Make the owned data available for reading by remote processes
-  // // and then get the ghost values from other processes
-
   const std::size_t _size_local = size_local();
   assert(local_data.size() == _size_local);
   remote_data.resize(num_ghosts());
