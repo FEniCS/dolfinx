@@ -187,6 +187,18 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
     ghosts[index] = global_index_remote[index_old];
   }
 
+  // FIXME: remove
+  // Set shared nodes
+  // std::unordered_map<int, std::vector<int>> _shared_nodes;
+  for (auto it = it_unowned0; it != dofs_view.end(); ++it)
+  {
+    const std::int32_t index = std::distance(dofs_view.begin(), it) / bs;
+    const std::int32_t index_old = *it / bs_view;
+    auto procs = dofmap_view._shared_nodes.find(index_old);
+    assert(procs != dofmap_view._shared_nodes.end());
+    _shared_nodes[index] = procs->second;
+  }
+
   // Create new index map
   _index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
                                                   num_owned_new, ghosts, bs);
@@ -204,11 +216,6 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
     PetscInt dof_view = dofmap_view._dofmap[i];
     _dofmap[i] = old_to_new[dof_view];
   }
-
-  // FIXME:
-  // Set shared nodes
-
-  // FIXME: _element_dof_layout should not be a view
 
   // Dimension sanity checks
   assert(

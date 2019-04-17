@@ -144,6 +144,7 @@ public:
   ///         The ownership range.
   std::array<std::int64_t, 2> ownership_range() const;
 
+  // TODO: Remove and work via teh index_map
   /// Return map from all shared nodes to the sharing processes (not
   /// including the current process) that share it.
   ///
@@ -269,7 +270,7 @@ private:
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;
 
-  // Processes that share a given dof
+  // Processes that share a given node
   std::unordered_map<int, std::vector<int>> _shared_nodes;
 
   // Processes that this dofmap shares dofs with
