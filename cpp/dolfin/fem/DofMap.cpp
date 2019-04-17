@@ -102,7 +102,7 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
       _element_dof_layout(dofmap_view._element_dof_layout)
 {
   if (dofmap_view._index_map->block_size() == 1
-      and dofmap_view._element_dof_layout.block_size() > 1)
+      and dofmap_view._element_dof_layout->block_size() > 1)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
