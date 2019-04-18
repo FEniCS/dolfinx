@@ -34,7 +34,11 @@ public:
   /// Create finite element directly
   FiniteElement(
     std::string signature, std::string family, int topological_dimension,
-    int space_dimension, const std::vector<int>& value_dimension, int value_size, int reference_value_size, int degree,
+    int space_dimension, const std::vector<int>& value_dimension,
+    Eigen::Ref<
+        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        reference_dof_coordinates,
+    int value_size, int reference_value_size, int degree,
     std::function<int(double*, int, int, const double*)>
         evaluate_reference_basis_derivatives,
     std::function<int(double*, int, int, const double*, const double*,

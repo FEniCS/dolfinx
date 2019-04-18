@@ -118,6 +118,7 @@ public:
         ref_vals[3 * ip + 1] = X0;
         ref_vals[3 * ip + 2] = X1;
       }
+      return 0;
     }
     else if (order == 1)
     {
@@ -130,8 +131,9 @@ public:
         ref_vals[6 * ip + 4] = 0.0;
         ref_vals[6 * ip + 5] = 1.0;
       }
+      return 0;
     }
-    return 0;
+    return -1;
   }
 
   static int transform_basis_derivs(double* values, int order, int num_points,
@@ -140,6 +142,40 @@ public:
                                     const double* detJ, const double* K,
                                     int cell_orientation)
   {
+    if (order == 0)
+    {
+      for (int ip = 0; ip < num_points * 3; ++ip)
+        values[ip] = reference_values[ip];
+      return 0;
+    }
+    else if (order == 1)
+    {
+      for (int ip = 0; ip < num_points; ++ip)
+      {
+        double transform[2][2];
+
+        transform[0][0] = K[4 * ip];
+        transform[0][1] = K[4 * ip + 2];
+        transform[1][0] = K[4 * ip + 1];
+        transform[1][1] = K[4 * ip + 3];
+
+        for (int d = 0; d < 3; ++d)
+        {
+          // Using affine transform to map values back to the physical
+          // element.
+          // Mapping derivatives back to the physical element
+          values[6 * ip + 2 * d]
+              = transform[0][0] * reference_values[6 * ip + 2 * d];
+          +transform[0][1] * reference_values[6 * ip + 2 * d + 1];
+
+          values[6 * ip + 2 * d + 1]
+              = transform[1][0] * reference_values[6 * ip + 2 * d];
+          +transform[1][1] * reference_values[6 * ip + 2 * d + 1];
+        }
+      }
+      return 0;
+    }
+
     return -1;
   }
 
@@ -289,20 +325,15 @@ int main(int argc, char* argv[])
   auto dm = std::make_shared<fem::DofMap>(layout, *mesh);
 
   // Custom FiniteElement
+  Eigen::Array<double, 3, 2, Eigen::RowMajor> refX;
+  refX << 0, 0, 1, 0, 0, 1;
   auto fe = std::shared_ptr<fem::FiniteElement>(new fem::FiniteElement(
-      "P1", "Lagrange", 2, 3, {1}, 1, 1, 1, P1Element::evaluate_basis_derivs,
-      P1Element::transform_basis_derivs, P1Element::transform_values));
+      "FiniteElement('Lagrange', triangle, 1)", "Lagrange", 2, 3, {}, refX, 1,
+      1, 1, P1Element::evaluate_basis_derivs, P1Element::transform_basis_derivs,
+      P1Element::transform_values));
 
-  ufc_function_space* space = poisson_functionspace_create();
-  ufc_dofmap* ufc_map = space->create_dofmap();
-  ufc_finite_element* ufc_element = space->create_element();
-
-  auto V = std::make_shared<function::FunctionSpace>(
-      mesh, std::make_shared<fem::FiniteElement>(*ufc_element), dm);
-
-  std::free(ufc_element);
-  std::free(ufc_map);
-  std::free(space);
+  // Create FunctionSpace from Mesh, FiniteElement and DofMap
+  auto V = std::make_shared<function::FunctionSpace>(mesh, fe, dm);
 
   // Now, the Dirichlet boundary condition (:math:`u = 0`) can be created
   // using the class :cpp:class:`DirichletBC`. A :cpp:class:`DirichletBC`

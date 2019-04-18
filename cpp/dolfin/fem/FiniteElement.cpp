@@ -76,6 +76,9 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
 FiniteElement::FiniteElement(
     std::string signature, std::string family, int topological_dimension,
     int space_dimension, const std::vector<int>& value_dimension,
+    Eigen::Ref<
+        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        reference_dof_coordinates,
     int value_size, int reference_value_size, int degree,
     std::function<int(double*, int, int, const double*)>
         evaluate_reference_basis_derivatives,
@@ -88,7 +91,7 @@ FiniteElement::FiniteElement(
     : _signature(signature), _family(family), _tdim(topological_dimension),
       _space_dim(space_dimension), _value_size(value_size),
       _reference_value_size(reference_value_size), _degree(degree),
-      _value_dimension(value_dimension),
+      _refX(reference_dof_coordinates), _value_dimension(value_dimension),
       _evaluate_reference_basis_derivatives(
           evaluate_reference_basis_derivatives),
       _transform_reference_basis_derivatives(
