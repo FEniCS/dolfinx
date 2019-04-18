@@ -81,6 +81,7 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_local_n(n * size_local, 0);
   std::vector<std::int64_t> data_ghost_n(n * num_ghosts, value);
   idx_map.scatter_rev(data_local_n, data_ghost_n, n);
+  CHECK(data_local_n.size() == n * size_local);
   std::int64_t sum_n
       = std::accumulate(data_local_n.begin(), data_local_n.end(), 0);
   CHECK(sum_n == n * value * num_ghosts);
