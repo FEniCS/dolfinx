@@ -37,8 +37,9 @@ void test_scatter_fwd()
 
   // Scatter values to ghost and check value is correctly received
   idx_map.scatter_fwd(data_local, data_ghost, 1);
-  CHECK(std::set<std::int64_t>(data_ghost.begin(), data_ghost.end()).size()
-        == 1);
+  CHECK(std::all_of(data_ghost.begin(), data_ghost.end(), [=](auto i) {
+    return i == val * ((mpi_rank + 1) % mpi_size);
+  }));
 
   // Test block of values
   const int n = 7;
@@ -48,8 +49,9 @@ void test_scatter_fwd()
   // Scatter values to ghost and check value is correctly received
   idx_map.scatter_fwd(data_local_n, data_ghost_n, n);
   CHECK(data_ghost_n.size() == n * num_ghosts);
-  CHECK(std::set<std::int64_t>(data_ghost_n.begin(), data_ghost_n.end()).size()
-        == 1);
+  CHECK(std::all_of(data_ghost_n.begin(), data_ghost_n.end(), [=](auto i) {
+    return i == val * ((mpi_rank + 1) % mpi_size);
+  }));
 }
 
 void test_scatter_rev()
