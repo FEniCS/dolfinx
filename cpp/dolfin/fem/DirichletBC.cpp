@@ -31,6 +31,85 @@ using namespace dolfin::fem;
 
 namespace
 {
+std::map<PetscInt, PetscInt>
+gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
+            const std::set<std::array<PetscInt, 2>>& dofs_local)
+{
+  std::map<PetscInt, PetscInt> dof_dof_g;
+
+  const std::int32_t bs = map.block_size();
+  const std::int32_t size_owned = map.size_local();
+  const std::int32_t size_ghost = map.num_ghosts();
+
+  const std::int32_t bs_g = map_g.block_size();
+  const std::int32_t size_owned_g = map_g.size_local();
+  const std::array<std::int64_t, 2> range_g = map_g.local_range();
+  const std::int64_t offset_g = range_g[0];
+
+  // For each dof local index, store global index in Vg (-1 if no bc)
+  std::vector<PetscInt> marker_owned(bs * size_owned, -1);
+  std::vector<PetscInt> marker_ghost(bs * size_ghost, -1);
+  std::vector<PetscInt> marker_ghost_tmp(bs * size_ghost, 0);
+  for (auto& dofs : dofs_local)
+  {
+    const PetscInt index_block = dofs[0] / bs;
+    const PetscInt pos = dofs[0] % bs;
+    if (index_block < size_owned)
+      marker_owned[index_block + pos] = map_g.local_to_global(dofs[1]);
+    else
+    {
+      marker_ghost[index_block - size_owned + pos]
+          = map_g.local_to_global(dofs[1]);
+      marker_ghost_tmp[index_block - size_owned + pos] = 1;
+    }
+  }
+
+  // Global-to-local map for ghosts in map_g
+  std::map<PetscInt, PetscInt> global_to_local_g;
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts_g = map_g.ghosts();
+  for (Eigen::Index i = 0; i < size_owned_g; ++i)
+    global_to_local_g.insert({i + offset_g, i});
+  for (Eigen::Index i = 0; i < ghosts_g.rows(); ++i)
+    global_to_local_g.insert({ghosts_g[i], i + bs_g * size_owned_g});
+
+  // Scatter g index from owner to ghost processes
+  std::vector<PetscInt> marker_ghost_rcvd;
+  map.scatter_fwd(marker_owned, marker_ghost_rcvd, bs);
+  assert((int)marker_ghost_rcvd.size() == size_ghost * bs);
+  for (std::size_t i = 0; i < marker_ghost_rcvd.size(); ++i)
+  {
+    if (marker_ghost_rcvd[i] != -1)
+    {
+      auto it = global_to_local_g.find(marker_ghost_rcvd[i]);
+      assert(it != global_to_local_g.end());
+      dof_dof_g.insert({i + size_owned, it->second});
+    }
+  }
+
+  // FIXME: Find better way to do this
+  // Find out how many procs with ghost will send back the bc
+  std::vector<PetscInt> marker_owner_rcvd_tmp(bs * size_owned, 0);
+  map.scatter_rev(marker_owner_rcvd_tmp, marker_ghost_tmp, bs, MPI_SUM);
+
+  // Scatter data from ghost processes to owner
+  std::vector<PetscInt> marker_owner_rcvd(bs * size_owned, -1);
+  map.scatter_rev(marker_owner_rcvd, marker_ghost, bs, MPI_MAX);
+  assert((int)marker_owner_rcvd.size() == size_owned * bs);
+  for (std::size_t i = 0; i < marker_owner_rcvd.size(); ++i)
+  {
+    if (marker_owner_rcvd_tmp[i] > 0)
+    {
+      PetscInt index_global_g = marker_owner_rcvd[i] / marker_owner_rcvd_tmp[i];
+      auto it = global_to_local_g.find(index_global_g);
+      assert(it != global_to_local_g.end());
+      dof_dof_g.insert({i, it->second});
+    }
+  }
+
+  return dof_dof_g;
+} // namespace
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 template <class T>
 std::set<PetscInt> gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap,
@@ -261,18 +340,24 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   const std::set<PetscInt> dofs_remote
       = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
 
+  const std::map<PetscInt, PetscInt> dofs_remote_test
+      = gather_test(*V->dofmap()->index_map(),
+                    *g->function_space()->dofmap()->index_map(), dofs_local);
+
   // For bc dofs received from other process, map index in V to index in
   // Vg
-  const std::map<PetscInt, PetscInt> shared_dofs
+  std::map<PetscInt, PetscInt> shared_dofs
       = shared_bc_to_g(*V, *g->function_space());
+
+  // shared_dofs = dofs_remote_test;
 
   // Add received bc indices to dofs_local
   for (auto dof_remote : dofs_remote)
   {
-    // Sanity check
+    // // Sanity check
     auto it = shared_dofs.find(dof_remote);
-    if (it == shared_dofs.end())
-      throw std::runtime_error("Oops, can't find dof (A).");
+    // if (it == shared_dofs.end())
+    //   throw std::runtime_error("Oops, can't find dof (A).");
 
     // Add indicies in (V, Vg) pairs to dofs_local
     const std::array<PetscInt, 2> ldofs = {{it->first, it->second}};

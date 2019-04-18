@@ -74,6 +74,7 @@ public:
   /// Get global index for local index i (index of the block)
   std::int64_t local_to_global(std::int64_t i) const
   {
+    assert(i >= 0);
     const std::int64_t local_size
         = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
 
@@ -83,7 +84,11 @@ public:
       return (i + global_offset);
     }
     else
+    {
+      assert((i - local_size) >= 0);
+      assert((i - local_size) < _ghosts.size());
       return _ghosts[i - local_size];
+    }
   }
 
   /// Owner rank of each ghost entry
@@ -100,11 +105,17 @@ public:
   /// be the same as size_local().
   void scatter_fwd(const std::vector<std::int64_t>& local_data,
                    std::vector<std::int64_t>& remote_data, int n) const;
+  void scatter_fwd(const std::vector<std::int32_t>& local_data,
+                   std::vector<std::int32_t>& remote_data, int n) const;
 
   /// Send n values for each ghost index to owning to processes. The size
   /// of the input array remote_data must be the same as num_ghosts().
   void scatter_rev(std::vector<std::int64_t>& local_data,
-                   const std::vector<std::int64_t>& remote_data, int n) const;
+                   const std::vector<std::int64_t>& remote_data, int n,
+                   MPI_Op op) const;
+  void scatter_rev(std::vector<std::int32_t>& local_data,
+                   const std::vector<std::int32_t>& remote_data, int n,
+                   MPI_Op op) const;
 
 private:
   // MPI Communicator
@@ -129,6 +140,14 @@ private:
 
   // Block size
   int _block_size;
+
+  template <typename T>
+  void scatter_fwd_impl(const std::vector<T>& local_data,
+                        std::vector<T>& remote_data, int n) const;
+  template <typename T>
+  void scatter_rev_impl(std::vector<T>& local_data,
+                        const std::vector<T>& remote_data, int n,
+                        MPI_Op op) const;
 };
 
 } // namespace common

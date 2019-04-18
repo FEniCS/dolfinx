@@ -204,4 +204,9 @@ with XDMFFile(
 
 # Plot solution
 dolfin.plotting.plot(u)
-plt.show()
+#plt.show()
+
+norm = u.vector().norm()
+
+if MPI.rank(mesh.mpi_comm()) == 0:
+    print("soln norm:", norm)
