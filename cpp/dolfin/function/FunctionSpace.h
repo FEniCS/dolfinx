@@ -14,7 +14,6 @@
 #include <map>
 #include <memory>
 #include <petscsys.h>
-#include <unordered_map>
 #include <vector>
 
 namespace dolfin
@@ -174,13 +173,12 @@ public:
   /// Collapse a subspace and return a new function space and a map
   /// from new to old dofs
   ///
-  /// @param    collapsed_dofs (std::unordered_map<std::size_t, std::size_t>)
+  /// @param    collapsed_dofs (std::vector<PetscInt>)
   ///         The map from new to old dofs.
   ///
   /// @returns    _FunctionSpace_
   ///       The new function space.
-  std::pair<std::shared_ptr<FunctionSpace>,
-            std::unordered_map<std::size_t, std::size_t>>
+  std::pair<std::shared_ptr<FunctionSpace>, std::vector<PetscInt>>
   collapse() const;
 
   /// Check if function space has given cell
