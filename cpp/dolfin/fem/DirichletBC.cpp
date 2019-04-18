@@ -54,12 +54,19 @@ gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
   {
     const PetscInt index_block = dofs[0] / bs;
     const PetscInt pos = dofs[0] % bs;
+
+    const PetscInt pos_g = dofs[1] % bs_g;
+    const PetscInt index_block_g = dofs[1] / bs_g;
+
     if (index_block < size_owned)
-      marker_owned[index_block + pos] = map_g.local_to_global(dofs[1]);
+    {
+      marker_owned[index_block + pos]
+          = map_g.local_to_global(index_block_g) + pos_g;
+    }
     else
     {
       marker_ghost[index_block - size_owned + pos]
-          = map_g.local_to_global(dofs[1]);
+          = map_g.local_to_global(index_block_g) + pos_g;
       marker_ghost_tmp[index_block - size_owned + pos] = 1;
     }
   }
