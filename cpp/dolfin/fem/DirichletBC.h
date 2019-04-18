@@ -204,17 +204,18 @@ private:
   shared_bc_to_g(const function::FunctionSpace& V,
                  const function::FunctionSpace& Vg);
 
-  // Compute boundary value dofs (topological approach)
+  // Compute boundary conditions dof indices pairs in (V, Vg) using the
+  // topological approach)
   static std::set<std::array<PetscInt, 2>>
   compute_bc_dofs_topological(const function::FunctionSpace& V,
                               const function::FunctionSpace* Vg,
                               const std::vector<std::int32_t>& facets);
 
-  // Compute boundary values dofs (geometrical approach)
-  static std::set<PetscInt>
-  compute_bc_dofs_geometric(const function::FunctionSpace& V,
-                            const function::FunctionSpace* Vg,
-                            const std::vector<std::int32_t>& facets);
+  // // Compute boundary values dofs (geometrical approach)
+  // static std::set<PetscInt>
+  // compute_bc_dofs_geometric(const function::FunctionSpace& V,
+  //                           const function::FunctionSpace* Vg,
+  //                           const std::vector<std::int32_t>& facets);
 
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
