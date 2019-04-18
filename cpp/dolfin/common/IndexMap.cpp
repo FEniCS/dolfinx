@@ -107,9 +107,25 @@ void IndexMap::scatter_fwd(const std::vector<std::int32_t>& local_data,
   scatter_fwd_impl(local_data, remote_data, n);
 }
 //-----------------------------------------------------------------------------
+std::vector<std::int64_t>
+IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const
+{
+  std::vector<std::int64_t> remote_data;
+  scatter_fwd_impl(local_data, remote_data, n);
+  return remote_data;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+IndexMap::scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const
+{
+  std::vector<std::int32_t> remote_data;
+  scatter_fwd_impl(local_data, remote_data, n);
+  return remote_data;
+}
+//-----------------------------------------------------------------------------
 void IndexMap::scatter_rev(std::vector<std::int64_t>& local_data,
-                           const std::vector<std::int64_t>& remote_data,
-                           int n, MPI_Op op) const
+                           const std::vector<std::int64_t>& remote_data, int n,
+                           MPI_Op op) const
 {
   scatter_rev_impl(local_data, remote_data, n, op);
 }

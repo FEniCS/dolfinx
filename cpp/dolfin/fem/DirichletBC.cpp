@@ -64,45 +64,46 @@ gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
     }
   }
 
-  // Global-to-local map for ghosts in map_g
+  // Build global-to-local map for ghost indices (blocks) in map_g
   std::map<PetscInt, PetscInt> global_to_local_g;
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts_g = map_g.ghosts();
   for (Eigen::Index i = 0; i < size_owned_g; ++i)
     global_to_local_g.insert({i + offset_g, i});
   for (Eigen::Index i = 0; i < ghosts_g.rows(); ++i)
-    global_to_local_g.insert({ghosts_g[i], i + bs_g * size_owned_g});
+    global_to_local_g.insert({ghosts_g[i], i + size_owned_g});
 
-  // Scatter g index from owner to ghost processes
-  std::vector<PetscInt> marker_ghost_rcvd;
-  map.scatter_fwd(marker_owned, marker_ghost_rcvd, bs);
+  // For each owned bc index, scatter associated g global index to ghost
+  // processes
+  std::vector<PetscInt> marker_ghost_rcvd = map.scatter_fwd(marker_owned, bs);
   assert((int)marker_ghost_rcvd.size() == size_ghost * bs);
+
+  // Add to (local index)-(local g index) map
   for (std::size_t i = 0; i < marker_ghost_rcvd.size(); ++i)
   {
     if (marker_ghost_rcvd[i] != -1)
     {
-      auto it = global_to_local_g.find(marker_ghost_rcvd[i]);
+      const PetscInt index_block_g = marker_ghost_rcvd[i] / bs_g;
+      const PetscInt pos_g = marker_ghost_rcvd[i] % bs_g;
+      const auto it = global_to_local_g.find(index_block_g);
       assert(it != global_to_local_g.end());
-      dof_dof_g.insert({i + size_owned, it->second});
+      dof_dof_g.insert({i + size_owned, it->second + pos_g});
     }
   }
 
-  // FIXME: Find better way to do this
-  // Find out how many procs with ghost will send back the bc
-  std::vector<PetscInt> marker_owner_rcvd_tmp(bs * size_owned, 0);
-  map.scatter_rev(marker_owner_rcvd_tmp, marker_ghost_tmp, bs, MPI_SUM);
-
-  // Scatter data from ghost processes to owner
+  // Scatter (reverse) data from ghost processes to owner
   std::vector<PetscInt> marker_owner_rcvd(bs * size_owned, -1);
   map.scatter_rev(marker_owner_rcvd, marker_ghost, bs, MPI_MAX);
   assert((int)marker_owner_rcvd.size() == size_owned * bs);
   for (std::size_t i = 0; i < marker_owner_rcvd.size(); ++i)
   {
-    if (marker_owner_rcvd_tmp[i] > 0)
+    if (marker_owner_rcvd[i] >= 0)
     {
-      PetscInt index_global_g = marker_owner_rcvd[i] / marker_owner_rcvd_tmp[i];
-      auto it = global_to_local_g.find(index_global_g);
+      const PetscInt index_global_g = marker_owner_rcvd[i];
+      const PetscInt index_block_g = index_global_g / bs_g;
+      const PetscInt pos_g = index_global_g % bs_g;
+      const auto it = global_to_local_g.find(index_block_g);
       assert(it != global_to_local_g.end());
-      dof_dof_g.insert({i, it->second});
+      dof_dof_g.insert({i, it->second + pos_g});
     }
   }
 
@@ -349,7 +350,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   std::map<PetscInt, PetscInt> shared_dofs
       = shared_bc_to_g(*V, *g->function_space());
 
-  // shared_dofs = dofs_remote_test;
+  shared_dofs = dofs_remote_test;
 
   // Add received bc indices to dofs_local
   for (auto dof_remote : dofs_remote)

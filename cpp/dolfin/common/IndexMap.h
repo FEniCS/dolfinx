@@ -108,6 +108,11 @@ public:
   void scatter_fwd(const std::vector<std::int32_t>& local_data,
                    std::vector<std::int32_t>& remote_data, int n) const;
 
+  std::vector<std::int64_t>
+  scatter_fwd(const std::vector<std::int64_t>& local_data, int n) const;
+  std::vector<std::int32_t>
+  scatter_fwd(const std::vector<std::int32_t>& local_data, int n) const;
+
   /// Send n values for each ghost index to owning to processes. The size
   /// of the input array remote_data must be the same as num_ghosts().
   void scatter_rev(std::vector<std::int64_t>& local_data,
