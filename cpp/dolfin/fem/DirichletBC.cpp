@@ -49,25 +49,23 @@ gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
   // For each dof local index, store global index in Vg (-1 if no bc)
   std::vector<PetscInt> marker_owned(bs * size_owned, -1);
   std::vector<PetscInt> marker_ghost(bs * size_ghost, -1);
-  std::vector<PetscInt> marker_ghost_tmp(bs * size_ghost, 0);
   for (auto& dofs : dofs_local)
   {
     const PetscInt index_block = dofs[0] / bs;
     const PetscInt pos = dofs[0] % bs;
 
-    const PetscInt pos_g = dofs[1] % bs_g;
     const PetscInt index_block_g = dofs[1] / bs_g;
+    const PetscInt pos_g = dofs[1] % bs_g;
 
     if (index_block < size_owned)
     {
-      marker_owned[index_block + pos]
-          = map_g.local_to_global(index_block_g) + pos_g;
+      marker_owned[bs * index_block + pos]
+          = bs_g * map_g.local_to_global(index_block_g) + pos_g;
     }
     else
     {
-      marker_ghost[index_block - size_owned + pos]
-          = map_g.local_to_global(index_block_g) + pos_g;
-      marker_ghost_tmp[index_block - size_owned + pos] = 1;
+      marker_ghost[bs * (index_block - size_owned) + pos]
+          = bs_g * map_g.local_to_global(index_block_g) + pos_g;
     }
   }
 
@@ -92,8 +90,9 @@ gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
       const PetscInt index_block_g = marker_ghost_rcvd[i] / bs_g;
       const PetscInt pos_g = marker_ghost_rcvd[i] % bs_g;
       const auto it = global_to_local_g.find(index_block_g);
+
       assert(it != global_to_local_g.end());
-      dof_dof_g.insert({i + size_owned, it->second + pos_g});
+      dof_dof_g.insert({i + bs * size_owned, bs_g * it->second + pos_g});
     }
   }
 
@@ -106,11 +105,13 @@ gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
     if (marker_owner_rcvd[i] >= 0)
     {
       const PetscInt index_global_g = marker_owner_rcvd[i];
+
       const PetscInt index_block_g = index_global_g / bs_g;
       const PetscInt pos_g = index_global_g % bs_g;
       const auto it = global_to_local_g.find(index_block_g);
+
       assert(it != global_to_local_g.end());
-      dof_dof_g.insert({i, it->second + pos_g});
+      dof_dof_g.insert({i, bs_g * it->second + pos_g});
     }
   }
 
