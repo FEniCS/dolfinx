@@ -118,7 +118,39 @@ void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
             remote_data_offset, 1, dolfin::MPI::mpi_type<std::int64_t>(), win);
   }
 
-  // Synchronise
+  // Synchronise and free window
+  MPI_Win_fence(0, win);
+  MPI_Win_free(&win);
+}
+//-----------------------------------------------------------------------------
+void IndexMap::scatter_rev(std::vector<std::int64_t>& local_data,
+                           const std::vector<std::int64_t>& remote_data) const
+{
+  assert((std::int32_t)remote_data.size() == num_ghosts());
+  local_data.resize(size_local(), 0);
+
+  // Open window into local data array
+  MPI_Win win;
+  MPI_Win_create(local_data.data(), sizeof(std::int64_t) * size_local(),
+                 sizeof(std::int64_t), MPI_INFO_NULL, _mpi_comm, &win);
+  MPI_Win_fence(0, win);
+
+  // 'Put' (accumulate) ghost data onto owning process
+  for (int i = 0; i < num_ghosts(); ++i)
+  {
+    // Remote owning process
+    const int p = _ghost_owners[i];
+
+    // Index on remote process
+    const int remote_data_offset = _ghosts[i] - _all_ranges[p];
+
+    // Stack up requests (sum)
+    MPI_Accumulate(remote_data.data() + i, 1, MPI::mpi_type<std::int64_t>(), p,
+                   remote_data_offset, 1, MPI::mpi_type<std::int64_t>(),
+                   MPI_SUM, win);
+  }
+
+  // Synchronise and free window
   MPI_Win_fence(0, win);
   MPI_Win_free(&win);
 }
