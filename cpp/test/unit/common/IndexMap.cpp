@@ -35,14 +35,20 @@ void test_scatter_fwd()
   std::vector<std::int64_t> data_ghost(num_ghosts, -1);
 
   // Scatter values to ghost and check value is correctly received
-  idx_map.scatter_fwd(data_local, data_ghost);
+  idx_map.scatter_fwd(data_local, data_ghost, 1);
   for (std::int64_t data : data_ghost)
-  {
-    if (data == val * ((mpi_rank + 1) % mpi_size))
-      continue;
-    else
-      throw std::runtime_error("Received data incorrect.");
-  }
+    CHECK(data == val * ((mpi_rank + 1) % mpi_size));
+
+  // Test block of values
+  const int n = 7;
+  std::vector<std::int64_t> data_local_n(n * size_local, val * mpi_rank);
+  std::vector<std::int64_t> data_ghost_n(n * num_ghosts, -1);
+
+  // Scatter values to ghost and check value is correctly received
+  idx_map.scatter_fwd(data_local_n, data_ghost_n, n);
+  CHECK(data_ghost_n.size() == n * num_ghosts);
+  for (std::int64_t data : data_ghost_n)
+    CHECK(data == val * ((mpi_rank + 1) % mpi_size));
 }
 
 void test_scatter_rev()
@@ -66,10 +72,18 @@ void test_scatter_rev()
   std::vector<std::int64_t> data_ghost(num_ghosts, value);
 
   // Scatter ghost values back to owner (sum)
-  idx_map.scatter_rev(data_local, data_ghost);
+  idx_map.scatter_rev(data_local, data_ghost, 1);
   std::int64_t sum = std::accumulate(data_local.begin(), data_local.end(), 0);
-  if (sum != value * num_ghosts)
-    throw std::runtime_error("Received data incorrect.");
+  CHECK(sum == value * num_ghosts);
+
+  // Test block of values
+  const int n = 5;
+  std::vector<std::int64_t> data_local_n(n * size_local, 0);
+  std::vector<std::int64_t> data_ghost_n(n * num_ghosts, value);
+  idx_map.scatter_rev(data_local_n, data_ghost_n, n);
+  std::int64_t sum_n
+      = std::accumulate(data_local_n.begin(), data_local_n.end(), 0);
+  CHECK(sum_n == n * value * num_ghosts);
 }
 } // namespace
 

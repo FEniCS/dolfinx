@@ -165,7 +165,7 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   // receive new global indices from owner
   std::vector<std::int64_t> global_index_remote(
       dofmap_view._index_map->num_ghosts(), -1);
-  dofmap_view._index_map->scatter_fwd(global_index, global_index_remote);
+  dofmap_view._index_map->scatter_fwd(global_index, global_index_remote, 1);
 
   // Compute ghosts for collapsed dofmap
   std::vector<std::int64_t> ghosts(num_unowned);

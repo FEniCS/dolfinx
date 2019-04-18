@@ -91,16 +91,16 @@ const EigenArrayXi32& IndexMap::ghost_owners() const { return _ghost_owners; }
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
 void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
-                           std::vector<std::int64_t>& remote_data) const
+                           std::vector<std::int64_t>& remote_data, int n) const
 {
   const std::size_t _size_local = size_local();
-  assert(local_data.size() == _size_local);
-  remote_data.resize(num_ghosts());
+  assert(local_data.size() == n * _size_local);
+  remote_data.resize(n * num_ghosts());
 
   // Open window into owned data
   MPI_Win win;
   MPI_Win_create(const_cast<std::int64_t*>(local_data.data()),
-                 sizeof(std::int64_t) * _size_local, sizeof(std::int64_t),
+                 sizeof(std::int64_t) * n * _size_local, sizeof(std::int64_t),
                  MPI_INFO_NULL, _mpi_comm, &win);
   MPI_Win_fence(0, win);
 
@@ -114,8 +114,9 @@ void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
     std::int64_t remote_data_offset = _ghosts[i] - _all_ranges[p];
 
     // Stack up requests
-    MPI_Get(remote_data.data() + i, 1, dolfin::MPI::mpi_type<std::int64_t>(), p,
-            remote_data_offset, 1, dolfin::MPI::mpi_type<std::int64_t>(), win);
+    MPI_Get(remote_data.data() + n * i, n,
+            dolfin::MPI::mpi_type<std::int64_t>(), p, n * remote_data_offset, n,
+            dolfin::MPI::mpi_type<std::int64_t>(), win);
   }
 
   // Synchronise and free window
@@ -124,14 +125,15 @@ void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
 }
 //-----------------------------------------------------------------------------
 void IndexMap::scatter_rev(std::vector<std::int64_t>& local_data,
-                           const std::vector<std::int64_t>& remote_data) const
+                           const std::vector<std::int64_t>& remote_data,
+                           int n) const
 {
-  assert((std::int32_t)remote_data.size() == num_ghosts());
-  local_data.resize(size_local(), 0);
+  assert((std::int32_t)remote_data.size() == n * num_ghosts());
+  local_data.resize(n * size_local(), 0);
 
   // Open window into local data array
   MPI_Win win;
-  MPI_Win_create(local_data.data(), sizeof(std::int64_t) * size_local(),
+  MPI_Win_create(local_data.data(), sizeof(std::int64_t) * n * size_local(),
                  sizeof(std::int64_t), MPI_INFO_NULL, _mpi_comm, &win);
   MPI_Win_fence(0, win);
 
@@ -145,8 +147,8 @@ void IndexMap::scatter_rev(std::vector<std::int64_t>& local_data,
     const int remote_data_offset = _ghosts[i] - _all_ranges[p];
 
     // Stack up requests (sum)
-    MPI_Accumulate(remote_data.data() + i, 1, MPI::mpi_type<std::int64_t>(), p,
-                   remote_data_offset, 1, MPI::mpi_type<std::int64_t>(),
+    MPI_Accumulate(remote_data.data() + n * i, n, MPI::mpi_type<std::int64_t>(),
+                   p, remote_data_offset, n, MPI::mpi_type<std::int64_t>(),
                    MPI_SUM, win);
   }
 
