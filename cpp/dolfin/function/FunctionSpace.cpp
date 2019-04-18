@@ -16,7 +16,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-// #include <spdlog/spdlog.h>
 #include <vector>
 
 using namespace dolfin;
@@ -293,8 +292,7 @@ FunctionSpace::sub(const std::vector<std::size_t>& component) const
   return sub_space;
 }
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<FunctionSpace>,
-          std::unordered_map<std::size_t, std::size_t>>
+std::pair<std::shared_ptr<FunctionSpace>, std::vector<PetscInt>>
 FunctionSpace::collapse() const
 {
   assert(_mesh);
@@ -307,7 +305,7 @@ FunctionSpace::collapse() const
 
   // Create collapsed DofMap
   std::shared_ptr<fem::GenericDofMap> collapsed_dofmap;
-  std::unordered_map<std::size_t, std::size_t> collapsed_dofs;
+  std::vector<PetscInt> collapsed_dofs;
   std::tie(collapsed_dofmap, collapsed_dofs) = _dofmap->collapse(*_mesh);
 
   // Create new FunctionSpace and return

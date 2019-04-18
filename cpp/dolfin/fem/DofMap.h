@@ -203,15 +203,14 @@ public:
 
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
   ///
-  /// @param     collapsed_map (std::unordered_map<std::size_t, std::size_t>)
+  /// @param     collapsed_map
   ///         The "collapsed" map.
   /// @param     mesh (_mesh::Mesh_)
   ///         The mesh.
   ///
   /// @return    DofMap
   ///         The collapsed dofmap.
-  std::pair<std::shared_ptr<GenericDofMap>,
-            std::unordered_map<std::size_t, std::size_t>>
+  std::pair<std::shared_ptr<GenericDofMap>, std::vector<PetscInt>>
   collapse(const mesh::Mesh& mesh) const;
 
   /// Set dof entries in vector to a specified value. Parallel layout
