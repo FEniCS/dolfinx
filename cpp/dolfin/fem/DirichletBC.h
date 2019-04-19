@@ -7,10 +7,8 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <map>
 #include <memory>
 #include <petscsys.h>
-#include <utility>
 #include <vector>
 
 namespace dolfin

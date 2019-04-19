@@ -8,9 +8,6 @@
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
 #include <array>
-#include <cfloat>
-#include <cinttypes>
-#include <cstdlib>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -32,11 +29,11 @@ using namespace dolfin::fem;
 
 namespace
 {
-std::map<PetscInt, PetscInt>
+std::vector<std::array<PetscInt, 2>>
 get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
                const std::vector<std::array<PetscInt, 2>>& dofs_local)
 {
-  std::map<PetscInt, PetscInt> dof_dof_g;
+  std::vector<std::array<PetscInt, 2>> dof_dof_g;
 
   const std::int32_t bs = map.block_size();
   const std::int32_t size_owned = map.size_local();
@@ -89,7 +86,8 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
       const PetscInt pos_g = marker_ghost_rcvd[i] % bs_g;
       const auto it = global_to_local_g.find(index_block_g);
       assert(it != global_to_local_g.end());
-      dof_dof_g.insert({bs * size_owned + i, bs_g * it->second + pos_g});
+      dof_dof_g.push_back(
+          {(PetscInt)(bs * size_owned + i), bs_g * it->second + pos_g});
     }
   }
 
@@ -106,7 +104,7 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
       const PetscInt pos_g = index_global_g % bs_g;
       const auto it = global_to_local_g.find(index_block_g);
       assert(it != global_to_local_g.end());
-      dof_dof_g.insert({i, bs_g * it->second + pos_g});
+      dof_dof_g.push_back({(PetscInt)i, bs_g * it->second + pos_g});
     }
   }
 
@@ -342,17 +340,13 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   // Get bc dof indices (local) in (V, Vg) spaces on this process that
   // were found by other processes, e.g. a vertex dof on this process that
   // has no connected factes on the boundary.
-  const std::map<PetscInt, PetscInt> dofs_remote
+  const std::vector<std::array<PetscInt, 2>> dofs_remote
       = get_remote_bcs(*V->dofmap()->index_map(),
                        *g->function_space()->dofmap()->index_map(), dofs_local);
 
   // Add received bc indices to dofs_local
   for (auto& dof_remote : dofs_remote)
-  {
-    const std::array<PetscInt, 2> ldofs
-        = {{dof_remote.first, dof_remote.second}};
-    dofs_local.push_back(ldofs);
-  }
+    dofs_local.push_back(dof_remote);
 
   // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
