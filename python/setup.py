@@ -21,7 +21,7 @@ REQUIREMENTS = [
     "numba",
     "mpi4py",
     "petsc4py",
-    "fenics-ffc{}",
+    "fenics-ffc",
     "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
     "fenics-dijitso{}".format(RESTRICT_REQUIREMENTS),
 ]
