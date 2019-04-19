@@ -1,13 +1,13 @@
-import os
-import re
-import sys
-import platform
-import subprocess
 import multiprocessing
-
-from setuptools import setup, Extension
-from setuptools.command.build_ext import build_ext
+import os
+import platform
+import re
+import subprocess
+import sys
 from distutils.version import LooseVersion
+
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
 if sys.version_info < (3, 5):
     print("Python 3.5 or higher required, please upgrade.")
