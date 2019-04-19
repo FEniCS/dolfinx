@@ -198,13 +198,6 @@ public:
   void mark_dofs(std::vector<bool>& markers) const;
 
 private:
-  // Compute boundary conditions dof indices pairs in (V, Vg) using the
-  // topological approach)
-  static std::vector<std::array<PetscInt, 2>>
-  compute_bc_dofs_topological(const function::FunctionSpace& V,
-                              const function::FunctionSpace* Vg,
-                              const std::vector<std::int32_t>& facets);
-
   // // Compute boundary values dofs (geometrical approach)
   // static std::set<PetscInt>
   // compute_bc_dofs_geometric(const function::FunctionSpace& V,

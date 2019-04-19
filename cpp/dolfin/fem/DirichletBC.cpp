@@ -211,7 +211,73 @@ std::vector<std::int32_t> facets_marked(std::shared_ptr<const mesh::Mesh> mesh,
 
 //   return false;
 // }
-// //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Compute boundary conditions dof indices pairs in (V, Vg) using the
+// topological approach)
+std::vector<std::array<PetscInt, 2>>
+compute_bc_dofs_topological(const function::FunctionSpace& V,
+                            const function::FunctionSpace* Vg,
+                            const std::vector<std::int32_t>& facets)
+{
+  // Get mesh
+  assert(V.mesh());
+  const mesh::Mesh& mesh = *V.mesh();
+  const std::size_t tdim = mesh.topology().dim();
+
+  // Get dofmap
+  assert(V.dofmap());
+  const GenericDofMap& dofmap = *V.dofmap();
+  const GenericDofMap* dofmap_g = &dofmap;
+  if (Vg)
+  {
+    assert(Vg->dofmap());
+    dofmap_g = Vg->dofmap().get();
+  }
+
+  // Initialise facet-cell connectivity
+  mesh.init(tdim);
+  mesh.init(tdim - 1, tdim);
+
+  // Allocate space
+  const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(tdim - 1);
+
+  // Build vector local dofs for each cell facet
+  const mesh::CellType& cell_type = mesh.type();
+  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> facet_dofs;
+  for (std::size_t i = 0; i < cell_type.num_entities(tdim - 1); ++i)
+    facet_dofs.push_back(dofmap.tabulate_entity_closure_dofs(tdim - 1, i));
+
+  // Iterate over marked facets
+  std::vector<std::array<PetscInt, 2>> bc_dofs;
+  for (std::size_t f = 0; f < facets.size(); ++f)
+  {
+    // Create facet and attached cell
+    const mesh::Facet facet(mesh, facets[f]);
+    assert(facet.num_entities(tdim) > 0);
+    const std::size_t cell_index = facet.entities(tdim)[0];
+    const mesh::Cell cell(mesh, cell_index);
+
+    // Get cell dofmap
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
+        = dofmap.cell_dofs(cell.index());
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+        cell_dofs_g = dofmap_g->cell_dofs(cell.index());
+
+    // Loop over facet dofs
+    const size_t facet_local_index = cell.index(facet);
+    for (std::size_t i = 0; i < num_facet_dofs; i++)
+    {
+      const std::size_t index = facet_dofs[facet_local_index][i];
+      const PetscInt dof_index = cell_dofs[index];
+      const PetscInt dof_index_g = cell_dofs_g[index];
+      bc_dofs.push_back({{dof_index, dof_index_g}});
+    }
+  }
+
+  return bc_dofs;
+}
+//-----------------------------------------------------------------------------
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -385,68 +451,6 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
     assert(_dof_indices[i] < (PetscInt)markers.size());
     markers[_dof_indices[i]] = true;
   }
-}
-//-----------------------------------------------------------------------------
-std::vector<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
-    const function::FunctionSpace& V, const function::FunctionSpace* Vg,
-    const std::vector<std::int32_t>& facets)
-{
-  // Get mesh
-  assert(V.mesh());
-  const mesh::Mesh& mesh = *V.mesh();
-  const std::size_t tdim = mesh.topology().dim();
-
-  // Get dofmap
-  assert(V.dofmap());
-  const GenericDofMap& dofmap = *V.dofmap();
-  const GenericDofMap* dofmap_g = &dofmap;
-  if (Vg)
-  {
-    assert(Vg->dofmap());
-    dofmap_g = Vg->dofmap().get();
-  }
-
-  // Initialise facet-cell connectivity
-  mesh.init(tdim);
-  mesh.init(tdim - 1, tdim);
-
-  // Allocate space
-  const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(tdim - 1);
-
-  // Build vector local dofs for each cell facet
-  const mesh::CellType& cell_type = mesh.type();
-  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> facet_dofs;
-  for (std::size_t i = 0; i < cell_type.num_entities(tdim - 1); ++i)
-    facet_dofs.push_back(dofmap.tabulate_entity_closure_dofs(tdim - 1, i));
-
-  // Iterate over marked facets
-  std::vector<std::array<PetscInt, 2>> bc_dofs;
-  for (std::size_t f = 0; f < facets.size(); ++f)
-  {
-    // Create facet and attached cell
-    const mesh::Facet facet(mesh, facets[f]);
-    assert(facet.num_entities(tdim) > 0);
-    const std::size_t cell_index = facet.entities(tdim)[0];
-    const mesh::Cell cell(mesh, cell_index);
-
-    // Get cell dofmap
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
-        = dofmap.cell_dofs(cell.index());
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-        cell_dofs_g = dofmap_g->cell_dofs(cell.index());
-
-    // Loop over facet dofs
-    const size_t facet_local_index = cell.index(facet);
-    for (std::size_t i = 0; i < num_facet_dofs; i++)
-    {
-      const std::size_t index = facet_dofs[facet_local_index][i];
-      const PetscInt dof_index = cell_dofs[index];
-      const PetscInt dof_index_g = cell_dofs_g[index];
-      bc_dofs.push_back({{dof_index, dof_index_g}});
-    }
-  }
-
-  return bc_dofs;
 }
 //-----------------------------------------------------------------------------
 // std::set<PetscInt>
