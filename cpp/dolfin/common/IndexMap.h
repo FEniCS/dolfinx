@@ -20,24 +20,24 @@ namespace common
 {
 
 /// This class represents the distribution index arrays across
-/// processes. An index array is a contiguous collection of N+1
-/// block indices [0, 1, . . ., N] that are distributed across processes M
-/// processes. On a given process, the IndexMap stores a portion of
-/// the index set using local indices [0, 1, . . . , n], and a map
-/// from the local block indices  to a unique global block index.
+/// processes. An index array is a contiguous collection of N+1 block
+/// indices [0, 1, . . ., N] that are distributed across processes M
+/// processes. On a given process, the IndexMap stores a portion of the
+/// index set using local indices [0, 1, . . . , n], and a map from the
+/// local block indices  to a unique global block index.
 
 class IndexMap
 {
 public:
-  /// Create Index map with local_size owned blocks on this process, and blocks
-  /// have size block_size.
+  /// Create Index map with local_size owned blocks on this process, and
+  /// blocks have size block_size.
   ///
   /// Collective
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<std::size_t>& ghosts, std::size_t block_size);
 
-  /// Create Index map with local_size owned blocks on this process, and blocks
-  /// have size block_size.
+  /// Create Index map with local_size owned blocks on this process, and
+  /// blocks have size block_size.
   ///
   /// Collective
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
