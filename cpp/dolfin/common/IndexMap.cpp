@@ -194,23 +194,9 @@ void IndexMap::scatter_rev_impl(std::vector<T>& local_data,
     // Index on remote process
     const int remote_data_offset = _ghosts[i] - _all_ranges[p];
 
-    if (remote_data[i] == 461)
-    {
-      if (i == 3)
-        std::cout << "test value: " << remote_data[i] << ", " << p << ", "
-                  << remote_data_offset << ", " << MPI::rank(MPI_COMM_WORLD)
-                  << std::endl;
-    }
-    // if (MPI::rank(MPI_COMM_WORLD) == 0)
-    // {
-    //   if (i == 3)
-    //     std::cout << "test value: " << remote_data[i] << ", " << p << ", "
-    //               << remote_data_offset << std::endl;
-    // }
-
     // Stack up requests (sum)
     MPI_Accumulate(remote_data.data() + n * i, n, MPI::mpi_type<T>(), p,
-                   remote_data_offset, n, MPI::mpi_type<T>(), op, win);
+                   n * remote_data_offset, n, MPI::mpi_type<T>(), op, win);
   }
 
   // Synchronise and free window

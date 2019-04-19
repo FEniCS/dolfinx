@@ -72,22 +72,20 @@ public:
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts() const;
 
   /// Get global index for local index i (index of the block)
-  std::int64_t local_to_global(std::int64_t i) const
+  std::int64_t local_to_global(std::int64_t local_index) const
   {
-    assert(i >= 0);
+    assert(local_index >= 0);
     const std::int64_t local_size
         = _all_ranges[_myrank + 1] - _all_ranges[_myrank];
-
-    if (i < local_size)
+    if (local_index < local_size)
     {
       const std::int64_t global_offset = _all_ranges[_myrank];
-      return (i + global_offset);
+      return global_offset + local_index;
     }
     else
     {
-      assert((i - local_size) >= 0);
-      assert((i - local_size) < _ghosts.size());
-      return _ghosts[i - local_size];
+      assert((local_index - local_size) < _ghosts.size());
+      return _ghosts[local_index - local_size];
     }
   }
 
