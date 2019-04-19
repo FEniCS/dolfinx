@@ -7,6 +7,7 @@
 #include "DirichletBC.h"
 #include "FiniteElement.h"
 #include "GenericDofMap.h"
+#include <array>
 #include <cfloat>
 #include <cinttypes>
 #include <cstdlib>
@@ -33,7 +34,7 @@ namespace
 {
 std::map<PetscInt, PetscInt>
 get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
-               const std::set<std::array<PetscInt, 2>>& dofs_local)
+               const std::vector<std::array<PetscInt, 2>>& dofs_local)
 {
 
   std::map<PetscInt, PetscInt> dof_dof_g;
@@ -113,7 +114,7 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
   return dof_dof_g;
 }
 //-----------------------------------------------------------------------------
-// Return list in facet indices that are marked
+// Return list of facet indices that are marked
 std::vector<std::int32_t> facets_marked(std::shared_ptr<const mesh::Mesh> mesh,
                                         const mesh::SubDomain& sub_domain,
                                         bool check_midpoint)
@@ -145,7 +146,6 @@ std::vector<std::int32_t> facets_marked(std::shared_ptr<const mesh::Mesh> mesh,
 
   return facets;
 }
-
 //-----------------------------------------------------------------------------
 // bool on_facet(
 //     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>
@@ -254,7 +254,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   }
 
   assert(V);
-  std::set<std::array<PetscInt, 2>> dofs_local;
+  std::vector<std::array<PetscInt, 2>> dofs_local;
   if (method == Method::topological)
   {
     dofs_local = compute_bc_dofs_topological(*V, g->function_space().get(),
@@ -268,6 +268,11 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
+  // Remove duplicates
+  std::sort(dofs_local.begin(), dofs_local.end());
+  dofs_local.erase(std::unique(dofs_local.begin(), dofs_local.end()),
+                   dofs_local.end());
+
   // Get bc dof indices (local) in (V, Vg) spaces on this process that
   // were found by other processes, e.g. a vertex dof on this process that
   // has no connected factes on the boundary.
@@ -280,17 +285,22 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   {
     const std::array<PetscInt, 2> ldofs
         = {{dof_remote.first, dof_remote.second}};
-    dofs_local.insert(ldofs);
+    dofs_local.push_back(ldofs);
   }
+
+  // Remove duplicates
+  std::sort(dofs_local.begin(), dofs_local.end());
+  dofs_local.erase(std::unique(dofs_local.begin(), dofs_local.end()),
+                   dofs_local.end());
 
   _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
       dofs_local.size(), 2);
-  for (auto e = dofs_local.cbegin(); e != dofs_local.cend(); ++e)
+  for (std::size_t i = 0; i < dofs_local.size(); ++i)
   {
-    std::size_t pos = std::distance(dofs_local.begin(), e);
-    _dofs(pos, 0) = (*e)[0];
-    _dofs(pos, 1) = (*e)[1];
+    _dofs(i, 0) = dofs_local[i][0];
+    _dofs(i, 1) = dofs_local[i][1];
   }
+
   _dof_indices = _dofs.col(0);
 }
 //-----------------------------------------------------------------------------
@@ -432,7 +442,7 @@ DirichletBC::shared_bc_to_g(const function::FunctionSpace& V,
   return std::map<PetscInt, PetscInt>(dofs.begin(), dofs.end());
 }
 //-----------------------------------------------------------------------------
-std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
+std::vector<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
     const function::FunctionSpace& V, const function::FunctionSpace* Vg,
     const std::vector<std::int32_t>& facets)
 {
@@ -491,7 +501,7 @@ std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
     }
   }
 
-  return std::set<std::array<PetscInt, 2>>(bc_dofs.begin(), bc_dofs.end());
+  return bc_dofs;
 }
 //-----------------------------------------------------------------------------
 // std::set<PetscInt>

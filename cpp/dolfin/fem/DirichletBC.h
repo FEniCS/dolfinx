@@ -10,7 +10,6 @@
 #include <map>
 #include <memory>
 #include <petscsys.h>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -206,7 +205,7 @@ private:
 
   // Compute boundary conditions dof indices pairs in (V, Vg) using the
   // topological approach)
-  static std::set<std::array<PetscInt, 2>>
+  static std::vector<std::array<PetscInt, 2>>
   compute_bc_dofs_topological(const function::FunctionSpace& V,
                               const function::FunctionSpace* Vg,
                               const std::vector<std::int32_t>& facets);
