@@ -41,7 +41,6 @@ public:
   /// @param[out] dofmap
   /// @param[in] dolfin_mesh
   static std::tuple<std::int64_t, std::unique_ptr<common::IndexMap>,
-                    std::unordered_map<std::int32_t, std::vector<std::int32_t>>,
                     std::vector<PetscInt>>
   build(const mesh::Mesh& dolfin_mesh,
         const ElementDofLayout& element_dof_layout,

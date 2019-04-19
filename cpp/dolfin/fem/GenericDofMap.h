@@ -116,11 +116,6 @@ public:
   Eigen::Array<std::size_t, Eigen::Dynamic, 1>
   tabulate_local_to_global_dofs() const;
 
-  /// Return map from shared nodes to the processes (not including
-  /// the current process) that share it.
-  virtual const std::unordered_map<int, std::vector<int>>&
-  shared_nodes() const = 0;
-
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const = 0;
 };

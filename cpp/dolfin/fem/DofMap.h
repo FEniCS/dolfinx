@@ -137,14 +137,6 @@ public:
   ///         Number of dofs associated with closure of given entity dimension
   virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const;
 
-  // TODO: Remove and work via teh index_map
-  /// Return map from all shared nodes to the sharing processes (not
-  /// including the current process) that share it.
-  ///
-  /// @return     std::unordered_map<std::size_t, std::vector<std::uint32_t>>
-  ///         The map from dofs to list of processes
-  const std::unordered_map<int, std::vector<int>>& shared_nodes() const;
-
   /// Local-to-global mapping of dofs on a cell
   ///
   /// @param     cell_index (std::size_t)
@@ -257,9 +249,6 @@ private:
   // Object containing information about dof distribution across
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;
-
-  // Processes that share a given node
-  std::unordered_map<int, std::vector<int>> _shared_nodes;
 
   // Processes that this dofmap shares dofs with
   std::set<int> _neighbours;
