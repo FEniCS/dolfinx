@@ -111,95 +111,8 @@ gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
   }
 
   return dof_dof_g;
-} // namespace
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-template <class T>
-std::set<PetscInt> gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap,
-                              const T& dofs)
-{
-  std::size_t comm_size = MPI::size(mpi_comm);
-
-  const auto& shared_nodes = dofmap.shared_nodes();
-  const int bs = dofmap.index_map()->block_size();
-  assert(dofmap.index_map());
-
-  // Create list of boundary dofs to send to each processor
-  std::vector<std::vector<PetscInt>> proc_map(comm_size);
-  for (auto dof : dofs)
-  {
-    // If the boundary dof is attached to a shared dof, add it to the
-    // list of boundary values for each of the processors that share it
-    const std::div_t div = std::div(dof[0], bs);
-    const int component = div.rem;
-    const int node_index = div.quot;
-
-    auto shared_node = shared_nodes.find(node_index);
-    if (shared_node != shared_nodes.end())
-    {
-      for (auto proc = shared_node->second.begin();
-           proc != shared_node->second.end(); ++proc)
-      {
-        const std::size_t global_node
-            = dofmap.index_map()->local_to_global(node_index);
-        proc_map[*proc].push_back(bs * global_node + component);
-      }
-    }
-  }
-
-  // Distribute the lists between neighbours
-  std::vector<PetscInt> received_bvc;
-  MPI::all_to_all(mpi_comm, proc_map, received_bvc);
-
-  auto index_map = dofmap.index_map();
-  assert(index_map);
-  const std::int64_t n0 = index_map->local_range()[0] * index_map->block_size();
-  const std::int64_t n1 = index_map->local_range()[1] * index_map->block_size();
-  const std::int64_t owned_size = n1 - n0;
-
-  // Add the received boundary values to the local boundary values
-  std::set<PetscInt> _vec;
-  for (PetscInt index_global : received_bvc)
-  {
-    // Convert to local (process) dof index
-    int local_index = -1;
-    if (index_global >= n0 and index_global < n1)
-    {
-      // Case 0: dof is owned by this process
-      local_index = index_global - n0;
-    }
-    else
-    {
-      const std::imaxdiv_t div = std::imaxdiv(index_global, bs);
-      const std::size_t node = div.quot;
-      const int component = div.rem;
-
-      // Get local-to-global for ghost blocks
-      const auto& local_to_global = dofmap.index_map()->ghosts();
-
-      // Case 1: dof is not owned by this process
-      auto it
-          = std::find(local_to_global.data(),
-                      local_to_global.data() + local_to_global.size(), node);
-      if (it == (local_to_global.data() + local_to_global.size()))
-      {
-        throw std::runtime_error(
-            "Cannot find dof in local_to_global_unowned array");
-      }
-      else
-      {
-        std::size_t pos = std::distance(local_to_global.data(), it);
-        local_index = owned_size + bs * pos + component;
-      }
-    }
-
-    assert(local_index >= 0);
-    _vec.insert(local_index);
-  }
-
-  return _vec;
 }
+
 //-----------------------------------------------------------------------------
 // bool on_facet(
 //     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>
@@ -323,7 +236,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       _facets.push_back(facet.index());
   }
 
-  // Compute bc dof indices in (V, Vg) spaces via a process-local check
+  // Compute bc dof indices in (V, Vg) spaces via a local (process)
+  // check
   std::set<std::array<PetscInt, 2>> dofs_local;
   if (method == Method::topological)
   {
@@ -338,39 +252,19 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
-  // Get dof indices in V that are on this process, but for which a
-  // remote process detected the boundary condition (e.g., a vertex dof
-  // when that us connected boundary facets do not lie on this process)
-  const std::set<PetscInt> dofs_remote
-      = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
-
-  const std::map<PetscInt, PetscInt> dofs_remote_test
+  // Get bc dof indices (local) in (V, Vg) spaces on this process that
+  // were found by other processes, e.g. a vertex dof on this process that
+  // has no connected factes on the boundary.
+  const std::map<PetscInt, PetscInt> dofs_remote
       = gather_test(*V->dofmap()->index_map(),
                     *g->function_space()->dofmap()->index_map(), dofs_local);
 
-  // For bc dofs received from other process, map index in V to index in
-  // Vg
-  std::map<PetscInt, PetscInt> shared_dofs
-      = shared_bc_to_g(*V, *g->function_space());
-
-  shared_dofs = dofs_remote_test;
-
   // Add received bc indices to dofs_local
-  for (auto dof_remote : dofs_remote)
+  for (auto& dof_remote : dofs_remote)
   {
-    // // Sanity check
-    auto it = shared_dofs.find(dof_remote);
-    // if (it == shared_dofs.end())
-    //   throw std::runtime_error("Oops, can't find dof (A).");
-
-    // Add indicies in (V, Vg) pairs to dofs_local
-    const std::array<PetscInt, 2> ldofs = {{it->first, it->second}};
-    auto it_map = dofs_local.insert(ldofs);
-    if (it_map.second)
-    {
-      continue;
-      // std::cout << "Inserted off-process dof (A)" << std::endl;
-    }
+    const std::array<PetscInt, 2> ldofs
+        = {{dof_remote.first, dof_remote.second}};
+    dofs_local.insert(ldofs);
   }
 
   _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
@@ -426,23 +320,19 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
-  // std::cout << "Local dofs size: " << MPI::rank(MPI_COMM_WORLD) << ", "
-  //           << dofs_local.size() << std::endl;
+  // Get bc dof indices (local) in (V, Vg) spaces on this process that
+  // were found by other processes, e.g. a vertex dof on this process that
+  // has no connected factes on the boundary.
+  const std::map<PetscInt, PetscInt> dofs_remote
+      = gather_test(*V->dofmap()->index_map(),
+                    *g->function_space()->dofmap()->index_map(), dofs_local);
 
-  std::set<PetscInt> dofs_remote
-      = gather_new(V->mesh()->mpi_comm(), *V->dofmap(), dofs_local);
-
-  const std::map<PetscInt, PetscInt> shared_dofs
-      = shared_bc_to_g(*V, *g->function_space());
-  for (auto dof_remote : dofs_remote)
+  // Add received bc indices to dofs_local
+  for (auto& dof_remote : dofs_remote)
   {
-    auto it = shared_dofs.find(dof_remote);
-    if (it == shared_dofs.end())
-      throw std::runtime_error("Oops, can't find dof (B).");
-    const std::array<PetscInt, 2> ldofs = {{it->first, it->second}};
-    auto it_map = dofs_local.insert(ldofs);
-    if (it_map.second)
-      std::cout << "Inserted off-process dof (B)" << std::endl;
+    const std::array<PetscInt, 2> ldofs
+        = {{dof_remote.first, dof_remote.second}};
+    dofs_local.insert(ldofs);
   }
 
   _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
