@@ -10,7 +10,7 @@
 #include <array>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
+#include <petscsys.h>
 #include <vector>
 
 namespace dolfin

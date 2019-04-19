@@ -6,7 +6,6 @@
 
 #include "IndexMap.h"
 #include <algorithm>
-#include <limits>
 
 using namespace dolfin;
 using namespace dolfin::common;
@@ -84,15 +83,14 @@ int IndexMap::owner(std::int64_t global_index) const
   auto it
       = std::upper_bound(_all_ranges.begin(), _all_ranges.end(), global_index);
   return std::distance(_all_ranges.begin(), it) - 1;
-
-  // return std::upper_bound(_all_ranges.begin(), _all_ranges.end(),
-  // global_index)
-  //        - _all_ranges.begin() - 1;
 }
 //-----------------------------------------------------------------------------
-const EigenArrayXi32& IndexMap::ghost_owners() const { return _ghost_owners; }
+const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
+IndexMap::ghost_owners() const
+{
+  return _ghost_owners;
+}
 //----------------------------------------------------------------------------
-// MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm.comm(); }
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
 void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
