@@ -198,11 +198,6 @@ public:
   void mark_dofs(std::vector<bool>& markers) const;
 
 private:
-  // Build map of shared dofs in V to dofs in Vg
-  static std::map<PetscInt, PetscInt>
-  shared_bc_to_g(const function::FunctionSpace& V,
-                 const function::FunctionSpace& Vg);
-
   // Compute boundary conditions dof indices pairs in (V, Vg) using the
   // topological approach)
   static std::vector<std::array<PetscInt, 2>>

@@ -36,7 +36,6 @@ std::map<PetscInt, PetscInt>
 get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
                const std::vector<std::array<PetscInt, 2>>& dofs_local)
 {
-
   std::map<PetscInt, PetscInt> dof_dof_g;
 
   const std::int32_t bs = map.block_size();
@@ -268,6 +267,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
+  // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
   std::sort(dofs_local.begin(), dofs_local.end());
   dofs_local.erase(std::unique(dofs_local.begin(), dofs_local.end()),
@@ -288,6 +288,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     dofs_local.push_back(ldofs);
   }
 
+  // TODO: is removing duplicates at this point worth the effort?
   // Remove duplicates
   std::sort(dofs_local.begin(), dofs_local.end());
   dofs_local.erase(std::unique(dofs_local.begin(), dofs_local.end()),
@@ -301,6 +302,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
     _dofs(i, 1) = dofs_local[i][1];
   }
 
+  // Note: _dof_indices must be sorted
   _dof_indices = _dofs.col(0);
 }
 //-----------------------------------------------------------------------------
@@ -383,63 +385,6 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
     assert(_dof_indices[i] < (PetscInt)markers.size());
     markers[_dof_indices[i]] = true;
   }
-}
-//-----------------------------------------------------------------------------
-std::map<PetscInt, PetscInt>
-DirichletBC::shared_bc_to_g(const function::FunctionSpace& V,
-                            const function::FunctionSpace& Vg)
-{
-  // Get mesh
-  assert(V.mesh());
-  const mesh::Mesh& mesh = *V.mesh();
-  const std::size_t tdim = mesh.topology().dim();
-
-  // Get dofmaps
-  assert(V.dofmap());
-  assert(Vg.dofmap());
-  const GenericDofMap& dofmap = *V.dofmap();
-  const GenericDofMap& dofmap_g = *Vg.dofmap();
-
-  // Initialise facet-cell connectivity
-  mesh.init(tdim - 1);
-  mesh.init(tdim, tdim - 1);
-
-  // Allocate space
-  const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(tdim - 1);
-
-  // Build vector local dofs for each cell facet
-  const mesh::CellType& cell_type = mesh.type();
-  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> facet_dofs;
-  for (std::size_t i = 0; i < cell_type.num_entities(tdim - 1); ++i)
-    facet_dofs.push_back(dofmap.tabulate_entity_closure_dofs(tdim - 1, i));
-
-  std::vector<std::pair<PetscInt, PetscInt>> dofs;
-  for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
-  {
-    assert(facet.num_entities(tdim) > 0);
-    if (facet.num_entities(tdim) > 0)
-    {
-      const std::size_t cell_index = facet.entities(tdim)[0];
-      const mesh::Cell cell(mesh, cell_index);
-
-      // Get cell dofmap
-      const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-          cell_dofs = dofmap.cell_dofs(cell.index());
-      const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
-          cell_dofs_g = dofmap_g.cell_dofs(cell.index());
-
-      // Loop over facet dofs
-      const size_t facet_local_index = cell.index(facet);
-      for (std::size_t i = 0; i < num_facet_dofs; i++)
-      {
-        const std::size_t index = facet_dofs[facet_local_index][i];
-        const PetscInt dof_index = cell_dofs[index];
-        const PetscInt dof_index_g = cell_dofs_g[index];
-        dofs.push_back({dof_index, dof_index_g});
-      }
-    }
-  }
-  return std::map<PetscInt, PetscInt>(dofs.begin(), dofs.end());
 }
 //-----------------------------------------------------------------------------
 std::vector<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
