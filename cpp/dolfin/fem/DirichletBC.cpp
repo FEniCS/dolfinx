@@ -32,8 +32,8 @@ using namespace dolfin::fem;
 namespace
 {
 std::map<PetscInt, PetscInt>
-gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
-            const std::set<std::array<PetscInt, 2>>& dofs_local)
+get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
+               const std::set<std::array<PetscInt, 2>>& dofs_local)
 {
 
   std::map<PetscInt, PetscInt> dof_dof_g;
@@ -112,6 +112,39 @@ gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
 
   return dof_dof_g;
 }
+//-----------------------------------------------------------------------------
+// Return list in facet indices that are marked
+std::vector<std::int32_t> facets_marked(std::shared_ptr<const mesh::Mesh> mesh,
+                                        const mesh::SubDomain& sub_domain,
+                                        bool check_midpoint)
+{
+  // FIXME: This can be made more efficient, we should be able to
+  //        extract the facets without first creating a
+  //        mesh::MeshFunction on the entire mesh and then extracting
+  //        the subset. This is done mainly for convenience (we may
+  //        reuse mark() in SubDomain).
+
+  assert(mesh);
+
+  // Create mesh function for sub domain markers on facets and mark
+  // all facet as subdomain 1
+  const std::size_t dim = mesh->topology().dim();
+  mesh->init(dim - 1);
+  mesh::MeshFunction<std::size_t> domain(mesh, dim - 1, 1);
+
+  // Mark the sub domain as sub domain 0
+  sub_domain.mark(domain, (std::size_t)0, check_midpoint);
+
+  // Build set of boundary facets
+  std::vector<std::int32_t> facets;
+  for (auto& facet : mesh::MeshRange<mesh::Facet>(*mesh))
+  {
+    if (domain[facet] == 0)
+      facets.push_back(facet.index());
+  }
+
+  return facets;
+}
 
 //-----------------------------------------------------------------------------
 // bool on_facet(
@@ -187,95 +220,10 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
                          std::shared_ptr<const function::Function> g,
                          const mesh::SubDomain& sub_domain, Method method,
                          bool check_midpoint)
-    : _function_space(V), _g(g)
+    : DirichletBC(V, g, facets_marked(V->mesh(), sub_domain, check_midpoint),
+                  method)
 {
-  assert(V);
-  assert(g);
-  assert(g->function_space());
-  if (V != g->function_space())
-  {
-    assert(V->mesh());
-    assert(g->function_space()->mesh());
-    if (V->mesh() != g->function_space()->mesh())
-    {
-      throw std::runtime_error("Boundary condition function and constrained "
-                               "function do not share mesh.");
-    }
-
-    assert(g->function_space()->element());
-    if (!V->has_element(*g->function_space()->element()))
-    {
-      throw std::runtime_error("Boundary condition function and constrained "
-                               "function do not have same element.");
-    }
-  }
-
-  // FIXME: This can be made more efficient, we should be able to
-  //        extract the facets without first creating a
-  //        mesh::MeshFunction on the entire mesh and then extracting
-  //        the subset. This is done mainly for convenience (we may
-  //        reuse mark() in SubDomain).
-
-  std::shared_ptr<const mesh::Mesh> mesh = V->mesh();
-  assert(mesh);
-
-  // Create mesh function for sub domain markers on facets and mark
-  // all facet as subdomain 1
-  const std::size_t dim = mesh->topology().dim();
-  _function_space->mesh()->init(dim - 1);
-  mesh::MeshFunction<std::size_t> domain(mesh, dim - 1, 1);
-
-  // Mark the sub domain as sub domain 0
-  sub_domain.mark(domain, (std::size_t)0, check_midpoint);
-
-  // Build set of boundary facets
-  std::vector<std::int32_t> _facets;
-  for (auto& facet : mesh::MeshRange<mesh::Facet>(*mesh))
-  {
-    if (domain[facet] == 0)
-      _facets.push_back(facet.index());
-  }
-
-  // Compute bc dof indices in (V, Vg) spaces via a local (process)
-  // check
-  std::set<std::array<PetscInt, 2>> dofs_local;
-  if (method == Method::topological)
-  {
-    dofs_local
-        = compute_bc_dofs_topological(*V, g->function_space().get(), _facets);
-  }
-  else if (method == Method::geometric)
-  {
-    throw std::runtime_error("BC method not yet supported");
-    // dofs_local = compute_bc_dofs_geometric(*V, nullptr, _facets);
-  }
-  else
-    throw std::runtime_error("BC method not yet supported");
-
-  // Get bc dof indices (local) in (V, Vg) spaces on this process that
-  // were found by other processes, e.g. a vertex dof on this process that
-  // has no connected factes on the boundary.
-  const std::map<PetscInt, PetscInt> dofs_remote
-      = gather_test(*V->dofmap()->index_map(),
-                    *g->function_space()->dofmap()->index_map(), dofs_local);
-
-  // Add received bc indices to dofs_local
-  for (auto& dof_remote : dofs_remote)
-  {
-    const std::array<PetscInt, 2> ldofs
-        = {{dof_remote.first, dof_remote.second}};
-    dofs_local.insert(ldofs);
-  }
-
-  _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
-      dofs_local.size(), 2);
-  for (auto e = dofs_local.cbegin(); e != dofs_local.cend(); ++e)
-  {
-    std::size_t pos = std::distance(dofs_local.begin(), e);
-    _dofs(pos, 0) = (*e)[0];
-    _dofs(pos, 1) = (*e)[1];
-  }
-  _dof_indices = _dofs.col(0);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
@@ -324,8 +272,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   // were found by other processes, e.g. a vertex dof on this process that
   // has no connected factes on the boundary.
   const std::map<PetscInt, PetscInt> dofs_remote
-      = gather_test(*V->dofmap()->index_map(),
-                    *g->function_space()->dofmap()->index_map(), dofs_local);
+      = get_remote_bcs(*V->dofmap()->index_map(),
+                       *g->function_space()->dofmap()->index_map(), dofs_local);
 
   // Add received bc indices to dofs_local
   for (auto& dof_remote : dofs_remote)
