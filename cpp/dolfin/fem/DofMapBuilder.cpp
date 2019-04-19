@@ -649,7 +649,6 @@ std::vector<std::int64_t> compute_global_indices(
 
 //-----------------------------------------------------------------------------
 std::tuple<std::int64_t, std::unique_ptr<common::IndexMap>,
-           std::unordered_map<std::int32_t, std::vector<std::int32_t>>,
            std::vector<PetscInt>>
 DofMapBuilder::build(const mesh::Mesh& mesh,
                      const ElementDofLayout& element_dof_layout,
@@ -727,14 +726,6 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
       dolfin::MPI::sum(mesh.mpi_comm(), (std::int64_t)index_map->size_local())
       == global_dimension);
 
-  // Update shared_nodes following the reordering
-  std::unordered_map<std::int32_t, std::vector<std::int32_t>> shared_nodes1;
-  for (auto it = shared_node_to_processes0.begin();
-       it != shared_node_to_processes0.end(); ++it)
-  {
-    shared_nodes1.insert({old_to_new[it->first], it->second});
-  }
-
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap, accounting for block size
@@ -755,7 +746,6 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   }
 
   return std::make_tuple(std::move(block_size * global_dimension),
-                         std::move(index_map), std::move(shared_nodes1),
-                         std::move(dofmap));
+                         std::move(index_map), std::move(dofmap));
 }
 //-----------------------------------------------------------------------------
