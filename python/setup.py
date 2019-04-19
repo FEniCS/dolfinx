@@ -13,15 +13,15 @@ if sys.version_info < (3, 5):
     print("Python 3.5 or higher required, please upgrade.")
     sys.exit(1)
 
-VERSION = "2018.2.0.dev0"
-RESTRICT_REQUIREMENTS = ">=2018.2.0.dev0,<2018.3"
+VERSION = "2019.2.0.dev0"
+RESTRICT_REQUIREMENTS = ">=2019.2.0.dev0,<2019.3"
 
 REQUIREMENTS = [
     "numpy",
     "numba",
     "mpi4py",
     "petsc4py",
-    "fenics-ffc{}".format(RESTRICT_REQUIREMENTS),
+    "fenics-ffc{}",
     "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
     "fenics-dijitso{}".format(RESTRICT_REQUIREMENTS),
 ]
