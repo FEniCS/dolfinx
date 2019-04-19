@@ -24,7 +24,6 @@
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Vertex.h>
 #include <map>
-// #include <spdlog/spdlog.h>
 #include <utility>
 
 using namespace dolfin;
@@ -32,6 +31,89 @@ using namespace dolfin::fem;
 
 namespace
 {
+std::map<PetscInt, PetscInt>
+gather_test(const common::IndexMap& map, const common::IndexMap& map_g,
+            const std::set<std::array<PetscInt, 2>>& dofs_local)
+{
+
+  std::map<PetscInt, PetscInt> dof_dof_g;
+
+  const std::int32_t bs = map.block_size();
+  const std::int32_t size_owned = map.size_local();
+  const std::int32_t size_ghost = map.num_ghosts();
+
+  const std::int32_t bs_g = map_g.block_size();
+  const std::int32_t size_owned_g = map_g.size_local();
+  const std::int32_t size_ghost_g = map_g.num_ghosts();
+  const std::array<std::int64_t, 2> range_g = map_g.local_range();
+  const std::int64_t offset_g = range_g[0];
+
+  // For each dof local index, store global index in Vg (-1 if no bc)
+  std::vector<PetscInt> marker_owned(bs * size_owned, -1);
+  std::vector<PetscInt> marker_ghost(bs * size_ghost, -1);
+  for (auto& dofs : dofs_local)
+  {
+    const PetscInt index_block_g = dofs[1] / bs_g;
+    const PetscInt pos_g = dofs[1] % bs_g;
+    if (dofs[0] < bs * size_owned)
+    {
+      marker_owned[dofs[0]]
+          = bs_g * map_g.local_to_global(index_block_g) + pos_g;
+    }
+    else
+    {
+      marker_ghost[dofs[0] - (bs * size_owned)]
+          = bs_g * map_g.local_to_global(index_block_g) + pos_g;
+    }
+  }
+
+  // Build global-to-local map for ghost indices (blocks) in map_g
+  std::map<PetscInt, PetscInt> global_to_local_g;
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghosts_g = map_g.ghosts();
+  for (Eigen::Index i = 0; i < size_owned_g; ++i)
+    global_to_local_g.insert({i + offset_g, i});
+  for (Eigen::Index i = 0; i < size_ghost_g; ++i)
+    global_to_local_g.insert({ghosts_g[i], i + size_owned_g});
+
+  // For each owned bc index, scatter associated g global index to ghost
+  // processes
+  std::vector<PetscInt> marker_ghost_rcvd = map.scatter_fwd(marker_owned, bs);
+  assert((int)marker_ghost_rcvd.size() == size_ghost * bs);
+
+  // Add to (local index)-(local g index) map
+  for (std::size_t i = 0; i < marker_ghost_rcvd.size(); ++i)
+  {
+    if (marker_ghost_rcvd[i] > -1)
+    {
+      const PetscInt index_block_g = marker_ghost_rcvd[i] / bs_g;
+      const PetscInt pos_g = marker_ghost_rcvd[i] % bs_g;
+      const auto it = global_to_local_g.find(index_block_g);
+      assert(it != global_to_local_g.end());
+      dof_dof_g.insert({bs * size_owned + i, bs_g * it->second + pos_g});
+    }
+  }
+
+  // Scatter (reverse) data from ghost processes to owner
+  std::vector<PetscInt> marker_owner_rcvd(bs * size_owned, -1);
+  map.scatter_rev(marker_owner_rcvd, marker_ghost, bs, MPI_MAX);
+  assert((int)marker_owner_rcvd.size() == size_owned * bs);
+  for (std::size_t i = 0; i < marker_owner_rcvd.size(); ++i)
+  {
+    if (marker_owner_rcvd[i] >= 0)
+    {
+      const PetscInt index_global_g = marker_owner_rcvd[i];
+      const PetscInt index_block_g = index_global_g / bs_g;
+      const PetscInt pos_g = index_global_g % bs_g;
+      const auto it = global_to_local_g.find(index_block_g);
+      assert(it != global_to_local_g.end());
+      dof_dof_g.insert({i, bs_g * it->second + pos_g});
+    }
+  }
+
+  return dof_dof_g;
+} // namespace
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 template <class T>
 std::set<PetscInt> gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap,
@@ -43,11 +125,11 @@ std::set<PetscInt> gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap,
   const int bs = dofmap.index_map()->block_size();
   assert(dofmap.index_map());
 
-  // Create list of boundary values to send to each processor
+  // Create list of boundary dofs to send to each processor
   std::vector<std::vector<PetscInt>> proc_map(comm_size);
   for (auto dof : dofs)
   {
-    // If the boundary value is attached to a shared dof, add it to the
+    // If the boundary dof is attached to a shared dof, add it to the
     // list of boundary values for each of the processors that share it
     const std::div_t div = std::div(dof[0], bs);
     const int component = div.rem;
@@ -119,72 +201,72 @@ std::set<PetscInt> gather_new(MPI_Comm mpi_comm, const GenericDofMap& dofmap,
   return _vec;
 }
 //-----------------------------------------------------------------------------
-bool on_facet(
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>> coordinates,
-    const mesh::Facet& facet)
-{
-  if (facet.dim() == 1)
-  {
-    // Check if the coordinates are on the same line as the line segment
+// bool on_facet(
+//     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 1>>
+//     coordinates, const mesh::Facet& facet)
+// {
+//   if (facet.dim() == 1)
+//   {
+//     // Check if the coordinates are on the same line as the line segment
 
-    // Create points
-    geometry::Point p(coordinates[0], coordinates[1]);
-    const geometry::Point v0
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    const geometry::Point v1
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
+//     // Create points
+//     geometry::Point p(coordinates[0], coordinates[1]);
+//     const geometry::Point v0
+//         = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
+//     const geometry::Point v1
+//         = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
 
-    // Create vectors
-    const geometry::Point v01 = v1 - v0;
-    const geometry::Point vp0 = v0 - p;
-    const geometry::Point vp1 = v1 - p;
+//     // Create vectors
+//     const geometry::Point v01 = v1 - v0;
+//     const geometry::Point vp0 = v0 - p;
+//     const geometry::Point vp1 = v1 - p;
 
-    // Check if the length of the sum of the two line segments vp0 and
-    // vp1 is equal to the total length of the facet
-    if (std::abs(v01.norm() - vp0.norm() - vp1.norm()) < 2.0 * DBL_EPSILON)
-      return true;
-    else
-      return false;
-  }
-  else if (facet.dim() == 2)
-  {
-    // Check if the coordinates are in the same plane as the triangular
-    // facet
+//     // Check if the length of the sum of the two line segments vp0 and
+//     // vp1 is equal to the total length of the facet
+//     if (std::abs(v01.norm() - vp0.norm() - vp1.norm()) < 2.0 * DBL_EPSILON)
+//       return true;
+//     else
+//       return false;
+//   }
+//   else if (facet.dim() == 2)
+//   {
+//     // Check if the coordinates are in the same plane as the triangular
+//     // facet
 
-    // Create points
-    const geometry::Point p(coordinates[0], coordinates[1], coordinates[2]);
-    const geometry::Point v0
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
-    const geometry::Point v1
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
-    const geometry::Point v2
-        = mesh::Vertex(facet.mesh(), facet.entities(0)[2]).point();
+//     // Create points
+//     const geometry::Point p(coordinates[0], coordinates[1], coordinates[2]);
+//     const geometry::Point v0
+//         = mesh::Vertex(facet.mesh(), facet.entities(0)[0]).point();
+//     const geometry::Point v1
+//         = mesh::Vertex(facet.mesh(), facet.entities(0)[1]).point();
+//     const geometry::Point v2
+//         = mesh::Vertex(facet.mesh(), facet.entities(0)[2]).point();
 
-    // Create vectors
-    const geometry::Point v01 = v1 - v0;
-    const geometry::Point v02 = v2 - v0;
-    const geometry::Point vp0 = v0 - p;
-    const geometry::Point vp1 = v1 - p;
-    const geometry::Point vp2 = v2 - p;
+//     // Create vectors
+//     const geometry::Point v01 = v1 - v0;
+//     const geometry::Point v02 = v2 - v0;
+//     const geometry::Point vp0 = v0 - p;
+//     const geometry::Point vp1 = v1 - p;
+//     const geometry::Point vp2 = v2 - p;
 
-    // Check if the sum of the area of the sub triangles is equal to the
-    // total area of the facet
-    if (std::abs(v01.cross(v02).norm() - vp0.cross(vp1).norm()
-                 - vp1.cross(vp2).norm() - vp2.cross(vp0).norm())
-        < 2.0 * DBL_EPSILON)
-    {
-      return true;
-    }
-    else
-      return false;
-  }
+//     // Check if the sum of the area of the sub triangles is equal to the
+//     // total area of the facet
+//     if (std::abs(v01.cross(v02).norm() - vp0.cross(vp1).norm()
+//                  - vp1.cross(vp2).norm() - vp2.cross(vp0).norm())
+//         < 2.0 * DBL_EPSILON)
+//     {
+//       return true;
+//     }
+//     else
+//       return false;
+//   }
 
-  throw std::runtime_error("Determine if given point is on facet. Not "
-                           "implemented for given facet dimension");
+//   throw std::runtime_error("Determine if given point is on facet. Not "
+//                            "implemented for given facet dimension");
 
-  return false;
-}
-//-----------------------------------------------------------------------------
+//   return false;
+// }
+// //-----------------------------------------------------------------------------
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -241,6 +323,7 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
       _facets.push_back(facet.index());
   }
 
+  // Compute bc dof indices in (V, Vg) spaces via a process-local check
   std::set<std::array<PetscInt, 2>> dofs_local;
   if (method == Method::topological)
   {
@@ -255,23 +338,39 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   else
     throw std::runtime_error("BC method not yet supported");
 
+  // Get dof indices in V that are on this process, but for which a
+  // remote process detected the boundary condition (e.g., a vertex dof
+  // when that us connected boundary facets do not lie on this process)
   const std::set<PetscInt> dofs_remote
       = gather_new(mesh->mpi_comm(), *V->dofmap(), dofs_local);
-  // std::set_union(dofs_local.begin(), dofs_local.end(), dofs_remote.begin(),
-  //                dofs_remote.end(), std::back_inserter(_dofs));
 
-  const std::map<PetscInt, PetscInt> shared_dofs
+  const std::map<PetscInt, PetscInt> dofs_remote_test
+      = gather_test(*V->dofmap()->index_map(),
+                    *g->function_space()->dofmap()->index_map(), dofs_local);
+
+  // For bc dofs received from other process, map index in V to index in
+  // Vg
+  std::map<PetscInt, PetscInt> shared_dofs
       = shared_bc_to_g(*V, *g->function_space());
+
+  shared_dofs = dofs_remote_test;
+
+  // Add received bc indices to dofs_local
   for (auto dof_remote : dofs_remote)
   {
+    // // Sanity check
     auto it = shared_dofs.find(dof_remote);
-    if (it == shared_dofs.end())
-      throw std::runtime_error("Oops, can't find dof (A).");
+    // if (it == shared_dofs.end())
+    //   throw std::runtime_error("Oops, can't find dof (A).");
 
+    // Add indicies in (V, Vg) pairs to dofs_local
     const std::array<PetscInt, 2> ldofs = {{it->first, it->second}};
     auto it_map = dofs_local.insert(ldofs);
     if (it_map.second)
-      std::cout << "Inserted off-process dof (A)" << std::endl;
+    {
+      continue;
+      // std::cout << "Inserted off-process dof (A)" << std::endl;
+    }
   }
 
   _dofs = Eigen::Array<PetscInt, Eigen::Dynamic, 2, Eigen::RowMajor>(
@@ -557,116 +656,118 @@ std::set<std::array<PetscInt, 2>> DirichletBC::compute_bc_dofs_topological(
   return std::set<std::array<PetscInt, 2>>(bc_dofs.begin(), bc_dofs.end());
 }
 //-----------------------------------------------------------------------------
-std::set<PetscInt>
-DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
-                                       const function::FunctionSpace* Vg,
-                                       const std::vector<std::int32_t>& facets)
-{
-  assert(V.element());
+// std::set<PetscInt>
+// DirichletBC::compute_bc_dofs_geometric(const function::FunctionSpace& V,
+//                                        const function::FunctionSpace* Vg,
+//                                        const std::vector<std::int32_t>&
+//                                        facets)
+// {
+//   assert(V.element());
 
-  // Get mesh
-  assert(V.mesh());
-  const mesh::Mesh& mesh = *V.mesh();
+//   // Get mesh
+//   assert(V.mesh());
+//   const mesh::Mesh& mesh = *V.mesh();
 
-  // Get dofmap
-  assert(V.dofmap());
-  const GenericDofMap& dofmap = *V.dofmap();
+//   // Get dofmap
+//   assert(V.dofmap());
+//   const GenericDofMap& dofmap = *V.dofmap();
 
-  const GenericDofMap* dofmap_g = &dofmap;
-  if (Vg)
-  {
-    assert(Vg->dofmap());
-    dofmap_g = Vg->dofmap().get();
-  }
+//   const GenericDofMap* dofmap_g = &dofmap;
+//   if (Vg)
+//   {
+//     assert(Vg->dofmap());
+//     dofmap_g = Vg->dofmap().get();
+//   }
 
-  // Get finite element
-  assert(V.element());
-  const FiniteElement& element = *V.element();
+//   // Get finite element
+//   assert(V.element());
+//   const FiniteElement& element = *V.element();
 
-  // Initialize facets, needed for geometric search
-  // spdlog::info("Computing facets, needed for geometric application of
-  // boundary "
-  //              "conditions.");
-  mesh.init(mesh.topology().dim() - 1);
+//   // Initialize facets, needed for geometric search
+//   // spdlog::info("Computing facets, needed for geometric application of
+//   // boundary "
+//   //              "conditions.");
+//   mesh.init(mesh.topology().dim() - 1);
 
-  // Speed up the computations by only visiting (most) dofs once
-  common::RangedIndexSet already_visited(
-      dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
-                       : dofmap.index_map()->local_range(),
-      dofmap.index_map()->block_size());
+//   // Speed up the computations by only visiting (most) dofs once
+//   common::RangedIndexSet already_visited(
+//       dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
+//                        : dofmap.index_map()->local_range(),
+//       dofmap.index_map()->block_size());
 
-  // Topological and geometric dimensions
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t gdim = mesh.geometry().dim();
+//   // Topological and geometric dimensions
+//   const std::size_t tdim = mesh.topology().dim();
+//   const std::size_t gdim = mesh.geometry().dim();
 
-  // Get dof coordinates on reference element
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
-      = element.dof_reference_coordinates();
+//   // Get dof coordinates on reference element
+//   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+//   Eigen::RowMajor>& X
+//       = element.dof_reference_coordinates();
 
-  // Get coordinate mapping
-  if (!mesh.geometry().coord_mapping)
-  {
-    throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
-  }
-  const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
+//   // Get coordinate mapping
+//   if (!mesh.geometry().coord_mapping)
+//   {
+//     throw std::runtime_error(
+//         "CoordinateMapping has not been attached to mesh.");
+//   }
+//   const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
 
-  // Create vertex coordinate holder
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
+//   // Create vertex coordinate holder
+//   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+//       coordinate_dofs;
 
-  // Coordinates for dofs
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x;
+//   // Coordinates for dofs
+//   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x;
 
-  // Iterate over facets
-  std::vector<PetscInt> bc_dofs;
-  std::vector<PetscInt> bc_dofs_g;
-  for (std::size_t f = 0; f < facets.size(); ++f)
-  {
-    // Create facet and attached cell (get first attached cell)
-    const mesh::Facet facet(mesh, facets[f]);
-    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+//   // Iterate over facets
+//   std::vector<PetscInt> bc_dofs;
+//   std::vector<PetscInt> bc_dofs_g;
+//   for (std::size_t f = 0; f < facets.size(); ++f)
+//   {
+//     // Create facet and attached cell (get first attached cell)
+//     const mesh::Facet facet(mesh, facets[f]);
+//     const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
-    // Loop over vertices associated with the facet
-    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(facet))
-    {
-      // Loop the cells associated with the vertex
-      for (auto& c : mesh::EntityRange<mesh::Cell>(vertex))
-      {
-        coordinate_dofs.resize(cell.num_vertices(), gdim);
-        c.get_coordinate_dofs(coordinate_dofs);
+//     // Loop over vertices associated with the facet
+//     for (auto& vertex : mesh::EntityRange<mesh::Vertex>(facet))
+//     {
+//       // Loop the cells associated with the vertex
+//       for (auto& c : mesh::EntityRange<mesh::Cell>(vertex))
+//       {
+//         coordinate_dofs.resize(cell.num_vertices(), gdim);
+//         c.get_coordinate_dofs(coordinate_dofs);
 
-        // Tabulate dof coordinates on physical element
-        cmap.compute_physical_coordinates(x, X, coordinate_dofs);
+//         // Tabulate dof coordinates on physical element
+//         cmap.compute_physical_coordinates(x, X, coordinate_dofs);
 
-        // Get cell dofmap
-        auto cell_dofs = dofmap.cell_dofs(c.index());
-        auto cell_dofs_g = dofmap_g->cell_dofs(c.index());
+//         // Get cell dofmap
+//         auto cell_dofs = dofmap.cell_dofs(c.index());
+//         auto cell_dofs_g = dofmap_g->cell_dofs(c.index());
 
-        // Loop over all cell dofs
-        for (int i = 0; i < cell_dofs.size(); ++i)
-        {
-          // Check if the dof coordinate is on current facet
-          if (!on_facet(x.row(i), facet))
-            continue;
+//         // Loop over all cell dofs
+//         for (int i = 0; i < cell_dofs.size(); ++i)
+//         {
+//           // Check if the dof coordinate is on current facet
+//           if (!on_facet(x.row(i), facet))
+//             continue;
 
-          // Skip already checked dofs
-          if (already_visited.in_range(cell_dofs[i])
-              and !already_visited.insert(cell_dofs[i]))
-          {
-            continue;
-          }
+//           // Skip already checked dofs
+//           if (already_visited.in_range(cell_dofs[i])
+//               and !already_visited.insert(cell_dofs[i]))
+//           {
+//             continue;
+//           }
 
-          bc_dofs.push_back(cell_dofs[i]);
-          bc_dofs_g.push_back(cell_dofs_g[i]);
-        }
-      }
-    }
-  }
+//           bc_dofs.push_back(cell_dofs[i]);
+//           bc_dofs_g.push_back(cell_dofs_g[i]);
+//         }
+//       }
+//     }
+//   }
 
-  // FIXME: Send to other (neigbouring) processes, maybe just for shared
-  // dofs?
+//   // FIXME: Send to other (neigbouring) processes, maybe just for shared
+//   // dofs?
 
-  return std::set<PetscInt>(bc_dofs.begin(), bc_dofs.end());
-}
+//   return std::set<PetscInt>(bc_dofs.begin(), bc_dofs.end());
+// }
 //-----------------------------------------------------------------------------
