@@ -526,9 +526,10 @@ compute_reordering_map(const DofMapStructure& dofmap,
     // NOTE: Randomised dof ordering should only be used for
     // testing/benchmarking
     node_remap.resize(graph.size());
-    for (std::size_t i = 0; i < node_remap.size(); ++i)
-      node_remap[i] = i;
-    std::random_shuffle(node_remap.begin(), node_remap.end());
+    std::iota(node_remap.begin(), node_remap.end(), 0);
+    std::random_device rd;
+    std::default_random_engine g(rd());
+    std::shuffle(node_remap.begin(), node_remap.end(), g);
   }
   else
   {
