@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -36,7 +36,8 @@ public:
   /// Create empty mesh topology
   /// @param dim
   ///   Topological dimension
-  Topology(std::size_t dim, std::int32_t num_vertices);
+  Topology(std::size_t dim, std::int32_t num_vertices,
+           std::int64_t num_vertices_global);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;

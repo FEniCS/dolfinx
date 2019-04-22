@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2011 Anders Logg
+// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -14,13 +14,15 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-Topology::Topology(std::size_t dim, std::int32_t num_vertices)
+Topology::Topology(std::size_t dim, std::int32_t num_vertices,
+                   std::int64_t num_vertices_global)
     : _num_vertices(num_vertices), _ghost_offset_index(dim + 1, 0),
-      _global_num_entities(dim + 1, 0), _global_indices(dim + 1),
+      _global_num_entities(dim + 1, -1), _global_indices(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<Connectivity>>(dim + 1))
 {
-  // Do nothing
+  assert(!_global_num_entities.empty());
+  _global_num_entities[0] = num_vertices_global;
 }
 //-----------------------------------------------------------------------------
 int Topology::dim() const { return _connectivity.size() - 1; }
@@ -73,6 +75,11 @@ void Topology::clear(int d0, int d1)
 //-----------------------------------------------------------------------------
 void Topology::set_num_entities_global(int dim, std::int64_t global_size)
 {
+  if (dim == 0)
+  {
+    throw std::runtime_error(
+        "Cannot set number of global vertices post Topology creation.");
+  }
   assert(dim < (int)_global_num_entities.size());
   _global_num_entities[dim] = global_size;
 

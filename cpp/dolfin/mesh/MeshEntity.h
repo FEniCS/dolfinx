@@ -8,6 +8,7 @@
 
 #include "Connectivity.h"
 #include "Mesh.h"
+#include "Topology.h"
 #include <dolfin/geometry/Point.h>
 
 namespace dolfin

@@ -11,12 +11,12 @@
 #include "Facet.h"
 #include "MeshIterator.h"
 #include "MeshPartitioning.h"
+#include "Topology.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -125,8 +125,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   }
 
   // Initialise vertex topology
-  _topology = std::make_unique<Topology>(tdim, num_vertices);
-  _topology->set_num_entities_global(0, num_vertices_global);
+  _topology
+      = std::make_unique<Topology>(tdim, num_vertices, num_vertices_global);
   _topology->set_global_indices(0, global_vertex_indices);
   _topology->shared_entities(0) = shared_vertices;
 
@@ -218,6 +218,46 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   return *this;
 }
 //-----------------------------------------------------------------------------
+std::int32_t Mesh::num_entities(int d) const
+{
+  assert(_topology);
+  return _topology->size(d);
+}
+//-----------------------------------------------------------------------------
+std::int64_t Mesh::num_entities_global(std::size_t dim) const
+{
+  assert(_topology);
+  return _topology->size_global(dim);
+}
+//-----------------------------------------------------------------------------
+Topology& Mesh::topology()
+{
+  assert(_topology);
+  return *_topology;
+}
+//-----------------------------------------------------------------------------
+const Topology& Mesh::topology() const
+{
+  assert(_topology);
+  return *_topology;
+}
+//-----------------------------------------------------------------------------
+MeshGeometry& Mesh::geometry() { return _geometry; }
+//-----------------------------------------------------------------------------
+const MeshGeometry& Mesh::geometry() const { return _geometry; }
+//-----------------------------------------------------------------------------
+mesh::CellType& Mesh::type()
+{
+  assert(_cell_type);
+  return *_cell_type;
+}
+//-----------------------------------------------------------------------------
+const mesh::CellType& Mesh::type() const
+{
+  assert(_cell_type);
+  return *_cell_type;
+}
+//-----------------------------------------------------------------------------
 std::size_t Mesh::init(int dim) const
 {
   // This function is obviously not const since it may potentially
@@ -246,16 +286,6 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   // mesh always exists, it just hasn't been computed yet. The
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
-
-  // Skip if mesh is empty
-  assert(_topology);
-  if (num_entities(_topology->dim()) == 0)
-  {
-    // spdlog::warn("Mesh is empty, unable to create connectivity %d --> %d.",
-    // d0,
-    //              d1);
-    return;
-  }
 
   // Skip if already computed
   if (_topology->connectivity(d0, d1))
@@ -372,6 +402,8 @@ std::string Mesh::str(bool verbose) const
 
   return s.str();
 }
+//-----------------------------------------------------------------------------
+MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 mesh::GhostMode Mesh::get_ghost_mode() const { return _ghost_mode; }
 //-----------------------------------------------------------------------------
