@@ -9,6 +9,7 @@
 #include "Connectivity.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
+#include "MeshGeometry.h"
 #include "MeshIterator.h"
 #include "MeshPartitioning.h"
 #include "Topology.h"
@@ -28,10 +29,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const std::vector<std::int64_t>& global_cell_indices,
            const GhostMode ghost_mode, std::uint32_t num_ghost_cells)
     : _cell_type(mesh::CellType::create(type)),
-      // _topology(_cell_type->dim()),
-      _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
-      _mpi_comm(comm), _ghost_mode(ghost_mode),
-      _unique_id(common::UniqueIdGenerator::id())
+      _coordinate_dofs(_cell_type->dim()), _degree(1), _mpi_comm(comm),
+      _ghost_mode(ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
@@ -98,7 +97,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Initialise geometry with global size, actual points, and local to
   // global map
-  _geometry.init(num_points_global, distributed_points, global_point_indices);
+  _geometry = std::make_unique<MeshGeometry>(
+      num_points_global, distributed_points, global_point_indices);
 
   // Get global vertex information
   std::uint64_t num_vertices_global;
@@ -171,7 +171,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
     : _cell_type(CellType::create(mesh._cell_type->cell_type())),
-      _topology(new Topology(*mesh._topology)), _geometry(mesh._geometry),
+      _topology(new Topology(*mesh._topology)),
+      _geometry(new MeshpGeometry(*mesh._geometry)),
       _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
       _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
@@ -202,7 +203,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   // Assign data
   assert(mesh._topology);
   _topology = std::make_unique<Topology>(*mesh._topology);
-  _geometry = mesh._geometry;
+  _geometry = std::make_unique<MeshGeometry>(*mesh._geometry);
   _coordinate_dofs = mesh._coordinate_dofs;
   _degree = mesh._degree;
 
@@ -241,9 +242,17 @@ const Topology& Mesh::topology() const
   return *_topology;
 }
 //-----------------------------------------------------------------------------
-MeshGeometry& Mesh::geometry() { return _geometry; }
+MeshGeometry& Mesh::geometry()
+{
+  assert(_geometry);
+  return *_geometry;
+}
 //-----------------------------------------------------------------------------
-const MeshGeometry& Mesh::geometry() const { return _geometry; }
+const MeshGeometry& Mesh::geometry() const
+{
+  assert(_geometry);
+  return *_geometry;
+}
 //-----------------------------------------------------------------------------
 mesh::CellType& Mesh::type()
 {
@@ -364,9 +373,12 @@ double Mesh::rmax() const
 //-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const
 {
+  assert(_topology);
+  assert(_geometry);
+
   // Get local hashes
   const std::size_t kt_local = _topology->hash();
-  const std::size_t kg_local = _geometry.hash();
+  const std::size_t kg_local = _geometry->hash();
 
   // Compute global hash
   const std::size_t kt = common::hash_global(_mpi_comm.comm(), kt_local);
@@ -378,13 +390,14 @@ std::size_t Mesh::hash() const
 //-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const
 {
+  assert(_geometry);
   assert(_topology);
   std::stringstream s;
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
 
-    s << common::indent(_geometry.str(true));
+    s << common::indent(_geometry->str(true));
     s << common::indent(_topology->str(true));
   }
   else

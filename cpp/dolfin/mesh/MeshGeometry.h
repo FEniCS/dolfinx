@@ -30,10 +30,10 @@ namespace mesh
 class MeshGeometry
 {
 public:
-  /// Create set of coordinates
-  MeshGeometry(const Eigen::Ref<const Eigen::Array<
-                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-                   points);
+  MeshGeometry(std::int64_t num_points_global,
+               const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>& coordinates,
+               const std::vector<std::int64_t>& global_indices);
 
   /// Copy constructor
   MeshGeometry(const MeshGeometry&) = default;
@@ -80,10 +80,10 @@ public:
   const std::vector<std::int64_t>& global_indices() const;
 
   /// Initialise MeshGeometry data
-  void init(std::uint64_t num_points_global,
-            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>& coordinates,
-            const std::vector<std::int64_t>& global_indices);
+  // void init(std::uint64_t num_points_global,
+  //           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+  //                              Eigen::RowMajor>& coordinates,
+  //           const std::vector<std::int64_t>& global_indices);
 
   /// Hash of coordinate values
   ///

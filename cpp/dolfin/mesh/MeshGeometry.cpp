@@ -14,10 +14,12 @@ using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
 MeshGeometry::MeshGeometry(
-    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                        Eigen::RowMajor>>
-        points)
-    : _coordinates(points)
+    std::int64_t num_points_global,
+    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        coordinates,
+    const std::vector<std::int64_t>& global_indices)
+    : _coordinates(coordinates), _global_indices(global_indices),
+      _num_points_global(num_points_global)
 {
   // Do nothing
 }
@@ -59,17 +61,6 @@ MeshGeometry::points() const
 const std::vector<std::int64_t>& MeshGeometry::global_indices() const
 {
   return _global_indices;
-}
-//-----------------------------------------------------------------------------
-void MeshGeometry::init(
-    std::uint64_t num_points_global,
-    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        coordinates,
-    const std::vector<std::int64_t>& global_indices)
-{
-  _num_points_global = num_points_global;
-  _coordinates = coordinates;
-  _global_indices = global_indices;
 }
 //-----------------------------------------------------------------------------
 std::size_t MeshGeometry::hash() const

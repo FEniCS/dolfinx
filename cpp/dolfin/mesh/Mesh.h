@@ -8,7 +8,6 @@
 
 #include "CellType.h"
 #include "CoordinateDofs.h"
-#include "MeshGeometry.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
@@ -29,6 +28,7 @@ namespace mesh
 {
 enum class GhostMode : int;
 class MeshEntity;
+class MeshGeometry;
 class Topology;
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
@@ -285,7 +285,7 @@ private:
   std::unique_ptr<Topology> _topology;
 
   // Mesh geometry
-  MeshGeometry _geometry;
+  std::unique_ptr<MeshGeometry> _geometry;
 
   // FIXME: This should be in geometry!
   // Coordinate dofs
