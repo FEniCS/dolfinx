@@ -83,9 +83,8 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
     // Build list of entities, moving between levels
     for (std::size_t level = 1; level < coloring_type.size(); ++level)
     {
-      for (std::unordered_set<std::size_t>::const_iterator entity_index
-           = entity_list0.begin();
-           entity_index != entity_list0.end(); ++entity_index)
+      for (auto entity_index = entity_list0.cbegin();
+           entity_index != entity_list0.cend(); ++entity_index)
       {
         const mesh::MeshEntity entity(mesh, coloring_type[level - 1],
                                       *entity_index);
