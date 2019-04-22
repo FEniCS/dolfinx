@@ -172,7 +172,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 Mesh::Mesh(const Mesh& mesh)
     : _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(new Topology(*mesh._topology)),
-      _geometry(new MeshpGeometry(*mesh._geometry)),
+      _geometry(new MeshGeometry(*mesh._geometry)),
       _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
       _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
