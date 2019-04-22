@@ -112,14 +112,13 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
 
   if (MPI::size(mesh.mpi_comm()) == 1)
   {
-    mesh.init(d);
-
     // Set global entity numbers in mesh
-    _mesh.topology().init(d, mesh.num_entities(d), mesh.num_entities(d));
-    _mesh.topology().init_global_indices(d, mesh.num_entities(d));
-    for (auto& e : mesh::MeshRange<MeshEntity>(mesh, d))
-      _mesh.topology().set_global_index(d, e.index(), e.index());
-
+    mesh.init(d);
+    _mesh.topology().set_num_entities(d, mesh.num_entities(d),
+                                      mesh.num_entities(d));
+    std::vector<std::int64_t> global_indices(mesh.num_entities(d), 0);
+    std::iota(global_indices.begin(), global_indices.end(), 0);
+    _mesh.topology().set_global_indices(d, global_indices);
     return;
   }
 
@@ -141,10 +140,9 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
       = number_entities(mesh, slave_entities, d);
 
   // Set global entity numbers in mesh
-  _mesh.topology().init(d, mesh.num_entities(d), num_global_entities);
-  _mesh.topology().init_global_indices(d, global_entity_indices.size());
-  for (std::size_t i = 0; i < global_entity_indices.size(); ++i)
-    _mesh.topology().set_global_index(d, i, global_entity_indices[i]);
+  _mesh.topology().set_num_entities(d, mesh.num_entities(d),
+                                    num_global_entities);
+  _mesh.topology().set_global_indices(d, global_entity_indices);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int64_t>,

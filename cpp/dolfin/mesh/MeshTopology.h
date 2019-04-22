@@ -68,19 +68,15 @@ public:
 
   /// Set number of local entities (local_size) and global entities
   /// (global_size) for given topological dimension dim
-  void init(std::size_t dim, std::int32_t local_size, std::int64_t global_size);
+  void set_num_entities(int dim, std::int32_t local_size,
+                        std::int64_t global_size);
 
-  /// Initialize storage for global entity numbering for entities of
-  /// dimension dim
-  void init_global_indices(std::size_t dim, std::int64_t size);
+  // Set the global indices for entities of dimension dim
+  void set_global_indices(int dim,
+                          const std::vector<std::int64_t>& global_indices);
 
   /// Initialise the offset index of ghost entities for this dimension
   void init_ghost(std::size_t dim, std::size_t index);
-
-  /// Set global index for entity of dimension dim and with local
-  /// index
-  void set_global_index(std::size_t dim, std::int32_t local_index,
-                        std::int64_t global_index);
 
   /// Get local-to-global index map for entities of topological
   /// dimension d

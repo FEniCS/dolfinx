@@ -65,32 +65,31 @@ void MeshTopology::clear(int d0, int d1)
   _connectivity[d0][d1].reset();
 }
 //-----------------------------------------------------------------------------
-void MeshTopology::init(std::size_t dim, std::int32_t local_size,
-                        std::int64_t global_size)
+void MeshTopology::set_num_entities(int dim, std::int32_t local_size,
+                                    std::int64_t global_size)
 {
-  assert(dim < _num_entities.size());
+  assert(dim < (int)_num_entities.size());
   _num_entities[dim] = local_size;
 
-  assert(dim < _global_num_entities.size());
+  assert(dim < (int)_global_num_entities.size());
   _global_num_entities[dim] = global_size;
 
   // If mesh is local, make shared vertices empty
-  if (dim == 0 && (local_size == global_size))
-    shared_entities(0);
+  // if (dim == 0 && (local_size == global_size))
+  //   shared_entities(0);
+}
+//-----------------------------------------------------------------------------
+void MeshTopology::set_global_indices(
+    int dim, const std::vector<std::int64_t>& global_indices)
+{
+  assert(dim < (int)_global_indices.size());
+  _global_indices[dim] = global_indices;
 }
 //-----------------------------------------------------------------------------
 void MeshTopology::init_ghost(std::size_t dim, std::size_t index)
 {
   assert(dim < _ghost_offset_index.size());
   _ghost_offset_index[dim] = index;
-}
-//-----------------------------------------------------------------------------
-void MeshTopology::set_global_index(std::size_t dim, std::int32_t local_index,
-                                    std::int64_t global_index)
-{
-  assert(dim < _global_indices.size());
-  assert(local_index < (std::int32_t)_global_indices[dim].size());
-  _global_indices[dim][local_index] = global_index;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int64_t>&
@@ -109,12 +108,6 @@ bool MeshTopology::have_global_indices(std::size_t dim) const
 bool MeshTopology::have_shared_entities(int dim) const
 {
   return (_shared_entities.find(dim) != _shared_entities.end());
-}
-//-----------------------------------------------------------------------------
-void MeshTopology::init_global_indices(std::size_t dim, std::int64_t size)
-{
-  assert(dim < _global_indices.size());
-  _global_indices[dim] = std::vector<std::int64_t>(size, -1);
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::int32_t>>&

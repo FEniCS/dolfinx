@@ -125,16 +125,13 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   }
 
   // Initialise vertex topology
-  _topology.init(0, num_vertices, num_vertices_global);
-  _topology.init_global_indices(0, num_vertices);
-  for (std::int32_t i = 0; i < num_vertices; ++i)
-    _topology.set_global_index(0, i, global_vertex_indices[i]);
+  _topology.set_num_entities(0, num_vertices, num_vertices_global);
+  _topology.set_global_indices(0, global_vertex_indices);
   _topology.shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
-  _topology.init(tdim, num_cells, num_cells_global);
+  _topology.set_num_entities(tdim, num_cells, num_cells_global);
   _topology.init_ghost(tdim, num_local_cells);
-  _topology.init_global_indices(tdim, num_cells);
 
   // Find the max vertex index of non-ghost cells.
   if (num_ghost_cells > 0)
@@ -159,16 +156,15 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // Global cell indices - construct if none given
   if (global_cell_indices.empty())
   {
+    // FIXME: Should global_cell_indices ever be empty?
     const std::int64_t global_cell_offset
         = MPI::global_offset(comm, num_cells, true);
-    for (std::int32_t i = 0; i != num_cells; ++i)
-      _topology.set_global_index(tdim, i, global_cell_offset + i);
+    std::vector<std::int64_t> global_indices(num_cells, 0);
+    std::iota(global_indices.begin(), global_indices.end(), global_cell_offset);
+    _topology.set_global_indices(tdim, global_indices);
   }
   else
-  {
-    for (std::int32_t i = 0; i != num_cells; ++i)
-      _topology.set_global_index(tdim, i, global_cell_indices[i]);
-  }
+    _topology.set_global_indices(tdim, global_cell_indices);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)

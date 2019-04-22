@@ -221,7 +221,7 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   // FIXME: move this out some Mesh can be const
 
   // Initialise connectivity data structure
-  topology.init(dim, num_mesh_entities, 0);
+  topology.set_num_entities(dim, num_mesh_entities, -1);
 
   // Initialise ghost entity offset
   topology.init_ghost(dim, num_nonghost_entities);

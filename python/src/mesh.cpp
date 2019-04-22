@@ -120,22 +120,18 @@ void mesh(py::module& m)
       m, "MeshTopology", "DOLFIN MeshTopology object")
       .def_property_readonly("dim", &dolfin::mesh::MeshTopology::dim,
                              "Topological dimension")
-      .def("init", py::overload_cast<std::size_t, std::int32_t, std::int64_t>(
-                       &dolfin::mesh::MeshTopology::init))
+      .def("set_num_entities", &dolfin::mesh::MeshTopology::set_num_entities)
       .def("connectivity",
            py::overload_cast<std::size_t, std::size_t>(
                &dolfin::mesh::MeshTopology::connectivity, py::const_))
       .def("size", &dolfin::mesh::MeshTopology::size)
       .def("hash", &dolfin::mesh::MeshTopology::hash)
-      .def("init_global_indices",
-           &dolfin::mesh::MeshTopology::init_global_indices)
       .def("have_global_indices",
            &dolfin::mesh::MeshTopology::have_global_indices)
       .def("ghost_offset", &dolfin::mesh::MeshTopology::ghost_offset)
       .def("cell_owner",
            py::overload_cast<>(&dolfin::mesh::MeshTopology::cell_owner,
                                py::const_))
-      .def("set_global_index", &dolfin::mesh::MeshTopology::set_global_index)
       .def("global_indices",
            [](const dolfin::mesh::MeshTopology& self, int dim) {
              auto& indices = self.global_indices(dim);
