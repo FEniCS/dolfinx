@@ -27,13 +27,19 @@ int Topology::dim() const { return _num_entities.size() - 1; }
 //-----------------------------------------------------------------------------
 std::int32_t Topology::size(int dim) const
 {
-  if (_num_entities.empty())
-    return 0;
-  else
+  if (dim == 0)
+    return _num_entities[0];
+
+  assert((int)_num_entities.size() > dim);
+  assert(!_connectivity[dim].empty());
+  auto c = _connectivity[dim][0];
+  if (!c)
   {
-    assert(dim < (int)_num_entities.size());
-    return _num_entities[dim];
+    throw std::runtime_error("Entities of dimension " + std::to_string(dim)
+                             + " have not been created.");
   }
+
+  return c->entity_positions().rows() - 1;
 }
 //-----------------------------------------------------------------------------
 std::int64_t Topology::size_global(int dim) const

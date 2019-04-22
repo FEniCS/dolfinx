@@ -97,6 +97,7 @@ from ufl import div, dx, grad, inner
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
 mesh = xdmf.read_mesh(MPI.comm_world, dolfin.cpp.mesh.GhostMode.none)
+
 sub_domains = xdmf.read_mf_size_t(mesh)
 
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())

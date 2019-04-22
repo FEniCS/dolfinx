@@ -224,20 +224,8 @@ std::size_t Mesh::init(int dim) const
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
 
-  // Skip if mesh is empty
-  if (num_entities(topology().dim()) == 0)
-  {
-    // spdlog::warn("Mesh is empty, unable to create entities of dimension %d.",
-    //              dim);
-    return 0;
-  }
-
-  // Skip if already computed
-  if (_topology.size(dim) > 0)
-    return _topology.size(dim);
-
-  // Skip vertices and cells (should always exist)
-  if (dim == 0 || dim == _topology.dim())
+  // Skip if already computed (vertices (dim=0) should always exist)
+  if (_topology.connectivity(dim, 0) or dim == 0)
     return _topology.size(dim);
 
   // Compute connectivity

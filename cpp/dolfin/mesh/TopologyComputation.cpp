@@ -55,7 +55,7 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   const int tdim = topology.dim();
 
   // Check if entities have already been computed
-  if (topology.size(dim) > 0)
+  if (topology.connectivity(dim, 0))
   {
     // Make sure we really have the connectivity
     if ((!topology.connectivity(tdim, dim) and dim != (int)topology.dim())
@@ -71,7 +71,7 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   }
 
   // Make sure connectivity does not already exist
-  if (topology.connectivity(tdim, dim) || topology.connectivity(dim, 0))
+  if (topology.connectivity(tdim, dim) or topology.connectivity(dim, 0))
   {
     throw std::runtime_error("Connectivity for topological dimension "
                              + std::to_string(dim)
@@ -333,7 +333,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
 
   // Check if entities have already been computed
   Topology& topology = mesh.topology();
-  if (topology.size(dim) > 0)
+  if (topology.connectivity(dim, 0))
   {
     // Make sure we really have the connectivity
     if ((!topology.connectivity(topology.dim(), dim) and dim != topology.dim())
@@ -342,8 +342,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
       throw std::runtime_error(
           "Cannot compute topological entities. Entities of topological "
           "dimension "
-          + std::to_string(dim)
-          + " exist but connectivity is missing  Missing connectivity");
+          + std::to_string(dim) + " exist but connectivity is missing.");
     }
     return topology.size(dim);
   }
@@ -373,7 +372,6 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
                              + std::to_string(num_entity_vertices)
                              + "not supported");
   }
-
   // Set cell-entity connectivity
   if (std::get<0>(data))
     topology.set_connectivity(std::get<0>(data), topology.dim(), dim);
@@ -410,14 +408,10 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
     return;
 
   // Compute entities if they don't exist
-  if (topology.size(d0) == 0)
+  if (!topology.connectivity(d0, 0))
     compute_entities(mesh, d0);
-  if (topology.size(d1) == 0)
+  if (!topology.connectivity(d1, 0))
     compute_entities(mesh, d1);
-
-  // Check if mesh has entities
-  if (topology.size(d0) == 0 && topology.size(d1) == 0)
-    return;
 
   // Check if connectivity still needs to be computed
   if (topology.connectivity(d0, d1))
