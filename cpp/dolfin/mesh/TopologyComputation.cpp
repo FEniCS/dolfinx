@@ -50,6 +50,12 @@ std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
            std::int32_t>
 compute_entities_by_key_matching(Mesh& mesh, int dim)
 {
+  if (dim == 0)
+  {
+    throw std::runtime_error(
+        "Cannot create vertices fo topology. Should already exist.");
+  }
+
   // Get mesh topology and connectivity
   Topology& topology = mesh.topology();
   const int tdim = topology.dim();
@@ -57,29 +63,15 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   // Check if entities have already been computed
   if (topology.connectivity(dim, 0))
   {
-    // Make sure we really have the connectivity
-    if ((!topology.connectivity(tdim, dim) and dim != (int)topology.dim())
-        or (!topology.connectivity(dim, 0) and dim != 0))
-    {
-      throw std::runtime_error(
-          "Cannot compute topological entities. Entities of topological "
-          "dimension "
-          + std::to_string(dim)
-          + " exist but connectivity is missing  Missing connectivity");
-    }
+    // Check that we have cell-entity connectivity
+    if (!topology.connectivity(tdim, dim))
+      throw std::runtime_error("Missing cell-entity connectivity");
+
     return {nullptr, nullptr, topology.size(dim)};
   }
 
-  // Make sure connectivity does not already exist
-  if (topology.connectivity(tdim, dim) or topology.connectivity(dim, 0))
-  {
-    throw std::runtime_error("Connectivity for topological dimension "
-                             + std::to_string(dim)
-                             + " exists but entities are missing");
-  }
-
   // Start timer
-  common::Timer timer("Compute entities dim = " + std::to_string(dim));
+  common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   // Get cell type
   const CellType& cell_type = mesh.type();
@@ -89,7 +81,6 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   const int num_vertices = cell_type.num_vertices(dim);
 
   // Create map from cell vertices to entity vertices
-
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       e_vertices(num_entities, num_vertices);
   const int num_vertices_per_cell = cell_type.num_vertices();
@@ -330,11 +321,15 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
 
   // Check if entities have already been computed
   Topology& topology = mesh.topology();
+
+  // Vertices must always exist
+  if (dim == 0)
+    return topology.size(0);
+
   if (topology.connectivity(dim, 0))
   {
     // Make sure we really have the connectivity
-    if ((!topology.connectivity(topology.dim(), dim) and dim != topology.dim())
-        or (!topology.connectivity(dim, 0) and dim != 0))
+    if (!topology.connectivity(topology.dim(), dim))
     {
       throw std::runtime_error(
           "Cannot compute topological entities. Entities of topological "
@@ -421,6 +416,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
+    // For d0-d1, use indentity connecticity
     std::vector<std::vector<std::size_t>> connectivity_dd(
         topology.size(d0), std::vector<std::size_t>(1));
     for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
@@ -436,12 +432,14 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
         = std::make_shared<Connectivity>(compute_from_transpose(mesh, d0, d1));
     topology.set_connectivity(c, d0, d1);
   }
-  else
+  else if (d0 > d1)
   {
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
     auto c = std::make_shared<Connectivity>(compute_from_map(mesh, d0, d1));
     topology.set_connectivity(c, d0, d1);
   }
+  else
+    throw std::runtime_error("Entity dimension error when computing topology.");
 }
 //--------------------------------------------------------------------------

@@ -508,9 +508,10 @@ def test_dofs_dim(space):
     mesh = V.mesh()
     for dim in range(0, mesh.topology.dim):
         edofs = dofmap.dofs(mesh, dim)
-        num_mesh_entities = mesh.num_entities(dim)
-        dofs_per_entity = dofmap.num_entity_dofs(dim)
-        assert len(edofs) == dofs_per_entity * num_mesh_entities
+        if mesh.topology.connectivity(dim, 0) is not None:
+            num_mesh_entities = mesh.num_entities(dim)
+            dofs_per_entity = dofmap.num_entity_dofs(dim)
+            assert len(edofs) == dofs_per_entity * num_mesh_entities
 
 
 @pytest.mark.skip

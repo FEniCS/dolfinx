@@ -27,10 +27,11 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXi64> cells,
            const std::vector<std::int64_t>& global_cell_indices,
            const GhostMode ghost_mode, std::uint32_t num_ghost_cells)
-    : common::Variable("mesh"), _cell_type(mesh::CellType::create(type)),
+    : _cell_type(mesh::CellType::create(type)),
       // _topology(_cell_type->dim()),
       _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
-      _mpi_comm(comm), _ghost_mode(ghost_mode)
+      _mpi_comm(comm), _ghost_mode(ghost_mode),
+      _unique_id(common::UniqueIdGenerator::id())
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
@@ -169,24 +170,24 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : common::Variable(mesh.name()),
-      _cell_type(CellType::create(mesh._cell_type->cell_type())),
+    : _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(new Topology(*mesh._topology)), _geometry(mesh._geometry),
       _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
-      _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode)
+      _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode),
+      _unique_id(common::UniqueIdGenerator::id())
 
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
-    : common::Variable(std::move(mesh)),
-      _cell_type(CellType::create(mesh._cell_type->cell_type())),
+    : _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _coordinate_dofs(std::move(mesh._coordinate_dofs)), _degree(mesh._degree),
       _mpi_comm(std::move(mesh._mpi_comm)),
-      _ghost_mode(std::move(mesh._ghost_mode))
+      _ghost_mode(std::move(mesh._ghost_mode)),
+      _unique_id(std::move(mesh._unique_id))
 {
   // Do nothing
 }
@@ -211,9 +212,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
     _cell_type.reset();
 
   _ghost_mode = mesh._ghost_mode;
-
-  // Rename
-  rename(mesh.name());
+  _unique_id = common::UniqueIdGenerator::id();
 
   return *this;
 }

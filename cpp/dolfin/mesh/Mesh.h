@@ -10,7 +10,7 @@
 #include "CoordinateDofs.h"
 #include "MeshGeometry.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
+#include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/utils.h>
 #include <memory>
@@ -57,7 +57,7 @@ class Topology;
 /// such as all edges connected to a given vertex must also be
 /// explicitly created (in this case by a call to mesh.init(0, 1)).
 
-class Mesh : public common::Variable
+class Mesh
 {
 public:
   /// Construct a Mesh from topological and geometric data.
@@ -116,6 +116,12 @@ public:
   /// @param mesh (Mesh)
   ///         Another Mesh object.
   Mesh& operator=(const Mesh& mesh);
+
+  /// Assignment move operator
+  ///
+  /// @param mesh (Mesh)
+  ///         Another Mesh object.
+  // Mesh& operator=(Mesh&& mesh) = default;
 
   /// Get number of entities of given topological dimension.
   ///
@@ -238,6 +244,12 @@ public:
   ///
   std::size_t hash() const;
 
+  /// Get unique identifier.
+  ///
+  /// @returns _std::size_t_
+  ///         The unique integer identifier associated with the object.
+  std::size_t id() const { return _unique_id; }
+
   /// Informal string representation.
   ///
   /// @param verbose (bool)
@@ -288,6 +300,9 @@ private:
 
   // Ghost mode used for partitioning
   GhostMode _ghost_mode;
+
+  // Unique identifier
+  std::size_t _unique_id;
 };
 } // namespace mesh
 } // namespace dolfin

@@ -140,9 +140,8 @@ void mesh(py::module& m)
       .def("str", &dolfin::mesh::Topology::str);
 
   // dolfin::mesh::Mesh
-  py::class_<dolfin::mesh::Mesh, std::shared_ptr<dolfin::mesh::Mesh>,
-             dolfin::common::Variable>(m, "Mesh", py::dynamic_attr(),
-                                       "Mesh object")
+  py::class_<dolfin::mesh::Mesh, std::shared_ptr<dolfin::mesh::Mesh>>(
+      m, "Mesh", py::dynamic_attr(), "Mesh object")
       .def(py::init(
           [](const MPICommWrapper comm, dolfin::mesh::CellType::Type type,
              const Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
@@ -189,7 +188,8 @@ void mesh(py::module& m)
           "Mesh topology", py::return_value_policy::reference_internal)
       .def("type", py::overload_cast<>(&dolfin::mesh::Mesh::type, py::const_),
            py::return_value_policy::reference)
-      .def("ufl_id", [](const dolfin::mesh::Mesh& self) { return self.id(); })
+      .def("ufl_id", &dolfin::mesh::Mesh::id)
+      .def_property_readonly("id", &dolfin::mesh::Mesh::id)
       .def("cell_name", [](const dolfin::mesh::Mesh& self) {
         return dolfin::mesh::CellType::type2string(self.type().cell_type());
       });
