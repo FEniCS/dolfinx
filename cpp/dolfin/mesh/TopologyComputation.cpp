@@ -18,7 +18,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <memory>
-// #include <spdlog/spdlog.h>
 #include <numeric>
 #include <string>
 #include <tuple>
@@ -59,15 +58,14 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   if (topology.size(dim) > 0)
   {
     // Make sure we really have the connectivity
-    if ((!topology.connectivity(tdim, dim) && dim != (int)topology.dim())
-        || (!topology.connectivity(dim, 0) && dim != 0))
+    if ((!topology.connectivity(tdim, dim) and dim != (int)topology.dim())
+        or (!topology.connectivity(dim, 0) and dim != 0))
     {
-      // spdlog::error("TopologyComputation.cpp", "compute topological
-      // entities",
-      //               "Entities of topological dimension %d exist but "
-      //               "connectivity is missing",
-      //               dim);
-      throw std::runtime_error("Missing connectivity");
+      throw std::runtime_error(
+          "Cannot compute topological entities. Entities of topological "
+          "dimension "
+          + std::to_string(dim)
+          + " exist but connectivity is missing  Missing connectivity");
     }
     return {nullptr, nullptr, topology.size(dim)};
   }
@@ -341,12 +339,11 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
     if ((!topology.connectivity(topology.dim(), dim) and dim != topology.dim())
         or (!topology.connectivity(dim, 0) and dim != 0))
     {
-      // spdlog::error("TopologyComputation.cpp", "compute topological
-      // entities",
-      //               "Entities of topological dimension %d exist but "
-      //               "connectivity is missing",
-      //               dim);
-      throw std::runtime_error("Missing connectivity");
+      throw std::runtime_error(
+          "Cannot compute topological entities. Entities of topological "
+          "dimension "
+          + std::to_string(dim)
+          + " exist but connectivity is missing  Missing connectivity");
     }
     return topology.size(dim);
   }
@@ -372,10 +369,9 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
     data = compute_entities_by_key_matching<4>(mesh, dim);
     break;
   default:
-    // spdlog::error("TopologyComputation.cpp", "compute topological entities",
-    //               "Entities with %d vertices not supported",
-    //               num_entity_vertices);
-    throw std::runtime_error("Not supported");
+    throw std::runtime_error("Topology computation of entities with "
+                             + std::to_string(num_entity_vertices)
+                             + "not supported");
   }
 
   // Set cell-entity connectivity
@@ -436,7 +432,6 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   {
     std::vector<std::vector<std::size_t>> connectivity_dd(
         topology.size(d0), std::vector<std::size_t>(1));
-
     for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
       connectivity_dd[e.index()][0] = e.index();
     auto connectivity = std::make_shared<Connectivity>(connectivity_dd);
