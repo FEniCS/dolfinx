@@ -14,8 +14,8 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-Topology::Topology(std::size_t dim)
-    : _num_entities(dim + 1, 0), _ghost_offset_index(dim + 1, 0),
+Topology::Topology(std::size_t dim, std::int32_t num_vertices)
+    : _num_vertices(num_vertices), _ghost_offset_index(dim + 1, 0),
       _global_num_entities(dim + 1, 0), _global_indices(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<Connectivity>>(dim + 1))
@@ -23,14 +23,14 @@ Topology::Topology(std::size_t dim)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-int Topology::dim() const { return _num_entities.size() - 1; }
+int Topology::dim() const { return _connectivity.size() - 1; }
 //-----------------------------------------------------------------------------
 std::int32_t Topology::size(int dim) const
 {
   if (dim == 0)
-    return _num_entities[0];
+    return _num_vertices;
 
-  assert((int)_num_entities.size() > dim);
+  assert(dim < (int)_connectivity.size());
   assert(!_connectivity[dim].empty());
   auto c = _connectivity[dim][0];
   if (!c)
@@ -71,12 +71,8 @@ void Topology::clear(int d0, int d1)
   _connectivity[d0][d1].reset();
 }
 //-----------------------------------------------------------------------------
-void Topology::set_num_entities(int dim, std::int32_t local_size,
-                                std::int64_t global_size)
+void Topology::set_num_entities_global(int dim, std::int64_t global_size)
 {
-  assert(dim < (int)_num_entities.size());
-  _num_entities[dim] = local_size;
-
   assert(dim < (int)_global_num_entities.size());
   _global_num_entities[dim] = global_size;
 
@@ -175,7 +171,7 @@ size_t Topology::hash() const
 //-----------------------------------------------------------------------------
 std::string Topology::str(bool verbose) const
 {
-  const std::size_t _dim = _num_entities.size() - 1;
+  const std::size_t _dim = _connectivity.size() - 1;
   std::stringstream s;
   if (verbose)
   {
@@ -183,7 +179,7 @@ std::string Topology::str(bool verbose) const
 
     s << "  Number of entities:" << std::endl << std::endl;
     for (std::size_t d = 0; d <= _dim; d++)
-      s << "    dim = " << d << ": " << _num_entities[d] << std::endl;
+      s << "    dim = " << d << ": " << size(d) << std::endl;
     s << std::endl;
 
     s << "  Connectivity matrix:" << std::endl << std::endl;

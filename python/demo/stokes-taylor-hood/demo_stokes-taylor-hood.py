@@ -103,7 +103,6 @@ sub_domains = xdmf.read_mf_size_t(mesh)
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
-
 # Next, we define a :py:class:`FunctionSpace
 # <dolfin.functions.functionspace.FunctionSpace>` built on a mixed
 # finite element ``TH`` which consists of continuous

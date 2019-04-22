@@ -28,9 +28,9 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const std::vector<std::int64_t>& global_cell_indices,
            const GhostMode ghost_mode, std::uint32_t num_ghost_cells)
     : common::Variable("mesh"), _cell_type(mesh::CellType::create(type)),
-      _topology(_cell_type->dim()), _geometry(points),
-      _coordinate_dofs(_cell_type->dim()), _degree(1), _mpi_comm(comm),
-      _ghost_mode(ghost_mode)
+      // _topology(_cell_type->dim()),
+      _geometry(points), _coordinate_dofs(_cell_type->dim()), _degree(1),
+      _mpi_comm(comm), _ghost_mode(ghost_mode)
 {
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
@@ -125,13 +125,14 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   }
 
   // Initialise vertex topology
-  _topology.set_num_entities(0, num_vertices, num_vertices_global);
-  _topology.set_global_indices(0, global_vertex_indices);
-  _topology.shared_entities(0) = shared_vertices;
+  _topology = std::make_unique<Topology>(tdim, num_vertices);
+  _topology->set_num_entities_global(0, num_vertices_global);
+  _topology->set_global_indices(0, global_vertex_indices);
+  _topology->shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
-  _topology.set_num_entities(tdim, num_cells, num_cells_global);
-  _topology.init_ghost(tdim, num_local_cells);
+  _topology->set_num_entities_global(tdim, num_cells_global);
+  _topology->init_ghost(tdim, num_local_cells);
 
   // Find the max vertex index of non-ghost cells.
   if (num_ghost_cells > 0)
@@ -142,16 +143,16 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
     // Initialise number of local non-ghost vertices
     const std::uint32_t num_non_ghost_vertices = max_vertex + 1;
-    _topology.init_ghost(0, num_non_ghost_vertices);
+    _topology->init_ghost(0, num_non_ghost_vertices);
   }
   else
-    _topology.init_ghost(0, num_vertices);
+    _topology->init_ghost(0, num_vertices);
 
   // Add cells. Only copies the first few entries on each row
   // corresponding to vertices.
   auto cv = std::make_shared<Connectivity>(
       coordinate_dofs.leftCols(num_vertices_per_cell));
-  _topology.set_connectivity(cv, tdim, 0);
+  _topology->set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given
   if (global_cell_indices.empty())
@@ -161,16 +162,16 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
         = MPI::global_offset(comm, num_cells, true);
     std::vector<std::int64_t> global_indices(num_cells, 0);
     std::iota(global_indices.begin(), global_indices.end(), global_cell_offset);
-    _topology.set_global_indices(tdim, global_indices);
+    _topology->set_global_indices(tdim, global_indices);
   }
   else
-    _topology.set_global_indices(tdim, global_cell_indices);
+    _topology->set_global_indices(tdim, global_cell_indices);
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
     : common::Variable(mesh.name()),
       _cell_type(CellType::create(mesh._cell_type->cell_type())),
-      _topology(mesh._topology), _geometry(mesh._geometry),
+      _topology(new Topology(*mesh._topology)), _geometry(mesh._geometry),
       _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
       _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode)
 
@@ -198,7 +199,8 @@ Mesh::~Mesh()
 Mesh& Mesh::operator=(const Mesh& mesh)
 {
   // Assign data
-  _topology = mesh._topology;
+  assert(mesh._topology);
+  _topology = std::make_unique<Topology>(*mesh._topology);
   _geometry = mesh._geometry;
   _coordinate_dofs = mesh._coordinate_dofs;
   _degree = mesh._degree;
@@ -224,15 +226,17 @@ std::size_t Mesh::init(int dim) const
   // const_cast is also needed to allow iterators over a const Mesh to
   // create new connectivity.
 
+  assert(_topology);
+
   // Skip if already computed (vertices (dim=0) should always exist)
-  if (_topology.connectivity(dim, 0) or dim == 0)
-    return _topology.size(dim);
+  if (_topology->connectivity(dim, 0) or dim == 0)
+    return _topology->size(dim);
 
   // Compute connectivity
   Mesh* mesh = const_cast<Mesh*>(this);
   TopologyComputation::compute_entities(*mesh, dim);
 
-  return _topology.size(dim);
+  return _topology->size(dim);
 }
 //-----------------------------------------------------------------------------
 void Mesh::init(std::size_t d0, std::size_t d1) const
@@ -244,7 +248,8 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   // create new connectivity.
 
   // Skip if mesh is empty
-  if (num_entities(topology().dim()) == 0)
+  assert(_topology);
+  if (num_entities(_topology->dim()) == 0)
   {
     // spdlog::warn("Mesh is empty, unable to create connectivity %d --> %d.",
     // d0,
@@ -253,7 +258,7 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   }
 
   // Skip if already computed
-  if (_topology.connectivity(d0, d1))
+  if (_topology->connectivity(d0, d1))
     return;
 
   // Compute connectivity
@@ -264,12 +269,12 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
 void Mesh::init() const
 {
   // Compute all entities
-  for (int d = 0; d <= topology().dim(); d++)
+  for (int d = 0; d <= _topology->dim(); d++)
     init(d);
 
   // Compute all connectivity
-  for (int d0 = 0; d0 <= topology().dim(); d0++)
-    for (int d1 = 0; d1 <= topology().dim(); d1++)
+  for (int d0 = 0; d0 <= _topology->dim(); d0++)
+    for (int d1 = 0; d1 <= _topology->dim(); d1++)
       init(d0, d1);
 }
 //-----------------------------------------------------------------------------
@@ -281,13 +286,13 @@ void Mesh::init_global(std::size_t dim) const
 //-----------------------------------------------------------------------------
 void Mesh::clean()
 {
-  const std::size_t D = topology().dim();
+  const std::size_t D = _topology->dim();
   for (std::size_t d0 = 0; d0 <= D; d0++)
   {
     for (std::size_t d1 = 0; d1 <= D; d1++)
     {
       if (!(d0 == D && d1 == 0))
-        _topology.clear(d0, d1);
+        _topology->clear(d0, d1);
     }
   }
 }
@@ -331,7 +336,7 @@ double Mesh::rmax() const
 std::size_t Mesh::hash() const
 {
   // Get local hashes
-  const std::size_t kt_local = _topology.hash();
+  const std::size_t kt_local = _topology->hash();
   const std::size_t kg_local = _geometry.hash();
 
   // Compute global hash
@@ -344,18 +349,19 @@ std::size_t Mesh::hash() const
 //-----------------------------------------------------------------------------
 std::string Mesh::str(bool verbose) const
 {
+  assert(_topology);
   std::stringstream s;
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
 
     s << common::indent(_geometry.str(true));
-    s << common::indent(_topology.str(true));
+    s << common::indent(_topology->str(true));
   }
   else
   {
     std::string cell_type("undefined cell type");
-    const int tdim = topology().dim();
+    const int tdim = _topology->dim();
     if (_cell_type)
       cell_type = _cell_type->description(true);
 

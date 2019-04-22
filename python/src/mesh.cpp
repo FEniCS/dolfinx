@@ -119,7 +119,6 @@ void mesh(py::module& m)
       m, "Topology", "DOLFIN Topology object")
       .def_property_readonly("dim", &dolfin::mesh::Topology::dim,
                              "Topological dimension")
-      .def("set_num_entities", &dolfin::mesh::Topology::set_num_entities)
       .def("connectivity",
            py::overload_cast<std::size_t, std::size_t>(
                &dolfin::mesh::Topology::connectivity, py::const_))

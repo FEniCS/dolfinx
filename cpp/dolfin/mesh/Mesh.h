@@ -125,7 +125,11 @@ public:
   /// @return std::size_t
   ///         Number of entities of topological dimension d.
   ///
-  std::int32_t num_entities(int d) const { return _topology.size(d); }
+  std::int32_t num_entities(int d) const
+  {
+    assert(_topology);
+    return _topology->size(d);
+  }
 
   /// Get global number of entities of given topological dimension.
   ///
@@ -137,20 +141,29 @@ public:
   ///
   std::int64_t num_entities_global(std::size_t dim) const
   {
-    return _topology.size_global(dim);
+    assert(_topology);
+    return _topology->size_global(dim);
   }
 
   /// Get mesh topology.
   ///
   /// @return Topology
   ///         The topology object associated with the mesh.
-  Topology& topology() { return _topology; }
+  Topology& topology()
+  {
+    assert(_topology);
+    return *_topology;
+  }
 
   /// Get mesh topology (const version).
   ///
   /// @return Topology
   ///         The topology object associated with the mesh.
-  const Topology& topology() const { return _topology; }
+  const Topology& topology() const
+  {
+    assert(_topology);
+    return *_topology;
+  }
 
   /// Get mesh geometry.
   ///
@@ -281,7 +294,7 @@ private:
   std::unique_ptr<mesh::CellType> _cell_type;
 
   // Mesh topology
-  Topology _topology;
+  std::unique_ptr<Topology> _topology;
 
   // Mesh geometry
   MeshGeometry _geometry;

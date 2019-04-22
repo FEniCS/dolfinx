@@ -36,7 +36,7 @@ public:
   /// Create empty mesh topology
   /// @param dim
   ///   Topological dimension
-  Topology(std::size_t dim);
+  Topology(std::size_t dim, std::int32_t num_vertices);
 
   /// Copy constructor
   Topology(const Topology& topology) = default;
@@ -66,10 +66,9 @@ public:
   /// Clear data for given pair of topological dimensions
   void clear(int d0, int d1);
 
-  /// Set number of local entities (local_size) and global entities
-  /// (global_size) for given topological dimension dim
-  void set_num_entities(int dim, std::int32_t local_size,
-                        std::int64_t global_size);
+  /// Set number of global entities (global_size) for given topological
+  /// dimension dim
+  void set_num_entities_global(int dim, std::int64_t global_size);
 
   // Set the global indices for entities of dimension dim
   void set_global_indices(int dim,
@@ -127,8 +126,8 @@ public:
   std::string str(bool verbose) const;
 
 private:
-  // Number of mesh entities for each topological dimension
-  std::vector<std::int32_t> _num_entities;
+  // Number of mesh vertices
+  std::int32_t _num_vertices;
 
   // Number of ghost indices for each topological dimension (local
   // or global??)
