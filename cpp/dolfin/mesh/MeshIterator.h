@@ -9,7 +9,7 @@
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshTopology.h"
+#include "Topology.h"
 #include <iterator>
 
 namespace dolfin

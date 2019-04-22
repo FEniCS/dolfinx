@@ -11,7 +11,7 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
-#include "MeshTopology.h"
+#include "Topology.h"
 #include "MeshValueCollection.h"
 #include "Vertex.h"
 #include <algorithm>

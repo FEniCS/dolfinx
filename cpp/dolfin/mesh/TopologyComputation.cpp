@@ -10,7 +10,7 @@
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "MeshIterator.h"
-#include "MeshTopology.h"
+#include "Topology.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <boost/unordered_map.hpp>
@@ -52,7 +52,7 @@ std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
 compute_entities_by_key_matching(Mesh& mesh, int dim)
 {
   // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.topology();
+  Topology& topology = mesh.topology();
   const int tdim = topology.dim();
 
   // Check if entities have already been computed
@@ -251,7 +251,7 @@ Connectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
   // d1);
 
   // Get mesh topology and connectivity
-  const MeshTopology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
 
   // Need connectivity d1 - d0
   if (!topology.connectivity(d1, d0))
@@ -334,7 +334,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
   // spdlog::info("Computing mesh entities of dimension %d", dim);
 
   // Check if entities have already been computed
-  MeshTopology& topology = mesh.topology();
+  Topology& topology = mesh.topology();
   if (topology.size(dim) > 0)
   {
     // Make sure we really have the connectivity
@@ -407,7 +407,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   // spdlog::info("Requesting connectivity %d - %d.", d0, d1);
 
   // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.topology();
+  Topology& topology = mesh.topology();
 
   // Return connectivity has already been computed
   if (topology.connectivity(d0, d1))

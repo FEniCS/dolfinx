@@ -9,7 +9,7 @@
 #include "CellType.h"
 #include "CoordinateDofs.h"
 #include "MeshGeometry.h"
-#include "MeshTopology.h"
+#include "Topology.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
@@ -142,15 +142,15 @@ public:
 
   /// Get mesh topology.
   ///
-  /// @return MeshTopology
+  /// @return Topology
   ///         The topology object associated with the mesh.
-  MeshTopology& topology() { return _topology; }
+  Topology& topology() { return _topology; }
 
   /// Get mesh topology (const version).
   ///
-  /// @return MeshTopology
+  /// @return Topology
   ///         The topology object associated with the mesh.
-  const MeshTopology& topology() const { return _topology; }
+  const Topology& topology() const { return _topology; }
 
   /// Get mesh geometry.
   ///
@@ -281,7 +281,7 @@ private:
   std::unique_ptr<mesh::CellType> _cell_type;
 
   // Mesh topology
-  MeshTopology _topology;
+  Topology _topology;
 
   // Mesh geometry
   MeshGeometry _geometry;

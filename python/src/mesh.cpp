@@ -23,11 +23,11 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshQuality.h>
-#include <dolfin/mesh/MeshTopology.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Ordering.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/SubDomain.h>
+#include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/Vertex.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -114,34 +114,31 @@ void mesh(py::module& m)
       .def_readwrite("coord_mapping",
                      &dolfin::mesh::MeshGeometry::coord_mapping);
 
-  // dolfin::mesh::MeshTopology class
-  py::class_<dolfin::mesh::MeshTopology,
-             std::shared_ptr<dolfin::mesh::MeshTopology>>(
-      m, "MeshTopology", "DOLFIN MeshTopology object")
-      .def_property_readonly("dim", &dolfin::mesh::MeshTopology::dim,
+  // dolfin::mesh::Topology class
+  py::class_<dolfin::mesh::Topology, std::shared_ptr<dolfin::mesh::Topology>>(
+      m, "Topology", "DOLFIN Topology object")
+      .def_property_readonly("dim", &dolfin::mesh::Topology::dim,
                              "Topological dimension")
-      .def("set_num_entities", &dolfin::mesh::MeshTopology::set_num_entities)
+      .def("set_num_entities", &dolfin::mesh::Topology::set_num_entities)
       .def("connectivity",
            py::overload_cast<std::size_t, std::size_t>(
-               &dolfin::mesh::MeshTopology::connectivity, py::const_))
-      .def("size", &dolfin::mesh::MeshTopology::size)
-      .def("hash", &dolfin::mesh::MeshTopology::hash)
-      .def("have_global_indices",
-           &dolfin::mesh::MeshTopology::have_global_indices)
-      .def("ghost_offset", &dolfin::mesh::MeshTopology::ghost_offset)
+               &dolfin::mesh::Topology::connectivity, py::const_))
+      .def("size", &dolfin::mesh::Topology::size)
+      .def("hash", &dolfin::mesh::Topology::hash)
+      .def("have_global_indices", &dolfin::mesh::Topology::have_global_indices)
+      .def("ghost_offset", &dolfin::mesh::Topology::ghost_offset)
       .def("cell_owner",
-           py::overload_cast<>(&dolfin::mesh::MeshTopology::cell_owner,
-                               py::const_))
+           py::overload_cast<>(&dolfin::mesh::Topology::cell_owner, py::const_))
       .def("global_indices",
-           [](const dolfin::mesh::MeshTopology& self, int dim) {
+           [](const dolfin::mesh::Topology& self, int dim) {
              auto& indices = self.global_indices(dim);
              return py::array_t<std::int64_t>(indices.size(), indices.data());
            })
       .def("have_shared_entities",
-           &dolfin::mesh::MeshTopology::have_shared_entities)
+           &dolfin::mesh::Topology::have_shared_entities)
       .def("shared_entities",
-           py::overload_cast<int>(&dolfin::mesh::MeshTopology::shared_entities))
-      .def("str", &dolfin::mesh::MeshTopology::str);
+           py::overload_cast<int>(&dolfin::mesh::Topology::shared_entities))
+      .def("str", &dolfin::mesh::Topology::str);
 
   // dolfin::mesh::Mesh
   py::class_<dolfin::mesh::Mesh, std::shared_ptr<dolfin::mesh::Mesh>,

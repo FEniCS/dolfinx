@@ -109,7 +109,7 @@ public:
   Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
   entity_positions() const;
 
-  /// Set global number of connections for all local entities
+  /// Set global number of connections for each local entities
   void set_global_size(const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
                            num_global_connections);
 
@@ -126,7 +126,7 @@ private:
   // Position of first connection for each entity (using local index)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _index_to_position;
 
-  // Global number of connections for all entities (possibly not
+  // Global number of connections for each entity (possibly not
   // computed)
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _num_global_connections;
 };
