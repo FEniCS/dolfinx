@@ -48,7 +48,7 @@ namespace
 template <int N>
 std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
            std::int32_t>
-compute_entities_by_key_matching(Mesh& mesh, int dim)
+compute_entities_by_key_matching(const Mesh& mesh, int dim)
 {
   if (dim == 0)
   {
@@ -57,7 +57,7 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   }
 
   // Get mesh topology and connectivity
-  Topology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
 
   // Check if entities have already been computed
@@ -132,8 +132,8 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
     }
   }
 
-  // Sort entities by key. For the same key, those beloning to non-ghost
-  // cells will appear before those belonging to ghost cells.
+  // Sort entities by key. For the same key, those belonging to
+  // non-ghost cells will appear before those belonging to ghost cells.
   std::sort(keyed_entities.begin(), keyed_entities.end());
 
   // Compute entity indices (using -1, -2, -3, etc, for ghost entities)
@@ -209,19 +209,15 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
 
   // FIXME: move this out some Mesh can be const
 
-  // Initialise ghost entity offset
-  topology.init_ghost(dim, num_nonghost_entities);
-
   // Set cell-entity connectivity
   auto ce = std::make_shared<Connectivity>(connectivity_ce);
   auto ev = std::make_shared<Connectivity>(connectivity_ev);
 
-  return {ce, ev, connectivity_ev.size()};
+  return {ce, ev, num_nonghost_entities};
 }
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
-Connectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
-                                    std::size_t d1)
+Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
 {
   // The transpose is computed in three steps:
   //
@@ -264,7 +260,7 @@ Connectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
 }
 //-----------------------------------------------------------------------------
 // Direct lookup of entity from vertices in a map
-Connectivity compute_from_map(const Mesh& mesh, std::size_t d0, std::size_t d1)
+Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
 {
   assert(d1 > 0);
   assert(d0 > d1);
@@ -315,7 +311,7 @@ Connectivity compute_from_map(const Mesh& mesh, std::size_t d0, std::size_t d1)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
+void TopologyComputation::compute_entities(Mesh& mesh, int dim)
 {
   // spdlog::info("Computing mesh entities of dimension %d", dim);
 
@@ -324,7 +320,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
 
   // Vertices must always exist
   if (dim == 0)
-    return topology.size(0);
+    return;
 
   if (topology.connectivity(dim, 0))
   {
@@ -336,7 +332,7 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
           "dimension "
           + std::to_string(dim) + " exist but connectivity is missing.");
     }
-    return topology.size(dim);
+    return;
   }
 
   // Call specialised function to compute entities
@@ -372,11 +368,11 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
   if (std::get<1>(data))
     topology.set_connectivity(std::get<1>(data), dim, 0);
 
-  return std::get<2>(data);
+  // Initialise ghost entity offset
+  topology.init_ghost(dim, std::get<2>(data));
 }
 //-----------------------------------------------------------------------------
-void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
-                                               std::size_t d1)
+void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
 {
   // This is where all the logic takes place to find a strategy for
   // the connectivity computation. For any given pair (d0, d1), the
