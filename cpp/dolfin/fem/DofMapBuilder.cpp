@@ -299,7 +299,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
       needs_entities[d] = true;
-      mesh.init(d);
+      mesh.create_entities(d);
       mesh::DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d] = mesh.num_entities(d);
       num_mesh_entities_global[d] = mesh.num_entities_global(d);
@@ -682,8 +682,8 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // random positive integer, interior nodes are marked as -1, interior
   // nodes in ghost layer of other processes are marked -2, and ghost
   // nodes are marked as -3,
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
+  mesh.create_entities(D - 1);
+  mesh.create_connectivity(D - 1, D);
   const std::vector<sharing_marker> shared_nodes
       = compute_sharing_markers(node_graph0, element_dof_layout, mesh);
 

@@ -64,10 +64,10 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   const std::size_t D = mesh.topology().dim();
   if (dim < D)
   {
-    mesh.init(dim);
+    mesh.create_entities(dim);
     if (dim != D - 1)
-      mesh.init(dim, D - 1);
-    mesh.init(D - 1, D);
+      mesh.create_connectivity(dim, D - 1);
+    mesh.create_connectivity(D - 1, D);
   }
 
   // Speed up the computation by only checking each vertex once (or

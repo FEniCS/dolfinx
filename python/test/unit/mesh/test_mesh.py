@@ -389,7 +389,7 @@ def test_shared_entities(mesh_factory):
     # FIXME: Implement a proper test
     for shared_dim in range(dim + 1):
         # Initialise global indices (if not already)
-        mesh.init_global(shared_dim)
+        mesh.create_global_indices(shared_dim)
 
         assert isinstance(mesh.topology.shared_entities(shared_dim), dict)
         assert isinstance(
@@ -431,7 +431,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities
-    mesh.init()
+    mesh.create_connectivity_all()
 
     for cell in Cells(mesh):
         # Get mesh-global (MPI-local) indices of cell vertices

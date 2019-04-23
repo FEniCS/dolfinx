@@ -89,9 +89,9 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
       master_coord_to_entity_index((lt_coordinate(sub_domain.map_tolerance)));
 
   // Initialise facet-cell connectivity
-  mesh.init(tdim - 1, tdim);
-  mesh.init(dim);
-  mesh.init(tdim - 1, dim);
+  mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entities(dim);
+  mesh.create_connectivity(tdim - 1, dim);
 
   std::vector<bool> visited(mesh.num_entities(dim), false);
   for (auto& f : MeshRange<Facet>(mesh))

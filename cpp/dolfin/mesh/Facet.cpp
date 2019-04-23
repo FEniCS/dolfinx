@@ -17,8 +17,8 @@ using namespace dolfin::mesh;
 geometry::Point Facet::normal() const
 {
   const std::size_t D = _mesh->topology().dim();
-  _mesh->init(D - 1);
-  _mesh->init(D - 1, D);
+  _mesh->create_entities(D - 1);
+  _mesh->create_connectivity(D - 1, D);
 
   // Get cell to which face belong (first cell when there is more than one)
   const Cell cell(*_mesh, this->entities(D)[0]);

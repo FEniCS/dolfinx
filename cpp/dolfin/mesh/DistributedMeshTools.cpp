@@ -114,7 +114,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   if (MPI::size(mesh.mpi_comm()) == 1)
   {
     // Set global entity numbers in mesh
-    mesh.init(d);
+    mesh.create_entities(d);
     _mesh.topology().set_num_entities_global(d, mesh.num_entities(d));
     std::vector<std::int64_t> global_indices(mesh.num_entities(d), 0);
     std::iota(global_indices.begin(), global_indices.end(), 0);
@@ -194,7 +194,7 @@ DistributedMeshTools::number_entities(
   const std::size_t process_number = MPI::rank(mpi_comm);
 
   // Initialize entities of dimension d locally
-  mesh.init(d);
+  mesh.create_entities(d);
 
   // Build list of slave entities to exclude from ownership computation
   std::vector<bool> exclude(mesh.num_entities(d), false);
@@ -570,7 +570,7 @@ DistributedMeshTools::compute_shared_entities(const Mesh& mesh, std::size_t d)
   }
 
   // Initialize entities of dimension d
-  mesh.init(d);
+  mesh.create_entities(d);
 
   // Number entities (globally)
   number_entities(mesh, d);
@@ -1058,10 +1058,10 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   const int D = mesh.topology().dim();
 
   // Initialize entities of dimension d
-  mesh.init(D - 1);
+  mesh.create_entities(D - 1);
 
   // Initialise local facet-cell connections.
-  mesh.init(D - 1, D);
+  mesh.create_connectivity(D - 1, D);
 
   // Global numbering
   number_entities(mesh, D - 1);

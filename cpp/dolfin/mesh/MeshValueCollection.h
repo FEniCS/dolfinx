@@ -206,7 +206,7 @@ MeshValueCollection<T>::MeshValueCollection(
   }
   else
   {
-    _mesh->init(_dim, D);
+    _mesh->create_connectivity(_dim, D);
     const Connectivity& connectivity = _mesh->topology().connectivity(_dim, D);
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
          ++entity_index)
@@ -256,7 +256,7 @@ operator=(const MeshFunction<T>& mesh_function)
   }
   else
   {
-    _mesh->init(_dim, D);
+    _mesh->create_connectivity(_dim, D);
     assert(_mesh->topology().connectivity(_dim, D));
     const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
     for (std::size_t entity_index = 0; entity_index < mesh_function.size();
@@ -373,7 +373,7 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   }
 
   // Get mesh connectivity d --> D
-  _mesh->init(_dim, D);
+  _mesh->create_connectivity(_dim, D);
   assert(_mesh->topology().connectivity(_dim, D));
   const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
 

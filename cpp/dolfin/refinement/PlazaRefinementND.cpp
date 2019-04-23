@@ -236,9 +236,9 @@ std::pair<std::vector<std::int32_t>, std::vector<bool>>
 PlazaRefinementND::face_long_edge(const mesh::Mesh& mesh)
 {
   const std::int32_t tdim = mesh.topology().dim();
-  mesh.init(1);
-  mesh.init(2);
-  mesh.init(2, 1);
+  mesh.create_entities(1);
+  mesh.create_entities(2);
+  mesh.create_connectivity(2, 1);
 
   // Storage for face-local index of longest edge
   std::vector<std::int32_t> long_edge(mesh.num_entities(2));

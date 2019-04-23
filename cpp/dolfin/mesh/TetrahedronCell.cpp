@@ -268,7 +268,7 @@ geometry::Point TetrahedronCell::normal(const Cell& cell,
                                         std::size_t facet) const
 {
   // Make sure we have facets
-  cell.mesh().init(3, 2);
+  cell.mesh().create_connectivity(3, 2);
 
   // Create facet from the mesh and local facet number
   Facet f(cell.mesh(), cell.entities(2)[facet]);

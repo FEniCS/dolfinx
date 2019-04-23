@@ -127,7 +127,7 @@ std::vector<std::int32_t> facets_marked(std::shared_ptr<const mesh::Mesh> mesh,
   // Create mesh function for sub domain markers on facets and mark
   // all facet as subdomain 1
   const std::size_t dim = mesh->topology().dim();
-  mesh->init(dim - 1);
+  mesh->create_entities(dim - 1);
   mesh::MeshFunction<std::size_t> domain(mesh, dim - 1, 1);
 
   // Mark the sub domain as sub domain 0
@@ -233,8 +233,8 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
   }
 
   // Initialise facet-cell connectivity
-  mesh.init(tdim);
-  mesh.init(tdim - 1, tdim);
+  mesh.create_entities(tdim);
+  mesh.create_connectivity(tdim - 1, tdim);
 
   // Allocate space
   const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(tdim - 1);
@@ -478,7 +478,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //   // spdlog::info("Computing facets, needed for geometric application of
 //   // boundary "
 //   //              "conditions.");
-//   mesh.init(mesh.topology().dim() - 1);
+//   mesh.create_entities(mesh.topology().dim() - 1);
 
 //   // Speed up the computations by only visiting (most) dofs once
 //   common::RangedIndexSet already_visited(

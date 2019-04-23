@@ -33,7 +33,7 @@ def test_assign_2D_cells():
 
 def test_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
-    mesh.init(2, 1)
+    mesh.create_connectivity(2, 1)
     ncells = mesh.num_cells()
     f = MeshValueCollection("int", mesh, 1)
     all_new = True
@@ -56,7 +56,7 @@ def test_assign_2D_facets():
 
 def test_assign_2D_vertices():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
-    mesh.init(2, 0)
+    mesh.create_connectivity(2, 0)
     ncells = mesh.num_cells()
     f = MeshValueCollection("int", mesh, 0)
     all_new = True
@@ -115,7 +115,7 @@ def test_mesh_function_assign_2D_cells():
 
 def test_mesh_function_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
-    mesh.init(1)
+    mesh.create_entities(1)
     tdim = mesh.topology.dim
     f = MeshFunction("int", mesh, tdim - 1, 25)
     for cell in Cells(mesh):
@@ -139,7 +139,7 @@ def test_mesh_function_assign_2D_facets():
 
 def test_mesh_function_assign_2D_vertices():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
-    mesh.init(0)
+    mesh.create_entities(0)
     f = MeshFunction("int", mesh, 0, 25)
     g = MeshValueCollection("int", mesh, 0)
     g.assign(f)

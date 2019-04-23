@@ -7,6 +7,7 @@
 #include "Mesh.h"
 #include "Cell.h"
 #include "Connectivity.h"
+#include "CoordinateDofs.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "Geometry.h"
@@ -28,8 +29,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXi64> cells,
            const std::vector<std::int64_t>& global_cell_indices,
            const GhostMode ghost_mode, std::uint32_t num_ghost_cells)
-    : _cell_type(mesh::CellType::create(type)),
-      _coordinate_dofs(_cell_type->dim()), _degree(1), _mpi_comm(comm),
+    : _cell_type(mesh::CellType::create(type)), _degree(1), _mpi_comm(comm),
       _ghost_mode(ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 {
   const std::size_t tdim = _cell_type->dim();
@@ -87,7 +87,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   std::tie(num_vertices, global_point_indices, coordinate_dofs)
       = Partitioning::compute_point_mapping(num_vertices_per_cell, cells,
                                             cell_permutation);
-  _coordinate_dofs.init(tdim, coordinate_dofs, cell_permutation);
+  _coordinate_dofs = std::make_unique<CoordinateDofs>(tdim, coordinate_dofs,
+                                                      cell_permutation);
 
   // Distribute the points across processes and calculate shared points
   EigenRowArrayXXd distributed_points;
@@ -173,9 +174,9 @@ Mesh::Mesh(const Mesh& mesh)
     : _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)),
-      _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
-      _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode),
-      _unique_id(common::UniqueIdGenerator::id())
+      _coordinate_dofs(new CoordinateDofs(*mesh._coordinate_dofs)),
+      _degree(mesh._degree), _mpi_comm(mesh.mpi_comm()),
+      _ghost_mode(mesh._ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 
 {
   // Do nothing
@@ -204,7 +205,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   assert(mesh._topology);
   _topology = std::make_unique<Topology>(*mesh._topology);
   _geometry = std::make_unique<Geometry>(*mesh._geometry);
-  _coordinate_dofs = mesh._coordinate_dofs;
+  _coordinate_dofs = std::make_unique<CoordinateDofs>(*mesh._coordinate_dofs);
   _degree = mesh._degree;
 
   if (mesh._cell_type)
@@ -266,7 +267,7 @@ const mesh::CellType& Mesh::type() const
   return *_cell_type;
 }
 //-----------------------------------------------------------------------------
-std::size_t Mesh::init(int dim) const
+std::size_t Mesh::create_entities(int dim) const
 {
   // This function is obviously not const since it may potentially
   // compute new connectivity. However, in a sense all connectivity of a
@@ -287,7 +288,7 @@ std::size_t Mesh::init(int dim) const
   return _topology->size(dim);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init(std::size_t d0, std::size_t d1) const
+void Mesh::create_connectivity(std::size_t d0, std::size_t d1) const
 {
   // This function is obviously not const since it may potentially
   // compute new connectivity. However, in a sense all connectivity of a
@@ -304,21 +305,21 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   TopologyComputation::compute_connectivity(*mesh, d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init() const
+void Mesh::create_connectivity_all() const
 {
   // Compute all entities
   for (int d = 0; d <= _topology->dim(); d++)
-    init(d);
+    create_entities(d);
 
   // Compute all connectivity
   for (int d0 = 0; d0 <= _topology->dim(); d0++)
     for (int d1 = 0; d1 <= _topology->dim(); d1++)
-      init(d0, d1);
+      create_connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init_global(std::size_t dim) const
+void Mesh::create_global_indices(std::size_t dim) const
 {
-  init(dim);
+  create_entities(dim);
   DistributedMeshTools::number_entities(*this, dim);
 }
 //-----------------------------------------------------------------------------
@@ -418,4 +419,12 @@ std::string Mesh::str(bool verbose) const
 MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 mesh::GhostMode Mesh::get_ghost_mode() const { return _ghost_mode; }
+//-----------------------------------------------------------------------------
+const CoordinateDofs& Mesh::coordinate_dofs() const
+{
+  assert(_coordinate_dofs);
+  return *_coordinate_dofs;
+}
+//-----------------------------------------------------------------------------
+std::int32_t Mesh::degree() const { return _degree; }
 //-----------------------------------------------------------------------------
