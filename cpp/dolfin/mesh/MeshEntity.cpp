@@ -15,32 +15,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
-{
-  // Store variables
-  _mesh = &mesh; // Yes, we should probably use a shared pointer here...
-  _dim = dim;
-  _local_index = index;
-
-  // Check index range
-  if ((std::int64_t)index < _mesh->num_entities(dim))
-    return;
-
-  // Initialize mesh entities
-  _mesh->create_entities(dim);
-
-  // Check index range again
-  if ((std::int64_t)index < _mesh->num_entities(dim))
-    return;
-
-  // Illegal index range
-  // spdlog::error(
-  //     "MeshEntity.cpp", "create mesh entity",
-  //     "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
-  //     index, _mesh->num_entities(dim), dim);
-  throw std::runtime_error("Out of range");
-}
-//-----------------------------------------------------------------------------
 bool MeshEntity::incident(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident

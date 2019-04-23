@@ -51,16 +51,6 @@ public:
   /// Move assignement operator
   MeshEntity& operator=(MeshEntity&& e) = default;
 
-  /// Initialize mesh entity with given data
-  ///
-  /// @param      mesh (_Mesh_)
-  ///         The mesh.
-  /// @param     dim (std::size_t)
-  ///         The topological dimension.
-  /// @param     index (std::size_t)
-  ///         The index.
-  void init(const Mesh& mesh, std::size_t dim, std::size_t index);
-
   /// Comparison Operator
   ///
   /// @param e (MeshEntity)
