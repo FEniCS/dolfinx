@@ -21,8 +21,8 @@
 // multimesh objects, ie. the only thing that is tested is that it
 // doesn't crash
 
-#include <dolfin.h>
 #include <catch.hpp>
+#include <dolfin.h>
 
 using namespace dolfin;
 
@@ -45,11 +45,11 @@ TEST_CASE("MultiMesh", "[!hide]")
   {
     // FIXME: Enable this test when it is working
 
-    std::shared_ptr<Mesh> background = std::make_shared<UnitCubeMesh>(1,1,1);
+    std::shared_ptr<Mesh> background = std::make_shared<UnitCubeMesh>(1, 1, 1);
 
-    std::shared_ptr<Mesh> refmesh = std::make_shared<BoxMesh>(Point(0.394383, 0.783099, 0.197551),
-                                                              Point(0.840188, 0.79844, 0.911647),
-                                                              1,1,1);
+    std::shared_ptr<Mesh> refmesh = std::make_shared<BoxMesh>(
+        Point(0.394383, 0.783099, 0.197551), Point(0.840188, 0.79844, 0.911647),
+        1, 1, 1);
     const std::vector<double>& refmeshcoords = refmesh->coordinates();
 
     std::shared_ptr<Mesh> tetmesh(new Mesh(UnitTetrahedronMesh::create()));
@@ -61,9 +61,9 @@ TEST_CASE("MultiMesh", "[!hide]")
 
       for (int i = 0; i < 4; i++)
       {
-        tetmesh_coords[i*3] = refmeshcoords[vertex_indices[i]];
-        tetmesh_coords[i*3 + 1] = refmeshcoords[vertex_indices[i] + 1];
-        tetmesh_coords[i*3 + 2] = refmeshcoords[vertex_indices[i] + 2];
+        tetmesh_coords[i * 3] = refmeshcoords[vertex_indices[i]];
+        tetmesh_coords[i * 3 + 1] = refmeshcoords[vertex_indices[i] + 1];
+        tetmesh_coords[i * 3 + 2] = refmeshcoords[vertex_indices[i] + 2];
       }
 
       MultiMesh multimesh(background, tetmesh, 1);
@@ -77,15 +77,12 @@ TEST_CASE("MultiMesh", "[!hide]")
     std::shared_ptr<Mesh> background(new Mesh(UnitTetrahedronMesh::create()));
     {
       std::vector<double>& coords = background->coordinates();
-      coords = { 0, 0, 0,
-                 0, 0, 1,
-                 1, 0, 1,
-                 1, 1, 1 };
+      coords = {0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1};
     }
 
-    std::shared_ptr<Mesh> overlapping = std::make_shared<BoxMesh>(Point(0.394383, 0.783099, 0.197551),
-                                                                  Point(0.840188, 0.79844,  0.911647),
-                                                                  1,1,1);
+    std::shared_ptr<Mesh> overlapping = std::make_shared<BoxMesh>(
+        Point(0.394383, 0.783099, 0.197551), Point(0.840188, 0.79844, 0.911647),
+        1, 1, 1);
     MultiMesh multimesh(background, overlapping, 1);
   }
 }

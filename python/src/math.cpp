@@ -15,4 +15,4 @@ void math(py::module& m)
 {
   // dolfin/math free functions
 }
-}
+} // namespace dolfin_wrappers

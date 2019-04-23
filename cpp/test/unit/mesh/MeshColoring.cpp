@@ -17,8 +17,8 @@
 //
 // Unit tests for MeshColoring
 
-#include <dolfin.h>
 #include <catch.hpp>
+#include <dolfin.h>
 
 using namespace dolfin;
 
@@ -33,27 +33,25 @@ TEST_CASE("MeshColoring")
     // Compute vertex-based coloring
     mesh->color("vertex");
     const MeshFunction<std::size_t> colors_vertex
-      = MeshColoring::cell_colors(mesh, "vertex");
+        = MeshColoring::cell_colors(mesh, "vertex");
 
     // Compute edge-based coloring
     mesh->color("edge");
     const MeshFunction<std::size_t> colors_edge
-      = MeshColoring::cell_colors(mesh, "edge");
+        = MeshColoring::cell_colors(mesh, "edge");
 
     // Compute facet-based coloring
     mesh->color("facet");
     const MeshFunction<std::size_t> colors_facet
-      = MeshColoring::cell_colors(mesh, "facet");
+        = MeshColoring::cell_colors(mesh, "facet");
 
     // Compute facet-based coloring with distance 2
     std::vector<std::size_t> coloring_type
-      = {{mesh->topology().dim(),
-          mesh->topology().dim() - 1,
-          mesh->topology().dim(),
-          mesh->topology().dim() - 1,
-          mesh->topology().dim()}};
+        = {{mesh->topology().dim(), mesh->topology().dim() - 1,
+            mesh->topology().dim(), mesh->topology().dim() - 1,
+            mesh->topology().dim()}};
     mesh->color(coloring_type);
     const MeshFunction<std::size_t> colors_vertex_2
-      = MeshColoring::cell_colors(mesh, coloring_type);
+        = MeshColoring::cell_colors(mesh, coloring_type);
   }
 }

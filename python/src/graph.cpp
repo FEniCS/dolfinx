@@ -37,4 +37,4 @@ void graph(py::module& m)
         return dolfin::graph::GraphBuilder::local_graph(mesh, dim0, dim1);
       });
 }
-}
+} // namespace dolfin_wrappers

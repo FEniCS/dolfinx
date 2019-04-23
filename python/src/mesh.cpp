@@ -16,15 +16,15 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
 #include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Ordering.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Topology.h>
@@ -95,9 +95,8 @@ void mesh(py::module& m)
            });
 
   // dolfin::mesh::Geometry class
-  py::class_<dolfin::mesh::Geometry,
-             std::shared_ptr<dolfin::mesh::Geometry>>(m, "Geometry",
-                                                          "Geometry object")
+  py::class_<dolfin::mesh::Geometry, std::shared_ptr<dolfin::mesh::Geometry>>(
+      m, "Geometry", "Geometry object")
       .def_property_readonly("dim", &dolfin::mesh::Geometry::dim,
                              "Geometric dimension")
       .def("num_points", &dolfin::mesh::Geometry::num_points)
@@ -108,11 +107,11 @@ void mesh(py::module& m)
            "Return coordinates of a point")
       .def_property(
           "points", py::overload_cast<>(&dolfin::mesh::Geometry::points),
-          [](dolfin::mesh::Geometry& self,
-             dolfin::EigenRowArrayXXd values) { self.points() = values; },
+          [](dolfin::mesh::Geometry& self, dolfin::EigenRowArrayXXd values) {
+            self.points() = values;
+          },
           "Return coordinates of all points")
-      .def_readwrite("coord_mapping",
-                     &dolfin::mesh::Geometry::coord_mapping);
+      .def_readwrite("coord_mapping", &dolfin::mesh::Geometry::coord_mapping);
 
   // dolfin::mesh::Topology class
   py::class_<dolfin::mesh::Topology, std::shared_ptr<dolfin::mesh::Topology>>(
@@ -198,12 +197,13 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Connectivity,
              std::shared_ptr<dolfin::mesh::Connectivity>>(m, "Connectivity",
                                                           "Connectivity object")
-      .def("connections",
-           [](const dolfin::mesh::Connectivity& self, std::size_t i) {
-             return Eigen::Map<const dolfin::EigenArrayXi32>(
-                 self.connections(i), self.size(i));
-           },
-           py::return_value_policy::reference_internal)
+      .def(
+          "connections",
+          [](const dolfin::mesh::Connectivity& self, std::size_t i) {
+            return Eigen::Map<const dolfin::EigenArrayXi32>(self.connections(i),
+                                                            self.size(i));
+          },
+          py::return_value_policy::reference_internal)
       .def("size", &dolfin::mesh::Connectivity::size);
 
   // dolfin::mesh::MeshEntity class
@@ -224,12 +224,13 @@ void mesh(py::module& m)
       .def("num_global_entities",
            &dolfin::mesh::MeshEntity::num_global_entities,
            "Global number of incident entities of given dimension")
-      .def("entities",
-           [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
-             return Eigen::Map<const dolfin::EigenArrayXi32>(
-                 self.entities(dim), self.num_entities(dim));
-           },
-           py::return_value_policy::reference_internal)
+      .def(
+          "entities",
+          [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
+            return Eigen::Map<const dolfin::EigenArrayXi32>(
+                self.entities(dim), self.num_entities(dim));
+          },
+          py::return_value_policy::reference_internal)
       .def("midpoint", &dolfin::mesh::MeshEntity::midpoint,
            "Midpoint of Entity")
       .def("sharing_processes", &dolfin::mesh::MeshEntity::sharing_processes)
@@ -378,12 +379,13 @@ void mesh(py::module& m)
       .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR>& self,             \
                          const SCALAR& value) { self = value; })               \
       .def("where_equal", &dolfin::mesh::MeshFunction<SCALAR>::where_equal)    \
-      .def("array",                                                            \
-           [](dolfin::mesh::MeshFunction<SCALAR>& self) {                      \
-             return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(       \
-                 self.values(), self.size());                                  \
-           },                                                                  \
-           py::return_value_policy::reference_internal)
+      .def(                                                                    \
+          "array",                                                             \
+          [](dolfin::mesh::MeshFunction<SCALAR>& self) {                       \
+            return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(        \
+                self.values(), self.size());                                   \
+          },                                                                   \
+          py::return_value_policy::reference_internal)
 
   MESHFUNCTION_MACRO(bool, Bool);
   MESHFUNCTION_MACRO(int, Int);
