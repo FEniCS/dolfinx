@@ -7,7 +7,7 @@
 #include "TetrahedronCell.h"
 #include "Cell.h"
 #include "Facet.h"
-#include "MeshGeometry.h"
+#include "Geometry.h"
 #include "TriangleCell.h"
 #include "Vertex.h"
 #include <algorithm>
@@ -130,7 +130,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   }
 
   // Get mesh geometry
-  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
+  const Geometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
@@ -176,7 +176,7 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
   }
 
   // Get mesh geometry
-  const MeshGeometry& geometry = tetrahedron.mesh().geometry();
+  const Geometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
@@ -225,7 +225,7 @@ double TetrahedronCell::squared_distance(const Cell& cell,
   // only return the distance to that point.
 
   // Get the vertices as points
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
   const std::int32_t* vertices = cell.entities(0);
   const geometry::Point a = geometry.point(vertices[0]);
   const geometry::Point b = geometry.point(vertices[1]);
@@ -282,7 +282,7 @@ geometry::Point TetrahedronCell::normal(const Cell& cell,
   std::size_t v3 = f.entities(0)[2];
 
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the four vertices
   const geometry::Point P0 = geometry.point(v0);
@@ -325,7 +325,7 @@ double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
   Facet f(cell.mesh(), cell.entities(2)[facet]);
 
   // Get mesh geometry
-  const MeshGeometry& geometry = f.mesh().geometry();
+  const Geometry& geometry = f.mesh().geometry();
 
   // Get the coordinates of the three vertices
   const std::int32_t* vertices = f.entities(0);

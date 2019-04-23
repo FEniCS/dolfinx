@@ -28,7 +28,7 @@ namespace mesh
 {
 enum class GhostMode : int;
 class MeshEntity;
-class MeshGeometry;
+class Geometry;
 class Topology;
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
@@ -157,15 +157,15 @@ public:
 
   /// Get mesh geometry.
   ///
-  /// @return MeshGeometry
+  /// @return Geometry
   ///         The geometry object associated with the mesh.
-  MeshGeometry& geometry();
+  Geometry& geometry();
 
   /// Get mesh geometry (const version).
   ///
-  /// @return MeshGeometry
+  /// @return Geometry
   ///         The geometry object associated with the mesh.
-  const MeshGeometry& geometry() const;
+  const Geometry& geometry() const;
 
   /// Get mesh cell type.
   ///
@@ -274,7 +274,7 @@ public:
   /// Get coordinate dofs for all local cells
   const CoordinateDofs& coordinate_dofs() const { return _coordinate_dofs; }
 
-  // FIXME: This should be with MeshGeometry
+  // FIXME: This should be with Geometry
   std::int32_t degree() const { return _degree; }
 
 private:
@@ -285,7 +285,7 @@ private:
   std::unique_ptr<Topology> _topology;
 
   // Mesh geometry
-  std::unique_ptr<MeshGeometry> _geometry;
+  std::unique_ptr<Geometry> _geometry;
 
   // FIXME: This should be in geometry!
   // Coordinate dofs

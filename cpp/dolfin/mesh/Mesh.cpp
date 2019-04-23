@@ -9,9 +9,9 @@
 #include "Connectivity.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
-#include "MeshGeometry.h"
+#include "Geometry.h"
 #include "MeshIterator.h"
-#include "MeshPartitioning.h"
+#include "Partitioning.h"
 #include "Topology.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
@@ -85,7 +85,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   std::vector<std::int64_t> global_point_indices;
   EigenRowArrayXXi32 coordinate_dofs;
   std::tie(num_vertices, global_point_indices, coordinate_dofs)
-      = MeshPartitioning::compute_point_mapping(num_vertices_per_cell, cells,
+      = Partitioning::compute_point_mapping(num_vertices_per_cell, cells,
                                                 cell_permutation);
   _coordinate_dofs.init(tdim, coordinate_dofs, cell_permutation);
 
@@ -93,12 +93,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   EigenRowArrayXXd distributed_points;
   std::map<std::int32_t, std::set<std::int32_t>> shared_points;
   std::tie(distributed_points, shared_points)
-      = MeshPartitioning::distribute_points(comm, points, global_point_indices);
+      = Partitioning::distribute_points(comm, points, global_point_indices);
 
   // Initialise geometry with global size, actual points, and local to
   // global map
-  _geometry = std::make_unique<MeshGeometry>(
-      num_points_global, distributed_points, global_point_indices);
+  _geometry = std::make_unique<Geometry>(num_points_global, distributed_points,
+                                         global_point_indices);
 
   // Get global vertex information
   std::uint64_t num_vertices_global;
@@ -116,7 +116,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     // For higher order meshes, vertices are a subset of points, so need
     // to build a distinct global indexing for vertices.
     std::tie(num_vertices_global, global_vertex_indices)
-        = MeshPartitioning::build_global_vertex_indices(
+        = Partitioning::build_global_vertex_indices(
             comm, num_vertices, global_point_indices, shared_points);
     // Eliminate shared points which are not vertices.
     // FIXME: could be useful information. Where should it be kept?
@@ -172,7 +172,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 Mesh::Mesh(const Mesh& mesh)
     : _cell_type(CellType::create(mesh._cell_type->cell_type())),
       _topology(new Topology(*mesh._topology)),
-      _geometry(new MeshGeometry(*mesh._geometry)),
+      _geometry(new Geometry(*mesh._geometry)),
       _coordinate_dofs(mesh._coordinate_dofs), _degree(mesh._degree),
       _mpi_comm(mesh.mpi_comm()), _ghost_mode(mesh._ghost_mode),
       _unique_id(common::UniqueIdGenerator::id())
@@ -203,7 +203,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   // Assign data
   assert(mesh._topology);
   _topology = std::make_unique<Topology>(*mesh._topology);
-  _geometry = std::make_unique<MeshGeometry>(*mesh._geometry);
+  _geometry = std::make_unique<Geometry>(*mesh._geometry);
   _coordinate_dofs = mesh._coordinate_dofs;
   _degree = mesh._degree;
 
@@ -242,13 +242,13 @@ const Topology& Mesh::topology() const
   return *_topology;
 }
 //-----------------------------------------------------------------------------
-MeshGeometry& Mesh::geometry()
+Geometry& Mesh::geometry()
 {
   assert(_geometry);
   return *_geometry;
 }
 //-----------------------------------------------------------------------------
-const MeshGeometry& Mesh::geometry() const
+const Geometry& Mesh::geometry() const
 {
   assert(_geometry);
   return *_geometry;

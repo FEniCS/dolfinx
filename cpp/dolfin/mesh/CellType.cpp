@@ -119,7 +119,7 @@ CellType::Type CellType::entity_type(std::size_t i) const
 double CellType::h(const MeshEntity& entity) const
 {
   // Get mesh geometry
-  const MeshGeometry& geometry = entity.mesh().geometry();
+  const Geometry& geometry = entity.mesh().geometry();
 
   // Get number of cell vertices
   const int num_vertices = entity.num_entities(0);

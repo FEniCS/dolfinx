@@ -7,7 +7,7 @@
 #include "UnitDiscMesh.h"
 #include <cmath>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;
 using namespace dolfin::generation;
@@ -23,7 +23,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n,
   {
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 6);
-    return mesh::MeshPartitioning::build_distributed_mesh(
+    return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::Type::triangle, geom, topo, {},
         ghost_mode);
   }
@@ -96,7 +96,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n,
     }
   }
 
-  return mesh::MeshPartitioning::build_distributed_mesh(
+  return mesh::Partitioning::build_distributed_mesh(
       comm, mesh::CellType::Type::triangle, points, cells, {},
       ghost_mode);
 }

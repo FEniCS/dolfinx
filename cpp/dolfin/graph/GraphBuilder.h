@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <set>
 #include <tuple>
 #include <utility>
@@ -63,7 +63,7 @@ public:
 
 private:
   // FIXME: Stop putting this garbage in the code
-  friend class mesh::MeshPartitioning;
+  friend class mesh::Partitioning;
 
   typedef std::vector<std::pair<std::vector<std::size_t>, std::int32_t>>
       FacetCellMap;

@@ -29,7 +29,7 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Vertex.h>
 #include <iomanip>
@@ -1498,7 +1498,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
   std::iota(global_cell_indices.begin(), global_cell_indices.end(),
             cell_index_offset);
 
-  return mesh::MeshPartitioning::build_distributed_mesh(
+  return mesh::Partitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type->cell_type(), points, cells,
       global_cell_indices, ghost_mode);
 }
@@ -1748,7 +1748,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                  hid_t h5_id, const std::string path_prefix,
                                  const mesh::Mesh& mesh)
 {
-  const mesh::MeshGeometry& mesh_geometry = mesh.geometry();
+  const mesh::Geometry& mesh_geometry = mesh.geometry();
   int gdim = mesh_geometry.dim();
 
   // Compute number of points (global) in mesh (equal to number of vertices

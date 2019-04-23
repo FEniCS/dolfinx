@@ -13,7 +13,7 @@
 #include <cstddef>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshGeometry.h>
+#include <dolfin/mesh/Geometry.h>
 // #include <spdlog/spdlog.h>
 #include <map>
 

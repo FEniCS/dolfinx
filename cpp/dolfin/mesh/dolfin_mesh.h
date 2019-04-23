@@ -20,9 +20,9 @@ namespace dolfin
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/MeshGeometry.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/MeshValueCollection.h>

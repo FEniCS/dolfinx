@@ -19,9 +19,9 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/MeshGeometry.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/MeshQuality.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Ordering.h>
@@ -94,25 +94,25 @@ void mesh(py::module& m)
              return py::array({num_entities, entity_size}, connections.data());
            });
 
-  // dolfin::mesh::MeshGeometry class
-  py::class_<dolfin::mesh::MeshGeometry,
-             std::shared_ptr<dolfin::mesh::MeshGeometry>>(m, "MeshGeometry",
-                                                          "MeshGeometry object")
-      .def_property_readonly("dim", &dolfin::mesh::MeshGeometry::dim,
+  // dolfin::mesh::Geometry class
+  py::class_<dolfin::mesh::Geometry,
+             std::shared_ptr<dolfin::mesh::Geometry>>(m, "Geometry",
+                                                          "Geometry object")
+      .def_property_readonly("dim", &dolfin::mesh::Geometry::dim,
                              "Geometric dimension")
-      .def("num_points", &dolfin::mesh::MeshGeometry::num_points)
-      .def("num_points_global", &dolfin::mesh::MeshGeometry::num_points_global)
-      .def("global_indices", &dolfin::mesh::MeshGeometry::global_indices)
-      .def("x", &dolfin::mesh::MeshGeometry::x,
+      .def("num_points", &dolfin::mesh::Geometry::num_points)
+      .def("num_points_global", &dolfin::mesh::Geometry::num_points_global)
+      .def("global_indices", &dolfin::mesh::Geometry::global_indices)
+      .def("x", &dolfin::mesh::Geometry::x,
            py::return_value_policy::reference_internal,
            "Return coordinates of a point")
       .def_property(
-          "points", py::overload_cast<>(&dolfin::mesh::MeshGeometry::points),
-          [](dolfin::mesh::MeshGeometry& self,
+          "points", py::overload_cast<>(&dolfin::mesh::Geometry::points),
+          [](dolfin::mesh::Geometry& self,
              dolfin::EigenRowArrayXXd values) { self.points() = values; },
           "Return coordinates of all points")
       .def_readwrite("coord_mapping",
-                     &dolfin::mesh::MeshGeometry::coord_mapping);
+                     &dolfin::mesh::Geometry::coord_mapping);
 
   // dolfin::mesh::Topology class
   py::class_<dolfin::mesh::Topology, std::shared_ptr<dolfin::mesh::Topology>>(

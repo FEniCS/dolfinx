@@ -8,7 +8,7 @@
 
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshGeometry.h"
+#include "Geometry.h"
 #include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
 
