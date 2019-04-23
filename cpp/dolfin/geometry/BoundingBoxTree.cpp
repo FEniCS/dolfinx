@@ -59,7 +59,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   _tdim = tdim;
 
   // Initialize entities of given dimension if they don't exist
-  mesh.init(tdim);
+  mesh.create_entities(tdim);
 
   // Create bounding boxes for all entities (leaves)
   const unsigned int num_leaves = mesh.num_entities(tdim);

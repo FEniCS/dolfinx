@@ -27,7 +27,7 @@ void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
     return;
 
   // Initialize mesh entities
-  _mesh->init(dim);
+  _mesh->create_entities(dim);
 
   // Check index range again
   if ((std::int64_t)index < _mesh->num_entities(dim))

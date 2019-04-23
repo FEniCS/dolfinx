@@ -58,9 +58,9 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
 {
   // Initialise mesh
   for (std::size_t i = 0; i < coloring_type.size(); ++i)
-    mesh.init(coloring_type[i]);
+    mesh.create_entities(coloring_type[i]);
   for (std::size_t i = 1; i < coloring_type.size(); ++i)
-    mesh.init(coloring_type[i - 1], coloring_type[i]);
+    mesh.create_connectivity(coloring_type[i - 1], coloring_type[i]);
 
   // Check coloring type
   assert(coloring_type.size() >= 2);
@@ -109,10 +109,10 @@ dolfin::graph::Graph
 dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
                                          std::size_t dim0, std::size_t dim1)
 {
-  mesh.init(dim0);
-  mesh.init(dim1);
-  mesh.init(dim0, dim1);
-  mesh.init(dim1, dim0);
+  mesh.create_entities(dim0);
+  mesh.create_entities(dim1);
+  mesh.create_connectivity(dim0, dim1);
+  mesh.create_connectivity(dim1, dim0);
 
   // Create graph
   const std::size_t num_vertices = mesh.num_entities(dim0);

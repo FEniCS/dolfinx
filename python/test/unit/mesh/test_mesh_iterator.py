@@ -16,7 +16,7 @@ def test_vertex_iterators():
 
     mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5)
     for i in range(4):
-        mesh.init(0, i)
+        mesh.create_connectivity(0, i)
 
     connectivities = [(i, mesh.topology.connectivity(0, i)) for i in range(4)]
 
@@ -41,7 +41,7 @@ def test_edge_iterators():
 
     mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5)
     for i in range(4):
-        mesh.init(1, i)
+        mesh.create_connectivity(1, i)
 
     connectivities = [(i, mesh.topology.connectivity(1, i)) for i in range(4)]
 
@@ -66,7 +66,7 @@ def test_face_iterator():
 
     mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5)
     for i in range(4):
-        mesh.init(2, i)
+        mesh.create_connectivity(2, i)
 
     connectivities = [(i, mesh.topology.connectivity(2, i)) for i in range(4)]
 
@@ -99,7 +99,7 @@ def test_cell_iterators():
     """Iterate over cells"""
     mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5)
     for i in range(4):
-        mesh.init(3, i)
+        mesh.create_connectivity(3, i)
 
     connectivities = [(i, mesh.topology.connectivity(3, i)) for i in range(4)]
 

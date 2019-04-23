@@ -266,7 +266,7 @@ const mesh::CellType& Mesh::type() const
   return *_cell_type;
 }
 //-----------------------------------------------------------------------------
-std::size_t Mesh::init(int dim) const
+std::size_t Mesh::create_entities(int dim) const
 {
   // This function is obviously not const since it may potentially
   // compute new connectivity. However, in a sense all connectivity of a
@@ -287,7 +287,7 @@ std::size_t Mesh::init(int dim) const
   return _topology->size(dim);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init(std::size_t d0, std::size_t d1) const
+void Mesh::create_connectivity(std::size_t d0, std::size_t d1) const
 {
   // This function is obviously not const since it may potentially
   // compute new connectivity. However, in a sense all connectivity of a
@@ -304,21 +304,21 @@ void Mesh::init(std::size_t d0, std::size_t d1) const
   TopologyComputation::compute_connectivity(*mesh, d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init() const
+void Mesh::create_connectivity_all() const
 {
   // Compute all entities
   for (int d = 0; d <= _topology->dim(); d++)
-    init(d);
+    create_entities(d);
 
   // Compute all connectivity
   for (int d0 = 0; d0 <= _topology->dim(); d0++)
     for (int d1 = 0; d1 <= _topology->dim(); d1++)
-      init(d0, d1);
+      create_connectivity(d0, d1);
 }
 //-----------------------------------------------------------------------------
-void Mesh::init_global(std::size_t dim) const
+void Mesh::create_global_indices(std::size_t dim) const
 {
-  init(dim);
+  create_entities(dim);
   DistributedMeshTools::number_entities(*this, dim);
 }
 //-----------------------------------------------------------------------------

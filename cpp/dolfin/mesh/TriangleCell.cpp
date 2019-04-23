@@ -277,7 +277,7 @@ double TriangleCell::normal(const Cell& cell, std::size_t facet,
 geometry::Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Make sure we have facets
-  cell.mesh().init(2, 1);
+  cell.mesh().create_connectivity(2, 1);
 
   // Create facet from the mesh and local facet number
   Facet f(cell.mesh(), cell.entities(1)[facet]);

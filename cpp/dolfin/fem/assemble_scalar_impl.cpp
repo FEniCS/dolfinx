@@ -78,7 +78,7 @@ PetscScalar fem::impl::assemble_cells(
     const std::vector<int>& offsets)
 {
   const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim);
+  mesh.create_entities(tdim);
 
   // Create data structures used in assembly
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
@@ -120,8 +120,8 @@ PetscScalar fem::impl::assemble_exterior_facets(
     const std::vector<int>& offsets)
 {
   const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim - 1);
-  mesh.init(tdim - 1, tdim);
+  mesh.create_entities(tdim - 1);
+  mesh.create_connectivity(tdim - 1, tdim);
 
   // Creat data structures used in assembly
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());

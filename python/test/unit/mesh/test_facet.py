@@ -10,7 +10,7 @@ from dolfin import UnitSquareMesh, Facets, MPI
 def test_normal():
     "Test that the normal() method is wrapped"
     mesh = UnitSquareMesh(MPI.comm_world, 4, 4)
-    mesh.init(1)
+    mesh.create_entities(1)
     for facet in Facets(mesh):
         n = facet.normal()
         nx, ny, nz = n[0], n[1], n[2]

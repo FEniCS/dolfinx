@@ -1128,7 +1128,7 @@ void HDF5File::write_mesh_value_collection(
   value_data.reserve(values.size());
 
   const std::size_t tdim = mesh->topology().dim();
-  mesh->init(tdim, dim);
+  mesh->create_connectivity(tdim, dim);
   for (auto& p : values)
   {
     mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
@@ -1218,7 +1218,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   /// read data to the 'sorting' hosts.
 
   // Ensure the mesh dimension is initialised
-  mesh->init(dim);
+  mesh->create_entities(dim);
   std::size_t global_vertex_range = mesh->num_entities_global(0);
   std::vector<std::size_t> v(num_verts_per_entity);
   const std::size_t num_processes = _mpi_comm.size();

@@ -774,7 +774,7 @@ void XDMFFile::write_mesh_value_collection(
   topology_data.reserve(num_cells * num_vertices_per_cell);
   value_data.reserve(num_cells);
 
-  mesh->init(tdim, cell_dim);
+  mesh->create_connectivity(tdim, cell_dim);
   for (auto& p : values)
   {
     mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
@@ -925,7 +925,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
       = get_dataset<T>(_mpi_comm.comm(), attribute_data_node, parent_path);
 
   // Ensure the mesh dimension is initialised
-  mesh->init(dim);
+  mesh->create_entities(dim);
   const std::size_t global_vertex_range = mesh->num_entities_global(0);
   const std::int32_t num_processes = _mpi_comm.size();
 

@@ -167,12 +167,11 @@ void mesh(py::module& m)
       .def("hash", &dolfin::mesh::Mesh::hash)
       .def("hmax", &dolfin::mesh::Mesh::hmax)
       .def("hmin", &dolfin::mesh::Mesh::hmin)
-      .def("init_global", &dolfin::mesh::Mesh::init_global)
-      .def("init", py::overload_cast<>(&dolfin::mesh::Mesh::init, py::const_))
-      .def("init",
-           py::overload_cast<int>(&dolfin::mesh::Mesh::init, py::const_))
-      .def("init", py::overload_cast<std::size_t, std::size_t>(
-                       &dolfin::mesh::Mesh::init, py::const_))
+      .def("create_global_indices", &dolfin::mesh::Mesh::create_global_indices)
+      .def("create_entities", &dolfin::mesh::Mesh::create_entities)
+      .def("create_connectivity", &dolfin::mesh::Mesh::create_connectivity)
+      .def("create_connectivity_all",
+           &dolfin::mesh::Mesh::create_connectivity_all)
       .def("mpi_comm",
            [](dolfin::mesh::Mesh& self) {
              return MPICommWrapper(self.mpi_comm());
@@ -197,13 +196,12 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Connectivity,
              std::shared_ptr<dolfin::mesh::Connectivity>>(m, "Connectivity",
                                                           "Connectivity object")
-      .def(
-          "connections",
-          [](const dolfin::mesh::Connectivity& self, std::size_t i) {
-            return Eigen::Map<const dolfin::EigenArrayXi32>(self.connections(i),
-                                                            self.size(i));
-          },
-          py::return_value_policy::reference_internal)
+      .def("connections",
+           [](const dolfin::mesh::Connectivity& self, std::size_t i) {
+             return Eigen::Map<const dolfin::EigenArrayXi32>(
+                 self.connections(i), self.size(i));
+           },
+           py::return_value_policy::reference_internal)
       .def("size", &dolfin::mesh::Connectivity::size);
 
   // dolfin::mesh::MeshEntity class
@@ -224,13 +222,12 @@ void mesh(py::module& m)
       .def("num_global_entities",
            &dolfin::mesh::MeshEntity::num_global_entities,
            "Global number of incident entities of given dimension")
-      .def(
-          "entities",
-          [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
-            return Eigen::Map<const dolfin::EigenArrayXi32>(
-                self.entities(dim), self.num_entities(dim));
-          },
-          py::return_value_policy::reference_internal)
+      .def("entities",
+           [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
+             return Eigen::Map<const dolfin::EigenArrayXi32>(
+                 self.entities(dim), self.num_entities(dim));
+           },
+           py::return_value_policy::reference_internal)
       .def("midpoint", &dolfin::mesh::MeshEntity::midpoint,
            "Midpoint of Entity")
       .def("sharing_processes", &dolfin::mesh::MeshEntity::sharing_processes)
@@ -379,13 +376,12 @@ void mesh(py::module& m)
       .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR>& self,             \
                          const SCALAR& value) { self = value; })               \
       .def("where_equal", &dolfin::mesh::MeshFunction<SCALAR>::where_equal)    \
-      .def(                                                                    \
-          "array",                                                             \
-          [](dolfin::mesh::MeshFunction<SCALAR>& self) {                       \
-            return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(        \
-                self.values(), self.size());                                   \
-          },                                                                   \
-          py::return_value_policy::reference_internal)
+      .def("array",                                                            \
+           [](dolfin::mesh::MeshFunction<SCALAR>& self) {                      \
+             return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(       \
+                 self.values(), self.size());                                  \
+           },                                                                  \
+           py::return_value_policy::reference_internal)
 
   MESHFUNCTION_MACRO(bool, Bool);
   MESHFUNCTION_MACRO(int, Int);

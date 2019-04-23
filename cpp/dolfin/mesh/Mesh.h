@@ -55,7 +55,7 @@ class Topology;
 /// by calling init(). For example, all edges in a mesh may be
 /// created by a call to mesh.init(1). Similarly, connectivities
 /// such as all edges connected to a given vertex must also be
-/// explicitly created (in this case by a call to mesh.init(0, 1)).
+/// explicitly created (in this case by a call to mesh.create_connectivity(0, 1)).
 
 class Mesh
 {
@@ -176,29 +176,29 @@ public:
   /// Get mesh cell type (const version).
   const mesh::CellType& type() const;
 
-  /// Compute entities of given topological dimension.
+  /// Create entities of given topological dimension.
   ///
   /// @param  dim (int)
   ///         Topological dimension.
   ///
   /// @return std::size_t
   ///         Number of created entities.
-  std::size_t init(int dim) const;
+  std::size_t create_entities(int dim) const;
 
-  /// Compute connectivity between given pair of dimensions.
+  /// Create connectivity between given pair of dimensions.
   ///
   /// @param    d0 (std::size_t)
   ///         Topological dimension.
   ///
   /// @param    d1 (std::size_t)
   ///         Topological dimension.
-  void init(std::size_t d0, std::size_t d1) const;
+  void create_connectivity(std::size_t d0, std::size_t d1) const;
 
   /// Compute all entities and connectivity.
-  void init() const;
+  void create_connectivity_all() const;
 
   /// Compute global indices for entity dimension dim
-  void init_global(std::size_t dim) const;
+  void create_global_indices(std::size_t dim) const;
 
   /// Clean out all auxiliary topology data. This clears all topological
   /// data, except the connectivity between cells and vertices.

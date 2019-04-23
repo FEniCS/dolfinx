@@ -42,7 +42,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   }
 
   // Check that V0 is a (lowest-order) edge basis
-  mesh.init(1);
+  mesh.create_entities(1);
   if (V0.dim() != mesh.num_entities_global(1))
   {
     throw std::runtime_error(
@@ -71,7 +71,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
       = V1.dofmap()->tabulate_local_to_global_dofs();
 
   // Initialize edge -> vertex connections
-  mesh.init(1, 0);
+  mesh.create_connectivity(1, 0);
 
   // Copy index maps from dofmaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
