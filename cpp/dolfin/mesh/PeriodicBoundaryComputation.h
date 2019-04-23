@@ -50,5 +50,5 @@ private:
                               const std::vector<double>& bounding_box,
                               const double tol);
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

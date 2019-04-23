@@ -10,7 +10,7 @@
 #include <cmath>
 #include <dolfin/common/MPI.h>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;
 using namespace dolfin::generation;
@@ -45,7 +45,7 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
   {
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 3);
-    return mesh::MeshPartitioning::build_distributed_mesh(
+    return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::Type::triangle, geom, topo, {}, ghost_mode);
   }
 
@@ -210,7 +210,7 @@ mesh::Mesh RectangleMesh::build_tri(MPI_Comm comm,
     }
   }
 
-  return mesh::MeshPartitioning::build_distributed_mesh(
+  return mesh::Partitioning::build_distributed_mesh(
       comm, mesh::CellType::Type::triangle, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------
@@ -224,7 +224,7 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
   {
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 4);
-    return mesh::MeshPartitioning::build_distributed_mesh(
+    return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, ghost_mode);
   }
 
@@ -268,7 +268,7 @@ mesh::Mesh RectangleMesh::build_quad(MPI_Comm comm,
       ++cell;
     }
 
-  return mesh::MeshPartitioning::build_distributed_mesh(
+  return mesh::Partitioning::build_distributed_mesh(
       comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------

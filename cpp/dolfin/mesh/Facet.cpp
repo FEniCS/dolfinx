@@ -34,7 +34,7 @@ double Facet::squared_distance(const geometry::Point& point) const
   if (_dim == 1)
   {
     // Extract vertices
-    const MeshGeometry& geometry = _mesh->geometry();
+    const Geometry& geometry = _mesh->geometry();
     const std::int32_t* vertices = entities(0);
     const geometry::Point a = geometry.point(vertices[0]);
     const geometry::Point b = geometry.point(vertices[1]);
@@ -45,7 +45,7 @@ double Facet::squared_distance(const geometry::Point& point) const
   else if (_dim == 2)
   {
     // Extract vertices
-    const MeshGeometry& geometry = _mesh->geometry();
+    const Geometry& geometry = _mesh->geometry();
     const std::int32_t* vertices = entities(0);
     const geometry::Point a = geometry.point(vertices[0]);
     const geometry::Point b = geometry.point(vertices[1]);

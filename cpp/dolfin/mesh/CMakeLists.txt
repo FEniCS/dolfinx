@@ -13,9 +13,9 @@ set(HEADERS
   Mesh.h
   MeshEntity.h
   MeshFunction.h
-  MeshGeometry.h
+  Geometry.h
   MeshIterator.h
-  MeshPartitioning.h
+  Partitioning.h
   MeshQuality.h
   Topology.h
   MeshValueCollection.h
@@ -44,8 +44,8 @@ set(SOURCES
   Mesh.cpp
   MeshEntity.cpp
   MeshFunction.cpp
-  MeshGeometry.cpp
-  MeshPartitioning.cpp
+  Geometry.cpp
+  Partitioning.cpp
   MeshQuality.cpp
   Topology.cpp
   Ordering.cpp

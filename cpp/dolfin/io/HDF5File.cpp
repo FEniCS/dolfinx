@@ -23,8 +23,8 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
 #include <fstream>
 #include <iomanip>
@@ -1600,7 +1600,7 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
 
   t.stop();
 
-  return mesh::MeshPartitioning::build_distributed_mesh(
+  return mesh::Partitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type.cell_type(), points, cells,
       global_cell_indices, ghost_mode);
 }

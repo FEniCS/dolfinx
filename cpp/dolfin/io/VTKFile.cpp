@@ -198,7 +198,8 @@ void VTKFile::results_write(const function::Function& u,
   {
     // spdlog::error(
     //     "VTKFile.cpp", "write data to VTK file",
-    //     "Only scalar, vector and tensor functions can be saved in VTK format");
+    //     "Only scalar, vector and tensor functions can be saved in VTK
+    //     format");
     throw std::runtime_error("Invalid rank");
   }
 
@@ -211,8 +212,8 @@ void VTKFile::results_write(const function::Function& u,
     if (!(dim == 2 || dim == 3))
     {
       // spdlog::error("VTKFile.cpp", "write data to VTK file",
-      //               "Don't know how to handle vector function with dimension "
-      //               "other than 2 or 3");
+      //               "Don't know how to handle vector function with dimension
+      //               " "other than 2 or 3");
       throw std::runtime_error("Invalid dimension");
     }
   }
@@ -221,8 +222,8 @@ void VTKFile::results_write(const function::Function& u,
     if (!(dim == 4 || dim == 9))
     {
       // spdlog::error("VTKFile.cpp", "write data to VTK file",
-      //               "Don't know how to handle tensor function with dimension "
-      //               "other than 4 or 9");
+      //               "Don't know how to handle tensor function with dimension
+      //               " "other than 4 or 9");
       throw std::runtime_error("Invalid dimension");
     }
   }
@@ -416,8 +417,8 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     if (!(dim == 2 || dim == 3))
     {
       // spdlog::error("VTKFile.cpp", "write data to VTK file",
-      //               "Don't know how to handle vector function with dimension "
-      //               "other than 2 or 3");
+      //               "Don't know how to handle vector function with dimension
+      //               " "other than 2 or 3");
       throw std::runtime_error("Invalid dimension");
     }
     num_components = 3;
@@ -428,8 +429,8 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
     if (!(dim == 4 || dim == 9))
     {
       // spdlog::error("VTKFile.cpp", "write data to VTK file",
-      //               "Don't know how to handle tensor function with dimension "
-      //               "other than 4 or 9");
+      //               "Don't know how to handle tensor function with dimension
+      //               " "other than 4 or 9");
       throw std::runtime_error("Invalid dimension");
     }
     num_components = 9;
@@ -502,7 +503,8 @@ void VTKFile::pvtu_write(const function::Function& u,
   {
     // spdlog::error(
     //     "VTKFile.cpp", "write data to VTK file",
-    //     "Only scalar, vector and tensor functions can be saved in VTK format");
+    //     "Only scalar, vector and tensor functions can be saved in VTK
+    //     format");
     throw std::runtime_error("Invalid rank");
   }
 
@@ -655,7 +657,8 @@ void VTKFile::clear_file(std::string file) const
   std::ofstream _file(file.c_str(), std::ios::trunc);
   if (!_file.is_open())
   {
-    // spdlog::error("VTKFile.cpp", "clear VTK file", "Unable to open file \"%s\"",
+    // spdlog::error("VTKFile.cpp", "clear VTK file", "Unable to open file
+    // \"%s\"",
     //               file.c_str());
     throw std::runtime_error("IO Error");
   }

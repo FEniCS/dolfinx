@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <string>
 #include <petsc.h>
+#include <string>
 
 namespace dolfin
 {
@@ -91,5 +91,5 @@ private:
   bool petsc_initialized;
   bool control_mpi;
 };
-}
-}
+} // namespace common
+} // namespace dolfin

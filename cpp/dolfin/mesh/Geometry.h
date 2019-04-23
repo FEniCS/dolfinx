@@ -22,33 +22,33 @@ class CoordinateMapping;
 namespace mesh
 {
 
-/// MeshGeometry stores the geometry imposed on a mesh.
+/// Geometry stores the geometry imposed on a mesh.
 
 /// Currently, the geometry is represented by the set of coordinates for
 /// the vertices of a mesh, but other representations are possible.
 
-class MeshGeometry
+class Geometry
 {
 public:
-  MeshGeometry(std::int64_t num_points_global,
-               const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>& coordinates,
-               const std::vector<std::int64_t>& global_indices);
+  Geometry(std::int64_t num_points_global,
+           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>& coordinates,
+           const std::vector<std::int64_t>& global_indices);
 
   /// Copy constructor
-  MeshGeometry(const MeshGeometry&) = default;
+  Geometry(const Geometry&) = default;
 
   /// Move constructor
-  MeshGeometry(MeshGeometry&&) = default;
+  Geometry(Geometry&&) = default;
 
   /// Destructor
-  ~MeshGeometry() = default;
+  ~Geometry() = default;
 
   /// Copy Assignment
-  MeshGeometry& operator=(const MeshGeometry&) = default;
+  Geometry& operator=(const Geometry&) = default;
 
   /// Move Assignment
-  MeshGeometry& operator=(MeshGeometry&&) = default;
+  Geometry& operator=(Geometry&&) = default;
 
   /// Return Euclidean dimension of coordinate system
   std::size_t dim() const;
@@ -78,12 +78,6 @@ public:
 
   /// Global indices for points (const)
   const std::vector<std::int64_t>& global_indices() const;
-
-  /// Initialise MeshGeometry data
-  // void init(std::uint64_t num_points_global,
-  //           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-  //                              Eigen::RowMajor>& coordinates,
-  //           const std::vector<std::int64_t>& global_indices);
 
   /// Hash of coordinate values
   ///

@@ -51,7 +51,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   }
 
   for (int i = 0; i < a.integrals().num_integrals(
-                          fem::FormIntegrals::Type::exterior_facet);
+                      fem::FormIntegrals::Type::exterior_facet);
        ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,

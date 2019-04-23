@@ -28,7 +28,7 @@ namespace mesh
 class Mesh;
 template <typename T>
 class MeshFunction;
-}
+} // namespace mesh
 
 namespace io
 {
@@ -94,8 +94,8 @@ private:
 
   void results_write(const function::Function& u, std::string file) const;
 
-  void write_point_data(const function::Function& u,
-                        const mesh::Mesh& mesh, std::string file) const;
+  void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
+                        std::string file) const;
 
   void pvd_file_write(std::size_t step, double time, std::string file);
 
@@ -134,5 +134,5 @@ private:
 
   void pvtu_write_mesh(pugi::xml_node xml_node) const;
 };
-}
-}
+} // namespace io
+} // namespace dolfin

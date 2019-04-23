@@ -6,8 +6,8 @@
 
 #include "IntervalCell.h"
 #include "Cell.h"
+#include "Geometry.h"
 #include "MeshEntity.h"
-#include "MeshGeometry.h"
 #include <algorithm>
 // #include <spdlog/spdlog.h>
 #include <stdexcept>
@@ -82,7 +82,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
   }
 
   // Get mesh geometry
-  const MeshGeometry& geometry = interval.mesh().geometry();
+  const Geometry& geometry = interval.mesh().geometry();
 
   // Get the coordinates of the two vertices
   const std::int32_t* vertices = interval.entities(0);
@@ -110,7 +110,7 @@ double IntervalCell::squared_distance(const Cell& cell,
                                       const geometry::Point& point) const
 {
   // Get the vertices as points
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
   const std::int32_t* vertices = cell.entities(0);
   const geometry::Point a = geometry.point(vertices[0]);
   const geometry::Point b = geometry.point(vertices[1]);
@@ -151,7 +151,7 @@ double IntervalCell::normal(const Cell& cell, std::size_t facet,
 geometry::Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Get the two vertices as points
   const std::int32_t* vertices = cell.entities(0);
@@ -172,7 +172,7 @@ geometry::Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
 geometry::Point IntervalCell::cell_normal(const Cell& cell) const
 {
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Cell_normal only defined for gdim = 1, 2 for now
   const std::size_t gdim = geometry.dim();

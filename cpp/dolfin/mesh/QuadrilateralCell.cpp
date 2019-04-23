@@ -101,7 +101,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
   }
 
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the four vertices
   const std::int32_t* vertices = cell.entities(0);
@@ -203,7 +203,7 @@ geometry::Point QuadrilateralCell::normal(const Cell& cell,
   const std::size_t v2 = f.entities(0)[1];
 
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the three vertices
   const geometry::Point p0 = geometry.point(v0);
@@ -225,7 +225,7 @@ geometry::Point QuadrilateralCell::normal(const Cell& cell,
 geometry::Point QuadrilateralCell::cell_normal(const Cell& cell) const
 {
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Cell_normal only defined for gdim = 2, 3:
   const std::size_t gdim = geometry.dim();
@@ -263,7 +263,7 @@ double QuadrilateralCell::facet_area(const Cell& cell, std::size_t facet) const
   const std::size_t v1 = f.entities(0)[1];
 
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   const geometry::Point p0 = geometry.point(v0);
   const geometry::Point p1 = geometry.point(v1);

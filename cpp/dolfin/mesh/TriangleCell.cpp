@@ -11,9 +11,9 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <cmath>
-   // #include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
-    using namespace dolfin;
+using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
@@ -98,7 +98,7 @@ double TriangleCell::volume(const MeshEntity& triangle) const
   }
 
   // Get mesh geometry
-  const MeshGeometry& geometry = triangle.mesh().geometry();
+  const Geometry& geometry = triangle.mesh().geometry();
 
   // Get the coordinates of the three vertices
   const std::int32_t* vertices = triangle.entities(0);
@@ -150,7 +150,7 @@ double TriangleCell::circumradius(const MeshEntity& triangle) const
   }
 
   // Get mesh geometry
-  const MeshGeometry& geometry = triangle.mesh().geometry();
+  const Geometry& geometry = triangle.mesh().geometry();
 
   // Only know how to compute the diameter when embedded in R^2 or R^3
   if (geometry.dim() != 2 && geometry.dim() != 3)
@@ -184,7 +184,7 @@ double TriangleCell::squared_distance(const Cell& cell,
                                       const geometry::Point& point) const
 {
   // Get the vertices as points
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
   const std::int32_t* vertices = cell.entities(0);
   const geometry::Point a = geometry.point(vertices[0]);
   const geometry::Point b = geometry.point(vertices[1]);
@@ -302,7 +302,7 @@ geometry::Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
   const std::size_t v2 = f.entities(0)[1];
 
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the three vertices
   const geometry::Point p0 = geometry.point(v0);
@@ -324,7 +324,7 @@ geometry::Point TriangleCell::normal(const Cell& cell, std::size_t facet) const
 geometry::Point TriangleCell::cell_normal(const Cell& cell) const
 {
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Cell_normal only defined for gdim = 2, 3:
   const std::size_t gdim = geometry.dim();
@@ -362,7 +362,7 @@ double TriangleCell::facet_area(const Cell& cell, std::size_t facet) const
   const std::size_t v1 = f.entities(0)[1];
 
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the two vertices
   const geometry::Point p0 = geometry.point(v0);

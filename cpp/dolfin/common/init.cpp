@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 // #include <spdlog/spdlog.h>
-#include "SubSystemsManager.h"
 #include "init.h"
+#include "SubSystemsManager.h"
 
 //-----------------------------------------------------------------------------
 void dolfin::init(int argc, char* argv[])

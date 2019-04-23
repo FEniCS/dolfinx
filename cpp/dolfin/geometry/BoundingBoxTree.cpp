@@ -98,8 +98,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   }
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points,
-                                 int gdim)
+BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points, int gdim)
     : _tdim(0), _gdim(gdim)
 {
   // Create leaf partition (to be sorted)
@@ -666,7 +665,7 @@ void BoundingBoxTree::compute_bbox_of_entity(double* b,
   double* xmax = b + gdim;
 
   // Get mesh entity data
-  const mesh::MeshGeometry& geometry = entity.mesh().geometry();
+  const mesh::Geometry& geometry = entity.mesh().geometry();
   const int num_vertices = entity.num_entities(0);
   const std::int32_t* vertices = entity.entities(0);
   assert(num_vertices >= 2);

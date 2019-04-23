@@ -120,5 +120,5 @@ public:
 private:
   std::vector<T> _x;
 };
-}
-}
+} // namespace common
+} // namespace dolfin

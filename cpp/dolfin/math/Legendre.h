@@ -46,5 +46,5 @@ public:
   ///   Legendre polynomial 2nd derivative value at x
   static double d2dx(std::size_t n, double x);
 };
-}
-}
+} // namespace math
+} // namespace dolfin

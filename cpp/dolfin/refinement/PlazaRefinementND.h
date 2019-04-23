@@ -16,9 +16,9 @@ namespace dolfin
 namespace mesh
 {
 class Mesh;
-template<typename T>
+template <typename T>
 class MeshFunction;
-}
+} // namespace mesh
 
 namespace refinement
 {
@@ -77,8 +77,8 @@ public:
   ///
   static std::vector<std::int32_t>
   get_simplices(const std::vector<bool>& marked_edges,
-                const std::vector<std::int32_t>& longest_edge, std::int32_t tdim,
-                bool uniform);
+                const std::vector<std::int32_t>& longest_edge,
+                std::int32_t tdim, bool uniform);
 
 private:
   // Get the longest edge of each face (using local mesh index)

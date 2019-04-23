@@ -4,15 +4,15 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "MeshPartitioning.h"
+#include "Partitioning.h"
 #include "CellType.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
-#include "Topology.h"
 #include "MeshValueCollection.h"
+#include "Topology.h"
 #include "Vertex.h"
 #include <algorithm>
 #include <cstdint>
@@ -34,7 +34,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-mesh::Mesh MeshPartitioning::build_distributed_mesh(
+mesh::Mesh Partitioning::build_distributed_mesh(
     const MPI_Comm& comm, mesh::CellType::Type type,
     const Eigen::Ref<const EigenRowArrayXXd>& points,
     const Eigen::Ref<const EigenRowArrayXXi64>& cells,
@@ -48,7 +48,7 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   int all_ghosts = MPI::sum(comm, mp.num_ghosts());
   if (all_ghosts == 0 && ghost_mode != mesh::GhostMode::none)
   {
-    // spdlog::error("MeshPartitioning.cpp", "build ghost mesh",
+    // spdlog::error("Partitioning.cpp", "build ghost mesh",
     //               "Ghost cell information not available");
     throw std::runtime_error("Ghost cell information not available");
   }
@@ -67,7 +67,7 @@ mesh::Mesh MeshPartitioning::build_distributed_mesh(
   return mesh;
 }
 //-----------------------------------------------------------------------------
-PartitionData MeshPartitioning::partition_cells(
+PartitionData Partitioning::partition_cells(
     const MPI_Comm& mpi_comm, mesh::CellType::Type type,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const std::string partitioner)
@@ -107,12 +107,12 @@ PartitionData MeshPartitioning::partition_cells(
   return PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh MeshPartitioning::build(
-    const MPI_Comm& comm, mesh::CellType::Type type,
-    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const Eigen::Ref<const EigenRowArrayXXd>& points,
-    const std::vector<std::int64_t>& global_cell_indices,
-    const mesh::GhostMode ghost_mode, const PartitionData& mp)
+mesh::Mesh
+Partitioning::build(const MPI_Comm& comm, mesh::CellType::Type type,
+                    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+                    const Eigen::Ref<const EigenRowArrayXXd>& points,
+                    const std::vector<std::int64_t>& global_cell_indices,
+                    const mesh::GhostMode ghost_mode, const PartitionData& mp)
 {
   // spdlog::info("Distribute mesh cells");
 
@@ -199,7 +199,7 @@ mesh::Mesh MeshPartitioning::build(
 //-----------------------------------------------------------------------------
 std::tuple<std::map<std::int32_t, std::set<std::int32_t>>, EigenRowArrayXXi64,
            std::vector<std::int64_t>>
-MeshPartitioning::reorder_cells_gps(
+Partitioning::reorder_cells_gps(
     MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
     const CellType& cell_type,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
@@ -280,7 +280,7 @@ MeshPartitioning::reorder_cells_gps(
                          std::move(reordered_global_cell_indices));
 }
 //-----------------------------------------------------------------------------
-void MeshPartitioning::distribute_cell_layer(
+void Partitioning::distribute_cell_layer(
     MPI_Comm mpi_comm, const int num_regular_cells,
     std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
     EigenRowArrayXXi64& cell_vertices,
@@ -478,7 +478,7 @@ void MeshPartitioning::distribute_cell_layer(
 //-----------------------------------------------------------------------------
 std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
            std::map<std::int32_t, std::set<std::int32_t>>, std::int32_t>
-MeshPartitioning::distribute_cells(
+Partitioning::distribute_cells(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
@@ -625,7 +625,7 @@ MeshPartitioning::distribute_cells(
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::uint64_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
-MeshPartitioning::compute_point_mapping(
+Partitioning::compute_point_mapping(
     std::int32_t num_cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
     const std::vector<std::uint8_t>& cell_permutation)
@@ -700,7 +700,7 @@ MeshPartitioning::compute_point_mapping(
 }
 //-----------------------------------------------------------------------------
 std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::int32_t>>>
-MeshPartitioning::distribute_points(
+Partitioning::distribute_points(
     const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& points,
     const std::vector<std::int64_t>& global_point_indices)
 {
@@ -845,7 +845,7 @@ MeshPartitioning::distribute_points(
 }
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::int32_t>>
-MeshPartitioning::build_shared_points(
+Partitioning::build_shared_points(
     MPI_Comm mpi_comm,
     const std::vector<std::vector<std::size_t>>& received_point_indices,
     const std::pair<std::size_t, std::size_t> local_point_range,
@@ -949,7 +949,7 @@ MeshPartitioning::build_shared_points(
 }
 //-----------------------------------------------------------------------------
 std::pair<std::int64_t, std::vector<std::int64_t>>
-MeshPartitioning::build_global_vertex_indices(
+Partitioning::build_global_vertex_indices(
     MPI_Comm mpi_comm, std::int32_t num_vertices,
     const std::vector<std::int64_t>& global_point_indices,
     const std::map<std::int32_t, std::set<std::int32_t>>& shared_points)

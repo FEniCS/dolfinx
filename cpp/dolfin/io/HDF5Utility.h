@@ -80,15 +80,13 @@ public:
       const mesh::Mesh& mesh);
 
   /// Missing docstring
-  static void
-  set_local_vector_values(MPI_Comm mpi_comm, la::PETScVector& x,
-                          const mesh::Mesh& mesh,
-                          const std::vector<size_t>& cells,
-                          const std::vector<PetscInt>& cell_dofs,
-                          const std::vector<std::int64_t>& x_cell_dofs,
-                          const std::vector<PetscScalar>& vector,
-                          std::array<std::int64_t, 2> input_vector_range,
-                          const fem::GenericDofMap& dofmap);
+  static void set_local_vector_values(
+      MPI_Comm mpi_comm, la::PETScVector& x, const mesh::Mesh& mesh,
+      const std::vector<size_t>& cells, const std::vector<PetscInt>& cell_dofs,
+      const std::vector<std::int64_t>& x_cell_dofs,
+      const std::vector<PetscScalar>& vector,
+      std::array<std::int64_t, 2> input_vector_range,
+      const fem::GenericDofMap& dofmap);
 };
 } // namespace io
 } // namespace dolfin

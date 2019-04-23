@@ -26,7 +26,7 @@ public:
   /// @param tdim
   ///   Topological Dimension
   /// @param cell_dofs
-  ///   Connections from cells to points in MeshGeometry (cell_dofs)
+  ///   Connections from cells to points in Geometry (cell_dofs)
   CoordinateDofs(std::uint32_t tdim);
 
   /// Copy constructor

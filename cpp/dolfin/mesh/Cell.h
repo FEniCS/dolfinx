@@ -7,10 +7,10 @@
 #pragma once
 
 #include "CellType.h"
+#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
-#include "MeshGeometry.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
@@ -204,7 +204,7 @@ public:
   /// Get cell coordinate dofs (not vertex coordinates)
   void get_coordinate_dofs(EigenRowArrayXXd& coordinates) const
   {
-    const MeshGeometry& geom = _mesh->geometry();
+    const Geometry& geom = _mesh->geometry();
     const std::uint32_t tdim = _mesh->topology().dim();
     const Connectivity& conn = _mesh->coordinate_dofs().entity_points(tdim);
     const std::size_t ndofs = conn.size(_local_index);

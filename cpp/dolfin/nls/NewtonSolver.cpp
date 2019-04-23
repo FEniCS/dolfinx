@@ -65,7 +65,8 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
   else
   {
     // spdlog::error("NewtonSolver.cpp", "check for convergence",
-    //               "The convergence criterion %s is unknown, known criteria are "
+    //               "The convergence criterion %s is unknown, known criteria
+    //               are "
     //               "'residual' or 'incremental'",
     //               convergence_criterion.c_str());
     throw std::runtime_error("Unknown convergence criterion");
@@ -171,7 +172,8 @@ bool nls::NewtonSolver::converged(const Vec r,
   // Output iteration number and residual
   // if (report && _mpi_comm.rank() == 0)
   // {
-  //   spdlog::info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) = "
+  //   spdlog::info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) =
+  //   "
   //                "%.3e (tol "
   //                "= %.3e)",
   //                newton_iteration, _residual, atol, relative_residual, rtol);
