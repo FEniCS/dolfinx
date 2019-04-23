@@ -86,7 +86,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   EigenRowArrayXXi32 coordinate_dofs;
   std::tie(num_vertices, global_point_indices, coordinate_dofs)
       = Partitioning::compute_point_mapping(num_vertices_per_cell, cells,
-                                                cell_permutation);
+                                            cell_permutation);
   _coordinate_dofs.init(tdim, coordinate_dofs, cell_permutation);
 
   // Distribute the points across processes and calculate shared points

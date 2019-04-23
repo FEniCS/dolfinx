@@ -9,9 +9,9 @@
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Partitioning.h>
 #include <map>

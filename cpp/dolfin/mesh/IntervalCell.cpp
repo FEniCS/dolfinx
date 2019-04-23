@@ -6,8 +6,8 @@
 
 #include "IntervalCell.h"
 #include "Cell.h"
-#include "MeshEntity.h"
 #include "Geometry.h"
+#include "MeshEntity.h"
 #include <algorithm>
 // #include <spdlog/spdlog.h>
 #include <stdexcept>

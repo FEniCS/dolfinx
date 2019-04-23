@@ -6,9 +6,9 @@
 
 #pragma once
 
+#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "Geometry.h"
 #include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>
 
@@ -49,5 +49,5 @@ public:
     return _mesh->geometry().points().row(_local_index);
   }
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

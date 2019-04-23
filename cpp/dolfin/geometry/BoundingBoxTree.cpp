@@ -98,8 +98,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   }
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points,
-                                 int gdim)
+BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points, int gdim)
     : _tdim(0), _gdim(gdim)
 {
   // Create leaf partition (to be sorted)

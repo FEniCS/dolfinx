@@ -56,7 +56,7 @@ public:
   /// minimal mesh data, and return (graph, ghost_vertices, [num local edges,
   /// num non-local edges])
   static std::pair<std::vector<std::vector<std::size_t>>,
-    std::tuple<std::int32_t, std::int32_t, std::int32_t>>
+                   std::tuple<std::int32_t, std::int32_t, std::int32_t>>
   compute_dual_graph(const MPI_Comm mpi_comm,
                      const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                      const mesh::CellType& cell_type);
@@ -96,8 +96,7 @@ private:
   // non-local edges. Note: GraphBuilder::compute_local_dual_graph
   // should be called before this function is called.
   // Returns (ghost vertices, num_nonlocal_edges)
-  static std::pair<std::int32_t, std::int32_t>
-  compute_nonlocal_dual_graph(
+  static std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
       const MPI_Comm mpi_comm,
       const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
       const mesh::CellType& cell_type, const FacetCellMap& facet_cell_map,

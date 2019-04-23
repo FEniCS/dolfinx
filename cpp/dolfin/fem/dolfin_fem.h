@@ -11,7 +11,6 @@ namespace dolfin
 
 // DOLFIN fem interface
 
-#include <dolfin/fem/assembler.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
@@ -21,4 +20,5 @@ namespace dolfin
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/PETScDMCollection.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
+#include <dolfin/fem/assembler.h>
 #include <dolfin/fem/utils.h>

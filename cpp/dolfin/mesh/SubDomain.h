@@ -12,8 +12,8 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/Geometry.h>
+#include <dolfin/mesh/Mesh.h>
 // #include <spdlog/spdlog.h>
 #include <map>
 
@@ -219,5 +219,5 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-}
-}
+} // namespace mesh
+} // namespace dolfin

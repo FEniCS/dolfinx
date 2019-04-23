@@ -33,5 +33,5 @@ public:
   /// Compute normal to the face
   geometry::Point normal() const;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

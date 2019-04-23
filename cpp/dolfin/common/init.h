@@ -13,6 +13,4 @@ namespace dolfin
 /// should not be needed in most cases since the initialization is
 /// otherwise handled automatically.
 void init(int argc, char* argv[]);
-}
-
-
+} // namespace dolfin

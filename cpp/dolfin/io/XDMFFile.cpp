@@ -29,8 +29,8 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
 #include <iomanip>
 #include <memory>
@@ -234,7 +234,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 
   // Get newly (by add_mesh) created Grid
   pugi::xml_node mesh_grid_node
-    = func_temporal_grid_node.select_node("Grid[@Name='mesh']").node();
+      = func_temporal_grid_node.select_node("Grid[@Name='mesh']").node();
   assert(mesh_grid_node);
 
   // Change it's name to {function_name}_{counter}

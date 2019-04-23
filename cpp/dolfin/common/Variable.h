@@ -60,5 +60,5 @@ private:
   // Unique identifier
   const std::size_t unique_id;
 };
-}
-}
+} // namespace common
+} // namespace dolfin

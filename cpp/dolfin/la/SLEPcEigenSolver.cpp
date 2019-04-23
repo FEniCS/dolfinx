@@ -97,7 +97,8 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 
   EPSType eps_type = NULL;
   EPSGetType(_eps, &eps_type);
-  // spdlog::info("Eigenvalue solver (%s) converged in %d iterations.", eps_type,
+  // spdlog::info("Eigenvalue solver (%s) converged in %d iterations.",
+  // eps_type,
   //              num_iterations);
 }
 //-----------------------------------------------------------------------------

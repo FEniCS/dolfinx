@@ -26,7 +26,8 @@ bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
     return is_degenerate_3d(simplex);
   default:
     // spdlog::error("GeometryPredicates.cpp", "is_degenerate",
-    //               "Unkonwn dimension (only implemented for dimension 2 and 3");
+    //               "Unkonwn dimension (only implemented for dimension 2 and
+    //               3");
     throw std::runtime_error("Illegal dimension");
   }
   return false;

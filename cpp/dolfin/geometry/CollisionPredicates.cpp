@@ -8,8 +8,8 @@
 #include "Point.h"
 #include "predicates.h"
 #include <dolfin/mesh/CellType.h>
-#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/Geometry.h>
+#include <dolfin/mesh/MeshEntity.h>
 // #include <spdlog/spdlog.h>
 
 using namespace dolfin;

@@ -151,5 +151,5 @@ public:
       const Point& p0, const Point& p1, const Point& p2, const Point& p3,
       const Point& q0, const Point& q1, const Point& q2, const Point& q3);
 };
-}
-}
+} // namespace geometry
+} // namespace dolfin

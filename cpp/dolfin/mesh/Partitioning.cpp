@@ -11,8 +11,8 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
-#include "Topology.h"
 #include "MeshValueCollection.h"
+#include "Topology.h"
 #include "Vertex.h"
 #include <algorithm>
 #include <cstdint>
@@ -107,12 +107,12 @@ PartitionData Partitioning::partition_cells(
   return PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh Partitioning::build(
-    const MPI_Comm& comm, mesh::CellType::Type type,
-    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const Eigen::Ref<const EigenRowArrayXXd>& points,
-    const std::vector<std::int64_t>& global_cell_indices,
-    const mesh::GhostMode ghost_mode, const PartitionData& mp)
+mesh::Mesh
+Partitioning::build(const MPI_Comm& comm, mesh::CellType::Type type,
+                    const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+                    const Eigen::Ref<const EigenRowArrayXXd>& points,
+                    const std::vector<std::int64_t>& global_cell_indices,
+                    const mesh::GhostMode ghost_mode, const PartitionData& mp)
 {
   // spdlog::info("Distribute mesh cells");
 

@@ -41,5 +41,5 @@ public:
   static bool convex_hull_is_degenerate(const std::vector<Point>& p,
                                         std::size_t gdim);
 };
-}
-}
+} // namespace geometry
+} // namespace dolfin

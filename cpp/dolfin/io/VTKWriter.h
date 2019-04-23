@@ -7,8 +7,8 @@
 #pragma once
 
 #include <cstdint>
-#include <string>
 #include <petscsys.h>
+#include <string>
 #include <vector>
 
 namespace dolfin
@@ -52,5 +52,5 @@ private:
   static std::uint8_t vtk_cell_type(const mesh::Mesh& mesh,
                                     std::size_t cell_dim);
 };
-}
-}
+} // namespace io
+} // namespace dolfin

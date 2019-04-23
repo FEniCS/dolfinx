@@ -11,9 +11,9 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <cmath>
-   // #include <spdlog/spdlog.h>
+// #include <spdlog/spdlog.h>
 
-    using namespace dolfin;
+using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
