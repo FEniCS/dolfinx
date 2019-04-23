@@ -7,6 +7,7 @@
 #pragma once
 
 #include "CellType.h"
+#include "CoordinateDofs.h"
 #include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
