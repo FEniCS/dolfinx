@@ -11,6 +11,7 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
+#include <dolfin/mesh/MeshGeometry.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <map>

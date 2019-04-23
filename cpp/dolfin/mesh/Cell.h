@@ -10,6 +10,7 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
+#include "MeshGeometry.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
 #include <dolfin/geometry/Point.h>

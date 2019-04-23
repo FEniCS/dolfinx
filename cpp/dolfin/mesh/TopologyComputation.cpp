@@ -10,7 +10,7 @@
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "MeshIterator.h"
-#include "MeshTopology.h"
+#include "Topology.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <boost/unordered_map.hpp>
@@ -18,7 +18,6 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 #include <memory>
-// #include <spdlog/spdlog.h>
 #include <numeric>
 #include <string>
 #include <tuple>
@@ -49,39 +48,30 @@ namespace
 template <int N>
 std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
            std::int32_t>
-compute_entities_by_key_matching(Mesh& mesh, int dim)
+compute_entities_by_key_matching(const Mesh& mesh, int dim)
 {
+  if (dim == 0)
+  {
+    throw std::runtime_error(
+        "Cannot create vertices fo topology. Should already exist.");
+  }
+
   // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
   const int tdim = topology.dim();
 
   // Check if entities have already been computed
-  if (topology.size(dim) > 0)
+  if (topology.connectivity(dim, 0))
   {
-    // Make sure we really have the connectivity
-    if ((!topology.connectivity(tdim, dim) && dim != (int)topology.dim())
-        || (!topology.connectivity(dim, 0) && dim != 0))
-    {
-      // spdlog::error("TopologyComputation.cpp", "compute topological
-      // entities",
-      //               "Entities of topological dimension %d exist but "
-      //               "connectivity is missing",
-      //               dim);
-      throw std::runtime_error("Missing connectivity");
-    }
+    // Check that we have cell-entity connectivity
+    if (!topology.connectivity(tdim, dim))
+      throw std::runtime_error("Missing cell-entity connectivity");
+
     return {nullptr, nullptr, topology.size(dim)};
   }
 
-  // Make sure connectivity does not already exist
-  if (topology.connectivity(tdim, dim) || topology.connectivity(dim, 0))
-  {
-    throw std::runtime_error("Connectivity for topological dimension "
-                             + std::to_string(dim)
-                             + " exists but entities are missing");
-  }
-
   // Start timer
-  common::Timer timer("Compute entities dim = " + std::to_string(dim));
+  common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   // Get cell type
   const CellType& cell_type = mesh.type();
@@ -91,7 +81,6 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
   const int num_vertices = cell_type.num_vertices(dim);
 
   // Create map from cell vertices to entity vertices
-
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       e_vertices(num_entities, num_vertices);
   const int num_vertices_per_cell = cell_type.num_vertices();
@@ -143,8 +132,8 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
     }
   }
 
-  // Sort entities by key. For the same key, those beloning to non-ghost
-  // cells will appear before those belonging to ghost cells.
+  // Sort entities by key. For the same key, those belonging to
+  // non-ghost cells will appear before those belonging to ghost cells.
   std::sort(keyed_entities.begin(), keyed_entities.end());
 
   // Compute entity indices (using -1, -2, -3, etc, for ghost entities)
@@ -220,22 +209,15 @@ compute_entities_by_key_matching(Mesh& mesh, int dim)
 
   // FIXME: move this out some Mesh can be const
 
-  // Initialise connectivity data structure
-  topology.init(dim, num_mesh_entities, 0);
-
-  // Initialise ghost entity offset
-  topology.init_ghost(dim, num_nonghost_entities);
-
   // Set cell-entity connectivity
   auto ce = std::make_shared<Connectivity>(connectivity_ce);
   auto ev = std::make_shared<Connectivity>(connectivity_ev);
 
-  return {ce, ev, connectivity_ev.size()};
+  return {ce, ev, num_nonghost_entities};
 }
 //-----------------------------------------------------------------------------
 // Compute connectivity from transpose
-Connectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
-                                    std::size_t d1)
+Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
 {
   // The transpose is computed in three steps:
   //
@@ -251,7 +233,7 @@ Connectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
   // d1);
 
   // Get mesh topology and connectivity
-  const MeshTopology& topology = mesh.topology();
+  const Topology& topology = mesh.topology();
 
   // Need connectivity d1 - d0
   if (!topology.connectivity(d1, d0))
@@ -278,7 +260,7 @@ Connectivity compute_from_transpose(const Mesh& mesh, std::size_t d0,
 }
 //-----------------------------------------------------------------------------
 // Direct lookup of entity from vertices in a map
-Connectivity compute_from_map(const Mesh& mesh, std::size_t d0, std::size_t d1)
+Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
 {
   assert(d1 > 0);
   assert(d0 > d1);
@@ -329,26 +311,28 @@ Connectivity compute_from_map(const Mesh& mesh, std::size_t d0, std::size_t d1)
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
+void TopologyComputation::compute_entities(Mesh& mesh, int dim)
 {
   // spdlog::info("Computing mesh entities of dimension %d", dim);
 
   // Check if entities have already been computed
-  MeshTopology& topology = mesh.topology();
-  if (topology.size(dim) > 0)
+  Topology& topology = mesh.topology();
+
+  // Vertices must always exist
+  if (dim == 0)
+    return;
+
+  if (topology.connectivity(dim, 0))
   {
     // Make sure we really have the connectivity
-    if ((!topology.connectivity(topology.dim(), dim) and dim != topology.dim())
-        or (!topology.connectivity(dim, 0) and dim != 0))
+    if (!topology.connectivity(topology.dim(), dim))
     {
-      // spdlog::error("TopologyComputation.cpp", "compute topological
-      // entities",
-      //               "Entities of topological dimension %d exist but "
-      //               "connectivity is missing",
-      //               dim);
-      throw std::runtime_error("Missing connectivity");
+      throw std::runtime_error(
+          "Cannot compute topological entities. Entities of topological "
+          "dimension "
+          + std::to_string(dim) + " exist but connectivity is missing.");
     }
-    return topology.size(dim);
+    return;
   }
 
   // Call specialised function to compute entities
@@ -372,12 +356,10 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
     data = compute_entities_by_key_matching<4>(mesh, dim);
     break;
   default:
-    // spdlog::error("TopologyComputation.cpp", "compute topological entities",
-    //               "Entities with %d vertices not supported",
-    //               num_entity_vertices);
-    throw std::runtime_error("Not supported");
+    throw std::runtime_error("Topology computation of entities with "
+                             + std::to_string(num_entity_vertices)
+                             + "not supported");
   }
-
   // Set cell-entity connectivity
   if (std::get<0>(data))
     topology.set_connectivity(std::get<0>(data), topology.dim(), dim);
@@ -386,11 +368,11 @@ std::size_t TopologyComputation::compute_entities(Mesh& mesh, int dim)
   if (std::get<1>(data))
     topology.set_connectivity(std::get<1>(data), dim, 0);
 
-  return std::get<2>(data);
+  // Initialise ghost entity offset
+  topology.init_ghost(dim, std::get<2>(data));
 }
 //-----------------------------------------------------------------------------
-void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
-                                               std::size_t d1)
+void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
 {
   // This is where all the logic takes place to find a strategy for
   // the connectivity computation. For any given pair (d0, d1), the
@@ -407,21 +389,17 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   // spdlog::info("Requesting connectivity %d - %d.", d0, d1);
 
   // Get mesh topology and connectivity
-  MeshTopology& topology = mesh.topology();
+  Topology& topology = mesh.topology();
 
   // Return connectivity has already been computed
   if (topology.connectivity(d0, d1))
     return;
 
   // Compute entities if they don't exist
-  if (topology.size(d0) == 0)
+  if (!topology.connectivity(d0, 0))
     compute_entities(mesh, d0);
-  if (topology.size(d1) == 0)
+  if (!topology.connectivity(d1, 0))
     compute_entities(mesh, d1);
-
-  // Check if mesh has entities
-  if (topology.size(d0) == 0 && topology.size(d1) == 0)
-    return;
 
   // Check if connectivity still needs to be computed
   if (topology.connectivity(d0, d1))
@@ -434,9 +412,9 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
   // Decide how to compute the connectivity
   if (d0 == d1)
   {
+    // For d0-d1, use indentity connecticity
     std::vector<std::vector<std::size_t>> connectivity_dd(
         topology.size(d0), std::vector<std::size_t>(1));
-
     for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
       connectivity_dd[e.index()][0] = e.index();
     auto connectivity = std::make_shared<Connectivity>(connectivity_dd);
@@ -450,12 +428,14 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, std::size_t d0,
         = std::make_shared<Connectivity>(compute_from_transpose(mesh, d0, d1));
     topology.set_connectivity(c, d0, d1);
   }
-  else
+  else if (d0 > d1)
   {
     // Compute by mapping vertices from a lower dimension entity to
     // those of a higher dimension entity
     auto c = std::make_shared<Connectivity>(compute_from_map(mesh, d0, d1));
     topology.set_connectivity(c, d0, d1);
   }
+  else
+    throw std::runtime_error("Entity dimension error when computing topology.");
 }
 //--------------------------------------------------------------------------

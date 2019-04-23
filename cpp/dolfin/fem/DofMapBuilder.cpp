@@ -74,7 +74,7 @@ void get_cell_entities(
     std::vector<std::vector<std::int64_t>>& entity_indices_global,
     const mesh::Cell& cell, const std::vector<bool>& needs_mesh_entities)
 {
-  const mesh::MeshTopology& topology = cell.mesh().topology();
+  const mesh::Topology& topology = cell.mesh().topology();
   const int D = topology.dim();
   for (int d = 0; d < D; ++d)
   {

@@ -283,9 +283,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
   // Mark master and slaves, and pack off-process masters to send
   std::vector<std::vector<std::size_t>> master_dofs_send(
       MPI::size(mesh->mpi_comm()));
-  std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>::const_iterator
-      slave;
-  for (slave = slaves.begin(); slave != slaves.end(); ++slave)
+  for (auto slave = slaves.cbegin(); slave != slaves.cend(); ++slave)
   {
     // Set slave
     mf[slave->first] = 2;
@@ -304,12 +302,10 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
                      std::vector<std::pair<std::int32_t, std::int32_t>>>
       shared_entities_map
       = DistributedMeshTools::compute_shared_entities(*mesh, dim);
-  std::unordered_map<
-      std::int32_t,
-      std::vector<std::pair<std::int32_t, std::int32_t>>>::const_iterator e;
   std::vector<std::vector<std::pair<std::int32_t, std::int32_t>>>
       shared_entities(mesh->num_entities(dim));
-  for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
+  for (auto e = shared_entities_map.cbegin(); e != shared_entities_map.cend();
+       ++e)
   {
     assert(e->first < (std::int32_t)shared_entities.size());
     shared_entities[e->first] = e->second;

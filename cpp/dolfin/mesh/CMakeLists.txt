@@ -17,7 +17,7 @@ set(HEADERS
   MeshIterator.h
   MeshPartitioning.h
   MeshQuality.h
-  MeshTopology.h
+  Topology.h
   MeshValueCollection.h
   Ordering.h
   PartitionData.h
@@ -47,7 +47,7 @@ set(SOURCES
   MeshGeometry.cpp
   MeshPartitioning.cpp
   MeshQuality.cpp
-  MeshTopology.cpp
+  Topology.cpp
   Ordering.cpp
   PartitionData.cpp
   PeriodicBoundaryComputation.cpp

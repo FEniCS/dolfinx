@@ -56,7 +56,7 @@ bool increasing(const int n, const std::int32_t* v0, const std::int32_t* v1,
 void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
                         mesh::Mesh& mesh, mesh::Cell& cell)
 {
-  mesh::MeshTopology& topology = mesh.topology();
+  mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
 
   if (tdim < 1)
@@ -243,7 +243,7 @@ bool ordered_cell_simplex(
     const mesh::Cell& cell)
 {
   // Get mesh topology
-  const mesh::MeshTopology& topology = cell.mesh().topology();
+  const mesh::Topology& topology = cell.mesh().topology();
   const int tdim = topology.dim();
   const int c = cell.index();
 

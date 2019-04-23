@@ -8,10 +8,8 @@
 
 #include "CellType.h"
 #include "CoordinateDofs.h"
-#include "MeshGeometry.h"
-#include "MeshTopology.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
+#include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/utils.h>
 #include <memory>
@@ -30,6 +28,8 @@ namespace mesh
 {
 enum class GhostMode : int;
 class MeshEntity;
+class MeshGeometry;
+class Topology;
 
 /// A _Mesh_ consists of a set of connected and numbered mesh entities.
 ///
@@ -57,7 +57,7 @@ class MeshEntity;
 /// such as all edges connected to a given vertex must also be
 /// explicitly created (in this case by a call to mesh.init(0, 1)).
 
-class Mesh : public common::Variable
+class Mesh
 {
 public:
   /// Construct a Mesh from topological and geometric data.
@@ -117,6 +117,12 @@ public:
   ///         Another Mesh object.
   Mesh& operator=(const Mesh& mesh);
 
+  /// Assignment move operator
+  ///
+  /// @param mesh (Mesh)
+  ///         Another Mesh object.
+  // Mesh& operator=(Mesh&& mesh) = default;
+
   /// Get number of entities of given topological dimension.
   ///
   /// @param d (std::size_t)
@@ -125,7 +131,7 @@ public:
   /// @return std::size_t
   ///         Number of entities of topological dimension d.
   ///
-  std::int32_t num_entities(int d) const { return _topology.size(d); }
+  std::int32_t num_entities(int d) const;
 
   /// Get global number of entities of given topological dimension.
   ///
@@ -135,51 +141,40 @@ public:
   /// @return std::int64_t
   ///         Global number of entities of topological dimension d.
   ///
-  std::int64_t num_entities_global(std::size_t dim) const
-  {
-    return _topology.size_global(dim);
-  }
+  std::int64_t num_entities_global(std::size_t dim) const;
 
   /// Get mesh topology.
   ///
-  /// @return MeshTopology
+  /// @return Topology
   ///         The topology object associated with the mesh.
-  MeshTopology& topology() { return _topology; }
+  Topology& topology();
 
   /// Get mesh topology (const version).
   ///
-  /// @return MeshTopology
+  /// @return Topology
   ///         The topology object associated with the mesh.
-  const MeshTopology& topology() const { return _topology; }
+  const Topology& topology() const;
 
   /// Get mesh geometry.
   ///
   /// @return MeshGeometry
   ///         The geometry object associated with the mesh.
-  MeshGeometry& geometry() { return _geometry; }
+  MeshGeometry& geometry();
 
   /// Get mesh geometry (const version).
   ///
   /// @return MeshGeometry
   ///         The geometry object associated with the mesh.
-  const MeshGeometry& geometry() const { return _geometry; }
+  const MeshGeometry& geometry() const;
 
   /// Get mesh cell type.
   ///
   /// @return CellType&
   ///         The cell type object associated with the mesh.
-  mesh::CellType& type()
-  {
-    assert(_cell_type);
-    return *_cell_type;
-  }
+  mesh::CellType& type();
 
   /// Get mesh cell type (const version).
-  const mesh::CellType& type() const
-  {
-    assert(_cell_type);
-    return *_cell_type;
-  }
+  const mesh::CellType& type() const;
 
   /// Compute entities of given topological dimension.
   ///
@@ -249,6 +244,12 @@ public:
   ///
   std::size_t hash() const;
 
+  /// Get unique identifier.
+  ///
+  /// @returns _std::size_t_
+  ///         The unique integer identifier associated with the object.
+  std::size_t id() const { return _unique_id; }
+
   /// Informal string representation.
   ///
   /// @param verbose (bool)
@@ -261,7 +262,7 @@ public:
 
   /// Mesh MPI communicator
   /// @return MPI_Comm
-  MPI_Comm mpi_comm() const { return _mpi_comm.comm(); }
+  MPI_Comm mpi_comm() const;
 
   /// Ghost mode used for partitioning. Possible values are
   /// same as `parameters["ghost_mode"]`.
@@ -274,17 +275,17 @@ public:
   const CoordinateDofs& coordinate_dofs() const { return _coordinate_dofs; }
 
   // FIXME: This should be with MeshGeometry
-  std::uint32_t degree() const { return _degree; }
+  std::int32_t degree() const { return _degree; }
 
 private:
   // Cell type
   std::unique_ptr<mesh::CellType> _cell_type;
 
   // Mesh topology
-  MeshTopology _topology;
+  std::unique_ptr<Topology> _topology;
 
   // Mesh geometry
-  MeshGeometry _geometry;
+  std::unique_ptr<MeshGeometry> _geometry;
 
   // FIXME: This should be in geometry!
   // Coordinate dofs
@@ -292,13 +293,16 @@ private:
 
   // FXIME: This shouldn't be here
   // Mesh geometric degree (in Lagrange basis) describing coordinate dofs
-  std::uint32_t _degree;
+  std::int32_t _degree;
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
 
   // Ghost mode used for partitioning
   GhostMode _ghost_mode;
+
+  // Unique identifier
+  std::size_t _unique_id;
 };
 } // namespace mesh
 } // namespace dolfin

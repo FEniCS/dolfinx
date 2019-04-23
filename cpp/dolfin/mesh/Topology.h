@@ -1,4 +1,4 @@
-// Copyright (C) 2006-2009 Anders Logg
+// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -19,7 +19,7 @@ namespace mesh
 
 class Connectivity;
 
-/// MeshTopology stores the topology of a mesh, consisting of mesh
+/// Topology stores the topology of a mesh, consisting of mesh
 /// entities and connectivity (incidence relations for the mesh
 /// entities). Note that the mesh entities don't need to be stored,
 /// only the number of entities and the connectivity. Any numbering
@@ -30,25 +30,26 @@ class Connectivity;
 /// i), where dim is the topological dimension and i is the index of
 /// the entity within that topological dimension.
 
-class MeshTopology
+class Topology
 {
 public:
   /// Create empty mesh topology
   /// @param dim
   ///   Topological dimension
-  MeshTopology(std::size_t dim);
+  Topology(std::size_t dim, std::int32_t num_vertices,
+           std::int64_t num_vertices_global);
 
   /// Copy constructor
-  MeshTopology(const MeshTopology& topology) = default;
+  Topology(const Topology& topology) = default;
 
   /// Move constructor
-  MeshTopology(MeshTopology&& topology) = default;
+  Topology(Topology&& topology) = default;
 
   /// Destructor
-  ~MeshTopology() = default;
+  ~Topology() = default;
 
   /// Assignment
-  MeshTopology& operator=(const MeshTopology& topology) = default;
+  Topology& operator=(const Topology& topology) = default;
 
   /// Return topological dimension
   int dim() const;
@@ -66,21 +67,16 @@ public:
   /// Clear data for given pair of topological dimensions
   void clear(int d0, int d1);
 
-  /// Set number of local entities (local_size) and global entities
-  /// (global_size) for given topological dimension dim
-  void init(std::size_t dim, std::int32_t local_size, std::int64_t global_size);
-
-  /// Initialize storage for global entity numbering for entities of
+  /// Set number of global entities (global_size) for given topological
   /// dimension dim
-  void init_global_indices(std::size_t dim, std::int64_t size);
+  void set_num_entities_global(int dim, std::int64_t global_size);
+
+  // Set the global indices for entities of dimension dim
+  void set_global_indices(int dim,
+                          const std::vector<std::int64_t>& global_indices);
 
   /// Initialise the offset index of ghost entities for this dimension
   void init_ghost(std::size_t dim, std::size_t index);
-
-  /// Set global index for entity of dimension dim and with local
-  /// index
-  void set_global_index(std::size_t dim, std::int32_t local_index,
-                        std::int64_t global_index);
 
   /// Get local-to-global index map for entities of topological
   /// dimension d
@@ -131,8 +127,8 @@ public:
   std::string str(bool verbose) const;
 
 private:
-  // Number of mesh entities for each topological dimension
-  std::vector<std::int32_t> _num_entities;
+  // Number of mesh vertices
+  std::int32_t _num_vertices;
 
   // Number of ghost indices for each topological dimension (local
   // or global??)
@@ -144,11 +140,13 @@ private:
   // Global indices for mesh entities (empty if not set)
   std::vector<std::vector<std::int64_t>> _global_indices;
 
+  // TODO: Could IndexMap be used here in place of std::map?
   // For entities of a given dimension d, maps each shared entity
   // (local index) to a list of the processes sharing the vertex
   std::map<std::int32_t, std::map<std::int32_t, std::set<std::int32_t>>>
       _shared_entities;
 
+  // TODO: Could IndexMap be used here
   // For cells which are "ghosted", locate the owning process, using a
   // vector rather than a map, since ghost cells are always at the end
   // of the range.

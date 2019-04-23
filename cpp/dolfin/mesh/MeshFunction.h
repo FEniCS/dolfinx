@@ -9,6 +9,7 @@
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
+#include "Topology.h"
 #include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>

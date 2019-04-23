@@ -24,7 +24,7 @@ namespace dolfin
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshQuality.h>
-#include <dolfin/mesh/MeshTopology.h>
+#include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/SubDomain.h>

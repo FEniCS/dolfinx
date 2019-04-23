@@ -9,6 +9,7 @@
 #include "predicates.h"
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/MeshGeometry.h>
 // #include <spdlog/spdlog.h>
 
 using namespace dolfin;
@@ -175,9 +176,10 @@ bool CollisionPredicates::collides_segment_point(const Point& p0,
     return collides_segment_point_2d(p0, p1, point);
   case 3:
     return collides_segment_point_3d(p0, p1, point);
-  // default:
-  //   spdlog::error("CollisionPredicates.cpp", "call collides_segment_point",
-  //                 "Unknown dimension (only implemented for dimension 2 and 3");
+    // default:
+    //   spdlog::error("CollisionPredicates.cpp", "call collides_segment_point",
+    //                 "Unknown dimension (only implemented for dimension 2 and
+    //                 3");
   }
   throw std::runtime_error("Illegal dimension");
   return false;
@@ -200,7 +202,8 @@ bool CollisionPredicates::collides_segment_segment(const Point& p0,
   default:
     // spdlog::error("CollisionPredicates.cpp",
     //               "compute segment-segment collision ",
-    //               "Unknown dimension (Implemented for dimension 1, 2 and 3)");
+    //               "Unknown dimension (Implemented for dimension 1, 2 and
+    //               3)");
     throw std::runtime_error("Illegal dimension");
   }
   return false;

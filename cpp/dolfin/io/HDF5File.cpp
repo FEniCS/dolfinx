@@ -1251,8 +1251,8 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
   for (std::size_t i = 0; i != num_processes; ++i)
   {
-    for (std::vector<std::size_t>::const_iterator it = recv_entities[i].begin();
-         it != recv_entities[i].end(); it += (num_verts_per_entity + 1))
+    for (auto it = recv_entities[i].cbegin(); it != recv_entities[i].cend();
+         it += (num_verts_per_entity + 1))
     {
       std::copy(it + 1, it + num_verts_per_entity + 1, v.begin());
       auto map_it = entity_map.insert({v, {i, *it}});
