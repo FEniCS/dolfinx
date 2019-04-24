@@ -35,7 +35,7 @@ def test_creation_and_marking():
         dim = ind + 1
         args = [10] * dim
         mesh = MeshClass(MPI.comm_world, *args)
-        mesh.init()
+        mesh.create_connectivity_all()
 
         for left, right in subdomain_pairs:
             for t_dim, f_dim in [(0, 0), (mesh.topology.dim - 1, dim - 1),

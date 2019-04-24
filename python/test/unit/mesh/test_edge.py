@@ -31,7 +31,7 @@ def meshes(cube, square, request):
 def test_2DEdgeLength(square):
     """Iterate over edges and sum length."""
     length = 0.0
-    square.init(1)
+    square.create_entities(1)
     print(square.num_entities(1))
     for e in Edges(square):
         length += e.length()
@@ -42,7 +42,7 @@ def test_2DEdgeLength(square):
 def test_3DEdgeLength(cube):
     """Iterate over edges and sum length."""
     length = 0.0
-    cube.init(1)
+    cube.create_entities(1)
     for e in Edges(cube):
         length += e.length()
     assert round(length - 278.58049080280125053832, 7) == 0
@@ -50,7 +50,7 @@ def test_3DEdgeLength(cube):
 
 def test_EdgeDot(meshes):
     """Iterate over edges compute dot product with ."""
-    meshes.init(1)
+    meshes.create_entities(1)
     for e in Edges(meshes):
         dot = e.dot(e) / (e.length()**2)
         assert round(dot - 1.0, 7) == 0

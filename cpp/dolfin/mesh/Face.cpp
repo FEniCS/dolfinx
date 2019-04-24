@@ -32,7 +32,7 @@ double Face::area() const
   {
 
     // Initialize needed connectivity
-    _mesh->init(2, D);
+    _mesh->create_connectivity(2, D);
 
     // Get cell to which face belong (first cell when there is more than one)
     const Cell cell(*_mesh, this->entities(D)[0]);
@@ -68,7 +68,7 @@ geometry::Point Face::normal() const
   }
 
   // Initialize needed connectivity
-  _mesh->init(2, tD);
+  _mesh->create_connectivity(2, tD);
 
   // Get cell to which face belong (first cell when there is more than one)
   const Cell cell(*_mesh, this->entities(tD)[0]);

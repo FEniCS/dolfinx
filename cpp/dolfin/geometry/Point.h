@@ -54,7 +54,7 @@ public:
   ///
   /// @param    x (Array<double>)
   ///         Array of coordinates.
-  Point(const Eigen::VectorXd& x) : _x({{0.0, 0.0, 0.0}})
+  explicit Point(const Eigen::VectorXd& x) : _x({{0.0, 0.0, 0.0}})
   {
     for (int i = 0; i < x.size(); i++)
       _x[i] = x[i];
@@ -74,6 +74,12 @@ public:
 
   /// Destructor
   ~Point() = default;
+
+  /// Assignment operator
+  Point& operator=(const Point& p) = default;
+
+  /// Move assignment operator
+  Point& operator=(Point&& p) = default;
 
   /// Return address of coordinate in direction i
   ///
@@ -186,12 +192,6 @@ public:
     return *this;
   }
 
-  /// Assignment operator
-  Point& operator=(const Point& p) = default;
-
-  /// Move assignment operator
-  Point& operator=(Point&& p) = default;
-
   /// Equal to operator
   bool operator==(const Point& p) const { return _x == p._x; }
 
@@ -296,8 +296,8 @@ public:
 private:
   std::array<double, 3> _x;
 };
-}
-}
+} // namespace geometry
+} // namespace dolfin
 /// Output of Point to stream
 inline std::ostream& operator<<(std::ostream& stream,
                                 const dolfin::geometry::Point& point)

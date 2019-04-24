@@ -41,8 +41,8 @@ std::size_t Expression::value_dimension(std::size_t i) const
   if (i >= _value_shape.size())
   {
     // spdlog::error("Expression.cpp", "evaluate expression",
-    //               "Illegal axis %d for value dimension for value of rank %d", i,
-    //               _value_shape.size());
+    //               "Illegal axis %d for value dimension for value of rank %d",
+    //               i, _value_shape.size());
     throw std::runtime_error("Value dimension axis");
   }
   return _value_shape[i];

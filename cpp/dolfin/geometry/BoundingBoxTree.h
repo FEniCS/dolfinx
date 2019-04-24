@@ -34,8 +34,7 @@ class BoundingBoxTree
 private:
   BoundingBoxTree(const std::vector<double>& leaf_bboxes,
                   const std::vector<unsigned int>::iterator& begin,
-                  const std::vector<unsigned int>::iterator& end,
-                  int gdim);
+                  const std::vector<unsigned int>::iterator& end, int gdim);
 
 public:
   /// Constructor

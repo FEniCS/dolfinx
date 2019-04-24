@@ -8,7 +8,7 @@
 #include "Vertex.h"
 #include <cmath>
 #include <dolfin/geometry/Point.h>
-#include <dolfin/mesh/MeshGeometry.h>
+#include <dolfin/mesh/Geometry.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -39,7 +39,7 @@ double Edge::dot(const Edge& edge) const
   assert(v0);
   assert(v1);
 
-  const MeshGeometry& g = _mesh->geometry();
+  const Geometry& g = _mesh->geometry();
   const Eigen::Ref<const EigenVectorXd> x00 = g.x(v0[0]);
   const Eigen::Ref<const EigenVectorXd> x01 = g.x(v0[1]);
   const Eigen::Ref<const EigenVectorXd> x10 = g.x(v1[0]);

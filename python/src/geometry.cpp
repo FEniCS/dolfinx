@@ -125,11 +125,12 @@ void geometry(py::module& m)
       .def(py::self == py::self)
       .def(py::self * float())
       .def(py::self / float())
-      .def("array",
-           [](dolfin::geometry::Point& self) {
-             return Eigen::Vector3d(self.coordinates());
-           },
-           "Return copy of coordinate array")
+      .def(
+          "array",
+          [](dolfin::geometry::Point& self) {
+            return Eigen::Vector3d(self.coordinates());
+          },
+          "Return copy of coordinate array")
       .def("norm", &dolfin::geometry::Point::norm)
       .def("distance", &dolfin::geometry::Point::distance);
 

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfin/common/types.h>
+#include <Eigen/Dense>
 #include <memory>
 #include <vector>
 
@@ -16,18 +16,26 @@ namespace mesh
 {
 class Connectivity;
 
-/// CoordinateDofs contains the connectivity from MeshEntities to the geometric
-/// points which make up the mesh.
+/// CoordinateDofs contains the connectivity from MeshEntities to the
+/// geometric points which make up the mesh.
 
 class CoordinateDofs
 {
 public:
   /// Constructor
   /// @param tdim
-  ///   Topological Dimension
-  /// @param cell_dofs
-  ///   Connections from cells to points in MeshGeometry (cell_dofs)
-  CoordinateDofs(std::uint32_t tdim);
+  ///   Topological dimension
+  /// @param point_dofs
+  ///   Array containing point dofs for each entity
+  /// @param cell_permutation
+  ///   Array containing permutation for cell_vertices required for higher order
+  ///   elements which are input in gmsh/vtk order.
+  CoordinateDofs(
+      int tdim,
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>
+          point_dofs,
+      const std::vector<std::uint8_t>& cell_permutation);
 
   /// Copy constructor
   CoordinateDofs(const CoordinateDofs& topology) = default;
@@ -43,18 +51,6 @@ public:
 
   /// Move assignment
   CoordinateDofs& operator=(CoordinateDofs&& topology) = default;
-
-  /// Initialise entity->point dofs for dimension dim
-  /// @param dim
-  ///   Dimension of entity
-  /// @param point_dofs
-  ///   Array containing point dofs for each entity
-  /// @param cell_permutation
-  ///   Array containing permutation for cell_vertices required for higher order
-  ///   elements which are input in gmsh/vtk order.
-  void init(std::size_t dim,
-            const Eigen::Ref<const EigenRowArrayXXi32> point_dofs,
-            const std::vector<std::uint8_t>& cell_permutation);
 
   /// Get the entity points associated with entities of dimension i
   ///

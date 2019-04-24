@@ -13,11 +13,11 @@ set(HEADERS
   Mesh.h
   MeshEntity.h
   MeshFunction.h
-  MeshGeometry.h
+  Geometry.h
   MeshIterator.h
-  MeshPartitioning.h
+  Partitioning.h
   MeshQuality.h
-  MeshTopology.h
+  Topology.h
   MeshValueCollection.h
   Ordering.h
   PartitionData.h
@@ -44,10 +44,10 @@ set(SOURCES
   Mesh.cpp
   MeshEntity.cpp
   MeshFunction.cpp
-  MeshGeometry.cpp
-  MeshPartitioning.cpp
+  Geometry.cpp
+  Partitioning.cpp
   MeshQuality.cpp
-  MeshTopology.cpp
+  Topology.cpp
   Ordering.cpp
   PartitionData.cpp
   PeriodicBoundaryComputation.cpp

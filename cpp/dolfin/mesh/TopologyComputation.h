@@ -6,9 +6,6 @@
 
 #pragma once
 
-#include <cstddef>
-#include <cstdint>
-
 namespace dolfin
 {
 
@@ -16,18 +13,20 @@ namespace mesh
 {
 class Mesh;
 
-/// This class implements a set of basic algorithms that automate
-/// the computation of mesh entities and connectivity.
+/// This class implements a set of basic algorithms that automate the
+/// computation of mesh entities and connectivity.
 
 class TopologyComputation
 {
 public:
-  /// Compute mesh entities of given topological dimension, and connectivity
-  /// cell-to-enity (tdim, dim)
-  static std::size_t compute_entities(Mesh& mesh, int dim);
+  /// Compute mesh entities of given topological dimension by computing
+  /// entity-to-vertex connectivity (dim, 0), and cell-to-entity
+  /// connectivity (tdim, dim)
+  static void compute_entities(Mesh& mesh, int dim);
 
-  /// Compute connectivity for given pair of topological dimensions
-  static void compute_connectivity(Mesh& mesh, std::size_t d0, std::size_t d1);
+  /// Compute connectivity (d0, d1) for given pair of topological
+  /// dimensions
+  static void compute_connectivity(Mesh& mesh, int d0, int d1);
 };
 } // namespace mesh
 } // namespace dolfin

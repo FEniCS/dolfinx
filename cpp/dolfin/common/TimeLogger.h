@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <dolfin/common/Table.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/Table.h>
 #include <dolfin/common/timing.h>
 #include <map>
 #include <memory>
@@ -23,7 +23,7 @@ namespace dolfin
 namespace common
 {
 
-  /// Timer logging
+/// Timer logging
 
 class TimeLogger
 {
@@ -32,7 +32,7 @@ public:
   TimeLogger();
 
   /// Destructor
-  ~TimeLogger() {};
+  ~TimeLogger(){};
 
   /// Register timing (for later summary)
   void register_timing(std::string task,
@@ -53,7 +53,6 @@ public:
   MPI_Comm mpi_comm() { return _mpi_comm; }
 
 private:
-
   // List of timings for tasks, map from string to
   // (num_timings, total_wall_time, total_user_time, total_system_time)
   std::map<std::string, std::tuple<std::size_t, double, double, double>>
@@ -65,5 +64,5 @@ private:
   // MPI Communicator
   MPI_Comm _mpi_comm;
 };
-}
-}
+} // namespace common
+} // namespace dolfin

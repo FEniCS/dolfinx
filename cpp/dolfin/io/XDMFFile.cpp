@@ -29,8 +29,8 @@
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
 #include <iomanip>
 #include <memory>
@@ -234,9 +234,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 
   // Get newly (by add_mesh) created Grid
   pugi::xml_node mesh_grid_node
-      = func_temporal_grid_node
-            .select_node(("Grid[@Name='" + mesh.name() + "']").c_str())
-            .node();
+      = func_temporal_grid_node.select_node("Grid[@Name='mesh']").node();
   assert(mesh_grid_node);
 
   // Change it's name to {function_name}_{counter}
@@ -776,7 +774,7 @@ void XDMFFile::write_mesh_value_collection(
   topology_data.reserve(num_cells * num_vertices_per_cell);
   value_data.reserve(num_cells);
 
-  mesh->init(tdim, cell_dim);
+  mesh->create_connectivity(tdim, cell_dim);
   for (auto& p : values)
   {
     mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
@@ -927,7 +925,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
       = get_dataset<T>(_mpi_comm.comm(), attribute_data_node, parent_path);
 
   // Ensure the mesh dimension is initialised
-  mesh->init(dim);
+  mesh->create_entities(dim);
   const std::size_t global_vertex_range = mesh->num_entities_global(0);
   const std::int32_t num_processes = _mpi_comm.size();
 
@@ -1223,7 +1221,7 @@ void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");
   assert(grid_node);
-  grid_node.append_attribute("Name") = mesh.name().c_str();
+  grid_node.append_attribute("Name") = "mesh";
   grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes (including writing data)
@@ -1500,7 +1498,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
   std::iota(global_cell_indices.begin(), global_cell_indices.end(),
             cell_index_offset);
 
-  return mesh::MeshPartitioning::build_distributed_mesh(
+  return mesh::Partitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type->cell_type(), points, cells,
       global_cell_indices, ghost_mode);
 }
@@ -1737,7 +1735,7 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
   // Add topology DataItem node
-  const std::string group_name = path_prefix + "/" + mesh.name();
+  const std::string group_name = path_prefix + "/" + "mesh";
   const std::string h5_path = group_name + "/topology";
   const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
   const std::string number_type = "UInt";
@@ -1750,7 +1748,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                  hid_t h5_id, const std::string path_prefix,
                                  const mesh::Mesh& mesh)
 {
-  const mesh::MeshGeometry& mesh_geometry = mesh.geometry();
+  const mesh::Geometry& mesh_geometry = mesh.geometry();
   int gdim = mesh_geometry.dim();
 
   // Compute number of points (global) in mesh (equal to number of vertices
@@ -1783,7 +1781,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   }
 
   // Add geometry DataItem node
-  const std::string group_name = path_prefix + "/" + mesh.name();
+  const std::string group_name = path_prefix + "/" + "mesh";
   const std::string h5_path = group_name + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, gdim};
 
@@ -2650,7 +2648,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     // Make new grid node
     grid_node = domain_node.append_child("Grid");
     assert(grid_node);
-    grid_node.append_attribute("Name") = mesh->name().c_str();
+    grid_node.append_attribute("Name") = "mesh";
     grid_node.append_attribute("GridType") = "Uniform";
 
     // Make sure entities are numbered - only needed for  mesh::Edge in 3D in

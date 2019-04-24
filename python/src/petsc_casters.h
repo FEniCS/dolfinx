@@ -29,7 +29,7 @@
   }
 
 // Macro for casting between PETSc and petsc4py objects
-#define PETSC_CASTER_MACRO(TYPE, P4PYTYPE, NAME)                                         \
+#define PETSC_CASTER_MACRO(TYPE, P4PYTYPE, NAME)                               \
   template <>                                                                  \
   class type_caster<_p_##TYPE>                                                 \
   {                                                                            \

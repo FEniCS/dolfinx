@@ -21,7 +21,6 @@ extern "C"
 #include <ptscotch.h>
 }
 
-
 namespace dolfin
 {
 // Forward declarations

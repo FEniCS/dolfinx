@@ -27,5 +27,5 @@ public:
   /// Create mesh of unit triangle
   static mesh::Mesh create();
 };
-}
-}
+} // namespace generation
+} // namespace dolfin

@@ -37,12 +37,12 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
   const int bs = _element_dof_layout->block_size();
   if (bs == 1)
   {
-    std::tie(_global_dimension, _index_map, _shared_nodes, _dofmap)
+    std::tie(_global_dimension, _index_map, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
   }
   else
   {
-    std::tie(_global_dimension, _index_map, _shared_nodes, _dofmap)
+    std::tie(_global_dimension, _index_map, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
   }
 }
@@ -87,10 +87,6 @@ DofMap::DofMap(const DofMap& dofmap_parent,
     const std::int64_t n = mesh.num_entities_global(d);
     _global_dimension += n * _element_dof_layout->num_entity_dofs(d);
   }
-
-  // FIXME: This stores more than is required. Compress, or share with
-  // parent.
-  _shared_nodes = dofmap_parent._shared_nodes;
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
@@ -165,7 +161,7 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   // receive new global indices from owner
   std::vector<std::int64_t> global_index_remote(
       dofmap_view._index_map->num_ghosts(), -1);
-  dofmap_view._index_map->scatter_fwd(global_index, global_index_remote);
+  dofmap_view._index_map->scatter_fwd(global_index, global_index_remote, 1);
 
   // Compute ghosts for collapsed dofmap
   std::vector<std::int64_t> ghosts(num_unowned);
@@ -175,17 +171,6 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
     const std::int32_t index_old = *it / bs_view - num_owned_view;
     assert(global_index_remote[index_old] >= 0);
     ghosts[index] = global_index_remote[index_old];
-  }
-
-  // FIXME: remove
-  // Set shared nodes
-  for (auto it = it_unowned0; it != dofs_view.end(); ++it)
-  {
-    const std::int32_t index = std::distance(dofs_view.begin(), it) / bs;
-    const std::int32_t index_old = *it / bs_view;
-    auto procs = dofmap_view._shared_nodes.find(index_old);
-    assert(procs != dofmap_view._shared_nodes.end());
-    _shared_nodes[index] = procs->second;
   }
 
   // Create new index map
@@ -238,11 +223,6 @@ std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
   return _element_dof_layout->num_entity_closure_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
-const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
-{
-  return _shared_nodes;
-}
-//-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1>
 DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
                                      std::size_t cell_entity_index) const
@@ -288,16 +268,15 @@ std::unique_ptr<GenericDofMap>
 DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
                            const mesh::Mesh& mesh) const
 {
-  return std::unique_ptr<GenericDofMap>(new DofMap(*this, component, mesh));
+  return std::unique_ptr<DofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<GenericDofMap>,
-          std::unordered_map<std::size_t, std::size_t>>
+std::pair<std::shared_ptr<GenericDofMap>, std::vector<PetscInt>>
 DofMap::collapse(const mesh::Mesh& mesh) const
 {
   assert(_element_dof_layout);
   assert(_index_map);
-  std::shared_ptr<GenericDofMap> dofmap_new;
+  std::shared_ptr<DofMap> dofmap_new;
   if (this->_index_map->block_size() == 1
       and this->_element_dof_layout->block_size() > 1)
   {
@@ -307,29 +286,33 @@ DofMap::collapse(const mesh::Mesh& mesh) const
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
-    dofmap_new = std::shared_ptr<GenericDofMap>(
-        new DofMap(collapsed_dof_layout, mesh));
+    dofmap_new = std::make_shared<DofMap>(collapsed_dof_layout, mesh);
   }
   else
   {
     // Collapse dof map without build and re-ordering from scratch
-    dofmap_new = std::shared_ptr<GenericDofMap>(new DofMap(*this, mesh));
+    dofmap_new = std::shared_ptr<DofMap>(new DofMap(*this, mesh));
   }
-
-  // FIXME: Could we use a std::vector instead of std::map if the
-  //        collapsed dof map is contiguous (0, . . . , n)?
+  assert(dofmap_new);
 
   // Build map from collapsed dof index to original dof index
-  std::unordered_map<std::size_t, std::size_t> collapsed_map;
+  auto index_map_new = dofmap_new->index_map();
+  std::int32_t size
+      = (index_map_new->size_local() + index_map_new->num_ghosts())
+        * index_map_new->block_size();
+  std::vector<PetscInt> collapsed_map(size);
   const int tdim = mesh.topology().dim();
-  for (std::int64_t i = 0; i < mesh.num_entities(tdim); ++i)
+  for (std::int64_t c = 0; c < mesh.num_entities(tdim); ++c)
   {
-    auto view_cell_dofs = this->cell_dofs(i);
-    auto cell_dofs = dofmap_new->cell_dofs(i);
+    const auto view_cell_dofs = this->cell_dofs(c);
+    const auto cell_dofs = dofmap_new->cell_dofs(c);
     assert(view_cell_dofs.size() == cell_dofs.size());
 
-    for (Eigen::Index j = 0; j < view_cell_dofs.size(); ++j)
+    for (Eigen::Index j = 0; j < cell_dofs.size(); ++j)
+    {
+      assert(cell_dofs[j] < (int)collapsed_map.size());
       collapsed_map[cell_dofs[j]] = view_cell_dofs[j];
+    }
   }
 
   return std::make_pair(dofmap_new, std::move(collapsed_map));

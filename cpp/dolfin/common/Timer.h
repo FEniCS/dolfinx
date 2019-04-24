@@ -66,5 +66,5 @@ private:
   // Implementation of timer
   boost::timer::cpu_timer _timer;
 };
-}
-}
+} // namespace common
+} // namespace dolfin

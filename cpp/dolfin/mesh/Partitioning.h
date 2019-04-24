@@ -50,7 +50,7 @@ enum class GhostMode : int
 /// After partitioning, each process has a local mesh and some data
 /// that couples the meshes together.
 
-class MeshPartitioning
+class Partitioning
 {
 public:
   /// Build distributed mesh from a set of points and cells on each local

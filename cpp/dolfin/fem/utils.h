@@ -36,8 +36,8 @@ class FunctionSpace;
 namespace mesh
 {
 class CellType;
+class Geometry;
 class Mesh;
-class MeshGeometry;
 } // namespace mesh
 
 namespace fem
@@ -77,8 +77,7 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 
 /// Extract coefficients from UFC form
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
-  get_coeffs_from_ufc_form(const ufc_form& ufc_form);
-
+get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 
 } // namespace fem
 } // namespace dolfin

@@ -62,7 +62,7 @@ def test_issue_568():
         cell.facet_area(0)
 
     # Should work after initializing the connectivity
-    mesh.init(2, 1)
+    mesh.create_connectivity(2, 1)
     cell.facet_area(0)
 
 
@@ -85,7 +85,7 @@ def test_volume_quadrilateralR3(coordinates):
                 numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
                 cpp.mesh.GhostMode.none)
 
-    mesh.init()
+    mesh.create_connectivity_all()
     cell = Cell(mesh, 0)
 
     assert cell.volume() == 1.0
@@ -109,7 +109,7 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
             numpy.array([[0, 1, 2, 3]],
                         dtype=numpy.int32), [], cpp.mesh.GhostMode.none)
 
-        mesh.init()
+        mesh.create_connectivity_all()
         cell = Cell(mesh, 0)
         cell.volume()
 
@@ -132,7 +132,7 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
                         dtype=numpy.float64),
                     numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
                     cpp.mesh.GhostMode.none)
-        mesh.init()
+        mesh.create_connectivity_all()
         cell = Cell(mesh, 0)
         cell.volume()
 

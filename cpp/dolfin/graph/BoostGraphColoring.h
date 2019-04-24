@@ -37,11 +37,9 @@ public:
     Timer timer("Boost graph coloring (from dolfin::Graph)");
 
     // Typedef for Boost compressed sparse row graph
-    typedef boost::
-        compressed_sparse_row_graph<boost::directedS,
-                                    boost::property<boost::vertex_color_t,
-                                                    ColorType>>
-            BoostGraph;
+    typedef boost::compressed_sparse_row_graph<
+        boost::directedS, boost::property<boost::vertex_color_t, ColorType>>
+        BoostGraph;
 
     // Number of vertices
     const std::size_t n = graph.size();
@@ -105,5 +103,5 @@ public:
     return num_colors;
   }
 };
-}
-}
+} // namespace graph
+} // namespace dolfin

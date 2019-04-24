@@ -23,8 +23,8 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/MeshPartitioning.h>
 #include <dolfin/mesh/MeshValueCollection.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
 #include <fstream>
 #include <iomanip>
@@ -1128,7 +1128,7 @@ void HDF5File::write_mesh_value_collection(
   value_data.reserve(values.size());
 
   const std::size_t tdim = mesh->topology().dim();
-  mesh->init(tdim, dim);
+  mesh->create_connectivity(tdim, dim);
   for (auto& p : values)
   {
     mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
@@ -1218,7 +1218,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   /// read data to the 'sorting' hosts.
 
   // Ensure the mesh dimension is initialised
-  mesh->init(dim);
+  mesh->create_entities(dim);
   std::size_t global_vertex_range = mesh->num_entities_global(0);
   std::vector<std::size_t> v(num_verts_per_entity);
   const std::size_t num_processes = _mpi_comm.size();
@@ -1251,8 +1251,8 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
   for (std::size_t i = 0; i != num_processes; ++i)
   {
-    for (std::vector<std::size_t>::const_iterator it = recv_entities[i].begin();
-         it != recv_entities[i].end(); it += (num_verts_per_entity + 1))
+    for (auto it = recv_entities[i].cbegin(); it != recv_entities[i].cend();
+         it += (num_verts_per_entity + 1))
     {
       std::copy(it + 1, it + num_verts_per_entity + 1, v.begin());
       auto map_it = entity_map.insert({v, {i, *it}});
@@ -1600,7 +1600,7 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
 
   t.stop();
 
-  return mesh::MeshPartitioning::build_distributed_mesh(
+  return mesh::Partitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type.cell_type(), points, cells,
       global_cell_indices, ghost_mode);
 }

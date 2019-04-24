@@ -49,7 +49,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   }
 
   for (int i = 0; i < M.integrals().num_integrals(
-                          fem::FormIntegrals::Type::exterior_facet);
+                      fem::FormIntegrals::Type::exterior_facet);
        ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
@@ -57,7 +57,8 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
         = M.integrals().get_tabulate_tensor_fn_exterior_facet(i);
 
     const std::vector<std::int32_t>& active_facets
-        = M.integrals().integral_domains(fem::FormIntegrals::Type::exterior_facet, i);
+        = M.integrals().integral_domains(
+            fem::FormIntegrals::Type::exterior_facet, i);
 
     value += fem::impl::assemble_exterior_facets(mesh, active_facets, fn,
                                                  coeff_fn, c_offsets);
@@ -70,15 +71,14 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 }
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_cells(
-    const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_cells,
+    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
   const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim);
+  mesh.create_entities(tdim);
 
   // Create data structures used in assembly
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
@@ -113,16 +113,15 @@ PetscScalar fem::impl::assemble_cells(
 }
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_exterior_facets(
-    const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets,
+    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
   const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim - 1);
-  mesh.init(tdim - 1, tdim);
+  mesh.create_entities(tdim - 1);
+  mesh.create_connectivity(tdim - 1, tdim);
 
   // Creat data structures used in assembly
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());

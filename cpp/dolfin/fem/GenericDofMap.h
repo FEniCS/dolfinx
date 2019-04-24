@@ -95,8 +95,7 @@ public:
                      const mesh::Mesh& mesh) const = 0;
 
   /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-  virtual std::pair<std::shared_ptr<GenericDofMap>,
-                    std::unordered_map<std::size_t, std::size_t>>
+  virtual std::pair<std::shared_ptr<GenericDofMap>, std::vector<PetscInt>>
   collapse(const mesh::Mesh& mesh) const = 0;
 
   /// Return list of dof indices on this process that belong to mesh
@@ -116,11 +115,6 @@ public:
   /// Tabulate map between local (process) and global dof indices
   Eigen::Array<std::size_t, Eigen::Dynamic, 1>
   tabulate_local_to_global_dofs() const;
-
-  /// Return map from shared nodes to the processes (not including
-  /// the current process) that share it.
-  virtual const std::unordered_map<int, std::vector<int>>&
-  shared_nodes() const = 0;
 
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const = 0;

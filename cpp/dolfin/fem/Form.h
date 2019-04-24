@@ -234,6 +234,7 @@ public:
 
   /// Get coordinate_mapping (experimental)
   std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const;
+
 private:
   // Integrals associated with the Form
   FormIntegrals _integrals;

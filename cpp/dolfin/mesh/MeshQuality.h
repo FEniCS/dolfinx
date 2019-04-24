@@ -65,5 +65,5 @@ public:
   static std::pair<std::vector<double>, std::vector<std::size_t>>
   dihedral_angle_histogram_data(const Mesh& mesh, std::size_t num_bins);
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

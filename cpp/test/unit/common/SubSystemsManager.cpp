@@ -20,26 +20,23 @@
 //
 // Unit tests for SubSystemsManager
 
-#include <dolfin.h>
 #include <catch.hpp>
+#include <dolfin.h>
 #include <petscvec.h>
 
 namespace
 {
-  void init_petsc()
-  {
-    // Test user initialisation of PETSc
-    int argc = 0;
-    char **argv = NULL;
-    PetscInitialize(&argc, &argv, NULL, NULL);
-
-    Vec x;
-    VecCreate(MPI_COMM_WORLD, &x);
-    VecDestroy(&x);
-  }
-}
-
-TEST_CASE( "Initialise PETSc", "[petsc_init]" )
+void init_petsc()
 {
-  CHECK_NOTHROW(init_petsc());
+  // Test user initialisation of PETSc
+  int argc = 0;
+  char** argv = NULL;
+  PetscInitialize(&argc, &argv, NULL, NULL);
+
+  Vec x;
+  VecCreate(MPI_COMM_WORLD, &x);
+  VecDestroy(&x);
 }
+} // namespace
+
+TEST_CASE("Initialise PETSc", "[petsc_init]") { CHECK_NOTHROW(init_petsc()); }

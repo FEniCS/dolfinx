@@ -48,5 +48,5 @@ std::string MeshFunction<std::size_t>::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-}
-}
+} // namespace mesh
+} // namespace dolfin

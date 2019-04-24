@@ -34,14 +34,15 @@ void function(py::module& m)
 {
 
   // Create dolfin::function::Expression from a JIT pointer
-  m.def("make_dolfin_expression",
-        [](std::uintptr_t addr) {
-          dolfin::function::Expression* p
-              = reinterpret_cast<dolfin::function::Expression*>(addr);
-          return std::shared_ptr<const dolfin::function::Expression>(p);
-        },
-        "Create a dolfin::function::Expression object from a pointer integer, "
-        "typically returned by a just-in-time compiler");
+  m.def(
+      "make_dolfin_expression",
+      [](std::uintptr_t addr) {
+        dolfin::function::Expression* p
+            = reinterpret_cast<dolfin::function::Expression*>(addr);
+        return std::shared_ptr<const dolfin::function::Expression>(p);
+      },
+      "Create a dolfin::function::Expression object from a pointer integer, "
+      "typically returned by a just-in-time compiler");
 
   // dolfin:Expression
   py::class_<dolfin::function::Expression,
@@ -72,11 +73,12 @@ void function(py::module& m)
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
-      .def("collapse",
-           [](dolfin::function::Function& self) {
-             return std::make_shared<dolfin::function::Function>(self);
-           },
-           "Collapse sub-function view.")
+      .def(
+          "collapse",
+          [](dolfin::function::Function& self) {
+            return std::make_shared<dolfin::function::Function>(self);
+          },
+          "Collapse sub-function view.")
       .def("interpolate",
            py::overload_cast<const dolfin::function::Function&>(
                &dolfin::function::Function::interpolate),
@@ -85,24 +87,26 @@ void function(py::module& m)
            py::overload_cast<const dolfin::function::Expression&>(
                &dolfin::function::Function::interpolate),
            py::arg("expr"))
-      .def("vector",
-           [](const dolfin::function::Function& self) {
-             return self.vector().vec();
-           },
-           "Return the vector associated with the finite element Function")
+      .def(
+          "vector",
+          [](const dolfin::function::Function& self) {
+            return self.vector().vec();
+          },
+          "Return the vector associated with the finite element Function")
       .def("value_dimension", &dolfin::function::Function::value_dimension)
       .def("value_size", &dolfin::function::Function::value_size)
       .def("value_rank", &dolfin::function::Function::value_rank)
       .def_property_readonly("value_shape",
                              &dolfin::function::Function::value_shape)
-      .def("eval",
-           [](const dolfin::function::Function& self,
-              Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                      Eigen::Dynamic, Eigen::RowMajor>>
-                  u,
-              const Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
-              const dolfin::mesh::Cell& cell) { self.eval(u, x, cell); },
-           "Evaluate Function (cell version)")
+      .def(
+          "eval",
+          [](const dolfin::function::Function& self,
+             Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                     Eigen::Dynamic, Eigen::RowMajor>>
+                 u,
+             const Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
+             const dolfin::mesh::Cell& cell) { self.eval(u, x, cell); },
+          "Evaluate Function (cell version)")
       .def("eval",
            py::overload_cast<
                Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
@@ -116,20 +120,21 @@ void function(py::module& m)
            py::overload_cast<const dolfin::mesh::Mesh&>(
                &dolfin::function::Function::compute_point_values, py::const_),
            "Compute values at all mesh points")
-      .def("compute_point_values",
-           [](dolfin::function::Function& self) {
-             auto V = self.function_space();
-             if (!V)
-               throw py::value_error("Function has no function space. "
-                                     "You must supply a mesh.");
-             auto mesh = V->mesh();
-             if (!mesh)
-               throw py::value_error("Function has no function space "
-                                     "mesh. You must supply a mesh.");
-             return self.compute_point_values(*mesh);
-           },
-           "Compute values at all mesh points by using the mesh "
-           "function.function_space().mesh()")
+      .def(
+          "compute_point_values",
+          [](dolfin::function::Function& self) {
+            auto V = self.function_space();
+            if (!V)
+              throw py::value_error("Function has no function space. "
+                                    "You must supply a mesh.");
+            auto mesh = V->mesh();
+            if (!mesh)
+              throw py::value_error("Function has no function space "
+                                    "mesh. You must supply a mesh.");
+            return self.compute_point_values(*mesh);
+          },
+          "Compute values at all mesh points by using the mesh "
+          "function.function_space().mesh()")
       .def("function_space", &dolfin::function::Function::function_space);
 
   // FIXME: why is this floating here?

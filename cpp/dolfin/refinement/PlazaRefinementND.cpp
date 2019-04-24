@@ -236,9 +236,9 @@ std::pair<std::vector<std::int32_t>, std::vector<bool>>
 PlazaRefinementND::face_long_edge(const mesh::Mesh& mesh)
 {
   const std::int32_t tdim = mesh.topology().dim();
-  mesh.init(1);
-  mesh.init(2);
-  mesh.init(2, 1);
+  mesh.create_entities(1);
+  mesh.create_entities(2);
+  mesh.create_connectivity(2, 1);
 
   // Storage for face-local index of longest edge
   std::vector<std::int32_t> long_edge(mesh.num_entities(2));
@@ -414,7 +414,7 @@ mesh::Mesh PlazaRefinementND::compute_refinement(
 
       // Convert from cell local index to mesh index and add to cells
       std::vector<std::int64_t> simplex_set_global(simplex_set.size());
-      for (std::size_t i = 0; i< simplex_set_global.size(); ++i)
+      for (std::size_t i = 0; i < simplex_set_global.size(); ++i)
         simplex_set_global[i] = indices[simplex_set[i]];
       p_ref.new_cells(simplex_set_global);
     }

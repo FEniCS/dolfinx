@@ -289,7 +289,8 @@ void PETScKrylovSolver::write_report(int num_iterations,
 
   if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
   {
-    // spdlog::info("PETSc Krylov solver preconditioner (%s) submethods: (%s, %s)",
+    // spdlog::info("PETSc Krylov solver preconditioner (%s) submethods: (%s,
+    // %s)",
     //              pc_type, sub_ksp_type, sub_pc_type);
   }
 
