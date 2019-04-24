@@ -89,6 +89,7 @@
 // .. code-block:: cpp
 
 #include "poisson.h"
+#include <Eigen/Dense>
 #include <cfloat>
 #include <dolfin.h>
 #include <dolfin/mesh/Ordering.h>
@@ -109,28 +110,32 @@ public:
   {
     if (order == 0)
     {
-      for (int ip = 0; ip < npoints; ++ip)
-      {
-        const double X0 = X[2 * ip];
-        const double X1 = X[2 * ip + 1];
+      Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>>
+          _X(X, npoints, 2);
 
-        ref_vals[3 * ip] = (1.0 - X0 - X1);
-        ref_vals[3 * ip + 1] = X0;
-        ref_vals[3 * ip + 2] = X1;
-      }
+      Eigen::Map<
+          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+          _ref_vals(ref_vals, npoints, 3);
+
+      _ref_vals.col(0) = 1.0 - _X.col(0) - _X.col(1);
+      _ref_vals.col(1) = _X.col(0);
+      _ref_vals.col(2) = _X.col(1);
+
       return 0;
     }
     else if (order == 1)
     {
-      for (int ip = 0; ip < npoints; ++ip)
-      {
-        ref_vals[6 * ip] = -1.0;
-        ref_vals[6 * ip + 1] = 1.0;
-        ref_vals[6 * ip + 2] = 0.0;
-        ref_vals[6 * ip + 3] = -1.0;
-        ref_vals[6 * ip + 4] = 0.0;
-        ref_vals[6 * ip + 5] = 1.0;
-      }
+      // NB - not used by this demo - needs checking
+      Eigen::Map<
+          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+          _ref_vals(ref_vals, npoints, 6);
+
+      Eigen::Array<double, 1, 6> derivs;
+      derivs << -1, 1, 0, -1, 0, 1;
+
+      _ref_vals = derivs.replicate(npoints, 1);
+
       return 0;
     }
     return -1;
@@ -144,12 +149,25 @@ public:
   {
     if (order == 0)
     {
-      for (int ip = 0; ip < num_points * 3; ++ip)
-        values[ip] = reference_values[ip];
+      Eigen::Map<
+          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+          _values(values, num_points, 3);
+      Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>>
+          _reference_values(reference_values, num_points, 3);
+      _values = _reference_values;
       return 0;
     }
     else if (order == 1)
     {
+      // NB - not used in this demo - needs checking
+      Eigen::Map<
+          Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+          _values(values, num_points, 6);
+      Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                    Eigen::RowMajor>>
+          _reference_values(reference_values, num_points, 6);
+
       for (int ip = 0; ip < num_points; ++ip)
       {
         double transform[2][2];
@@ -164,13 +182,13 @@ public:
           // Using affine transform to map values back to the physical
           // element.
           // Mapping derivatives back to the physical element
-          values[6 * ip + 2 * d]
-              = transform[0][0] * reference_values[6 * ip + 2 * d]
-                + transform[0][1] * reference_values[6 * ip + 2 * d + 1];
+          _values(ip, 2 * d)
+              = transform[0][0] * _reference_values(ip, 2 * d)
+                + transform[0][1] * _reference_values(ip, 2 * d + 1);
 
-          values[6 * ip + 2 * d + 1]
-              = transform[1][0] * reference_values[6 * ip + 2 * d]
-                + transform[1][1] * reference_values[6 * ip + 2 * d + 1];
+          _values(ip, 2 * d + 1)
+              = transform[1][0] * _reference_values(ip, 2 * d)
+                + transform[1][1] * _reference_values(ip, 2 * d + 1);
         }
       }
       return 0;
@@ -213,13 +231,17 @@ public:
     K[2] = -J[2] / detJ[0];
     K[3] = J[0] / detJ[0];
 
-    for (int ip = 0; ip < num_points; ++ip)
-    {
-      X[2 * ip] = K[0] * (x[2 * ip] - coordinate_dofs[0])
-                  + K[1] * (x[2 * ip + 1] - coordinate_dofs[1]);
-      X[2 * ip + 1] = K[2] * (x[2 * ip] - coordinate_dofs[0])
-                      + K[3] * (x[2 * ip + 1] - coordinate_dofs[1]);
-    }
+    Eigen::Map<
+        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        _X(X, num_points, 2);
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        _x(x, num_points, 2);
+
+    _X.col(0) = K[0] * (_x.col(0) - coordinate_dofs[0])
+                + K[1] * (_x.col(1) - coordinate_dofs[1]);
+    _X.col(1) = K[2] * (_x.col(0) - coordinate_dofs[0])
+                + K[3] * (_x.col(1) - coordinate_dofs[1]);
   }
 
   static void compute_physical_coordinates(double* x, int nrows,
