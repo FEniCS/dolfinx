@@ -79,32 +79,6 @@ public:
   get_simplices(const std::vector<bool>& marked_edges,
                 const std::vector<std::int32_t>& longest_edge,
                 std::int32_t tdim, bool uniform);
-
-private:
-  // Get the longest edge of each face (using local mesh index)
-  static std::pair<std::vector<std::int32_t>, std::vector<bool>>
-  face_long_edge(const mesh::Mesh& mesh);
-
-  // 2D version of subdivision allowing for uniform subdivision (flag)
-  static std::vector<std::int32_t>
-  get_triangles(const std::vector<bool>& marked_edges,
-                const std::int32_t longest_edge, bool uniform);
-
-  // 3D version of subdivision
-  static std::vector<std::int32_t>
-  get_tetrahedra(const std::vector<bool>& marked_edges,
-                 const std::vector<std::int32_t>& longest_edge);
-
-  // Convenient interface for both uniform and marker refinement
-  static mesh::Mesh
-  compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
-                     const std::vector<std::int32_t>& long_edge,
-                     const std::vector<bool>& edge_ratio_ok, bool redistribute);
-
-  // Propagate edge markers according to rules (longest edge of each
-  // face must be marked, if any edge of face is marked)
-  static void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
-                            const std::vector<std::int32_t>& long_edge);
 };
 } // namespace refinement
 } // namespace dolfin

@@ -325,20 +325,6 @@ void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     x[index] = value;
 }
 //-----------------------------------------------------------------------------
-void DofMap::check_provided_entities(const ElementDofLayout& dofmap,
-                                     const mesh::Mesh& mesh)
-{
-  // Check that we have all mesh entities
-  for (int d = 0; d <= mesh.topology().dim(); ++d)
-  {
-    if (dofmap.num_entity_dofs(d) > 0 && mesh.num_entities(d) == 0)
-    {
-      throw std::runtime_error("Missing entities of dimension "
-                               + std::to_string(d) + " in dofmap construction");
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> DofMap::index_map() const
 {
   return _index_map;
