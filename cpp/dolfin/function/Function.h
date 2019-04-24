@@ -207,9 +207,6 @@ public:
   compute_point_values() const;
 
 private:
-  // Create vector
-  static la::PETScVector _create_vector(const function::FunctionSpace& V);
-
   // The function space
   std::shared_ptr<const FunctionSpace> _function_space;
 

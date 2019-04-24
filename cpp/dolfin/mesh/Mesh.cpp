@@ -341,7 +341,6 @@ double Mesh::hmin() const
   double h = std::numeric_limits<double>::max();
   for (auto& cell : MeshRange<Cell>(*this))
     h = std::min(h, cell.h());
-
   return h;
 }
 //-----------------------------------------------------------------------------
@@ -350,7 +349,6 @@ double Mesh::hmax() const
   double h = 0.0;
   for (auto& cell : MeshRange<Cell>(*this))
     h = std::max(h, cell.h());
-
   return h;
 }
 //-----------------------------------------------------------------------------
@@ -359,7 +357,6 @@ double Mesh::rmin() const
   double r = std::numeric_limits<double>::max();
   for (auto& cell : MeshRange<Cell>(*this))
     r = std::min(r, cell.inradius());
-
   return r;
 }
 //-----------------------------------------------------------------------------
@@ -368,7 +365,6 @@ double Mesh::rmax() const
   double r = 0.0;
   for (auto& cell : MeshRange<Cell>(*this))
     r = std::max(r, cell.inradius());
-
   return r;
 }
 //-----------------------------------------------------------------------------
@@ -397,7 +393,6 @@ std::string Mesh::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-
     s << common::indent(_geometry->str(true));
     s << common::indent(_topology->str(true));
   }

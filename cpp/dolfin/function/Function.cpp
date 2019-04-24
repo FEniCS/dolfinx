@@ -31,9 +31,39 @@
 using namespace dolfin;
 using namespace dolfin::function;
 
+namespace
+{
+//-----------------------------------------------------------------------------
+// Create a vector with layout from dofmap, and zero.
+la::PETScVector create_vector(const function::FunctionSpace& V)
+{
+  common::Timer timer("Init dof vector");
+
+  // Get dof map
+  assert(V.dofmap());
+  const fem::GenericDofMap& dofmap = *(V.dofmap());
+
+  // Check that function space is not a subspace (view)
+  if (dofmap.is_view())
+  {
+    std::runtime_error("Cannot initialize vector of degrees of freedom for "
+                       "function. Cannot be created from subspace. Consider "
+                       "collapsing the function space");
+  }
+
+  assert(dofmap.index_map());
+  la::PETScVector v = la::PETScVector(*dofmap.index_map());
+  la::VecWrapper _v(v.vec());
+  _v.x.setZero();
+
+  return v;
+}
+//-----------------------------------------------------------------------------
+} // namespace
+
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : common::Variable("u"), _function_space(V), _vector(_create_vector(*V))
+    : common::Variable("u"), _function_space(V), _vector(create_vector(*V))
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -73,7 +103,7 @@ Function::Function(const Function& v) : _vector(v._vector.vec())
     std::tie(_function_space, collapsed_map) = v._function_space->collapse();
 
     // Create new vector
-    _vector = _create_vector(*_function_space);
+    _vector = create_vector(*_function_space);
     assert(_function_space->dofmap());
     assert(_vector.size() == _function_space->dofmap()->global_dimension());
 
@@ -366,29 +396,6 @@ Function::compute_point_values() const
   assert(_function_space);
   assert(_function_space->mesh());
   return compute_point_values(*_function_space->mesh());
-}
-//-----------------------------------------------------------------------------
-la::PETScVector Function::_create_vector(const function::FunctionSpace& V)
-{
-  common::Timer timer("Init dof vector");
-
-  // Get dof map
-  assert(V.dofmap());
-  const fem::GenericDofMap& dofmap = *(V.dofmap());
-
-  // Check that function space is not a subspace (view)
-  if (dofmap.is_view())
-  {
-    std::runtime_error("Cannot initialize vector of degrees of freedom for "
-                       "function. Cannot be created from subspace. Consider "
-                       "collapsing the function space");
-  }
-
-  assert(dofmap.index_map());
-  la::PETScVector v = la::PETScVector(*dofmap.index_map());
-  VecSet(v.vec(), 0.0);
-
-  return v;
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_size() const
