@@ -109,7 +109,7 @@ Form::Form(const ufc_form& ufc_form,
 
   // Create CoordinateMapping
   ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
-  _coord_mapping = std::make_shared<fem::CoordinateMapping>(*cmap);
+  _coord_mapping = fem::get_cmap_from_ufc_cmap(*cmap);
   std::free(cmap);
 }
 //-----------------------------------------------------------------------------

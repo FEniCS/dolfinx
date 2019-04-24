@@ -6,31 +6,25 @@
 
 #include "CoordinateMapping.h"
 #include <dolfin/common/types.h>
-#include <ufc.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-CoordinateMapping::CoordinateMapping(const ufc_coordinate_mapping& cm)
-    : _tdim(cm.topological_dimension), _gdim(cm.geometric_dimension),
-      _signature(cm.signature),
-      _compute_physical_coordinates(cm.compute_physical_coordinates),
-      _compute_reference_geometry(cm.compute_reference_geometry)
+CoordinateMapping::CoordinateMapping(
+    CellType cell_type, int topological_dimension, int geometric_dimension,
+    std::string signature,
+    std::function<void(double*, int, const double*, const double*)>
+        compute_physical_coordinates,
+    std::function<void(double*, double*, double*, double*, int, const double*,
+                       const double*, int)>
+        compute_reference_geometry)
+    : _tdim(topological_dimension), _gdim(geometric_dimension),
+      _cell(cell_type), _signature(signature),
+      _compute_physical_coordinates(compute_physical_coordinates),
+      _compute_reference_geometry(compute_reference_geometry)
 {
-  static const std::map<ufc_shape, CellType> ufc_to_cell
-      = {{vertex, CellType::point},
-         {interval, CellType::interval},
-         {triangle, CellType::triangle},
-         {tetrahedron, CellType::tetrahedron},
-         {quadrilateral, CellType::quadrilateral},
-         {hexahedron, CellType::hexahedron}};
-  const auto it = ufc_to_cell.find(cm.cell_shape);
-  assert(it != ufc_to_cell.end());
-
-  _cell = it->second;
-  assert(_tdim == ReferenceCellTopology::dim(_cell));
 }
 //-----------------------------------------------------------------------------
 CoordinateMapping::CoordinateMapping(
