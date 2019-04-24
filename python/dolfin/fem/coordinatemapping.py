@@ -35,5 +35,5 @@ def create_coordinate_map(o):
 
     # Wrap compiled coordinate map and return
     ffi = FFI()
-    ufc_cmap = fem.dofmap.make_ufc_coordinate_mapping(ffi.cast("uintptr_t", cmap_ptr))
-    return cpp.fem.CoordinateMapping(ufc_cmap)
+    cmap = fem.dofmap.make_coordinate_mapping(ffi.cast("uintptr_t", cmap_ptr))
+    return cmap
