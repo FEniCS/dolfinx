@@ -9,7 +9,6 @@ import ufl
 
 from dolfin import jit
 from dolfin import fem
-from dolfin import cpp
 from cffi import FFI
 
 
@@ -28,12 +27,13 @@ def create_coordinate_map(o):
             cmap_ptr = jit.ffc_jit(o)
         else:
             raise TypeError(
-                "Cannot create coordinate map from an object of type: {}".format(type(o)))
+                "Cannot create coordinate map from an object of type: {}"
+                .format(type(o)))
     except Exception:
         print("Failed to create compiled coordinate map")
         raise
 
     # Wrap compiled coordinate map and return
     ffi = FFI()
-    ufc_cmap = fem.dofmap.make_ufc_coordinate_mapping(ffi.cast("uintptr_t", cmap_ptr))
-    return cpp.fem.CoordinateMapping(ufc_cmap)
+    cmap = fem.dofmap.make_coordinate_mapping(ffi.cast("uintptr_t", cmap_ptr))
+    return cmap

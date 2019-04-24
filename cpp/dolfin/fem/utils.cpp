@@ -577,3 +577,26 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   }
   return coeffs;
 }
+//-----------------------------------------------------------------------------
+std::shared_ptr<const fem::CoordinateMapping>
+fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
+{
+  static const std::map<ufc_shape, CellType> ufc_to_cell
+      = {{vertex, CellType::point},
+         {interval, CellType::interval},
+         {triangle, CellType::triangle},
+         {tetrahedron, CellType::tetrahedron},
+         {quadrilateral, CellType::quadrilateral},
+         {hexahedron, CellType::hexahedron}};
+  const auto it = ufc_to_cell.find(ufc_cmap.cell_shape);
+  assert(it != ufc_to_cell.end());
+
+  CellType cell_type = it->second;
+  assert(ufc_cmap.topological_dimension
+         == ReferenceCellTopology::dim(cell_type));
+
+  return std::make_shared<fem::CoordinateMapping>(
+      cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
+      ufc_cmap.signature, ufc_cmap.compute_physical_coordinates,
+      ufc_cmap.compute_reference_geometry);
+}
