@@ -27,21 +27,6 @@ CoordinateMapping::CoordinateMapping(
 {
 }
 //-----------------------------------------------------------------------------
-CoordinateMapping::CoordinateMapping(
-    CellType cell_type, int topological_dimension, int geometric_dimension,
-    std::string signature,
-    std::function<void(double*, int, const double*, const double*)>
-        compute_physical_coordinates,
-    std::function<void(double*, double*, double*, double*, int, const double*,
-                       const double*, int)>
-        compute_reference_geometry)
-    : _tdim(topological_dimension), _gdim(geometric_dimension),
-      _cell(cell_type), _signature(signature),
-      _compute_physical_coordinates(compute_physical_coordinates),
-      _compute_reference_geometry(compute_reference_geometry)
-{
-}
-//-----------------------------------------------------------------------------
 std::string CoordinateMapping::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
 CellType CoordinateMapping::cell_shape() const { return _cell; }

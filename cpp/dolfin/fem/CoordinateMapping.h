@@ -43,15 +43,6 @@ public:
                          const double*, int)>
           compute_reference_geometry);
 
-  CoordinateMapping(
-      CellType cell_type, int topological_dimension, int geometric_dimension,
-      std::string signature,
-      std::function<void(double*, int, const double*, const double*)>
-          compute_physical_coordinates,
-      std::function<void(double*, double*, double*, double*, int, const double*,
-                         const double*, int)>
-          compute_reference_geometry);
-
   /// Destructor
   virtual ~CoordinateMapping() = default;
 
