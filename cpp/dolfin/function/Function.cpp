@@ -84,46 +84,6 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
   assert(V->dofmap()->global_dimension() <= _vector.size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v) : _vector(v._vector.vec())
-{
-  // Make a copy of all the data, or if v is a sub-function, then we
-  // collapse the dof map and copy only the relevant entries from the
-  // vector of v.
-
-  if (v._vector.size() == v._function_space->dim())
-  {
-    // Copy function space pointer and copy vector
-    _function_space = v._function_space;
-    _vector = v._vector.copy();
-  }
-  else
-  {
-    // Create new collapsed FunctionSpace
-    std::vector<PetscInt> collapsed_map;
-    std::tie(_function_space, collapsed_map) = v._function_space->collapse();
-
-    // Create new vector
-    _vector = create_vector(*_function_space);
-    assert(_function_space->dofmap());
-    assert(_vector.size() == _function_space->dofmap()->global_dimension());
-
-    // Wrap PETSc vectors using Eigen
-    la::VecReadWrapper v_wrap(v.vector().vec());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_old
-        = v_wrap.x;
-    la::VecWrapper v_new(this->_vector.vec());
-    Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_new = v_new.x;
-
-    // Copy values into new vector
-    for (std::size_t i = 0; i < collapsed_map.size(); ++i)
-    {
-      assert((int)i < x_new.size());
-      assert(collapsed_map[i] < x_old.size());
-      x_new[i] = x_old[collapsed_map[i]];
-    }
-  }
-}
-//-----------------------------------------------------------------------------
 Function Function::sub(std::size_t i) const
 {
   // Extract function subspace
@@ -132,6 +92,41 @@ Function Function::sub(std::size_t i) const
   // Return sub-function
   assert(sub_space);
   return Function(sub_space, _vector.vec());
+}
+//-----------------------------------------------------------------------------
+Function Function::collapse() const
+{
+  // Create new collapsed FunctionSpace
+  std::shared_ptr<const FunctionSpace> function_space_new;
+  std::vector<PetscInt> collapsed_map;
+  std::tie(function_space_new, collapsed_map) = _function_space->collapse();
+
+  // Create new vector
+  assert(function_space_new);
+  la::PETScVector vector_new = create_vector(*function_space_new);
+
+  // Wrap PETSc vectors using Eigen
+  la::VecReadWrapper v_wrap(_vector.vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_old
+      = v_wrap.x;
+  la::VecWrapper v_new(vector_new.vec());
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_new = v_new.x;
+
+  // Copy values into new vector
+  for (std::size_t i = 0; i < collapsed_map.size(); ++i)
+  {
+    assert((int)i < x_new.size());
+    assert(collapsed_map[i] < x_old.size());
+    x_new[i] = x_old[collapsed_map[i]];
+  }
+
+  return Function(function_space_new, vector_new.vec());
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const FunctionSpace> Function::function_space() const
+{
+  assert(_function_space);
+  return _function_space;
 }
 //-----------------------------------------------------------------------------
 la::PETScVector& Function::vector()
