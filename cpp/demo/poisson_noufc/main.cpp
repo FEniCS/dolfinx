@@ -248,16 +248,19 @@ public:
                                            const double* X,
                                            const double* coordinate_dofs)
   {
-    for (int ip = 0; ip < nrows; ++ip)
-    {
-      const double X0 = X[2 * ip];
-      const double X1 = X[2 * ip + 1];
+    Eigen::Map<
+        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        _X(X, nrows, 2);
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        _x(x, nrows, 2);
 
-      x[2 * ip] = coordinate_dofs[0] * (1.0 - X0 - X1) + coordinate_dofs[2] * X0
-                  + coordinate_dofs[4] * X1;
-      x[2 * ip + 1] = coordinate_dofs[1] * (1.0 - X0 - X1)
-                      + coordinate_dofs[3] * X0 + coordinate_dofs[5] * X1;
-    }
+    _x.col(0) = coordinate_dofs[0]
+                + (coordinate_dofs[2] - coordinate_dofs[0]) * _X.col(0)
+                + (coordinate_dofs[4] - coordinate_dofs[0]) * _X.col(1);
+    _x.col(1) = coordinate_dofs[1]
+                + (coordinate_dofs[3] - coordinate_dofs[1]) * _X.col(0)
+                + (coordinate_dofs[4] - coordinate_dofs[1]) * _X.col(1);
   }
 };
 
@@ -412,7 +415,6 @@ int main(int argc, char* argv[])
       LinearTriangleCoordinateMap::compute_physical_coordinates,
       LinearTriangleCoordinateMap::compute_reference_geometry);
 
-  //  auto cmap = a->coordinate_mapping();
   mesh->geometry().coord_mapping = cmap;
 
   f->interpolate(f_expr);
