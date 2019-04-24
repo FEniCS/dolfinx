@@ -165,12 +165,12 @@ public:
           // element.
           // Mapping derivatives back to the physical element
           values[6 * ip + 2 * d]
-              = transform[0][0] * reference_values[6 * ip + 2 * d];
-          +transform[0][1] * reference_values[6 * ip + 2 * d + 1];
+              = transform[0][0] * reference_values[6 * ip + 2 * d]
+                + transform[0][1] * reference_values[6 * ip + 2 * d + 1];
 
           values[6 * ip + 2 * d + 1]
-              = transform[1][0] * reference_values[6 * ip + 2 * d];
-          +transform[1][1] * reference_values[6 * ip + 2 * d + 1];
+              = transform[1][0] * reference_values[6 * ip + 2 * d]
+                + transform[1][1] * reference_values[6 * ip + 2 * d + 1];
         }
       }
       return 0;
