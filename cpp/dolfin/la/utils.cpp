@@ -12,6 +12,8 @@
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <memory>
+#include <utility>
+
 // #include <spdlog/spdlog.h>
 
 #include <petsc.h>
@@ -302,6 +304,14 @@ dolfin::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
   new (&x) Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
 }
 //-----------------------------------------------------------------------------
+dolfin::la::VecWrapper::VecWrapper(VecWrapper&& w)
+    : x(std::move(w.x)), _y(std::exchange(w._y, nullptr)),
+      _y_local(std::exchange(w._y_local, nullptr)),
+      _ghosted(std::move(w._ghosted))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 dolfin::la::VecWrapper::~VecWrapper()
 {
   if (_y_local)
@@ -310,6 +320,15 @@ dolfin::la::VecWrapper::~VecWrapper()
     if (_ghosted)
       VecGhostRestoreLocalForm(_y, &_y_local);
   }
+}
+//-----------------------------------------------------------------------------
+dolfin::la::VecWrapper& dolfin::la::VecWrapper::operator=(VecWrapper&& w)
+{
+  _y = std::exchange(w._y, nullptr);
+  _y_local = std::exchange(w._y_local, nullptr);
+  _ghosted = std::move(w._ghosted);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void dolfin::la::VecWrapper::restore()
@@ -342,6 +361,14 @@ dolfin::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
       Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
 }
 //-----------------------------------------------------------------------------
+dolfin::la::VecReadWrapper::VecReadWrapper(VecReadWrapper&& w)
+    : x(std::move(w.x)), _y(std::exchange(w._y, nullptr)),
+      _y_local(std::exchange(w._y_local, nullptr)),
+      _ghosted(std::move(w._ghosted))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 dolfin::la::VecReadWrapper::~VecReadWrapper()
 {
   if (_y_local)
@@ -350,6 +377,16 @@ dolfin::la::VecReadWrapper::~VecReadWrapper()
     if (_ghosted)
       VecGhostRestoreLocalForm(_y, &_y_local);
   }
+}
+//-----------------------------------------------------------------------------
+dolfin::la::VecReadWrapper& dolfin::la::VecReadWrapper::
+operator=(VecReadWrapper&& w)
+{
+  _y = std::exchange(w._y, nullptr);
+  _y_local = std::exchange(w._y_local, nullptr);
+  _ghosted = std::move(w._ghosted);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void dolfin::la::VecReadWrapper::restore()

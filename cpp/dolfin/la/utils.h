@@ -72,10 +72,10 @@ class VecWrapper
 {
 public:
   VecWrapper(Vec y, bool ghosted = true);
-  VecWrapper(const VecWrapper& x) = delete;
-  VecWrapper(VecWrapper&& x) = default;
-  VecWrapper& operator=(const VecWrapper& x) = delete;
-  VecWrapper& operator=(VecWrapper&& x) = default;
+  VecWrapper(const VecWrapper& w) = delete;
+  VecWrapper(VecWrapper&& w);
+  VecWrapper& operator=(const VecWrapper& w) = delete;
+  VecWrapper& operator=(VecWrapper&& w);
   ~VecWrapper();
   void restore();
   Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
@@ -91,10 +91,10 @@ class VecReadWrapper
 {
 public:
   VecReadWrapper(const Vec y, bool ghosted = true);
-  VecReadWrapper(const VecReadWrapper& x) = delete;
-  VecReadWrapper(VecReadWrapper&& x) = default;
-  VecReadWrapper& operator=(const VecReadWrapper& x) = delete;
-  VecReadWrapper& operator=(VecReadWrapper&& x) = default;
+  VecReadWrapper(const VecReadWrapper& w) = delete;
+  VecReadWrapper(VecReadWrapper&& w);
+  VecReadWrapper& operator=(const VecReadWrapper& w) = delete;
+  VecReadWrapper& operator=(VecReadWrapper&& w);
   ~VecReadWrapper();
   void restore();
   Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x;
