@@ -9,7 +9,6 @@ import ufl
 
 from dolfin import jit
 from dolfin import fem
-from dolfin import cpp
 from cffi import FFI
 
 
@@ -28,7 +27,8 @@ def create_coordinate_map(o):
             cmap_ptr = jit.ffc_jit(o)
         else:
             raise TypeError(
-                "Cannot create coordinate map from an object of type: {}".format(type(o)))
+                "Cannot create coordinate map from an object of type: {}"
+                .format(type(o)))
     except Exception:
         print("Failed to create compiled coordinate map")
         raise
