@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "CoordinateMapping.h"
 #include "ElementDofLayout.h"
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
@@ -14,6 +15,7 @@
 
 struct ufc_dofmap;
 struct ufc_form;
+struct ufc_coordinate_mapping;
 
 namespace dolfin
 {
@@ -36,8 +38,8 @@ class FunctionSpace;
 namespace mesh
 {
 class CellType;
+class Geometry;
 class Mesh;
-class MeshGeometry;
 } // namespace mesh
 
 namespace fem
@@ -77,8 +79,11 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 
 /// Extract coefficients from UFC form
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
-  get_coeffs_from_ufc_form(const ufc_form& ufc_form);
+get_coeffs_from_ufc_form(const ufc_form& ufc_form);
 
+/// Get dolfin::fem::CoordinateMapping from ufc
+std::shared_ptr<const fem::CoordinateMapping>
+get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap);
 
 } // namespace fem
 } // namespace dolfin

@@ -117,7 +117,7 @@ public:
                     const Eigen::Ref<const EigenRowArrayXXd> x,
                     const dolfin::mesh::Cell& cell) const;
 
-  private:
+private:
   // Evaluate method
   //
   // Signature of the method accepts:

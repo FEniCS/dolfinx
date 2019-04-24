@@ -99,7 +99,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim,
   const std::size_t dofs_per_entity = num_entity_dofs(entity_dim);
 
   // Initialize entity to cell connections
-  mesh.init(entity_dim, top_dim);
+  mesh.create_connectivity(entity_dim, top_dim);
 
   // Allocate the the array to return
   const std::size_t num_marked_entities = entity_indices.size();
@@ -156,7 +156,7 @@ GenericDofMap::entity_dofs(const mesh::Mesh& mesh, std::size_t entity_dim) const
   const std::size_t num_mesh_entities = mesh.num_entities(entity_dim);
 
   // Initialize entity to cell connections
-  mesh.init(entity_dim, top_dim);
+  mesh.create_connectivity(entity_dim, top_dim);
 
   // Allocate the the array to return
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> entity_to_dofs(num_mesh_entities

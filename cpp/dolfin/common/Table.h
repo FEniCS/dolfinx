@@ -131,6 +131,4 @@ private:
   // Table
   Table& _table;
 };
-}
-
-
+} // namespace dolfin

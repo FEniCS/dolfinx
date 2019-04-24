@@ -48,8 +48,7 @@ assemble_cells(const mesh::Mesh& mesh,
 
 /// Execute kernel over exterior facets and accumulate result
 PetscScalar assemble_exterior_facets(
-    const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_cells,
+    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
     std::vector<const function::Function*> coefficients,

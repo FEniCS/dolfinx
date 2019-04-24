@@ -149,8 +149,8 @@ void _lift_bc_exterior_facets(
   const mesh::Mesh& mesh = *a.mesh();
 
   const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim - 1);
-  mesh.init(tdim - 1, tdim);
+  mesh.create_entities(tdim - 1);
+  mesh.create_connectivity(tdim - 1, tdim);
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
@@ -287,7 +287,7 @@ void fem::impl::assemble_vector(
   }
 
   for (int i = 0; i < L.integrals().num_integrals(
-                          fem::FormIntegrals::Type::exterior_facet);
+                      fem::FormIntegrals::Type::exterior_facet);
        ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
@@ -316,7 +316,7 @@ void fem::impl::assemble_cells(
     const std::vector<int>& offsets)
 {
   const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim);
+  mesh.create_entities(tdim);
 
   // Creat data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -358,8 +358,7 @@ void fem::impl::assemble_cells(
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
-    const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets,
+    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              int, int)>& fn,
@@ -367,8 +366,8 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<int>& offsets)
 {
   const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim - 1);
-  mesh.init(tdim - 1, tdim);
+  mesh.create_entities(tdim - 1);
+  mesh.create_connectivity(tdim - 1, tdim);
 
   // Creat data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

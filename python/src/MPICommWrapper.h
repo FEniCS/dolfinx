@@ -34,4 +34,4 @@ private:
   // The underlying communicator
   MPI_Comm _comm;
 };
-}
+} // namespace dolfin_wrappers

@@ -170,9 +170,8 @@ T dolfin::graph::BoostGraphOrdering::build_csr_directed_graph(const X& graph)
   // Build list of graph edges
   std::vector<std::pair<std::size_t, std::size_t>> edges;
   edges.reserve(num_edges);
-  graph_set_type::const_iterator edge;
   for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
+    for (auto edge = vertex->cbegin(); edge != vertex->cend(); ++edge)
       edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
 
   // Number of vertices

@@ -37,12 +37,12 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
   const int bs = _element_dof_layout->block_size();
   if (bs == 1)
   {
-    std::tie(_global_dimension, _index_map, _shared_nodes, _dofmap)
+    std::tie(_global_dimension, _index_map, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
   }
   else
   {
-    std::tie(_global_dimension, _index_map, _shared_nodes, _dofmap)
+    std::tie(_global_dimension, _index_map, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
   }
 }
@@ -87,10 +87,6 @@ DofMap::DofMap(const DofMap& dofmap_parent,
     const std::int64_t n = mesh.num_entities_global(d);
     _global_dimension += n * _element_dof_layout->num_entity_dofs(d);
   }
-
-  // FIXME: This stores more than is required. Compress, or share with
-  // parent.
-  _shared_nodes = dofmap_parent._shared_nodes;
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
@@ -177,17 +173,6 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
     ghosts[index] = global_index_remote[index_old];
   }
 
-  // FIXME: remove
-  // Set shared nodes
-  for (auto it = it_unowned0; it != dofs_view.end(); ++it)
-  {
-    const std::int32_t index = std::distance(dofs_view.begin(), it) / bs;
-    const std::int32_t index_old = *it / bs_view;
-    auto procs = dofmap_view._shared_nodes.find(index_old);
-    assert(procs != dofmap_view._shared_nodes.end());
-    _shared_nodes[index] = procs->second;
-  }
-
   // Create new index map
   _index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(), num_owned,
                                                   ghosts, bs);
@@ -236,11 +221,6 @@ std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 {
   assert(_element_dof_layout);
   return _element_dof_layout->num_entity_closure_dofs(entity_dim);
-}
-//-----------------------------------------------------------------------------
-const std::unordered_map<int, std::vector<int>>& DofMap::shared_nodes() const
-{
-  return _shared_nodes;
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1>

@@ -85,6 +85,12 @@ public:
   /// Iterator to beyond end of Set
   const_iterator end() const { return _x.end(); }
 
+  /// Iterator to start of Set
+  const_iterator cbegin() const { return _x.begin(); }
+
+  /// Iterator to beyond end of Set
+  const_iterator cend() const { return _x.end(); }
+
   /// Set size
   std::size_t size() const { return _x.size(); }
 
@@ -114,5 +120,5 @@ public:
 private:
   std::vector<T> _x;
 };
-}
-}
+} // namespace common
+} // namespace dolfin

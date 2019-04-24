@@ -8,7 +8,7 @@
 #include <Eigen/Dense>
 #include <dolfin/common/MPI.h>
 #include <dolfin/mesh/CellType.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;
 using namespace dolfin::generation;

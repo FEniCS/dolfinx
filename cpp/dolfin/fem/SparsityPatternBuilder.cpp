@@ -39,8 +39,8 @@ void SparsityPatternBuilder::interior_facets(
   assert(dofmaps[1]);
 
   const std::size_t D = mesh.topology().dim();
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
+  mesh.create_entities(D - 1);
+  mesh.create_connectivity(D - 1, D);
 
   // Array to store macro-dofs, if required (for interior facets)
   std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
@@ -79,8 +79,8 @@ void SparsityPatternBuilder::exterior_facets(
     const std::array<const fem::GenericDofMap*, 2> dofmaps)
 {
   const std::size_t D = mesh.topology().dim();
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
+  mesh.create_entities(D - 1);
+  mesh.create_connectivity(D - 1, D);
 
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {

@@ -78,7 +78,7 @@ void arbitrary_eval()
   }
   */
 }
-}
+} // namespace
 
 //-----------------------------------------------------------------------------
 TEST_CASE("Test arbitray eval", "[eval]") { CHECK_NOTHROW(arbitrary_eval()); }

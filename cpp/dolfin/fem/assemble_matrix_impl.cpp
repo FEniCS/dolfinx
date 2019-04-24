@@ -51,7 +51,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   }
 
   for (int i = 0; i < a.integrals().num_integrals(
-                          fem::FormIntegrals::Type::exterior_facet);
+                      fem::FormIntegrals::Type::exterior_facet);
        ++i)
   {
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
@@ -160,8 +160,8 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<int>& offsets)
 {
   const std::size_t tdim = mesh.topology().dim();
-  mesh.init(tdim - 1);
-  mesh.init(tdim - 1, tdim);
+  mesh.create_entities(tdim - 1);
+  mesh.create_connectivity(tdim - 1, tdim);
 
   // Data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

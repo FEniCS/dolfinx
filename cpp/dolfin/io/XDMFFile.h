@@ -51,7 +51,7 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
-class MeshPartitioning;
+class Partitioning;
 } // namespace mesh
 
 namespace io

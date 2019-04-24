@@ -7,6 +7,8 @@
 #pragma once
 
 #include "CellType.h"
+#include "CoordinateDofs.h"
+#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
@@ -111,7 +113,7 @@ public:
   double inradius() const
   {
     // We would need facet areas
-    _mesh->init(_mesh->type().dim() - 1);
+    _mesh->create_entities(_mesh->type().dim() - 1);
 
     return _mesh->type().inradius(*this);
   }
@@ -135,7 +137,7 @@ public:
   double radius_ratio() const
   {
     // We would need facet areas
-    _mesh->init(_mesh->type().dim() - 1);
+    _mesh->create_entities(_mesh->type().dim() - 1);
 
     return _mesh->type().radius_ratio(*this);
   }
@@ -203,7 +205,7 @@ public:
   /// Get cell coordinate dofs (not vertex coordinates)
   void get_coordinate_dofs(EigenRowArrayXXd& coordinates) const
   {
-    const MeshGeometry& geom = _mesh->geometry();
+    const Geometry& geom = _mesh->geometry();
     const std::uint32_t tdim = _mesh->topology().dim();
     const Connectivity& conn = _mesh->coordinate_dofs().entity_points(tdim);
     const std::size_t ndofs = conn.size(_local_index);

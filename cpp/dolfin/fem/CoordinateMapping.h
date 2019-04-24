@@ -14,7 +14,6 @@
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-struct ufc_coordinate_mapping;
 
 namespace dolfin
 {
@@ -27,11 +26,14 @@ namespace fem
 class CoordinateMapping
 {
 public:
-  /// Create coordinate mapping from UFC coordinate mapping
-  /// @param cm (ufc::coordinate_mapping)
-  ///  UFC coordinate mapping
-  CoordinateMapping(const ufc_coordinate_mapping& cm);
-
+  /// Create a CoordinateMapping object
+  /// @param cell_type
+  /// @param topological_dimension
+  /// @param geometric_dimension
+  /// @param signature
+  /// @param compute_physical_coordinates
+  /// @param compute_reference_geometry
+  ///
   CoordinateMapping(
       CellType cell_type, int topological_dimension, int geometric_dimension,
       std::string signature,
@@ -43,8 +45,6 @@ public:
 
   /// Destructor
   virtual ~CoordinateMapping() = default;
-
-  //--- Direct wrappers for ufc_coordinate_mapping ---
 
   /// Return a string identifying the finite element
   /// @return std::string

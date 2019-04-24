@@ -47,5 +47,5 @@ private:
   template <typename T, typename X>
   static T build_csr_directed_graph(const X& graph);
 };
-}
-}
+} // namespace graph
+} // namespace dolfin

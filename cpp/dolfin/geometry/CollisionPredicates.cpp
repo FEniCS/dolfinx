@@ -8,6 +8,7 @@
 #include "Point.h"
 #include "predicates.h"
 #include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/MeshEntity.h>
 // #include <spdlog/spdlog.h>
 
@@ -47,7 +48,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
   }
 
   // Get data
-  const mesh::MeshGeometry& g = entity.mesh().geometry();
+  const mesh::Geometry& g = entity.mesh().geometry();
   const int32_t* v = entity.entities(0);
   const std::size_t tdim = entity.mesh().topology().dim();
   const std::size_t gdim = entity.mesh().geometry().dim();
@@ -94,8 +95,8 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
   }
 
   // Get data
-  const mesh::MeshGeometry& g0 = entity_0.mesh().geometry();
-  const mesh::MeshGeometry& g1 = entity_1.mesh().geometry();
+  const mesh::Geometry& g0 = entity_0.mesh().geometry();
+  const mesh::Geometry& g1 = entity_1.mesh().geometry();
   const std::int32_t* v0 = entity_0.entities(0);
   const std::int32_t* v1 = entity_1.entities(0);
   const std::size_t d0 = entity_0.dim();
@@ -175,9 +176,10 @@ bool CollisionPredicates::collides_segment_point(const Point& p0,
     return collides_segment_point_2d(p0, p1, point);
   case 3:
     return collides_segment_point_3d(p0, p1, point);
-  // default:
-  //   spdlog::error("CollisionPredicates.cpp", "call collides_segment_point",
-  //                 "Unknown dimension (only implemented for dimension 2 and 3");
+    // default:
+    //   spdlog::error("CollisionPredicates.cpp", "call collides_segment_point",
+    //                 "Unknown dimension (only implemented for dimension 2 and
+    //                 3");
   }
   throw std::runtime_error("Illegal dimension");
   return false;
@@ -200,7 +202,8 @@ bool CollisionPredicates::collides_segment_segment(const Point& p0,
   default:
     // spdlog::error("CollisionPredicates.cpp",
     //               "compute segment-segment collision ",
-    //               "Unknown dimension (Implemented for dimension 1, 2 and 3)");
+    //               "Unknown dimension (Implemented for dimension 1, 2 and
+    //               3)");
     throw std::runtime_error("Illegal dimension");
   }
   return false;

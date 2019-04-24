@@ -145,8 +145,7 @@ private:
 
   CellType _cell_shape;
 
-  int _tdim, _space_dim, _value_size, _reference_value_size,
-      _degree;
+  int _tdim, _space_dim, _value_size, _reference_value_size, _degree;
 
   // Dof coordinates on the reference element
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
@@ -178,7 +177,6 @@ private:
   std::function<int(ufc_scalar_t*, const ufc_scalar_t*, const double*, int,
                     const ufc_coordinate_mapping*)>
       _transform_values;
-
 };
 } // namespace fem
 } // namespace dolfin

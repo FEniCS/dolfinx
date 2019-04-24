@@ -9,6 +9,7 @@
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
+#include "Topology.h"
 #include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
@@ -203,7 +204,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
     : _mesh(mesh), _dim(dim)
 {
   assert(mesh);
-  mesh->init(dim);
+  mesh->create_entities(dim);
   _values.resize(mesh->num_entities(dim), value);
 }
 //---------------------------------------------------------------------------
@@ -214,7 +215,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
     : common::Variable("f"), _mesh(mesh), _dim(value_collection.dim())
 {
   assert(_mesh);
-  _mesh->init(_dim);
+  _mesh->create_entities(_dim);
 
   // Initialise values with default
   _values.resize(_mesh->topology().size(_dim), default_value);
@@ -225,7 +226,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   assert(d <= D);
 
   // Generate connectivity if it does not exist
-  _mesh->init(D, d);
+  _mesh->create_connectivity(D, d);
   assert(_mesh->topology().connectivity(D, d));
   const Connectivity& connectivity = *_mesh->topology().connectivity(D, d);
 

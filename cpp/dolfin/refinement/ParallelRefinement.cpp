@@ -9,10 +9,11 @@
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Edge.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/MeshPartitioning.h>
+#include <dolfin/mesh/Partitioning.h>
 #include <map>
 #include <vector>
 
@@ -267,7 +268,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   Eigen::Map<const EigenRowArrayXXd> points(_new_vertex_coordinates.data(),
                                             num_local_vertices, gdim);
 
-  return mesh::MeshPartitioning::build_distributed_mesh(
+  return mesh::Partitioning::build_distributed_mesh(
       _mesh.mpi_comm(), _mesh.type().cell_type(), points, cells,
       global_cell_indices, _mesh.get_ghost_mode());
 }

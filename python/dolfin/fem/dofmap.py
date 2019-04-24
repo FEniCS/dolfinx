@@ -23,9 +23,9 @@ def make_ufc_form(ufc_form):
     return cpp.fem.make_ufc_form(ufc_form)
 
 
-def make_ufc_coordinate_mapping(ufc_coordinate_mapping):
-    """Returns ufc coordinate mapping from a pointer"""
-    return cpp.fem.make_ufc_coordinate_mapping(ufc_coordinate_mapping)
+def make_coordinate_mapping(ufc_coordinate_mapping):
+    """Returns CoordinateMapping from a pointer to a ufc_coordinate_mapping"""
+    return cpp.fem.make_coordinate_mapping(ufc_coordinate_mapping)
 
 
 class DofMap:

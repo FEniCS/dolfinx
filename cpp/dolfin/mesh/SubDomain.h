@@ -12,8 +12,8 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshGeometry.h>
 // #include <spdlog/spdlog.h>
 #include <map>
 
@@ -127,10 +127,10 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
   const std::size_t D = mesh.topology().dim();
   if (dim < D)
   {
-    mesh.init(dim);
+    mesh.create_entities(dim);
     if (dim != D - 1)
-      mesh.init(dim, D - 1);
-    mesh.init(D - 1, D);
+      mesh.create_connectivity(dim, D - 1);
+    mesh.create_connectivity(D - 1, D);
   }
 
   // Find all vertices on boundary
@@ -219,5 +219,5 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-}
-}
+} // namespace mesh
+} // namespace dolfin

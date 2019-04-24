@@ -71,13 +71,14 @@ void fem(py::module& m)
         },
         "Create a ufc_form object from a pointer.");
 
-  m.def("make_ufc_coordinate_mapping",
+  m.def("make_coordinate_mapping",
         [](std::uintptr_t e) {
           ufc_coordinate_mapping* p
               = reinterpret_cast<ufc_coordinate_mapping*>(e);
-          return std::shared_ptr<const ufc_coordinate_mapping>(p);
+          return dolfin::fem::get_cmap_from_ufc_cmap(*p);
         },
-        "Create a ufc_coordinate_mapping object from a pointer.");
+        "Create a CoordinateMapping object from a pointer to a "
+        "ufc_coordinate_map.");
 
   // utils
   m.def("create_vector", // TODO: change name to create_vector_block
@@ -187,8 +188,7 @@ void fem(py::module& m)
   // dolfin::fem::CoordinateMapping
   py::class_<dolfin::fem::CoordinateMapping,
              std::shared_ptr<dolfin::fem::CoordinateMapping>>(
-      m, "CoordinateMapping", "Coordinate mapping object")
-      .def(py::init<const ufc_coordinate_mapping&>());
+      m, "CoordinateMapping", "Coordinate mapping object");
 
   // dolfin::fem::DirichletBC
   py::class_<dolfin::fem::DirichletBC,

@@ -74,7 +74,7 @@ void get_cell_entities(
     std::vector<std::vector<std::int64_t>>& entity_indices_global,
     const mesh::Cell& cell, const std::vector<bool>& needs_mesh_entities)
 {
-  const mesh::MeshTopology& topology = cell.mesh().topology();
+  const mesh::Topology& topology = cell.mesh().topology();
   const int D = topology.dim();
   for (int d = 0; d < D; ++d)
   {
@@ -299,7 +299,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
     if (element_dof_layout.num_entity_dofs(d) > 0)
     {
       needs_entities[d] = true;
-      mesh.init(d);
+      mesh.create_entities(d);
       mesh::DistributedMeshTools::number_entities(mesh, d);
       num_mesh_entities_local[d] = mesh.num_entities(d);
       num_mesh_entities_global[d] = mesh.num_entities_global(d);
@@ -526,9 +526,10 @@ compute_reordering_map(const DofMapStructure& dofmap,
     // NOTE: Randomised dof ordering should only be used for
     // testing/benchmarking
     node_remap.resize(graph.size());
-    for (std::size_t i = 0; i < node_remap.size(); ++i)
-      node_remap[i] = i;
-    std::random_shuffle(node_remap.begin(), node_remap.end());
+    std::iota(node_remap.begin(), node_remap.end(), 0);
+    std::random_device rd;
+    std::default_random_engine g(rd());
+    std::shuffle(node_remap.begin(), node_remap.end(), g);
   }
   else
   {
@@ -649,7 +650,6 @@ std::vector<std::int64_t> compute_global_indices(
 
 //-----------------------------------------------------------------------------
 std::tuple<std::int64_t, std::unique_ptr<common::IndexMap>,
-           std::unordered_map<std::int32_t, std::vector<std::int32_t>>,
            std::vector<PetscInt>>
 DofMapBuilder::build(const mesh::Mesh& mesh,
                      const ElementDofLayout& element_dof_layout,
@@ -682,8 +682,8 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // random positive integer, interior nodes are marked as -1, interior
   // nodes in ghost layer of other processes are marked -2, and ghost
   // nodes are marked as -3,
-  mesh.init(D - 1);
-  mesh.init(D - 1, D);
+  mesh.create_entities(D - 1);
+  mesh.create_connectivity(D - 1, D);
   const std::vector<sharing_marker> shared_nodes
       = compute_sharing_markers(node_graph0, element_dof_layout, mesh);
 
@@ -727,14 +727,6 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
       dolfin::MPI::sum(mesh.mpi_comm(), (std::int64_t)index_map->size_local())
       == global_dimension);
 
-  // Update shared_nodes following the reordering
-  std::unordered_map<std::int32_t, std::vector<std::int32_t>> shared_nodes1;
-  for (auto it = shared_node_to_processes0.begin();
-       it != shared_node_to_processes0.end(); ++it)
-  {
-    shared_nodes1.insert({old_to_new[it->first], it->second});
-  }
-
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap, accounting for block size
@@ -755,7 +747,6 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   }
 
   return std::make_tuple(std::move(block_size * global_dimension),
-                         std::move(index_map), std::move(shared_nodes1),
-                         std::move(dofmap));
+                         std::move(index_map), std::move(dofmap));
 }
 //-----------------------------------------------------------------------------

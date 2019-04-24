@@ -53,9 +53,7 @@ HDF5Utility::map_gdof_to_cell(const MPI_Comm mpi_comm,
   // vector data for that DOF
   std::vector<std::vector<PetscInt>> send_dofs(num_processes);
   std::vector<std::vector<std::size_t>> send_cell_dofs(num_processes);
-  for (std::map<PetscInt, std::pair<std::size_t, std::size_t>>::const_iterator p
-       = dof_to_cell.begin();
-       p != dof_to_cell.end(); ++p)
+  for (auto p = dof_to_cell.cbegin(); p != dof_to_cell.cend(); ++p)
   {
     const std::size_t dest
         = std::upper_bound(all_vec_range.begin(), all_vec_range.end(), p->first)

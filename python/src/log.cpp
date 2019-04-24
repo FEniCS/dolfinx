@@ -30,7 +30,8 @@ void log(py::module& m)
 
   // dolfin/log free functions
   // m.def("info",
-  //       [](const dolfin::common::Variable& v) { spdlog::info(v.str(false)); });
+  //       [](const dolfin::common::Variable& v) { spdlog::info(v.str(false));
+  //       });
   // m.def("info", [](const dolfin::common::Variable& v, bool verbose) {
   //   spdlog::info(v.str(verbose));
   // });

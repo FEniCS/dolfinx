@@ -8,31 +8,29 @@
 #include "Connectivity.h"
 
 using namespace dolfin;
-using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-CoordinateDofs::CoordinateDofs(std::uint32_t tdim) : _coord_dofs(tdim + 1)
+mesh::CoordinateDofs::CoordinateDofs(
+    int tdim,
+    const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>
+        point_dofs,
+    const std::vector<std::uint8_t>& cell_permutation)
+    : _coord_dofs(tdim + 1), _cell_permutation(cell_permutation)
+
 {
-  // Do nothing
+  _coord_dofs[tdim] = std::make_shared<Connectivity>(point_dofs);
 }
 //-----------------------------------------------------------------------------
-void CoordinateDofs::init(std::size_t dim,
-                          const Eigen::Ref<const EigenRowArrayXXi32> point_dofs,
-                          const std::vector<std::uint8_t>& cell_permutation)
-{
-  assert(dim < _coord_dofs.size());
-  _coord_dofs[dim] = std::make_shared<Connectivity>(point_dofs);
-  _cell_permutation = cell_permutation;
-}
-//-----------------------------------------------------------------------------
-const Connectivity& CoordinateDofs::entity_points(std::uint32_t dim) const
+const mesh::Connectivity&
+mesh::CoordinateDofs::entity_points(std::uint32_t dim) const
 {
   assert(dim < _coord_dofs.size());
   assert(_coord_dofs[dim]);
   return *_coord_dofs[dim];
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::uint8_t>& CoordinateDofs::cell_permutation() const
+const std::vector<std::uint8_t>& mesh::CoordinateDofs::cell_permutation() const
 {
   return _cell_permutation;
 }

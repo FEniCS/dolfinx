@@ -114,7 +114,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
     with HDF5File(mesh.mpi_comm(), filename, 'w') as f:
         for dim in range(mesh.topology.dim):
             mvc = MeshValueCollection("size_t", mesh, dim)
-            mesh.init(dim)
+            mesh.create_entities(dim)
             for e in MeshEntities(mesh, dim):
                 # this can be easily computed to the check the value
                 val = int(ndiv * sum(point2list(e.midpoint()))) + 1
@@ -139,7 +139,7 @@ def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
     mesh = UnitCubeMesh(MPI.comm_world, ndiv, ndiv, ndiv)
     mvc = MeshValueCollection("size_t", mesh, 3)
-    mesh.init(3)
+    mesh.create_entities(3)
     if MPI.rank(mesh.mpi_comm()) == 0:
         mvc.set_value(0, 1)
 

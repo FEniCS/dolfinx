@@ -41,5 +41,5 @@ struct visit_helper<boost::variant>
     return boost::apply_visitor(args...);
   }
 };
-}
-}
+} // namespace detail
+} // namespace pybind11
