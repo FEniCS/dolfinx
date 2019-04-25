@@ -248,11 +248,11 @@ public:
                                            const double* X,
                                            const double* coordinate_dofs)
   {
-    Eigen::Map<
-        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-        _X(X, nrows, 2);
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
+        _X(X, nrows, 2);
+    Eigen::Map<
+        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         _x(x, nrows, 2);
 
     _x.col(0) = coordinate_dofs[0]
