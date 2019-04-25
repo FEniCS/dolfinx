@@ -21,12 +21,165 @@
 #include <fstream>
 #include <iomanip>
 #include <ostream>
-// #include <spdlog/spdlog.h>
 #include <sstream>
 #include <vector>
 
+// #include <spdlog/spdlog.h>
+
 using namespace dolfin;
 using namespace dolfin::io;
+
+namespace
+{
+//-----------------------------------------------------------------------------
+// Get VTK cell type
+std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
+{
+  // Get cell type
+  mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+
+  // Determine VTK cell type
+  std::uint8_t vtk_cell_type = 0;
+  if (cell_type == mesh::CellType::Type::tetrahedron)
+    vtk_cell_type = 10;
+  else if (cell_type == mesh::CellType::Type::hexahedron)
+    vtk_cell_type = 12;
+  else if (cell_type == mesh::CellType::Type::quadrilateral)
+    vtk_cell_type = 9;
+  else if (cell_type == mesh::CellType::Type::triangle)
+    vtk_cell_type = 5;
+  else if (cell_type == mesh::CellType::Type::interval)
+    vtk_cell_type = 3;
+  else if (cell_type == mesh::CellType::Type::point)
+    vtk_cell_type = 1;
+  else
+  {
+    // spdlog::error("VTKWriter.cpp", "write data to VTK file",
+    //               "Unknown cell type (%d)", (int)cell_type);
+    throw std::runtime_error("Unknown cell type");
+  }
+
+  return vtk_cell_type;
+}
+//----------------------------------------------------------------------------
+// Write cell data (ascii)
+std::string ascii_cell_data(const mesh::Mesh& mesh,
+                            const std::vector<std::size_t>& offset,
+                            const std::vector<PetscScalar>& values,
+                            std::size_t data_dim, std::size_t rank)
+{
+  std::ostringstream ss;
+  ss << std::scientific;
+  ss << std::setprecision(16);
+  std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
+  for (int i = 0; i < mesh.topology().ghost_offset(mesh.topology().dim()); ++i)
+  {
+    if (rank == 1 && data_dim == 2)
+    {
+      // Append 0.0 to 2D vectors to make them 3D
+      ss << values[*cell_offset] << "  " << values[*cell_offset + 1] << " "
+         << 0.0;
+    }
+    else if (rank == 2 && data_dim == 4)
+    {
+      // Pad with 0.0 to 2D tensors to make them 3D
+      for (std::size_t i = 0; i < 2; i++)
+      {
+        ss << values[*cell_offset + 2 * i] << " ";
+        ss << values[*cell_offset + 2 * i + 1] << " ";
+        ss << 0.0 << " ";
+      }
+      ss << 0.0 << " ";
+      ss << 0.0 << " ";
+      ss << 0.0;
+    }
+    else
+    {
+      // Write all components
+      for (std::size_t i = 0; i < data_dim; i++)
+        ss << values[*cell_offset + i] << " ";
+    }
+    ss << "  ";
+    ++cell_offset;
+  }
+
+  return ss.str();
+}
+//----------------------------------------------------------------------------
+// mesh::Mesh writer (ascii)
+void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
+                      std::string filename)
+{
+  const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
+  const std::size_t num_cell_vertices = mesh.type().num_vertices(cell_dim);
+
+  // Get VTK cell type
+  const std::size_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim);
+
+  // Open file
+  std::ofstream file(filename.c_str(), std::ios::app);
+  file.precision(16);
+  if (!file.is_open())
+  {
+    // spdlog::error("VTKWriter.cpp",
+    //               "write mesh to VTK file"
+    //               "Unable to open file \"%s\"",
+    //               filename.c_str());
+    throw std::runtime_error("IO Error");
+  }
+
+  // Write vertex positions
+  file << "<Points>" << std::endl;
+  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
+       << "ascii"
+       << "\">";
+  for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
+  {
+    geometry::Point p = v.point();
+    file << p[0] << " " << p[1] << " " << p[2] << "  ";
+  }
+  file << "</DataArray>" << std::endl << "</Points>" << std::endl;
+
+  // Write cell connectivity
+  file << "<Cells>" << std::endl;
+  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
+       << "ascii"
+       << "\">";
+
+  std::unique_ptr<mesh::CellType> celltype(
+      mesh::CellType::create(mesh.type().entity_type(cell_dim)));
+  const std::vector<std::int8_t> perm = celltype->vtk_mapping();
+  for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+  {
+    for (unsigned int i = 0; i != c.num_entities(0); ++i)
+      file << c.entities(0)[perm[i]] << " ";
+    file << " ";
+  }
+  file << "</DataArray>" << std::endl;
+
+  // Write offset into connectivity array for the end of each cell
+  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
+       << "ascii"
+       << "\">";
+  for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
+    file << offsets * num_cell_vertices << " ";
+  file << "</DataArray>" << std::endl;
+
+  // Write cell type
+  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\""
+       << "ascii"
+       << "\">";
+  for (std::size_t types = 0; types < num_cells; types++)
+    file << _vtk_cell_type << " ";
+  file << "</DataArray>" << std::endl;
+  file << "</Cells>" << std::endl;
+
+  // Close file
+  file.close();
+}
+//-----------------------------------------------------------------------------
+
+} // namespace
 
 //----------------------------------------------------------------------------
 void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
@@ -130,149 +283,5 @@ void VTKWriter::write_cell_data(const function::Function& u,
   fp << ascii_cell_data(mesh, offset, values, data_dim, rank);
   fp << "</DataArray> " << std::endl;
   fp << "</CellData> " << std::endl;
-}
-//----------------------------------------------------------------------------
-std::string VTKWriter::ascii_cell_data(const mesh::Mesh& mesh,
-                                       const std::vector<std::size_t>& offset,
-                                       const std::vector<PetscScalar>& values,
-                                       std::size_t data_dim, std::size_t rank)
-{
-  std::ostringstream ss;
-  ss << std::scientific;
-  ss << std::setprecision(16);
-  std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
-  for (int i = 0; i < mesh.topology().ghost_offset(mesh.topology().dim()); ++i)
-  {
-    if (rank == 1 && data_dim == 2)
-    {
-      // Append 0.0 to 2D vectors to make them 3D
-      ss << values[*cell_offset] << "  " << values[*cell_offset + 1] << " "
-         << 0.0;
-    }
-    else if (rank == 2 && data_dim == 4)
-    {
-      // Pad with 0.0 to 2D tensors to make them 3D
-      for (std::size_t i = 0; i < 2; i++)
-      {
-        ss << values[*cell_offset + 2 * i] << " ";
-        ss << values[*cell_offset + 2 * i + 1] << " ";
-        ss << 0.0 << " ";
-      }
-      ss << 0.0 << " ";
-      ss << 0.0 << " ";
-      ss << 0.0;
-    }
-    else
-    {
-      // Write all components
-      for (std::size_t i = 0; i < data_dim; i++)
-        ss << values[*cell_offset + i] << " ";
-    }
-    ss << "  ";
-    ++cell_offset;
-  }
-
-  return ss.str();
-}
-//----------------------------------------------------------------------------
-void VTKWriter::write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
-                                 std::string filename)
-{
-  const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
-  const std::size_t num_cell_vertices = mesh.type().num_vertices(cell_dim);
-
-  // Get VTK cell type
-  const std::size_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim);
-
-  // Open file
-  std::ofstream file(filename.c_str(), std::ios::app);
-  file.precision(16);
-  if (!file.is_open())
-  {
-    // spdlog::error("VTKWriter.cpp",
-    //               "write mesh to VTK file"
-    //               "Unable to open file \"%s\"",
-    //               filename.c_str());
-    throw std::runtime_error("IO Error");
-  }
-
-  // Write vertex positions
-  file << "<Points>" << std::endl;
-  file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
-       << "ascii"
-       << "\">";
-  for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
-  {
-    geometry::Point p = v.point();
-    file << p[0] << " " << p[1] << " " << p[2] << "  ";
-  }
-  file << "</DataArray>" << std::endl << "</Points>" << std::endl;
-
-  // Write cell connectivity
-  file << "<Cells>" << std::endl;
-  file << "<DataArray  type=\"UInt32\"  Name=\"connectivity\"  format=\""
-       << "ascii"
-       << "\">";
-
-  std::unique_ptr<mesh::CellType> celltype(
-      mesh::CellType::create(mesh.type().entity_type(cell_dim)));
-  const std::vector<std::int8_t> perm = celltype->vtk_mapping();
-  for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
-  {
-    for (unsigned int i = 0; i != c.num_entities(0); ++i)
-      file << c.entities(0)[perm[i]] << " ";
-    file << " ";
-  }
-  file << "</DataArray>" << std::endl;
-
-  // Write offset into connectivity array for the end of each cell
-  file << "<DataArray  type=\"UInt32\"  Name=\"offsets\"  format=\""
-       << "ascii"
-       << "\">";
-  for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
-    file << offsets * num_cell_vertices << " ";
-  file << "</DataArray>" << std::endl;
-
-  // Write cell type
-  file << "<DataArray  type=\"UInt8\"  Name=\"types\"  format=\""
-       << "ascii"
-       << "\">";
-  for (std::size_t types = 0; types < num_cells; types++)
-    file << _vtk_cell_type << " ";
-  file << "</DataArray>" << std::endl;
-  file << "</Cells>" << std::endl;
-
-  // Close file
-  file.close();
-}
-//-----------------------------------------------------------------------------
-std::uint8_t VTKWriter::vtk_cell_type(const mesh::Mesh& mesh,
-                                      std::size_t cell_dim)
-{
-  // Get cell type
-  mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
-
-  // Determine VTK cell type
-  std::uint8_t vtk_cell_type = 0;
-  if (cell_type == mesh::CellType::Type::tetrahedron)
-    vtk_cell_type = 10;
-  else if (cell_type == mesh::CellType::Type::hexahedron)
-    vtk_cell_type = 12;
-  else if (cell_type == mesh::CellType::Type::quadrilateral)
-    vtk_cell_type = 9;
-  else if (cell_type == mesh::CellType::Type::triangle)
-    vtk_cell_type = 5;
-  else if (cell_type == mesh::CellType::Type::interval)
-    vtk_cell_type = 3;
-  else if (cell_type == mesh::CellType::Type::point)
-    vtk_cell_type = 1;
-  else
-  {
-    // spdlog::error("VTKWriter.cpp", "write data to VTK file",
-    //               "Unknown cell type (%d)", (int)cell_type);
-    throw std::runtime_error("Unknown cell type");
-  }
-
-  return vtk_cell_type;
 }
 //----------------------------------------------------------------------------

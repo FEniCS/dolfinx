@@ -20,83 +20,145 @@
 using namespace dolfin;
 using namespace dolfin::refinement;
 
-//-----------------------------------------------------------------------------
-mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
+namespace
 {
-  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
-      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
+// Propagate edge markers according to rules (longest edge of each
+// face must be marked, if any edge of face is marked)
+void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
+                   const std::vector<std::int32_t>& long_edge)
+{
+  common::Timer t0("PLAZA: Enforce rules");
+
+  // Enforce rule, that if any edge of a face is marked, longest edge
+  // must also be marked
+
+  std::int32_t update_count = 1;
+  while (update_count != 0)
   {
-    // spdlog::error("PlazaRefinementND.cpp", "refine mesh",
-    //               "Cell type %s not supported",
-    //               mesh.type().description(false).c_str());
-    throw std::runtime_error("Not supported");
+    update_count = 0;
+    p_ref.update_logical_edgefunction();
+
+    for (const auto& f : mesh::MeshRange<mesh::Face>(mesh))
+    {
+      const std::int32_t long_e = long_edge[f.index()];
+      if (p_ref.is_marked(long_e))
+        continue;
+      bool any_marked = false;
+      for (const auto& e : mesh::EntityRange<mesh::Edge>(f))
+        any_marked |= p_ref.is_marked(e.index());
+      if (any_marked)
+      {
+        p_ref.mark(long_e);
+        ++update_count;
+      }
+    }
+    update_count = dolfin::MPI::sum(mesh.mpi_comm(), update_count);
   }
-
-  common::Timer t0("PLAZA: refine");
-  std::vector<std::int32_t> long_edge;
-  std::vector<bool> edge_ratio_ok;
-  std::tie(long_edge, edge_ratio_ok) = face_long_edge(mesh);
-
-  ParallelRefinement p_ref(mesh);
-  p_ref.mark_all();
-
-  return compute_refinement(mesh, p_ref, long_edge, edge_ratio_ok,
-                            redistribute);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh
-PlazaRefinementND::refine(const mesh::Mesh& mesh,
-                          const mesh::MeshFunction<bool>& refinement_marker,
-                          bool redistribute)
+// Convenient interface for both uniform and marker refinement
+mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
+                              const std::vector<std::int32_t>& long_edge,
+                              const std::vector<bool>& edge_ratio_ok,
+                              bool redistribute)
 {
-  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
-      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
+  const std::int32_t tdim = mesh.topology().dim();
+  const std::int32_t num_cell_edges = tdim * 3 - 3;
+  const std::int32_t num_cell_vertices = tdim + 1;
+
+  // Make new vertices in parallel
+  p_ref.create_new_vertices();
+  const std::map<std::size_t, std::size_t>& new_vertex_map
+      = p_ref.edge_to_new_vertex();
+
+  std::vector<std::size_t> parent_cell;
+  std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
+  std::vector<std::size_t> marked_edge_list;
+  std::vector<std::int32_t> simplex_set;
+
+  for (const auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    // spdlog::error("PlazaRefinementND.cpp", "refine mesh",
-    //               "Cell type %s not supported",
-    //               mesh.type().description(false).c_str());
-    throw std::runtime_error("Not supported");
+    // Create vector of indices in the order [vertices][edges], 3+3 in
+    // 2D, 4+6 in 3D
+    std::int32_t j = 0;
+    for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+      indices[j++] = v.global_index();
+
+    marked_edge_list = p_ref.marked_edge_list(cell);
+    if (marked_edge_list.size() == 0)
+    {
+      // Copy over existing Cell to new topology
+      std::vector<std::int64_t> cell_topology;
+      for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+        cell_topology.push_back(v.global_index());
+      p_ref.new_cells(cell_topology);
+      parent_cell.push_back(cell.index());
+    }
+    else
+    {
+      // Get the marked edge indices for new vertices and make bool
+      // vector of marked edges
+      std::vector<bool> markers(num_cell_edges, false);
+      for (auto& p : marked_edge_list)
+      {
+        markers[p] = true;
+        const std::int32_t edge_index = cell.entities(1)[p];
+
+        auto it = new_vertex_map.find(edge_index);
+        assert(it != new_vertex_map.end());
+        indices[num_cell_vertices + p] = it->second;
+      }
+
+      // Need longest edges of each facet in cell local indexing
+      std::vector<std::int32_t> longest_edge;
+      for (const auto& f : mesh::EntityRange<mesh::Face>(cell))
+        longest_edge.push_back(long_edge[f.index()]);
+
+      // Convert to cell local index
+      for (auto& p : longest_edge)
+      {
+        int i = 0;
+        for (const auto& ej : mesh::EntityRange<mesh::Edge>(cell))
+        {
+          if (p == ej.index())
+          {
+            p = i;
+            break;
+          }
+          ++i;
+        }
+      }
+
+      const bool uniform = (tdim == 2) ? edge_ratio_ok[cell.index()] : false;
+
+      // FIXME: this has an expensive dynamic memory allocation
+      simplex_set = PlazaRefinementND::get_simplices(markers, longest_edge,
+                                                     tdim, uniform);
+
+      // Save parent index
+      const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
+      for (std::int32_t i = 0; i != ncells; ++i)
+        parent_cell.push_back(cell.index());
+
+      // Convert from cell local index to mesh index and add to cells
+      std::vector<std::int64_t> simplex_set_global(simplex_set.size());
+      for (std::size_t i = 0; i < simplex_set_global.size(); ++i)
+        simplex_set_global[i] = indices[simplex_set[i]];
+      p_ref.new_cells(simplex_set_global);
+    }
   }
 
-  common::Timer t0("PLAZA: refine");
-  std::vector<std::int32_t> long_edge;
-  std::vector<bool> edge_ratio_ok;
-  std::tie(long_edge, edge_ratio_ok) = face_long_edge(mesh);
-
-  ParallelRefinement p_ref(mesh);
-  p_ref.mark(refinement_marker);
-
-  enforce_rules(p_ref, mesh, long_edge);
-
-  return compute_refinement(mesh, p_ref, long_edge, edge_ratio_ok,
-                            redistribute);
-}
-//-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-PlazaRefinementND::get_simplices(const std::vector<bool>& marked_edges,
-                                 const std::vector<std::int32_t>& longest_edge,
-                                 std::int32_t tdim, bool uniform)
-{
-  if (tdim == 2)
-  {
-    assert(longest_edge.size() == 1);
-    return get_triangles(marked_edges, longest_edge[0], uniform);
-  }
-  else if (tdim == 3)
-  {
-    assert(longest_edge.size() == 4);
-    return get_tetrahedra(marked_edges, longest_edge);
-  }
+  const bool serial = (dolfin::MPI::size(mesh.mpi_comm()) == 1);
+  if (serial)
+    return p_ref.build_local();
   else
-  {
-    throw std::runtime_error("Topological dimension not supported");
-    return std::vector<std::int32_t>();
-  }
+    return p_ref.partition(redistribute);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>
-PlazaRefinementND::get_triangles(const std::vector<bool>& marked_edges,
-                                 const std::int32_t longest_edge, bool uniform)
+// 2D version of subdivision allowing for uniform subdivision (flag)
+std::vector<std::int32_t> get_triangles(const std::vector<bool>& marked_edges,
+                                        const std::int32_t longest_edge,
+                                        bool uniform)
 {
   // Longest edge must be marked
   assert(marked_edges[longest_edge]);
@@ -132,9 +194,10 @@ PlazaRefinementND::get_triangles(const std::vector<bool>& marked_edges,
   return tri_set;
 }
 //-----------------------------------------------------------------------------
+// 3D version of subdivision
 std::vector<std::int32_t>
-PlazaRefinementND::get_tetrahedra(const std::vector<bool>& marked_edges,
-                                  const std::vector<std::int32_t>& longest_edge)
+get_tetrahedra(const std::vector<bool>& marked_edges,
+               const std::vector<std::int32_t>& longest_edge)
 {
   // Connectivity matrix for ten possible points (4 vertices + 6 edge midpoints)
   // ordered {v0, v1, v2, v3, e0, e1, e2, e3, e4, e5}
@@ -232,8 +295,9 @@ PlazaRefinementND::get_tetrahedra(const std::vector<bool>& marked_edges,
   return tet_set;
 }
 //-----------------------------------------------------------------------------
+// Get the longest edge of each face (using local mesh index)
 std::pair<std::vector<std::int32_t>, std::vector<bool>>
-PlazaRefinementND::face_long_edge(const mesh::Mesh& mesh)
+face_long_edge(const mesh::Mesh& mesh)
 {
   const std::int32_t tdim = mesh.topology().dim();
   mesh.create_entities(1);
@@ -297,133 +361,79 @@ PlazaRefinementND::face_long_edge(const mesh::Mesh& mesh)
   return std::make_pair(std::move(long_edge), std::move(edge_ratio_ok));
 }
 //-----------------------------------------------------------------------------
-void PlazaRefinementND::enforce_rules(
-    ParallelRefinement& p_ref, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& long_edge)
+
+} // namespace
+//-----------------------------------------------------------------------------
+mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 {
-  common::Timer t0("PLAZA: Enforce rules");
-
-  // Enforce rule, that if any edge of a face is marked, longest edge
-  // must also be marked
-
-  std::int32_t update_count = 1;
-  while (update_count != 0)
+  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
+      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
   {
-    update_count = 0;
-    p_ref.update_logical_edgefunction();
-
-    for (const auto& f : mesh::MeshRange<mesh::Face>(mesh))
-    {
-      const std::int32_t long_e = long_edge[f.index()];
-      if (p_ref.is_marked(long_e))
-        continue;
-      bool any_marked = false;
-      for (const auto& e : mesh::EntityRange<mesh::Edge>(f))
-        any_marked |= p_ref.is_marked(e.index());
-      if (any_marked)
-      {
-        p_ref.mark(long_e);
-        ++update_count;
-      }
-    }
-    update_count = dolfin::MPI::sum(mesh.mpi_comm(), update_count);
+    // spdlog::error("PlazaRefinementND.cpp", "refine mesh",
+    //               "Cell type %s not supported",
+    //               mesh.type().description(false).c_str());
+    throw std::runtime_error("Not supported");
   }
+
+  common::Timer t0("PLAZA: refine");
+  std::vector<std::int32_t> long_edge;
+  std::vector<bool> edge_ratio_ok;
+  std::tie(long_edge, edge_ratio_ok) = face_long_edge(mesh);
+
+  ParallelRefinement p_ref(mesh);
+  p_ref.mark_all();
+
+  return compute_refinement(mesh, p_ref, long_edge, edge_ratio_ok,
+                            redistribute);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh PlazaRefinementND::compute_refinement(
-    const mesh::Mesh& mesh, ParallelRefinement& p_ref,
-    const std::vector<std::int32_t>& long_edge,
-    const std::vector<bool>& edge_ratio_ok, bool redistribute)
+mesh::Mesh
+PlazaRefinementND::refine(const mesh::Mesh& mesh,
+                          const mesh::MeshFunction<bool>& refinement_marker,
+                          bool redistribute)
 {
-  const std::int32_t tdim = mesh.topology().dim();
-  const std::int32_t num_cell_edges = tdim * 3 - 3;
-  const std::int32_t num_cell_vertices = tdim + 1;
-
-  // Make new vertices in parallel
-  p_ref.create_new_vertices();
-  const std::map<std::size_t, std::size_t>& new_vertex_map
-      = p_ref.edge_to_new_vertex();
-
-  std::vector<std::size_t> parent_cell;
-  std::vector<std::int64_t> indices(num_cell_vertices + num_cell_edges);
-  std::vector<std::size_t> marked_edge_list;
-  std::vector<std::int32_t> simplex_set;
-
-  for (const auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
+      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
   {
-    // Create vector of indices in the order [vertices][edges], 3+3 in
-    // 2D, 4+6 in 3D
-    std::int32_t j = 0;
-    for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-      indices[j++] = v.global_index();
-
-    marked_edge_list = p_ref.marked_edge_list(cell);
-    if (marked_edge_list.size() == 0)
-    {
-      // Copy over existing Cell to new topology
-      std::vector<std::int64_t> cell_topology;
-      for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-        cell_topology.push_back(v.global_index());
-      p_ref.new_cells(cell_topology);
-      parent_cell.push_back(cell.index());
-    }
-    else
-    {
-      // Get the marked edge indices for new vertices and make bool
-      // vector of marked edges
-      std::vector<bool> markers(num_cell_edges, false);
-      for (auto& p : marked_edge_list)
-      {
-        markers[p] = true;
-        const std::int32_t edge_index = cell.entities(1)[p];
-
-        auto it = new_vertex_map.find(edge_index);
-        assert(it != new_vertex_map.end());
-        indices[num_cell_vertices + p] = it->second;
-      }
-
-      // Need longest edges of each facet in cell local indexing
-      std::vector<std::int32_t> longest_edge;
-      for (const auto& f : mesh::EntityRange<mesh::Face>(cell))
-        longest_edge.push_back(long_edge[f.index()]);
-
-      // Convert to cell local index
-      for (auto& p : longest_edge)
-      {
-        int i = 0;
-        for (const auto& ej : mesh::EntityRange<mesh::Edge>(cell))
-        {
-          if (p == ej.index())
-          {
-            p = i;
-            break;
-          }
-          ++i;
-        }
-      }
-
-      const bool uniform = (tdim == 2) ? edge_ratio_ok[cell.index()] : false;
-
-      // FIXME: this has an expensive dynamic memory allocation
-      simplex_set = get_simplices(markers, longest_edge, tdim, uniform);
-
-      // Save parent index
-      const std::int32_t ncells = simplex_set.size() / num_cell_vertices;
-      for (std::int32_t i = 0; i != ncells; ++i)
-        parent_cell.push_back(cell.index());
-
-      // Convert from cell local index to mesh index and add to cells
-      std::vector<std::int64_t> simplex_set_global(simplex_set.size());
-      for (std::size_t i = 0; i < simplex_set_global.size(); ++i)
-        simplex_set_global[i] = indices[simplex_set[i]];
-      p_ref.new_cells(simplex_set_global);
-    }
+    // spdlog::error("PlazaRefinementND.cpp", "refine mesh",
+    //               "Cell type %s not supported",
+    //               mesh.type().description(false).c_str());
+    throw std::runtime_error("Not supported");
   }
 
-  const bool serial = (dolfin::MPI::size(mesh.mpi_comm()) == 1);
-  if (serial)
-    return p_ref.build_local();
+  common::Timer t0("PLAZA: refine");
+  std::vector<std::int32_t> long_edge;
+  std::vector<bool> edge_ratio_ok;
+  std::tie(long_edge, edge_ratio_ok) = face_long_edge(mesh);
+
+  ParallelRefinement p_ref(mesh);
+  p_ref.mark(refinement_marker);
+
+  enforce_rules(p_ref, mesh, long_edge);
+
+  return compute_refinement(mesh, p_ref, long_edge, edge_ratio_ok,
+                            redistribute);
+}
+//-----------------------------------------------------------------------------
+std::vector<std::int32_t>
+PlazaRefinementND::get_simplices(const std::vector<bool>& marked_edges,
+                                 const std::vector<std::int32_t>& longest_edge,
+                                 std::int32_t tdim, bool uniform)
+{
+  if (tdim == 2)
+  {
+    assert(longest_edge.size() == 1);
+    return get_triangles(marked_edges, longest_edge[0], uniform);
+  }
+  else if (tdim == 3)
+  {
+    assert(longest_edge.size() == 4);
+    return get_tetrahedra(marked_edges, longest_edge);
+  }
   else
-    return p_ref.partition(redistribute);
+  {
+    throw std::runtime_error("Topological dimension not supported");
+    return std::vector<std::int32_t>();
+  }
 }
 //-----------------------------------------------------------------------------

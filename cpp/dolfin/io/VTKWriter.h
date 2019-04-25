@@ -36,21 +36,6 @@ public:
 
   /// Cell data writer
   static void write_cell_data(const function::Function& u, std::string file);
-
-private:
-  // Write cell data (ascii)
-  static std::string ascii_cell_data(const mesh::Mesh& mesh,
-                                     const std::vector<std::size_t>& offset,
-                                     const std::vector<PetscScalar>& values,
-                                     std::size_t dim, std::size_t rank);
-
-  // mesh::Mesh writer (ascii)
-  static void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
-                               std::string file);
-
-  // Get VTK cell type
-  static std::uint8_t vtk_cell_type(const mesh::Mesh& mesh,
-                                    std::size_t cell_dim);
 };
 } // namespace io
 } // namespace dolfin

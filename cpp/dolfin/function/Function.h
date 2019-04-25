@@ -60,21 +60,20 @@ public:
   ///         The vector.
   Function(std::shared_ptr<const FunctionSpace> V, Vec x);
 
-  /// Copy constructor
-  ///
-  /// If v is not a sub-function, the new Function shares the
-  /// FunctionSpace of v and copies the degree-of-freedom vector. If v
-  /// is a sub-Function, the new Function is a collapsed version of v.
-  ///
-  /// @param v (_Function_)
-  ///         The object to be copied.
-  Function(const Function& v);
+  // Copy constructor
+  Function(const Function& v) = delete;
 
   /// Move constructor
   Function(Function&& v) = default;
 
   /// Destructor
   virtual ~Function() = default;
+
+  /// Move assignment
+  Function& operator=(Function&& v) = default;
+
+  // Assignment
+  Function& operator=(const Function& v) = delete;
 
   /// Extract subfunction (view into the Function)
   ///
@@ -84,15 +83,15 @@ public:
   ///         The subfunction.
   Function sub(std::size_t i) const;
 
+  /// Collapse a subfunction (view into the Function) to a stand-alone
+  /// Function
+  Function collapse() const;
+
   /// Return shared pointer to function space
   ///
   /// @returns _FunctionSpace_
   ///         Return the shared pointer.
-  std::shared_ptr<const FunctionSpace> function_space() const
-  {
-    assert(_function_space);
-    return _function_space;
-  }
+  std::shared_ptr<const FunctionSpace> function_space() const;
 
   /// Return vector of expansion coefficients (non-const version)
   ///
@@ -207,9 +206,6 @@ public:
   compute_point_values() const;
 
 private:
-  // Create vector
-  static la::PETScVector _create_vector(const function::FunctionSpace& V);
-
   // The function space
   std::shared_ptr<const FunctionSpace> _function_space;
 

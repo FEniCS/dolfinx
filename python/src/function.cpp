@@ -73,12 +73,8 @@ void function(py::module& m)
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
-      .def(
-          "collapse",
-          [](dolfin::function::Function& self) {
-            return std::make_shared<dolfin::function::Function>(self);
-          },
-          "Collapse sub-function view.")
+      .def("collapse", &dolfin::function::Function::collapse,
+           "Collapse sub-function view")
       .def("interpolate",
            py::overload_cast<const dolfin::function::Function&>(
                &dolfin::function::Function::interpolate),

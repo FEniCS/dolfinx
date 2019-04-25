@@ -20,6 +20,7 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -30,8 +31,9 @@
 #include <iomanip>
 #include <iostream>
 #include <petscvec.h>
-// #include <spdlog/spdlog.h>
 #include <string>
+
+// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::io;

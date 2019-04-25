@@ -230,10 +230,6 @@ public:
   std::string str(bool verbose) const;
 
 private:
-  // Check that mesh provides the entities needed by dofmap
-  static void check_provided_entities(const ElementDofLayout& dofmap,
-                                      const mesh::Mesh& mesh);
-
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   std::vector<PetscInt> _dofmap;
 
