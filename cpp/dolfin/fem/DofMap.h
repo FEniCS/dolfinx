@@ -14,7 +14,6 @@
 #include <cstdlib>
 #include <memory>
 #include <set>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -245,9 +244,6 @@ private:
   // Object containing information about dof distribution across
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;
-
-  // Processes that this dofmap shares dofs with
-  std::set<int> _neighbours;
 
   std::shared_ptr<const ElementDofLayout> _element_dof_layout;
 };

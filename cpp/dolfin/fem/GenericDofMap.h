@@ -9,8 +9,6 @@
 #include <Eigen/Dense>
 #include <memory>
 #include <petscsys.h>
-#include <set>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 

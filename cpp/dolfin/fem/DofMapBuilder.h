@@ -6,10 +6,9 @@
 
 #pragma once
 
-#include <dolfin/common/types.h>
 #include <memory>
+#include <petscsys.h>
 #include <tuple>
-#include <unordered_map>
 #include <vector>
 
 namespace dolfin
