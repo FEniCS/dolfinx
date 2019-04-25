@@ -44,11 +44,6 @@ public:
   masters_slaves(std::shared_ptr<const Mesh> mesh,
                  const mesh::SubDomain& sub_domain, const std::size_t dim);
 
-private:
-  // Return true is point lies within bounding box
-  static bool in_bounding_box(const std::vector<double>& point,
-                              const std::vector<double>& bounding_box,
-                              const double tol);
 };
 } // namespace mesh
 } // namespace dolfin

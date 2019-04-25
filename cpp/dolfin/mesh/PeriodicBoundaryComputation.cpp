@@ -26,6 +26,7 @@ using namespace dolfin::mesh;
 // tolerance.
 namespace
 {
+//-----------------------------------------------------------------------------
 struct lt_coordinate
 {
   lt_coordinate(double tolerance) : TOL(tolerance) {}
@@ -54,6 +55,28 @@ struct lt_coordinate
   // Tolerance
   const double TOL;
 };
+//-----------------------------------------------------------------------------
+bool in_bounding_box(const std::vector<double>& point,
+                     const std::vector<double>& bounding_box, const double tol)
+{
+  // Return false if bounding box is empty
+  if (bounding_box.empty())
+    return false;
+
+  const std::size_t gdim = point.size();
+  assert(bounding_box.size() == 2 * gdim);
+  for (std::size_t i = 0; i < gdim; ++i)
+  {
+    if (!(point[i] >= (bounding_box[i] - tol)
+          && point[i] <= (bounding_box[gdim + i] + tol)))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+//-----------------------------------------------------------------------------
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -344,26 +367,5 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
       mf[master_dofs_recv[i][j]] = 1;
 
   return mf;
-}
-//-----------------------------------------------------------------------------
-bool PeriodicBoundaryComputation::in_bounding_box(
-    const std::vector<double>& point, const std::vector<double>& bounding_box,
-    const double tol)
-{
-  // Return false if bounding box is empty
-  if (bounding_box.empty())
-    return false;
-
-  const std::size_t gdim = point.size();
-  assert(bounding_box.size() == 2 * gdim);
-  for (std::size_t i = 0; i < gdim; ++i)
-  {
-    if (!(point[i] >= (bounding_box[i] - tol)
-          && point[i] <= (bounding_box[gdim + i] + tol)))
-    {
-      return false;
-    }
-  }
-  return true;
 }
 //-----------------------------------------------------------------------------
