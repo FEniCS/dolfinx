@@ -538,13 +538,6 @@ private:
   // same on all processes.
   bool name_same_on_all_procs(std::string name) const;
 
-  // Generate the XDMF format string based on the Encoding
-  // enumeration
-  static std::string xdmf_format_str(Encoding encoding)
-  {
-    return (encoding == XDMFFile::Encoding::HDF5) ? "HDF" : "XML";
-  }
-
   static std::string vtk_cell_type_str(mesh::CellType::Type cell_type,
                                        int order);
 

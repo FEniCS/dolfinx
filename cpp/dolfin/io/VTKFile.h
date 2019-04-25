@@ -126,7 +126,6 @@ private:
   // Strip path from file
   std::string strip_path(std::string file) const;
 
-private:
   const std::string _filename;
 
   // Counters for the number of times various data has been written

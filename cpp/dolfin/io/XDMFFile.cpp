@@ -36,12 +36,14 @@
 #include <memory>
 #include <petscvec.h>
 #include <set>
-// #include <spdlog/spdlog.h>
 #include <string>
 #include <vector>
 
+// #include <spdlog/spdlog.h>
+
 using namespace dolfin;
 using namespace dolfin::io;
+
 
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding)
