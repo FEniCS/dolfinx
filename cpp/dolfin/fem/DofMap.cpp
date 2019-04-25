@@ -15,7 +15,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <unordered_map>
 
 using namespace dolfin;
 using namespace dolfin::fem;

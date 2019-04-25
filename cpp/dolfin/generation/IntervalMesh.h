@@ -8,7 +8,6 @@
 
 #include <array>
 #include <cstddef>
-#include <dolfin/common/MPI.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -39,15 +38,8 @@ public:
   /// @endcode
   static mesh::Mesh create(MPI_Comm comm, std::size_t n,
                            std::array<double, 2> x,
-                           const mesh::GhostMode ghost_mode)
-  {
-    return build(comm, n, x, ghost_mode);
-  }
+                           const mesh::GhostMode ghost_mode);
 
-private:
-  // Build mesh
-  static mesh::Mesh build(MPI_Comm comm, std::size_t n, std::array<double, 2> x,
-                          const mesh::GhostMode ghost_mode);
 };
 } // namespace generation
 } // namespace dolfin

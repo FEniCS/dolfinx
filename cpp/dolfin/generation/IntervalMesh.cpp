@@ -15,13 +15,13 @@
 using namespace dolfin;
 using namespace dolfin::generation;
 
-//-----------------------------------------------------------------------------
-mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
-                               std::array<double, 2> x,
-                               const mesh::GhostMode ghost_mode)
+namespace
+{
+mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
+                 const mesh::GhostMode ghost_mode)
 {
   // Receive mesh according to parallel policy
-  if (MPI::rank(comm) != 0)
+  if (dolfin::MPI::rank(comm) != 0)
   {
     EigenRowArrayXXd geom(0, 1);
     EigenRowArrayXXi64 topo(0, 2);
@@ -61,5 +61,14 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
 
   return mesh::Partitioning::build_distributed_mesh(
       comm, mesh::CellType::Type::interval, geom, topo, {}, ghost_mode);
+}
+} // namespace
+
+//-----------------------------------------------------------------------------
+mesh::Mesh IntervalMesh::create(MPI_Comm comm, std::size_t n,
+                                std::array<double, 2> x,
+                                const mesh::GhostMode ghost_mode)
+{
+  return build(comm, n, x, ghost_mode);
 }
 //-----------------------------------------------------------------------------
