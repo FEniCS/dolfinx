@@ -12,7 +12,6 @@ import cffi
 import numba
 import numpy as np
 import pytest
-from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, Expression, Function, FunctionSpace, Point,
@@ -20,6 +19,8 @@ from dolfin import (MPI, Expression, Function, FunctionSpace, Point,
                     Vertex, cpp, function, interpolate)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
+from petsc4py import PETSc
+
 
 @fixture
 def mesh():
