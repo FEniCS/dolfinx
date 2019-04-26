@@ -12,6 +12,7 @@ import pytest
 
 import dolfin
 import ufl
+from dolfin.function.specialfunctions import SpatialCoordinate
 from petsc4py import PETSc
 from ufl import ds, dx, inner
 
@@ -36,7 +37,7 @@ def test_assemble_functional():
     value = dolfin.fem.assemble_scalar(M)
     value = dolfin.MPI.sum(mesh.mpi_comm(), value)
     assert value == pytest.approx(1.0, 1e-12)
-    x = dolfin.SpatialCoordinate(mesh)
+    x = SpatialCoordinate(mesh)
     M = x[0] * dx(domain=mesh)
     value = dolfin.fem.assemble_scalar(M)
     value = dolfin.MPI.sum(mesh.mpi_comm(), value)
