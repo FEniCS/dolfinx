@@ -171,7 +171,8 @@ void fem(py::module& m)
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
              dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
-      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>());
+      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>())
+      .def("dof_array", &dolfin::fem::DofMap::dof_array);
 
   // dolfin::fem::CoordinateMapping
   py::class_<dolfin::fem::CoordinateMapping,

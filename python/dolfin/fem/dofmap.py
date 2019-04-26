@@ -78,6 +78,10 @@ class DofMap:
         return self._cpp_object.tabulate_entity_dofs(entity_dim,
                                                      cell_entity_index)
 
+    @property
+    def dof_array(self):
+        return self._cpp_object.dof_array()
+
     def set(self, x, value):
         self._cpp_object.set(x, value)
 

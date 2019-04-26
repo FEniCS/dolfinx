@@ -5,26 +5,66 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Tests for custom assemblers"""
 
+import math
 
+import numpy as np
+import pytest
 from numba import jit
 
 import dolfin
+from petsc4py import PETSc
+from ufl import dx, inner
 
 
 def test_custom_mesh_loop():
 
     @jit(nopython=True)
-    def cell_loop(connections, pos):
-        test = 0
-        for i, cell in enumerate(pos[:-1]):
-            num_vertices = pos[i+1] - pos[i]
-            c = connections[cell:cell+num_vertices]
-            for v in c:
-                test += v*v
-        return test
+    def area(x0, x1, x2):
+        a = (x1[0] - x2[0])**2 + (x1[1] - x2[1])**2
+        b = (x0[0] - x2[0])**2 + (x0[1] - x2[1])**2
+        c = (x0[0] - x1[0])**2 + (x0[1] - x1[1])**2
+        return math.sqrt(2*(a*b + a*c + b*c) - (a**2 + b**2 + c**2))/4.0
 
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 256, 256)
+
+    @jit(nopython=True)
+    def assemble_vector(b, mesh, x, dofmap):
+        """Assemble over a mesh into the array b"""
+        connections, pos = mesh
+
+        # Quadrature points
+        q0, q1 = 1/3.0, 1/3.0
+
+        # Loops over cells
+        for i, cell in enumerate(pos[:-1]):
+            num_vertices = pos[i + 1] - pos[i]
+            c = connections[cell:cell + num_vertices]
+            A = area(x[c[0]], x[c[1]], x[c[2]])
+            b[dofmap[i * 3 + 0]] += A*(1.0 - q0 - q1)
+            b[dofmap[i * 3 + 1]] += A*q0
+            b[dofmap[i * 3 + 2]] += A*q1
+
+
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 2)
+    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    b0 = dolfin.Function(V)
+
     c = mesh.topology.connectivity(2, 0).connections()
     pos = mesh.topology.connectivity(2, 0).pos()
-    test = cell_loop(c, pos)
-    print("ncells:", mesh.num_cells(), len(pos), test)
+    geom = mesh.geometry.points
+    dofs = V.dofmap().dof_array
+
+    with b0.vector().localForm() as b:
+        b.set(0.0)
+        _b = np.asarray(b)
+        assemble_vector(_b, (c, pos), geom, dofs)
+    b0.vector().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    assert(b0.vector().sum() == pytest.approx(1.0))
+
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    L = inner(1.0, v) * dx
+    b1 = dolfin.fem.assemble_vector(L)
+    b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    assert(b1.sum() == pytest.approx(1.0))
+
+    b2 = b1 - b0.vector()
+    assert(b2.norm() == pytest.approx(0.0))
