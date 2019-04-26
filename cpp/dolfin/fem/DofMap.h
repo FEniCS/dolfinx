@@ -228,6 +228,7 @@ public:
   ///         An informal representation of the function space.
   std::string str(bool verbose) const;
 
+  /// Get dofmap array
   Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array() const;
 
 private:
