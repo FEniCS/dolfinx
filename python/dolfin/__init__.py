@@ -38,7 +38,7 @@ from dolfin.common import (has_debug, has_petsc_complex,
 
 import dolfin.MPI
 
-from dolfin.geometry import BoundingBoxTree, Point
+from dolfin.geometry import  Point
 from dolfin.generation import IntervalMesh, BoxMesh, RectangleMesh
 
 from .cpp.mesh import (Mesh, Topology, Geometry, CellType, Cell, Facet,
@@ -62,8 +62,7 @@ from .function.argument import (TestFunction, TrialFunction, TestFunctions,
                                 TrialFunctions)
 from .function.specialfunctions import (
     FacetNormal, CellVolume,
-    CellNormal, CellDiameter, Circumradius, MinCellEdgeLength,
-    MaxCellEdgeLength, MinFacetEdgeLength, MaxFacetEdgeLength)
+    CellNormal, CellDiameter, Circumradius)
 from .function.expression import Expression
 
 from .generation import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh

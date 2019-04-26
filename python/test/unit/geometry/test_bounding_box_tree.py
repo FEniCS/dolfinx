@@ -5,8 +5,9 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for BoundingBoxTree"""
 
-from dolfin import (MPI, BoundingBoxTree, MeshEntity, Point, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh)
+from dolfin import (MPI, MeshEntity, Point, UnitCubeMesh, UnitIntervalMesh,
+                    UnitSquareMesh)
+from dolfin.geometry import BoundingBoxTree
 from dolfin_utils.test.skips import skip_in_parallel
 
 # --- compute_collisions with point ---
