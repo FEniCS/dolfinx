@@ -39,7 +39,8 @@ from dolfin.common import (has_debug, has_petsc_complex,
 import dolfin.MPI
 
 from dolfin.geometry import  Point
-from dolfin.generation import IntervalMesh, BoxMesh, RectangleMesh
+from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
+                               UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
 from .cpp.mesh import (Mesh, Topology, Geometry, CellType, Cell, Facet,
                        Face, Edge, Vertex, MeshEntity, Cells, Facets, Faces,
@@ -60,12 +61,8 @@ from .function.functionspace import (FunctionSpace, VectorFunctionSpace,
 from .function.function import Function
 from .function.argument import (TestFunction, TrialFunction, TestFunctions,
                                 TrialFunctions)
-from .function.specialfunctions import (
-    FacetNormal, CellVolume,
-    CellNormal, CellDiameter, Circumradius)
+from .function.specialfunctions import (FacetNormal, CellVolume, CellNormal, CellDiameter, Circumradius)
 from .function.expression import Expression
-
-from .generation import UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh
 
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection
