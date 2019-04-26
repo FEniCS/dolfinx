@@ -19,7 +19,7 @@ from ufl import dx, inner
 
 def test_custom_mesh_loop():
 
-    @jit(nopython=True,  cache=True)
+    @jit(nopython=True, cache=True)
     def area(x0, x1, x2):
         a = (x1[0] - x2[0])**2 + (x1[1] - x2[1])**2
         b = (x0[0] - x2[0])**2 + (x0[1] - x2[1])**2
@@ -43,7 +43,7 @@ def test_custom_mesh_loop():
             b[dofmap[i * 3 + 2]] += A * q1
             b[dofmap[i * 3 + 1]] += A * q0
 
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 512 , 512)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     b0 = dolfin.Function(V)
 
@@ -71,7 +71,7 @@ def test_custom_mesh_loop():
     b0.vector().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert(b0.vector().sum() == pytest.approx(1.0))
 
-    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    v = dolfin.TestFunction(V)
     L = inner(1.0, v) * dx
 
     start = time.time()
