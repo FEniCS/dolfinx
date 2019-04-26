@@ -9,10 +9,10 @@ import math
 
 import numpy
 import pytest
-from petsc4py import PETSc
 
 import dolfin
 import ufl
+from petsc4py import PETSc
 from ufl import ds, dx, inner
 
 
@@ -443,8 +443,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Monolithic
 
-    P2 = dolfin.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1 = dolfin.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     TH = P2 * P1
     W = dolfin.FunctionSpace(mesh, TH)
     (u, p) = dolfin.TrialFunctions(W)

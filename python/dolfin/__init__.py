@@ -77,17 +77,6 @@ from .pybind11jit import compile_cpp_code
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection
 
-# Import from ufl
-from ufl import (
-    FiniteElement, TensorElement, VectorElement, MixedElement,
-    NodalEnrichedElement, rhs, lhs, conditional, le, lt, ge, gt, split, cross,
-    inner, dot, grad, curl, dx, div, Measure, det, pi, sin, cos, tan, acos,
-    asin, atan, ln, exp, sqrt, bessel_I, bessel_J, bessel_K, bessel_Y, Dx, ds,
-    dS, dP, dX, dC, interval, triangle, tetrahedron, quadrilateral, hexahedron,
-    avg, jump, sym, tr, Identity, variable, diff, as_vector, as_tensor,
-    as_matrix, system, outer, dev, skew, elem_mult, elem_div, elem_pow, elem_op,
-    erf)
-from ufl.formoperators import action
 
 # Initialise PETSc
 from dolfin import cpp

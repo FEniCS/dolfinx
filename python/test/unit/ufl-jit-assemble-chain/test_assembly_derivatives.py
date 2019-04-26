@@ -6,14 +6,16 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import math
-from dolfin import (UnitIntervalMesh, SpatialCoordinate, dx, ds, MPI,
-                    RectangleMesh, FacetNormal, Point)
-from ufl import (elem_pow, elem_op, elem_div, elem_mult, det, tr, cross, inner, diff,
-                 outer, div, grad, dot, as_vector, as_matrix, dev, skew, sym,
-                 atan, acos, asin, sin, cos, tan, exp, ln, erf,
-                 bessel_I, bessel_J, bessel_K, bessel_Y)
+
+import pytest
+
+from dolfin import (MPI, FacetNormal, Point, RectangleMesh, SpatialCoordinate,
+                    UnitIntervalMesh)
+from ufl import (acos, as_matrix, as_vector, asin, atan, bessel_I, bessel_J,
+                 bessel_K, bessel_Y, cos, cross, det, dev, diff, div, dot, ds,
+                 dx, elem_div, elem_mult, elem_op, elem_pow, erf, exp, grad,
+                 inner, ln, outer, sin, skew, sym, tan, tr)
 
 
 @pytest.mark.skip

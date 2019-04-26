@@ -9,14 +9,14 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Edges, Expression, Facets,
-                    FiniteElement, Function, FunctionSpace, MeshEntities,
-                    MeshFunction, MeshValueCollection, TensorFunctionSpace,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorElement, VectorFunctionSpace, Vertices, cpp,
-                    function, has_petsc_complex, interpolate)
+from dolfin import (MPI, Cells, CellType, Edges, Expression, Facets, Function,
+                    FunctionSpace, MeshEntities, MeshFunction,
+                    MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
+                    Vertices, cpp, function, has_petsc_complex, interpolate)
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
+from ufl import FiniteElement, VectorElement
 
 assert (tempdir)
 
