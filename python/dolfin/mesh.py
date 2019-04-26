@@ -42,7 +42,7 @@ _meshvaluecollection_types = {
 }
 
 
-class MeshFunction(object):
+class MeshFunction:
     def __new__(cls, value_type, mesh, dim, value):
         if value_type not in _meshfunction_types.keys():
             raise KeyError("MeshFunction type not recognised")
@@ -50,7 +50,7 @@ class MeshFunction(object):
         return fn(mesh, dim, value)
 
 
-class MeshValueCollection(object):
+class MeshValueCollection:
     def __new__(cls, value_type, mesh, dim=None):
         if value_type not in _meshvaluecollection_types.keys():
             raise KeyError("MeshValueCollection type not recognised")

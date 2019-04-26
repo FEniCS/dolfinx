@@ -70,15 +70,15 @@ def test_diff_then_integrate():
     else:
         print("Warning: skipping test of erf, old python version and no scipy.")
 
-    if 0:
-        print("Warning: skipping tests of bessel functions, doesn't build on all platforms.")
-    elif scipy is None:
-        print("Warning: skipping tests of bessel functions, missing scipy.")
-    else:
-        for nu in (0, 1, 2):
-            # Many of these are possibly more accurately integrated,
-            # but 4 covers all and is sufficient for this test
-            reg([bessel_J(nu, xs), bessel_Y(nu, xs), bessel_I(nu, xs), bessel_K(nu, xs)], 4)
+    # if 0:
+    #     print("Warning: skipping tests of bessel functions, doesn't build on all platforms.")
+    # elif scipy is None:
+    #     print("Warning: skipping tests of bessel functions, missing scipy.")
+    # else:
+    #     for nu in (0, 1, 2):
+    #         # Many of these are possibly more accurately integrated,
+    #         # but 4 covers all and is sufficient for this test
+    #         reg([bessel_J(nu, xs), bessel_Y(nu, xs), bessel_I(nu, xs), bessel_K(nu, xs)], 4)
 
     # To handle tensor algebra, make an x dependent input tensor
     # xx and square all expressions
