@@ -15,7 +15,7 @@ from dolfin import cpp
 from dolfin.jit import dolfin_pc, mpi_jit_decorator
 
 
-def jit_generate(cpp_code, module_name, signature):
+def jit_generate(cpp_code, module_name, signature, parameters):
 
     # log(LogLevel.TRACE,
     #     "Calling dijitso just-in-time (JIT) compiler for pybind11 code.")
