@@ -82,8 +82,8 @@ import dolfin
 import dolfin.plotting
 import ufl
 from dolfin import (MPI, CellType, DirichletBC, Function, FunctionSpace, Point,
-                    RectangleMesh, SpatialCoordinate, TestFunction,
-                    TrialFunction, solve)
+                    RectangleMesh, TestFunction, TrialFunction, solve)
+from dolfin.function.specialfunctions import SpatialCoordinate
 from dolfin.io import XDMFFile
 from ufl import ds, dx, grad, inner
 

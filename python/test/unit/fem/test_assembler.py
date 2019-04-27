@@ -9,10 +9,11 @@ import math
 
 import numpy
 import pytest
-from petsc4py import PETSc
 
 import dolfin
 import ufl
+from dolfin.function.specialfunctions import SpatialCoordinate
+from petsc4py import PETSc
 from ufl import ds, dx, inner
 
 
@@ -36,7 +37,7 @@ def test_assemble_functional():
     value = dolfin.fem.assemble_scalar(M)
     value = dolfin.MPI.sum(mesh.mpi_comm(), value)
     assert value == pytest.approx(1.0, 1e-12)
-    x = dolfin.SpatialCoordinate(mesh)
+    x = SpatialCoordinate(mesh)
     M = x[0] * dx(domain=mesh)
     value = dolfin.fem.assemble_scalar(M)
     value = dolfin.MPI.sum(mesh.mpi_comm(), value)
@@ -443,8 +444,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Monolithic
 
-    P2 = dolfin.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1 = dolfin.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     TH = P2 * P1
     W = dolfin.FunctionSpace(mesh, TH)
     (u, p) = dolfin.TrialFunctions(W)

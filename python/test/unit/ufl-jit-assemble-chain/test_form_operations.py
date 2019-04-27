@@ -7,8 +7,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import (RectangleMesh, MPI, Point, CellType, FunctionSpace,
-                    TestFunction, TrialFunction, inner, grad, dx, system, lhs, rhs)
+
+from dolfin import (MPI, CellType, FunctionSpace, Point, RectangleMesh,
+                    TestFunction, TrialFunction)
+from ufl import dx, grad, inner, lhs, rhs, system
 
 
 @pytest.mark.skip

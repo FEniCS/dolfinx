@@ -30,7 +30,7 @@ def test_assembly_dx_domains(mesh):
     values[1] = 222
     values[2:] = 333
 
-    dx = dolfin.Measure('dx', subdomain_data=marker, domain=mesh)
+    dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
 
     w = dolfin.Function(V)
     with w.vector().localForm() as w_local:
@@ -113,7 +113,7 @@ def test_assembly_ds_domains(mesh):
     right_subdomain = dolfin.mesh.create_subdomain(right)
     right_subdomain.mark(marker, 444)
 
-    ds = dolfin.Measure('ds', subdomain_data=marker, domain=mesh)
+    ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 
     w = dolfin.Function(V)
     with w.vector().localForm() as w_local:

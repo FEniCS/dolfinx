@@ -11,19 +11,16 @@ finite element space.
 
 """
 
-from petsc4py import PETSc
-
 import ufl
 from dolfin import cpp, fem, function, la
+from petsc4py import PETSc
 
 
 def project(v,
             V=None,
             bcs=[],
             mesh=None,
-            funct=None,
-            solver_type="lu",
-            preconditioner_type="default"):
+            funct=None):
     """Return projection of given expression *v* onto the finite element
     space *V*.
 
@@ -41,13 +38,6 @@ def project(v,
             Optional argument :py:class:`mesh <dolfin.cpp.Mesh>`.
         funct
             Target function where result is stored.
-        solver_type
-            see :py:func:`solve <dolfin.fem.solving.solve>` for options.
-        preconditioner_type
-            see :py:func:`solve <dolfin.fem.solving.solve>` for options.
-        form_compiler_parameters
-            see :py:class:`Parameters <dolfin.cpp.Parameters>` for more
-            information.
 
     *Example of usage*
 
@@ -102,7 +92,7 @@ def project(v,
     # Solve linear system for projection
     if funct is None:
         funct = function.Function(V)
-    la.solve(A, funct.vector(), b, solver_type, preconditioner_type)
+    la.solve(A, funct.vector(), b)
 
     return funct
 

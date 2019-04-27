@@ -10,14 +10,14 @@ from contextlib import ExitStack
 
 import numpy as np
 import pytest
-from petsc4py import PETSc
 
 import ufl
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, Identity,
-                    TestFunction, TrialFunction, UnitSquareMesh,
-                    VectorFunctionSpace, dot, dx, grad, inner, sym, tr)
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
+                    TrialFunction, UnitSquareMesh, VectorFunctionSpace)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
+from petsc4py import PETSc
+from ufl import Identity, dot, dx, grad, inner, sym, tr
 
 
 def test_krylov_solver_lu():

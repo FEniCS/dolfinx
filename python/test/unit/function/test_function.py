@@ -12,14 +12,14 @@ import cffi
 import numba
 import numpy as np
 import pytest
-from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, Expression, Function, FunctionSpace, Point,
                     TensorFunctionSpace, UnitCubeMesh, VectorFunctionSpace,
-                    Vertex, cpp, function, interpolate, lt)
+                    Vertex, cpp, function, interpolate)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
+from petsc4py import PETSc
 
 
 @fixture
@@ -223,8 +223,8 @@ def test_scalar_conditions(R):
     c.vector().set(1.5)
 
     # Float conversion does not interfere with boolean ufl expressions
-    assert isinstance(lt(c, 3), ufl.classes.LT)
-    assert not isinstance(lt(c, 3), bool)
+    assert isinstance(ufl.lt(c, 3), ufl.classes.LT)
+    assert not isinstance(ufl.lt(c, 3), bool)
 
     # Float conversion is not implicit in boolean Python expressions
     assert isinstance(c < 3, ufl.classes.LT)
