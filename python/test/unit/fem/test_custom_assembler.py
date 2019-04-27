@@ -8,12 +8,13 @@
 import math
 import time
 
+import cffi
 import numpy as np
 import pytest
 from numba import jit
+from petsc4py import PETSc
 
 import dolfin
-from petsc4py import PETSc
 from ufl import dx, inner
 
 
@@ -30,11 +31,7 @@ def test_custom_mesh_loop():
     def assemble_vector(b, mesh, x, dofmap):
         """Assemble over a mesh into the array b"""
         connections, pos = mesh
-
-        # Quadrature points
         q0, q1 = 1 / 3.0, 1 / 3.0
-
-        # Loops over cells
         for i, cell in enumerate(pos[:-1]):
             num_vertices = pos[i + 1] - pos[i]
             c = connections[cell:cell + num_vertices]
@@ -43,7 +40,28 @@ def test_custom_mesh_loop():
             b[dofmap[i * 3 + 2]] += A * q1
             b[dofmap[i * 3 + 1]] += A * q0
 
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
+    ffi = cffi.FFI()
+
+    @jit(nopython=True)
+    def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
+        """Assemble proved kernel over a mesh into the array b"""
+        connections, pos = mesh
+        b_local = np.zeros(3)
+        geometry = np.zeros((3, 2))
+        coeffs = np.zeros(0)
+        for i, cell in enumerate(pos[:-1]):
+            num_vertices = pos[i + 1] - pos[i]
+            c = connections[cell:cell + num_vertices]
+            for j in range(3):
+                for k in range(2):
+                    geometry[j, k] = x[c[j], k]
+            # for j in range(3):
+            #     geometry[j, :] = x[c[j]]
+            kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs), ffi.from_buffer(geometry), 0)
+            for j in range(3):
+                b[dofmap[i * 3 + j]] += b_local[j]
+
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1023, 1024)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     b0 = dolfin.Function(V)
 
@@ -91,3 +109,27 @@ def test_custom_mesh_loop():
 
     b2 = b1 - b0.vector()
     assert(b2.norm() == pytest.approx(0.0))
+
+    b3 = dolfin.Function(V)
+    ufc_form = dolfin.jit.ffc_jit(L)
+    kernel = ufc_form.create_cell_integral(-1).tabulate_tensor
+    # from pprint import pprint
+    # pprint(kernel)
+    with b3.vector().localForm() as b:
+        b.set(0.0)
+        _b = np.asarray(b)
+        start = time.time()
+        assemble_vector_ufc(_b, kernel, (c, pos), geom, dofs)
+        end = time.time()
+        print("Time (numba/cffi, 1):", end - start)
+
+    with b3.vector().localForm() as b:
+        b.set(0.0)
+        _b = np.asarray(b)
+        start = time.time()
+        assemble_vector_ufc(_b, kernel, (c, pos), geom, dofs)
+        end = time.time()
+        print("Time (numba/cffi, 2):", end - start)
+
+    b3.vector().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    assert(b3.vector().sum() == pytest.approx(1.0))
