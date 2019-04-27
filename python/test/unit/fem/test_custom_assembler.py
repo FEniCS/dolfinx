@@ -3,16 +3,15 @@
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
-"""Tests for custom assemblers"""
+"""Tests for custom Python assemblers"""
 
 import math
 import time
 
-import numba
 import cffi
 import numpy as np
 import pytest
-from numba import jit, cffi_support
+from numba import jit
 from petsc4py import PETSc
 
 import dolfin
@@ -45,7 +44,7 @@ def test_custom_mesh_loop():
 
     @jit(nopython=True)
     def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
-        """Assemble proved kernel over a mesh into the array b"""
+        """Assemble provided kernel over a mesh into the array b"""
         connections, pos = mesh
         b_local = np.zeros(3)
         geometry = np.zeros((3, 2))
@@ -56,8 +55,6 @@ def test_custom_mesh_loop():
             for j in range(3):
                 for k in range(2):
                     geometry[j, k] = x[c[j], k]
-            # for j in range(3):
-            #     geometry[j, :] = x[c[j]]
             kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs), ffi.from_buffer(geometry), 0)
             for j in range(3):
                 b[dofmap[i * 3 + j]] += b_local[j]
@@ -90,6 +87,7 @@ def test_custom_mesh_loop():
     b0.vector().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert(b0.vector().sum() == pytest.approx(1.0))
 
+    # Test against generated code and general assembler
     v = dolfin.TestFunction(V)
     L = inner(1.0, v) * dx
 
@@ -116,6 +114,7 @@ def test_custom_mesh_loop():
     if not dolfin.has_petsc_complex:
         return
 
+    # Assemble using generated tabulate_tensor kernel
     b3 = dolfin.Function(V)
     ufc_form = dolfin.jit.ffc_jit(L)
     print("test", ffi.list_types())
