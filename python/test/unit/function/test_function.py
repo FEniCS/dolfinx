@@ -406,7 +406,7 @@ def test_cffi_expression(V):
     f1.interpolate(ex1)
 
     @function.expression.numba_eval
-    def expr_eval2(values, x,  t):
+    def expr_eval2(values, x, t):
         values[:, 0] = x[:, 0] + x[:, 1]
 
     ex2 = Expression(expr_eval2)
