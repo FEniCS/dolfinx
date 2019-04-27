@@ -7,10 +7,11 @@
 
 import numpy as np
 import pytest
-from petsc4py import PETSc
 
 import dolfin
 import ufl
+from dolfin.function.specialfunctions import SpatialCoordinate
+from petsc4py import PETSc
 from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
@@ -43,7 +44,7 @@ def test_complex_assembly():
     A.assemble()
     A0_norm = A.norm(PETSc.NormType.FROBENIUS)
 
-    x = dolfin.SpatialCoordinate(mesh)
+    x = SpatialCoordinate(mesh)
 
     a_imag = j * inner(u, v) * dx
     f = 1j * ufl.sin(2 * np.pi * x[0])
@@ -80,7 +81,7 @@ def test_complex_assembly_solve():
     P = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), degree)
     V = dolfin.function.functionspace.FunctionSpace(mesh, P)
 
-    x = dolfin.SpatialCoordinate(mesh)
+    x = SpatialCoordinate(mesh)
 
     # Define source term
     A = 1 + 2 * (2 * np.pi)**2

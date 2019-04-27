@@ -12,8 +12,7 @@ import sys
 
 import dijitso
 from dolfin import cpp
-from dolfin.jit import mpi_jit_decorator, dolfin_pc
-# from dolfin.cpp.log import LogLevel, log
+from dolfin.jit import dolfin_pc, mpi_jit_decorator
 
 
 def jit_generate(cpp_code, module_name, signature, parameters):

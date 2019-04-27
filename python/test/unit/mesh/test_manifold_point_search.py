@@ -1,6 +1,7 @@
 import numpy
 
-from dolfin import MPI, BoundingBoxTree, CellType, Mesh, Point, cpp
+from dolfin import MPI, CellType, Mesh, Point, cpp
+from dolfin.geometry import BoundingBoxTree
 from dolfin_utils.test.skips import skip_in_parallel
 
 

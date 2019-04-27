@@ -11,12 +11,12 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (MPI, Cells, CellType, FiniteElement, FunctionSpace,
-                    MixedElement, Point, SubDomain, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, VectorElement,
+from dolfin import (MPI, Cells, CellType, FunctionSpace, Point, SubDomain,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     VectorFunctionSpace)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
+from ufl import FiniteElement, MixedElement, VectorElement
 
 xfail = pytest.mark.xfail(strict=True)
 
