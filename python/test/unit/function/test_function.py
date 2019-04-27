@@ -135,7 +135,7 @@ def test_assign(V, W):
         uu = Function(V1)
 
         @function.expression.numba_eval
-        def expr_eval(values, x, cell_idx, t):
+        def expr_eval(values, x, t):
             values[:, 0] = 1.0
 
         f = Expression(expr_eval)
@@ -161,13 +161,13 @@ def test_call(R, V, W, Q, mesh):
     u3 = Function(Q)
 
     @function.expression.numba_eval
-    def expr_eval1(values, x, cell_idx, t):
+    def expr_eval1(values, x, t):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
 
     e1 = Expression(expr_eval1)
 
     @function.expression.numba_eval
-    def expr_eval2(values, x, cell_idx, t):
+    def expr_eval2(values, x, t):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
@@ -175,7 +175,7 @@ def test_call(R, V, W, Q, mesh):
     e2 = Expression(expr_eval2, shape=(3, ))
 
     @function.expression.numba_eval
-    def expr_eval3(values, x, cell_idx, t):
+    def expr_eval3(values, x, t):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
@@ -245,7 +245,7 @@ def test_scalar_conditions(R):
 
 def test_interpolation_mismatch_rank0(W):
     @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx, t):
+    def expr_eval(values, x, t):
         values[:, 0] = 1.0
 
     f = Expression(expr_eval, shape=())
@@ -255,7 +255,7 @@ def test_interpolation_mismatch_rank0(W):
 
 def test_interpolation_mismatch_rank1(W):
     @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx, t):
+    def expr_eval(values, x, t):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
 
@@ -266,7 +266,7 @@ def test_interpolation_mismatch_rank1(W):
 
 def test_interpolation_rank0(V):
     @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx, t):
+    def expr_eval(values, x, t):
         values[:, 0] = 1.0 * t
 
     f = Expression(expr_eval, shape=())
@@ -300,7 +300,7 @@ def test_near_evaluations(R, mesh):
 
 def test_interpolation_rank1(W):
     @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx, t):
+    def expr_eval(values, x, t):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
         values[:, 2] = 1.0
@@ -316,7 +316,7 @@ def test_interpolation_rank1(W):
 def test_numba_expression_jit_objmode_fails(W):
     # numba cfunc cannot call into objmode jit function
     @function.expression.numba_eval(numba_jit_options={"forceobj": True})
-    def expr_eval(values, x, cell_idx, t):
+    def expr_eval(values, x, t):
         values[0] = 1.0
 
 
@@ -324,18 +324,18 @@ def test_numba_expression_jit_objmode_fails(W):
 def test_numba_expression_cfunc_objmode_fails(W):
     # numba does not support cfuncs built in objmode
     @function.expression.numba_eval(numba_cfunc_options={"forceobj": True})
-    def expr_eval(values, x, cell_idx, t):
+    def expr_eval(values, x, t):
         values[0] = 1.0
 
 
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
     @function.expression.numba_eval
-    def expr_eval0(values, x, cell_idx, t):
+    def expr_eval0(values, x, t):
         values[:, 0] = 1.0
 
     @function.expression.numba_eval
-    def expr_eval1(values, x, cell_idx, t):
+    def expr_eval1(values, x, t):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
         values[:, 2] = 1.0
@@ -357,7 +357,7 @@ def test_interpolation_old(V, W, mesh):
 
 def test_numba_expression_address(V):
     @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx, t):
+    def expr_eval(values, x, t):
         values[:, :] = 1.0
 
     # Handle C func address by hand
@@ -372,18 +372,17 @@ def test_numba_expression_address(V):
 @skip_if_complex
 def test_cffi_expression(V):
     code_h = """
-    void eval(double* values, const double* x, const int64_t* cell_idx,
-            int num_points, int value_size, int gdim, int num_cells);
+    void eval(double* values, const double* x, int num_points, int value_size,
+              int gdim, double t);
     """
 
     code_c = """
-    void eval(double* values, const double* x, const int64_t* cell_idx,
-            int num_points, int value_size, int gdim, int num_cells)
+    void eval(double* values, const double* x, int num_points, int value_size, int gdim, double t)
     {
-        for (int i = 0; i < num_points; ++i)
-        {
-            values[i*value_size + 0] = x[i*gdim + 0] + x[i*gdim + 1];
-        }
+      for (int i = 0; i < num_points; ++i)
+      {
+        values[i*value_size + 0] = x[i*gdim + 0] + x[i*gdim + 1];
+      }
     }
     """
     module = "_expr_eval" + str(MPI.comm_world.rank)
@@ -407,7 +406,7 @@ def test_cffi_expression(V):
     f1.interpolate(ex1)
 
     @function.expression.numba_eval
-    def expr_eval2(values, x, cell_idx, t):
+    def expr_eval2(values, x,  t):
         values[:, 0] = x[:, 0] + x[:, 1]
 
     ex2 = Expression(expr_eval2)

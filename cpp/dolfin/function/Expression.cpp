@@ -23,9 +23,8 @@ Expression::Expression(std::vector<std::size_t> value_shape)
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(
-    std::function<void(PetscScalar* values, const double* x,
-                       const int64_t* cell_idx, int num_points, int value_size,
-                       int gdim, int num_cells, double t)>
+    std::function<void(PetscScalar* values, const double* x, int num_points,
+                       int value_size, int gdim, double t)>
         eval_ptr,
     std::vector<std::size_t> value_shape)
     : _eval_ptr(eval_ptr), _value_shape(value_shape)
@@ -88,7 +87,7 @@ void Expression::restrict(
       eval_values(ndofs, value_size);
 
   // Evaluate all points in one call
-  eval(eval_values, eval_points, cell);
+  eval(eval_values, eval_points);
 
   // FIXME: *do not* use UFC directly
   // Apply a mapping to the reference element.
@@ -119,7 +118,7 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
       const Eigen::Ref<const Eigen::VectorXd> x = vertex.x();
 
       // Evaluate at vertex
-      eval(local_vertex_values, x, cell);
+      eval(local_vertex_values, x);
 
       // Copy to array
       vertex_values.row(vertex.index()) = local_vertex_values;
@@ -129,15 +128,16 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
   return vertex_values;
 }
 //-----------------------------------------------------------------------------
-void Expression::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                              Eigen::Dynamic, Eigen::RowMajor>>
-                          values,
-                      const Eigen::Ref<const EigenRowArrayXXd> x,
-                      const mesh::Cell& cell) const
+void Expression::eval(
+    Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                            Eigen::RowMajor>>
+        values,
+    const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                        Eigen::RowMajor>>
+        x) const
 {
-  const int64_t cell_idx = cell.index();
   assert(_eval_ptr);
-  _eval_ptr(values.data(), x.data(), &cell_idx, x.rows(), values.cols(),
-            x.cols(), 1, this->t);
+  _eval_ptr(values.data(), x.data(), x.rows(), values.cols(), x.cols(),
+            this->t);
 }
 //-----------------------------------------------------------------------------

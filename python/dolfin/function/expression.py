@@ -59,26 +59,21 @@ def numba_eval(*args,
     # Decomaker pattern see PEP 318
     def decorator(f: typing.Callable):
         scalar_type = numba.typeof(PETSc.ScalarType())
-        c_signature = numba.types.void(
-            numba.types.CPointer(scalar_type),
-            numba.types.CPointer(numba.types.double),
-            numba.types.CPointer(numba.types.int32), numba.types.intc,
-            numba.types.intc, numba.types.intc, numba.types.intc, numba.types.float64)
+        c_signature = numba.types.void(numba.types.CPointer(scalar_type), numba.types.CPointer(
+            numba.types.double), numba.types.intc, numba.types.intc, numba.types.intc, numba.types.float64)
 
         # Compile the user function
         f_jit = numba.jit(**numba_jit_options)(f)
 
         # Wrap the user function in a function with a C interface
         @numba.cfunc(c_signature, **numba_cfunc_options)
-        def eval(values, x, cell_idx, num_points, value_size, gdim, num_cells, t):
+        def eval(values, x, num_points, value_size, gdim, t):
             np_values = numba.carray(
                 values, (num_points, value_size), dtype=scalar_type)
             np_x = numba.carray(
                 x, (num_points, gdim), dtype=numba.types.double)
-            np_cell_idx = numba.carray(
-                cell_idx, (num_cells, ), dtype=numba.types.int32)
 
-            f_jit(np_values, np_x, np_cell_idx, t)
+            f_jit(np_values, np_x, t)
 
         return eval
 

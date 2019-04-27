@@ -48,19 +48,17 @@ void function(py::module& m)
              std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
       .def(py::init([](std::uintptr_t addr,
                        std::vector<std::size_t> value_size) {
-        std::function<void(PetscScalar*, const double*, const std::int64_t*,
-                           int, int, int, int, double)>
-            f = reinterpret_cast<void (*)(PetscScalar*, const double*,
-                                          const std::int64_t*, int, int, int,
+        std::function<void(PetscScalar*, const double*, int, int, int, double)>
+            f = reinterpret_cast<void (*)(PetscScalar*, const double*, int, int,
                                           int, double)>(addr);
         return std::make_unique<dolfin::function::Expression>(f, value_size);
       }))
-      .def(py::init<
-           std::function<void(PetscScalar*, const double*, const std::int64_t*,
-                              int, int, int, int, double)>,
-           std::vector<std::size_t>>())
+      .def(py::init<std::function<void(PetscScalar*, const double*, int, int,
+                                       int, double)>,
+                    std::vector<std::size_t>>())
       .def("eval", &dolfin::function::Expression::eval)
-      .def_property_readonly("value_rank", &dolfin::function::Expression::value_rank)
+      .def_property_readonly("value_rank",
+                             &dolfin::function::Expression::value_rank)
       .def("value_dimension", &dolfin::function::Expression::value_dimension)
       .def_readwrite("t", &dolfin::function::Expression::t);
 
