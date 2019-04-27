@@ -11,7 +11,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::function;
@@ -26,7 +25,7 @@ Expression::Expression(std::vector<std::size_t> value_shape)
 Expression::Expression(
     std::function<void(PetscScalar* values, const double* x,
                        const int64_t* cell_idx, int num_points, int value_size,
-                       int gdim, int num_cells)>
+                       int gdim, int num_cells, double t)>
         eval_ptr,
     std::vector<std::size_t> value_shape)
     : _eval_ptr(eval_ptr), _value_shape(value_shape)
@@ -40,11 +39,11 @@ std::size_t Expression::value_dimension(std::size_t i) const
 {
   if (i >= _value_shape.size())
   {
-    // spdlog::error("Expression.cpp", "evaluate expression",
-    //               "Illegal axis %d for value dimension for value of rank %d",
-    //               i, _value_shape.size());
-    throw std::runtime_error("Value dimension axis");
+    throw std::runtime_error("Illegal axis " + std::to_string(i)
+                             + " for value dimension for value of rank "
+                             + std::to_string(_value_shape.size()));
   }
+
   return _value_shape[i];
 }
 //-----------------------------------------------------------------------------
@@ -139,6 +138,6 @@ void Expression::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   const int64_t cell_idx = cell.index();
   assert(_eval_ptr);
   _eval_ptr(values.data(), x.data(), &cell_idx, x.rows(), values.cols(),
-            x.cols(), 1);
+            x.cols(), 1, this->t);
 }
 //-----------------------------------------------------------------------------

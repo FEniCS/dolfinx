@@ -30,7 +30,7 @@ def numba_eval(*args,
     should be:
 
     f: Callable(None, (numpy.array, numpy.array, numpy.array))
-        Python function accepting parameters: values, x, cell_index.
+        Python function accepting parameters: values, x, cell_index, t.
 
     For more information on ``numba_jit_options`` and ``numba_cfunc_options``
     read the Numba documentation.
@@ -63,14 +63,14 @@ def numba_eval(*args,
             numba.types.CPointer(scalar_type),
             numba.types.CPointer(numba.types.double),
             numba.types.CPointer(numba.types.int32), numba.types.intc,
-            numba.types.intc, numba.types.intc, numba.types.intc)
+            numba.types.intc, numba.types.intc, numba.types.intc, numba.types.float64)
 
         # Compile the user function
         f_jit = numba.jit(**numba_jit_options)(f)
 
         # Wrap the user function in a function with a C interface
         @numba.cfunc(c_signature, **numba_cfunc_options)
-        def eval(values, x, cell_idx, num_points, value_size, gdim, num_cells):
+        def eval(values, x, cell_idx, num_points, value_size, gdim, num_cells, t):
             np_values = numba.carray(
                 values, (num_points, value_size), dtype=scalar_type)
             np_x = numba.carray(
@@ -78,7 +78,7 @@ def numba_eval(*args,
             np_cell_idx = numba.carray(
                 cell_idx, (num_cells, ), dtype=numba.types.int32)
 
-            f_jit(np_values, np_x, np_cell_idx)
+            f_jit(np_values, np_x, np_cell_idx, t)
 
         return eval
 
@@ -123,6 +123,7 @@ class Expression:
             5. ``value_size``, ``int``, Number of values,
             6. ``gdim``, ``int``, Geometric dimension of coordinates,
             7. ``num_cells``, ``int``, Number of cells.
+            8. ``t``, ``float``, Time.
         shape: tuple
             Value shape.
         """
@@ -134,3 +135,18 @@ class Expression:
             self._f = f
         except AttributeError:
             self._cpp_object = cpp.function.Expression(f, shape)
+
+    @property
+    def value_rank(self):
+        return self._cpp_object.value_rank
+
+    def value_dimension(self, i):
+        return self._cpp_object.value_dimension(i)
+
+    @property
+    def t(self):
+        return self._cpp_object.t
+
+    @t.setter
+    def t(self, t):
+        self._cpp_object.t = t
