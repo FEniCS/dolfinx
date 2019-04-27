@@ -137,3 +137,9 @@ def test_custom_mesh_loop():
 
     b3.vector().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert(b3.vector().sum() == pytest.approx(1.0))
+
+
+    # Test against generated code and general assembler
+    u = dolfin.TrialFunction(V)
+    a = inner(u, v) * dx
+    A = dolfin.fem.assemble_vector(a)
