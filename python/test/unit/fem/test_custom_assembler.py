@@ -111,13 +111,14 @@ def test_custom_mesh_loop():
     b2 = b1 - b0.vector()
     assert(b2.norm() == pytest.approx(0.0))
 
-    cffi_support.register_type('double _Complex', numba.types.complex128)
-    # if not dolfin.has_petsc_complex:
-    #     # Numba doesn't support complex CFFI types
-    #     return
+    # Complex not supported yet
+    # cffi_support.register_type('double _Complex', numba.types.complex128)
+    if not dolfin.has_petsc_complex:
+        return
 
     b3 = dolfin.Function(V)
     ufc_form = dolfin.jit.ffc_jit(L)
+    print("test", ffi.list_types())
     kernel = ufc_form.create_cell_integral(-1).tabulate_tensor
     with b3.vector().localForm() as b:
         b.set(0.0)
