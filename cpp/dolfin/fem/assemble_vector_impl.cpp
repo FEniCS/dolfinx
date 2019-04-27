@@ -309,63 +309,53 @@ void fem::impl::assemble_cells(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& fn,
+                             int)>& kernel,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
+  const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
-  mesh.create_entities(tdim);
 
-  // Prepare cell coordinates
-  const mesh::Geometry& geom = mesh.geometry();
-  const mesh::Connectivity& conn = mesh.coordinate_dofs().entity_points(tdim);
-  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& g_positions
-      = conn.entity_positions();
-
-  const int ndofs = conn.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& x
-      = geom.points();
-  const int gdim = x.cols();
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs(ndofs, gdim);
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
 
   // Create data structures used in assembly
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over active cells
-  for (auto& cell_index : active_cells)
+  for (std::int32_t cell_index : active_cells)
   {
     const mesh::Cell cell(mesh, cell_index);
-
-    // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
-    // Get cell vertex coordinates
-    // const std::int32_t* g_dofs = conn.connections(cell_index);
-    // const std::int32_t* g_dofs = &(g_positions[cell_index]);
+    // Get cell coordinates/geometry
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
-    // for (int i = 0; i < ndofs; ++i)
-    //   coordinate_dofs.row(i) = x.row(g_dofs[i]);
-    const int offset = g_positions[cell_index];
-    for (int i = 0; i < ndofs; ++i)
-      coordinate_dofs.row(i) = x.row(offset + i);
-
-    // for (int i = 0; i < ndofs; ++i)
-    //   for (int d = 0; d < gdim; ++d)
-    //     coordinate_dofs(i, d) = x(g_positions[cell_index] + i, d);
-
-    // for (int d = 0; d < gdim; ++d)
-    //   for (int i = 0; i < ndofs; ++i)
-    //     coordinate_dofs(i, d) = x(g_positions[cell_index] + i, d);
-
-    // Update coefficients and tabulate vector
+    // FIXME: Move this outside of inner assembly loop
+    // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
       coefficients[i]->restrict(coeff_array.data() + offsets[i], cell,
                                 coordinate_dofs);
     }
-    fn(be.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+
+    // Tabulate vector for cell
+    kernel(be.data(), coeff_array.data(), coordinate_dofs.data(), 1);
 
     // Add local cell vector to global vector
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)

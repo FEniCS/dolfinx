@@ -43,7 +43,7 @@ def test_custom_mesh_loop():
             b[dofmap[i * 3 + 2]] += A * q1
             b[dofmap[i * 3 + 1]] += A * q0
 
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1024, 1024)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1023, 1025)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     b0 = dolfin.Function(V)
 
