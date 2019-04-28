@@ -18,14 +18,15 @@ import dolfin
 from ufl import dx, inner
 
 
-def test_custom_mesh_loop_rank1():
+@jit(nopython=True, cache=True)
+def area(x0, x1, x2):
+    a = (x1[0] - x2[0])**2 + (x1[1] - x2[1])**2
+    b = (x0[0] - x2[0])**2 + (x0[1] - x2[1])**2
+    c = (x0[0] - x1[0])**2 + (x0[1] - x1[1])**2
+    return math.sqrt(2 * (a * b + a * c + b * c) - (a**2 + b**2 + c**2)) / 4.0
 
-    @jit(nopython=True, cache=True)
-    def area(x0, x1, x2):
-        a = (x1[0] - x2[0])**2 + (x1[1] - x2[1])**2
-        b = (x0[0] - x2[0])**2 + (x0[1] - x2[1])**2
-        c = (x0[0] - x1[0])**2 + (x0[1] - x1[1])**2
-        return math.sqrt(2 * (a * b + a * c + b * c) - (a**2 + b**2 + c**2)) / 4.0
+
+def test_custom_mesh_loop_rank1():
 
     @jit(nopython=True, cache=True)
     def assemble_vector(b, mesh, x, dofmap):
@@ -37,8 +38,8 @@ def test_custom_mesh_loop_rank1():
             c = connections[cell:cell + num_vertices]
             A = area(x[c[0]], x[c[1]], x[c[2]])
             b[dofmap[i * 3 + 0]] += A * (1.0 - q0 - q1)
-            b[dofmap[i * 3 + 2]] += A * q1
             b[dofmap[i * 3 + 1]] += A * q0
+            b[dofmap[i * 3 + 2]] += A * q1
 
     ffi = cffi.FFI()
 
@@ -147,37 +148,95 @@ def test_custom_mesh_loop_rank2():
     petsc_dir = os.environ.get('PETSC_DIR', None)
     petsc_lib = ctypes.CDLL(petsc_dir + "/lib/libpetsc.dylib")
     MatSetValues = petsc_lib.MatSetValuesLocal
-    MatSetValues.argtypes = 7*(ctypes.c_void_p,)
-    # MatSetValues.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p,
-    #                          ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int)
+    MatSetValues.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(
+        ctypes.c_int), ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ctypes.c_int)
+    ADD_VALUES = PETSc.InsertMode.ADD_VALUES
     del petsc_lib
 
     @jit(nopython=True)
-    def assemble_matrix(A, mode):
-        pos = np.zeros(2, dtype=np.intc)
-        pos[0] = 0
-        pos[1] = 1
-        _A = np.zeros((2, 2))
-        _A[0, 0] = -10.0
-        _A[1, 1] = -20.0
-        MatSetValues(A, 2, pos.ctypes.data, 2, pos.ctypes.data, _A.ctypes.data, mode)
+    def assemble_matrix(A, mesh, x, dofmap, set_vals):
+        """Assemble over a mesh into the PETSc matrix A"""
+        def shape_functions(q):
+            return 1.0 - q[0] - q[1], q[0], q[1]
 
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 2)
+        # Mesh data
+        connections, pos = mesh
+
+        # Quadrature points and weights
+        q_points = np.empty((3, 2), dtype=np.double)
+        q_points[0, 0], q_points[0, 1] = 0.5, 0.0
+        q_points[1, 0], q_points[1, 1] = 0.5, 0.5
+        q_points[2, 0], q_points[2, 1] = 0.0, 0.5
+        weights = np.full(3, 1.0 / 3.0, dtype=np.double)
+
+        # Loop over cells
+        _A = np.empty((3, 3), dtype=np.double)
+        for i, cell in enumerate(pos[:-1]):
+            num_vertices = pos[i + 1] - pos[i]
+            c = connections[cell:cell + num_vertices]
+            cell_area = area(x[c[0]], x[c[1]], x[c[2]])
+            _A[:] = 0.0
+
+            # Loop over quadrature points
+            for j in range(q_points.shape[0]):
+
+                N0, N1, N2 = shape_functions(q_points[j])
+
+                _A[0, 0] += weights[j] * cell_area * N0 * N0
+                _A[0, 1] += weights[j] * cell_area * N0 * N1
+                _A[0, 2] += weights[j] * cell_area * N0 * N2
+
+                _A[1, 0] += weights[j] * cell_area * N1 * N0
+                _A[1, 1] += weights[j] * cell_area * N1 * N1
+                _A[1, 2] += weights[j] * cell_area * N1 * N2
+
+                _A[2, 0] += weights[j] * cell_area * N2 * N0
+                _A[2, 1] += weights[j] * cell_area * N2 * N1
+                _A[2, 2] += weights[j] * cell_area * N2 * N2
+
+            # Add to global tensor
+            rows = cols = dofmap[3 * i:3 * i + 3].ctypes
+            set_vals(A, 3, rows, 3, cols, _A.ctypes, ADD_VALUES)
+
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 256, 256)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    c = mesh.topology.connectivity(2, 0).connections()
+    pos = mesh.topology.connectivity(2, 0).pos()
+    geom = mesh.geometry.points
+    dofs = V.dofmap().dof_array
 
     # Test against generated code and general assembler
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
     a = inner(u, v) * dx
-    A = dolfin.fem.assemble_matrix(a)
-    A.assemble()
-    A.zeroEntries()
+    A0 = dolfin.fem.assemble_matrix(a)
+    A0.assemble()
+    A0.zeroEntries()
 
-    mat = A.handle
-    assemble_matrix(mat, PETSc.InsertMode.ADD)
-    A.assemble()
-    A.view()
-    print("Test norm: ", A.norm())
+    start = time.time()
+    dolfin.fem.assemble_matrix(A0, a)
+    end = time.time()
+    print("Time (C++, 2):", end - start)
+    A0.assemble()
 
+    A1 = A0.copy()
+    A1.zeroEntries()
+    mat = A1.handle
+    assemble_matrix(mat, (c, pos), geom, dofs, MatSetValues)
+    A1.assemble()
+
+    A1.zeroEntries()
+    start = time.time()
+    assemble_matrix(mat, (c, pos), geom, dofs, MatSetValues)
+    end = time.time()
+    print("Time (numba, 2):", end - start)
+    A1.assemble()
+
+    assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
+
+    # assemble_matrix(mat, PETSc.InsertMode.ADD)
+    # A.assemble()
+    # A.view()
+    # print("Test norm: ", A.norm())
 
     # libpetsc_path = ctypes.util.find_library('petsc')
     # print(libpetsc_path)
