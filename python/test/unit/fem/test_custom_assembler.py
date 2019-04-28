@@ -146,7 +146,10 @@ def test_custom_mesh_loop_rank2():
     import ctypes
     import ctypes.util
     petsc_dir = os.environ.get('PETSC_DIR', None)
-    petsc_lib = ctypes.CDLL(petsc_dir + "/lib/libpetsc.dylib")
+    try:
+        petsc_lib = ctypes.CDLL(petsc_dir + "/lib/libpetsc.so")
+    except OSError:
+        petsc_lib = ctypes.CDLL(petsc_dir + "/lib/libpetsc.dylib")
     MatSetValues = petsc_lib.MatSetValuesLocal
     MatSetValues.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(
         ctypes.c_int), ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ctypes.c_int)
@@ -198,7 +201,7 @@ def test_custom_mesh_loop_rank2():
             rows = cols = dofmap[3 * i:3 * i + 3].ctypes
             set_vals(A, 3, rows, 3, cols, _A.ctypes, ADD_VALUES)
 
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 256, 256)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     c = mesh.topology.connectivity(2, 0).connections()
     pos = mesh.topology.connectivity(2, 0).pos()
