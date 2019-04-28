@@ -51,9 +51,9 @@ std::vector<std::size_t> Expression::value_shape() const
   return _value_shape;
 }
 //-----------------------------------------------------------------------------
-void Expression::restrict(
-    PetscScalar* w, const fem::FiniteElement& element, const mesh::Cell& cell,
-    const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
+void Expression::restrict(PetscScalar* w, const fem::FiniteElement& element,
+                          const mesh::Cell& cell,
+                          const EigenRowArrayXXd& coordinate_dofs) const
 {
   // Get evaluation points
   const std::size_t value_size = std::accumulate(
