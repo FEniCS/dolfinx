@@ -23,8 +23,8 @@ Expression::Expression(std::vector<std::size_t> value_shape)
 }
 //-----------------------------------------------------------------------------
 Expression::Expression(
-    std::function<void(PetscScalar* values, const double* x, int num_points,
-                       int value_size, int gdim, double t)>
+    std::function<void(PetscScalar* values, int num_points, int value_size,
+                       const double* x, int gdim, double t)>
         eval_ptr,
     std::vector<std::size_t> value_shape)
     : _eval_ptr(eval_ptr), _value_shape(value_shape)
@@ -137,7 +137,8 @@ void Expression::eval(
         x) const
 {
   assert(_eval_ptr);
-  _eval_ptr(values.data(), x.data(), x.rows(), values.cols(), x.cols(),
+  assert(values.rows() == x.rows());
+  _eval_ptr(values.data(), values.rows(), values.cols(), x.data(), x.cols(),
             this->t);
 }
 //-----------------------------------------------------------------------------

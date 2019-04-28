@@ -44,7 +44,7 @@ public:
   /// @param value_shape (std::vector<std::size_t>)
   ///         Shape of expression.
   Expression(
-      std::function<void(PetscScalar*, const double*, int, int, int, double)>
+      std::function<void(PetscScalar*, int, int, const double*, int, double)>
           eval_ptr,
       std::vector<std::size_t> value_shape);
 
@@ -128,22 +128,22 @@ private:
   //        Pointer to row major 2D C-style array of `PetscScalar`.
   //        The array has shape=(number of points, value size) and has to
   //        be filled with custom values in the function body.
+  // @param num_points
+  //        Number of points where expression is evaluated
+  // @param value_size
+  //        Size of expression value
   // @param x
   //        Pointer to a row major C-style 2D array of `double`.
   //        The array has shape=(number of points, geometrical dimension)
   //        and represents array of points in physical space at which the
   //        Expression is being evaluated.
-  // @param num_points
-  //        Number of points where expression is evaluated
-  // @param value_size
-  //        Size of expression value
   // @param gdim
   //        Geometrical dimension of physical point where expression
   //        is evaluated
   // @param t
   //        Time
-  std::function<void(PetscScalar* values, const double* x, int num_points,
-                     int value_size, int gdim, double t)>
+  std::function<void(PetscScalar* values, int num_points, int value_size,
+                     const double* x, int gdim, double t)>
       _eval_ptr;
 
   // Value shape
