@@ -372,12 +372,11 @@ def test_numba_expression_address(V):
 @skip_if_complex
 def test_cffi_expression(V):
     code_h = """
-    void eval(double* values, const double* x, int num_points, int value_size,
-              int gdim, double t);
+    void eval(double* values, int num_points, int value_size, const double* x, int gdim, double t);
     """
 
     code_c = """
-    void eval(double* values, const double* x, int num_points, int value_size, int gdim, double t)
+    void eval(double* values, int num_points, int value_size, const double* x, int gdim, double t)
     {
       for (int i = 0; i < num_points; ++i)
       {
