@@ -18,7 +18,7 @@ import dolfin
 from ufl import dx, inner
 
 
-def test_custom_mesh_loop():
+def test_custom_mesh_loop_rank1():
 
     @jit(nopython=True, cache=True)
     def area(x0, x1, x2):
@@ -139,7 +139,110 @@ def test_custom_mesh_loop():
     assert(b3.vector().sum() == pytest.approx(1.0))
 
 
+def test_custom_mesh_loop_rank2():
+
+    import os
+    import ctypes
+    import ctypes.util
+    petsc_dir = os.environ.get('PETSC_DIR', None)
+    petsc_lib = ctypes.CDLL(petsc_dir + "/lib/libpetsc.dylib")
+    MatSetValues = petsc_lib.MatSetValuesLocal
+    MatSetValues.argtypes = 7*(ctypes.c_void_p,)
+    # MatSetValues.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p,
+    #                          ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int)
+    del petsc_lib
+
+    @jit(nopython=True)
+    def assemble_matrix(A, mode):
+        pos = np.zeros(2, dtype=np.intc)
+        pos[0] = 0
+        pos[1] = 1
+        _A = np.zeros((2, 2))
+        _A[0, 0] = -10.0
+        _A[1, 1] = -20.0
+        MatSetValues(A, 2, pos.ctypes.data, 2, pos.ctypes.data, _A.ctypes.data, mode)
+
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 2, 2)
+    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+
     # Test against generated code and general assembler
-    u = dolfin.TrialFunction(V)
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
     a = inner(u, v) * dx
-    A = dolfin.fem.assemble_vector(a)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    A.zeroEntries()
+
+    mat = A.handle
+    assemble_matrix(mat, PETSc.InsertMode.ADD)
+    A.assemble()
+    A.view()
+    print("Test norm: ", A.norm())
+
+
+    # libpetsc_path = ctypes.util.find_library('petsc')
+    # print(libpetsc_path)
+
+#     from cffi import FFI
+#     ffibuilder = FFI()
+
+#     ffibuilder.cdef("""
+#         typedef struct{...;} Mat;
+
+#         /*typedef ... Mat;*/
+#         /* typedef ... InsertMode; */
+#         int MatSetValuesLocal(Mat A, int nrow, const int* irow, int ncol, const int* icol,
+#                               const double* y, ...);
+#         int mysum(int x);
+#         void mymat(Mat mat, uintptr_t x);
+#     """)
+
+#     ffibuilder.set_source("_petsc_cffi",
+#                           """
+#      # include "petscmat.h"   // the C header of the library
+#      int mysum(int x) { return 2 + x ; }
+#      void mymat(Mat mat, uintptr_t x) { mat = NULL; }
+# """,
+#                           libraries=['petsc'],
+#                           include_dirs=['/Users/garth/local/packages/petsc-dev/include'],
+#                           library_dirs=["/Users/garth/local/packages/petsc-dev/lib"])
+
+#     ffibuilder.compile(verbose=True)
+
+
+#     from _petsc_cffi import ffi, lib
+
+#     test = ffi.typeof("Mat")
+#     test = ffi.sizeof("Mat")
+#     print(test, type(A.handle))
+#     p = ffi.new("Mat *")
+#     print(p)
+
+#     # test1 = ffi.cast("Mat", A.handle)
+#     # test = lib.mysum(2)
+#     # print(test)
+
+#     # test0 = ffi.typeof("Mat")
+#     # testb = ffi.new_handle(A)
+#     # print(testb)
+#     # # test1 = ffi.new(test0)
+#     # print("Boo:", test0)
+#     # # print("Boo:", ffi.sizeof("Mat"))
+
+#     # # Ah = A.handle
+#     # # print(type(A.handle))
+
+#     # # test = ffi.cast("Mat", A.handle)
+#     # p_handle = ffi.new("Mat *")
+#     # print(type(p_handle))
+
+#     # junk = ffi.cast("uintptr_t", A.handle)
+#     # print("junk", junk)
+
+#     # pos = np.zeros(1, dtype=np.uint8)
+#     # lib.MatSetValuesLocal(junk, 1, ffi.from_buffer(pos), 1, ffi.from_buffer(pos),
+#     #                       ffi.from_buffer(vals), PETSc.InsertMode.ADD)
+#     # test=PETSc.InsertMode.ADD
+#     # print(test, type(test))
+
+
+#     # assemble_matrix(lib.MatSetValuesLocal)
