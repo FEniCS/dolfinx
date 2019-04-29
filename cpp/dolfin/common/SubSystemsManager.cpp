@@ -95,8 +95,8 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   const bool mpi_init_status = mpi_initialized();
 
   // Print message if PETSc is initialised with command line arguments
-  // if (argc > 1)
-  //   glog::info("Initializing PETSc with given command-line arguments.");
+  if (argc > 1)
+    LOG(INFO) << "Initializing PETSc with given command-line arguments.";
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
@@ -213,11 +213,11 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorMessage(n, &desc, nullptr);
 
   // Log detailed error info
-  // glog::error(
-  //     "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
-  //     "                       : error code '{}' ({}), message follows:",
-  //     line, fun, file, n, desc);
-  // glog::error(_mess);
+  LOG(ERROR)
+      << "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
+         "                       : error code '{}' ({}), message follows:"
+      << line << fun << file << n << desc;
+  LOG(ERROR) << (_mess);
 
   // Continue with error handling
   PetscFunctionReturn(n);

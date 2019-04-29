@@ -369,10 +369,7 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
   {
-    // glog::error("PlazaRefinementND.cpp", "refine mesh",
-    //               "Cell type %s not supported",
-    //               mesh.type().description(false).c_str());
-    throw std::runtime_error("Not supported");
+    throw std::runtime_error("Cell type not supported");
   }
 
   common::Timer t0("PLAZA: refine");
@@ -395,10 +392,7 @@ PlazaRefinementND::refine(const mesh::Mesh& mesh,
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle
       and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
   {
-    // glog::error("PlazaRefinementND.cpp", "refine mesh",
-    //               "Cell type %s not supported",
-    //               mesh.type().description(false).c_str());
-    throw std::runtime_error("Not supported");
+    throw std::runtime_error("Cell type not supported");
   }
 
   common::Timer t0("PLAZA: refine");

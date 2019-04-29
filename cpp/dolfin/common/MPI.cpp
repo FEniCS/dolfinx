@@ -4,11 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <algorithm>
-#include <numeric>
-// #include <glog/glog.h>
 #include "MPI.h"
 #include "SubSystemsManager.h"
+#include <algorithm>
+#include <glog/logging.h>
+#include <numeric>
 
 //-----------------------------------------------------------------------------
 dolfin::MPI::Comm::Comm(MPI_Comm comm)
@@ -19,7 +19,7 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
     int err = MPI_Comm_dup(comm, &_comm);
     if (err != MPI_SUCCESS)
     {
-      // glog::error("Duplication of MPI communicator failed (MPI_Comm_dup)");
+      LOG(ERROR) << "Duplication of MPI communicator failed (MPI_Comm_dup)";
       throw std::runtime_error(
           "Duplication of MPI communicator failed (MPI_Comm_dup)");
     }

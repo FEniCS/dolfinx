@@ -7,9 +7,9 @@
 #include "Table.h"
 #include <cfloat>
 #include <cmath>
+#include <glog/logging.h>
 #include <iomanip>
 #include <iostream>
-// #include <glog/glog.h>
 #include <sstream>
 
 using namespace dolfin;
@@ -86,9 +86,8 @@ std::string Table::get(std::string row, std::string col) const
   auto it = values.find(key);
   if (it == values.end())
   {
-    // glog::error("Table.cpp", "access table value",
-    //               "Missing table value for entry (\"%s\", \"%s\")",
-    //               row.c_str(), col.c_str());
+    LOG(ERROR) << "Missing table value for entry (\"" << row << "\", \"" << col
+               << "\")";
     throw std::runtime_error("Missing table value");
   }
 
@@ -101,9 +100,9 @@ double Table::get_value(std::string row, std::string col) const
   auto it = dvalues.find(key);
   if (it == dvalues.end())
   {
-    // glog::error("Table.cpp", "access table value",
-    //               "Missing double value for entry (\"%s\", \"%s\")",
-    //               row.c_str(), col.c_str());
+    LOG(ERROR) << "Missing double value for entry (\"" << row << "\", \"" << col
+               << "\")";
+
     throw std::runtime_error("Missing table value");
   }
 

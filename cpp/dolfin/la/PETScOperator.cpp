@@ -7,8 +7,8 @@
 #include "PETScOperator.h"
 #include "PETScVector.h"
 #include "utils.h"
+#include <glog/logging.h>
 #include <petscvec.h>
-// #include <glog/glog.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
@@ -74,9 +74,8 @@ PETScVector PETScOperator::create_vector(std::size_t dim) const
   }
   else
   {
-    // glog::error("PETScOperator.cpp",
-    //               "initialize PETSc vector to match PETSc matrix",
-    //               "Dimension must be 0 or 1, not %d", dim);
+    LOG(ERROR) << "Cannot initialize PETSc vector to match PETSc matrix. "
+               << "Dimension must be 0 or 1, not " << dim;
     throw std::runtime_error("Invalid dimension");
   }
 
