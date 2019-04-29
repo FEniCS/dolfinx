@@ -329,6 +329,13 @@ std::shared_ptr<const common::IndexMap> DofMap::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
+Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+DofMap::dof_array() const
+{
+  return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
+      _dofmap.data(), _dofmap.size());
+}
+//-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const
 {
   std::stringstream s;

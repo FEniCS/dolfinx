@@ -208,14 +208,14 @@ public:
     const Geometry& geom = _mesh->geometry();
     const std::uint32_t tdim = _mesh->topology().dim();
     const Connectivity& conn = _mesh->coordinate_dofs().entity_points(tdim);
-    const std::size_t ndofs = conn.size(_local_index);
+    const int ndofs = conn.size(_local_index);
     const std::int32_t* dofs = conn.connections(_local_index);
 
     const EigenRowArrayXXd& x = geom.points();
-    const std::size_t gdim = geom.dim();
+    const int gdim = geom.dim();
 
     coordinates.resize(ndofs, gdim);
-    for (unsigned int i = 0; i < ndofs; ++i)
+    for (int i = 0; i < ndofs; ++i)
       coordinates.row(i) = x.row(dofs[i]);
   }
 };
