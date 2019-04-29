@@ -5,7 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #define MPICH_IGNORE_CXX_SEEK 1
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 #include <iostream>
 #include <mpi.h>
 #include <petsc.h>
@@ -70,7 +71,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   return provided;
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_logging() { google::InitGoogleLogging("dolfin"); }
+void SubSystemsManager::init_logging() {}
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {
@@ -96,7 +97,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   // Print message if PETSc is initialised with command line arguments
   if (argc > 1)
-    LOG(INFO) << "Initializing PETSc with given command-line arguments.";
+    LOG_S(INFO) << "Initializing PETSc with given command-line arguments.";
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
@@ -213,11 +214,11 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorMessage(n, &desc, nullptr);
 
   // Log detailed error info
-  LOG(ERROR)
+  LOG_S(ERROR)
       << "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
          "                       : error code '{}' ({}), message follows:"
       << line << fun << file << n << desc;
-  LOG(ERROR) << (_mess);
+  LOG_S(ERROR) << (_mess);
 
   // Continue with error handling
   PetscFunctionReturn(n);

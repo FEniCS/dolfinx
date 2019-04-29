@@ -7,7 +7,8 @@
 #include "Table.h"
 #include <cfloat>
 #include <cmath>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -86,7 +87,7 @@ std::string Table::get(std::string row, std::string col) const
   auto it = values.find(key);
   if (it == values.end())
   {
-    LOG(ERROR) << "Missing table value for entry (\"" << row << "\", \"" << col
+    LOG_S(ERROR) << "Missing table value for entry (\"" << row << "\", \"" << col
                << "\")";
     throw std::runtime_error("Missing table value");
   }
@@ -100,7 +101,7 @@ double Table::get_value(std::string row, std::string col) const
   auto it = dvalues.find(key);
   if (it == dvalues.end())
   {
-    LOG(ERROR) << "Missing double value for entry (\"" << row << "\", \"" << col
+    LOG_S(ERROR) << "Missing double value for entry (\"" << row << "\", \"" << col
                << "\")";
 
     throw std::runtime_error("Missing table value");

@@ -11,7 +11,8 @@
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/la/PETScVector.h>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 #include <slepcversion.h>
 
 using namespace dolfin;
@@ -89,7 +90,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
   EPSConvergedReason reason;
   EPSGetConvergedReason(_eps, &reason);
   if (reason < 0)
-    LOG(WARNING) << "Eigenvalue solver did not converge";
+    LOG_S(WARNING) << "Eigenvalue solver did not converge";
 
   // Report solver status
   PetscInt num_iterations = 0;
@@ -97,7 +98,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
 
   EPSType eps_type = NULL;
   EPSGetType(_eps, &eps_type);
-  LOG(INFO) << "Eigenvalue solver (" << eps_type << ") converged in "
+  LOG_S(INFO) << "Eigenvalue solver (" << eps_type << ") converged in "
             << num_iterations << " iterations.";
 }
 //-----------------------------------------------------------------------------

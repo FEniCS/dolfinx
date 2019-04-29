@@ -13,7 +13,8 @@
 #include "MeshValueCollection.h"
 #include "Vertex.h"
 #include <dolfin/common/RangedIndexSet.h>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -52,7 +53,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   // FIXME: This function can probably be folded into the above
   //        function operator[] in std::map and MeshFunction.
 
-  LOG(INFO) << "Computing sub domain markers for sub domain " << sub_domain;
+  LOG_S(INFO) << "Computing sub domain markers for sub domain " << sub_domain;
 
   auto gdim = mesh.geometry().dim();
 

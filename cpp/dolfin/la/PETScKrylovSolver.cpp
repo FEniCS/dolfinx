@@ -11,7 +11,8 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/PETScDMCollection.h>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 #include <petsclog.h>
 
 using namespace dolfin;
@@ -87,7 +88,7 @@ int PETScKrylovSolver::solve(Vec x, const Vec b, bool transpose)
 
   // Solve linear system
   if (dolfin::MPI::rank(this->mpi_comm()) == 0)
-    LOG(INFO) << "PETSc Krylov solver starting to solve system.";
+    LOG_S(INFO) << "PETSc Krylov solver starting to solve system.";
 
   // Solve system
   if (!transpose)
@@ -277,18 +278,18 @@ void PETScKrylovSolver::write_report(int num_iterations,
   // Report number of iterations and solver type
   if (reason >= 0)
   {
-    LOG(INFO) << "PETSc Krylov solver (" << ksp_type << "," << pc_type
+    LOG_S(INFO) << "PETSc Krylov solver (" << ksp_type << "," << pc_type
               << ") converged in " << num_iterations << " iterations.";
   }
   else
   {
-    LOG(INFO) << "PETSc Krylov solver (" << ksp_type << "," << pc_type
+    LOG_S(INFO) << "PETSc Krylov solver (" << ksp_type << "," << pc_type
               << ") failed to converge in " << num_iterations << " iterations.";
   }
 
   if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
   {
-    LOG(INFO) << "PETSc Krylov solver preconditioner (" << pc_type
+    LOG_S(INFO) << "PETSc Krylov solver preconditioner (" << pc_type
               << ") submethods: (" << sub_ksp_type << ", " << sub_pc_type
               << ")";
   }
@@ -301,7 +302,7 @@ void PETScKrylovSolver::write_report(int num_iterations,
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "PCHYPREGetType");
 
-    LOG(INFO) << "Hypre preconditioner method: " << hypre_sub_type;
+    LOG_S(INFO) << "Hypre preconditioner method: " << hypre_sub_type;
   }
 #endif
 }

@@ -6,7 +6,8 @@
 
 #include "TimeLogger.h"
 #include <dolfin/common/MPI.h>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 #include <vector>
 
 using namespace dolfin;
@@ -28,7 +29,7 @@ void TimeLogger::register_timing(std::string task,
   line << "Elapsed wall, usr, sys time: " << std::get<0>(elapsed) << ", "
        << std::get<1>(elapsed) << ", " << std::get<2>(elapsed) << " (" << task
        << ")";
-  DLOG(INFO) << line.str();
+  DLOG_S(INFO) << line.str();
 
   // Store values for summary
   const auto timing = std::tuple_cat(std::make_tuple(std::size_t(1)), elapsed);
@@ -95,7 +96,7 @@ TimeLogger::timing(std::string task)
   {
     std::stringstream line;
     line << "No timings registered for task \"" << task << "\".";
-    LOG(ERROR) << line.str();
+    LOG_S(ERROR) << line.str();
     throw std::runtime_error("Cannot extract timing");
   }
   // Prepare for return for the case of reset

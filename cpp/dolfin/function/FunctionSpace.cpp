@@ -16,7 +16,8 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 #include <vector>
 
 using namespace dolfin;
@@ -189,7 +190,7 @@ void FunctionSpace::interpolate(
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
   {
-    LOG(ERROR) << "Cannot interpolate function into function space. "
+    LOG_S(ERROR) << "Cannot interpolate function into function space. "
                << "Rank of function (" << v.value_rank()
                << ") does not match rank of function space ("
                << element()->value_rank() << ")";
@@ -202,7 +203,7 @@ void FunctionSpace::interpolate(
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
-      LOG(ERROR) << "Cannot interpolate function into function space. "
+      LOG_S(ERROR) << "Cannot interpolate function into function space. "
                  << "Dimension " << i << " of function ("
                  << v.value_dimension(i) << ") does not match dimension " << i
                  << " of function space(" << element()->value_dimension(i)
@@ -301,7 +302,7 @@ FunctionSpace::collapse() const
   assert(_mesh);
   if (_component.empty())
   {
-    LOG(ERROR) << "Function space is not a subspace";
+    LOG_S(ERROR) << "Function space is not a subspace";
     throw std::runtime_error("Not a subspace");
   }
 
@@ -329,7 +330,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 
   if (!_component.empty())
   {
-    LOG(ERROR) << "Cannot tabulate coordinates for a FunctionSpace that is a "
+    LOG_S(ERROR) << "Cannot tabulate coordinates for a FunctionSpace that is a "
                   "subspace.";
     throw std::runtime_error("Cannot tabulate for subspace");
   }

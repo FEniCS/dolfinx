@@ -9,7 +9,8 @@
 #include "predicates.h"
 #include <cfloat>
 #include <cmath>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;
 using namespace dolfin::geometry;
@@ -34,7 +35,7 @@ bool GeometryPredicates::is_degenerate_2d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 3)
   {
-    LOG(INFO) << "Degenerate 2D simplex with" << simplex.size() << " vertices";
+    LOG_S(INFO) << "Degenerate 2D simplex with" << simplex.size() << " vertices";
     return true;
   }
 
@@ -55,7 +56,7 @@ bool GeometryPredicates::is_degenerate_3d(const std::vector<Point>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 4)
   {
-    LOG(INFO) << "Degenerate 3D simplex with " << simplex.size() << " vertices";
+    LOG_S(INFO) << "Degenerate 3D simplex with " << simplex.size() << " vertices";
     return true;
   }
 

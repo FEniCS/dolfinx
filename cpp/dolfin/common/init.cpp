@@ -6,13 +6,14 @@
 
 #include "init.h"
 #include "SubSystemsManager.h"
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 
 //-----------------------------------------------------------------------------
 void dolfin::init(int argc, char* argv[])
 {
   common::SubSystemsManager::init_logging();
-  LOG(INFO) << "Initializing DOLFIN version" << DOLFIN_VERSION;
+  LOG_S(INFO) << "Initializing DOLFIN version" << DOLFIN_VERSION;
   common::SubSystemsManager::init_petsc(argc, argv);
 }
 //-----------------------------------------------------------------------------

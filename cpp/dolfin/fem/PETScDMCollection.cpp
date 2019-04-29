@@ -20,7 +20,8 @@
 #include <petscdmshell.h>
 #include <petscmat.h>
 
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -264,7 +265,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
-      LOG(ERROR) << "Creating interpolation matrix. "
+      LOG_S(ERROR) << "Creating interpolation matrix. "
                  << "Ranks of function spaces do not match:" << el->value_rank()
                  << ", " << elf->value_rank();
       throw std::runtime_error("Non matching function space");
@@ -275,7 +276,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
-        LOG(ERROR) << "Creating interpolation matrix.  Dimension " << i
+        LOG_S(ERROR) << "Creating interpolation matrix.  Dimension " << i
                    << " of function space(" << el->value_dimension(i)
                    << ") does not match dimension " << i
                    << " of function space(" << elf->value_dimension(i) << ")";

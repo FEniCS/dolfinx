@@ -12,7 +12,8 @@
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/CellType.h>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 #include <map>
 #include <numeric>
 #include <set>
@@ -142,7 +143,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
                                  const std::vector<std::size_t>& node_weights,
                                  std::int32_t num_ghost_nodes)
 {
-  LOG(INFO) << "Compute graph partition using PT-SCOTCH";
+  LOG_S(INFO) << "Compute graph partition using PT-SCOTCH";
   common::Timer timer("Compute graph partition (SCOTCH)");
 
   // C-style array indexing

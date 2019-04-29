@@ -17,7 +17,8 @@
 #include <cstdint>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 #include <memory>
 #include <numeric>
 #include <string>
@@ -230,7 +231,7 @@ Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
   //   3. Iterate again over entities of dimension d1 and add connections
   //      for each entity of dimension d0
 
-  LOG(INFO) << "Computing mesh connectivity " << d0 << " - " << d1
+  LOG_S(INFO) << "Computing mesh connectivity " << d0 << " - " << d1
             << "from transpose.";
 
   // Get mesh topology and connectivity
@@ -314,7 +315,7 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
 //-----------------------------------------------------------------------------
 void TopologyComputation::compute_entities(Mesh& mesh, int dim)
 {
-  LOG(INFO) << "Computing mesh entities of dimension " << dim;
+  LOG_S(INFO) << "Computing mesh entities of dimension " << dim;
 
   // Check if entities have already been computed
   Topology& topology = mesh.topology();
@@ -387,7 +388,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.
 
-  LOG(INFO) << "Requesting connectivity " << d0 << " - " << d1;
+  LOG_S(INFO) << "Requesting connectivity " << d0 << " - " << d1;
 
   // Get mesh topology and connectivity
   Topology& topology = mesh.topology();

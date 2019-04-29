@@ -215,12 +215,6 @@ set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
   URL "https://www.labri.fr/perso/pelegrin/scotch"
   PURPOSE "Enables parallel graph partitioning")
 
-find_package(glog REQUIRED)
-set_package_properties(glog PROPERTIES TYPE REQUIRED
-  DESCRIPTION "Google log"
-  URL "https://github.com/google/glog"
-  PURPOSE "Logging library")
-
 #------------------------------------------------------------------------------
 # Run tests to find optional packages
 

@@ -137,9 +137,6 @@ target_include_directories(dolfin SYSTEM PUBLIC ${HDF5_INCLUDE_DIRS})
 target_link_libraries(dolfin PRIVATE ${SCOTCH_LIBRARIES})
 target_include_directories(dolfin SYSTEM PRIVATE ${SCOTCH_INCLUDE_DIRS})
 
-target_link_libraries(dolfin PRIVATE glog::glog)
-target_include_directories(dolfin PRIVATE glog::glog)
-
 #------------------------------------------------------------------------------
 # Optional packages
 

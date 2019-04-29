@@ -13,7 +13,8 @@
 // Note: dolfin/common/MPI.h is included before hdf5.h to avoid the
 // MPICH_IGNORE_CXX_SEEK issue
 #include <dolfin/common/MPI.h>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 #include <hdf5.h>
 
 namespace dolfin
@@ -351,7 +352,7 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   assert(rank >= 0);
 
   if (rank > 2)
-    LOG(WARNING) << "HDF5Interface::read_dataset untested for rank > 2.";
+    LOG_S(WARNING) << "HDF5Interface::read_dataset untested for rank > 2.";
 
   // Allocate data for shape
   std::vector<hsize_t> shape(rank);

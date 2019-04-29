@@ -17,7 +17,8 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;
 using namespace dolfin::geometry;
@@ -76,7 +77,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   // Recursively build the bounding box tree from the leaves
   _build_from_leaf(leaf_bboxes, leaf_partition.begin(), leaf_partition.end());
 
-  LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
+  LOG_S(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " entities.";
 
   // Build tree for each process
@@ -92,7 +93,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
     std::iota(global_leaves.begin(), global_leaves.end(), 0);
     _global_tree.reset(new BoundingBoxTree(recv_bbox, global_leaves.begin(),
                                            global_leaves.end(), _gdim));
-    LOG(INFO) << "Computed global bounding box tree with "
+    LOG_S(INFO) << "Computed global bounding box tree with "
               << _global_tree->num_bboxes() << " boxes.";
   }
 }
@@ -108,7 +109,7 @@ BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points, int gdim)
   // Recursively build the bounding box tree from the leaves
   _build_from_point(points, leaf_partition.begin(), leaf_partition.end());
 
-  LOG(INFO) << "Computed bounding box tree with " << num_bboxes()
+  LOG_S(INFO) << "Computed bounding box tree with " << num_bboxes()
             << " nodes for " << num_leaves << " points.";
 }
 //-----------------------------------------------------------------------------
@@ -639,7 +640,7 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   if (_point_search_tree)
     return;
 
-  LOG(INFO) << "Building point search tree to accelerate distance queries.";
+  LOG_S(INFO) << "Building point search tree to accelerate distance queries.";
 
   // Create list of midpoints for all cells
   std::vector<Point> points;
