@@ -33,32 +33,11 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            const Eigen::Ref<const EigenRowArrayXXd> x,
-            const mesh::Cell& cell) const override;
+            const Eigen::Ref<const EigenRowArrayXXd> x) const override;
 
 private:
-  // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
 };
 
-/// This function represents the area/length of a cell facet on a
-/// given mesh.
-class FacetArea : public Expression
-{
-public:
-  /// Constructor
-  explicit FacetArea(std::shared_ptr<const mesh::Mesh> mesh);
-
-  /// Evaluate function
-  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                values,
-            const Eigen::Ref<const EigenRowArrayXXd> x,
-            const mesh::Cell& cell) const override;
-
-private:
-  // The mesh
-  std::shared_ptr<const mesh::Mesh> _mesh;
-};
 } // namespace function
 } // namespace dolfin
