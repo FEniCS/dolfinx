@@ -242,4 +242,3 @@ def test_custom_mesh_loop_ctypes_rank2():
     A1.assemble()
 
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
-
