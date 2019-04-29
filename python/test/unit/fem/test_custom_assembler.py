@@ -49,7 +49,7 @@ def test_custom_mesh_loop_rank1():
         connections, pos = mesh
         b_local = np.zeros(3)
         geometry = np.zeros((3, 2))
-        coeffs = np.zeros(0)
+        coeffs = np.zeros(0, dtype=PETSc.ScalarType())
         for i, cell in enumerate(pos[:-1]):
             num_vertices = pos[i + 1] - pos[i]
             c = connections[cell:cell + num_vertices]
@@ -112,13 +112,12 @@ def test_custom_mesh_loop_rank1():
 
     # Complex not supported yet
     # cffi_support.register_type('double _Complex', numba.types.complex128)
-    if not dolfin.has_petsc_complex:
-        return
+    # if dolfin.has_petsc_complex:
+    #     return
 
     # Assemble using generated tabulate_tensor kernel
     b3 = dolfin.Function(V)
     ufc_form = dolfin.jit.ffc_jit(L)
-    print("test", ffi.list_types())
     kernel = ufc_form.create_cell_integral(-1).tabulate_tensor
     with b3.vector().localForm() as b:
         b.set(0.0)
@@ -141,6 +140,9 @@ def test_custom_mesh_loop_rank1():
 
 
 def test_custom_mesh_loop_rank2():
+
+    if dolfin.has_petsc_complex:
+        return
 
     import os
     import ctypes
