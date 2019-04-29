@@ -9,7 +9,6 @@
 #include "Facet.h"
 #include "MeshEntity.h"
 #include "Vertex.h"
-// #include <glog/glog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -24,9 +23,6 @@ std::size_t PointCell::num_entities(std::size_t dim) const
   case 0:
     return 1; // vertices
   default:
-    // glog::error("PointCell.cpp",
-    //               "extract number of entities of given dimension in cell",
-    //               "Illegal topological dimension %d for point", dim);
     throw std::runtime_error("Illegal dimension");
   }
 
@@ -40,9 +36,6 @@ std::size_t PointCell::num_vertices(std::size_t dim) const
   case 0:
     return 1; // vertices
   default:
-    // glog::error("PointCell.cpp",
-    //               "extract number of vertices of given dimension in cell",
-    //               "Illegal topological dimension %d for point", dim);
     throw std::runtime_error("Illegal dimension");
   }
 
@@ -54,23 +47,17 @@ void PointCell::create_entities(
         e,
     std::size_t dim, const std::int32_t* v) const
 {
-  // glog::error("PointCell.cpp", "create entities",
-  //               "Entities on a point cell are not defined");
   throw std::runtime_error("Not defined");
 }
 //-----------------------------------------------------------------------------
 double PointCell::volume(const MeshEntity& triangle) const
 {
-  // glog::error("PointCell.cpp", "compute volume of cell",
-  //               "Volume of a point cell is not defined");
   throw std::runtime_error("Not defined");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 double PointCell::circumradius(const MeshEntity& point) const
 {
-  // glog::error("PointCell.cpp", "find circumradious of cell",
-  //               "Circumradius of a point cell is not defined");
   throw std::runtime_error("Not defined");
   return 0.0;
 }
@@ -78,8 +65,6 @@ double PointCell::circumradius(const MeshEntity& point) const
 double PointCell::squared_distance(const Cell& cell,
                                    const geometry::Point& point) const
 {
-  // glog::error("PointCell.cpp",
-  //               "Squared distance of a point cell is not defined");
   throw std::runtime_error("Not defined");
   return 0.0;
 }
@@ -87,32 +72,24 @@ double PointCell::squared_distance(const Cell& cell,
 double PointCell::normal(const Cell& cell, std::size_t facet,
                          std::size_t i) const
 {
-  // glog::error("PointCell.cpp", "find component of normal vector of cell",
-  //               "Component %d of normal of a point cell is not defined", i);
   throw std::runtime_error("Not defined");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 geometry::Point PointCell::normal(const Cell& cell, std::size_t facet) const
 {
-  // glog::error("PointCell.cpp", "find normal vector of cell",
-  //               "Normal vector of a point cell is not defined");
   throw std::runtime_error("Not defined");
   return geometry::Point();
 }
 //-----------------------------------------------------------------------------
 geometry::Point PointCell::cell_normal(const Cell& cell) const
 {
-  // glog::error("PointCell.cpp", "compute cell normal",
-  //               "Normal vector of a point cell is not defined");
   throw std::runtime_error("Not defined");
   return geometry::Point();
 }
 //-----------------------------------------------------------------------------
 double PointCell::facet_area(const Cell& cell, std::size_t facet) const
 {
-  // glog::error("PointCell.cpp", "find facet area of cell",
-  //               "Facet area of a point cell is not defined");
   throw std::runtime_error("Not defined");
   return 0.0;
 }
@@ -126,8 +103,6 @@ std::string PointCell::description(bool plural) const
 //-----------------------------------------------------------------------------
 std::size_t PointCell::find_edge(std::size_t i, const Cell& cell) const
 {
-  // glog::error("PointCell.cpp", "find edge",
-  //               "Edges are not defined for a point cell");
   throw std::runtime_error("Not defined");
   return 0;
 }
