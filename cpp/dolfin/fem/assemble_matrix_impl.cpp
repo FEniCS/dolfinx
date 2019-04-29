@@ -15,7 +15,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscsys.h>
-// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 
@@ -26,8 +25,17 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 {
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
+
+  // Get dofmap data
   const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
+  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array0
+      = dofmap0.dof_array();
+  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array1
+      = dofmap1.dof_array();
+  // FIXME: do this right
+  const int num_dofs_per_cell0 = dofmap0.num_element_dofs(0);
+  const int num_dofs_per_cell1 = dofmap1.num_element_dofs(0);
 
   // Prepare coefficients
   const FormCoefficients& coefficients = a.coeffs();
@@ -36,38 +44,29 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  for (int i = 0;
-       i < a.integrals().num_integrals(fem::FormIntegrals::Type::cell); ++i)
+  const FormIntegrals& integrals = a.integrals();
+  using type = fem::FormIntegrals::Type;
+  for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& fn
-        = a.integrals().get_tabulate_tensor_fn_cell(i);
-
+    auto& fn = integrals.get_tabulate_tensor_fn_cell(i);
     const std::vector<std::int32_t>& active_cells
-        = a.integrals().integral_domains(fem::FormIntegrals::Type::cell, i);
-
-    fem::impl::assemble_cells(A, mesh, active_cells, dofmap0, dofmap1, bc0, bc1,
-                              fn, coeff_fn, c_offsets);
+        = integrals.integral_domains(type::cell, i);
+    fem::impl::assemble_cells(
+        A, mesh, active_cells, dof_array0, num_dofs_per_cell0, dof_array1,
+        num_dofs_per_cell1, bc0, bc1, fn, coeff_fn, c_offsets);
   }
 
-  for (int i = 0; i < a.integrals().num_integrals(
-                      fem::FormIntegrals::Type::exterior_facet);
-       ++i)
+  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn
-        = a.integrals().get_tabulate_tensor_fn_exterior_facet(i);
-
+    auto& fn = integrals.get_tabulate_tensor_fn_exterior_facet(i);
     const std::vector<std::int32_t>& active_facets
-        = a.integrals().integral_domains(
-            fem::FormIntegrals::Type::exterior_facet, i);
-
+        = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(A, mesh, active_facets, dofmap0,
                                         dofmap1, bc0, bc1, fn, coeff_fn,
                                         c_offsets);
   }
 
-  if (a.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
+  if (a.integrals().num_integrals(type::interior_facet) > 0)
   {
     throw std::runtime_error(
         "Interior facet integrals in bilinear forms not yet supported.");
@@ -76,11 +75,14 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_cells(
     Mat A, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_cells, const GenericDofMap& dofmap0,
-    const GenericDofMap& dofmap1, const std::vector<bool>& bc0,
+    const std::vector<std::int32_t>& active_cells,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap0,
+    int num_dofs_per_cell0,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap1,
+    int num_dofs_per_cell1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& fn,
+                             int)>& kernel,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
@@ -105,12 +107,6 @@ void fem::impl::assemble_cells(
     // Get cell vertex coordinates
     cell.get_coordinate_dofs(coordinate_dofs);
 
-    // Get dof maps for cell
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
-        = dofmap0.cell_dofs(cell_index);
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
-        = dofmap1.cell_dofs(cell_index);
-
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
@@ -119,15 +115,16 @@ void fem::impl::assemble_cells(
     }
 
     // Tabulate tensor
-    Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+    Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
+    kernel(Ae.data(), coeff_array.data(), coordinate_dofs.data(), 1);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
     {
       for (Eigen::Index i = 0; i < Ae.rows(); ++i)
       {
-        if (bc0[dmap0[i]])
+        const PetscInt dof = dofmap0[cell_index * num_dofs_per_cell0 + i];
+        if (bc0[dof])
           Ae.row(i).setZero();
       }
     }
@@ -135,13 +132,16 @@ void fem::impl::assemble_cells(
     {
       for (Eigen::Index j = 0; j < Ae.cols(); ++j)
       {
-        if (bc1[dmap1[j]])
+        const PetscInt dof = dofmap1[cell_index * num_dofs_per_cell1 + j];
+        if (bc1[dof])
           Ae.col(j).setZero();
       }
     }
 
-    ierr = MatSetValuesLocal(A, dmap0.size(), dmap0.data(), dmap1.size(),
-                             dmap1.data(), Ae.data(), ADD_VALUES);
+    ierr = MatSetValuesLocal(
+        A, num_dofs_per_cell0, dofmap0.data() + cell_index * num_dofs_per_cell0,
+        num_dofs_per_cell1, dofmap1.data() + cell_index * num_dofs_per_cell1,
+        Ae.data(), ADD_VALUES);
 #ifdef DEBUG
     if (ierr != 0)
       la::petsc_error(ierr, __FILE__, "MatSetValuesLocal");

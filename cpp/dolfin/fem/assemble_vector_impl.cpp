@@ -280,7 +280,6 @@ void fem::impl::assemble_vector(
 
   const FormIntegrals& integrals = L.integrals();
   using type = fem::FormIntegrals::Type;
-
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
     auto& fn = integrals.get_tabulate_tensor_fn_cell(i);
