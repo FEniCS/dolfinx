@@ -31,7 +31,8 @@
 #include <numeric>
 #include <set>
 
-#include <glog/logging.h>
+#define LOGURU_WITH_STREAMS 1
+#include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
