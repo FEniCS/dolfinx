@@ -11,7 +11,7 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
-// #include <glog/glog.h>
+#include <glog/logging.h>
 #include <string>
 
 using namespace dolfin;
@@ -64,12 +64,8 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
   }
   else
   {
-    // glog::error("NewtonSolver.cpp", "check for convergence",
-    //               "The convergence criterion %s is unknown, known criteria
-    //               are "
-    //               "'residual' or 'incremental'",
-    //               convergence_criterion.c_str());
-    throw std::runtime_error("Unknown convergence criterion");
+    throw std::runtime_error("Unknown convergence criterion: "
+                             + convergence_criterion);
   }
 
   // Start iterations
@@ -124,10 +120,9 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
   {
     if (_mpi_comm.rank() == 0)
     {
-      // glog::info(
-      //     "Newton solver finished in %d iterations and %d linear solver "
-      //     "iterations.",
-      //     newton_iteration, _krylov_iterations);
+      LOG(INFO) << "Newton solver finished in " << newton_iteration
+                << " iterations and " << _krylov_iterations
+                << " linear solver iterations.";
     }
   }
   else
@@ -142,8 +137,8 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
       else
         throw std::runtime_error("Newton solver did not converge");
     }
-    // else
-    //   glog::warn("Newton solver did not converge.");
+    else
+      LOG(WARNING) << "Newton solver did not converge.";
   }
 
   return std::make_pair(newton_iteration, newton_converged);
@@ -170,14 +165,13 @@ bool nls::NewtonSolver::converged(const Vec r,
   const double relative_residual = _residual / _residual0;
 
   // Output iteration number and residual
-  // if (report && _mpi_comm.rank() == 0)
-  // {
-  //   glog::info("Newton iteration %d: r (abs) = %.3e (tol = %.3e) r (rel) =
-  //   "
-  //                "%.3e (tol "
-  //                "= %.3e)",
-  //                newton_iteration, _residual, atol, relative_residual, rtol);
-  // }
+  if (report && _mpi_comm.rank() == 0)
+  {
+    LOG(INFO) << "Newton iteration " << newton_iteration
+              << ": r (abs) = " << _residual << " (tol = " << atol
+              << ") r (rel) = " << relative_residual << "(tol = " << rtol
+              << ")";
+  }
 
   // Return true if convergence criterion is met
   if (relative_residual < rtol or _residual < atol)

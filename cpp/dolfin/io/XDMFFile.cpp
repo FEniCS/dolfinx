@@ -138,140 +138,139 @@ void XDMFFile::write_checkpoint(const function::Function& u,
       LOG(WARNING) << "File \"" << _filename
                    << "\" contains invalid XDMF. Writing new XDMF.";
     }
+  }
 
-    bool truncate_hdf = false;
+  bool truncate_hdf = false;
 
-    // If the XML file doesn't have expected structure (domain) reset the file
-    // and create empty structure
-    if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
+  // If the XML file doesn't have expected structure (domain) reset the file
+  // and create empty structure
+  if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
+  {
+    _xml_doc->reset();
+
+    // Prepare new XML structure
+    pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
+    assert(xdmf_node);
+    xdmf_node.append_attribute("Version") = "3.0";
+
+    pugi::xml_node domain_node = xdmf_node.append_child("Domain");
+    assert(domain_node);
+
+    truncate_hdf = true;
+  }
+
+  if (truncate_hdf and boost::filesystem::exists(get_hdf5_filename(_filename)))
+  {
+    LOG(WARNING) << "HDF file \"" << get_hdf5_filename(_filename)
+                 << "\" will be overwritten.";
+  }
+
+  // Open the HDF5 file if using HDF5 encoding (truncate)
+  hid_t h5_id = -1;
+  if (_encoding == Encoding::HDF5)
+  {
+    if (truncate_hdf)
     {
-      _xml_doc->reset();
-
-      // Prepare new XML structure
-      pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
-      assert(xdmf_node);
-      xdmf_node.append_attribute("Version") = "3.0";
-
-      pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-      assert(domain_node);
-
-      truncate_hdf = true;
+      // We are writing for the first time, any HDF file must be overwritten
+      _hdf5_file = std::make_unique<HDF5File>(
+          _mpi_comm.comm(), get_hdf5_filename(_filename), "w");
     }
-
-    if (truncate_hdf
-        and boost::filesystem::exists(get_hdf5_filename(_filename)))
+    else if (_hdf5_file)
     {
-      LOG(WARNING) << "HDF file \"" << get_hdf5_filename(_filename)
-                   << "\" will be overwritten.";
-    }
-
-    // Open the HDF5 file if using HDF5 encoding (truncate)
-    hid_t h5_id = -1;
-    if (_encoding == Encoding::HDF5)
-    {
-      if (truncate_hdf)
-      {
-        // We are writing for the first time, any HDF file must be overwritten
-        _hdf5_file = std::make_unique<HDF5File>(
-            _mpi_comm.comm(), get_hdf5_filename(_filename), "w");
-      }
-      else if (_hdf5_file)
-      {
-        // Pointer to HDF file is active, we are writing time series
-        // or adding function with flush_output=false
-      }
-      else
-      {
-        // Pointer is empty, we are writing time series
-        // or adding function to already flushed file
-        _hdf5_file = std::unique_ptr<HDF5File>(
-            new HDF5File(_mpi_comm.comm(), get_hdf5_filename(_filename), "a"));
-      }
-      assert(_hdf5_file);
-      h5_id = _hdf5_file->h5_id();
-    }
-
-    // From this point _xml_doc points to a valid XDMF XML document
-    // with expected structure
-
-    // Find temporal grid with name equal to the name of function we're about
-    // to save
-    pugi::xml_node func_temporal_grid_node
-        = _xml_doc
-              ->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
-                             "@Name='"
-                             + function_name + "']")
-                                .c_str())
-              .node();
-
-    // If there is no such temporal grid then create one
-    if (func_temporal_grid_node.empty())
-    {
-      func_temporal_grid_node
-          = _xml_doc->select_node("/Xdmf/Domain").node().append_child("Grid");
-      func_temporal_grid_node.append_attribute("GridType") = "Collection";
-      func_temporal_grid_node.append_attribute("CollectionType") = "Temporal";
-      func_temporal_grid_node.append_attribute("Name") = function_name.c_str();
+      // Pointer to HDF file is active, we are writing time series
+      // or adding function with flush_output=false
     }
     else
     {
-      LOG(INFO) << "XDMF time series for function \"" << function_name
-                << "\" not empty. Appending.";
+      // Pointer is empty, we are writing time series
+      // or adding function to already flushed file
+      _hdf5_file = std::unique_ptr<HDF5File>(
+          new HDF5File(_mpi_comm.comm(), get_hdf5_filename(_filename), "a"));
     }
+    assert(_hdf5_file);
+    h5_id = _hdf5_file->h5_id();
+  }
 
-    //
-    // Write mesh
-    //
+  // From this point _xml_doc points to a valid XDMF XML document
+  // with expected structure
 
-    std::size_t counter = func_temporal_grid_node.select_nodes("Grid").size();
-    std::string function_time_name
-        = function_name + "_" + std::to_string(counter);
+  // Find temporal grid with name equal to the name of function we're about
+  // to save
+  pugi::xml_node func_temporal_grid_node
+      = _xml_doc
+            ->select_node(("/Xdmf/Domain/Grid[@CollectionType='Temporal' and "
+                           "@Name='"
+                           + function_name + "']")
+                              .c_str())
+            .node();
 
-    const mesh::Mesh& mesh = *u.function_space()->mesh();
-    add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
-             function_name + "/" + function_time_name);
+  // If there is no such temporal grid then create one
+  if (func_temporal_grid_node.empty())
+  {
+    func_temporal_grid_node
+        = _xml_doc->select_node("/Xdmf/Domain").node().append_child("Grid");
+    func_temporal_grid_node.append_attribute("GridType") = "Collection";
+    func_temporal_grid_node.append_attribute("CollectionType") = "Temporal";
+    func_temporal_grid_node.append_attribute("Name") = function_name.c_str();
+  }
+  else
+  {
+    LOG(INFO) << "XDMF time series for function \"" << function_name
+              << "\" not empty. Appending.";
+  }
 
-    // Get newly (by add_mesh) created Grid
-    pugi::xml_node mesh_grid_node
-        = func_temporal_grid_node.select_node("Grid[@Name='mesh']").node();
-    assert(mesh_grid_node);
+  //
+  // Write mesh
+  //
 
-    // Change it's name to {function_name}_{counter}
-    // where counter = number of children in temporal grid node
-    mesh_grid_node.attribute("Name") = function_time_name.c_str();
+  std::size_t counter = func_temporal_grid_node.select_nodes("Grid").size();
+  std::string function_time_name
+      = function_name + "_" + std::to_string(counter);
 
-    pugi::xml_node time_node = mesh_grid_node.append_child("Time");
-    time_node.append_attribute("Value") = std::to_string(time_step).c_str();
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
+           function_name + "/" + function_time_name);
+
+  // Get newly (by add_mesh) created Grid
+  pugi::xml_node mesh_grid_node
+      = func_temporal_grid_node.select_node("Grid[@Name='mesh']").node();
+  assert(mesh_grid_node);
+
+  // Change it's name to {function_name}_{counter}
+  // where counter = number of children in temporal grid node
+  mesh_grid_node.attribute("Name") = function_time_name.c_str();
+
+  pugi::xml_node time_node = mesh_grid_node.append_child("Time");
+  time_node.append_attribute("Value") = std::to_string(time_step).c_str();
 
 #ifdef PETSC_USE_COMPLEX
-    std::vector<std::string> components = {"real", "imag"};
+  std::vector<std::string> components = {"real", "imag"};
 #else
-    std::vector<std::string> components = {""};
+  std::vector<std::string> components = {""};
 #endif
 
-    // Write function u (for each of its components)
-    for (const std::string component : components)
-    {
-      add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
-                   function_name + "/" + function_time_name, u, function_name,
-                   mesh, component);
-    }
+  // Write function u (for each of its components)
+  for (const std::string component : components)
+  {
+    add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
+                 function_name + "/" + function_time_name, u, function_name,
+                 mesh, component);
+  }
 
-    // Save XML file (on process 0 only)
-    if (_mpi_comm.rank() == 0)
-    {
-      LOG(INFO) << "Saving XML file \"" << _filename << "\" (only on rank = 0)";
-      _xml_doc->save_file(_filename.c_str(), "  ");
-    }
+  // Save XML file (on process 0 only)
+  if (_mpi_comm.rank() == 0)
+  {
+    LOG(INFO) << "Saving XML file \"" << _filename << "\" (only on rank = 0)";
+    _xml_doc->save_file(_filename.c_str(), "  ");
+  }
 
-    // Close the HDF5 file if in "flush" mode
-    if (_encoding == Encoding::HDF5 and flush_output)
-    {
-      LOG(INFO) << "Writing function in \"flush_output\" mode. HDF5 "
-                   "file will be flushed (closed).";
-      assert(_hdf5_file);
-      _hdf5_file.reset();
-    }
+  // Close the HDF5 file if in "flush" mode
+  if (_encoding == Encoding::HDF5 and flush_output)
+  {
+    LOG(INFO) << "Writing function in \"flush_output\" mode. HDF5 "
+                 "file will be flushed (closed).";
+    assert(_hdf5_file);
+    _hdf5_file.reset();
   }
 }
 //-----------------------------------------------------------------------------
