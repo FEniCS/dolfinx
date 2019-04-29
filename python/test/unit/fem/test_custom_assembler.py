@@ -9,6 +9,8 @@ import math
 import time
 
 import cffi
+import numba
+import numba.cffi_support
 import numpy as np
 import pytest
 from numba import jit
@@ -42,14 +44,18 @@ def test_custom_mesh_loop_rank1():
             b[dofmap[i * 3 + 2]] += A * q1
 
     ffi = cffi.FFI()
+    numba.cffi_support.register_type(ffi.typeof('double _Complex'),
+                                     numba.types.complex128)
+    numba.cffi_support.register_type(ffi.typeof('float _Complex'),
+                                     numba.types.complex64)
 
     @jit(nopython=True)
     def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
         """Assemble provided kernel over a mesh into the array b"""
         connections, pos = mesh
-        b_local = np.zeros(3)
+        b_local = np.zeros(3, dtype=PETSc.ScalarType)
         geometry = np.zeros((3, 2))
-        coeffs = np.zeros(0, dtype=PETSc.ScalarType())
+        coeffs = np.zeros(1, dtype=PETSc.ScalarType)
         for i, cell in enumerate(pos[:-1]):
             num_vertices = pos[i + 1] - pos[i]
             c = connections[cell:cell + num_vertices]
