@@ -158,7 +158,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     const graph::GraphBuilder::FacetCellMap& facet_cell_map,
     std::vector<std::vector<std::size_t>>& local_graph)
 {
-  // spdlog::info("Build nonlocal part of mesh dual graph");
+  // glog::info("Build nonlocal part of mesh dual graph");
   common::Timer timer("Compute non-local part of mesh dual graph");
 
   // Get number of MPI processes, and return if mesh is not distributed
@@ -416,7 +416,7 @@ graph::GraphBuilder::compute_dual_graph(
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type)
 {
-  // spdlog::info("Build mesh dual graph");
+  // glog::info("Build mesh dual graph");
 
   std::vector<std::vector<std::size_t>> local_graph;
   std::int32_t num_ghost_nodes;
@@ -449,7 +449,7 @@ dolfin::graph::GraphBuilder::compute_local_dual_graph(
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
     const mesh::CellType& cell_type)
 {
-  // spdlog::info("Build local part of mesh dual graph");
+  // glog::info("Build local part of mesh dual graph");
 
   const std::int8_t tdim = cell_type.dim();
   const std::int8_t num_entity_vertices = cell_type.num_vertices(tdim - 1);

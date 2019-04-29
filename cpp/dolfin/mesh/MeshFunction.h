@@ -16,7 +16,7 @@
 #include <map>
 #include <memory>
 #include <unordered_set>
-// #include <spdlog/spdlog.h>
+// #include <glog/glog.h>
 
 namespace dolfin
 {
@@ -266,7 +266,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   // Check that all values have been set, if not issue a debug message
   // if (entities_values_set.size() != _values.size())
   // {
-  //   spdlog::debug(
+  //   glog::debug(
   //       "Mesh value collection does not contain all values for all
   //       entities");
   // }
@@ -370,7 +370,7 @@ std::string MeshFunction<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    // spdlog::warn(
+    // glog::warn(
     //     "Verbose output of MeshFunctions must be implemented manually.");
   }
   else

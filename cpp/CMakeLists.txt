@@ -199,7 +199,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
   URL "https://github.com/fenics/ffcx")
 
-  # Check for HDF5
+# Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
 find_package(HDF5 REQUIRED)
 if (NOT HDF5_IS_PARALLEL)
@@ -214,6 +214,12 @@ set_package_properties(SCOTCH PROPERTIES TYPE REQUIRED
   DESCRIPTION "Programs and libraries for graph, mesh and hypergraph partitioning"
   URL "https://www.labri.fr/perso/pelegrin/scotch"
   PURPOSE "Enables parallel graph partitioning")
+
+find_package(glog REQUIRED)
+set_package_properties(glog PROPERTIES TYPE REQUIRED
+  DESCRIPTION "Google log"
+  URL "https://github.com/google/glog"
+  PURPOSE "Logging library")
 
 #------------------------------------------------------------------------------
 # Run tests to find optional packages

@@ -6,9 +6,9 @@
 
 #include "FiniteElement.h"
 #include <functional>
+#include <glog/logging.h>
 #include <memory>
 #include <ufc.h>
-// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -190,8 +190,8 @@ std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(
   // Recursively extract sub element
   std::shared_ptr<FiniteElement> sub_finite_element
       = extract_sub_element(*this, component);
-  // spdlog::debug("Extracted finite element for sub system: %s",
-  //               sub_finite_element->signature().c_str());
+  DLOG(INFO) << "Extracted finite element for sub system:"
+             << sub_finite_element->signature().c_str();
 
   return sub_finite_element;
 }

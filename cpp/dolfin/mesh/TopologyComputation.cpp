@@ -229,7 +229,7 @@ Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
   //   3. Iterate again over entities of dimension d1 and add connections
   //      for each entity of dimension d0
 
-  // spdlog::info("Computing mesh connectivity %d - %d from transpose.", d0,
+  // glog::info("Computing mesh connectivity %d - %d from transpose.", d0,
   // d1);
 
   // Get mesh topology and connectivity
@@ -313,7 +313,7 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
 //-----------------------------------------------------------------------------
 void TopologyComputation::compute_entities(Mesh& mesh, int dim)
 {
-  // spdlog::info("Computing mesh entities of dimension %d", dim);
+  // glog::info("Computing mesh entities of dimension %d", dim);
 
   // Check if entities have already been computed
   Topology& topology = mesh.topology();
@@ -386,7 +386,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
   // Each of these functions assume a set of preconditions that we
   // need to satisfy.
 
-  // spdlog::info("Requesting connectivity %d - %d.", d0, d1);
+  // glog::info("Requesting connectivity %d - %d.", d0, d1);
 
   // Get mesh topology and connectivity
   Topology& topology = mesh.topology();

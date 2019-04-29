@@ -9,7 +9,7 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/utils.h>
-// #include <spdlog/spdlog.h>
+// #include <glog/glog.h>
 
 using namespace dolfin;
 using namespace dolfin::la;
@@ -379,7 +379,7 @@ void SparsityPattern::assemble()
   const std::size_t proc_number = _mpi_comm.rank();
 
   // // Print some useful information
-  // if (spdlog::default_logger()->level() <= spdlog::level::debug)
+  // if (glog::default_logger()->level() <= glog::level::debug)
   //   info_statistics();
 
   // Communicate non-local blocks if any

@@ -168,6 +168,7 @@ class DirichletBoundary : public mesh::SubDomain
 int main(int argc, char* argv[])
 {
   common::SubSystemsManager::init_petsc(argc, argv);
+  common::SubSystemsManager::init_logging();
 
   // Create mesh and function space
   std::array<geometry::Point, 2> pt

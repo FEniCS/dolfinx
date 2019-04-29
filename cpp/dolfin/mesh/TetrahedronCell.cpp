@@ -12,7 +12,7 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <cmath>
-// #include <spdlog/spdlog.h>
+// #include <glog/glog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -33,7 +33,7 @@ std::size_t TetrahedronCell::num_entities(std::size_t dim) const
   case 3:
     return 1; // cells
   default:
-    // spdlog::error("TetrahedronCell.cpp",
+    // glog::error("TetrahedronCell.cpp",
     //               "access number of entities of tetrahedron cell",
     //               "Illegal topological dimension (%d)", dim);
     throw std::runtime_error("Illegal topological dimension");
@@ -55,7 +55,7 @@ std::size_t TetrahedronCell::num_vertices(std::size_t dim) const
   case 3:
     return 4; // cells
   default:
-    // spdlog::error(
+    // glog::error(
     //     "TetrahedronCell.cpp",
     //     "access number of vertices for subsimplex of tetrahedron cell",
     //     "Illegal topological dimension (%d)", dim);
@@ -110,7 +110,7 @@ void TetrahedronCell::create_entities(
     e(3, 2) = v[2];
     break;
   default:
-    // spdlog::error(
+    // glog::error(
     //     "TetrahedronCell.cpp", "create entities of tetrahedron cell",
     //     "Don't know how to create entities of topological dimension %d",
     //     dim);
@@ -123,7 +123,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
   {
-    // spdlog::error("TetrahedronCell.cpp", "compute volume of tetrahedron
+    // glog::error("TetrahedronCell.cpp", "compute volume of tetrahedron
     // cell",
     //               "Illegal mesh entity, not a tetrahedron");
     throw std::runtime_error("Illegal topological dimension");
@@ -135,7 +135,7 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
   {
-    // spdlog::error("TetrahedronCell.cpp", "compute volume of tetrahedron",
+    // glog::error("TetrahedronCell.cpp", "compute volume of tetrahedron",
     //               "Only know how to compute volume when embedded in R^3");
     throw std::runtime_error("Illegal geometric dimension");
   }
@@ -169,7 +169,7 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
   {
-    // spdlog::error("TetrahedronCell.cpp", "compute diameter of tetrahedron
+    // glog::error("TetrahedronCell.cpp", "compute diameter of tetrahedron
     // cell",
     //               "Illegal mesh entity, not a tetrahedron");
     throw std::runtime_error("Illegal topological dimension");
@@ -181,7 +181,7 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
   {
-    // spdlog::error(
+    // glog::error(
     //     "TetrahedronCell.cpp", "compute diameter",
     //     "Tetrahedron is not embedded in R^3, only know how to compute "
     //     "diameter in that case");
@@ -310,7 +310,7 @@ geometry::Point TetrahedronCell::normal(const Cell& cell,
 //-----------------------------------------------------------------------------
 geometry::Point TetrahedronCell::cell_normal(const Cell& cell) const
 {
-  // spdlog::error("TetrahedronCell.cpp", "compute cell normal",
+  // glog::error("TetrahedronCell.cpp", "compute cell normal",
   //               "cell_normal not implemented for TetrahedronCell");
   throw std::runtime_error("Not Implemented");
   return geometry::Point();
@@ -378,7 +378,7 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   }
 
   // We should not reach this
-  // spdlog::error("TetrahedronCell.cpp", "find specified edge in cell",
+  // glog::error("TetrahedronCell.cpp", "find specified edge in cell",
   //               "Edge really not found");
   throw std::runtime_error("Not found");
   return 0;

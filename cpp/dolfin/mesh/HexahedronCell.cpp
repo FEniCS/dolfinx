@@ -10,7 +10,7 @@
 #include "MeshEntity.h"
 #include "Vertex.h"
 #include <algorithm>
-// #include <spdlog/spdlog.h>
+// #include <glog/glog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -31,7 +31,7 @@ std::size_t HexahedronCell::num_entities(std::size_t dim) const
   case 3:
     return 1; // cells
   default:
-    // spdlog::error("HexahedronCell.cpp",
+    // glog::error("HexahedronCell.cpp",
     //               "access number of entities of hexahedron cell",
     //               "Illegal topological dimension (%d)", dim);
     throw std::runtime_error("Illegal topological dimension");
@@ -53,7 +53,7 @@ std::size_t HexahedronCell::num_vertices(std::size_t dim) const
   case 3:
     return 8; // cells
   default:
-    // spdlog::error("HexahedronCell.cpp",
+    // glog::error("HexahedronCell.cpp",
     //               "access number of vertices for subsimplex of hexahedron
     //               cell", "Illegal topological dimension (%d)", dim);
     throw std::runtime_error("Illegal topological dimension");
@@ -139,12 +139,12 @@ double HexahedronCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
   {
-    // spdlog::error("HexahedronCell.cpp", "compute volume (area) of cell",
+    // glog::error("HexahedronCell.cpp", "compute volume (area) of cell",
     //               "Illegal mesh entity");
     throw std::runtime_error("Illegal topological dimension");
   }
 
-  // spdlog::error("HexahedronCell.cpp", "compute volume of hexahedron",
+  // glog::error("HexahedronCell.cpp", "compute volume of hexahedron",
   //               "Not implemented");
   throw std::runtime_error("Not Implemented");
 
@@ -156,13 +156,13 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
   // Check that we get a cell
   if (cell.dim() != 2)
   {
-    // spdlog::error("HexahedronCell.cpp",
+    // glog::error("HexahedronCell.cpp",
     //               "compute circumradius of hexahedron cell",
     //               "Illegal mesh entity");
     throw std::runtime_error("Illegal topological dimension");
   }
 
-  // spdlog::error("HexahedronCell.cpp", "compute circumradius of hexahedron
+  // glog::error("HexahedronCell.cpp", "compute circumradius of hexahedron
   // cell",
   //               "Don't know how to compute diameter");
   throw std::runtime_error("Not Implemented");
@@ -173,7 +173,7 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
 double HexahedronCell::squared_distance(const mesh::Cell& cell,
                                         const geometry::Point& point) const
 {
-  // spdlog::error("Not implemented");
+  // glog::error("Not implemented");
   throw std::runtime_error("");
   return 0.0;
 }
@@ -187,14 +187,14 @@ double HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet,
 geometry::Point HexahedronCell::normal(const mesh::Cell& cell,
                                        std::size_t facet) const
 {
-  // spdlog::error("Not implemented");
+  // glog::error("Not implemented");
   throw std::runtime_error("");
   return geometry::Point();
 }
 //-----------------------------------------------------------------------------
 geometry::Point HexahedronCell::cell_normal(const mesh::Cell& cell) const
 {
-  // spdlog::error("Not implemented");
+  // glog::error("Not implemented");
   throw std::runtime_error("");
   return geometry::Point();
 }
@@ -202,7 +202,7 @@ geometry::Point HexahedronCell::cell_normal(const mesh::Cell& cell) const
 double HexahedronCell::facet_area(const mesh::Cell& cell,
                                   std::size_t facet) const
 {
-  // spdlog::error("Not implemented");
+  // glog::error("Not implemented");
   throw std::runtime_error("");
   return 0.0;
 }

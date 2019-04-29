@@ -15,7 +15,7 @@
 #include <map>
 #include <numeric>
 #include <set>
-// #include <spdlog/spdlog.h>
+// #include <glog/glog.h>
 #include <string>
 
 extern "C"
@@ -142,7 +142,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
                                  const std::vector<std::size_t>& node_weights,
                                  std::int32_t num_ghost_nodes)
 {
-  // spdlog::info("Compute graph partition using PT-SCOTCH");
+  // glog::info("Compute graph partition using PT-SCOTCH");
   common::Timer timer("Compute graph partition (SCOTCH)");
 
   // C-style array indexing

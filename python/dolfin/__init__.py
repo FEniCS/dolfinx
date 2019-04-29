@@ -71,3 +71,4 @@ from .mesh import MeshValueCollection
 # Initialise PETSc
 from dolfin import cpp
 cpp.common.SubSystemsManager.init_petsc()
+cpp.common.SubSystemsManager.init_logging()

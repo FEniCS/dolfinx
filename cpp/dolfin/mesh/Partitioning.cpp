@@ -31,7 +31,7 @@
 #include <numeric>
 #include <set>
 
-// #include <spdlog/spdlog.h>
+#include <glog/logging.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -48,7 +48,7 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
     const std::pair<std::size_t, std::size_t> local_point_range,
     const std::vector<std::vector<std::int32_t>>& local_indexing)
 {
-  // spdlog::info("Build shared points during distributed mesh construction");
+  LOG(INFO) << "Build shared points during distributed mesh construction.";
 
   const std::int32_t mpi_size = dolfin::MPI::size(mpi_comm);
 
@@ -167,7 +167,7 @@ distribute_cells(const MPI_Comm mpi_comm,
   // global index, and the cell owner (for ghost cells this will be
   // different from the destination)
 
-  // spdlog::info("Distribute cells during distributed mesh construction");
+  LOG(INFO) << "Distribute cells during distributed mesh construction";
 
   common::Timer timer("Distribute cells");
 
@@ -510,7 +510,7 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
                  const std::vector<std::int64_t>& global_cell_indices,
                  const mesh::GhostMode ghost_mode, const PartitionData& mp)
 {
-  // spdlog::info("Distribute mesh cells");
+  LOG(INFO) << "Distribute mesh cells";
 
   common::Timer timer("Distribute mesh cells");
 
@@ -602,7 +602,7 @@ partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
                 const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
                 const std::string partitioner)
 {
-  // spdlog::info("Compute partition of cells across processes");
+  LOG(INFO) << "Compute partition of cells across processes";
 
   std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
   assert(cell_type);
@@ -655,8 +655,8 @@ mesh::Mesh Partitioning::build_distributed_mesh(
   int all_ghosts = dolfin::MPI::sum(comm, mp.num_ghosts());
   if (all_ghosts == 0 && ghost_mode != mesh::GhostMode::none)
   {
-    // spdlog::error("Partitioning.cpp", "build ghost mesh",
-    //               "Ghost cell information not available");
+    LOG(ERROR) << "Cannot build ghost mesh."
+               << " Ghost cell information not available.";
     throw std::runtime_error("Ghost cell information not available");
   }
 
@@ -687,7 +687,7 @@ Partitioning::reorder_cells_gps(
       << "WARNING: this function is probably broken. It needs careful testing."
       << std::endl;
 
-  // spdlog::info("Re-order cells during distributed mesh construction");
+  LOG(INFO) << "Re-order cells during distributed mesh construction";
 
   common::Timer timer("Reorder cells using GPS ordering");
 
@@ -849,7 +849,7 @@ Partitioning::distribute_points(
   EigenRowArrayXXd point_coordinates(global_point_indices.size(),
                                      points.cols());
 
-  // spdlog::info("Distribute points during distributed mesh construction");
+  LOG(INFO) << "Distribute points during distributed mesh construction";
   common::Timer timer("Distribute points");
 
   // Get number of processes

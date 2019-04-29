@@ -13,7 +13,7 @@
 #include "MeshValueCollection.h"
 #include "Vertex.h"
 #include <dolfin/common/RangedIndexSet.h>
-// #include <spdlog/spdlog.h>
+// #include <glog/glog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -40,7 +40,7 @@ EigenArrayXb SubDomain::inside(Eigen::Ref<const EigenRowArrayXXd> x,
 void SubDomain::map(Eigen::Ref<const EigenArrayXd> x,
                     Eigen::Ref<EigenArrayXd> y) const
 {
-  // spdlog::error(
+  // glog::error(
   //     "SubDomain.cpp", "map points within subdomain",
   //     "Function map() not implemented by user. (Required for periodic "
   //     "boundary conditions)");
@@ -55,7 +55,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
   // FIXME: This function can probably be folded into the above
   //        function operator[] in std::map and MeshFunction.
 
-  // spdlog::debug("Computing sub domain markers for sub domain %d.",
+  // glog::debug("Computing sub domain markers for sub domain %d.",
   // sub_domain);
 
   auto gdim = mesh.geometry().dim();

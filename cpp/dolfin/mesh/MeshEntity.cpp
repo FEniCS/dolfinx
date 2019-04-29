@@ -9,7 +9,7 @@
 #include "MeshIterator.h"
 #include "Topology.h"
 #include "Vertex.h"
-// #include <spdlog/spdlog.h>
+// #include <glog/glog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -42,7 +42,7 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   // Must be in the same mesh to be incident
   if (_mesh != entity._mesh)
   {
-    // spdlog::error("MeshEntity.cpp", "compute index of mesh entity",
+    // glog::error("MeshEntity.cpp", "compute index of mesh entity",
     //               "Mesh entity is defined on a different mesh");
     throw std::runtime_error("Wrong mesh");
   }
@@ -60,7 +60,7 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
       return i;
 
   // Entity was not found
-  // spdlog::error("MeshEntity.cpp", "compute index of mesh entity",
+  // glog::error("MeshEntity.cpp", "compute index of mesh entity",
   //               "Mesh entity was not found");
   throw std::runtime_error("Mesh entity was not found");
 
@@ -102,7 +102,7 @@ std::uint32_t MeshEntity::owner() const
 {
   if (_dim != _mesh->topology().dim())
   {
-    // spdlog::error("MeshEntity.cpp", "get ownership of entity",
+    // glog::error("MeshEntity.cpp", "get ownership of entity",
     //               "Entity ownership is only defined for cells");
     throw std::runtime_error("Entity ownership is only defined for cells");
   }
@@ -110,7 +110,7 @@ std::uint32_t MeshEntity::owner() const
   const std::int32_t offset = _mesh->topology().ghost_offset(_dim);
   if (_local_index < offset)
   {
-    // spdlog::error("MeshEntity.cpp", "get ownership of entity",
+    // glog::error("MeshEntity.cpp", "get ownership of entity",
     //               "Ownership of non-ghost cells is local process");
     throw std::runtime_error("Ownership of non-ghost cells is local process");
   }
@@ -122,7 +122,7 @@ std::uint32_t MeshEntity::owner() const
 std::string MeshEntity::str(bool verbose) const
 {
   // if (verbose)
-  //   spdlog::warn("Verbose output for MeshEntityIterator not implemented.");
+  //   glog::warn("Verbose output for MeshEntityIterator not implemented.");
 
   std::stringstream s;
   s << "<Mesh entity " << index() << " of topological dimension " << dim()

@@ -122,6 +122,8 @@ void common(py::module& m)
                     dolfin::common::SubSystemsManager::init_petsc(args.size(),
                                                                   argv.data());
                   })
+      .def_static("init_logging",
+                  (&dolfin::common::SubSystemsManager::init_logging))
       .def_static("finalize", &dolfin::common::SubSystemsManager::finalize)
       .def_static("responsible_mpi",
                   &dolfin::common::SubSystemsManager::responsible_mpi)
@@ -144,12 +146,11 @@ void mpi(py::module& m)
       m, "MPICommWrapper",
       "DOLFIN is compiled without support for mpi4py. This object can be "
       "passed into DOLFIN as an MPI communicator, but is not an mpi4py comm.")
-      .def(
-          "underlying_comm",
-          [](MPICommWrapper self) { return (std::uintptr_t)self.get(); },
-          "Return the underlying MPI_Comm cast to std::uintptr_t. "
-          "The return value may or may not make sense depending on the MPI "
-          "implementation.");
+      .def("underlying_comm",
+           [](MPICommWrapper self) { return (std::uintptr_t)self.get(); },
+           "Return the underlying MPI_Comm cast to std::uintptr_t. "
+           "The return value may or may not make sense depending on the MPI "
+           "implementation.");
 #endif
 
   // dolfin::MPI
