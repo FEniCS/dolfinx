@@ -116,11 +116,6 @@ def test_custom_mesh_loop_rank1():
     b2 = b1 - b0.vector()
     assert(b2.norm() == pytest.approx(0.0))
 
-    # Complex not supported yet
-    # cffi_support.register_type('double _Complex', numba.types.complex128)
-    # if dolfin.has_petsc_complex:
-    #     return
-
     # Assemble using generated tabulate_tensor kernel
     b3 = dolfin.Function(V)
     ufc_form = dolfin.jit.ffc_jit(L)
@@ -147,9 +142,6 @@ def test_custom_mesh_loop_rank1():
 
 def test_custom_mesh_loop_rank2():
 
-    if dolfin.has_petsc_complex:
-        return
-
     import os
     import ctypes
     import ctypes.util
@@ -160,7 +152,7 @@ def test_custom_mesh_loop_rank2():
         petsc_lib = ctypes.CDLL(petsc_dir + "/lib/libpetsc.dylib")
     MatSetValues = petsc_lib.MatSetValuesLocal
     MatSetValues.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(
-        ctypes.c_int), ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_double), ctypes.c_int)
+        ctypes.c_int), ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_void_p, ctypes.c_int)
     ADD_VALUES = PETSc.InsertMode.ADD_VALUES
     del petsc_lib
 
@@ -181,7 +173,7 @@ def test_custom_mesh_loop_rank2():
         weights = np.full(3, 1.0 / 3.0, dtype=np.double)
 
         # Loop over cells
-        _A = np.empty((3, 3), dtype=np.double)
+        _A = np.empty((3, 3), dtype=PETSc.ScalarType)
         for i, cell in enumerate(pos[:-1]):
             num_vertices = pos[i + 1] - pos[i]
             c = connections[cell:cell + num_vertices]
