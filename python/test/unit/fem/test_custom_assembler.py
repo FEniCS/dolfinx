@@ -55,7 +55,7 @@ def test_custom_mesh_loop_rank1():
     numba.cffi_support.register_type(ffi.typeof('float _Complex'),
                                      numba.types.complex64)
 
-    @numba.jit(nopython=True)
+    @numba.njit
     def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
         """Assemble provided FFC/UFC kernel over a mesh into the array b"""
         connections, pos = mesh
@@ -162,7 +162,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     ADD_VALUES = PETSc.InsertMode.ADD_VALUES
     del petsc_lib
 
-    @numba.jit(nopython=True)
+    @numba.njit
     def assemble_matrix(A, mesh, x, dofmap, set_vals):
         """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
 
@@ -306,7 +306,7 @@ def test_custom_mesh_loop_cffi_rank2():
     def sink(*args):
         pass
 
-    @numba.jit(nopython=True)
+    @numba.njit
     def assemble_matrix(A, mesh, x, dofmap, set_vals, mode):
         """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
 
@@ -350,7 +350,6 @@ def test_custom_mesh_loop_cffi_rank2():
             rows = cols = module.ffi.from_buffer(dofmap[3 * i:3 * i + 3])
             set_vals(A, 3, rows, 3, cols, module.ffi.from_buffer(_A), mode)
         sink(_A, dofmap)
-
 
     # Unpack mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).connections()
