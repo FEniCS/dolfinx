@@ -297,7 +297,6 @@ def test_custom_mesh_loop_cffi_rank2():
         raise ImportError("Failed to find CFFI generated module")
     module = importlib.util.module_from_spec(spec)
 
-
     numba.cffi_support.register_module(module)
     add_values = module.lib.MatSetValuesLocal
     numba.cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba.types.float64)
