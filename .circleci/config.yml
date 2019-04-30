@@ -40,8 +40,7 @@ regression-tests-cpp: &regression-tests-cpp
   command: |
     cd build
     ninja -j3 demos
-    export GLOG_logtostderr=1
-    ctest --verbose -j3 -R demo -R serial
+    ctest -j3 -R demo -R serial
 
 regression-tests-cpp-mpi: &regression-tests-cpp-mpi
   name: Run C++ regression tests (MPI)
