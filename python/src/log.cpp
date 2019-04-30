@@ -56,6 +56,9 @@ void log(py::module& m)
     case (loguru::Verbosity_ERROR):
       LOG(ERROR) << s;
       break;
+    default:
+      throw std::runtime_error("Log level not supported");
+      break;
     }
   });
 }
