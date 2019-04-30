@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #define MPICH_IGNORE_CXX_SEEK 1
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 #include <iostream>
 #include <mpi.h>
@@ -101,7 +101,7 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
 
   // Print message if PETSc is initialised with command line arguments
   if (argc > 1)
-    LOG_S(INFO) << "Initializing PETSc with given command-line arguments.";
+    LOG(INFO) << "Initializing PETSc with given command-line arguments.";
 
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
@@ -218,11 +218,11 @@ PetscErrorCode SubSystemsManager::PetscDolfinErrorHandler(
   PetscErrorMessage(n, &desc, nullptr);
 
   // Log detailed error info
-  LOG_S(ERROR)
+  LOG(ERROR)
       << "PetscDolfinErrorHandler: line '{}', function '{}', file '{}',\n"
          "                       : error code '{}' ({}), message follows:"
       << line << fun << file << n << desc;
-  LOG_S(ERROR) << (_mess);
+  LOG(ERROR) << (_mess);
 
   // Continue with error handling
   PetscFunctionReturn(n);

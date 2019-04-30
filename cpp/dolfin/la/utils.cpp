@@ -14,7 +14,7 @@
 #include <memory>
 #include <utility>
 
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 
 #include <petsc.h>
@@ -273,16 +273,16 @@ void dolfin::la::petsc_error(int error_code, std::string filename,
   dolfin::common::SubSystemsManager::singleton().petsc_err_msg = "";
 
   // // Log detailed error info
-  DLOG_S(INFO) << "PETSc error in '" << filename.c_str() << "', '"
+  DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
              << petsc_function.c_str() << "'";
 
-  DLOG_S(INFO) << "PETSc error code '" << error_code << "' (" << desc
+  DLOG(INFO) << "PETSc error code '" << error_code << "' (" << desc
              << "), message follows:";
 
   // NOTE: don't put msg as variadic argument; it might get trimmed
-  DLOG_S(INFO) << std::string(78, '-');
-  DLOG_S(INFO) << msg;
-  DLOG_S(INFO) << std::string(78, '-');
+  DLOG(INFO) << std::string(78, '-');
+  DLOG(INFO) << msg;
+  DLOG(INFO) << std::string(78, '-');
 
   // Raise exception with standard error message
   throw std::runtime_error("Failed to successfully call PETSc function '"

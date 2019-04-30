@@ -9,7 +9,7 @@
 #include "MeshIterator.h"
 #include "Topology.h"
 #include "Vertex.h"
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;
@@ -115,7 +115,7 @@ std::uint32_t MeshEntity::owner() const
 std::string MeshEntity::str(bool verbose) const
 {
   if (verbose)
-    LOG_S(WARNING) << "Verbose output for MeshEntityIterator not implemented.";
+    LOG(WARNING) << "Verbose output for MeshEntityIterator not implemented.";
 
   std::stringstream s;
   s << "<Mesh entity " << index() << " of topological dimension " << dim()

@@ -9,7 +9,7 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/fem/utils.h>
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;

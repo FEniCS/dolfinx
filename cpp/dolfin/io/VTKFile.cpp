@@ -20,7 +20,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 #include <iomanip>
 #include <ostream>
@@ -126,7 +126,7 @@ void VTKFile::write_function(const function::Function& u, double time)
   // Finalise and write pvd files
   finalize(vtu_filename, time);
 
-  DLOG_S(INFO) << "Saved function \"" << u.name() << "\" to file \""
+  DLOG(INFO) << "Saved function \"" << u.name() << "\" to file \""
                << _filename << "\" in VTK format.";
 }
 //----------------------------------------------------------------------------
@@ -157,7 +157,7 @@ void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
   // Finalise
   finalize(vtu_filename, time);
 
-  DLOG_S(INFO) << "Saved mesh in VTK format to file:" << _filename;
+  DLOG(INFO) << "Saved mesh in VTK format to file:" << _filename;
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::init(const mesh::Mesh& mesh, std::size_t cell_dim) const

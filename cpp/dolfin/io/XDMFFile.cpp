@@ -39,7 +39,7 @@
 #include <string>
 #include <vector>
 
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;
@@ -122,13 +122,13 @@ void XDMFFile::write_checkpoint(const function::Function& u,
                              "when writing to XDMF file.");
   }
 
-  LOG_S(INFO) << "Writing function \"" << function_name << "\" to XDMF file \""
+  LOG(INFO) << "Writing function \"" << function_name << "\" to XDMF file \""
             << _filename << "\" with time step " << time_step;
 
   // If XML file exists load it to member _xml_doc
   if (boost::filesystem::exists(_filename))
   {
-    LOG_S(WARNING) << "Appending to an existing XDMF XML file \"" << _filename
+    LOG(WARNING) << "Appending to an existing XDMF XML file \"" << _filename
                  << "\"";
 
     pugi::xml_parse_result result = _xml_doc->load_file(_filename.c_str());
@@ -136,7 +136,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 
     if (_xml_doc->select_node("/Xdmf/Domain").node().empty())
     {
-      LOG_S(WARNING) << "File \"" << _filename
+      LOG(WARNING) << "File \"" << _filename
                    << "\" contains invalid XDMF. Writing new XDMF.";
     }
   }
@@ -162,7 +162,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
 
   if (truncate_hdf and boost::filesystem::exists(get_hdf5_filename(_filename)))
   {
-    LOG_S(WARNING) << "HDF file \"" << get_hdf5_filename(_filename)
+    LOG(WARNING) << "HDF file \"" << get_hdf5_filename(_filename)
                  << "\" will be overwritten.";
   }
 
@@ -216,7 +216,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   }
   else
   {
-    LOG_S(INFO) << "XDMF time series for function \"" << function_name
+    LOG(INFO) << "XDMF time series for function \"" << function_name
               << "\" not empty. Appending.";
   }
 
@@ -261,14 +261,14 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   // Save XML file (on process 0 only)
   if (_mpi_comm.rank() == 0)
   {
-    LOG_S(INFO) << "Saving XML file \"" << _filename << "\" (only on rank = 0)";
+    LOG(INFO) << "Saving XML file \"" << _filename << "\" (only on rank = 0)";
     _xml_doc->save_file(_filename.c_str(), "  ");
   }
 
   // Close the HDF5 file if in "flush" mode
   if (_encoding == Encoding::HDF5 and flush_output)
   {
-    LOG_S(INFO) << "Writing function in \"flush_output\" mode. HDF5 "
+    LOG(INFO) << "Writing function in \"flush_output\" mode. HDF5 "
                  "file will be flushed (closed).";
     assert(_hdf5_file);
     _hdf5_file.reset();
@@ -1211,7 +1211,7 @@ XDMFFile::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
 void XDMFFile::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                         const mesh::Mesh& mesh, const std::string path_prefix)
 {
-  LOG_S(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
+  LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
 
   // Add grid node and attributes
   pugi::xml_node grid_node = xml_node.append_child("Grid");
@@ -1239,7 +1239,7 @@ void XDMFFile::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
                             std::string function_name, const mesh::Mesh& mesh,
                             const std::string component)
 {
-  LOG_S(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
+  LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
   std::string element_family = u.function_space()->element()->family();
   const std::size_t element_degree = u.function_space()->element()->degree();
@@ -1430,7 +1430,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
 
   const int degree = cell_type_str.second;
   if (degree == 2)
-    LOG_S(WARNING) << "Caution: reading quadratic mesh";
+    LOG(WARNING) << "Caution: reading quadratic mesh";
 
   // Get toplogical dimensions
   std::unique_ptr<mesh::CellType> cell_type(
@@ -1508,7 +1508,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                              "when reading XDMF file.");
   }
 
-  LOG_S(INFO) << "Reading function \"" << func_name << "\" from XDMF file \""
+  LOG(INFO) << "Reading function \"" << func_name << "\" from XDMF file \""
             << _filename << "\" with counter " << counter;
 
   // Extract parent filepath (required by HDF5 when XDMF stores relative path
@@ -1787,7 +1787,7 @@ void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
                              const std::vector<std::int64_t> shape,
                              const std::string number_type)
 {
-  DLOG_S(INFO) << "Adding data item to node " << xml_node.path();
+  DLOG(INFO) << "Adding data item to node " << xml_node.path();
 
   // Add DataItem node
   assert(xml_node);

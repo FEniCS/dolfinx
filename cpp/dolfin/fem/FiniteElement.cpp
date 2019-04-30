@@ -6,7 +6,7 @@
 
 #include "FiniteElement.h"
 #include <functional>
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 #include <memory>
 #include <ufc.h>
@@ -191,7 +191,7 @@ std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(
   // Recursively extract sub element
   std::shared_ptr<FiniteElement> sub_finite_element
       = extract_sub_element(*this, component);
-  DLOG_S(INFO) << "Extracted finite element for sub system:"
+  DLOG(INFO) << "Extracted finite element for sub system:"
              << sub_finite_element->signature().c_str();
 
   return sub_finite_element;

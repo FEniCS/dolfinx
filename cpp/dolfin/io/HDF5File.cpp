@@ -28,7 +28,7 @@
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
 #include <fstream>
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 #include <iomanip>
 #include <iostream>
@@ -180,7 +180,7 @@ la::PETScVector HDF5File::read_vector(MPI_Comm comm,
   const std::size_t rank
       = HDF5Interface::dataset_rank(_hdf5_file_id, dataset_name);
   if (rank != 1)
-    LOG_S(WARNING) << "Reading non-scalar data in HDF5 Vector";
+    LOG(WARNING) << "Reading non-scalar data in HDF5 Vector";
 
   // Get global dataset size
   const std::vector<std::int64_t> data_shape
@@ -1483,7 +1483,7 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
   else
   {
     if (use_partition_from_file)
-      LOG_S(WARNING) << "Could not use partition from file: wrong size";
+      LOG(WARNING) << "Could not use partition from file: wrong size";
 
     // Divide up cells approximately equally between processes
     cell_range = MPI::local_range(_mpi_comm.comm(), num_global_cells);

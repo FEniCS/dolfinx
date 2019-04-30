@@ -11,7 +11,7 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 #include <string>
 
@@ -121,7 +121,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
   {
     if (_mpi_comm.rank() == 0)
     {
-      LOG_S(INFO) << "Newton solver finished in " << newton_iteration
+      LOG(INFO) << "Newton solver finished in " << newton_iteration
                 << " iterations and " << _krylov_iterations
                 << " linear solver iterations.";
     }
@@ -139,7 +139,7 @@ dolfin::nls::NewtonSolver::solve(NonlinearProblem& nonlinear_problem, Vec x)
         throw std::runtime_error("Newton solver did not converge");
     }
     else
-      LOG_S(WARNING) << "Newton solver did not converge.";
+      LOG(WARNING) << "Newton solver did not converge.";
   }
 
   return std::make_pair(newton_iteration, newton_converged);
@@ -168,7 +168,7 @@ bool nls::NewtonSolver::converged(const Vec r,
   // Output iteration number and residual
   if (report && _mpi_comm.rank() == 0)
   {
-    LOG_S(INFO) << "Newton iteration " << newton_iteration
+    LOG(INFO) << "Newton iteration " << newton_iteration
               << ": r (abs) = " << _residual << " (tol = " << atol
               << ") r (rel) = " << relative_residual << "(tol = " << rtol
               << ")";

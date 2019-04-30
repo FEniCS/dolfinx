@@ -7,8 +7,6 @@
 #include "MPI.h"
 #include "SubSystemsManager.h"
 #include <algorithm>
-#define LOGURU_WITH_STREAMS 1
-#include <dolfin/common/loguru.hpp>
 #include <numeric>
 
 //-----------------------------------------------------------------------------
@@ -20,7 +18,6 @@ dolfin::MPI::Comm::Comm(MPI_Comm comm)
     int err = MPI_Comm_dup(comm, &_comm);
     if (err != MPI_SUCCESS)
     {
-      LOG_S(ERROR) << "Duplication of MPI communicator failed (MPI_Comm_dup)";
       throw std::runtime_error(
           "Duplication of MPI communicator failed (MPI_Comm_dup)");
     }

@@ -14,7 +14,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 #include <map>
 
@@ -118,7 +118,7 @@ template <typename S, typename T>
 void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
                      bool check_midpoint) const
 {
-  LOG_S(INFO) << "Computing sub domain markers for sub domain " << sub_domain;
+  LOG(INFO) << "Computing sub domain markers for sub domain " << sub_domain;
 
   // Get the dimension of the entities we are marking
   const std::size_t dim = sub_domains.dim();

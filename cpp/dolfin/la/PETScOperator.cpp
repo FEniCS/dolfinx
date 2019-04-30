@@ -7,7 +7,7 @@
 #include "PETScOperator.h"
 #include "PETScVector.h"
 #include "utils.h"
-#define LOGURU_WITH_STREAMS 1
+
 #include <dolfin/common/loguru.hpp>
 #include <petscvec.h>
 
@@ -75,7 +75,7 @@ PETScVector PETScOperator::create_vector(std::size_t dim) const
   }
   else
   {
-    LOG_S(ERROR) << "Cannot initialize PETSc vector to match PETSc matrix. "
+    LOG(ERROR) << "Cannot initialize PETSc vector to match PETSc matrix. "
                << "Dimension must be 0 or 1, not " << dim;
     throw std::runtime_error("Invalid dimension");
   }
