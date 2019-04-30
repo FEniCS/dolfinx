@@ -105,7 +105,7 @@ ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64/bin:$PATH
 # Second set of packages are recommended and/or required to build documentation or run tests.
 RUN pip3 install --no-cache-dir mpi4py numba && \
     export HDF5_MPI="ON" && \
-    pip3 install --no-cache-dir --no-binary=h5py cffi decorator flake8 h5py pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
+    pip3 install --no-cache-dir --no-binary=h5py cffi decorator flake8 h5py ipython pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
 
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
