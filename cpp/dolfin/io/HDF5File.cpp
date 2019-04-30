@@ -13,6 +13,7 @@
 #include <cstdio>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/loguru.hpp>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -28,8 +29,6 @@
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
 #include <fstream>
-
-#include <dolfin/common/loguru.hpp>
 #include <iomanip>
 #include <iostream>
 #include <petscvec.h>

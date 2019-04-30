@@ -7,12 +7,11 @@
 #include "NewtonSolver.h"
 #include "NonlinearProblem.h"
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/loguru.hpp>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
-
-#include <dolfin/common/loguru.hpp>
 #include <string>
 
 using namespace dolfin;

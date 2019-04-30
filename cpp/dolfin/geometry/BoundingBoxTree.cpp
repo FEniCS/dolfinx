@@ -12,13 +12,12 @@
 #include "BoundingBoxTree.h"
 #include "CollisionPredicates.h"
 #include <dolfin/common/MPI.h>
+#include <dolfin/common/loguru.hpp>
 #include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-
-#include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;
 using namespace dolfin::geometry;

@@ -10,12 +10,10 @@
 #include <cassert>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/SubSystemsManager.h>
+#include <dolfin/common/loguru.hpp>
 #include <dolfin/la/SparsityPattern.h>
 #include <memory>
 #include <utility>
-
-
-#include <dolfin/common/loguru.hpp>
 
 #include <petsc.h>
 

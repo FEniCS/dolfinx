@@ -16,6 +16,7 @@
 #include <boost/lexical_cast.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
+#include <dolfin/common/loguru.hpp>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/ReferenceCellTopology.h>
@@ -38,9 +39,6 @@
 #include <set>
 #include <string>
 #include <vector>
-
-
-#include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;
 using namespace dolfin::io;

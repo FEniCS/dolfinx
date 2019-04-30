@@ -9,13 +9,12 @@
 #include <boost/unordered_map.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/loguru.hpp>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-
-#include <dolfin/common/loguru.hpp>
 #include <numeric>
 #include <set>
 #include <unordered_set>

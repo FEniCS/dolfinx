@@ -10,9 +10,8 @@
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/fem/PETScDMCollection.h>
-
 #include <dolfin/common/loguru.hpp>
+#include <dolfin/fem/PETScDMCollection.h>
 #include <petsclog.h>
 
 using namespace dolfin;

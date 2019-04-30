@@ -8,9 +8,8 @@
 #include <algorithm>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/fem/utils.h>
-
 #include <dolfin/common/loguru.hpp>
+#include <dolfin/fem/utils.h>
 
 using namespace dolfin;
 using namespace dolfin::la;

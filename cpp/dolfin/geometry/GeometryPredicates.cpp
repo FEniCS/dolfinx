@@ -9,7 +9,6 @@
 #include "predicates.h"
 #include <cfloat>
 #include <cmath>
-
 #include <dolfin/common/loguru.hpp>
 
 using namespace dolfin;

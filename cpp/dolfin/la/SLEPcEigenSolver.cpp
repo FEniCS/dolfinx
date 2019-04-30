@@ -10,9 +10,8 @@
 #include "VectorSpaceBasis.h"
 #include "utils.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/la/PETScVector.h>
-
 #include <dolfin/common/loguru.hpp>
+#include <dolfin/la/PETScVector.h>
 #include <slepcversion.h>
 
 using namespace dolfin;

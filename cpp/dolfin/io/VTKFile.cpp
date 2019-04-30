@@ -10,6 +10,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/loguru.hpp>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
@@ -20,8 +21,6 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-
-#include <dolfin/common/loguru.hpp>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
@@ -126,8 +125,8 @@ void VTKFile::write_function(const function::Function& u, double time)
   // Finalise and write pvd files
   finalize(vtu_filename, time);
 
-  DLOG(INFO) << "Saved function \"" << u.name() << "\" to file \""
-               << _filename << "\" in VTK format.";
+  DLOG(INFO) << "Saved function \"" << u.name() << "\" to file \"" << _filename
+             << "\" in VTK format.";
 }
 //----------------------------------------------------------------------------
 void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
