@@ -73,6 +73,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_logging(int argc, char* argv[])
 {
+  loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
   loguru::init(argc, argv);
 }
 //-----------------------------------------------------------------------------
