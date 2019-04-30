@@ -301,8 +301,11 @@ def test_custom_mesh_loop_cffi_rank2():
     add_values = module.lib.MatSetValuesLocal
     numba.cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba.types.float64)
 
-    # See https://github.com/numba/numba/issues/3902 and https://github.com/numba/numba/issues/4036
-    # for issues on passing arrays to cffi function
+    # See https://github.com/numba/numba/issues/4036 for why we need 'sink'
+    @numba.njit
+    def sink(*args):
+        pass
+
     @numba.jit(nopython=True)
     def assemble_matrix(A, mesh, x, dofmap, set_vals, mode):
         """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
@@ -344,8 +347,10 @@ def test_custom_mesh_loop_cffi_rank2():
                 _A[2, 2] += weights[j] * cell_area * N2 * N2
 
             # Add to global tensor
-            rows = cols = dofmap[3 * i:3 * i + 3].ctypes
-            set_vals(A, 3, rows, 3, cols, _A.ctypes, mode)
+            rows = cols = module.ffi.from_buffer(dofmap[3 * i:3 * i + 3])
+            set_vals(A, 3, rows, 3, cols, module.ffi.from_buffer(_A), mode)
+        sink(_A, dofmap)
+
 
     # Unpack mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).connections()
