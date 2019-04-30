@@ -126,8 +126,8 @@ void VTKFile::write_function(const function::Function& u, double time)
   // Finalise and write pvd files
   finalize(vtu_filename, time);
 
-  DLOG_S(INFO) << "Saved function %s (%s) to file %s in VTK format." << u.name()
-             << u.name() << _filename;
+  DLOG_S(INFO) << "Saved function \"" << u.name() << "\" to file \""
+               << _filename << "\" in VTK format.";
 }
 //----------------------------------------------------------------------------
 void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)

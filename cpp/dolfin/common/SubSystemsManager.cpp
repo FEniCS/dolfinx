@@ -71,7 +71,10 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
   return provided;
 }
 //-----------------------------------------------------------------------------
-void SubSystemsManager::init_logging() {}
+void SubSystemsManager::init_logging(int argc, char* argv[])
+{
+  loguru::init(argc, argv);
+}
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()
 {

@@ -12,7 +12,8 @@
 //-----------------------------------------------------------------------------
 void dolfin::init(int argc, char* argv[])
 {
-  common::SubSystemsManager::init_logging();
+  loguru::g_stderr_verbosity = WARNING;
+  common::SubSystemsManager::init_logging(argc, argv);
   LOG_S(INFO) << "Initializing DOLFIN version" << DOLFIN_VERSION;
   common::SubSystemsManager::init_petsc(argc, argv);
 }
