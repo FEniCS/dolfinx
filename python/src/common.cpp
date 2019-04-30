@@ -123,7 +123,13 @@ void common(py::module& m)
                                                                   argv.data());
                   })
       .def_static("init_logging",
-                  (&dolfin::common::SubSystemsManager::init_logging))
+                  [](std::vector<std::string> args) {
+                    std::vector<char*> argv(args.size() + 1, nullptr);
+                    for (std::size_t i = 0; i < args.size(); ++i)
+                      argv[i] = const_cast<char*>(args[i].data());
+                    dolfin::common::SubSystemsManager::init_logging(
+                        args.size(), argv.data());
+                  })
       .def_static("finalize", &dolfin::common::SubSystemsManager::finalize)
       .def_static("responsible_mpi",
                   &dolfin::common::SubSystemsManager::responsible_mpi)
