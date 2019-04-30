@@ -20,6 +20,7 @@ import pytest
 from petsc4py import PETSc
 
 import dolfin
+from dolfin_utils.test.skips import skip_if_complex
 from ufl import dx, inner
 
 
@@ -245,8 +246,14 @@ def test_custom_mesh_loop_ctypes_rank2():
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
 
+@skip_if_complex
 def test_custom_mesh_loop_cffi_rank2():
-    """Test numba assembler for bilinear form"""
+    """Test numba assembler for bilinear form
+
+    Some work is required to get this working with complex types, and possibly
+    64-bit indices.
+
+    """
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
@@ -268,14 +275,21 @@ def test_custom_mesh_loop_cffi_rank2():
     petsc_dir = os.environ.get('PETSC_DIR', None)
     ffibuilder = cffi.FFI()
     ffibuilder.cdef("""
-        int MatSetValuesLocal(void* mat, int nrow, const int* irow,
-                             int ncol, const int* icol,
-                             const double* y, int addv);
+        typedef int... PetscInt;
+        typedef int... PetscErrorCode;
+        typedef ... PetscScalar;
+        typedef int... InsertMode;
+        PetscErrorCode MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
+                             PetscInt ncol, const PetscInt* icol,
+                             const PetscScalar* y, InsertMode addv);
     """)
-    ffibuilder.set_source("_petsc_cffi", '#include "petscmat.h"',
+    ffibuilder.set_source("_petsc_cffi", """
+        #include "petscmat.h"
+    """,
                           libraries=['petsc'],
                           include_dirs=[os.path.join(petsc_dir, 'include')],
-                          library_dirs=[os.path.join(petsc_dir, 'lib')])
+                          library_dirs=[os.path.join(petsc_dir, 'lib')],
+                          extra_compile_args=["-std=c99"])
     ffibuilder.compile(verbose=False)
 
     spec = importlib.util.find_spec('_petsc_cffi')
@@ -283,8 +297,10 @@ def test_custom_mesh_loop_cffi_rank2():
         raise ImportError("Failed to find CFFI generated module")
     module = importlib.util.module_from_spec(spec)
 
+
     numba.cffi_support.register_module(module)
     add_values = module.lib.MatSetValuesLocal
+    numba.cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba.types.float64)
 
     # See https://github.com/numba/numba/issues/3902 and https://github.com/numba/numba/issues/4036
     # for issues on passing arrays to cffi function
