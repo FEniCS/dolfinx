@@ -166,7 +166,8 @@ void fem(py::module& m)
            &dolfin::fem::GenericDofMap::tabulate_local_to_global_dofs)
       .def("tabulate_entity_dofs",
            &dolfin::fem::GenericDofMap::tabulate_entity_dofs)
-      .def("set", &dolfin::fem::GenericDofMap::set);
+      .def("set", &dolfin::fem::GenericDofMap::set)
+      .def("dof_array", &dolfin::fem::GenericDofMap::dof_array);
 
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,

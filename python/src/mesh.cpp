@@ -202,6 +202,12 @@ void mesh(py::module& m)
                  self.connections(i), self.size(i));
            },
            py::return_value_policy::reference_internal)
+      .def("connections",
+           py::overload_cast<>(&dolfin::mesh::Connectivity::connections),
+           "Return all connectivities")
+      .def("pos",
+           py::overload_cast<>(&dolfin::mesh::Connectivity::entity_positions),
+           "Index to each entity in the connectivity array")
       .def("size", &dolfin::mesh::Connectivity::size);
 
   // dolfin::mesh::MeshEntity class

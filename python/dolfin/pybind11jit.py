@@ -28,9 +28,7 @@ def jit_generate(cpp_code, module_name, signature, parameters):
         raise RuntimeError(
             "Cannot find keyword: SIGNATURE in pybind11 C++ code.")
     elif len(split_cpp_code) > 2:
-        raise RuntimeError(
-            "Found multiple instances of keyword: SIGNATURE in pybind11 C++ code."
-        )
+        raise RuntimeError("Found multiple instances of keyword: SIGNATURE in pybind11 C++ code.")
 
     code_c = split_cpp_code[0] + signature + split_cpp_code[1]
 
