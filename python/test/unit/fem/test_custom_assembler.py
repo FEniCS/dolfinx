@@ -13,6 +13,7 @@ import os
 import time
 
 import cffi
+import mpi4py
 import numba
 import numba.cffi_support
 import numpy as np
@@ -272,26 +273,29 @@ def test_custom_mesh_loop_cffi_rank2():
     A0.assemble()
 
     # Make MatSetValuesLocal from PETSc available via cffi
-    os.environ["CC"] = "mpicc"
-    petsc_dir = os.environ.get('PETSC_DIR', None)
-    ffibuilder = cffi.FFI()
-    ffibuilder.cdef("""
-        typedef int... PetscInt;
-        typedef int... PetscErrorCode;
-        typedef ... PetscScalar;
-        typedef int... InsertMode;
-        PetscErrorCode MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
-                             PetscInt ncol, const PetscInt* icol,
-                             const PetscScalar* y, InsertMode addv);
-    """)
-    ffibuilder.set_source("_petsc_cffi", """
-        #include "petscmat.h"
-    """,
-                          libraries=['petsc'],
-                          include_dirs=[os.path.join(petsc_dir, 'include')],
-                          library_dirs=[os.path.join(petsc_dir, 'lib')],
-                          extra_compile_args=[])
-    ffibuilder.compile(verbose=False)
+    if mesh.mpi_comm().Get_rank() == 0:
+        os.environ["CC"] = "mpicc"
+        petsc_dir = os.environ.get('PETSC_DIR', None)
+        ffibuilder = cffi.FFI()
+        ffibuilder.cdef("""
+            typedef int... PetscInt;
+            typedef int... PetscErrorCode;
+            typedef ... PetscScalar;
+            typedef int... InsertMode;
+            PetscErrorCode MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
+                                PetscInt ncol, const PetscInt* icol,
+                                const PetscScalar* y, InsertMode addv);
+        """)
+        ffibuilder.set_source("_petsc_cffi", """
+            #include "petscmat.h"
+        """,
+                            libraries=['petsc'],
+                            include_dirs=[os.path.join(petsc_dir, 'include')],
+                            library_dirs=[os.path.join(petsc_dir, 'lib')],
+                            extra_compile_args=[])
+        ffibuilder.compile(verbose=False)
+
+    mesh.mpi_comm().barrier()
 
     spec = importlib.util.find_spec('_petsc_cffi')
     if spec is None:
