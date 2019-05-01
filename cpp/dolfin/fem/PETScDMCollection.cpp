@@ -20,8 +20,6 @@
 #include <petscdmshell.h>
 #include <petscmat.h>
 
-// #include <spdlog/spdlog.h>
-
 using namespace dolfin;
 using namespace dolfin::fem;
 
@@ -280,11 +278,9 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
-      // spdlog::error("create_transfer_matrix", "Creating interpolation
-      // matrix",
-      //               "Ranks of function spaces do not match: %d, %d.",
-      //               el->value_rank(), elf->value_rank());
-      throw std::runtime_error("Non matching function space");
+      throw std::runtime_error("Ranks of function spaces do not match:"
+                               + std::to_string(el->value_rank()) + ", "
+                               + std::to_string(elf->value_rank()));
     }
 
     // Check that function dims match
@@ -292,12 +288,10 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
-        // spdlog::error("create_transfer_matrix", "Creating interpolation
-        // matrix",
-        //               "Dimension %d of function space (%d) does not match "
-        //               "dimension %d of function space (%d)",
-        //               i, el->value_dimension(i), i, elf->value_dimension(i));
-        throw std::runtime_error("Non matching function dimension");
+        throw std::runtime_error("Dimensions of function spaces ("
+                                 + std::to_string(i) + ") do not match:"
+                                 + std::to_string(el->value_dimension(i)) + ", "
+                                 + std::to_string(elf->value_dimension(i)));
       }
     }
   }
