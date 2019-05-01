@@ -13,7 +13,6 @@ import os
 import time
 
 import cffi
-import mpi4py
 import numba
 import numba.cffi_support
 import numpy as np
@@ -289,10 +288,10 @@ def test_custom_mesh_loop_cffi_rank2():
         ffibuilder.set_source("_petsc_cffi", """
             #include "petscmat.h"
         """,
-                            libraries=['petsc'],
-                            include_dirs=[os.path.join(petsc_dir, 'include')],
-                            library_dirs=[os.path.join(petsc_dir, 'lib')],
-                            extra_compile_args=[])
+                              libraries=['petsc'],
+                              include_dirs=[os.path.join(petsc_dir, 'include')],
+                              library_dirs=[os.path.join(petsc_dir, 'lib')],
+                              extra_compile_args=[])
         ffibuilder.compile(verbose=False)
 
     mesh.mpi_comm().barrier()
