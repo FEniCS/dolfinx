@@ -87,6 +87,20 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   }
   const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
 
+  // Prepare cell geometry
+  const int tdim = mesh.topology().dim();
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
   EigenRowArrayXXd coordinate_dofs;
@@ -101,8 +115,11 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Get cell coordinates
+    const int cell_index = cell.index();
     coordinate_dofs.resize(cell.num_vertices(), gdim);
-    cell.get_coordinate_dofs(coordinate_dofs);
+    for (int i = 0; i < cell.num_vertices(); ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get local-to-global map
     auto dofs = dofmap.cell_dofs(cell.index());
@@ -520,6 +537,19 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   EigenArrayXd detJ(1);
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = meshc.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = meshc.geometry().points();
+
   for (unsigned int i = 0; i < found_ids.size(); ++i)
   {
     // Get coarse cell id and point
@@ -530,7 +560,12 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
     // Get dofs coordinates of the coarse cell
     coordinate_dofs.resize(coarse_cell.num_vertices(), gdim);
-    coarse_cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = coarse_cell.index();
+    coordinate_dofs.resize(coarse_cell.num_vertices(), gdim);
+    for (int i = 0; i < coarse_cell.num_vertices(); ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values

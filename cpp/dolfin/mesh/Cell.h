@@ -203,21 +203,21 @@ public:
 
   // FIXME: Update for higher-order geometries
   /// Get cell coordinate dofs (not vertex coordinates)
-  void get_coordinate_dofs(EigenRowArrayXXd& coordinates) const
-  {
-    const Geometry& geom = _mesh->geometry();
-    const std::uint32_t tdim = _mesh->topology().dim();
-    const Connectivity& conn = _mesh->coordinate_dofs().entity_points(tdim);
-    const int ndofs = conn.size(_local_index);
-    const std::int32_t* dofs = conn.connections(_local_index);
+  // void get_coordinate_dofs(EigenRowArrayXXd& coordinates) const
+  // {
+  //   const Geometry& geom = _mesh->geometry();
+  //   const std::uint32_t tdim = _mesh->topology().dim();
+  //   const Connectivity& conn = _mesh->coordinate_dofs().entity_points(tdim);
+  //   const int ndofs = conn.size(_local_index);
+  //   const std::int32_t* dofs = conn.connections(_local_index);
 
-    const EigenRowArrayXXd& x = geom.points();
-    const int gdim = geom.dim();
+  //   const EigenRowArrayXXd& x = geom.points();
+  //   const int gdim = geom.dim();
 
-    coordinates.resize(ndofs, gdim);
-    for (int i = 0; i < ndofs; ++i)
-      coordinates.row(i) = x.row(dofs[i]);
-  }
+  //   coordinates.resize(ndofs, gdim);
+  //   for (int i = 0; i < ndofs; ++i)
+  //     coordinates.row(i) = x.row(dofs[i]);
+  // }
 };
 } // namespace mesh
 } // namespace dolfin
