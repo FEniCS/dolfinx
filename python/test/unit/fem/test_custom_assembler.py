@@ -13,6 +13,7 @@ import os
 import time
 
 import cffi
+import mpi4py
 import numba
 import numba.cffi_support
 import numpy as np
@@ -272,6 +273,7 @@ def test_custom_mesh_loop_cffi_rank2():
     A0.assemble()
 
     # Make MatSetValuesLocal from PETSc available via cffi
+    os.environ["CC"] = "mpicc"
     petsc_dir = os.environ.get('PETSC_DIR', None)
     ffibuilder = cffi.FFI()
     ffibuilder.cdef("""
@@ -289,7 +291,7 @@ def test_custom_mesh_loop_cffi_rank2():
                           libraries=['petsc'],
                           include_dirs=[os.path.join(petsc_dir, 'include')],
                           library_dirs=[os.path.join(petsc_dir, 'lib')],
-                          extra_compile_args=["-std=c99"])
+                          extra_compile_args=[])
     ffibuilder.compile(verbose=False)
 
     spec = importlib.util.find_spec('_petsc_cffi')
