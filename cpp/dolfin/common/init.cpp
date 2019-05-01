@@ -6,7 +6,7 @@
 
 #include "init.h"
 #include "SubSystemsManager.h"
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 
 //-----------------------------------------------------------------------------
 void dolfin::init(int argc, char* argv[])

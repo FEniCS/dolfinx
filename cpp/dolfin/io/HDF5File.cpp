@@ -13,7 +13,7 @@
 #include <cstdio>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>

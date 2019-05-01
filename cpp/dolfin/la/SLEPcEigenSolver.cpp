@@ -10,7 +10,7 @@
 #include "VectorSpaceBasis.h"
 #include "utils.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <dolfin/la/PETScVector.h>
 #include <slepcversion.h>
 

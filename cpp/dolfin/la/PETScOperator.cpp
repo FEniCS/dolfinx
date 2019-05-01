@@ -7,7 +7,7 @@
 #include "PETScOperator.h"
 #include "PETScVector.h"
 #include "utils.h"
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <petscvec.h>
 
 using namespace dolfin;

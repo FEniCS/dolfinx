@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FiniteElement.h"
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <functional>
 #include <memory>
 #include <ufc.h>

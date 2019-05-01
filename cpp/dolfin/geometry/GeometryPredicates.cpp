@@ -9,7 +9,7 @@
 #include "predicates.h"
 #include <cfloat>
 #include <cmath>
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 
 using namespace dolfin;
 using namespace dolfin::geometry;

@@ -13,7 +13,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/mesh/CellType.h>
 
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <map>
 #include <numeric>
 #include <set>

@@ -6,7 +6,7 @@
 
 #include "TimeLogger.h"
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <vector>
 
 using namespace dolfin;

@@ -14,7 +14,7 @@
 // MPICH_IGNORE_CXX_SEEK issue
 #include <dolfin/common/MPI.h>
 
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <hdf5.h>
 
 namespace dolfin

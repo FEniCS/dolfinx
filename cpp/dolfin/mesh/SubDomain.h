@@ -15,7 +15,7 @@
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <map>
 
 namespace dolfin

@@ -6,7 +6,7 @@
 
 #define MPICH_IGNORE_CXX_SEEK 1
 
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <iostream>
 #include <mpi.h>
 #include <petsc.h>
@@ -74,7 +74,7 @@ int SubSystemsManager::init_mpi(int argc, char* argv[],
 void SubSystemsManager::init_logging(int argc, char* argv[])
 {
   loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
-  loguru::init(argc, argv, nullptr);
+  loguru::init(argc, argv, "-loglevel");
 }
 //-----------------------------------------------------------------------------
 void SubSystemsManager::init_petsc()

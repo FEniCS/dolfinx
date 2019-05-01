@@ -31,7 +31,7 @@
 #include <numeric>
 #include <set>
 
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;

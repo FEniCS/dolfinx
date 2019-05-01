@@ -10,7 +10,7 @@
 #include <boost/cstdint.hpp>
 #include <boost/detail/endian.hpp>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>

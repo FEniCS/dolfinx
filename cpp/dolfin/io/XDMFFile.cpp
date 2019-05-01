@@ -16,7 +16,7 @@
 #include <boost/lexical_cast.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/defines.h>
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/ReferenceCellTopology.h>

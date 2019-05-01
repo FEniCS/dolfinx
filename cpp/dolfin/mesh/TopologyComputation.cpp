@@ -18,7 +18,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>
 
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <memory>
 #include <numeric>
 #include <string>
