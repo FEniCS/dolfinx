@@ -8,7 +8,7 @@
 
 // Initialise static data
 // FIXME : Logger singleton is initialised here on the first call to logger()
-// to avoid "static initialisazation order fiasco". Logger's destructor
+// to avoid "static initialisation order fiasco". Logger's destructor
 // may therefore never be called.
 
 dolfin::common::TimeLogger& dolfin::common::TimeLogManager::logger()

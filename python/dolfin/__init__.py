@@ -37,6 +37,7 @@ from dolfin.common import (has_debug, has_petsc_complex,
                            timing, timings, list_timings)
 
 import dolfin.MPI
+import dolfin.log
 
 from dolfin.geometry import  Point
 from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
@@ -70,4 +71,7 @@ from .mesh import MeshValueCollection
 
 # Initialise PETSc
 from dolfin import cpp
+import sys
+cpp.common.SubSystemsManager.init_logging(sys.argv)
+del sys
 cpp.common.SubSystemsManager.init_petsc()

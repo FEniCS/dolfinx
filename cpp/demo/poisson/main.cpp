@@ -167,6 +167,7 @@ class DirichletBoundary : public mesh::SubDomain
 
 int main(int argc, char* argv[])
 {
+  common::SubSystemsManager::init_logging(argc, argv);
   common::SubSystemsManager::init_petsc(argc, argv);
 
   // Create mesh and function space

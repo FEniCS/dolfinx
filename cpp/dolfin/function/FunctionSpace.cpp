@@ -188,11 +188,11 @@ void FunctionSpace::interpolate(
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
   {
-    // spdlog::error(
-    //     "FunctionSpace.cpp", "interpolate function into function space",
-    //     "Rank of function (%d) does not match rank of function space (%d)",
-    //     v.value_rank(), element()->value_rank());
-    throw std::runtime_error("Incorrect Rank");
+    throw std::runtime_error("Cannot interpolate function into function space. "
+                             "Rank of function ("
+                             + std::to_string(v.value_rank())
+                             + ") does not match rank of function space ("
+                             + std::to_string(element()->value_rank()) + ")");
   }
 
   // Check that function dimension match
@@ -200,12 +200,13 @@ void FunctionSpace::interpolate(
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
-      // spdlog::error("FunctionSpace.cpp",
-      //               "interpolate function into function space",
-      //               "Dimension %d of function (%d) does not match dimension
-      //               %d " "of function space (%d)", i, v.value_dimension(i),
-      //               i, element()->value_dimension(i));
-      throw std::runtime_error("Incorrect dimension");
+      throw std::runtime_error(
+          "Cannot interpolate function into function space. "
+          "Dimension "
+          + std::to_string(i) + " of function ("
+          + std::to_string(v.value_dimension(i)) + ") does not match dimension "
+          + std::to_string(i) + " of function space("
+          + std::to_string(element()->value_dimension(i)) + ")");
     }
   }
 
@@ -298,9 +299,7 @@ FunctionSpace::collapse() const
   assert(_mesh);
   if (_component.empty())
   {
-    // spdlog::error("FunctionSpace.cpp", "collapse function space",
-    //               "Function space is not a subspace");
-    throw std::runtime_error("Not a subspace");
+    throw std::runtime_error("Function space is not a subspace");
   }
 
   // Create collapsed DofMap
@@ -327,11 +326,8 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 
   if (!_component.empty())
   {
-    // spdlog::error(
-    //     "FunctionSpace.cpp", "tabulate_dof_coordinates",
-    //     "Cannot tabulate coordinates for a FunctionSpace that is a
-    //     subspace.");
-    throw std::runtime_error("Cannot tabulate for subspace");
+    throw std::runtime_error(
+        "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
   // Get local size
