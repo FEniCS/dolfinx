@@ -117,7 +117,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
     // Get cell coordinates
     const int cell_index = cell.index();
     coordinate_dofs.resize(cell.num_vertices(), gdim);
-    for (int i = 0; i < cell.num_vertices(); ++i)
+    for (int i = 0; i < (int)cell.num_vertices(); ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
@@ -562,10 +562,9 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     coordinate_dofs.resize(coarse_cell.num_vertices(), gdim);
     const int cell_index = coarse_cell.index();
     coordinate_dofs.resize(coarse_cell.num_vertices(), gdim);
-    for (int i = 0; i < coarse_cell.num_vertices(); ++i)
+    for (int i = 0; i < (int)coarse_cell.num_vertices(); ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
-
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values

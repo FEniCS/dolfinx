@@ -382,8 +382,8 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_cell_vertices, value_size_loc);
 
-  const std::size_t gdim = mesh.topology().dim();
-  const std::size_t tdim = mesh.topology().dim();
+  const int gdim = mesh.topology().dim();
+  const int tdim = mesh.topology().dim();
   const mesh::Connectivity& cell_dofs
       = mesh.coordinate_dofs().entity_points(tdim);
 

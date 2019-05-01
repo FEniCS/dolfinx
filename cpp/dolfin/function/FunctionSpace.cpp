@@ -192,7 +192,7 @@ void FunctionSpace::interpolate_from_any(
     // Get cell coordinate dofs
     const int cell_index = cell.index();
     coordinate_dofs.resize(cell.num_vertices(), gdim);
-    for (int i = 0; i < cell.num_vertices(); ++i)
+    for (int i = 0; i < (int)cell.num_vertices(); ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
@@ -409,7 +409,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
     // Update cell
     const int cell_index = cell.index();
     coordinate_dofs.resize(cell.num_vertices(), gdim);
-    for (int i = 0; i < cell.num_vertices(); ++i)
+    for (int i = 0; i < (int)cell.num_vertices(); ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
@@ -477,7 +477,7 @@ void FunctionSpace::set_x(
     // Update UFC cell
     const int cell_index = cell.index();
     coordinate_dofs.resize(cell.num_vertices(), gdim);
-    for (int i = 0; i < cell.num_vertices(); ++i)
+    for (int i = 0; i < (int)cell.num_vertices(); ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
