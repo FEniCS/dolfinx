@@ -112,8 +112,6 @@
 # :py:mod:`dolfin` module are imported::
 
 from dolfin import log
-# Save all logging to file
-log.set_output_file("log.txt")
 
 import os
 import random
@@ -126,6 +124,10 @@ from dolfin.io import XDMFFile
 from petsc4py import PETSc
 from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
                  variable)
+
+
+# Save all logging to file
+log.set_output_file("log.txt")
 
 # .. index::
 #    single: NonlinearProblem; (in Cahn-Hilliard demo)
