@@ -234,7 +234,7 @@ void Function::eval(
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = mesh.geometry().points();
-  EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), gdim);
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
 
   const int cell_index = cell.index();
   for (int i = 0; i < num_dofs_g; ++i)
