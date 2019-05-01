@@ -151,6 +151,7 @@ private:
 
 int main(int argc, char* argv[])
 {
+  common::SubSystemsManager::init_logging(argc, argv);
   common::SubSystemsManager::init_petsc(argc, argv);
 
   // Inside the ``main`` function, we begin by defining a tetrahedral mesh

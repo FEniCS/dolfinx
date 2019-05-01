@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
-// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -32,9 +31,6 @@ std::size_t QuadrilateralCell::num_entities(std::size_t dim) const
   case 2:
     return 1; // cells
   default:
-    // spdlog::error("QuadrilateralCell.cpp",
-    //               "access number of entities of quadrilateral cell",
-    //               "Illegal topological dimension (%d)", dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -52,10 +48,6 @@ std::size_t QuadrilateralCell::num_vertices(std::size_t dim) const
   case 2:
     return 4; // cells
   default:
-    // spdlog::error(
-    //     "QuadrilateralCell.cpp",
-    //     "access number of vertices for subsimplex of quadrilateral cell",
-    //     "Illegal topological dimension (%d)", dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -70,10 +62,6 @@ void QuadrilateralCell::create_entities(
   // We only need to know how to create edges
   if (dim != 1)
   {
-    // spdlog::error(
-    //     "QuadrilateralCell.cpp", "create entities of quadrilateral cell",
-    //     "Don't know how to create entities of topological dimension %d",
-    //     dim);
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -95,8 +83,6 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
   {
-    // spdlog::error("QuadrilateralCell.cpp", "compute volume (area) of cell",
-    //               "Illegal mesh entity");
     throw std::runtime_error("Illegal topological dimension");
   }
 
@@ -112,8 +98,6 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
 
   if (geometry.dim() != 2 && geometry.dim() != 3)
   {
-    // spdlog::error("QuadrilateralCell.cpp", "compute volume of quadrilateral",
-    //               "Only know how to compute volume in R^2 or R^3");
     throw std::runtime_error("Illegal geometric dimension");
   }
 
@@ -132,9 +116,6 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     // Check for coplanarity
     if (std::abs(copl) > h * DBL_EPSILON)
     {
-      // spdlog::error("QuadrilateralCell.cpp", "compute volume of
-      // quadrilateral",
-      //               "Vertices of the quadrilateral are not coplanar");
       throw std::runtime_error("Not coplanar");
     }
   }
@@ -147,27 +128,18 @@ double QuadrilateralCell::circumradius(const MeshEntity& cell) const
   // Check that we get a cell
   if (cell.dim() != 2)
   {
-    // spdlog::error("QuadrilateralCell.cpp",
-    //               "compute circumradius of quadrilateral cell",
-    //               "Illegal mesh entity");
     throw std::runtime_error("Illegal topological dimension");
   }
 
-  // spdlog::error("QuadrilateralCell.cpp",
-  //               "compute cirumradius of quadrilateral cell",
-  //               "Don't know how to compute circumradius");
   throw std::runtime_error("Not supported");
 
-  // spdlog::error("Not implemented");
-  throw std::runtime_error("");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
 double QuadrilateralCell::squared_distance(const Cell& cell,
                                            const geometry::Point& point) const
 {
-  // spdlog::error("Not implemented");
-  throw std::runtime_error("");
+  throw std::runtime_error("Not implemented");
   return 0.0;
 }
 //-----------------------------------------------------------------------------
@@ -188,10 +160,6 @@ geometry::Point QuadrilateralCell::normal(const Cell& cell,
 
   if (cell.mesh().geometry().dim() != 2)
   {
-    // spdlog::error("QuadrilateralCell.cpp", "find normal",
-    //               "Normal vector is not defined in dimension %d (only defined
-    //               " "when the triangle is in R^2",
-    //               cell.mesh().geometry().dim());
     throw std::runtime_error("Illegal geometric dimension");
   }
 
@@ -231,8 +199,6 @@ geometry::Point QuadrilateralCell::cell_normal(const Cell& cell) const
   const std::size_t gdim = geometry.dim();
   if (gdim > 3)
   {
-    // spdlog::error("QuadrilateralCell.cpp", "compute cell normal",
-    //               "Illegal geometric dimension (%d)", gdim);
     throw std::runtime_error("Illegal geometric dimension");
   }
 

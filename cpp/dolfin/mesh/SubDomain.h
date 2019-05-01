@@ -14,7 +14,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
-// #include <spdlog/spdlog.h>
+
+#include <dolfin/common/log.h>
 #include <map>
 
 namespace dolfin
@@ -117,8 +118,7 @@ template <typename S, typename T>
 void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
                      bool check_midpoint) const
 {
-  // spdlog::debug("Computing sub domain markers for sub domain %d.",
-  //          sub_domain);
+  LOG(INFO) << "Computing sub domain markers for sub domain " << sub_domain;
 
   // Get the dimension of the entities we are marking
   const std::size_t dim = sub_domains.dim();
