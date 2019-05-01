@@ -44,7 +44,6 @@
 using namespace dolfin;
 using namespace dolfin::io;
 
-
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding)
     : _mpi_comm(comm), _filename(filename), _counter(0),
@@ -332,7 +331,6 @@ void XDMFFile::write(const function::Function& u)
   // Get function::Function data values and shape
   std::vector<PetscScalar> data_values;
   bool cell_centred = has_cell_centred_data(u);
-
   if (cell_centred)
     data_values = get_cell_data_values(u);
   else
@@ -352,7 +350,6 @@ void XDMFFile::write(const function::Function& u)
 #else
   std::vector<std::string> components = {""};
 #endif
-
   for (const std::string component : components)
   {
     std::string attr_name;
@@ -2797,10 +2794,10 @@ bool XDMFFile::has_cell_centred_data(const function::Function& u)
 std::vector<PetscScalar>
 XDMFFile::get_point_data_values(const function::Function& u)
 {
-  const auto mesh = u.function_space()->mesh();
-
-  auto data_values = u.compute_point_values(*mesh);
-
+  auto mesh = u.function_space()->mesh();
+  assert(mesh);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      data_values = u.compute_point_values(*mesh);
   std::int64_t width = get_padded_width(u);
 
   // FIXME: Unpick the below code for the new layout of data from

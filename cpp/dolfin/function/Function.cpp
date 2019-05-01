@@ -365,22 +365,12 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
         "Cannot interpolate function values at points. Non-matching mesh");
   }
 
-  // Local data for interpolation on each cell
-  const std::size_t num_cell_vertices
-      = mesh.type().num_vertices(mesh.topology().dim());
-
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
 
   // Resize Array for holding point values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       point_values(mesh.geometry().num_points(), value_size_loc);
-
-  // Interpolate point values on each cell (using last computed value
-  // if not continuous, e.g. discontinuous Galerkin methods)
-  EigenRowArrayXXd x(num_cell_vertices, mesh.geometry().dim());
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values(num_cell_vertices, value_size_loc);
 
   const int gdim = mesh.topology().dim();
   const int tdim = mesh.topology().dim();
@@ -400,6 +390,11 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
       x_g
       = mesh.geometry().points();
 
+  // Interpolate point values on each cell (using last computed value
+  // if not continuous, e.g. discontinuous Galerkin methods)
+  EigenRowArrayXXd x(num_dofs_g, mesh.geometry().dim());
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values(num_dofs_g, value_size_loc);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Get coordinates for all points in cell
