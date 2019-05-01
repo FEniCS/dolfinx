@@ -186,13 +186,12 @@ void FunctionSpace::interpolate_from_any(
       = _mesh->geometry().points();
 
   // Iterate over mesh and interpolate on each cell
-  EigenRowArrayXXd coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Get cell coordinate dofs
     const int cell_index = cell.index();
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    for (int i = 0; i < (int)cell.num_vertices(); ++i)
+    for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
@@ -403,13 +402,12 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(_element->space_dimension(), gdim);
-  EigenRowArrayXXd coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update cell
     const int cell_index = cell.index();
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    for (int i = 0; i < (int)cell.num_vertices(); ++i)
+    for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
@@ -471,13 +469,12 @@ void FunctionSpace::set_x(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinates(_element->space_dimension(), _mesh->geometry().dim());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
+      coordinate_dofs(num_dofs_g, gdim);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
     const int cell_index = cell.index();
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    for (int i = 0; i < (int)cell.num_vertices(); ++i)
+    for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 

@@ -74,7 +74,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       = dofmap.tabulate_local_to_global_dofs();
 
   // Geometric dimension
-  const std::size_t gdim = mesh.geometry().dim();
+  const int gdim = mesh.geometry().dim();
 
   // Get dof coordinates on reference element
   const EigenRowArrayXXd& X = element.dof_reference_coordinates();
@@ -241,8 +241,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   // Get coarse mesh and dimension of the domain
   assert(coarse_space.mesh());
   const mesh::Mesh& meshc = *coarse_space.mesh();
-  std::size_t gdim = meshc.geometry().dim();
-  std::size_t tdim = meshc.topology().dim();
+  const int gdim = meshc.geometry().dim();
+  const int tdim = meshc.topology().dim();
 
   // MPI communicator, size and rank
   const MPI_Comm mpi_comm = meshc.mpi_comm();
