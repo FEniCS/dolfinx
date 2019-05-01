@@ -475,7 +475,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //   const FiniteElement& element = *V.element();
 
 //   // Initialize facets, needed for geometric search
-//   // spdlog::info("Computing facets, needed for geometric application of
+//   // glog::info("Computing facets, needed for geometric application of
 //   // boundary "
 //   //              "conditions.");
 //   mesh.create_entities(mesh.topology().dim() - 1);

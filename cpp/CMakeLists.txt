@@ -199,7 +199,7 @@ set_package_properties(UFC PROPERTIES TYPE REQUIRED
   DESCRIPTION "Unified language for form-compilers (part of FFC-X)"
   URL "https://github.com/fenics/ffcx")
 
-  # Check for HDF5
+# Check for HDF5
 set(HDF5_PREFER_PARALLEL TRUE)
 find_package(HDF5 REQUIRED)
 if (NOT HDF5_IS_PARALLEL)
