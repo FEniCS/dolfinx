@@ -13,7 +13,6 @@ import os
 import time
 
 import cffi
-import mpi4py
 import numba
 import numba.cffi_support
 import numpy as np
