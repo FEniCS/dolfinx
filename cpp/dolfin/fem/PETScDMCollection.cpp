@@ -103,7 +103,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
-  EigenRowArrayXXd coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);;
   std::vector<double> coors(gdim);
 
   // Speed up the computations by only visiting (most) dofs once
@@ -116,8 +116,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   {
     // Get cell coordinates
     const int cell_index = cell.index();
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    for (int i = 0; i < (int)cell.num_vertices(); ++i)
+    for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
@@ -526,7 +525,6 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> coarse_local_to_global_dofs
       = coarsemap->tabulate_local_to_global_dofs();
 
-  EigenRowArrayXXd coordinate_dofs; // cell dofs coordinates vector
 
   // Loop over the found coarse cells
   Eigen::Map<const EigenRowArrayXXd> x(found_points.data(), found_ids.size(),
@@ -549,6 +547,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
       = meshc.geometry().points();
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);; // cell dofs coordinates vector
 
   for (unsigned int i = 0; i < found_ids.size(); ++i)
   {
@@ -559,10 +558,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
 
     // Get dofs coordinates of the coarse cell
-    coordinate_dofs.resize(coarse_cell.num_vertices(), gdim);
     const int cell_index = coarse_cell.index();
-    coordinate_dofs.resize(coarse_cell.num_vertices(), gdim);
-    for (int i = 0; i < (int)coarse_cell.num_vertices(); ++i)
+    for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 

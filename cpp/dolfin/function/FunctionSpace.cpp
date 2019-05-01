@@ -166,8 +166,8 @@ void FunctionSpace::interpolate_from_any(
 {
   assert(_mesh);
 
-  const std::size_t gdim = _mesh->geometry().dim();
-  const std::size_t tdim = _mesh->topology().dim();
+  const int gdim = _mesh->geometry().dim();
+  const int tdim = _mesh->topology().dim();
 
   // Initialize local arrays
   std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
