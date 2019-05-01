@@ -1,5 +1,3 @@
-#define LOGURU_WITH_STREAMS 1
-
 #ifndef _WIN32
 // Disable all warnings from gcc/clang:
 #pragma GCC diagnostic push
@@ -1599,94 +1597,62 @@ namespace loguru
 			else           { str += char('a' + num - 10); }
 		};
 
-		auto write_hex_16 = [&](uint16_t n){
-    write_hex_digit((n >> 12u) & 0x0f);
-    write_hex_digit((n >> 8u) & 0x0f);
-    write_hex_digit((n >> 4u) & 0x0f);
-    write_hex_digit((n >> 0u) & 0x0f);
-  };
+		auto write_hex_16 = [&](uint16_t n)
+		{
+			write_hex_digit((n >> 12u) & 0x0f);
+			write_hex_digit((n >>  8u) & 0x0f);
+			write_hex_digit((n >>  4u) & 0x0f);
+			write_hex_digit((n >>  0u) & 0x0f);
+		};
 
-  if (c == '\\')
-  {
-    str += "\\\\";
-  }
-  else if (c == '\"')
-  {
-    str += "\\\"";
-  }
-  else if (c == '\'')
-  {
-    str += "\\\'";
-  }
-  else if (c == '\0')
-  {
-    str += "\\0";
-  }
-  else if (c == '\b')
-  {
-    str += "\\b";
-  }
-  else if (c == '\f')
-  {
-    str += "\\f";
-  }
-  else if (c == '\n')
-  {
-    str += "\\n";
-  }
-  else if (c == '\r')
-  {
-    str += "\\r";
-  }
-  else if (c == '\t')
-  {
-    str += "\\t";
-  }
-  else if (0 <= c && c < 0x20)
-  {
-    str += "\\u";
-    write_hex_16(static_cast<uint16_t>(c));
-  }
-  else
-  {
-    str += c;
-  }
+		if      (c == '\\') { str += "\\\\"; }
+		else if (c == '\"') { str += "\\\""; }
+		else if (c == '\'') { str += "\\\'"; }
+		else if (c == '\0') { str += "\\0";  }
+		else if (c == '\b') { str += "\\b";  }
+		else if (c == '\f') { str += "\\f";  }
+		else if (c == '\n') { str += "\\n";  }
+		else if (c == '\r') { str += "\\r";  }
+		else if (c == '\t') { str += "\\t";  }
+		else if (0 <= c && c < 0x20) {
+			str += "\\u";
+			write_hex_16(static_cast<uint16_t>(c));
+		} else { str += c; }
 
-  str += "'";
+		str += "'";
 
-  return Text{STRDUP(str.c_str())};
-}
+		return Text{STRDUP(str.c_str())};
+	}
 
-#define DEFINE_EC(Type)                                                        \
-  Text ec_to_text(Type value)                                                  \
-  {                                                                            \
-    auto str = std::to_string(value);                                          \
-    return Text{STRDUP(str.c_str())};                                          \
-  }
+	#define DEFINE_EC(Type)                        \
+		Text ec_to_text(Type value)                \
+		{                                          \
+			auto str = std::to_string(value);      \
+			return Text{STRDUP(str.c_str())};      \
+		}
 
-DEFINE_EC(int)
-DEFINE_EC(unsigned int)
-DEFINE_EC(long)
-DEFINE_EC(unsigned long)
-DEFINE_EC(long long)
-DEFINE_EC(unsigned long long)
-DEFINE_EC(float)
-DEFINE_EC(double)
-DEFINE_EC(long double)
+	DEFINE_EC(int)
+	DEFINE_EC(unsigned int)
+	DEFINE_EC(long)
+	DEFINE_EC(unsigned long)
+	DEFINE_EC(long long)
+	DEFINE_EC(unsigned long long)
+	DEFINE_EC(float)
+	DEFINE_EC(double)
+	DEFINE_EC(long double)
 
-#undef DEFINE_EC
+	#undef DEFINE_EC
 
-Text ec_to_text(EcHandle ec_handle)
-{
-  Text parent_ec = get_error_context_for(ec_handle);
-  char* with_newline
-      = reinterpret_cast<char*>(malloc(strlen(parent_ec.c_str()) + 2));
-  with_newline[0] = '\n';
-  strcpy(with_newline + 1, parent_ec.c_str());
-  return Text(with_newline);
-}
+	Text ec_to_text(EcHandle ec_handle)
+	{
+		Text parent_ec = get_error_context_for(ec_handle);
+		char* with_newline = reinterpret_cast<char*>(malloc(strlen(parent_ec.c_str()) + 2));
+		with_newline[0] = '\n';
+		strcpy(with_newline + 1, parent_ec.c_str());
+		return Text(with_newline);
+	}
 
-// ----------------------------------------------------------------------------
+	// ----------------------------------------------------------------------------
 
 } // namespace loguru
 
@@ -1698,132 +1664,129 @@ Text ec_to_text(EcHandle ec_handle)
 // ----------------------------------------------------------------------------
 
 #ifdef _WIN32
-namespace loguru
-{
-void install_signal_handlers()
-{
-#if defined(_MSC_VER)
-#pragma message("No signal handlers on Win32")
-#else
-#warning "No signal handlers on Win32"
-#endif
-}
+namespace loguru {
+	void install_signal_handlers()
+	{
+		#if defined(_MSC_VER)
+		#pragma message ( "No signal handlers on Win32" )
+		#else
+		#warning "No signal handlers on Win32"
+		#endif
+	}
 } // namespace loguru
 
 #else // _WIN32
 
 namespace loguru
 {
-struct Signal
-{
-  int number;
-  const char* name;
-};
-const Signal ALL_SIGNALS[] = {
+	struct Signal
+	{
+		int         number;
+		const char* name;
+	};
+	const Signal ALL_SIGNALS[] = {
 #if LOGURU_CATCH_SIGABRT
-    {SIGABRT, "SIGABRT"},
+		{ SIGABRT, "SIGABRT" },
 #endif
-    {SIGBUS, "SIGBUS"},   {SIGFPE, "SIGFPE"},   {SIGILL, "SIGILL"},
-    {SIGINT, "SIGINT"},   {SIGSEGV, "SIGSEGV"}, {SIGTERM, "SIGTERM"},
-};
+		{ SIGBUS,  "SIGBUS"  },
+		{ SIGFPE,  "SIGFPE"  },
+		{ SIGILL,  "SIGILL"  },
+		{ SIGINT,  "SIGINT"  },
+		{ SIGSEGV, "SIGSEGV" },
+		{ SIGTERM, "SIGTERM" },
+	};
 
-void write_to_stderr(const char* data, size_t size)
-{
-  auto result = write(STDERR_FILENO, data, size);
-  (void)result; // Ignore errors.
-}
+	void write_to_stderr(const char* data, size_t size)
+	{
+		auto result = write(STDERR_FILENO, data, size);
+		(void)result; // Ignore errors.
+	}
 
-void write_to_stderr(const char* data) { write_to_stderr(data, strlen(data)); }
+	void write_to_stderr(const char* data)
+	{
+		write_to_stderr(data, strlen(data));
+	}
 
-void call_default_signal_handler(int signal_number)
-{
-  struct sigaction sig_action;
-  memset(&sig_action, 0, sizeof(sig_action));
-  sigemptyset(&sig_action.sa_mask);
-  sig_action.sa_handler = SIG_DFL;
-  sigaction(signal_number, &sig_action, NULL);
-  kill(getpid(), signal_number);
-}
+	void call_default_signal_handler(int signal_number)
+	{
+		struct sigaction sig_action;
+		memset(&sig_action, 0, sizeof(sig_action));
+		sigemptyset(&sig_action.sa_mask);
+		sig_action.sa_handler = SIG_DFL;
+		sigaction(signal_number, &sig_action, NULL);
+		kill(getpid(), signal_number);
+	}
 
-void signal_handler(int signal_number, siginfo_t*, void*)
-{
-  const char* signal_name = "UNKNOWN SIGNAL";
+	void signal_handler(int signal_number, siginfo_t*, void*)
+	{
+		const char* signal_name = "UNKNOWN SIGNAL";
 
-  for (const auto& s : ALL_SIGNALS)
-  {
-    if (s.number == signal_number)
-    {
-      signal_name = s.name;
-      break;
-    }
-  }
+		for (const auto& s : ALL_SIGNALS) {
+			if (s.number == signal_number) {
+				signal_name = s.name;
+				break;
+			}
+		}
 
-  // --------------------------------------------------------------------
-  /* There are few things that are safe to do in a signal handler,
-     but writing to stderr is one of them.
-     So we first print out what happened to stderr so we're sure that gets out,
-     then we do the unsafe things, like logging the stack trace.
-  */
+		// --------------------------------------------------------------------
+		/* There are few things that are safe to do in a signal handler,
+		   but writing to stderr is one of them.
+		   So we first print out what happened to stderr so we're sure that gets out,
+		   then we do the unsafe things, like logging the stack trace.
+		*/
 
-  if (g_colorlogtostderr && s_terminal_has_color)
-  {
-    write_to_stderr(terminal_reset());
-    write_to_stderr(terminal_bold());
-    write_to_stderr(terminal_light_red());
-  }
-  write_to_stderr("\n");
-  write_to_stderr("Loguru caught a signal: ");
-  write_to_stderr(signal_name);
-  write_to_stderr("\n");
-  if (g_colorlogtostderr && s_terminal_has_color)
-  {
-    write_to_stderr(terminal_reset());
-  }
+		if (g_colorlogtostderr && s_terminal_has_color) {
+			write_to_stderr(terminal_reset());
+			write_to_stderr(terminal_bold());
+			write_to_stderr(terminal_light_red());
+		}
+		write_to_stderr("\n");
+		write_to_stderr("Loguru caught a signal: ");
+		write_to_stderr(signal_name);
+		write_to_stderr("\n");
+		if (g_colorlogtostderr && s_terminal_has_color) {
+			write_to_stderr(terminal_reset());
+		}
 
-  // --------------------------------------------------------------------
+		// --------------------------------------------------------------------
 
 #if LOGURU_UNSAFE_SIGNAL_HANDLER
-  // --------------------------------------------------------------------
-  /* Now we do unsafe things. This can for example lead to deadlocks if
-     the signal was triggered from the system's memory management functions
-     and the code below tries to do allocations.
-  */
+		// --------------------------------------------------------------------
+		/* Now we do unsafe things. This can for example lead to deadlocks if
+		   the signal was triggered from the system's memory management functions
+		   and the code below tries to do allocations.
+		*/
 
-  flush();
-  char preamble_buff[LOGURU_PREAMBLE_WIDTH];
-  print_preamble(preamble_buff, sizeof(preamble_buff), Verbosity_FATAL, "", 0);
-  auto message = Message{Verbosity_FATAL, "",         0, preamble_buff, "",
-                         "Signal: ",      signal_name};
-  try
-  {
-    log_message(1, message, false, false);
-  }
-  catch (...)
-  {
-    // This can happed due to s_fatal_handler.
-    write_to_stderr("Exception caught and ignored by Loguru signal handler.\n");
-  }
-  flush();
+		flush();
+		char preamble_buff[LOGURU_PREAMBLE_WIDTH];
+		print_preamble(preamble_buff, sizeof(preamble_buff), Verbosity_FATAL, "", 0);
+		auto message = Message{Verbosity_FATAL, "", 0, preamble_buff, "", "Signal: ", signal_name};
+		try {
+			log_message(1, message, false, false);
+		} catch (...) {
+			// This can happed due to s_fatal_handler.
+			write_to_stderr("Exception caught and ignored by Loguru signal handler.\n");
+		}
+		flush();
 
-  // --------------------------------------------------------------------
+		// --------------------------------------------------------------------
 #endif // LOGURU_UNSAFE_SIGNAL_HANDLER
 
-  call_default_signal_handler(signal_number);
-}
+		call_default_signal_handler(signal_number);
+	}
 
-void install_signal_handlers()
-{
-  struct sigaction sig_action;
-  memset(&sig_action, 0, sizeof(sig_action));
-  sigemptyset(&sig_action.sa_mask);
-  sig_action.sa_flags |= SA_SIGINFO;
-  sig_action.sa_sigaction = &signal_handler;
-  for (const auto& s : ALL_SIGNALS)
-  {
-    CHECK_F(sigaction(s.number, &sig_action, NULL) != -1,
-            "Failed to install handler for %s", s.name);
-  }
-}
+	void install_signal_handlers()
+	{
+		struct sigaction sig_action;
+		memset(&sig_action, 0, sizeof(sig_action));
+		sigemptyset(&sig_action.sa_mask);
+		sig_action.sa_flags |= SA_SIGINFO;
+		sig_action.sa_sigaction = &signal_handler;
+		for (const auto& s : ALL_SIGNALS) {
+			CHECK_F(sigaction(s.number, &sig_action, NULL) != -1,
+				"Failed to install handler for %s", s.name);
+		}
+	}
 } // namespace loguru
 
 #endif // _WIN32

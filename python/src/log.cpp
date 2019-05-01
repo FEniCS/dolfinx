@@ -6,7 +6,7 @@
 
 #include "casters.h"
 #include <dolfin/common/Variable.h>
-#include <dolfin/common/loguru.hpp>
+#include <dolfin/common/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
 #include <pybind11/pybind11.h>
@@ -26,24 +26,16 @@ void log(py::module& m)
       .value("WARNING", loguru::Verbosity_WARNING)
       .value("ERROR", loguru::Verbosity_ERROR);
 
-  // dolfin/log free functions
-  //  m.def("info",
-  //       [](const dolfin::common::Variable& v) {
-  //       spdlog::info(v.str(false));
-  //       });
-  // m.def("info", [](const dolfin::common::Variable& v, bool verbose) {
-  //   spdlog::info(v.str(verbose));
-  // });
-  m.def("info", [](std::string s) { LOG(INFO) << s; });
-  // m.def("info",
-  //       [](const dolfin::mesh::Mesh& mesh, bool verbose) {
-  //         spdlog::info(mesh.str(verbose));
-  //       },
-  //       py::arg("mesh"), py::arg("verbose") = false);
+  m.def("set_output_file", [](std::string filename) {
+    loguru::add_file(filename.c_str(), loguru::Truncate,
+                     loguru::Verbosity_INFO);
+  });
+
   m.def("set_log_level", [](loguru::NamedVerbosity level) {
     loguru::g_stderr_verbosity = level;
   });
-  m.def("get_log_level", []() { return loguru::g_stderr_verbosity; });
+  m.def("get_log_level",
+        []() { return loguru::NamedVerbosity(loguru::g_stderr_verbosity); });
   m.def("log", [](loguru::NamedVerbosity level, std::string s) {
     switch (level)
     {
