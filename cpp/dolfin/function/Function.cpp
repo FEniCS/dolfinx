@@ -198,6 +198,9 @@ void Function::eval(
         x,
     const mesh::Cell& cell) const
 {
+  // FIXME: This function needs to be changed to handle an arbitrary
+  // number of points for efficiency
+
   assert(_function_space);
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
@@ -215,9 +218,28 @@ void Function::eval(
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
       element.space_dimension());
 
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+
   // Cell coordinates (re-allocated inside function for thread safety)
-  EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
-  cell.get_coordinate_dofs(coordinate_dofs);
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+
+  const int cell_index = cell.index();
+  for (int i = 0; i < num_dofs_g; ++i)
+    for (int j = 0; j < gdim; ++j)
+      coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
   restrict(coefficients.data(), cell, coordinate_dofs);
 
@@ -231,9 +253,6 @@ void Function::eval(
   }
 
   std::size_t num_points = x.rows();
-  std::size_t gdim = mesh.geometry().dim();
-  std::size_t tdim = mesh.topology().dim();
-
   std::size_t reference_value_size = element.reference_value_size();
   std::size_t value_size = element.value_size();
   std::size_t space_dimension = element.space_dimension();
@@ -346,10 +365,6 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
         "Cannot interpolate function values at points. Non-matching mesh");
   }
 
-  // Local data for interpolation on each cell
-  const std::size_t num_cell_vertices
-      = mesh.type().num_vertices(mesh.topology().dim());
-
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
 
@@ -357,20 +372,37 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       point_values(mesh.geometry().num_points(), value_size_loc);
 
-  // Interpolate point values on each cell (using last computed value
-  // if not continuous, e.g. discontinuous Galerkin methods)
-  EigenRowArrayXXd x(num_cell_vertices, mesh.geometry().dim());
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values(num_cell_vertices, value_size_loc);
-
-  const std::size_t tdim = mesh.topology().dim();
+  const int gdim = mesh.topology().dim();
+  const int tdim = mesh.topology().dim();
   const mesh::Connectivity& cell_dofs
       = mesh.coordinate_dofs().entity_points(tdim);
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
+  // Interpolate point values on each cell (using last computed value
+  // if not continuous, e.g. discontinuous Galerkin methods)
+  EigenRowArrayXXd x(num_dofs_g, mesh.geometry().dim());
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values(num_dofs_g, value_size_loc);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Get coordinates for all points in cell
-    cell.get_coordinate_dofs(x);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        x(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+
     values.resize(x.rows(), value_size_loc);
 
     // Call evaluate function
