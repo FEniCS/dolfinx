@@ -146,14 +146,21 @@ def test_custom_mesh_loop_ctypes_rank2():
     """Test numba assembler for bilinear form"""
 
     # Load PETSc library
-    petsc_dir = os.environ.get('PETSC_DIR', None)
-    try:
-        petsc_lib = ctypes.CDLL(petsc_dir + "/lib/libpetsc.so")
-    except OSError:
-        petsc_lib = ctypes.CDLL(petsc_dir + "/lib/libpetsc.dylib")
-    except OSError:
-        print("Could not load PETSc library for ctypes.")
-        raise
+    ctypes.util.find_library("petsc")
+
+
+    petsc_lib_name = ctypes.util.find_library("petsc")
+    if petsc_lib_name is not None:
+        petsc_lib = ctypes.CDLL(petsc_lib_name)
+    else:
+        petsc_dir = os.environ.get('PETSC_DIR', None)
+        try:
+            petsc_lib = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.so"))
+        except OSError:
+            petsc_lib = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
+        except OSError:
+            print("Could not load PETSc library for CFFI (ABI mode).")
+            raise
 
     # Get the PETSc MatSetValuesLocal function
     MatSetValues = petsc_lib.MatSetValuesLocal
@@ -286,7 +293,7 @@ def test_custom_mesh_loop_cffi_rank2():
                                 const PetscScalar* y, InsertMode addv);
         """)
         ffibuilder.set_source("_petsc_cffi", """
-            #include "petscmat.h"
+            # include "petscmat.h"
         """,
                               libraries=['petsc'],
                               include_dirs=[os.path.join(petsc_dir, 'include')],
@@ -405,13 +412,20 @@ def test_custom_mesh_loop_cffi_abi_rank2():
     # Make MatSetValuesLocal from PETSc available via cffi
     ffi = cffi.FFI()
     ffi.cdef("""
-        int MatSetValuesLocal(void* mat, int nrow, const int* irow,
-                              int ncol, const int* icol,
+        int MatSetValuesLocal(void* mat, int nrow, const int* irow, int ncol, const int* icol,
                               const double* y, int addv);
     """)
 
-    petsc_dir = os.environ.get('PETSC_DIR', None)
-    petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib/libpetsc.dylib"))
+    petsc_lib = ctypes.util.find_library("petsc")
+    if petsc_lib is None:
+        petsc_dir = os.environ.get('PETSC_DIR', None)
+        try:
+            petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.so"))
+        except OSError:
+            petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
+        except OSError:
+            print("Could not load PETSc library for CFFI (ABI mode).")
+            raise
     add_values = petsc_lib.MatSetValuesLocal
 
     # See https://github.com/numba/numba/issues/4036 for why we need 'sink'
