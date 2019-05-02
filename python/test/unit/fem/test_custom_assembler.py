@@ -376,3 +376,112 @@ def test_custom_mesh_loop_cffi_rank2():
     A1.assemble()
 
     assert (A1 - A0).norm() == pytest.approx(0.0)
+
+
+def test_custom_mesh_loop_cffi_abi_rank2():
+    """Test numba assembler for bilinear form
+
+    Some work is required to get this working with complex types, and possibly
+    64-bit indices.
+
+    """
+
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
+    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+
+    # Test against generated code and general assembler
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+    a = inner(u, v) * dx
+    A0 = dolfin.fem.assemble_matrix(a)
+    A0.assemble()
+
+    A0.zeroEntries()
+    start = time.time()
+    dolfin.fem.assemble_matrix(A0, a)
+    end = time.time()
+    print("Time (C++, pass 2):", end - start)
+    A0.assemble()
+
+    # Make MatSetValuesLocal from PETSc available via cffi
+    ffi = cffi.FFI()
+    ffi.cdef("""
+        int MatSetValuesLocal(void* mat, int nrow, const int* irow,
+                              int ncol, const int* icol,
+                              const double* y, int addv);
+    """)
+
+    petsc_dir = os.environ.get('PETSC_DIR', None)
+    petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib/libpetsc.dylib"))
+    add_values = petsc_lib.MatSetValuesLocal
+
+    # See https://github.com/numba/numba/issues/4036 for why we need 'sink'
+    @numba.njit
+    def sink(*args):
+        pass
+
+    @numba.njit
+    def assemble_matrix(A, mesh, x, dofmap, set_vals, mode):
+        """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
+
+        def shape_functions(q):
+            """Compute shape functions at a point"""
+            return 1.0 - q[0] - q[1], q[0], q[1]
+
+        # Mesh data
+        connections, pos = mesh
+
+        # Quadrature points and weights
+        q_points = np.array([[0.5, 0.0], [0.5, 0.5], [0.0, 0.5]], dtype=np.double)
+        weights = np.full(3, 1.0 / 3.0, dtype=np.double)
+
+        # Loop over cells
+        _A = np.empty((3, 3), dtype=PETSc.ScalarType)
+        for i, cell in enumerate(pos[:-1]):
+            num_vertices = pos[i + 1] - pos[i]
+            c = connections[cell:cell + num_vertices]
+            cell_area = area(x[c[0]], x[c[1]], x[c[2]])
+
+            # Loop over quadrature points
+            _A[:] = 0.0
+            for j in range(q_points.shape[0]):
+
+                N0, N1, N2 = shape_functions(q_points[j])
+
+                _A[0, 0] += weights[j] * cell_area * N0 * N0
+                _A[0, 1] += weights[j] * cell_area * N0 * N1
+                _A[0, 2] += weights[j] * cell_area * N0 * N2
+
+                _A[1, 0] += weights[j] * cell_area * N1 * N0
+                _A[1, 1] += weights[j] * cell_area * N1 * N1
+                _A[1, 2] += weights[j] * cell_area * N1 * N2
+
+                _A[2, 0] += weights[j] * cell_area * N2 * N0
+                _A[2, 1] += weights[j] * cell_area * N2 * N1
+                _A[2, 2] += weights[j] * cell_area * N2 * N2
+
+            # Add to global tensor
+            rows = cols = ffi.from_buffer(dofmap[3 * i:3 * i + 3])
+            set_vals(A, 3, rows, 3, cols, ffi.from_buffer(_A), mode)
+        sink(_A, dofmap)
+
+    # Unpack mesh and dofmap data
+    c = mesh.topology.connectivity(2, 0).connections()
+    pos = mesh.topology.connectivity(2, 0).pos()
+    geom = mesh.geometry.points
+    dofs = V.dofmap().dof_array
+
+    # First assembly
+    A1 = A0.copy()
+    A1.zeroEntries()
+    assemble_matrix(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
+    A1.assemble()
+
+    # Second assembly
+    A1.zeroEntries()
+    start = time.time()
+    assemble_matrix(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
+    end = time.time()
+    print("Time (Numba, pass 2):", end - start)
+    A1.assemble()
+
+    assert (A1 - A0).norm() == pytest.approx(0.0)
