@@ -148,7 +148,6 @@ def test_custom_mesh_loop_ctypes_rank2():
     # Load PETSc library
     ctypes.util.find_library("petsc")
 
-
     petsc_lib_name = ctypes.util.find_library("petsc")
     if petsc_lib_name is not None:
         petsc_lib = ctypes.CDLL(petsc_lib_name)
