@@ -305,7 +305,6 @@ def test_custom_mesh_loop_ctypes_rank2():
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
 
-@skip_if_complex
 def test_custom_mesh_loop_cffi_rank2():
     """Test numba assembler for bilinear form
 
@@ -336,13 +335,12 @@ def test_custom_mesh_loop_cffi_rank2():
         petsc_dir = os.environ.get('PETSC_DIR', None)
         ffibuilder = cffi.FFI()
         ffibuilder.cdef("""
-            typedef int... PetscInt;
-            typedef int... PetscErrorCode;
+            typedef ... PetscInt;
             typedef ... PetscScalar;
             typedef int... InsertMode;
-            PetscErrorCode MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
-                                PetscInt ncol, const PetscInt* icol,
-                                const PetscScalar* y, InsertMode addv);
+            int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
+                                  PetscInt ncol, const PetscInt* icol,
+                                  const PetscScalar* y, InsertMode addv);
         """)
         ffibuilder.set_source("_petsc_cffi", """
             # include "petscmat.h"
