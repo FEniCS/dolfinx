@@ -107,6 +107,39 @@ else:
         raise
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
+# Make MatSetValuesLocal from PETSc available via cffi in API mode
+if dolfin.MPI.comm_world.Get_rank() == 0:
+    os.environ["CC"] = "mpicc"
+    petsc_dir = os.environ.get('PETSC_DIR', None)
+    ffibuilder = cffi.FFI()
+    ffibuilder.cdef("""
+        typedef int... PetscInt;
+        typedef ... PetscScalar;
+        typedef int... InsertMode;
+        int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
+                                PetscInt ncol, const PetscInt* icol,
+                                const PetscScalar* y, InsertMode addv);
+    """)
+    ffibuilder.set_source("_petsc_cffi", """
+        # include "petscmat.h"
+    """,
+                          libraries=['petsc'],
+                          include_dirs=[os.path.join(petsc_dir, 'include')],
+                          library_dirs=[os.path.join(petsc_dir, 'lib')],
+                          extra_compile_args=[])
+    ffibuilder.compile(verbose=False)
+
+dolfin.MPI.comm_world.barrier()
+
+spec = importlib.util.find_spec('_petsc_cffi')
+if spec is None:
+    raise ImportError("Failed to find CFFI generated module")
+module = importlib.util.module_from_spec(spec)
+
+numba.cffi_support.register_module(module)
+MatSetValues_api = module.lib.MatSetValuesLocal
+numba.cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
+
 
 @numba.jit(nopython=True, cache=True)
 def area(x0, x1, x2) -> float:
@@ -378,39 +411,6 @@ def test_custom_mesh_loop_cffi_rank2():
     print("Time (C++, pass 2):", end - start)
     A0.assemble()
 
-    # Make MatSetValuesLocal from PETSc available via cffi
-    if mesh.mpi_comm().Get_rank() == 0:
-        os.environ["CC"] = "mpicc"
-        petsc_dir = os.environ.get('PETSC_DIR', None)
-        ffibuilder = cffi.FFI()
-        ffibuilder.cdef("""
-            typedef int... PetscInt;
-            typedef ... PetscScalar;
-            typedef int... InsertMode;
-            int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
-                                  PetscInt ncol, const PetscInt* icol,
-                                  const PetscScalar* y, InsertMode addv);
-        """)
-        ffibuilder.set_source("_petsc_cffi", """
-            # include "petscmat.h"
-        """,
-                              libraries=['petsc'],
-                              include_dirs=[os.path.join(petsc_dir, 'include')],
-                              library_dirs=[os.path.join(petsc_dir, 'lib')],
-                              extra_compile_args=[])
-        ffibuilder.compile(verbose=False)
-
-    mesh.mpi_comm().barrier()
-
-    spec = importlib.util.find_spec('_petsc_cffi')
-    if spec is None:
-        raise ImportError("Failed to find CFFI generated module")
-    module = importlib.util.module_from_spec(spec)
-
-    numba.cffi_support.register_module(module)
-    add_values = module.lib.MatSetValuesLocal
-    numba.cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
-
     # Unpack mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).connections()
     pos = mesh.topology.connectivity(2, 0).pos()
@@ -420,13 +420,13 @@ def test_custom_mesh_loop_cffi_rank2():
     # First assembly
     A1 = A0.copy()
     A1.zeroEntries()
-    assemble_matrix_cffi(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
+    assemble_matrix_cffi(A1.handle, (c, pos), geom, dofs, MatSetValues_api, PETSc.InsertMode.ADD_VALUES)
     A1.assemble()
 
     # Second assembly
     A1.zeroEntries()
     start = time.time()
-    assemble_matrix_cffi(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
+    assemble_matrix_cffi(A1.handle, (c, pos), geom, dofs, MatSetValues_api, PETSc.InsertMode.ADD_VALUES)
     end = time.time()
     print("Time (Numba, pass 2):", end - start)
     A1.assemble()
