@@ -337,7 +337,7 @@ def test_custom_mesh_loop_cffi_rank2():
         petsc_dir = os.environ.get('PETSC_DIR', None)
         ffibuilder = cffi.FFI()
         ffibuilder.cdef("""
-            typedef ... PetscInt;
+            typedef int... PetscInt;
             typedef ... PetscScalar;
             typedef int... InsertMode;
             int MatSetValuesLocal(void* mat, PetscInt nrow, const PetscInt* irow,
