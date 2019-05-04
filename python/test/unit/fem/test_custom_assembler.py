@@ -52,7 +52,8 @@ elif not complex and scalar_size == 8:
 elif not complex and scalar_size == 4:
     c_scalar_t = "float"
 else:
-    raise RuntimeError("Cannot translate PETSc scalar type to a C type.")
+    raise RuntimeError(
+        "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
 
 
 # Load PETSc library via ctypes
@@ -305,6 +306,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     assert (A0 - A1).norm() == pytest.approx(0.0, abs=1.0e-9)
 
 
+@skip_if_complex
 def test_custom_mesh_loop_cffi_rank2():
     """Test numba assembler for bilinear form
 
