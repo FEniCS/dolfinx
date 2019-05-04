@@ -20,7 +20,6 @@ import pytest
 from petsc4py import PETSc
 
 import dolfin
-from dolfin_utils.test.skips import skip_if_complex
 from ufl import dx, inner
 
 petsc_dir = os.environ.get('PETSC_DIR', None)
@@ -91,8 +90,7 @@ numba.cffi_support.register_type(ffi.typeof('float _Complex'),
                                  numba.types.complex64)
 
 
-# get MatSetValuesLocal from PETSc available via cffi in ABI mode
-# ffi = cffi.FFI()
+# Get MatSetValuesLocal from PETSc available via cffi in ABI mode
 ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow, {0} ncol, const {0}* icol,
                             const {1}* y, int addv);
 """.format(c_int_t, c_scalar_t))
@@ -362,12 +360,7 @@ def test_custom_mesh_loop_ctypes_rank2():
 
 
 def test_custom_mesh_loop_cffi_rank2():
-    """Test numba assembler for bilinear form
-
-    Some work is required to get this working with complex types, and possibly
-    64-bit indices.
-
-    """
+    """Test numba assembler for bilinear form"""
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
@@ -441,14 +434,8 @@ def test_custom_mesh_loop_cffi_rank2():
     assert (A1 - A0).norm() == pytest.approx(0.0)
 
 
-@skip_if_complex
 def test_custom_mesh_loop_cffi_abi_rank2():
-    """Test numba assembler for bilinear form
-
-    Some work is required to get this working with complex types, and possibly
-    64-bit indices.
-
-    """
+    """Test numba assembler for bilinear form"""
 
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
