@@ -96,13 +96,13 @@ if petsc_lib_name is not None:
     petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
 else:
     try:
-        petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.so"))
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.so"))
     except OSError:
-        petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
+        petsc_lib_cffi = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
     except OSError:
         print("Could not load PETSc library for CFFI (ABI mode).")
         raise
-MatSetValues_abi = petsc_lib.MatSetValuesLocal
+MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 
 @numba.jit(nopython=True, cache=True)

@@ -304,7 +304,7 @@ void Function::interpolate(const Expression& e)
 {
   assert(_function_space);
   la::VecWrapper x(_vector.vec());
-  _function_space->interpolate(x.x, ex);
+  _function_space->interpolate(x.x, e);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const
