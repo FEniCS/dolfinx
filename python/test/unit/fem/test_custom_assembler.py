@@ -23,6 +23,87 @@ import dolfin
 from dolfin_utils.test.skips import skip_if_complex
 from ufl import dx, inner
 
+petsc_dir = os.environ.get('PETSC_DIR', None)
+
+# Get PETSc int and scalar types
+if np.dtype(PETSc.ScalarType).type == 'c':
+    complex = True
+else:
+    complex = False
+
+scalar_size = np.dtype(PETSc.ScalarType).itemsize
+index_size = np.dtype(PETSc.IntType).itemsize
+
+if index_size == 8:
+    c_int_t = "int64_t"
+    ctypes_index = ctypes.c_int64
+elif index_size == 4:
+    c_int_t = "int32_t"
+    ctypes_index = ctypes.c_int32
+else:
+    raise RecursionError("Unknown PETSc index type.")
+
+if complex and scalar_size == 16:
+    c_scalar_t = "double _Complex"
+elif complex and scalar_size == 8:
+    c_scalar_t = "float _Complex"
+elif not complex and scalar_size == 8:
+    c_scalar_t = "double"
+elif not complex and scalar_size == 4:
+    c_scalar_t = "float"
+else:
+    raise RuntimeError("Cannot translate PETSc scalar type to a C type.")
+
+
+# Load PETSc library via ctypes
+petsc_lib_name = ctypes.util.find_library("petsc")
+if petsc_lib_name is not None:
+    petsc_lib_ctypes = ctypes.CDLL(petsc_lib_name)
+else:
+    try:
+        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.so"))
+    except OSError:
+        petsc_lib_ctypes = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
+    except OSError:
+        print("Could not load PETSc library for CFFI (ABI mode).")
+        raise
+
+# Get the PETSc MatSetValuesLocal function via ctypes
+MatSetValues_ctypes = petsc_lib_ctypes.MatSetValuesLocal
+MatSetValues_ctypes.argtypes = (ctypes.c_void_p, ctypes_index, ctypes.POINTER(
+    ctypes_index), ctypes_index, ctypes.POINTER(ctypes_index), ctypes.c_void_p, ctypes.c_int)
+del petsc_lib_ctypes
+
+
+ADD_VALUES = PETSc.InsertMode.ADD_VALUES
+
+
+# CFFI - register complex types
+ffi = cffi.FFI()
+numba.cffi_support.register_type(ffi.typeof('double _Complex'),
+                                 numba.types.complex128)
+numba.cffi_support.register_type(ffi.typeof('float _Complex'),
+                                 numba.types.complex64)
+
+
+# get MatSetValuesLocal from PETSc available via cffi in ABI mode
+# ffi = cffi.FFI()
+ffi.cdef("""int MatSetValuesLocal(void* mat, {0} nrow, const {0}* irow, {0} ncol, const {0}* icol,
+                            const {1}* y, int addv);
+""".format(c_int_t, c_scalar_t))
+
+if petsc_lib_name is not None:
+    petsc_lib_cffi = ffi.dlopen(petsc_lib_name)
+else:
+    try:
+        petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.so"))
+    except OSError:
+        petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
+    except OSError:
+        print("Could not load PETSc library for CFFI (ABI mode).")
+        raise
+MatSetValues_abi = petsc_lib.MatSetValuesLocal
+
 
 @numba.jit(nopython=True, cache=True)
 def area(x0, x1, x2) -> float:
@@ -33,44 +114,39 @@ def area(x0, x1, x2) -> float:
     return math.sqrt(2 * (a * b + a * c + b * c) - (a**2 + b**2 + c**2)) / 4.0
 
 
+@numba.jit(nopython=True, cache=True)
+def assemble_vector(b, mesh, x, dofmap):
+    """Assemble simple linear form over a mesh into the array b"""
+    connections, pos = mesh
+    q0, q1 = 1 / 3.0, 1 / 3.0
+    for i, cell in enumerate(pos[:-1]):
+        num_vertices = pos[i + 1] - pos[i]
+        c = connections[cell:cell + num_vertices]
+        A = area(x[c[0]], x[c[1]], x[c[2]])
+        b[dofmap[i * 3 + 0]] += A * (1.0 - q0 - q1)
+        b[dofmap[i * 3 + 1]] += A * q0
+        b[dofmap[i * 3 + 2]] += A * q1
+
+
+@numba.njit
+def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
+    """Assemble provided FFC/UFC kernel over a mesh into the array b"""
+    connections, pos = mesh
+    geometry = np.zeros((3, 2))
+    coeffs = np.zeros(1, dtype=PETSc.ScalarType)
+    b_local = np.zeros(3, dtype=PETSc.ScalarType)
+    for i, cell in enumerate(pos[:-1]):
+        num_vertices = pos[i + 1] - pos[i]
+        c = connections[cell:cell + num_vertices]
+        for j in range(3):
+            for k in range(2):
+                geometry[j, k] = x[c[j], k]
+        kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs), ffi.from_buffer(geometry), 0)
+        for j in range(3):
+            b[dofmap[i * 3 + j]] += b_local[j]
+
+
 def test_custom_mesh_loop_rank1():
-
-    @numba.jit(nopython=True, cache=True)
-    def assemble_vector(b, mesh, x, dofmap):
-        """Assemble simple linear form over a mesh into the array b"""
-        connections, pos = mesh
-        q0, q1 = 1 / 3.0, 1 / 3.0
-        for i, cell in enumerate(pos[:-1]):
-            num_vertices = pos[i + 1] - pos[i]
-            c = connections[cell:cell + num_vertices]
-            A = area(x[c[0]], x[c[1]], x[c[2]])
-            b[dofmap[i * 3 + 0]] += A * (1.0 - q0 - q1)
-            b[dofmap[i * 3 + 1]] += A * q0
-            b[dofmap[i * 3 + 2]] += A * q1
-
-    # CFFI - register complex types
-    ffi = cffi.FFI()
-    numba.cffi_support.register_type(ffi.typeof('double _Complex'),
-                                     numba.types.complex128)
-    numba.cffi_support.register_type(ffi.typeof('float _Complex'),
-                                     numba.types.complex64)
-
-    @numba.njit
-    def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
-        """Assemble provided FFC/UFC kernel over a mesh into the array b"""
-        connections, pos = mesh
-        geometry = np.zeros((3, 2))
-        coeffs = np.zeros(1, dtype=PETSc.ScalarType)
-        b_local = np.zeros(3, dtype=PETSc.ScalarType)
-        for i, cell in enumerate(pos[:-1]):
-            num_vertices = pos[i + 1] - pos[i]
-            c = connections[cell:cell + num_vertices]
-            for j in range(3):
-                for k in range(2):
-                    geometry[j, k] = x[c[j], k]
-            kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs), ffi.from_buffer(geometry), 0)
-            for j in range(3):
-                b[dofmap[i * 3 + j]] += b_local[j]
 
     # Create mesh and function space
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 64, 64)
@@ -145,28 +221,6 @@ def test_custom_mesh_loop_rank1():
 def test_custom_mesh_loop_ctypes_rank2():
     """Test numba assembler for bilinear form"""
 
-    # Load PETSc library
-    ctypes.util.find_library("petsc")
-    petsc_lib_name = ctypes.util.find_library("petsc")
-    if petsc_lib_name is not None:
-        petsc_lib = ctypes.CDLL(petsc_lib_name)
-    else:
-        petsc_dir = os.environ.get('PETSC_DIR', None)
-        try:
-            petsc_lib = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.so"))
-        except OSError:
-            petsc_lib = ctypes.CDLL(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
-        except OSError:
-            print("Could not load PETSc library for CFFI (ABI mode).")
-            raise
-
-    # Get the PETSc MatSetValuesLocal function
-    MatSetValues = petsc_lib.MatSetValuesLocal
-    MatSetValues.argtypes = (ctypes.c_void_p, ctypes.c_int, ctypes.POINTER(
-        ctypes.c_int), ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.c_void_p, ctypes.c_int)
-    ADD_VALUES = PETSc.InsertMode.ADD_VALUES
-    del petsc_lib
-
     @numba.njit
     def assemble_matrix(A, mesh, x, dofmap, set_vals):
         """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
@@ -238,12 +292,12 @@ def test_custom_mesh_loop_ctypes_rank2():
     A1 = A0.copy()
     A1.zeroEntries()
     mat = A1.handle
-    assemble_matrix(mat, (c, pos), geom, dofs, MatSetValues)
+    assemble_matrix(mat, (c, pos), geom, dofs, MatSetValues_ctypes)
     A1.assemble()
 
     A1.zeroEntries()
     start = time.time()
-    assemble_matrix(mat, (c, pos), geom, dofs, MatSetValues)
+    assemble_matrix(mat, (c, pos), geom, dofs, MatSetValues_ctypes)
     end = time.time()
     print("Time (numba, pass 2):", end - start)
     A1.assemble()
@@ -492,7 +546,7 @@ def test_custom_mesh_loop_cffi_abi_rank2():
     # Second assembly
     A1.zeroEntries()
     start = time.time()
-    assemble_matrix(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
+    assemble_matrix(A1.handle, (c, pos), geom, dofs, MatSetValues_abi, PETSc.InsertMode.ADD_VALUES)
     end = time.time()
     print("Time (Numba, pass 2):", end - start)
     A1.assemble()
