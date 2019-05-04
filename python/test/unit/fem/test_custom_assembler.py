@@ -45,12 +45,16 @@ else:
 
 if complex and scalar_size == 16:
     c_scalar_t = "double _Complex"
+    numba_scalar_t = numba.types.complex128
 elif complex and scalar_size == 8:
     c_scalar_t = "float _Complex"
+    numba_scalar_t = numba.types.complex64
 elif not complex and scalar_size == 8:
     c_scalar_t = "double"
+    numba_scalar_t = numba.types.float64
 elif not complex and scalar_size == 4:
     c_scalar_t = "float"
+    numba_scalar_t = numba.types.float32
 else:
     raise RuntimeError(
         "Cannot translate PETSc scalar type to a C type, complex: {} size: {}.".format(complex, scalar_size))
@@ -362,7 +366,7 @@ def test_custom_mesh_loop_cffi_rank2():
 
     numba.cffi_support.register_module(module)
     add_values = module.lib.MatSetValuesLocal
-    numba.cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba.types.float64)
+    numba.cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
 
     # See https://github.com/numba/numba/issues/4036 for why we need 'sink'
     @numba.njit
