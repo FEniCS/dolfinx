@@ -150,6 +150,57 @@ def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
         for j in range(3):
             b[dofmap[i * 3 + j]] += b_local[j]
 
+# See https://github.com/numba/numba/issues/4036 for why we need 'sink'
+@numba.njit
+def sink(*args):
+    pass
+
+
+@numba.njit
+def assemble_matrix_cffi(A, mesh, x, dofmap, set_vals, mode):
+    """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
+
+    def shape_functions(q):
+        """Compute shape functions at a point"""
+        return 1.0 - q[0] - q[1], q[0], q[1]
+
+    # Mesh data
+    connections, pos = mesh
+
+    # Quadrature points and weights
+    q_points = np.array([[0.5, 0.0], [0.5, 0.5], [0.0, 0.5]], dtype=np.double)
+    weights = np.full(3, 1.0 / 3.0, dtype=np.double)
+
+    # Loop over cells
+    _A = np.empty((3, 3), dtype=PETSc.ScalarType)
+    for i, cell in enumerate(pos[:-1]):
+        num_vertices = pos[i + 1] - pos[i]
+        c = connections[cell:cell + num_vertices]
+        cell_area = area(x[c[0]], x[c[1]], x[c[2]])
+
+        # Loop over quadrature points
+        _A[:] = 0.0
+        for j in range(q_points.shape[0]):
+
+            N0, N1, N2 = shape_functions(q_points[j])
+
+            _A[0, 0] += weights[j] * cell_area * N0 * N0
+            _A[0, 1] += weights[j] * cell_area * N0 * N1
+            _A[0, 2] += weights[j] * cell_area * N0 * N2
+
+            _A[1, 0] += weights[j] * cell_area * N1 * N0
+            _A[1, 1] += weights[j] * cell_area * N1 * N1
+            _A[1, 2] += weights[j] * cell_area * N1 * N2
+
+            _A[2, 0] += weights[j] * cell_area * N2 * N0
+            _A[2, 1] += weights[j] * cell_area * N2 * N1
+            _A[2, 2] += weights[j] * cell_area * N2 * N2
+
+        # Add to global tensor
+        rows = cols = ffi.from_buffer(dofmap[3 * i:3 * i + 3])
+        set_vals(A, 3, rows, 3, cols, ffi.from_buffer(_A), mode)
+    sink(_A, dofmap)
+
 
 def test_custom_mesh_loop_rank1():
 
@@ -367,56 +418,6 @@ def test_custom_mesh_loop_cffi_rank2():
     add_values = module.lib.MatSetValuesLocal
     numba.cffi_support.register_type(module.ffi.typeof("PetscScalar"), numba_scalar_t)
 
-    # See https://github.com/numba/numba/issues/4036 for why we need 'sink'
-    @numba.njit
-    def sink(*args):
-        pass
-
-    @numba.njit
-    def assemble_matrix(A, mesh, x, dofmap, set_vals, mode):
-        """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
-
-        def shape_functions(q):
-            """Compute shape functions at a point"""
-            return 1.0 - q[0] - q[1], q[0], q[1]
-
-        # Mesh data
-        connections, pos = mesh
-
-        # Quadrature points and weights
-        q_points = np.array([[0.5, 0.0], [0.5, 0.5], [0.0, 0.5]], dtype=np.double)
-        weights = np.full(3, 1.0 / 3.0, dtype=np.double)
-
-        # Loop over cells
-        _A = np.empty((3, 3), dtype=PETSc.ScalarType)
-        for i, cell in enumerate(pos[:-1]):
-            num_vertices = pos[i + 1] - pos[i]
-            c = connections[cell:cell + num_vertices]
-            cell_area = area(x[c[0]], x[c[1]], x[c[2]])
-
-            # Loop over quadrature points
-            _A[:] = 0.0
-            for j in range(q_points.shape[0]):
-
-                N0, N1, N2 = shape_functions(q_points[j])
-
-                _A[0, 0] += weights[j] * cell_area * N0 * N0
-                _A[0, 1] += weights[j] * cell_area * N0 * N1
-                _A[0, 2] += weights[j] * cell_area * N0 * N2
-
-                _A[1, 0] += weights[j] * cell_area * N1 * N0
-                _A[1, 1] += weights[j] * cell_area * N1 * N1
-                _A[1, 2] += weights[j] * cell_area * N1 * N2
-
-                _A[2, 0] += weights[j] * cell_area * N2 * N0
-                _A[2, 1] += weights[j] * cell_area * N2 * N1
-                _A[2, 2] += weights[j] * cell_area * N2 * N2
-
-            # Add to global tensor
-            rows = cols = module.ffi.from_buffer(dofmap[3 * i:3 * i + 3])
-            set_vals(A, 3, rows, 3, cols, module.ffi.from_buffer(_A), mode)
-        sink(_A, dofmap)
-
     # Unpack mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).connections()
     pos = mesh.topology.connectivity(2, 0).pos()
@@ -426,13 +427,13 @@ def test_custom_mesh_loop_cffi_rank2():
     # First assembly
     A1 = A0.copy()
     A1.zeroEntries()
-    assemble_matrix(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
+    assemble_matrix_cffi(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
     A1.assemble()
 
     # Second assembly
     A1.zeroEntries()
     start = time.time()
-    assemble_matrix(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
+    assemble_matrix_cffi(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
     end = time.time()
     print("Time (Numba, pass 2):", end - start)
     A1.assemble()
@@ -465,75 +466,6 @@ def test_custom_mesh_loop_cffi_abi_rank2():
     print("Time (C++, pass 2):", end - start)
     A0.assemble()
 
-    # Make MatSetValuesLocal from PETSc available via cffi
-    ffi = cffi.FFI()
-    ffi.cdef("""
-        int MatSetValuesLocal(void* mat, int nrow, const int* irow, int ncol, const int* icol,
-                              const double* y, int addv);
-    """)
-
-    petsc_lib = ctypes.util.find_library("petsc")
-    if petsc_lib is None:
-        petsc_dir = os.environ.get('PETSC_DIR', None)
-        try:
-            petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.so"))
-        except OSError:
-            petsc_lib = ffi.dlopen(os.path.join(petsc_dir, "lib", "libpetsc.dylib"))
-        except OSError:
-            print("Could not load PETSc library for CFFI (ABI mode).")
-            raise
-    add_values = petsc_lib.MatSetValuesLocal
-
-    # See https://github.com/numba/numba/issues/4036 for why we need 'sink'
-    @numba.njit
-    def sink(*args):
-        pass
-
-    @numba.njit
-    def assemble_matrix(A, mesh, x, dofmap, set_vals, mode):
-        """Assemble P1 mass matrix over a mesh into the PETSc matrix A"""
-
-        def shape_functions(q):
-            """Compute shape functions at a point"""
-            return 1.0 - q[0] - q[1], q[0], q[1]
-
-        # Mesh data
-        connections, pos = mesh
-
-        # Quadrature points and weights
-        q_points = np.array([[0.5, 0.0], [0.5, 0.5], [0.0, 0.5]], dtype=np.double)
-        weights = np.full(3, 1.0 / 3.0, dtype=np.double)
-
-        # Loop over cells
-        _A = np.empty((3, 3), dtype=PETSc.ScalarType)
-        for i, cell in enumerate(pos[:-1]):
-            num_vertices = pos[i + 1] - pos[i]
-            c = connections[cell:cell + num_vertices]
-            cell_area = area(x[c[0]], x[c[1]], x[c[2]])
-
-            # Loop over quadrature points
-            _A[:] = 0.0
-            for j in range(q_points.shape[0]):
-
-                N0, N1, N2 = shape_functions(q_points[j])
-
-                _A[0, 0] += weights[j] * cell_area * N0 * N0
-                _A[0, 1] += weights[j] * cell_area * N0 * N1
-                _A[0, 2] += weights[j] * cell_area * N0 * N2
-
-                _A[1, 0] += weights[j] * cell_area * N1 * N0
-                _A[1, 1] += weights[j] * cell_area * N1 * N1
-                _A[1, 2] += weights[j] * cell_area * N1 * N2
-
-                _A[2, 0] += weights[j] * cell_area * N2 * N0
-                _A[2, 1] += weights[j] * cell_area * N2 * N1
-                _A[2, 2] += weights[j] * cell_area * N2 * N2
-
-            # Add to global tensor
-            rows = cols = ffi.from_buffer(dofmap[3 * i:3 * i + 3])
-            set_vals(A, 3, rows, 3, cols, ffi.from_buffer(_A), mode)
-        sink(_A, dofmap)
-
     # Unpack mesh and dofmap data
     c = mesh.topology.connectivity(2, 0).connections()
     pos = mesh.topology.connectivity(2, 0).pos()
@@ -543,13 +475,13 @@ def test_custom_mesh_loop_cffi_abi_rank2():
     # First assembly
     A1 = A0.copy()
     A1.zeroEntries()
-    assemble_matrix(A1.handle, (c, pos), geom, dofs, add_values, PETSc.InsertMode.ADD_VALUES)
+    assemble_matrix_cffi(A1.handle, (c, pos), geom, dofs, MatSetValues_abi, PETSc.InsertMode.ADD_VALUES)
     A1.assemble()
 
     # Second assembly
     A1.zeroEntries()
     start = time.time()
-    assemble_matrix(A1.handle, (c, pos), geom, dofs, MatSetValues_abi, PETSc.InsertMode.ADD_VALUES)
+    assemble_matrix_cffi(A1.handle, (c, pos), geom, dofs, MatSetValues_abi, PETSc.InsertMode.ADD_VALUES)
     end = time.time()
     print("Time (Numba, pass 2):", end - start)
     A1.assemble()
