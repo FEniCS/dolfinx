@@ -26,7 +26,7 @@ from ufl import dx, inner
 petsc_dir = os.environ.get('PETSC_DIR', None)
 
 # Get PETSc int and scalar types
-if np.dtype(PETSc.ScalarType).type == 'c':
+if np.dtype(PETSc.ScalarType).kind == 'c':
     complex = True
 else:
     complex = False
