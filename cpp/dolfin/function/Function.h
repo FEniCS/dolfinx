@@ -115,7 +115,7 @@ public:
   ///
   /// @param    expr (Expression)
   ///         The expression to be interpolated.
-  void interpolate(const Expression& expr);
+  void interpolate(const Expression& e);
 
   /// Return value rank
   ///

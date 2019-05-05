@@ -300,11 +300,11 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const Expression& expr)
+void Function::interpolate(const Expression& e)
 {
   assert(_function_space);
   la::VecWrapper x(_vector.vec());
-  _function_space->interpolate(x.x, expr);
+  _function_space->interpolate(x.x, e);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const
