@@ -7,7 +7,6 @@
 #include "PETScDMCollection.h"
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -107,8 +106,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
       = dofmap.index_map()->size_local() * dofmap.index_map()->block_size();
-  common::RangedIndexSet already_visited(
-      std::array<std::int64_t, 2>{{0, local_size}});
+  std::vector<bool> already_visited(local_size, false);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
@@ -131,8 +129,10 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       if (dof < local_size)
       {
         // Skip already checked dofs
-        if (!already_visited.insert(dof))
+        if (already_visited[dof])
           continue;
+
+        already_visited[dof] = true;
 
         // Put coordinates in coors
         std::copy(coordinates.row(i).data(),
