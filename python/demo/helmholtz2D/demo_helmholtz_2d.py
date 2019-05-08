@@ -15,11 +15,11 @@ solution and source term."""
 import numpy as np
 
 from dolfin import (MPI, Expression, FacetNormal, Function, FunctionSpace,
-                    TestFunction, TrialFunction, UnitSquareMesh, dx,
-                    function, grad, has_petsc_complex, inner, interpolate,
-                    project, solve)
+                    TestFunction, TrialFunction, UnitSquareMesh, function,
+                    has_petsc_complex, interpolate, project, solve)
 from dolfin.fem.assemble import assemble_scalar
 from dolfin.io import XDMFFile
+from ufl import dx, grad, inner
 
 # wavenumber
 k0 = 4 * np.pi

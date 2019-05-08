@@ -111,18 +111,23 @@
 # First, the modules :py:mod:`random` :py:mod:`matplotlib`
 # :py:mod:`dolfin` module are imported::
 
+from dolfin import log
+
 import os
 import random
 
-from petsc4py import PETSc
-
-from dolfin import (MPI, CellType, Expression, FiniteElement, Function,
-                    FunctionSpace, NewtonSolver, NonlinearProblem,
-                    TestFunctions, TrialFunction, UnitSquareMesh, function,
-                    split)
+from dolfin import (MPI, CellType, Expression, Function, FunctionSpace,
+                    NewtonSolver, NonlinearProblem, TestFunctions,
+                    TrialFunction, UnitSquareMesh, function)
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
-from ufl import derivative, diff, dx, grad, inner, variable
+from petsc4py import PETSc
+from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
+                 variable)
+
+
+# Save all logging to file
+log.set_output_file("log.txt")
 
 # .. index::
 #    single: NonlinearProblem; (in Cahn-Hilliard demo)

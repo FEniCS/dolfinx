@@ -4,6 +4,8 @@ set(HEADERS
   dolfin_doc.h
   IndexMap.h
   init.h
+  log.h
+  loguru.hpp
   MPI.h
   RangedIndexSet.h
   Set.h
@@ -23,6 +25,7 @@ set(SOURCES
   defines.cpp
   IndexMap.cpp
   init.cpp
+  log.cpp
   MPI.cpp
   SubSystemsManager.cpp
   Table.cpp

@@ -7,10 +7,10 @@
 
 import pytest
 
-from dolfin import (MPI, FiniteElement, Function, FunctionSpace, TestFunction,
-                    TrialFunction, UnitCubeMesh, VectorElement,
-                    VectorFunctionSpace, grad, triangle)
+from dolfin import (MPI, Function, FunctionSpace, TestFunction, TrialFunction,
+                    UnitCubeMesh, VectorFunctionSpace)
 from dolfin_utils.test.fixtures import fixture
+from ufl import FiniteElement, VectorElement, grad, triangle
 from ufl.log import UFLException
 
 

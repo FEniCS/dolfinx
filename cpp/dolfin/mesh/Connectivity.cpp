@@ -86,13 +86,12 @@ Connectivity::connections() const
   return _connections;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-Connectivity::entity_positions()
+Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& Connectivity::entity_positions()
 {
   return _index_to_position;
 }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
 Connectivity::entity_positions() const
 {
   return _index_to_position;

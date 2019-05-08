@@ -7,11 +7,11 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import pytest
-from dolfin import (UnitCubeMesh, UnitSquareMesh, FunctionSpace, MPI,
-                    Expression, interpolate, Function, VectorElement,
-                    FiniteElement, MixedElement, VectorFunctionSpace)
-from dolfin import function
+
+from dolfin import (MPI, Expression, Function, FunctionSpace, UnitCubeMesh,
+                    UnitSquareMesh, VectorFunctionSpace, function, interpolate)
 from dolfin.cpp.fem import PETScDMCollection
+from ufl import FiniteElement, MixedElement, VectorElement
 
 
 def test_scalar_p1():

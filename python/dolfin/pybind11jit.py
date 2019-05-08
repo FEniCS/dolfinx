@@ -12,8 +12,7 @@ import sys
 
 import dijitso
 from dolfin import cpp
-from dolfin.jit import mpi_jit_decorator, dolfin_pc
-# from dolfin.cpp.log import LogLevel, log
+from dolfin.jit import dolfin_pc, mpi_jit_decorator
 
 
 def jit_generate(cpp_code, module_name, signature, parameters):
@@ -29,9 +28,7 @@ def jit_generate(cpp_code, module_name, signature, parameters):
         raise RuntimeError(
             "Cannot find keyword: SIGNATURE in pybind11 C++ code.")
     elif len(split_cpp_code) > 2:
-        raise RuntimeError(
-            "Found multiple instances of keyword: SIGNATURE in pybind11 C++ code."
-        )
+        raise RuntimeError("Found multiple instances of keyword: SIGNATURE in pybind11 C++ code.")
 
     code_c = split_cpp_code[0] + signature + split_cpp_code[1]
 

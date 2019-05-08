@@ -6,7 +6,8 @@
 
 import numpy as np
 
-from dolfin import MPI, PeriodicBoundaryComputation, SubDomain, UnitSquareMesh
+from dolfin import MPI, SubDomain, UnitSquareMesh
+from dolfin.cpp.mesh import PeriodicBoundaryComputation
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 

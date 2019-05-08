@@ -9,8 +9,6 @@
 #include <Eigen/Dense>
 #include <memory>
 #include <petscsys.h>
-#include <set>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -115,6 +113,10 @@ public:
   /// Tabulate map between local (process) and global dof indices
   Eigen::Array<std::size_t, Eigen::Dynamic, 1>
   tabulate_local_to_global_dofs() const;
+
+  /// Get dofmap array
+  virtual Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+  dof_array() const = 0;
 
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const = 0;

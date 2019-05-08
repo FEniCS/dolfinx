@@ -6,14 +6,16 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import math
-from dolfin import (UnitIntervalMesh, SpatialCoordinate, dx, ds, MPI,
-                    RectangleMesh, FacetNormal, Point)
-from ufl import (elem_pow, elem_op, elem_div, elem_mult, det, tr, cross, inner, diff,
-                 outer, div, grad, dot, as_vector, as_matrix, dev, skew, sym,
-                 atan, acos, asin, sin, cos, tan, exp, ln, erf,
-                 bessel_I, bessel_J, bessel_K, bessel_Y)
+
+import pytest
+
+from dolfin import MPI, FacetNormal, Point, RectangleMesh, UnitIntervalMesh
+from dolfin.function.specialfunctions import SpatialCoordinate
+from ufl import (acos, as_matrix, as_vector, asin, atan, cos, cross, det, dev,
+                 diff, div, dot, ds, dx, elem_div, elem_mult, elem_op,
+                 elem_pow, erf, exp, grad, inner, ln, outer, sin, skew, sym,
+                 tan, tr)
 
 
 @pytest.mark.skip
@@ -68,15 +70,15 @@ def test_diff_then_integrate():
     else:
         print("Warning: skipping test of erf, old python version and no scipy.")
 
-    if 0:
-        print("Warning: skipping tests of bessel functions, doesn't build on all platforms.")
-    elif scipy is None:
-        print("Warning: skipping tests of bessel functions, missing scipy.")
-    else:
-        for nu in (0, 1, 2):
-            # Many of these are possibly more accurately integrated,
-            # but 4 covers all and is sufficient for this test
-            reg([bessel_J(nu, xs), bessel_Y(nu, xs), bessel_I(nu, xs), bessel_K(nu, xs)], 4)
+    # if 0:
+    #     print("Warning: skipping tests of bessel functions, doesn't build on all platforms.")
+    # elif scipy is None:
+    #     print("Warning: skipping tests of bessel functions, missing scipy.")
+    # else:
+    #     for nu in (0, 1, 2):
+    #         # Many of these are possibly more accurately integrated,
+    #         # but 4 covers all and is sufficient for this test
+    #         reg([bessel_J(nu, xs), bessel_Y(nu, xs), bessel_I(nu, xs), bessel_K(nu, xs)], 4)
 
     # To handle tensor algebra, make an x dependent input tensor
     # xx and square all expressions

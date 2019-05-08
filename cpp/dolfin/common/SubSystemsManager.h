@@ -35,6 +35,9 @@ public:
   /// Initialise MPI with required level of thread support
   static int init_mpi(int argc, char* argv[], int required_thread_level);
 
+  /// Initialise loguru
+  static void init_logging(int argc, char *argv[]);
+
   /// Initialize PETSc without command-line arguments
   static void init_petsc();
 

@@ -20,8 +20,6 @@
 #include <petscdmshell.h>
 #include <petscmat.h>
 
-// #include <spdlog/spdlog.h>
-
 using namespace dolfin;
 using namespace dolfin::fem;
 
@@ -74,7 +72,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       = dofmap.tabulate_local_to_global_dofs();
 
   // Geometric dimension
-  const std::size_t gdim = mesh.geometry().dim();
+  const int gdim = mesh.geometry().dim();
 
   // Get dof coordinates on reference element
   const EigenRowArrayXXd& X = element.dof_reference_coordinates();
@@ -87,9 +85,23 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   }
   const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
 
+  // Prepare cell geometry
+  const int tdim = mesh.topology().dim();
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
-  EigenRowArrayXXd coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);;
   std::vector<double> coors(gdim);
 
   // Speed up the computations by only visiting (most) dofs once
@@ -101,8 +113,10 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Get cell coordinates
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get local-to-global map
     auto dofs = dofmap.cell_dofs(cell.index());
@@ -224,8 +238,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   // Get coarse mesh and dimension of the domain
   assert(coarse_space.mesh());
   const mesh::Mesh& meshc = *coarse_space.mesh();
-  std::size_t gdim = meshc.geometry().dim();
-  std::size_t tdim = meshc.topology().dim();
+  const int gdim = meshc.geometry().dim();
+  const int tdim = meshc.topology().dim();
 
   // MPI communicator, size and rank
   const MPI_Comm mpi_comm = meshc.mpi_comm();
@@ -264,11 +278,9 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
-      // spdlog::error("create_transfer_matrix", "Creating interpolation
-      // matrix",
-      //               "Ranks of function spaces do not match: %d, %d.",
-      //               el->value_rank(), elf->value_rank());
-      throw std::runtime_error("Non matching function space");
+      throw std::runtime_error("Ranks of function spaces do not match:"
+                               + std::to_string(el->value_rank()) + ", "
+                               + std::to_string(elf->value_rank()));
     }
 
     // Check that function dims match
@@ -276,12 +288,10 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
-        // spdlog::error("create_transfer_matrix", "Creating interpolation
-        // matrix",
-        //               "Dimension %d of function space (%d) does not match "
-        //               "dimension %d of function space (%d)",
-        //               i, el->value_dimension(i), i, elf->value_dimension(i));
-        throw std::runtime_error("Non matching function dimension");
+        throw std::runtime_error("Dimensions of function spaces ("
+                                 + std::to_string(i) + ") do not match:"
+                                 + std::to_string(el->value_dimension(i)) + ", "
+                                 + std::to_string(elf->value_dimension(i)));
       }
     }
   }
@@ -509,7 +519,6 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> coarse_local_to_global_dofs
       = coarsemap->tabulate_local_to_global_dofs();
 
-  EigenRowArrayXXd coordinate_dofs; // cell dofs coordinates vector
 
   // Loop over the found coarse cells
   Eigen::Map<const EigenRowArrayXXd> x(found_points.data(), found_ids.size(),
@@ -520,6 +529,20 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   EigenArrayXd detJ(1);
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = meshc.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = meshc.geometry().points();
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);; // cell dofs coordinates vector
+
   for (unsigned int i = 0; i < found_ids.size(); ++i)
   {
     // Get coarse cell id and point
@@ -529,8 +552,10 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
 
     // Get dofs coordinates of the coarse cell
-    coordinate_dofs.resize(coarse_cell.num_vertices(), gdim);
-    coarse_cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = coarse_cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values

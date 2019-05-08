@@ -15,7 +15,6 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <unordered_map>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -328,6 +327,13 @@ void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
 std::shared_ptr<const common::IndexMap> DofMap::index_map() const
 {
   return _index_map;
+}
+//-----------------------------------------------------------------------------
+Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+DofMap::dof_array() const
+{
+  return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
+      _dofmap.data(), _dofmap.size());
 }
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const

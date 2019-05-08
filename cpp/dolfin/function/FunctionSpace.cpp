@@ -105,8 +105,8 @@ void FunctionSpace::interpolate_from_any(
     const Function& v) const
 {
   assert(_mesh);
-
-  std::size_t gdim = _mesh->geometry().dim();
+  const int gdim = _mesh->geometry().dim();
+  const int tdim = _mesh->topology().dim();
 
   // Initialize local arrays
   std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
@@ -117,8 +117,21 @@ void FunctionSpace::interpolate_from_any(
                              "different elements not suppoted.");
   }
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = _mesh->coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = _mesh->geometry().points();
+
   // Iterate over mesh and interpolate on each cell
-  EigenRowArrayXXd coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // FIXME: Move this out
@@ -129,8 +142,10 @@ void FunctionSpace::interpolate_from_any(
     }
 
     // Get cell coordinate dofs
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Restrict function to cell
     v.restrict(cell_coefficients.data(), cell, coordinate_dofs);
@@ -150,18 +165,34 @@ void FunctionSpace::interpolate_from_any(
 {
   assert(_mesh);
 
-  std::size_t gdim = _mesh->geometry().dim();
+  const int gdim = _mesh->geometry().dim();
+  const int tdim = _mesh->topology().dim();
 
   // Initialize local arrays
   std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = _mesh->coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = _mesh->geometry().points();
+
   // Iterate over mesh and interpolate on each cell
-  EigenRowArrayXXd coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Get cell coordinate dofs
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Restrict function to cell
     expr.restrict(cell_coefficients.data(), *_element, cell, coordinate_dofs);
@@ -188,11 +219,11 @@ void FunctionSpace::interpolate(
   // Check that function ranks match
   if (_element->value_rank() != v.value_rank())
   {
-    // spdlog::error(
-    //     "FunctionSpace.cpp", "interpolate function into function space",
-    //     "Rank of function (%d) does not match rank of function space (%d)",
-    //     v.value_rank(), element()->value_rank());
-    throw std::runtime_error("Incorrect Rank");
+    throw std::runtime_error("Cannot interpolate function into function space. "
+                             "Rank of function ("
+                             + std::to_string(v.value_rank())
+                             + ") does not match rank of function space ("
+                             + std::to_string(element()->value_rank()) + ")");
   }
 
   // Check that function dimension match
@@ -200,12 +231,13 @@ void FunctionSpace::interpolate(
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
-      // spdlog::error("FunctionSpace.cpp",
-      //               "interpolate function into function space",
-      //               "Dimension %d of function (%d) does not match dimension
-      //               %d " "of function space (%d)", i, v.value_dimension(i),
-      //               i, element()->value_dimension(i));
-      throw std::runtime_error("Incorrect dimension");
+      throw std::runtime_error(
+          "Cannot interpolate function into function space. "
+          "Dimension "
+          + std::to_string(i) + " of function ("
+          + std::to_string(v.value_dimension(i)) + ") does not match dimension "
+          + std::to_string(i) + " of function space("
+          + std::to_string(element()->value_dimension(i)) + ")");
     }
   }
 
@@ -298,9 +330,7 @@ FunctionSpace::collapse() const
   assert(_mesh);
   if (_component.empty())
   {
-    // spdlog::error("FunctionSpace.cpp", "collapse function space",
-    //               "Function space is not a subspace");
-    throw std::runtime_error("Not a subspace");
+    throw std::runtime_error("Function space is not a subspace");
   }
 
   // Create collapsed DofMap
@@ -323,15 +353,13 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   // Geometric dimension
   assert(_mesh);
   assert(_element);
-  const std::size_t gdim = _mesh->geometry().dim();
+  const int gdim = _mesh->geometry().dim();
+  const int tdim = _mesh->topology().dim();
 
   if (!_component.empty())
   {
-    // spdlog::error(
-    //     "FunctionSpace.cpp", "tabulate_dof_coordinates",
-    //     "Cannot tabulate coordinates for a FunctionSpace that is a
-    //     subspace.");
-    throw std::runtime_error("Cannot tabulate for subspace");
+    throw std::runtime_error(
+        "Cannot tabulate coordinates for a FunctionSpace that is a subspace.");
   }
 
   // Get local size
@@ -353,14 +381,30 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   }
   const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
 
+  // Cell coordinates (re-allocated inside function for thread safety)
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = _mesh->coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = _mesh->geometry().points();
+
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(_element->space_dimension(), gdim);
-  EigenRowArrayXXd coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update cell
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get local-to-global map
     auto dofs = _dofmap->cell_dofs(cell.index());
@@ -388,8 +432,22 @@ void FunctionSpace::set_x(
   assert(_dofmap);
   assert(_element);
 
-  const std::size_t gdim = _mesh->geometry().dim();
+  const int gdim = _mesh->geometry().dim();
+  const int tdim = _mesh->topology().dim();
   std::vector<PetscScalar> x_values;
+
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = _mesh->coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = _mesh->geometry().points();
 
   // Dof coordinate on reference element
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
@@ -406,12 +464,14 @@ void FunctionSpace::set_x(
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinates(_element->space_dimension(), _mesh->geometry().dim());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
+      coordinate_dofs(num_dofs_g, gdim);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Update UFC cell
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get cell local-to-global map
     auto dofs = _dofmap->cell_dofs(cell.index());

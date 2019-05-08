@@ -14,7 +14,6 @@
 #include <cstdlib>
 #include <memory>
 #include <set>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -229,6 +228,9 @@ public:
   ///         An informal representation of the function space.
   std::string str(bool verbose) const;
 
+  /// Get dofmap array
+  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array() const;
+
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   std::vector<PetscInt> _dofmap;
@@ -245,9 +247,6 @@ private:
   // Object containing information about dof distribution across
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;
-
-  // Processes that this dofmap shares dofs with
-  std::set<int> _neighbours;
 
   std::shared_ptr<const ElementDofLayout> _element_dof_layout;
 };

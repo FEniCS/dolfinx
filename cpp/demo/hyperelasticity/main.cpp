@@ -42,8 +42,7 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x,
-            const dolfin::mesh::Cell& cell) const
+            Eigen::Ref<const EigenRowArrayXXd> x) const
   {
     for (int i = 0; i < x.rows(); ++i)
     {
@@ -63,8 +62,7 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x,
-            const dolfin::mesh::Cell& cell) const
+            Eigen::Ref<const EigenRowArrayXXd> x) const
   {
     const double scale = 0.005;
 
@@ -153,6 +151,7 @@ private:
 
 int main(int argc, char* argv[])
 {
+  common::SubSystemsManager::init_logging(argc, argv);
   common::SubSystemsManager::init_petsc(argc, argv);
 
   // Inside the ``main`` function, we begin by defining a tetrahedral mesh

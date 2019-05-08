@@ -64,12 +64,27 @@ void _lift_bc_cells(
                            int)>& fn
       = a.integrals().get_tabulate_tensor_fn_cell(0);
 
+  // Prepare cell geometry
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
   // Data structures used in bc application
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
 
   // Iterate over all cells
   for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -96,7 +111,10 @@ void _lift_bc_cells(
       continue;
 
     // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Size data structure for assembly
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
@@ -148,7 +166,8 @@ void _lift_bc_exterior_facets(
   assert(a.mesh());
   const mesh::Mesh& mesh = *a.mesh();
 
-  const std::size_t tdim = mesh.topology().dim();
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
 
@@ -178,12 +197,25 @@ void _lift_bc_exterior_facets(
                            int)>& fn
       = a.integrals().get_tabulate_tensor_fn_exterior_facet(0);
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
   // Data structures used in bc application
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
 
   // Iterate over all cells
   for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
@@ -218,7 +250,10 @@ void _lift_bc_exterior_facets(
       continue;
 
     // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Size data structure for assembly
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
@@ -263,7 +298,13 @@ void fem::impl::assemble_vector(
 {
   assert(L.mesh());
   const mesh::Mesh& mesh = *L.mesh();
+
+  // Get dofmap data
   const fem::GenericDofMap& dofmap = *L.function_space(0)->dofmap();
+  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
+      = dofmap.dof_array();
+  // FIXME: do this right
+  const int num_dofs_per_cell = dofmap.num_element_dofs(0);
 
   // Prepare coefficients
   const FormCoefficients& coefficients = L.coeffs();
@@ -272,32 +313,22 @@ void fem::impl::assemble_vector(
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  for (int i = 0;
-       i < L.integrals().num_integrals(fem::FormIntegrals::Type::cell); ++i)
+  const FormIntegrals& integrals = L.integrals();
+  using type = fem::FormIntegrals::Type;
+  for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& fn
-        = L.integrals().get_tabulate_tensor_fn_cell(i);
-
+    auto& fn = integrals.get_tabulate_tensor_fn_cell(i);
     const std::vector<std::int32_t>& active_cells
-        = L.integrals().integral_domains(fem::FormIntegrals::Type::cell, i);
-
-    fem::impl::assemble_cells(b, mesh, active_cells, dofmap, fn, coeff_fn,
-                              c_offsets);
+        = integrals.integral_domains(type::cell, i);
+    fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
+                              num_dofs_per_cell, fn, coeff_fn, c_offsets);
   }
 
-  for (int i = 0; i < L.integrals().num_integrals(
-                      fem::FormIntegrals::Type::exterior_facet);
-       ++i)
+  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn
-        = L.integrals().get_tabulate_tensor_fn_exterior_facet(i);
-
+    const auto& fn = integrals.get_tabulate_tensor_fn_exterior_facet(i);
     const std::vector<std::int32_t>& active_facets
-        = L.integrals().integral_domains(
-            fem::FormIntegrals::Type::exterior_facet, i);
-
+        = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
                                         coeff_fn, c_offsets);
   }
@@ -309,50 +340,60 @@ void fem::impl::assemble_vector(
 void fem::impl::assemble_cells(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const fem::GenericDofMap& dofmap,
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
+    int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& fn,
+                             int)>& kernel,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
-  const std::size_t tdim = mesh.topology().dim();
-  mesh.create_entities(tdim);
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
 
-  // Creat data structures used in assembly
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
+  // Create data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
-  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
+      coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be(num_dofs_per_cell);
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over active cells
-  for (const auto& cell_index : active_cells)
+  for (std::int32_t cell_index : active_cells)
   {
     const mesh::Cell cell(mesh, cell_index);
-
-    // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
-    // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
+    // Get cell coordinates/geometry
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
-    // Get dof maps for cell
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap
-        = dofmap.cell_dofs(cell_index);
-
-    // Size data structure for assembly
-    be.setZero(dmap.size());
-
-    // Update coefficients and tabulate vector
+    // FIXME: Move this outside of inner assembly loop
+    // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
       coefficients[i]->restrict(coeff_array.data() + offsets[i], cell,
                                 coordinate_dofs);
     }
-    fn(be.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+
+    // Tabulate vector for cell
+    kernel(be.data(), coeff_array.data(), coordinate_dofs.data(), 1);
 
     // Add local cell vector to global vector
-    for (Eigen::Index i = 0; i < dmap.size(); ++i)
-      b[dmap[i]] += be[i];
+    for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
+      b[dofmap[cell_index * num_dofs_per_cell + i]] += be[i];
   }
 }
 //-----------------------------------------------------------------------------
@@ -365,13 +406,27 @@ void fem::impl::assemble_exterior_facets(
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
-  const std::size_t tdim = mesh.topology().dim();
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
   // Creat data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
+      coordinate_dofs(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
@@ -390,7 +445,10 @@ void fem::impl::assemble_exterior_facets(
     const int local_facet = cell.index(facet);
 
     // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get dof map for cell
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap

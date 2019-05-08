@@ -13,7 +13,6 @@
 #include <dolfin/common/types.h>
 #include <limits>
 #include <map>
-// #include <spdlog/spdlog.h>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -26,6 +25,7 @@ using namespace dolfin::mesh;
 // tolerance.
 namespace
 {
+//-----------------------------------------------------------------------------
 struct lt_coordinate
 {
   lt_coordinate(double tolerance) : TOL(tolerance) {}
@@ -54,6 +54,28 @@ struct lt_coordinate
   // Tolerance
   const double TOL;
 };
+//-----------------------------------------------------------------------------
+bool in_bounding_box(const std::vector<double>& point,
+                     const std::vector<double>& bounding_box, const double tol)
+{
+  // Return false if bounding box is empty
+  if (bounding_box.empty())
+    return false;
+
+  const std::size_t gdim = point.size();
+  assert(bounding_box.size() == 2 * gdim);
+  for (std::size_t i = 0; i < gdim; ++i)
+  {
+    if (!(point[i] >= (bounding_box[i] - tol)
+          && point[i] <= (bounding_box[gdim + i] + tol)))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+//-----------------------------------------------------------------------------
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -148,11 +170,9 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           {
             if (std::isnan(y[i]))
             {
-              // spdlog::error("PeriodicBoundaryComputation.cpp",
-              //               "periodic boundary mapping",
-              //               "Need to set coordinate %d in sub_domain.map",
-              //               i);
-              throw std::runtime_error("Not set");
+              throw std::runtime_error(
+                  "periodic boundary mapping not set.  Need to set coordinate "
+                  + std::to_string(i) + " in sub_domain.map");
             }
           }
 
@@ -344,26 +364,5 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
       mf[master_dofs_recv[i][j]] = 1;
 
   return mf;
-}
-//-----------------------------------------------------------------------------
-bool PeriodicBoundaryComputation::in_bounding_box(
-    const std::vector<double>& point, const std::vector<double>& bounding_box,
-    const double tol)
-{
-  // Return false if bounding box is empty
-  if (bounding_box.empty())
-    return false;
-
-  const std::size_t gdim = point.size();
-  assert(bounding_box.size() == 2 * gdim);
-  for (std::size_t i = 0; i < gdim; ++i)
-  {
-    if (!(point[i] >= (bounding_box[i] - tol)
-          && point[i] <= (bounding_box[gdim + i] + tol)))
-    {
-      return false;
-    }
-  }
-  return true;
 }
 //-----------------------------------------------------------------------------
