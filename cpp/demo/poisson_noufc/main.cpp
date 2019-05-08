@@ -264,6 +264,144 @@ public:
   }
 };
 
+void tabulate_tensor_bilinear(ufc_scalar_t* A, const ufc_scalar_t* w,
+                              const double* coordinate_dofs,
+                              int cell_orientation)
+{
+  const double J_c0 = -coordinate_dofs[0] + coordinate_dofs[2];
+  const double J_c3 = -coordinate_dofs[1] + coordinate_dofs[5];
+  const double J_c1 = -coordinate_dofs[0] + coordinate_dofs[4];
+  const double J_c2 = -coordinate_dofs[1] + coordinate_dofs[3];
+  const double v_cell = 0.5 / std::fabs(J_c0 * J_c3 - J_c1 * J_c2);
+
+  // Local tensor
+  A[8] = (J_c0 * J_c0 + J_c2 * J_c2) * v_cell;
+  A[5] = -(J_c0 * J_c1 + J_c2 * J_c3) * v_cell;
+  A[4] = (J_c1 * J_c1 + J_c3 * J_c3) * v_cell;
+
+  A[1] = -A[5] - A[4];
+  A[2] = -A[5] - A[8];
+  A[0] = -A[1] - A[2];
+
+  A[3] = A[1];
+  A[6] = A[2];
+  A[7] = A[5];
+}
+
+void tabulate_tensor_linear(ufc_scalar_t* A, const ufc_scalar_t* w,
+                            const double* coordinate_dofs, int cell_orientation)
+{
+  // Quadrature rules
+  alignas(32) static const ufc_scalar_t weights3[3]
+      = {0.1666666666666667, 0.1666666666666667, 0.1666666666666667};
+  // Precomputed values of basis functions and precomputations
+  // FE* dimensions: [entities][points][dofs]
+  // PI* dimensions: [entities][dofs][dofs] or [entities][dofs]
+  // PM* dimensions: [entities][dofs][dofs]
+  alignas(32) static const ufc_scalar_t FE3_C0_Q3[1][3][3]
+      = {{{0.6666666666666669, 0.1666666666666666, 0.1666666666666667},
+          {0.1666666666666667, 0.1666666666666666, 0.6666666666666665},
+          {0.1666666666666667, 0.6666666666666666, 0.1666666666666666}}};
+  alignas(32) static const ufc_scalar_t FE4_C0_D01_Q3[1][1][2]
+      = {{{-1.0, 1.0}}};
+  // Unstructured piecewise computations
+  const double J_c0 = -coordinate_dofs[0] + coordinate_dofs[2];
+  const double J_c3 = -coordinate_dofs[1] + coordinate_dofs[5];
+  const double J_c1 = -coordinate_dofs[0] + coordinate_dofs[4];
+  const double J_c2 = -coordinate_dofs[1] + coordinate_dofs[3];
+
+  alignas(32) ufc_scalar_t sp[4];
+  sp[0] = J_c0 * J_c3;
+  sp[1] = J_c1 * J_c2;
+  sp[2] = sp[0] - sp[1];
+  sp[3] = std::fabs(sp[2]);
+
+  // UFLACS block mode: full
+  alignas(32) ufc_scalar_t BF0[3] = {0};
+  for (int iq = 0; iq < 3; ++iq)
+  {
+    // Quadrature loop body setup (num_points=3)
+    // Unstructured varying computations for num_points=3
+    ufc_scalar_t w0 = 0.0;
+    for (int ic = 0; ic < 3; ++ic)
+      w0 += w[ic] * FE3_C0_Q3[0][iq][ic];
+    alignas(32) ufc_scalar_t sv3[1];
+    sv3[0] = sp[3] * w0;
+    // UFLACS block mode: full
+    const ufc_scalar_t fw0 = sv3[0] * weights3[iq];
+    for (int i = 0; i < 3; ++i)
+      BF0[i] += fw0 * FE3_C0_Q3[0][iq][i];
+  }
+  // UFLACS block mode: preintegrated
+  for (int k = 0; k < 3; ++k)
+    A[k] = 0.0;
+  for (int i = 0; i < 3; ++i)
+    A[i] += BF0[i];
+}
+
+void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
+                                           const ufc_scalar_t* w,
+                                           const double* coordinate_dofs,
+                                           int facet, int cell_orientation)
+{
+  // Quadrature rules
+  alignas(32) static const ufc_scalar_t weights2[2] = {0.5, 0.5};
+  // Precomputed values of basis functions and precomputations
+  // FE* dimensions: [entities][points][dofs]
+  // PI* dimensions: [entities][dofs][dofs] or [entities][dofs]
+  // PM* dimensions: [entities][dofs][dofs]
+  alignas(32) static const ufc_scalar_t FE3_C0_F_Q2[3][2][3]
+      = {{{0.0, 0.7886751345948129, 0.2113248654051871},
+          {0.0, 0.2113248654051872, 0.7886751345948129}},
+         {{0.7886751345948129, 0.0, 0.2113248654051871},
+          {0.2113248654051872, 0.0, 0.7886751345948129}},
+         {{0.7886751345948129, 0.2113248654051871, 0.0},
+          {0.2113248654051871, 0.7886751345948129, 0.0}}};
+  alignas(32) static const ufc_scalar_t FE4_C0_D01_F_Q2[1][1][2]
+      = {{{-1.0, 1.0}}};
+  // Unstructured piecewise computations
+  const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_F_Q2[0][0][0]
+                      + coordinate_dofs[2] * FE4_C0_D01_F_Q2[0][0][1];
+  const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_F_Q2[0][0][0]
+                      + coordinate_dofs[4] * FE4_C0_D01_F_Q2[0][0][1];
+  const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_F_Q2[0][0][0]
+                      + coordinate_dofs[3] * FE4_C0_D01_F_Q2[0][0][1];
+  const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_F_Q2[0][0][0]
+                      + coordinate_dofs[5] * FE4_C0_D01_F_Q2[0][0][1];
+  alignas(32) ufc_scalar_t sp[10];
+  sp[0] = J_c0 * triangle_reference_facet_jacobian[facet][0][0];
+  sp[1] = J_c1 * triangle_reference_facet_jacobian[facet][1][0];
+  sp[2] = sp[0] + sp[1];
+  sp[3] = sp[2] * sp[2];
+  sp[4] = triangle_reference_facet_jacobian[facet][0][0] * J_c2;
+  sp[5] = triangle_reference_facet_jacobian[facet][1][0] * J_c3;
+  sp[6] = sp[4] + sp[5];
+  sp[7] = sp[6] * sp[6];
+  sp[8] = sp[3] + sp[7];
+  sp[9] = sqrt(sp[8]);
+  // UFLACS block mode: full
+  alignas(32) ufc_scalar_t BF0[3] = {0};
+  for (int iq = 0; iq < 2; ++iq)
+  {
+    // Quadrature loop body setup (num_points=2)
+    // Unstructured varying computations for num_points=2
+    ufc_scalar_t w1 = 0.0;
+    for (int ic = 0; ic < 3; ++ic)
+      w1 += w[3 + ic] * FE3_C0_F_Q2[facet][iq][ic];
+    alignas(32) ufc_scalar_t sv2[1];
+    sv2[0] = sp[9] * w1;
+    // UFLACS block mode: full
+    const ufc_scalar_t fw0 = sv2[0] * weights2[iq];
+    for (int i = 0; i < 3; ++i)
+      BF0[i] += fw0 * FE3_C0_F_Q2[facet][iq][i];
+  }
+  // UFLACS block mode: preintegrated
+  for (int k = 0; k < 3; ++k)
+    A[k] = 0.0;
+  for (int i = 0; i < 3; ++i)
+    A[i] += BF0[i];
+}
+
 // Source term (right-hand side)
 class Source : public function::Expression
 {
@@ -273,8 +411,7 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x,
-            const dolfin::mesh::Cell& cell) const
+            Eigen::Ref<const EigenRowArrayXXd> x) const
   {
     for (unsigned int i = 0; i != x.rows(); ++i)
     {
@@ -294,8 +431,7 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x,
-            const dolfin::mesh::Cell& cell) const
+            Eigen::Ref<const EigenRowArrayXXd> x) const
   {
     for (unsigned int i = 0; i != x.rows(); ++i)
       values(i, 0) = sin(5 * x(i, 0));
@@ -332,13 +468,14 @@ class DirichletBoundary : public mesh::SubDomain
 
 int main(int argc, char* argv[])
 {
+  common::SubSystemsManager::init_logging(argc, argv);
   common::SubSystemsManager::init_petsc(argc, argv);
 
   // Create mesh and function space
   std::array<geometry::Point, 2> pt
       = {geometry::Point(0., 0.), geometry::Point(1., 1.)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
+      MPI_COMM_WORLD, pt, {{320, 320}}, mesh::CellType::Type::triangle,
       mesh::GhostMode::none));
 
   mesh::Ordering::order_simplex(*mesh);
@@ -377,7 +514,7 @@ int main(int argc, char* argv[])
   // Define boundary condition
   auto u0 = std::make_shared<function::Function>(V);
   DirichletBoundary boundary;
-  ;
+
   std::vector<std::shared_ptr<const fem::DirichletBC>> bc
       = {std::make_shared<fem::DirichletBC>(V, u0, boundary)};
 
@@ -390,18 +527,13 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Define variational forms
-  ufc_form* bilinear_form = poisson_bilinearform_create();
-  auto a = std::make_shared<fem::Form>(
-      *bilinear_form,
-      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
-                                                                            V});
-  std::free(bilinear_form);
+  auto a = std::shared_ptr<fem::Form>(new fem::Form({V, V}));
+  a->register_tabulate_tensor_cell(-1, tabulate_tensor_bilinear);
 
-  ufc_form* linear_form = poisson_linearform_create();
-  auto L = std::make_shared<fem::Form>(
-      *linear_form,
-      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
-  std::free(linear_form);
+  auto L = std::shared_ptr<fem::Form>(new fem::Form({V}));
+  L->register_tabulate_tensor_cell(-1, tabulate_tensor_linear);
+  L->register_tabulate_tensor_exterior_facet(
+      -1, tabulate_tensor_linear_exterior_facet);
 
   auto f_expr = Source();
   auto g_expr = dUdN();
@@ -419,7 +551,7 @@ int main(int argc, char* argv[])
 
   f->interpolate(f_expr);
   g->interpolate(g_expr);
-  L->set_coefficients({{"f", f}, {"g", g}});
+  L->set_coefficients({{0, f}, {1, g}});
 
   // Now, we have specified the variational forms and can consider the
   // solution of the variational problem. First, we need to define a

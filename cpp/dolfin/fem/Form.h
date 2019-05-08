@@ -173,6 +173,11 @@ public:
                                                        const PetscScalar*,
                                                        const double*, int));
 
+  /// Register the function for 'tabulate_tensor' for exterior facet integral i
+  void register_tabulate_tensor_exterior_facet(int i, void (*fn)(PetscScalar*,
+                                                                 const PetscScalar*,
+                                                                 const double*, int, int));
+
   /// Return exterior facet domains (zero pointer if no domains have
   /// been specified)
   ///

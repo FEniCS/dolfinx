@@ -196,6 +196,15 @@ void Form::register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
     _integrals.set_default_domains(*_mesh);
 }
 //-----------------------------------------------------------------------------
+void Form::register_tabulate_tensor_exterior_facet(
+    int i,
+    void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int))
+{
+  _integrals.register_tabulate_tensor_exterior_facet(i, fn);
+  if (i == -1 and _mesh)
+    _integrals.set_default_domains(*_mesh);
+}
+//-----------------------------------------------------------------------------
 void Form::set_cell_domains(const mesh::MeshFunction<std::size_t>& cell_domains)
 {
   _integrals.set_domains(FormIntegrals::Type::cell, cell_domains);
