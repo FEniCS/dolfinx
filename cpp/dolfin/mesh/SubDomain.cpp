@@ -10,7 +10,6 @@
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshIterator.h"
-#include "MeshValueCollection.h"
 #include "Vertex.h"
 #include <dolfin/common/log.h>
 
@@ -28,7 +27,7 @@ SubDomain::~SubDomain()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EigenArrayXb SubDomain::inside(Eigen::Ref<const EigenRowArrayXXd> x,
+EigenArrayXb SubDomain::inside(const Eigen::Ref<const EigenRowArrayXXd> x,
                                bool on_boundary) const
 {
   throw std::runtime_error(
@@ -36,7 +35,7 @@ EigenArrayXb SubDomain::inside(Eigen::Ref<const EigenRowArrayXXd> x,
   return EigenArrayXb();
 }
 //-----------------------------------------------------------------------------
-void SubDomain::map(Eigen::Ref<const EigenArrayXd> x,
+void SubDomain::map(const Eigen::Ref<const EigenArrayXd> x,
                     Eigen::Ref<EigenArrayXd> y) const
 {
   throw std::runtime_error("Function map() not implemented by user. (Required "
@@ -53,10 +52,10 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
   LOG(INFO) << "Computing sub domain markers for sub domain " << sub_domain;
 
-  auto gdim = mesh.geometry().dim();
+  const int gdim = mesh.geometry().dim();
+  const int D = mesh.topology().dim();
 
   // Compute connectivities for boundary detection, if necessary
-  const std::size_t D = mesh.topology().dim();
   if (dim < D)
   {
     mesh.create_entities(dim);
@@ -81,11 +80,10 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
       on_boundary = (entity.num_global_entities(D) == 1);
-    // Or, if entity is of topological dimension less than D - 1, check if any
-    // connected
-    // facet is on the boundary
     else if (dim < D - 1)
     {
+      // Or, if entity is of topological dimension less than D - 1,
+      // check if any connected facet is on the boundary
       on_boundary = false;
       for (std::size_t f(0); f < entity.num_entities(D - 1); ++f)
       {

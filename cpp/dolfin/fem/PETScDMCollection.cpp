@@ -132,8 +132,6 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
         if (already_visited[dof])
           continue;
 
-        already_visited[dof] = true;
-
         // Put coordinates in coors
         std::copy(coordinates.row(i).data(),
                   coordinates.row(i).data() + coordinates.row(i).size(),
@@ -141,12 +139,14 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 
         // Add dof to list at this coord
         const auto ins = coords_to_dofs.insert({coors, {local_to_global[dof]}});
-
         if (!ins.second)
           ins.first->second.push_back(local_to_global[dof]);
+
+        already_visited[dof] = true;
       }
     }
   }
+
   return coords_to_dofs;
 }
 } // namespace
