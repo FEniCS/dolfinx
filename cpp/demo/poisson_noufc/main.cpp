@@ -325,18 +325,14 @@ void tabulate_tensor_linear(ufc_scalar_t* A, const ufc_scalar_t* w,
     ufc_scalar_t w0 = 0.0;
     for (int ic = 0; ic < 3; ++ic)
       w0 += w[ic] * FE3_C0_Q3[0][iq][ic];
-    alignas(32) ufc_scalar_t sv3[1];
-    sv3[0] = sp[3] * w0;
     // UFLACS block mode: full
-    const ufc_scalar_t fw0 = sv3[0] * weights3[iq];
+    const ufc_scalar_t fw0 = sp[3] * w0 * weights3[iq];
     for (int i = 0; i < 3; ++i)
       BF0[i] += fw0 * FE3_C0_Q3[0][iq][i];
   }
   // UFLACS block mode: preintegrated
-  for (int k = 0; k < 3; ++k)
-    A[k] = 0.0;
   for (int i = 0; i < 3; ++i)
-    A[i] += BF0[i];
+    A[i] = BF0[i];
 }
 
 void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
@@ -344,8 +340,6 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
                                            const double* coordinate_dofs,
                                            int facet, int cell_orientation)
 {
-  // Quadrature rules
-  alignas(32) static const ufc_scalar_t weights2[2] = {0.5, 0.5};
   // Precomputed values of basis functions and precomputations
   // FE* dimensions: [entities][points][dofs]
   // PI* dimensions: [entities][dofs][dofs] or [entities][dofs]
@@ -357,17 +351,12 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
           {0.2113248654051872, 0.0, 0.7886751345948129}},
          {{0.7886751345948129, 0.2113248654051871, 0.0},
           {0.2113248654051871, 0.7886751345948129, 0.0}}};
-  alignas(32) static const ufc_scalar_t FE4_C0_D01_F_Q2[1][1][2]
-      = {{{-1.0, 1.0}}};
-  // Unstructured piecewise computations
-  const double J_c0 = coordinate_dofs[0] * FE4_C0_D01_F_Q2[0][0][0]
-                      + coordinate_dofs[2] * FE4_C0_D01_F_Q2[0][0][1];
-  const double J_c1 = coordinate_dofs[0] * FE4_C0_D01_F_Q2[0][0][0]
-                      + coordinate_dofs[4] * FE4_C0_D01_F_Q2[0][0][1];
-  const double J_c2 = coordinate_dofs[1] * FE4_C0_D01_F_Q2[0][0][0]
-                      + coordinate_dofs[3] * FE4_C0_D01_F_Q2[0][0][1];
-  const double J_c3 = coordinate_dofs[1] * FE4_C0_D01_F_Q2[0][0][0]
-                      + coordinate_dofs[5] * FE4_C0_D01_F_Q2[0][0][1];
+
+  const double J_c0 = -coordinate_dofs[0] + coordinate_dofs[2];
+  const double J_c3 = -coordinate_dofs[1] + coordinate_dofs[5];
+  const double J_c1 = -coordinate_dofs[0] + coordinate_dofs[4];
+  const double J_c2 = -coordinate_dofs[1] + coordinate_dofs[3];
+
   alignas(32) ufc_scalar_t sp[10];
   sp[0] = J_c0 * triangle_reference_facet_jacobian[facet][0][0];
   sp[1] = J_c1 * triangle_reference_facet_jacobian[facet][1][0];
@@ -388,18 +377,15 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
     ufc_scalar_t w1 = 0.0;
     for (int ic = 0; ic < 3; ++ic)
       w1 += w[3 + ic] * FE3_C0_F_Q2[facet][iq][ic];
-    alignas(32) ufc_scalar_t sv2[1];
-    sv2[0] = sp[9] * w1;
+
     // UFLACS block mode: full
-    const ufc_scalar_t fw0 = sv2[0] * weights2[iq];
+    const ufc_scalar_t fw0 = sp[9] * w1 * 0.5;
     for (int i = 0; i < 3; ++i)
       BF0[i] += fw0 * FE3_C0_F_Q2[facet][iq][i];
   }
   // UFLACS block mode: preintegrated
-  for (int k = 0; k < 3; ++k)
-    A[k] = 0.0;
   for (int i = 0; i < 3; ++i)
-    A[i] += BF0[i];
+    A[i] = BF0[i];
 }
 
 // Source term (right-hand side)
@@ -475,7 +461,7 @@ int main(int argc, char* argv[])
   std::array<geometry::Point, 2> pt
       = {geometry::Point(0., 0.), geometry::Point(1., 1.)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, pt, {{320, 320}}, mesh::CellType::Type::triangle,
+      MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
       mesh::GhostMode::none));
 
   mesh::Ordering::order_simplex(*mesh);
