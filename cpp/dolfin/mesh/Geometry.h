@@ -97,6 +97,9 @@ private:
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       _coordinates;
 
+  // Geometric dimension
+  int _dim;
+
   // Global indices for points
   std::vector<std::int64_t> _global_indices;
 

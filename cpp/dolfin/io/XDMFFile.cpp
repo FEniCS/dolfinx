@@ -1752,27 +1752,36 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
+  // FIXME: readjust when all geometry data has fixed width 3
+
   // Pack geometry data
   EigenRowArrayXXd _x = mesh::DistributedMeshTools::reorder_by_global_indices(
       mesh.mpi_comm(), mesh.geometry().points(),
       mesh.geometry().global_indices());
-  std::vector<double> x(_x.data(), _x.data() + _x.size());
 
-  // XDMF does not support 1D, so handle as special case
+  int width = gdim;
+  // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   if (gdim == 1)
+    width = 2;
+
+  std::size_t num_values = mesh.geometry().points().rows() * width;
+  std::vector<double> x(num_values, 0.0);
+
+  if (mesh.geometry().points().cols() == width)
+    std::copy(_x.data(), _x.data() + _x.size(), x.begin());
+  else
   {
-    // Pad the coordinates with zeros for a dummy Y
-    gdim = 2;
-    std::vector<double> _x(2 * x.size(), 0.0);
-    for (std::size_t i = 0; i < x.size(); ++i)
-      _x[2 * i] = x[i];
-    std::swap(x, _x);
+    for (int i = 0; i < _x.rows(); ++i)
+    {
+      for (int j = 0; j < gdim; ++j)
+        x[width * i + j] = _x(i, j);
+    }
   }
 
   // Add geometry DataItem node
   const std::string group_name = path_prefix + "/" + "mesh";
   const std::string h5_path = group_name + "/geometry";
-  const std::vector<std::int64_t> shape = {num_points, gdim};
+  const std::vector<std::int64_t> shape = {num_points, width};
 
   add_data_item(comm, geometry_node, h5_id, h5_path, x, shape);
 }

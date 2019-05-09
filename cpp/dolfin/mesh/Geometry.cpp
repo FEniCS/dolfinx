@@ -17,14 +17,22 @@ Geometry::Geometry(std::int64_t num_points_global,
                    const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                       Eigen::RowMajor>& coordinates,
                    const std::vector<std::int64_t>& global_indices)
-    : _coordinates(coordinates), _global_indices(global_indices),
+    : _dim(coordinates.cols()), _global_indices(global_indices),
       _num_points_global(num_points_global)
 {
-  // Do nothing
+  // Make all geometry 3D
+  if (_dim == 3)
+    _coordinates = coordinates;
+  else
+  {
+    _coordinates.resize(coordinates.rows(), 3);
+    _coordinates.setZero();
+    _coordinates.block(0, 0, coordinates.rows(), coordinates.cols())
+        = coordinates;
+  }
 }
 //-----------------------------------------------------------------------------
-std::size_t Geometry::dim() const { return _coordinates.cols(); }
-
+std::size_t Geometry::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::num_points() const { return _coordinates.rows(); }
 
