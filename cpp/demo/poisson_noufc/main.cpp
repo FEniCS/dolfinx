@@ -88,7 +88,6 @@
 //
 // .. code-block:: cpp
 
-#include "poisson.h"
 #include <Eigen/Dense>
 #include <cfloat>
 #include <dolfin.h>
@@ -357,13 +356,16 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
   const double J_c1 = -coordinate_dofs[0] + coordinate_dofs[4];
   const double J_c2 = -coordinate_dofs[1] + coordinate_dofs[3];
 
+  static const double triangle_reference_facet_jacobian[3][2]
+      = {{-1.0, 1.0}, {0.0, 1.0}, {1.0, 0.0}};
+
   alignas(32) ufc_scalar_t sp[10];
-  sp[0] = J_c0 * triangle_reference_facet_jacobian[facet][0][0];
-  sp[1] = J_c1 * triangle_reference_facet_jacobian[facet][1][0];
+  sp[0] = J_c0 * triangle_reference_facet_jacobian[facet][0];
+  sp[1] = J_c1 * triangle_reference_facet_jacobian[facet][1];
   sp[2] = sp[0] + sp[1];
   sp[3] = sp[2] * sp[2];
-  sp[4] = triangle_reference_facet_jacobian[facet][0][0] * J_c2;
-  sp[5] = triangle_reference_facet_jacobian[facet][1][0] * J_c3;
+  sp[4] = triangle_reference_facet_jacobian[facet][0] * J_c2;
+  sp[5] = triangle_reference_facet_jacobian[facet][1] * J_c3;
   sp[6] = sp[4] + sp[5];
   sp[7] = sp[6] * sp[6];
   sp[8] = sp[3] + sp[7];
