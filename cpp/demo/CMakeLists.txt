@@ -7,7 +7,7 @@ find_package(DOLFIN REQUIRED)
 # include(${DOLFIN_USE_FILE})
 
 # Demos that run in real and complex modes
-add_subdirectory(poisson)
+add_subdirectory(poisson poisson_noufc)
 
 # Demos that run only in real mode
 if (NOT PETSC_SCALAR_COMPLEX)
@@ -21,7 +21,7 @@ endif()
 
 # FIXME: do this programatically. Can we get a list of all targets?
 if (NOT PETSC_SCALAR_COMPLEX)
-  add_custom_target(demos DEPENDS demo_poisson demo_hyperelasticity)
+  add_custom_target(demos DEPENDS demo_poisson demo_poisson_noufc demo_hyperelasticity)
 else()
-  add_custom_target(demos DEPENDS demo_poisson)
+  add_custom_target(demos DEPENDS demo_poisson demo_poisson_noufc)
 endif()
