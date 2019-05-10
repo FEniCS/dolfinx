@@ -574,6 +574,7 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
 
   // Build mesh from points and distributed cells
   const std::int32_t num_ghosts = new_cell_vertices.rows() - num_regular_cells;
+
   mesh::Mesh mesh(comm, type, points, new_cell_vertices,
                   new_global_cell_indices, ghost_mode, num_ghosts);
 

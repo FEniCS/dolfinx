@@ -281,6 +281,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     std::vector<double> vertex_coords(
         _vertex_coords.data(), _vertex_coords.data() + _vertex_coords.size());
 
+    // FIXME: adjust when 2D or 1D data...
+
     // Write coordinates out from each process
     std::vector<std::int64_t> global_size(2);
     global_size[0] = MPI::sum(_mpi_comm.comm(), vertex_coords.size() / gdim);

@@ -154,15 +154,13 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
     }
   }
 
-  auto gdim = mesh.geometry().dim();
-
   // Check all vertices for "inside" (on_boundary==false)
   const EigenRowArrayXXd& x = mesh.geometry().points();
   EigenArrayXb all_inside = inside(x, false);
   assert(all_inside.rows() == x.rows());
 
   // Check all boundary vertices for "inside" (on_boundary==true)
-  EigenRowArrayXXd x_bound(count, gdim);
+  EigenRowArrayXXd x_bound(count, 3);
   for (std::int32_t i = 0; i != mesh.num_entities(0); ++i)
   {
     if (boundary_vertex[i] != -1)
@@ -208,7 +206,7 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
     // FIXME: refactor for efficiency
     if (all_points_inside && check_midpoint)
     {
-      Eigen::Map<EigenRowArrayXd> x(entity.midpoint().coordinates(), gdim);
+      Eigen::Map<EigenRowArrayXd> x(entity.midpoint().coordinates(), 3);
       if (!inside(x, on_boundary)[0])
         all_points_inside = false;
     }
