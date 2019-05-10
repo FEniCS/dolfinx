@@ -1752,22 +1752,18 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
   geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
 
-  // FIXME: readjust when all geometry data has fixed width 3
-
   // Pack geometry data
   EigenRowArrayXXd _x = mesh::DistributedMeshTools::reorder_by_global_indices(
       mesh.mpi_comm(), mesh.geometry().points(),
       mesh.geometry().global_indices());
 
-  int width = gdim;
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
-  if (gdim == 1)
-    width = 2;
+  int width = (gdim == 1) ? 2 : gdim;
 
   std::size_t num_values = mesh.geometry().points().rows() * width;
   std::vector<double> x(num_values, 0.0);
 
-  if (mesh.geometry().points().cols() == width)
+  if (width == 3)
     std::copy(_x.data(), _x.data() + _x.size(), x.begin());
   else
   {
