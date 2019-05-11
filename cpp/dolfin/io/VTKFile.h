@@ -102,8 +102,10 @@ private:
                            const std::string name, const std::string filename,
                            std::size_t num_processes) const;
 
-  void pvtu_write_mesh(const std::string pvtu_filename,
-                       const std::size_t num_processes) const;
+  static void pvtu_write_mesh(const std::string filename,
+                              const std::string pvtu_filename,
+                              const std::size_t counter,
+                              const std::size_t num_processes);
 
   void pvtu_write(const function::Function& u,
                   const std::string pvtu_filename) const;
@@ -123,7 +125,8 @@ private:
   void mesh_function_write(T& meshfunction, double time);
 
   // Strip path from file
-  static std::string strip_path(const std::string filename, const std::string file);
+  static std::string strip_path(const std::string filename,
+                                const std::string file);
 
   const std::string _filename;
 

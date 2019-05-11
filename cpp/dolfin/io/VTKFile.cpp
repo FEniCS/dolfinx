@@ -148,7 +148,7 @@ void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
   if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, _filename, ".pvtu");
-    pvtu_write_mesh(pvtu_filename, num_processes);
+    pvtu_write_mesh(_filename, pvtu_filename, counter, num_processes);
     pvd_file_write(counter, time, pvtu_filename);
   }
   else if (num_processes == 1)
@@ -455,8 +455,10 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
   xml_doc.save_file(fname.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write_mesh(const std::string fname,
-                              const std::size_t num_processes) const
+void VTKFile::pvtu_write_mesh(const std::string filename,
+                              const std::string fname,
+                              const std::size_t counter,
+                              const std::size_t num_processes)
 {
   // Create xml doc
   pugi::xml_document xml_doc;
@@ -473,7 +475,7 @@ void VTKFile::pvtu_write_mesh(const std::string fname,
   for (std::size_t i = 0; i < num_processes; i++)
   {
     const std::string tmp_string
-        = vtu_name(i, num_processes, counter, _filename, ".vtu");
+        = vtu_name(i, num_processes, counter, filename, ".vtu");
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
