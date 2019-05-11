@@ -90,8 +90,6 @@ private:
 
   std::string init(const mesh::Mesh& mesh, std::size_t dim) const;
 
-  void finalize(std::string vtu_filename, double time);
-
   void results_write(const function::Function& u, std::string file) const;
 
   void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
@@ -115,23 +113,24 @@ private:
 
   static void vtk_header_close(std::string file);
 
-  std::string vtu_name(const int process, const int num_processes,
-                       const int counter, std::string ext) const;
+  static std::string vtu_name(const int process, const int num_processes,
+                              const int counter, const std::string filename,
+                              const std::string ext);
 
-  void clear_file(std::string file) const;
+  static void clear_file(std::string file);
 
   template <typename T>
   void mesh_function_write(T& meshfunction, double time);
 
   // Strip path from file
-  std::string strip_path(std::string file) const;
+  static std::string strip_path(const std::string filename, const std::string file);
 
   const std::string _filename;
 
   // Counters for the number of times various data has been written
   std::size_t counter;
 
-  void pvtu_write_mesh(pugi::xml_node xml_node) const;
+  static void pvtu_write_mesh(pugi::xml_node xml_node);
 };
 } // namespace io
 } // namespace dolfin

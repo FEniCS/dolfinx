@@ -115,7 +115,7 @@ void VTKFile::write_function(const function::Function& u, double time)
   const std::size_t num_processes = MPI::size(mpi_comm);
   if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
   {
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
+    std::string pvtu_filename = vtu_name(0, 0, counter, _filename, ".pvtu");
     pvtu_write(u, pvtu_filename);
     pvd_file_write(counter, time, pvtu_filename);
   }
@@ -123,7 +123,8 @@ void VTKFile::write_function(const function::Function& u, double time)
     pvd_file_write(counter, time, vtu_filename);
 
   // Finalise and write pvd files
-  finalize(vtu_filename, time);
+  vtk_header_close(vtu_filename);
+  counter++;
 
   DLOG(INFO) << "Saved function \"" << u.name() << "\" to file \"" << _filename
              << "\" in VTK format.";
@@ -146,7 +147,7 @@ void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
   const std::size_t num_processes = MPI::size(mpi_comm);
   if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
   {
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
+    std::string pvtu_filename = vtu_name(0, 0, counter, _filename, ".pvtu");
     pvtu_write_mesh(pvtu_filename, num_processes);
     pvd_file_write(counter, time, pvtu_filename);
   }
@@ -154,7 +155,8 @@ void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
     pvd_file_write(counter, time, vtu_filename);
 
   // Finalise
-  finalize(vtu_filename, time);
+  vtk_header_close(vtu_filename);
+  counter++;
 
   DLOG(INFO) << "Saved mesh in VTK format to file:" << _filename;
 }
@@ -165,8 +167,8 @@ std::string VTKFile::init(const mesh::Mesh& mesh, std::size_t cell_dim) const
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get vtu file name and clear file
-  std::string vtu_filename
-      = vtu_name(MPI::rank(mpi_comm), MPI::size(mpi_comm), counter, ".vtu");
+  std::string vtu_filename = vtu_name(MPI::rank(mpi_comm), MPI::size(mpi_comm),
+                                      counter, _filename, ".vtu");
   clear_file(vtu_filename);
 
   // Number of cells and vertices
@@ -177,15 +179,6 @@ std::string VTKFile::init(const mesh::Mesh& mesh, std::size_t cell_dim) const
   vtk_header_open(num_vertices, num_cells, vtu_filename);
 
   return vtu_filename;
-}
-//----------------------------------------------------------------------------
-void VTKFile::finalize(std::string vtu_filename, double time)
-{
-  // Close headers
-  vtk_header_close(vtu_filename);
-
-  // Increase the number of times we have saved the object
-  counter++;
 }
 //----------------------------------------------------------------------------
 void VTKFile::results_write(const function::Function& u,
@@ -342,7 +335,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
   }
 
   // Remove directory path from name for pvd file
-  const std::string fname_strip = strip_path(fname);
+  const std::string fname_strip = strip_path(_filename, fname);
 
   // Get Collection node
   pugi::xml_node xml_collections = xml_doc.child("VTKFile").child("Collection");
@@ -358,7 +351,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
   xml_doc.save_file(_filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node) const
+void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node)
 {
   // mesh::Vertex data
   pugi::xml_node vertex_data_node = xml_node.append_child("PPoints");
@@ -454,7 +447,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
   for (std::size_t i = 0; i < num_processes; i++)
   {
     const std::string tmp_string
-        = strip_path(vtu_name(i, num_processes, counter, ".vtu"));
+        = vtu_name(i, num_processes, counter, _filename, ".vtu");
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
@@ -480,7 +473,7 @@ void VTKFile::pvtu_write_mesh(const std::string fname,
   for (std::size_t i = 0; i < num_processes; i++)
   {
     const std::string tmp_string
-        = strip_path(vtu_name(i, num_processes, counter, ".vtu"));
+        = vtu_name(i, num_processes, counter, _filename, ".vtu");
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
@@ -560,7 +553,8 @@ void VTKFile::vtk_header_close(std::string vtu_filename)
 }
 //----------------------------------------------------------------------------
 std::string VTKFile::vtu_name(const int process, const int num_processes,
-                              const int counter, std::string ext) const
+                              const int counter, const std::string filename,
+                              const std::string ext)
 {
   std::string filestart, extension;
   std::ostringstream fileid, newfilename;
@@ -568,8 +562,8 @@ std::string VTKFile::vtu_name(const int process, const int num_processes,
   fileid.fill('0');
   fileid.width(6);
 
-  filestart.assign(_filename, 0, _filename.find_last_of("."));
-  extension.assign(_filename, _filename.find_last_of("."), _filename.size());
+  filestart.assign(filename, 0, filename.find_last_of("."));
+  extension.assign(filename, filename.find_last_of("."), filename.size());
 
   fileid << counter;
 
@@ -621,7 +615,7 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
   const std::size_t process_number = MPI::rank(mesh.mpi_comm());
   if (num_processes > 1 && process_number == 0)
   {
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
+    std::string pvtu_filename = vtu_name(0, 0, counter, _filename, ".pvtu");
     pvtu_write_function(1, 0, "cell", meshfunction.name(), pvtu_filename,
                         num_processes);
     pvd_file_write(counter, time, pvtu_filename);
@@ -630,24 +624,23 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
     pvd_file_write(counter, time, vtu_filename);
 
   // Write pvd files
-  finalize(vtu_filename, time);
+  vtk_header_close(vtu_filename);
+  counter++;
 }
 //----------------------------------------------------------------------------
-void VTKFile::clear_file(std::string file) const
+void VTKFile::clear_file(std::string file)
 {
-  // Open file and clear
   std::ofstream _file(file.c_str(), std::ios::trunc);
   if (!_file.is_open())
-  {
     throw std::runtime_error("IO Error");
-  }
   _file.close();
 }
 //----------------------------------------------------------------------------
-std::string VTKFile::strip_path(std::string file) const
+std::string VTKFile::strip_path(const std::string filename,
+                                const std::string file)
 {
   std::string fname;
-  fname.assign(file, _filename.find_last_of("/") + 1, file.size());
+  fname.assign(file, filename.find_last_of("/") + 1, file.size());
   return fname;
 }
 //----------------------------------------------------------------------------
