@@ -46,6 +46,35 @@ using namespace dolfin::io;
 namespace
 {
 //-----------------------------------------------------------------------------
+// Get DOLFIN cell type string from XML topology node
+std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node)
+{
+  assert(topology_node);
+  pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
+  assert(type_attr);
+
+  const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
+      = {{"polyvertex", {"point", 1}},
+         {"polyline", {"interval", 1}},
+         {"edge_3", {"interval", 2}},
+         {"triangle", {"triangle", 1}},
+         {"triangle_6", {"triangle", 2}},
+         {"tetrahedron", {"tetrahedron", 1}},
+         {"tetrahedron_10", {"tetrahedron", 2}},
+         {"quadrilateral", {"quadrilateral", 1}}};
+
+  // Convert XDMF cell type string to DOLFIN cell type string
+  std::string cell_type = type_attr.as_string();
+  boost::algorithm::to_lower(cell_type);
+  auto it = xdmf_to_dolfin.find(cell_type);
+  if (it == xdmf_to_dolfin.end())
+  {
+    throw std::runtime_error("Cannot recognise cell type. Unknown value: "
+                             + cell_type);
+  }
+  return it->second;
+}
+//----------------------------------------------------------------------------
 // Get dimensions from an XML DataSet node
 std::vector<std::int64_t> get_dataset_shape(const pugi::xml_node& dataset_node)
 {
@@ -68,6 +97,43 @@ std::vector<std::int64_t> get_dataset_shape(const pugi::xml_node& dataset_node)
   }
 
   return dims;
+}
+//----------------------------------------------------------------------------
+// Get number of cells from an XML Topology node
+std::int64_t get_num_cells(const pugi::xml_node& topology_node)
+{
+  assert(topology_node);
+
+  // Get number of cells from topology
+  std::int64_t num_cells_topolgy = -1;
+  pugi::xml_attribute num_cells_attr
+      = topology_node.attribute("NumberOfElements");
+  if (num_cells_attr)
+    num_cells_topolgy = num_cells_attr.as_llong();
+
+  // Get number of cells from topology dataset
+  pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
+  assert(topology_dataset_node);
+  const std::vector<std::int64_t> tdims
+      = get_dataset_shape(topology_dataset_node);
+
+  // Check that number of cells can be determined
+  if (tdims.size() != 2 and num_cells_topolgy == -1)
+  {
+    throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
+  }
+
+  // Check for consistency if number of cells appears in both the topology
+  // and DataItem nodes
+  if (num_cells_topolgy != -1 and tdims.size() == 2)
+  {
+    if (num_cells_topolgy != tdims[0])
+    {
+      throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
+    }
+  }
+
+  return std::max(num_cells_topolgy, tdims[0]);
 }
 //----------------------------------------------------------------------------
 // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
@@ -2558,71 +2624,6 @@ XDMFFile::compute_value_data(const mesh::MeshFunction<T>& meshfunction)
   }
 
   return value_data;
-}
-//----------------------------------------------------------------------------
-std::pair<std::string, int>
-XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
-{
-  assert(topology_node);
-  pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
-  assert(type_attr);
-
-  const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
-      = {{"polyvertex", {"point", 1}},
-         {"polyline", {"interval", 1}},
-         {"edge_3", {"interval", 2}},
-         {"triangle", {"triangle", 1}},
-         {"triangle_6", {"triangle", 2}},
-         {"tetrahedron", {"tetrahedron", 1}},
-         {"tetrahedron_10", {"tetrahedron", 2}},
-         {"quadrilateral", {"quadrilateral", 1}}};
-
-  // Convert XDMF cell type string to DOLFIN cell type string
-  std::string cell_type = type_attr.as_string();
-  boost::algorithm::to_lower(cell_type);
-  auto it = xdmf_to_dolfin.find(cell_type);
-  if (it == xdmf_to_dolfin.end())
-  {
-    throw std::runtime_error("Cannot recognise cell type. Unknown value: "
-                             + cell_type);
-  }
-  return it->second;
-}
-//----------------------------------------------------------------------------
-std::int64_t XDMFFile::get_num_cells(const pugi::xml_node& topology_node)
-{
-  assert(topology_node);
-
-  // Get number of cells from topology
-  std::int64_t num_cells_topolgy = -1;
-  pugi::xml_attribute num_cells_attr
-      = topology_node.attribute("NumberOfElements");
-  if (num_cells_attr)
-    num_cells_topolgy = num_cells_attr.as_llong();
-
-  // Get number of cells from topology dataset
-  pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
-  assert(topology_dataset_node);
-  const std::vector<std::int64_t> tdims
-      = get_dataset_shape(topology_dataset_node);
-
-  // Check that number of cells can be determined
-  if (tdims.size() != 2 and num_cells_topolgy == -1)
-  {
-    throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
-  }
-
-  // Check for consistency if number of cells appears in both the topology
-  // and DataItem nodes
-  if (num_cells_topolgy != -1 and tdims.size() == 2)
-  {
-    if (num_cells_topolgy != tdims[0])
-    {
-      throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
-    }
-  }
-
-  return std::max(num_cells_topolgy, tdims[0]);
 }
 //----------------------------------------------------------------------------
 template <typename T>

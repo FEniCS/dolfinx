@@ -478,13 +478,6 @@ private:
   template <typename T>
   std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction);
 
-  // Get DOLFIN cell type string from XML topology node
-  static std::pair<std::string, int>
-  get_cell_type(const pugi::xml_node& topology_node);
-
-  // Get number of cells from an XML Topology node
-  static std::int64_t get_num_cells(const pugi::xml_node& topology_node);
-
   // Generic mesh::MeshFunction reader
   template <typename T>
   mesh::MeshFunction<T>
