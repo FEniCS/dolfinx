@@ -110,10 +110,10 @@ private:
   void pvtu_write(const function::Function& u,
                   const std::string pvtu_filename) const;
 
-  void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
-                       std::string file) const;
+  static void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
+                              const std::string vtu_filename);
 
-  void vtk_header_close(std::string file) const;
+  static void vtk_header_close(std::string file);
 
   std::string vtu_name(const int process, const int num_processes,
                        const int counter, std::string ext) const;

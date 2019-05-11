@@ -520,15 +520,13 @@ void VTKFile::pvtu_write(const function::Function& u,
 }
 //----------------------------------------------------------------------------
 void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
-                              std::string vtu_filename) const
+                              const std::string vtu_filename)
 {
   // Open file
   std::ofstream file(vtu_filename.c_str(), std::ios::app);
   file.precision(16);
   if (!file.is_open())
-  {
-    throw std::runtime_error("Unable to open file " + _filename);
-  }
+    throw std::runtime_error("Unable to open file " + vtu_filename);
 
   // Write headers
   file << "<?xml version=\"1.0\"?>" << std::endl;
@@ -542,7 +540,7 @@ void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
   file.close();
 }
 //----------------------------------------------------------------------------
-void VTKFile::vtk_header_close(std::string vtu_filename) const
+void VTKFile::vtk_header_close(std::string vtu_filename)
 {
   // Open file
   std::ofstream file(vtu_filename.c_str(), std::ios::app);
