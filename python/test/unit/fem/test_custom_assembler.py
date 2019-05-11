@@ -108,9 +108,9 @@ else:
 MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 # Make MatSetValuesLocal from PETSc available via cffi in API mode
+worker = os.getenv('PYTEST_XDIST_WORKER', None)
+module_name = "_petsc_cffi_{}".format(worker)
 if dolfin.MPI.comm_world.Get_rank() == 0:
-    worker = os.getenv('PYTEST_XDIST_WORKER', None)
-    module_name = "_petsc_cffi_{}".format(worker)
     os.environ["CC"] = "mpicc"
     petsc_dir = os.environ.get('PETSC_DIR', None)
     ffibuilder = cffi.FFI()
