@@ -454,26 +454,6 @@ private:
                                 hid_t h5_id, const std::string path_prefix,
                                 const mesh::Mesh& mesh);
 
-  // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the
-  // data is written to the HDFF5 file with the path 'h5_path'.
-  // Otherwise, data is witten to the XML node and 'h5_path' is ignored
-  template <typename T>
-  static void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
-                            hid_t h5_id, const std::string h5_path, const T& x,
-                            const std::vector<std::int64_t> dimensions,
-                            const std::string number_type = "");
-
-  // Calculate set of entities of dimension cell_dim which are
-  // duplicated on other processes and should not be output on this
-  // process
-  static std::set<std::uint32_t>
-  compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim);
-
-  // Return topology data on this process as a flat vector
-  template <typename T>
-  static std::vector<T> compute_topology_data(const mesh::Mesh& mesh,
-                                              int cell_dim);
-
   // Return data which is local
   template <typename T>
   std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction);
@@ -507,22 +487,5 @@ private:
   const Encoding _encoding;
 };
 
-#ifndef DOXYGEN_IGNORE
-// Specialisation for std::vector<bool>, as HDF5 does not support it
-// natively
-template <>
-inline void XDMFFile::add_data_item(MPI_Comm comm, pugi::xml_node& xml_node,
-                                    hid_t h5_id, const std::string h5_path,
-                                    const std::vector<bool>& x,
-                                    const std::vector<std::int64_t> shape,
-                                    const std::string number_type)
-{
-  // HDF5 cannot accept 'bool' so copy to 'int'
-  std::vector<int> x_int(x.size());
-  for (std::size_t i = 0; i < x.size(); ++i)
-    x_int[i] = (int)x[i];
-  add_data_item(comm, xml_node, h5_id, h5_path, x_int, shape, number_type);
-}
-#endif
 } // namespace io
 } // namespace dolfin
