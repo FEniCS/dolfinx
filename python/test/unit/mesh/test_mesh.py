@@ -36,7 +36,7 @@ def mesh2d():
         MPI.comm_world, [Point(0, 0)._cpp_object,
                          Point(1, 1)._cpp_object], [1, 1],
         CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
-    mesh2d.geometry.points[3,:2] += 0.5 * (sqrt(3.0) - 1.0)
+    mesh2d.geometry.points[3, :2] += 0.5 * (sqrt(3.0) - 1.0)
     return mesh2d
 
 
