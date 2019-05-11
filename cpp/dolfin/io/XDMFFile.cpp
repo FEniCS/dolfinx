@@ -43,6 +43,305 @@
 using namespace dolfin;
 using namespace dolfin::io;
 
+namespace
+{
+//-----------------------------------------------------------------------------
+// Get data width - normally the same as u.value_size(), but expand for
+// 2D vector/tensor because XDMF presents everything as 3D
+std::int64_t get_padded_width(const function::Function& u)
+{
+  std::int64_t width = u.value_size();
+  std::int64_t rank = u.value_rank();
+  if (rank == 1 and width == 2)
+    return 3;
+  else if (rank == 2 and width == 4)
+    return 9;
+  return width;
+}
+//-----------------------------------------------------------------------------
+// Convert a value_rank to the XDMF string description (Scalar, Vector,
+// Tensor)
+std::string rank_to_string(std::size_t value_rank)
+{
+  switch (value_rank)
+  {
+  case 0:
+    return "Scalar";
+  case 1:
+    return "Vector";
+  case 2:
+    return "Tensor";
+  default:
+    throw std::runtime_error("Range Error");
+  }
+
+  return "";
+}
+//-----------------------------------------------------------------------------
+// Return a vector of numerical values from a vector of stringstream
+template <typename T>
+std::vector<T> string_to_vector(const std::vector<std::string>& x_str)
+{
+  std::vector<T> data;
+  for (auto& v : x_str)
+  {
+    if (!v.empty())
+      data.push_back(boost::lexical_cast<T>(v));
+  }
+
+  return data;
+}
+//-----------------------------------------------------------------------------
+// Return a string of the form "x y"
+template <typename X, typename Y>
+std::string to_string(X x, Y y)
+{
+  return std::to_string(x) + " " + std::to_string(y);
+}
+//-----------------------------------------------------------------------------
+std::string vtk_cell_type_str(mesh::CellType::Type cell_type, int order)
+{
+  // FIXME: Move to CellType?
+  switch (cell_type)
+  {
+  case mesh::CellType::Type::point:
+    switch (order)
+    {
+    case 1:
+      return "PolyVertex";
+    }
+  case mesh::CellType::Type::interval:
+    switch (order)
+    {
+    case 1:
+      return "PolyLine";
+    case 2:
+      return "Edge_3";
+    }
+  case mesh::CellType::Type::triangle:
+    switch (order)
+    {
+    case 1:
+      return "Triangle";
+    case 2:
+      return "Triangle_6";
+    }
+  case mesh::CellType::Type::quadrilateral:
+    switch (order)
+    {
+    case 1:
+      return "Quadrilateral";
+    case 2:
+      return "Quadrilateral_8";
+    }
+  case mesh::CellType::Type::tetrahedron:
+    switch (order)
+    {
+    case 1:
+      return "Tetrahedron";
+    case 2:
+      return "Tetrahedron_10";
+    }
+  case mesh::CellType::Type::hexahedron:
+    switch (order)
+    {
+    case 1:
+      return "Hexahedron";
+    case 2:
+      return "Hexahedron_20";
+    }
+  default:
+    throw std::runtime_error("Invalid combination of cell type and order");
+    return "error";
+  }
+}
+//-----------------------------------------------------------------------------
+// Get cell data values as a flattened 2D array
+std::vector<PetscScalar> get_cell_data_values(const function::Function& u)
+{
+  assert(u.function_space()->dofmap());
+
+  const auto mesh = u.function_space()->mesh();
+  const std::size_t value_size = u.value_size();
+  const std::size_t value_rank = u.value_rank();
+
+  // Allocate memory for function values at cell centres
+  const std::size_t tdim = mesh->topology().dim();
+  const std::size_t num_local_cells = mesh->topology().ghost_offset(tdim);
+  const std::size_t local_size = num_local_cells * value_size;
+
+  // Build lists of dofs and create map
+  std::vector<PetscInt> dof_set;
+  dof_set.reserve(local_size);
+  const auto dofmap = u.function_space()->dofmap();
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
+  {
+    // Tabulate dofs
+    auto dofs = dofmap->cell_dofs(cell.index());
+    const std::size_t ndofs = dofmap->num_element_dofs(cell.index());
+    assert(ndofs == value_size);
+    for (std::size_t i = 0; i < ndofs; ++i)
+      dof_set.push_back(dofs[i]);
+  }
+
+  // Get  values
+  std::vector<PetscScalar> data_values(dof_set.size());
+  {
+    la::VecReadWrapper u_wrapper(u.vector().vec());
+    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
+        = u_wrapper.x;
+    for (std::size_t i = 0; i < dof_set.size(); ++i)
+      data_values[i] = x[dof_set[i]];
+  }
+
+  if (value_rank == 1 && value_size == 2)
+  {
+    // Pad out data for 2D vector to 3D
+    data_values.resize(3 * num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      PetscScalar nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
+      std::copy(nd, nd + 3, &data_values[j * 3]);
+    }
+  }
+  else if (value_rank == 2 && value_size == 4)
+  {
+    data_values.resize(9 * num_local_cells);
+    for (int j = (num_local_cells - 1); j >= 0; --j)
+    {
+      PetscScalar nd[9] = {data_values[j * 4],
+                           data_values[j * 4 + 1],
+                           0,
+                           data_values[j * 4 + 2],
+                           data_values[j * 4 + 3],
+                           0,
+                           0,
+                           0,
+                           0};
+      std::copy(nd, nd + 9, &data_values[j * 9]);
+    }
+  }
+  return data_values;
+}
+//-----------------------------------------------------------------------------
+// // Get point data values collocated at P2 geometry points (vertices and
+// // edges) flattened as a 2D array
+// std::vector<PetscScalar> get_p2_data_values(const function::Function& u)
+// {
+//   const auto mesh = u.function_space()->mesh();
+
+//   const std::size_t value_size = u.value_size();
+//   const std::size_t value_rank = u.value_rank();
+//   const std::size_t num_local_points
+//       = mesh->num_entities(0) + mesh->num_entities(1);
+//   const std::size_t width = get_padded_width(u);
+//   std::vector<PetscScalar> data_values(width * num_local_points);
+//   std::vector<PetscInt> data_dofs(data_values.size(), 0);
+
+//   assert(u.function_space()->dofmap());
+//   const auto dofmap = u.function_space()->dofmap();
+
+//   // function::Function can be P1 or P2
+//   if (dofmap->num_entity_dofs(1) == 0)
+//   {
+//     // P1
+//     for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
+//     {
+//       auto dofs = dofmap->cell_dofs(cell.index());
+//       std::size_t c = 0;
+//       for (std::size_t i = 0; i != value_size; ++i)
+//       {
+//         for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+//         {
+//           const std::size_t v0 = v.index() * width;
+//           data_dofs[v0 + i] = dofs[c];
+//           ++c;
+//         }
+//       }
+//     }
+
+//     // Get the values at the vertex points
+//     {
+//       la::VecReadWrapper u_wrapper(u.vector().vec());
+//       Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
+//           = u_wrapper.x;
+//       for (std::size_t i = 0; i < data_dofs.size(); ++i)
+//         data_values[i] = x[data_dofs[i]];
+//     }
+
+//     // Get midpoint values for  mesh::Edge points
+//     for (auto& e : mesh::MeshRange<mesh::Edge>(*mesh))
+//     {
+//       const std::size_t v0 = e.entities(0)[0];
+//       const std::size_t v1 = e.entities(0)[1];
+//       const std::size_t e0 = (e.index() + mesh->num_entities(0)) * width;
+//       for (std::size_t i = 0; i != value_size; ++i)
+//         data_values[e0 + i] = (data_values[v0 + i] + data_values[v1 + i]) / 2.0;
+//     }
+//   }
+//   else if (dofmap->num_entity_dofs(0) == dofmap->num_entity_dofs(1))
+//   {
+//     // P2
+//     // Go over all cells inserting values
+//     // FIXME: a lot of duplication here
+//     for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
+//     {
+//       auto dofs = dofmap->cell_dofs(cell.index());
+//       std::size_t c = 0;
+//       for (std::size_t i = 0; i != value_size; ++i)
+//       {
+//         for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+//         {
+//           const std::size_t v0 = v.index() * width;
+//           data_dofs[v0 + i] = dofs[c];
+//           ++c;
+//         }
+//         for (auto& e : mesh::EntityRange<mesh::Edge>(cell))
+//         {
+//           const std::size_t e0 = (e.index() + mesh->num_entities(0)) * width;
+//           data_dofs[e0 + i] = dofs[c];
+//           ++c;
+//         }
+//       }
+//     }
+
+//     la::VecReadWrapper u_wrapper(u.vector().vec());
+//     Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
+//         = u_wrapper.x;
+//     for (std::size_t i = 0; i < data_dofs.size(); ++i)
+//       data_values[i] = x[data_dofs[i]];
+//   }
+//   else
+//   {
+//     throw std::runtime_error(
+//         "Cannotget point values for function::Function. Function appears not "
+//         "to be defined on a P1 or P2 type function::FunctionSpace");
+//   }
+
+//   // Blank out empty values of 2D vector and tensor
+//   if (value_rank == 1 and value_size == 2)
+//   {
+//     for (std::size_t i = 0; i < data_values.size(); i += 3)
+//       data_values[i + 2] = 0.0;
+//   }
+//   else if (value_rank == 2 and value_size == 4)
+//   {
+//     for (std::size_t i = 0; i < data_values.size(); i += 9)
+//     {
+//       data_values[i + 2] = 0.0;
+//       data_values[i + 5] = 0.0;
+//       data_values[i + 6] = 0.0;
+//       data_values[i + 7] = 0.0;
+//       data_values[i + 8] = 0.0;
+//     }
+//   }
+
+//   return data_values;
+// }
+//----------------------------------------------------------------------------
+
+} // namespace
+
 //-----------------------------------------------------------------------------
 XDMFFile::XDMFFile(MPI_Comm comm, const std::string filename, Encoding encoding)
     : _mpi_comm(comm), _filename(filename), _counter(0),
@@ -112,12 +411,6 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   {
     throw std::runtime_error(
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
-  }
-
-  if (!name_same_on_all_procs(function_name))
-  {
-    throw std::runtime_error("Function name must be the same on all processes "
-                             "when writing to XDMF file.");
   }
 
   LOG(INFO) << "Writing function \"" << function_name << "\" to XDMF file \""
@@ -1498,12 +1791,6 @@ function::Function
 XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                           std::string func_name, std::int64_t counter) const
 {
-  if (!name_same_on_all_procs(func_name))
-  {
-    throw std::runtime_error("Function name must be the same on all processes "
-                             "when reading XDMF file.");
-  }
-
   LOG(INFO) << "Reading function \"" << func_name << "\" from XDMF file \""
             << _filename << "\" with counter " << counter;
 
@@ -2671,85 +2958,6 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   ++_counter;
 }
 //-----------------------------------------------------------------------------
-std::vector<PetscScalar>
-XDMFFile::get_cell_data_values(const function::Function& u)
-{
-  assert(u.function_space()->dofmap());
-
-  const auto mesh = u.function_space()->mesh();
-  const std::size_t value_size = u.value_size();
-  const std::size_t value_rank = u.value_rank();
-
-  // Allocate memory for function values at cell centres
-  const std::size_t tdim = mesh->topology().dim();
-  const std::size_t num_local_cells = mesh->topology().ghost_offset(tdim);
-  const std::size_t local_size = num_local_cells * value_size;
-
-  // Build lists of dofs and create map
-  std::vector<PetscInt> dof_set;
-  dof_set.reserve(local_size);
-  const auto dofmap = u.function_space()->dofmap();
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
-  {
-    // Tabulate dofs
-    auto dofs = dofmap->cell_dofs(cell.index());
-    const std::size_t ndofs = dofmap->num_element_dofs(cell.index());
-    assert(ndofs == value_size);
-    for (std::size_t i = 0; i < ndofs; ++i)
-      dof_set.push_back(dofs[i]);
-  }
-
-  // Get  values
-  std::vector<PetscScalar> data_values(dof_set.size());
-  {
-    la::VecReadWrapper u_wrapper(u.vector().vec());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
-        = u_wrapper.x;
-    for (std::size_t i = 0; i < dof_set.size(); ++i)
-      data_values[i] = x[dof_set[i]];
-  }
-
-  if (value_rank == 1 && value_size == 2)
-  {
-    // Pad out data for 2D vector to 3D
-    data_values.resize(3 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      PetscScalar nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
-      std::copy(nd, nd + 3, &data_values[j * 3]);
-    }
-  }
-  else if (value_rank == 2 && value_size == 4)
-  {
-    data_values.resize(9 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      PetscScalar nd[9] = {data_values[j * 4],
-                           data_values[j * 4 + 1],
-                           0,
-                           data_values[j * 4 + 2],
-                           data_values[j * 4 + 3],
-                           0,
-                           0,
-                           0,
-                           0};
-      std::copy(nd, nd + 9, &data_values[j * 9]);
-    }
-  }
-  return data_values;
-}
-//-----------------------------------------------------------------------------
-std::int64_t XDMFFile::get_padded_width(const function::Function& u)
-{
-  std::int64_t width = u.value_size();
-  std::int64_t rank = u.value_rank();
-  if (rank == 1 and width == 2)
-    return 3;
-  else if (rank == 2 and width == 4)
-    return 9;
-  return width;
-}
-//-----------------------------------------------------------------------------
 bool XDMFFile::has_cell_centred_data(const function::Function& u)
 {
   // Test for cell-centred data
@@ -2808,222 +3016,5 @@ XDMFFile::get_point_data_values(const function::Function& u)
       = std::vector<PetscScalar>(vals.data(), vals.data() + vals.size());
 
   return _data_values;
-}
-//-----------------------------------------------------------------------------
-std::vector<PetscScalar>
-XDMFFile::get_p2_data_values(const function::Function& u)
-{
-  const auto mesh = u.function_space()->mesh();
-
-  const std::size_t value_size = u.value_size();
-  const std::size_t value_rank = u.value_rank();
-  const std::size_t num_local_points
-      = mesh->num_entities(0) + mesh->num_entities(1);
-  const std::size_t width = get_padded_width(u);
-  std::vector<PetscScalar> data_values(width * num_local_points);
-  std::vector<PetscInt> data_dofs(data_values.size(), 0);
-
-  assert(u.function_space()->dofmap());
-  const auto dofmap = u.function_space()->dofmap();
-
-  // function::Function can be P1 or P2
-  if (dofmap->num_entity_dofs(1) == 0)
-  {
-    // P1
-    for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
-    {
-      auto dofs = dofmap->cell_dofs(cell.index());
-      std::size_t c = 0;
-      for (std::size_t i = 0; i != value_size; ++i)
-      {
-        for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-        {
-          const std::size_t v0 = v.index() * width;
-          data_dofs[v0 + i] = dofs[c];
-          ++c;
-        }
-      }
-    }
-
-    // Get the values at the vertex points
-    {
-      la::VecReadWrapper u_wrapper(u.vector().vec());
-      Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
-          = u_wrapper.x;
-      for (std::size_t i = 0; i < data_dofs.size(); ++i)
-        data_values[i] = x[data_dofs[i]];
-    }
-
-    // Get midpoint values for  mesh::Edge points
-    for (auto& e : mesh::MeshRange<mesh::Edge>(*mesh))
-    {
-      const std::size_t v0 = e.entities(0)[0];
-      const std::size_t v1 = e.entities(0)[1];
-      const std::size_t e0 = (e.index() + mesh->num_entities(0)) * width;
-      for (std::size_t i = 0; i != value_size; ++i)
-        data_values[e0 + i] = (data_values[v0 + i] + data_values[v1 + i]) / 2.0;
-    }
-  }
-  else if (dofmap->num_entity_dofs(0) == dofmap->num_entity_dofs(1))
-  {
-    // P2
-    // Go over all cells inserting values
-    // FIXME: a lot of duplication here
-    for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
-    {
-      auto dofs = dofmap->cell_dofs(cell.index());
-      std::size_t c = 0;
-      for (std::size_t i = 0; i != value_size; ++i)
-      {
-        for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-        {
-          const std::size_t v0 = v.index() * width;
-          data_dofs[v0 + i] = dofs[c];
-          ++c;
-        }
-        for (auto& e : mesh::EntityRange<mesh::Edge>(cell))
-        {
-          const std::size_t e0 = (e.index() + mesh->num_entities(0)) * width;
-          data_dofs[e0 + i] = dofs[c];
-          ++c;
-        }
-      }
-    }
-
-    la::VecReadWrapper u_wrapper(u.vector().vec());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
-        = u_wrapper.x;
-    for (std::size_t i = 0; i < data_dofs.size(); ++i)
-      data_values[i] = x[data_dofs[i]];
-  }
-  else
-  {
-    throw std::runtime_error(
-        "Cannotget point values for function::Function. Function appears not "
-        "to be defined on a P1 or P2 type function::FunctionSpace");
-  }
-
-  // Blank out empty values of 2D vector and tensor
-  if (value_rank == 1 and value_size == 2)
-  {
-    for (std::size_t i = 0; i < data_values.size(); i += 3)
-      data_values[i + 2] = 0.0;
-  }
-  else if (value_rank == 2 and value_size == 4)
-  {
-    for (std::size_t i = 0; i < data_values.size(); i += 9)
-    {
-      data_values[i + 2] = 0.0;
-      data_values[i + 5] = 0.0;
-      data_values[i + 6] = 0.0;
-      data_values[i + 7] = 0.0;
-      data_values[i + 8] = 0.0;
-    }
-  }
-
-  return data_values;
-}
-//----------------------------------------------------------------------------
-bool XDMFFile::name_same_on_all_procs(std::string name) const
-{
-  std::vector<std::string> names_received;
-  MPI::all_gather(_mpi_comm.comm(), name, names_received);
-
-  std::set<std::string> name_set(names_received.begin(), names_received.end());
-  return (name_set.size() == 1);
-}
-//-----------------------------------------------------------------------------
-std::string XDMFFile::vtk_cell_type_str(mesh::CellType::Type cell_type,
-                                        int order)
-{
-  // FIXME: Move to CellType?
-  switch (cell_type)
-  {
-  case mesh::CellType::Type::point:
-    switch (order)
-    {
-    case 1:
-      return "PolyVertex";
-    }
-  case mesh::CellType::Type::interval:
-    switch (order)
-    {
-    case 1:
-      return "PolyLine";
-    case 2:
-      return "Edge_3";
-    }
-  case mesh::CellType::Type::triangle:
-    switch (order)
-    {
-    case 1:
-      return "Triangle";
-    case 2:
-      return "Triangle_6";
-    }
-  case mesh::CellType::Type::quadrilateral:
-    switch (order)
-    {
-    case 1:
-      return "Quadrilateral";
-    case 2:
-      return "Quadrilateral_8";
-    }
-  case mesh::CellType::Type::tetrahedron:
-    switch (order)
-    {
-    case 1:
-      return "Tetrahedron";
-    case 2:
-      return "Tetrahedron_10";
-    }
-  case mesh::CellType::Type::hexahedron:
-    switch (order)
-    {
-    case 1:
-      return "Hexahedron";
-    case 2:
-      return "Hexahedron_20";
-    }
-  default:
-    throw std::runtime_error("Invalid combination of cell type and order");
-    return "error";
-  }
-}
-//-----------------------------------------------------------------------------
-template <typename X, typename Y>
-std::string XDMFFile::to_string(X x, Y y)
-{
-  return std::to_string(x) + " " + std::to_string(y);
-}
-//-----------------------------------------------------------------------------
-template <typename T>
-std::vector<T> XDMFFile::string_to_vector(const std::vector<std::string>& x_str)
-{
-  std::vector<T> data;
-  for (auto& v : x_str)
-  {
-    if (!v.empty())
-      data.push_back(boost::lexical_cast<T>(v));
-  }
-
-  return data;
-}
-//-----------------------------------------------------------------------------
-std::string XDMFFile::rank_to_string(std::size_t value_rank)
-{
-  switch (value_rank)
-  {
-  case 0:
-    return "Scalar";
-  case 1:
-    return "Vector";
-  case 2:
-    return "Tensor";
-  default:
-    throw std::runtime_error("Range Error");
-  }
-
-  return "";
 }
 //-----------------------------------------------------------------------------

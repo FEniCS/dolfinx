@@ -513,10 +513,6 @@ private:
   template <typename T>
   void write_mesh_function(const mesh::MeshFunction<T>& meshfunction);
 
-  // Get data width - normally the same as u.value_size(), but expand
-  // for 2D vector/tensor because XDMF presents everything as 3D
-  static std::int64_t get_padded_width(const function::Function& u);
-
   // Returns true for DG0 function::Functions
   static bool has_cell_centred_data(const function::Function& u);
 
@@ -525,34 +521,6 @@ private:
   static std::vector<PetscScalar>
   get_point_data_values(const function::Function& u);
 
-  // Get point data values collocated at P2 geometry points (vertices
-  // and edges) flattened as a 2D array
-  static std::vector<PetscScalar>
-  get_p2_data_values(const function::Function& u);
-
-  // Get cell data values as a flattened 2D array
-  static std::vector<PetscScalar>
-  get_cell_data_values(const function::Function& u);
-
-  // Check that string is the same on all processes. Returns true of
-  // same on all processes.
-  bool name_same_on_all_procs(std::string name) const;
-
-  static std::string vtk_cell_type_str(mesh::CellType::Type cell_type,
-                                       int order);
-
-  // Return a string of the form "x y"
-  template <typename X, typename Y>
-  static std::string to_string(X x, Y y);
-
-  // Return a vector of numerical values from a vector of
-  // stringstream
-  template <typename T>
-  static std::vector<T> string_to_vector(const std::vector<std::string>& x_str);
-
-  // Convert a value_rank to the XDMF string description (Scalar,
-  // Vector, Tensor)
-  static std::string rank_to_string(std::size_t value_rank);
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;
