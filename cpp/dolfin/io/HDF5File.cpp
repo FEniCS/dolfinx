@@ -100,23 +100,15 @@ void HDF5File::write(const std::vector<geometry::Point>& points,
   assert(points.size() > 0);
   assert(_hdf5_file_id > 0);
 
-  // Get number of points (global)
-  std::size_t num_points_global = MPI::sum(_mpi_comm.comm(), points.size());
-
   // Pack data
   const std::size_t n = points.size();
-  std::vector<double> x(3 * n);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x(n, 3);
   for (std::size_t i = 0; i < n; ++i)
     for (std::size_t j = 0; j < 3; ++j)
-      x[3 * i + j] = points[i][j];
-
-  // Write data to file
-  std::vector<std::int64_t> global_size(2);
-  global_size[0] = num_points_global;
-  global_size[1] = 3;
+      x(i, j) = points[i][j];
 
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
-  write_data(dataset_name, x, global_size, mpi_io);
+  write_data(dataset_name, x, mpi_io);
 }
 //-----------------------------------------------------------------------------
 void HDF5File::write(const std::vector<double>& values,
@@ -278,16 +270,17 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
           mesh.mpi_comm(), mesh.geometry().points(),
           mesh.geometry().global_indices());
     }
-    std::vector<double> vertex_coords(
-        _vertex_coords.data(), _vertex_coords.data() + _vertex_coords.size());
 
-    // FIXME: adjust when 2D or 1D data...
+    Eigen::Map<
+        Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
+        varray(_vertex_coords.data(), _vertex_coords.size() / 3, 3);
+
+    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        vertex_coords(varray.rows(), gdim);
+    vertex_coords = varray.block(0, 0, varray.rows(), gdim);
 
     // Write coordinates out from each process
-    std::vector<std::int64_t> global_size(2);
-    global_size[0] = MPI::sum(_mpi_comm.comm(), vertex_coords.size() / gdim);
-    global_size[1] = gdim;
-    write_data(coord_dataset, vertex_coords, global_size, mpi_io);
+    write_data(coord_dataset, vertex_coords, mpi_io);
   }
 
   // ---------- Topology

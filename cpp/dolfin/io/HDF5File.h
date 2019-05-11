@@ -240,6 +240,14 @@ private:
   void write_data(const std::string dataset_name, const std::vector<T>& data,
                   const std::vector<std::int64_t> global_size, bool use_mpi_io);
 
+  // Write 2D dataset to HDF5. Eigen::Arrays on each process must have the same
+  // number of columns.
+  template <typename T>
+  void write_data(
+      const std::string dataset_name,
+      Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& data,
+      bool use_mpi_io);
+
   // HDF5 file descriptor/handle
   hid_t _hdf5_file_id;
 
@@ -273,6 +281,33 @@ void HDF5File::write_data(const std::string dataset_name,
   std::string dset_name(dataset_name);
   if (dset_name[0] != '/')
     dset_name = "/" + dataset_name;
+
+  HDF5Interface::write_dataset(_hdf5_file_id, dset_name, data.data(), range,
+                               global_size, use_mpi_io, chunking);
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+void HDF5File::write_data(
+    const std::string dataset_name,
+    Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& data,
+    bool use_mpi_io)
+{
+  assert(_hdf5_file_id > 0);
+
+  // Compute offset
+  const std::int64_t offset
+      = MPI::global_offset(_mpi_comm.comm(), data.rows(), true);
+  std::array<std::int64_t, 2> range = {{offset, offset + data.rows()}};
+
+  // Write data to HDF5 file. Ensure dataset starts with '/'.
+  std::string dset_name(dataset_name);
+  if (dset_name[0] != '/')
+    dset_name = "/" + dataset_name;
+
+  std::int64_t global_rows = MPI::sum(_mpi_comm.comm(), data.rows());
+  std::vector<std::int64_t> global_size = {global_rows, data.cols()};
+  if (data.cols() == 1)
+    global_size = {global_rows};
 
   HDF5Interface::write_dataset(_hdf5_file_id, dset_name, data.data(), range,
                                global_size, use_mpi_io, chunking);
