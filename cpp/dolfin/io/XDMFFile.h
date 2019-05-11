@@ -482,26 +482,8 @@ private:
   static std::pair<std::string, int>
   get_cell_type(const pugi::xml_node& topology_node);
 
-  // Get dimensions from an XML DataSet node
-  static std::vector<std::int64_t>
-  get_dataset_shape(const pugi::xml_node& dataset_node);
-
   // Get number of cells from an XML Topology node
   static std::int64_t get_num_cells(const pugi::xml_node& topology_node);
-
-  // Return data associated with a data set node
-  template <typename T>
-  static std::vector<T>
-  get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
-              const boost::filesystem::path& parent_path,
-              std::array<std::int64_t, 2> range = {{0, 0}});
-
-  // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
-  // node
-  static std::array<std::string, 2>
-  get_hdf5_paths(const pugi::xml_node& dataitem_node);
-
-  static std::string get_hdf5_filename(std::string xdmf_filename);
 
   // Generic mesh::MeshFunction reader
   template <typename T>
@@ -512,15 +494,6 @@ private:
   // Generic mesh::MeshFunction writer
   template <typename T>
   void write_mesh_function(const mesh::MeshFunction<T>& meshfunction);
-
-  // Returns true for DG0 function::Functions
-  static bool has_cell_centred_data(const function::Function& u);
-
-  // Get point data values for linear or quadratic mesh into flattened
-  // 2D array
-  static std::vector<PetscScalar>
-  get_point_data_values(const function::Function& u);
-
 
   // MPI communicator
   dolfin::MPI::Comm _mpi_comm;

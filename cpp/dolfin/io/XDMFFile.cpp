@@ -46,6 +46,226 @@ using namespace dolfin::io;
 namespace
 {
 //-----------------------------------------------------------------------------
+// Get dimensions from an XML DataSet node
+std::vector<std::int64_t> get_dataset_shape(const pugi::xml_node& dataset_node)
+{
+  // Get Dimensions attribute string
+  assert(dataset_node);
+  pugi::xml_attribute dimensions_attr = dataset_node.attribute("Dimensions");
+
+  // Gets dimensions, if attribute is present
+  std::vector<std::int64_t> dims;
+  if (dimensions_attr)
+  {
+    // Split dimensions string
+    const std::string dims_str = dimensions_attr.as_string();
+    std::vector<std::string> dims_list;
+    boost::split(dims_list, dims_str, boost::is_any_of(" "));
+
+    // Cast dims to integers
+    for (auto d : dims_list)
+      dims.push_back(boost::lexical_cast<std::int64_t>(d));
+  }
+
+  return dims;
+}
+//----------------------------------------------------------------------------
+// Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
+// node
+std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node)
+{
+  // Check that node is a DataItem node
+  assert(dataitem_node);
+  const std::string dataitem_str = "DataItem";
+  if (dataitem_node.name() != dataitem_str)
+  {
+    throw std::runtime_error("Node name is \""
+                             + std::string(dataitem_node.name())
+                             + "\", expecting \"DataItem\"");
+  }
+
+  // Check that format is HDF
+  pugi::xml_attribute format_attr = dataitem_node.attribute("Format");
+  assert(format_attr);
+  const std::string format = format_attr.as_string();
+  if (format.compare("HDF") != 0)
+  {
+    throw std::runtime_error("DataItem format \"" + format
+                             + "\" is not \"HDF\"");
+  }
+
+  // Get path data
+  pugi::xml_node path_node = dataitem_node.first_child();
+  assert(path_node);
+
+  // Create string from path and trim leading and trailing whitespace
+  std::string path = path_node.text().get();
+  boost::algorithm::trim(path);
+
+  // Split string into file path and HD5 internal path
+  std::vector<std::string> paths;
+  boost::split(paths, path, boost::is_any_of(":"));
+  assert(paths.size() == 2);
+
+  return {{paths[0], paths[1]}};
+}
+//-----------------------------------------------------------------------------
+// Return data associated with a data set node
+template <typename T>
+std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
+                           const boost::filesystem::path& parent_path,
+                           std::array<std::int64_t, 2> range = {{0, 0}})
+{
+  // FIXME: Need to sort out datasset dimensions - can't depend on
+  // HDF5 shape, and a Topology data item is not required to have a
+  // 'Dimensions' attribute since the dimensions can be determined
+  // from the number of cells and the cell type (for topology, one
+  // must supply cell type + (number of cells or dimensions).
+  //
+  // A geometry data item must have 'Dimensions' attribute.
+
+  assert(dataset_node);
+  pugi::xml_attribute format_attr = dataset_node.attribute("Format");
+  assert(format_attr);
+
+  // Get data set shape from 'Dimensions' attribute (empty if not available)
+  const std::vector<std::int64_t> shape_xml = get_dataset_shape(dataset_node);
+
+  const std::string format = format_attr.as_string();
+  std::vector<T> data_vector;
+  // Only read ASCII on process 0
+  if (format == "XML")
+  {
+    if (dolfin::MPI::rank(comm) == 0)
+    {
+      // Read data and trim any leading/trailing whitespace
+      pugi::xml_node data_node = dataset_node.first_child();
+      assert(data_node);
+      std::string data_str = data_node.value();
+
+      // Split data based on spaces and line breaks
+      std::vector<boost::iterator_range<std::string::iterator>> data_vector_str;
+      boost::split(data_vector_str, data_str, boost::is_any_of(" \n"));
+
+      // Add data to numerical vector
+      data_vector.reserve(data_vector_str.size());
+      for (auto& v : data_vector_str)
+      {
+        if (v.begin() != v.end())
+          data_vector.push_back(
+              boost::lexical_cast<T>(boost::copy_range<std::string>(v)));
+      }
+    }
+  }
+  else if (format == "HDF")
+  {
+    // Get file and data path
+    auto paths = get_hdf5_paths(dataset_node);
+
+    // Handle cases where file path is (a) absolute or (b) relative
+    boost::filesystem::path h5_filepath(paths[0]);
+    if (!h5_filepath.is_absolute())
+      h5_filepath = parent_path / h5_filepath;
+
+    // Open HDF5 for reading
+    HDF5File h5_file(comm, h5_filepath.string(), "r");
+
+    // Get data shape from HDF5 file
+    const std::vector<std::int64_t> shape_hdf5
+        = HDF5Interface::get_dataset_shape(h5_file.h5_id(), paths[1]);
+
+    // FIXME: should we support empty data sets?
+    // Check that data set is not empty
+    assert(!shape_hdf5.empty());
+    assert(shape_hdf5[0] != 0);
+
+    // Determine range of data to read from HDF5 file. This is
+    // complicated by the XML Dimension attribute and the HDF5 storage
+    // possibly having different shapes, e.g. the HDF5 storgae may be a
+    // flat array.
+
+    // If range = {0, 0} then no range is supplied
+    // and we must determine the range
+    if (range[0] == 0 and range[1] == 0)
+    {
+      if (shape_xml == shape_hdf5)
+        range = dolfin::MPI::local_range(comm, shape_hdf5[0]);
+      else if (!shape_xml.empty() and shape_hdf5.size() == 1)
+      {
+        // Size of dims > 0
+        std::int64_t d = 1;
+        for (std::size_t i = 1; i < shape_xml.size(); ++i)
+          d *= shape_xml[i];
+
+        // Check for data size consistency
+        if (d * shape_xml[0] != shape_hdf5[0])
+        {
+          throw std::runtime_error("Data size in XDMF/XML and size of HDF5 "
+                                   "dataset are inconsistent");
+        }
+
+        // Compute data range to read
+        range = dolfin::MPI::local_range(comm, shape_xml[0]);
+        range[0] *= d;
+        range[1] *= d;
+      }
+      else
+      {
+        throw std::runtime_error(
+            "This combination of array shapes in XDMF and HDF5 "
+            "is not supported");
+      }
+    }
+
+    // Retrieve data
+    data_vector
+        = HDF5Interface::read_dataset<T>(h5_file.h5_id(), paths[1], range);
+  }
+  else
+  {
+    throw std::runtime_error("Storage format \"" + format + "\" is unknown");
+  }
+
+  // Get dimensions for consistency (if available in DataItem node)
+  if (shape_xml.empty())
+  {
+    std::int64_t size = 1;
+    for (auto dim : shape_xml)
+      size *= dim;
+
+    if (size != (std::int64_t)dolfin::MPI::sum(comm, data_vector.size()))
+    {
+      throw std::runtime_error(
+          "Data sizes in attribute and size of data read are inconsistent");
+    }
+  }
+
+  return data_vector;
+}
+//----------------------------------------------------------------------------
+std::string get_hdf5_filename(std::string xdmf_filename)
+{
+  boost::filesystem::path p(xdmf_filename);
+  p.replace_extension(".h5");
+  if (p.string() == xdmf_filename)
+  {
+    throw std::runtime_error(
+        "Cannot deduce name of HDF5 file from XDMF filename. "
+        "Filename clash. Check XDMF filename");
+  }
+
+  return p.string();
+}
+//----------------------------------------------------------------------------
+// Returns true for DG0 function::Functions
+bool has_cell_centred_data(const function::Function& u)
+{
+  std::size_t cell_based_dim = 1;
+  for (std::size_t i = 0; i < u.value_rank(); i++)
+    cell_based_dim *= u.function_space()->mesh()->topology().dim();
+  return (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim);
+}
+//-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
 // 2D vector/tensor because XDMF presents everything as 3D
 std::int64_t get_padded_width(const function::Function& u)
@@ -276,7 +496,8 @@ std::vector<PetscScalar> get_cell_data_values(const function::Function& u)
 //       const std::size_t v1 = e.entities(0)[1];
 //       const std::size_t e0 = (e.index() + mesh->num_entities(0)) * width;
 //       for (std::size_t i = 0; i != value_size; ++i)
-//         data_values[e0 + i] = (data_values[v0 + i] + data_values[v1 + i]) / 2.0;
+//         data_values[e0 + i] = (data_values[v0 + i] + data_values[v1 + i])
+//         / 2.0;
 //     }
 //   }
 //   else if (dofmap->num_entity_dofs(0) == dofmap->num_entity_dofs(1))
@@ -314,8 +535,8 @@ std::vector<PetscScalar> get_cell_data_values(const function::Function& u)
 //   else
 //   {
 //     throw std::runtime_error(
-//         "Cannotget point values for function::Function. Function appears not "
-//         "to be defined on a P1 or P2 type function::FunctionSpace");
+//         "Cannotget point values for function::Function. Function appears not
+//         " "to be defined on a P1 or P2 type function::FunctionSpace");
 //   }
 
 //   // Blank out empty values of 2D vector and tensor
@@ -339,6 +560,58 @@ std::vector<PetscScalar> get_cell_data_values(const function::Function& u)
 //   return data_values;
 // }
 //----------------------------------------------------------------------------
+// Get point data values for linear or quadratic mesh into flattened 2D
+// array
+std::vector<PetscScalar> get_point_data_values(const function::Function& u)
+{
+  auto mesh = u.function_space()->mesh();
+  assert(mesh);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      data_values = u.compute_point_values(*mesh);
+  std::int64_t width = get_padded_width(u);
+
+  // FIXME: Unpick the below code for the new layout of data from
+  //        GenericFunction::compute_vertex_values
+  const std::size_t num_local_points = mesh->geometry().num_points();
+  std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
+
+  const std::size_t value_rank = u.value_rank();
+  if (value_rank > 0)
+  {
+    // Transpose vector/tensor data arrays
+    const std::size_t value_size = u.value_size();
+    for (std::size_t i = 0; i < num_local_points; i++)
+    {
+      for (std::size_t j = 0; j < value_size; j++)
+      {
+        std::size_t tensor_2d_offset
+            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
+        _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
+      }
+    }
+  }
+  else
+  {
+    _data_values = std::vector<PetscScalar>(
+        data_values.data(),
+        data_values.data() + data_values.rows() * data_values.cols());
+  }
+
+  // Reorder values by global point indices
+  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                          Eigen::RowMajor>>
+      in_vals(_data_values.data(), _data_values.size() / width, width);
+
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      vals = mesh::DistributedMeshTools::reorder_by_global_indices(
+          mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
+
+  _data_values
+      = std::vector<PetscScalar>(vals.data(), vals.data() + vals.size());
+
+  return _data_values;
+}
+//-----------------------------------------------------------------------------
 
 } // namespace
 
@@ -2316,30 +2589,6 @@ XDMFFile::get_cell_type(const pugi::xml_node& topology_node)
   return it->second;
 }
 //----------------------------------------------------------------------------
-std::vector<std::int64_t>
-XDMFFile::get_dataset_shape(const pugi::xml_node& dataset_node)
-{
-  // Get Dimensions attribute string
-  assert(dataset_node);
-  pugi::xml_attribute dimensions_attr = dataset_node.attribute("Dimensions");
-
-  // Gets dimensions, if attribute is present
-  std::vector<std::int64_t> dims;
-  if (dimensions_attr)
-  {
-    // Split dimensions string
-    const std::string dims_str = dimensions_attr.as_string();
-    std::vector<std::string> dims_list;
-    boost::split(dims_list, dims_str, boost::is_any_of(" "));
-
-    // Cast dims to integers
-    for (auto d : dims_list)
-      dims.push_back(boost::lexical_cast<std::int64_t>(d));
-  }
-
-  return dims;
-}
-//----------------------------------------------------------------------------
 std::int64_t XDMFFile::get_num_cells(const pugi::xml_node& topology_node)
 {
   assert(topology_node);
@@ -2376,178 +2625,6 @@ std::int64_t XDMFFile::get_num_cells(const pugi::xml_node& topology_node)
   return std::max(num_cells_topolgy, tdims[0]);
 }
 //----------------------------------------------------------------------------
-template <typename T>
-std::vector<T> XDMFFile::get_dataset(MPI_Comm comm,
-                                     const pugi::xml_node& dataset_node,
-                                     const boost::filesystem::path& parent_path,
-                                     std::array<std::int64_t, 2> range)
-{
-  // FIXME: Need to sort out datasset dimensions - can't depend on
-  // HDF5 shape, and a Topology data item is not required to have a
-  // 'Dimensions' attribute since the dimensions can be determined
-  // from the number of cells and the cell type (for topology, one
-  // must supply cell type + (number of cells or dimensions).
-  //
-  // A geometry data item must have 'Dimensions' attribute.
-
-  assert(dataset_node);
-  pugi::xml_attribute format_attr = dataset_node.attribute("Format");
-  assert(format_attr);
-
-  // Get data set shape from 'Dimensions' attribute (empty if not available)
-  const std::vector<std::int64_t> shape_xml = get_dataset_shape(dataset_node);
-
-  const std::string format = format_attr.as_string();
-  std::vector<T> data_vector;
-  // Only read ASCII on process 0
-  if (format == "XML")
-  {
-    if (MPI::rank(comm) == 0)
-    {
-      // Read data and trim any leading/trailing whitespace
-      pugi::xml_node data_node = dataset_node.first_child();
-      assert(data_node);
-      std::string data_str = data_node.value();
-
-      // Split data based on spaces and line breaks
-      std::vector<boost::iterator_range<std::string::iterator>> data_vector_str;
-      boost::split(data_vector_str, data_str, boost::is_any_of(" \n"));
-
-      // Add data to numerical vector
-      data_vector.reserve(data_vector_str.size());
-      for (auto& v : data_vector_str)
-      {
-        if (v.begin() != v.end())
-          data_vector.push_back(
-              boost::lexical_cast<T>(boost::copy_range<std::string>(v)));
-      }
-    }
-  }
-  else if (format == "HDF")
-  {
-    // Get file and data path
-    auto paths = get_hdf5_paths(dataset_node);
-
-    // Handle cases where file path is (a) absolute or (b) relative
-    boost::filesystem::path h5_filepath(paths[0]);
-    if (!h5_filepath.is_absolute())
-      h5_filepath = parent_path / h5_filepath;
-
-    // Open HDF5 for reading
-    HDF5File h5_file(comm, h5_filepath.string(), "r");
-
-    // Get data shape from HDF5 file
-    const std::vector<std::int64_t> shape_hdf5
-        = HDF5Interface::get_dataset_shape(h5_file.h5_id(), paths[1]);
-
-    // FIXME: should we support empty data sets?
-    // Check that data set is not empty
-    assert(!shape_hdf5.empty());
-    assert(shape_hdf5[0] != 0);
-
-    // Determine range of data to read from HDF5 file. This is
-    // complicated by the XML Dimension attribute and the HDF5 storage
-    // possibly having different shapes, e.g. the HDF5 storgae may be a
-    // flat array.
-
-    // If range = {0, 0} then no range is supplied
-    // and we must determine the range
-    if (range[0] == 0 and range[1] == 0)
-    {
-      if (shape_xml == shape_hdf5)
-        range = MPI::local_range(comm, shape_hdf5[0]);
-      else if (!shape_xml.empty() and shape_hdf5.size() == 1)
-      {
-        // Size of dims > 0
-        std::int64_t d = 1;
-        for (std::size_t i = 1; i < shape_xml.size(); ++i)
-          d *= shape_xml[i];
-
-        // Check for data size consistency
-        if (d * shape_xml[0] != shape_hdf5[0])
-        {
-          throw std::runtime_error("Data size in XDMF/XML and size of HDF5 "
-                                   "dataset are inconsistent");
-        }
-
-        // Compute data range to read
-        range = MPI::local_range(comm, shape_xml[0]);
-        range[0] *= d;
-        range[1] *= d;
-      }
-      else
-      {
-        throw std::runtime_error(
-            "This combination of array shapes in XDMF and HDF5 "
-            "is not supported");
-      }
-    }
-
-    // Retrieve data
-    data_vector
-        = HDF5Interface::read_dataset<T>(h5_file.h5_id(), paths[1], range);
-  }
-  else
-  {
-    throw std::runtime_error("Storage format \"" + format + "\" is unknown");
-  }
-
-  // Get dimensions for consistency (if available in DataItem node)
-  if (shape_xml.empty())
-  {
-    std::int64_t size = 1;
-    for (auto dim : shape_xml)
-      size *= dim;
-
-    if (size != (std::int64_t)MPI::sum(comm, data_vector.size()))
-    {
-      throw std::runtime_error(
-          "Data sizes in attribute and size of data read are inconsistent");
-    }
-  }
-
-  return data_vector;
-}
-//----------------------------------------------------------------------------
-std::array<std::string, 2>
-XDMFFile::get_hdf5_paths(const pugi::xml_node& dataitem_node)
-{
-  // Check that node is a DataItem node
-  assert(dataitem_node);
-  const std::string dataitem_str = "DataItem";
-  if (dataitem_node.name() != dataitem_str)
-  {
-    throw std::runtime_error("Node name is \""
-                             + std::string(dataitem_node.name())
-                             + "\", expecting \"DataItem\"");
-  }
-
-  // Check that format is HDF
-  pugi::xml_attribute format_attr = dataitem_node.attribute("Format");
-  assert(format_attr);
-  const std::string format = format_attr.as_string();
-  if (format.compare("HDF") != 0)
-  {
-    throw std::runtime_error("DataItem format \"" + format
-                             + "\" is not \"HDF\"");
-  }
-
-  // Get path data
-  pugi::xml_node path_node = dataitem_node.first_child();
-  assert(path_node);
-
-  // Create string from path and trim leading and trailing whitespace
-  std::string path = path_node.text().get();
-  boost::algorithm::trim(path);
-
-  // Split string into file path and HD5 internal path
-  std::vector<std::string> paths;
-  boost::split(paths, path, boost::is_any_of(":"));
-  assert(paths.size() == 2);
-
-  return {{paths[0], paths[1]}};
-}
-//-----------------------------------------------------------------------------
 template <typename T>
 mesh::MeshFunction<T>
 XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
@@ -2796,20 +2873,6 @@ void XDMFFile::remap_meshfunction_data(
   }
 }
 //----------------------------------------------------------------------------
-std::string XDMFFile::get_hdf5_filename(std::string xdmf_filename)
-{
-  boost::filesystem::path p(xdmf_filename);
-  p.replace_extension(".h5");
-  if (p.string() == xdmf_filename)
-  {
-    throw std::runtime_error(
-        "Cannot deduce name of HDF5 file from XDMF filename. "
-        "Filename clash. Check XDMF filename");
-  }
-
-  return p.string();
-}
-//----------------------------------------------------------------------------
 template <typename T>
 void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
 {
@@ -2956,65 +3019,5 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   // Increment the counter, so we can save multiple mesh::MeshFunctions in one
   // file
   ++_counter;
-}
-//-----------------------------------------------------------------------------
-bool XDMFFile::has_cell_centred_data(const function::Function& u)
-{
-  // Test for cell-centred data
-  std::size_t cell_based_dim = 1;
-  for (std::size_t i = 0; i < u.value_rank(); i++)
-    cell_based_dim *= u.function_space()->mesh()->topology().dim();
-  return (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim);
-}
-//-----------------------------------------------------------------------------
-std::vector<PetscScalar>
-XDMFFile::get_point_data_values(const function::Function& u)
-{
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      data_values = u.compute_point_values(*mesh);
-  std::int64_t width = get_padded_width(u);
-
-  // FIXME: Unpick the below code for the new layout of data from
-  //        GenericFunction::compute_vertex_values
-  const std::size_t num_local_points = mesh->geometry().num_points();
-  std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
-
-  const std::size_t value_rank = u.value_rank();
-  if (value_rank > 0)
-  {
-    // Transpose vector/tensor data arrays
-    const std::size_t value_size = u.value_size();
-    for (std::size_t i = 0; i < num_local_points; i++)
-    {
-      for (std::size_t j = 0; j < value_size; j++)
-      {
-        std::size_t tensor_2d_offset
-            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
-        _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
-      }
-    }
-  }
-  else
-  {
-    _data_values = std::vector<PetscScalar>(
-        data_values.data(),
-        data_values.data() + data_values.rows() * data_values.cols());
-  }
-
-  // Reorder values by global point indices
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>>
-      in_vals(_data_values.data(), _data_values.size() / width, width);
-
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      vals = mesh::DistributedMeshTools::reorder_by_global_indices(
-          mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
-
-  _data_values
-      = std::vector<PetscScalar>(vals.data(), vals.data() + vals.size());
-
-  return _data_values;
 }
 //-----------------------------------------------------------------------------
