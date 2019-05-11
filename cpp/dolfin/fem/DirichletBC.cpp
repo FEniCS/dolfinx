@@ -9,7 +9,6 @@
 #include "GenericDofMap.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>

@@ -7,7 +7,6 @@ set(HEADERS
   log.h
   loguru.hpp
   MPI.h
-  RangedIndexSet.h
   Set.h
   SubSystemsManager.h
   Table.h

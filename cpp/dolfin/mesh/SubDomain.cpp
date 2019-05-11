@@ -10,10 +10,7 @@
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshIterator.h"
-#include "MeshValueCollection.h"
 #include "Vertex.h"
-#include <dolfin/common/RangedIndexSet.h>
-
 #include <dolfin/common/log.h>
 
 using namespace dolfin;
@@ -30,7 +27,7 @@ SubDomain::~SubDomain()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-EigenArrayXb SubDomain::inside(Eigen::Ref<const EigenRowArrayXXd> x,
+EigenArrayXb SubDomain::inside(const Eigen::Ref<const EigenRowArrayXXd> x,
                                bool on_boundary) const
 {
   throw std::runtime_error(
@@ -38,7 +35,7 @@ EigenArrayXb SubDomain::inside(Eigen::Ref<const EigenRowArrayXXd> x,
   return EigenArrayXb();
 }
 //-----------------------------------------------------------------------------
-void SubDomain::map(Eigen::Ref<const EigenArrayXd> x,
+void SubDomain::map(const Eigen::Ref<const EigenArrayXd> x,
                     Eigen::Ref<EigenArrayXd> y) const
 {
   throw std::runtime_error("Function map() not implemented by user. (Required "
@@ -55,10 +52,10 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
   LOG(INFO) << "Computing sub domain markers for sub domain " << sub_domain;
 
-  auto gdim = mesh.geometry().dim();
+  const int gdim = mesh.geometry().dim();
+  const int D = mesh.topology().dim();
 
   // Compute connectivities for boundary detection, if necessary
-  const std::size_t D = mesh.topology().dim();
   if (dim < D)
   {
     mesh.create_entities(dim);
@@ -69,8 +66,8 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
 
   // Speed up the computation by only checking each vertex once (or
   // twice if it is on the boundary for some but not all facets).
-  common::RangedIndexSet boundary_visited{{{0, mesh.num_entities(0)}}};
-  common::RangedIndexSet interior_visited{{{0, mesh.num_entities(0)}}};
+  std::vector<bool> boundary_visited(mesh.num_entities(0), false);
+  std::vector<bool> interior_visited(mesh.num_entities(0), false);
   std::vector<bool> boundary_inside(mesh.num_entities(0));
   std::vector<bool> interior_inside(mesh.num_entities(0));
 
@@ -83,11 +80,10 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     // Check if entity is on the boundary if entity is a facet
     if (dim == D - 1)
       on_boundary = (entity.num_global_entities(D) == 1);
-    // Or, if entity is of topological dimension less than D - 1, check if any
-    // connected
-    // facet is on the boundary
     else if (dim < D - 1)
     {
+      // Or, if entity is of topological dimension less than D - 1,
+      // check if any connected facet is on the boundary
       on_boundary = false;
       for (std::size_t f(0); f < entity.num_entities(D - 1); ++f)
       {
@@ -102,7 +98,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     }
 
     // Select the visited-cache to use for this entity
-    common::RangedIndexSet& is_visited
+    std::vector<bool>& is_visited
         = (on_boundary ? boundary_visited : interior_visited);
     std::vector<bool>& is_inside
         = (on_boundary ? boundary_inside : interior_inside);
@@ -115,10 +111,14 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     {
       for (auto& vertex : EntityRange<Vertex>(entity))
       {
-        if (is_visited.insert(vertex.index()))
-          is_inside[vertex.index()] = inside(vertex.x(), on_boundary)[0];
+        const std::int32_t vertex_index = vertex.index();
+        if (!is_visited[vertex_index])
+        {
+          is_visited[vertex_index] = true;
+          is_inside[vertex_index] = inside(vertex.x(), on_boundary)[0];
+        }
 
-        if (!is_inside[vertex.index()])
+        if (!is_inside[vertex_index])
         {
           all_points_inside = false;
           break;
