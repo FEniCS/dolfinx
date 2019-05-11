@@ -86,16 +86,19 @@ public:
 private:
   void write_function(const function::Function& u, double time);
 
-  void write_mesh(const mesh::Mesh& mesh, double time);
+  static void write_mesh(const mesh::Mesh& mesh, const std::string filename,
+                         const std::size_t counter, double time);
 
-  std::string init(const mesh::Mesh& mesh, std::size_t dim) const;
+  static std::string init(const mesh::Mesh& mesh, const std::string filename,
+                          const std::size_t counter, std::size_t dim);
 
   void results_write(const function::Function& u, std::string file) const;
 
   void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
                         std::string file) const;
 
-  void pvd_file_write(std::size_t step, double time, std::string file);
+  static void pvd_file_write(std::size_t step, double time,
+                             const std::string filename, std::string file);
 
   void pvtu_write_function(std::size_t dim, std::size_t rank,
                            const std::string data_location,
