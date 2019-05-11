@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2017 Garth N. Wells
+// Copyright (C) 2005-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -84,62 +84,12 @@ public:
   void write(const function::Function& u, double t);
 
 private:
-  void write_function(const function::Function& u, double time);
-
-  static void write_mesh(const mesh::Mesh& mesh, const std::string filename,
-                         const std::size_t counter, double time);
-
-  static std::string init(const mesh::Mesh& mesh, const std::string filename,
-                          const std::size_t counter, std::size_t dim);
-
-  void results_write(const function::Function& u, std::string file) const;
-
-  void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
-                        std::string file) const;
-
-  static void pvd_file_write(std::size_t step, double time,
-                             const std::string filename, std::string file);
-
-  static void
-  pvtu_write_function(std::size_t dim, std::size_t rank,
-                      const std::string data_location, const std::string name,
-                      const std::string filename, const std::string fname,
-                      const std::size_t counter, std::size_t num_processes);
-
-  static void pvtu_write_mesh(const std::string filename,
-                              const std::string pvtu_filename,
-                              const std::size_t counter,
-                              const std::size_t num_processes);
-
-  static void pvtu_write(const function::Function& u,
-                         const std::string filename,
-                         const std::string pvtu_filename,
-                         const std::size_t counter);
-
-  static void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
-                              const std::string vtu_filename);
-
-  static void vtk_header_close(std::string file);
-
-  static std::string vtu_name(const int process, const int num_processes,
-                              const int counter, const std::string filename,
-                              const std::string ext);
-
-  static void clear_file(std::string file);
-
-  template <typename T>
-  void mesh_function_write(T& meshfunction, double time);
-
-  // Strip path from file
-  static std::string strip_path(const std::string filename,
-                                const std::string file);
 
   const std::string _filename;
 
-  // Counters for the number of times various data has been written
-  std::size_t counter;
+  // Counter for the number of times various data has been written
+  std::size_t _counter;
 
-  static void pvtu_write_mesh(pugi::xml_node xml_node);
 };
 } // namespace io
 } // namespace dolfin
