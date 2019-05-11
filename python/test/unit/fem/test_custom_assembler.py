@@ -109,6 +109,8 @@ MatSetValues_abi = petsc_lib_cffi.MatSetValuesLocal
 
 # Make MatSetValuesLocal from PETSc available via cffi in API mode
 if dolfin.MPI.comm_world.Get_rank() == 0:
+    worker = os.getenv('PYTEST_XDIST_WORKER', None)
+    module_name = "_petsc_cffi_{}".format(worker)
     os.environ["CC"] = "mpicc"
     petsc_dir = os.environ.get('PETSC_DIR', None)
     ffibuilder = cffi.FFI()
@@ -120,7 +122,7 @@ if dolfin.MPI.comm_world.Get_rank() == 0:
                                 PetscInt ncol, const PetscInt* icol,
                                 const PetscScalar* y, InsertMode addv);
     """)
-    ffibuilder.set_source("_petsc_cffi", """
+    ffibuilder.set_source(module_name, """
         # include "petscmat.h"
     """,
                           libraries=['petsc'],
@@ -131,7 +133,7 @@ if dolfin.MPI.comm_world.Get_rank() == 0:
 
 dolfin.MPI.comm_world.barrier()
 
-spec = importlib.util.find_spec('_petsc_cffi')
+spec = importlib.util.find_spec(module_name)
 if spec is None:
     raise ImportError("Failed to find CFFI generated module")
 module = importlib.util.module_from_spec(spec)
