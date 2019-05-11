@@ -122,7 +122,7 @@ void VTKFile::write_function(const function::Function& u, double time)
   if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, _filename, ".pvtu");
-    pvtu_write(u, pvtu_filename);
+    pvtu_write(u, _filename, pvtu_filename, counter);
     pvd_file_write(counter, time, _filename, pvtu_filename);
   }
   else if (num_processes == 1)
@@ -384,11 +384,10 @@ void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node)
   data_node.append_attribute("Name") = "types";
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
-                                  const std::string data_location,
-                                  const std::string name,
-                                  const std::string fname,
-                                  std::size_t num_processes) const
+void VTKFile::pvtu_write_function(
+    std::size_t dim, std::size_t rank, const std::string data_location,
+    const std::string name, const std::string filename, const std::string fname,
+    const std::size_t counter, std::size_t num_processes)
 {
   // Create xml doc
   pugi::xml_document xml_doc;
@@ -456,7 +455,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
   for (std::size_t i = 0; i < num_processes; i++)
   {
     const std::string tmp_string
-        = vtu_name(i, num_processes, counter, _filename, ".vtu");
+        = vtu_name(i, num_processes, counter, filename, ".vtu");
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
@@ -493,7 +492,8 @@ void VTKFile::pvtu_write_mesh(const std::string filename,
 }
 //----------------------------------------------------------------------------
 void VTKFile::pvtu_write(const function::Function& u,
-                         const std::string fname) const
+                         const std::string filename, const std::string fname,
+                         const std::size_t counter)
 {
   assert(u.function_space()->element());
   const std::size_t rank = u.function_space()->element()->value_rank();
@@ -520,7 +520,8 @@ void VTKFile::pvtu_write(const function::Function& u,
     data_type = "cell";
 
   const std::size_t num_processes = MPI::size(mesh.mpi_comm());
-  pvtu_write_function(dim, rank, data_type, u.name(), fname, num_processes);
+  pvtu_write_function(dim, rank, data_type, u.name(), filename, fname, counter,
+                      num_processes);
 }
 //----------------------------------------------------------------------------
 void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
@@ -627,8 +628,8 @@ void VTKFile::mesh_function_write(T& meshfunction, double time)
   if (num_processes > 1 && process_number == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, _filename, ".pvtu");
-    pvtu_write_function(1, 0, "cell", meshfunction.name(), pvtu_filename,
-                        num_processes);
+    pvtu_write_function(1, 0, "cell", meshfunction.name(), _filename,
+                        pvtu_filename, counter, num_processes);
     pvd_file_write(counter, time, _filename, pvtu_filename);
   }
   else if (num_processes == 1)

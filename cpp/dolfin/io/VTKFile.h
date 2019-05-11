@@ -100,18 +100,21 @@ private:
   static void pvd_file_write(std::size_t step, double time,
                              const std::string filename, std::string file);
 
-  void pvtu_write_function(std::size_t dim, std::size_t rank,
-                           const std::string data_location,
-                           const std::string name, const std::string filename,
-                           std::size_t num_processes) const;
+  static void
+  pvtu_write_function(std::size_t dim, std::size_t rank,
+                      const std::string data_location, const std::string name,
+                      const std::string filename, const std::string fname,
+                      const std::size_t counter, std::size_t num_processes);
 
   static void pvtu_write_mesh(const std::string filename,
                               const std::string pvtu_filename,
                               const std::size_t counter,
                               const std::size_t num_processes);
 
-  void pvtu_write(const function::Function& u,
-                  const std::string pvtu_filename) const;
+  static void pvtu_write(const function::Function& u,
+                         const std::string filename,
+                         const std::string pvtu_filename,
+                         const std::size_t counter);
 
   static void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
                               const std::string vtu_filename);
