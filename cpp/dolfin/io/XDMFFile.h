@@ -420,25 +420,6 @@ private:
   read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
                              std::string name) const;
 
-  // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and
-  // write data
-  static void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const mesh::Mesh& mesh, const std::string path_prefix);
-
-  // Add function to a XML node
-  static void add_function(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                           std::string h5_path, const function::Function& u,
-                           std::string function_name, const mesh::Mesh& mesh,
-                           const std::string component = "");
-
-  // Add set of points to XDMF xml_node and write data
-  static void add_points(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                         const std::vector<geometry::Point>& points);
-
-  // Return data which is local
-  template <typename T>
-  std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction);
-
   // Generic mesh::MeshFunction reader
   template <typename T>
   mesh::MeshFunction<T>
