@@ -147,21 +147,6 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   }
 }
 
-// /// Specialisation for std::vector<bool>, as HDF5 does not support it
-// /// natively
-// template <>
-// void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-//                    const std::string h5_path, const std::vector<bool>& x,
-//                    const std::vector<std::int64_t> shape,
-//                    const std::string number_type)
-// {
-//   // HDF5 cannot accept 'bool' so copy to 'int'
-//   std::vector<int> x_int(x.size());
-//   for (std::size_t i = 0; i < x.size(); ++i)
-//     x_int[i] = (int)x[i];
-//   add_data_item(comm, xml_node, h5_id, h5_path, x_int, shape, number_type);
-// }
-
 // Return data which is local
 template <typename T>
 std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)

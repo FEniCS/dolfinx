@@ -1049,11 +1049,6 @@ void XDMFFile::write(const function::Function& u, double time_step)
   ++_counter;
 }
 //-----------------------------------------------------------------------------
-// void XDMFFile::write(const mesh::MeshFunction<bool>& meshfunction)
-// {
-//   write_mesh_function(meshfunction);
-// }
-//-----------------------------------------------------------------------------
 void XDMFFile::write(const mesh::MeshFunction<int>& meshfunction)
 {
   write_mesh_function(meshfunction);
@@ -1068,11 +1063,6 @@ void XDMFFile::write(const mesh::MeshFunction<double>& meshfunction)
 {
   write_mesh_function(meshfunction);
 }
-//-----------------------------------------------------------------------------
-// void XDMFFile::write(const mesh::MeshValueCollection<bool>& mvc)
-// {
-//   write_mesh_value_collection(mvc);
-// }
 //-----------------------------------------------------------------------------
 void XDMFFile::write(const mesh::MeshValueCollection<int>& mvc)
 {
@@ -1101,7 +1091,8 @@ void XDMFFile::write_mesh_value_collection(
   }
 
   // Provide some very basic functionality for saving
-  // mesh::MeshValueCollections mainly for saving values on a boundary mesh
+  // mesh::MeshValueCollections mainly for saving values on a boundary
+  // mesh
 
   assert(mvc.mesh());
   std::shared_ptr<const mesh::Mesh> mesh = mvc.mesh();
@@ -1120,6 +1111,7 @@ void XDMFFile::write_mesh_value_collection(
   {
     // Reset pugi
     _xml_doc->reset();
+
     // Add XDMF node and version attribute
     _xml_doc->append_child(pugi::node_doctype)
         .set_value("Xdmf SYSTEM \"Xdmf.dtd\" []");
@@ -1152,10 +1144,9 @@ void XDMFFile::write_mesh_value_collection(
     h5_id = h5_file->h5_id();
   }
 
-  // Check domain node for existing mesh::Mesh Grid and check it is compatible
-  // with
-  // this mesh::MeshValueCollection, or if none, add mesh::Mesh
-
+  // Check domain node for existing mesh::Mesh Grid and check it is
+  // compatible with this mesh::MeshValueCollection, or if none, add
+  // mesh::Mesh
   pugi::xml_node grid_node = domain_node.child("Grid");
   if (grid_node.empty())
     xdmf_write::add_mesh(_mpi_comm.comm(), domain_node, h5_id, *mesh, "/Mesh");
@@ -1277,21 +1268,6 @@ void XDMFFile::write_mesh_value_collection(
 
   ++_counter;
 }
-//-----------------------------------------------------------------------------
-// mesh::MeshValueCollection<bool>
-// XDMFFile::read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh,
-//                         std::string name) const
-// {
-//   // Bool is not really supported, so copy from int
-//   mesh::MeshValueCollection<int> mvc_int
-//       = read_mesh_value_collection<int>(mesh, name);
-
-//   mesh::MeshValueCollection<bool> mvc(mesh, mvc_int.dim());
-//   for (const auto& p : mvc_int.values())
-//     mvc.set_value(p.first.first, p.first.second, (bool)p.second);
-
-//   return mvc;
-// }
 //-----------------------------------------------------------------------------
 mesh::MeshValueCollection<int>
 XDMFFile::read_mvc_int(std::shared_ptr<const mesh::Mesh> mesh,
@@ -1587,22 +1563,6 @@ void XDMFFile::write(const std::vector<geometry::Point>& points,
   if (_mpi_comm.rank() == 0)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
-//----------------------------------------------------------------------------
-// mesh::MeshFunction<bool>
-// XDMFFile::read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
-//                        std::string name) const
-// {
-//   // Read mesh function
-//   mesh::MeshFunction<std::size_t> mf_int
-//       = read_mesh_function<std::size_t>(mesh, name);
-
-//   // Convert to bool
-//   mesh::MeshFunction<bool> mf(mesh, mf_int.dim(), 0);
-//   for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, mf.dim()))
-//     mf[cell.index()] = (mf_int[cell.index()] == 1);
-
-//   return mf;
-// }
 //----------------------------------------------------------------------------
 mesh::MeshFunction<int>
 XDMFFile::read_mf_int(std::shared_ptr<const mesh::Mesh> mesh,
