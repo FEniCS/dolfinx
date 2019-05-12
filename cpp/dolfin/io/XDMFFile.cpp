@@ -4,9 +4,11 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "XDMFFile.h"
+#include "xdmf_utils.h"
+
 #include "HDF5File.h"
 #include "HDF5Utility.h"
+#include "XDMFFile.h"
 #include "pugixml.hpp"
 #include <algorithm>
 #include <boost/algorithm/string.hpp>
@@ -327,67 +329,6 @@ std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node)
   return it->second;
 }
 //----------------------------------------------------------------------------
-// Get dimensions from an XML DataSet node
-std::vector<std::int64_t> get_dataset_shape(const pugi::xml_node& dataset_node)
-{
-  // Get Dimensions attribute string
-  assert(dataset_node);
-  pugi::xml_attribute dimensions_attr = dataset_node.attribute("Dimensions");
-
-  // Gets dimensions, if attribute is present
-  std::vector<std::int64_t> dims;
-  if (dimensions_attr)
-  {
-    // Split dimensions string
-    const std::string dims_str = dimensions_attr.as_string();
-    std::vector<std::string> dims_list;
-    boost::split(dims_list, dims_str, boost::is_any_of(" "));
-
-    // Cast dims to integers
-    for (auto d : dims_list)
-      dims.push_back(boost::lexical_cast<std::int64_t>(d));
-  }
-
-  return dims;
-}
-//----------------------------------------------------------------------------
-// Get number of cells from an XML Topology node
-std::int64_t get_num_cells(const pugi::xml_node& topology_node)
-{
-  assert(topology_node);
-
-  // Get number of cells from topology
-  std::int64_t num_cells_topolgy = -1;
-  pugi::xml_attribute num_cells_attr
-      = topology_node.attribute("NumberOfElements");
-  if (num_cells_attr)
-    num_cells_topolgy = num_cells_attr.as_llong();
-
-  // Get number of cells from topology dataset
-  pugi::xml_node topology_dataset_node = topology_node.child("DataItem");
-  assert(topology_dataset_node);
-  const std::vector<std::int64_t> tdims
-      = get_dataset_shape(topology_dataset_node);
-
-  // Check that number of cells can be determined
-  if (tdims.size() != 2 and num_cells_topolgy == -1)
-  {
-    throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
-  }
-
-  // Check for consistency if number of cells appears in both the topology
-  // and DataItem nodes
-  if (num_cells_topolgy != -1 and tdims.size() == 2)
-  {
-    if (num_cells_topolgy != tdims[0])
-    {
-      throw std::runtime_error("Cannot determine number of cells in XMDF mesh");
-    }
-  }
-
-  return std::max(num_cells_topolgy, tdims[0]);
-}
-//----------------------------------------------------------------------------
 // Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
 // node
 std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node)
@@ -447,7 +388,8 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   assert(format_attr);
 
   // Get data set shape from 'Dimensions' attribute (empty if not available)
-  const std::vector<std::int64_t> shape_xml = get_dataset_shape(dataset_node);
+  const std::vector<std::int64_t> shape_xml
+      = xdmf_utils::get_dataset_shape(dataset_node);
 
   const std::string format = format_attr.as_string();
   std::vector<T> data_vector;
@@ -540,9 +482,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
         = HDF5Interface::read_dataset<T>(h5_file.h5_id(), paths[1], range);
   }
   else
-  {
     throw std::runtime_error("Storage format \"" + format + "\" is unknown");
-  }
 
   // Get dimensions for consistency (if available in DataItem node)
   if (shape_xml.empty())
@@ -635,131 +575,6 @@ template <typename X, typename Y>
 std::string to_string(X x, Y y)
 {
   return std::to_string(x) + " " + std::to_string(y);
-}
-//-----------------------------------------------------------------------------
-std::string vtk_cell_type_str(mesh::CellType::Type cell_type, int order)
-{
-  // FIXME: Move to CellType?
-  switch (cell_type)
-  {
-  case mesh::CellType::Type::point:
-    switch (order)
-    {
-    case 1:
-      return "PolyVertex";
-    }
-  case mesh::CellType::Type::interval:
-    switch (order)
-    {
-    case 1:
-      return "PolyLine";
-    case 2:
-      return "Edge_3";
-    }
-  case mesh::CellType::Type::triangle:
-    switch (order)
-    {
-    case 1:
-      return "Triangle";
-    case 2:
-      return "Triangle_6";
-    }
-  case mesh::CellType::Type::quadrilateral:
-    switch (order)
-    {
-    case 1:
-      return "Quadrilateral";
-    case 2:
-      return "Quadrilateral_8";
-    }
-  case mesh::CellType::Type::tetrahedron:
-    switch (order)
-    {
-    case 1:
-      return "Tetrahedron";
-    case 2:
-      return "Tetrahedron_10";
-    }
-  case mesh::CellType::Type::hexahedron:
-    switch (order)
-    {
-    case 1:
-      return "Hexahedron";
-    case 2:
-      return "Hexahedron_20";
-    }
-  default:
-    throw std::runtime_error("Invalid combination of cell type and order");
-    return "error";
-  }
-}
-//-----------------------------------------------------------------------------
-// Get cell data values as a flattened 2D array
-std::vector<PetscScalar> get_cell_data_values(const function::Function& u)
-{
-  assert(u.function_space()->dofmap());
-
-  const auto mesh = u.function_space()->mesh();
-  const std::size_t value_size = u.value_size();
-  const std::size_t value_rank = u.value_rank();
-
-  // Allocate memory for function values at cell centres
-  const std::size_t tdim = mesh->topology().dim();
-  const std::size_t num_local_cells = mesh->topology().ghost_offset(tdim);
-  const std::size_t local_size = num_local_cells * value_size;
-
-  // Build lists of dofs and create map
-  std::vector<PetscInt> dof_set;
-  dof_set.reserve(local_size);
-  const auto dofmap = u.function_space()->dofmap();
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
-  {
-    // Tabulate dofs
-    auto dofs = dofmap->cell_dofs(cell.index());
-    const std::size_t ndofs = dofmap->num_element_dofs(cell.index());
-    assert(ndofs == value_size);
-    for (std::size_t i = 0; i < ndofs; ++i)
-      dof_set.push_back(dofs[i]);
-  }
-
-  // Get  values
-  std::vector<PetscScalar> data_values(dof_set.size());
-  {
-    la::VecReadWrapper u_wrapper(u.vector().vec());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
-        = u_wrapper.x;
-    for (std::size_t i = 0; i < dof_set.size(); ++i)
-      data_values[i] = x[dof_set[i]];
-  }
-
-  if (value_rank == 1 && value_size == 2)
-  {
-    // Pad out data for 2D vector to 3D
-    data_values.resize(3 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      PetscScalar nd[3] = {data_values[j * 2], data_values[j * 2 + 1], 0};
-      std::copy(nd, nd + 3, &data_values[j * 3]);
-    }
-  }
-  else if (value_rank == 2 && value_size == 4)
-  {
-    data_values.resize(9 * num_local_cells);
-    for (int j = (num_local_cells - 1); j >= 0; --j)
-    {
-      PetscScalar nd[9] = {data_values[j * 4],
-                           data_values[j * 4 + 1],
-                           0,
-                           data_values[j * 4 + 2],
-                           data_values[j * 4 + 3],
-                           0,
-                           0,
-                           0,
-                           0};
-      std::copy(nd, nd + 9, &data_values[j * 9]);
-    }
-  }
-  return data_values;
 }
 //-----------------------------------------------------------------------------
 // // Get point data values collocated at P2 geometry points (vertices and
@@ -878,58 +693,6 @@ std::vector<PetscScalar> get_cell_data_values(const function::Function& u)
 //   return data_values;
 // }
 //----------------------------------------------------------------------------
-// Get point data values for linear or quadratic mesh into flattened 2D
-// array
-std::vector<PetscScalar> get_point_data_values(const function::Function& u)
-{
-  auto mesh = u.function_space()->mesh();
-  assert(mesh);
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      data_values = u.compute_point_values(*mesh);
-  std::int64_t width = get_padded_width(u);
-
-  // FIXME: Unpick the below code for the new layout of data from
-  //        GenericFunction::compute_vertex_values
-  const std::size_t num_local_points = mesh->geometry().num_points();
-  std::vector<PetscScalar> _data_values(width * num_local_points, 0.0);
-
-  const std::size_t value_rank = u.value_rank();
-  if (value_rank > 0)
-  {
-    // Transpose vector/tensor data arrays
-    const std::size_t value_size = u.value_size();
-    for (std::size_t i = 0; i < num_local_points; i++)
-    {
-      for (std::size_t j = 0; j < value_size; j++)
-      {
-        std::size_t tensor_2d_offset
-            = (j > 1 && value_rank == 2 && value_size == 4) ? 1 : 0;
-        _data_values[i * width + j + tensor_2d_offset] = data_values(i, j);
-      }
-    }
-  }
-  else
-  {
-    _data_values = std::vector<PetscScalar>(
-        data_values.data(),
-        data_values.data() + data_values.rows() * data_values.cols());
-  }
-
-  // Reorder values by global point indices
-  Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                          Eigen::RowMajor>>
-      in_vals(_data_values.data(), _data_values.size() / width, width);
-
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      vals = mesh::DistributedMeshTools::reorder_by_global_indices(
-          mesh->mpi_comm(), in_vals, mesh->geometry().global_indices());
-
-  _data_values
-      = std::vector<PetscScalar>(vals.data(), vals.data() + vals.size());
-
-  return _data_values;
-}
-//-----------------------------------------------------------------------------
 
 } // namespace
 
@@ -1211,9 +974,9 @@ void XDMFFile::write(const function::Function& u)
   std::vector<PetscScalar> data_values;
   bool cell_centred = has_cell_centred_data(u);
   if (cell_centred)
-    data_values = get_cell_data_values(u);
+    data_values = xdmf_utils::get_cell_data_values(u);
   else
-    data_values = get_point_data_values(u);
+    data_values = xdmf_utils::get_point_data_values(u);
 
   // Add attribute DataItem node and write data
   std::int64_t width = get_padded_width(u);
@@ -1404,9 +1167,9 @@ void XDMFFile::write(const function::Function& u, double time_step)
   bool cell_centred = has_cell_centred_data(u);
 
   if (cell_centred)
-    data_values = get_cell_data_values(u);
+    data_values = xdmf_utils::get_cell_data_values(u);
   else
-    data_values = get_point_data_values(u);
+    data_values = xdmf_utils::get_point_data_values(u);
 
   // Add attribute DataItem node and write data
   std::int64_t width = get_padded_width(u);
@@ -1629,8 +1392,8 @@ void XDMFFile::write_mesh_value_collection(
   // Add topology node and attributes
   const std::size_t cell_dim = mvc.dim();
   const std::size_t degree = 1;
-  const std::string vtk_cell_str
-      = vtk_cell_type_str(mesh->type().entity_type(cell_dim), degree);
+  const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
+      mesh->type().entity_type(cell_dim), degree);
   const std::int64_t num_vertices_per_cell
       = mesh->type().num_vertices(cell_dim);
 
@@ -2344,7 +2107,8 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
   // Get number of points from Geometry dataitem node
   pugi::xml_node geometry_data_node = geometry_node.child("DataItem");
   assert(geometry_data_node);
-  const std::vector<std::int64_t> gdims = get_dataset_shape(geometry_data_node);
+  const std::vector<std::int64_t> gdims
+      = xdmf_utils::get_dataset_shape(geometry_data_node);
   assert(gdims.size() == 2);
   assert(gdims[1] == gdim);
 
@@ -2360,7 +2124,8 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
   assert(topology_data_node);
 
   // Topology
-  const std::vector<std::int64_t> tdims = get_dataset_shape(topology_data_node);
+  const std::vector<std::int64_t> tdims
+      = xdmf_utils::get_dataset_shape(topology_data_node);
   const auto topology_data = get_dataset<std::int64_t>(
       _mpi_comm.comm(), topology_data_node, parent_path);
   const std::size_t npoint_per_cell = tdims[1];
@@ -2479,11 +2244,11 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
       = get_dataset<std::size_t>(_mpi_comm.comm(), cells_dataitem, parent_path);
 
   const std::vector<std::int64_t> x_cell_dofs_shape
-      = get_dataset_shape(cells_dataitem);
+      = xdmf_utils::get_dataset_shape(cells_dataitem);
 
   // Divide cells equally between processes
   std::array<std::int64_t, 2> cell_range
-      = MPI::local_range(_mpi_comm.comm(), x_cell_dofs_shape[0]);
+      = dolfin::MPI::local_range(_mpi_comm.comm(), x_cell_dofs_shape[0]);
 
   // Read number of dofs per cell
   std::vector<std::int64_t> x_cell_dofs = get_dataset<std::int64_t>(
@@ -2496,7 +2261,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                               {{x_cell_dofs.front(), x_cell_dofs.back()}});
 
   const std::vector<std::int64_t> vector_shape
-      = get_dataset_shape(vector_dataitem);
+      = xdmf_utils::get_dataset_shape(vector_dataitem);
   const std::size_t num_global_dofs = vector_shape[0];
 
   // Divide vector between processes
@@ -2560,8 +2325,8 @@ void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   // Get VTK string for cell type and degree (linear or quadratic)
   const std::size_t degree = mesh.degree();
-  const std::string vtk_cell_str
-      = vtk_cell_type_str(mesh.type().entity_type(cell_dim), degree);
+  const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
+      mesh.type().entity_type(cell_dim), degree);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
@@ -2730,7 +2495,8 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::uint32_t num_vertices_per_cell = cell_type->num_entities(0);
   const std::uint32_t dim = cell_type->dim();
 
-  const std::int64_t num_entities_global = get_num_cells(topology_node);
+  const std::int64_t num_entities_global
+      = xdmf_utils::get_num_cells(topology_node);
 
   // Ensure num_entities_global(cell_dim) is set and check dataset matches
   mesh::DistributedMeshTools::number_entities(*mesh, dim);
