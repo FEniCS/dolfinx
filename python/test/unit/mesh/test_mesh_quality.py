@@ -71,7 +71,7 @@ def test_radius_ratio_min_radius_ratio_max():
                          Point(1, 1)._cpp_object], [1, 1],
         CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
     x = mesh2d.geometry.points
-    x[3] += 0.5 * (sqrt(3.0) - 1.0)
+    x[3, :2] += 0.5 * (sqrt(3.0) - 1.0)
 
     # Create 3D mesh with regular tetrahedron and degenerate cells
     mesh3d = UnitCubeMesh(MPI.comm_self, 1, 1, 1)
