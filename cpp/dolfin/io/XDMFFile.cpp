@@ -284,49 +284,6 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   }
 }
 //----------------------------------------------------------------------------
-// Add geometry node and data to xml_node
-void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const std::string path_prefix, const mesh::Mesh& mesh)
-{
-  const mesh::Geometry& mesh_geometry = mesh.geometry();
-  int gdim = mesh_geometry.dim();
-
-  // Compute number of points (global) in mesh (equal to number of vertices
-  // for affine meshes)
-  const std::int64_t num_points = mesh.geometry().num_points_global();
-
-  // Add geometry node and attributes
-  pugi::xml_node geometry_node = xml_node.append_child("Geometry");
-  assert(geometry_node);
-  assert(gdim > 0 and gdim <= 3);
-  const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
-  geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
-
-  // Pack geometry data
-  EigenRowArrayXXd _x = mesh::DistributedMeshTools::reorder_by_global_indices(
-      mesh.mpi_comm(), mesh.geometry().points(),
-      mesh.geometry().global_indices());
-  std::vector<double> x(_x.data(), _x.data() + _x.size());
-
-  // XDMF does not support 1D, so handle as special case
-  if (gdim == 1)
-  {
-    // Pad the coordinates with zeros for a dummy Y
-    gdim = 2;
-    std::vector<double> _x(2 * x.size(), 0.0);
-    for (std::size_t i = 0; i < x.size(); ++i)
-      _x[2 * i] = x[i];
-    std::swap(x, _x);
-  }
-
-  // Add geometry DataItem node
-  const std::string group_name = path_prefix + "/" + "mesh";
-  const std::string h5_path = group_name + "/geometry";
-  const std::vector<std::int64_t> shape = {num_points, gdim};
-
-  add_data_item(comm, geometry_node, h5_id, h5_path, x, shape, "");
-}
-//-----------------------------------------------------------------------------
 // Specialisation for std::vector<bool>, as HDF5 does not support it
 // natively
 template <>
@@ -2333,7 +2290,10 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     // Add geometry node if none already, else link back to first existing
     // mesh::Mesh
     if (grid_empty)
-      add_geometry_data(_mpi_comm.comm(), grid_node, h5_id, mf_name, *mesh);
+    {
+      xdmf_write::add_geometry_data(_mpi_comm.comm(), grid_node, h5_id, mf_name,
+                                    *mesh);
+    }
     else
     {
       // Add geometry node (reference)

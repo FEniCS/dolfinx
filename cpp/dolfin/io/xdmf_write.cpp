@@ -5,43 +5,24 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_write.h"
-#include "xdmf_utils.h"
-
 #include "HDF5File.h"
-#include "HDF5Utility.h"
-#include "XDMFFile.h"
 #include "pugixml.hpp"
-#include <algorithm>
+#include "xdmf_utils.h"
 #include <boost/algorithm/string.hpp>
-#include <boost/container/vector.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/defines.h>
 #include <dolfin/common/log.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/fem/ReferenceCellTopology.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/la/PETScVector.h>
-#include <dolfin/la/utils.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Connectivity.h>
+#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
-#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/MeshValueCollection.h>
-#include <dolfin/mesh/Partitioning.h>
+#include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/Vertex.h>
-#include <iomanip>
-#include <memory>
-#include <petscvec.h>
-#include <set>
-#include <string>
-#include <vector>
 
 using namespace dolfin;
 using namespace dolfin::io;
@@ -285,49 +266,6 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   }
 }
 //----------------------------------------------------------------------------
-// Add geometry node and data to xml_node
-void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const std::string path_prefix, const mesh::Mesh& mesh)
-{
-  const mesh::Geometry& mesh_geometry = mesh.geometry();
-  int gdim = mesh_geometry.dim();
-
-  // Compute number of points (global) in mesh (equal to number of vertices
-  // for affine meshes)
-  const std::int64_t num_points = mesh.geometry().num_points_global();
-
-  // Add geometry node and attributes
-  pugi::xml_node geometry_node = xml_node.append_child("Geometry");
-  assert(geometry_node);
-  assert(gdim > 0 and gdim <= 3);
-  const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
-  geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
-
-  // Pack geometry data
-  EigenRowArrayXXd _x = mesh::DistributedMeshTools::reorder_by_global_indices(
-      mesh.mpi_comm(), mesh.geometry().points(),
-      mesh.geometry().global_indices());
-  std::vector<double> x(_x.data(), _x.data() + _x.size());
-
-  // XDMF does not support 1D, so handle as special case
-  if (gdim == 1)
-  {
-    // Pad the coordinates with zeros for a dummy Y
-    gdim = 2;
-    std::vector<double> _x(2 * x.size(), 0.0);
-    for (std::size_t i = 0; i < x.size(); ++i)
-      _x[2 * i] = x[i];
-    std::swap(x, _x);
-  }
-
-  // Add geometry DataItem node
-  const std::string group_name = path_prefix + "/" + "mesh";
-  const std::string h5_path = group_name + "/geometry";
-  const std::vector<std::int64_t> shape = {num_points, gdim};
-
-  add_data_item(comm, geometry_node, h5_id, h5_path, x, shape, "");
-}
-//-----------------------------------------------------------------------------
 // Calculate set of entities of dimension cell_dim which are duplicated
 // on other processes and should not be output on this process
 std::set<std::uint32_t> compute_nonlocal_entities(const mesh::Mesh& mesh,
@@ -738,6 +676,49 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
   add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape,
                 number_type);
+}
+//-----------------------------------------------------------------------------
+void xdmf_write::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
+                                   hid_t h5_id, const std::string path_prefix,
+                                   const mesh::Mesh& mesh)
+{
+  const mesh::Geometry& mesh_geometry = mesh.geometry();
+  int gdim = mesh_geometry.dim();
+
+  // Compute number of points (global) in mesh (equal to number of vertices
+  // for affine meshes)
+  const std::int64_t num_points = mesh.geometry().num_points_global();
+
+  // Add geometry node and attributes
+  pugi::xml_node geometry_node = xml_node.append_child("Geometry");
+  assert(geometry_node);
+  assert(gdim > 0 and gdim <= 3);
+  const std::string geometry_type = (gdim == 3) ? "XYZ" : "XY";
+  geometry_node.append_attribute("GeometryType") = geometry_type.c_str();
+
+  // Pack geometry data
+  EigenRowArrayXXd _x = mesh::DistributedMeshTools::reorder_by_global_indices(
+      mesh.mpi_comm(), mesh.geometry().points(),
+      mesh.geometry().global_indices());
+  std::vector<double> x(_x.data(), _x.data() + _x.size());
+
+  // XDMF does not support 1D, so handle as special case
+  if (gdim == 1)
+  {
+    // Pad the coordinates with zeros for a dummy Y
+    gdim = 2;
+    std::vector<double> _x(2 * x.size(), 0.0);
+    for (std::size_t i = 0; i < x.size(); ++i)
+      _x[2 * i] = x[i];
+    std::swap(x, _x);
+  }
+
+  // Add geometry DataItem node
+  const std::string group_name = path_prefix + "/" + "mesh";
+  const std::string h5_path = group_name + "/geometry";
+  const std::vector<std::int64_t> shape = {num_points, gdim};
+
+  add_data_item(comm, geometry_node, h5_id, h5_path, x, shape, "");
 }
 //-----------------------------------------------------------------------------
 void xdmf_write::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,

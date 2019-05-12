@@ -51,6 +51,10 @@ void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                        const std::string path_prefix, const mesh::Mesh& mesh,
                        int cell_dim);
 
+/// Add geometry node and data to xml_node
+void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+                       const std::string path_prefix, const mesh::Mesh& mesh);
+
 /// Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write
 /// data
 void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
