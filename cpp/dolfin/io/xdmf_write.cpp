@@ -49,84 +49,6 @@ std::string rank_to_string(std::size_t value_rank)
   return "";
 }
 //-----------------------------------------------------------------------------
-// Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the
-// data is written to the HDFF5 file with the path 'h5_path'. Otherwise,
-// data is witten to the XML node and 'h5_path' is ignored
-template <typename T>
-void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                   const std::string h5_path, const T& x,
-                   const std::vector<std::int64_t> shape,
-                   const std::string number_type)
-{
-  DLOG(INFO) << "Adding data item to node " << xml_node.path();
-
-  // Add DataItem node
-  assert(xml_node);
-  pugi::xml_node data_item_node = xml_node.append_child("DataItem");
-  assert(data_item_node);
-
-  // Add dimensions attribute
-  data_item_node.append_attribute("Dimensions")
-      = common::container_to_string(shape, " ", 16).c_str();
-
-  // Set type for topology data (needed by XDMF to prevent default to float)
-  if (!number_type.empty())
-    data_item_node.append_attribute("NumberType") = number_type.c_str();
-
-  // Add format attribute
-  if (h5_id < 0)
-  {
-    data_item_node.append_attribute("Format") = "XML";
-    assert(shape.size() == 2);
-    data_item_node.append_child(pugi::node_pcdata)
-        .set_value(common::container_to_string(x, " ", 16, shape[1]).c_str());
-  }
-  else
-  {
-    data_item_node.append_attribute("Format") = "HDF";
-
-    // Get name of HDF5 file
-    const std::string hdf5_filename = HDF5Interface::get_filename(h5_id);
-    const boost::filesystem::path p(hdf5_filename);
-
-    // Add HDF5 filename and HDF5 internal path to XML file
-    const std::string xdmf_path = p.filename().string() + ":" + h5_path;
-    data_item_node.append_child(pugi::node_pcdata).set_value(xdmf_path.c_str());
-
-    // Compute total number of items and check for consistency with shape
-    assert(!shape.empty());
-    std::int64_t num_items_total = 1;
-    for (auto n : shape)
-      num_items_total *= n;
-
-    assert(num_items_total == (std::int64_t)dolfin::MPI::sum(comm, x.size()));
-
-    // Compute data offset and range of values
-    std::int64_t local_shape0 = x.size();
-    for (std::size_t i = 1; i < shape.size(); ++i)
-    {
-      assert(local_shape0 % shape[i] == 0);
-      local_shape0 /= shape[i];
-    }
-    const std::int64_t offset
-        = dolfin::MPI::global_offset(comm, local_shape0, true);
-    const std::array<std::int64_t, 2> local_range
-        = {{offset, offset + local_shape0}};
-
-    const bool use_mpi_io = (dolfin::MPI::size(comm) > 1);
-    HDF5Interface::write_dataset(h5_id, h5_path, x.data(), local_range, shape,
-                                 use_mpi_io, false);
-
-    // Add partitioning attribute to dataset
-    std::vector<std::size_t> partitions;
-    std::vector<std::size_t> offset_tmp(1, offset);
-    dolfin::MPI::gather(comm, offset_tmp, partitions);
-    dolfin::MPI::broadcast(comm, partitions);
-    HDF5Interface::add_attribute(h5_id, h5_path, "partition", partitions);
-  }
-}
-//-----------------------------------------------------------------------------
-
 // Remap meshfunction data, scattering data to appropriate processes
 template <typename T>
 void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
@@ -514,43 +436,6 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   return data_vector;
 }
 //----------------------------------------------------------------------------
-// Return data which is local
-template <typename T>
-std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
-{
-  // Create vector to store data
-  std::vector<T> value_data;
-  value_data.reserve(meshfunction.size());
-
-  // Get mesh communicator
-  const auto mesh = meshfunction.mesh();
-  MPI_Comm comm = mesh->mpi_comm();
-
-  const int tdim = mesh->topology().dim();
-  const int cell_dim = meshfunction.dim();
-
-  if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
-  {
-    // FIXME: fail with ghosts?
-    value_data.resize(meshfunction.size());
-    std::copy(meshfunction.values(),
-              meshfunction.values() + meshfunction.size(), value_data.begin());
-  }
-  else
-  {
-    std::set<std::uint32_t> non_local_entities
-        = compute_nonlocal_entities(*mesh, cell_dim);
-
-    for (auto& e : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
-    {
-      if (non_local_entities.find(e.index()) == non_local_entities.end())
-        value_data.push_back(meshfunction[e]);
-    }
-  }
-
-  return value_data;
-}
-//----------------------------------------------------------------------------
 // Return a vector of numerical values from a vector of stringstream
 template <typename T>
 std::vector<T> string_to_vector(const std::vector<std::string>& x_str)
@@ -674,8 +559,8 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
   const std::string number_type = "UInt";
 
-  add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape,
-                number_type);
+  xdmf_write::add_data_item(comm, topology_node, h5_id, h5_path, topology_data,
+                            shape, number_type);
 }
 //-----------------------------------------------------------------------------
 void xdmf_write::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
@@ -718,7 +603,7 @@ void xdmf_write::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   const std::string h5_path = group_name + "/geometry";
   const std::vector<std::int64_t> shape = {num_points, gdim};
 
-  add_data_item(comm, geometry_node, h5_id, h5_path, x, shape, "");
+  xdmf_write::add_data_item(comm, geometry_node, h5_id, h5_path, x, shape, "");
 }
 //-----------------------------------------------------------------------------
 void xdmf_write::add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
@@ -843,8 +728,9 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
       = MPI::sum(mpi_comm, cell_dofs.size());
 
   // Write dofmap = indices to the values DataItem
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/cell_dofs",
-                cell_dofs, {num_cell_dofs_global, 1}, "UInt");
+  xdmf_write::add_data_item(mpi_comm, fe_attribute_node, h5_id,
+                            h5_path + "/cell_dofs", cell_dofs,
+                            {num_cell_dofs_global, 1}, "UInt");
 
   // FIXME: Avoid unnecessary copying of data
   // Get all local data
@@ -870,12 +756,13 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
       component_data_values[i] = local_data[i].imag();
   }
 
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
-                component_data_values, {(std::int64_t)u_vector.size(), 1},
-                "Float");
+  xdmf_write::add_data_item(mpi_comm, fe_attribute_node, h5_id,
+                            h5_path + "/vector", component_data_values,
+                            {(std::int64_t)u_vector.size(), 1}, "Float");
 #else
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
-                local_data, {(std::int64_t)u_vector.size(), 1}, "Float");
+  xdmf_write::add_data_item(mpi_comm, fe_attribute_node, h5_id,
+                            h5_path + "/vector", local_data,
+                            {(std::int64_t)u_vector.size(), 1}, "Float");
 #endif
 
   if (MPI::rank(mpi_comm) == MPI::size(mpi_comm) - 1)
@@ -885,8 +772,9 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
       = mesh.num_entities_global(tdim) + 1;
 
   // Write number of dofs per cell
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/x_cell_dofs",
-                x_cell_dofs, {num_x_cell_dofs_global, 1}, "UInt");
+  xdmf_write::add_data_item(mpi_comm, fe_attribute_node, h5_id,
+                            h5_path + "/x_cell_dofs", x_cell_dofs,
+                            {num_x_cell_dofs_global, 1}, "UInt");
 
   // Save cell ordering - copy to local vector and cut off ghosts
   std::vector<std::size_t> cells(mesh.topology().global_indices(tdim).begin(),
@@ -895,7 +783,8 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   const std::int64_t num_cells_global = mesh.num_entities_global(tdim);
 
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/cells", cells,
-                {num_cells_global, 1}, "UInt");
+  xdmf_write::add_data_item(mpi_comm, fe_attribute_node, h5_id,
+                            h5_path + "/cells", cells, {num_cells_global, 1},
+                            "UInt");
 }
 //-----------------------------------------------------------------------------

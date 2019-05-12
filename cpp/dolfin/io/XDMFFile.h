@@ -184,15 +184,15 @@ public:
   ///
   void write(const function::Function& u, double t);
 
-  /// Save mesh::MeshFunction to file using an associated HDF5 file, or
-  /// storing the data inline as XML.
-  ///
-  /// @param    meshfunction (_MeshFunction_)
-  ///         A meshfunction to save.
-  /// @param    encoding (_Encoding_)
-  ///         Encoding to use: HDF5 or ASCII
-  ///
-  void write(const mesh::MeshFunction<bool>& meshfunction);
+  // /// Save mesh::MeshFunction to file using an associated HDF5 file, or
+  // /// storing the data inline as XML.
+  // ///
+  // /// @param    meshfunction (_MeshFunction_)
+  // ///         A meshfunction to save.
+  // /// @param    encoding (_Encoding_)
+  // ///         Encoding to use: HDF5 or ASCII
+  // ///
+  // void write(const mesh::MeshFunction<bool>& meshfunction);
 
   /// Save mesh::MeshFunction to file using an associated HDF5 file, or
   /// storing the data inline as XML.
@@ -224,15 +224,15 @@ public:
   ///
   void write(const mesh::MeshFunction<double>& meshfunction);
 
-  /// Write out mesh value collection (subset) using an associated
-  /// HDF5 file, or storing the data inline as XML.
-  ///
-  /// @param mvc (_MeshValueCollection<bool>_)
-  ///         mesh::MeshValueCollection to save
-  /// @param encoding (_Encoding_)
-  ///         Encoding to use: HDF5 or ASCII
-  ///
-  void write(const mesh::MeshValueCollection<bool>& mvc);
+  // /// Write out mesh value collection (subset) using an associated
+  // /// HDF5 file, or storing the data inline as XML.
+  // ///
+  // /// @param mvc (_MeshValueCollection<bool>_)
+  // ///         mesh::MeshValueCollection to save
+  // /// @param encoding (_Encoding_)
+  // ///         Encoding to use: HDF5 or ASCII
+  // ///
+  // void write(const mesh::MeshValueCollection<bool>& mvc);
 
   /// Write out mesh value collection (subset) using an associated
   /// HDF5 file, or storing the data inline as XML.
@@ -322,13 +322,13 @@ public:
   read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                   std::string func_name, std::int64_t counter = -1) const;
 
-  /// Read first mesh::MeshFunction from file
-  /// @param meshfunction (_MeshFunction<bool>_)
-  ///        mesh::MeshFunction to restore
-  /// @param name (std::string)
-  ///        Name of data attribute in XDMF file
-  mesh::MeshFunction<bool> read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
-                                        std::string name = "") const;
+  // /// Read first mesh::MeshFunction from file
+  // /// @param meshfunction (_MeshFunction<bool>_)
+  // ///        mesh::MeshFunction to restore
+  // /// @param name (std::string)
+  // ///        Name of data attribute in XDMF file
+  // mesh::MeshFunction<bool> read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
+  //                                       std::string name = "") const;
 
   /// Read first mesh::MeshFunction from file
   /// @param meshfunction (_MeshFunction<int>_)
@@ -356,15 +356,15 @@ public:
   read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
                  std::string name = "") const;
 
-  /// Read mesh::MeshValueCollection from file, optionally specifying dataset
-  /// name
-  /// @param mvc (_MeshValueCollection<bool>_)
-  ///        mesh::MeshValueCollection to restore
-  /// @param name (std::string)
-  ///        Name of data attribute in XDMF file
-  mesh::MeshValueCollection<bool>
-  read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh,
-                std::string name = "") const;
+  // /// Read mesh::MeshValueCollection from file, optionally specifying dataset
+  // /// name
+  // /// @param mvc (_MeshValueCollection<bool>_)
+  // ///        mesh::MeshValueCollection to restore
+  // /// @param name (std::string)
+  // ///        Name of data attribute in XDMF file
+  // mesh::MeshValueCollection<bool>
+  // read_mvc_bool(std::shared_ptr<const mesh::Mesh> mesh,
+  //               std::string name = "") const;
 
   /// Read mesh::MeshValueCollection from file, optionally specifying dataset
   /// name
