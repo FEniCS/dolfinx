@@ -7,6 +7,7 @@ set(HEADERS
   VTKWriter.h
   XDMFFile.h
   xdmf_utils.h
+  xdmf_write.h
   PARENT_SCOPE)
 
 set(SOURCES
@@ -18,4 +19,5 @@ set(SOURCES
   VTKWriter.cpp
   XDMFFile.cpp
   xdmf_utils.cpp
+  xdmf_write.cpp
   PARENT_SCOPE)

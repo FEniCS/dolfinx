@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "xdmf_utils.h"
+#include "xdmf_write.h"
 
 #include "HDF5File.h"
 #include "HDF5Utility.h"
@@ -144,205 +145,6 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
   }
 }
 //-----------------------------------------------------------------------------
-// Add set of points to XDMF xml_node and write data
-void add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
-                const std::vector<geometry::Point>& points)
-{
-  xdmf_node.append_attribute("Version") = "3.0";
-  xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
-  pugi::xml_node domain_node = xdmf_node.append_child("Domain");
-  assert(domain_node);
-
-  // Add a Grid to the domain
-  pugi::xml_node grid_node = domain_node.append_child("Grid");
-  assert(grid_node);
-  grid_node.append_attribute("GridType") = "Uniform";
-  grid_node.append_attribute("Name") = "Point cloud";
-
-  pugi::xml_node topology_node = grid_node.append_child("Topology");
-  assert(topology_node);
-  const std::size_t n = points.size();
-  const std::int64_t nglobal = MPI::sum(comm, n);
-  topology_node.append_attribute("NumberOfElements")
-      = std::to_string(nglobal).c_str();
-  topology_node.append_attribute("TopologyType") = "PolyVertex";
-  topology_node.append_attribute("NodesPerElement") = 1;
-
-  pugi::xml_node geometry_node = grid_node.append_child("Geometry");
-  assert(geometry_node);
-  geometry_node.append_attribute("GeometryType") = "XYZ";
-
-  // Pack data
-  std::vector<double> x(3 * n);
-  for (std::size_t i = 0; i < n; ++i)
-    for (std::size_t j = 0; j < 3; ++j)
-      x[3 * i + j] = points[i][j];
-
-  const std::vector<std::int64_t> shape = {nglobal, 3};
-  add_data_item(comm, geometry_node, h5_id, "/Points/coordinates", x, shape,
-                "");
-}
-//----------------------------------------------------------------------------
-// Add function to a XML node
-void add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node, hid_t h5_id,
-                  std::string h5_path, const function::Function& u,
-                  std::string function_name, const mesh::Mesh& mesh,
-                  const std::string component)
-{
-  LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
-
-  std::string element_family = u.function_space()->element()->family();
-  const std::size_t element_degree = u.function_space()->element()->degree();
-  const CellType element_cell_type
-      = u.function_space()->element()->cell_shape();
-
-  // Map of standard UFL family abbreviations for visualisation
-  const std::map<std::string, std::string> family_abbr
-      = {{"Lagrange", "CG"},
-         {"Discontinuous Lagrange", "DG"},
-         {"Raviart-Thomas", "RT"},
-         {"Brezzi-Douglas-Marini", "BDM"},
-         {"Crouzeix-Raviart", "CR"},
-         {"Nedelec 1st kind H(curl)", "N1curl"},
-         {"Nedelec 2nd kind H(curl)", "N2curl"},
-         {"Q", "Q"},
-         {"DQ", "DQ"}};
-
-  const std::map<CellType, std::string> cell_shape_repr
-      = {{CellType::interval, "interval"},
-         {CellType::triangle, "triangle"},
-         {CellType::tetrahedron, "tetrahedron"},
-         {CellType::quadrilateral, "quadrilateral"},
-         {CellType::hexahedron, "hexahedron"}};
-
-  // Check that element is supported
-  auto const it = family_abbr.find(element_family);
-  if (it == family_abbr.end())
-    throw std::runtime_error("Element type not supported for XDMF output.");
-  element_family = it->second;
-
-  // Check that cell shape is supported
-  auto it_shape = cell_shape_repr.find(element_cell_type);
-  if (it_shape == cell_shape_repr.end())
-    throw std::runtime_error("Cell type not supported for XDMF output.");
-  const std::string element_cell = it_shape->second;
-
-  // Prepare main Attribute for the FiniteElementFunction type
-  std::string attr_name;
-  if (component.empty())
-    attr_name = function_name;
-  else
-  {
-    attr_name = component + "_" + function_name;
-    h5_path = h5_path + "/" + component;
-  }
-
-  pugi::xml_node fe_attribute_node = xml_node.append_child("Attribute");
-  fe_attribute_node.append_attribute("ItemType") = "FiniteElementFunction";
-  fe_attribute_node.append_attribute("ElementFamily") = element_family.c_str();
-  fe_attribute_node.append_attribute("ElementDegree")
-      = std::to_string(element_degree).c_str();
-  fe_attribute_node.append_attribute("ElementCell") = element_cell.c_str();
-  fe_attribute_node.append_attribute("Name") = attr_name.c_str();
-  fe_attribute_node.append_attribute("Center") = "Other";
-  fe_attribute_node.append_attribute("AttributeType")
-      = rank_to_string(u.value_rank()).c_str();
-
-  // Prepare and save number of dofs per cell (x_cell_dofs) and cell
-  // dofmaps (cell_dofs)
-
-  assert(u.function_space()->dofmap());
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
-
-  const std::size_t tdim = mesh.topology().dim();
-  std::vector<PetscInt> cell_dofs;
-  std::vector<std::size_t> x_cell_dofs;
-  const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
-  x_cell_dofs.reserve(n_cells);
-
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
-      = dofmap.tabulate_local_to_global_dofs();
-
-  // Add number of dofs for each cell
-  // Add cell dofmap
-  for (std::size_t i = 0; i != n_cells; ++i)
-  {
-    x_cell_dofs.push_back(cell_dofs.size());
-    auto cell_dofs_i = dofmap.cell_dofs(i);
-    for (Eigen::Index j = 0; j < cell_dofs_i.size(); ++j)
-    {
-      auto p = cell_dofs_i[j];
-      assert(p < (PetscInt)local_to_global_map.size());
-      cell_dofs.push_back(local_to_global_map[p]);
-    }
-  }
-
-  // Add offset to CSR index to be seamless in parallel
-  std::size_t offset = MPI::global_offset(mpi_comm, cell_dofs.size(), true);
-  std::transform(x_cell_dofs.begin(), x_cell_dofs.end(), x_cell_dofs.begin(),
-                 std::bind2nd(std::plus<std::size_t>(), offset));
-
-  const std::int64_t num_cell_dofs_global
-      = MPI::sum(mpi_comm, cell_dofs.size());
-
-  // Write dofmap = indices to the values DataItem
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/cell_dofs",
-                cell_dofs, {num_cell_dofs_global, 1}, "UInt");
-
-  // FIXME: Avoid unnecessary copying of data
-  // Get all local data
-  const la::PETScVector& u_vector = u.vector();
-  PetscErrorCode ierr;
-  const PetscScalar* u_ptr = nullptr;
-  ierr = VecGetArrayRead(u_vector.vec(), &u_ptr);
-  if (ierr != 0)
-    la::petsc_error(ierr, __FILE__, "VecGetArrayRead");
-  std::vector<PetscScalar> local_data(u_ptr, u_ptr + u_vector.local_size());
-  ierr = VecRestoreArrayRead(u_vector.vec(), &u_ptr);
-  if (ierr != 0)
-    la::petsc_error(ierr, __FILE__, "VecRestoreArrayRead");
-
-#ifdef PETSC_USE_COMPLEX
-  // FIXME: Avoid copies by writing directly a compound data
-  std::vector<double> component_data_values(local_data.size());
-  for (unsigned int i = 0; i < local_data.size(); i++)
-  {
-    if (component == "real")
-      component_data_values[i] = local_data[i].real();
-    else if (component == "imag")
-      component_data_values[i] = local_data[i].imag();
-  }
-
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
-                component_data_values, {(std::int64_t)u_vector.size(), 1},
-                "Float");
-#else
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/vector",
-                local_data, {(std::int64_t)u_vector.size(), 1}, "Float");
-#endif
-
-  if (MPI::rank(mpi_comm) == MPI::size(mpi_comm) - 1)
-    x_cell_dofs.push_back(num_cell_dofs_global);
-
-  const std::int64_t num_x_cell_dofs_global
-      = mesh.num_entities_global(tdim) + 1;
-
-  // Write number of dofs per cell
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/x_cell_dofs",
-                x_cell_dofs, {num_x_cell_dofs_global, 1}, "UInt");
-
-  // Save cell ordering - copy to local vector and cut off ghosts
-  std::vector<std::size_t> cells(mesh.topology().global_indices(tdim).begin(),
-                                 mesh.topology().global_indices(tdim).begin()
-                                     + n_cells);
-
-  const std::int64_t num_cells_global = mesh.num_entities_global(tdim);
-
-  add_data_item(mpi_comm, fe_attribute_node, h5_id, h5_path + "/cells", cells,
-                {num_cells_global, 1}, "UInt");
-}
-//-----------------------------------------------------------------------------
-
 // Remap meshfunction data, scattering data to appropriate processes
 template <typename T>
 void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
@@ -539,7 +341,7 @@ void add_data_item(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
     x_int[i] = (int)x[i];
   add_data_item(comm, xml_node, h5_id, h5_path, x_int, shape, number_type);
 }
-
+//-----------------------------------------------------------------------------
 // Calculate set of entities of dimension cell_dim which are duplicated
 // on other processes and should not be output on this process
 std::set<std::uint32_t> compute_nonlocal_entities(const mesh::Mesh& mesh,
@@ -587,168 +389,6 @@ std::set<std::uint32_t> compute_nonlocal_entities(const mesh::Mesh& mesh,
 }
 
 //-----------------------------------------------------------------------------
-// Return topology data on this process as a flat vector
-template <typename T>
-std::vector<T> compute_topology_data(const mesh::Mesh& mesh, int cell_dim)
-{
-  // Create vector to store topology data
-  const int num_vertices_per_cell = mesh.type().num_vertices(cell_dim);
-  std::vector<T> topology_data;
-  topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
-
-  // Get mesh communicator
-  MPI_Comm comm = mesh.mpi_comm();
-
-  const std::vector<std::int8_t> perm = mesh.type().vtk_mapping();
-  const int tdim = mesh.topology().dim();
-  if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
-  {
-    // Simple case when nothing is shared between processes
-    if (cell_dim == 0)
-    {
-      for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
-        topology_data.push_back(v.global_index());
-    }
-    else
-    {
-      const auto& global_vertices = mesh.topology().global_indices(0);
-      for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
-      {
-        const std::int32_t* entities = c.entities(0);
-        for (std::uint32_t i = 0; i != c.num_entities(0); ++i)
-          topology_data.push_back(global_vertices[entities[perm[i]]]);
-      }
-    }
-  }
-  else
-  {
-    std::set<std::uint32_t> non_local_entities
-        = compute_nonlocal_entities(mesh, cell_dim);
-
-    if (cell_dim == 0)
-    {
-      // Special case for mesh of points
-      for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
-      {
-        if (non_local_entities.find(v.index()) == non_local_entities.end())
-          topology_data.push_back(v.global_index());
-      }
-    }
-    else
-    {
-      // Local-to-global map for point indices
-      const auto& global_vertices = mesh.topology().global_indices(0);
-      for (auto& e : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
-      {
-        // If not excluded, add to topology
-        if (non_local_entities.find(e.index()) == non_local_entities.end())
-        {
-          for (std::uint32_t i = 0; i != e.num_entities(0); ++i)
-          {
-            const std::int32_t local_idx = e.entities(0)[perm[i]];
-            topology_data.push_back(global_vertices[local_idx]);
-          }
-        }
-      }
-    }
-  }
-
-  return topology_data;
-}
-//-----------------------------------------------------------------------------
-// Add topology node to xml_node (includes writing data to XML or HDF5
-// file)
-template <typename T>
-void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-                       const std::string path_prefix, const mesh::Mesh& mesh,
-                       int cell_dim)
-{
-  // Get number of cells (global) and vertices per cell from mesh
-  const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
-  int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
-
-  // Get VTK string for cell type and degree (linear or quadratic)
-  const std::size_t degree = mesh.degree();
-  const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh.type().entity_type(cell_dim), degree);
-
-  pugi::xml_node topology_node = xml_node.append_child("Topology");
-  assert(topology_node);
-  topology_node.append_attribute("NumberOfElements")
-      = std::to_string(num_cells).c_str();
-  topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
-
-  // Compute packed topology data
-  std::vector<T> topology_data;
-
-  if (degree > 1)
-  {
-    const int tdim = mesh.topology().dim();
-    if (cell_dim != tdim)
-    {
-      throw std::runtime_error("Cannot create topology data for mesh. "
-                               "Can only create mesh of cells");
-    }
-
-    const auto& global_points = mesh.geometry().global_indices();
-    const mesh::Connectivity& cell_points
-        = mesh.coordinate_dofs().entity_points(tdim);
-
-    // Adjust num_nodes_per_cell to appropriate size
-    num_nodes_per_cell = cell_points.size(0);
-    topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
-    const std::vector<std::uint8_t>& perm
-        = mesh.coordinate_dofs().cell_permutation();
-
-    for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
-    {
-      const std::int32_t* points = cell_points.connections(c);
-      for (std::int32_t i = 0; i < num_nodes_per_cell; ++i)
-        topology_data.push_back(global_points[points[perm[i]]]);
-    }
-  }
-  else
-    topology_data = compute_topology_data<T>(mesh, cell_dim);
-
-  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
-
-  // Add topology DataItem node
-  const std::string group_name = path_prefix + "/" + "mesh";
-  const std::string h5_path = group_name + "/topology";
-  const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
-  const std::string number_type = "UInt";
-
-  add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape,
-                number_type);
-}
-//-----------------------------------------------------------------------------
-// Add mesh to XDMF xml_node (usually a Domain or Time Grid) and write
-// data
-void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
-              const mesh::Mesh& mesh, const std::string path_prefix)
-{
-  LOG(INFO) << "Adding mesh to node \"" << xml_node.path('/') << "\"";
-
-  // Add grid node and attributes
-  pugi::xml_node grid_node = xml_node.append_child("Grid");
-  assert(grid_node);
-  grid_node.append_attribute("Name") = "mesh";
-  grid_node.append_attribute("GridType") = "Uniform";
-
-  // Add topology node and attributes (including writing data)
-  const int tdim = mesh.topology().dim();
-  const std::int64_t num_global_cells = mesh.num_entities_global(tdim);
-  if (num_global_cells < 1e9)
-    add_topology_data<std::int32_t>(comm, grid_node, h5_id, path_prefix, mesh,
-                                    tdim);
-  else
-    add_topology_data<std::int64_t>(comm, grid_node, h5_id, path_prefix, mesh,
-                                    tdim);
-
-  // Add geometry node and attributes (including writing data)
-  add_geometry_data(comm, grid_node, h5_id, path_prefix, mesh);
-}
-//----------------------------------------------------------------------------
 // Return data associated with a data set node
 template <typename T>
 std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
@@ -1135,7 +775,7 @@ void XDMFFile::write(const mesh::Mesh& mesh)
   assert(domain_node);
 
   // Add the mesh Grid to the domain
-  add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
+  xdmf_write::add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
 
   // Save XML file (on process 0 only)
   if (_mpi_comm.rank() == 0)
@@ -1259,8 +899,8 @@ void XDMFFile::write_checkpoint(const function::Function& u,
       = function_name + "_" + std::to_string(counter);
 
   const mesh::Mesh& mesh = *u.function_space()->mesh();
-  add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
-           function_name + "/" + function_time_name);
+  xdmf_write::add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
+                       function_name + "/" + function_time_name);
 
   // Get newly (by add_mesh) created Grid
   pugi::xml_node mesh_grid_node
@@ -1283,9 +923,9 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   // Write function u (for each of its components)
   for (const std::string component : components)
   {
-    add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
-                 function_name + "/" + function_time_name, u, function_name,
-                 mesh, component);
+    xdmf_write::add_function(_mpi_comm.comm(), mesh_grid_node, h5_id,
+                             function_name + "/" + function_time_name, u,
+                             function_name, mesh, component);
   }
 
   // Save XML file (on process 0 only)
@@ -1350,7 +990,7 @@ void XDMFFile::write(const function::Function& u)
   assert(domain_node);
 
   // Add the mesh Grid to the domain
-  add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
+  xdmf_write::add_mesh(_mpi_comm.comm(), domain_node, h5_id, mesh, "/Mesh");
 
   pugi::xml_node grid_node = domain_node.child("Grid");
   assert(grid_node);
@@ -1518,8 +1158,8 @@ void XDMFFile::write(const function::Function& u, double time_step)
     // Add the mesh grid node to to the time series grid node
     if (new_timegrid or rewrite_function_mesh)
     {
-      add_mesh(_mpi_comm.comm(), timegrid_node, h5_id, mesh,
-               "/Mesh/" + std::to_string(_counter));
+      xdmf_write::add_mesh(_mpi_comm.comm(), timegrid_node, h5_id, mesh,
+                           "/Mesh/" + std::to_string(_counter));
     }
     else
     {
@@ -1735,7 +1375,7 @@ void XDMFFile::write_mesh_value_collection(
 
   pugi::xml_node grid_node = domain_node.child("Grid");
   if (grid_node.empty())
-    add_mesh(_mpi_comm.comm(), domain_node, h5_id, *mesh, "/Mesh");
+    xdmf_write::add_mesh(_mpi_comm.comm(), domain_node, h5_id, *mesh, "/Mesh");
   else
   {
     // Check topology
@@ -2098,7 +1738,7 @@ void XDMFFile::write(const std::vector<geometry::Point>& points)
   pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
   assert(xdmf_node);
 
-  add_points(_mpi_comm.comm(), xdmf_node, h5_id, points);
+  xdmf_write::add_points(_mpi_comm.comm(), xdmf_node, h5_id, points);
 
   // Save XML file (on process 0 only)
   if (_mpi_comm.rank() == 0)
@@ -2141,7 +1781,7 @@ void XDMFFile::write(const std::vector<geometry::Point>& points,
   pugi::xml_node xdmf_node = _xml_doc->append_child("Xdmf");
   assert(xdmf_node);
 
-  add_points(_mpi_comm.comm(), xdmf_node, h5_id, points);
+  xdmf_write::add_points(_mpi_comm.comm(), xdmf_node, h5_id, points);
 
   // Add attribute node
   pugi::xml_node domain_node = xdmf_node.child("Domain");
@@ -2599,9 +2239,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   }
 
   if (meshfunction.size() == 0)
-  {
     throw std::runtime_error("No values in MeshFunction");
-  }
 
   // Get mesh
   assert(meshfunction.mesh());
@@ -2689,13 +2327,8 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     // FIXME: remove this once  mesh::Edge in 3D in parallel works properly
     mesh::DistributedMeshTools::number_entities(*mesh, cell_dim);
 
-    const std::int64_t num_global_cells = mesh->num_entities_global(cell_dim);
-    if (num_global_cells < 1e9)
-      add_topology_data<std::int32_t>(_mpi_comm.comm(), grid_node, h5_id,
-                                      mf_name, *mesh, cell_dim);
-    else
-      add_topology_data<std::int64_t>(_mpi_comm.comm(), grid_node, h5_id,
-                                      mf_name, *mesh, cell_dim);
+    xdmf_write::add_topology_data(_mpi_comm.comm(), grid_node, h5_id, mf_name,
+                                  *mesh, cell_dim);
 
     // Add geometry node if none already, else link back to first existing
     // mesh::Mesh
