@@ -1760,7 +1760,7 @@ void XDMFFile::add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Increase 1D to 2D because XDMF has no "X" geometry, use "XY"
   int width = (gdim == 1) ? 2 : gdim;
 
-  std::size_t num_values = mesh.geometry().points().rows() * width;
+  std::size_t num_values = _x.rows() * width;
   std::vector<double> x(num_values, 0.0);
 
   if (width == 3)
