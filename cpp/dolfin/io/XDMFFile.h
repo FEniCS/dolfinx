@@ -449,11 +449,6 @@ private:
                                 hid_t h5_id, const std::string path_prefix,
                                 const mesh::Mesh& mesh, int tdim);
 
-  // Add geometry node and data to xml_node
-  static void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                hid_t h5_id, const std::string path_prefix,
-                                const mesh::Mesh& mesh);
-
   // Return data which is local
   template <typename T>
   std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction);
