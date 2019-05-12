@@ -14,10 +14,11 @@
 // #include <dolfin/mesh/MeshFunction.h>
 // #include <dolfin/mesh/MeshValueCollection.h>
 // #include <memory>
-#include <string>
-// #include <utility>
+#include <array>
 #include <dolfin/mesh/CellType.h>
 #include <petscsys.h>
+#include <string>
+#include <utility>
 #include <vector>
 
 namespace pugi
@@ -42,6 +43,15 @@ namespace io
 {
 namespace xdmf_utils
 {
+
+// Get DOLFIN cell type string from XML topology node
+std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node);
+
+// Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
+// node
+std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node);
+
+std::string get_hdf5_filename(std::string xdmf_filename);
 
 /// Get dimensions from an XML DataSet node
 std::vector<std::int64_t> get_dataset_shape(const pugi::xml_node& dataset_node);

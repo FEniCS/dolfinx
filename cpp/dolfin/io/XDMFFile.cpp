@@ -48,6 +48,145 @@ using namespace dolfin::io;
 namespace
 {
 //-----------------------------------------------------------------------------
+// Remap meshfunction data, scattering data to appropriate processes
+template <typename T>
+void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
+                             const std::vector<std::int64_t>& topology_data,
+                             const std::vector<T>& value_data)
+{
+  // Send the read data to each process on the basis of the first
+  // vertex of the entity, since we do not know the global_index
+  const int cell_dim = meshfunction.dim();
+  const auto mesh = meshfunction.mesh();
+  // FIXME : get vertices_per_entity properly
+  const int vertices_per_entity = meshfunction.dim() + 1;
+  const MPI_Comm comm = mesh->mpi_comm();
+  const std::size_t num_processes = MPI::size(comm);
+
+  // Wrap topology data in boost array
+  assert(topology_data.size() % vertices_per_entity == 0);
+  const std::size_t num_entities = topology_data.size() / vertices_per_entity;
+
+  // Send (sorted) entity topology and data to a post-office process
+  // determined by the lowest global vertex index of the entity
+  std::vector<std::vector<std::int64_t>> send_topology(num_processes);
+  std::vector<std::vector<T>> send_values(num_processes);
+  const std::size_t max_vertex = mesh->num_entities_global(0);
+  for (std::size_t i = 0; i < num_entities; ++i)
+  {
+    std::vector<std::int64_t> cell_topology(
+        topology_data.begin() + i * vertices_per_entity,
+        topology_data.begin() + (i + 1) * vertices_per_entity);
+    std::sort(cell_topology.begin(), cell_topology.end());
+
+    // Use first vertex to decide where to send this data
+    const std::size_t destination_process
+        = MPI::index_owner(comm, cell_topology.front(), max_vertex);
+
+    send_topology[destination_process].insert(
+        send_topology[destination_process].end(), cell_topology.begin(),
+        cell_topology.end());
+    send_values[destination_process].push_back(value_data[i]);
+  }
+
+  std::vector<std::vector<std::int64_t>> receive_topology(num_processes);
+  std::vector<std::vector<T>> receive_values(num_processes);
+  MPI::all_to_all(comm, send_topology, receive_topology);
+  MPI::all_to_all(comm, send_values, receive_values);
+
+  // Generate requests for data from remote processes, based on the
+  // first vertex of the mesh::MeshEntities which belong on this process
+  // Send our process number, and our local index, so it can come back
+  // directly to the right place
+  std::vector<std::vector<std::int64_t>> send_requests(num_processes);
+  const std::size_t rank = MPI::rank(comm);
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim,
+                                                      mesh::MeshRangeType::ALL))
+  {
+    std::vector<std::int64_t> cell_topology;
+    if (cell_dim == 0)
+      cell_topology.push_back(cell.global_index());
+    else
+    {
+      for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+        cell_topology.push_back(v.global_index());
+    }
+
+    std::sort(cell_topology.begin(), cell_topology.end());
+
+    // Use first vertex to decide where to send this request
+    std::size_t send_to_process
+        = MPI::index_owner(comm, cell_topology.front(), max_vertex);
+    // Map to this process and local index by appending to send data
+    cell_topology.push_back(cell.index());
+    cell_topology.push_back(rank);
+    send_requests[send_to_process].insert(send_requests[send_to_process].end(),
+                                          cell_topology.begin(),
+                                          cell_topology.end());
+  }
+
+  std::vector<std::vector<std::int64_t>> receive_requests(num_processes);
+  MPI::all_to_all(comm, send_requests, receive_requests);
+
+  // At this point, the data with its associated vertices is in
+  // receive_values and receive_topology and the final destinations
+  // are stored in receive_requests as
+  // [vertices][index][process][vertices][index][process]...  Some
+  // data will have more than one destination
+
+  // Create a mapping from the topology vector to the desired data
+  std::map<std::vector<std::int64_t>, T> cell_to_data;
+
+  for (std::size_t i = 0; i < receive_values.size(); ++i)
+  {
+    assert(receive_values[i].size() * vertices_per_entity
+           == receive_topology[i].size());
+    auto p = receive_topology[i].begin();
+    for (std::size_t j = 0; j < receive_values[i].size(); ++j)
+    {
+      const std::vector<std::int64_t> cell(p, p + vertices_per_entity);
+      cell_to_data.insert({cell, receive_values[i][j]});
+      p += vertices_per_entity;
+    }
+  }
+
+  // Clear vectors for reuse - now to send values and indices to final
+  // destination
+  send_topology = std::vector<std::vector<std::int64_t>>(num_processes);
+  send_values = std::vector<std::vector<T>>(num_processes);
+
+  // Go through requests, which are stacked as [vertex, vertex, ...]
+  // [index] [proc] etc.  Use the vertices as the key for the map
+  // (above) to retrieve the data to send to proc
+  for (std::size_t i = 0; i < receive_requests.size(); ++i)
+  {
+    for (auto p = receive_requests[i].begin(); p != receive_requests[i].end();
+         p += (vertices_per_entity + 2))
+    {
+      const std::vector<std::int64_t> cell(p, p + vertices_per_entity);
+      const std::size_t remote_index = *(p + vertices_per_entity);
+      const std::size_t send_to_proc = *(p + vertices_per_entity + 1);
+
+      const auto find_cell = cell_to_data.find(cell);
+      assert(find_cell != cell_to_data.end());
+      send_values[send_to_proc].push_back(find_cell->second);
+      send_topology[send_to_proc].push_back(remote_index);
+    }
+  }
+
+  MPI::all_to_all(comm, send_topology, receive_topology);
+  MPI::all_to_all(comm, send_values, receive_values);
+
+  // At this point, receive_topology should only list the local indices
+  // and received values should have the appropriate values for each
+  for (std::size_t i = 0; i < receive_values.size(); ++i)
+  {
+    assert(receive_values[i].size() == receive_topology[i].size());
+    for (std::size_t j = 0; j < receive_values[i].size(); ++j)
+      meshfunction[receive_topology[i][j]] = receive_values[i][j];
+  }
+}
+//----------------------------------------------------------------------------
 // Add DataItem node to an XML node. If HDF5 is open (h5_id > 0) the
 // data is written to the HDFF5 file with the path 'h5_path'. Otherwise,
 // data is witten to the XML node and 'h5_path' is ignored
@@ -134,7 +273,6 @@ void add_geometry_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
 
   // Compute number of points (global) in mesh (equal to number of vertices
   // for affine meshes)
-
   const std::int64_t num_points = mesh.geometry().num_points_global();
 
   // Add geometry node and attributes
@@ -300,73 +438,70 @@ std::vector<T> compute_topology_data(const mesh::Mesh& mesh, int cell_dim)
   return topology_data;
 }
 //-----------------------------------------------------------------------------
-// Get DOLFIN cell type string from XML topology node
-std::pair<std::string, int> get_cell_type(const pugi::xml_node& topology_node)
+// Add topology node to xml_node (includes writing data to XML or HDF5
+// file)
+template <typename T>
+void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
+                       const std::string path_prefix, const mesh::Mesh& mesh,
+                       int cell_dim)
 {
+  // Get number of cells (global) and vertices per cell from mesh
+  const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
+  int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
+
+  // Get VTK string for cell type and degree (linear or quadratic)
+  const std::size_t degree = mesh.degree();
+  const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
+      mesh.type().entity_type(cell_dim), degree);
+
+  pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
-  pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
-  assert(type_attr);
+  topology_node.append_attribute("NumberOfElements")
+      = std::to_string(num_cells).c_str();
+  topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
 
-  const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
-      = {{"polyvertex", {"point", 1}},
-         {"polyline", {"interval", 1}},
-         {"edge_3", {"interval", 2}},
-         {"triangle", {"triangle", 1}},
-         {"triangle_6", {"triangle", 2}},
-         {"tetrahedron", {"tetrahedron", 1}},
-         {"tetrahedron_10", {"tetrahedron", 2}},
-         {"quadrilateral", {"quadrilateral", 1}}};
+  // Compute packed topology data
+  std::vector<T> topology_data;
 
-  // Convert XDMF cell type string to DOLFIN cell type string
-  std::string cell_type = type_attr.as_string();
-  boost::algorithm::to_lower(cell_type);
-  auto it = xdmf_to_dolfin.find(cell_type);
-  if (it == xdmf_to_dolfin.end())
+  if (degree > 1)
   {
-    throw std::runtime_error("Cannot recognise cell type. Unknown value: "
-                             + cell_type);
+    const int tdim = mesh.topology().dim();
+    if (cell_dim != tdim)
+    {
+      throw std::runtime_error("Cannot create topology data for mesh. "
+                               "Can only create mesh of cells");
+    }
+
+    const auto& global_points = mesh.geometry().global_indices();
+    const mesh::Connectivity& cell_points
+        = mesh.coordinate_dofs().entity_points(tdim);
+
+    // Adjust num_nodes_per_cell to appropriate size
+    num_nodes_per_cell = cell_points.size(0);
+    topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
+    const std::vector<std::uint8_t>& perm
+        = mesh.coordinate_dofs().cell_permutation();
+
+    for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
+    {
+      const std::int32_t* points = cell_points.connections(c);
+      for (std::int32_t i = 0; i < num_nodes_per_cell; ++i)
+        topology_data.push_back(global_points[points[perm[i]]]);
+    }
   }
-  return it->second;
-}
-//----------------------------------------------------------------------------
-// Return (0) HDF5 filename and (1) path in HDF5 file from a DataItem
-// node
-std::array<std::string, 2> get_hdf5_paths(const pugi::xml_node& dataitem_node)
-{
-  // Check that node is a DataItem node
-  assert(dataitem_node);
-  const std::string dataitem_str = "DataItem";
-  if (dataitem_node.name() != dataitem_str)
-  {
-    throw std::runtime_error("Node name is \""
-                             + std::string(dataitem_node.name())
-                             + "\", expecting \"DataItem\"");
-  }
+  else
+    topology_data = compute_topology_data<T>(mesh, cell_dim);
 
-  // Check that format is HDF
-  pugi::xml_attribute format_attr = dataitem_node.attribute("Format");
-  assert(format_attr);
-  const std::string format = format_attr.as_string();
-  if (format.compare("HDF") != 0)
-  {
-    throw std::runtime_error("DataItem format \"" + format
-                             + "\" is not \"HDF\"");
-  }
+  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
 
-  // Get path data
-  pugi::xml_node path_node = dataitem_node.first_child();
-  assert(path_node);
+  // Add topology DataItem node
+  const std::string group_name = path_prefix + "/" + "mesh";
+  const std::string h5_path = group_name + "/topology";
+  const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
+  const std::string number_type = "UInt";
 
-  // Create string from path and trim leading and trailing whitespace
-  std::string path = path_node.text().get();
-  boost::algorithm::trim(path);
-
-  // Split string into file path and HD5 internal path
-  std::vector<std::string> paths;
-  boost::split(paths, path, boost::is_any_of(":"));
-  assert(paths.size() == 2);
-
-  return {{paths[0], paths[1]}};
+  add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape,
+                number_type);
 }
 //-----------------------------------------------------------------------------
 // Return data associated with a data set node
@@ -420,7 +555,7 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   else if (format == "HDF")
   {
     // Get file and data path
-    auto paths = get_hdf5_paths(dataset_node);
+    auto paths = xdmf_utils::get_hdf5_paths(dataset_node);
 
     // Handle cases where file path is (a) absolute or (b) relative
     boost::filesystem::path h5_filepath(paths[0]);
@@ -499,20 +634,6 @@ std::vector<T> get_dataset(MPI_Comm comm, const pugi::xml_node& dataset_node,
   }
 
   return data_vector;
-}
-//----------------------------------------------------------------------------
-std::string get_hdf5_filename(std::string xdmf_filename)
-{
-  boost::filesystem::path p(xdmf_filename);
-  p.replace_extension(".h5");
-  if (p.string() == xdmf_filename)
-  {
-    throw std::runtime_error(
-        "Cannot deduce name of HDF5 file from XDMF filename. "
-        "Filename clash. Check XDMF filename");
-  }
-
-  return p.string();
 }
 //----------------------------------------------------------------------------
 // Returns true for DG0 function::Functions
@@ -727,8 +848,8 @@ void XDMFFile::write(const mesh::Mesh& mesh)
   if (_encoding == Encoding::HDF5)
   {
     // Open file
-    h5_file = std::make_unique<HDF5File>(mesh.mpi_comm(),
-                                         get_hdf5_filename(_filename), "w");
+    h5_file = std::make_unique<HDF5File>(
+        mesh.mpi_comm(), xdmf_utils::get_hdf5_filename(_filename), "w");
     assert(h5_file);
 
     // Get file handle
@@ -805,9 +926,10 @@ void XDMFFile::write_checkpoint(const function::Function& u,
     truncate_hdf = true;
   }
 
-  if (truncate_hdf and boost::filesystem::exists(get_hdf5_filename(_filename)))
+  if (truncate_hdf
+      and boost::filesystem::exists(xdmf_utils::get_hdf5_filename(_filename)))
   {
-    LOG(WARNING) << "HDF file \"" << get_hdf5_filename(_filename)
+    LOG(WARNING) << "HDF file \"" << xdmf_utils::get_hdf5_filename(_filename)
                  << "\" will be overwritten.";
   }
 
@@ -819,7 +941,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
     {
       // We are writing for the first time, any HDF file must be overwritten
       _hdf5_file = std::make_unique<HDF5File>(
-          _mpi_comm.comm(), get_hdf5_filename(_filename), "w");
+          _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "w");
     }
     else if (_hdf5_file)
     {
@@ -830,8 +952,8 @@ void XDMFFile::write_checkpoint(const function::Function& u,
     {
       // Pointer is empty, we are writing time series
       // or adding function to already flushed file
-      _hdf5_file = std::unique_ptr<HDF5File>(
-          new HDF5File(_mpi_comm.comm(), get_hdf5_filename(_filename), "a"));
+      _hdf5_file = std::unique_ptr<HDF5File>(new HDF5File(
+          _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "a"));
     }
     assert(_hdf5_file);
     h5_id = _hdf5_file->h5_id();
@@ -947,8 +1069,8 @@ void XDMFFile::write(const function::Function& u)
   if (_encoding == Encoding::HDF5)
   {
     // Open file
-    h5_file = std::make_unique<HDF5File>(mesh.mpi_comm(),
-                                         get_hdf5_filename(_filename), "w");
+    h5_file = std::make_unique<HDF5File>(
+        mesh.mpi_comm(), xdmf_utils::get_hdf5_filename(_filename), "w");
     assert(h5_file);
 
     // Get file handle
@@ -1069,19 +1191,19 @@ void XDMFFile::write(const function::Function& u, double time_step)
     // Truncate the file the first time
     if (_counter == 0)
       _hdf5_file = std::make_unique<HDF5File>(
-          mesh.mpi_comm(), get_hdf5_filename(_filename), "w");
+          mesh.mpi_comm(), xdmf_utils::get_hdf5_filename(_filename), "w");
     else if (flush_output)
     {
       // Append to existing HDF5 file
       assert(!_hdf5_file);
       _hdf5_file = std::make_unique<HDF5File>(
-          mesh.mpi_comm(), get_hdf5_filename(_filename), "a");
+          mesh.mpi_comm(), xdmf_utils::get_hdf5_filename(_filename), "a");
     }
     else if ((_counter != 0) and (!_hdf5_file))
     {
       // The XDMFFile was previously closed, and now must be reopened
       _hdf5_file = std::make_unique<HDF5File>(
-          mesh.mpi_comm(), get_hdf5_filename(_filename), "a");
+          mesh.mpi_comm(), xdmf_utils::get_hdf5_filename(_filename), "a");
     }
     assert(_hdf5_file);
     h5_id = _hdf5_file->h5_id();
@@ -1336,7 +1458,8 @@ void XDMFFile::write_mesh_value_collection(
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(
-        mesh->mpi_comm(), get_hdf5_filename(_filename), hdf_filemode);
+        mesh->mpi_comm(), xdmf_utils::get_hdf5_filename(_filename),
+        hdf_filemode);
     assert(h5_file);
 
     // Get file handle
@@ -1540,7 +1663,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   assert(topology_node);
 
   // Get description of MVC cell type and dimension from topology node
-  auto cell_type_str = get_cell_type(topology_node);
+  auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
   std::unique_ptr<mesh::CellType> cell_type(
       mesh::CellType::create(cell_type_str.first));
@@ -1696,8 +1819,8 @@ void XDMFFile::write(const std::vector<geometry::Point>& points)
   if (_encoding == Encoding::HDF5)
   {
     // Open file
-    h5_file = std::make_unique<HDF5File>(_mpi_comm.comm(),
-                                         get_hdf5_filename(_filename), "w");
+    h5_file = std::make_unique<HDF5File>(
+        _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "w");
     assert(h5_file);
 
     // Get file handle
@@ -1779,8 +1902,8 @@ void XDMFFile::write(const std::vector<geometry::Point>& points,
   if (_encoding == Encoding::HDF5)
   {
     // Open file
-    h5_file = std::make_unique<HDF5File>(_mpi_comm.comm(),
-                                         get_hdf5_filename(_filename), "w");
+    h5_file = std::make_unique<HDF5File>(
+        _mpi_comm.comm(), xdmf_utils::get_hdf5_filename(_filename), "w");
     assert(h5_file);
 
     // Get file handle
@@ -2071,7 +2194,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
   assert(topology_node);
 
   // Get cell type
-  const auto cell_type_str = get_cell_type(topology_node);
+  const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
 
   const int degree = cell_type_str.second;
   if (degree == 2)
@@ -2315,70 +2438,6 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
 }
 //----------------------------------------------------------------------------
 template <typename T>
-void XDMFFile::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                 hid_t h5_id, const std::string path_prefix,
-                                 const mesh::Mesh& mesh, int cell_dim)
-{
-  // Get number of cells (global) and vertices per cell from mesh
-  const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
-  int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
-
-  // Get VTK string for cell type and degree (linear or quadratic)
-  const std::size_t degree = mesh.degree();
-  const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh.type().entity_type(cell_dim), degree);
-
-  pugi::xml_node topology_node = xml_node.append_child("Topology");
-  assert(topology_node);
-  topology_node.append_attribute("NumberOfElements")
-      = std::to_string(num_cells).c_str();
-  topology_node.append_attribute("TopologyType") = vtk_cell_str.c_str();
-
-  // Compute packed topology data
-  std::vector<T> topology_data;
-
-  if (degree > 1)
-  {
-    const int tdim = mesh.topology().dim();
-    if (cell_dim != tdim)
-    {
-      throw std::runtime_error("Cannot create topology data for mesh. "
-                               "Can only create mesh of cells");
-    }
-
-    const auto& global_points = mesh.geometry().global_indices();
-    const mesh::Connectivity& cell_points
-        = mesh.coordinate_dofs().entity_points(tdim);
-
-    // Adjust num_nodes_per_cell to appropriate size
-    num_nodes_per_cell = cell_points.size(0);
-    topology_data.reserve(num_nodes_per_cell * mesh.num_entities(tdim));
-    const std::vector<std::uint8_t>& perm
-        = mesh.coordinate_dofs().cell_permutation();
-
-    for (std::int32_t c = 0; c < mesh.num_entities(tdim); ++c)
-    {
-      const std::int32_t* points = cell_points.connections(c);
-      for (std::int32_t i = 0; i < num_nodes_per_cell; ++i)
-        topology_data.push_back(global_points[points[perm[i]]]);
-    }
-  }
-  else
-    topology_data = compute_topology_data<T>(mesh, cell_dim);
-
-  topology_node.append_attribute("NodesPerElement") = num_nodes_per_cell;
-
-  // Add topology DataItem node
-  const std::string group_name = path_prefix + "/" + "mesh";
-  const std::string h5_path = group_name + "/topology";
-  const std::vector<std::int64_t> shape = {num_cells, num_nodes_per_cell};
-  const std::string number_type = "UInt";
-
-  add_data_item(comm, topology_node, h5_id, h5_path, topology_data, shape,
-                number_type);
-}
-//-----------------------------------------------------------------------------
-template <typename T>
 std::vector<T>
 XDMFFile::compute_value_data(const mesh::MeshFunction<T>& meshfunction)
 {
@@ -2487,7 +2546,7 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
 
   // Get cell type and topology of mesh::MeshFunction (may be different from
   // mesh::Mesh)
-  const auto cell_type_str = get_cell_type(topology_node);
+  const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
   std::unique_ptr<mesh::CellType> cell_type(
       mesh::CellType::create(cell_type_str.first));
@@ -2525,145 +2584,6 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   return mf;
 }
 //-----------------------------------------------------------------------------
-template <typename T>
-void XDMFFile::remap_meshfunction_data(
-    mesh::MeshFunction<T>& meshfunction,
-    const std::vector<std::int64_t>& topology_data,
-    const std::vector<T>& value_data)
-{
-  // Send the read data to each process on the basis of the first
-  // vertex of the entity, since we do not know the global_index
-  const int cell_dim = meshfunction.dim();
-  const auto mesh = meshfunction.mesh();
-  // FIXME : get vertices_per_entity properly
-  const int vertices_per_entity = meshfunction.dim() + 1;
-  const MPI_Comm comm = mesh->mpi_comm();
-  const std::size_t num_processes = MPI::size(comm);
-
-  // Wrap topology data in boost array
-  assert(topology_data.size() % vertices_per_entity == 0);
-  const std::size_t num_entities = topology_data.size() / vertices_per_entity;
-
-  // Send (sorted) entity topology and data to a post-office process
-  // determined by the lowest global vertex index of the entity
-  std::vector<std::vector<std::int64_t>> send_topology(num_processes);
-  std::vector<std::vector<T>> send_values(num_processes);
-  const std::size_t max_vertex = mesh->num_entities_global(0);
-  for (std::size_t i = 0; i < num_entities; ++i)
-  {
-    std::vector<std::int64_t> cell_topology(
-        topology_data.begin() + i * vertices_per_entity,
-        topology_data.begin() + (i + 1) * vertices_per_entity);
-    std::sort(cell_topology.begin(), cell_topology.end());
-
-    // Use first vertex to decide where to send this data
-    const std::size_t destination_process
-        = MPI::index_owner(comm, cell_topology.front(), max_vertex);
-
-    send_topology[destination_process].insert(
-        send_topology[destination_process].end(), cell_topology.begin(),
-        cell_topology.end());
-    send_values[destination_process].push_back(value_data[i]);
-  }
-
-  std::vector<std::vector<std::int64_t>> receive_topology(num_processes);
-  std::vector<std::vector<T>> receive_values(num_processes);
-  MPI::all_to_all(comm, send_topology, receive_topology);
-  MPI::all_to_all(comm, send_values, receive_values);
-
-  // Generate requests for data from remote processes, based on the
-  // first vertex of the mesh::MeshEntities which belong on this process
-  // Send our process number, and our local index, so it can come back
-  // directly to the right place
-  std::vector<std::vector<std::int64_t>> send_requests(num_processes);
-  const std::size_t rank = MPI::rank(comm);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim,
-                                                      mesh::MeshRangeType::ALL))
-  {
-    std::vector<std::int64_t> cell_topology;
-    if (cell_dim == 0)
-      cell_topology.push_back(cell.global_index());
-    else
-    {
-      for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-        cell_topology.push_back(v.global_index());
-    }
-
-    std::sort(cell_topology.begin(), cell_topology.end());
-
-    // Use first vertex to decide where to send this request
-    std::size_t send_to_process
-        = MPI::index_owner(comm, cell_topology.front(), max_vertex);
-    // Map to this process and local index by appending to send data
-    cell_topology.push_back(cell.index());
-    cell_topology.push_back(rank);
-    send_requests[send_to_process].insert(send_requests[send_to_process].end(),
-                                          cell_topology.begin(),
-                                          cell_topology.end());
-  }
-
-  std::vector<std::vector<std::int64_t>> receive_requests(num_processes);
-  MPI::all_to_all(comm, send_requests, receive_requests);
-
-  // At this point, the data with its associated vertices is in
-  // receive_values and receive_topology and the final destinations
-  // are stored in receive_requests as
-  // [vertices][index][process][vertices][index][process]...  Some
-  // data will have more than one destination
-
-  // Create a mapping from the topology vector to the desired data
-  std::map<std::vector<std::int64_t>, T> cell_to_data;
-
-  for (std::size_t i = 0; i < receive_values.size(); ++i)
-  {
-    assert(receive_values[i].size() * vertices_per_entity
-           == receive_topology[i].size());
-    auto p = receive_topology[i].begin();
-    for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-    {
-      const std::vector<std::int64_t> cell(p, p + vertices_per_entity);
-      cell_to_data.insert({cell, receive_values[i][j]});
-      p += vertices_per_entity;
-    }
-  }
-
-  // Clear vectors for reuse - now to send values and indices to final
-  // destination
-  send_topology = std::vector<std::vector<std::int64_t>>(num_processes);
-  send_values = std::vector<std::vector<T>>(num_processes);
-
-  // Go through requests, which are stacked as [vertex, vertex, ...]
-  // [index] [proc] etc.  Use the vertices as the key for the map
-  // (above) to retrieve the data to send to proc
-  for (std::size_t i = 0; i < receive_requests.size(); ++i)
-  {
-    for (auto p = receive_requests[i].begin(); p != receive_requests[i].end();
-         p += (vertices_per_entity + 2))
-    {
-      const std::vector<std::int64_t> cell(p, p + vertices_per_entity);
-      const std::size_t remote_index = *(p + vertices_per_entity);
-      const std::size_t send_to_proc = *(p + vertices_per_entity + 1);
-
-      const auto find_cell = cell_to_data.find(cell);
-      assert(find_cell != cell_to_data.end());
-      send_values[send_to_proc].push_back(find_cell->second);
-      send_topology[send_to_proc].push_back(remote_index);
-    }
-  }
-
-  MPI::all_to_all(comm, send_topology, receive_topology);
-  MPI::all_to_all(comm, send_values, receive_values);
-
-  // At this point, receive_topology should only list the local indices
-  // and received values should have the appropriate values for each
-  for (std::size_t i = 0; i < receive_values.size(); ++i)
-  {
-    assert(receive_values[i].size() == receive_topology[i].size());
-    for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-      meshfunction[receive_topology[i][j]] = receive_values[i][j];
-  }
-}
-//----------------------------------------------------------------------------
 template <typename T>
 void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
 {
@@ -2717,7 +2637,8 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   {
     // Open file
     h5_file = std::make_unique<HDF5File>(
-        mesh->mpi_comm(), get_hdf5_filename(_filename), hdf_filemode);
+        mesh->mpi_comm(), xdmf_utils::get_hdf5_filename(_filename),
+        hdf_filemode);
     assert(h5_file);
 
     // Get file handle
@@ -2742,7 +2663,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   {
     pugi::xml_node topology_node = grid_node.child("Topology");
     assert(topology_node);
-    auto cell_type_str = get_cell_type(topology_node);
+    auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
     if (mesh::CellType::type2string(mesh->type().cell_type())
         != cell_type_str.first)
     {

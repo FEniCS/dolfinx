@@ -13,7 +13,7 @@
 // #include <algorithm>
 #include <boost/algorithm/string.hpp>
 // #include <boost/container/vector.hpp>
-// #include <boost/filesystem.hpp>
+#include <boost/filesystem.hpp>
 // #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 // #include <dolfin/common/MPI.h>
@@ -42,6 +42,7 @@
 // #include <set>
 // #include <string>
 // #include <vector>
+#include <map>
 
 using namespace dolfin;
 using namespace dolfin::io;
@@ -64,6 +65,87 @@ std::int64_t get_padded_width(const function::Function& u)
 
 } // namespace
 
+//----------------------------------------------------------------------------
+std::pair<std::string, int>
+xdmf_utils::get_cell_type(const pugi::xml_node& topology_node)
+{
+  assert(topology_node);
+  pugi::xml_attribute type_attr = topology_node.attribute("TopologyType");
+  assert(type_attr);
+
+  const std::map<std::string, std::pair<std::string, int>> xdmf_to_dolfin
+      = {{"polyvertex", {"point", 1}},
+         {"polyline", {"interval", 1}},
+         {"edge_3", {"interval", 2}},
+         {"triangle", {"triangle", 1}},
+         {"triangle_6", {"triangle", 2}},
+         {"tetrahedron", {"tetrahedron", 1}},
+         {"tetrahedron_10", {"tetrahedron", 2}},
+         {"quadrilateral", {"quadrilateral", 1}}};
+
+  // Convert XDMF cell type string to DOLFIN cell type string
+  std::string cell_type = type_attr.as_string();
+  boost::algorithm::to_lower(cell_type);
+  auto it = xdmf_to_dolfin.find(cell_type);
+  if (it == xdmf_to_dolfin.end())
+  {
+    throw std::runtime_error("Cannot recognise cell type. Unknown value: "
+                             + cell_type);
+  }
+  return it->second;
+}
+//----------------------------------------------------------------------------
+std::array<std::string, 2>
+xdmf_utils::get_hdf5_paths(const pugi::xml_node& dataitem_node)
+{
+  // Check that node is a DataItem node
+  assert(dataitem_node);
+  const std::string dataitem_str = "DataItem";
+  if (dataitem_node.name() != dataitem_str)
+  {
+    throw std::runtime_error("Node name is \""
+                             + std::string(dataitem_node.name())
+                             + "\", expecting \"DataItem\"");
+  }
+
+  // Check that format is HDF
+  pugi::xml_attribute format_attr = dataitem_node.attribute("Format");
+  assert(format_attr);
+  const std::string format = format_attr.as_string();
+  if (format.compare("HDF") != 0)
+  {
+    throw std::runtime_error("DataItem format \"" + format
+                             + "\" is not \"HDF\"");
+  }
+
+  // Get path data
+  pugi::xml_node path_node = dataitem_node.first_child();
+  assert(path_node);
+
+  // Create string from path and trim leading and trailing whitespace
+  std::string path = path_node.text().get();
+  boost::algorithm::trim(path);
+
+  // Split string into file path and HD5 internal path
+  std::vector<std::string> paths;
+  boost::split(paths, path, boost::is_any_of(":"));
+  assert(paths.size() == 2);
+
+  return {{paths[0], paths[1]}};
+}
+//-----------------------------------------------------------------------------
+std::string xdmf_utils::get_hdf5_filename(std::string xdmf_filename)
+{
+  boost::filesystem::path p(xdmf_filename);
+  p.replace_extension(".h5");
+  if (p.string() == xdmf_filename)
+  {
+    throw std::runtime_error("Cannot deduce name of HDF5 file from XDMF "
+                             "filename. Filename clash. Check XDMF filename");
+  }
+
+  return p.string();
+}
 //-----------------------------------------------------------------------------
 std::vector<std::int64_t>
 xdmf_utils::get_dataset_shape(const pugi::xml_node& dataset_node)

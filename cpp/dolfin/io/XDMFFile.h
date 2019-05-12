@@ -420,13 +420,6 @@ private:
   read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
                              std::string name) const;
 
-  // Remap meshfunction data, scattering data to appropriate processes
-  template <typename T>
-  static void
-  remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
-                          const std::vector<std::int64_t>& topology_data,
-                          const std::vector<T>& value_data);
-
   // Add mesh to XDMF xml_node (usually a Domain or Time Grid) and
   // write data
   static void add_mesh(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
@@ -441,13 +434,6 @@ private:
   // Add set of points to XDMF xml_node and write data
   static void add_points(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
                          const std::vector<geometry::Point>& points);
-
-  // Add topology node to xml_node (includes writing data to XML or  HDF5
-  // file)
-  template <typename T>
-  static void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
-                                hid_t h5_id, const std::string path_prefix,
-                                const mesh::Mesh& mesh, int tdim);
 
   // Return data which is local
   template <typename T>
