@@ -58,18 +58,17 @@ namespace io
 {
 class HDF5File;
 
-/// Read and write mesh::Mesh, function::Function, mesh::MeshFunction and other
-/// objects in XDMF
+/// Read and write mesh::Mesh, function::Function, mesh::MeshFunction
+/// and other objects in XDMF.
 
 /// This class supports the output of meshes and functions in XDMF
-/// (http://www.xdmf.org) format. It creates an XML file that
-/// describes the data and points to a HDF5 file that stores the
-/// actual problem data. Output of data in parallel is supported.
+/// (http://www.xdmf.org) format. It creates an XML file that describes
+/// the data and points to a HDF5 file that stores the actual problem
+/// data. Output of data in parallel is supported.
 ///
-/// XDMF is not suitable for checkpointing as it may decimate some
-/// data.
+/// XDMF is not suitable for checkpointing as it may decimate some data.
 
-// FIXME: Set read mode when creating file obejct?
+// FIXME: Set read mode when creating file object?
 
 // FIXME: Set encoding when opening file
 
