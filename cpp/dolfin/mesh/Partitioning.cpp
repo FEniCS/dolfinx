@@ -65,8 +65,8 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
     }
   }
 
-  // Create an array of 'pointers' to shared entries
-  // (where number shared, p > 1).
+  // Create an array of 'pointers' to shared entries (where number
+  // shared, p > 1).
   // Set to 0 for unshared entries. Make space for two values: process
   // number, and local index on that process
   std::vector<std::int32_t> offset;
@@ -185,8 +185,8 @@ distribute_cells(const MPI_Comm mpi_comm,
   assert(mp.size() == num_local_cells);
 
   // Send all cells to their destinations including their global
-  // indices.  First element of vector is cell count of unghosted
-  // cells, second element is count of ghost cells.
+  // indices.  First element of vector is cell count of unghosted cells,
+  // second element is count of ghost cells.
   std::vector<std::vector<std::size_t>> send_cell_vertices(
       mpi_size, std::vector<std::size_t>(2, 0));
 
@@ -233,8 +233,8 @@ distribute_cells(const MPI_Comm mpi_comm,
   std::vector<std::vector<std::size_t>> received_cell_vertices(mpi_size);
   dolfin::MPI::all_to_all(mpi_comm, send_cell_vertices, received_cell_vertices);
 
-  // Count number of received cells (first entry in vector) and find
-  // out how many ghost cells there are...
+  // Count number of received cells (first entry in vector) and find out
+  // how many ghost cells there are...
   std::size_t local_count = 0;
   std::size_t ghost_count = 0;
   for (std::size_t p = 0; p < mpi_size; ++p)
@@ -301,11 +301,12 @@ distribute_cells(const MPI_Comm mpi_comm,
       std::move(new_cell_partition), std::move(shared_cells), local_count);
 }
 //-----------------------------------------------------------------------------
-// Distribute additional cells implied by connectivity via vertex. The input
-// cell_vertices, shared_cells, global_cell_indices and cell_partition must
-// already be distributed with a ghost layer by shared_facet.
-// FIXME: shared_cells, cell_vertices, global_cell_indices and cell_partition
-// are all modified by this function.
+// Distribute additional cells implied by connectivity via vertex. The
+// input cell_vertices, shared_cells, global_cell_indices and
+// cell_partition must already be distributed with a ghost layer by
+// shared_facet.
+// FIXME: shared_cells, cell_vertices, global_cell_indices and
+// cell_partition are all modified by this function.
 void distribute_cell_layer(
     MPI_Comm mpi_comm, const int num_regular_cells,
     std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
@@ -352,11 +353,11 @@ void distribute_cell_layer(
     }
   }
 
-  // sh_vert_to_cell now contains a mapping from the vertices of
-  // ghost cells to any regular cells which they are also incident with.
+  // sh_vert_to_cell now contains a mapping from the vertices of ghost
+  // cells to any regular cells which they are also incident with.
 
-  // Send lists of cells/owners to "index owner" of vertex,
-  // collating and sending back out...
+  // Send lists of cells/owners to "index owner" of vertex, collating
+  // and sending back out...
   std::vector<std::vector<std::int64_t>> send_vertcells(mpi_size);
   std::vector<std::vector<std::int64_t>> recv_vertcells(mpi_size);
   for (const auto& vc_it : sh_vert_to_cell)
@@ -422,8 +423,8 @@ void distribute_cell_layer(
 
   dolfin::MPI::all_to_all(mpi_comm, send_vertcells, recv_vertcells);
 
-  // Count up new cells, assign local index, set owner
-  // and initialise shared_cells
+  // Count up new cells, assign local index, set owner and initialise
+  // shared_cells
 
   const std::int32_t num_cells = cell_vertices.rows();
   std::int32_t count = num_cells;
@@ -594,10 +595,9 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
   return mesh;
 }
 //-----------------------------------------------------------------------------
-// Compute cell partitioning from local mesh data. Returns a
-// vector 'cell -> process' vector for cells, and
-// a map 'local cell index -> processes' to which ghost cells must
-// be sent
+// Compute cell partitioning from local mesh data. Returns a vector
+// 'cell -> process' vector for cells, and a map 'local cell index ->
+// processes' to which ghost cells must be sent
 PartitionData
 partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
                 const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
@@ -638,7 +638,6 @@ partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
   return PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -664,8 +663,8 @@ mesh::Mesh Partitioning::build_distributed_mesh(
       = build(comm, type, cells, points, global_cell_indices, ghost_mode, mp);
 
   // Initialise number of globally connected cells to each facet. This
-  // is necessary to distinguish between facets on an exterior
-  // boundary and facets on a partition boundary (see
+  // is necessary to distinguish between facets on an exterior boundary
+  // and facets on a partition boundary (see
   // https://bugs.launchpad.net/dolfin/+bug/733834).
 
   DistributedMeshTools::init_facet_cell_connections(mesh);
@@ -837,12 +836,12 @@ Partitioning::distribute_points(
     const std::vector<std::int64_t>& global_point_indices)
 {
   // This function distributes all points (coordinates and
-  // local-to-global mapping) according to the cells that are stored
-  // on each process. This happens in several stages: First each
-  // process figures out which points it needs (by looking at its
-  // cells) and where those points are located. That information is
-  // then distributed so that each process learns where it needs to
-  // send its points.
+  // local-to-global mapping) according to the cells that are stored on
+  // each process. This happens in several stages: First each process
+  // figures out which points it needs (by looking at its cells) and
+  // where those points are located. That information is then
+  // distributed so that each process learns where it needs to send its
+  // points.
 
   // Create data structures that will be returned
   EigenRowArrayXXd point_coordinates(global_point_indices.size(),
@@ -890,8 +889,8 @@ Partitioning::distribute_points(
     offset += (send_point_indices[i].size() - 1);
   }
 
-  // Send required point indices to other processes, and receive
-  // point indices required by other processes.
+  // Send required point indices to other processes, and receive point
+  // indices required by other processes.
   std::vector<std::vector<std::size_t>> received_point_indices;
   dolfin::MPI::all_to_all(mpi_comm, send_point_indices, received_point_indices);
 
@@ -905,8 +904,8 @@ Partitioning::distribute_points(
     num_received_indices += p.size();
   }
 
-  // Pop offset off back of sending arrays too, achieving
-  // a clean transfer of the offset data from local to remote
+  // Pop offset off back of sending arrays too, achieving a clean
+  // transfer of the offset data from local to remote
   for (auto& p : send_point_indices)
     p.pop_back();
 
@@ -922,14 +921,14 @@ Partitioning::distribute_points(
                  sizeof(double), MPI_INFO_NULL, mpi_comm, &win);
   MPI_Win_fence(0, win);
 
-  // This memory block is to read from, and must remain in place until the
-  // transfer is complete (after next MPI_Win_fence)
+  // This memory block is to read from, and must remain in place until
+  // the transfer is complete (after next MPI_Win_fence)
   EigenRowArrayXXd send_coord_data(num_received_indices, gdim);
 
   const std::pair<std::size_t, std::size_t> local_point_range
       = {ranges[mpi_rank], ranges[mpi_rank + 1]};
-  // Convert global index to local index and put coordinate data in sending
-  // array
+  // Convert global index to local index and put coordinate data in
+  // sending array
   std::size_t local_index = 0;
   for (int p = 0; p < mpi_size; ++p)
   {
@@ -1015,8 +1014,8 @@ Partitioning::build_global_vertex_indices(
     }
   }
 
-  // Now have numbered all vertices locally so can get global
-  // size and local offset
+  // Now have numbered all vertices locally so can get global size and
+  // local offset
   std::int64_t num_vertices_global = dolfin::MPI::sum(mpi_comm, v);
   std::int64_t offset = dolfin::MPI::global_offset(mpi_comm, v, true);
 
@@ -1034,8 +1033,8 @@ Partitioning::build_global_vertex_indices(
     assert(it.second);
   }
 
-  // Adjust global_vertex_indices either by adding offset
-  // or inserting remote index
+  // Adjust global_vertex_indices either by adding offset or inserting
+  // remote index
   for (std::int32_t i = 0; i < num_vertices; ++i)
   {
     const auto it = global_point_to_vertex.find(global_point_indices[i]);

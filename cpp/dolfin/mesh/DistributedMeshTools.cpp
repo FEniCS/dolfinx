@@ -17,7 +17,6 @@
 #include "dolfin/graph/SCOTCH.h"
 #include <Eigen/Dense>
 #include <complex>
-
 #include <dolfin/common/log.h>
 
 using namespace dolfin;
@@ -90,8 +89,8 @@ reorder_values_by_global_indices(
   std::vector<std::vector<std::size_t>> indices_to_send(mpi_size);
   std::vector<std::vector<T>> values_to_send(mpi_size);
 
-  // Go through local vector and append value to the appropriate list
-  // to send to correct process
+  // Go through local vector and append value to the appropriate list to
+  // send to correct process
   for (std::size_t i = 0; i != num_local_indices; ++i)
   {
     const std::size_t global_i = global_indices[i];
@@ -117,16 +116,16 @@ reorder_values_by_global_indices(
       received_values_array(received_values.data(), received_indices.size(),
                             values.cols());
 
-  // Create array for new data. Note that any indices which are not received
-  // will be uninitialised.
+  // Create array for new data. Note that any indices which are not
+  // received will be uninitialised.
   const std::array<std::int64_t, 2> range
       = dolfin::MPI::local_range(mpi_comm, global_vector_size);
   Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> new_values(
       range[1] - range[0], values.cols());
 
   // Go through received data in descending order, and place in local
-  // partition of the global vector. Any duplicate data (with same index)
-  // will be overwritten by values from the lowest rank process.
+  // partition of the global vector. Any duplicate data (with same
+  // index) will be overwritten by values from the lowest rank process.
   for (std::int32_t j = received_indices.size() - 1; j >= 0; --j)
   {
     const std::int64_t global_i = received_indices[j];
@@ -176,8 +175,8 @@ bool is_shared(
   return true;
 }
 //-----------------------------------------------------------------------------
-// Build preliminary 'guess' of shared entities. This function does
-// not involve any inter-process communication. Returns (owned_entities,
+// Build preliminary 'guess' of shared entities. This function does not
+// involve any inter-process communication. Returns (owned_entities,
 // entity_ownership).
 std::pair<std::vector<std::size_t>, std::array<std::map<Entity, EntityData>, 2>>
 compute_preliminary_entity_ownership(
@@ -336,8 +335,8 @@ void compute_final_entity_ownership(
       for (std::size_t j = 0; j < entity_size; ++j)
         entity.push_back(received_common_entity_values[p][i++]);
 
-      // Check if received really is an entity on this process (in
-      // which case it will be in owned or unowned entities)
+      // Check if received really is an entity on this process (in which
+      // case it will be in owned or unowned entities)
       bool is_entity = false;
       if (unowned_shared_entities.find(entity) != unowned_shared_entities.end()
           || owned_shared_entities.find(entity) != owned_shared_entities.end())
@@ -345,8 +344,8 @@ void compute_final_entity_ownership(
         is_entity = true;
       }
 
-      // Add information about entity (whether it's actually an
-      // entity) to send to other processes
+      // Add information about entity (whether it's actually an entity)
+      // to send to other processes
       send_is_entity_values[p].push_back(entity_size);
       for (std::size_t j = 0; j < entity_size; ++j)
         send_is_entity_values[p].push_back(entity[j]);
@@ -559,11 +558,11 @@ DistributedMeshTools::number_entities(
         slave_entities,
     int d)
 {
-  // Developer note: This function should use global_vertex_indices
-  // for the global mesh indices and *not* access these through the
-  // mesh. In some cases special numbering is passed in which differs
-  // from mesh global numbering, e.g. when computing mesh entity
-  // numbering for problems with periodic boundary conditions.
+  // Developer note: This function should use global_vertex_indices for
+  // the global mesh indices and *not* access these through the mesh. In
+  // some cases special numbering is passed in which differs from mesh
+  // global numbering, e.g. when computing mesh entity numbering for
+  // problems with periodic boundary conditions.
 
   LOG(INFO)
       << "Number mesh entities for distributed mesh (for specified vertex ids)."
@@ -574,8 +573,8 @@ DistributedMeshTools::number_entities(
   std::vector<std::int64_t> global_entity_indices;
   std::map<std::int32_t, std::set<std::int32_t>> shared_entities;
 
-  // Check that we're not re-numbering vertices (these are fixed at
-  // mesh construction)
+  // Check that we're not re-numbering vertices (these are fixed at mesh
+  // construction)
   if (d == 0)
   {
     throw std::runtime_error(
@@ -608,8 +607,8 @@ DistributedMeshTools::number_entities(
   for (auto s = slave_entities.cbegin(); s != slave_entities.cend(); ++s)
     exclude[s->first] = true;
 
-  // Build entity global [vertex list]-to-[local entity index]
-  // map. Exclude any slave entities.
+  // Build entity global [vertex list]-to-[local entity index] map.
+  // Exclude any slave entities.
   std::map<std::vector<std::size_t>, std::int32_t> entities;
   std::pair<std::vector<std::size_t>, std::int32_t> entity;
   for (auto& e : mesh::MeshRange<MeshEntity>(mesh, d, mesh::MeshRangeType::ALL))
@@ -661,8 +660,8 @@ DistributedMeshTools::number_entities(
   // Extract offset
   std::size_t offset = num_global_entities.second;
 
-  // Prepare list of global entity numbers. Check later that nothing
-  // is equal to -1
+  // Prepare list of global entity numbers. Check later that nothing is
+  // equal to -1
   global_entity_indices = std::vector<std::int64_t>(mesh.num_entities(d), -1);
 
   // Number exclusively owned entities
@@ -677,8 +676,8 @@ DistributedMeshTools::number_entities(
     global_entity_indices[it1->second.local_index] = offset++;
   }
 
-  // Communicate indices for shared entities (owned by this process)
-  // and get indices for shared but not owned entities
+  // Communicate indices for shared entities (owned by this process) and
+  // get indices for shared but not owned entities
   std::vector<std::vector<std::size_t>> send_values(num_processes);
   std::vector<std::size_t> destinations;
   for (auto it1 = owned_shared_entities.cbegin();
@@ -712,8 +711,7 @@ DistributedMeshTools::number_entities(
   std::vector<std::vector<std::size_t>> received_values;
   MPI::all_to_all(mpi_comm, send_values, received_values);
 
-  // Fill in global entity indices received from lower ranked
-  // processes
+  // Fill in global entity indices received from lower ranked processes
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     for (std::size_t i = 0; i < received_values[p].size();)
@@ -1141,8 +1139,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   }
   else
   {
-    // With ghost cells, shared facets may be on an external edge,
-    // so need to check connectivity with the cell owner.
+    // With ghost cells, shared facets may be on an external edge, so
+    // need to check connectivity with the cell owner.
 
     const std::int32_t mpi_size = MPI::size(mesh.mpi_comm());
     std::vector<std::vector<std::size_t>> send_facet(mpi_size);
@@ -1173,8 +1171,8 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
 
     MPI::all_to_all(mesh.mpi_comm(), send_facet, recv_facet);
 
-    // Convert received global facet index into number of attached
-    // cells and return to sender
+    // Convert received global facet index into number of attached cells
+    // and return to sender
     std::vector<std::vector<std::size_t>> send_response(mpi_size);
     for (std::int32_t p = 0; p != mpi_size; ++p)
     {
