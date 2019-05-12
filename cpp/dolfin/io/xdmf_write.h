@@ -187,7 +187,7 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
   else
   {
     std::set<std::uint32_t> non_local_entities
-        = compute_nonlocal_entities(*mesh, cell_dim);
+        = xdmf_write::compute_nonlocal_entities(*mesh, cell_dim);
 
     for (auto& e : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
     {

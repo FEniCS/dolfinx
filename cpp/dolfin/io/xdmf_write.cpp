@@ -188,51 +188,6 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   }
 }
 //----------------------------------------------------------------------------
-// Calculate set of entities of dimension cell_dim which are duplicated
-// on other processes and should not be output on this process
-std::set<std::uint32_t> compute_nonlocal_entities(const mesh::Mesh& mesh,
-                                                  int cell_dim)
-{
-  // If not already numbered, number entities of
-  // order cell_dim so we can get shared_entities
-  mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
-
-  const int mpi_rank = dolfin::MPI::rank(mesh.mpi_comm());
-  const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-      = mesh.topology().shared_entities(cell_dim);
-
-  std::set<std::uint32_t> non_local_entities;
-
-  const int tdim = mesh.topology().dim();
-  bool ghosted
-      = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
-
-  if (!ghosted)
-  {
-    // No ghost cells - exclude shared entities
-    // which are on lower rank processes
-    for (const auto& e : shared_entities)
-    {
-      const int lowest_rank_owner = *(e.second.begin());
-      if (lowest_rank_owner < mpi_rank)
-        non_local_entities.insert(e.first);
-    }
-  }
-  else
-  {
-    // Iterate through ghost cells, adding non-ghost entities which are
-    // in lower rank process cells
-    for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
-             mesh, tdim, mesh::MeshRangeType::GHOST))
-    {
-      const int cell_owner = c.owner();
-      for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
-        if (!e.is_ghost() && cell_owner < mpi_rank)
-          non_local_entities.insert(e.index());
-    }
-  }
-  return non_local_entities;
-}
 
 //-----------------------------------------------------------------------------
 // Return topology data on this process as a flat vector
@@ -271,7 +226,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   else
   {
     std::set<std::uint32_t> non_local_entities
-        = compute_nonlocal_entities(mesh, cell_dim);
+        = xdmf_write::compute_nonlocal_entities(mesh, cell_dim);
 
     if (cell_dim == 0)
     {
@@ -460,6 +415,49 @@ std::string to_string(X x, Y y)
 
 } // namespace
 
+std::set<std::uint32_t>
+xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
+{
+  // If not already numbered, number entities of
+  // order cell_dim so we can get shared_entities
+  mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
+
+  const int mpi_rank = dolfin::MPI::rank(mesh.mpi_comm());
+  const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
+      = mesh.topology().shared_entities(cell_dim);
+
+  std::set<std::uint32_t> non_local_entities;
+
+  const int tdim = mesh.topology().dim();
+  bool ghosted
+      = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
+
+  if (!ghosted)
+  {
+    // No ghost cells - exclude shared entities which are on lower rank
+    // processes
+    for (const auto& e : shared_entities)
+    {
+      const int lowest_rank_owner = *(e.second.begin());
+      if (lowest_rank_owner < mpi_rank)
+        non_local_entities.insert(e.first);
+    }
+  }
+  else
+  {
+    // Iterate through ghost cells, adding non-ghost entities which are
+    // in lower rank process cells
+    for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
+             mesh, tdim, mesh::MeshRangeType::GHOST))
+    {
+      const int cell_owner = c.owner();
+      for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
+        if (!e.is_ghost() && cell_owner < mpi_rank)
+          non_local_entities.insert(e.index());
+    }
+  }
+  return non_local_entities;
+}
 //-----------------------------------------------------------------------------
 void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
                             hid_t h5_id,
