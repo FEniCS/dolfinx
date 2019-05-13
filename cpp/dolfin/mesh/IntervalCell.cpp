@@ -135,18 +135,18 @@ double IntervalCell::normal(const Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-geometry::Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
+Eigen::Vector3d IntervalCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Get mesh geometry
   const Geometry& geometry = cell.mesh().geometry();
 
   // Get the two vertices as points
   const std::int32_t* vertices = cell.entities(0);
-  geometry::Point p0 = geometry.point(vertices[0]);
-  geometry::Point p1 = geometry.point(vertices[1]);
+  Eigen::Vector3d p0 = geometry.x(vertices[0]);
+  Eigen::Vector3d p1 = geometry.x(vertices[1]);
 
   // Compute normal
-  geometry::Point n = p0 - p1;
+  Eigen::Vector3d n = p0 - p1;
   if (facet == 1)
     n *= -1.0;
 

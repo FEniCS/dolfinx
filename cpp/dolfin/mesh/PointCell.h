@@ -55,7 +55,7 @@ public:
   double normal(const mesh::Cell& cell, std::size_t facet, std::size_t i) const;
 
   /// Compute of given facet with respect to the cell
-  geometry::Point normal(const mesh::Cell& cell, std::size_t facet) const;
+  Eigen::Vector3d normal(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Compute normal to given cell (viewed as embedded in 1D)
   geometry::Point cell_normal(const mesh::Cell& cell) const;

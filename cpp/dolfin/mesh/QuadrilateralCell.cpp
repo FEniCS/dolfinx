@@ -150,7 +150,7 @@ double QuadrilateralCell::normal(const Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-geometry::Point QuadrilateralCell::normal(const Cell& cell,
+Eigen::Vector3d QuadrilateralCell::normal(const Cell& cell,
                                           std::size_t facet) const
 {
   // Make sure we have facets
@@ -175,14 +175,14 @@ geometry::Point QuadrilateralCell::normal(const Cell& cell,
   const Geometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the three vertices
-  const geometry::Point p0 = geometry.point(v0);
-  const geometry::Point p1 = geometry.point(v1);
-  const geometry::Point p2 = geometry.point(v2);
+  const Eigen::Vector3d p0 = geometry.x(v0);
+  const Eigen::Vector3d p1 = geometry.x(v1);
+  const Eigen::Vector3d p2 = geometry.x(v2);
 
   // Subtract projection of p2 - p0 onto p2 - p1
-  geometry::Point t = p2 - p1;
+  Eigen::Vector3d t = p2 - p1;
   t /= t.norm();
-  geometry::Point n = p2 - p0;
+  Eigen::Vector3d n = p2 - p0;
   n -= t * n.dot(t);
 
   // Normalize

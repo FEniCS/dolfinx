@@ -33,7 +33,7 @@ public:
   ~Facet() {}
 
   /// Compute normal to the facet
-  geometry::Point normal() const;
+  Eigen::Vector3d normal() const;
 
   /// Compute squared distance to given point.
   ///

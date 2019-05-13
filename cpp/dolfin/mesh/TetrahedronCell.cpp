@@ -240,7 +240,7 @@ double TetrahedronCell::normal(const Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-geometry::Point TetrahedronCell::normal(const Cell& cell,
+Eigen::Vector3d TetrahedronCell::normal(const Cell& cell,
                                         std::size_t facet) const
 {
   // Make sure we have facets
@@ -261,18 +261,18 @@ geometry::Point TetrahedronCell::normal(const Cell& cell,
   const Geometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the four vertices
-  const geometry::Point P0 = geometry.point(v0);
-  const geometry::Point P1 = geometry.point(v1);
-  const geometry::Point P2 = geometry.point(v2);
-  const geometry::Point P3 = geometry.point(v3);
+  const Eigen::Vector3d P0 = geometry.x(v0);
+  const Eigen::Vector3d P1 = geometry.x(v1);
+  const Eigen::Vector3d P2 = geometry.x(v2);
+  const Eigen::Vector3d P3 = geometry.x(v3);
 
   // Create vectors
-  geometry::Point V0 = P0 - P1;
-  geometry::Point V1 = P2 - P1;
-  geometry::Point V2 = P3 - P1;
+  Eigen::Vector3d V0 = P0 - P1;
+  Eigen::Vector3d V1 = P2 - P1;
+  Eigen::Vector3d V2 = P3 - P1;
 
   // Compute normal vector
-  geometry::Point n = V1.cross(V2);
+  Eigen::Vector3d n = V1.cross(V2);
 
   // Normalize
   n /= n.norm();

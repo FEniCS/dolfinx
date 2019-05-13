@@ -14,7 +14,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-geometry::Point Facet::normal() const
+Eigen::Vector3d Facet::normal() const
 {
   const std::size_t D = _mesh->topology().dim();
   _mesh->create_entities(D - 1);

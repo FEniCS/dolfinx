@@ -169,9 +169,9 @@ public:
   /// @param    facet
   ///         Index of facet.
   ///
-  /// @return geometry::Point
+  /// @return Eigen::Vector3d
   ///         Normal of the facet.
-  geometry::Point normal(std::size_t facet) const
+  Eigen::Vector3d normal(std::size_t facet) const
   {
     return _mesh->type().normal(*this, facet);
   }

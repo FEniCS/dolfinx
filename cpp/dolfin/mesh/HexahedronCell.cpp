@@ -167,11 +167,11 @@ double HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-geometry::Point HexahedronCell::normal(const mesh::Cell& cell,
+Eigen::Vector3d HexahedronCell::normal(const mesh::Cell& cell,
                                        std::size_t facet) const
 {
   throw std::runtime_error("Not implemented");
-  return geometry::Point();
+  return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
 geometry::Point HexahedronCell::cell_normal(const mesh::Cell& cell) const
