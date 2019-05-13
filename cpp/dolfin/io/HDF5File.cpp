@@ -390,7 +390,6 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     const std::int64_t num_cells = mpi_io ? mesh.num_entities_global(cell_dim)
                                           : mesh.num_entities(cell_dim);
     assert(global_size[0] == num_cells);
-    const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
     write_data(topology_dataset, topological_data, global_size, mpi_io);
 
     // For cells, write the global cell index
@@ -402,7 +401,6 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       const std::vector<std::int64_t> cells(
           cell_index_ref.begin(),
           cell_index_ref.begin() + mesh.topology().ghost_offset(cell_dim));
-      const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
       write_data(cell_index_dataset, cells, global_size, mpi_io);
     }
 
