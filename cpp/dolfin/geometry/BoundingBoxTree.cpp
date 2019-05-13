@@ -97,7 +97,8 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   }
 }
 //-----------------------------------------------------------------------------
-BoundingBoxTree::BoundingBoxTree(const std::vector<Point>& points, int gdim)
+BoundingBoxTree::BoundingBoxTree(const std::vector<Eigen::Vector3d>& points,
+                                 int gdim)
     : _tdim(0), _gdim(gdim)
 {
   // Create leaf partition (to be sorted)
@@ -319,7 +320,7 @@ unsigned int BoundingBoxTree::_build_from_leaf(
 }
 //-----------------------------------------------------------------------------
 unsigned int BoundingBoxTree::_build_from_point(
-    const std::vector<Point>& points,
+    const std::vector<Eigen::Vector3d>& points,
     const std::vector<unsigned int>::iterator& begin,
     const std::vector<unsigned int>::iterator& end)
 {
@@ -646,7 +647,7 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   LOG(INFO) << "Building point search tree to accelerate distance queries.";
 
   // Create list of midpoints for all cells
-  std::vector<Point> points;
+  std::vector<Eigen::Vector3d> points;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
     points.push_back(cell.midpoint());
 
@@ -688,15 +689,15 @@ void BoundingBoxTree::compute_bbox_of_entity(double* b,
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::sort_points(
-    std::size_t axis, const std::vector<Point>& points,
+    std::size_t axis, const std::vector<Eigen::Vector3d>& points,
     const std::vector<unsigned int>::iterator& begin,
     const std::vector<unsigned int>::iterator& middle,
     const std::vector<unsigned int>::iterator& end)
 {
   // Comparison lambda function with capture
   auto cmp = [&points, &axis](unsigned int i, unsigned int j) -> bool {
-    const double* pi = points[i].coordinates();
-    const double* pj = points[j].coordinates();
+    const double* pi = points[i].data();
+    const double* pj = points[j].data();
     return pi[axis] < pj[axis];
   };
 
@@ -749,13 +750,13 @@ void BoundingBoxTree::sort_bboxes(
 }
 //-----------------------------------------------------------------------------
 void BoundingBoxTree::compute_bbox_of_points(
-    double* bbox, std::size_t& axis, const std::vector<Point>& points,
+    double* bbox, std::size_t& axis, const std::vector<Eigen::Vector3d>& points,
     const std::vector<unsigned int>::iterator& begin,
     const std::vector<unsigned int>::iterator& end, int gdim)
 {
   // Get coordinates for first point
   auto it = begin;
-  const double* p = points[*it].coordinates();
+  const double* p = points[*it].data();
   for (int i = 0; i < gdim; ++i)
   {
     bbox[i] = p[i];
@@ -765,7 +766,7 @@ void BoundingBoxTree::compute_bbox_of_points(
   // Compute min and max over remaining points
   for (; it != end; ++it)
   {
-    const double* p = points[*it].coordinates();
+    const double* p = points[*it].data();
     for (int i = 0; i < gdim; ++i)
     {
       bbox[i] = std::min(p[i], bbox[i]);

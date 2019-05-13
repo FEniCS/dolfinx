@@ -205,7 +205,7 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
     // FIXME: refactor for efficiency
     if (all_points_inside && check_midpoint)
     {
-      Eigen::Map<EigenRowArrayXd> x(entity.midpoint().coordinates(), 3);
+      Eigen::Map<EigenRowArrayXd> x(entity.midpoint().data(), 3);
       if (!inside(x, on_boundary)[0])
         all_points_inside = false;
     }

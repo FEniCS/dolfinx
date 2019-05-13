@@ -119,7 +119,7 @@ public:
   virtual Eigen::Vector3d normal(const Cell& cell, std::size_t facet) const = 0;
 
   /// Compute normal to given cell (viewed as embedded in 3D)
-  virtual geometry::Point cell_normal(const Cell& cell) const = 0;
+  virtual Eigen::Vector3d cell_normal(const Cell& cell) const = 0;
 
   /// Compute the area/length of given facet with respect to the cell
   virtual double facet_area(const Cell& cell, std::size_t facet) const = 0;

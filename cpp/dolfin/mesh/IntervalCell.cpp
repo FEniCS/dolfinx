@@ -156,7 +156,7 @@ Eigen::Vector3d IntervalCell::normal(const Cell& cell, std::size_t facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-geometry::Point IntervalCell::cell_normal(const Cell& cell) const
+Eigen::Vector3d IntervalCell::cell_normal(const Cell& cell) const
 {
   // Get mesh geometry
   const Geometry& geometry = cell.mesh().geometry();
@@ -170,12 +170,13 @@ geometry::Point IntervalCell::cell_normal(const Cell& cell) const
 
   // Get the two vertices as points
   const std::int32_t* vertices = cell.entities(0);
-  geometry::Point p0 = geometry.point(vertices[0]);
-  geometry::Point p1 = geometry.point(vertices[1]);
+  Eigen::Vector3d p0 = geometry.x(vertices[0]);
+  Eigen::Vector3d p1 = geometry.x(vertices[1]);
 
   // Define normal by rotating tangent counterclockwise
-  geometry::Point t = p1 - p0;
-  geometry::Point n(-t[1], t[0]);
+  Eigen::Vector3d t = p1 - p0;
+  Eigen::Vector3d n;
+  n << -t[1], t[0], 0.0;
 
   // Normalize
   n /= n.norm();

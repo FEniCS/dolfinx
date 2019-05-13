@@ -284,10 +284,10 @@ Eigen::Vector3d TetrahedronCell::normal(const Cell& cell,
   return n;
 }
 //-----------------------------------------------------------------------------
-geometry::Point TetrahedronCell::cell_normal(const Cell& cell) const
+Eigen::Vector3d TetrahedronCell::cell_normal(const Cell& cell) const
 {
   throw std::runtime_error("Not Implemented");
-  return geometry::Point();
+  return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
@@ -303,9 +303,9 @@ double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 
   // Get the coordinates of the three vertices
   const std::int32_t* vertices = f.entities(0);
-  const geometry::Point x0 = geometry.point(vertices[0]);
-  const geometry::Point x1 = geometry.point(vertices[1]);
-  const geometry::Point x2 = geometry.point(vertices[2]);
+  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
+  const Eigen::Vector3d x2 = geometry.x(vertices[2]);
 
   // Compute area of triangle embedded in R^3
   double v0 = (x0[1] * x1[2] + x0[2] * x2[1] + x1[1] * x2[2])

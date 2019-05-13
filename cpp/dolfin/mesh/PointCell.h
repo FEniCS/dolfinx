@@ -58,7 +58,7 @@ public:
   Eigen::Vector3d normal(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Compute normal to given cell (viewed as embedded in 1D)
-  geometry::Point cell_normal(const mesh::Cell& cell) const;
+  Eigen::Vector3d cell_normal(const mesh::Cell& cell) const;
 
   /// Compute the area/length of given facet with respect to the
   /// cell

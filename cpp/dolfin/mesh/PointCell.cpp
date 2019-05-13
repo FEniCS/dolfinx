@@ -82,10 +82,10 @@ Eigen::Vector3d PointCell::normal(const Cell& cell, std::size_t facet) const
   return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
-geometry::Point PointCell::cell_normal(const Cell& cell) const
+Eigen::Vector3d PointCell::cell_normal(const Cell& cell) const
 {
   throw std::runtime_error("Not defined");
-  return geometry::Point();
+  return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
 double PointCell::facet_area(const Cell& cell, std::size_t facet) const

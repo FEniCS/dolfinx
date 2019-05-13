@@ -180,7 +180,7 @@ public:
   ///
   /// @return geometry::Point
   ///         Normal of the cell
-  geometry::Point cell_normal() const
+  Eigen::Vector3d cell_normal() const
   {
     return _mesh->type().cell_normal(*this);
   }

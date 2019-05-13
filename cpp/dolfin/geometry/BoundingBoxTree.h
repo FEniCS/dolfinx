@@ -41,7 +41,7 @@ public:
   BoundingBoxTree(const mesh::Mesh& mesh, int tdim);
 
   /// Constructor
-  BoundingBoxTree(const std::vector<Point>& points, int gdim);
+  BoundingBoxTree(const std::vector<Eigen::Vector3d>& points, int gdim);
 
   /// Move constructor
   BoundingBoxTree(BoundingBoxTree&& tree) = default;
@@ -132,7 +132,7 @@ private:
 
   // Build bounding box tree for points (recursive)
   unsigned int
-  _build_from_point(const std::vector<Point>& points,
+    _build_from_point(const std::vector<Eigen::Vector3d>& points,
                     const std::vector<unsigned int>::iterator& begin,
                     const std::vector<unsigned int>::iterator& end);
 
@@ -188,7 +188,7 @@ private:
                                      int gdim);
 
   // Sort points along given axis
-  static void sort_points(std::size_t axis, const std::vector<Point>& points,
+  static void sort_points(std::size_t axis, const std::vector<Eigen::Vector3d>& points,
                           const std::vector<unsigned int>::iterator& begin,
                           const std::vector<unsigned int>::iterator& middle,
                           const std::vector<unsigned int>::iterator& end);
@@ -206,17 +206,16 @@ private:
   unsigned int num_bboxes() const { return _bboxes.size(); }
 
   // Add bounding box and point coordinates
-  unsigned int add_point(const BBox& bbox, const Point& point)
+  unsigned int add_point(const BBox& bbox, const Eigen::Vector3d& point)
   {
     // Add bounding box
     _bboxes.push_back(bbox);
 
     // Add point coordinates (twice)
-    const double* x = point.coordinates();
     for (int i = 0; i < _gdim; ++i)
-      _bbox_coordinates.push_back(x[i]);
+      _bbox_coordinates.push_back(point[i]);
     for (int i = 0; i < _gdim; ++i)
-      _bbox_coordinates.push_back(x[i]);
+      _bbox_coordinates.push_back(point[i]);
 
     return _bboxes.size() - 1;
   }
@@ -251,7 +250,7 @@ private:
 
   // Compute bounding box of points
   static void compute_bbox_of_points(
-      double* bbox, std::size_t& axis, const std::vector<Point>& points,
+                                     double* bbox, std::size_t& axis, const std::vector<Eigen::Vector3d>& points,
       const std::vector<unsigned int>::iterator& begin,
       const std::vector<unsigned int>::iterator& end, int gdim);
 
