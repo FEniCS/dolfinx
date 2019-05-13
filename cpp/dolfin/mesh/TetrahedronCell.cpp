@@ -192,7 +192,7 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::squared_distance(const Cell& cell,
-                                         const geometry::Point& point) const
+                                         const Eigen::Vector3d& point) const
 {
   // Algorithm from Real-time collision detection by Christer Ericson:
   // ClosestPtPointTetrahedron on page 143, Section 5.1.6.
@@ -203,10 +203,10 @@ double TetrahedronCell::squared_distance(const Cell& cell,
   // Get the vertices as points
   const Geometry& geometry = cell.mesh().geometry();
   const std::int32_t* vertices = cell.entities(0);
-  const geometry::Point a = geometry.point(vertices[0]);
-  const geometry::Point b = geometry.point(vertices[1]);
-  const geometry::Point c = geometry.point(vertices[2]);
-  const geometry::Point d = geometry.point(vertices[3]);
+  const Eigen::Vector3d a = geometry.x(vertices[0]);
+  const Eigen::Vector3d b = geometry.x(vertices[1]);
+  const Eigen::Vector3d c = geometry.x(vertices[2]);
+  const Eigen::Vector3d d = geometry.x(vertices[3]);
 
   // Initialize squared distance
   double r2 = std::numeric_limits<double>::max();
@@ -356,16 +356,16 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-bool TetrahedronCell::point_outside_of_plane(const geometry::Point& point,
-                                             const geometry::Point& a,
-                                             const geometry::Point& b,
-                                             const geometry::Point& c,
-                                             const geometry::Point& d) const
+bool TetrahedronCell::point_outside_of_plane(const Eigen::Vector3d& point,
+                                             const Eigen::Vector3d& a,
+                                             const Eigen::Vector3d& b,
+                                             const Eigen::Vector3d& c,
+                                             const Eigen::Vector3d& d) const
 {
   // Algorithm from Real-time collision detection by Christer Ericson:
   // PointOutsideOfPlane on page 144, Section 5.1.6.
 
-  const geometry::Point v = (b - a).cross(c - a);
+  const Eigen::Vector3d v = (b - a).cross(c - a);
   const double signp = v.dot(point - a);
   const double signd = v.dot(d - a);
 

@@ -154,7 +154,7 @@ double HexahedronCell::circumradius(const MeshEntity& cell) const
 }
 //-----------------------------------------------------------------------------
 double HexahedronCell::squared_distance(const mesh::Cell& cell,
-                                        const geometry::Point& point) const
+                                        const Eigen::Vector3d& point) const
 {
 
   throw std::runtime_error("Not implemented");

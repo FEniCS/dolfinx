@@ -109,7 +109,7 @@ public:
 
   /// Compute squared distance to given point
   virtual double squared_distance(const Cell& cell,
-                                  const geometry::Point& point) const = 0;
+                                  const Eigen::Vector3d& point) const = 0;
 
   /// Compute component i of normal of given facet with respect to the cell
   virtual double normal(const Cell& cell, std::size_t facet,

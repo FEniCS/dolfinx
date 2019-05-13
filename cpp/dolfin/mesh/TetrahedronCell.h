@@ -49,7 +49,7 @@ public:
 
   /// Compute squared distance to given point
   double squared_distance(const mesh::Cell& cell,
-                          const geometry::Point& point) const;
+                          const Eigen::Vector3d& point) const;
 
   /// Compute component i of normal of given facet with respect to
   /// the cell
@@ -76,11 +76,11 @@ private:
 
   // Check whether point is outside region defined by facet ABC.
   // The fourth vertex is needed to define the orientation.
-  bool point_outside_of_plane(const geometry::Point& point,
-                              const geometry::Point& A,
-                              const geometry::Point& B,
-                              const geometry::Point& C,
-                              const geometry::Point& D) const;
+  bool point_outside_of_plane(const Eigen::Vector3d& point,
+                              const Eigen::Vector3d& A,
+                              const Eigen::Vector3d& B,
+                              const Eigen::Vector3d& C,
+                              const Eigen::Vector3d& D) const;
 };
 } // namespace mesh
 } // namespace dolfin

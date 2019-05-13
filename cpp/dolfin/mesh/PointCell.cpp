@@ -63,7 +63,7 @@ double PointCell::circumradius(const MeshEntity& point) const
 }
 //-----------------------------------------------------------------------------
 double PointCell::squared_distance(const Cell& cell,
-                                   const geometry::Point& point) const
+                                   const Eigen::Vector3d& point) const
 {
   throw std::runtime_error("Not defined");
   return 0.0;

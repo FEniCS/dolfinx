@@ -48,7 +48,7 @@ public:
 
   /// Compute squared distance to given point
   double squared_distance(const mesh::Cell& cell,
-                          const geometry::Point& point) const;
+                          const Eigen::Vector3d& point) const;
 
   /// Compute component i of normal of given facet with respect to
   /// the cell

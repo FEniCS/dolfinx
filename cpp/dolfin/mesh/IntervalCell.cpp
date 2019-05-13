@@ -75,10 +75,10 @@ double IntervalCell::volume(const MeshEntity& interval) const
 
   // Get the coordinates of the two vertices
   const std::int32_t* vertices = interval.entities(0);
-  const geometry::Point x0 = geometry.point(vertices[0]);
-  const geometry::Point x1 = geometry.point(vertices[1]);
+  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
 
-  return x1.distance(x0);
+  return (x1 - x0).norm();
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::circumradius(const MeshEntity& interval) const
@@ -94,26 +94,26 @@ double IntervalCell::circumradius(const MeshEntity& interval) const
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell,
-                                      const geometry::Point& point) const
+                                      const Eigen::Vector3d& point) const
 {
   // Get the vertices as points
   const Geometry& geometry = cell.mesh().geometry();
   const std::int32_t* vertices = cell.entities(0);
-  const geometry::Point a = geometry.point(vertices[0]);
-  const geometry::Point b = geometry.point(vertices[1]);
+  const Eigen::Vector3d a = geometry.x(vertices[0]);
+  const Eigen::Vector3d b = geometry.x(vertices[1]);
 
   // Call function to compute squared distance
   return squared_distance(point, a, b);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::squared_distance(const geometry::Point& point,
-                                      const geometry::Point& a,
-                                      const geometry::Point& b)
+double IntervalCell::squared_distance(const Eigen::Vector3d& point,
+                                      const Eigen::Vector3d& a,
+                                      const Eigen::Vector3d& b)
 {
   // Compute vector
-  const geometry::Point v0 = point - a;
-  const geometry::Point v1 = point - b;
-  const geometry::Point v01 = b - a;
+  const Eigen::Vector3d v0 = point - a;
+  const Eigen::Vector3d v1 = point - b;
+  const Eigen::Vector3d v01 = b - a;
 
   // Check if a is closest point (outside of interval)
   const double a0 = v0.dot(v01);

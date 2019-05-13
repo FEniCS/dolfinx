@@ -39,10 +39,9 @@ std::size_t Geometry::num_points() const { return _coordinates.rows(); }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::num_points_global() const { return _num_points_global; }
 //-----------------------------------------------------------------------------
-Eigen::Ref<const Eigen::Array<double, 1, Eigen::Dynamic>>
-Geometry::x(std::size_t n) const
+Eigen::Ref<const Eigen::Vector3d> Geometry::x(std::size_t n) const
 {
-  return _coordinates.row(n);
+  return _coordinates.row(n).matrix().transpose();
 }
 //-----------------------------------------------------------------------------
 geometry::Point Geometry::point(std::size_t n) const
@@ -50,13 +49,12 @@ geometry::Point Geometry::point(std::size_t n) const
   return geometry::Point(_coordinates.cols(), _coordinates.row(n).data());
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-Geometry::points()
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& Geometry::points()
 {
   return _coordinates;
 }
 //-----------------------------------------------------------------------------
-const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
 Geometry::points() const
 {
   return _coordinates;

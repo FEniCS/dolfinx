@@ -148,7 +148,7 @@ public:
   ///         The point.
   /// @return     double
   ///         The squared distance to the point.
-  double squared_distance(const geometry::Point& point) const
+  double squared_distance(const Eigen::Vector3d& point) const
   {
     return _mesh->type().squared_distance(*this, point);
   }
@@ -159,7 +159,7 @@ public:
   ///         The point.
   /// @return     double
   ///         The distance to the point.
-  double distance(const geometry::Point& point) const
+  double distance(const Eigen::Vector3d& point) const
   {
     return sqrt(squared_distance(point));
   }
