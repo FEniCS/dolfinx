@@ -125,10 +125,10 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 
   // Get the coordinates of the four vertices
   const std::int32_t* vertices = tetrahedron.entities(0);
-  const geometry::Point x0 = geometry.point(vertices[0]);
-  const geometry::Point x1 = geometry.point(vertices[1]);
-  const geometry::Point x2 = geometry.point(vertices[2]);
-  const geometry::Point x3 = geometry.point(vertices[3]);
+  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
+  const Eigen::Vector3d x2 = geometry.x(vertices[2]);
+  const Eigen::Vector3d x3 = geometry.x(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
   const double v = (x0[0]
@@ -166,18 +166,18 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
 
   // Get the coordinates of the four vertices
   const std::int32_t* vertices = tetrahedron.entities(0);
-  const geometry::Point p0 = geometry.point(vertices[0]);
-  const geometry::Point p1 = geometry.point(vertices[1]);
-  const geometry::Point p2 = geometry.point(vertices[2]);
-  const geometry::Point p3 = geometry.point(vertices[3]);
+  const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+  const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+  const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+  const Eigen::Vector3d p3 = geometry.x(vertices[3]);
 
   // Compute side lengths
-  const double a = p1.distance(p2);
-  const double b = p0.distance(p2);
-  const double c = p0.distance(p1);
-  const double aa = p0.distance(p3);
-  const double bb = p1.distance(p3);
-  const double cc = p2.distance(p3);
+  const double a = (p1 - p2).norm();
+  const double b = (p0 - p2).norm();
+  const double c = (p0 - p1).norm();
+  const double aa = (p0 - p3).norm();
+  const double bb = (p1 - p3).norm();
+  const double cc = (p2 - p3).norm();
 
   // Compute "area" of triangle with strange side lengths
   const double la = a * aa;

@@ -78,7 +78,7 @@ Eigen::Vector3d MeshEntity::midpoint() const
 
   for (auto& v : EntityRange<Vertex>(*this))
   {
-    x += v.x().matrix().transpose();
+    x += v.x();
     ++num_vertices;
   }
 

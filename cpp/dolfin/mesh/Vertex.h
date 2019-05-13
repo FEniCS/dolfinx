@@ -44,9 +44,9 @@ public:
   }
 
   /// Return array of vertex coordinates (const version)
-  Eigen::Ref<const EigenRowArrayXd> x() const
+  Eigen::Ref<const Eigen::Vector3d> x() const
   {
-    return _mesh->geometry().points().row(_local_index);
+    return _mesh->geometry().x(_local_index);
   }
 };
 } // namespace mesh
