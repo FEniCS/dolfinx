@@ -55,3 +55,11 @@ bool dolfin::has_parmetis()
 #endif
 }
 //-------------------------------------------------------------------------
+bool dolfin::has_kahip()
+{
+#ifdef PARHIP_INTERFACE
+  return true;
+#else
+  return false;
+#endif
+}
