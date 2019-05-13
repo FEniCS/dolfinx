@@ -40,7 +40,7 @@ void geometry(py::module& m)
       //          & dolfin::geometry::BoundingBoxTree::build)
       .def("compute_collisions",
            (std::vector<unsigned int>(dolfin::geometry::BoundingBoxTree::*)(
-               const dolfin::geometry::Point&) const)
+               const Eigen::Vector3d&) const)
                & dolfin::geometry::BoundingBoxTree::compute_collisions)
       .def("compute_collisions",
            (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
@@ -49,7 +49,7 @@ void geometry(py::module& m)
                & dolfin::geometry::BoundingBoxTree::compute_collisions)
       .def("compute_entity_collisions",
            (std::vector<unsigned int>(dolfin::geometry::BoundingBoxTree::*)(
-               const dolfin::geometry::Point&, const dolfin::mesh::Mesh&) const)
+               const Eigen::Vector3d&, const dolfin::mesh::Mesh&) const)
                & dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
       .def("compute_entity_collisions",
            (std::pair<std::vector<unsigned int>, std::vector<unsigned int>>(
@@ -125,12 +125,11 @@ void geometry(py::module& m)
       .def(py::self == py::self)
       .def(py::self * float())
       .def(py::self / float())
-      .def(
-          "array",
-          [](dolfin::geometry::Point& self) {
-            return Eigen::Vector3d(self.coordinates());
-          },
-          "Return copy of coordinate array")
+      .def("array",
+           [](dolfin::geometry::Point& self) {
+             return Eigen::Vector3d(self.coordinates());
+           },
+           "Return copy of coordinate array")
       .def("norm", &dolfin::geometry::Point::norm)
       .def("distance", &dolfin::geometry::Point::distance);
 
