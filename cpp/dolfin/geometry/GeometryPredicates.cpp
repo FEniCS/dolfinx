@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "GeometryPredicates.h"
-#include "Point.h"
 #include "predicates.h"
 #include <cfloat>
 #include <cmath>
@@ -15,8 +14,8 @@ using namespace dolfin;
 using namespace dolfin::geometry;
 
 //-----------------------------------------------------------------------------
-bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
-                                       std::size_t gdim)
+bool GeometryPredicates::is_degenerate(
+    const std::vector<Eigen::Vector3d>& simplex, std::size_t gdim)
 {
   switch (gdim)
   {
@@ -30,7 +29,8 @@ bool GeometryPredicates::is_degenerate(const std::vector<Point>& simplex,
   return false;
 }
 //-----------------------------------------------------------------------------
-bool GeometryPredicates::is_degenerate_2d(const std::vector<Point>& simplex)
+bool GeometryPredicates::is_degenerate_2d(
+    const std::vector<Eigen::Vector3d>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 3)
   {
@@ -51,7 +51,8 @@ bool GeometryPredicates::is_degenerate_2d(const std::vector<Point>& simplex)
   return true;
 }
 //------------------------------------------------------------------------------
-bool GeometryPredicates::is_degenerate_3d(const std::vector<Point>& simplex)
+bool GeometryPredicates::is_degenerate_3d(
+    const std::vector<Eigen::Vector3d>& simplex)
 {
   if (simplex.size() < 2 or simplex.size() > 4)
   {
@@ -93,7 +94,7 @@ bool GeometryPredicates::is_degenerate_3d(const std::vector<Point>& simplex)
   return true;
 }
 //-----------------------------------------------------------------------------
-bool GeometryPredicates::is_finite(const std::vector<Point>& simplex)
+bool GeometryPredicates::is_finite(const std::vector<Eigen::Vector3d>& simplex)
 {
   for (auto p : simplex)
   {
@@ -118,7 +119,7 @@ bool GeometryPredicates::is_finite(const std::vector<double>& simplex)
 }
 //-----------------------------------------------------------------------------
 bool GeometryPredicates::convex_hull_is_degenerate(
-    const std::vector<Point>& points, std::size_t gdim)
+    const std::vector<Eigen::Vector3d>& points, std::size_t gdim)
 {
   // Points are assumed to be unique
 
@@ -142,8 +143,8 @@ bool GeometryPredicates::convex_hull_is_degenerate(
       {
         for (k = j + 1; k < points.size(); k++)
         {
-          const Point ij = points[j] - points[i];
-          const Point ik = points[k] - points[i];
+          const Eigen::Vector3d ij = points[j] - points[i];
+          const Eigen::Vector3d ik = points[k] - points[i];
           if (-(std::abs((ij / ij.norm()).dot(ik / ik.norm())) - 1)
               > 2.0 * DBL_EPSILON)
           {

@@ -379,8 +379,7 @@ void BoundingBoxTree::_compute_collisions_point(
     {
       // Get cell
       mesh::Cell cell(*mesh, entity_index);
-      geometry::Point p(point);
-      if (CollisionPredicates::collides(cell, p))
+      if (CollisionPredicates::collides(cell, point))
         entities.push_back(entity_index);
     }
 
@@ -544,7 +543,7 @@ unsigned int BoundingBoxTree::_compute_first_entity_collision(
 
     // Check entity
 
-    if (CollisionPredicates::collides(cell, geometry::Point(point)))
+    if (CollisionPredicates::collides(cell, point))
       return entity_index;
   }
 
