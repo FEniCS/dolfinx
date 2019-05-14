@@ -29,9 +29,8 @@ static inline Eigen::Vector3d cross_product(const Eigen::Vector3d& a,
   double axy[2] = {a[0], a[1]};
   double bxy[2] = {b[0], b[1]};
   double cxy[2] = {c[0], c[1]};
-  Eigen::Vector3d r;
-  r << _orient2d(ayz, byz, cyz), _orient2d(azx, bzx, czx),
-      _orient2d(axy, bxy, cxy);
+  Eigen::Vector3d r(_orient2d(ayz, byz, cyz), _orient2d(azx, bzx, czx),
+                    _orient2d(axy, bxy, cxy));
   return r;
 }
 
@@ -423,14 +422,10 @@ bool CollisionPredicates::collides_segment_segment_3d(const Eigen::Vector3d& p0,
     {
       const std::array<std::array<std::size_t, 2>, 3> dims
           = {{{{1, 2}}, {{0, 2}}, {{0, 1}}}};
-      Eigen::Vector3d p0_2d;
-      p0_2d << p0[dims[d][0]], p0[dims[d][1]], 0.0;
-      Eigen::Vector3d p1_2d;
-      p1_2d << p1[dims[d][0]], p1[dims[d][1]], 0.0;
-      Eigen::Vector3d q0_2d;
-      q0_2d << q0[dims[d][0]], q0[dims[d][1]], 0.0;
-      Eigen::Vector3d q1_2d;
-      q1_2d << q1[dims[d][0]], q1[dims[d][1]], 0.0;
+      Eigen::Vector3d p0_2d(p0[dims[d][0]], p0[dims[d][1]], 0.0);
+      Eigen::Vector3d p1_2d(p1[dims[d][0]], p1[dims[d][1]], 0.0);
+      Eigen::Vector3d q0_2d(q0[dims[d][0]], q0[dims[d][1]], 0.0);
+      Eigen::Vector3d q1_2d(q1[dims[d][0]], q1[dims[d][1]], 0.0);
 
       return collides_segment_segment_2d(p0_2d, p1_2d, q0_2d, q1_2d);
     }

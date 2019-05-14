@@ -175,8 +175,7 @@ Eigen::Vector3d IntervalCell::cell_normal(const Cell& cell) const
 
   // Define normal by rotating tangent counterclockwise
   Eigen::Vector3d t = p1 - p0;
-  Eigen::Vector3d n;
-  n << -t[1], t[0], 0.0;
+  Eigen::Vector3d n(-t[1], t[0], 0.0);
 
   // Normalize
   n /= n.norm();

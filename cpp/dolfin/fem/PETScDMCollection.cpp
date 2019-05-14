@@ -101,7 +101,6 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
-  ;
   std::vector<double> coors(gdim);
 
   // Speed up the computations by only visiting (most) dofs once
