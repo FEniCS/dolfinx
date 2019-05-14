@@ -16,14 +16,9 @@
 #include <utility>
 #include <vector>
 
-#ifndef PARHIP_INTERFACE
-#define PARHIP_INTERFACE
+#ifdef HAS_KAHIP
+#include "parhip_interface.h"
 #endif
-
-extern "C"
-{
-#include "KaHIP_interface.h"
-}
 
 namespace dolfin
 {
@@ -43,11 +38,10 @@ class CSRGraph;
 
 class KaHIP
 {
-#ifdef PARHIP_INTERFACE
+#ifdef HAS_KAHIP
 public:
   // Standard ParMETIS partition
-  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  partition(MPI_Comm mpi_comm, const CSRGraph<idx_t>& csr_graph);
+  void partition(MPI_Comm mpi_comm, const CSRGraph<idxtype>& csr_graph);
 
 #endif
 };

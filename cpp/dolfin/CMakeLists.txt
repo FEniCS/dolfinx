@@ -154,6 +154,13 @@ if (DOLFIN_ENABLE_PARMETIS AND PARMETIS_FOUND)
   target_include_directories(dolfin SYSTEM PRIVATE ${PARMETIS_INCLUDE_DIRS})
 endif()
 
+# KaHIP
+if (DOLFIN_ENABLE_KAHIP AND KAHIP_FOUND)
+  target_compile_definitions(dolfin PUBLIC HAS_KAHIP)
+  target_link_libraries(dolfin INTERFACE ${KAHIP_LIBRARIES})
+  target_include_directories(dolfin SYSTEM PRIVATE ${KAHIP_INCLUDE_DIRS})
+endif()
+
 #------------------------------------------------------------------------------
 # Set compiler flags, include directories and library dependencies
 
