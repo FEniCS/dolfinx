@@ -23,6 +23,8 @@ install-kahip: &install-kahip
             ./compile_withcmake.sh
             echo 'export KAHIP_ROOT=`pwd`:$KAHIP_ROOT' >> $BASH_ENV
             source $BASH_ENV
+            echo $ENVAR
+            echo $KAHIP_ROOT
 
 build-documentation-cpp: &build-documentation-cpp
   name: Build documentation (C++)
