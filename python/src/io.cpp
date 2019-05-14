@@ -7,7 +7,6 @@
 #include "casters.h"
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/XDMFFile.h>
 #include <dolfin/la/PETScVector.h>
