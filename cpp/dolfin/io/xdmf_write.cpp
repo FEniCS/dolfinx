@@ -17,7 +17,6 @@
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -461,7 +460,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
 //-----------------------------------------------------------------------------
 void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
                             hid_t h5_id,
-                            const std::vector<geometry::Point>& points)
+                            const std::vector<Eigen::Vector3d>& points)
 {
   xdmf_node.append_attribute("Version") = "3.0";
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";

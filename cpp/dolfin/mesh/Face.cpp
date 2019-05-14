@@ -6,7 +6,6 @@
 
 #include "Face.h"
 #include "Cell.h"
-#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;

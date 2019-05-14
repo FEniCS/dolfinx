@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "CollisionPredicates.h"
-#include "Point.h"
 #include "predicates.h"
 #include <Eigen/Dense>
 #include <dolfin/mesh/CellType.h>

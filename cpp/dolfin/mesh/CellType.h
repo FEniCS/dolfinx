@@ -13,10 +13,6 @@
 
 namespace dolfin
 {
-namespace geometry
-{
-class Point;
-}
 
 namespace mesh
 {

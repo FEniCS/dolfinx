@@ -23,10 +23,7 @@
 
 namespace dolfin
 {
-namespace geometry
-{
-class Point;
-}
+
 namespace function
 {
 class Function;
@@ -49,7 +46,7 @@ std::set<std::uint32_t> compute_nonlocal_entities(const mesh::Mesh& mesh,
 
 /// Add set of points to XDMF xml_node and write data
 void add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
-                const std::vector<geometry::Point>& points);
+                const std::vector<Eigen::Vector3d>& points);
 
 /// Add topology node to xml_node (includes writing data to XML or HDF5
 /// file)

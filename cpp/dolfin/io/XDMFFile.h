@@ -38,11 +38,6 @@ class Function;
 class FunctionSpace;
 } // namespace function
 
-namespace geometry
-{
-class Point;
-}
-
 namespace mesh
 {
 enum class GhostMode : int;
@@ -251,7 +246,7 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const std::vector<geometry::Point>& points);
+  void write(const std::vector<Eigen::Vector3d>& points);
 
   /// Save a cloud of points, with scalar values using an associated
   /// HDF5 file, or storing the data inline as XML.
@@ -263,7 +258,7 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const std::vector<geometry::Point>& points,
+  void write(const std::vector<Eigen::Vector3d>& points,
              const std::vector<double>& values);
 
   /// Read in the first mesh::Mesh in XDMF file

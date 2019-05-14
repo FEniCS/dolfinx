@@ -16,7 +16,6 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <array>
-#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;

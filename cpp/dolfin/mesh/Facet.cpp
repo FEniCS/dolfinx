@@ -8,7 +8,6 @@
 #include "Cell.h"
 #include "IntervalCell.h"
 #include "TriangleCell.h"
-#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;

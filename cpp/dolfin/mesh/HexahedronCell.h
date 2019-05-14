@@ -7,7 +7,6 @@
 #pragma once
 
 #include "CellType.h"
-#include <dolfin/geometry/Point.h>
 #include <vector>
 
 namespace dolfin

@@ -31,11 +31,6 @@ namespace function
 class FunctionSpace;
 } // namespace function
 
-namespace geometry
-{
-class Point;
-}
-
 namespace mesh
 {
 class CellType;
@@ -65,7 +60,7 @@ public:
   void flush();
 
   /// Write points to file
-  void write(const std::vector<geometry::Point>& points,
+  void write(const std::vector<Eigen::Vector3d>& points,
              const std::string name);
 
   /// Write simple vector of double to file

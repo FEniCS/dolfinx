@@ -7,7 +7,6 @@
 #include "Edge.h"
 #include "Vertex.h"
 #include <cmath>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Geometry.h>
 
 using namespace dolfin;

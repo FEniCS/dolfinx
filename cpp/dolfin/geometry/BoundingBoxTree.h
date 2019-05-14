@@ -6,8 +6,8 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <array>
-#include <dolfin/geometry/Point.h>
 #include <limits>
 #include <memory>
 #include <sstream>

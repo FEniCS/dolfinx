@@ -1198,7 +1198,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   return mvc;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<geometry::Point>& points)
+void XDMFFile::write(const std::vector<Eigen::Vector3d>& points)
 {
   // Check that encoding
   if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
@@ -1236,7 +1236,7 @@ void XDMFFile::write(const std::vector<geometry::Point>& points)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<geometry::Point>& points,
+void XDMFFile::write(const std::vector<Eigen::Vector3d>& points,
                      const std::vector<double>& values)
 {
   // Write clouds of points to XDMF/HDF5 with values

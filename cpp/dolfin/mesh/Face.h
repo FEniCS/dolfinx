@@ -7,7 +7,6 @@
 #pragma once
 
 #include "MeshEntity.h"
-#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {

@@ -7,7 +7,6 @@
 #pragma once
 
 #include "CellType.h"
-#include <dolfin/geometry/Point.h>
 #include <vector>
 
 namespace dolfin
@@ -33,7 +32,7 @@ public:
   /// Return number of entities of given topological dimension
   std::size_t num_entities(std::size_t dim) const;
 
-  /// Return number of vertices for entity of given topolPointogical dimension
+  /// Return number of vertices for entity of given topological dimension
   std::size_t num_vertices(std::size_t dim) const;
 
   /// Create entities e of given topological dimension from vertices v
