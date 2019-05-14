@@ -27,6 +27,7 @@ void dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   common::Timer timer("Compute graph partition (KaHIP)");
 
   // Number of partitions (one for each process)
+  // FIXME: Allow partition on a subset of processes
   int nparts = dolfin::MPI::size(mpi_comm);
 
   // Graph does not have vertex or adjacency weights,
@@ -67,7 +68,7 @@ void dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
 
   common::Timer timer2("Compute graph halo data (KaHIP)");
   //
-  // // Work out halo cells for current division of dual graph
+  // Work out halo cells for current division of dual graph
   // const auto& elmdist = csr_graph.node_distribution();
   // const auto& xadj = csr_graph.nodes();
   // const auto& adjncy = csr_graph.edges();
