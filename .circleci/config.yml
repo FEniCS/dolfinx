@@ -140,6 +140,7 @@ jobs:
       - checkout
       - run: *install-python-components
       - run: *flake8-python-code
+      - run: *install-kahip
       - run: *build-documentation-cpp
       - run: *configure-cpp
       - run: *build-install-cpp

@@ -40,15 +40,15 @@ message(STATUS "Checking for package 'KaHIP'")
 
 
 # Check for header file
-find_path(KAHIP_INCLUDE_DIRS kaHIP_interface.h
-  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy/
+find_path(KAHIP_INCLUDE_DIRS parhip_interface.h
+  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy/ /usr/local/KaHIP/deploy
   PATH_SUFFIXES kahip
   DOC "Directory where the KaHIP header is located"
   )
 
 
 find_library(KAHIP_LIBRARY kahip
-  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy
+  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
   NO_DEFAULT_PATH
   DOC "Directory where the KaHIP library is located"
 )
@@ -58,7 +58,7 @@ find_library(KAHIP_LIBRARY kahip
 )
 
 find_library(PARHIP_LIBRARY parhip
-  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy
+  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
   NO_DEFAULT_PATH
   DOC "Directory where the KaHIP library is located"
 )
