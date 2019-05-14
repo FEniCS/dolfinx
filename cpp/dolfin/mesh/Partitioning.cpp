@@ -20,7 +20,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/graph/CSRGraph.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/ParMETIS.h>

@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/geometry/Point.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -62,9 +61,6 @@ public:
   /// Return coordinate array for point with local index n
   Eigen::Ref<const Eigen::Vector3d>
   x(std::size_t n) const;
-
-  /// Return coordinate with local index n as a 3D point value
-  geometry::Point point(std::size_t n) const;
 
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points

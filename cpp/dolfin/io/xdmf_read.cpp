@@ -17,7 +17,6 @@
 // #include <dolfin/fem/GenericDofMap.h>
 // #include <dolfin/function/Function.h>
 // #include <dolfin/function/FunctionSpace.h>
-// #include <dolfin/geometry/Point.h>
 // #include <dolfin/mesh/DistributedMeshTools.h>
 // #include <dolfin/mesh/Mesh.h>
 // #include <dolfin/mesh/MeshIterator.h>
@@ -26,4 +25,3 @@
 
 using namespace dolfin;
 using namespace dolfin::io;
-

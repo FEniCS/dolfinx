@@ -13,7 +13,7 @@ import pytest
 import dolfin
 import FIAT
 from dolfin import (MPI, BoxMesh, Cell, Cells, CellType, MeshEntities,
-                    MeshEntity, MeshFunction, Point, RectangleMesh,
+                    MeshEntity, MeshFunction, RectangleMesh,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, Vertex,
                     cpp)
 from dolfin.io import XDMFFile
@@ -33,8 +33,8 @@ def mesh1d():
 def mesh2d():
     # Create 2D mesh with one equilateral triangle
     mesh2d = RectangleMesh(
-        MPI.comm_world, [Point(0, 0)._cpp_object,
-                         Point(1, 1)._cpp_object], [1, 1],
+        MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
+                         numpy.array([1., 1., 0.0])], [1, 1],
         CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
     mesh2d.geometry.points[3, :2] += 0.5 * (sqrt(3.0) - 1.0)
     return mesh2d
@@ -80,8 +80,8 @@ def square():
 @fixture
 def rectangle():
     return RectangleMesh(
-        MPI.comm_world, [Point(0, 0)._cpp_object,
-                         Point(2, 2)._cpp_object], [5, 5],
+        MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
+                         numpy.array([2.0, 2.0, 0.0])], [5, 5],
         CellType.Type.triangle, cpp.mesh.GhostMode.none)
 
 
@@ -92,8 +92,8 @@ def cube():
 
 @fixture
 def box():
-    return BoxMesh(MPI.comm_world, [Point(0, 0, 0)._cpp_object,
-                                    Point(2, 2, 2)._cpp_object], [2, 2, 5], CellType.Type.tetrahedron,
+    return BoxMesh(MPI.comm_world, [numpy.array([0, 0, 0]),
+                                    numpy.array([2, 2, 2])], [2, 2, 5], CellType.Type.tetrahedron,
                    cpp.mesh.GhostMode.none)
 
 

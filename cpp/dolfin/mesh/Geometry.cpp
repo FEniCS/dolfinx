@@ -6,7 +6,6 @@
 
 #include "Geometry.h"
 #include <boost/functional/hash.hpp>
-#include <dolfin/geometry/Point.h>
 #include <sstream>
 
 using namespace dolfin;
@@ -42,11 +41,6 @@ std::size_t Geometry::num_points_global() const { return _num_points_global; }
 Eigen::Ref<const Eigen::Vector3d> Geometry::x(std::size_t n) const
 {
   return _coordinates.row(n).matrix().transpose();
-}
-//-----------------------------------------------------------------------------
-geometry::Point Geometry::point(std::size_t n) const
-{
-  return geometry::Point(_coordinates.cols(), _coordinates.row(n).data());
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& Geometry::points()
