@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfin import (MPI, Expression, Function, FunctionSpace, Point,
+from dolfin import (MPI, Expression, Function, FunctionSpace,
                     TensorFunctionSpace, UnitCubeMesh, VectorFunctionSpace,
                     Vertex, cpp, function, interpolate)
 from dolfin_utils.test.fixtures import fixture

@@ -12,7 +12,7 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfin import (MPI, Point, TestFunction, TrialFunction, UnitCubeMesh,
+from dolfin import (MPI, TestFunction, TrialFunction, UnitCubeMesh,
                     UnitSquareMesh, VectorFunctionSpace, cpp, fem, la)
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_matrix
