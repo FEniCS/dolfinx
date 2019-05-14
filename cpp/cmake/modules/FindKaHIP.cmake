@@ -65,7 +65,7 @@ find_library(PARHIP_LIBRARY parhip
 
 
 find_library(PARHIP_LIBRARY parhip
-  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy
+  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
   NO_DEFAULT_PATH
   DOC "Directory where the KaHIP library is located"
 )
