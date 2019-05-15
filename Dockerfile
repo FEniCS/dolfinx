@@ -50,7 +50,8 @@ ENV OPENBLAS_NUM_THREADS=1 \
 # Install dependencies available via apt-get.
 # First set of packages are required to build and run FEniCS.
 # Second set of packages are recommended and/or required to build documentation or tests.
-# Third set of packages are required to run gmsh pre-built binaries.
+# Third set of packages are optional, but required to run gmsh pre-built binaries.
+# Fourth set of packages are optional, required for meshio.
 RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -qq update && \
     apt-get -yq --with-new-pkgs -o Dpkg::Options::="--force-confold" upgrade && \
@@ -89,7 +90,8 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get -y install \
         libglu1 \
         libxcursor-dev \
-        libxinerama1 \
+        libxinerama1 && \
+    apt-get -y install \
         python3-lxml && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
@@ -103,10 +105,11 @@ ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64/bin:$PATH
 # Install Python packages (via pip)
 # First set of packages are required to build and run FEniCS.
 # Second set of packages are recommended and/or required to build documentation or run tests.
+# Third set of packages are optional but required for pygmsh/meshio/DOLFIN mesh pipeline.
 RUN pip3 install --no-cache-dir mpi4py numba && \
+    pip3 install --no-cache-dir cffi decorator flake8 pytest pytest-xdist sphinx sphinx_rtd_theme && \
     export HDF5_MPI="ON" && \
-    pip3 install --no-cache-dir --no-binary=h5py cffi decorator flake8 h5py pygmsh pytest pytest-xdist sphinx sphinx_rtd_theme
-
+    pip3 install --no-cache-dir --no-binary=h5py h5py meshio pygmsh
 # Install pybind11
 RUN wget -nc --quiet https://github.com/pybind/pybind11/archive/v${PYBIND11_VERSION}.tar.gz && \
     tar -xf v${PYBIND11_VERSION}.tar.gz && \
@@ -253,8 +256,9 @@ ARG MAKEFLAGS
 
 WORKDIR /tmp
 
-# Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
-RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
+# Install ipython (optional), FIAT, UFL, dijitso and ffcX (development versions, master branch)
+RUN pip3 install --no-cache-dir ipython && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
     pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
@@ -281,8 +285,9 @@ ARG MAKEFLAGS
 
 WORKDIR /tmp
 
-# Install FIAT, UFL, dijitso and ffcX (development versions, master branch)
-RUN pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
+# Install ipython (optional), FIAT, UFL, dijitso and ffcX (development versions, master branch)
+RUN pip3 install --no-cache-dir ipython && \
+    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
     pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/dijitso.git && \
     pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
