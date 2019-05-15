@@ -7,7 +7,6 @@
 #include "PETScDMCollection.h"
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -72,7 +71,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       = dofmap.tabulate_local_to_global_dofs();
 
   // Geometric dimension
-  const std::size_t gdim = mesh.geometry().dim();
+  const int gdim = mesh.geometry().dim();
 
   // Get dof coordinates on reference element
   const EigenRowArrayXXd& X = element.dof_reference_coordinates();
@@ -85,22 +84,37 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   }
   const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
 
+  // Prepare cell geometry
+  const int tdim = mesh.topology().dim();
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
-  EigenRowArrayXXd coordinate_dofs;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);;
   std::vector<double> coors(gdim);
 
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
       = dofmap.index_map()->size_local() * dofmap.index_map()->block_size();
-  common::RangedIndexSet already_visited(
-      std::array<std::int64_t, 2>{{0, local_size}});
+  std::vector<bool> already_visited(local_size, false);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Get cell coordinates
-    coordinate_dofs.resize(cell.num_vertices(), gdim);
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get local-to-global map
     auto dofs = dofmap.cell_dofs(cell.index());
@@ -115,7 +129,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       if (dof < local_size)
       {
         // Skip already checked dofs
-        if (!already_visited.insert(dof))
+        if (already_visited[dof])
           continue;
 
         // Put coordinates in coors
@@ -125,12 +139,14 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 
         // Add dof to list at this coord
         const auto ins = coords_to_dofs.insert({coors, {local_to_global[dof]}});
-
         if (!ins.second)
           ins.first->second.push_back(local_to_global[dof]);
+
+        already_visited[dof] = true;
       }
     }
   }
+
   return coords_to_dofs;
 }
 } // namespace
@@ -222,8 +238,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   // Get coarse mesh and dimension of the domain
   assert(coarse_space.mesh());
   const mesh::Mesh& meshc = *coarse_space.mesh();
-  std::size_t gdim = meshc.geometry().dim();
-  std::size_t tdim = meshc.topology().dim();
+  const int gdim = meshc.geometry().dim();
+  const int tdim = meshc.topology().dim();
 
   // MPI communicator, size and rank
   const MPI_Comm mpi_comm = meshc.mpi_comm();
@@ -503,7 +519,6 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> coarse_local_to_global_dofs
       = coarsemap->tabulate_local_to_global_dofs();
 
-  EigenRowArrayXXd coordinate_dofs; // cell dofs coordinates vector
 
   // Loop over the found coarse cells
   Eigen::Map<const EigenRowArrayXXd> x(found_points.data(), found_ids.size(),
@@ -514,6 +529,20 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   EigenArrayXd detJ(1);
   Eigen::Tensor<double, 3, Eigen::RowMajor> K(1, tdim, gdim);
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = meshc.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = meshc.geometry().points();
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);; // cell dofs coordinates vector
+
   for (unsigned int i = 0; i < found_ids.size(); ++i)
   {
     // Get coarse cell id and point
@@ -523,8 +552,10 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
 
     // Get dofs coordinates of the coarse cell
-    coordinate_dofs.resize(coarse_cell.num_vertices(), gdim);
-    coarse_cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = coarse_cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Evaluate the basis functions of the coarse cells at the fine
     // point and store the values into temp_values

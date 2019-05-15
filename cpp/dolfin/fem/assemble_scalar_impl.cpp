@@ -32,39 +32,28 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
+  const FormIntegrals& integrals = M.integrals();
+  using type = fem::FormIntegrals::Type;
   PetscScalar value = 0.0;
-
-  for (int i = 0;
-       i < M.integrals().num_integrals(fem::FormIntegrals::Type::cell); ++i)
+  for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& fn
-        = M.integrals().get_tabulate_tensor_fn_cell(i);
-
+    auto& fn = integrals.get_tabulate_tensor_fn_cell(i);
     const std::vector<std::int32_t>& active_cells
-        = M.integrals().integral_domains(fem::FormIntegrals::Type::cell, i);
-
+        = integrals.integral_domains(type::cell, i);
     value += fem::impl::assemble_cells(mesh, active_cells, fn, coeff_fn,
                                        c_offsets);
   }
 
-  for (int i = 0; i < M.integrals().num_integrals(
-                      fem::FormIntegrals::Type::exterior_facet);
-       ++i)
+  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn
-        = M.integrals().get_tabulate_tensor_fn_exterior_facet(i);
-
-    const std::vector<std::int32_t>& active_facets
-        = M.integrals().integral_domains(
-            fem::FormIntegrals::Type::exterior_facet, i);
-
+    auto& fn = integrals.get_tabulate_tensor_fn_exterior_facet(i);
+    const std::vector<std::int32_t>& active_facets = integrals.integral_domains(
+        fem::FormIntegrals::Type::exterior_facet, i);
     value += fem::impl::assemble_exterior_facets(mesh, active_facets, fn,
                                                  coeff_fn, c_offsets);
   }
 
-  if (M.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
+  if (integrals.num_integrals(type::interior_facet) > 0)
     value += fem::impl::assemble_interior_facets(M);
 
   return value;
@@ -77,13 +66,27 @@ PetscScalar fem::impl::assemble_cells(
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
-  const std::size_t tdim = mesh.topology().dim();
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim);
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
   // Create data structures used in assembly
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
+      coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over all cells
   PetscScalar cell_value, value(0);
@@ -95,8 +98,10 @@ PetscScalar fem::impl::assemble_cells(
     // Check that cell is not a ghost
     assert(!cell.is_ghost());
 
-    // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
+    // Get cell coordinates/geometry
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
@@ -119,18 +124,31 @@ PetscScalar fem::impl::assemble_exterior_facets(
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
-  const std::size_t tdim = mesh.topology().dim();
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
   mesh.create_entities(tdim - 1);
   mesh.create_connectivity(tdim - 1, tdim);
 
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points(tdim);
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+      x_g
+      = mesh.geometry().points();
+
   // Creat data structures used in assembly
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
+      coordinate_dofs(num_dofs_g, gdim);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over all facets
   PetscScalar cell_value, value(0);
-
   for (const auto& facet_index : active_facets)
   {
     const mesh::Facet facet(mesh, facet_index);
@@ -146,7 +164,10 @@ PetscScalar fem::impl::assemble_exterior_facets(
     const int local_facet = cell.index(facet);
 
     // Get cell vertex coordinates
-    cell.get_coordinate_dofs(coordinate_dofs);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
