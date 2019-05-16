@@ -125,10 +125,10 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 
   // Get the coordinates of the four vertices
   const std::int32_t* vertices = tetrahedron.entities(0);
-  const geometry::Point x0 = geometry.point(vertices[0]);
-  const geometry::Point x1 = geometry.point(vertices[1]);
-  const geometry::Point x2 = geometry.point(vertices[2]);
-  const geometry::Point x3 = geometry.point(vertices[3]);
+  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
+  const Eigen::Vector3d x2 = geometry.x(vertices[2]);
+  const Eigen::Vector3d x3 = geometry.x(vertices[3]);
 
   // Formula for volume from http://mathworld.wolfram.com
   const double v = (x0[0]
@@ -166,18 +166,18 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
 
   // Get the coordinates of the four vertices
   const std::int32_t* vertices = tetrahedron.entities(0);
-  const geometry::Point p0 = geometry.point(vertices[0]);
-  const geometry::Point p1 = geometry.point(vertices[1]);
-  const geometry::Point p2 = geometry.point(vertices[2]);
-  const geometry::Point p3 = geometry.point(vertices[3]);
+  const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+  const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+  const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+  const Eigen::Vector3d p3 = geometry.x(vertices[3]);
 
   // Compute side lengths
-  const double a = p1.distance(p2);
-  const double b = p0.distance(p2);
-  const double c = p0.distance(p1);
-  const double aa = p0.distance(p3);
-  const double bb = p1.distance(p3);
-  const double cc = p2.distance(p3);
+  const double a = (p1 - p2).norm();
+  const double b = (p0 - p2).norm();
+  const double c = (p0 - p1).norm();
+  const double aa = (p0 - p3).norm();
+  const double bb = (p1 - p3).norm();
+  const double cc = (p2 - p3).norm();
 
   // Compute "area" of triangle with strange side lengths
   const double la = a * aa;
@@ -192,7 +192,7 @@ double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::squared_distance(const Cell& cell,
-                                         const geometry::Point& point) const
+                                         const Eigen::Vector3d& point) const
 {
   // Algorithm from Real-time collision detection by Christer Ericson:
   // ClosestPtPointTetrahedron on page 143, Section 5.1.6.
@@ -203,10 +203,10 @@ double TetrahedronCell::squared_distance(const Cell& cell,
   // Get the vertices as points
   const Geometry& geometry = cell.mesh().geometry();
   const std::int32_t* vertices = cell.entities(0);
-  const geometry::Point a = geometry.point(vertices[0]);
-  const geometry::Point b = geometry.point(vertices[1]);
-  const geometry::Point c = geometry.point(vertices[2]);
-  const geometry::Point d = geometry.point(vertices[3]);
+  const Eigen::Vector3d a = geometry.x(vertices[0]);
+  const Eigen::Vector3d b = geometry.x(vertices[1]);
+  const Eigen::Vector3d c = geometry.x(vertices[2]);
+  const Eigen::Vector3d d = geometry.x(vertices[3]);
 
   // Initialize squared distance
   double r2 = std::numeric_limits<double>::max();
@@ -240,7 +240,7 @@ double TetrahedronCell::normal(const Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-geometry::Point TetrahedronCell::normal(const Cell& cell,
+Eigen::Vector3d TetrahedronCell::normal(const Cell& cell,
                                         std::size_t facet) const
 {
   // Make sure we have facets
@@ -261,18 +261,18 @@ geometry::Point TetrahedronCell::normal(const Cell& cell,
   const Geometry& geometry = cell.mesh().geometry();
 
   // Get the coordinates of the four vertices
-  const geometry::Point P0 = geometry.point(v0);
-  const geometry::Point P1 = geometry.point(v1);
-  const geometry::Point P2 = geometry.point(v2);
-  const geometry::Point P3 = geometry.point(v3);
+  const Eigen::Vector3d P0 = geometry.x(v0);
+  const Eigen::Vector3d P1 = geometry.x(v1);
+  const Eigen::Vector3d P2 = geometry.x(v2);
+  const Eigen::Vector3d P3 = geometry.x(v3);
 
   // Create vectors
-  geometry::Point V0 = P0 - P1;
-  geometry::Point V1 = P2 - P1;
-  geometry::Point V2 = P3 - P1;
+  Eigen::Vector3d V0 = P0 - P1;
+  Eigen::Vector3d V1 = P2 - P1;
+  Eigen::Vector3d V2 = P3 - P1;
 
   // Compute normal vector
-  geometry::Point n = V1.cross(V2);
+  Eigen::Vector3d n = V1.cross(V2);
 
   // Normalize
   n /= n.norm();
@@ -284,10 +284,10 @@ geometry::Point TetrahedronCell::normal(const Cell& cell,
   return n;
 }
 //-----------------------------------------------------------------------------
-geometry::Point TetrahedronCell::cell_normal(const Cell& cell) const
+Eigen::Vector3d TetrahedronCell::cell_normal(const Cell& cell) const
 {
   throw std::runtime_error("Not Implemented");
-  return geometry::Point();
+  return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
 double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
@@ -303,9 +303,9 @@ double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
 
   // Get the coordinates of the three vertices
   const std::int32_t* vertices = f.entities(0);
-  const geometry::Point x0 = geometry.point(vertices[0]);
-  const geometry::Point x1 = geometry.point(vertices[1]);
-  const geometry::Point x2 = geometry.point(vertices[2]);
+  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
+  const Eigen::Vector3d x2 = geometry.x(vertices[2]);
 
   // Compute area of triangle embedded in R^3
   double v0 = (x0[1] * x1[2] + x0[2] * x2[1] + x1[1] * x2[2])
@@ -356,16 +356,16 @@ std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-bool TetrahedronCell::point_outside_of_plane(const geometry::Point& point,
-                                             const geometry::Point& a,
-                                             const geometry::Point& b,
-                                             const geometry::Point& c,
-                                             const geometry::Point& d) const
+bool TetrahedronCell::point_outside_of_plane(const Eigen::Vector3d& point,
+                                             const Eigen::Vector3d& a,
+                                             const Eigen::Vector3d& b,
+                                             const Eigen::Vector3d& c,
+                                             const Eigen::Vector3d& d) const
 {
   // Algorithm from Real-time collision detection by Christer Ericson:
   // PointOutsideOfPlane on page 144, Section 5.1.6.
 
-  const geometry::Point v = (b - a).cross(c - a);
+  const Eigen::Vector3d v = (b - a).cross(c - a);
   const double signp = v.dot(point - a);
   const double signd = v.dot(d - a);
 

@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/geometry/Point.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -60,20 +59,17 @@ public:
   std::size_t num_points_global() const;
 
   /// Return coordinate array for point with local index n
-  Eigen::Ref<const Eigen::Array<double, 1, Eigen::Dynamic>>
+  Eigen::Ref<const Eigen::Vector3d>
   x(std::size_t n) const;
-
-  /// Return coordinate with local index n as a 3D point value
-  geometry::Point point(std::size_t n) const;
 
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
   points();
 
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points (const version)
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
   points() const;
 
   /// Global indices for points (const)
@@ -94,8 +90,11 @@ public:
 
 private:
   // Coordinates for all points stored as a contiguous array
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
       _coordinates;
+
+  // Geometric dimension
+  int _dim;
 
   // Global indices for points
   std::vector<std::int64_t> _global_indices;

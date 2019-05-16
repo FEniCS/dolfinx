@@ -1,3 +1,4 @@
+#include <Eigen/Dense>
 
 #pragma once
 
@@ -13,11 +14,11 @@ void exactinit();
 /// Compute relative orientation of point x wrt segment [a, b]
 double orient1d(double a, double b, double x);
 
-/// Convenience function using dolfin::Point
-double orient2d(const Point& a, const Point& b, const Point& c);
+/// Convenience function using Eigen
+double orient2d(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c);
 
-/// Convenience function using dolfin::Point
-double orient3d(const Point& a, const Point& b, const Point& c, const Point& d);
+/// Convenience function using Eigen
+double orient3d(const Eigen::Vector3d& a, const Eigen::Vector3d& b, const Eigen::Vector3d& c, const Eigen::Vector3d& d);
 
 /// Class used for automatic initialization of tolerances at startup.
 /// A global instance is defined inside predicates.cpp to ensure that

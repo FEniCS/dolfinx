@@ -246,7 +246,7 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Vertex, std::shared_ptr<dolfin::mesh::Vertex>,
              dolfin::mesh::MeshEntity>(m, "Vertex", "Vertex object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def("point", &dolfin::mesh::Vertex::point);
+      .def("point", &dolfin::mesh::Vertex::x);
 
   // dolfin::mesh::Edge
   py::class_<dolfin::mesh::Edge, std::shared_ptr<dolfin::mesh::Edge>,

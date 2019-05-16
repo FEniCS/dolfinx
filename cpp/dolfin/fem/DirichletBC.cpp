@@ -9,11 +9,9 @@
 #include "GenericDofMap.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>

@@ -7,7 +7,6 @@
 #include "PETScDMCollection.h"
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/common/RangedIndexSet.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -95,20 +94,19 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
       x_g
       = mesh.geometry().points();
 
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(element.space_dimension(), gdim);
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
   std::vector<double> coors(gdim);
 
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
       = dofmap.index_map()->size_local() * dofmap.index_map()->block_size();
-  common::RangedIndexSet already_visited(
-      std::array<std::int64_t, 2>{{0, local_size}});
+  std::vector<bool> already_visited(local_size, false);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
@@ -131,7 +129,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       if (dof < local_size)
       {
         // Skip already checked dofs
-        if (!already_visited.insert(dof))
+        if (already_visited[dof])
           continue;
 
         // Put coordinates in coors
@@ -141,12 +139,14 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 
         // Add dof to list at this coord
         const auto ins = coords_to_dofs.insert({coors, {local_to_global[dof]}});
-
         if (!ins.second)
           ins.first->second.push_back(local_to_global[dof]);
+
+        already_visited[dof] = true;
       }
     }
   }
+
   return coords_to_dofs;
 }
 } // namespace
@@ -346,7 +346,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   for (const auto& map_it : coords_to_dofs)
   {
     const std::vector<double>& _x = map_it.first;
-    geometry::Point curr_point(gdim, _x.data());
+    Eigen::Map<const Eigen::Vector3d> curr_point(_x.data());
 
     // Compute which processes' BBoxes contain the fine point
     found_ranks = treec.compute_process_collisions(curr_point);
@@ -388,7 +388,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     unsigned int n_points = recv_found[p].size() / gdim;
     for (unsigned int i = 0; i < n_points; ++i)
     {
-      const geometry::Point curr_point(gdim, &recv_found[p][i * gdim]);
+      Eigen::Map<const Eigen::Vector3d> curr_point(&recv_found[p][i * gdim]);
       send_ids[p].push_back(
           treec.compute_first_entity_collision(curr_point, meshc));
     }
@@ -519,7 +519,6 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> coarse_local_to_global_dofs
       = coarsemap->tabulate_local_to_global_dofs();
 
-
   // Loop over the found coarse cells
   Eigen::Map<const EigenRowArrayXXd> x(found_points.data(), found_ids.size(),
                                        gdim);
@@ -538,10 +537,11 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
       x_g
       = meshc.geometry().points();
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);; // cell dofs coordinates vector
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+  ; // cell dofs coordinates vector
 
   for (unsigned int i = 0; i < found_ids.size(); ++i)
   {
@@ -700,7 +700,7 @@ void PETScDMCollection::find_exterior_points(
     unsigned int n_points = p.size() / dim;
     for (unsigned int i = 0; i < n_points; ++i)
     {
-      const geometry::Point curr_point(dim, &p[i * dim]);
+      Eigen::Map<const Eigen::Vector3d> curr_point(&p[i * dim]);
       std::pair<unsigned int, double> find_point
           = treec.compute_closest_entity(curr_point, meshc);
       send_distance.push_back(find_point.second);

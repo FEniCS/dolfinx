@@ -14,7 +14,7 @@ import numpy as np
 from petsc4py import PETSc
 
 import dolfin
-from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function, Point,
+from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function,
                     TestFunction, TrialFunction, VectorFunctionSpace, cpp)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.io import XDMFFile
@@ -62,8 +62,8 @@ def build_nullspace(V):
 
 # mesh = UnitCubeMesh(2, 2, 2)
 mesh = BoxMesh(
-    MPI.comm_world, [Point(0, 0, 0)._cpp_object,
-                     Point(2, 1, 1)._cpp_object], [12, 12, 12],
+    MPI.comm_world, [np.array([0, 0, 0]),
+                     np.array([2, 1, 1])], [12, 12, 12],
     CellType.Type.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
