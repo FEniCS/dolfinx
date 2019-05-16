@@ -9,7 +9,6 @@
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "Topology.h"
-#include <dolfin/geometry/Point.h>
 
 namespace dolfin
 {
@@ -192,7 +191,7 @@ public:
   ///
   /// @return geometry::Point
   ///         The midpoint of the cell.
-  geometry::Point midpoint() const;
+  Eigen::Vector3d midpoint() const;
 
   /// Determine whether an entity is a 'ghost' from another
   /// process

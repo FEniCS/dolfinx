@@ -20,7 +20,6 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/graph/CSRGraph.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/ParMETIS.h>
@@ -575,6 +574,7 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
 
   // Build mesh from points and distributed cells
   const std::int32_t num_ghosts = new_cell_vertices.rows() - num_regular_cells;
+
   mesh::Mesh mesh(comm, type, points, new_cell_vertices,
                   new_global_cell_indices, ghost_mode, num_ghosts);
 

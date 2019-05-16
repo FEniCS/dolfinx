@@ -15,11 +15,6 @@
 namespace dolfin
 {
 
-namespace geometry
-{
-class Point;
-}
-
 namespace generation
 {
 
@@ -53,7 +48,7 @@ public:
   ///         8});
   /// @endcode
   static mesh::Mesh
-  create(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
+    create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
          std::array<std::size_t, 2> n, mesh::CellType::Type cell_type,
          const mesh::GhostMode ghost_mode, std::string diagonal = "right");
 };

@@ -6,7 +6,6 @@
 
 #include "Face.h"
 #include "Cell.h"
-#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -43,7 +42,7 @@ double Face::area() const
   }
 }
 //-----------------------------------------------------------------------------
-geometry::Point Face::normal() const
+Eigen::Vector3d Face::normal() const
 {
   assert(_mesh);
 

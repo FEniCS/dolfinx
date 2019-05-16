@@ -129,7 +129,7 @@ void SubDomain::apply_markers(std::map<std::size_t, std::size_t>& sub_domains,
     // Check midpoint (works also in the case when we have a single vertex)
     if (all_points_inside && check_midpoint)
     {
-      Eigen::Map<EigenRowArrayXd> x(entity.midpoint().coordinates(), gdim);
+      Eigen::Map<EigenRowArrayXd> x(entity.midpoint().data(), gdim);
       if (!inside(x, on_boundary)[0])
         all_points_inside = false;
     }

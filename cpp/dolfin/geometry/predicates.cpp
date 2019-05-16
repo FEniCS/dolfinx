@@ -1,5 +1,4 @@
 #include "predicates.h"
-#include <dolfin/geometry/Point.h>
 
 //-----------------------------------------------------------------------------
 double dolfin::geometry::orient1d(double a, double b, double x)
@@ -11,18 +10,19 @@ double dolfin::geometry::orient1d(double a, double b, double x)
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double dolfin::geometry::orient2d(const Point& a, const Point& b,
-                                  const Point& c)
+double dolfin::geometry::orient2d(const Eigen::Vector3d& a,
+                                  const Eigen::Vector3d& b,
+                                  const Eigen::Vector3d& c)
 {
-  return dolfin::geometry::_orient2d(a.coordinates(), b.coordinates(),
-                                     c.coordinates());
+  return dolfin::geometry::_orient2d(a.data(), b.data(), c.data());
 }
 //-----------------------------------------------------------------------------
-double dolfin::geometry::orient3d(const Point& a, const Point& b,
-                                  const Point& c, const Point& d)
+double dolfin::geometry::orient3d(const Eigen::Vector3d& a,
+                                  const Eigen::Vector3d& b,
+                                  const Eigen::Vector3d& c,
+                                  const Eigen::Vector3d& d)
 {
-  return dolfin::geometry::_orient3d(a.coordinates(), b.coordinates(),
-                                     c.coordinates(), d.coordinates());
+  return dolfin::geometry::_orient3d(a.data(), b.data(), c.data(), d.data());
 }
 //-----------------------------------------------------------------------------
 

@@ -546,7 +546,7 @@ def test_save_points_2D(tempdir, encoding):
     points, values = [], []
     for v in Vertices(mesh):
         points.append(v.point())
-        values.append(v.point().norm())
+        values.append(numpy.linalg.norm(v.point()))
     vals = numpy.array(values)
 
     with XDMFFile(
@@ -568,7 +568,7 @@ def test_save_points_3D(tempdir, encoding):
     points, values = [], []
     for v in Vertices(mesh):
         points.append(v.point())
-        values.append(v.point().norm())
+        values.append(numpy.linalg.norm(v.point()))
     vals = numpy.array(values)
 
     with XDMFFile(

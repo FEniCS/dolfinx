@@ -17,7 +17,6 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Mesh.h>
@@ -158,8 +157,7 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   // Find the cell that contains x
   for (unsigned int i = 0; i < x.rows(); ++i)
   {
-    const double* _x = x.row(i).data();
-    const geometry::Point point(mesh.geometry().dim(), _x);
+    const Eigen::Vector3d point = x.row(i).matrix().transpose();
 
     // Get index of first cell containing point
     unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
