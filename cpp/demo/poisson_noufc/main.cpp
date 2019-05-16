@@ -301,8 +301,7 @@ void tabulate_tensor_linear(ufc_scalar_t* A, const ufc_scalar_t* w,
       = {{{0.6666666666666669, 0.1666666666666666, 0.1666666666666667},
           {0.1666666666666667, 0.1666666666666666, 0.6666666666666665},
           {0.1666666666666667, 0.6666666666666666, 0.1666666666666666}}};
-  alignas(32) static const ufc_scalar_t FE4_C0_D01_Q3[1][1][2]
-      = {{{-1.0, 1.0}}};
+
   // Unstructured piecewise computations
   const double J_c0 = -coordinate_dofs[0] + coordinate_dofs[2];
   const double J_c3 = -coordinate_dofs[1] + coordinate_dofs[5];
@@ -460,8 +459,8 @@ int main(int argc, char* argv[])
   common::SubSystemsManager::init_petsc(argc, argv);
 
   // Create mesh and function space
-  std::array<geometry::Point, 2> pt
-      = {geometry::Point(0., 0.), geometry::Point(1., 1.)};
+  std::array<Eigen::Vector3d, 2> pt
+      = {Eigen::Vector3d(0., 0., 0.), Eigen::Vector3d(1., 1., 0.)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
       mesh::GhostMode::none));

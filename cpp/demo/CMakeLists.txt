@@ -7,7 +7,8 @@ find_package(DOLFIN REQUIRED)
 # include(${DOLFIN_USE_FILE})
 
 # Demos that run in real and complex modes
-add_subdirectory(poisson poisson_noufc)
+add_subdirectory(poisson)
+add_subdirectory(poisson_noufc)
 
 # Demos that run only in real mode
 if (NOT PETSC_SCALAR_COMPLEX)
