@@ -229,7 +229,7 @@ void Function::eval(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
       x_g
       = mesh.geometry().points();
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
@@ -384,7 +384,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
       x_g
       = mesh.geometry().points();
 

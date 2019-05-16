@@ -27,9 +27,9 @@ mesh::Mesh build_tet(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   // Receive mesh if not rank 0
   if (dolfin::MPI::rank(comm) != 0)
   {
-    Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> geom(
+    Eigen::Array<double, 0, 3, Eigen::RowMajor> geom(
         0, 3);
-    Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    Eigen::Array<std::int64_t, 0, 4, Eigen::RowMajor>
         topo(0, 4);
 
     return mesh::Partitioning::build_distributed_mesh(
