@@ -79,7 +79,7 @@ PetscScalar fem::impl::assemble_cells(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
       x_g
       = mesh.geometry().points();
 
@@ -138,7 +138,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
       x_g
       = mesh.geometry().points();
 
