@@ -40,7 +40,7 @@ class KaHIP
 {
 #ifdef HAS_KAHIP
 public:
-  // Standard ParMETIS partition
+  // Standard KaHIP partition
   void partition(MPI_Comm mpi_comm, const CSRGraph<idxtype>& csr_graph);
 
 #endif

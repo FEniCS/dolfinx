@@ -68,18 +68,35 @@ find_library(KAHIP_LIBRARY parhip
   DOC "Directory where the KaHIP library is located"
 )
 
-# Add MPI variables if MPI has been found
-if (MPI_CXX_FOUND)
-  set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${MPI_CXX_INCLUDE_PATH})
-  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${MPI_CXX_LIBRARIES})
-  set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-endif()
 
 set(KAHIP_LIBRARIES ${KAHIP_LIBRARY})
+
+# Set flags for building test program
+set(CMAKE_REQUIRED_INCLUDES  ${KAHIP_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
+set(CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARIES}    ${MPI_CXX_LIBRARIES})
+set(CMAKE_REQUIRED_FLAGS     ${CMAKE_REQUIRED_FLAGS}  ${MPI_CXX_COMPILE_FLAGS})
+
+
+# Build and run test program
+include(CheckCXXSourceRuns)
+
+check_cxx_source_runs("
+#define MPICH_IGNORE_CXX_SEEK 1
+#include <mpi.h>
+
+#include <parhip_interface.h>
+
+int main()
+{
+return 0;
+}
+" KAHIP_TEST_RUNS)
+
 
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(KaHIP
                                   "KaHIP could not be found/configured."
+                                  KAHIP_LIBRARIES
                                   KAHIP_INCLUDE_DIRS
-                                  KAHIP_LIBRARIES)
+                                  KAHIP_TEST_RUNS)
