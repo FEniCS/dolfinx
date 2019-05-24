@@ -238,7 +238,7 @@ if (DOLFIN_ENABLE_PARMETIS)
 endif()
 
 # Check for KaHIP
-if (DOLFIN_ENABLE_PARMETIS)
+if (DOLFIN_ENABLE_KAHIP)
   find_package(KaHIP)
   set_package_properties(KaHIP PROPERTIES TYPE OPTIONAL
     DESCRIPTION "A family of graph partitioning programs"

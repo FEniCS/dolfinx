@@ -47,26 +47,24 @@ find_path(KAHIP_INCLUDE_DIRS parhip_interface.h
   )
 
 
-find_library(KAHIP_LIBRARY kahip
+# find_library(KAHIP_LIBRARY kahip
+#   HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
+#   NO_DEFAULT_PATH
+#   DOC "Directory where the KaHIP library is located"
+# )
+#
+# find_library(KAHIP_LIBRARY kahip
+#   DOC "Directory where the KaHIP library is located"
+# )
+
+find_library(KAHIP_LIBRARY parhip
   HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
   NO_DEFAULT_PATH
   DOC "Directory where the KaHIP library is located"
 )
 
-find_library(KAHIP_LIBRARY kahip
-  DOC "Directory where the KaHIP library is located"
-)
 
-find_library(PARHIP_LIBRARY parhip
-  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
-  NO_DEFAULT_PATH
-  DOC "Directory where the KaHIP library is located"
-)
-
-
-find_library(PARHIP_LIBRARY parhip
-  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
-  NO_DEFAULT_PATH
+find_library(KAHIP_LIBRARY parhip
   DOC "Directory where the KaHIP library is located"
 )
 
@@ -77,11 +75,7 @@ if (MPI_CXX_FOUND)
   set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
 endif()
 
-set(KAHIP_LIBRARIES ${KAHIP_LIBRARY} ${PARHIP_LIBRARY})
-
-message(STATUS "--------------------------------------: ${KAHIP_INCLUDE_DIRS}")
-message(STATUS "'KaHIP' Library: ${PARHIP_LIBRARY}")
-
+set(KAHIP_LIBRARIES ${KAHIP_LIBRARY})
 
 
 include(FindPackageHandleStandardArgs)

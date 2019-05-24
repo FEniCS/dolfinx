@@ -17,7 +17,7 @@
 #include <vector>
 
 #ifdef HAS_KAHIP
-#include "parhip_interface.h"
+#include <parhip_interface.h>
 #endif
 
 namespace dolfin
