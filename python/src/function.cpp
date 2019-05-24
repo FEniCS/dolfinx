@@ -13,7 +13,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SpecialFunctions.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>

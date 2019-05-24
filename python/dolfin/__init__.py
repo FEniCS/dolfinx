@@ -39,7 +39,6 @@ from dolfin.common import (has_debug, has_petsc_complex,
 import dolfin.MPI
 import dolfin.log
 
-from dolfin.geometry import  Point
 from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 

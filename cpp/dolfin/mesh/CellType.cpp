@@ -16,7 +16,6 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <array>
-#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -127,17 +126,17 @@ double CellType::h(const MeshEntity& entity) const
   // Get the coordinates (Points) of the vertices
   const std::int32_t* vertices = entity.entities(0);
   assert(vertices);
-  std::array<geometry::Point, 8> points;
+  std::array<Eigen::Vector3d, 8> points;
   assert(num_vertices <= 8);
   for (int i = 0; i < num_vertices; ++i)
-    points[i] = geometry.point(vertices[i]);
+    points[i] = geometry.x(vertices[i]);
 
   // Get maximum edge length
   double h = 0.0;
   for (int i = 0; i < num_vertices; ++i)
   {
     for (int j = i + 1; j < num_vertices; ++j)
-      h = std::max(h, points[i].distance(points[j]));
+      h = std::max(h, (points[i] - points[j]).norm());
   }
 
   return h;

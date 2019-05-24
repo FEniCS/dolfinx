@@ -64,35 +64,28 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-geometry::Point MeshEntity::midpoint() const
+Eigen::Vector3d MeshEntity::midpoint() const
 {
   // Special case: a vertex is its own midpoint (don't check neighbors)
   if (_dim == 0)
-    return _mesh->geometry().point(_local_index);
+    return _mesh->geometry().x(_local_index);
 
   // Otherwise iterate over incident vertices and compute average
   std::size_t num_vertices = 0;
 
-  double x = 0.0;
-  double y = 0.0;
-  double z = 0.0;
+  Eigen::Vector3d x;
+  x.setZero();
 
   for (auto& v : EntityRange<Vertex>(*this))
   {
-    x += v.point()[0];
-    y += v.point()[1];
-    z += v.point()[2];
-    num_vertices++;
+    x += v.x();
+    ++num_vertices;
   }
 
   assert(num_vertices > 0);
-
   x /= double(num_vertices);
-  y /= double(num_vertices);
-  z /= double(num_vertices);
 
-  geometry::Point p(x, y, z);
-  return p;
+  return x;
 }
 //-----------------------------------------------------------------------------
 std::uint32_t MeshEntity::owner() const

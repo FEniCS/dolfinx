@@ -164,8 +164,10 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Create mesh and define function space
-  std::array<geometry::Point, 2> pt
-      = {geometry::Point(0.0, 0.0, 0.0), geometry::Point(1.0, 1.0, 1.0)};
+  std::array<Eigen::Vector3d, 2> pt;
+  pt[0] << 0., 0., 0.;
+  pt[1] << 1., 1., 1.;
+
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
       MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::Type::tetrahedron,
       mesh::GhostMode::none));

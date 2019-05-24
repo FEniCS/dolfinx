@@ -9,7 +9,6 @@
 #include <cfloat>
 #include <cmath>
 #include <dolfin/common/MPI.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;
@@ -18,7 +17,7 @@ using namespace dolfin::generation;
 namespace
 {
 //-----------------------------------------------------------------------------
-mesh::Mesh build_tri(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
+mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                      std::array<std::size_t, 2> n,
                      const mesh::GhostMode ghost_mode, std::string diagonal)
 {
@@ -38,8 +37,8 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
     std::runtime_error("Unknown mesh diagonal definition.");
   }
 
-  const geometry::Point& p0 = p[0];
-  const geometry::Point& p1 = p[1];
+  const Eigen::Vector3d& p0 = p[0];
+  const Eigen::Vector3d& p1 = p[1];
 
   const std::size_t nx = n[0];
   const std::size_t ny = n[1];
@@ -196,7 +195,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
       comm, mesh::CellType::Type::triangle, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh build_quad(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
+mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
                       std::array<std::size_t, 2> n,
                       const mesh::GhostMode ghost_mode)
 {
@@ -257,7 +256,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<geometry::Point, 2>& p,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
-                                 const std::array<geometry::Point, 2>& p,
+                                 const std::array<Eigen::Vector3d, 2>& p,
                                  std::array<std::size_t, 2> n,
                                  mesh::CellType::Type cell_type,
                                  const mesh::GhostMode ghost_mode,

@@ -81,7 +81,7 @@ import numpy as np
 import dolfin
 import dolfin.plotting
 import ufl
-from dolfin import (MPI, CellType, DirichletBC, Function, FunctionSpace, Point,
+from dolfin import (MPI, CellType, DirichletBC, Function, FunctionSpace,
                     RectangleMesh, TestFunction, TrialFunction, solve)
 from dolfin.function.specialfunctions import SpatialCoordinate
 from dolfin.io import XDMFFile
@@ -97,7 +97,7 @@ from ufl import ds, dx, grad, inner
 # Create mesh and define function space
 mesh = RectangleMesh(
     MPI.comm_world,
-    [Point(0, 0)._cpp_object, Point(1, 1)._cpp_object], [32, 32],
+    [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
     CellType.Type.triangle, dolfin.cpp.mesh.GhostMode.none)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 

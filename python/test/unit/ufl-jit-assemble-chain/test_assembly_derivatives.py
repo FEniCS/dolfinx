@@ -7,10 +7,10 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 import math
-
+import numpy
 import pytest
 
-from dolfin import MPI, FacetNormal, Point, RectangleMesh, UnitIntervalMesh
+from dolfin import MPI, FacetNormal, RectangleMesh, UnitIntervalMesh
 from dolfin.function.specialfunctions import SpatialCoordinate
 from ufl import (acos, as_matrix, as_vector, asin, atan, cos, cross, det, dev,
                  diff, div, dot, ds, dx, elem_div, elem_mult, elem_op,
@@ -150,7 +150,8 @@ def test_div_grad_then_integrate_over_cells_and_boundary():
 
     # Define 2D geometry
     n = 10
-    mesh = RectangleMesh(Point(0.0, 0.0), Point(2.0, 3.0), 2 * n, 3 * n)
+    mesh = RectangleMesh([numpy.array([0.0, 0.0, 0.0]),
+                          numpy.array([2.0, 3.0, 0.0])], 2 * n, 3 * n)
 
     x, y = SpatialCoordinate(mesh)
     xs = 0.1 + 0.8 * x / 2  # scaled to be within [0.1,0.9]

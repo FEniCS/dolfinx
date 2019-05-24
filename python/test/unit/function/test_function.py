@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 
 import ufl
-from dolfin import (MPI, Expression, Function, FunctionSpace, Point,
+from dolfin import (MPI, Expression, Function, FunctionSpace,
                     TensorFunctionSpace, UnitCubeMesh, VectorFunctionSpace,
                     Vertex, cpp, function, interpolate)
 from dolfin_utils.test.fixtures import fixture
@@ -193,7 +193,7 @@ def test_call(R, V, W, Q, mesh):
     u2.interpolate(e2)
     u3.interpolate(e3)
 
-    p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0).array()
+    p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0)
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
 
     tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
@@ -286,15 +286,15 @@ def test_near_evaluations(R, mesh):
     bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)
     u0.vector().set(1.0)
-    a = Vertex(mesh, 0).point().array()
+    a = Vertex(mesh, 0).point()
     offset = 0.99 * np.finfo(float).eps
 
-    a_shift_x = Point(a[0] - offset, a[1], a[2]).array()
+    a_shift_x = np.array([a[0] - offset, a[1], a[2]])
     assert round(u0(a, bb_tree)[0] - u0(a_shift_x, bb_tree)[0], 7) == 0
 
-    a_shift_xyz = Point(a[0] - offset / math.sqrt(3),
-                        a[1] - offset / math.sqrt(3),
-                        a[2] - offset / math.sqrt(3)).array()
+    a_shift_xyz = np.array([a[0] - offset / math.sqrt(3),
+                            a[1] - offset / math.sqrt(3),
+                            a[2] - offset / math.sqrt(3)])
     assert round(u0(a, bb_tree)[0] - u0(a_shift_xyz, bb_tree)[0], 7) == 0
 
 

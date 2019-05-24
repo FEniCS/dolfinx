@@ -131,9 +131,8 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           visited[e.index()] = true;
 
         // Copy entity coordinate
-        const geometry::Point midpoint = e.midpoint();
-        std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
-                  x.begin());
+        const Eigen::Vector3d midpoint = e.midpoint();
+        std::copy(midpoint.data(), midpoint.data() + gdim, x.begin());
 
         // Check if entity lies on a 'master' or 'slave' boundary
         if (sub_domain.inside(_x, true)[0])

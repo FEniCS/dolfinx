@@ -1,4 +1,4 @@
-// Copyright (C) 2005-2009 Garth N. Wells
+// Copyright (C) 2005-2019 Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -29,144 +29,135 @@
 using namespace dolfin;
 using namespace dolfin::io;
 
-//----------------------------------------------------------------------------
-VTKFile::VTKFile(const std::string filename) : _filename(filename), counter(0)
+namespace
 {
-  // Do nothing
-}
-//----------------------------------------------------------------------------
-VTKFile::~VTKFile()
-{
-  // Do nothing
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::Mesh& mesh) { write_mesh(mesh, counter); }
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<bool>& meshfunction)
-{
-  mesh_function_write(meshfunction, counter);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<std::size_t>& meshfunction)
-{
-  mesh_function_write(meshfunction, counter);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<int>& meshfunction)
-{
-  mesh_function_write(meshfunction, counter);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<double>& meshfunction)
-{
-  mesh_function_write(meshfunction, counter);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const function::Function& u) { write_function(u, counter); }
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::Mesh& mesh, double time)
-{
-  write_mesh(mesh, time);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<int>& mf, double time)
-{
-  mesh_function_write(mf, time);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<std::size_t>& mf, double time)
-{
-  mesh_function_write(mf, time);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<double>& mf, double time)
-{
-  mesh_function_write(mf, time);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const mesh::MeshFunction<bool>& mf, double time)
-{
-  mesh_function_write(mf, time);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write(const function::Function& u, double time)
-{
-  write_function(u, time);
-}
-//----------------------------------------------------------------------------
-void VTKFile::write_function(const function::Function& u, double time)
-{
-  assert(u.function_space()->mesh());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
+void write_function(const function::Function& u, const std::string filename,
+                    const std::size_t counter, double time);
+void write_mesh(const mesh::Mesh& mesh, const std::string filename,
+                const std::size_t counter, double time);
+std::string init(const mesh::Mesh& mesh, const std::string filename,
+                 const std::size_t counter, std::size_t dim);
+void results_write(const function::Function& u, std::string file);
+void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
+                      std::string file);
+void pvd_file_write(std::size_t step, double time, const std::string filename,
+                    std::string file);
+void pvtu_write_function(std::size_t dim, std::size_t rank,
+                         const std::string data_location,
+                         const std::string name, const std::string filename,
+                         const std::string fname, const std::size_t counter,
+                         std::size_t num_processes);
+void pvtu_write_mesh(const std::string filename,
+                     const std::string pvtu_filename, const std::size_t counter,
+                     const std::size_t num_processes);
+void pvtu_write(const function::Function& u, const std::string filename,
+                const std::string pvtu_filename, const std::size_t counter);
+void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
+                     const std::string vtu_filename);
+void vtk_header_close(std::string file);
+std::string vtu_name(const int process, const int num_processes,
+                     const int counter, const std::string filename,
+                     const std::string ext);
+void clear_file(std::string file);
+template <typename T>
+void mesh_function_write(T& meshfunction, const std::string filename,
+                         const std::size_t counter, double time);
+std::string strip_path(const std::string filename, const std::string file);
+void pvtu_write_mesh(pugi::xml_node xml_node);
 
-  // Get MPI communicator
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
+//----------------------------------------------------------------------------
+void vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
+                     const std::string vtu_filename)
+{
+  // Open file
+  std::ofstream file(vtu_filename.c_str(), std::ios::app);
+  file.precision(16);
+  if (!file.is_open())
+    throw std::runtime_error("Unable to open file " + vtu_filename);
 
-  // Get vtu file name and initialise
-  std::string vtu_filename = init(mesh, mesh.topology().dim());
+  // Write headers
+  file << "<?xml version=\"1.0\"?>" << std::endl;
+  file << "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" "
+       << ">" << std::endl;
+  file << "<UnstructuredGrid>" << std::endl;
+  file << "<Piece  NumberOfPoints=\"" << num_vertices << "\" NumberOfCells=\""
+       << num_cells << "\">" << std::endl;
 
-  // Write mesh
-  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename);
-
-  // Write results
-  results_write(u, vtu_filename);
-
-  // Parallel-specific files
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
+  // Close file
+  file.close();
+}
+//----------------------------------------------------------------------------
+void vtk_header_close(std::string vtu_filename)
+{
+  // Open file
+  std::ofstream file(vtu_filename.c_str(), std::ios::app);
+  file.precision(16);
+  if (!file.is_open())
   {
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    pvtu_write(u, pvtu_filename);
-    pvd_file_write(counter, time, pvtu_filename);
+    throw std::runtime_error("IO Error");
   }
-  else if (num_processes == 1)
-    pvd_file_write(counter, time, vtu_filename);
 
-  // Finalise and write pvd files
-  finalize(vtu_filename, time);
+  // Close headers
+  file << "</Piece>" << std::endl
+       << "</UnstructuredGrid>" << std::endl
+       << "</VTKFile>";
 
-  DLOG(INFO) << "Saved function \"" << u.name() << "\" to file \"" << _filename
-             << "\" in VTK format.";
+  // Close file
+  file.close();
 }
 //----------------------------------------------------------------------------
-void VTKFile::write_mesh(const mesh::Mesh& mesh, double time)
+std::string vtu_name(const int process, const int num_processes,
+                     const int counter, const std::string filename,
+                     const std::string ext)
 {
-  common::Timer t("Write mesh to PVD/VTK file");
+  std::string filestart, extension;
+  std::ostringstream fileid, newfilename;
 
-  // Get MPI communicator
-  const MPI_Comm mpi_comm = mesh.mpi_comm();
+  fileid.fill('0');
+  fileid.width(6);
 
-  // Get vtu file name and initialise out files
-  std::string vtu_filename = init(mesh, mesh.topology().dim());
+  filestart.assign(filename, 0, filename.find_last_of("."));
+  extension.assign(filename, filename.find_last_of("."), filename.size());
 
-  // Write local mesh to vtu file
-  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename);
+  fileid << counter;
 
-  // Parallel-specific files
-  const std::size_t num_processes = MPI::size(mpi_comm);
-  if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
+  // Add process number to .vtu file name
+  std::string proc = "";
+  if (num_processes > 1)
   {
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    pvtu_write_mesh(pvtu_filename, num_processes);
-    pvd_file_write(counter, time, pvtu_filename);
+    std::ostringstream _p;
+    _p << "_p" << process << "_";
+    proc = _p.str();
   }
-  else if (num_processes == 1)
-    pvd_file_write(counter, time, vtu_filename);
+  newfilename << filestart << proc << fileid.str() << ext;
 
-  // Finalise
-  finalize(vtu_filename, time);
-
-  DLOG(INFO) << "Saved mesh in VTK format to file:" << _filename;
+  return newfilename.str();
 }
 //----------------------------------------------------------------------------
-std::string VTKFile::init(const mesh::Mesh& mesh, std::size_t cell_dim) const
+void clear_file(std::string file)
+{
+  std::ofstream _file(file.c_str(), std::ios::trunc);
+  if (!_file.is_open())
+    throw std::runtime_error("IO Error");
+  _file.close();
+}
+//----------------------------------------------------------------------------
+std::string strip_path(const std::string filename, const std::string file)
+{
+  std::string fname;
+  fname.assign(file, filename.find_last_of("/") + 1, file.size());
+  return fname;
+}
+//----------------------------------------------------------------------------
+std::string init(const mesh::Mesh& mesh, const std::string filename,
+                 const std::size_t counter, std::size_t cell_dim)
 {
   // Get MPI communicators
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get vtu file name and clear file
-  std::string vtu_filename
-      = vtu_name(MPI::rank(mpi_comm), MPI::size(mpi_comm), counter, ".vtu");
+  std::string vtu_filename = vtu_name(MPI::rank(mpi_comm), MPI::size(mpi_comm),
+                                      counter, filename, ".vtu");
   clear_file(vtu_filename);
 
   // Number of cells and vertices
@@ -179,17 +170,124 @@ std::string VTKFile::init(const mesh::Mesh& mesh, std::size_t cell_dim) const
   return vtu_filename;
 }
 //----------------------------------------------------------------------------
-void VTKFile::finalize(std::string vtu_filename, double time)
+template <typename T>
+void mesh_function_write(T& meshfunction, const std::string filename,
+                         const std::size_t counter, double time)
 {
-  // Close headers
-  vtk_header_close(vtu_filename);
+  const mesh::Mesh& mesh = *meshfunction.mesh();
+  const std::size_t cell_dim = meshfunction.dim();
 
-  // Increase the number of times we have saved the object
-  counter++;
+  // Update vtu file name and clear file
+  std::string vtu_filename = init(mesh, filename, counter, cell_dim);
+
+  // Write mesh
+  VTKWriter::write_mesh(mesh, cell_dim, vtu_filename);
+
+  // Open file to write data
+  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
+  fp.precision(16);
+  fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
+  fp << "<DataArray  type=\"Float64\"  Name=\"" << meshfunction.name()
+     << "\"  format=\"ascii\">";
+
+  // Write data
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+    fp << meshfunction[cell.index()] << " ";
+
+  // Write footers
+  fp << "</DataArray>" << std::endl;
+  fp << "</CellData>" << std::endl;
+
+  // Close file
+  fp.close();
+
+  // Parallel-specific files
+  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
+  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
+  if (num_processes > 1 && process_number == 0)
+  {
+    std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
+    pvtu_write_function(1, 0, "cell", meshfunction.name(), filename,
+                        pvtu_filename, counter, num_processes);
+    pvd_file_write(counter, time, filename, pvtu_filename);
+  }
+  else if (num_processes == 1)
+    pvd_file_write(counter, time, filename, vtu_filename);
+
+  // Write pvd files
+  vtk_header_close(vtu_filename);
 }
 //----------------------------------------------------------------------------
-void VTKFile::results_write(const function::Function& u,
-                            std::string vtu_filename) const
+void write_function(const function::Function& u, const std::string filename,
+                    const std::size_t counter, double time)
+{
+  assert(u.function_space()->mesh());
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
+
+  // Get MPI communicator
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
+
+  // Get vtu file name and initialise
+  std::string vtu_filename
+      = init(mesh, filename, counter, mesh.topology().dim());
+
+  // Write mesh
+  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename);
+
+  // Write results
+  results_write(u, vtu_filename);
+
+  // Parallel-specific files
+  const std::size_t num_processes = MPI::size(mpi_comm);
+  if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
+  {
+    std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
+    pvtu_write(u, filename, pvtu_filename, counter);
+    pvd_file_write(counter, time, filename, pvtu_filename);
+  }
+  else if (num_processes == 1)
+    pvd_file_write(counter, time, filename, vtu_filename);
+
+  // Finalise and write pvd files
+  vtk_header_close(vtu_filename);
+
+  DLOG(INFO) << "Saved function \"" << u.name() << "\" to file \"" << filename
+             << "\" in VTK format.";
+}
+//----------------------------------------------------------------------------
+void write_mesh(const mesh::Mesh& mesh, const std::string filename,
+                const std::size_t counter, double time)
+{
+  common::Timer t("Write mesh to PVD/VTK file");
+
+  // Get MPI communicator
+  const MPI_Comm mpi_comm = mesh.mpi_comm();
+
+  // Get vtu file name and initialise out files
+  std::string vtu_filename
+      = init(mesh, filename, counter, mesh.topology().dim());
+
+  // Write local mesh to vtu file
+  VTKWriter::write_mesh(mesh, mesh.topology().dim(), vtu_filename);
+
+  // Parallel-specific files
+  const std::size_t num_processes = MPI::size(mpi_comm);
+  if (num_processes > 1 && MPI::rank(mpi_comm) == 0)
+  {
+    std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
+    pvtu_write_mesh(filename, pvtu_filename, counter, num_processes);
+    pvd_file_write(counter, time, filename, pvtu_filename);
+  }
+  else if (num_processes == 1)
+    pvd_file_write(counter, time, filename, vtu_filename);
+
+  // Finalise
+  vtk_header_close(vtu_filename);
+
+  DLOG(INFO) << "Saved mesh in VTK format to file:" << filename;
+}
+//----------------------------------------------------------------------------
+void results_write(const function::Function& u, std::string vtu_filename)
 {
   // Get rank of function::Function
   const std::size_t rank = u.value_rank();
@@ -239,9 +337,8 @@ void VTKFile::results_write(const function::Function& u,
     write_point_data(u, mesh, vtu_filename);
 }
 //----------------------------------------------------------------------------
-void VTKFile::write_point_data(const function::Function& u,
-                               const mesh::Mesh& mesh,
-                               std::string vtu_filename) const
+void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
+                      std::string vtu_filename)
 {
   const std::size_t rank = u.value_rank();
 
@@ -320,7 +417,8 @@ void VTKFile::write_point_data(const function::Function& u,
   fp << "</PointData> " << std::endl;
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
+void pvd_file_write(std::size_t step, double time, const std::string filename,
+                    std::string fname)
 {
   pugi::xml_document xml_doc;
   if (step == 0)
@@ -332,7 +430,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
   }
   else
   {
-    pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+    pugi::xml_parse_result result = xml_doc.load_file(filename.c_str());
     if (!result)
     {
       throw std::runtime_error(
@@ -342,7 +440,7 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
   }
 
   // Remove directory path from name for pvd file
-  const std::string fname_strip = strip_path(fname);
+  const std::string fname_strip = strip_path(filename, fname);
 
   // Get Collection node
   pugi::xml_node xml_collections = xml_doc.child("VTKFile").child("Collection");
@@ -355,10 +453,10 @@ void VTKFile::pvd_file_write(std::size_t step, double time, std::string fname)
   dataset_node.append_attribute("file") = fname_strip.c_str();
 
   // Save file
-  xml_doc.save_file(_filename.c_str(), "  ");
+  xml_doc.save_file(filename.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node) const
+void pvtu_write_mesh(pugi::xml_node xml_node)
 {
   // mesh::Vertex data
   pugi::xml_node vertex_data_node = xml_node.append_child("PPoints");
@@ -382,11 +480,11 @@ void VTKFile::pvtu_write_mesh(pugi::xml_node xml_node) const
   data_node.append_attribute("Name") = "types";
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
-                                  const std::string data_location,
-                                  const std::string name,
-                                  const std::string fname,
-                                  std::size_t num_processes) const
+void pvtu_write_function(std::size_t dim, std::size_t rank,
+                         const std::string data_location,
+                         const std::string name, const std::string filename,
+                         const std::string fname, const std::size_t counter,
+                         std::size_t num_processes)
 {
   // Create xml doc
   pugi::xml_document xml_doc;
@@ -454,7 +552,7 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
   for (std::size_t i = 0; i < num_processes; i++)
   {
     const std::string tmp_string
-        = strip_path(vtu_name(i, num_processes, counter, ".vtu"));
+        = vtu_name(i, num_processes, counter, filename, ".vtu");
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
@@ -462,8 +560,8 @@ void VTKFile::pvtu_write_function(std::size_t dim, std::size_t rank,
   xml_doc.save_file(fname.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write_mesh(const std::string fname,
-                              const std::size_t num_processes) const
+void pvtu_write_mesh(const std::string filename, const std::string fname,
+                     const std::size_t counter, const std::size_t num_processes)
 {
   // Create xml doc
   pugi::xml_document xml_doc;
@@ -480,7 +578,7 @@ void VTKFile::pvtu_write_mesh(const std::string fname,
   for (std::size_t i = 0; i < num_processes; i++)
   {
     const std::string tmp_string
-        = strip_path(vtu_name(i, num_processes, counter, ".vtu"));
+        = vtu_name(i, num_processes, counter, filename, ".vtu");
     pugi::xml_node piece_node = grid_node.append_child("Piece");
     piece_node.append_attribute("Source") = tmp_string.c_str();
   }
@@ -488,8 +586,8 @@ void VTKFile::pvtu_write_mesh(const std::string fname,
   xml_doc.save_file(fname.c_str(), "  ");
 }
 //----------------------------------------------------------------------------
-void VTKFile::pvtu_write(const function::Function& u,
-                         const std::string fname) const
+void pvtu_write(const function::Function& u, const std::string filename,
+                const std::string fname, const std::size_t counter)
 {
   assert(u.function_space()->element());
   const std::size_t rank = u.function_space()->element()->value_rank();
@@ -516,140 +614,93 @@ void VTKFile::pvtu_write(const function::Function& u,
     data_type = "cell";
 
   const std::size_t num_processes = MPI::size(mesh.mpi_comm());
-  pvtu_write_function(dim, rank, data_type, u.name(), fname, num_processes);
+  pvtu_write_function(dim, rank, data_type, u.name(), filename, fname, counter,
+                      num_processes);
 }
 //----------------------------------------------------------------------------
-void VTKFile::vtk_header_open(std::size_t num_vertices, std::size_t num_cells,
-                              std::string vtu_filename) const
+
+} // namespace
+
+//----------------------------------------------------------------------------
+VTKFile::VTKFile(const std::string filename) : _filename(filename), _counter(0)
 {
-  // Open file
-  std::ofstream file(vtu_filename.c_str(), std::ios::app);
-  file.precision(16);
-  if (!file.is_open())
-  {
-    throw std::runtime_error("Unable to open file " + _filename);
-  }
-
-  // Write headers
-  file << "<?xml version=\"1.0\"?>" << std::endl;
-  file << "<VTKFile type=\"UnstructuredGrid\"  version=\"0.1\" "
-       << ">" << std::endl;
-  file << "<UnstructuredGrid>" << std::endl;
-  file << "<Piece  NumberOfPoints=\"" << num_vertices << "\" NumberOfCells=\""
-       << num_cells << "\">" << std::endl;
-
-  // Close file
-  file.close();
+  // Do nothing
 }
 //----------------------------------------------------------------------------
-void VTKFile::vtk_header_close(std::string vtu_filename) const
+VTKFile::~VTKFile()
 {
-  // Open file
-  std::ofstream file(vtu_filename.c_str(), std::ios::app);
-  file.precision(16);
-  if (!file.is_open())
-  {
-    throw std::runtime_error("IO Error");
-  }
-
-  // Close headers
-  file << "</Piece>" << std::endl
-       << "</UnstructuredGrid>" << std::endl
-       << "</VTKFile>";
-
-  // Close file
-  file.close();
+  // Do nothing
 }
 //----------------------------------------------------------------------------
-std::string VTKFile::vtu_name(const int process, const int num_processes,
-                              const int counter, std::string ext) const
+void VTKFile::write(const mesh::Mesh& mesh)
 {
-  std::string filestart, extension;
-  std::ostringstream fileid, newfilename;
-
-  fileid.fill('0');
-  fileid.width(6);
-
-  filestart.assign(_filename, 0, _filename.find_last_of("."));
-  extension.assign(_filename, _filename.find_last_of("."), _filename.size());
-
-  fileid << counter;
-
-  // Add process number to .vtu file name
-  std::string proc = "";
-  if (num_processes > 1)
-  {
-    std::ostringstream _p;
-    _p << "_p" << process << "_";
-    proc = _p.str();
-  }
-  newfilename << filestart << proc << fileid.str() << ext;
-
-  return newfilename.str();
+  write_mesh(mesh, _filename, _counter, _counter);
+  ++_counter;
 }
 //----------------------------------------------------------------------------
-template <typename T>
-void VTKFile::mesh_function_write(T& meshfunction, double time)
+void VTKFile::write(const mesh::MeshFunction<bool>& meshfunction)
 {
-  const mesh::Mesh& mesh = *meshfunction.mesh();
-  const std::size_t cell_dim = meshfunction.dim();
-
-  // Update vtu file name and clear file
-  std::string vtu_filename = init(mesh, cell_dim);
-
-  // Write mesh
-  VTKWriter::write_mesh(mesh, cell_dim, vtu_filename);
-
-  // Open file to write data
-  std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
-  fp.precision(16);
-  fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
-  fp << "<DataArray  type=\"Float64\"  Name=\"" << meshfunction.name()
-     << "\"  format=\"ascii\">";
-
-  // Write data
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
-    fp << meshfunction[cell.index()] << " ";
-
-  // Write footers
-  fp << "</DataArray>" << std::endl;
-  fp << "</CellData>" << std::endl;
-
-  // Close file
-  fp.close();
-
-  // Parallel-specific files
-  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
-  const std::size_t process_number = MPI::rank(mesh.mpi_comm());
-  if (num_processes > 1 && process_number == 0)
-  {
-    std::string pvtu_filename = vtu_name(0, 0, counter, ".pvtu");
-    pvtu_write_function(1, 0, "cell", meshfunction.name(), pvtu_filename,
-                        num_processes);
-    pvd_file_write(counter, time, pvtu_filename);
-  }
-  else if (num_processes == 1)
-    pvd_file_write(counter, time, vtu_filename);
-
-  // Write pvd files
-  finalize(vtu_filename, time);
+  mesh_function_write(meshfunction, _filename, _counter, _counter);
+  ++_counter;
 }
 //----------------------------------------------------------------------------
-void VTKFile::clear_file(std::string file) const
+void VTKFile::write(const mesh::MeshFunction<std::size_t>& meshfunction)
 {
-  // Open file and clear
-  std::ofstream _file(file.c_str(), std::ios::trunc);
-  if (!_file.is_open())
-  {
-    throw std::runtime_error("IO Error");
-  }
-  _file.close();
+  mesh_function_write(meshfunction, _filename, _counter, _counter);
+  ++_counter;
 }
 //----------------------------------------------------------------------------
-std::string VTKFile::strip_path(std::string file) const
+void VTKFile::write(const mesh::MeshFunction<int>& meshfunction)
 {
-  std::string fname;
-  fname.assign(file, _filename.find_last_of("/") + 1, file.size());
-  return fname;
+  mesh_function_write(meshfunction, _filename, _counter, _counter);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const mesh::MeshFunction<double>& meshfunction)
+{
+  mesh_function_write(meshfunction, _filename, _counter, _counter);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const function::Function& u)
+{
+  write_function(u, _filename, _counter, _counter);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const mesh::Mesh& mesh, double time)
+{
+  write_mesh(mesh, _filename, _counter, time);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const mesh::MeshFunction<int>& mf, double time)
+{
+  mesh_function_write(mf, _filename, _counter, time);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const mesh::MeshFunction<std::size_t>& mf, double time)
+{
+  mesh_function_write(mf, _filename, _counter, time);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const mesh::MeshFunction<double>& mf, double time)
+{
+  mesh_function_write(mf, _filename, _counter, time);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const mesh::MeshFunction<bool>& mf, double time)
+{
+  mesh_function_write(mf, _filename, _counter, time);
+  ++_counter;
+}
+//----------------------------------------------------------------------------
+void VTKFile::write(const function::Function& u, double time)
+{
+  write_function(u, _filename, _counter, time);
+  ++_counter;
 }
 //----------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import numpy
 
-from dolfin import MPI, CellType, Mesh, Point, cpp
+from dolfin import MPI, CellType, Mesh, cpp
 from dolfin.geometry import BoundingBoxTree
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -17,8 +17,8 @@ def test_manifold_point_search():
                 cpp.mesh.GhostMode.none)
 
     bb = BoundingBoxTree(mesh, mesh.topology.dim)
-    p = Point(0.5, 0.25, 0.75)
+    p = numpy.array([0.5, 0.25, 0.75])
     assert bb.compute_first_entity_collision(p, mesh) == 0
 
-    p = Point(0.25, 0.5, 0.75)
+    p = numpy.array([0.25, 0.5, 0.75])
     assert bb.compute_first_entity_collision(p, mesh) == 1

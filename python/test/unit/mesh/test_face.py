@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import numpy
 import pytest
 
 from dolfin import MPI, Face, Faces, UnitCubeMesh, UnitSquareMesh
@@ -42,7 +43,7 @@ def test_NormalPoint(cube, square):
     cube.create_entities(2)
     for f in Faces(cube):
         n = f.normal()
-        assert round(n.norm() - 1.0, 7) == 0
+        assert round(numpy.linalg.norm(n) - 1.0, 7) == 0
 
     f = Face(square, 0)
     with pytest.raises(RuntimeError):

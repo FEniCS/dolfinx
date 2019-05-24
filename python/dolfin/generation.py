@@ -7,8 +7,8 @@
 """Simple mesh generation module"""
 
 import typing
-
-from dolfin import cpp, fem, geometry
+import numpy
+from dolfin import cpp, fem
 
 __all__ = ["IntervalMesh", "UnitIntervalMesh",
            "RectangleMesh", "UnitSquareMesh",
@@ -55,7 +55,7 @@ def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.none):
 
 
 def RectangleMesh(comm,
-                  points: typing.List[geometry.Point],
+                  points: typing.List[numpy.array],
                   n: list,
                   cell_type=cpp.mesh.CellType.Type.triangle,
                   ghost_mode=cpp.mesh.GhostMode.none,
@@ -101,16 +101,15 @@ def UnitSquareMesh(comm,
         Direction of diagonal
 
     """
-    from dolfin.geometry import Point
-    mesh = RectangleMesh(comm, [Point(0.0, 0.0)._cpp_object,
-                                Point(1.0, 1.0)._cpp_object],
+    mesh = RectangleMesh(comm, [numpy.array([0.0, 0.0, 0.0]),
+                                numpy.array([1.0, 1.0, 0.0])],
                          [nx, ny], cell_type, ghost_mode, diagonal)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
 
 
 def BoxMesh(comm,
-            points: typing.List[geometry.Point],
+            points: typing.List[numpy.array],
             n: list,
             cell_type=cpp.mesh.CellType.Type.tetrahedron,
             ghost_mode=cpp.mesh.GhostMode.none):
@@ -152,9 +151,8 @@ def UnitCubeMesh(comm,
         Number of cells in "z" direction
 
     """
-    from dolfin.geometry import Point
-    mesh = BoxMesh(comm, [Point(0.0, 0.0, 0.0)._cpp_object,
-                          Point(1.0, 1.0, 1.0)._cpp_object],
+    mesh = BoxMesh(comm, [numpy.array([0.0, 0.0, 0.0]),
+                          numpy.array([1.0, 1.0, 1.0])],
                    [nx, ny, nz], cell_type, ghost_mode)
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
