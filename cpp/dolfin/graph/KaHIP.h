@@ -12,13 +12,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <map>
-#include <string>
 #include <utility>
-#include <vector>
-
-#ifdef HAS_KAHIP
-#include <parhip_interface.h>
-#endif
 
 namespace dolfin
 {
@@ -41,7 +35,8 @@ class KaHIP
 #ifdef HAS_KAHIP
 public:
   // Standard KaHIP partition
-  void partition(MPI_Comm mpi_comm, const CSRGraph<idxtype>& csr_graph);
+  void partition(MPI_Comm mpi_comm,
+                 const CSRGraph<unsigned long long>& csr_graph);
 
 #endif
 };

@@ -20,8 +20,8 @@ using namespace dolfin;
 
 #ifdef HAS_KAHIP
 
-void dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
-                                     const CSRGraph<idxtype>& csr_graph)
+void dolfin::graph::KaHIP::partition(
+    MPI_Comm mpi_comm, const CSRGraph<unsigned long long>& csr_graph)
 {
   std::map<std::int64_t, std::vector<int>> ghost_procs;
   common::Timer timer("Compute graph partition (KaHIP)");
@@ -170,7 +170,7 @@ void dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   //   }
   // }
   //
-  // timer2.stop();
+  timer2.stop();
   //
   // return std::make_pair(std::vector<int>(part.begin(), part.end()),
   //                       std::move(ghost_procs));
