@@ -18,7 +18,7 @@ flake8-python-code: &flake8-python-code
 install-kahip: &install-kahip
   name: Install KaHIP partitioner
   command: |
-            git clone https://github.com/schulzchristian/KaHIP.git
+            git clone https://github.com/IgorBaratta/KaHIP.git
             cd KaHIP
             ./compile_withcmake.sh
             cd .. && cp -r ./KaHIP /usr/local/KaHIP
