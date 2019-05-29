@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016 Igor A. Baratta
+// Copyright (C) 2019 Igor A. Baratta
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -48,16 +48,10 @@ void dolfin::graph::KaHIP::partition(
   // Call KaHIP to partition graph
   common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
   const std::int32_t num_local_cells = csr_graph.size();
-  std::vector<idxtype> part(num_local_cells);
+  std::vector<unsigned long long> part(num_local_cells);
   int edgecut = 0;
   assert(!part.empty());
 
-  // void ParHIPPartitionKWay(idxtype *vtxdist, idxtype *xadj, idxtype *adjncy,
-  //                          idxtype *vwgt, idxtype *adjwgt,
-  //                          int *nparts, double* imbalance, bool
-  //                          suppress_output, int seed, int mode, int *edgecut,
-  //                          idxtype *part, MPI_Comm *comm);
-  //
   ParHIPPartitionKWay(
       const_cast<idxtype*>(csr_graph.node_distribution().data()),
       const_cast<idxtype*>(csr_graph.nodes().data()),
@@ -67,7 +61,7 @@ void dolfin::graph::KaHIP::partition(
   timer1.stop();
 
   common::Timer timer2("Compute graph halo data (KaHIP)");
-  //
+
   // Work out halo cells for current division of dual graph
   // const auto& elmdist = csr_graph.node_distribution();
   // const auto& xadj = csr_graph.nodes();

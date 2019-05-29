@@ -156,15 +156,6 @@ endif()
 
 # KaHIP
 if (DOLFIN_ENABLE_KAHIP AND KAHIP_FOUND)
-  # KaHIP depends on OpenMP and gomp
-  find_package(OpenMP)
-  if (OPENMP_FOUND)
-    add_definitions(-fopenmp -DHAVE_OPENMP)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    if (CMAKE_COMPILER_IS_GNUCC)
-      set(EXTERNAL_LIBS ${EXTERNAL_LIBS} gomp)
-    endif(CMAKE_COMPILER_IS_GNUCC)
-  endif(OPENMP_FOUND)
   target_compile_definitions(dolfin PUBLIC HAS_KAHIP)
   target_link_libraries(dolfin PRIVATE ${KAHIP_LIBRARIES})
   target_include_directories(dolfin SYSTEM PRIVATE ${KAHIP_INCLUDE_DIRS})
