@@ -73,7 +73,7 @@ public:
                          const Eigen::Ref<const EigenRowArrayXXi64>& cells,
                          const std::vector<std::int64_t>& global_cell_indices,
                          const mesh::GhostMode ghost_mode,
-                         std::string graph_partitioner = "SCOTCH");
+                         std::string graph_partitioner = "KaHIP");
 
   /// Redistribute points to the processes that need them.
   /// @param mpi_comm

@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/types.h>
+// #include <dolfin/common/types.h>
 #include <map>
 #include <utility>
 
@@ -35,8 +35,8 @@ class KaHIP
 #ifdef HAS_KAHIP
 public:
   // Standard KaHIP partition
-  void partition(MPI_Comm mpi_comm,
-                 const CSRGraph<unsigned long long>& csr_graph);
+  static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
+  partition(MPI_Comm mpi_comm, const CSRGraph<unsigned long long>& csr_graph);
 
 #endif
 };

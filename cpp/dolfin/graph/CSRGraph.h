@@ -26,7 +26,7 @@ namespace graph
 /// offset of each process is given by node_distribution()
 ///
 /// The format of the nodes, edges and distribution is identical
-/// with the formats for ParMETIS and PT-SCOTCH.  See the manuals
+/// with the formats for ParMETIS, KaHIP and PT-SCOTCH.  See the manuals
 /// for these libraries for further information.
 
 template <typename T>
