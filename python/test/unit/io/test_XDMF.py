@@ -150,7 +150,6 @@ def test_save_1d_scalar(tempdir, encoding):
 @pytest.mark.parametrize("fe_family", fe_families)
 @pytest.mark.parametrize("mesh_tdim", mesh_tdims)
 @pytest.mark.parametrize("mesh_n", mesh_ns)
-@pytest.mark.skip(reason="hanging for unknown reason")
 def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
                                     mesh_tdim, mesh_n):
     if invalid_fe(fe_family, fe_degree):
@@ -189,7 +188,6 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
 @pytest.mark.parametrize("fe_family", fe_families)
 @pytest.mark.parametrize("mesh_tdim", mesh_tdims)
 @pytest.mark.parametrize("mesh_n", mesh_ns)
-@pytest.mark.skip(reason="hanging for unknown reason")
 def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
                                     mesh_tdim, mesh_n):
     if invalid_fe(fe_family, fe_degree):
@@ -256,7 +254,6 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
 
 
 @pytest.mark.parametrize("encoding", encodings)
-@pytest.mark.skip(reason="hanging for unknown reason")
 def test_save_and_checkpoint_timeseries(tempdir, encoding):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     filename = os.path.join(tempdir, "u2_checkpoint.xdmf")

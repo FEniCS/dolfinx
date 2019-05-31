@@ -51,7 +51,6 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   const std::int32_t num_local_cells = csr_graph.size();
   std::vector<unsigned long long> part(num_local_cells);
   int edgecut = 0;
-  // assert(!part.empty());
 
   ParHIPPartitionKWay(
       const_cast<idxtype*>(csr_graph.node_distribution().data()),

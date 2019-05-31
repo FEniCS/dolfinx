@@ -59,10 +59,10 @@ L = inner(f, v) * dx
 u = Function(V)
 solve(a == L, u, [])
 
-# # Save solution in XDMF format (to be viewed in Paraview, for example)
-# with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
-#               encoding=XDMFFile.Encoding.HDF5) as file:
-#     file.write(u)
+# Save solution in XDMF format (to be viewed in Paraview, for example)
+with XDMFFile(MPI.comm_world, "plane_wave.xdmf",
+              encoding=XDMFFile.Encoding.HDF5) as file:
+    file.write(u)
 
 """Calculate L2 and H1 errors of FEM solution and best approximation.
 This demonstrates the error bounds given in Ihlenburg. Pollution errors
