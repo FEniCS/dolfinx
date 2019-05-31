@@ -18,7 +18,7 @@ from dolfin import (MPI, Expression, FacetNormal, Function, FunctionSpace,
                     TestFunction, TrialFunction, UnitSquareMesh, function,
                     has_petsc_complex, interpolate, project, solve)
 from dolfin.fem.assemble import assemble_scalar
-# from dolfin.io import XDMFFile
+from dolfin.io import XDMFFile
 from ufl import dx, grad, inner
 
 # wavenumber
