@@ -617,7 +617,8 @@ partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // At least two cells per processor are required for mesh partitioning
-  if (global_graph_size / num_processes < 2)
+  // in parallel
+  if (num_processes > 1 && global_graph_size / num_processes < 2)
     throw std::runtime_error("Cannot partition a graph of size "
                              + std::to_string(global_graph_size) + " into "
                              + std::to_string(num_processes) + " blocks.");
