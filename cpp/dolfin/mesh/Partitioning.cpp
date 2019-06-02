@@ -613,6 +613,15 @@ partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
   std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
       mpi_comm, cell_vertices, *cell_type);
 
+  const std::size_t global_graph_size = MPI::sum(mpi_comm, local_graph.size());
+  const std::size_t num_processes = MPI::size(mpi_comm);
+
+  // At least two cells per processor are required for mesh partitioning
+  if (global_graph_size / num_processes < 2)
+    throw std::runtime_error("Cannot partition a graph of size "
+                             + std::to_string(global_size) + " into "
+                             + std::to_string(num_processes) + " blocks.");
+
   // Compute cell partition using partitioner from parameter system
   if (partitioner == "SCOTCH")
   {
