@@ -469,7 +469,7 @@ def test_mesh_topology_lifetime():
                    reason="Small meshes fail in parallel")
 def test_small_mesh(interval):
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
-    assert mesh3d.num_cells() == 2
+    assert mesh3d.num_cells() == 6
 
     mesh2d = UnitSquareMesh(MPI.comm_world, 1, 1)
     assert mesh2d.num_cells() == 2
