@@ -157,7 +157,10 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   // Find the cell that contains x
   for (unsigned int i = 0; i < x.rows(); ++i)
   {
-    const Eigen::Vector3d point = x.row(i).matrix().transpose();
+    // Pad the input point to size 3
+    // Bounding box requires 3d point
+    Eigen::Vector3d point;
+    point.head(x.row(i).size()) = x.row(i);
 
     // Get index of first cell containing point
     unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
