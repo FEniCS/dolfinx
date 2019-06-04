@@ -532,7 +532,7 @@ def test_basic_interior_facet_assembly():
     V = dolfin.function.FunctionSpace(mesh, ("DG", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
-    a = ufl.avg(u) * ufl.avg(v) * ufl.dS
+    a = innert(ufl.avg(u), ufl.avg(v)) * ufl.dS
 
     A = dolfin.fem.assemble_matrix(a)
     A.assemble()
