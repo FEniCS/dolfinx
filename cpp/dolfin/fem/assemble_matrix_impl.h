@@ -62,7 +62,7 @@ void assemble_exterior_facets(
     const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn,
+                             const int*, const int*)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets);
 
@@ -72,7 +72,7 @@ void assemble_interior_facets(
     const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             const double*, int, int, int, int)>& fn,
+                             const int*, const int*)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets);
 

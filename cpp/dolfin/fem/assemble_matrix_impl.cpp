@@ -176,7 +176,7 @@ void fem::impl::assemble_exterior_facets(
     const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn,
+                             const int*, const int*)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
@@ -218,6 +218,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
+    const int orient = 1;
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
@@ -240,7 +241,8 @@ void fem::impl::assemble_exterior_facets(
 
     // Tabulate tensor
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), local_facet, 1);
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), &local_facet,
+       &orient);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -275,7 +277,7 @@ void fem::impl::assemble_interior_facets(
     const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             const double*, int, int, int, int)>& fn,
+                             const int*, const int*)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
@@ -298,9 +300,7 @@ void fem::impl::assemble_interior_facets(
 
   // Data structures used in assembly
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs0(num_dofs_g, gdim);
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs1(num_dofs_g, gdim);
+      coordinate_dofs(2 * num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
@@ -322,8 +322,9 @@ void fem::impl::assemble_interior_facets(
     const mesh::Cell cell1(mesh, facet.entities(tdim)[1]);
 
     // Get local index of facet with respect to the cell
-    const int local_facet0 = cell0.index(facet);
-    const int local_facet1 = cell1.index(facet);
+    const int local_facet[2]
+        = {(int)cell0.index(facet), (int)cell1.index(facet)};
+    const int orient[2] = {1, 1};
 
     // Get cell vertex coordinates
     const int cell_index0 = cell0.index();
@@ -331,8 +332,9 @@ void fem::impl::assemble_interior_facets(
     for (int i = 0; i < num_dofs_g; ++i)
       for (int j = 0; j < gdim; ++j)
       {
-        coordinate_dofs0(i, j) = x_g(cell_g[pos_g[cell_index0] + i], j);
-        coordinate_dofs1(i, j) = x_g(cell_g[pos_g[cell_index1] + i], j);
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index0] + i], j);
+        coordinate_dofs(i + num_dofs_g, j)
+            = x_g(cell_g[pos_g[cell_index1] + i], j);
       }
 
     // Get dof maps for cell
@@ -358,6 +360,14 @@ void fem::impl::assemble_interior_facets(
               dmapjoint1.begin() + dmap1_cell0.size());
 
     // Update coefficients
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);
+
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        coordinate_dofs1(coordinate_dofs.data() + num_dofs_g * gdim, num_dofs_g,
+                         gdim);
     for (std::size_t i = 0; i < coefficients.size(); ++i)
     {
       coefficients[i]->restrict(coeff_array.data() + offsets[i], cell0,
@@ -369,8 +379,8 @@ void fem::impl::assemble_interior_facets(
 
     // Tabulate tensor
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs0.data(),
-       coordinate_dofs1.data(), local_facet0, local_facet1, 1, 1);
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), local_facet,
+       orient);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

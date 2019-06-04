@@ -56,7 +56,7 @@ void assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn,
+                             const int*, const int*)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets);
 
@@ -66,7 +66,7 @@ void assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             const double*, int, int, int, int)>& fn,
+                             const int*, const int*)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets);
 
