@@ -410,7 +410,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     // Add partitioning attribute to dataset
     std::vector<std::size_t> partitions;
     const std::size_t topology_offset = MPI::global_offset(
-        _mpi_comm.comm(), topological_data.size() / (cell_dim + 1), true);
+        _mpi_comm.comm(), topological_data.size() / num_cell_points, true);
 
     std::vector<std::size_t> topology_offset_tmp(1, topology_offset);
     MPI::gather(_mpi_comm.comm(), topology_offset_tmp, partitions);
