@@ -233,8 +233,7 @@ PetscScalar fem::impl::assemble_interior_facets(
     const mesh::Cell cell1(mesh, facet.entities(tdim)[1]);
 
     // Get local index of facet with respect to the cell
-    const int local_facet[2]
-        = {(int)cell0.index(facet), (int)cell1.index(facet)};
+    const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
     const int orient[2] = {1, 1};
 
     // Get cell vertex coordinates
