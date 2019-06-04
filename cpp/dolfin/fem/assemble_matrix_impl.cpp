@@ -303,7 +303,7 @@ void fem::impl::assemble_interior_facets(
       coordinate_dofs1(num_dofs_g, gdim);
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
 
   // Temporaries for joint dofmaps
   std::vector<PetscInt> dmapjoint0, dmapjoint1;
@@ -362,6 +362,9 @@ void fem::impl::assemble_interior_facets(
     {
       coefficients[i]->restrict(coeff_array.data() + offsets[i], cell0,
                                 coordinate_dofs0);
+      coefficients[i]->restrict(coeff_array.data() + offsets.back()
+                                    + offsets[i],
+                                cell1, coordinate_dofs1);
     }
 
     // Tabulate tensor

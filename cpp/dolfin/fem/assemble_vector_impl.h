@@ -62,7 +62,14 @@ void assemble_exterior_facets(
 
 /// Assemble linear form interior facet integrals into an Eigen vector
 void assemble_interior_facets(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L);
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
+    const fem::GenericDofMap& dofmap,
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             const double*, int, int, int, int)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets);
+
 
 /// Modify b such that:
 ///
