@@ -66,6 +66,16 @@ void assemble_exterior_facets(
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets);
 
+void assemble_interior_facets(
+    Mat A, const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_facets,
+    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             const double*, int, int, int, int)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets);
+
 } // namespace impl
 } // namespace fem
 } // namespace dolfin
