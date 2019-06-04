@@ -516,3 +516,15 @@ def test_projection():
 
     integral_analytic = 1.0 / 3
     assert integral == pytest.approx(integral_analytic, rel=1.e-6, abs=1.e-12)
+
+
+def test_interior_facets():
+    mesh = dolfin.UnitCubeMesh(dolfin.MPI.comm_world, 4, 4, 4)
+    V = dolfin.function.FunctionSpace(mesh, ("DG", 1))
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+
+    a = ufl.avg(u) * ufl.avg(v) * ufl.dS
+
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    assert isinstance(A, PETSc.Mat)

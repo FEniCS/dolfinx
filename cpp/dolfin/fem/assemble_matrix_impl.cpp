@@ -66,7 +66,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
                                         c_offsets);
   }
 
-  for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
+  for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
     auto& fn = integrals.get_tabulate_tensor_fn_interior_facet(i);
     const std::vector<std::int32_t>& active_facets
@@ -305,12 +305,15 @@ void fem::impl::assemble_interior_facets(
       Ae;
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
+  // Temporaries for joint dofmaps
+  std::vector<PetscInt> dmapjoint0, dmapjoint1;
+
   // Iterate over all facets
   PetscErrorCode ierr;
   for (const auto& facet_index : active_facets)
   {
     const mesh::Facet facet(mesh, facet_index);
-    assert(facet.num_global_entities(tdim) == 1);
+    assert(facet.num_global_entities(tdim) == 2);
 
     // TODO: check ghosting sanity?
 
@@ -342,15 +345,17 @@ void fem::impl::assemble_interior_facets(
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1_cell1
         = dofmap1.cell_dofs(cell_index1);
 
-    std::vector<PetscInt> dmapjoint0(dmap0_cell0.data(),
-                                     dmap0_cell0.data() + dmap0_cell0.size());
-    dmapjoint0.insert(dmapjoint0.end(), dmap0_cell1.data(),
-                      dmap0_cell1.data() + dmap0_cell1.size());
+    dmapjoint0.resize(dmap0_cell0.size() + dmap0_cell1.size());
+    std::copy(dmap0_cell0.data(), dmap0_cell0.data() + dmap0_cell0.size(),
+              dmapjoint0.begin());
+    std::copy(dmap0_cell1.data(), dmap0_cell1.data() + dmap0_cell1.size(),
+              dmapjoint0.begin() + dmap0_cell0.size());
 
-    std::vector<PetscInt> dmapjoint1(dmap1_cell0.data(),
-                                     dmap1_cell0.data() + dmap1_cell0.size());
-    dmapjoint1.insert(dmapjoint1.end(), dmap1_cell1.data(),
-                      dmap1_cell1.data() + dmap1_cell1.size());
+    dmapjoint1.resize(dmap1_cell0.size() + dmap1_cell1.size());
+    std::copy(dmap1_cell0.data(), dmap1_cell0.data() + dmap1_cell0.size(),
+              dmapjoint1.begin());
+    std::copy(dmap1_cell1.data(), dmap1_cell1.data() + dmap1_cell1.size(),
+              dmapjoint1.begin() + dmap1_cell0.size());
 
     // Update coefficients
     for (std::size_t i = 0; i < coefficients.size(); ++i)
@@ -367,7 +372,7 @@ void fem::impl::assemble_interior_facets(
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
     {
-      for (Eigen::Index i = 0; i < dmapjoint0.size(); ++i)
+      for (std::size_t i = 0; i < dmapjoint0.size(); ++i)
       {
         if (bc0[dmapjoint0[i]])
           Ae.row(i).setZero();
@@ -375,7 +380,7 @@ void fem::impl::assemble_interior_facets(
     }
     if (!bc1.empty())
     {
-      for (Eigen::Index j = 0; j < dmapjoint1.size(); ++j)
+      for (std::size_t j = 0; j < dmapjoint1.size(); ++j)
       {
         if (bc1[dmapjoint1[j]])
           Ae.col(j).setZero();
