@@ -154,13 +154,14 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
 
+  Eigen::Vector3d point = Eigen::Vector3d::Zero();
+
   // Find the cell that contains x
   for (unsigned int i = 0; i < x.rows(); ++i)
   {
     // Pad the input point to size 3
     // Bounding box requires 3d point
-    Eigen::Vector3d point;
-    point.head(x.row(i).size()) = x.row(i);
+    point.head(x.cols()) = x.row(i);
 
     // Get index of first cell containing point
     unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
