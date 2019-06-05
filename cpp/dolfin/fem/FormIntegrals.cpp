@@ -200,6 +200,9 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
                                + std::to_string(marker.dim()));
     }
 
+    if (_cell_integral_ids.size() == 0)
+      return;
+
     // Create a reverse map
     std::map<int, int> cell_id_to_integral;
     for (unsigned int i = 0; i < _cell_integral_ids.size(); ++i)
@@ -225,6 +228,9 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
       throw std::runtime_error("Invalid MeshFunction dimension:"
                                + std::to_string(marker.dim()));
     }
+
+    if (_exterior_facet_integral_ids.size() == 0)
+      return;
 
     // Create a reverse map
     std::map<int, int> facet_id_to_integral;
