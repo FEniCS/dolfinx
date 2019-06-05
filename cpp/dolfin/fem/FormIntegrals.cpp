@@ -201,7 +201,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
 
     if (_cell_integral_ids.size() == 0)
-      throw std::runtime_error("No cell integrals");
+      return;
 
     // Create a reverse map
     std::map<int, int> cell_id_to_integral;
@@ -230,7 +230,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
 
     if (_exterior_facet_integral_ids.size() == 0)
-      throw std::runtime_error("No exterior facet integrals");
+      return;
 
     // Create a reverse map
     std::map<int, int> facet_id_to_integral;
