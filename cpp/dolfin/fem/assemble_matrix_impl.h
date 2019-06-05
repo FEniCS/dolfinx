@@ -51,7 +51,7 @@ void assemble_cells(
     int num_dofs_per_cell1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& kernel,
+                             const int *, const int*)>& kernel,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets);
 

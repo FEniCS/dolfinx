@@ -20,7 +20,8 @@ FormIntegrals::FormIntegrals()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>&
+const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                         const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor_fn_cell(unsigned int i) const
 {
   if (i > _tabulate_tensor_cell.size())
@@ -50,7 +51,8 @@ FormIntegrals::get_tabulate_tensor_fn_interior_facet(unsigned int i) const
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::register_tabulate_tensor_cell(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
+    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*,
+                      const int*, const int*))
 {
   if (std::find(_cell_integral_ids.begin(), _cell_integral_ids.end(), i)
       != _cell_integral_ids.end())

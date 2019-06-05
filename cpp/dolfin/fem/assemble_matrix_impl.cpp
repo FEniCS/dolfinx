@@ -86,7 +86,7 @@ void fem::impl::assemble_cells(
     int num_dofs_per_cell1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& kernel,
+                             const int*, const int*)>& kernel,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
@@ -137,7 +137,7 @@ void fem::impl::assemble_cells(
 
     // Tabulate tensor
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
-    kernel(Ae.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+    kernel(Ae.data(), coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())

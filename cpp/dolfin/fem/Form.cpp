@@ -187,9 +187,9 @@ Form::function_spaces() const
   return _function_spaces;
 }
 //-----------------------------------------------------------------------------
-void Form::register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
-                                                           const PetscScalar*,
-                                                           const double*, int))
+void Form::register_tabulate_tensor_cell(
+    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*,
+                      const int*, const int*))
 {
   _integrals.register_tabulate_tensor_cell(i, fn);
   if (i == -1 and _mesh)

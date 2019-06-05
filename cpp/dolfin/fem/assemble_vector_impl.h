@@ -46,7 +46,7 @@ void assemble_cells(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& kernel,
+                             const int*, const int*)>& kernel,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets);
 

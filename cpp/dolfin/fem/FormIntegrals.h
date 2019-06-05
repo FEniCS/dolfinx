@@ -49,7 +49,7 @@ public:
   /// @returns std::function
   ///    Function to call for tabulate_tensor on a cell
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                           int)>&
+                           const int*, const int*)>&
   get_tabulate_tensor_fn_cell(unsigned int i) const;
 
   /// Get the function for 'tabulate_tensor' for exterior facet integral i
@@ -73,7 +73,8 @@ public:
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
                                                        const PetscScalar*,
-                                                       const double*, int));
+                                                       const double*,
+                                                       const int*, const int*));
 
   /// Register the function for 'tabulate_tensor' for exterior facet integral
   /// i
@@ -119,8 +120,8 @@ public:
 
 private:
   // Function pointers to tabulate_tensor functions
-  std::vector<
-      std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>>
+  std::vector<std::function<void(PetscScalar*, const PetscScalar*,
+                                 const double*, const int*, const int*)>>
       _tabulate_tensor_cell;
 
   std::vector<std::function<void(PetscScalar*, const PetscScalar*,

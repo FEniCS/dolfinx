@@ -61,7 +61,7 @@ void _lift_bc_cells(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                           int)>& fn
+                           const int*, const int*)>& fn
       = a.integrals().get_tabulate_tensor_fn_cell(0);
 
   // Prepare cell geometry
@@ -129,7 +129,7 @@ void _lift_bc_cells(
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -349,7 +349,7 @@ void fem::impl::assemble_cells(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& kernel,
+                             const int*, const int*)>& kernel,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
@@ -394,7 +394,7 @@ void fem::impl::assemble_cells(
     }
 
     // Tabulate vector for cell
-    kernel(be.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+    kernel(be.data(), coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
 
     // Add local cell vector to global vector
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)

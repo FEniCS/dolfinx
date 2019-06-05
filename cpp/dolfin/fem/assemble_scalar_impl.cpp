@@ -68,7 +68,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 PetscScalar fem::impl::assemble_cells(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& fn,
+                             const int*, const int*)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
@@ -115,7 +115,7 @@ PetscScalar fem::impl::assemble_cells(
                                 coordinate_dofs);
     }
 
-    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), 1);
+    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
     value += cell_value;
   }
 

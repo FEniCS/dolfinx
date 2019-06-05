@@ -38,13 +38,12 @@ namespace impl
 PetscScalar assemble_scalar(const fem::Form& M);
 
 /// Assemble functional over cells
-PetscScalar
-assemble_cells(const mesh::Mesh& mesh,
-               const std::vector<std::int32_t>& active_cells,
-               const std::function<void(PetscScalar*, const PetscScalar*,
-                                        const double*, int)>& fn,
-               std::vector<const function::Function*> coefficients,
-               const std::vector<int>& offsets);
+PetscScalar assemble_cells(
+    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             const int*, const int*)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets);
 
 /// Execute kernel over exterior facets and accumulate result
 PetscScalar assemble_exterior_facets(
