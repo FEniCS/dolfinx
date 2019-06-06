@@ -155,9 +155,12 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
+  const int gdim = x.cols();
+  Eigen::Vector3d point = Eigen::Vector3d::Zero();
   for (unsigned int i = 0; i < x.rows(); ++i)
   {
-    const Eigen::Vector3d point = x.row(i).matrix().transpose();
+    // Pad the input point to size 3 (bounding box requires 3d point)
+    point.head(gdim) = x.row(i);
 
     // Get index of first cell containing point
     unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
@@ -169,7 +172,6 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
       // allow without _allow_extrapolation
       std::pair<unsigned int, double> close
           = bb_tree.compute_closest_entity(point, mesh);
-
       if (close.second < 2.0 * DBL_EPSILON)
         id = close.first;
       else
@@ -229,8 +231,7 @@ void Function::eval(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
 
@@ -384,8 +385,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
   // Interpolate point values on each cell (using last computed value

@@ -174,29 +174,6 @@ public:
                                                        const double*,
                                                        const int*, const int*));
 
-  /// Return exterior facet domains (zero pointer if no domains have
-  /// been specified)
-  ///
-  /// @return     std::shared_ptr<_mesh::MeshFunction_ <std::size_t>>
-  ///         The exterior facet domains.
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-  exterior_facet_domains() const;
-
-  /// Return interior facet domains (zero pointer if no domains have
-  /// been specified)
-  ///
-  /// @return     _mesh::MeshFunction_ <std::size_t>
-  ///         The interior facet domains.
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-  interior_facet_domains() const;
-
-  /// Return vertex domains (zero pointer if no domains have been
-  /// specified)
-  ///
-  /// @return     _mesh::MeshFunction_ <std::size_t>
-  ///         The vertex domains.
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains() const;
-
   /// Set cell domains
   ///
   /// @param[in]    cell_domains (_mesh::MeshFunction_ <std::size_t>)
