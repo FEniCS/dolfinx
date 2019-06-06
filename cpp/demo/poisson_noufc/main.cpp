@@ -1,8 +1,8 @@
 // Poisson equation (C++)
 // ======================
 //
-// This demo has the same behaviour as the main Poisson demo,
-// but uses entirely hand-written kernels, elements and coordinate mappings
+// This demo has the same behaviour as the main Poisson demo, but uses
+// entirely hand-written kernels, elements and coordinate mappings
 //
 
 #include <Eigen/Dense>
@@ -22,15 +22,12 @@ int evaluate_basis_derivs(double* ref_vals, int order, int npoints,
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         _X(X, npoints, 2);
-
     Eigen::Map<
         Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         _ref_vals(ref_vals, npoints, 3);
-
     _ref_vals.col(0) = 1.0 - _X.col(0) - _X.col(1);
     _ref_vals.col(1) = _X.col(0);
     _ref_vals.col(2) = _X.col(1);
-
     return 0;
   }
   else if (order == 1)
@@ -39,12 +36,9 @@ int evaluate_basis_derivs(double* ref_vals, int order, int npoints,
     Eigen::Map<
         Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
         _ref_vals(ref_vals, npoints, 6);
-
     Eigen::Array<double, 1, 6> derivs;
     derivs << -1, 1, 0, -1, 0, 1;
-
     _ref_vals = derivs.replicate(npoints, 1);
-
     return 0;
   }
   return -1;
@@ -75,25 +69,20 @@ int transform_basis_derivs(double* values, int order, int num_points,
     Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>
         _reference_values(reference_values, num_points, 6);
-
     for (int ip = 0; ip < num_points; ++ip)
     {
       double transform[2][2];
-
       transform[0][0] = K[4 * ip];
       transform[0][1] = K[4 * ip + 2];
       transform[1][0] = K[4 * ip + 1];
       transform[1][1] = K[4 * ip + 3];
-
       for (int d = 0; d < 3; ++d)
       {
         // Using affine transform to map values back to the physical
-        // element.
-        // Mapping derivatives back to the physical element
+        // element. Mapping derivatives back to the physical element
         _values(ip, 2 * d)
             = transform[0][0] * _reference_values(ip, 2 * d)
               + transform[0][1] * _reference_values(ip, 2 * d + 1);
-
         _values(ip, 2 * d + 1)
             = transform[1][0] * _reference_values(ip, 2 * d)
               + transform[1][1] * _reference_values(ip, 2 * d + 1);
@@ -142,7 +131,6 @@ void compute_reference_geometry(double* X, double* J, double* detJ, double* K,
   Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>
       _x(x, num_points, 2);
-
   _X.col(0) = K[0] * (_x.col(0) - coordinate_dofs[0])
               + K[1] * (_x.col(1) - coordinate_dofs[1]);
   _X.col(1) = K[2] * (_x.col(0) - coordinate_dofs[0])
@@ -196,13 +184,13 @@ void tabulate_tensor_linear(ufc_scalar_t* A, const ufc_scalar_t* w,
                             const double* coordinate_dofs, int cell_orientation)
 {
   // Quadrature rules
-  alignas(32) static const ufc_scalar_t weights3[3]
+  static const ufc_scalar_t weights3[3]
       = {0.1666666666666667, 0.1666666666666667, 0.1666666666666667};
   // Precomputed values of basis functions and precomputations
   // FE* dimensions: [entities][points][dofs]
   // PI* dimensions: [entities][dofs][dofs] or [entities][dofs]
   // PM* dimensions: [entities][dofs][dofs]
-  alignas(32) static const ufc_scalar_t FE3_C0_Q3[1][3][3]
+  static const ufc_scalar_t FE3_C0_Q3[1][3][3]
       = {{{0.6666666666666669, 0.1666666666666666, 0.1666666666666667},
           {0.1666666666666667, 0.1666666666666666, 0.6666666666666665},
           {0.1666666666666667, 0.6666666666666666, 0.1666666666666666}}};
@@ -213,14 +201,14 @@ void tabulate_tensor_linear(ufc_scalar_t* A, const ufc_scalar_t* w,
   const double J_c1 = -coordinate_dofs[0] + coordinate_dofs[4];
   const double J_c2 = -coordinate_dofs[1] + coordinate_dofs[3];
 
-  alignas(32) ufc_scalar_t sp[4];
+  ufc_scalar_t sp[4];
   sp[0] = J_c0 * J_c3;
   sp[1] = J_c1 * J_c2;
   sp[2] = sp[0] - sp[1];
   sp[3] = std::fabs(sp[2]);
 
   // UFLACS block mode: full
-  alignas(32) ufc_scalar_t BF0[3] = {0};
+  ufc_scalar_t BF0[3] = {0};
   for (int iq = 0; iq < 3; ++iq)
   {
     // Quadrature loop body setup (num_points=3)
@@ -228,12 +216,10 @@ void tabulate_tensor_linear(ufc_scalar_t* A, const ufc_scalar_t* w,
     ufc_scalar_t w0 = 0.0;
     for (int ic = 0; ic < 3; ++ic)
       w0 += w[ic] * FE3_C0_Q3[0][iq][ic];
-    // UFLACS block mode: full
     const ufc_scalar_t fw0 = sp[3] * w0 * weights3[iq];
     for (int i = 0; i < 3; ++i)
       BF0[i] += fw0 * FE3_C0_Q3[0][iq][i];
   }
-  // UFLACS block mode: preintegrated
   for (int i = 0; i < 3; ++i)
     A[i] = BF0[i];
 }
@@ -247,7 +233,7 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
   // FE* dimensions: [entities][points][dofs]
   // PI* dimensions: [entities][dofs][dofs] or [entities][dofs]
   // PM* dimensions: [entities][dofs][dofs]
-  alignas(32) static const ufc_scalar_t FE3_C0_F_Q2[3][2][3]
+  static const ufc_scalar_t FE3_C0_F_Q2[3][2][3]
       = {{{0.0, 0.7886751345948129, 0.2113248654051871},
           {0.0, 0.2113248654051872, 0.7886751345948129}},
          {{0.7886751345948129, 0.0, 0.2113248654051871},
@@ -263,7 +249,7 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
   static const double triangle_reference_facet_jacobian[3][2]
       = {{-1.0, 1.0}, {0.0, 1.0}, {1.0, 0.0}};
 
-  alignas(32) ufc_scalar_t sp[10];
+  ufc_scalar_t sp[10];
   sp[0] = J_c0 * triangle_reference_facet_jacobian[facet][0];
   sp[1] = J_c1 * triangle_reference_facet_jacobian[facet][1];
   sp[2] = sp[0] + sp[1];
@@ -274,8 +260,8 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
   sp[7] = sp[6] * sp[6];
   sp[8] = sp[3] + sp[7];
   sp[9] = sqrt(sp[8]);
-  // UFLACS block mode: full
-  alignas(32) ufc_scalar_t BF0[3] = {0};
+
+  ufc_scalar_t BF0[3] = {0};
   for (int iq = 0; iq < 2; ++iq)
   {
     // Quadrature loop body setup (num_points=2)
@@ -284,12 +270,10 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
     for (int ic = 0; ic < 3; ++ic)
       w1 += w[3 + ic] * FE3_C0_F_Q2[facet][iq][ic];
 
-    // UFLACS block mode: full
     const ufc_scalar_t fw0 = sp[9] * w1 * 0.5;
     for (int i = 0; i < 3; ++i)
       BF0[i] += fw0 * FE3_C0_F_Q2[facet][iq][i];
   }
-  // UFLACS block mode: preintegrated
   for (int i = 0; i < 3; ++i)
     A[i] = BF0[i];
 }
@@ -299,13 +283,12 @@ class Source : public function::Expression
 {
 public:
   Source() : function::Expression({}) {}
-
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
             Eigen::Ref<const EigenRowArrayXXd> x) const
   {
-    for (unsigned int i = 0; i != x.rows(); ++i)
+    for (unsigned int i = 0; i < x.rows(); ++i)
     {
       double dx = x(i, 0) - 0.5;
       double dy = x(i, 1) - 0.5;
@@ -319,7 +302,6 @@ class dUdN : public function::Expression
 {
 public:
   dUdN() : function::Expression({}) {}
-
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
@@ -351,7 +333,6 @@ class DirichletBoundary : public mesh::SubDomain
 
 // Inside the ``main`` function, we begin by defining a mesh of the
 // domain.
-
 int main(int argc, char* argv[])
 {
   common::SubSystemsManager::init_logging(argc, argv);
@@ -359,7 +340,7 @@ int main(int argc, char* argv[])
 
   // Create mesh and function space
   std::array<Eigen::Vector3d, 2> pt
-      = {Eigen::Vector3d(0., 0., 0.), Eigen::Vector3d(1., 1., 0.)};
+      = {Eigen::Vector3d::Zero(), Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
       mesh::GhostMode::none));
@@ -402,7 +383,6 @@ int main(int argc, char* argv[])
 
   auto f_expr = Source();
   auto g_expr = dUdN();
-
   auto f = std::make_shared<function::Function>(V);
   auto g = std::make_shared<function::Function>(V);
 
@@ -411,7 +391,6 @@ int main(int argc, char* argv[])
       dolfin::CellType::triangle, 2, 2, "Linear Triangle Coordinate Map",
       LinearTriangleCoordinateMap::compute_physical_coordinates,
       LinearTriangleCoordinateMap::compute_reference_geometry);
-
   mesh->geometry().coord_mapping = cmap;
 
   f->interpolate(f_expr);
