@@ -61,7 +61,7 @@ Form::Form(const ufc_form& ufc_form,
   ufc_form.get_cell_integral_ids(cell_integral_ids.data());
   for (int id : cell_integral_ids)
   {
-    ufc_cell_integral* cell_integral = ufc_form.create_cell_integral(id);
+    ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
     assert(cell_integral);
     _integrals.register_tabulate_tensor_cell(id,
                                              cell_integral->tabulate_tensor);
@@ -73,7 +73,7 @@ Form::Form(const ufc_form& ufc_form,
   ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
   for (int id : exterior_facet_integral_ids)
   {
-    ufc_exterior_facet_integral* exterior_facet_integral
+    ufc_integral* exterior_facet_integral
         = ufc_form.create_exterior_facet_integral(id);
     assert(exterior_facet_integral);
     _integrals.register_tabulate_tensor_exterior_facet(
@@ -86,7 +86,7 @@ Form::Form(const ufc_form& ufc_form,
   ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
   for (int id : interior_facet_integral_ids)
   {
-    ufc_interior_facet_integral* interior_facet_integral
+    ufc_integral* interior_facet_integral
         = ufc_form.create_interior_facet_integral(id);
     assert(interior_facet_integral);
     _integrals.register_tabulate_tensor_interior_facet(
