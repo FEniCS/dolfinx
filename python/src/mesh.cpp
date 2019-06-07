@@ -81,7 +81,7 @@ void mesh(py::module& m)
                  = self.entity_points(dim);
              Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
                  connections = connectivity.connections();
-             const int num_entities = connectivity.entity_positions().size();
+             const int num_entities = connectivity.entity_positions().size() - 1;
 
              // FIXME: mesh::CoordinateDofs should know its dimension
              // (entity_size) to handle empty case on a process.

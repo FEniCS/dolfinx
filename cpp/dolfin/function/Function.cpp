@@ -355,8 +355,8 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   assert(_function_space);
   assert(_function_space->mesh());
 
-  // Check that the mesh matches. Notice that the hash is only
-  // compared if the pointers are not matching.
+  // Check that the mesh matches. Notice that the hash is only compared
+  // if the pointers are not matching.
   if (&mesh != _function_space->mesh().get()
       and mesh.hash() != _function_space->mesh()->hash())
   {
