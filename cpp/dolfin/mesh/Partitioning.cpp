@@ -771,19 +771,19 @@ Partitioning::distribute_points(
   // distributed so that each process learns where it needs to send its
   // points.
 
+  // Get geometric dimension
+  const int gdim = points.cols();
+
   // Create data structures that will be returned
   EigenRowArrayXXd point_coordinates(global_point_indices.size(),
-                                     points.cols());
+                                     gdim;
 
   LOG(INFO) << "Distribute points during distributed mesh construction";
   common::Timer timer("Distribute points");
 
-  // Get number of processes
+  // Get number of processes and rank
   const int mpi_size = dolfin::MPI::size(mpi_comm);
   const int mpi_rank = dolfin::MPI::rank(mpi_comm);
-
-  // Get geometric dimension
-  const int gdim = points.cols();
 
   // Compute where (process number) the points we need are located
   std::vector<std::size_t> ranges(mpi_size);
@@ -807,9 +807,8 @@ Partitioning::distribute_points(
   }
 
   // Each remote process will put the requested point coordinates into a
-  // block of memory on the local process.
-  // Calculate offset position for each process, and attach to the sending
-  // data
+  // block of memory on the local process. Calculate offset position for
+  // each process, and attach to the sending data
   std::size_t offset = 0;
   for (int i = 0; i != mpi_size; ++i)
   {
@@ -825,7 +824,7 @@ Partitioning::distribute_points(
   // Pop offsets off back of received data
   std::vector<std::size_t> remote_offsets;
   std::size_t num_received_indices = 0;
-  for (auto& p : received_point_indices)
+  for (std::vector<std::size_t>& p : received_point_indices)
   {
     remote_offsets.push_back(p.back());
     p.pop_back();
@@ -865,8 +864,7 @@ Partitioning::distribute_points(
       const std::size_t local_index_0 = local_index;
       for (const auto& q : received_point_indices[p])
       {
-        assert(q >= local_point_range.first && q < local_point_range.second);
-
+        assert(q >= local_point_range.first and q < local_point_range.second);ß
         const std::size_t location = q - local_point_range.first;
         send_coord_data.row(local_index) = points.row(location);
         ++local_index;
