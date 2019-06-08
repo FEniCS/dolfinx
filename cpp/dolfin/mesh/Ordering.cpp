@@ -181,6 +181,37 @@ void sort_3_1(mesh::Connectivity& connect_3_1,
   }
 }
 //-----------------------------------------------------------------------------
+void sort_3_2(mesh::Connectivity& connect_3_2,
+              const mesh::Connectivity& connect_2_0, const mesh::Cell& cell,
+              const std::vector<std::int64_t>& global_vertex_indices)
+{
+  // Get cell vertices and facet numbers
+  const std::int32_t* cell_vertices = cell.entities(0);
+  assert(cell_vertices);
+  std::int32_t* cell_faces = connect_3_2.connections(cell.index());
+  assert(cell_faces);
+
+  // Loop vertices on cell
+  for (int i = 0; i < 4; ++i)
+  {
+    // Loop facets on cell
+    for (int j = i; j < 4; ++j)
+    {
+      const std::int32_t* face_vertices
+          = connect_2_0.connections(cell_faces[j]);
+      assert(face_vertices);
+
+      // Check if the ith vertex of the cell is non-incident on facet j
+      if (!std::count(face_vertices, face_vertices + 3, cell_vertices[i]))
+      {
+        // Swap facet numbers
+        std::swap(cell_faces[i], cell_faces[j]);
+        break;
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 bool ordered_cell_simplex(
     const std::vector<std::int64_t>& global_vertex_indices,
     const mesh::Cell& cell)
@@ -275,104 +306,74 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   if (tdim == 0)
     return;
 
+  mesh::Connectivity& connect_g = mesh.coordinate_dofs().entity_points();
+
   // Get global vertex numbering
   if (!mesh.topology().have_global_indices(0))
     throw std::runtime_error("Mesh does not have global vertex indices.");
   const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
 
+  const int num_edges = cell_type.num_entities(1);
+  const int num_faces = (tdim > 1) ? cell_type.num_entities(2) : -1;
+
+  std::shared_ptr<mesh::Connectivity> connect_1_0, connect_2_0, connect_2_1,
+      connect_3_0, connect_3_1, connect_3_2;
+  connect_1_0 = topology.connectivity(1, 0);
+  if (tdim > 1)
+  {
+    connect_2_0 = topology.connectivity(2, 0);
+    connect_2_1 = topology.connectivity(2, 1);
+  }
+  if (tdim > 2)
+  {
+    connect_3_0 = topology.connectivity(3, 0);
+    connect_3_1 = topology.connectivity(3, 1);
+    connect_3_2 = topology.connectivity(3, 2);
+  }
+
   // Iterate over all cells
   for (mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    const mesh::CellType& cell_type = cell.mesh().type();
-    const int num_edges = cell_type.num_entities(1);
-
     // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
     // Order 'coordinate' connectivity
-    mesh::Connectivity& connect_g = mesh.coordinate_dofs().entity_points();
     if (tdim == 1)
       sort_1_0(connect_g, cell, global_vertex_indices, num_edges);
     else if (tdim == 2)
-      sort_2_0(connect_g, cell, global_vertex_indices,
-               cell_type.num_entities(2));
+      sort_2_0(connect_g, cell, global_vertex_indices, num_faces);
     else if (tdim == 3)
       sort_3_0(connect_g, cell, global_vertex_indices);
 
-    // Sort local vertices on edges in ascending order, connectivity 1 - 0
-    std::shared_ptr<mesh::Connectivity> connect_1_0
-        = topology.connectivity(1, 0);
+    // Sort local vertices on edges in ascending order, connectivity 1-0
     if (connect_1_0)
       sort_1_0(*connect_1_0, cell, global_vertex_indices, num_edges);
 
-    if (tdim < 2)
-      continue;
-
-    const int num_faces = cell_type.num_entities(2);
-
-    // Sort local vertices on faces in ascending order, connectivity 2 - 0
-    std::shared_ptr<mesh::Connectivity> connect_2_0
-        = topology.connectivity(2, 0);
+    // Sort local vertices on faces in ascending order, connectivity 2-0
     if (connect_2_0)
       sort_2_0(*connect_2_0, cell, global_vertex_indices, num_faces);
 
     // Sort local edges on local faces after non-incident vertex,
-    // connectivity 2 - 1
-    std::shared_ptr<mesh::Connectivity> connect_2_1
-        = topology.connectivity(2, 1);
+    // connectivity 2-1
     if (connect_2_1)
     {
       sort_2_1(*connect_2_1, *connect_2_0, *connect_1_0, cell,
                global_vertex_indices, num_faces);
     }
 
-    if (tdim < 3)
-      continue;
-
-    // Sort local vertices on cell in ascending order, connectivity 3 - 0
-    std::shared_ptr<mesh::Connectivity> connect_3_0
-        = topology.connectivity(3, 0);
+    // Sort local vertices on cell in ascending order, connectivity 3-0
     if (connect_3_0)
       sort_3_0(*connect_3_0, cell, global_vertex_indices);
 
-    // Sort local edges on cell after non-incident vertex tuble,
+    // Sort local edges on cell after non-incident vertex tuple,
     // connectivity 3-1
-    std::shared_ptr<mesh::Connectivity> connect_3_1
-        = topology.connectivity(3, 1);
     if (connect_3_1)
       sort_3_1(*connect_3_1, *connect_1_0, cell, global_vertex_indices);
 
-    // Sort local facets on cell after non-incident vertex, connectivity 3
-    // - 2
-    std::shared_ptr<mesh::Connectivity> connect_3_2
-        = topology.connectivity(3, 2);
+    // Sort local facets on cell after non-incident vertex, connectivity
+    // 3-2
     if (connect_3_2)
-    {
-      // Get cell vertices and facet numbers
-      const std::int32_t* cell_vertices = cell.entities(0);
-      assert(cell_vertices);
-      std::int32_t* cell_faces = connect_3_2->connections(cell.index());
-      assert(cell_faces);
-
-      // Loop vertices on cell
-      for (int i = 0; i < 4; ++i)
-      {
-        // Loop facets on cell
-        for (int j = i; j < 4; ++j)
-        {
-          std::int32_t* face_vertices = connect_2_0->connections(cell_faces[j]);
-          assert(face_vertices);
-
-          // Check if the ith vertex of the cell is non-incident on facet j
-          if (!std::count(face_vertices, face_vertices + 3, cell_vertices[i]))
-          {
-            // Swap facet numbers
-            std::swap(cell_faces[i], cell_faces[j]);
-            break;
-          }
-        }
-      }
-    }
+      sort_3_2(*connect_3_2, *connect_2_0, cell, global_vertex_indices);
   }
 }
 //-----------------------------------------------------------------------------
