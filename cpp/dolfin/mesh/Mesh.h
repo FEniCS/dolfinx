@@ -95,7 +95,7 @@ public:
        const Eigen::Ref<const EigenRowArrayXXd> points,
        const Eigen::Ref<const EigenRowArrayXXi64> cells,
        const std::vector<std::int64_t>& global_cell_indices,
-       const GhostMode ghost_mode, std::uint32_t num_ghost_cells = 0);
+       const GhostMode ghost_mode, std::int32_t num_ghost_cells = 0);
 
   /// Copy constructor.
   ///

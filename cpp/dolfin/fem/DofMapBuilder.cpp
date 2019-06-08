@@ -339,8 +339,6 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
-    std::cout << "Cell index: " << cell.index() << std::endl;
-
     // Get local (process) and global cell entity indices
     get_cell_entities(entity_indices_local, entity_indices_global, cell,
                       needs_entities);
@@ -353,8 +351,6 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
     {
       const std::int32_t d = std::distance(entity_dofs.begin(), e_dofs_d);
 
-      std::cout << "    dim: " << d << std::endl;
-
       // Iterate over each entity of current dimension d
       for (auto e_dofs = e_dofs_d->begin(); e_dofs != e_dofs_d->end(); ++e_dofs)
       {
@@ -363,9 +359,6 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
         const std::int32_t e = std::distance(e_dofs_d->begin(), e_dofs);
         const std::int32_t e_index_local = entity_indices_local[d][e];
         const std::int64_t e_index_global = entity_indices_global[d][e];
-
-        std::cout << "      e: " << e << ", " << e_index_local << ", "
-                  << e_index_global << std::endl;
 
         // Loop over dofs belong to entity e of dimension d (d, e)
         // d: topological dimension
@@ -381,15 +374,6 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
           dofmap.dof(cell.index(), *dof_local) = dof;
           dofmap.global_indices[dof]
               = offset_global + num_entity_dofs * e_index_global + count;
-          if (d == 1 and e_index_local == 1)
-          {
-            std::cout << "    local, dof: " << *dof_local << ", " << dof << std::endl;
-          }
-          // if (d == 1)
-          // {
-          //   std::cout << "    local, dof: " << *dof_local << ", " << dof << ",     " << e_index_local << std::endl;
-          // }
-
         }
       }
       offset_local += entity_dofs[d][0].size() * num_mesh_entities_local[d];

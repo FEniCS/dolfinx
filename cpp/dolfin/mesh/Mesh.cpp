@@ -34,9 +34,9 @@ namespace
 // @param cell_permutation
 //   Permutation from VTK to DOLFIN index ordering
 // @return
-//   Local-to-global map for vertices (std::vector<std::int64_t>) and cell
-//   topology in local indexing (EigenRowArrayXXi32)
-std::tuple<std::uint64_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
+//   Local-to-global map for nodes (std::vector<std::int64_t>) and cell
+//   nodes in local indexing (EigenRowArrayXXi32)
+std::tuple<std::int32_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
 compute_cell_node_map(std::int32_t num_vertices_per_cell,
                       const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
                       const std::vector<std::uint8_t>& cell_permutation)
@@ -78,7 +78,7 @@ compute_cell_node_map(std::int32_t num_vertices_per_cell,
     if (pass == 0)
       num_vertices_local = local_to_global.size();
 
-    // Update loop range to loop over nodes
+    // Update node loop range for second pass
     v0 = num_vertices_per_cell;
     v1 = num_nodes_per_cell;
   }
@@ -94,7 +94,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXd> points,
            const Eigen::Ref<const EigenRowArrayXXi64> cells,
            const std::vector<std::int64_t>& global_cell_indices,
-           const GhostMode ghost_mode, std::uint32_t num_ghost_cells)
+           const GhostMode ghost_mode, std::int32_t num_ghost_cells)
     : _cell_type(mesh::CellType::create(type)), _degree(1), _mpi_comm(comm),
       _ghost_mode(ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 {
@@ -140,22 +140,22 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Number of local cells (not includign ghosts)
   const std::int32_t num_cells = cells.rows();
-  assert((std::int32_t)num_ghost_cells <= num_cells);
-  const std::int32_t num_local_cells = num_cells - num_ghost_cells;
+  assert(num_ghost_cells <= num_cells);
+  const std::int32_t num_cells_local = num_cells - num_ghost_cells;
 
   // Number of cells (global)
-  const std::int64_t num_cells_global = MPI::sum(comm, num_local_cells);
+  const std::int64_t num_cells_global = MPI::sum(comm, num_cells_local);
 
   // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices.
   std::int32_t num_vertices;
   std::vector<std::int64_t> global_point_indices;
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinate_dofs;
-  std::tie(num_vertices, global_point_indices, coordinate_dofs)
+      coordinate_nodes;
+  std::tie(num_vertices, global_point_indices, coordinate_nodes)
       = compute_cell_node_map(num_vertices_per_cell, cells, cell_permutation);
   _coordinate_dofs
-      = std::make_unique<CoordinateDofs>(coordinate_dofs, cell_permutation);
+      = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
 
   // Distribute the points across processes and calculate shared points
   EigenRowArrayXXd distributed_points;
@@ -201,13 +201,13 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Initialise cell topology
   _topology->set_num_entities_global(tdim, num_cells_global);
-  _topology->init_ghost(tdim, num_local_cells);
+  _topology->init_ghost(tdim, num_cells_local);
 
   // Find the max vertex index of non-ghost cells.
   if (num_ghost_cells > 0)
   {
     const std::uint32_t max_vertex
-        = coordinate_dofs.topLeftCorner(num_local_cells, num_vertices_per_cell)
+        = coordinate_nodes.topLeftCorner(num_cells_local, num_vertices_per_cell)
               .maxCoeff();
 
     // Initialise number of local non-ghost vertices
@@ -220,7 +220,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // Add cells. Only copies the first few entries on each row
   // corresponding to vertices.
   auto cv = std::make_shared<Connectivity>(
-      coordinate_dofs.leftCols(num_vertices_per_cell));
+      coordinate_nodes.leftCols(num_vertices_per_cell));
   _topology->set_connectivity(cv, tdim, 0);
 
   // Global cell indices - construct if none given
