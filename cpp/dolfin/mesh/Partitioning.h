@@ -93,11 +93,9 @@ public:
                     const Eigen::Ref<const EigenRowArrayXXd>& points,
                     const std::vector<std::int64_t>& global_point_indices);
 
-  /// Compute mapping of globally indexed vertices to local indices
-  /// and remap topology accordingly
+  /// Compute map from global node indices to local (contiguous) node
+  /// indices, and remap cell node topology accordingly
   ///
-  /// @param mpi_comm
-  ///   MPI Communicator
   /// @param cell_vertices
   ///   Input cell topology (global indexing)
   /// @param cell_permutation
@@ -107,8 +105,8 @@ public:
   ///   topology in local indexing (EigenRowArrayXXi32)
   static std::tuple<std::uint64_t, std::vector<std::int64_t>,
                     EigenRowArrayXXi32>
-  compute_point_mapping(std::int32_t num_cell_vertices,
-                        const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
+  compute_point_mapping(std::int32_t num_vertices_per_cell,
+                        const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
                         const std::vector<std::uint8_t>& cell_permutation);
 
   // Utility to create global vertex indices, needed for higher

@@ -43,7 +43,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
         "Cannot create mesh. Wrong number of global cell indices");
   }
 
-  // Permutation from VTK to DOLFIN order for cell geometric points
+  // Permutation from VTK to DOLFIN order for cell geometric nodes
   // FIXME: should do this also for quad/hex
   // FIXME: remove duplication in CellType::vtk_mapping()
   std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -69,17 +69,18 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     }
   }
 
-  // Get number of points (global) before distributing (which creates
-  // duplicates)
+  // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 
-  // Number of cells, local (not ghost) and global.
+  // Number of local cells (not includign ghosts)
   const std::int32_t num_cells = cells.rows();
   assert((std::int32_t)num_ghost_cells <= num_cells);
   const std::int32_t num_local_cells = num_cells - num_ghost_cells;
-  const std::uint64_t num_cells_global = MPI::sum(comm, num_local_cells);
 
-  // Compute point local-to-global map from global indices, and compute
+  // Number of cells (global)
+  const std::int64_t num_cells_global = MPI::sum(comm, num_local_cells);
+
+  // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices.
   std::int32_t num_vertices;
   std::vector<std::int64_t> global_point_indices;

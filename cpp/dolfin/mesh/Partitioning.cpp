@@ -756,77 +756,55 @@ Partitioning::reorder_cells_gps(
 //-----------------------------------------------------------------------------
 std::tuple<std::uint64_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
 Partitioning::compute_point_mapping(
-    std::int32_t num_cell_vertices,
-    const Eigen::Ref<const EigenRowArrayXXi64>& cell_points,
+    std::int32_t num_vertices_per_cell,
+    const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
     const std::vector<std::uint8_t>& cell_permutation)
 {
-  const std::int32_t num_cells = cell_points.rows();
-  const std::int32_t num_cell_points = cell_points.cols();
+  const std::int32_t num_cells = cell_nodes.rows();
+  const std::int32_t num_nodes_per_cell = cell_nodes.cols();
 
   // Cell points in local indexing
-  EigenRowArrayXXi32 local_cell_points(num_cells, num_cell_points);
+  EigenRowArrayXXi32 cell_nodes_local(num_cells, num_nodes_per_cell);
 
-  // Local-to-global map for points
-  std::vector<std::int64_t> point_local_to_global;
-
-  // Get set of unique points from cells. Remap cell_points to
-  // local_cell_points, starting from 0. Record the global indices for
-  // each local point in point_indices.
-
-  // Loop over cells mapping vertices (but not other points)
-  std::int32_t nv = 0;
-  std::map<std::int64_t, std::int32_t> point_global_to_local;
-  for (std::int32_t c = 0; c < num_cells; ++c)
+  // Loop over cells to build local-to-global map for (i) vertices, and
+  // (ii) then other nodes
+  std::vector<std::int64_t> node_local_to_global;
+  std::map<std::int64_t, std::int32_t> node_global_to_local;
+  std::int32_t num_vertices_local = 0;
+  int v0(0), v1(num_vertices_per_cell);
+  for (std::int32_t pass = 0; pass < 2; ++pass)
   {
-    // Loop over cell points
-    for (std::int32_t v = 0; v < num_cell_vertices; ++v)
+    for (std::int32_t c = 0; c < num_cells; ++c)
     {
-      // Get global cell index
-      std::int64_t q = cell_points(c, v);
-
-      // Insert (global_vertex_index, local_vertex_index) into map
-      auto map_it = point_global_to_local.insert({q, nv});
-
-      // Set local index in cell vertex list
-      local_cell_points(c, cell_permutation[v]) = map_it.first->second;
-
-      // If global index seen for first time, add to local-to-global map
-      if (map_it.second)
+      // Loop over cell points
+      for (std::int32_t v = v0; v < v1; ++v)
       {
-        point_local_to_global.push_back(q);
-        ++nv;
+        // Get global cell index
+        std::int64_t q = cell_nodes(c, v);
+
+        // Insert (global_vertex_index, local_vertex_index) into map. If
+        // global index seen for first time, add to local-to-global map.
+        auto map_it
+            = node_global_to_local.insert({q, node_local_to_global.size()});
+        if (map_it.second)
+          node_local_to_global.push_back(q);
+
+        // Set local index in cell vertex list (applying permutation)
+        cell_nodes_local(c, cell_permutation[v]) = map_it.first->second;
       }
     }
+
+    // Store number of local vertices
+    if (pass == 0)
+      num_vertices_local = node_local_to_global.size();
+
+    // Update loop range to loop over nodes
+    v0 = num_vertices_per_cell;
+    v1 = num_nodes_per_cell;
   }
 
-  const std::int32_t num_local_vertices = nv;
-
-  // Repeat and map non-vertex points
-  for (std::int32_t c = 0; c < num_cells; ++c)
-  {
-    // Loop over cell points
-    for (std::int32_t v = num_cell_vertices; v < num_cell_points; ++v)
-    {
-      // Get global cell index
-      std::int64_t q = cell_points(c, v);
-
-      // Insert (global_vertex_index, local_vertex_index) into map
-      auto map_it = point_global_to_local.insert({q, nv});
-
-      // Set local index in cell vertex list
-      local_cell_points(c, cell_permutation[v]) = map_it.first->second;
-
-      // If global index seen for first time, add to local-to-global map
-      if (map_it.second)
-      {
-        point_local_to_global.push_back(q);
-        ++nv;
-      }
-    }
-  }
-
-  return std::make_tuple(num_local_vertices, std::move(point_local_to_global),
-                         std::move(local_cell_points));
+  return std::make_tuple(num_vertices_local, std::move(node_local_to_global),
+                         std::move(cell_nodes_local));
 }
 //-----------------------------------------------------------------------------
 std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::int32_t>>>

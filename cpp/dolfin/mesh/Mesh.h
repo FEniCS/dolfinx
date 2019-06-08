@@ -62,15 +62,16 @@ class Mesh
 public:
   /// Construct a Mesh from topological and geometric data.
   ///
-  /// In parallel, geometric points must be arranged in global index order
-  /// across processes, starting from 0 on process 0, and must not be
-  /// duplicated. The points will be redistributed to the processes that need
-  /// them.
+  /// In parallel, geometric points must be arranged in global index
+  /// order across processes, starting from 0 on process 0, and must not
+  /// be duplicated. The points will be redistributed to the processes
+  /// that need them.
   ///
-  /// Cells should be listed only on the processes they appear on, i.e. mesh
-  /// partitioning should be performed on the topology data before calling the
-  /// Mesh constructor. Ghost cells, if present, must be at the end of the list
-  /// of cells, and the number of ghost cells must be provided.
+  /// Cells should be listed only on the processes they appear on, i.e.
+  /// mesh partitioning should be performed on the topology data before
+  /// calling the Mesh constructor. Ghost cells, if present, must be at
+  /// the end of the list of cells, and the number of ghost cells must
+  /// be provided.
   ///
   /// @param comm (MPI_Comm)
   ///         MPI Communicator
