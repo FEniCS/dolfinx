@@ -75,24 +75,22 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::CoordinateDofs,
              std::shared_ptr<dolfin::mesh::CoordinateDofs>>(
       m, "CoordinateDofs", "CoordinateDofs object")
-      .def("entity_points",
-           [](const dolfin::mesh::CoordinateDofs& self, std::size_t dim) {
-             const dolfin::mesh::Connectivity& connectivity
-                 = self.entity_points(dim);
-             Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-                 connections = connectivity.connections();
-             const int num_entities = connectivity.entity_positions().size() - 1;
+      .def("entity_points", [](const dolfin::mesh::CoordinateDofs& self) {
+        const dolfin::mesh::Connectivity& connectivity = self.entity_points();
+        Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+            connections = connectivity.connections();
+        const int num_entities = connectivity.entity_positions().size() - 1;
 
-             // FIXME: mesh::CoordinateDofs should know its dimension
-             // (entity_size) to handle empty case on a process.
-             int entity_size = 0;
-             if (num_entities > 0)
-             {
-               assert(connections.size() % num_entities == 0);
-               entity_size = connections.size() / num_entities;
-             }
-             return py::array({num_entities, entity_size}, connections.data());
-           });
+        // FIXME: mesh::CoordinateDofs should know its dimension
+        // (entity_size) to handle empty case on a process.
+        int entity_size = 0;
+        if (num_entities > 0)
+        {
+          assert(connections.size() % num_entities == 0);
+          entity_size = connections.size() / num_entities;
+        }
+        return py::array({num_entities, entity_size}, connections.data());
+      });
 
   // dolfin::mesh::Geometry class
   py::class_<dolfin::mesh::Geometry, std::shared_ptr<dolfin::mesh::Geometry>>(
