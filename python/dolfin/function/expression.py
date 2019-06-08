@@ -17,11 +17,11 @@ from dolfin import cpp
 def numba_eval(*args,
                numba_jit_options: dict = {
                    "nopython": True,
-                   "cache": True
+                   "cache": False
                },
                numba_cfunc_options: dict = {
                    "nopython": True,
-                   "cache": True
+                   "cache": False
                }):
     """Decorator to create Numba JIT-compiled evaluate function.
 
