@@ -100,6 +100,12 @@ void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::Cell& cell,
 void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
                         mesh::Mesh& mesh, mesh::Cell& cell)
 {
+  if (mesh.degree() > 1)
+  {
+    throw std::runtime_error(
+        "Mesh re-ordering not yet working for high-order meshes");
+  }
+
   mesh::Topology& topology = mesh.topology();
   const int tdim = topology.dim();
 
