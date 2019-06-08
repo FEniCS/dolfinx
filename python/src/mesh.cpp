@@ -160,7 +160,9 @@ void mesh(py::module& m)
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")
-      .def("coordinate_dofs", &dolfin::mesh::Mesh::coordinate_dofs)
+      .def(
+          "coordinate_dofs",
+          py::overload_cast<>(&dolfin::mesh::Mesh::coordinate_dofs, py::const_))
       .def("degree", &dolfin::mesh::Mesh::degree)
       .def("hash", &dolfin::mesh::Mesh::hash)
       .def("hmax", &dolfin::mesh::Mesh::hmax)
