@@ -20,6 +20,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
+#include <dolfin/common/log.h>
 #include <dolfin/graph/CSRGraph.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/ParMETIS.h>
@@ -30,8 +31,6 @@
 #include <numeric>
 #include <set>
 
-#include <dolfin/common/log.h>
-
 using namespace dolfin;
 using namespace dolfin::mesh;
 
@@ -39,8 +38,8 @@ namespace
 {
 //-----------------------------------------------------------------------------
 // FIXME: Improve explanation
-// Utility to convert received_point_indices into
-// point sharing information
+// Utility to convert received_point_indices into point sharing
+// information
 std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
     MPI_Comm mpi_comm,
     const std::vector<std::vector<std::size_t>>& received_point_indices,
@@ -156,7 +155,7 @@ std::map<std::int32_t, std::set<std::int32_t>> build_shared_points(
 std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
            std::map<std::int32_t, std::set<std::int32_t>>, std::int32_t>
 distribute_cells(const MPI_Comm mpi_comm,
-                 const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+                 const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                  const std::vector<std::int64_t>& global_cell_indices,
                  const PartitionData& mp)
 {
@@ -184,8 +183,8 @@ distribute_cells(const MPI_Comm mpi_comm,
   assert(mp.size() == num_local_cells);
 
   // Send all cells to their destinations including their global
-  // indices.  First element of vector is cell count of unghosted cells,
-  // second element is count of ghost cells.
+  // indices.  First element of vector is cell count of un-ghosted
+  // cells, second element is count of ghost cells.
   std::vector<std::vector<std::size_t>> send_cell_vertices(
       mpi_size, std::vector<std::size_t>(2, 0));
 
@@ -505,8 +504,8 @@ void distribute_cell_layer(
 // Build a distributed mesh from local mesh data with a computed
 // partition
 mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
-                 const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-                 const Eigen::Ref<const EigenRowArrayXXd>& points,
+                 const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                 const Eigen::Ref<const EigenRowArrayXXd> points,
                  const std::vector<std::int64_t>& global_cell_indices,
                  const mesh::GhostMode ghost_mode, const PartitionData& mp)
 {
@@ -599,7 +598,7 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
 // processes' to which ghost cells must be sent
 PartitionData
 partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
-                const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
+                const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                 const std::string partitioner)
 {
   LOG(INFO) << "Compute partition of cells across processes";
@@ -641,17 +640,19 @@ partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
 // // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH).
 // // Returns the tuple (reordered_shared_cells, reordered_cell_vertices,
 // // reordered_global_cell_indices)
-// std::tuple<std::map<std::int32_t, std::set<std::int32_t>>, EigenRowArrayXXi64,
+// std::tuple<std::map<std::int32_t, std::set<std::int32_t>>,
+// EigenRowArrayXXi64,
 //            std::vector<std::int64_t>>
 // reorder_cells_gps(
 //     MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
 //     const CellType& cell_type,
 //     const std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
-//     const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
+//     const Eigen::Ref<const EigenRowArrayXXi64> global_cell_vertices,
 //     const std::vector<std::int64_t>& global_cell_indices)
 // {
 //   std::cout
-//       << "WARNING: this function is probably broken. It needs careful testing."
+//       << "WARNING: this function is probably broken. It needs careful
+//       testing."
 //       << std::endl;
 
 //   LOG(INFO) << "Re-order cells during distributed mesh construction";
@@ -729,14 +730,14 @@ partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh Partitioning::build_distributed_mesh(
-    const MPI_Comm& comm, mesh::CellType::Type type,
-    const Eigen::Ref<const EigenRowArrayXXd>& points,
-    const Eigen::Ref<const EigenRowArrayXXi64>& cells,
+    const MPI_Comm& comm, mesh::CellType::Type cell_type,
+    const Eigen::Ref<const EigenRowArrayXXd> points,
+    const Eigen::Ref<const EigenRowArrayXXi64> cells,
     const std::vector<std::int64_t>& global_cell_indices,
     const mesh::GhostMode ghost_mode, std::string graph_partitioner)
 {
   // Compute the cell partition
-  PartitionData mp = partition_cells(comm, type, cells, graph_partitioner);
+  PartitionData mp = partition_cells(comm, cell_type, cells, graph_partitioner);
 
   // Check that we have some ghost information.
   int all_ghosts = dolfin::MPI::sum(comm, mp.num_ghosts());
@@ -744,8 +745,8 @@ mesh::Mesh Partitioning::build_distributed_mesh(
     throw std::runtime_error("Ghost cell information not available");
 
   // Build mesh from local mesh data and provided cell partition
-  mesh::Mesh mesh
-      = build(comm, type, cells, points, global_cell_indices, ghost_mode, mp);
+  mesh::Mesh mesh = build(comm, cell_type, cells, points, global_cell_indices,
+                          ghost_mode, mp);
 
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior boundary
@@ -759,7 +760,7 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 //-----------------------------------------------------------------------------
 std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::int32_t>>>
 Partitioning::distribute_points(
-    const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd>& points,
+    const MPI_Comm mpi_comm, const Eigen::Ref<const EigenRowArrayXXd> points,
     const std::vector<std::int64_t>& global_point_indices)
 {
   // This function distributes all points (coordinates and

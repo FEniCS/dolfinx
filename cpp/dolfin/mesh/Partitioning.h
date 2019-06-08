@@ -66,9 +66,9 @@ public:
   /// @param ghost_mode
   ///     Ghost mode
   static mesh::Mesh
-  build_distributed_mesh(const MPI_Comm& comm, mesh::CellType::Type type,
-                         const Eigen::Ref<const EigenRowArrayXXd>& points,
-                         const Eigen::Ref<const EigenRowArrayXXi64>& cells,
+  build_distributed_mesh(const MPI_Comm& comm, mesh::CellType::Type cell_type,
+                         const Eigen::Ref<const EigenRowArrayXXd> points,
+                         const Eigen::Ref<const EigenRowArrayXXi64> cells,
                          const std::vector<std::int64_t>& global_cell_indices,
                          const mesh::GhostMode ghost_mode,
                          std::string graph_partitioner = "SCOTCH");
@@ -88,7 +88,7 @@ public:
   static std::pair<EigenRowArrayXXd,
                    std::map<std::int32_t, std::set<std::int32_t>>>
   distribute_points(const MPI_Comm mpi_comm,
-                    const Eigen::Ref<const EigenRowArrayXXd>& points,
+                    const Eigen::Ref<const EigenRowArrayXXd> points,
                     const std::vector<std::int64_t>& global_point_indices);
 
   // Utility to create global vertex indices, needed for higher order
