@@ -111,6 +111,15 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
 
   // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
+  // Order 'coordinate' connectivity
+  mesh::Connectivity& connect_g = mesh.coordinate_dofs().entity_points();
+  if (tdim == 1)
+    sort_1_0(connect_g, cell, global_vertex_indices, num_edges);
+  else if (tdim == 2)
+    sort_2_0(connect_g, cell, global_vertex_indices, cell_type.num_entities(2));
+  else if (tdim == 3)
+    sort_3_0(connect_g, cell, global_vertex_indices);
+
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   std::shared_ptr<mesh::Connectivity> connect_1_0 = topology.connectivity(1, 0);
   if (connect_1_0)

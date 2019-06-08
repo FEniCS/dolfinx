@@ -22,6 +22,12 @@ mesh::CoordinateDofs::CoordinateDofs(
   // Do nothing
 }
 //-----------------------------------------------------------------------------
+mesh::Connectivity& mesh::CoordinateDofs::entity_points()
+{
+  assert(_coord_dofs);
+  return *_coord_dofs;
+}
+//-----------------------------------------------------------------------------
 const mesh::Connectivity& mesh::CoordinateDofs::entity_points() const
 {
   assert(_coord_dofs);

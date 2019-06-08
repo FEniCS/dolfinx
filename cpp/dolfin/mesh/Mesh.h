@@ -272,6 +272,9 @@ public:
   mesh::GhostMode get_ghost_mode() const;
 
   /// Get coordinate dofs for all local cells
+  CoordinateDofs& coordinate_dofs();
+
+  /// Get coordinate dofs for all local cells (const version)
   const CoordinateDofs& coordinate_dofs() const;
 
   // FIXME: This should be with Geometry

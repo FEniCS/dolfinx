@@ -416,6 +416,12 @@ MPI_Comm Mesh::mpi_comm() const { return _mpi_comm.comm(); }
 //-----------------------------------------------------------------------------
 mesh::GhostMode Mesh::get_ghost_mode() const { return _ghost_mode; }
 //-----------------------------------------------------------------------------
+CoordinateDofs& Mesh::coordinate_dofs()
+{
+  assert(_coordinate_dofs);
+  return *_coordinate_dofs;
+}
+//-----------------------------------------------------------------------------
 const CoordinateDofs& Mesh::coordinate_dofs() const
 {
   assert(_coordinate_dofs);

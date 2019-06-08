@@ -49,10 +49,14 @@ public:
   /// Move assignment
   CoordinateDofs& operator=(CoordinateDofs&& topology) = default;
 
-  /// Get the entity points associated with entities of dimension i
+  /// Get the entity points associated with cells (const version)
   ///
-  /// @param dim
-  ///   Entity dimension
+  /// @return Connectivity
+  ///   Connections from cells to points
+  Connectivity& entity_points();
+
+  /// Get the entity points associated with cells (const version)
+  ///
   /// @return Connectivity
   ///   Connections from cells to points
   const Connectivity& entity_points() const;
