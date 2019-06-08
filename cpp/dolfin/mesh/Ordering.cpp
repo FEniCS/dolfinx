@@ -53,6 +53,50 @@ bool increasing(const int n, const std::int32_t* v0, const std::int32_t* v1,
   return w0 < w1;
 }
 //-----------------------------------------------------------------------------
+void sort_1_0(mesh::Connectivity& connect_1_0, const mesh::Cell& cell,
+              const std::vector<std::int64_t>& global_vertex_indices,
+              const int num_edges)
+{
+  // Sort vertices on each edge
+  const std::int32_t* cell_edges = cell.entities(1);
+  assert(cell_edges);
+  for (int i = 0; i < num_edges; ++i)
+  {
+    std::int32_t* edge_vertices = connect_1_0.connections(cell_edges[i]);
+    assert(edge_vertices);
+    std::sort(edge_vertices, edge_vertices + 2, [&](auto& a, auto& b) {
+      return global_vertex_indices[a] < global_vertex_indices[b];
+    });
+  }
+}
+//-----------------------------------------------------------------------------
+void sort_2_0(mesh::Connectivity& connect_2_0, const mesh::Cell& cell,
+              const std::vector<std::int64_t>& global_vertex_indices,
+              const int num_faces)
+{
+  // Sort vertices on each facet
+  const std::int32_t* cell_faces = cell.entities(2);
+  assert(cell_faces);
+  for (int i = 0; i < num_faces; ++i)
+  {
+    std::int32_t* face_vertices = connect_2_0.connections(cell_faces[i]);
+    assert(face_vertices);
+    std::sort(face_vertices, face_vertices + 3, [&](auto& a, auto& b) {
+      return global_vertex_indices[a] < global_vertex_indices[b];
+    });
+  }
+}
+//-----------------------------------------------------------------------------
+void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::Cell& cell,
+              const std::vector<std::int64_t>& global_vertex_indices)
+{
+  std::int32_t* cell_vertices = connect_3_0.connections(cell.index());
+  assert(cell_vertices);
+  std::sort(cell_vertices, cell_vertices + 4, [&](auto& a, auto& b) {
+    return global_vertex_indices[a] < global_vertex_indices[b];
+  });
+}
+//-----------------------------------------------------------------------------
 void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
                         mesh::Mesh& mesh, mesh::Cell& cell)
 {
@@ -70,19 +114,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   // Sort local vertices on edges in ascending order, connectivity 1 - 0
   std::shared_ptr<mesh::Connectivity> connect_1_0 = topology.connectivity(1, 0);
   if (connect_1_0)
-  {
-    // Sort vertices on each edge
-    const std::int32_t* cell_edges = cell.entities(1);
-    assert(cell_edges);
-    for (int i = 0; i < num_edges; ++i)
-    {
-      std::int32_t* edge_vertices = connect_1_0->connections(cell_edges[i]);
-      assert(edge_vertices);
-      std::sort(edge_vertices, edge_vertices + 2, [&](auto& a, auto& b) {
-        return global_vertex_indices[a] < global_vertex_indices[b];
-      });
-    }
-  }
+    sort_1_0(*connect_1_0, cell, global_vertex_indices, num_edges);
 
   if (tdim < 2)
     return;
@@ -92,19 +124,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   // Sort local vertices on faces in ascending order, connectivity 2 - 0
   std::shared_ptr<mesh::Connectivity> connect_2_0 = topology.connectivity(2, 0);
   if (connect_2_0)
-  {
-    // Sort vertices on each facet
-    const std::int32_t* cell_faces = cell.entities(2);
-    assert(cell_faces);
-    for (int i = 0; i < num_faces; ++i)
-    {
-      std::int32_t* face_vertices = connect_2_0->connections(cell_faces[i]);
-      assert(face_vertices);
-      std::sort(face_vertices, face_vertices + 3, [&](auto& a, auto& b) {
-        return global_vertex_indices[a] < global_vertex_indices[b];
-      });
-    }
-  }
+    sort_2_0(*connect_2_0, cell, global_vertex_indices, num_faces);
 
   // Sort local edges on local faces after non-incident vertex,
   // connectivity 2 - 1
@@ -156,13 +176,7 @@ void order_cell_simplex(const std::vector<std::int64_t>& global_vertex_indices,
   // Sort local vertices on cell in ascending order, connectivity 3 - 0
   std::shared_ptr<mesh::Connectivity> connect_3_0 = topology.connectivity(3, 0);
   if (connect_3_0)
-  {
-    std::int32_t* cell_vertices = connect_3_0->connections(cell.index());
-    assert(cell_vertices);
-    std::sort(cell_vertices, cell_vertices + 4, [&](auto& a, auto& b) {
-      return global_vertex_indices[a] < global_vertex_indices[b];
-    });
-  }
+    sort_3_0(*connect_3_0, cell, global_vertex_indices);
 
   // Sort local edges on cell after non-incident vertex tuble,
   // connectivity 3-1
