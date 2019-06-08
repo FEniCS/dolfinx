@@ -23,6 +23,72 @@
 using namespace dolfin;
 using namespace dolfin::mesh;
 
+namespace
+{
+//-----------------------------------------------------------------------------
+// Compute map from global node indices to local (contiguous) node
+// indices, and remap cell node topology accordingly
+//
+// @param cell_vertices
+//   Input cell topology (global indexing)
+// @param cell_permutation
+//   Permutation from VTK to DOLFIN index ordering
+// @return
+//   Local-to-global map for vertices (std::vector<std::int64_t>) and cell
+//   topology in local indexing (EigenRowArrayXXi32)
+std::tuple<std::uint64_t, std::vector<std::int64_t>, EigenRowArrayXXi32>
+compute_cell_node_map(std::int32_t num_vertices_per_cell,
+                      const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
+                      const std::vector<std::uint8_t>& cell_permutation)
+{
+  const std::int32_t num_cells = cell_nodes.rows();
+  const std::int32_t num_nodes_per_cell = cell_nodes.cols();
+
+  // Cell points in local indexing
+  EigenRowArrayXXi32 cell_nodes_local(num_cells, num_nodes_per_cell);
+
+  // Loop over cells to build local-to-global map for (i) vertex nodes,
+  // and (ii) then other nodes
+  std::vector<std::int64_t> local_to_global;
+  std::map<std::int64_t, std::int32_t> global_to_local;
+  std::int32_t num_vertices_local = 0;
+  int v0(0), v1(num_vertices_per_cell);
+  for (std::int32_t pass = 0; pass < 2; ++pass)
+  {
+    for (std::int32_t c = 0; c < num_cells; ++c)
+    {
+      // Loop over cell nodes
+      for (std::int32_t v = v0; v < v1; ++v)
+      {
+        // Get global node index
+        std::int64_t q = cell_nodes(c, v);
+
+        // Insert (global_vertex_index, local_vertex_index) into map. If
+        // global index seen for first time, add to local-to-global map.
+        auto map_it = global_to_local.insert({q, local_to_global.size()});
+        if (map_it.second)
+          local_to_global.push_back(q);
+
+        // Set local node index in cell node list (applying permutation)
+        cell_nodes_local(c, cell_permutation[v]) = map_it.first->second;
+      }
+    }
+
+    // Store number of local vertices
+    if (pass == 0)
+      num_vertices_local = local_to_global.size();
+
+    // Update loop range to loop over nodes
+    v0 = num_vertices_per_cell;
+    v1 = num_nodes_per_cell;
+  }
+
+  return std::make_tuple(num_vertices_local, std::move(local_to_global),
+                         std::move(cell_nodes_local));
+}
+//-----------------------------------------------------------------------------
+} // namespace
+
 //-----------------------------------------------------------------------------
 Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
            const Eigen::Ref<const EigenRowArrayXXd> points,
@@ -87,8 +153,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs;
   std::tie(num_vertices, global_point_indices, coordinate_dofs)
-      = Partitioning::compute_point_mapping(num_vertices_per_cell, cells,
-                                            cell_permutation);
+      = compute_cell_node_map(num_vertices_per_cell, cells, cell_permutation);
   _coordinate_dofs
       = std::make_unique<CoordinateDofs>(coordinate_dofs, cell_permutation);
 

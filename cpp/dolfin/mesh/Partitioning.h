@@ -93,22 +93,6 @@ public:
                     const Eigen::Ref<const EigenRowArrayXXd>& points,
                     const std::vector<std::int64_t>& global_point_indices);
 
-  /// Compute map from global node indices to local (contiguous) node
-  /// indices, and remap cell node topology accordingly
-  ///
-  /// @param cell_vertices
-  ///   Input cell topology (global indexing)
-  /// @param cell_permutation
-  ///   Permutation from VTK to DOLFIN index ordering
-  /// @return
-  ///   Local-to-global map for vertices (std::vector<std::int64_t>) and cell
-  ///   topology in local indexing (EigenRowArrayXXi32)
-  static std::tuple<std::uint64_t, std::vector<std::int64_t>,
-                    EigenRowArrayXXi32>
-  compute_point_mapping(std::int32_t num_vertices_per_cell,
-                        const Eigen::Ref<const EigenRowArrayXXi64>& cell_nodes,
-                        const std::vector<std::uint8_t>& cell_permutation);
-
   // Utility to create global vertex indices, needed for higher
   // order meshes, where there are geometric points which are not
   // at the vertex nodes
