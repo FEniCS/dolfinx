@@ -224,7 +224,7 @@ void Function::eval(
   // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points(tdim);
+      = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -372,13 +372,11 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
       point_values(mesh.geometry().num_points(), value_size_loc);
 
   const int gdim = mesh.topology().dim();
-  const int tdim = mesh.topology().dim();
-  const mesh::Connectivity& cell_dofs
-      = mesh.coordinate_dofs().entity_points(tdim);
+  const mesh::Connectivity& cell_dofs = mesh.coordinate_dofs().entity_points();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points(tdim);
+      = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g

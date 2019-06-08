@@ -69,7 +69,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     }
   }
 
-  // Get number of global points before distributing (which creates
+  // Get number of points (global) before distributing (which creates
   // duplicates)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 
@@ -83,12 +83,13 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // cell topology using new local indices.
   std::int32_t num_vertices;
   std::vector<std::int64_t> global_point_indices;
-  EigenRowArrayXXi32 coordinate_dofs;
+  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs;
   std::tie(num_vertices, global_point_indices, coordinate_dofs)
       = Partitioning::compute_point_mapping(num_vertices_per_cell, cells,
                                             cell_permutation);
-  _coordinate_dofs = std::make_unique<CoordinateDofs>(tdim, coordinate_dofs,
-                                                      cell_permutation);
+  _coordinate_dofs
+      = std::make_unique<CoordinateDofs>(coordinate_dofs, cell_permutation);
 
   // Distribute the points across processes and calculate shared points
   EigenRowArrayXXd distributed_points;

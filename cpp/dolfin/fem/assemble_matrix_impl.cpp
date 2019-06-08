@@ -89,11 +89,10 @@ void fem::impl::assemble_cells(
   assert(A);
 
   const int gdim = mesh.geometry().dim();
-  const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points(tdim);
+      = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -184,7 +183,7 @@ void fem::impl::assemble_exterior_facets(
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points(tdim);
+      = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
