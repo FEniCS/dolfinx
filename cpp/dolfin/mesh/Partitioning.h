@@ -20,11 +20,10 @@ namespace dolfin
 {
 namespace mesh
 {
-// Developer note: MeshFunction and MeshValueCollection cannot
-// appear in the implementations that appear in this file of the
-// templated functions as this leads to a circular
-// dependency. Therefore the functions are templated over these
-// types.
+// Developer note: MeshFunction and MeshValueCollection cannot appear in
+// the implementations that appear in this file of the templated
+// functions as this leads to a circular dependency. Therefore the
+// functions are templated over these types.
 
 class Mesh;
 template <typename T>
@@ -41,13 +40,12 @@ enum class GhostMode : int
   shared_vertex
 };
 
-/// This class partitions and distributes a mesh based on
-/// partitioned local mesh data.The local mesh data will also be
-/// repartitioned and redistributed during the computation of the
-/// mesh partitioning.
+/// This class partitions and distributes a mesh based on partitioned
+/// local mesh data.The local mesh data will also be repartitioned and
+/// redistributed during the computation of the mesh partitioning.
 ///
-/// After partitioning, each process has a local mesh and some data
-/// that couples the meshes together.
+/// After partitioning, each process has a local mesh and some data that
+/// couples the meshes together.
 
 class Partitioning
 {
@@ -93,28 +91,14 @@ public:
                     const Eigen::Ref<const EigenRowArrayXXd>& points,
                     const std::vector<std::int64_t>& global_point_indices);
 
-  // Utility to create global vertex indices, needed for higher
-  // order meshes, where there are geometric points which are not
-  // at the vertex nodes
+  // Utility to create global vertex indices, needed for higher order
+  // meshes, where there are geometric points which are not at the
+  // vertex nodes
   static std::pair<std::int64_t, std::vector<std::int64_t>>
   build_global_vertex_indices(
       MPI_Comm mpi_comm, std::int32_t num_vertices,
       const std::vector<std::int64_t>& global_point_indices,
       const std::map<std::int32_t, std::set<std::int32_t>>& shared_points);
-
-private:
-  // FIXME: make clearer what goes in and what comes out
-  // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH). Returns
-  // the tuple (reordered_shared_cells, reordered_cell_vertices,
-  // reordered_global_cell_indices)
-  static std::tuple<std::map<std::int32_t, std::set<std::int32_t>>,
-                    EigenRowArrayXXi64, std::vector<std::int64_t>>
-  reorder_cells_gps(
-      MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
-      const mesh::CellType& cell_type,
-      const std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
-      const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
-      const std::vector<std::int64_t>& global_cell_indices);
 };
 } // namespace mesh
 } // namespace dolfin

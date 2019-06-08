@@ -637,6 +637,94 @@ partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
   return PartitionData({}, {});
 }
 //-----------------------------------------------------------------------------
+// // FIXME: make clearer what goes in and what comes out
+// // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH).
+// // Returns the tuple (reordered_shared_cells, reordered_cell_vertices,
+// // reordered_global_cell_indices)
+// std::tuple<std::map<std::int32_t, std::set<std::int32_t>>, EigenRowArrayXXi64,
+//            std::vector<std::int64_t>>
+// reorder_cells_gps(
+//     MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
+//     const CellType& cell_type,
+//     const std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
+//     const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
+//     const std::vector<std::int64_t>& global_cell_indices)
+// {
+//   std::cout
+//       << "WARNING: this function is probably broken. It needs careful testing."
+//       << std::endl;
+
+//   LOG(INFO) << "Re-order cells during distributed mesh construction";
+
+//   common::Timer timer("Reorder cells using GPS ordering");
+
+//   // FIXME: Should not use Graph private methods
+//   // Make dual graph from vertex indices, using GraphBuilder
+//   // FIXME: this should be reused later to add the facet-cell topology
+//   std::vector<std::vector<std::size_t>> local_graph;
+//   dolfin::graph::GraphBuilder::FacetCellMap facet_cell_map;
+//   std::tie(local_graph, facet_cell_map, std::ignore)
+//       = dolfin::graph::GraphBuilder::compute_local_dual_graph(
+//           mpi_comm, global_cell_vertices, cell_type);
+
+//   const std::size_t num_all_cells = global_cell_vertices.rows();
+//   const std::size_t local_cell_offset
+//       = dolfin::MPI::global_offset(mpi_comm, num_all_cells, true);
+
+//   // Convert between graph types, removing offset
+//   // FIXME: make all graphs the same type
+
+//   dolfin::graph::Graph g_dual;
+//   // Ignore the ghost cells - they will not be reordered
+//   // FIXME: reorder ghost cells too
+//   for (std::int32_t i = 0; i < num_regular_cells; ++i)
+//   {
+//     dolfin::common::Set<int> conn_set;
+//     for (auto q = local_graph[i].begin(); q != local_graph[i].end(); ++q)
+//     {
+//       assert(*q >= local_cell_offset);
+//       const int local_index = *q - local_cell_offset;
+
+//       // Ignore ghost cells in connectivity
+//       if (local_index < (int)num_regular_cells)
+//         conn_set.insert(local_index);
+//     }
+//     g_dual.push_back(conn_set);
+//   }
+//   std::vector<int> remap;
+//   std::tie(remap, std::ignore) = dolfin::graph::SCOTCH::compute_gps(g_dual);
+
+//   // Add direct mapping for any ghost cells (not reordered)
+//   for (unsigned int j = remap.size(); j < global_cell_indices.size(); ++j)
+//     remap.push_back(j);
+
+//   EigenRowArrayXXi64 reordered_cell_vertices(global_cell_vertices.rows(),
+//                                              global_cell_vertices.cols());
+//   std::vector<std::int64_t> reordered_global_cell_indices(g_dual.size());
+//   for (std::size_t i = 0; i < g_dual.size(); ++i)
+//   {
+//     // Remap data
+//     const int j = remap[i];
+//     reordered_cell_vertices.row(j) = global_cell_vertices.row(i);
+//     reordered_global_cell_indices[j] = global_cell_indices[i];
+//   }
+
+//   std::map<std::int32_t, std::set<std::int32_t>> reordered_shared_cells;
+//   for (auto p = shared_cells.begin(); p != shared_cells.end(); ++p)
+//   {
+//     const std::int32_t cell_index = p->first;
+//     if (cell_index < num_regular_cells)
+//       reordered_shared_cells.insert({remap[cell_index], p->second});
+//     else
+//       reordered_shared_cells.insert(*p);
+//   }
+
+//   return std::make_tuple(std::move(reordered_shared_cells),
+//                          std::move(reordered_cell_vertices),
+//                          std::move(reordered_global_cell_indices));
+// }
+//-----------------------------------------------------------------------------
+
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -652,10 +740,8 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 
   // Check that we have some ghost information.
   int all_ghosts = dolfin::MPI::sum(comm, mp.num_ghosts());
-  if (all_ghosts == 0 && ghost_mode != mesh::GhostMode::none)
-  {
+  if (all_ghosts == 0 and ghost_mode != mesh::GhostMode::none)
     throw std::runtime_error("Ghost cell information not available");
-  }
 
   // Build mesh from local mesh data and provided cell partition
   mesh::Mesh mesh
@@ -669,89 +755,6 @@ mesh::Mesh Partitioning::build_distributed_mesh(
   DistributedMeshTools::init_facet_cell_connections(mesh);
 
   return mesh;
-}
-//-----------------------------------------------------------------------------
-std::tuple<std::map<std::int32_t, std::set<std::int32_t>>, EigenRowArrayXXi64,
-           std::vector<std::int64_t>>
-Partitioning::reorder_cells_gps(
-    MPI_Comm mpi_comm, const std::int32_t num_regular_cells,
-    const CellType& cell_type,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_cells,
-    const Eigen::Ref<const EigenRowArrayXXi64>& global_cell_vertices,
-    const std::vector<std::int64_t>& global_cell_indices)
-{
-  std::cout
-      << "WARNING: this function is probably broken. It needs careful testing."
-      << std::endl;
-
-  LOG(INFO) << "Re-order cells during distributed mesh construction";
-
-  common::Timer timer("Reorder cells using GPS ordering");
-
-  // FIXME: Should not use Graph private methods
-  // Make dual graph from vertex indices, using GraphBuilder
-  // FIXME: this should be reused later to add the facet-cell topology
-  std::vector<std::vector<std::size_t>> local_graph;
-  dolfin::graph::GraphBuilder::FacetCellMap facet_cell_map;
-  std::tie(local_graph, facet_cell_map, std::ignore)
-      = dolfin::graph::GraphBuilder::compute_local_dual_graph(
-          mpi_comm, global_cell_vertices, cell_type);
-
-  const std::size_t num_all_cells = global_cell_vertices.rows();
-  const std::size_t local_cell_offset
-      = dolfin::MPI::global_offset(mpi_comm, num_all_cells, true);
-
-  // Convert between graph types, removing offset
-  // FIXME: make all graphs the same type
-
-  dolfin::graph::Graph g_dual;
-  // Ignore the ghost cells - they will not be reordered
-  // FIXME: reorder ghost cells too
-  for (std::int32_t i = 0; i < num_regular_cells; ++i)
-  {
-    dolfin::common::Set<int> conn_set;
-    for (auto q = local_graph[i].begin(); q != local_graph[i].end(); ++q)
-    {
-      assert(*q >= local_cell_offset);
-      const int local_index = *q - local_cell_offset;
-
-      // Ignore ghost cells in connectivity
-      if (local_index < (int)num_regular_cells)
-        conn_set.insert(local_index);
-    }
-    g_dual.push_back(conn_set);
-  }
-  std::vector<int> remap;
-  std::tie(remap, std::ignore) = dolfin::graph::SCOTCH::compute_gps(g_dual);
-
-  // Add direct mapping for any ghost cells (not reordered)
-  for (unsigned int j = remap.size(); j < global_cell_indices.size(); ++j)
-    remap.push_back(j);
-
-  EigenRowArrayXXi64 reordered_cell_vertices(global_cell_vertices.rows(),
-                                             global_cell_vertices.cols());
-  std::vector<std::int64_t> reordered_global_cell_indices(g_dual.size());
-  for (std::size_t i = 0; i < g_dual.size(); ++i)
-  {
-    // Remap data
-    const int j = remap[i];
-    reordered_cell_vertices.row(j) = global_cell_vertices.row(i);
-    reordered_global_cell_indices[j] = global_cell_indices[i];
-  }
-
-  std::map<std::int32_t, std::set<std::int32_t>> reordered_shared_cells;
-  for (auto p = shared_cells.begin(); p != shared_cells.end(); ++p)
-  {
-    const std::int32_t cell_index = p->first;
-    if (cell_index < num_regular_cells)
-      reordered_shared_cells.insert({remap[cell_index], p->second});
-    else
-      reordered_shared_cells.insert(*p);
-  }
-
-  return std::make_tuple(std::move(reordered_shared_cells),
-                         std::move(reordered_cell_vertices),
-                         std::move(reordered_global_cell_indices));
 }
 //-----------------------------------------------------------------------------
 std::pair<EigenRowArrayXXd, std::map<std::int32_t, std::set<std::int32_t>>>

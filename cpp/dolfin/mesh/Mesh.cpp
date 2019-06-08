@@ -138,7 +138,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
   // Get number of nodes (global)
   const std::uint64_t num_points_global = MPI::sum(comm, points.rows());
 
-  // Number of local cells (not includign ghosts)
+  // Number of local cells (not including ghosts)
   const std::int32_t num_cells = cells.rows();
   assert(num_ghost_cells <= num_cells);
   const std::int32_t num_cells_local = num_cells - num_ghost_cells;
@@ -148,55 +148,55 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Compute node local-to-global map from global indices, and compute
   // cell topology using new local indices.
-  std::int32_t num_vertices;
-  std::vector<std::int64_t> global_point_indices;
+  std::int32_t num_vertices_local;
+  std::vector<std::int64_t> node_indices_global;
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_nodes;
-  std::tie(num_vertices, global_point_indices, coordinate_nodes)
+  std::tie(num_vertices_local, node_indices_global, coordinate_nodes)
       = compute_cell_node_map(num_vertices_per_cell, cells, cell_permutation);
   _coordinate_dofs
       = std::make_unique<CoordinateDofs>(coordinate_nodes, cell_permutation);
 
-  // Distribute the points across processes and calculate shared points
-  EigenRowArrayXXd distributed_points;
-  std::map<std::int32_t, std::set<std::int32_t>> shared_points;
-  std::tie(distributed_points, shared_points)
-      = Partitioning::distribute_points(comm, points, global_point_indices);
+  // Distribute the points across processes and calculate shared nodes
+  EigenRowArrayXXd points_received;
+  std::map<std::int32_t, std::set<std::int32_t>> nodes_shared;
+  std::tie(points_received, nodes_shared)
+      = Partitioning::distribute_points(comm, points, node_indices_global);
 
   // Initialise geometry with global size, actual points, and local to
   // global map
-  _geometry = std::make_unique<Geometry>(num_points_global, distributed_points,
-                                         global_point_indices);
+  _geometry = std::make_unique<Geometry>(num_points_global, points_received,
+                                         node_indices_global);
 
   // Get global vertex information
   std::uint64_t num_vertices_global;
-  std::vector<std::int64_t> global_vertex_indices;
+  std::vector<std::int64_t> vertex_indices_global;
   std::map<std::int32_t, std::set<std::int32_t>> shared_vertices;
-
   if (_degree == 1)
   {
     num_vertices_global = num_points_global;
-    global_vertex_indices = std::move(global_point_indices);
-    shared_vertices = std::move(shared_points);
+    vertex_indices_global = std::move(node_indices_global);
+    shared_vertices = std::move(nodes_shared);
   }
   else
   {
     // For higher order meshes, vertices are a subset of points, so need
-    // to build a distinct global indexing for vertices.
-    std::tie(num_vertices_global, global_vertex_indices)
+    // to build a global indexing for vertices
+    std::tie(num_vertices_global, vertex_indices_global)
         = Partitioning::build_global_vertex_indices(
-            comm, num_vertices, global_point_indices, shared_points);
-    // Eliminate shared points which are not vertices.
+            comm, num_vertices_local, node_indices_global, nodes_shared);
+
     // FIXME: could be useful information. Where should it be kept?
-    for (auto it = shared_points.begin(); it != shared_points.end(); ++it)
-      if (it->first < num_vertices)
+    // Eliminate shared points which are not vertices
+    for (auto it = nodes_shared.begin(); it != nodes_shared.end(); ++it)
+      if (it->first < num_vertices_local)
         shared_vertices.insert(*it);
   }
 
   // Initialise vertex topology
-  _topology
-      = std::make_unique<Topology>(tdim, num_vertices, num_vertices_global);
-  _topology->set_global_indices(0, global_vertex_indices);
+  _topology = std::make_unique<Topology>(tdim, num_vertices_local,
+                                         num_vertices_global);
+  _topology->set_global_indices(0, vertex_indices_global);
   _topology->shared_entities(0) = shared_vertices;
 
   // Initialise cell topology
@@ -215,7 +215,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     _topology->init_ghost(0, num_non_ghost_vertices);
   }
   else
-    _topology->init_ghost(0, num_vertices);
+    _topology->init_ghost(0, num_vertices_local);
 
   // Add cells. Only copies the first few entries on each row
   // corresponding to vertices.
