@@ -775,8 +775,7 @@ Partitioning::distribute_points(
   const int gdim = points.cols();
 
   // Create data structures that will be returned
-  EigenRowArrayXXd point_coordinates(global_point_indices.size(),
-                                     gdim;
+  EigenRowArrayXXd point_coordinates(global_point_indices.size(), gdim);
 
   LOG(INFO) << "Distribute points during distributed mesh construction";
   common::Timer timer("Distribute points");
