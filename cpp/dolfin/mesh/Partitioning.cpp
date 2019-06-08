@@ -864,7 +864,7 @@ Partitioning::distribute_points(
       const std::size_t local_index_0 = local_index;
       for (const auto& q : received_point_indices[p])
       {
-        assert(q >= local_point_range.first and q < local_point_range.second);ß
+        assert(q >= local_point_range.first and q < local_point_range.second);
         const std::size_t location = q - local_point_range.first;
         send_coord_data.row(local_index) = points.row(location);
         ++local_index;
