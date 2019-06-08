@@ -87,6 +87,50 @@ void sort_2_0(mesh::Connectivity& connect_2_0, const mesh::Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
+void sort_2_1(mesh::Connectivity& connect_2_1,
+              const mesh::Connectivity& connect_2_0,
+              const mesh::Connectivity& connect_1_0, const mesh::Cell& cell,
+              const std::vector<std::int64_t>& global_vertex_indices,
+              const int num_faces)
+{
+  // Loop over faces on cell
+  const std::int32_t* cell_faces = cell.entities(2);
+  assert(cell_faces);
+  for (int i = 0; i < num_faces; ++i)
+  {
+    // For each face number get the global vertex numbers
+    const std::int32_t* face_vertices = connect_2_0.connections(cell_faces[i]);
+    assert(face_vertices);
+
+    // For each facet number get the global edge number
+    std::int32_t* cell_edges = connect_2_1.connections(cell_faces[i]);
+    assert(cell_edges);
+
+    // Loop over vertices on face
+    std::size_t m = 0;
+    for (int j = 0; j < 3; ++j)
+    {
+      // Loop edges on face
+      for (int k = m; k < 3; ++k)
+      {
+        // For each edge number get the global vertex numbers
+        const std::int32_t* edge_vertices
+            = connect_1_0.connections(cell_edges[k]);
+        assert(edge_vertices);
+
+        // Check if the jth vertex of facet i is non-incident on edge k
+        if (!std::count(edge_vertices, edge_vertices + 2, face_vertices[j]))
+        {
+          // Swap face numbers
+          std::swap(cell_edges[m], cell_edges[k]);
+          m++;
+          break;
+        }
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::Cell& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
@@ -95,6 +139,46 @@ void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::Cell& cell,
   std::sort(cell_vertices, cell_vertices + 4, [&](auto& a, auto& b) {
     return global_vertex_indices[a] < global_vertex_indices[b];
   });
+}
+//-----------------------------------------------------------------------------
+void sort_3_1(mesh::Connectivity& connect_3_1,
+              const mesh::Connectivity& connect_1_0, const mesh::Cell& cell,
+              const std::vector<std::int64_t>& global_vertex_indices)
+{
+  // Get cell vertices and edge numbers
+  const std::int32_t* cell_vertices = cell.entities(0);
+  assert(cell_vertices);
+  std::int32_t* cell_edges = connect_3_1.connections(cell.index());
+  assert(cell_edges);
+
+  // Loop two vertices on cell as a lexicographical tuple
+  // (i, j): (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
+  int m = 0;
+  for (int i = 0; i < 3; ++i)
+  {
+    for (int j = i + 1; j < 4; ++j)
+    {
+      // Loop edge numbers
+      for (int k = m; k < 6; ++k)
+      {
+        // Get local vertices on edge
+        const std::int32_t* edge_vertices
+            = connect_1_0.connections(cell_edges[k]);
+        assert(edge_vertices);
+
+        // Check if the ith and jth vertex of the cell are
+        // non-incident on edge k
+        if (!std::count(edge_vertices, edge_vertices + 2, cell_vertices[i])
+            and !std::count(edge_vertices, edge_vertices + 2, cell_vertices[j]))
+        {
+          // Swap edge numbers
+          std::swap(cell_edges[m], cell_edges[k]);
+          m++;
+          break;
+        }
+      }
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 bool ordered_cell_simplex(
@@ -176,7 +260,14 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   if (!cell_type.is_simplex())
     throw std::runtime_error("Mesh ordering is for simplex cell types only.");
 
-  const int tdim = mesh.topology().dim();
+  if (mesh.degree() > 1)
+  {
+    throw std::runtime_error(
+        "Mesh re-ordering not yet working for high-order meshes");
+  }
+
+  mesh::Topology& topology = mesh.topology();
+  const int tdim = topology.dim();
   if (mesh.num_entities(tdim) == 0)
     return;
 
@@ -193,18 +284,6 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   // Iterate over all cells
   for (mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    if (mesh.degree() > 1)
-    {
-      throw std::runtime_error(
-          "Mesh re-ordering not yet working for high-order meshes");
-    }
-
-    mesh::Topology& topology = mesh.topology();
-    const int tdim = topology.dim();
-
-    if (tdim < 1)
-      return;
-
     const mesh::CellType& cell_type = cell.mesh().type();
     const int num_edges = cell_type.num_entities(1);
 
@@ -227,7 +306,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
       sort_1_0(*connect_1_0, cell, global_vertex_indices, num_edges);
 
     if (tdim < 2)
-      return;
+      continue;
 
     const int num_faces = cell_type.num_entities(2);
 
@@ -243,47 +322,12 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
         = topology.connectivity(2, 1);
     if (connect_2_1)
     {
-      // Loop over faces on cell
-      const std::int32_t* cell_faces = cell.entities(2);
-      assert(cell_faces);
-      for (int i = 0; i < num_faces; ++i)
-      {
-        // For each face number get the global vertex numbers
-        const std::int32_t* face_vertices
-            = connect_2_0->connections(cell_faces[i]);
-        assert(face_vertices);
-
-        // For each facet number get the global edge number
-        std::int32_t* cell_edges = connect_2_1->connections(cell_faces[i]);
-        assert(cell_edges);
-
-        // Loop over vertices on face
-        std::size_t m = 0;
-        for (int j = 0; j < 3; ++j)
-        {
-          // Loop edges on face
-          for (int k = m; k < 3; ++k)
-          {
-            // For each edge number get the global vertex numbers
-            const std::int32_t* edge_vertices
-                = connect_1_0->connections(cell_edges[k]);
-            assert(edge_vertices);
-
-            // Check if the jth vertex of facet i is non-incident on edge k
-            if (!std::count(edge_vertices, edge_vertices + 2, face_vertices[j]))
-            {
-              // Swap face numbers
-              std::swap(cell_edges[m], cell_edges[k]);
-              m++;
-              break;
-            }
-          }
-        }
-      }
+      sort_2_1(*connect_2_1, *connect_2_0, *connect_1_0, cell,
+               global_vertex_indices, num_faces);
     }
 
     if (tdim < 3)
-      return;
+      continue;
 
     // Sort local vertices on cell in ascending order, connectivity 3 - 0
     std::shared_ptr<mesh::Connectivity> connect_3_0
@@ -296,43 +340,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
     std::shared_ptr<mesh::Connectivity> connect_3_1
         = topology.connectivity(3, 1);
     if (connect_3_1)
-    {
-      // Get cell vertices and edge numbers
-      const std::int32_t* cell_vertices = cell.entities(0);
-      assert(cell_vertices);
-      std::int32_t* cell_edges = connect_3_1->connections(cell.index());
-      assert(cell_edges);
-
-      // Loop two vertices on cell as a lexicographical tuple
-      // (i, j): (0,1) (0,2) (0,3) (1,2) (1,3) (2,3)
-      int m = 0;
-      for (int i = 0; i < 3; ++i)
-      {
-        for (int j = i + 1; j < 4; ++j)
-        {
-          // Loop edge numbers
-          for (int k = m; k < 6; ++k)
-          {
-            // Get local vertices on edge
-            const std::int32_t* edge_vertices
-                = connect_1_0->connections(cell_edges[k]);
-            assert(edge_vertices);
-
-            // Check if the ith and jth vertex of the cell are
-            // non-incident on edge k
-            if (!std::count(edge_vertices, edge_vertices + 2, cell_vertices[i])
-                and !std::count(edge_vertices, edge_vertices + 2,
-                                cell_vertices[j]))
-            {
-              // Swap edge numbers
-              std::swap(cell_edges[m], cell_edges[k]);
-              m++;
-              break;
-            }
-          }
-        }
-      }
-    }
+      sort_3_1(*connect_3_1, *connect_1_0, cell, global_vertex_indices);
 
     // Sort local facets on cell after non-incident vertex, connectivity 3
     // - 2
@@ -366,7 +374,6 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
       }
     }
   }
-  // order_cell_simplex(global_vertex_indices, mesh, cell);
 }
 //-----------------------------------------------------------------------------
 bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
