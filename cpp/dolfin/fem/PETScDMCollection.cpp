@@ -85,9 +85,8 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
 
   // Prepare cell geometry
-  const int tdim = mesh.topology().dim();
   const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points(tdim);
+      = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -530,7 +529,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = meshc.coordinate_dofs().entity_points(tdim);
+      = meshc.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
