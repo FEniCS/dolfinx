@@ -516,3 +516,30 @@ def test_projection():
 
     integral_analytic = 1.0 / 3
     assert integral == pytest.approx(integral_analytic, rel=1.e-6, abs=1.e-12)
+
+
+def test_basic_interior_facet_assembly():
+
+    ghost_mode = dolfin.cpp.mesh.GhostMode.none
+    if (dolfin.MPI.size(dolfin.MPI.comm_world) > 1):
+        ghost_mode = dolfin.cpp.mesh.GhostMode.shared_facet
+
+    mesh = dolfin.RectangleMesh(dolfin.MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
+                                                        numpy.array([1.0, 1.0, 0.0])], [5, 5],
+                                cell_type=dolfin.cpp.mesh.CellType.Type.triangle,
+                                ghost_mode=ghost_mode)
+
+    V = dolfin.function.FunctionSpace(mesh, ("DG", 1))
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+
+    a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
+
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    assert isinstance(A, PETSc.Mat)
+
+    L = ufl.conj(ufl.avg(v)) * ufl.dS
+
+    b = dolfin.fem.assemble_vector(L)
+    b.assemble()
+    assert isinstance(b, PETSc.Vec)

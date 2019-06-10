@@ -185,7 +185,7 @@ public:
   ///
   /// @return     std::size_t
   ///         The local index of given entity.
-  std::size_t index(const MeshEntity& entity) const;
+  int index(const MeshEntity& entity) const;
 
   /// Compute midpoint of cell
   ///
