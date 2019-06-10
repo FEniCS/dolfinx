@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Chris N Richardson
+// Copyright (C) 2018 Chris N. Richardson
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -23,15 +23,12 @@ class CoordinateDofs
 {
 public:
   /// Constructor
-  /// @param tdim
-  ///   Topological dimension
   /// @param point_dofs
   ///   Array containing point dofs for each entity
   /// @param cell_permutation
   ///   Array containing permutation for cell_vertices required for higher order
   ///   elements which are input in gmsh/vtk order.
   CoordinateDofs(
-      int tdim,
       const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                           Eigen::Dynamic, Eigen::RowMajor>>
           point_dofs,
@@ -52,25 +49,29 @@ public:
   /// Move assignment
   CoordinateDofs& operator=(CoordinateDofs&& topology) = default;
 
-  /// Get the entity points associated with entities of dimension i
+  /// Get the entity points associated with cells (const version)
   ///
-  /// @param dim
-  ///   Entity dimension
   /// @return Connectivity
-  ///   Connections from entities of given dimension to points
-  const Connectivity& entity_points(std::uint32_t dim) const;
+  ///   Connections from cells to points
+  Connectivity& entity_points();
+
+  /// Get the entity points associated with cells (const version)
+  ///
+  /// @return Connectivity
+  ///   Connections from cells to points
+  const Connectivity& entity_points() const;
 
   const std::vector<std::uint8_t>& cell_permutation() const;
 
 private:
-  // Connectivity from entities to points. Initially only defined for
-  // cells
-  std::vector<std::shared_ptr<Connectivity>> _coord_dofs;
+  // Connectivity from cells to points
+  std::shared_ptr<Connectivity> _coord_dofs;
 
-  // Permutation required to transform to/from VTK/gmsh ordering to
-  // DOLFIN ordering needed for higher order elements
+
   // FIXME: ideally remove this, but would need to harmonise the dof
   // ordering between dolfin/ffc/gmsh
+  // Permutation required to transform to/from VTK/gmsh ordering to
+  // DOLFIN ordering needed for higher order elements
   std::vector<std::uint8_t> _cell_permutation;
 };
 } // namespace mesh

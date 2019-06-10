@@ -106,7 +106,6 @@ void FunctionSpace::interpolate_from_any(
 {
   assert(_mesh);
   const int gdim = _mesh->geometry().dim();
-  const int tdim = _mesh->topology().dim();
 
   // Initialize local arrays
   std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
@@ -119,7 +118,7 @@ void FunctionSpace::interpolate_from_any(
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points(tdim);
+      = _mesh->coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -166,14 +165,13 @@ void FunctionSpace::interpolate_from_any(
   assert(_mesh);
 
   const int gdim = _mesh->geometry().dim();
-  const int tdim = _mesh->topology().dim();
 
   // Initialize local arrays
   std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points(tdim);
+      = _mesh->coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -354,7 +352,6 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   assert(_mesh);
   assert(_element);
   const int gdim = _mesh->geometry().dim();
-  const int tdim = _mesh->topology().dim();
 
   if (!_component.empty())
   {
@@ -384,7 +381,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points(tdim);
+      = _mesh->coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -433,12 +430,11 @@ void FunctionSpace::set_x(
   assert(_element);
 
   const int gdim = _mesh->geometry().dim();
-  const int tdim = _mesh->topology().dim();
   std::vector<PetscScalar> x_values;
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points(tdim);
+      = _mesh->coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g

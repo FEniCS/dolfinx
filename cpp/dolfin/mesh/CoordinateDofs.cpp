@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Chris N Richardson
+// Copyright (C) 2018 Chris N. Richardson
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -11,23 +11,27 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 mesh::CoordinateDofs::CoordinateDofs(
-    int tdim,
     const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
                                         Eigen::Dynamic, Eigen::RowMajor>>
         point_dofs,
     const std::vector<std::uint8_t>& cell_permutation)
-    : _coord_dofs(tdim + 1), _cell_permutation(cell_permutation)
+    : _coord_dofs(new Connectivity(point_dofs)),
+      _cell_permutation(cell_permutation)
 
 {
-  _coord_dofs[tdim] = std::make_shared<Connectivity>(point_dofs);
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
-const mesh::Connectivity&
-mesh::CoordinateDofs::entity_points(std::uint32_t dim) const
+mesh::Connectivity& mesh::CoordinateDofs::entity_points()
 {
-  assert(dim < _coord_dofs.size());
-  assert(_coord_dofs[dim]);
-  return *_coord_dofs[dim];
+  assert(_coord_dofs);
+  return *_coord_dofs;
+}
+//-----------------------------------------------------------------------------
+const mesh::Connectivity& mesh::CoordinateDofs::entity_points() const
+{
+  assert(_coord_dofs);
+  return *_coord_dofs;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::uint8_t>& mesh::CoordinateDofs::cell_permutation() const
