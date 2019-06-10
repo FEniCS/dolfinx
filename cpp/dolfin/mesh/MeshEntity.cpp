@@ -38,7 +38,7 @@ bool MeshEntity::incident(const MeshEntity& entity) const
   return false;
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshEntity::index(const MeshEntity& entity) const
+int MeshEntity::index(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident
   if (_mesh != entity._mesh)
@@ -50,11 +50,11 @@ std::size_t MeshEntity::index(const MeshEntity& entity) const
   const std::int32_t* entities = _mesh->topology()
                                      .connectivity(_dim, entity._dim)
                                      ->connections(_local_index);
-  const std::size_t num_entities
+  const int num_entities
       = _mesh->topology().connectivity(_dim, entity._dim)->size(_local_index);
 
   // Check if any entity matches
-  for (std::size_t i = 0; i < num_entities; ++i)
+  for (int i = 0; i < num_entities; ++i)
     if (entities[i] == entity._local_index)
       return i;
 
