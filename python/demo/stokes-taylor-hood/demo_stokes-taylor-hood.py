@@ -196,10 +196,8 @@ L = inner(f, v) * dx
 
 # Compute solution
 w = Function(W)
-print("start solve")
 solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
-                                     "pc_type": "lu", "pc_factor_mat_solver_type": "superlu"})
-print("post solve interpolate")
+                                     "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
 
 # Split the mixed solution and collapse
 u = w.sub(0).collapse()
