@@ -271,6 +271,8 @@ public:
   ///        Mesh
   mesh::Mesh read_mesh(MPI_Comm comm, const mesh::GhostMode ghost_mode) const;
 
+  std::map<std::string, int> read_tags() const;
+
   /// Read a function from the XDMF file. Supplied function must
   /// come with already initialized and compatible function space.
   ///

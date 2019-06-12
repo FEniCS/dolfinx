@@ -210,6 +210,10 @@ class XDMFFile:
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
+    def read_tags(self):
+        tag = self._cpp_object.read_tags()
+        return tag
+
     def read_checkpoint(self, V, name: str,
                         counter: int = -1) -> function.Function:
         """Read finite element Function from checkpointing format

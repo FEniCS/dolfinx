@@ -1424,6 +1424,53 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
       global_cell_indices, ghost_mode);
 }
 //----------------------------------------------------------------------------
+std::map<std::string, int> XDMFFile::read_tags() const{
+
+  boost::filesystem::path xdmf_filename(_filename);
+  const boost::filesystem::path parent_path = xdmf_filename.parent_path();
+
+  if (!boost::filesystem::exists(xdmf_filename))
+    throw std::runtime_error("Cannot open XDMF file. File does not exists.");
+
+  // Load XML doc from file
+  pugi::xml_document xml_doc;
+  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+  assert(result);
+
+  // Get XDMF node
+  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
+  assert(xdmf_node);
+
+  // Get domain node
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
+  assert(domain_node); 
+
+  // Get information node
+  pugi::xml_node information_node = domain_node.child("Information");
+  assert(information_node);
+
+  // Get CDATA
+  pugi::xml_document doc;
+  const char* source =  information_node.text().get();
+  pugi::xml_parse_result result_tag = doc.load_string(source);
+  assert(result_tag);
+
+  pugi::xml_node main_node = doc.child("main");
+
+  // Creation of Map
+  std::map<std::string, int> mapOfTag;
+  for (pugi::xml_node child: main_node.children())
+  {
+      auto tag_key = child.first_attribute().value();
+      int tag_value = atoi (child.child_value())  ;
+
+      // Insert Element in map
+      mapOfTag.insert(std::pair<std::string, int>(tag_key, tag_value));
+  }
+
+  return mapOfTag;
+}
+//----------------------------------------------------------------------------
 function::Function
 XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                           std::string func_name, std::int64_t counter) const

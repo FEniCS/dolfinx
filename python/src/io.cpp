@@ -236,6 +236,10 @@ void io(py::module& m)
               const dolfin::mesh::GhostMode ghost_mode) {
              return self.read_mesh(comm.get(), ghost_mode);
            })
+      .def("read_tags",
+           [](dolfin::io::XDMFFile& self) {
+             return self.read_tags();
+           })
       // MeshFunction
       .def("read_mf_int", &dolfin::io::XDMFFile::read_mf_int, py::arg("mesh"),
            py::arg("name") = "")
