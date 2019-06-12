@@ -255,12 +255,6 @@ private:
           expansion_coefficients,
       const Function& v) const;
 
-  // General interpolation from any Expression on any mesh
-  void interpolate_from_any(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-          expansion_coefficients,
-      const Expression& expr) const;
-
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
 

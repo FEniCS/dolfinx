@@ -78,20 +78,6 @@ public:
   ///         The value shape.
   virtual std::vector<std::size_t> value_shape() const;
 
-  /// Restrict function to local cell (compute expansion coefficients w).
-  ///
-  /// @param    w (list of PetscScalar)
-  ///         Expansion coefficients.
-  /// @param    element (_FiniteElement_)
-  ///         The element.
-  /// @param    dolfin_cell (_Cell_)
-  ///         The cell.
-  /// @param  coordinate_dofs (double*)
-  ///         The coordinates
-  virtual void restrict(PetscScalar* w, const fem::FiniteElement& element,
-                        const mesh::Cell& dolfin_cell,
-                        const EigenRowArrayXXd& coordinate_dofs) const;
-
   /// Compute values at all mesh vertices.
   ///
   /// @param    mesh (Mesh)

@@ -51,51 +51,6 @@ std::vector<std::size_t> Expression::value_shape() const
   return _value_shape;
 }
 //-----------------------------------------------------------------------------
-void Expression::restrict(PetscScalar* w, const fem::FiniteElement& element,
-                          const mesh::Cell& cell,
-                          const EigenRowArrayXXd& coordinate_dofs) const
-{
-  // Get evaluation points
-  const std::size_t value_size = std::accumulate(
-      std::begin(_value_shape), std::end(_value_shape), 1, std::multiplies<>());
-  const std::size_t ndofs = element.space_dimension();
-  const std::size_t gdim = cell.mesh().geometry().dim();
-
-  // FIXME: for Vector Lagrange elements (and probably Tensor too),
-  // this repeats the same evaluation points "gdim" times. Should only
-  // do them once, and remove the "mapping" below (which is the identity).
-
-  // Get dof coordinates on reference element
-  const EigenRowArrayXXd& X = element.dof_reference_coordinates();
-
-  // Get coordinate mapping
-  if (!cell.mesh().geometry().coord_mapping)
-  {
-    throw std::runtime_error(
-        "CoordinateMapping has not been attached to mesh.");
-  }
-  const fem::CoordinateMapping& cmap = *cell.mesh().geometry().coord_mapping;
-
-  // FIXME: Avoid dynamic memory allocation
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_points(ndofs, gdim);
-  cmap.compute_physical_coordinates(eval_points, X, coordinate_dofs);
-
-  // FIXME: Avoid dynamic memory allocation
-  // Storage for evaluation values
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      eval_values(ndofs, value_size);
-
-  // Evaluate all points in one call
-  eval(eval_values, eval_points);
-
-  // FIXME: *do not* use UFC directly
-  // Apply a mapping to the reference element.
-  // FIXME: not needed for Lagrange elements, eliminate.
-  // See: ffc/uflacs/backends/ufc/evaluatedof.py:_change_variables()
-  element.transform_values(w, eval_values, coordinate_dofs);
-}
-//-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Expression::compute_point_values(const mesh::Mesh& mesh) const
 {
