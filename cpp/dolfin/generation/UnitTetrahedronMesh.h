@@ -28,5 +28,5 @@ public:
   /// Create mesh of unit tetrahedron
   static mesh::Mesh create();
 };
-}
-}
+} // namespace generation
+} // namespace dolfin

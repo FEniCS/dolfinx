@@ -12,17 +12,19 @@ from petsc4py import PETSc
 
 import dolfin
 from dolfin import (MPI, FunctionSpace, TimingType, UnitSquareMesh, cpp,
-                    list_timings)
+                    list_timings, Function)
 from dolfin_utils.test.skips import skip_if_complex
 
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
-    numba.types.CPointer(numba.types.double), numba.types.intc)
+    numba.types.CPointer(numba.types.double),
+    numba.types.CPointer(numba.types.int32),
+    numba.types.CPointer(numba.types.int32))
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_tensor_A(A_, w_, coords_, cell_orientation):
+def tabulate_tensor_A(A_, w_, coords_, entity_local_index, cell_orientation):
     A = numba.carray(A_, (3, 3), dtype=PETSc.ScalarType)
     coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
 
@@ -40,7 +42,7 @@ def tabulate_tensor_A(A_, w_, coords_, cell_orientation):
 
 
 @numba.cfunc(c_signature, nopython=True)
-def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
+def tabulate_tensor_b(b_, w_, coords_, local_index, orientation):
     b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
     coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
     x0, y0 = coordinate_dofs[0, :]
@@ -50,6 +52,20 @@ def tabulate_tensor_b(b_, w_, coords_, cell_orientation):
     # 2x Element area Ae
     Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
     b[:] = Ae / 6.0
+
+
+@numba.cfunc(c_signature, nopython=True)
+def tabulate_tensor_b_coeff(b_, w_, coords_, local_index, orientation):
+    b = numba.carray(b_, (3), dtype=PETSc.ScalarType)
+    w = numba.carray(w_, (1), dtype=PETSc.ScalarType)
+    coordinate_dofs = numba.carray(coords_, (3, 2), dtype=np.float64)
+    x0, y0 = coordinate_dofs[0, :]
+    x1, y1 = coordinate_dofs[1, :]
+    x2, y2 = coordinate_dofs[2, :]
+
+    # 2x Element area Ae
+    Ae = abs((x0 - x1) * (y2 - y1) - (y0 - y1) * (x2 - x1))
+    b[:] = w[0] * Ae / 6.0
 
 
 def test_numba_assembly():
@@ -77,6 +93,25 @@ def test_numba_assembly():
     list_timings([TimingType.wall])
 
 
+def test_coefficient():
+    mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
+    V = FunctionSpace(mesh, ("Lagrange", 1))
+    DG0 = FunctionSpace(mesh, ("DG", 0))
+    vals = Function(DG0)
+    vals.vector().set(2.0)
+
+    L = cpp.fem.Form([V._cpp_object])
+    L.set_tabulate_cell(-1, tabulate_tensor_b_coeff.address)
+    L.set_coefficient(0, vals._cpp_object)
+
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    bnorm = b.norm(PETSc.NormType.N2)
+    print(bnorm)
+    assert (np.isclose(bnorm, 2.0 * 0.0739710713711999))
+
+
 @skip_if_complex
 def test_cffi_assembly():
     mesh = UnitSquareMesh(MPI.comm_world, 13, 13)
@@ -90,7 +125,8 @@ def test_cffi_assembly():
         #include <stdalign.h>
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* restrict coordinate_dofs,
-                                    int cell_orientation)
+                                    const int* entity_local_index,
+                                    const int* cell_orientation)
         {
         // Precomputed values of basis functions and precomputations
         // FE* dimensions: [entities][points][dofs]
@@ -137,7 +173,8 @@ def test_cffi_assembly():
 
         void tabulate_tensor_poissonL(double* restrict A, const double* w,
                                      const double* restrict coordinate_dofs,
-                                     int cell_orientation)
+                                     const int* entity_local_index,
+                                     const int* cell_orientation)
         {
         // Precomputed values of basis functions and precomputations
         // FE* dimensions: [entities][points][dofs]
@@ -163,10 +200,12 @@ def test_cffi_assembly():
         ffibuilder.cdef("""
         void tabulate_tensor_poissonA(double* restrict A, const double* w,
                                     const double* restrict coordinate_dofs,
-                                    int cell_orientation);
+                                    const int* entity_local_index,
+                                    const int* cell_orientation);
         void tabulate_tensor_poissonL(double* restrict A, const double* w,
                                     const double* restrict coordinate_dofs,
-                                    int cell_orientation);
+                                    const int* entity_local_index,
+                                    const int* cell_orientation);
         """)
 
         ffibuilder.compile(verbose=True)

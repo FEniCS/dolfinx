@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/geometry/Point.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,85 +21,59 @@ class CoordinateMapping;
 namespace mesh
 {
 
-/// MeshGeometry stores the geometry imposed on a mesh.
+/// Geometry stores the geometry imposed on a mesh.
 
 /// Currently, the geometry is represented by the set of coordinates for
 /// the vertices of a mesh, but other representations are possible.
 
-class MeshGeometry
+class Geometry
 {
 public:
-  /// Create set of coordinates
-  MeshGeometry(const Eigen::Ref<const Eigen::Array<
-                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-                   points);
+  Geometry(std::int64_t num_points_global,
+           const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>& coordinates,
+           const std::vector<std::int64_t>& global_indices);
 
   /// Copy constructor
-  MeshGeometry(const MeshGeometry&) = default;
+  Geometry(const Geometry&) = default;
 
   /// Move constructor
-  MeshGeometry(MeshGeometry&&) = default;
+  Geometry(Geometry&&) = default;
 
   /// Destructor
-  ~MeshGeometry() = default;
+  ~Geometry() = default;
 
   /// Copy Assignment
-  MeshGeometry& operator=(const MeshGeometry&) = default;
+  Geometry& operator=(const Geometry&) = default;
 
   /// Move Assignment
-  MeshGeometry& operator=(MeshGeometry&&) = default;
+  Geometry& operator=(Geometry&&) = default;
 
   /// Return Euclidean dimension of coordinate system
-  std::size_t dim() const { return _coordinates.cols(); }
+  std::size_t dim() const;
 
   /// Return the number of local points in the geometry
-  std::size_t num_points() const { return _coordinates.rows(); }
+  std::size_t num_points() const;
 
   /// Return the number of global points in the geometry
-  std::size_t num_points_global() const { return _num_points_global; }
+  std::size_t num_points_global() const;
 
   /// Return coordinate array for point with local index n
-  Eigen::Ref<const Eigen::Array<double, 1, Eigen::Dynamic>>
-  x(std::size_t n) const
-  {
-    return _coordinates.row(n);
-  }
-
-  /// Return coordinate with local index n as a 3D point value
-  geometry::Point point(std::size_t n) const;
+  Eigen::Ref<const Eigen::Vector3d>
+  x(std::size_t n) const;
 
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-  points()
-  {
-    return _coordinates;
-  }
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
+  points();
 
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points (const version)
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-  points() const
-  {
-    return _coordinates;
-  }
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
+  points() const;
 
   /// Global indices for points (const)
-  const std::vector<std::int64_t>& global_indices() const
-  {
-    return _global_indices;
-  }
-
-  /// Initialise MeshGeometry data
-  void init(std::uint64_t num_points_global,
-            const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
-                               Eigen::RowMajor>& coordinates,
-            const std::vector<std::int64_t>& global_indices)
-  {
-    _num_points_global = num_points_global;
-    _coordinates = coordinates;
-    _global_indices = global_indices;
-  }
+  const std::vector<std::int64_t>& global_indices() const;
 
   /// Hash of coordinate values
   ///
@@ -117,8 +90,11 @@ public:
 
 private:
   // Coordinates for all points stored as a contiguous array
-  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
       _coordinates;
+
+  // Geometric dimension
+  int _dim;
 
   // Global indices for points
   std::vector<std::int64_t> _global_indices;

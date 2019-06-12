@@ -69,5 +69,5 @@ public:
   /// @endcode
   double dot(const Edge& edge) const;
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

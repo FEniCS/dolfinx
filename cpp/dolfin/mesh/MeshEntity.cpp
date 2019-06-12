@@ -7,39 +7,14 @@
 #include "MeshEntity.h"
 #include "Mesh.h"
 #include "MeshIterator.h"
-#include "MeshTopology.h"
+#include "Topology.h"
 #include "Vertex.h"
-// #include <spdlog/spdlog.h>
+
+#include <dolfin/common/log.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
 
-//-----------------------------------------------------------------------------
-void MeshEntity::init(const Mesh& mesh, std::size_t dim, std::size_t index)
-{
-  // Store variables
-  _mesh = &mesh; // Yes, we should probably use a shared pointer here...
-  _dim = dim;
-  _local_index = index;
-
-  // Check index range
-  if ((std::int64_t)index < _mesh->num_entities(dim))
-    return;
-
-  // Initialize mesh entities
-  _mesh->init(dim);
-
-  // Check index range again
-  if ((std::int64_t)index < _mesh->num_entities(dim))
-    return;
-
-  // Illegal index range
-  // spdlog::error(
-  //     "MeshEntity.cpp", "create mesh entity",
-  //     "Mesh entity index %d out of range [0, %d] for entity of dimension %d",
-  //     index, _mesh->num_entities(dim), dim);
-  throw std::runtime_error("Out of range");
-}
 //-----------------------------------------------------------------------------
 bool MeshEntity::incident(const MeshEntity& entity) const
 {
@@ -48,8 +23,9 @@ bool MeshEntity::incident(const MeshEntity& entity) const
     return false;
 
   // Get list of entities for given topological dimension
-  const std::int32_t* entities
-      = (*_mesh->topology().connectivity(_dim, entity._dim))(_local_index);
+  const std::int32_t* entities = _mesh->topology()
+                                     .connectivity(_dim, entity._dim)
+                                     ->connections(_local_index);
   const std::size_t num_entities
       = _mesh->topology().connectivity(_dim, entity._dim)->size(_local_index);
 
@@ -62,80 +38,66 @@ bool MeshEntity::incident(const MeshEntity& entity) const
   return false;
 }
 //-----------------------------------------------------------------------------
-std::size_t MeshEntity::index(const MeshEntity& entity) const
+int MeshEntity::index(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident
   if (_mesh != entity._mesh)
   {
-    // spdlog::error("MeshEntity.cpp", "compute index of mesh entity",
-    //               "Mesh entity is defined on a different mesh");
-    throw std::runtime_error("Wrong mesh");
+    throw std::runtime_error("Mesh entity is defined on a different mesh");
   }
 
   // Get list of entities for given topological dimension
-  const std::int32_t* entities
-      = (*_mesh->topology().connectivity(_dim, entity._dim))(_local_index);
-  const std::size_t num_entities
+  const std::int32_t* entities = _mesh->topology()
+                                     .connectivity(_dim, entity._dim)
+                                     ->connections(_local_index);
+  const int num_entities
       = _mesh->topology().connectivity(_dim, entity._dim)->size(_local_index);
 
   // Check if any entity matches
-  for (std::size_t i = 0; i < num_entities; ++i)
+  for (int i = 0; i < num_entities; ++i)
     if (entities[i] == entity._local_index)
       return i;
 
   // Entity was not found
-  // spdlog::error("MeshEntity.cpp", "compute index of mesh entity",
-  //               "Mesh entity was not found");
   throw std::runtime_error("Mesh entity was not found");
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-geometry::Point MeshEntity::midpoint() const
+Eigen::Vector3d MeshEntity::midpoint() const
 {
   // Special case: a vertex is its own midpoint (don't check neighbors)
   if (_dim == 0)
-    return _mesh->geometry().point(_local_index);
+    return _mesh->geometry().x(_local_index);
 
   // Otherwise iterate over incident vertices and compute average
   std::size_t num_vertices = 0;
 
-  double x = 0.0;
-  double y = 0.0;
-  double z = 0.0;
+  Eigen::Vector3d x;
+  x.setZero();
 
   for (auto& v : EntityRange<Vertex>(*this))
   {
-    x += v.point()[0];
-    y += v.point()[1];
-    z += v.point()[2];
-    num_vertices++;
+    x += v.x();
+    ++num_vertices;
   }
 
   assert(num_vertices > 0);
-
   x /= double(num_vertices);
-  y /= double(num_vertices);
-  z /= double(num_vertices);
 
-  geometry::Point p(x, y, z);
-  return p;
+  return x;
 }
 //-----------------------------------------------------------------------------
 std::uint32_t MeshEntity::owner() const
 {
   if (_dim != _mesh->topology().dim())
   {
-    // spdlog::error("MeshEntity.cpp", "get ownership of entity",
-    //               "Entity ownership is only defined for cells");
     throw std::runtime_error("Entity ownership is only defined for cells");
   }
 
   const std::int32_t offset = _mesh->topology().ghost_offset(_dim);
   if (_local_index < offset)
   {
-    // spdlog::error("MeshEntity.cpp", "get ownership of entity",
-    //               "Ownership of non-ghost cells is local process");
     throw std::runtime_error("Ownership of non-ghost cells is local process");
   }
 
@@ -145,8 +107,8 @@ std::uint32_t MeshEntity::owner() const
 //-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const
 {
-  // if (verbose)
-  //   spdlog::warn("Verbose output for MeshEntityIterator not implemented.");
+  if (verbose)
+    LOG(WARNING) << "Verbose output for MeshEntityIterator not implemented.";
 
   std::stringstream s;
   s << "<Mesh entity " << index() << " of topological dimension " << dim()

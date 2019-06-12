@@ -13,4 +13,3 @@ namespace dolfin
 
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/CollisionPredicates.h>
-#include <dolfin/geometry/Point.h>

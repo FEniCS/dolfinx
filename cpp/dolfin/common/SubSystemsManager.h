@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <string>
 #include <petsc.h>
+#include <string>
 
 namespace dolfin
 {
@@ -34,6 +34,9 @@ public:
 
   /// Initialise MPI with required level of thread support
   static int init_mpi(int argc, char* argv[], int required_thread_level);
+
+  /// Initialise loguru
+  static void init_logging(int argc, char *argv[]);
 
   /// Initialize PETSc without command-line arguments
   static void init_petsc();
@@ -91,5 +94,5 @@ private:
   bool petsc_initialized;
   bool control_mpi;
 };
-}
-}
+} // namespace common
+} // namespace dolfin

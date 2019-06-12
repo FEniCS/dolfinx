@@ -6,15 +6,18 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Unit tests for the KrylovSolver interface"""
 
+from contextlib import ExitStack
+
+import numpy as np
 import pytest
-from petsc4py import PETSc
 
 import ufl
-from dolfin import (MPI, DirichletBC, Function, FunctionSpace, Identity,
-                    TestFunction, TrialFunction, UnitSquareMesh,
-                    VectorFunctionSpace, dot, dx, grad, inner, sym, tr)
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
+                    TrialFunction, UnitSquareMesh, VectorFunctionSpace)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
+from petsc4py import PETSc
+from ufl import Identity, dot, dx, grad, inner, sym, tr
 
 
 def test_krylov_solver_lu():
@@ -55,16 +58,17 @@ def test_krylov_samg_solver_elasticity():
         # Create list of vectors for null space
         nullspace_basis = [x.copy() for i in range(3)]
 
-        # Build translational null space basis
-        V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
-        V.sub(1).dofmap().set(nullspace_basis[1], 1.0)
+        with ExitStack() as stack:
+            vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+            basis = [np.asarray(x) for x in vec_local]
 
-        # Build rotational null space basis
-        V.sub(0).set_x(nullspace_basis[2], -1.0, 1)
-        V.sub(1).set_x(nullspace_basis[2], 1.0, 0)
+            # Build translational null space basis
+            V.sub(0).dofmap().set(basis[0], 1.0)
+            V.sub(1).dofmap().set(basis[1], 1.0)
 
-        for x in nullspace_basis:
-            x.apply("insert")
+            # Build rotational null space basis
+            V.sub(0).set_x(basis[2], -1.0, 1)
+            V.sub(1).set_x(basis[2], 1.0, 0)
 
         null_space = VectorSpaceBasis(nullspace_basis)
         null_space.orthonormalize()

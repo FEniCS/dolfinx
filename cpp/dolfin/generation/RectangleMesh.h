@@ -15,11 +15,6 @@
 namespace dolfin
 {
 
-namespace geometry
-{
-class Point;
-}
-
 namespace generation
 {
 
@@ -52,25 +47,10 @@ public:
   ///         {8,
   ///         8});
   /// @endcode
-  static mesh::Mesh create(MPI_Comm comm,
-                           const std::array<geometry::Point, 2>& p,
-                           std::array<std::size_t, 2> n,
-                           mesh::CellType::Type cell_type,
-                           const mesh::GhostMode ghost_mode,
-                           std::string diagonal = "right");
-
-private:
-  // Build mesh
-  static mesh::Mesh build_tri(MPI_Comm comm,
-                              const std::array<geometry::Point, 2>& p,
-                              std::array<std::size_t, 2> n,
-                              const mesh::GhostMode ghost_mode,
-                              std::string diagonal = "right");
-
-  static mesh::Mesh build_quad(MPI_Comm comm,
-                               const std::array<geometry::Point, 2>& p,
-                               std::array<std::size_t, 2> n,
-                               const mesh::GhostMode ghost_mode);
+  static mesh::Mesh
+    create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
+         std::array<std::size_t, 2> n, mesh::CellType::Type cell_type,
+         const mesh::GhostMode ghost_mode, std::string diagonal = "right");
 };
 } // namespace generation
 } // namespace dolfin

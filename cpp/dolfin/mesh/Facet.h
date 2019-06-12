@@ -8,8 +8,7 @@
 
 #include "Mesh.h"
 #include "MeshEntity.h"
-#include "MeshTopology.h"
-#include <dolfin/geometry/Point.h>
+#include "Topology.h"
 #include <utility>
 
 namespace dolfin
@@ -33,15 +32,15 @@ public:
   ~Facet() {}
 
   /// Compute normal to the facet
-  geometry::Point normal() const;
+  Eigen::Vector3d normal() const;
 
   /// Compute squared distance to given point.
   ///
-  /// @param     point (_geometry::Point_)
+  /// @param     point (_Eigen::Vector3d_)
   ///         The point.
   /// @return     double
   ///         The squared distance to the point.
-  double squared_distance(const geometry::Point& point) const;
+  double squared_distance(const Eigen::Vector3d& point) const;
 
   /// Return true if facet is an exterior facet (relative to global
   /// mesh, so this function will return false for facets on partition

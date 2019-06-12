@@ -1,6 +1,7 @@
 #include "hyperelasticity.h"
 #include <cfloat>
 #include <dolfin.h>
+#include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
 
@@ -41,8 +42,7 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x,
-            const dolfin::mesh::Cell& cell) const
+            Eigen::Ref<const EigenRowArrayXXd> x) const
   {
     for (int i = 0; i < x.rows(); ++i)
     {
@@ -62,8 +62,7 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x,
-            const dolfin::mesh::Cell& cell) const
+            Eigen::Ref<const EigenRowArrayXXd> x) const
   {
     const double scale = 0.005;
 
@@ -152,6 +151,7 @@ private:
 
 int main(int argc, char* argv[])
 {
+  common::SubSystemsManager::init_logging(argc, argv);
   common::SubSystemsManager::init_petsc(argc, argv);
 
   // Inside the ``main`` function, we begin by defining a tetrahedral mesh
@@ -164,19 +164,22 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Create mesh and define function space
-  std::array<geometry::Point, 2> pt
-      = {geometry::Point(0.0, 0.0, 0.0), geometry::Point(1.0, 1.0, 1.0)};
+  std::array<Eigen::Vector3d, 2> pt;
+  pt[0] << 0., 0., 0.;
+  pt[1] << 1., 1., 1.;
+
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
       MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::Type::tetrahedron,
       mesh::GhostMode::none));
+  mesh::Ordering::order_simplex(*mesh);
 
   ufc_function_space* space = hyperelasticity_functionspace_create();
-  ufc_dofmap* ufc_map = space->dofmap();
+  ufc_dofmap* ufc_map = space->create_dofmap();
+  ufc_finite_element* ufc_element = space->create_element();
   auto V = std::make_shared<function::FunctionSpace>(
-      mesh,
-      std::make_shared<fem::FiniteElement>(
-          std::shared_ptr<ufc_finite_element>(space->element(), free)),
+      mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
       std::make_shared<fem::DofMap>(*ufc_map, *mesh));
+  std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);
 

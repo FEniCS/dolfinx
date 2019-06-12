@@ -7,7 +7,7 @@
 #include "IntervalMesh.h"
 #include "dolfin/common/MPI.h"
 #include "dolfin/mesh/CellType.h"
-#include "dolfin/mesh/MeshPartitioning.h"
+#include "dolfin/mesh/Partitioning.h"
 #include <Eigen/Dense>
 #include <cfloat>
 #include <cmath>
@@ -15,17 +15,17 @@
 using namespace dolfin;
 using namespace dolfin::generation;
 
-//-----------------------------------------------------------------------------
-mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
-                               std::array<double, 2> x,
-                               const mesh::GhostMode ghost_mode)
+namespace
+{
+mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
+                 const mesh::GhostMode ghost_mode)
 {
   // Receive mesh according to parallel policy
-  if (MPI::rank(comm) != 0)
+  if (dolfin::MPI::rank(comm) != 0)
   {
     EigenRowArrayXXd geom(0, 1);
     EigenRowArrayXXi64 topo(0, 2);
-    return mesh::MeshPartitioning::build_distributed_mesh(
+    return mesh::Partitioning::build_distributed_mesh(
         comm, mesh::CellType::Type::interval, geom, topo, {}, ghost_mode);
   }
 
@@ -59,7 +59,16 @@ mesh::Mesh IntervalMesh::build(MPI_Comm comm, std::size_t nx,
   for (std::size_t ix = 0; ix < nx; ix++)
     topo.row(ix) << ix, ix + 1;
 
-  return mesh::MeshPartitioning::build_distributed_mesh(
+  return mesh::Partitioning::build_distributed_mesh(
       comm, mesh::CellType::Type::interval, geom, topo, {}, ghost_mode);
+}
+} // namespace
+
+//-----------------------------------------------------------------------------
+mesh::Mesh IntervalMesh::create(MPI_Comm comm, std::size_t n,
+                                std::array<double, 2> x,
+                                const mesh::GhostMode ghost_mode)
+{
+  return build(comm, n, x, ghost_mode);
 }
 //-----------------------------------------------------------------------------

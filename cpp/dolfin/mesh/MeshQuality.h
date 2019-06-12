@@ -8,7 +8,6 @@
 
 #include "MeshFunction.h"
 #include <array>
-#include <boost/multi_array.hpp>
 #include <memory>
 #include <string>
 #include <utility>
@@ -66,5 +65,5 @@ public:
   static std::pair<std::vector<double>, std::vector<std::size_t>>
   dihedral_angle_histogram_data(const Mesh& mesh, std::size_t num_bins);
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

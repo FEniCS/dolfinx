@@ -9,10 +9,11 @@ import math
 
 import numpy
 import pytest
-from petsc4py import PETSc
 
 import dolfin
 import ufl
+from dolfin.function.specialfunctions import SpatialCoordinate
+from petsc4py import PETSc
 from ufl import ds, dx, inner
 
 
@@ -36,7 +37,7 @@ def test_assemble_functional():
     value = dolfin.fem.assemble_scalar(M)
     value = dolfin.MPI.sum(mesh.mpi_comm(), value)
     assert value == pytest.approx(1.0, 1e-12)
-    x = dolfin.SpatialCoordinate(mesh)
+    x = SpatialCoordinate(mesh)
     M = x[0] * dx(domain=mesh)
     value = dolfin.fem.assemble_scalar(M)
     value = dolfin.MPI.sum(mesh.mpi_comm(), value)
@@ -443,8 +444,8 @@ def test_assembly_solve_taylor_hood(mesh):
 
     # -- Monolithic
 
-    P2 = dolfin.VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    P1 = dolfin.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
+    P2 = ufl.VectorElement("Lagrange", mesh.ufl_cell(), 2)
+    P1 = ufl.FiniteElement("Lagrange", mesh.ufl_cell(), 1)
     TH = P2 * P1
     W = dolfin.FunctionSpace(mesh, TH)
     (u, p) = dolfin.TrialFunctions(W)
@@ -515,3 +516,30 @@ def test_projection():
 
     integral_analytic = 1.0 / 3
     assert integral == pytest.approx(integral_analytic, rel=1.e-6, abs=1.e-12)
+
+
+def test_basic_interior_facet_assembly():
+
+    ghost_mode = dolfin.cpp.mesh.GhostMode.none
+    if (dolfin.MPI.size(dolfin.MPI.comm_world) > 1):
+        ghost_mode = dolfin.cpp.mesh.GhostMode.shared_facet
+
+    mesh = dolfin.RectangleMesh(dolfin.MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
+                                                        numpy.array([1.0, 1.0, 0.0])], [5, 5],
+                                cell_type=dolfin.cpp.mesh.CellType.Type.triangle,
+                                ghost_mode=ghost_mode)
+
+    V = dolfin.function.FunctionSpace(mesh, ("DG", 1))
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+
+    a = ufl.inner(ufl.avg(u), ufl.avg(v)) * ufl.dS
+
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    assert isinstance(A, PETSc.Mat)
+
+    L = ufl.conj(ufl.avg(v)) * ufl.dS
+
+    b = dolfin.fem.assemble_vector(L)
+    b.assemble()
+    assert isinstance(b, PETSc.Vec)

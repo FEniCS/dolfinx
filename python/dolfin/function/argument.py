@@ -54,14 +54,6 @@ def TrialFunction(V: FunctionSpace, part: int = None):
     return Argument(V, 1, part)
 
 
-def Arguments(V: FunctionSpace, number: int):
-    """Create an Argument in a mixed space, and return a tuple with the
-    function components corresponding to the subelements.
-
-    """
-    return ufl.split(Argument(V, number))
-
-
 def TestFunctions(V: FunctionSpace):
     """Create a TestFunction in a mixed space, and return a
     tuple with the function components corresponding to the

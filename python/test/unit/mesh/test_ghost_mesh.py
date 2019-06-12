@@ -74,11 +74,11 @@ def test_ghost_3d(mode):
 def test_ghost_connectivities(mode):
     # Ghosted mesh
     meshG = UnitSquareMesh(MPI.comm_world, 4, 4, ghost_mode=mode)
-    meshG.init(1, 2)
+    meshG.create_connectivity(1, 2)
 
     # Reference mesh, not ghosted, not parallel
     meshR = UnitSquareMesh(MPI.comm_self, 4, 4, ghost_mode=cpp.mesh.GhostMode.none)
-    meshR.init(1, 2)
+    meshR.create_connectivity(1, 2)
 
     # Create reference mapping from facet midpoint to cell midpoint
     reference = {}
@@ -86,7 +86,7 @@ def test_ghost_connectivities(mode):
         fidx = facet.index()
         facet_mp = tuple(facet.midpoint()[:])
         reference[facet_mp] = []
-        for cidx in meshR.topology.connectivity(1, 2)(fidx):
+        for cidx in meshR.topology.connectivity(1, 2).connections(fidx):
             cell = Cell(meshR, cidx)
             cell_mp = tuple(cell.midpoint()[:])
             reference[facet_mp].append(cell_mp)
@@ -98,7 +98,7 @@ def test_ghost_connectivities(mode):
         facet_mp = tuple(facet.midpoint()[:])
         assert facet_mp in reference
 
-        for cidx in meshG.topology.connectivity(1, 2)(fidx):
+        for cidx in meshG.topology.connectivity(1, 2).connections(fidx):
             assert cidx in allowable_cell_indices
             cell = Cell(meshG, cidx)
             cell_mp = tuple(cell.midpoint()[:])

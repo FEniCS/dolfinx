@@ -27,7 +27,7 @@ public:
   /// on this process (local index) to its master entity (owning
   /// process, local index on owner). If a master entity is shared
   /// by processes, only one of the owning processes is returned.
-  static std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
+  static std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
   compute_periodic_pairs(const Mesh& mesh, const mesh::SubDomain& sub_domain,
                          const std::size_t dim);
 
@@ -44,11 +44,6 @@ public:
   masters_slaves(std::shared_ptr<const Mesh> mesh,
                  const mesh::SubDomain& sub_domain, const std::size_t dim);
 
-private:
-  // Return true is point lies within bounding box
-  static bool in_bounding_box(const std::vector<double>& point,
-                              const std::vector<double>& bounding_box,
-                              const double tol);
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

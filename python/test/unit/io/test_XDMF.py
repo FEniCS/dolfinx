@@ -9,14 +9,14 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Edges, Expression, Facets,
-                    FiniteElement, Function, FunctionSpace, MeshEntities,
-                    MeshFunction, MeshValueCollection, TensorFunctionSpace,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorElement, VectorFunctionSpace, Vertices, cpp,
-                    function, has_petsc_complex, interpolate)
+from dolfin import (MPI, Cells, CellType, Edges, Expression, Facets, Function,
+                    FunctionSpace, MeshEntities, MeshFunction,
+                    MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
+                    Vertices, cpp, function, has_petsc_complex, interpolate)
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
+from ufl import FiniteElement, VectorElement
 
 assert (tempdir)
 
@@ -546,7 +546,7 @@ def test_save_points_2D(tempdir, encoding):
     points, values = [], []
     for v in Vertices(mesh):
         points.append(v.point())
-        values.append(v.point().norm())
+        values.append(numpy.linalg.norm(v.point()))
     vals = numpy.array(values)
 
     with XDMFFile(
@@ -568,7 +568,7 @@ def test_save_points_3D(tempdir, encoding):
     points, values = [], []
     for v in Vertices(mesh):
         points.append(v.point())
-        values.append(v.point().norm())
+        values.append(numpy.linalg.norm(v.point()))
     vals = numpy.array(values)
 
     with XDMFFile(
@@ -602,7 +602,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
         mvc = MeshValueCollection(dtype_str, mesh, mvc_dim)
         tag = "dim_%d_marker" % mvc_dim
         mvc.rename(tag)
-        mesh.init(mvc_dim, tdim)
+        mesh.create_connectivity(mvc_dim, tdim)
         for e in MeshEntities(mesh, mvc_dim):
             if (e.midpoint()[0] > 0.5):
                 mvc.set_value(e.index(), dtype(1))
@@ -681,9 +681,9 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
 def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
-    mesh.init()
+    mesh.create_connectivity_all()
     for d in range(mesh.geometry.dim + 1):
-        mesh.init_global(d)
+        mesh.create_global_indices(d)
 
     mvc_v = MeshValueCollection(dtype_str, mesh, 0)
     mvc_v.rename("vertices")

@@ -16,6 +16,87 @@
 
 using namespace dolfin;
 
+namespace
+{
+//-----------------------------------------------------------------------------
+template <typename T, typename X>
+T build_undirected_graph(const X& graph)
+{
+  common::Timer timer("Build Boost undirected graph");
+
+  // Graph size
+  const std::size_t n = graph.size();
+
+  // Build Boost graph
+  T boost_graph(n);
+  typename X::const_iterator vertex;
+  dolfin::graph::graph_set_type::const_iterator edge;
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+  {
+    const std::size_t vertex_index = vertex - graph.begin();
+    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
+    {
+      if (vertex_index < *edge)
+        boost::add_edge(vertex_index, *edge, boost_graph);
+    }
+  }
+
+  return boost_graph;
+}
+//-----------------------------------------------------------------------------
+template <typename T, typename X>
+T build_directed_graph(const X& graph)
+{
+  common::Timer timer("Build Boost directed graph");
+
+  // Graph size
+  const std::size_t n = graph.size();
+
+  // Build Boost graph
+  T boost_graph(n);
+  typename X::const_iterator vertex;
+  dolfin::graph::graph_set_type::const_iterator edge;
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+  {
+    const std::size_t vertex_index = vertex - graph.begin();
+    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
+    {
+      if (vertex_index != *edge)
+        boost::add_edge(vertex_index, *edge, boost_graph);
+    }
+  }
+
+  return boost_graph;
+}
+//-----------------------------------------------------------------------------
+template <typename T, typename X>
+T build_csr_directed_graph(const X& graph)
+{
+  common::Timer timer("Build Boost CSR graph");
+
+  // Count number of edges
+  dolfin::graph::Graph::const_iterator vertex;
+  std::size_t num_edges = 0;
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+    num_edges += vertex->size();
+
+  // Build list of graph edges
+  std::vector<std::pair<std::size_t, std::size_t>> edges;
+  edges.reserve(num_edges);
+  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
+    for (auto edge = vertex->cbegin(); edge != vertex->cend(); ++edge)
+      edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
+
+  // Number of vertices
+  const std::size_t n = graph.size();
+
+  // Build and return Boost graph
+  return T(boost::edges_are_unsorted_multi_pass, edges.begin(), edges.end(), n);
+}
+//-----------------------------------------------------------------------------
+
+} // namespace
+
 //-----------------------------------------------------------------------------
 std::vector<int>
 dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(const Graph& graph,
@@ -104,81 +185,5 @@ std::vector<int> dolfin::graph::BoostGraphOrdering::compute_cuthill_mckee(
   }
 
   return map;
-}
-//-----------------------------------------------------------------------------
-template <typename T, typename X>
-T dolfin::graph::BoostGraphOrdering::build_undirected_graph(const X& graph)
-{
-  common::Timer timer("Build Boost undirected graph");
-
-  // Graph size
-  const std::size_t n = graph.size();
-
-  // Build Boost graph
-  T boost_graph(n);
-  typename X::const_iterator vertex;
-  graph_set_type::const_iterator edge;
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-  {
-    const std::size_t vertex_index = vertex - graph.begin();
-    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
-    {
-      if (vertex_index < *edge)
-        boost::add_edge(vertex_index, *edge, boost_graph);
-    }
-  }
-
-  return boost_graph;
-}
-//-----------------------------------------------------------------------------
-template <typename T, typename X>
-T dolfin::graph::BoostGraphOrdering::build_directed_graph(const X& graph)
-{
-  common::Timer timer("Build Boost directed graph");
-
-  // Graph size
-  const std::size_t n = graph.size();
-
-  // Build Boost graph
-  T boost_graph(n);
-  typename X::const_iterator vertex;
-  graph_set_type::const_iterator edge;
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-  {
-    const std::size_t vertex_index = vertex - graph.begin();
-    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
-    {
-      if (vertex_index != *edge)
-        boost::add_edge(vertex_index, *edge, boost_graph);
-    }
-  }
-
-  return boost_graph;
-}
-//-----------------------------------------------------------------------------
-template <typename T, typename X>
-T dolfin::graph::BoostGraphOrdering::build_csr_directed_graph(const X& graph)
-{
-  common::Timer timer("Build Boost CSR graph");
-
-  // Count number of edges
-  Graph::const_iterator vertex;
-  std::size_t num_edges = 0;
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-    num_edges += vertex->size();
-
-  // Build list of graph edges
-  std::vector<std::pair<std::size_t, std::size_t>> edges;
-  edges.reserve(num_edges);
-  graph_set_type::const_iterator edge;
-  for (vertex = graph.begin(); vertex != graph.end(); ++vertex)
-    for (edge = vertex->begin(); edge != vertex->end(); ++edge)
-      edges.push_back(std::make_pair(vertex - graph.begin(), *edge));
-
-  // Number of vertices
-  const std::size_t n = graph.size();
-
-  // Build and return Boost graph
-  return T(boost::edges_are_unsorted_multi_pass, edges.begin(), edges.end(), n);
 }
 //-----------------------------------------------------------------------------

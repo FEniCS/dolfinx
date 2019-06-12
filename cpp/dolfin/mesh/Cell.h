@@ -7,12 +7,13 @@
 #pragma once
 
 #include "CellType.h"
+#include "CoordinateDofs.h"
+#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
-#include <dolfin/geometry/Point.h>
 #include <memory>
 
 namespace dolfin
@@ -111,7 +112,7 @@ public:
   double inradius() const
   {
     // We would need facet areas
-    _mesh->init(_mesh->type().dim() - 1);
+    _mesh->create_entities(_mesh->type().dim() - 1);
 
     return _mesh->type().inradius(*this);
   }
@@ -135,7 +136,7 @@ public:
   double radius_ratio() const
   {
     // We would need facet areas
-    _mesh->init(_mesh->type().dim() - 1);
+    _mesh->create_entities(_mesh->type().dim() - 1);
 
     return _mesh->type().radius_ratio(*this);
   }
@@ -146,7 +147,7 @@ public:
   ///         The point.
   /// @return     double
   ///         The squared distance to the point.
-  double squared_distance(const geometry::Point& point) const
+  double squared_distance(const Eigen::Vector3d& point) const
   {
     return _mesh->type().squared_distance(*this, point);
   }
@@ -157,7 +158,7 @@ public:
   ///         The point.
   /// @return     double
   ///         The distance to the point.
-  double distance(const geometry::Point& point) const
+  double distance(const Eigen::Vector3d& point) const
   {
     return sqrt(squared_distance(point));
   }
@@ -167,9 +168,9 @@ public:
   /// @param    facet
   ///         Index of facet.
   ///
-  /// @return geometry::Point
+  /// @return Eigen::Vector3d
   ///         Normal of the facet.
-  geometry::Point normal(std::size_t facet) const
+  Eigen::Vector3d normal(std::size_t facet) const
   {
     return _mesh->type().normal(*this, facet);
   }
@@ -178,7 +179,7 @@ public:
   ///
   /// @return geometry::Point
   ///         Normal of the cell
-  geometry::Point cell_normal() const
+  Eigen::Vector3d cell_normal() const
   {
     return _mesh->type().cell_normal(*this);
   }
@@ -198,24 +199,6 @@ public:
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
   /// Local facet index, used typically in eval functions
   mutable int local_facet;
-
-  // FIXME: Update for higher-order geometries
-  /// Get cell coordinate dofs (not vertex coordinates)
-  void get_coordinate_dofs(EigenRowArrayXXd& coordinates) const
-  {
-    const MeshGeometry& geom = _mesh->geometry();
-    const std::uint32_t tdim = _mesh->topology().dim();
-    const MeshConnectivity& conn = _mesh->coordinate_dofs().entity_points(tdim);
-    const std::size_t ndofs = conn.size(_local_index);
-    const std::int32_t* dofs = conn(_local_index);
-
-    const EigenRowArrayXXd& x = geom.points();
-    const std::size_t gdim = geom.dim();
-
-    coordinates.resize(ndofs, gdim);
-    for (unsigned int i = 0; i < ndofs; ++i)
-      coordinates.row(i) = x.row(dofs[i]);
-  }
 };
 } // namespace mesh
 } // namespace dolfin

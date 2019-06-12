@@ -6,10 +6,9 @@
 
 #include "IntervalCell.h"
 #include "Cell.h"
+#include "Geometry.h"
 #include "MeshEntity.h"
-#include "MeshGeometry.h"
 #include <algorithm>
-// #include <spdlog/spdlog.h>
 #include <stdexcept>
 
 using namespace dolfin;
@@ -27,10 +26,6 @@ std::size_t IntervalCell::num_entities(std::size_t dim) const
   case 1:
     return 1; // cells
   default:
-    // spdlog::error("IntervalCell.cpp: "
-    //               "access number of entities of interval cell. "
-    //               "Illegal topological dimension ({}).",
-    //               dim);
     throw std::invalid_argument("Illegal dimension");
   }
 
@@ -46,26 +41,25 @@ std::size_t IntervalCell::num_vertices(std::size_t dim) const
   case 1:
     return 2; // cells
   default:
-    // spdlog::error("IntervalCell.cpp",
-    //               "access number of vertices for subsimplex of interval cell",
-    //               "Illegal topological dimension (%d)", dim);
     throw std::invalid_argument("Illegal dimension");
   }
 
   return 0;
 }
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(boost::multi_array<std::int32_t, 2>& e,
-                                   std::size_t dim, const std::int32_t* v) const
+void IntervalCell::create_entities(
+    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
+        e,
+    std::size_t dim, const std::int32_t* v) const
 {
   // For completeness, IntervalCell has two 'edges'
   assert(dim == 0);
 
   // Resize data structure
-  e.resize(boost::extents[2][1]);
+  e.resize(2, 1);
   // Create the three edges
-  e[0][0] = v[0];
-  e[1][0] = v[1];
+  e(0, 0) = v[0];
+  e(1, 0) = v[1];
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::volume(const MeshEntity& interval) const
@@ -73,21 +67,18 @@ double IntervalCell::volume(const MeshEntity& interval) const
   // Check that we get an interval
   if (interval.dim() != 1)
   {
-    // spdlog::error("IntervalCell.cpp",
-    //               "compute volume (length) of interval cell",
-    //               "Illegal mesh entity, not an interval");
     throw std::invalid_argument("Illegal dimension");
   }
 
   // Get mesh geometry
-  const MeshGeometry& geometry = interval.mesh().geometry();
+  const Geometry& geometry = interval.mesh().geometry();
 
   // Get the coordinates of the two vertices
   const std::int32_t* vertices = interval.entities(0);
-  const geometry::Point x0 = geometry.point(vertices[0]);
-  const geometry::Point x1 = geometry.point(vertices[1]);
+  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
 
-  return x1.distance(x0);
+  return (x1 - x0).norm();
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::circumradius(const MeshEntity& interval) const
@@ -95,8 +86,6 @@ double IntervalCell::circumradius(const MeshEntity& interval) const
   // Check that we get an interval
   if (interval.dim() != 1)
   {
-    // spdlog::error("IntervalCell.cpp", "compute diameter of interval cell",
-    //               "Illegal mesh entity, not an interval");
     throw std::invalid_argument("Illegal dimension");
   }
 
@@ -105,26 +94,26 @@ double IntervalCell::circumradius(const MeshEntity& interval) const
 }
 //-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell,
-                                      const geometry::Point& point) const
+                                      const Eigen::Vector3d& point) const
 {
   // Get the vertices as points
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
   const std::int32_t* vertices = cell.entities(0);
-  const geometry::Point a = geometry.point(vertices[0]);
-  const geometry::Point b = geometry.point(vertices[1]);
+  const Eigen::Vector3d a = geometry.x(vertices[0]);
+  const Eigen::Vector3d b = geometry.x(vertices[1]);
 
   // Call function to compute squared distance
   return squared_distance(point, a, b);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::squared_distance(const geometry::Point& point,
-                                      const geometry::Point& a,
-                                      const geometry::Point& b)
+double IntervalCell::squared_distance(const Eigen::Vector3d& point,
+                                      const Eigen::Vector3d& a,
+                                      const Eigen::Vector3d& b)
 {
   // Compute vector
-  const geometry::Point v0 = point - a;
-  const geometry::Point v1 = point - b;
-  const geometry::Point v01 = b - a;
+  const Eigen::Vector3d v0 = point - a;
+  const Eigen::Vector3d v1 = point - b;
+  const Eigen::Vector3d v01 = b - a;
 
   // Check if a is closest point (outside of interval)
   const double a0 = v0.dot(v01);
@@ -146,18 +135,18 @@ double IntervalCell::normal(const Cell& cell, std::size_t facet,
   return normal(cell, facet)[i];
 }
 //-----------------------------------------------------------------------------
-geometry::Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
+Eigen::Vector3d IntervalCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Get the two vertices as points
   const std::int32_t* vertices = cell.entities(0);
-  geometry::Point p0 = geometry.point(vertices[0]);
-  geometry::Point p1 = geometry.point(vertices[1]);
+  Eigen::Vector3d p0 = geometry.x(vertices[0]);
+  Eigen::Vector3d p1 = geometry.x(vertices[1]);
 
   // Compute normal
-  geometry::Point n = p0 - p1;
+  Eigen::Vector3d n = p0 - p1;
   if (facet == 1)
     n *= -1.0;
 
@@ -167,28 +156,26 @@ geometry::Point IntervalCell::normal(const Cell& cell, std::size_t facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-geometry::Point IntervalCell::cell_normal(const Cell& cell) const
+Eigen::Vector3d IntervalCell::cell_normal(const Cell& cell) const
 {
   // Get mesh geometry
-  const MeshGeometry& geometry = cell.mesh().geometry();
+  const Geometry& geometry = cell.mesh().geometry();
 
   // Cell_normal only defined for gdim = 1, 2 for now
   const std::size_t gdim = geometry.dim();
   if (gdim > 2)
   {
-    // spdlog::error("IntervalCell.cpp", "compute cell normal",
-    //               "Illegal geometric dimension (%d)", gdim);
     throw std::invalid_argument("Illegal dimension");
   }
 
   // Get the two vertices as points
   const std::int32_t* vertices = cell.entities(0);
-  geometry::Point p0 = geometry.point(vertices[0]);
-  geometry::Point p1 = geometry.point(vertices[1]);
+  Eigen::Vector3d p0 = geometry.x(vertices[0]);
+  Eigen::Vector3d p1 = geometry.x(vertices[1]);
 
   // Define normal by rotating tangent counterclockwise
-  geometry::Point t = p1 - p0;
-  geometry::Point n(-t[1], t[0]);
+  Eigen::Vector3d t = p1 - p0;
+  Eigen::Vector3d n(-t[1], t[0], 0.0);
 
   // Normalize
   n /= n.norm();

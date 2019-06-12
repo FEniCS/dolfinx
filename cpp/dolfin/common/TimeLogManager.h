@@ -22,5 +22,5 @@ public:
   /// Singleton instance of logger
   static TimeLogger& logger();
 };
-}
-}
+} // namespace common
+} // namespace dolfin

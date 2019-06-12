@@ -6,8 +6,6 @@
 
 #include "Face.h"
 #include "Cell.h"
-#include <dolfin/geometry/Point.h>
-// #include <spdlog/spdlog.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -32,7 +30,7 @@ double Face::area() const
   {
 
     // Initialize needed connectivity
-    _mesh->init(2, D);
+    _mesh->create_connectivity(2, D);
 
     // Get cell to which face belong (first cell when there is more than one)
     const Cell cell(*_mesh, this->entities(D)[0]);
@@ -44,7 +42,7 @@ double Face::area() const
   }
 }
 //-----------------------------------------------------------------------------
-geometry::Point Face::normal() const
+Eigen::Vector3d Face::normal() const
 {
   assert(_mesh);
 
@@ -63,12 +61,11 @@ geometry::Point Face::normal() const
   // in R^3
   if (tD == 2 && gD == 3)
   {
-    // spdlog::error("Not implemented");
-    throw std::runtime_error("");
+    throw std::runtime_error("Not implemented");
   }
 
   // Initialize needed connectivity
-  _mesh->init(2, tD);
+  _mesh->create_connectivity(2, tD);
 
   // Get cell to which face belong (first cell when there is more than one)
   const Cell cell(*_mesh, this->entities(tD)[0]);

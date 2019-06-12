@@ -23,9 +23,9 @@ def make_ufc_form(ufc_form):
     return cpp.fem.make_ufc_form(ufc_form)
 
 
-def make_ufc_coordinate_mapping(ufc_coordinate_mapping):
-    """Returns ufc coordinate mapping from a pointer"""
-    return cpp.fem.make_ufc_coordinate_mapping(ufc_coordinate_mapping)
+def make_coordinate_mapping(ufc_coordinate_mapping):
+    """Returns CoordinateMapping from a pointer to a ufc_coordinate_mapping"""
+    return cpp.fem.make_coordinate_mapping(ufc_coordinate_mapping)
 
 
 class DofMap:
@@ -52,17 +52,9 @@ class DofMap:
         cpp_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh)
         return cls(cpp_dofmap)
 
+    @property
     def global_dimension(self):
-        return self._cpp_object.global_dimension()
-
-    def neighbours(self):
-        return self._cpp_object.neighbours()
-
-    def shared_nodes(self):
-        return self._cpp_object.shared_nodes()
-
-    def ownership_range(self):
-        return self._cpp_object.ownership_range()
+        return self._cpp_object.global_dimension
 
     def cell_dofs(self, cell_index: int):
         return self._cpp_object.cell_dofs(cell_index)
@@ -86,11 +78,13 @@ class DofMap:
         return self._cpp_object.tabulate_entity_dofs(entity_dim,
                                                      cell_entity_index)
 
-    def block_size(self):
-        return self._cpp_object.block_size()
+    @property
+    def dof_array(self):
+        return self._cpp_object.dof_array()
 
-    def set(self, petscvec, value):
-        self._cpp_object.set(petscvec, value)
+    def set(self, x, value):
+        self._cpp_object.set(x, value)
 
+    @property
     def index_map(self):
-        return self._cpp_object.index_map()
+        return self._cpp_object.index_map

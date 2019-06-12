@@ -10,9 +10,10 @@
 #include <cassert>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/SubSystemsManager.h>
+#include <dolfin/common/log.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <memory>
-// #include <spdlog/spdlog.h>
+#include <utility>
 
 #include <petsc.h>
 
@@ -270,14 +271,16 @@ void dolfin::la::petsc_error(int error_code, std::string filename,
   dolfin::common::SubSystemsManager::singleton().petsc_err_msg = "";
 
   // // Log detailed error info
-  // spdlog::debug("PETSc error in '%s', '%s'", filename.c_str(),
-  //               petsc_function.c_str());
-  // spdlog::debug("PETSc error code '%d' (%s), message follows:", error_code,
-  //               desc);
-  // // NOTE: don't put msg as variadic argument; it might get trimmed
-  // spdlog::debug(std::string(78, '-'));
-  // spdlog::debug(msg);
-  // spdlog::debug(std::string(78, '-'));
+  DLOG(INFO) << "PETSc error in '" << filename.c_str() << "', '"
+             << petsc_function.c_str() << "'";
+
+  DLOG(INFO) << "PETSc error code '" << error_code << "' (" << desc
+             << "), message follows:";
+
+  // NOTE: don't put msg as variadic argument; it might get trimmed
+  DLOG(INFO) << std::string(78, '-');
+  DLOG(INFO) << msg;
+  DLOG(INFO) << std::string(78, '-');
 
   // Raise exception with standard error message
   throw std::runtime_error("Failed to successfully call PETSc function '"
@@ -302,6 +305,14 @@ dolfin::la::VecWrapper::VecWrapper(Vec y, bool ghosted)
   new (&x) Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
 }
 //-----------------------------------------------------------------------------
+dolfin::la::VecWrapper::VecWrapper(VecWrapper&& w)
+    : x(std::move(w.x)), _y(std::exchange(w._y, nullptr)),
+      _y_local(std::exchange(w._y_local, nullptr)),
+      _ghosted(std::move(w._ghosted))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 dolfin::la::VecWrapper::~VecWrapper()
 {
   if (_y_local)
@@ -310,6 +321,15 @@ dolfin::la::VecWrapper::~VecWrapper()
     if (_ghosted)
       VecGhostRestoreLocalForm(_y, &_y_local);
   }
+}
+//-----------------------------------------------------------------------------
+dolfin::la::VecWrapper& dolfin::la::VecWrapper::operator=(VecWrapper&& w)
+{
+  _y = std::exchange(w._y, nullptr);
+  _y_local = std::exchange(w._y_local, nullptr);
+  _ghosted = std::move(w._ghosted);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void dolfin::la::VecWrapper::restore()
@@ -342,6 +362,14 @@ dolfin::la::VecReadWrapper::VecReadWrapper(const Vec y, bool ghosted)
       Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>(array, n);
 }
 //-----------------------------------------------------------------------------
+dolfin::la::VecReadWrapper::VecReadWrapper(VecReadWrapper&& w)
+    : x(std::move(w.x)), _y(std::exchange(w._y, nullptr)),
+      _y_local(std::exchange(w._y_local, nullptr)),
+      _ghosted(std::move(w._ghosted))
+{
+  // Do nothing
+}
+//-----------------------------------------------------------------------------
 dolfin::la::VecReadWrapper::~VecReadWrapper()
 {
   if (_y_local)
@@ -350,6 +378,16 @@ dolfin::la::VecReadWrapper::~VecReadWrapper()
     if (_ghosted)
       VecGhostRestoreLocalForm(_y, &_y_local);
   }
+}
+//-----------------------------------------------------------------------------
+dolfin::la::VecReadWrapper& dolfin::la::VecReadWrapper::
+operator=(VecReadWrapper&& w)
+{
+  _y = std::exchange(w._y, nullptr);
+  _y_local = std::exchange(w._y_local, nullptr);
+  _ghosted = std::move(w._ghosted);
+
+  return *this;
 }
 //-----------------------------------------------------------------------------
 void dolfin::la::VecReadWrapper::restore()

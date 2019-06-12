@@ -9,7 +9,7 @@
 from dolfin import cpp
 
 
-def solve(A, x, b, method="default", preconditioner="default"):
+def solve(A, x, b):
     """Solve linear system Ax = b.
 
     A linear system Ax = b may be solved by calling solve(A, x, b),

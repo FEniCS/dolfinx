@@ -6,11 +6,8 @@
 
 #include "TimeLogger.h"
 #include <dolfin/common/MPI.h>
-// #include <spdlog/spdlog.h>
+#include <dolfin/common/log.h>
 #include <vector>
-
-#define DOLFIN_LINELENGTH 256
-#define DOLFIN_TERM_WIDTH 80
 
 using namespace dolfin;
 using namespace dolfin::common;
@@ -31,7 +28,7 @@ void TimeLogger::register_timing(std::string task,
   line << "Elapsed wall, usr, sys time: " << std::get<0>(elapsed) << ", "
        << std::get<1>(elapsed) << ", " << std::get<2>(elapsed) << " (" << task
        << ")";
-  // spdlog::debug(line.str());
+  DLOG(INFO) << line.str();
 
   // Store values for summary
   const auto timing = std::tuple_cat(std::make_tuple(std::size_t(1)), elapsed);
@@ -56,9 +53,9 @@ void TimeLogger::list_timings(std::set<TimingType> type)
   timings = MPI::avg(_mpi_comm, timings);
   const std::string str = "\n" + timings.str(true);
 
-  // // Print just on rank 0
-  // if (dolfin::MPI::rank(_mpi_comm) == 0)
-  //   spdlog::info(str);
+  // Print just on rank 0
+  if (dolfin::MPI::rank(_mpi_comm) == 0)
+    std::cout << str << std::endl;
 }
 //-----------------------------------------------------------------------------
 std::map<TimingType, std::string> TimeLogger::_TimingType_descr
@@ -96,10 +93,9 @@ TimeLogger::timing(std::string task)
   auto it = _timings.find(task);
   if (it == _timings.end())
   {
-    // std::stringstream line;
-    // line << "No timings registered for task \"" << task << "\".";
-    // spdlog::error("TimeLogger.cpp", "extract timing for task", line.str());
-    throw std::runtime_error("Cannot extract timing");
+    std::stringstream line;
+    line << "No timings registered for task \"" << task << "\".";
+    throw std::runtime_error("Cannot extract timing. " + line.str());
   }
   // Prepare for return for the case of reset
   const auto result = it->second;

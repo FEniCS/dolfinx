@@ -8,11 +8,13 @@
 # pulley subjected to centripetal accelerations. The solver uses
 # smoothed aggregation algerbaric multigrid.
 
+from contextlib import ExitStack
+
 import numpy as np
 from petsc4py import PETSc
 
 import dolfin
-from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function, Point,
+from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function,
                     TestFunction, TrialFunction, VectorFunctionSpace, cpp)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.io import XDMFFile
@@ -24,21 +26,25 @@ def build_nullspace(V):
     """Function to build null space for 3D elasticity"""
 
     # Create list of vectors for null space
-    index_map = V.dofmap().index_map()
+    index_map = V.dofmap().index_map
     nullspace_basis = [cpp.la.create_vector(index_map) for i in range(6)]
 
-    # Build translational null space basis
-    V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
-    V.sub(1).dofmap().set(nullspace_basis[1], 1.0)
-    V.sub(2).dofmap().set(nullspace_basis[2], 1.0)
+    with ExitStack() as stack:
+        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        basis = [np.asarray(x) for x in vec_local]
 
-    # Build rotational null space basis
-    V.sub(0).set_x(nullspace_basis[3], -1.0, 1)
-    V.sub(1).set_x(nullspace_basis[3], 1.0, 0)
-    V.sub(0).set_x(nullspace_basis[4], 1.0, 2)
-    V.sub(2).set_x(nullspace_basis[4], -1.0, 0)
-    V.sub(2).set_x(nullspace_basis[5], 1.0, 1)
-    V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
+        # Build translational null space basis
+        V.sub(0).dofmap().set(basis[0], 1.0)
+        V.sub(1).dofmap().set(basis[1], 1.0)
+        V.sub(2).dofmap().set(basis[2], 1.0)
+
+        # Build rotational null space basis
+        V.sub(0).set_x(basis[3], -1.0, 1)
+        V.sub(1).set_x(basis[3], 1.0, 0)
+        V.sub(0).set_x(basis[4], 1.0, 2)
+        V.sub(2).set_x(basis[4], -1.0, 0)
+        V.sub(2).set_x(basis[5], 1.0, 1)
+        V.sub(1).set_x(basis[5], -1.0, 2)
 
     # Create vector space basis and orthogonalize
     basis = VectorSpaceBasis(nullspace_basis)
@@ -56,8 +62,8 @@ def build_nullspace(V):
 
 # mesh = UnitCubeMesh(2, 2, 2)
 mesh = BoxMesh(
-    MPI.comm_world, [Point(0, 0, 0)._cpp_object,
-                     Point(2, 1, 1)._cpp_object], [12, 12, 12],
+    MPI.comm_world, [np.array([0, 0, 0]),
+                     np.array([2, 1, 1])], [12, 12, 12],
     CellType.Type.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap

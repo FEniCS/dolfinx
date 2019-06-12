@@ -7,7 +7,6 @@
 #include "casters.h"
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/io/HDF5File.h>
 #include <dolfin/io/XDMFFile.h>
 #include <dolfin/la/PETScVector.h>
@@ -180,10 +179,6 @@ void io(py::module& m)
            py::arg("mesh"))
       // MeshFunction
       .def("write",
-           py::overload_cast<const dolfin::mesh::MeshFunction<bool>&>(
-               &dolfin::io::XDMFFile::write),
-           py::arg("mf"))
-      .def("write",
            py::overload_cast<const dolfin::mesh::MeshFunction<std::size_t>&>(
                &dolfin::io::XDMFFile::write),
            py::arg("mf"))
@@ -196,10 +191,6 @@ void io(py::module& m)
                &dolfin::io::XDMFFile::write),
            py::arg("mf"))
       // MeshValueCollection
-      .def("write",
-           py::overload_cast<const dolfin::mesh::MeshValueCollection<bool>&>(
-               &dolfin::io::XDMFFile::write),
-           py::arg("mvc"))
       .def("write",
            py::overload_cast<
                const dolfin::mesh::MeshValueCollection<std::size_t>&>(
@@ -216,7 +207,7 @@ void io(py::module& m)
       // Points
       .def("write",
            [](dolfin::io::XDMFFile& instance, py::list points) {
-             auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
+             auto _points = points.cast<std::vector<Eigen::Vector3d>>();
              instance.write(_points);
            },
            py::arg("points"))
@@ -224,7 +215,7 @@ void io(py::module& m)
       .def("write",
            [](dolfin::io::XDMFFile& instance, py::list points,
               std::vector<double>& values) {
-             auto _points = points.cast<std::vector<dolfin::geometry::Point>>();
+             auto _points = points.cast<std::vector<Eigen::Vector3d>>();
              instance.write(_points, values);
            },
            py::arg("points"), py::arg("values"))
@@ -246,8 +237,6 @@ void io(py::module& m)
              return self.read_mesh(comm.get(), ghost_mode);
            })
       // MeshFunction
-      .def("read_mf_bool", &dolfin::io::XDMFFile::read_mf_bool, py::arg("mesh"),
-           py::arg("name") = "")
       .def("read_mf_int", &dolfin::io::XDMFFile::read_mf_int, py::arg("mesh"),
            py::arg("name") = "")
       .def("read_mf_size_t", &dolfin::io::XDMFFile::read_mf_size_t,
@@ -255,8 +244,6 @@ void io(py::module& m)
       .def("read_mf_double", &dolfin::io::XDMFFile::read_mf_double,
            py::arg("mesh"), py::arg("name") = "")
       // MeshValueCollection
-      .def("read_mvc_bool", &dolfin::io::XDMFFile::read_mvc_bool,
-           py::arg("mesh"), py::arg("name") = "")
       .def("read_mvc_int", &dolfin::io::XDMFFile::read_mvc_int, py::arg("mesh"),
            py::arg("name") = "")
       .def("read_mvc_size_t", &dolfin::io::XDMFFile::read_mvc_size_t,

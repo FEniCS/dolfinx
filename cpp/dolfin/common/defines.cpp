@@ -4,10 +4,10 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include <petscversion.h>
-#include <hdf5.h>
 #include "defines.h"
 #include "types.h"
+#include <hdf5.h>
+#include <petscversion.h>
 
 //-------------------------------------------------------------------------
 std::string dolfin::dolfin_version() { return std::string(DOLFIN_VERSION); }

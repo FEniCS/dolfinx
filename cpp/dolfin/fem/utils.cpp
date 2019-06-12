@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <Eigen/Dense>
 #include <array>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
@@ -29,7 +30,7 @@ namespace
 {
 // Try to figure out block size. FIXME - replace elsewhere
 int analyse_block_structure(
-    const std::vector<std::shared_ptr<fem::ElementDofLayout>> sub_dofmaps)
+    const std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps)
 {
   // Must be at least two subdofmaps
   if (sub_dofmaps.size() < 2)
@@ -366,23 +367,26 @@ fem::create_matrix_nest(std::vector<std::vector<const fem::Form*>> a)
     }
   }
 
-  // Block shape
-  const auto shape = boost::extents[a.size()][a[0].size()];
-
   // Loop over each form and create matrix
-  boost::multi_array<std::shared_ptr<la::PETScMatrix>, 2> mats(shape);
-  boost::multi_array<Mat, 2> petsc_mats(shape);
+  Eigen::Array<std::shared_ptr<la::PETScMatrix>, Eigen::Dynamic, Eigen::Dynamic,
+               Eigen::RowMajor>
+      mats(a.size(), a[0].size());
+  Eigen::Array<Mat, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> petsc_mats(
+      a.size(), a[0].size());
   for (std::size_t i = 0; i < a.size(); ++i)
   {
     for (std::size_t j = 0; j < a[i].size(); ++j)
     {
       if (a[i][j])
       {
-        mats[i][j] = std::make_shared<la::PETScMatrix>(create_matrix(*a[i][j]));
-        petsc_mats[i][j] = mats[i][j]->mat();
+        mats(i, j) = std::make_shared<la::PETScMatrix>(create_matrix(*a[i][j]));
+        petsc_mats(i, j) = mats(i, j)->mat();
+        // mats[i][j] =
+        // std::make_shared<la::PETScMatrix>(create_matrix(*a[i][j]));
+        // petsc_mats[i][j] = mats[i][j]->mat();
       }
       else
-        petsc_mats[i][j] = nullptr;
+        petsc_mats(i, j) = nullptr;
     }
   }
 
@@ -390,8 +394,8 @@ fem::create_matrix_nest(std::vector<std::vector<const fem::Form*>> a)
   Mat _A;
   MatCreate(a[0][0]->mesh()->mpi_comm(), &_A);
   MatSetType(_A, MATNEST);
-  MatNestSetSubMats(_A, petsc_mats.shape()[0], NULL, petsc_mats.shape()[1],
-                    NULL, petsc_mats.data());
+  MatNestSetSubMats(_A, petsc_mats.rows(), NULL, petsc_mats.cols(), NULL,
+                    petsc_mats.data());
   MatSetUp(_A);
 
   return la::PETScMatrix(_A);
@@ -522,7 +526,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     }
   }
 
-  // TODO:  UFC dofmaps just use simple offset for each field but this
+  // TODO: UFC dofmaps just use simple offset for each field but this
   // could be different for custom dofmaps This data should come
   // directly from the UFC interface in place of the the implicit
   // assumption
@@ -539,7 +543,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     offsets.push_back(offsets.back() + num_dofs);
   }
 
-  std::vector<std::shared_ptr<fem::ElementDofLayout>> sub_dofmaps;
+  std::vector<std::shared_ptr<const fem::ElementDofLayout>> sub_dofmaps;
   for (std::size_t i = 0; i < ufc_sub_dofmaps.size(); ++i)
   {
     auto ufc_sub_dofmap = ufc_sub_dofmaps[i];
@@ -555,7 +559,44 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   // but keep for now to mimic existing code
   const int block_size = analyse_block_structure(sub_dofmaps);
 
-  return fem::ElementDofLayout(block_size, entity_dofs,
-                               parent_map, sub_dofmaps, cell_type);
+  return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
+                               cell_type);
 }
 //-----------------------------------------------------------------------------
+std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
+{
+  std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
+      coeffs;
+  const char** names = ufc_form.coefficient_name_map();
+  for (int i = 0; i < ufc_form.num_coefficients; ++i)
+  {
+    coeffs.push_back(
+        std::make_tuple<int, std::string, std::shared_ptr<function::Function>>(
+            ufc_form.original_coefficient_position(i), names[i], nullptr));
+  }
+  return coeffs;
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const fem::CoordinateMapping>
+fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
+{
+  static const std::map<ufc_shape, CellType> ufc_to_cell
+      = {{vertex, CellType::point},
+         {interval, CellType::interval},
+         {triangle, CellType::triangle},
+         {tetrahedron, CellType::tetrahedron},
+         {quadrilateral, CellType::quadrilateral},
+         {hexahedron, CellType::hexahedron}};
+  const auto it = ufc_to_cell.find(ufc_cmap.cell_shape);
+  assert(it != ufc_to_cell.end());
+
+  CellType cell_type = it->second;
+  assert(ufc_cmap.topological_dimension
+         == ReferenceCellTopology::dim(cell_type));
+
+  return std::make_shared<fem::CoordinateMapping>(
+      cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,
+      ufc_cmap.signature, ufc_cmap.compute_physical_coordinates,
+      ufc_cmap.compute_reference_geometry);
+}

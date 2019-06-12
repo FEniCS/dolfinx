@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "HDF5Utility.h"
-#include <boost/multi_array.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/GenericDofMap.h>
@@ -54,9 +53,7 @@ HDF5Utility::map_gdof_to_cell(const MPI_Comm mpi_comm,
   // vector data for that DOF
   std::vector<std::vector<PetscInt>> send_dofs(num_processes);
   std::vector<std::vector<std::size_t>> send_cell_dofs(num_processes);
-  for (std::map<PetscInt, std::pair<std::size_t, std::size_t>>::const_iterator p
-       = dof_to_cell.begin();
-       p != dof_to_cell.end(); ++p)
+  for (auto p = dof_to_cell.cbegin(); p != dof_to_cell.cend(); ++p)
   {
     const std::size_t dest
         = std::upper_bound(all_vec_range.begin(), all_vec_range.end(), p->first)
@@ -71,9 +68,9 @@ HDF5Utility::map_gdof_to_cell(const MPI_Comm mpi_comm,
   MPI::all_to_all(mpi_comm, send_dofs, receive_dofs);
   MPI::all_to_all(mpi_comm, send_cell_dofs, receive_cell_dofs);
 
-  // Unpack associated cell and local_dofs into vector
-  // There may be some overwriting due to receiving an
-  // index for the same DOF from multiple cells on different processes
+  // Unpack associated cell and local_dofs into vector There may be some
+  // overwriting due to receiving an index for the same DOF from
+  // multiple cells on different processes
 
   std::vector<std::size_t> global_cells(vector_range[1] - vector_range[0]);
   std::vector<std::size_t> remote_local_dofi(vector_range[1] - vector_range[0]);

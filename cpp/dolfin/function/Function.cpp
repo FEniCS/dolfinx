@@ -17,8 +17,8 @@
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
+#include <dolfin/la/utils.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
@@ -30,9 +30,39 @@
 using namespace dolfin;
 using namespace dolfin::function;
 
+namespace
+{
+//-----------------------------------------------------------------------------
+// Create a vector with layout from dofmap, and zero.
+la::PETScVector create_vector(const function::FunctionSpace& V)
+{
+  common::Timer timer("Init dof vector");
+
+  // Get dof map
+  assert(V.dofmap());
+  const fem::GenericDofMap& dofmap = *(V.dofmap());
+
+  // Check that function space is not a subspace (view)
+  if (dofmap.is_view())
+  {
+    std::runtime_error("Cannot initialize vector of degrees of freedom for "
+                       "function. Cannot be created from subspace. Consider "
+                       "collapsing the function space");
+  }
+
+  assert(dofmap.index_map());
+  la::PETScVector v = la::PETScVector(*dofmap.index_map());
+  la::VecWrapper _v(v.vec());
+  _v.x.setZero();
+
+  return v;
+}
+//-----------------------------------------------------------------------------
+} // namespace
+
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : common::Variable("u"), _function_space(V), _vector(_create_vector(*V))
+    : common::Variable("u"), _function_space(V), _vector(create_vector(*V))
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -53,58 +83,6 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
   assert(V->dofmap()->global_dimension() <= _vector.size());
 }
 //-----------------------------------------------------------------------------
-Function::Function(const Function& v) : _vector(v.vector().vec())
-{
-  // Make a copy of all the data, or if v is a sub-function, then we
-  // collapse the dof map and copy only the relevant entries from the
-  // vector of v.
-  if (v._vector.size() == v._function_space->dim())
-  {
-    // Copy function space pointer
-    this->_function_space = v._function_space;
-
-    // Copy vector
-    this->_vector = v._vector.copy();
-  }
-  else
-  {
-    // Create new collapsed FunctionSpace
-    std::unordered_map<std::size_t, std::size_t> collapsed_map;
-    std::tie(_function_space, collapsed_map) = v._function_space->collapse();
-
-    // Get row indices of original and new vectors
-    std::unordered_map<std::size_t, std::size_t>::const_iterator entry;
-    std::vector<PetscInt> new_rows(collapsed_map.size());
-    std::vector<PetscInt> old_rows(collapsed_map.size());
-    std::size_t i = 0;
-    for (entry = collapsed_map.begin(); entry != collapsed_map.end(); ++entry)
-    {
-      new_rows[i] = entry->first;
-      old_rows[i++] = entry->second;
-    }
-
-    // Gather values into a vector
-    la::VecReadWrapper v_wrap(v.vector().vec());
-    Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x
-        = v_wrap.x;
-    std::vector<PetscScalar> gathered_values(collapsed_map.size());
-    for (std::size_t j = 0; j < gathered_values.size(); ++j)
-      gathered_values[j] = x[old_rows[j]];
-
-    // Initial new vector (global)
-    _vector = _create_vector(*_function_space);
-    assert(_function_space->dofmap());
-    assert(_vector.size() == _function_space->dofmap()->global_dimension());
-
-    // FIXME (local): Check this for local or global
-    // Set values in vector
-    la::VecWrapper v(this->_vector.vec());
-    for (std::size_t i = 0; i < collapsed_map.size(); ++i)
-      v.x[new_rows[i]] = gathered_values[i];
-    v.restore();
-  }
-}
-//-----------------------------------------------------------------------------
 Function Function::sub(std::size_t i) const
 {
   // Extract function subspace
@@ -113,6 +91,41 @@ Function Function::sub(std::size_t i) const
   // Return sub-function
   assert(sub_space);
   return Function(sub_space, _vector.vec());
+}
+//-----------------------------------------------------------------------------
+Function Function::collapse() const
+{
+  // Create new collapsed FunctionSpace
+  std::shared_ptr<const FunctionSpace> function_space_new;
+  std::vector<PetscInt> collapsed_map;
+  std::tie(function_space_new, collapsed_map) = _function_space->collapse();
+
+  // Create new vector
+  assert(function_space_new);
+  la::PETScVector vector_new = create_vector(*function_space_new);
+
+  // Wrap PETSc vectors using Eigen
+  la::VecReadWrapper v_wrap(_vector.vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_old
+      = v_wrap.x;
+  la::VecWrapper v_new(vector_new.vec());
+  Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x_new = v_new.x;
+
+  // Copy values into new vector
+  for (std::size_t i = 0; i < collapsed_map.size(); ++i)
+  {
+    assert((int)i < x_new.size());
+    assert(collapsed_map[i] < x_old.size());
+    x_new[i] = x_old[collapsed_map[i]];
+  }
+
+  return Function(function_space_new, vector_new.vec());
+}
+//-----------------------------------------------------------------------------
+std::shared_ptr<const FunctionSpace> Function::function_space() const
+{
+  assert(_function_space);
+  return _function_space;
 }
 //-----------------------------------------------------------------------------
 la::PETScVector& Function::vector()
@@ -142,10 +155,12 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
+  const int gdim = x.cols();
+  Eigen::Vector3d point = Eigen::Vector3d::Zero();
   for (unsigned int i = 0; i < x.rows(); ++i)
   {
-    const double* _x = x.row(i).data();
-    const geometry::Point point(mesh.geometry().dim(), _x);
+    // Pad the input point to size 3 (bounding box requires 3d point)
+    point.head(gdim) = x.row(i);
 
     // Get index of first cell containing point
     unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
@@ -157,7 +172,6 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
       // allow without _allow_extrapolation
       std::pair<unsigned int, double> close
           = bb_tree.compute_closest_entity(point, mesh);
-
       if (close.second < 2.0 * DBL_EPSILON)
         id = close.first;
       else
@@ -184,6 +198,9 @@ void Function::eval(
         x,
     const mesh::Cell& cell) const
 {
+  // FIXME: This function needs to be changed to handle an arbitrary
+  // number of points for efficiency
+
   assert(_function_space);
   assert(_function_space->mesh());
   const mesh::Mesh& mesh = *_function_space->mesh();
@@ -201,9 +218,27 @@ void Function::eval(
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
       element.space_dimension());
 
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+
   // Cell coordinates (re-allocated inside function for thread safety)
-  EigenRowArrayXXd coordinate_dofs(cell.num_vertices(), mesh.geometry().dim());
-  cell.get_coordinate_dofs(coordinate_dofs);
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
+      = mesh.geometry().points();
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+
+  const int cell_index = cell.index();
+  for (int i = 0; i < num_dofs_g; ++i)
+    for (int j = 0; j < gdim; ++j)
+      coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
   restrict(coefficients.data(), cell, coordinate_dofs);
 
@@ -217,9 +252,6 @@ void Function::eval(
   }
 
   std::size_t num_points = x.rows();
-  std::size_t gdim = mesh.geometry().dim();
-  std::size_t tdim = mesh.topology().dim();
-
   std::size_t reference_value_size = element.reference_value_size();
   std::size_t value_size = element.value_size();
   std::size_t space_dimension = element.space_dimension();
@@ -263,13 +295,15 @@ void Function::eval(
 void Function::interpolate(const Function& v)
 {
   assert(_function_space);
-  _function_space->interpolate(_vector, v);
+  la::VecWrapper x(_vector.vec());
+  _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const Expression& expr)
+void Function::interpolate(const Expression& e)
 {
   assert(_function_space);
-  _function_space->interpolate(_vector, expr);
+  la::VecWrapper x(_vector.vec());
+  _function_space->interpolate(x.x, e);
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_rank() const
@@ -321,18 +355,14 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   assert(_function_space);
   assert(_function_space->mesh());
 
-  // Check that the mesh matches. Notice that the hash is only
-  // compared if the pointers are not matching.
+  // Check that the mesh matches. Notice that the hash is only compared
+  // if the pointers are not matching.
   if (&mesh != _function_space->mesh().get()
       and mesh.hash() != _function_space->mesh()->hash())
   {
     throw std::runtime_error(
         "Cannot interpolate function values at points. Non-matching mesh");
   }
-
-  // Local data for interpolation on each cell
-  const std::size_t num_cell_vertices
-      = mesh.type().num_vertices(mesh.topology().dim());
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
@@ -341,27 +371,41 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       point_values(mesh.geometry().num_points(), value_size_loc);
 
+  const int gdim = mesh.topology().dim();
+  const mesh::Connectivity& cell_dofs = mesh.coordinate_dofs().entity_points();
+
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
+      = mesh.geometry().points();
+
   // Interpolate point values on each cell (using last computed value
   // if not continuous, e.g. discontinuous Galerkin methods)
-  EigenRowArrayXXd x(num_cell_vertices, mesh.geometry().dim());
+  EigenRowArrayXXd x(num_dofs_g, mesh.geometry().dim());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      values(num_cell_vertices, value_size_loc);
-
-  const std::size_t tdim = mesh.topology().dim();
-  const mesh::MeshConnectivity& cell_dofs
-      = mesh.coordinate_dofs().entity_points(tdim);
-
+      values(num_dofs_g, value_size_loc);
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Get coordinates for all points in cell
-    cell.get_coordinate_dofs(x);
+    const int cell_index = cell.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+        x(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
+
     values.resize(x.rows(), value_size_loc);
 
     // Call evaluate function
     eval(values, x, cell);
 
     // Copy values to array of point values
-    const std::int32_t* dofs = cell_dofs(cell.index());
+    const std::int32_t* dofs = cell_dofs.connections(cell.index());
     for (unsigned int i = 0; i < x.rows(); ++i)
       point_values.row(dofs[i]) = values.row(i);
   }
@@ -375,29 +419,6 @@ Function::compute_point_values() const
   assert(_function_space);
   assert(_function_space->mesh());
   return compute_point_values(*_function_space->mesh());
-}
-//-----------------------------------------------------------------------------
-la::PETScVector Function::_create_vector(const function::FunctionSpace& V)
-{
-  common::Timer timer("Init dof vector");
-
-  // Get dof map
-  assert(V.dofmap());
-  const fem::GenericDofMap& dofmap = *(V.dofmap());
-
-  // Check that function space is not a subspace (view)
-  if (dofmap.is_view())
-  {
-    std::runtime_error("Cannot initialize vector of degrees of freedom for "
-                       "function. Cannot be created from subspace. Consider "
-                       "collapsing the function space");
-  }
-
-  assert(dofmap.index_map());
-  la::PETScVector v = la::PETScVector(*dofmap.index_map());
-  VecSet(v.vec(), 0.0);
-
-  return v;
 }
 //-----------------------------------------------------------------------------
 std::size_t Function::value_size() const

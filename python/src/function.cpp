@@ -13,7 +13,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/function/SpecialFunctions.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
-#include <dolfin/geometry/Point.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
@@ -48,19 +47,19 @@ void function(py::module& m)
              std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
       .def(py::init([](std::uintptr_t addr,
                        std::vector<std::size_t> value_size) {
-        std::function<void(PetscScalar*, const double*, const std::int64_t*,
-                           int, int, int, int)>
-            f = reinterpret_cast<void (*)(PetscScalar*, const double*,
-                                          const std::int64_t*, int, int, int,
-                                          int)>(addr);
+        std::function<void(PetscScalar*, int, int, const double*, int, double)>
+            f = reinterpret_cast<void (*)(PetscScalar*, int, int, const double*,
+                                          int, double)>(addr);
         return std::make_unique<dolfin::function::Expression>(f, value_size);
       }))
-      .def(
-          py::init<std::function<void(PetscScalar*, const double*,
-                                      const std::int64_t*, int, int, int, int)>,
-                   std::vector<std::size_t>>())
+      .def(py::init<std::function<void(PetscScalar*, int, int, const double*,
+                                       int, double)>,
+                    std::vector<std::size_t>>())
       .def("eval", &dolfin::function::Expression::eval)
-      .def("value_dimension", &dolfin::function::Expression::value_dimension);
+      .def_property_readonly("value_rank",
+                             &dolfin::function::Expression::value_rank)
+      .def("value_dimension", &dolfin::function::Expression::value_dimension)
+      .def_readwrite("t", &dolfin::function::Expression::t);
 
   // dolfin::function::Function
   py::class_<dolfin::function::Function,
@@ -72,11 +71,8 @@ void function(py::module& m)
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
-      .def("collapse",
-           [](dolfin::function::Function& self) {
-             return std::make_shared<dolfin::function::Function>(self);
-           },
-           "Collapse sub-function view.")
+      .def("collapse", &dolfin::function::Function::collapse,
+           "Collapse sub-function view")
       .def("interpolate",
            py::overload_cast<const dolfin::function::Function&>(
                &dolfin::function::Function::interpolate),

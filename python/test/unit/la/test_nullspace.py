@@ -6,14 +6,17 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+from contextlib import ExitStack
+
+import numpy as np
 import pytest
 
 import ufl
-from dolfin import (MPI, Point, TestFunction, TrialFunction, UnitCubeMesh,
+from dolfin import (MPI, TestFunction, TrialFunction, UnitCubeMesh,
                     UnitSquareMesh, VectorFunctionSpace, cpp, fem, la)
-from dolfin.generation import BoxMesh
 from dolfin.cpp.mesh import CellType, GhostMode
 from dolfin.fem import assemble_matrix
+from dolfin.generation import BoxMesh
 from ufl import dx, grad, inner
 
 
@@ -28,25 +31,29 @@ def build_elastic_nullspace(V):
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map()) for i in range(dim)]
+    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map) for i in range(dim)]
 
-    # Build translational null space basis
-    for i in range(gdim):
-        V.sub(i).dofmap().set(nullspace_basis[i], 1.0)
+    with ExitStack() as stack:
+        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        basis = [np.asarray(x) for x in vec_local]
 
-    # Build rotational null space basis
-    if gdim == 2:
-        V.sub(0).set_x(nullspace_basis[2], -1.0, 1)
-        V.sub(1).set_x(nullspace_basis[2], 1.0, 0)
-    elif gdim == 3:
-        V.sub(0).set_x(nullspace_basis[3], -1.0, 1)
-        V.sub(1).set_x(nullspace_basis[3], 1.0, 0)
+        # Build translational null space basis
+        for i in range(gdim):
+            V.sub(i).dofmap().set(basis[i], 1.0)
 
-        V.sub(0).set_x(nullspace_basis[4], 1.0, 2)
-        V.sub(2).set_x(nullspace_basis[4], -1.0, 0)
+        # Build rotational null space basis
+        if gdim == 2:
+            V.sub(0).set_x(basis[2], -1.0, 1)
+            V.sub(1).set_x(basis[2], 1.0, 0)
+        elif gdim == 3:
+            V.sub(0).set_x(basis[3], -1.0, 1)
+            V.sub(1).set_x(basis[3], 1.0, 0)
 
-        V.sub(2).set_x(nullspace_basis[5], 1.0, 1)
-        V.sub(1).set_x(nullspace_basis[5], -1.0, 2)
+            V.sub(0).set_x(basis[4], 1.0, 2)
+            V.sub(2).set_x(basis[4], -1.0, 0)
+
+            V.sub(2).set_x(basis[5], 1.0, 1)
+            V.sub(1).set_x(basis[5], -1.0, 2)
 
     return la.VectorSpaceBasis(nullspace_basis)
 
@@ -55,18 +62,22 @@ def build_broken_elastic_nullspace(V):
     """Function to build incorrect null space for 2D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map()) for i in range(4)]
+    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map) for i in range(4)]
 
-    # Build translational null space basis
-    V.sub(0).dofmap().set(nullspace_basis[0], 1.0)
-    V.sub(1).dofmap().set(nullspace_basis[1], 1.0)
+    with ExitStack() as stack:
+        vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
+        basis = [np.asarray(x) for x in vec_local]
 
-    # Build rotational null space basis
-    V.sub(0).set_x(nullspace_basis[2], -1.0, 1)
-    V.sub(1).set_x(nullspace_basis[2], 1.0, 0)
+        # Build translational null space basis
+        V.sub(0).dofmap().set(basis[0], 1.0)
+        V.sub(1).dofmap().set(basis[1], 1.0)
 
-    # Add vector that is not in nullspace
-    V.sub(1).set_x(nullspace_basis[3], 1.0, 1)
+        # Build rotational null space basis
+        V.sub(0).set_x(basis[2], -1.0, 1)
+        V.sub(1).set_x(basis[2], 1.0, 0)
+
+        # Add vector that is not in nullspace
+        V.sub(1).set_x(basis[3], 1.0, 1)
 
     return la.VectorSpaceBasis(nullspace_basis)
 
@@ -92,8 +103,8 @@ def test_nullspace_orthogonal(mesh, degree):
     UnitSquareMesh(MPI.comm_world, 12, 13),
     BoxMesh(
         MPI.comm_world,
-        [Point(0.8, -0.2, 1.2)._cpp_object,
-         Point(3.0, 11.0, -5.0)._cpp_object], [12, 18, 25],
+        [np.array([0.8, -0.2, 1.2]),
+         np.array([3.0, 11.0, -5.0])], [12, 18, 25],
         cell_type=CellType.Type.tetrahedron,
         ghost_mode=GhostMode.none),
 ])

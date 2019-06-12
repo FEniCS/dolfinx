@@ -8,17 +8,16 @@
 #include "Cell.h"
 #include "IntervalCell.h"
 #include "TriangleCell.h"
-#include <dolfin/geometry/Point.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-geometry::Point Facet::normal() const
+Eigen::Vector3d Facet::normal() const
 {
   const std::size_t D = _mesh->topology().dim();
-  _mesh->init(D - 1);
-  _mesh->init(D - 1, D);
+  _mesh->create_entities(D - 1);
+  _mesh->create_connectivity(D - 1, D);
 
   // Get cell to which face belong (first cell when there is more than one)
   const Cell cell(*_mesh, this->entities(D)[0]);
@@ -29,15 +28,15 @@ geometry::Point Facet::normal() const
   return cell.normal(local_facet);
 }
 //-----------------------------------------------------------------------------
-double Facet::squared_distance(const geometry::Point& point) const
+double Facet::squared_distance(const Eigen::Vector3d& point) const
 {
   if (_dim == 1)
   {
     // Extract vertices
-    const MeshGeometry& geometry = _mesh->geometry();
+    const Geometry& geometry = _mesh->geometry();
     const std::int32_t* vertices = entities(0);
-    const geometry::Point a = geometry.point(vertices[0]);
-    const geometry::Point b = geometry.point(vertices[1]);
+    const Eigen::Vector3d a = geometry.x(vertices[0]);
+    const Eigen::Vector3d b = geometry.x(vertices[1]);
 
     // Compute squared distance
     return IntervalCell::squared_distance(point, a, b);
@@ -45,11 +44,11 @@ double Facet::squared_distance(const geometry::Point& point) const
   else if (_dim == 2)
   {
     // Extract vertices
-    const MeshGeometry& geometry = _mesh->geometry();
+    const Geometry& geometry = _mesh->geometry();
     const std::int32_t* vertices = entities(0);
-    const geometry::Point a = geometry.point(vertices[0]);
-    const geometry::Point b = geometry.point(vertices[1]);
-    const geometry::Point c = geometry.point(vertices[2]);
+    const Eigen::Vector3d a = geometry.x(vertices[0]);
+    const Eigen::Vector3d b = geometry.x(vertices[1]);
+    const Eigen::Vector3d c = geometry.x(vertices[2]);
 
     // Compute squared distance
     return TriangleCell::squared_distance(point, a, b, c);

@@ -21,128 +21,54 @@
 #include <fstream>
 #include <iomanip>
 #include <ostream>
-// #include <spdlog/spdlog.h>
 #include <sstream>
 #include <vector>
 
 using namespace dolfin;
 using namespace dolfin::io;
 
-//----------------------------------------------------------------------------
-void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
-                           std::string filename)
+namespace
 {
-  write_ascii_mesh(mesh, cell_dim, filename);
+//-----------------------------------------------------------------------------
+// Get VTK cell type
+std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
+{
+  // Get cell type
+  mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+
+  // Determine VTK cell type
+  std::uint8_t vtk_cell_type = 0;
+  if (cell_type == mesh::CellType::Type::tetrahedron)
+    vtk_cell_type = 10;
+  else if (cell_type == mesh::CellType::Type::hexahedron)
+    vtk_cell_type = 12;
+  else if (cell_type == mesh::CellType::Type::quadrilateral)
+    vtk_cell_type = 9;
+  else if (cell_type == mesh::CellType::Type::triangle)
+    vtk_cell_type = 5;
+  else if (cell_type == mesh::CellType::Type::interval)
+    vtk_cell_type = 3;
+  else if (cell_type == mesh::CellType::Type::point)
+    vtk_cell_type = 1;
+  else
+  {
+    throw std::runtime_error("Unknown cell type");
+  }
+
+  return vtk_cell_type;
 }
 //----------------------------------------------------------------------------
-void VTKWriter::write_cell_data(const function::Function& u,
-                                std::string filename)
-{
-  // For brevity
-  assert(u.function_space()->mesh());
-  assert(u.function_space()->dofmap());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
-  const std::size_t tdim = mesh.topology().dim();
-  const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
-
-  std::string encode_string = "ascii";
-
-  // Get rank of function::Function
-  const std::size_t rank = u.value_rank();
-  if (rank > 2)
-  {
-    // spdlog::error("VTKFile.cpp", "write data to VTK file",
-    //               "Don't know how to handle vector function with dimension "
-    //               "other than 2 or 3");
-    throw std::runtime_error("Invalid dimension");
-  }
-
-  // Get number of components
-  const std::size_t data_dim = u.value_size();
-
-  // Open file
-  std::ofstream fp(filename.c_str(), std::ios_base::app);
-  fp.precision(16);
-
-  // Write headers
-  if (rank == 0)
-  {
-    fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""
-       << encode_string << "\">";
-  }
-  else if (rank == 1)
-  {
-    if (!(data_dim == 2 || data_dim == 3))
-    {
-      // spdlog::error("VTKWriter.cpp", "write data to VTK file",
-      //               "Don't know how to handle vector function with dimension "
-      //               "other than 2 or 3");
-      throw std::runtime_error("Invalid dimension");
-    }
-    fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
-       << "\"  NumberOfComponents=\"3\" format=\"" << encode_string << "\">";
-  }
-  else if (rank == 2)
-  {
-    if (!(data_dim == 4 || data_dim == 9))
-    {
-      // spdlog::error("VTKFile.cpp", "write data to VTK file",
-      //               "Don't know how to handle tensor function with dimension "
-      //               "other than 4 or 9");
-      throw std::runtime_error("Invalid dimension");
-    }
-    fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
-       << "\"  NumberOfComponents=\"9\" format=\"" << encode_string << "\">";
-  }
-
-  // Allocate memory for function values at cell centres
-  const std::size_t size = num_cells * data_dim;
-
-  // Build lists of dofs and create map
-  std::vector<PetscInt> dof_set;
-  std::vector<std::size_t> offset(size + 1);
-  std::vector<std::size_t>::iterator cell_offset = offset.begin();
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
-  {
-    // Tabulate dofs
-    auto dofs = dofmap.cell_dofs(cell.index());
-    for (std::size_t i = 0; i < dofmap.num_element_dofs(cell.index()); ++i)
-      dof_set.push_back(dofs[i]);
-
-    // Add local dimension to cell offset and increment
-    *(cell_offset + 1) = *(cell_offset) + dofmap.num_element_dofs(cell.index());
-    ++cell_offset;
-  }
-
-  // Get  values
-  std::vector<PetscScalar> values(dof_set.size());
-  la::VecReadWrapper u_wrapper(u.vector().vec());
-  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x
-      = u_wrapper.x;
-  for (std::size_t i = 0; i < dof_set.size(); ++i)
-    values[i] = _x[dof_set[i]];
-
-  // Get cell data
-  fp << ascii_cell_data(mesh, offset, values, data_dim, rank);
-  fp << "</DataArray> " << std::endl;
-  fp << "</CellData> " << std::endl;
-}
-//----------------------------------------------------------------------------
-std::string VTKWriter::ascii_cell_data(const mesh::Mesh& mesh,
-                                       const std::vector<std::size_t>& offset,
-                                       const std::vector<PetscScalar>& values,
-                                       std::size_t data_dim, std::size_t rank)
+// Write cell data (ascii)
+std::string ascii_cell_data(const mesh::Mesh& mesh,
+                            const std::vector<std::size_t>& offset,
+                            const std::vector<PetscScalar>& values,
+                            std::size_t data_dim, std::size_t rank)
 {
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
   std::vector<std::size_t>::const_iterator cell_offset = offset.begin();
-  for (std::uint32_t i = 0;
-       i != mesh.topology().ghost_offset(mesh.topology().dim()); ++i)
+  for (int i = 0; i < mesh.topology().ghost_offset(mesh.topology().dim()); ++i)
   {
     if (rank == 1 && data_dim == 2)
     {
@@ -176,8 +102,9 @@ std::string VTKWriter::ascii_cell_data(const mesh::Mesh& mesh,
   return ss.str();
 }
 //----------------------------------------------------------------------------
-void VTKWriter::write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
-                                 std::string filename)
+// mesh::Mesh writer (ascii)
+void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
+                      std::string filename)
 {
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
   const std::size_t num_cell_vertices = mesh.type().num_vertices(cell_dim);
@@ -190,11 +117,7 @@ void VTKWriter::write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file.precision(16);
   if (!file.is_open())
   {
-    // spdlog::error("VTKWriter.cpp",
-    //               "write mesh to VTK file"
-    //               "Unable to open file \"%s\"",
-    //               filename.c_str());
-    throw std::runtime_error("IO Error");
+    throw std::runtime_error("Unable to open file:" + filename);
   }
 
   // Write vertex positions
@@ -204,7 +127,7 @@ void VTKWriter::write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "\">";
   for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
   {
-    geometry::Point p = v.point();
+    Eigen::Vector3d p = v.x();
     file << p[0] << " " << p[1] << " " << p[2] << "  ";
   }
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
@@ -247,33 +170,105 @@ void VTKWriter::write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file.close();
 }
 //-----------------------------------------------------------------------------
-std::uint8_t VTKWriter::vtk_cell_type(const mesh::Mesh& mesh,
-                                      std::size_t cell_dim)
-{
-  // Get cell type
-  mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
 
-  // Determine VTK cell type
-  std::uint8_t vtk_cell_type = 0;
-  if (cell_type == mesh::CellType::Type::tetrahedron)
-    vtk_cell_type = 10;
-  else if (cell_type == mesh::CellType::Type::hexahedron)
-    vtk_cell_type = 12;
-  else if (cell_type == mesh::CellType::Type::quadrilateral)
-    vtk_cell_type = 9;
-  else if (cell_type == mesh::CellType::Type::triangle)
-    vtk_cell_type = 5;
-  else if (cell_type == mesh::CellType::Type::interval)
-    vtk_cell_type = 3;
-  else if (cell_type == mesh::CellType::Type::point)
-    vtk_cell_type = 1;
-  else
+} // namespace
+
+//----------------------------------------------------------------------------
+void VTKWriter::write_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
+                           std::string filename)
+{
+  write_ascii_mesh(mesh, cell_dim, filename);
+}
+//----------------------------------------------------------------------------
+void VTKWriter::write_cell_data(const function::Function& u,
+                                std::string filename)
+{
+  // For brevity
+  assert(u.function_space()->mesh());
+  assert(u.function_space()->dofmap());
+  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const std::size_t tdim = mesh.topology().dim();
+  const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
+
+  std::string encode_string = "ascii";
+
+  // Get rank of function::Function
+  const std::size_t rank = u.value_rank();
+  if (rank > 2)
   {
-    // spdlog::error("VTKWriter.cpp", "write data to VTK file",
-    //               "Unknown cell type (%d)", (int)cell_type);
-    throw std::runtime_error("Unknown cell type");
+    throw std::runtime_error("Don't know how to handle vector function with "
+                             "dimension other than 2 or 3");
   }
 
-  return vtk_cell_type;
+  // Get number of components
+  const std::size_t data_dim = u.value_size();
+
+  // Open file
+  std::ofstream fp(filename.c_str(), std::ios_base::app);
+  fp.precision(16);
+
+  // Write headers
+  if (rank == 0)
+  {
+    fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""
+       << encode_string << "\">";
+  }
+  else if (rank == 1)
+  {
+    if (!(data_dim == 2 || data_dim == 3))
+    {
+      throw std::runtime_error(
+          "Don't know how to handle vector function with dimension  "
+          "other than 2 or 3");
+    }
+    fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  NumberOfComponents=\"3\" format=\"" << encode_string << "\">";
+  }
+  else if (rank == 2)
+  {
+    if (!(data_dim == 4 || data_dim == 9))
+    {
+      throw std::runtime_error("Don't know how to handle tensor function with "
+                               "dimension other than 4 or 9");
+    }
+    fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+       << "\"  NumberOfComponents=\"9\" format=\"" << encode_string << "\">";
+  }
+
+  // Allocate memory for function values at cell centres
+  const std::size_t size = num_cells * data_dim;
+
+  // Build lists of dofs and create map
+  std::vector<PetscInt> dof_set;
+  std::vector<std::size_t> offset(size + 1);
+  std::vector<std::size_t>::iterator cell_offset = offset.begin();
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  {
+    // Tabulate dofs
+    auto dofs = dofmap.cell_dofs(cell.index());
+    for (std::size_t i = 0; i < dofmap.num_element_dofs(cell.index()); ++i)
+      dof_set.push_back(dofs[i]);
+
+    // Add local dimension to cell offset and increment
+    *(cell_offset + 1) = *(cell_offset) + dofmap.num_element_dofs(cell.index());
+    ++cell_offset;
+  }
+
+  // Get  values
+  std::vector<PetscScalar> values(dof_set.size());
+  la::VecReadWrapper u_wrapper(u.vector().vec());
+  Eigen::Map<const Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> _x
+      = u_wrapper.x;
+  for (std::size_t i = 0; i < dof_set.size(); ++i)
+    values[i] = _x[dof_set[i]];
+
+  // Get cell data
+  fp << ascii_cell_data(mesh, offset, values, data_dim, rank);
+  fp << "</DataArray> " << std::endl;
+  fp << "</CellData> " << std::endl;
 }
 //----------------------------------------------------------------------------

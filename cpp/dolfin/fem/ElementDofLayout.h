@@ -22,27 +22,33 @@ class CellType;
 
 namespace fem
 {
+
 /// The class represents the degree-of-freedom (dofs) for an element.
 /// Dofs are associated with a mesh entity. This class also handles
 /// sub-space dofs, which are views into the parent dofs.
 
 // TODO: For this class/concept to be robust, the topology of the
-//       reference cell needs to be defined. TODO: Handle block dofmaps
-//       properly
+//       reference cell needs to be defined.
+
+// TODO: Handle block dofmaps properly
 
 class ElementDofLayout
 {
 public:
-  // FIXME: Remove redundant arguments
   /// Constructor
-  ElementDofLayout(int block_size,
-                   std::vector<std::vector<std::set<int>>> entity_dofs,
-                   std::vector<int> parent_map,
-                   std::vector<std::shared_ptr<ElementDofLayout>> sub_dofmaps,
-                   const mesh::CellType& cell_type);
+  ElementDofLayout(
+      int block_size,
+      const std::vector<std::vector<std::set<int>>>& entity_dofs,
+      const std::vector<int>& parent_map,
+      const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
+      const mesh::CellType& cell_type);
+
+  // Copy-like constructor with option to reset (clear) parent map
+  ElementDofLayout(const ElementDofLayout& element_dof_layout,
+                   bool reset_parent);
 
   // Copy constructor
-  ElementDofLayout(const ElementDofLayout& dofmap) = delete;
+  ElementDofLayout(const ElementDofLayout& dofmap) = default;
 
   /// Move constructor
   ElementDofLayout(ElementDofLayout&& dofmap) = default;
@@ -50,7 +56,8 @@ public:
   /// Destructor
   ~ElementDofLayout() = default;
 
-  ElementDofLayout& operator=(const ElementDofLayout& dofmap) = delete;
+  // Copy assignment
+  ElementDofLayout& operator=(const ElementDofLayout& dofmap) = default;
 
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
@@ -65,10 +72,11 @@ public:
   /// connected entities of lower dim)
   int num_entity_closure_dofs(unsigned int dim) const;
 
-  /// Direct access to all entity dofs
+  /// Direct access to all entity dofs (dof = _entity_dofs[dim][entity][i])
   const std::vector<std::vector<std::set<int>>>& entity_dofs() const;
 
-  /// Direct access to all entity closure dofs
+  /// Direct access to all entity closure dofs (dof =
+  /// _entity_dofs[dim][entity][i])
   const std::vector<std::vector<std::set<int>>>& entity_closure_dofs() const;
 
   /// Get number of sub-dofmaps
@@ -78,10 +86,10 @@ public:
   std::shared_ptr<const ElementDofLayout>
   sub_dofmap(const std::vector<std::size_t>& component) const;
 
-  /// Get mapping from a child dofmap, referenced by the component list
-  /// (as for sub_dofmap()), back to this dofmap
-  std::vector<int>
-  sub_dofmap_mapping(const std::vector<std::size_t>& component) const;
+  /// Get view for a sub dofmap, defined by the component list (as for
+  /// sub_dofmap()), into this dofmap. I.e., the dofs in this dofmap
+  /// that are the sub-dofs.
+  std::vector<int> sub_view(const std::vector<std::size_t>& component) const;
 
   /// Block size
   int block_size() const;
@@ -93,29 +101,28 @@ private:
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
 
-private:
-  // Block size, as deduced in from UFC
-  int _block_size;
+  // Block size
+  const int _block_size;
 
-  // Total number of dofs in this element dofmap
+  // Total number of dofs on this element dofmap
   int _num_dofs;
 
   // The number of dofs associated with each entity type
   std::array<int, 4> _num_entity_dofs;
 
-  // The number of dofs associated with each entity type, including
-  // all connected entities of lower dimension.
+  // The number of dofs associated with each entity type, including all
+  // connected entities of lower dimension.
   std::array<int, 4> _num_entity_closure_dofs;
 
   // List of dofs per entity, ordered by dimension.
   // dof = _entity_dofs[dim][entity][i]
-  std::vector<std::vector<std::set<int>>> _entity_dofs;
+  const std::vector<std::vector<std::set<int>>> _entity_dofs;
 
   // List of dofs with connected entities of lower dimension
   std::vector<std::vector<std::set<int>>> _entity_closure_dofs;
 
   // List of sub dofmaps
-  std::vector<std::shared_ptr<ElementDofLayout>> _sub_dofmaps;
+  const std::vector<std::shared_ptr<const ElementDofLayout>> _sub_dofmaps;
 };
 } // namespace fem
 } // namespace dolfin

@@ -6,16 +6,16 @@
 
 #pragma once
 
+#include "Connectivity.h"
 #include "Mesh.h"
-#include "MeshConnectivity.h"
 #include "MeshEntity.h"
+#include "Topology.h"
 #include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Variable.h>
 #include <map>
 #include <memory>
 #include <unordered_set>
-// #include <spdlog/spdlog.h>
 
 namespace dolfin
 {
@@ -91,9 +91,9 @@ public:
 
   /// Return topological dimension
   ///
-  /// @return std::size_t
+  /// @return int
   ///         The dimension.
-  std::size_t dim() const;
+  int dim() const;
 
   /// Return size (number of entities)
   ///
@@ -186,7 +186,7 @@ private:
   std::shared_ptr<const Mesh> _mesh;
 
   // Topological dimension
-  std::size_t _dim;
+  int _dim;
 };
 
 template <>
@@ -203,7 +203,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
     : _mesh(mesh), _dim(dim)
 {
   assert(mesh);
-  mesh->init(dim);
+  mesh->create_entities(dim);
   _values.resize(mesh->num_entities(dim), value);
 }
 //---------------------------------------------------------------------------
@@ -211,11 +211,10 @@ template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                               const MeshValueCollection<T>& value_collection,
                               const T& default_value)
-    : common::Variable("f"), _mesh(mesh),
-      _dim(value_collection.dim())
+    : common::Variable("f"), _mesh(mesh), _dim(value_collection.dim())
 {
   assert(_mesh);
-  _mesh->init(_dim);
+  _mesh->create_entities(_dim);
 
   // Initialise values with default
   _values.resize(_mesh->topology().size(_dim), default_value);
@@ -226,9 +225,9 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   assert(d <= D);
 
   // Generate connectivity if it does not exist
-  _mesh->init(D, d);
+  _mesh->create_connectivity(D, d);
   assert(_mesh->topology().connectivity(D, d));
-  const MeshConnectivity& connectivity = *_mesh->topology().connectivity(D, d);
+  const Connectivity& connectivity = *_mesh->topology().connectivity(D, d);
 
   // Iterate over all values
   std::unordered_set<std::size_t> entities_values_set;
@@ -247,7 +246,7 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
     {
       // Get global (local to to process) entity index
       assert(cell_index < _mesh->num_entities(D));
-      entity_index = connectivity(cell_index)[local_entity];
+      entity_index = connectivity.connections(cell_index)[local_entity];
     }
     else
     {
@@ -266,8 +265,8 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   // Check that all values have been set, if not issue a debug message
   // if (entities_values_set.size() != _values.size())
   // {
-  //   spdlog::debug(
-  //       "Mesh value collection does not contain all values for all entities");
+  //       "Mesh value collection does not contain all values for all
+  //       entities");
   // }
 }
 //---------------------------------------------------------------------------
@@ -279,7 +278,7 @@ std::shared_ptr<const Mesh> MeshFunction<T>::mesh() const
 }
 //---------------------------------------------------------------------------
 template <typename T>
-std::size_t MeshFunction<T>::dim() const
+int MeshFunction<T>::dim() const
 {
   return _dim;
 }
@@ -369,8 +368,7 @@ std::string MeshFunction<T>::str(bool verbose) const
   if (verbose)
   {
     s << str(false) << std::endl << std::endl;
-    // spdlog::warn(
-    //     "Verbose output of MeshFunctions must be implemented manually.");
+    // Verbose output of MeshFunctions must be implemented manually.;
   }
   else
   {
@@ -381,5 +379,5 @@ std::string MeshFunction<T>::str(bool verbose) const
   return s.str();
 }
 //---------------------------------------------------------------------------
-}
-}
+} // namespace mesh
+} // namespace dolfin

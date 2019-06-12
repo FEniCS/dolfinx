@@ -13,7 +13,6 @@
 #include <dolfin/common/types.h>
 #include <limits>
 #include <map>
-// #include <spdlog/spdlog.h>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -26,6 +25,7 @@ using namespace dolfin::mesh;
 // tolerance.
 namespace
 {
+//-----------------------------------------------------------------------------
 struct lt_coordinate
 {
   lt_coordinate(double tolerance) : TOL(tolerance) {}
@@ -54,10 +54,32 @@ struct lt_coordinate
   // Tolerance
   const double TOL;
 };
+//-----------------------------------------------------------------------------
+bool in_bounding_box(const std::vector<double>& point,
+                     const std::vector<double>& bounding_box, const double tol)
+{
+  // Return false if bounding box is empty
+  if (bounding_box.empty())
+    return false;
+
+  const std::size_t gdim = point.size();
+  assert(bounding_box.size() == 2 * gdim);
+  for (std::size_t i = 0; i < gdim; ++i)
+  {
+    if (!(point[i] >= (bounding_box[i] - tol)
+          && point[i] <= (bounding_box[gdim + i] + tol)))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+//-----------------------------------------------------------------------------
+
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
+std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
 PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
                                                     const SubDomain& sub_domain,
                                                     const std::size_t dim)
@@ -85,13 +107,13 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
   std::vector<double> x_min_max;
 
   // Map from master entity midpoint coordinate to local facet index
-  std::map<std::vector<double>, std::uint32_t, lt_coordinate>
+  std::map<std::vector<double>, std::int32_t, lt_coordinate>
       master_coord_to_entity_index((lt_coordinate(sub_domain.map_tolerance)));
 
   // Initialise facet-cell connectivity
-  mesh.init(tdim - 1, tdim);
-  mesh.init(dim);
-  mesh.init(tdim - 1, dim);
+  mesh.create_connectivity(tdim - 1, tdim);
+  mesh.create_entities(dim);
+  mesh.create_connectivity(tdim - 1, dim);
 
   std::vector<bool> visited(mesh.num_entities(dim), false);
   for (auto& f : MeshRange<Facet>(mesh))
@@ -109,9 +131,8 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           visited[e.index()] = true;
 
         // Copy entity coordinate
-        const geometry::Point midpoint = e.midpoint();
-        std::copy(midpoint.coordinates(), midpoint.coordinates() + gdim,
-                  x.begin());
+        const Eigen::Vector3d midpoint = e.midpoint();
+        std::copy(midpoint.data(), midpoint.data() + gdim, x.begin());
 
         // Check if entity lies on a 'master' or 'slave' boundary
         if (sub_domain.inside(_x, true)[0])
@@ -148,10 +169,9 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           {
             if (std::isnan(y[i]))
             {
-              // spdlog::error("PeriodicBoundaryComputation.cpp",
-              //               "periodic boundary mapping",
-              //               "Need to set coordinate %d in sub_domain.map", i);
-              throw std::runtime_error("Not set");
+              throw std::runtime_error(
+                  "periodic boundary mapping not set.  Need to set coordinate "
+                  + std::to_string(i) + " in sub_domain.map");
             }
           }
 
@@ -177,7 +197,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
   // Build send buffer of mapped slave midpoint coordinate to
   // processes that may own the master entity
   std::vector<std::vector<double>> slave_mapped_coords_send(num_processes);
-  std::vector<std::vector<std::uint32_t>> sent_slave_indices(num_processes);
+  std::vector<std::vector<std::int32_t>> sent_slave_indices(num_processes);
   for (std::size_t i = 0; i < slave_entities.size(); ++i)
   {
     for (std::size_t p = 0; p < num_processes; ++p)
@@ -208,7 +228,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
   // Check if this process owns the master facet for a received (mapped)
   // slave
   std::vector<double> coordinates(gdim);
-  std::vector<std::vector<std::uint32_t>> master_local_entity(num_processes);
+  std::vector<std::vector<std::int32_t>> master_local_entity(num_processes);
   for (std::size_t p = 0; p < num_processes; ++p)
   {
     const std::vector<double>& slave_mapped_coords_p
@@ -221,39 +241,39 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
 
       // Check is this process has a master entity that is paired with
       // a received slave entity
-      std::map<std::vector<double>, std::uint32_t>::const_iterator it
+      std::map<std::vector<double>, std::int32_t>::const_iterator it
           = master_coord_to_entity_index.find(coordinates);
 
       // If this process owns the master, insert master entity index,
-      // else insert std::numeric_limits<std::uint32_t>::max()
+      // else insert std::numeric_limits<std::int32_t>::max()
       if (it != master_coord_to_entity_index.end())
         master_local_entity[p].push_back(it->second);
       else
         master_local_entity[p].push_back(
-            std::numeric_limits<std::uint32_t>::max());
+            std::numeric_limits<std::int32_t>::max());
     }
   }
 
   // Send local index of master entity back to owner of slave entity
-  std::vector<std::vector<std::uint32_t>> master_entity_local_index_recv;
+  std::vector<std::vector<std::int32_t>> master_entity_local_index_recv;
   MPI::all_to_all(mpi_comm, master_local_entity,
                   master_entity_local_index_recv);
 
   // Build map from slave facets on this process to master facet (local
   // facet index, process owner)
-  std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>>
+  std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
       slave_to_master_entity;
   std::size_t num_local_slave_entities = 0;
   for (std::size_t p = 0; p < num_processes; ++p)
   {
-    const std::vector<std::uint32_t> master_entity_index_p
+    const std::vector<std::int32_t> master_entity_index_p
         = master_entity_local_index_recv[p];
-    const std::vector<std::uint32_t> sent_slaves_p = sent_slave_indices[p];
+    const std::vector<std::int32_t> sent_slaves_p = sent_slave_indices[p];
     assert(master_entity_index_p.size() == sent_slaves_p.size());
 
     for (std::size_t i = 0; i < master_entity_index_p.size(); ++i)
     {
-      if (master_entity_index_p[i] < std::numeric_limits<std::uint32_t>::max())
+      if (master_entity_index_p[i] < std::numeric_limits<std::int32_t>::max())
       {
         ++num_local_slave_entities;
         slave_to_master_entity.insert(
@@ -276,21 +296,19 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
   MeshFunction<std::size_t> mf(mesh, dim, 0);
 
   // Compute marker
-  const std::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>> slaves
+  const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>> slaves
       = compute_periodic_pairs(*mesh, sub_domain, dim);
 
   // Mark master and slaves, and pack off-process masters to send
   std::vector<std::vector<std::size_t>> master_dofs_send(
       MPI::size(mesh->mpi_comm()));
-  std::map<std::uint32_t,
-           std::pair<std::uint32_t, std::uint32_t>>::const_iterator slave;
-  for (slave = slaves.begin(); slave != slaves.end(); ++slave)
+  for (auto slave = slaves.cbegin(); slave != slaves.cend(); ++slave)
   {
     // Set slave
     mf[slave->first] = 2;
 
     // Pack master entity to send to all sharing processes
-    assert(slave->second.first < master_dofs_send.size());
+    assert(slave->second.first < (std::int32_t)master_dofs_send.size());
     master_dofs_send[slave->second.first].push_back(slave->second.second);
   }
 
@@ -299,18 +317,16 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
   MPI::all_to_all(mesh->mpi_comm(), master_dofs_send, master_dofs_recv);
 
   // Build list of sharing processes
-  std::unordered_map<std::uint32_t,
-                     std::vector<std::pair<std::uint32_t, std::uint32_t>>>
+  std::unordered_map<std::int32_t,
+                     std::vector<std::pair<std::int32_t, std::int32_t>>>
       shared_entities_map
       = DistributedMeshTools::compute_shared_entities(*mesh, dim);
-  std::unordered_map<
-      std::uint32_t,
-      std::vector<std::pair<std::uint32_t, std::uint32_t>>>::const_iterator e;
-  std::vector<std::vector<std::pair<std::uint32_t, std::uint32_t>>>
+  std::vector<std::vector<std::pair<std::int32_t, std::int32_t>>>
       shared_entities(mesh->num_entities(dim));
-  for (e = shared_entities_map.begin(); e != shared_entities_map.end(); ++e)
+  for (auto e = shared_entities_map.cbegin(); e != shared_entities_map.cend();
+       ++e)
   {
-    assert(e->first < shared_entities.size());
+    assert(e->first < (std::int32_t)shared_entities.size());
     shared_entities[e->first] = e->second;
   }
 
@@ -322,17 +338,17 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
     for (std::size_t i = 0; i < master_dofs_recv[p].size(); ++i)
     {
       // Get local index
-      const std::size_t local_index = master_dofs_recv[p][i];
+      const std::int32_t local_index = master_dofs_recv[p][i];
 
       // Mark locally
       mf[local_index] = 1;
 
       // Pack to send to sharing processes
-      const std::vector<std::pair<std::uint32_t, std::uint32_t>> sharing
+      const std::vector<std::pair<std::int32_t, std::int32_t>> sharing
           = shared_entities[local_index];
       for (std::size_t j = 0; j < sharing.size(); ++j)
       {
-        assert(sharing[j].first < master_dofs_send.size());
+        assert(sharing[j].first < (std::int32_t)master_dofs_send.size());
         master_dofs_send[sharing[j].first].push_back(sharing[j].second);
       }
     }
@@ -347,26 +363,5 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
       mf[master_dofs_recv[i][j]] = 1;
 
   return mf;
-}
-//-----------------------------------------------------------------------------
-bool PeriodicBoundaryComputation::in_bounding_box(
-    const std::vector<double>& point, const std::vector<double>& bounding_box,
-    const double tol)
-{
-  // Return false if bounding box is empty
-  if (bounding_box.empty())
-    return false;
-
-  const std::size_t gdim = point.size();
-  assert(bounding_box.size() == 2 * gdim);
-  for (std::size_t i = 0; i < gdim; ++i)
-  {
-    if (!(point[i] >= (bounding_box[i] - tol)
-          && point[i] <= (bounding_box[gdim + i] + tol)))
-    {
-      return false;
-    }
-  }
-  return true;
 }
 //-----------------------------------------------------------------------------

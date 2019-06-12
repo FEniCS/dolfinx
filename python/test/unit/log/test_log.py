@@ -6,11 +6,21 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import dolfin
+from dolfin import log
 
 
-def xtest_log_level_comparable():
-    info = dolfin.cpp.log.LogLevel.INFO
-    warning = dolfin.cpp.log.LogLevel.WARNING
-    assert info < warning
-    assert warning < 1000
+def test_log():
+    info = log.LogLevel.INFO
+    warn = log.LogLevel.WARNING
+    error = log.LogLevel.ERROR
+    print(info, warn, error)
+
+    log.set_log_level(warn)
+    log.log(info, "HELLO")
+    log.log(warn, "HELLO")
+    log.log(error, "HELLO")
+
+    log.set_log_level(info)
+    log.log(info, "HELLO")
+    log.log(warn, "HELLO")
+    log.log(error, "HELLO")

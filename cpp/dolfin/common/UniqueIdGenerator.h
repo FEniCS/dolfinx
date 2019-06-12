@@ -32,5 +32,5 @@ private:
   // Next ID to be returned
   std::size_t _next_id;
 };
-}
-}
+} // namespace common
+} // namespace dolfin

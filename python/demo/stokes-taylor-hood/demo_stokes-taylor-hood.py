@@ -87,21 +87,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import dolfin
-from dolfin import (MPI, DirichletBC, Expression, FiniteElement, Function,
-                    FunctionSpace, TestFunctions, TrialFunctions,
-                    VectorElement, function, interpolate, solve)
+from dolfin import (MPI, DirichletBC, Expression, Function, FunctionSpace,
+                    TestFunctions, TrialFunctions, function, interpolate,
+                    solve)
 from dolfin.io import XDMFFile
 from dolfin.plotting import plot
-from ufl import div, dx, grad, inner
+from ufl import FiniteElement, VectorElement, div, dx, grad, inner
 
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
 mesh = xdmf.read_mesh(MPI.comm_world, dolfin.cpp.mesh.GhostMode.none)
+
 sub_domains = xdmf.read_mf_size_t(mesh)
 
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
-
 
 # Next, we define a :py:class:`FunctionSpace
 # <dolfin.functions.functionspace.FunctionSpace>` built on a mixed

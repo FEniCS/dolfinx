@@ -1,4 +1,4 @@
-// Copyright (C) 2018 Chris N Richardson
+// Copyright (C) 2018 Chris N. Richardson
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <dolfin/common/types.h>
+#include <Eigen/Dense>
 #include <memory>
 #include <vector>
 
@@ -14,20 +14,25 @@ namespace dolfin
 {
 namespace mesh
 {
-class MeshConnectivity;
+class Connectivity;
 
-/// CoordinateDofs contains the connectivity from MeshEntities to the geometric
-/// points which make up the mesh.
+/// CoordinateDofs contains the connectivity from MeshEntities to the
+/// geometric points which make up the mesh.
 
 class CoordinateDofs
 {
 public:
   /// Constructor
-  /// @param tdim
-  ///   Topological Dimension
-  /// @param cell_dofs
-  ///   Connections from cells to points in MeshGeometry (cell_dofs)
-  CoordinateDofs(std::uint32_t tdim);
+  /// @param point_dofs
+  ///   Array containing point dofs for each entity
+  /// @param cell_permutation
+  ///   Array containing permutation for cell_vertices required for higher order
+  ///   elements which are input in gmsh/vtk order.
+  CoordinateDofs(
+      const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>
+          point_dofs,
+      const std::vector<std::uint8_t>& cell_permutation);
 
   /// Copy constructor
   CoordinateDofs(const CoordinateDofs& topology) = default;
@@ -44,37 +49,29 @@ public:
   /// Move assignment
   CoordinateDofs& operator=(CoordinateDofs&& topology) = default;
 
-  /// Initialise entity->point dofs for dimension dim
-  /// @param dim
-  ///   Dimension of entity
-  /// @param point_dofs
-  ///   Array containing point dofs for each entity
-  /// @param cell_permutation
-  ///   Array containing permutation for cell_vertices required for higher order
-  ///   elements which are input in gmsh/vtk order.
-  void init(std::size_t dim,
-            const Eigen::Ref<const EigenRowArrayXXi32> point_dofs,
-            const std::vector<std::uint8_t>& cell_permutation);
-
-  /// Get the entity points associated with entities of dimension i
+  /// Get the entity points associated with cells (const version)
   ///
-  /// @param dim
-  ///   Entity dimension
-  /// @return MeshConnectivity
-  ///   Connections from entities of given dimension to points
-  const MeshConnectivity& entity_points(std::uint32_t dim) const;
+  /// @return Connectivity
+  ///   Connections from cells to points
+  Connectivity& entity_points();
+
+  /// Get the entity points associated with cells (const version)
+  ///
+  /// @return Connectivity
+  ///   Connections from cells to points
+  const Connectivity& entity_points() const;
 
   const std::vector<std::uint8_t>& cell_permutation() const;
 
 private:
-  // Connectivity from entities to points. Initially only defined for
-  // cells
-  std::vector<std::shared_ptr<MeshConnectivity>> _coord_dofs;
+  // Connectivity from cells to points
+  std::shared_ptr<Connectivity> _coord_dofs;
 
-  // Permutation required to transform to/from VTK/gmsh ordering to
-  // DOLFIN ordering needed for higher order elements
+
   // FIXME: ideally remove this, but would need to harmonise the dof
   // ordering between dolfin/ffc/gmsh
+  // Permutation required to transform to/from VTK/gmsh ordering to
+  // DOLFIN ordering needed for higher order elements
   std::vector<std::uint8_t> _cell_permutation;
 };
 } // namespace mesh

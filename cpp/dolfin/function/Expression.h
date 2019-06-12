@@ -43,10 +43,10 @@ public:
   ///
   /// @param value_shape (std::vector<std::size_t>)
   ///         Shape of expression.
-  Expression(std::function<void(PetscScalar*, const double*, const int64_t*,
-                                int, int, int, int)>
-                 eval_ptr,
-             std::vector<std::size_t> value_shape);
+  Expression(
+      std::function<void(PetscScalar*, int, int, const double*, int, double)>
+          eval_ptr,
+      std::vector<std::size_t> value_shape);
 
   /// Copy constructor
   ///
@@ -88,10 +88,9 @@ public:
   ///         The cell.
   /// @param  coordinate_dofs (double*)
   ///         The coordinates
-  virtual void
-  restrict(PetscScalar* w, const fem::FiniteElement& element,
-           const mesh::Cell& dolfin_cell,
-           const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
+  virtual void restrict(PetscScalar* w, const fem::FiniteElement& element,
+                        const mesh::Cell& dolfin_cell,
+                        const EigenRowArrayXXd& coordinate_dofs) const;
 
   /// Compute values at all mesh vertices.
   ///
@@ -109,15 +108,18 @@ public:
   ///         The values at the point.
   /// @param    x (Eigen::Ref<const Eigen::VectorXd>)
   ///         The coordinates of the point.
-  /// @param    cell (mesh::Cell)
-  ///         The cell which contains the given point.
-  virtual void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                            Eigen::Dynamic, Eigen::RowMajor>>
-                        values,
-                    const Eigen::Ref<const EigenRowArrayXXd> x,
-                    const dolfin::mesh::Cell& cell) const;
+  virtual void
+  eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                               Eigen::RowMajor>>
+           values,
+       const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                           Eigen::Dynamic, Eigen::RowMajor>>
+           x) const;
 
-  private:
+  /// Time
+  double t = 0.0;
+
+private:
   // Evaluate method
   //
   // Signature of the method accepts:
@@ -125,27 +127,22 @@ public:
   //        Pointer to row major 2D C-style array of `PetscScalar`.
   //        The array has shape=(number of points, value size) and has to
   //        be filled with custom values in the function body.
+  // @param num_points
+  //        Number of points where expression is evaluated
+  // @param value_size
+  //        Size of expression value
   // @param x
   //        Pointer to a row major C-style 2D array of `double`.
   //        The array has shape=(number of points, geometrical dimension)
   //        and represents array of points in physical space at which the
   //        Expression is being evaluated.
-  // @param cell_idx
-  //        Pointer to a 1D C-style array of `int`. It is an array
-  //        of indices of cells where points are evaluated. Value -1 represents
-  //        cell-independent eval function
-  // @param num_points
-  //        Number of points where expression is evaluated
-  // @param value_size
-  //        Size of expression value
   // @param gdim
   //        Geometrical dimension of physical point where expression
   //        is evaluated
-  // @param num_cells
-  //        Number of cells
-  std::function<void(PetscScalar* values, const double* x,
-                     const int64_t* cell_idx, int num_points, int value_size,
-                     int gdim, int num_cells)>
+  // @param t
+  //        Time
+  std::function<void(PetscScalar* values, int num_points, int value_size,
+                     const double* x, int gdim, double t)>
       _eval_ptr;
 
   // Value shape

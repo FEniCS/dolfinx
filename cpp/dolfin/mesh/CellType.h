@@ -6,17 +6,13 @@
 
 #pragma once
 
-#include <boost/multi_array.hpp>
+#include <Eigen/Dense>
 #include <cstdint>
 #include <string>
 #include <vector>
 
 namespace dolfin
 {
-namespace geometry
-{
-class Point;
-}
 
 namespace mesh
 {
@@ -87,7 +83,8 @@ public:
 
   /// Create entities e of given topological dimension from
   /// vertices v
-  virtual void create_entities(boost::multi_array<std::int32_t, 2>& e,
+  virtual void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>& e,
                                std::size_t dim,
                                const std::int32_t* v) const = 0;
 
@@ -108,17 +105,17 @@ public:
 
   /// Compute squared distance to given point
   virtual double squared_distance(const Cell& cell,
-                                  const geometry::Point& point) const = 0;
+                                  const Eigen::Vector3d& point) const = 0;
 
   /// Compute component i of normal of given facet with respect to the cell
   virtual double normal(const Cell& cell, std::size_t facet,
                         std::size_t i) const = 0;
 
   /// Compute of given facet with respect to the cell
-  virtual geometry::Point normal(const Cell& cell, std::size_t facet) const = 0;
+  virtual Eigen::Vector3d normal(const Cell& cell, std::size_t facet) const = 0;
 
   /// Compute normal to given cell (viewed as embedded in 3D)
-  virtual geometry::Point cell_normal(const Cell& cell) const = 0;
+  virtual Eigen::Vector3d cell_normal(const Cell& cell) const = 0;
 
   /// Compute the area/length of given facet with respect to the cell
   virtual double facet_area(const Cell& cell, std::size_t facet) const = 0;
@@ -151,5 +148,5 @@ private:
              const std::int32_t* vertices,
              const std::vector<std::int64_t>& local_to_global_vertex_indices);
 };
-}
-}
+} // namespace mesh
+} // namespace dolfin

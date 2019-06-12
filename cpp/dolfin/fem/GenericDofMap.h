@@ -9,9 +9,6 @@
 #include <Eigen/Dense>
 #include <memory>
 #include <petscsys.h>
-#include <petscvec.h>
-#include <set>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -61,10 +58,6 @@ public:
   /// Return the number of closure dofs for a given entity dimension
   virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const = 0;
 
-  /// Return the ownership range (dofs in this range are owned by
-  /// this process)
-  virtual std::array<std::int64_t, 2> ownership_range() const = 0;
-
   /// Local-to-global mapping of dofs on a cell
   virtual Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   cell_dofs(std::size_t cell_index) const = 0;
@@ -100,8 +93,7 @@ public:
                      const mesh::Mesh& mesh) const = 0;
 
   /// Create a "collapsed" a dofmap (collapses from a sub-dofmap view)
-  virtual std::pair<std::shared_ptr<GenericDofMap>,
-                    std::unordered_map<std::size_t, std::size_t>>
+  virtual std::pair<std::shared_ptr<GenericDofMap>, std::vector<PetscInt>>
   collapse(const mesh::Mesh& mesh) const = 0;
 
   /// Return list of dof indices on this process that belong to mesh
@@ -109,38 +101,25 @@ public:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
                                                  std::size_t dim) const;
 
-  /// Set dof entries in vector to a specified value. Parallel
-  /// layout of vector must be consistent with dof map range. This
-  /// function is typically used to construct the null space of a
-  /// matrix operator
-  virtual void set(Vec x, PetscScalar value) const = 0;
+  /// Set dof entries in vector to a specified value. Vector size must
+  /// be consistent with dof map range. This function is typically used
+  /// to construct the null space of a matrix operator
+  virtual void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
+                   PetscScalar value) const = 0;
 
-  /// Index map (const access)
+  /// Index map
   virtual std::shared_ptr<const common::IndexMap> index_map() const = 0;
 
   /// Tabulate map between local (process) and global dof indices
   Eigen::Array<std::size_t, Eigen::Dynamic, 1>
   tabulate_local_to_global_dofs() const;
 
-  /// Return map from shared nodes to the processes (not including
-  /// the current process) that share it.
-  virtual const std::unordered_map<int, std::vector<int>>&
-  shared_nodes() const = 0;
-
-  /// Return set of processes that share dofs with the this process
-  virtual const std::set<int>& neighbours() const = 0;
+  /// Get dofmap array
+  virtual Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+  dof_array() const = 0;
 
   /// Return informal string representation (pretty-print)
   virtual std::string str(bool verbose) const = 0;
-
-  /// Get block size
-  virtual int block_size() const = 0;
-
-  /// UFC dofmap (temporary replacement for generated dofmap)
-  static void ufc_tabulate_dofs(
-      int64_t* dofs,
-      const std::vector<std::vector<std::set<int>>>& entity_dofs,
-      const int64_t* num_global_entities, const int64_t** entity_indices);
 };
 } // namespace fem
 } // namespace dolfin

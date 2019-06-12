@@ -91,6 +91,7 @@
 #include "poisson.h"
 #include <cfloat>
 #include <dolfin.h>
+#include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
 
@@ -109,8 +110,7 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x,
-            const dolfin::mesh::Cell& cell) const
+            Eigen::Ref<const EigenRowArrayXXd> x) const
   {
     for (unsigned int i = 0; i != x.rows(); ++i)
     {
@@ -130,8 +130,7 @@ public:
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x,
-            const dolfin::mesh::Cell& cell) const
+            Eigen::Ref<const EigenRowArrayXXd> x) const
   {
     for (unsigned int i = 0; i != x.rows(); ++i)
       values(i, 0) = sin(5 * x(i, 0));
@@ -168,22 +167,25 @@ class DirichletBoundary : public mesh::SubDomain
 
 int main(int argc, char* argv[])
 {
+  common::SubSystemsManager::init_logging(argc, argv);
   common::SubSystemsManager::init_petsc(argc, argv);
 
   // Create mesh and function space
-  std::array<geometry::Point, 2> pt
-      = {geometry::Point(0., 0.), geometry::Point(1., 1.)};
+  std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
+                                    Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
       MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
       mesh::GhostMode::none));
 
+  mesh::Ordering::order_simplex(*mesh);
+
   ufc_function_space* space = poisson_functionspace_create();
-  ufc_dofmap* ufc_map = space->dofmap();
+  ufc_dofmap* ufc_map = space->create_dofmap();
+  ufc_finite_element* ufc_element = space->create_element();
   auto V = std::make_shared<function::FunctionSpace>(
-      mesh,
-      std::make_shared<fem::FiniteElement>(
-          std::shared_ptr<ufc_finite_element>(space->element(), free)),
+      mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
       std::make_shared<fem::DofMap>(*ufc_map, *mesh));
+  std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);
 

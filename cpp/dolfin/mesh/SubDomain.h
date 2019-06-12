@@ -12,9 +12,9 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/MeshGeometry.h>
-// #include <spdlog/spdlog.h>
+#include <dolfin/common/log.h>
 #include <map>
 
 namespace dolfin
@@ -53,7 +53,7 @@ public:
   ///
   /// @return    bool
   ///         True for points inside the subdomain.
-  virtual EigenArrayXb inside(Eigen::Ref<const EigenRowArrayXXd> x,
+  virtual EigenArrayXb inside(const Eigen::Ref<const EigenRowArrayXXd> x,
                               bool on_boundary) const;
 
   /// Map coordinate x in domain H to coordinate y in domain G (used for
@@ -63,7 +63,7 @@ public:
   ///         The coordinates in domain H.
   /// @param    y (Eigen::Ref<EigenArrayXd>)
   ///         The coordinates in domain G.
-  virtual void map(Eigen::Ref<const EigenArrayXd> x,
+  virtual void map(const Eigen::Ref<const EigenArrayXd> x,
                    Eigen::Ref<EigenArrayXd> y) const;
 
   //--- Marking of MeshFunction ---
@@ -117,8 +117,7 @@ template <typename S, typename T>
 void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
                      bool check_midpoint) const
 {
-  // spdlog::debug("Computing sub domain markers for sub domain %d.",
-  //          sub_domain);
+  LOG(INFO) << "Computing sub domain markers for sub domain " << sub_domain;
 
   // Get the dimension of the entities we are marking
   const std::size_t dim = sub_domains.dim();
@@ -127,10 +126,10 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
   const std::size_t D = mesh.topology().dim();
   if (dim < D)
   {
-    mesh.init(dim);
+    mesh.create_entities(dim);
     if (dim != D - 1)
-      mesh.init(dim, D - 1);
-    mesh.init(D - 1, D);
+      mesh.create_connectivity(dim, D - 1);
+    mesh.create_connectivity(D - 1, D);
   }
 
   // Find all vertices on boundary
@@ -154,15 +153,13 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
     }
   }
 
-  auto gdim = mesh.geometry().dim();
-
   // Check all vertices for "inside" (on_boundary==false)
   const EigenRowArrayXXd& x = mesh.geometry().points();
   EigenArrayXb all_inside = inside(x, false);
   assert(all_inside.rows() == x.rows());
 
   // Check all boundary vertices for "inside" (on_boundary==true)
-  EigenRowArrayXXd x_bound(count, gdim);
+  EigenRowArrayXXd x_bound(count, 3);
   for (std::int32_t i = 0; i != mesh.num_entities(0); ++i)
   {
     if (boundary_vertex[i] != -1)
@@ -173,7 +170,7 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
 
   // Copy values back to vector, now -1="not on boundary anyway",
   // 1="inside", 0="not inside"
-  for (std::int32_t i = 0; i != mesh.num_entities(0); ++i)
+  for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
   {
     if (boundary_vertex[i] != -1)
       boundary_vertex[i] = bound_inside(boundary_vertex[i]) ? 1 : 0;
@@ -208,7 +205,7 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
     // FIXME: refactor for efficiency
     if (all_points_inside && check_midpoint)
     {
-      Eigen::Map<EigenRowArrayXd> x(entity.midpoint().coordinates(), gdim);
+      Eigen::Map<EigenRowArrayXd> x(entity.midpoint().data(), 3);
       if (!inside(x, on_boundary)[0])
         all_points_inside = false;
     }
@@ -219,5 +216,5 @@ void SubDomain::mark(S& sub_domains, T sub_domain, const Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-}
-}
+} // namespace mesh
+} // namespace dolfin

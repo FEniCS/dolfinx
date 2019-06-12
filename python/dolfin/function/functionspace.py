@@ -8,6 +8,7 @@
 import typing
 
 import cffi
+
 import ufl
 from dolfin import cpp, jit
 from dolfin.fem import dofmap

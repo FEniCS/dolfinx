@@ -58,5 +58,5 @@ public:
 
   operator dolfin_wrappers::MPICommWrapper() { return this->value; }
 };
-}
-}
+} // namespace detail
+} // namespace pybind11
