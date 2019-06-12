@@ -204,7 +204,7 @@ void FunctionSpace::interpolate(
   assert(_element);
   assert(_dofmap);
 
-  // Check that function ranks match
+  // Check that ranks match
   if (_element->value_rank() != e.value_rank())
   {
     throw std::runtime_error("Rank of Expression "
@@ -212,7 +212,7 @@ void FunctionSpace::interpolate(
                              + " doesn't match the target space.");
   }
 
-  // Check that function dims match
+  // Check that dims match
   for (int i = 0; i < _element->value_rank(); ++i)
   {
     if (_element->value_dimension(i) != e.value_dimension(i))
@@ -222,8 +222,15 @@ void FunctionSpace::interpolate(
     }
   }
 
-  // Build list of points at which to evaluate Expression
+  // Note: the following does not exploit any block structure, e.g. for
+  // vector Lagrange, which leads to a lot of redundant evaluations.
+  // E.g., for a vector Lagrange element the vector-valued expression is
+  // evaluted three times at the some point.
+
+  // Build list of points at which to evaluate the Expression
   EigenRowArrayXXd x = tabulate_dof_coordinates();
+
+  // Evaluate Expression at points
   std::vector<int> vshape = e.value_shape();
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
@@ -232,15 +239,21 @@ void FunctionSpace::interpolate(
   assert(values.rows() == x.rows());
   e.eval(values, x);
 
-  // Dummy coordinate dofs
+  // FIXME: Dummy coordinate dofs - should limit the interpolation to
+  // Lagrange, in which case we don't need coordinate dofs in
+  // FiniteElement::transform_values.
   EigenRowArrayXXd coordinate_dofs;
+
+  // FIXME: It would be far more elegant and efficient to avoid the need
+  // to loop over cells to set the expansion corfficients. Would be much
+  // better if the expansion coefficients could be passed straight into
+  // Expresion::eval.
 
   // Loop over cells
   const int ndofs = _element->space_dimension();
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values_cell(ndofs, value_size);
   std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
-  // double tmp = 0.0;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Get dofmap for cell
@@ -251,11 +264,13 @@ void FunctionSpace::interpolate(
       for (Eigen::Index j = 0; j < value_size; ++j)
         values_cell(i, j) = values(cell_dofs[i], j);
 
-      // FIXME: Add doc
+      // FIXME: For vector-valued Lagrange, this function 'throws away'
+      // the redundant expression evaluations. It should really be made
+      // not necessary.
       _element->transform_values(cell_coefficients.data(), values_cell,
                                  coordinate_dofs);
 
-      // Copy cell 'dofs' from values
+      // Copy into expansion coefficient array
       for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
         expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
     }
