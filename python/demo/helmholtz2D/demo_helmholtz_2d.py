@@ -71,7 +71,7 @@ are evident for high wavenumbers."""
 
 # "Exact" solution expression
 @function.expression.numba_eval
-def solution(values, x, cell_idx):
+def solution(values, x):
     values[:, 0] = A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 
 
@@ -79,7 +79,7 @@ def solution(values, x, cell_idx):
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 
 # "exact" solution
-u_exact = interpolate(Expression(solution), V_exact)
+u_exact = interpolate(Expression(f=solution), V_exact)
 
 # best approximation from V
 u_BA = project(u_exact, V)
