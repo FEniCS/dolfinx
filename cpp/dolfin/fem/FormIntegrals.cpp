@@ -45,26 +45,21 @@ void FormIntegrals::register_tabulate_tensor(FormIntegrals::Type type, int i,
   std::vector<struct FormIntegrals::Integral>& integrals
       = _integrals[type_index];
 
-  if (std::find_if(integrals.begin(), integrals.end(),
-                   [&i](const struct FormIntegrals::Integral& val) {
-                     return val.id == i;
-                   })
-      != integrals.end())
+  // Find insertion point
+  int pos = 0;
+  for (const auto& q : integrals)
   {
-    throw std::runtime_error("Integral with ID " + std::to_string(i)
-                             + " already exists");
+    if (q.id == i)
+    {
+      throw std::runtime_error("Integral with ID " + std::to_string(i)
+                               + " already exists");
+    }
+    else if (q.id > i)
+      break;
+    ++pos;
   }
 
-  // Find insertion position
-  int pos = std::distance(
-      integrals.begin(),
-      std::upper_bound(
-          integrals.begin(), integrals.end(), i,
-          [](const int& aid, const struct FormIntegrals::Integral& b) {
-            return aid < b.id;
-          }));
-
-  // Create new Integral
+  // Create new Integral and insert
   struct FormIntegrals::Integral new_integral
       = {fn, i, std::vector<std::int32_t>()};
 

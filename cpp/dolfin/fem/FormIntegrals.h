@@ -41,16 +41,6 @@ public:
     vertex = 3
   };
 
-  // Collect together the function, id, and indices of entities to integrate on
-  struct Integral
-  {
-    std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                       const int*, const int*)>
-        tabulate;
-    int id;
-    std::vector<std::int32_t> active_entities;
-  };
-
   /// Initialise the FormIntegrals as empty
   FormIntegrals();
 
@@ -100,6 +90,16 @@ public:
   void set_default_domains(const mesh::Mesh& mesh);
 
 private:
+  // Collect together the function, id, and indices of entities to integrate on
+  struct Integral
+  {
+    std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                       const int*, const int*)>
+        tabulate;
+    int id;
+    std::vector<std::int32_t> active_entities;
+  };
+
   // Array of vectors of integrals, arranged by type
   // (see Type enum, and struct Integral above)
   std::array<std::vector<struct Integral>, 4> _integrals;
