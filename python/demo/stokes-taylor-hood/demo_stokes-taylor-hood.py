@@ -122,7 +122,6 @@ W = FunctionSpace(mesh, TH)
 # No-slip boundary condition for velocity
 # x1 = 0, x1 = 1 and around the dolphin
 
-
 class NoSlip(Expression):
     """Evaluate the no-slip condition"""
 
@@ -149,7 +148,7 @@ bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
 
 @function.expression.numba_eval
-def inflow_eval(values, x, cell):
+def inflow_eval(values, x):
     values[:, 0] = - np.sin(x[:, 1] * np.pi)
     values[:, 1] = 0.0
 
