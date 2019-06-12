@@ -61,7 +61,7 @@ void _lift_bc_cells(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
   const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                           int)>& fn
+                           const int*, const int*)>& fn
       = a.integrals().get_tabulate_tensor_fn_cell(0);
 
   // Prepare cell geometry
@@ -74,8 +74,7 @@ void _lift_bc_cells(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
   // Data structures used in bc application
@@ -129,7 +128,7 @@ void _lift_bc_cells(
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -192,8 +191,8 @@ void _lift_bc_exterior_facets(
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
-  const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
-                           int)>& fn
+  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                           const int*, const int*)>& fn
       = a.integrals().get_tabulate_tensor_fn_exterior_facet(0);
 
   // Prepare cell geometry
@@ -205,8 +204,7 @@ void _lift_bc_exterior_facets(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
   // Data structures used in bc application
@@ -229,6 +227,7 @@ void _lift_bc_exterior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
+    const int orient = 1;
 
     // Get dof maps for cell
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
@@ -268,7 +267,8 @@ void _lift_bc_exterior_facets(
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), local_facet, 1);
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), &local_facet,
+       &orient);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -332,8 +332,14 @@ void fem::impl::assemble_vector(
                                         coeff_fn, c_offsets);
   }
 
-  if (L.integrals().num_integrals(fem::FormIntegrals::Type::interior_facet) > 0)
-    fem::impl::assemble_interior_facets(b, L);
+  for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
+  {
+    const auto& fn = integrals.get_tabulate_tensor_fn_interior_facet(i);
+    const std::vector<std::int32_t>& active_facets
+        = integrals.integral_domains(type::interior_facet, i);
+    fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, fn,
+                                        coeff_fn, c_offsets);
+  }
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_cells(
@@ -342,7 +348,7 @@ void fem::impl::assemble_cells(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& kernel,
+                             const int*, const int*)>& kernel,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
@@ -357,8 +363,7 @@ void fem::impl::assemble_cells(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
   // Create data structures used in assembly
@@ -387,7 +392,7 @@ void fem::impl::assemble_cells(
     }
 
     // Tabulate vector for cell
-    kernel(be.data(), coeff_array.data(), coordinate_dofs.data(), 1);
+    kernel(be.data(), coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
 
     // Add local cell vector to global vector
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
@@ -400,7 +405,7 @@ void fem::impl::assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn,
+                             const int*, const int*)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets)
 {
@@ -418,8 +423,7 @@ void fem::impl::assemble_exterior_facets(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
   // Creat data structures used in assembly
@@ -441,6 +445,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
+    const int orient = 1;
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
@@ -463,7 +468,8 @@ void fem::impl::assemble_exterior_facets(
 
     // Tabulate element vector
     be.setZero(dmap.size());
-    fn(be.data(), coeff_array.data(), coordinate_dofs.data(), local_facet, 1);
+    fn(be.data(), coeff_array.data(), coordinate_dofs.data(), &local_facet,
+       &orient);
 
     // Add element vector to global vector
     for (Eigen::Index i = 0; i < dmap.size(); ++i)
@@ -472,9 +478,101 @@ void fem::impl::assemble_exterior_facets(
 }
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_interior_facets(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b, const Form& L)
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
+    const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
+    const fem::GenericDofMap& dofmap,
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             const int*, const int*)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets)
 {
-  throw std::runtime_error("Interior facet integrals not supported yet.");
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+  mesh.create_entities(tdim - 1);
+  mesh.create_connectivity(tdim - 1, tdim);
+
+  // Prepare cell geometry
+  const mesh::Connectivity& connectivity_g
+      = mesh.coordinate_dofs().entity_points();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
+      = connectivity_g.entity_positions();
+  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
+      = connectivity_g.connections();
+  // FIXME: Add proper interface for num coordinate dofs
+  const int num_dofs_g = connectivity_g.size(0);
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
+      = mesh.geometry().points();
+
+  // Creat data structures used in assembly
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      coordinate_dofs(2 * num_dofs_g, gdim);
+  Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
+
+  for (const auto& facet_index : active_facets)
+  {
+    const mesh::Facet facet(mesh, facet_index);
+
+    assert(facet.num_global_entities(tdim) == 2);
+
+    // TODO: check ghosting sanity?
+
+    // Create attached cells
+    const mesh::Cell cell0(mesh, facet.entities(tdim)[0]);
+    const mesh::Cell cell1(mesh, facet.entities(tdim)[1]);
+
+    // Get local index of facet with respect to the cell
+    const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
+    const int orient[2] = {1, 1};
+
+    // Get cell vertex coordinates
+    const int cell_index0 = cell0.index();
+    const int cell_index1 = cell1.index();
+    for (int i = 0; i < num_dofs_g; ++i)
+      for (int j = 0; j < gdim; ++j)
+      {
+        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index0] + i], j);
+        coordinate_dofs(i + num_dofs_g, j)
+            = x_g(cell_g[pos_g[cell_index1] + i], j);
+      }
+
+    // Get dofmaps for cell
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap0
+        = dofmap.cell_dofs(cell_index0);
+    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
+        = dofmap.cell_dofs(cell_index1);
+
+    // TODO: Move gathering of coefficients outside of main assembly
+    // loop
+    // Update coefficients
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        coordinate_dofs0(coordinate_dofs.data(), num_dofs_g, gdim);
+
+    Eigen::Map<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>
+        coordinate_dofs1(coordinate_dofs.data() + num_dofs_g * gdim, num_dofs_g,
+                         gdim);
+    for (std::size_t i = 0; i < coefficients.size(); ++i)
+    {
+      coefficients[i]->restrict(coeff_array.data() + offsets[i], cell0,
+                                coordinate_dofs0);
+      coefficients[i]->restrict(coeff_array.data() + offsets.back()
+                                    + offsets[i],
+                                cell1, coordinate_dofs1);
+    }
+
+    // Tabulate element vector
+    be.setZero(dmap0.size() + dmap1.size());
+    fn(be.data(), coeff_array.data(), coordinate_dofs.data(), local_facet,
+       orient);
+
+    // Add element vector to global vector
+    for (Eigen::Index i = 0; i < dmap0.size(); ++i)
+      b[dmap0[i]] += be[i];
+    for (Eigen::Index i = 0; i < dmap1.size(); ++i)
+      b[dmap1[i]] += be[i + dmap0.size()];
+  }
 }
 //-----------------------------------------------------------------------------
 void fem::impl::apply_lifting(

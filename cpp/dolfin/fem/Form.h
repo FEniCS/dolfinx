@@ -171,7 +171,8 @@ public:
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
                                                        const PetscScalar*,
-                                                       const double*, int));
+                                                       const double*,
+                                                       const int*, const int*));
 
   /// Set cell domains
   ///
