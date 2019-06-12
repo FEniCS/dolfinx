@@ -89,10 +89,10 @@ def numba_eval(*args,
         return decorator
 
 
-class Expression:
+class Expression(cpp.function.Expression):
     def __init__(self,
-                 f: typing.Union[numba.ccallback.CFunc, int],
-                 shape: tuple = ()):
+                 shape: tuple = (),
+                 f: typing.Optional[typing.Union[numba.ccallback.CFunc, int]] = None):
         """Initialise Expression
 
         Initialises Expression from Numba callback of compiled C function or
@@ -104,6 +104,8 @@ class Expression:
 
         Parameters
         ---------
+        shape: tuple
+            Value shape.
         f: numba.ccallback.CFunc, int
             The C function must accept the following arguments:
             ``(values_p, x_p, cells_p, num_points, value_size, gdim, num_cells)``
@@ -119,29 +121,14 @@ class Expression:
                of the points at which the expression function should be evaluated.
             5. ``gdim``, ``int``, Geometric dimension of coordinates,
             6. ``t``, ``float``, Time.
-        shape: tuple
-            Value shape.
         """
 
-        try:
-            self._cpp_object = cpp.function.Expression(f.address, shape)
-            # Hold reference to eval function to avoid premature garbage
-            # collection
-            self._f = f
-        except AttributeError:
-            self._cpp_object = cpp.function.Expression(f, shape)
-
-    @property
-    def value_rank(self):
-        return self._cpp_object.value_rank
-
-    def value_dimension(self, i):
-        return self._cpp_object.value_dimension(i)
-
-    @property
-    def t(self):
-        return self._cpp_object.t
-
-    @t.setter
-    def t(self, t):
-        self._cpp_object.t = t
+        super().__init__(shape)
+        if f is not None:
+            try:
+                self.set_eval_ptr(f.address)
+                # Hold reference to eval function to avoid premature garbage
+                # collection
+                self._f = f
+            except AttributeError:
+                self.set_eval(f)

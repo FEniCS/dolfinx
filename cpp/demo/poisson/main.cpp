@@ -106,13 +106,12 @@ class Source : public function::Expression
 {
 public:
   Source() : function::Expression({}) {}
-
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x) const
+            const Eigen::Ref<const EigenRowArrayXXd> x) const
   {
-    for (unsigned int i = 0; i != x.rows(); ++i)
+    for (int i = 0; i < x.rows(); ++i)
     {
       double dx = x(i, 0) - 0.5;
       double dy = x(i, 1) - 0.5;
@@ -126,13 +125,12 @@ class dUdN : public function::Expression
 {
 public:
   dUdN() : function::Expression({}) {}
-
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x) const
+            const Eigen::Ref<const EigenRowArrayXXd> x) const
   {
-    for (unsigned int i = 0; i != x.rows(); ++i)
+    for (int i = 0; i < x.rows(); ++i)
       values(i, 0) = sin(5 * x(i, 0));
   }
 };

@@ -224,7 +224,7 @@ void FunctionSpace::interpolate(
 
   // Build list of points at which to evaluate Expression
   EigenRowArrayXXd x = tabulate_dof_coordinates();
-  std::vector<std::size_t> vshape = e.value_shape();
+  std::vector<int> vshape = e.value_shape();
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>

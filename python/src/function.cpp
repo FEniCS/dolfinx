@@ -42,19 +42,34 @@ void function(py::module& m)
         "Create a dolfin::function::Expression object from a pointer integer, "
         "typically returned by a just-in-time compiler");
 
-  // dolfin:Expression
-  py::class_<dolfin::function::Expression,
+  // function::Expression trampoline (used for overloading virtual
+  // function from Python)
+  class PyExpression : public dolfin::function::Expression
+  {
+    using dolfin::function::Expression::Expression;
+
+    void
+    eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                 Eigen::RowMajor>>
+             values,
+         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>
+             x) const override
+    {
+      PYBIND11_OVERLOAD(void, dolfin::function::Expression, eval, values, x);
+    }
+  };
+
+  // dolfin:function::Expression
+  py::class_<dolfin::function::Expression, PyExpression,
              std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
-      .def(py::init([](std::uintptr_t addr,
-                       std::vector<std::size_t> value_size) {
+      .def(py::init<std::vector<int>>(), "Create Expression with a given shape.")
+      .def("set_eval", &dolfin::function::Expression::set_eval)
+      .def("set_eval_ptr", [](dolfin::function::Expression& self, std::uintptr_t addr) {
         std::function<void(PetscScalar*, int, int, const double*, int, double)>
             f = reinterpret_cast<void (*)(PetscScalar*, int, int, const double*,
                                           int, double)>(addr);
-        return std::make_unique<dolfin::function::Expression>(f, value_size);
-      }))
-      .def(py::init<std::function<void(PetscScalar*, int, int, const double*,
-                                       int, double)>,
-                    std::vector<std::size_t>>())
+               self.set_eval(f);})
       .def("eval", &dolfin::function::Expression::eval)
       .def_property_readonly("value_rank",
                              &dolfin::function::Expression::value_rank)

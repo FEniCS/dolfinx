@@ -16,25 +16,21 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-Expression::Expression(std::vector<std::size_t> value_shape)
-    : _value_shape(value_shape)
+Expression::Expression(std::vector<int> value_shape) : _value_shape(value_shape)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Expression::Expression(
-    std::function<void(PetscScalar* values, int num_points, int value_size,
-                       const double* x, int gdim, double t)>
-        eval_ptr,
-    std::vector<std::size_t> value_shape)
-    : _eval_ptr(eval_ptr), _value_shape(value_shape)
+void Expression::set_eval(
+    std::function<void(PetscScalar*, int, int, const double*, int, double)>
+        eval_ptr)
 {
-  // Do nothing
+  _eval_ptr = eval_ptr;
 }
 //-----------------------------------------------------------------------------
-std::size_t Expression::value_rank() const { return _value_shape.size(); }
+int Expression::value_rank() const { return _value_shape.size(); }
 //-----------------------------------------------------------------------------
-std::size_t Expression::value_dimension(std::size_t i) const
+int Expression::value_dimension(int i) const
 {
   if (i >= _value_shape.size())
   {
@@ -46,10 +42,7 @@ std::size_t Expression::value_dimension(std::size_t i) const
   return _value_shape[i];
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> Expression::value_shape() const
-{
-  return _value_shape;
-}
+std::vector<int> Expression::value_shape() const { return _value_shape; }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Expression::compute_point_values(const mesh::Mesh& mesh) const
@@ -60,7 +53,7 @@ Expression::compute_point_values(const mesh::Mesh& mesh) const
       = mesh.geometry().points().leftCols(num_vertices_per_cell);
 
   // Prepare data structure for vertex values
-  const std::size_t size = std::accumulate(
+  const int size = std::accumulate(
       std::begin(_value_shape), std::end(_value_shape), 1, std::multiplies<>());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       vertex_values(x.rows(), size);

@@ -123,10 +123,15 @@ W = FunctionSpace(mesh, TH)
 # x1 = 0, x1 = 1 and around the dolphin
 
 
-@function.expression.numba_eval
-def noslip_eval(values, x, cell):
-    values[:, 0] = 0.0
-    values[:, 1] = 0.0
+class NoSlip(Expression):
+    """Evaluate the no-slip condition"""
+
+    def __init__(self):
+        super().__init__((2,))
+
+    def eval(self, values, x):
+        values[:, 0] = 0.0
+        values[:, 1] = 0.0
 
 
 # Extract subdomain facet arrays
@@ -134,7 +139,8 @@ mf = sub_domains.array()
 mf0 = np.where(mf == 0)
 mf1 = np.where(mf == 1)
 
-noslip_expr = Expression(noslip_eval, shape=(2,))
+# noslip_expr = Expression(noslip_eval, shape=(2,))
+noslip_expr = NoSlip()
 noslip = interpolate(noslip_expr, W.sub(0).collapse())
 bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
@@ -148,7 +154,7 @@ def inflow_eval(values, x, cell):
     values[:, 1] = 0.0
 
 
-inflow_expr = Expression(inflow_eval, shape=(2,))
+inflow_expr = Expression(f=inflow_eval, shape=(2,))
 inflow = interpolate(inflow_expr, W.sub(0).collapse())
 bc1 = DirichletBC(W.sub(0), inflow, mf1[0])
 
@@ -190,8 +196,10 @@ L = inner(f, v) * dx
 
 # Compute solution
 w = Function(W)
+print("start solve")
 solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
-                                     "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
+                                     "pc_type": "lu", "pc_factor_mat_solver_type": "superlu"})
+print("post solve interpolate")
 
 # Split the mixed solution and collapse
 u = w.sub(0).collapse()

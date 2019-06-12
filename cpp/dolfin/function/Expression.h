@@ -35,18 +35,9 @@ class Expression
 public:
   /// Create tensor-valued expression with given shape.
   ///
-  /// @param value_shape (std::vector<std::size_t>)
+  /// @param value_shape (std::vector<int>)
   ///         Shape of expression.
-  explicit Expression(std::vector<std::size_t> value_shape);
-
-  /// Create tensor-valued expression with given shape.
-  ///
-  /// @param value_shape (std::vector<std::size_t>)
-  ///         Shape of expression.
-  Expression(
-      std::function<void(PetscScalar*, int, int, const double*, int, double)>
-          eval_ptr,
-      std::vector<std::size_t> value_shape);
+  explicit Expression(std::vector<int> value_shape);
 
   /// Copy constructor
   ///
@@ -57,26 +48,30 @@ public:
   /// Destructor
   virtual ~Expression() = default;
 
+  void set_eval(
+      std::function<void(PetscScalar*, int, int, const double*, int, double)>
+          eval_ptr);
+
   /// Return value rank.
   ///
-  /// @return std::size_t
+  /// @return int
   ///         The value rank.
-  virtual std::size_t value_rank() const;
+  virtual int value_rank() const;
 
   /// Return value dimension for given axis.
   ///
-  /// @param i (std::size_t)
+  /// @param i (int)
   ///         Integer denoting the axis to use.
   ///
-  /// @return std::size_t
+  /// @return int
   ///         The value dimension (for the given axis).
-  virtual std::size_t value_dimension(std::size_t i) const;
+  virtual int value_dimension(int i) const;
 
   /// Return value shape
   ///
-  /// @return std::vector<std::size_t>
+  /// @return std::vector<int>
   ///         The value shape.
-  virtual std::vector<std::size_t> value_shape() const;
+  virtual std::vector<int> value_shape() const;
 
   /// Compute values at all mesh vertices.
   ///
@@ -132,7 +127,7 @@ private:
       _eval_ptr;
 
   // Value shape
-  std::vector<std::size_t> _value_shape;
+  std::vector<int> _value_shape;
 };
 } // namespace function
 } // namespace dolfin
