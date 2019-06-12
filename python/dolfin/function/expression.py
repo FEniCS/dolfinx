@@ -65,7 +65,6 @@ def numba_eval(*args,
             numba.types.intc,
             numba.types.CPointer(numba.types.double),
             numba.types.intc,
-            numba.types.float64,
         )
 
         # Compile the user function
@@ -73,12 +72,12 @@ def numba_eval(*args,
 
         # Wrap the user function in a function with a C interface
         @numba.cfunc(c_signature, **numba_cfunc_options)
-        def eval(values, num_points, value_size, x, gdim, t):
+        def eval(values, num_points, value_size, x, gdim):
             np_values = numba.carray(values, (num_points, value_size),
                                      dtype=scalar_type)
             np_x = numba.carray(x, (num_points, gdim),
                                 dtype=numba.types.double)
-            f_jit(np_values, np_x, t)
+            f_jit(np_values, np_x)
 
         return eval
 
@@ -131,4 +130,4 @@ class Expression(cpp.function.Expression):
                 # collection
                 self._f = f
             except AttributeError:
-                self.set_eval(f)
+                self.set_eval_ptr(f)

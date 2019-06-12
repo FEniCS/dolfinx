@@ -27,10 +27,10 @@ def test_save_and_read_function_timeseries(tempdir):
     t = 0.0
 
     @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx):
+    def expr_eval(values, x):
         values[:, 0] = t * x[:, 0]
 
-    E = Expression(expr_eval)
+    E = Expression(f=expr_eval)
     F0.interpolate(E)
 
     # Save to HDF5 File

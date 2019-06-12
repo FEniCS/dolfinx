@@ -63,18 +63,20 @@ void function(py::module& m)
   // dolfin:function::Expression
   py::class_<dolfin::function::Expression, PyExpression,
              std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
-      .def(py::init<std::vector<int>>(), "Create Expression with a given shape.")
+      .def(py::init<std::vector<int>>(),
+           "Create Expression with a given shape.")
       .def("set_eval", &dolfin::function::Expression::set_eval)
-      .def("set_eval_ptr", [](dolfin::function::Expression& self, std::uintptr_t addr) {
-        std::function<void(PetscScalar*, int, int, const double*, int, double)>
-            f = reinterpret_cast<void (*)(PetscScalar*, int, int, const double*,
-                                          int, double)>(addr);
-               self.set_eval(f);})
+      .def("set_eval_ptr",
+           [](dolfin::function::Expression& self, std::uintptr_t addr) {
+             std::function<void(PetscScalar*, int, int, const double*, int)> f
+                 = reinterpret_cast<void (*)(PetscScalar*, int, int,
+                                             const double*, int)>(addr);
+             self.set_eval(f);
+           })
       .def("eval", &dolfin::function::Expression::eval)
       .def_property_readonly("value_rank",
                              &dolfin::function::Expression::value_rank)
-      .def("value_dimension", &dolfin::function::Expression::value_dimension)
-      .def_readwrite("t", &dolfin::function::Expression::t);
+      .def("value_dimension", &dolfin::function::Expression::value_dimension);
 
   // dolfin::function::Function
   py::class_<dolfin::function::Function,

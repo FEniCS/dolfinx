@@ -135,10 +135,10 @@ def test_assign(V, W):
         uu = Function(V1)
 
         @function.expression.numba_eval
-        def expr_eval(values, x, t):
+        def expr_eval(values, x):
             values[:, 0] = 1.0
 
-        f = Expression(expr_eval)
+        f = Expression(f=expr_eval)
 
         with pytest.raises(RuntimeError):
             uu.assign(1.0)
@@ -161,21 +161,21 @@ def test_call(R, V, W, Q, mesh):
     u3 = Function(Q)
 
     @function.expression.numba_eval
-    def expr_eval1(values, x, t):
+    def expr_eval1(values, x):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
 
-    e1 = Expression(expr_eval1)
+    e1 = Expression(f=expr_eval1)
 
     @function.expression.numba_eval
-    def expr_eval2(values, x, t):
+    def expr_eval2(values, x):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
 
-    e2 = Expression(expr_eval2, shape=(3, ))
+    e2 = Expression(f=expr_eval2, shape=(3, ))
 
     @function.expression.numba_eval
-    def expr_eval3(values, x, t):
+    def expr_eval3(values, x):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
@@ -186,7 +186,7 @@ def test_call(R, V, W, Q, mesh):
         values[:, 7] = -x[:, 1]
         values[:, 8] = -x[:, 2]
 
-    e3 = Expression(expr_eval3, shape=(3, 3))
+    e3 = Expression(f=expr_eval3, shape=(3, 3))
 
     u0.vector().set(1.0)
     u1.interpolate(e1)
@@ -245,31 +245,39 @@ def test_scalar_conditions(R):
 
 def test_interpolation_mismatch_rank0(W):
     @function.expression.numba_eval
-    def expr_eval(values, x, t):
+    def expr_eval(values, x):
         values[:, 0] = 1.0
 
-    f = Expression(expr_eval, shape=())
+    f = Expression(f=expr_eval, shape=())
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
 
 def test_interpolation_mismatch_rank1(W):
     @function.expression.numba_eval
-    def expr_eval(values, x, t):
+    def expr_eval(values, x):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
 
-    f = Expression(expr_eval, shape=(2, ))
+    f = Expression(f=expr_eval, shape=(2, ))
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
 
 def test_interpolation_rank0(V):
-    @function.expression.numba_eval
-    def expr_eval(values, x, t):
-        values[:, 0] = 1.0 * t
+    class MyExpression(Expression):
+        def __init__(self):
+            super().__init__()
+            self.t = 0.0
 
-    f = Expression(expr_eval, shape=())
+        def eval(self, values, x):
+            values[:, 0] = self.t
+
+    # @function.expression.numba_eval
+    # def expr_eval(values, x):
+    #     values[:, 0] = 1.0 * t
+
+    f = MyExpression()
     f.t = 1.0
     w = interpolate(f, V)
     with w.vector().localForm() as x:
@@ -300,12 +308,12 @@ def test_near_evaluations(R, mesh):
 
 def test_interpolation_rank1(W):
     @function.expression.numba_eval
-    def expr_eval(values, x, t):
+    def expr_eval(values, x):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
         values[:, 2] = 1.0
 
-    f = Expression(expr_eval, shape=(3, ))
+    f = Expression(f=expr_eval, shape=(3, ))
     w = interpolate(f, W)
     x = w.vector()
     assert x.max()[1] == 1.0
@@ -316,7 +324,7 @@ def test_interpolation_rank1(W):
 def test_numba_expression_jit_objmode_fails(W):
     # numba cfunc cannot call into objmode jit function
     @function.expression.numba_eval(numba_jit_options={"forceobj": True})
-    def expr_eval(values, x, t):
+    def expr_eval(values, x):
         values[0] = 1.0
 
 
@@ -324,31 +332,31 @@ def test_numba_expression_jit_objmode_fails(W):
 def test_numba_expression_cfunc_objmode_fails(W):
     # numba does not support cfuncs built in objmode
     @function.expression.numba_eval(numba_cfunc_options={"forceobj": True})
-    def expr_eval(values, x, t):
+    def expr_eval(values, x):
         values[0] = 1.0
 
 
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
     @function.expression.numba_eval
-    def expr_eval0(values, x, t):
+    def expr_eval0(values, x):
         values[:, 0] = 1.0
 
     @function.expression.numba_eval
-    def expr_eval1(values, x, t):
+    def expr_eval1(values, x):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
         values[:, 2] = 1.0
 
     # Scalar interpolation
-    f0 = Expression(expr_eval0)
+    f0 = Expression(f=expr_eval0)
     f = Function(V)
     f = interpolate(f0, V)
     assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_entities(0),
                  7) == 0
 
     # Vector interpolation
-    f1 = Expression(expr_eval1, shape=(3, ))
+    f1 = Expression(f=expr_eval1, shape=(3, ))
     f = Function(W)
     f.interpolate(f1)
     assert round(f.vector().norm(PETSc.NormType.N1) - 3 * mesh.num_entities(0),
@@ -357,11 +365,11 @@ def test_interpolation_old(V, W, mesh):
 
 def test_numba_expression_address(V):
     @function.expression.numba_eval
-    def expr_eval(values, x, t):
+    def expr_eval(values, x):
         values[:, :] = 1.0
 
     # Handle C func address by hand
-    f1 = Expression(expr_eval.address)
+    f1 = Expression(f=expr_eval.address)
     f = Function(V)
 
     f.interpolate(f1)
@@ -372,16 +380,14 @@ def test_numba_expression_address(V):
 @skip_if_complex
 def test_cffi_expression(V):
     code_h = """
-    void eval(double* values, int num_points, int value_size, const double* x, int gdim, double t);
+    void eval(double* values, int num_points, int value_size, const double* x, int gdim);
     """
 
     code_c = """
-    void eval(double* values, int num_points, int value_size, const double* x, int gdim, double t)
+    void eval(double* values, int num_points, int value_size, const double* x, int gdim)
     {
       for (int i = 0; i < num_points; ++i)
-      {
         values[i*value_size + 0] = x[i*gdim + 0] + x[i*gdim + 1];
-      }
     }
     """
     module = "_expr_eval" + str(MPI.comm_world.rank)
@@ -400,15 +406,15 @@ def test_cffi_expression(V):
     eval_ptr = ffi.cast("uintptr_t", ffi.addressof(lib, "eval"))
 
     # Handle C func address by hand
-    ex1 = Expression(int(eval_ptr))
+    ex1 = Expression(f=int(eval_ptr))
     f1 = Function(V)
     f1.interpolate(ex1)
 
-    @function.expression.numba_eval
-    def expr_eval2(values, x, t):
-        values[:, 0] = x[:, 0] + x[:, 1]
+    # @function.expression.numba_eval
+    # def expr_eval2(values, x):
+    #     values[:, 0] = x[:, 0] + x[:, 1]
 
-    ex2 = Expression(expr_eval2)
-    f2 = Function(V)
-    f2.interpolate(ex2)
-    assert (f1.vector() - f2.vector()).norm() < 1.0e-12
+    # ex2 = Expression(f=expr_eval2)
+    # f2 = Function(V)
+    # f2.interpolate(ex2)
+    # assert (f1.vector() - f2.vector()).norm() < 1.0e-12

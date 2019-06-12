@@ -22,8 +22,7 @@ Expression::Expression(std::vector<int> value_shape) : _value_shape(value_shape)
 }
 //-----------------------------------------------------------------------------
 void Expression::set_eval(
-    std::function<void(PetscScalar*, int, int, const double*, int, double)>
-        eval_ptr)
+    std::function<void(PetscScalar*, int, int, const double*, int)> eval_ptr)
 {
   _eval_ptr = eval_ptr;
 }
@@ -74,7 +73,6 @@ void Expression::eval(
 {
   assert(_eval_ptr);
   assert(values.rows() == x.rows());
-  _eval_ptr(values.data(), values.rows(), values.cols(), x.data(), x.cols(),
-            this->t);
+  _eval_ptr(values.data(), values.rows(), values.cols(), x.data(), x.cols());
 }
 //-----------------------------------------------------------------------------

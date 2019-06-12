@@ -49,7 +49,7 @@ public:
   virtual ~Expression() = default;
 
   void set_eval(
-      std::function<void(PetscScalar*, int, int, const double*, int, double)>
+      std::function<void(PetscScalar*, int, int, const double*, int)>
           eval_ptr);
 
   /// Return value rank.
@@ -97,9 +97,6 @@ public:
                                            Eigen::Dynamic, Eigen::RowMajor>>
            x) const;
 
-  /// Time
-  double t = 0.0;
-
 private:
   // Evaluate method
   //
@@ -123,7 +120,7 @@ private:
   // @param t
   //        Time
   std::function<void(PetscScalar* values, int num_points, int value_size,
-                     const double* x, int gdim, double t)>
+                     const double* x, int gdim)>
       _eval_ptr;
 
   // Value shape
