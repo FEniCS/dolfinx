@@ -92,14 +92,35 @@ class Expression(cpp.function.Expression):
     def __init__(self,
                  shape: tuple = (),
                  f: typing.Optional[typing.Union[numba.ccallback.CFunc, int]] = None):
-        """Initialise Expression
+        """An Expression is a mathematical function that can be evaluated
+        a position x.
 
-        Initialises Expression from Numba callback of compiled C function or
-        integer address of C function and value shape.
+        The class can be used by:
 
-        The majority of users should use this class in conjunction with the
-        ``function.expression.numba_eval`` decorator that creates the Numba
-        JIT-compiled evaluation functions.
+        1. Creating a sub-class the provides the ``eval(self, values, x)`` method, e.g.:
+
+            class MyExpression(Expression):
+                def __init__(self, shape):
+                    super()._init__(shape)
+                def eval(self, values, x):
+                    values[:, 0] = x[:, 0]*x[:, 1]
+                    values[:, 1] = -x[:, 0]
+
+            f = MyExpression((2,))
+
+        2. Providing a callback ``eval`` function, usually a Numba
+           callback with a C signature or the integer address of C
+           function and value shape.
+
+           The ``function.expression.numba_eval`` decorator simplifies
+           the creation of Numba JIT-compiled evaluation functions::
+
+            @function.expression.numba_eval
+            def my_eval(values, x):
+                values[:, 0] = x[:, 0]*x[:, 1]
+                values[:, 1] = -x[:, 0]
+
+            f = Expression(shape=(2,), my_eval)
 
         Parameters
         ---------
@@ -107,7 +128,7 @@ class Expression(cpp.function.Expression):
             Value shape.
         f: numba.ccallback.CFunc, int
             The C function must accept the following arguments:
-            ``(values_p, x_p, cells_p, num_points, value_size, gdim, num_cells)``
+            ``(values_p, x_p, cells_p, num_points, value_size, gdim)``
             1. ``values_p`` is a pointer to a row-major array of
                ``PetscScalar`` of shape ``(num_points, value_size)``.
                The function itself is responsible for filling ``values_p``
@@ -119,7 +140,6 @@ class Expression(cpp.function.Expression):
                ``(num_points, gdim)``. The array contains the coordinates
                of the points at which the expression function should be evaluated.
             5. ``gdim``, ``int``, Geometric dimension of coordinates,
-            6. ``t``, ``float``, Time.
         """
 
         super().__init__(shape)
