@@ -141,41 +141,43 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 {
-  int tdim = mesh.topology().dim();
+  const int tdim = mesh.topology().dim();
 
-  std::vector<struct FormIntegrals::Integral>& integrals
+  std::vector<struct FormIntegrals::Integral>& cell_integrals
       = _integrals[static_cast<int>(FormIntegrals::Type::cell)];
 
   // If there is a default integral, define it on all cells
-  if (integrals.size() > 0 and integrals[0].id == -1)
+  if (cell_integrals.size() > 0 and cell_integrals[0].id == -1)
   {
-    integrals[0].active_entities.resize(mesh.num_entities(tdim));
-    std::iota(integrals[0].active_entities.begin(),
-              integrals[0].active_entities.end(), 0);
+    cell_integrals[0].active_entities.resize(mesh.num_entities(tdim));
+    std::iota(cell_integrals[0].active_entities.begin(),
+              cell_integrals[0].active_entities.end(), 0);
   }
 
-  integrals = _integrals[static_cast<int>(FormIntegrals::Type::exterior_facet)];
-  if (integrals.size() > 0 and integrals[0].id == -1)
+  std::vector<struct FormIntegrals::Integral>& exf_integrals
+      = _integrals[static_cast<int>(FormIntegrals::Type::exterior_facet)];
+  if (exf_integrals.size() > 0 and exf_integrals[0].id == -1)
   {
     // If there is a default integral, define it only on surface facets
-    integrals[0].active_entities.clear();
+    exf_integrals[0].active_entities.clear();
     for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
       if (facet.num_global_entities(tdim) == 1)
-        integrals[0].active_entities.push_back(facet.index());
+        exf_integrals[0].active_entities.push_back(facet.index());
     }
   }
 
-  integrals = _integrals[static_cast<int>(FormIntegrals::Type::interior_facet)];
-  if (integrals.size() > 0 and integrals[0].id == -1)
+  std::vector<struct FormIntegrals::Integral>& inf_integrals
+      = _integrals[static_cast<int>(FormIntegrals::Type::interior_facet)];
+  if (inf_integrals.size() > 0 and inf_integrals[0].id == -1)
   {
     // If there is a default integral, define it only on interior facets
-    integrals[0].active_entities.clear();
-    integrals[0].active_entities.reserve(mesh.num_entities(tdim - 1));
+    inf_integrals[0].active_entities.clear();
+    inf_integrals[0].active_entities.reserve(mesh.num_entities(tdim - 1));
     for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
       if (facet.num_global_entities(tdim) != 1)
-        integrals[0].active_entities.push_back(facet.index());
+        inf_integrals[0].active_entities.push_back(facet.index());
     }
   }
 }
