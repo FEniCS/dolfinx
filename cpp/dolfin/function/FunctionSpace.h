@@ -149,7 +149,7 @@ public:
   ///         The expression to be interpolated.
   void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
                        expansion_coefficients,
-                   const Expression& expr) const;
+                   const Expression& e) const;
 
   /// Extract subspace for component
   ///

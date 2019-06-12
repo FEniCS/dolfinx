@@ -54,31 +54,19 @@ std::vector<std::size_t> Expression::value_shape() const
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 Expression::compute_point_values(const mesh::Mesh& mesh) const
 {
-  // Local data for vertex values
+  // Get vertex coordinates
+  const int num_vertices_per_cell = mesh.type().num_entities(0);
+  Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> x
+      = mesh.geometry().points().leftCols(num_vertices_per_cell);
+
+  // Prepare data structure for vertex values
   const std::size_t size = std::accumulate(
       std::begin(_value_shape), std::end(_value_shape), 1, std::multiplies<>());
-  Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> local_vertex_values(size);
-
-  // Resize vertex_values
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      vertex_values(mesh.num_entities(0), size);
+      vertex_values(x.rows(), size);
 
-  // Iterate over cells, overwriting values when repeatedly visiting vertices
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
-  {
-    // Iterate over cell vertices
-    for (auto& vertex : mesh::EntityRange<mesh::Vertex>(cell))
-    {
-      // Wrap coordinate data
-      const Eigen::Ref<const Eigen::VectorXd> x = vertex.x();
-
-      // Evaluate at vertex
-      eval(local_vertex_values, x);
-
-      // Copy to array
-      vertex_values.row(vertex.index()) = local_vertex_values;
-    }
-  }
+  // Evaluate Expression at x
+  eval(vertex_values, x);
 
   return vertex_values;
 }

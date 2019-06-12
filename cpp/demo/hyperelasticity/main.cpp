@@ -38,18 +38,12 @@ class Clamp : public function::Expression
 {
 public:
   Clamp() : function::Expression({3}) {}
-
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
             Eigen::Ref<const EigenRowArrayXXd> x) const
   {
-    for (int i = 0; i < x.rows(); ++i)
-    {
-      values(i, 0) = 0.0;
-      values(i, 1) = 0.0;
-      values(i, 2) = 0.0;
-    }
+    values = 0.0;
   }
 };
 
@@ -58,11 +52,10 @@ class Rotation : public function::Expression
 {
 public:
   Rotation() : function::Expression({3}) {}
-
   void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                     Eigen::RowMajor>>
                 values,
-            Eigen::Ref<const EigenRowArrayXXd> x) const
+            const Eigen::Ref<const EigenRowArrayXXd> x) const
   {
     const double scale = 0.005;
 
