@@ -8,26 +8,20 @@
 
 #include <Eigen/Dense>
 #include <dolfin/common/types.h>
-#include <memory>
+#include <functional>
 #include <petscsys.h>
 #include <vector>
 
 namespace dolfin
 {
-namespace fem
-{
-class FiniteElement;
-}
 
 namespace mesh
 {
-class Cell;
 class Mesh;
 } // namespace mesh
 
 namespace function
 {
-class FunctionSpace;
 
 class Expression
 {
@@ -49,8 +43,7 @@ public:
   virtual ~Expression() = default;
 
   void set_eval(
-      std::function<void(PetscScalar*, int, int, const double*, int)>
-          eval_ptr);
+      std::function<void(PetscScalar*, int, int, const double*, int)> eval_ptr);
 
   /// Return value rank.
   ///
@@ -98,6 +91,9 @@ public:
            x) const;
 
 private:
+  // Value shape
+  std::vector<int> _value_shape;
+
   // Evaluate method
   //
   // Signature of the method accepts:
@@ -122,9 +118,6 @@ private:
   std::function<void(PetscScalar* values, int num_points, int value_size,
                      const double* x, int gdim)>
       _eval_ptr;
-
-  // Value shape
-  std::vector<int> _value_shape;
 };
 } // namespace function
 } // namespace dolfin

@@ -5,9 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Expression.h"
-#include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/fem/FiniteElement.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
