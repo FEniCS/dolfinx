@@ -177,7 +177,7 @@ void FunctionSpace::interpolate(
   }
 
   // Check that function dimension match
-  for (std::size_t i = 0; i < _element->value_rank(); ++i)
+  for (int i = 0; i < _element->value_rank(); ++i)
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
@@ -213,7 +213,7 @@ void FunctionSpace::interpolate(
   }
 
   // Check that function dims match
-  for (std::size_t i = 0; i < _element->value_rank(); ++i)
+  for (int i = 0; i < _element->value_rank(); ++i)
   {
     if (_element->value_dimension(i) != e.value_dimension(i))
     {

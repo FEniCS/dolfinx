@@ -24,7 +24,7 @@ void MeshCoordinates::eval(
     const Eigen::Ref<const EigenRowArrayXXd> x) const
 {
   assert(_mesh);
-  assert((unsigned int)x.cols() == _mesh->geometry().dim());
+  assert(x.cols() == _mesh->geometry().dim());
   values = x;
 }
 //-----------------------------------------------------------------------------

@@ -306,14 +306,14 @@ void Function::interpolate(const Expression& e)
   _function_space->interpolate(x.x, e);
 }
 //-----------------------------------------------------------------------------
-std::size_t Function::value_rank() const
+int Function::value_rank() const
 {
   assert(_function_space);
   assert(_function_space->element());
   return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
-std::size_t Function::value_dimension(std::size_t i) const
+int Function::value_dimension(int i) const
 {
   assert(_function_space);
   assert(_function_space->element());
@@ -424,7 +424,7 @@ Function::compute_point_values() const
 std::size_t Function::value_size() const
 {
   std::size_t size = 1;
-  for (std::size_t i = 0; i < value_rank(); ++i)
+  for (int i = 0; i < value_rank(); ++i)
     size *= value_dimension(i);
   return size;
 }

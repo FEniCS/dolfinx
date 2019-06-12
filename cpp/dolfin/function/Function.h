@@ -119,9 +119,9 @@ public:
 
   /// Return value rank
   ///
-  /// @returns std::size_t
+  /// @returns int
   ///         The value rank.
-  std::size_t value_rank() const;
+  int value_rank() const;
 
   /// Return value size
   ///
@@ -130,12 +130,12 @@ public:
 
   /// Return value dimension for given axis
   ///
-  /// @param    i (std::size_t)
+  /// @param    i (int)
   ///         The index of the axis.
   ///
-  /// @returns    std::size_t
+  /// @returns    int
   ///         The value dimension.
-  std::size_t value_dimension(std::size_t i) const;
+  int value_dimension(int i) const;
 
   /// Return value shape
   ///

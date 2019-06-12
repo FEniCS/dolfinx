@@ -31,7 +31,7 @@ int Expression::value_rank() const { return _value_shape.size(); }
 //-----------------------------------------------------------------------------
 int Expression::value_dimension(int i) const
 {
-  if (i >= _value_shape.size())
+  if (i >= (int)_value_shape.size())
   {
     throw std::runtime_error("Illegal axis " + std::to_string(i)
                              + " for value dimension for value of rank "

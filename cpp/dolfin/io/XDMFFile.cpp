@@ -73,7 +73,7 @@ std::string rank_to_string(std::size_t value_rank)
 bool has_cell_centred_data(const function::Function& u)
 {
   std::size_t cell_based_dim = 1;
-  for (std::size_t i = 0; i < u.value_rank(); i++)
+  for (int i = 0; i < u.value_rank(); i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
   return (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim);
 }
