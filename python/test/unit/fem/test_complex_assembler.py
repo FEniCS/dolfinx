@@ -7,11 +7,11 @@
 
 import numpy as np
 import pytest
+from petsc4py import PETSc
 
 import dolfin
 import ufl
 from dolfin.function.specialfunctions import SpatialCoordinate
-from petsc4py import PETSc
 from ufl import dx, grad, inner
 
 pytestmark = pytest.mark.skipif(
@@ -111,9 +111,9 @@ def test_complex_assembly_solve():
 
     # Reference Solution
     @dolfin.function.expression.numba_eval
-    def ref_eval(values, x, cell_idx):
+    def ref_eval(values, x):
         values[:, 0] = np.cos(2 * np.pi * x[:, 0]) * np.cos(2 * np.pi * x[:, 1])
-    u_ref = dolfin.interpolate(dolfin.Expression(ref_eval), V)
+    u_ref = dolfin.interpolate(dolfin.Expression(f=ref_eval), V)
 
     xnorm = x.norm(PETSc.NormType.N2)
     x_ref_norm = u_ref.vector().norm(PETSc.NormType.N2)
