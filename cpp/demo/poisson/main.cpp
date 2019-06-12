@@ -111,12 +111,8 @@ public:
                 values,
             const Eigen::Ref<const EigenRowArrayXXd> x) const
   {
-    for (int i = 0; i < x.rows(); ++i)
-    {
-      double dx = x(i, 0) - 0.5;
-      double dy = x(i, 1) - 0.5;
-      values(i, 0) = 10 * exp(-(dx * dx + dy * dy) / 0.02);
-    }
+    auto dx = Eigen::square(x - 0.5);
+    values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
   }
 };
 
@@ -130,8 +126,7 @@ public:
                 values,
             const Eigen::Ref<const EigenRowArrayXXd> x) const
   {
-    for (int i = 0; i < x.rows(); ++i)
-      values(i, 0) = sin(5 * x(i, 0));
+    values = Eigen::sin(5 * x.col(0));
   }
 };
 
@@ -147,10 +142,7 @@ class DirichletBoundary : public mesh::SubDomain
   EigenArrayXb inside(Eigen::Ref<const EigenRowArrayXXd> x,
                       bool on_boundary) const
   {
-    EigenArrayXb result(x.rows());
-    for (unsigned int i = 0; i != x.rows(); ++i)
-      result[i] = (x(i, 0) < DBL_EPSILON or x(i, 0) > 1.0 - DBL_EPSILON);
-    return result;
+    return (x.col(0) < DBL_EPSILON or x.col(0) > 1.0 - DBL_EPSILON);
   }
 };
 
@@ -288,7 +280,7 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Save solution in VTK format
-  io::VTKFile file("poisson.pvd");
+  io::VTKFile file("u.pvd");
   file.write(u);
 
   return 0;
