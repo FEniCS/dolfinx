@@ -101,35 +101,6 @@ using namespace dolfin;
 //
 // .. code-block:: cpp
 
-// Source term (right-hand side)
-class Source : public function::Expression
-{
-public:
-  Source() : function::Expression({}) {}
-  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                values,
-            const Eigen::Ref<const EigenRowArrayXXd> x) const
-  {
-    auto dx = Eigen::square(x - 0.5);
-    values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
-  }
-};
-
-// Normal derivative (Neumann boundary condition)
-class dUdN : public function::Expression
-{
-public:
-  dUdN() : function::Expression({}) {}
-  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                values,
-            const Eigen::Ref<const EigenRowArrayXXd> x) const
-  {
-    values = Eigen::sin(5 * x.col(0));
-  }
-};
-
 // The ``DirichletBoundary`` is derived from the :cpp:class:`SubDomain`
 // class and defines the part of the boundary to which the Dirichlet
 // boundary condition should be applied.
@@ -222,9 +193,6 @@ int main(int argc, char* argv[])
       std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
   std::free(linear_form);
 
-  auto f_expr = Source();
-  auto g_expr = dUdN();
-
   auto f = std::make_shared<function::Function>(V);
   auto g = std::make_shared<function::Function>(V);
 
@@ -232,8 +200,14 @@ int main(int argc, char* argv[])
   auto cmap = a->coordinate_mapping();
   mesh->geometry().coord_mapping = cmap;
 
-  f->interpolate(f_expr);
-  g->interpolate(g_expr);
+  // auto dx = Eigen::square(x - 0.5);
+  // values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
+  f->interpolate([](auto values, auto x) {
+    auto dx = Eigen::square(x - 0.5);
+    values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
+  });
+  g->interpolate(
+      [](auto values, auto x) { values = Eigen::sin(5 * x.col(0)); });
   L->set_coefficients({{"f", f}, {"g", g}});
 
   // Now, we have specified the variational forms and can consider the

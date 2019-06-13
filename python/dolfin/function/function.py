@@ -111,7 +111,10 @@ class Function(ufl.Coefficient):
         try:
             self._cpp_object.interpolate(u._cpp_object)
         except AttributeError:
-            self._cpp_object.interpolate(u)
+            try:
+                self._cpp_object.interpolate(u)
+            except TypeError:
+                self._cpp_object.interpolate(u.eval)
 
     def compute_point_values(self, mesh=None):
         if mesh is not None:

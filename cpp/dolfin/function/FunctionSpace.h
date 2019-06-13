@@ -141,7 +141,6 @@ public:
                        expansion_coefficients,
                    const Function& v) const;
 
-  // TODO: remove
   /// Interpolate expression into function space, returning the
   /// vector of expansion coefficients
   ///
