@@ -42,8 +42,16 @@ public:
   /// Destructor
   virtual ~Expression() = default;
 
-  void set_eval(
-      std::function<void(PetscScalar*, int, int, const double*, int)> eval_ptr);
+  void
+  set_eval(const std::function<
+           void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                        Eigen::Dynamic, Eigen::RowMajor>>,
+                const Eigen::Ref<const Eigen::Array<
+                    double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>&
+               eval_fn);
+
+  void set_eval_c(const std::function<void(PetscScalar*, int, int,
+                                           const double*, int)>& eval_fn);
 
   /// Return value rank.
   ///
@@ -118,6 +126,14 @@ private:
   std::function<void(PetscScalar* values, int num_points, int value_size,
                      const double* x, int gdim)>
       _eval_ptr;
+
+  // Test
+  std::function<void(
+      Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                              Eigen::RowMajor>>,
+      const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                          Eigen::Dynamic, Eigen::RowMajor>>)>
+      _eval_eigen_fn;
 };
 } // namespace function
 } // namespace dolfin

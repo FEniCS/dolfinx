@@ -71,7 +71,7 @@ void function(py::module& m)
              std::function<void(PetscScalar*, int, int, const double*, int)> f
                  = reinterpret_cast<void (*)(PetscScalar*, int, int,
                                              const double*, int)>(addr);
-             self.set_eval(f);
+             self.set_eval_c(f);
            })
       .def("eval", &dolfin::function::Expression::eval)
       .def_property_readonly("value_rank",

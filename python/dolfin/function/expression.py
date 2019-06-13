@@ -108,9 +108,16 @@ class Expression(cpp.function.Expression):
 
             f = MyExpression((2,))
 
-        2. Providing a callback ``eval`` function, usually a Numba
-           callback with a C signature or the integer address of C
-           function and value shape.
+        2. Providing a callback ``eval`` function.
+
+            def my_eval(values, x):
+                values[:, 0] = x[:, 0]*x[:, 1]
+                values[:, 1] = -x[:, 0]
+
+            f = Expression(shape=(2,), my_eval)
+
+            It is possible to pass a Numba callback with a C signature or
+            the integer address of C function and value shape.
 
            The ``function.expression.numba_eval`` decorator simplifies
            the creation of Numba JIT-compiled evaluation functions::
@@ -143,11 +150,16 @@ class Expression(cpp.function.Expression):
         """
 
         super().__init__(shape)
+
+        # Attach any received eval function
         if f is not None:
             try:
-                self.set_eval_ptr(f.address)
-                # Hold reference to eval function to avoid premature garbage
-                # collection
-                self._f = f
-            except AttributeError:
-                self.set_eval_ptr(f)
+                self.set_eval(f)
+            except TypeError:
+                try:
+                    self.set_eval_ptr(f.address)
+                    # Hold reference to eval function to avoid premature garbage
+                    # collection
+                    self._f = f
+                except AttributeError:
+                    self.set_eval_ptr(f)

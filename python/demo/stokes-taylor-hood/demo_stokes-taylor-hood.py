@@ -149,13 +149,25 @@ bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
 
 @function.expression.numba_eval
-def inflow_eval(values, x):
+def inflow_evalx(values, x):
     values[:, 0] = - np.sin(x[:, 1] * np.pi)
     values[:, 1] = 0.0
 
 
+inflow_exprx = Expression(f=inflow_evalx, shape=(2,))
+
+print("************")
+def inflow_eval(values, x):
+    print("boo")
+    values[:, 0] = - np.sin(x[:, 1] * np.pi)
+    values[:, 1] = 0.0
+
 inflow_expr = Expression(f=inflow_eval, shape=(2,))
+
+
 inflow = interpolate(inflow_expr, W.sub(0).collapse())
+
+
 bc1 = DirichletBC(W.sub(0), inflow, mf1[0])
 
 # Collect boundary conditions
@@ -197,7 +209,7 @@ L = inner(f, v) * dx
 # Compute solution
 w = Function(W)
 solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
-                                     "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
+                                     "pc_type": "lu", "pc_factor_mat_solver_type": "superlu"})
 
 # Split the mixed solution and collapse
 u = w.sub(0).collapse()

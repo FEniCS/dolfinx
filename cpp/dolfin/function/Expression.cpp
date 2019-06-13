@@ -19,9 +19,21 @@ Expression::Expression(std::vector<int> value_shape) : _value_shape(value_shape)
 }
 //-----------------------------------------------------------------------------
 void Expression::set_eval(
-    std::function<void(PetscScalar*, int, int, const double*, int)> eval_ptr)
+    const std::function<void(
+        Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>,
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>>)>&
+        eval_ptr)
 {
-  _eval_ptr = eval_ptr;
+  _eval_eigen_fn = eval_ptr;
+}
+//-----------------------------------------------------------------------------
+void Expression::set_eval_c(
+    const std::function<void(PetscScalar*, int, int, const double*, int)>&
+        eval_fn)
+{
+  _eval_ptr = eval_fn;
 }
 //-----------------------------------------------------------------------------
 int Expression::value_rank() const { return _value_shape.size(); }
@@ -68,8 +80,13 @@ void Expression::eval(
                                         Eigen::RowMajor>>
         x) const
 {
-  assert(_eval_ptr);
   assert(values.rows() == x.rows());
-  _eval_ptr(values.data(), values.rows(), values.cols(), x.data(), x.cols());
+  if (_eval_eigen_fn)
+    _eval_eigen_fn(values, x);
+  else
+  {
+    assert(_eval_ptr);
+    _eval_ptr(values.data(), values.rows(), values.cols(), x.data(), x.cols());
+  }
 }
 //-----------------------------------------------------------------------------
