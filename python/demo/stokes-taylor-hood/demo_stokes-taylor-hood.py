@@ -156,18 +156,14 @@ def inflow_evalx(values, x):
 
 inflow_exprx = Expression(f=inflow_evalx, shape=(2,))
 
-print("************")
+
 def inflow_eval(values, x):
-    print("boo")
     values[:, 0] = - np.sin(x[:, 1] * np.pi)
     values[:, 1] = 0.0
 
+
 inflow_expr = Expression(f=inflow_eval, shape=(2,))
-
-
 inflow = interpolate(inflow_expr, W.sub(0).collapse())
-
-
 bc1 = DirichletBC(W.sub(0), inflow, mf1[0])
 
 # Collect boundary conditions
