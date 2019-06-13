@@ -10,7 +10,7 @@ import os
 import re
 import sys
 
-import dijitso
+import dolfin.dijitso as dijitso
 from dolfin import cpp
 from dolfin.jit import dolfin_pc, mpi_jit_decorator
 

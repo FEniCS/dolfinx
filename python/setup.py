@@ -23,7 +23,6 @@ REQUIREMENTS = [
     "petsc4py",
     "fenics-ffc",
     "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
-    "fenics-dijitso{}".format(RESTRICT_REQUIREMENTS),
 ]
 
 
@@ -87,6 +86,7 @@ setup(name='fenics-dolfin',
       description='DOLFIN Python interface',
       long_description='',
       packages=["dolfin",
+                "dolfin.dijitso",
                 "dolfin.function",
                 "dolfin.fem",
                 "dolfin.la",
