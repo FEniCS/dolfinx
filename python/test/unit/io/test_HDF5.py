@@ -8,10 +8,10 @@ import os
 
 from petsc4py import PETSc
 
-from dolfin import (MPI, Cell, Expression, Function, FunctionSpace,
-                    MeshEntities, MeshEntity, MeshFunction,
-                    MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp,
-                    function)
+from dolfin import (MPI, Cell, Function, FunctionSpace, MeshEntities,
+                    MeshEntity, MeshFunction, MeshValueCollection,
+                    UnitCubeMesh, UnitSquareMesh, cpp, function)
+from dolfin.function import expression
 from dolfin.io import HDF5File
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import xfail_if_complex
@@ -165,10 +165,9 @@ def test_save_and_read_function(tempdir):
     F1 = Function(Q)
 
     @function.expression.numba_eval
-    def expr_eval(values, x):
+    def E(values, x):
         values[:, 0] = x[:, 0]
 
-    E = Expression(f=expr_eval)
     F0.interpolate(E)
 
     # Save to HDF5 File

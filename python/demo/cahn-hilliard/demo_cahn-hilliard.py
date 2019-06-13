@@ -116,10 +116,11 @@ import random
 
 from petsc4py import PETSc
 
-from dolfin import (MPI, CellType, Expression, Function, FunctionSpace,
-                    NewtonSolver, NonlinearProblem, TestFunctions,
-                    TrialFunction, UnitSquareMesh, function, log)
+from dolfin import (MPI, CellType, Function, FunctionSpace, NewtonSolver,
+                    NonlinearProblem, TestFunctions, TrialFunction,
+                    UnitSquareMesh, function, log)
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
+from dolfin.function import expression
 from dolfin.io import XDMFFile
 from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
                  variable)
@@ -232,13 +233,12 @@ c0, mu0 = split(u0)
 
 
 @function.expression.numba_eval
-def init_cond(values, x):
+def u_init(values, x):
     values[:, 0] = 0.63 + 0.02 * (0.5 - random.random())
     values[:, 1] = 0.0
 
 
 # Create intial conditions and interpolate
-u_init = Expression(f=init_cond, shape=(2,))
 u.interpolate(u_init)
 
 # The first line creates an object of type ``InitialConditions``.  The

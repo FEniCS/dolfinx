@@ -88,78 +88,66 @@ def numba_eval(*args,
         return decorator
 
 
-class Expression(cpp.function.Expression):
-    def __init__(self,
-                 shape: tuple = (),
-                 f: typing.Optional[typing.Union[numba.ccallback.CFunc, int]] = None):
-        """An Expression is a mathematical function that can be evaluated
-        a position x.
+# class Expression:
+#     def __init__(self,
+#                  shape: tuple = (),
+#                  f: typing.Optional[typing.Union[numba.ccallback.CFunc, int]] = None):
+#         """An Expression is a mathematical function that can be evaluated
+#         a position x.
 
-        The class can be used by:
+#         The class can be used by:
 
-        1. Creating a sub-class the provides the ``eval(self, values, x)`` method, e.g.:
+#         1. Creating a sub-class the provides the ``eval(self, values, x)`` method, e.g.:
 
-            class MyExpression(Expression):
-                def __init__(self, shape):
-                    super()._init__(shape)
-                def eval(self, values, x):
-                    values[:, 0] = x[:, 0]*x[:, 1]
-                    values[:, 1] = -x[:, 0]
+#             class MyExpression(Expression):
+#                 def __init__(self, shape):
+#                     super()._init__(shape)
+#                 def eval(self, values, x):
+#                     values[:, 0] = x[:, 0]*x[:, 1]
+#                     values[:, 1] = -x[:, 0]
 
-            f = MyExpression((2,))
+#             f = MyExpression((2,))
 
-        2. Providing a callback ``eval`` function.
+#         2. Providing a callback ``eval`` function.
 
-            def my_eval(values, x):
-                values[:, 0] = x[:, 0]*x[:, 1]
-                values[:, 1] = -x[:, 0]
+#             def my_eval(values, x):
+#                 values[:, 0] = x[:, 0]*x[:, 1]
+#                 values[:, 1] = -x[:, 0]
 
-            f = Expression(shape=(2,), my_eval)
+#             f = Expression(shape=(2,), my_eval)
 
-            It is possible to pass a Numba callback with a C signature or
-            the integer address of C function and value shape.
+#             It is possible to pass a Numba callback with a C signature or
+#             the integer address of C function and value shape.
 
-           The ``function.expression.numba_eval`` decorator simplifies
-           the creation of Numba JIT-compiled evaluation functions::
+#            The ``function.expression.numba_eval`` decorator simplifies
+#            the creation of Numba JIT-compiled evaluation functions::
 
-            @function.expression.numba_eval
-            def my_eval(values, x):
-                values[:, 0] = x[:, 0]*x[:, 1]
-                values[:, 1] = -x[:, 0]
+#             @function.expression.numba_eval
+#             def my_eval(values, x):
+#                 values[:, 0] = x[:, 0]*x[:, 1]
+#                 values[:, 1] = -x[:, 0]
 
-            f = Expression(shape=(2,), my_eval)
+#             f = Expression(shape=(2,), my_eval)
 
-        Parameters
-        ---------
-        shape: tuple
-            Value shape.
-        f: numba.ccallback.CFunc, int
-            The C function must accept the following arguments:
-            ``(values_p, x_p, cells_p, num_points, value_size, gdim)``
-            1. ``values_p`` is a pointer to a row-major array of
-               ``PetscScalar`` of shape ``(num_points, value_size)``.
-               The function itself is responsible for filling ``values_p``
-               with the desired Expression evaluations. ``values_p`` is not
-               zeroed before being passed to the function.
-            2. ``num_points``, ``int``, Number of points,
-            3. ``value_size``, ``int``, Number of values,
-            4. ``x_p`` is a pointer to a row-major array of ``double`` of shape
-               ``(num_points, gdim)``. The array contains the coordinates
-               of the points at which the expression function should be evaluated.
-            5. ``gdim``, ``int``, Geometric dimension of coordinates,
-        """
+#         Parameters
+#         ---------
+#         shape: tuple
+#             Value shape.
+#         f: numba.ccallback.CFunc, int
+#             The C function must accept the following arguments:
+#             ``(values_p, x_p, cells_p, num_points, value_size, gdim)``
+#             1. ``values_p`` is a pointer to a row-major array of
+#                ``PetscScalar`` of shape ``(num_points, value_size)``.
+#                The function itself is responsible for filling ``values_p``
+#                with the desired Expression evaluations. ``values_p`` is not
+#                zeroed before being passed to the function.
+#             2. ``num_points``, ``int``, Number of points,
+#             3. ``value_size``, ``int``, Number of values,
+#             4. ``x_p`` is a pointer to a row-major array of ``double`` of shape
+#                ``(num_points, gdim)``. The array contains the coordinates
+#                of the points at which the expression function should be evaluated.
+#             5. ``gdim``, ``int``, Geometric dimension of coordinates,
+#         """
 
-        super().__init__(shape)
-
-        # Attach any received eval function
-        if f is not None:
-            try:
-                self.set_eval(f)
-            except TypeError:
-                try:
-                    self.set_eval_ptr(f.address)
-                    # Hold reference to eval function to avoid premature garbage
-                    # collection
-                    self._f = f
-                except AttributeError:
-                    self.set_eval_ptr(f)
+#         # super().__init__(shape)
+#         self._f = f

@@ -11,11 +11,11 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>
+#include <functional>
 #include <map>
 #include <memory>
 #include <petscsys.h>
 #include <vector>
-#include <functional>
 
 namespace dolfin
 {
@@ -32,7 +32,6 @@ class Mesh;
 
 namespace function
 {
-class Expression;
 class Function;
 
 /// This class represents a finite element function space defined by
@@ -140,6 +139,19 @@ public:
   void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
                        expansion_coefficients,
                    const Function& v) const;
+
+  /// Interpolate expression into function space, returning the
+  /// vector of expansion coefficients
+  ///
+  /// @param   expansion_coefficients (_la::PETScVector_)
+  ///         The expansion coefficients.
+  /// @param   expr (_Expression_)
+  ///         The expression to be interpolated.
+  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+                       expansion_coefficients,
+                   const std::function<void(PetscScalar* values, int num_points,
+                                            int value_size, const double* x,
+                                            int gdim)>& eval) const;
 
   /// Interpolate expression into function space, returning the
   /// vector of expansion coefficients

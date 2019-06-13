@@ -31,7 +31,6 @@ class Mesh;
 
 namespace function
 {
-class Expression;
 class FunctionSpace;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -111,7 +110,7 @@ public:
   ///         The function to be interpolated.
   void interpolate(const Function& v);
 
-  /// Interpolate expression (on possibly non-matching meshes)
+  /// Interpolate expression
   ///
   /// @param    expr (Expression)
   ///         The expression to be interpolated.
@@ -122,11 +121,13 @@ public:
           const Eigen::Ref<const Eigen::Array<
               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& e);
 
-  /// Interpolate expression (on possibly non-matching meshes)
+  /// Interpolate expression
   ///
   /// @param    expr (Expression)
   ///         The expression to be interpolated.
-  // void interpolate(const Expression& e);
+  void interpolate(
+      const std::function<void(PetscScalar* values, int num_points,
+                               int value_size, const double* x, int gdim)>& e);
 
   /// Return value rank
   ///

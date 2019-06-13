@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FunctionSpace.h"
-#include "Expression.h"
 #include "Function.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
@@ -193,6 +192,93 @@ void FunctionSpace::interpolate(
 
   std::shared_ptr<const FunctionSpace> v_fs = v.function_space();
   interpolate_from_any(expansion_coefficients, v);
+}
+//-----------------------------------------------------------------------------
+void FunctionSpace::interpolate(
+    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+        expansion_coefficients,
+    const std::function<void(PetscScalar* values, int num_points,
+                             int value_size, const double* x, int gdim)>& eval)
+    const
+{
+  assert(_mesh);
+  assert(_element);
+  assert(_dofmap);
+
+  // // Check that ranks match
+  // if (_element->value_rank() != e.value_rank())
+  // {
+  //   throw std::runtime_error("Rank of Expression "
+  //                            + std::to_string(e.value_rank())
+  //                            + " doesn't match the target space.");
+  // }
+
+  // // Check that dims match
+  // for (int i = 0; i < _element->value_rank(); ++i)
+  // {
+  //   if (_element->value_dimension(i) != e.value_dimension(i))
+  //   {
+  //     throw std::runtime_error(
+  //         "Dimensions of Expression doesn't match the target space.");
+  //   }
+  // }
+
+  // Note: the following does not exploit any block structure, e.g. for
+  // vector Lagrange, which leads to a lot of redundant evaluations.
+  // E.g., for a vector Lagrange element the vector-valued expression is
+  // evaluted three times at the some point.
+
+  // Build list of points at which to evaluate the Expression
+  EigenRowArrayXXd x = tabulate_dof_coordinates();
+
+  // Evaluate Expression at points
+  // std::vector<int> vshape = e.value_shape();
+  std::vector<int> vshape(_element->value_rank(), 1);
+  for (std::size_t i = 0; i < vshape.size(); ++i)
+    vshape[i] = _element->value_dimension(i);
+  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
+                                         1, std::multiplies<>());
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values(x.rows(), value_size);
+  assert(values.rows() == x.rows());
+  eval(values.data(), values.rows(), values.cols(), x.data(), x.cols());
+
+  // FIXME: Dummy coordinate dofs - should limit the interpolation to
+  // Lagrange, in which case we don't need coordinate dofs in
+  // FiniteElement::transform_values.
+  EigenRowArrayXXd coordinate_dofs;
+
+  // FIXME: It would be far more elegant and efficient to avoid the need
+  // to loop over cells to set the expansion corfficients. Would be much
+  // better if the expansion coefficients could be passed straight into
+  // Expresion::eval.
+
+  // Loop over cells
+  const int ndofs = _element->space_dimension();
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values_cell(ndofs, value_size);
+  std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
+  {
+    // Get dofmap for cell
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
+        = _dofmap->cell_dofs(cell.index());
+    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+    {
+      for (Eigen::Index j = 0; j < value_size; ++j)
+        values_cell(i, j) = values(cell_dofs[i], j);
+
+      // FIXME: For vector-valued Lagrange, this function 'throws away'
+      // the redundant expression evaluations. It should really be made
+      // not necessary.
+      _element->transform_values(cell_coefficients.data(), values_cell,
+                                 coordinate_dofs);
+
+      // Copy into expansion coefficient array
+      for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+        expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(

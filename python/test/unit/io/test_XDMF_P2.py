@@ -6,9 +6,9 @@
 
 import os
 
-from dolfin import (MPI, Expression, Function, FunctionSpace,
-                    VectorFunctionSpace, cpp, fem, has_petsc_complex)
-from dolfin import function
+from dolfin import (MPI, Function, FunctionSpace, VectorFunctionSpace, cpp,
+                    fem, function, has_petsc_complex)
+from dolfin.function import expression
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 
@@ -45,12 +45,12 @@ def test_read_write_p2_function(tempdir):
         @function.expression.numba_eval
         def expr_eval(values, x):
             values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
-        F.interpolate(Expression(f=expr_eval))
+        F.interpolate(expr_eval)
     else:
         @function.expression.numba_eval
         def expr_eval(values, x):
             values[:, 0] = x[:, 0]
-        F.interpolate(Expression(f=expr_eval))
+        F.interpolate(expr_eval)
 
     filename = os.path.join(tempdir, "tri6_function.xdmf")
     with XDMFFile(
@@ -65,13 +65,13 @@ def test_read_write_p2_function(tempdir):
         def expr_eval(values, x):
             values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
             values[:, 1] = x[:, 1] + 1.0j * x[:, 1]
-        F.interpolate(Expression(f=expr_eval, shape=(2,)))
+        F.interpolate(expr_eval)
     else:
         @function.expression.numba_eval
         def expr_eval(values, x):
             values[:, 0] = x[:, 0]
             values[:, 1] = x[:, 1]
-        F.interpolate(Expression(f=expr_eval, shape=(2,)))
+        F.interpolate(expr_eval)
     filename = os.path.join(tempdir, "tri6_vector_function.xdmf")
     with XDMFFile(
             mesh.mpi_comm(), filename,

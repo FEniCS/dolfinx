@@ -109,12 +109,35 @@ class Function(ufl.Coefficient):
 
     def interpolate(self, u):
         try:
-            self._cpp_object.interpolate(u._cpp_object)
-        except AttributeError:
+            self._cpp_object.interpolate(u)
+        except TypeError:
             try:
-                self._cpp_object.interpolate(u)
-            except TypeError:
-                self._cpp_object.interpolate(u.eval)
+                self._cpp_object.interpolate(u._cpp_object)
+            except AttributeError:
+                # 'Expression'
+                try:
+                    self._cpp_object.interpolate(u.eval)
+                except AttributeError:
+                    try:
+                        self._cpp_object.interpolate(u.address)
+                    except AttributeError:
+                        self._cpp_object.interpolate(int(u))
+                        # try:
+                        #     self._cpp_object.interpolate(int(u._f))
+                        # except:
+                        #     raise
+
+        # try:
+        #     self._cpp_object.interpolate(u._cpp_object)
+        # except AttributeError:
+        #     try:
+        #         self._cpp_object.interpolate(u)
+        #     except TypeError:
+        #         print("TTTTTT", type(u))
+        #         try:
+        #             self._cpp_object.interpolate(u._f)
+        #         except TypeError:
+        #             self._cpp_object.interpolate(u.eval)
 
     def compute_point_values(self, mesh=None):
         if mesh is not None:

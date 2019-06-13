@@ -9,11 +9,12 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Edges, Expression, Facets, Function,
+from dolfin import (MPI, Cells, CellType, Edges, Facets, Function,
                     FunctionSpace, MeshEntities, MeshFunction,
                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
                     Vertices, cpp, function, has_petsc_complex, interpolate)
+from dolfin.function import expression
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement
@@ -166,12 +167,12 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
         @function.expression.numba_eval
         def expr_eval(values, x):
             values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
-        u_out.interpolate(Expression(f=expr_eval))
+        u_out.interpolate(expr_eval)
     else:
         @function.expression.numba_eval
         def expr_eval(values, x):
             values[:, 0] = x[:, 0]
-        u_out.interpolate(Expression(f=expr_eval))
+        u_out.interpolate(expr_eval)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write_checkpoint(u_out, "u_out", 0)
@@ -205,14 +206,14 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
             @function.expression.numba_eval
             def expr_eval(values, x):
                 values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
-            u_out.interpolate(Expression(f=expr_eval, shape=(1,)))
+            u_out.interpolate(expr_eval)
 
         elif mesh.geometry.dim == 2:
             @function.expression.numba_eval
             def expr_eval(values, x):
                 values[:, 0] = 1.0j * x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
-            u_out.interpolate(Expression(f=expr_eval, shape=(2,)))
+            u_out.interpolate(expr_eval)
 
         elif mesh.geometry.dim == 3:
             @function.expression.numba_eval
@@ -220,20 +221,20 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
                 values[:, 2] = x[:, 2]
-            u_out.interpolate(Expression(f=expr_eval, shape=(3,)))
+            u_out.interpolate(expr_eval)
     else:
         if mesh.geometry.dim == 1:
             @function.expression.numba_eval
             def expr_eval(values, x):
                 values[:, 0] = x[:, 0]
-            u_out.interpolate(Expression(f=expr_eval, shape=(1,)))
+            u_out.interpolate(expr_eval)
 
         elif mesh.geometry.dim == 2:
             @function.expression.numba_eval
             def expr_eval(values, x):
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0]
-            u_out.interpolate(Expression(f=expr_eval, shape=(2,)))
+            u_out.interpolate(expr_eval)
 
         elif mesh.geometry.dim == 3:
             @function.expression.numba_eval
@@ -241,7 +242,7 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0]
                 values[:, 2] = x[:, 2]
-            u_out.interpolate(Expression(f=expr_eval, shape=(3,)))
+            u_out.interpolate(expr_eval)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write_checkpoint(u_out, "u_out", 0)
@@ -272,7 +273,7 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         for i, p in enumerate(times):
-            u_out[i] = interpolate(Expression(f=expr_eval), V)
+            u_out[i] = interpolate(expr_eval, V)
             file.write_checkpoint(u_out[i], "u_out", p)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:

@@ -14,10 +14,11 @@ solution and source term."""
 
 import numpy as np
 
-from dolfin import (MPI, Expression, FacetNormal, Function, FunctionSpace,
-                    TestFunction, TrialFunction, UnitSquareMesh, function,
-                    has_petsc_complex, interpolate, project, solve)
+from dolfin import (MPI, FacetNormal, Function, FunctionSpace, TestFunction,
+                    TrialFunction, UnitSquareMesh, function, has_petsc_complex,
+                    interpolate, project, solve)
 from dolfin.fem.assemble import assemble_scalar
+from dolfin.function import expression
 from dolfin.io import XDMFFile
 from ufl import dx, grad, inner
 
@@ -51,7 +52,7 @@ V = FunctionSpace(mesh, ("Lagrange", deg))
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = interpolate(Expression(f=source), V)
+f = interpolate(source, V)
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
@@ -79,7 +80,7 @@ def solution(values, x):
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 
 # "exact" solution
-u_exact = interpolate(Expression(f=solution), V_exact)
+u_exact = interpolate(solution, V_exact)
 
 # best approximation from V
 u_BA = project(u_exact, V)
