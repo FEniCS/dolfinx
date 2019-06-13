@@ -30,8 +30,7 @@ from dolfin.dijitso.str import as_unicode
 
 
 # Warning for fenics backwards compatibility:
-if (os.environ.get("INSTANT_CACHE_DIR") and
-        not os.environ.get("DIJITSO_CACHE_DIR")):
+if (os.environ.get("INSTANT_CACHE_DIR") and not os.environ.get("DIJITSO_CACHE_DIR")):
     warning("INSTANT_CACHE_DIR is no longer used by dijitso."
             " To set the cache directory for dijitso,"
             " set DIJITSO_CACHE_DIR.")

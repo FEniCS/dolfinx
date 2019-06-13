@@ -198,8 +198,8 @@ def build_shared_library(signature, header, source, dependencies, params):
         files = set((inc_filename, src_filename, lib_filename, log_filename))
         files = files - set((None,))
         files = sorted(files)
-        debug("Compilation succeeded. Files written to cache:\n" +
-              "\n".join(files))
+        debug("Compilation succeeded. Files written to cache:\n"
+              + "\n".join(files))
         err_info = None
     else:
         # Create filenames in a local directory to store files for

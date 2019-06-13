@@ -25,6 +25,6 @@ __all__ = ["validate_params", "jit", "extract_factory_function",
            "set_log_level"]
 
 from dolfin.dijitso.params import validate_params
-from dolfin.dijitso.jit import jit, DijitsoError
+from dolfin.dijitso.jit import jit
 from dolfin.dijitso.jit import extract_factory_function
 from dolfin.dijitso.log import set_log_level
