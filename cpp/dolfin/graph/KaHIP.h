@@ -10,17 +10,10 @@
 #include <cstddef>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
-// #include <dolfin/common/types.h>
 #include <map>
-#include <utility>
 
 namespace dolfin
 {
-
-namespace mesh
-{
-class CellType;
-}
 
 namespace graph
 {
@@ -29,7 +22,6 @@ template <typename T>
 class CSRGraph;
 
 /// This class provides an interface to KaHIP
-
 class KaHIP
 {
 #ifdef HAS_KAHIP
