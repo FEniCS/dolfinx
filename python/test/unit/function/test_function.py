@@ -18,7 +18,6 @@ import ufl
 from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
                     UnitCubeMesh, VectorFunctionSpace, Vertex, cpp, function,
                     interpolate)
-from dolfin.function import expression
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
@@ -104,22 +103,6 @@ def test_assign(V, W):
             uu.vector().get_local().sum() - float(
                 expr_scalar * uu.vector().size()), 7) == 0)
 
-        # Test expression scaling
-        expr = 3 * expr
-        expr_scalar *= 3
-        uu.assign(expr)
-        assert (round(
-            uu.vector().get_local().sum() - float(
-                expr_scalar * uu.vector().size()), 7) == 0)
-
-        # Test expression scaling
-        expr = expr / 4.5
-        expr_scalar /= 4.5
-        uu.assign(expr)
-        assert (round(
-            uu.vector().get_local().sum() - float(
-                expr_scalar * uu.vector().size()), 7) == 0)
-
         # Test self assignment
         expr = 3 * u - 5.0 * u2 + u1 - 5 * u
         expr_scalar = 3 - 5 * 4. + 3. - 5
@@ -136,10 +119,8 @@ def test_assign(V, W):
         uu = Function(V1)
 
         @function.expression.numba_eval
-        def expr_eval(values, x):
+        def f(values, x):
             values[:, 0] = 1.0
-
-        f = Expression(f=expr_eval)
 
         with pytest.raises(RuntimeError):
             uu.assign(1.0)
@@ -241,10 +222,9 @@ def test_scalar_conditions(R):
 @pytest.mark.skip
 def test_interpolation_mismatch_rank0(W):
     @function.expression.numba_eval
-    def expr_eval(values, x):
+    def f(values, x):
         values[:, 0] = 1.0
 
-    f = Expression(f=expr_eval, shape=())
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 
@@ -252,11 +232,10 @@ def test_interpolation_mismatch_rank0(W):
 @pytest.mark.skip
 def test_interpolation_mismatch_rank1(W):
     @function.expression.numba_eval
-    def expr_eval(values, x):
+    def f(values, x):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
 
-    f = Expression(f=expr_eval, shape=(2, ))
     with pytest.raises(RuntimeError):
         interpolate(f, W)
 

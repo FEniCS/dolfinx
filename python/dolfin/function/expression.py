@@ -11,8 +11,6 @@ import numba
 import numba.ccallback
 from petsc4py import PETSc
 
-from dolfin import cpp
-
 
 def numba_eval(*args,
                numba_jit_options: dict = {

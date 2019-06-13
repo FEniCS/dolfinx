@@ -18,7 +18,6 @@ from dolfin import (MPI, FacetNormal, Function, FunctionSpace, TestFunction,
                     TrialFunction, UnitSquareMesh, function, has_petsc_complex,
                     interpolate, project, solve)
 from dolfin.fem.assemble import assemble_scalar
-from dolfin.function import expression
 from dolfin.io import XDMFFile
 from ufl import dx, grad, inner
 

@@ -8,7 +8,6 @@ import os
 
 from dolfin import (MPI, Function, FunctionSpace, VectorFunctionSpace, cpp,
                     fem, function, has_petsc_complex)
-from dolfin.function import expression
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 

@@ -11,7 +11,6 @@ import pytest
 from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitSquareMesh,
                     VectorFunctionSpace, function, interpolate)
 from dolfin.cpp.fem import PETScDMCollection
-from dolfin.function import expression
 from ufl import FiniteElement, MixedElement, VectorElement
 
 
@@ -198,13 +197,12 @@ def test_taylor_hood_cube():
     Zf = FunctionSpace(meshf, Ze)
 
     @function.expression.numba_eval
-    def expr_eval(values, x):
+    def z(values, x):
         values[:, 0] = x[:, 0] * x[:, 1]
         values[:, 1] = x[:, 1] * x[:, 2]
         values[:, 2] = x[:, 2] * x[:, 0]
         values[:, 3] = x[:, 0] + 3.0 * x[:, 1] + x[:, 2]
 
-    z = Expression(f=expr_eval, shape=(4,))
     zc = interpolate(z, Zc)
     zf = interpolate(z, Zf)
 

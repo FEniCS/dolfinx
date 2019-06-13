@@ -120,7 +120,6 @@ from dolfin import (MPI, CellType, Function, FunctionSpace, NewtonSolver,
                     NonlinearProblem, TestFunctions, TrialFunction,
                     UnitSquareMesh, function, log)
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
-from dolfin.function import expression
 from dolfin.io import XDMFFile
 from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
                  variable)

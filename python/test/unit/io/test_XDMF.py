@@ -14,7 +14,6 @@ from dolfin import (MPI, Cells, CellType, Edges, Facets, Function,
                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
                     Vertices, cpp, function, has_petsc_complex, interpolate)
-from dolfin.function import expression
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement

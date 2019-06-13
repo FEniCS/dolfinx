@@ -7,7 +7,6 @@
 import os
 
 from dolfin import MPI, Function, FunctionSpace, UnitSquareMesh, function
-from dolfin.function import expression
 from dolfin.io import HDF5File
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import xfail_if_complex
