@@ -13,7 +13,7 @@ from petsc4py import PETSc
 
 import ufl
 from dolfin import common, cpp, function
-from dolfin.function import functionspace
+from dolfin.function import expression, functionspace
 
 
 class Function(ufl.Coefficient):
