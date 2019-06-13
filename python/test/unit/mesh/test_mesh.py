@@ -463,3 +463,19 @@ def test_mesh_topology_lifetime():
     assert sys.getrefcount(mesh) == rc + 1
     del topology
     assert sys.getrefcount(mesh) == rc
+
+
+@pytest.mark.xfail(condition=MPI.size(MPI.comm_world) > 1,
+                   reason="Small meshes fail in parallel")
+def test_small_mesh(interval):
+    mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
+    gdim = mesh3d.geometric_dimension()
+    assert mesh3d.num_entities_global(gdim) == 6
+
+    mesh2d = UnitSquareMesh(MPI.comm_world, 1, 1)
+    gdim = mesh2d.geometric_dimension()
+    assert mesh2d.num_entities_global(gdim) == 2
+
+    mesh1d = UnitIntervalMesh(MPI.comm_world, 2)
+    gdim = mesh1d.geometric_dimension()
+    assert mesh1d.num_entities_global(gdim) == 2
