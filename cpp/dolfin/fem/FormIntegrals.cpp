@@ -20,7 +20,8 @@ FormIntegrals::FormIntegrals()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>&
+const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                         const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor_fn_cell(unsigned int i) const
 {
   if (i > _tabulate_tensor_cell.size())
@@ -29,8 +30,8 @@ FormIntegrals::get_tabulate_tensor_fn_cell(unsigned int i) const
   return _tabulate_tensor_cell[i];
 }
 //-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
-                         int)>&
+const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                         const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor_fn_exterior_facet(unsigned int i) const
 {
   if (i > _tabulate_tensor_exterior_facet.size())
@@ -40,7 +41,7 @@ FormIntegrals::get_tabulate_tensor_fn_exterior_facet(unsigned int i) const
 }
 //-----------------------------------------------------------------------------
 const std::function<void(PetscScalar*, const PetscScalar* w, const double*,
-                         const double*, int, int, int, int)>&
+                         const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor_fn_interior_facet(unsigned int i) const
 {
   if (i > _tabulate_tensor_interior_facet.size())
@@ -50,7 +51,8 @@ FormIntegrals::get_tabulate_tensor_fn_interior_facet(unsigned int i) const
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::register_tabulate_tensor_cell(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
+    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*,
+                      const int*, const int*))
 {
   if (std::find(_cell_integral_ids.begin(), _cell_integral_ids.end(), i)
       != _cell_integral_ids.end())
@@ -71,8 +73,8 @@ void FormIntegrals::register_tabulate_tensor_cell(
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::register_tabulate_tensor_exterior_facet(
-    int i,
-    void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int))
+    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*,
+                      const int*, const int*))
 {
 
   if (std::find(_exterior_facet_integral_ids.begin(),
@@ -100,7 +102,7 @@ void FormIntegrals::register_tabulate_tensor_exterior_facet(
 //-----------------------------------------------------------------------------
 void FormIntegrals::register_tabulate_tensor_interior_facet(
     int i, void (*fn)(PetscScalar*, const PetscScalar* w, const double*,
-                      const double*, int, int, int, int))
+                      const int*, const int*))
 {
   // At the moment, only accept one integral with index -1
   if (i != -1)
@@ -201,7 +203,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
 
     if (_cell_integral_ids.size() == 0)
-      throw std::runtime_error("No cell integrals");
+      return;
 
     // Create a reverse map
     std::map<int, int> cell_id_to_integral;
@@ -230,7 +232,7 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
 
     if (_exterior_facet_integral_ids.size() == 0)
-      throw std::runtime_error("No exterior facet integrals");
+      return;
 
     // Create a reverse map
     std::map<int, int> facet_id_to_integral;

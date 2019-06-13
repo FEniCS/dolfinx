@@ -37,7 +37,7 @@ fe_3d_shapes = ["tetrahedron"]
 fe_families = ["CG", "DG"]
 fe_degrees = [0, 1, 3]
 mesh_tdims = [1, 2, 3]
-mesh_ns = [5, 7]
+mesh_ns = [6, 10]
 
 
 def mesh_factory(tdim, n):

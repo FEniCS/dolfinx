@@ -13,7 +13,7 @@ import pytest
 
 from dolfin import (MPI, Cells, CellType, FunctionSpace, SubDomain,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorFunctionSpace)
+                    VectorFunctionSpace, cpp, fem)
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement
@@ -177,64 +177,6 @@ def test_tabulate_coord_periodic(mesh_factory):
 
 @pytest.mark.skip
 @pytest.mark.parametrize(
-    'mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 5, 5)),
-                     (UnitSquareMesh,
-                      (MPI.comm_world, 5, 5, CellType.Type.quadrilateral))])
-def test_tabulate_dofs_periodic(mesh_factory):
-    class PeriodicBoundary2(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] < np.finfo(float).eps
-
-        def map(self, x, y):
-            y[0] = x[0] - 1.0
-            y[1] = x[1]
-
-    func, args = mesh_factory
-    mesh = func(*args)
-
-    # Create periodic boundary
-    periodic_boundary = PeriodicBoundary2()
-
-    V = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
-    Q = VectorElement("Lagrange", mesh.ufl_cell(), 2)
-    W = V * Q
-
-    V = FunctionSpace(mesh, V, constrained_domain=periodic_boundary)
-    Q = FunctionSpace(mesh, Q, constrained_domain=periodic_boundary)
-    W = FunctionSpace(mesh, W, constrained_domain=periodic_boundary)
-
-    L0 = W.sub(0)
-    L1 = W.sub(1)
-    L01 = L1.sub(0)
-    L11 = L1.sub(1)
-
-    # Check dimensions
-    assert V.dim == 110
-    assert Q.dim == 220
-    assert L0.dim == V.dim
-    assert L1.dim == Q.dim
-    assert L01.dim == V.dim
-    assert L11.dim == V.dim
-
-    for i, cell in enumerate(Cells(mesh)):
-        dofs0 = L0.dofmap().cell_dofs(cell.index())
-        dofs1 = L01.dofmap().cell_dofs(cell.index())
-        dofs2 = L11.dofmap().cell_dofs(cell.index())
-        dofs3 = L1.dofmap().cell_dofs(cell.index())
-
-        assert np.array_equal(dofs0, L0.dofmap().cell_dofs(i))
-        assert np.array_equal(dofs1, L01.dofmap().cell_dofs(i))
-        assert np.array_equal(dofs2, L11.dofmap().cell_dofs(i))
-        assert np.array_equal(dofs3, L1.dofmap().cell_dofs(i))
-
-        assert len(np.intersect1d(dofs0, dofs1)) == 0
-        assert len(np.intersect1d(dofs0, dofs2)) == 0
-        assert len(np.intersect1d(dofs1, dofs2)) == 0
-        assert np.array_equal(np.append(dofs1, dofs2), dofs3)
-
-
-@pytest.mark.skip
-@pytest.mark.parametrize(
     'mesh_factory', [(UnitSquareMesh, (MPI.comm_world, 3, 3)),
                      (UnitSquareMesh,
                       (MPI.comm_world, 3, 3, CellType.Type.quadrilateral))])
@@ -254,9 +196,7 @@ def test_global_dof_builder(mesh_factory):
 
 
 def test_entity_dofs(mesh):
-
-    # Test that num entity dofs is correctly wrapped to
-    # dolfin::DofMap
+    """Test that num entity dofs is correctly wrapped to dolfin::DofMap"""
     V = FunctionSpace(mesh, ("CG", 1))
     assert V.dofmap().num_entity_dofs(0) == 1
     assert V.dofmap().num_entity_dofs(1) == 0
@@ -290,8 +230,8 @@ def test_entity_dofs(mesh):
     V = VectorFunctionSpace(mesh, ("CG", 1))
 
     # Note this numbering is dependent on FFC and can change This test
-    # is here just to check that we get correct numbers mapped from
-    # ufc generated code to dolfin
+    # is here just to check that we get correct numbers mapped from ufc
+    # generated code to dolfin
     for i, cdofs in enumerate([[0, 3], [1, 4], [2, 5]]):
         dofs = V.dofmap().tabulate_entity_dofs(0, i)
         assert all(d == cd for d, cd in zip(dofs, cdofs))
@@ -538,3 +478,63 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     assert all(l2gu < V.dofmap().global_dimension())
     del l2gu
     assert sys.getrefcount(index_map) == rc
+
+
+@skip_in_parallel
+def test_high_order_lagrange():
+    """Test simple P3 Lagrange dofmap. Checks that dofs on a shared edged match."""
+    def check(mesh, edges):
+        """Compute the physical coordinates of the dofs on the given local edges"""
+        V = FunctionSpace(mesh, ("Lagrange", 3))
+
+        assert len(edges) == 2
+        dofmap = V.dofmap()
+        dofs = [dofmap.cell_dofs(c) for c in range(len(edges))]
+        edge_dofs_local = [dofmap.tabulate_entity_dofs(1, e) for e in edges]
+        for edofs in edge_dofs_local:
+            assert len(edofs) == 2
+        edge_dofs = [dofs[0][edge_dofs_local[0]], dofs[1][edge_dofs_local[1]]]
+        assert set(edge_dofs[0]) == set(edge_dofs[1])
+
+        X = V.element().dof_reference_coordinates()
+        coord_dofs = mesh.coordinate_dofs().entity_points()
+        x_g = mesh.geometry.points
+        x_dofs = []
+        cmap = fem.create_coordinate_map(mesh.ufl_domain())
+        for c in range(len(edges)):
+            x_coord_new = np.zeros([3, 2])
+            for v in range(3):
+                x_coord_new[v] = x_g[coord_dofs[c, v], :2]
+            x = X.copy()
+            cmap.compute_physical_coordinates(x, X, x_coord_new)
+            x_dofs.append(x[edge_dofs_local[c]])
+
+        return x_dofs
+
+    # Create simple mesh
+    points = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
+    cells = np.array([[0, 1, 2], [2, 3, 0], ])
+    mesh = cpp.mesh.Mesh(MPI.comm_world, CellType.Type.triangle, points,
+                         cells, [], cpp.mesh.GhostMode.none)
+    mesh.create_connectivity(2, 1)
+
+    c21 = mesh.topology.connectivity(2, 1)
+    e0 = c21.connections(0)[1]
+    e1 = c21.connections(1)[1]
+    assert e0 == e1
+
+    # Check un-ordered mesh
+    x0, x1 = check(mesh, [1, 1])
+    assert not np.allclose(x0, x1)
+    x0.sort(axis=0)
+    x1.sort(axis=0)
+    assert np.allclose(x0, x1)
+
+    # Check ordered mesh
+    cpp.mesh.Ordering.order_simplex(mesh)
+    c21 = mesh.topology.connectivity(2, 1)
+    e0 = c21.connections(0)[1]
+    e1 = c21.connections(1)[2]
+    assert e0 == e1
+    x0, x1 = check(mesh, [1, 2])
+    assert np.allclose(x0, x1)

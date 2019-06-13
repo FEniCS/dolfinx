@@ -530,7 +530,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 
     const auto& global_points = mesh.geometry().global_indices();
     const mesh::Connectivity& cell_points
-        = mesh.coordinate_dofs().entity_points(tdim);
+        = mesh.coordinate_dofs().entity_points();
 
     // Adjust num_nodes_per_cell to appropriate size
     num_nodes_per_cell = cell_points.size(0);
