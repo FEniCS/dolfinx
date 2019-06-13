@@ -113,7 +113,7 @@ def test_complex_assembly_solve():
     @dolfin.function.expression.numba_eval
     def ref_eval(values, x):
         values[:, 0] = np.cos(2 * np.pi * x[:, 0]) * np.cos(2 * np.pi * x[:, 1])
-    u_ref = dolfin.interpolate(dolfin.Expression(f=ref_eval), V)
+    u_ref = dolfin.interpolate(ref_eval, V)
 
     xnorm = x.norm(PETSc.NormType.N2)
     x_ref_norm = u_ref.vector().norm(PETSc.NormType.N2)
