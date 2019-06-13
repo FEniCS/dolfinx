@@ -94,10 +94,15 @@ void function(py::module& m)
            py::overload_cast<const dolfin::function::Function&>(
                &dolfin::function::Function::interpolate),
            py::arg("u"))
-      .def("interpolate",
-           py::overload_cast<const dolfin::function::Expression&>(
-               &dolfin::function::Function::interpolate),
-           py::arg("expr"))
+      .def(
+          "interpolate",
+          py::overload_cast<const std::function<void(
+              Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>,
+              const Eigen::Ref<const Eigen::Array<
+                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>&>(
+              &dolfin::function::Function::interpolate),
+          py::arg("f"))
       .def("vector",
            [](const dolfin::function::Function& self) {
              return self.vector().vec();

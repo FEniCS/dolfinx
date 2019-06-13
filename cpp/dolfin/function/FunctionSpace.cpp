@@ -198,29 +198,34 @@ void FunctionSpace::interpolate(
 void FunctionSpace::interpolate(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
-    const Expression& e) const
+    const std::function<void(
+        Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>,
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>>)>&
+        eval) const
 {
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
 
-  // Check that ranks match
-  if (_element->value_rank() != e.value_rank())
-  {
-    throw std::runtime_error("Rank of Expression "
-                             + std::to_string(e.value_rank())
-                             + " doesn't match the target space.");
-  }
+  // // Check that ranks match
+  // if (_element->value_rank() != e.value_rank())
+  // {
+  //   throw std::runtime_error("Rank of Expression "
+  //                            + std::to_string(e.value_rank())
+  //                            + " doesn't match the target space.");
+  // }
 
-  // Check that dims match
-  for (int i = 0; i < _element->value_rank(); ++i)
-  {
-    if (_element->value_dimension(i) != e.value_dimension(i))
-    {
-      throw std::runtime_error(
-          "Dimensions of Expression doesn't match the target space.");
-    }
-  }
+  // // Check that dims match
+  // for (int i = 0; i < _element->value_rank(); ++i)
+  // {
+  //   if (_element->value_dimension(i) != e.value_dimension(i))
+  //   {
+  //     throw std::runtime_error(
+  //         "Dimensions of Expression doesn't match the target space.");
+  //   }
+  // }
 
   // Note: the following does not exploit any block structure, e.g. for
   // vector Lagrange, which leads to a lot of redundant evaluations.
@@ -231,13 +236,16 @@ void FunctionSpace::interpolate(
   EigenRowArrayXXd x = tabulate_dof_coordinates();
 
   // Evaluate Expression at points
-  std::vector<int> vshape = e.value_shape();
+  // std::vector<int> vshape = e.value_shape();
+  std::vector<int> vshape(_element->value_rank(), 1);
+  for (std::size_t i = 0; i < vshape.size(); ++i)
+    vshape[i] = _element->value_dimension(i);
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(x.rows(), value_size);
   assert(values.rows() == x.rows());
-  e.eval(values, x);
+  eval(values, x);
 
   // FIXME: Dummy coordinate dofs - should limit the interpolation to
   // Lagrange, in which case we don't need coordinate dofs in

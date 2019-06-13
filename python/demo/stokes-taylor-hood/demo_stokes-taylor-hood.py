@@ -142,6 +142,7 @@ mf1 = np.where(mf == 1)
 # noslip_expr = Expression(noslip_eval, shape=(2,))
 noslip_expr = NoSlip()
 noslip = interpolate(noslip_expr, W.sub(0).collapse())
+
 bc0 = DirichletBC(W.sub(0), noslip, mf0[0])
 
 # Inflow boundary condition for velocity

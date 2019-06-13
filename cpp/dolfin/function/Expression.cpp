@@ -83,10 +83,9 @@ void Expression::eval(
   assert(values.rows() == x.rows());
   if (_eval_eigen_fn)
     _eval_eigen_fn(values, x);
-  else
-  {
-    assert(_eval_ptr);
+  else if (_eval_ptr)
     _eval_ptr(values.data(), values.rows(), values.cols(), x.data(), x.cols());
-  }
+  else
+    throw std::runtime_error("No eval function provided.");
 }
 //-----------------------------------------------------------------------------

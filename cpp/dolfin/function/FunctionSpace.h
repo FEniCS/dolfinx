@@ -15,6 +15,7 @@
 #include <memory>
 #include <petscsys.h>
 #include <vector>
+#include <functional>
 
 namespace dolfin
 {
@@ -140,6 +141,7 @@ public:
                        expansion_coefficients,
                    const Function& v) const;
 
+  // TODO: remove
   /// Interpolate expression into function space, returning the
   /// vector of expansion coefficients
   ///
@@ -147,9 +149,15 @@ public:
   ///         The expansion coefficients.
   /// @param   expr (_Expression_)
   ///         The expression to be interpolated.
-  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-                       expansion_coefficients,
-                   const Expression& e) const;
+  void interpolate(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          expansion_coefficients,
+      const std::function<void(
+          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>,
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& eval)
+      const;
 
   /// Extract subspace for component
   ///

@@ -115,7 +115,18 @@ public:
   ///
   /// @param    expr (Expression)
   ///         The expression to be interpolated.
-  void interpolate(const Expression& e);
+  void interpolate(
+      const std::function<void(
+          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>,
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& e);
+
+  /// Interpolate expression (on possibly non-matching meshes)
+  ///
+  /// @param    expr (Expression)
+  ///         The expression to be interpolated.
+  // void interpolate(const Expression& e);
 
   /// Return value rank
   ///

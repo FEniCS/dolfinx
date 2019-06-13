@@ -43,10 +43,6 @@ def interpolate(v, V):
 
     # Compute interpolation
     Pv = function.Function(V)
-
-    if hasattr(v, "_cpp_object"):
-        Pv.interpolate(v._cpp_object)
-    else:
-        Pv.interpolate(v)
+    Pv.interpolate(v.eval)
 
     return Pv
