@@ -93,6 +93,8 @@ from dolfin.io import XDMFFile
 from dolfin.plotting import plot
 from ufl import FiniteElement, VectorElement, div, dx, grad, inner
 
+from numba import njit
+
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
 mesh = xdmf.read_mesh(MPI.comm_world, dolfin.cpp.mesh.GhostMode.none)
