@@ -242,6 +242,7 @@ def test_scalar_conditions(R):
     with pytest.raises(ufl.UFLException):
         not c < 0
 
+
 @pytest.mark.skip
 def test_interpolation_mismatch_rank0(W):
     @function.expression.numba_eval
