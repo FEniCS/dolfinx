@@ -532,9 +532,9 @@ void XDMFFile::write(const function::Function& u)
   {
     std::string attr_name;
     if (component.empty())
-      attr_name = "u";
+      attr_name = u.name;
     else
-      attr_name = component + "_" + "u";
+      attr_name = component + "_" + u.name;
 
     // Add attribute node of the current component
     pugi::xml_node attribute_node = grid_node.append_child("Attribute");
@@ -629,7 +629,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
   assert(domain_node);
 
   // Should functions share mesh or not? By default they do not
-  std::string tg_name = std::string("TimeSeries_") + std::string("u");
+  std::string tg_name = std::string("TimeSeries_") + u.name;
   if (functions_share_mesh)
     tg_name = "TimeSeries";
 
@@ -726,12 +726,12 @@ void XDMFFile::write(const function::Function& u, double time_step)
     std::string dataset_name;
     if (component.empty())
     {
-      attr_name = "u";
+      attr_name = u.name;
       dataset_name = "/VisualisationVector/" + std::to_string(_counter);
     }
     else
     {
-      attr_name = component + "_" + "u";
+      attr_name = component + "_" + u.name;
       dataset_name = "/VisualisationVector/" + component + "/"
                      + std::to_string(_counter);
     }
