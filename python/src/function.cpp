@@ -31,12 +31,13 @@ void function(py::module& m)
 {
   // dolfin::function::Function
   py::class_<dolfin::function::Function,
-             std::shared_ptr<dolfin::function::Function>,
-             dolfin::common::Variable>(m, "Function",
-                                       "A finite element function")
+             std::shared_ptr<dolfin::function::Function>>(
+      m, "Function", "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
+      .def_readwrite("name", &dolfin::function::Function::name)
+      .def_readonly("id", &dolfin::function::Function::id)
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
       .def("collapse", &dolfin::function::Function::collapse,
@@ -133,12 +134,12 @@ void function(py::module& m)
 
   // dolfin::function::FunctionSpace
   py::class_<dolfin::function::FunctionSpace,
-             std::shared_ptr<dolfin::function::FunctionSpace>,
-             dolfin::common::Variable>(m, "FunctionSpace", py::dynamic_attr())
+             std::shared_ptr<dolfin::function::FunctionSpace>>(
+      m, "FunctionSpace", py::dynamic_attr())
       .def(py::init<std::shared_ptr<dolfin::mesh::Mesh>,
                     std::shared_ptr<dolfin::fem::FiniteElement>,
                     std::shared_ptr<dolfin::fem::GenericDofMap>>())
-      .def(py::init<const dolfin::function::FunctionSpace&>())
+      .def_readonly("id", &dolfin::function::FunctionSpace::id)
       .def("__eq__", &dolfin::function::FunctionSpace::operator==)
       .def("dim", &dolfin::function::FunctionSpace::dim)
       .def("collapse", &dolfin::function::FunctionSpace::collapse)
