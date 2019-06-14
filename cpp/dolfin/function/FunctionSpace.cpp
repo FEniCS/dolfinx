@@ -8,6 +8,7 @@
 #include "Expression.h"
 #include "Function.h"
 #include <dolfin/common/IndexMap.h>
+#include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -25,18 +26,21 @@ using namespace dolfin::function;
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::GenericDofMap> dofmap)
-    : _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
+    : _mesh(mesh), _element(element), _dofmap(dofmap),
+      _unique_id(common::UniqueIdGenerator::id()), _root_space_id(_unique_id)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh)
-    : _mesh(mesh), _root_space_id(id())
+    : _mesh(mesh), _unique_id(common::UniqueIdGenerator::id()),
+      _root_space_id(_unique_id)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(const FunctionSpace& V)
+    : _unique_id(common::UniqueIdGenerator::id()), _root_space_id(0)
 {
   // Assign data (will be shared)
   *this = V;
@@ -61,9 +65,6 @@ const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
   _element = V._element;
   _dofmap = V._dofmap;
   _component = V._component;
-
-  // Call assignment operator for base class
-  common::Variable::operator=(V);
 
   return *this;
 }
@@ -183,7 +184,8 @@ void FunctionSpace::interpolate_from_any(
       = _mesh->geometry().points();
 
   // Iterate over mesh and interpolate on each cell
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);;
+  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
+  ;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Get cell coordinate dofs

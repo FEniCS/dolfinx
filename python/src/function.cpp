@@ -139,8 +139,8 @@ void function(py::module& m)
 
   // dolfin::function::FunctionSpace
   py::class_<dolfin::function::FunctionSpace,
-             std::shared_ptr<dolfin::function::FunctionSpace>,
-             dolfin::common::Variable>(m, "FunctionSpace", py::dynamic_attr())
+             std::shared_ptr<dolfin::function::FunctionSpace>>(
+      m, "FunctionSpace", py::dynamic_attr())
       .def(py::init<std::shared_ptr<dolfin::mesh::Mesh>,
                     std::shared_ptr<dolfin::fem::FiniteElement>,
                     std::shared_ptr<dolfin::fem::GenericDofMap>>())

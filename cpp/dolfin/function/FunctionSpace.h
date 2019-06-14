@@ -8,7 +8,6 @@
 
 #include <Eigen/Dense>
 #include <cstddef>
-#include <dolfin/common/Variable.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>
 #include <map>
@@ -38,7 +37,7 @@ class Function;
 /// a mesh, a finite element, and a local-to-global mapping of the
 /// degrees of freedom (dofmap).
 
-class FunctionSpace : public common::Variable
+class FunctionSpace
 {
 public:
   /// Create function space for given mesh, element and dofmap
@@ -272,6 +271,9 @@ private:
 
   // The component w.r.t. to root space
   std::vector<std::size_t> _component;
+
+  // Unique identifier
+  const std::size_t _unique_id;
 
   // The identifier of root space
   std::size_t _root_space_id;
