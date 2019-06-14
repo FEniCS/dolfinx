@@ -44,15 +44,5 @@ def interpolate(v, V):
     # Compute interpolation
     Pv = function.Function(V)
     Pv.interpolate(v)
-    # try:
-    #     Pv.interpolate(v)
-    # except TypeError:
-    #     try:
-    #         Pv.interpolate(v.eval)
-    #     except AttributeError:
-    #         try:
-    #             Pv.interpolate(v.address)
-    #         except AttributeError:
-    #             Pv.interpolate(int(v))
 
     return Pv

@@ -208,24 +208,6 @@ void FunctionSpace::interpolate(
   assert(_element);
   assert(_dofmap);
 
-  // // Check that ranks match
-  // if (_element->value_rank() != e.value_rank())
-  // {
-  //   throw std::runtime_error("Rank of Expression "
-  //                            + std::to_string(e.value_rank())
-  //                            + " doesn't match the target space.");
-  // }
-
-  // // Check that dims match
-  // for (int i = 0; i < _element->value_rank(); ++i)
-  // {
-  //   if (_element->value_dimension(i) != e.value_dimension(i))
-  //   {
-  //     throw std::runtime_error(
-  //         "Dimensions of Expression doesn't match the target space.");
-  //   }
-  // }
-
   // Note: the following does not exploit any block structure, e.g. for
   // vector Lagrange, which leads to a lot of redundant evaluations.
   // E.g., for a vector Lagrange element the vector-valued expression is

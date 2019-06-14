@@ -53,10 +53,10 @@ class Function(ufl.Coefficient):
         """Return the FunctionSpace"""
         return self._V
 
-    def value_rank(self):
+    def value_rank(self) -> int:
         return self._cpp_object.value_rank()
 
-    def value_dimension(self, i):
+    def value_dimension(self, i) -> int:
         return self._cpp_object.value_dimension(i)
 
     def value_shape(self):
