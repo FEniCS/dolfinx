@@ -63,8 +63,8 @@ Form::Form(const ufc_form& ufc_form,
   {
     ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
     assert(cell_integral);
-    _integrals.register_tabulate_tensor_cell(id,
-                                             cell_integral->tabulate_tensor);
+    _integrals.register_tabulate_tensor(FormIntegrals::Type::cell, id,
+                                        cell_integral->tabulate_tensor);
     std::free(cell_integral);
   }
 
@@ -76,8 +76,9 @@ Form::Form(const ufc_form& ufc_form,
     ufc_integral* exterior_facet_integral
         = ufc_form.create_exterior_facet_integral(id);
     assert(exterior_facet_integral);
-    _integrals.register_tabulate_tensor_exterior_facet(
-        id, exterior_facet_integral->tabulate_tensor);
+    _integrals.register_tabulate_tensor(
+        FormIntegrals::Type::exterior_facet, id,
+        exterior_facet_integral->tabulate_tensor);
     std::free(exterior_facet_integral);
   }
 
@@ -89,8 +90,9 @@ Form::Form(const ufc_form& ufc_form,
     ufc_integral* interior_facet_integral
         = ufc_form.create_interior_facet_integral(id);
     assert(interior_facet_integral);
-    _integrals.register_tabulate_tensor_interior_facet(
-        id, interior_facet_integral->tabulate_tensor);
+    _integrals.register_tabulate_tensor(
+        FormIntegrals::Type::interior_facet, id,
+        interior_facet_integral->tabulate_tensor);
     std::free(interior_facet_integral);
   }
 
@@ -191,7 +193,7 @@ void Form::register_tabulate_tensor_cell(
     int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*,
                       const int*, const int*))
 {
-  _integrals.register_tabulate_tensor_cell(i, fn);
+  _integrals.register_tabulate_tensor(FormIntegrals::Type::cell, i, fn);
   if (i == -1 and _mesh)
     _integrals.set_default_domains(*_mesh);
 }
