@@ -119,10 +119,6 @@ class Function(ufl.Coefficient):
             except TypeError:
                 self._cpp_object.interpolate(u._cpp_object)
 
-        @_interpolate.register(numba.ccallback.CFunc)
-        def _(u, verbose=False):
-            self._cpp_object.interpolate_ptr(u.address)
-
         @_interpolate.register(int)
         def _(u, verbose=False):
             self._cpp_object.interpolate_ptr(u)

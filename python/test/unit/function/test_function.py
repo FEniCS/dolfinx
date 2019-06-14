@@ -305,18 +305,6 @@ def test_interpolation_old(V, W, mesh):
                  7) == 0
 
 
-def test_numba_expression_address(V):
-    def f1(values, x):
-        values[:, :] = 1.0
-
-    # Handle C func address by hand
-    f = Function(V)
-
-    f.interpolate(f1.address)
-    with f.vector().localForm() as lf:
-        assert (lf[:] == 1.0).all()
-
-
 @skip_if_complex
 def test_cffi_expression(V):
     code_h = """
