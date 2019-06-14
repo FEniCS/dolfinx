@@ -46,22 +46,11 @@ void FunctionSpace::attach(std::shared_ptr<const fem::FiniteElement> element,
   _dofmap = dofmap;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
-{
-  // Assign data (will be shared)
-  _mesh = V._mesh;
-  _element = V._element;
-  _dofmap = V._dofmap;
-  _component = V._component;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
 bool FunctionSpace::operator==(const FunctionSpace& V) const
 {
   // Compare pointers to shared objects
-  return _element.get() == V._element.get() && _mesh.get() == V._mesh.get()
-         && _dofmap.get() == V._dofmap.get();
+  return _element.get() == V._element.get() and _mesh.get() == V._mesh.get()
+         and _dofmap.get() == V._dofmap.get();
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator!=(const FunctionSpace& V) const

@@ -85,11 +85,11 @@ protected:
               std::shared_ptr<const fem::GenericDofMap> dofmap);
 
 public:
-  /// Assignment operator
-  ///
-  /// @param    V (_FunctionSpace_)
-  ///         Another function space.
-  const FunctionSpace& operator=(const FunctionSpace& V);
+  // Assignment operator (delete)
+  FunctionSpace& operator=(const FunctionSpace& V) = delete;
+
+  // Move assignment operator (delete)
+  FunctionSpace& operator=(FunctionSpace&& V) = default;
 
   /// Equality operator
   ///
