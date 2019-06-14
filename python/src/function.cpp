@@ -49,7 +49,7 @@ void function(py::module& m)
               const Eigen::Ref<const Eigen::Array<
                   double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>&>(
               &dolfin::function::Function::interpolate),
-          py::arg("f"), "Interpolate using a function expression")
+          py::arg("f"), "Interpolate a function expression")
       .def("interpolate",
            py::overload_cast<const dolfin::function::Function&>(
                &dolfin::function::Function::interpolate),
