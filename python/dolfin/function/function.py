@@ -9,7 +9,6 @@
 import typing
 from functools import singledispatch
 
-import numba
 import numpy as np
 from petsc4py import PETSc
 
