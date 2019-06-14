@@ -8,7 +8,6 @@
 #include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/function/Expression.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Connectivity.h>

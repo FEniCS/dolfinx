@@ -31,7 +31,6 @@ class Mesh;
 
 namespace function
 {
-class Expression;
 class FunctionSpace;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -111,17 +110,22 @@ public:
   ///         The function to be interpolated.
   void interpolate(const Function& v);
 
-  /// Interpolate expression (on possibly non-matching meshes)
+  /// Interpolate expression
   ///
   /// @param    expr (Expression)
   ///         The expression to be interpolated.
-  void interpolate(const Expression& e);
+  void interpolate(
+      const std::function<void(
+          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>,
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f);
 
   /// Return value rank
   ///
-  /// @returns std::size_t
+  /// @returns int
   ///         The value rank.
-  std::size_t value_rank() const;
+  int value_rank() const;
 
   /// Return value size
   ///
@@ -130,12 +134,12 @@ public:
 
   /// Return value dimension for given axis
   ///
-  /// @param    i (std::size_t)
+  /// @param    i (int)
   ///         The index of the axis.
   ///
-  /// @returns    std::size_t
+  /// @returns    int
   ///         The value dimension.
-  std::size_t value_dimension(std::size_t i) const;
+  int value_dimension(int i) const;
 
   /// Return value shape
   ///

@@ -88,14 +88,14 @@ std::size_t FiniteElement::reference_value_size() const
   return _reference_value_size;
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::value_rank() const
+int FiniteElement::value_rank() const
 {
   return _value_dimension.size();
 }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::value_dimension(std::size_t i) const
+int FiniteElement::value_dimension(int i) const
 {
-  if (i >= _value_dimension.size())
+  if (i >= (int)_value_dimension.size())
     return 1;
   return _value_dimension[i];
 }

@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <cfloat>
@@ -22,7 +21,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <unordered_map>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
@@ -299,21 +297,26 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const Expression& e)
+void Function::interpolate(
+    const std::function<
+        void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                     Eigen::Dynamic, Eigen::RowMajor>>,
+             const Eigen::Ref<const Eigen::Array<
+                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
+
 {
-  assert(_function_space);
   la::VecWrapper x(_vector.vec());
-  _function_space->interpolate(x.x, e);
+  _function_space->interpolate(x.x, f);
 }
 //-----------------------------------------------------------------------------
-std::size_t Function::value_rank() const
+int Function::value_rank() const
 {
   assert(_function_space);
   assert(_function_space->element());
   return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
-std::size_t Function::value_dimension(std::size_t i) const
+int Function::value_dimension(int i) const
 {
   assert(_function_space);
   assert(_function_space->element());
@@ -424,7 +427,7 @@ Function::compute_point_values() const
 std::size_t Function::value_size() const
 {
   std::size_t size = 1;
-  for (std::size_t i = 0; i < value_rank(); ++i)
+  for (int i = 0; i < value_rank(); ++i)
     size *= value_dimension(i);
   return size;
 }
