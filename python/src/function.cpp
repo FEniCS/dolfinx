@@ -31,8 +31,7 @@ void function(py::module& m)
 {
   // dolfin::function::Function
   py::class_<dolfin::function::Function,
-             std::shared_ptr<dolfin::function::Function>,
-             dolfin::common::Variable>(m, "Function",
+             std::shared_ptr<dolfin::function::Function>>(m, "Function",
                                        "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")

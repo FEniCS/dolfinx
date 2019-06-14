@@ -10,7 +10,6 @@
 #include <cfloat>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/Variable.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -60,7 +59,7 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : common::Variable("u"), _function_space(V), _vector(create_vector(*V))
+    : _function_space(V), _vector(create_vector(*V))
 {
   // Check that we don't have a subspace
   if (!V->component().empty())

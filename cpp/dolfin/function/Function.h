@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/la/PETScVector.h>
@@ -40,7 +39,7 @@ class FunctionSpace;
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
 
-class Function : public common::Variable
+class Function
 {
 public:
   /// Create function on given function space

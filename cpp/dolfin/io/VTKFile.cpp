@@ -251,8 +251,9 @@ void write_function(const function::Function& u, const std::string filename,
   // Finalise and write pvd files
   vtk_header_close(vtu_filename);
 
-  DLOG(INFO) << "Saved function \"" << u.name() << "\" to file \"" << filename
-             << "\" in VTK format.";
+  DLOG(INFO) << "Saved function \""
+             << "u"
+             << "\" to file \"" << filename << "\" in VTK format.";
 }
 //----------------------------------------------------------------------------
 void write_mesh(const mesh::Mesh& mesh, const std::string filename,
@@ -354,23 +355,33 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
 
   if (rank == 0)
   {
-    fp << "<PointData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""
+    fp << "<PointData  Scalars=\""
+       << "u"
+       << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\""
+       << "u"
+       << "\"  format=\""
        << "ascii"
        << "\">";
   }
   else if (rank == 1)
   {
-    fp << "<PointData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+    fp << "<PointData  Vectors=\""
+       << "u"
+       << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\""
+       << "u"
        << "\"  NumberOfComponents=\"3\" format=\""
        << "ascii"
        << "\">";
   }
   else if (rank == 2)
   {
-    fp << "<PointData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+    fp << "<PointData  Tensors=\""
+       << "u"
+       << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\""
+       << "u"
        << "\"  NumberOfComponents=\"9\" format=\""
        << "ascii"
        << "\">";
@@ -614,7 +625,7 @@ void pvtu_write(const function::Function& u, const std::string filename,
     data_type = "cell";
 
   const std::size_t num_processes = MPI::size(mesh.mpi_comm());
-  pvtu_write_function(dim, rank, data_type, u.name(), filename, fname, counter,
+  pvtu_write_function(dim, rank, data_type, "u", filename, fname, counter,
                       num_processes);
 }
 //----------------------------------------------------------------------------
