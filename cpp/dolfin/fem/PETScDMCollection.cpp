@@ -283,7 +283,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     }
 
     // Check that function dims match
-    for (std::size_t i = 0; i < el->value_rank(); ++i)
+    for (int i = 0; i < el->value_rank(); ++i)
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
@@ -300,7 +300,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Number of dofs associated with each fine point
   unsigned int data_size = 1;
-  for (unsigned data_dim = 0; data_dim < el->value_rank(); data_dim++)
+  for (int data_dim = 0; data_dim < el->value_rank(); data_dim++)
     data_size *= el->value_dimension(data_dim);
 
   // The overall idea is: a fine point can be on a coarse cell in the
