@@ -8,8 +8,8 @@
 
 #include <map>
 #include <set>
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace dolfin
 {
@@ -40,6 +40,9 @@ public:
   /// Destructor
   ~Table() = default;
 
+  /// Assignment operator
+  Table& operator=(const Table& table) = default;
+
   /// Return table entry
   TableEntry operator()(std::string row, std::string col);
 
@@ -61,10 +64,7 @@ public:
   /// Get value of table entry
   double get_value(std::string row, std::string col) const;
 
-  /// Assignment operator
-  const Table& operator=(const Table& table);
-
-  // Table name
+  /// Table name
   std::string name;
 
   /// Return informal string representation (pretty-print)
@@ -107,7 +107,7 @@ public:
   TableEntry(std::string row, std::string col, Table& table);
 
   /// Destructor
-  ~TableEntry();
+  ~TableEntry() = default;
 
   /// Assign value to table entry
   const TableEntry& operator=(std::size_t value);

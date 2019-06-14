@@ -638,11 +638,6 @@ VTKFile::VTKFile(const std::string filename) : _filename(filename), _counter(0)
   // Do nothing
 }
 //----------------------------------------------------------------------------
-VTKFile::~VTKFile()
-{
-  // Do nothing
-}
-//----------------------------------------------------------------------------
 void VTKFile::write(const mesh::Mesh& mesh)
 {
   write_mesh(mesh, _filename, _counter, _counter);

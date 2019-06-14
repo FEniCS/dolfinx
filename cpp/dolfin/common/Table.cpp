@@ -99,23 +99,6 @@ double Table::get_value(std::string row, std::string col) const
   return it->second;
 }
 //-----------------------------------------------------------------------------
-const Table& Table::operator=(const Table& table)
-{
-  name = table.name;
-  _right_justify = table._right_justify;
-
-  rows = table.rows;
-  row_set = table.row_set;
-
-  cols = table.cols;
-  col_set = table.col_set;
-
-  values = table.values;
-  dvalues = table.dvalues;
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
 std::string Table::str(bool verbose) const
 {
   std::stringstream s;
@@ -248,11 +231,6 @@ std::string Table::str_latex() const
 //-----------------------------------------------------------------------------
 TableEntry::TableEntry(std::string row, std::string col, Table& table)
     : _row(row), _col(col), _table(table)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-TableEntry::~TableEntry()
 {
   // Do nothing
 }
