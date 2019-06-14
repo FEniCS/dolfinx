@@ -31,7 +31,7 @@ Geometry::Geometry(std::int64_t num_points_global,
   }
 }
 //-----------------------------------------------------------------------------
-std::size_t Geometry::dim() const { return _dim; }
+int Geometry::dim() const { return _dim; }
 //-----------------------------------------------------------------------------
 std::size_t Geometry::num_points() const { return _coordinates.rows(); }
 

@@ -14,9 +14,9 @@ solution and source term."""
 
 import numpy as np
 
-from dolfin import (MPI, Expression, FacetNormal, Function, FunctionSpace,
-                    TestFunction, TrialFunction, UnitSquareMesh, function,
-                    has_petsc_complex, interpolate, project, solve)
+from dolfin import (MPI, FacetNormal, Function, FunctionSpace, TestFunction,
+                    TrialFunction, UnitSquareMesh, has_petsc_complex,
+                    interpolate, project, solve)
 from dolfin.fem.assemble import assemble_scalar
 from dolfin.io import XDMFFile
 from ufl import dx, grad, inner
@@ -40,8 +40,7 @@ else:
     A = 1
 
 
-@function.expression.numba_eval
-def source(values, x, cell_idx):
+def source(values, x):
     values[:, 0] = A * k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 
 
@@ -51,7 +50,7 @@ V = FunctionSpace(mesh, ("Lagrange", deg))
 # Define variational problem
 u = TrialFunction(V)
 v = TestFunction(V)
-f = interpolate(Expression(source), V)
+f = interpolate(source, V)
 a = inner(grad(u), grad(v)) * dx - k0**2 * inner(u, v) * dx
 L = inner(f, v) * dx
 
@@ -70,8 +69,7 @@ are evident for high wavenumbers."""
 
 
 # "Exact" solution expression
-@function.expression.numba_eval
-def solution(values, x, cell_idx):
+def solution(values, x):
     values[:, 0] = A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 
 
@@ -79,7 +77,7 @@ def solution(values, x, cell_idx):
 V_exact = FunctionSpace(mesh, ("Lagrange", deg + 3))
 
 # "exact" solution
-u_exact = interpolate(Expression(solution), V_exact)
+u_exact = interpolate(solution, V_exact)
 
 # best approximation from V
 u_BA = project(u_exact, V)

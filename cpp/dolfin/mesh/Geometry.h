@@ -50,7 +50,7 @@ public:
   Geometry& operator=(Geometry&&) = default;
 
   /// Return Euclidean dimension of coordinate system
-  std::size_t dim() const;
+  int dim() const;
 
   /// Return the number of local points in the geometry
   std::size_t num_points() const;
