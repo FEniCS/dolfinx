@@ -110,7 +110,6 @@ def test_complex_assembly_solve():
     solver.solve(x, b)
 
     # Reference Solution
-    @dolfin.function.expression.numba_eval
     def ref_eval(values, x):
         values[:, 0] = np.cos(2 * np.pi * x[:, 0]) * np.cos(2 * np.pi * x[:, 1])
     u_ref = dolfin.interpolate(ref_eval, V)

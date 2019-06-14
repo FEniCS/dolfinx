@@ -118,7 +118,7 @@ from petsc4py import PETSc
 
 from dolfin import (MPI, CellType, Function, FunctionSpace, NewtonSolver,
                     NonlinearProblem, TestFunctions, TrialFunction,
-                    UnitSquareMesh, function, log)
+                    UnitSquareMesh, log)
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
 from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
@@ -231,7 +231,6 @@ c0, mu0 = split(u0)
 # then interpolated into a finite element space::
 
 
-@function.expression.numba_eval
 def u_init(values, x):
     values[:, 0] = 0.63 + 0.02 * (0.5 - random.random())
     values[:, 1] = 0.0

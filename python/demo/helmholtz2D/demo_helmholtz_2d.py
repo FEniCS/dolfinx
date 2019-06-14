@@ -15,7 +15,7 @@ solution and source term."""
 import numpy as np
 
 from dolfin import (MPI, FacetNormal, Function, FunctionSpace, TestFunction,
-                    TrialFunction, UnitSquareMesh, function, has_petsc_complex,
+                    TrialFunction, UnitSquareMesh, has_petsc_complex,
                     interpolate, project, solve)
 from dolfin.fem.assemble import assemble_scalar
 from dolfin.io import XDMFFile
@@ -40,7 +40,6 @@ else:
     A = 1
 
 
-@function.expression.numba_eval
 def source(values, x):
     values[:, 0] = A * k0**2 * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 
@@ -70,7 +69,6 @@ are evident for high wavenumbers."""
 
 
 # "Exact" solution expression
-@function.expression.numba_eval
 def solution(values, x):
     values[:, 0] = A * np.cos(k0 * x[:, 0]) * np.cos(k0 * x[:, 1])
 

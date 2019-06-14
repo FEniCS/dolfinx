@@ -9,17 +9,16 @@ import importlib
 import math
 
 import cffi
-import numba
 import numpy as np
 import pytest
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                    UnitCubeMesh, VectorFunctionSpace, Vertex, cpp, function,
+                    UnitCubeMesh, VectorFunctionSpace, Vertex, cpp,
                     interpolate)
-from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
 @fixture
@@ -118,7 +117,6 @@ def test_assign(V, W):
         # Test erroneous assignments
         uu = Function(V1)
 
-        @function.expression.numba_eval
         def f(values, x):
             values[:, 0] = 1.0
 
@@ -142,17 +140,14 @@ def test_call(R, V, W, Q, mesh):
     u2 = Function(W)
     u3 = Function(Q)
 
-    @function.expression.numba_eval
     def e1(values, x):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
 
-    @function.expression.numba_eval
     def e2(values, x):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
         values[:, 2] = x[:, 0] + x[:, 1] + x[:, 2]
 
-    @function.expression.numba_eval
     def e3(values, x):
         values[:, 0] = x[:, 0] + x[:, 1] + x[:, 2]
         values[:, 1] = x[:, 0] - x[:, 1] - x[:, 2]
@@ -221,7 +216,6 @@ def test_scalar_conditions(R):
 
 @pytest.mark.skip
 def test_interpolation_mismatch_rank0(W):
-    @function.expression.numba_eval
     def f(values, x):
         values[:, 0] = 1.0
 
@@ -231,7 +225,6 @@ def test_interpolation_mismatch_rank0(W):
 
 @pytest.mark.skip
 def test_interpolation_mismatch_rank1(W):
-    @function.expression.numba_eval
     def f(values, x):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
@@ -278,7 +271,6 @@ def test_near_evaluations(R, mesh):
 
 
 def test_interpolation_rank1(W):
-    @function.expression.numba_eval
     def f(values, x):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
@@ -290,29 +282,11 @@ def test_interpolation_rank1(W):
     assert x.min()[1] == 1.0
 
 
-@pytest.mark.xfail(raises=numba.errors.TypingError)
-def test_numba_expression_jit_objmode_fails(W):
-    # numba cfunc cannot call into objmode jit function
-    @function.expression.numba_eval(numba_jit_options={"forceobj": True})
-    def expr_eval(values, x):
-        values[0] = 1.0
-
-
-@pytest.mark.xfail(raises=NotImplementedError)
-def test_numba_expression_cfunc_objmode_fails(W):
-    # numba does not support cfuncs built in objmode
-    @function.expression.numba_eval(numba_cfunc_options={"forceobj": True})
-    def expr_eval(values, x):
-        values[0] = 1.0
-
-
 @skip_in_parallel
 def test_interpolation_old(V, W, mesh):
-    @function.expression.numba_eval
     def f0(values, x):
         values[:, 0] = 1.0
 
-    @function.expression.numba_eval
     def f1(values, x):
         values[:, 0] = 1.0
         values[:, 1] = 1.0
@@ -332,7 +306,6 @@ def test_interpolation_old(V, W, mesh):
 
 
 def test_numba_expression_address(V):
-    @function.expression.numba_eval
     def f1(values, x):
         values[:, :] = 1.0
 
@@ -376,11 +349,9 @@ def test_cffi_expression(V):
     f1 = Function(V)
     f1.interpolate(int(eval_ptr))
 
-    # @function.expression.numba_eval
-    # def expr_eval2(values, x):
-    #     values[:, 0] = x[:, 0] + x[:, 1]
+    def expr_eval2(values, x):
+        values[:, 0] = x[:, 0] + x[:, 1]
 
-    # ex2 = Expression(f=expr_eval2)
-    # f2 = Function(V)
-    # f2.interpolate(ex2)
-    # assert (f1.vector() - f2.vector()).norm() < 1.0e-12
+    f2 = Function(V)
+    f2.interpolate(expr_eval2)
+    assert (f1.vector() - f2.vector()).norm() < 1.0e-12
