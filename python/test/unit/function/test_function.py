@@ -294,7 +294,7 @@ def test_interpolation_old(V, W, mesh):
 
     # Scalar interpolation
     f = Function(V)
-    f = interpolate(f0, V)
+    f.interpolate(f0)
     assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_entities(0),
                  7) == 0
 
