@@ -180,7 +180,7 @@ public:
   std::string name = "m";
 
   /// ID
-  const std::size_t id;
+  const std::size_t id = common::UniqueIdGenerator::id();
 
 private:
   // Values at the set of mesh entities. We don't use a
@@ -206,7 +206,7 @@ std::string MeshFunction<std::size_t>::str(bool verbose) const;
 template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
                               const T& value)
-    : id(common::UniqueIdGenerator::id()), _mesh(mesh), _dim(dim)
+    : _mesh(mesh), _dim(dim)
 {
   assert(mesh);
   mesh->create_entities(dim);
@@ -217,8 +217,7 @@ template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                               const MeshValueCollection<T>& value_collection,
                               const T& default_value)
-    : id(common::UniqueIdGenerator::id()), _mesh(mesh),
-      _dim(value_collection.dim())
+    : _mesh(mesh), _dim(value_collection.dim())
 {
   assert(_mesh);
   _mesh->create_entities(_dim);
