@@ -197,26 +197,6 @@ void FunctionSpace::interpolate(
 void FunctionSpace::interpolate(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
-    const std::function<void(PetscScalar* values, int num_points,
-                             int value_size, const double* x, int gdim)>& eval)
-    const
-{
-  auto _eval
-      = [eval](Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                   Eigen::RowMajor>>
-               values,
-           const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
-                                               Eigen::Dynamic, Eigen::RowMajor>>
-               x) {
-          eval(values.data(), values.rows(), values.cols(), x.data(), x.cols());
-        };
-
-  interpolate(expansion_coefficients, _eval);
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::interpolate(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-        expansion_coefficients,
     const std::function<void(
         Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                 Eigen::RowMajor>>,

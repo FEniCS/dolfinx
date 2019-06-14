@@ -374,7 +374,7 @@ def test_cffi_expression(V):
 
     # Handle C func address by hand
     f1 = Function(V)
-    f1.interpolate(eval_ptr)
+    f1.interpolate(int(eval_ptr))
 
     # @function.expression.numba_eval
     # def expr_eval2(values, x):

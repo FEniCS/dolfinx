@@ -147,19 +147,6 @@ public:
   ///         The expansion coefficients.
   /// @param   expr (_Expression_)
   ///         The expression to be interpolated.
-  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-                       expansion_coefficients,
-                   const std::function<void(PetscScalar* values, int num_points,
-                                            int value_size, const double* x,
-                                            int gdim)>& eval) const;
-
-  /// Interpolate expression into function space, returning the
-  /// vector of expansion coefficients
-  ///
-  /// @param   expansion_coefficients (_la::PETScVector_)
-  ///         The expansion coefficients.
-  /// @param   expr (_Expression_)
-  ///         The expression to be interpolated.
   void interpolate(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
           expansion_coefficients,

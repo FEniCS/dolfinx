@@ -7,7 +7,9 @@
 """Finite element functions"""
 
 import typing
+from functools import singledispatch
 
+import numba
 import numpy as np
 from petsc4py import PETSc
 
@@ -107,37 +109,22 @@ class Function(ufl.Coefficient):
     def eval(self, u, x, bb_tree: cpp.geometry.BoundingBoxTree):
         return self._cpp_object.eval(u, x, bb_tree)
 
-    def interpolate(self, u):
-        try:
-            self._cpp_object.interpolate(u)
-        except TypeError:
-            try:
-                self._cpp_object.interpolate(u._cpp_object)
-            except AttributeError:
-                # 'Expression'
-                try:
-                    self._cpp_object.interpolate(u.eval)
-                except AttributeError:
-                    try:
-                        self._cpp_object.interpolate(u.address)
-                    except AttributeError:
-                        self._cpp_object.interpolate(int(u))
-                        # try:
-                        #     self._cpp_object.interpolate(int(u._f))
-                        # except:
-                        #     raise
+    def interpolate(self, u) -> None:
+        """Interpolate an expression"""
 
-        # try:
-        #     self._cpp_object.interpolate(u._cpp_object)
-        # except AttributeError:
-        #     try:
-        #         self._cpp_object.interpolate(u)
-        #     except TypeError:
-        #         print("TTTTTT", type(u))
-        #         try:
-        #             self._cpp_object.interpolate(u._f)
-        #         except TypeError:
-        #             self._cpp_object.interpolate(u.eval)
+        @singledispatch
+        def _interpolate(u):
+            self._cpp_object.interpolate(u)
+
+        @_interpolate.register
+        def _(u: numba.ccallback.CFunc, verbose=False):
+            self._cpp_object.interpolate_ptr(u.address)
+
+        @_interpolate.register
+        def _(u: int, verbose=False):
+            self._cpp_object.interpolate_ptr(u)
+
+        _interpolate(u)
 
     def compute_point_values(self, mesh=None):
         if mesh is not None:

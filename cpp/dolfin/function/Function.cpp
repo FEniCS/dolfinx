@@ -299,14 +299,6 @@ void Function::interpolate(const Function& v)
 }
 //-----------------------------------------------------------------------------
 void Function::interpolate(
-    const std::function<void(PetscScalar* values, int num_points,
-                             int value_size, const double* x, int gdim)>& e)
-{
-  la::VecWrapper x(_vector.vec());
-  _function_space->interpolate(x.x, e);
-}
-//-----------------------------------------------------------------------------
-void Function::interpolate(
     const std::function<
         void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>>,

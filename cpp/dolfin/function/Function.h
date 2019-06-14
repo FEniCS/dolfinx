@@ -121,14 +121,6 @@ public:
           const Eigen::Ref<const Eigen::Array<
               double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& e);
 
-  /// Interpolate expression
-  ///
-  /// @param    expr (Expression)
-  ///         The expression to be interpolated.
-  void interpolate(
-      const std::function<void(PetscScalar* values, int num_points,
-                               int value_size, const double* x, int gdim)>& e);
-
   /// Return value rank
   ///
   /// @returns int
