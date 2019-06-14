@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/la/PETScVector.h>
@@ -40,7 +39,7 @@ class FunctionSpace;
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
 
-class Function : public common::Variable
+class Function
 {
 public:
   /// Create function on given function space
@@ -208,6 +207,12 @@ public:
   ///         The values at all geometric points
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   compute_point_values() const;
+
+  // Name
+  std::string name = "u";
+
+  /// ID
+  const std::size_t id;
 
 private:
   // The function space

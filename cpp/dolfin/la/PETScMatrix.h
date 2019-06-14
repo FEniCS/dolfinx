@@ -45,7 +45,7 @@ public:
   PETScMatrix(PETScMatrix&& A) = default;
 
   /// Destructor
-  ~PETScMatrix();
+  ~PETScMatrix() = default;
 
   /// Assignment operator (deleted)
   PETScMatrix& operator=(const PETScMatrix& A) = delete;

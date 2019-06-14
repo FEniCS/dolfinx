@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <cfloat>
-#include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/mesh/Cell.h>
@@ -349,9 +348,8 @@ void mesh(py::module& m)
 // dolfin::mesh::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME)                                \
   py::class_<dolfin::mesh::MeshFunction<SCALAR>,                               \
-             std::shared_ptr<dolfin::mesh::MeshFunction<SCALAR>>,              \
-             dolfin::common::Variable>(m, "MeshFunction" #SCALAR_NAME,         \
-                                       "DOLFIN MeshFunction object")           \
+             std::shared_ptr<dolfin::mesh::MeshFunction<SCALAR>>>(             \
+      m, "MeshFunction" #SCALAR_NAME, "DOLFIN MeshFunction object")            \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t,    \
                     SCALAR>())                                                 \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>,                 \
@@ -375,7 +373,11 @@ void mesh(py::module& m)
       .def("__len__", &dolfin::mesh::MeshFunction<SCALAR>::size)               \
       .def_property_readonly("dim", &dolfin::mesh::MeshFunction<SCALAR>::dim)  \
       .def("size", &dolfin::mesh::MeshFunction<SCALAR>::size)                  \
-      .def("ufl_id", &dolfin::mesh::MeshFunction<SCALAR>::id)                  \
+      .def("ufl_id",                                                           \
+           [](const dolfin::mesh::MeshFunction<SCALAR>& self) {                \
+             return self.id;                                                   \
+           })                                                                  \
+      .def_readwrite("name", &dolfin::mesh::MeshFunction<SCALAR>::name)        \
       .def("mesh", &dolfin::mesh::MeshFunction<SCALAR>::mesh)                  \
       .def("set_values", &dolfin::mesh::MeshFunction<SCALAR>::set_values)      \
       .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR>& self,             \
@@ -397,10 +399,11 @@ void mesh(py::module& m)
 // dolfin::mesh::MeshValueCollection
 #define MESHVALUECOLLECTION_MACRO(SCALAR, SCALAR_NAME)                         \
   py::class_<dolfin::mesh::MeshValueCollection<SCALAR>,                        \
-             std::shared_ptr<dolfin::mesh::MeshValueCollection<SCALAR>>,       \
-             dolfin::common::Variable>(m, "MeshValueCollection_" #SCALAR_NAME, \
-                                       "DOLFIN MeshValueCollection object")    \
+             std::shared_ptr<dolfin::mesh::MeshValueCollection<SCALAR>>>(      \
+      m, "MeshValueCollection_" #SCALAR_NAME,                                  \
+      "DOLFIN MeshValueCollection object")                                     \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t>()) \
+      .def_readwrite("name", &dolfin::mesh::MeshValueCollection<SCALAR>::name) \
       .def_property_readonly("dim",                                            \
                              &dolfin::mesh::MeshValueCollection<SCALAR>::dim)  \
       .def("size", &dolfin::mesh::MeshValueCollection<SCALAR>::size)           \

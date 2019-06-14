@@ -22,11 +22,6 @@ SubDomain::SubDomain(const double map_tol) : map_tolerance(map_tol)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-SubDomain::~SubDomain()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 EigenArrayXb SubDomain::inside(const Eigen::Ref<const EigenRowArrayXXd> x,
                                bool on_boundary) const
 {

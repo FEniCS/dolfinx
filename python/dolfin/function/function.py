@@ -41,9 +41,9 @@ class Function(ufl.Coefficient):
 
         # Set name
         if name is None:
-            self.rename("f_{}".format(self.count()))
+            self.name = "f_{}".format(self.count())
         else:
-            self.rename(name)
+            self.name = name
 
         # Store DOLFIN FunctionSpace object
         self._V = V
@@ -143,12 +143,8 @@ class Function(ufl.Coefficient):
         return self._cpp_object.vector()
 
     def name(self) -> str:
-        """Get the name of the Function."""
-        return self._cpp_object.name()
-
-    def rename(self, name: str):
-        """Re-name Function."""
-        self._cpp_object.rename(name)
+        """Return name of the Function."""
+        return self._cpp_object.name
 
     @property
     def id(self) -> int:
@@ -157,7 +153,7 @@ class Function(ufl.Coefficient):
 
     def __str__(self):
         """Return a pretty print representation of it self."""
-        return self.name()
+        return self.name
 
     def sub(self, i: int):
         """Return a sub function.

@@ -180,13 +180,13 @@ dolfin::Table dolfin::MPI::all_reduce(const MPI_Comm comm,
                                       const dolfin::Table& table,
                                       const MPI_Op op)
 {
-  const std::string new_title = "[" + operation_map[op] + "] " + table.name();
+  const std::string new_title = "[" + operation_map[op] + "] " + table.name;
 
   // Handle trivial reduction
   if (MPI::size(comm) == 1)
   {
     Table table_all(table);
-    table_all.rename(new_title);
+    table_all.name = new_title;
     return table_all;
   }
 

@@ -8,7 +8,6 @@
 
 #include <Eigen/Dense>
 #include <cstddef>
-#include <dolfin/common/Variable.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>
 #include <functional>
@@ -38,7 +37,7 @@ class Function;
 /// a mesh, a finite element, and a local-to-global mapping of the
 /// degrees of freedom (dofmap).
 
-class FunctionSpace : public common::Variable
+class FunctionSpace
 {
 public:
   /// Create function space for given mesh, element and dofmap
@@ -66,14 +65,14 @@ protected:
   explicit FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh);
 
 public:
-  /// Copy constructor
-  ///
-  /// @param    V (_FunctionSpace_)
-  ///         The object to be copied.
-  FunctionSpace(const FunctionSpace& V);
+  // Copy constructor (deleted)
+  FunctionSpace(const FunctionSpace& V) = delete;
+
+  /// Move constructor
+  FunctionSpace(FunctionSpace&& V) = default;
 
   /// Destructor
-  virtual ~FunctionSpace();
+  virtual ~FunctionSpace() = default;
 
 protected:
   /// Attach data to an empty function space
@@ -86,11 +85,11 @@ protected:
               std::shared_ptr<const fem::GenericDofMap> dofmap);
 
 public:
-  /// Assignment operator
-  ///
-  /// @param    V (_FunctionSpace_)
-  ///         Another function space.
-  const FunctionSpace& operator=(const FunctionSpace& V);
+  // Assignment operator (delete)
+  FunctionSpace& operator=(const FunctionSpace& V) = delete;
+
+  // Move assignment operator (delete)
+  FunctionSpace& operator=(FunctionSpace&& V) = default;
 
   /// Equality operator
   ///
@@ -253,6 +252,9 @@ public:
 
   /// Print dofmap (useful for debugging)
   void print_dofmap() const;
+
+  /// Unique identifier
+  const std::size_t id;
 
 private:
   // General interpolation from any Function on any mesh

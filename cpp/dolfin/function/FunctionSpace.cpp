@@ -7,6 +7,7 @@
 #include "FunctionSpace.h"
 #include "Function.h"
 #include <dolfin/common/IndexMap.h>
+#include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -24,24 +25,14 @@ using namespace dolfin::function;
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::GenericDofMap> dofmap)
-    : _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
+    : id(common::UniqueIdGenerator::id()), _mesh(mesh), _element(element),
+      _dofmap(dofmap), _root_space_id(id)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh)
-    : _mesh(mesh), _root_space_id(id())
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const FunctionSpace& V)
-{
-  // Assign data (will be shared)
-  *this = V;
-}
-//-----------------------------------------------------------------------------
-FunctionSpace::~FunctionSpace()
+    : id(common::UniqueIdGenerator::id()), _mesh(mesh), _root_space_id(id)
 {
   // Do nothing
 }
@@ -53,25 +44,11 @@ void FunctionSpace::attach(std::shared_ptr<const fem::FiniteElement> element,
   _dofmap = dofmap;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
-{
-  // Assign data (will be shared)
-  _mesh = V._mesh;
-  _element = V._element;
-  _dofmap = V._dofmap;
-  _component = V._component;
-
-  // Call assignment operator for base class
-  common::Variable::operator=(V);
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
 bool FunctionSpace::operator==(const FunctionSpace& V) const
 {
   // Compare pointers to shared objects
-  return _element.get() == V._element.get() && _mesh.get() == V._mesh.get()
-         && _dofmap.get() == V._dofmap.get();
+  return _element.get() == V._element.get() and _mesh.get() == V._mesh.get()
+         and _dofmap.get() == V._dofmap.get();
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator!=(const FunctionSpace& V) const

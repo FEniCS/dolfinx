@@ -27,11 +27,6 @@ CellType::CellType(Type cell_type, Type facet_type)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-CellType::~CellType()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 CellType* CellType::create(Type type)
 {
   switch (type)

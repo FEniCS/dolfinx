@@ -235,7 +235,6 @@ public:
   ///    Owning process
   std::uint32_t owner() const;
 
-  // Note: Not a subclass of Variable for efficiency!
   /// Return informal string representation (pretty-print)
   ///
   /// @param      verbose (bool)
