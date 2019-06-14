@@ -65,14 +65,14 @@ protected:
   explicit FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh);
 
 public:
-  /// Copy constructor
-  ///
-  /// @param    V (_FunctionSpace_)
-  ///         The object to be copied.
-  FunctionSpace(const FunctionSpace& V);
+  // Copy constructor (deleted)
+  FunctionSpace(const FunctionSpace& V) = delete;
+
+  /// Move constructor
+  FunctionSpace(FunctionSpace&& V) = default;
 
   /// Destructor
-  virtual ~FunctionSpace();
+  virtual ~FunctionSpace() = default;
 
 protected:
   /// Attach data to an empty function space

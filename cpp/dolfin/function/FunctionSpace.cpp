@@ -39,18 +39,6 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh)
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const FunctionSpace& V)
-    : _unique_id(common::UniqueIdGenerator::id()), _root_space_id(0)
-{
-  // Assign data (will be shared)
-  *this = V;
-}
-//-----------------------------------------------------------------------------
-FunctionSpace::~FunctionSpace()
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 void FunctionSpace::attach(std::shared_ptr<const fem::FiniteElement> element,
                            std::shared_ptr<const fem::GenericDofMap> dofmap)
 {
