@@ -144,6 +144,7 @@ void function(py::module& m)
       .def(py::init<std::shared_ptr<dolfin::mesh::Mesh>,
                     std::shared_ptr<dolfin::fem::FiniteElement>,
                     std::shared_ptr<dolfin::fem::GenericDofMap>>())
+      .def_readonly("id", &dolfin::function::FunctionSpace::id)
       .def("__eq__", &dolfin::function::FunctionSpace::operator==)
       .def("dim", &dolfin::function::FunctionSpace::dim)
       .def("collapse", &dolfin::function::FunctionSpace::collapse)

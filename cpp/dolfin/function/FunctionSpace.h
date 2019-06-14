@@ -247,6 +247,9 @@ public:
   /// Print dofmap (useful for debugging)
   void print_dofmap() const;
 
+  /// Unique identifier
+  const std::size_t id;
+
 private:
   // General interpolation from any Function on any mesh
   void interpolate_from_any(
@@ -271,9 +274,6 @@ private:
 
   // The component w.r.t. to root space
   std::vector<std::size_t> _component;
-
-  // Unique identifier
-  const std::size_t _unique_id;
 
   // The identifier of root space
   std::size_t _root_space_id;

@@ -26,15 +26,14 @@ using namespace dolfin::function;
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::GenericDofMap> dofmap)
-    : _mesh(mesh), _element(element), _dofmap(dofmap),
-      _unique_id(common::UniqueIdGenerator::id()), _root_space_id(_unique_id)
+    : id(common::UniqueIdGenerator::id()), _mesh(mesh), _element(element),
+      _dofmap(dofmap), _root_space_id(id)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh)
-    : _mesh(mesh), _unique_id(common::UniqueIdGenerator::id()),
-      _root_space_id(_unique_id)
+    : id(common::UniqueIdGenerator::id()), _mesh(mesh), _root_space_id(id)
 {
   // Do nothing
 }
