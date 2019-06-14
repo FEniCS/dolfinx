@@ -6,10 +6,10 @@
 
 #pragma once
 
-#include <dolfin/common/Variable.h>
 #include <map>
 #include <set>
 #include <vector>
+#include <string>
 
 namespace dolfin
 {
@@ -31,14 +31,14 @@ class TableEntry;
 ///
 ///   log::info(table);
 
-class Table : public common::Variable
+class Table
 {
 public:
   /// Create empty table
   Table(std::string title = "", bool right_justify = true);
 
   /// Destructor
-  ~Table();
+  ~Table() = default;
 
   /// Return table entry
   TableEntry operator()(std::string row, std::string col);
@@ -63,6 +63,9 @@ public:
 
   /// Assignment operator
   const Table& operator=(const Table& table);
+
+  // Table name
+  std::string name;
 
   /// Return informal string representation (pretty-print)
   std::string str(bool verbose) const;

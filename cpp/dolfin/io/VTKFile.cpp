@@ -186,8 +186,8 @@ void mesh_function_write(T& meshfunction, const std::string filename,
   // Open file to write data
   std::ofstream fp(vtu_filename.c_str(), std::ios_base::app);
   fp.precision(16);
-  fp << "<CellData  Scalars=\"" << meshfunction.name() << "\">" << std::endl;
-  fp << "<DataArray  type=\"Float64\"  Name=\"" << meshfunction.name()
+  fp << "<CellData  Scalars=\"" << meshfunction.name << "\">" << std::endl;
+  fp << "<DataArray  type=\"Float64\"  Name=\"" << meshfunction.name
      << "\"  format=\"ascii\">";
 
   // Write data
@@ -207,7 +207,7 @@ void mesh_function_write(T& meshfunction, const std::string filename,
   if (num_processes > 1 && process_number == 0)
   {
     std::string pvtu_filename = vtu_name(0, 0, counter, filename, ".pvtu");
-    pvtu_write_function(1, 0, "cell", meshfunction.name(), filename,
+    pvtu_write_function(1, 0, "cell", meshfunction.name, filename,
                         pvtu_filename, counter, num_processes);
     pvd_file_write(counter, time, filename, pvtu_filename);
   }

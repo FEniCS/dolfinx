@@ -31,11 +31,13 @@ void function(py::module& m)
 {
   // dolfin::function::Function
   py::class_<dolfin::function::Function,
-             std::shared_ptr<dolfin::function::Function>>(m, "Function",
-                                       "A finite element function")
+             std::shared_ptr<dolfin::function::Function>>(
+      m, "Function", "A finite element function")
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>>(),
            "Create a function on the given function space")
       .def(py::init<std::shared_ptr<dolfin::function::FunctionSpace>, Vec>())
+      .def_readwrite("name", &dolfin::function::Function::name)
+      .def_readonly("id", &dolfin::function::Function::id)
       .def("sub", &dolfin::function::Function::sub,
            "Return sub-function (view into parent Function")
       .def("collapse", &dolfin::function::Function::collapse,

@@ -916,7 +916,7 @@ void XDMFFile::write_mesh_value_collection(
   // Add new grid node, for MVC mesh
   pugi::xml_node mvc_grid_node = domain_node.append_child("Grid");
   assert(mvc_grid_node);
-  mvc_grid_node.append_attribute("Name") = mvc.name().c_str();
+  mvc_grid_node.append_attribute("Name") = mvc.name.c_str();
   mvc_grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes
@@ -984,7 +984,7 @@ void XDMFFile::write_mesh_value_collection(
   // Add attribute node with values
   pugi::xml_node attribute_node = mvc_grid_node.append_child("Attribute");
   assert(attribute_node);
-  attribute_node.append_attribute("Name") = mvc.name().c_str();
+  attribute_node.append_attribute("Name") = mvc.name.c_str();
   attribute_node.append_attribute("AttributeType") = "Scalar";
   attribute_node.append_attribute("Center") = "Cell";
 
@@ -1826,7 +1826,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   // Add attribute node with values
   pugi::xml_node attribute_node = grid_node.append_child("Attribute");
   assert(attribute_node);
-  attribute_node.append_attribute("Name") = meshfunction.name().c_str();
+  attribute_node.append_attribute("Name") = meshfunction.name.c_str();
   attribute_node.append_attribute("AttributeType") = "Scalar";
   attribute_node.append_attribute("Center") = "Cell";
 

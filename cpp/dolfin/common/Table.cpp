@@ -15,13 +15,7 @@ using namespace dolfin;
 
 //-----------------------------------------------------------------------------
 Table::Table(std::string title, bool right_justify)
-    : _right_justify(right_justify)
-{
-  rename(title);
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-Table::~Table()
+    : name(title), _right_justify(right_justify)
 {
   // Do nothing
 }
@@ -107,7 +101,7 @@ double Table::get_value(std::string row, std::string col) const
 //-----------------------------------------------------------------------------
 const Table& Table::operator=(const Table& table)
 {
-  rename(table.name());
+  name = table.name;
   _right_justify = table._right_justify;
 
   rows = table.rows;
@@ -132,7 +126,7 @@ std::string Table::str(bool verbose) const
     std::vector<std::size_t> col_sizes;
 
     // Format values and compute column sizes
-    col_sizes.push_back(name().size());
+    col_sizes.push_back(name.size());
     for (std::size_t j = 0; j < cols.size(); j++)
       col_sizes.push_back(cols[j].size());
     for (std::size_t i = 0; i < rows.size(); i++)
@@ -155,8 +149,8 @@ std::string Table::str(bool verbose) const
       return "";
 
     // Write table
-    s << name();
-    for (std::size_t k = 0; k < col_sizes[0] - name().size(); k++)
+    s << name;
+    for (std::size_t k = 0; k < col_sizes[0] - name.size(); k++)
       s << " ";
     s << "  |";
     for (std::size_t j = 0; j < cols.size(); j++)
@@ -218,7 +212,7 @@ std::string Table::str_latex() const
 
   std::stringstream s;
 
-  s << name() << "\n";
+  s << name << "\n";
   s << "\\begin{center}\n";
   s << "\\begin{tabular}{|l|";
   for (std::size_t j = 0; j < cols.size(); j++)

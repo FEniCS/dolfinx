@@ -208,6 +208,12 @@ public:
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   compute_point_values() const;
 
+  // Name
+  std::string name = "u";
+
+  /// ID
+  const std::size_t id;
+
 private:
   // The function space
   std::shared_ptr<const FunctionSpace> _function_space;
