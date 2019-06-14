@@ -8,10 +8,8 @@
 #include <cstdint>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/GenericDofMap.h>
-#include <dolfin/function/Expression.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/function/SpecialFunctions.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
@@ -31,36 +29,6 @@ namespace dolfin_wrappers
 
 void function(py::module& m)
 {
-
-  // Create dolfin::function::Expression from a JIT pointer
-  m.def("make_dolfin_expression",
-        [](std::uintptr_t addr) {
-          dolfin::function::Expression* p
-              = reinterpret_cast<dolfin::function::Expression*>(addr);
-          return std::shared_ptr<const dolfin::function::Expression>(p);
-        },
-        "Create a dolfin::function::Expression object from a pointer integer, "
-        "typically returned by a just-in-time compiler");
-
-  // dolfin:Expression
-  py::class_<dolfin::function::Expression,
-             std::shared_ptr<dolfin::function::Expression>>(m, "Expression")
-      .def(py::init([](std::uintptr_t addr,
-                       std::vector<std::size_t> value_size) {
-        std::function<void(PetscScalar*, int, int, const double*, int, double)>
-            f = reinterpret_cast<void (*)(PetscScalar*, int, int, const double*,
-                                          int, double)>(addr);
-        return std::make_unique<dolfin::function::Expression>(f, value_size);
-      }))
-      .def(py::init<std::function<void(PetscScalar*, int, int, const double*,
-                                       int, double)>,
-                    std::vector<std::size_t>>())
-      .def("eval", &dolfin::function::Expression::eval)
-      .def_property_readonly("value_rank",
-                             &dolfin::function::Expression::value_rank)
-      .def("value_dimension", &dolfin::function::Expression::value_dimension)
-      .def_readwrite("t", &dolfin::function::Expression::t);
-
   // dolfin::function::Function
   py::class_<dolfin::function::Function,
              std::shared_ptr<dolfin::function::Function>,
@@ -73,14 +41,40 @@ void function(py::module& m)
            "Return sub-function (view into parent Function")
       .def("collapse", &dolfin::function::Function::collapse,
            "Collapse sub-function view")
+      .def(
+          "interpolate",
+          py::overload_cast<const std::function<void(
+              Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                      Eigen::Dynamic, Eigen::RowMajor>>,
+              const Eigen::Ref<const Eigen::Array<
+                  double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>&>(
+              &dolfin::function::Function::interpolate),
+          py::arg("f"), "Interpolate a function expression")
       .def("interpolate",
            py::overload_cast<const dolfin::function::Function&>(
                &dolfin::function::Function::interpolate),
-           py::arg("u"))
-      .def("interpolate",
-           py::overload_cast<const dolfin::function::Expression&>(
-               &dolfin::function::Function::interpolate),
-           py::arg("expr"))
+           py::arg("u"), "Interpolate a finite element function")
+      .def("interpolate_ptr",
+           [](dolfin::function::Function& self, std::uintptr_t addr) {
+             const std::function<void(PetscScalar*, int, int, const double*,
+                                      int)>
+                 f = reinterpret_cast<void (*)(PetscScalar*, int, int,
+                                               const double*, int)>(addr);
+             auto _f =
+                 [&f](Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                              Eigen::Dynamic, Eigen::RowMajor>>
+                          values,
+                      const Eigen::Ref<
+                          const Eigen::Array<double, Eigen::Dynamic,
+                                             Eigen::Dynamic, Eigen::RowMajor>>
+                          x) {
+                   f(values.data(), values.rows(), values.cols(), x.data(),
+                     x.cols());
+                 };
+
+             self.interpolate(_f);
+           },
+           "Interpolate using a pointer to an expression with a C signature")
       .def("vector",
            [](const dolfin::function::Function& self) {
              return self.vector().vec();

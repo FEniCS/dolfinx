@@ -10,6 +10,7 @@
 #include <cstddef>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>
+#include <functional>
 #include <map>
 #include <memory>
 #include <petscsys.h>
@@ -30,7 +31,6 @@ class Mesh;
 
 namespace function
 {
-class Expression;
 class Function;
 
 /// This class represents a finite element function space defined by
@@ -146,9 +146,15 @@ public:
   ///         The expansion coefficients.
   /// @param   expr (_Expression_)
   ///         The expression to be interpolated.
-  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-                       expansion_coefficients,
-                   const Expression& expr) const;
+  void interpolate(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          expansion_coefficients,
+      const std::function<void(
+          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>,
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
+      const;
 
   /// Extract subspace for component
   ///
@@ -256,12 +262,6 @@ private:
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
           expansion_coefficients,
       const Function& v) const;
-
-  // General interpolation from any Expression on any mesh
-  void interpolate_from_any(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-          expansion_coefficients,
-      const Expression& expr) const;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;

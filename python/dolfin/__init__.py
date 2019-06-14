@@ -62,7 +62,6 @@ from .function.function import Function
 from .function.argument import (TestFunction, TrialFunction, TestFunctions,
                                 TrialFunctions)
 from .function.specialfunctions import (FacetNormal, CellVolume, CellNormal, CellDiameter, Circumradius)
-from .function.expression import Expression
 
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection

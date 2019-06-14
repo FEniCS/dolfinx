@@ -59,10 +59,10 @@ public:
   std::size_t reference_value_size() const;
 
   /// Return the rank of the value space
-  std::size_t value_rank() const;
+  int value_rank() const;
 
   /// Return the dimension of the value space for axis i
-  std::size_t value_dimension(std::size_t i) const;
+  int value_dimension(int i) const;
 
   // FIXME: Is this well-defined? What does it do on non-simplex
   // elements?
