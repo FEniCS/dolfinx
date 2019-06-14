@@ -119,7 +119,7 @@ public:
           Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>,
           const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& e);
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f);
 
   /// Return value rank
   ///

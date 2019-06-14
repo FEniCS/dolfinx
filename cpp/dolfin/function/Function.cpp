@@ -21,7 +21,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <unordered_map>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
@@ -303,11 +302,11 @@ void Function::interpolate(
         void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                      Eigen::Dynamic, Eigen::RowMajor>>,
              const Eigen::Ref<const Eigen::Array<
-                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& e)
+                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
 
 {
   la::VecWrapper x(_vector.vec());
-  _function_space->interpolate(x.x, e);
+  _function_space->interpolate(x.x, f);
 }
 //-----------------------------------------------------------------------------
 int Function::value_rank() const

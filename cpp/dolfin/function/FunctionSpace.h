@@ -154,7 +154,7 @@ public:
           Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                   Eigen::RowMajor>>,
           const Eigen::Ref<const Eigen::Array<
-              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& eval)
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
       const;
 
   /// Extract subspace for component

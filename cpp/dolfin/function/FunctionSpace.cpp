@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Anders Logg
+// Copyright (C) 2008-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -202,7 +202,7 @@ void FunctionSpace::interpolate(
                                 Eigen::RowMajor>>,
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>>)>&
-        eval) const
+        f) const
 {
   assert(_mesh);
   assert(_element);
@@ -226,7 +226,7 @@ void FunctionSpace::interpolate(
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(x.rows(), value_size);
   assert(values.rows() == x.rows());
-  eval(values, x);
+  f(values, x);
 
   // FIXME: Dummy coordinate dofs - should limit the interpolation to
   // Lagrange, in which case we don't need coordinate dofs in
