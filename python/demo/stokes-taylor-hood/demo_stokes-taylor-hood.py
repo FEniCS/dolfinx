@@ -126,8 +126,7 @@ class NoSlip:
     """Evaluate the no-slip condition"""
 
     def eval(self, values, x):
-        values[:, 0] = 0.0
-        values[:, 1] = 0.0
+        values[:, :] = 0.0
 
 
 # Extract subdomain facet arrays

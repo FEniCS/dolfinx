@@ -288,9 +288,7 @@ def test_interpolation_old(V, W, mesh):
         values[:, 0] = 1.0
 
     def f1(values, x):
-        values[:, 0] = 1.0
-        values[:, 1] = 1.0
-        values[:, 2] = 1.0
+        values[:, :] = 1.0
 
     # Scalar interpolation
     f = Function(V)
