@@ -18,7 +18,7 @@ using namespace dolfin;
 using namespace dolfin::la;
 
 //-----------------------------------------------------------------------------
-PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm) : _ksp(NULL)
+PETScKrylovSolver::PETScKrylovSolver(MPI_Comm comm) : _ksp(nullptr)
 {
   PetscErrorCode ierr;
 
@@ -190,7 +190,7 @@ void PETScKrylovSolver::set_options_prefix(std::string options_prefix)
 std::string PETScKrylovSolver::get_options_prefix() const
 {
   assert(_ksp);
-  const char* prefix = NULL;
+  const char* prefix = nullptr;
   PetscErrorCode ierr = KSPGetOptionsPrefix(_ksp, &prefix);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "KSPGetOptionsPrefix");
@@ -244,18 +244,18 @@ void PETScKrylovSolver::write_report(int num_iterations,
   KSPType sub_ksp_type;
   PCType sub_pc_type;
   PC sub_pc;
-  KSP* sub_ksp = NULL;
+  KSP* sub_ksp = nullptr;
   if (pc_type_str == PCASM || pc_type_str == PCBJACOBI)
   {
     if (pc_type_str == PCASM)
     {
-      ierr = PCASMGetSubKSP(pc, NULL, NULL, &sub_ksp);
+      ierr = PCASMGetSubKSP(pc, nullptr, nullptr, &sub_ksp);
       if (ierr != 0)
         petsc_error(ierr, __FILE__, "PCASMGetSubKSP");
     }
     else if (pc_type_str == PCBJACOBI)
     {
-      ierr = PCBJacobiGetSubKSP(pc, NULL, NULL, &sub_ksp);
+      ierr = PCBJacobiGetSubKSP(pc, nullptr, nullptr, &sub_ksp);
       if (ierr != 0)
         petsc_error(ierr, __FILE__, "PCBJacobiGetSubKSP");
     }

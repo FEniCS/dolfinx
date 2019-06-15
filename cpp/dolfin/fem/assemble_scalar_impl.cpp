@@ -94,8 +94,8 @@ PetscScalar fem::impl::assemble_cells(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over all cells
+  const int orientation = 0;
   PetscScalar cell_value, value(0);
-
   for (const auto& cell_index : active_cells)
   {
     const mesh::Cell cell(mesh, cell_index);
@@ -115,7 +115,8 @@ PetscScalar fem::impl::assemble_cells(
                                 coordinate_dofs);
     }
 
-    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
+    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), nullptr,
+       &orientation);
     value += cell_value;
   }
 
@@ -166,7 +167,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
-    const int orient = 1;
+    const int orient = 0;
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
@@ -234,7 +235,7 @@ PetscScalar fem::impl::assemble_interior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
-    const int orient[2] = {1, 1};
+    const int orient[2] = {0, 0};
 
     // Get cell vertex coordinates
     const int cell0_index = cell0.index();
