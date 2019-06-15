@@ -59,13 +59,11 @@ def test_read_write_p2_function(tempdir):
     F = Function(Q)
     if has_petsc_complex:
         def expr_eval(values, x):
-            values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
-            values[:, 1] = x[:, 1] + 1.0j * x[:, 1]
+            values[:, :] = x + 1.0j * x
         F.interpolate(expr_eval)
     else:
         def expr_eval(values, x):
-            values[:, 0] = x[:, 0]
-            values[:, 1] = x[:, 1]
+            values[:, :] = x
         F.interpolate(expr_eval)
     filename = os.path.join(tempdir, "tri6_vector_function.xdmf")
     with XDMFFile(
