@@ -10,10 +10,10 @@ import pytest
 
 import dolfin
 from dolfin import MPI, cpp
-from dolfin.pybind11jit import compile_cpp_code
 from dolfin_utils.test.skips import skip_in_serial
 
 
+@pytest.mark.skip
 def test_mpi_pybind11():
     """
     Test MPICommWrapper <-> mpi4py.MPI.Comm conversion for JIT-ed code
@@ -51,6 +51,7 @@ def test_mpi_pybind11():
     assert isinstance(w2, MPI.Comm)
 
 
+@pytest.mark.skip
 def test_petsc():
     create_matrix_code = r'''
     #include <pybind11/pybind11.h>
