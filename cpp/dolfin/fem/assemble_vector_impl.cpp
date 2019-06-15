@@ -86,6 +86,7 @@ void _lift_bc_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
+  const int orient = 0;
   for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
@@ -129,7 +130,7 @@ void _lift_bc_cells(
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), nullptr, nullptr);
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), nullptr, &orient);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
