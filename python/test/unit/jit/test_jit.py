@@ -13,6 +13,10 @@ from dolfin import MPI, cpp
 from dolfin_utils.test.skips import skip_in_serial
 
 
+def compile_cpp_code(code):
+    pass
+
+
 @pytest.mark.skip
 def test_mpi_pybind11():
     """
@@ -75,6 +79,7 @@ def test_petsc():
     assert (module)
 
 
+@pytest.mark.skip
 def test_pass_array_int():
     code = """
     #include <Eigen/Core>
@@ -96,6 +101,7 @@ def test_pass_array_int():
     assert ans == arr.sum() == 15
 
 
+@pytest.mark.skip
 def test_pass_array_double():
     code = """
     #include <Eigen/Core>
