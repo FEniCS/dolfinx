@@ -95,7 +95,7 @@ void SLEPcEigenSolver::solve(std::int64_t n)
   PetscInt num_iterations = 0;
   EPSGetIterationNumber(_eps, &num_iterations);
 
-  EPSType eps_type = NULL;
+  EPSType eps_type = nullptr;
   EPSGetType(_eps, &eps_type);
   LOG(INFO) << "Eigenvalue solver (" << eps_type << ") converged in "
             << num_iterations << " iterations.";
@@ -114,7 +114,7 @@ std::complex<PetscReal> SLEPcEigenSolver::get_eigenvalue(std::size_t i) const
   {
 #ifdef PETSC_USE_COMPLEX
     PetscScalar l;
-    EPSGetEigenvalue(_eps, ii, &l, NULL);
+    EPSGetEigenvalue(_eps, ii, &l, nullptr);
     return l;
 #else
     PetscScalar lr, li;
@@ -206,7 +206,7 @@ void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
 std::string SLEPcEigenSolver::get_options_prefix() const
 {
   assert(_eps);
-  const char* prefix = NULL;
+  const char* prefix = nullptr;
   PetscErrorCode ierr = EPSGetOptionsPrefix(_eps, &prefix);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "EPSGetOptionsPrefix");

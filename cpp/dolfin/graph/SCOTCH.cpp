@@ -82,7 +82,8 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
   // Build SCOTCH graph
   common::Timer timer1("SCOTCH: call SCOTCH_graphBuild");
   if (SCOTCH_graphBuild(&scotch_graph, baseval, vertnbr, &verttab[0],
-                        &verttab[1], NULL, NULL, edgenbr, &edgetab[0], NULL))
+                        &verttab[1], nullptr, nullptr, edgenbr, &edgetab[0],
+                        nullptr))
   {
     throw std::runtime_error("Error building SCOTCH graph");
   }
@@ -115,7 +116,8 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
   // Compute re-ordering
   common::Timer timer2("SCOTCH: call SCOTCH_graphOrder");
   if (SCOTCH_graphOrder(&scotch_graph, &strat, permutation_indices.data(),
-                        inverse_permutation_indices.data(), NULL, NULL, NULL))
+                        inverse_permutation_indices.data(), nullptr, nullptr,
+                        nullptr))
   {
     throw std::runtime_error("Error during SCOTCH re-ordering");
   }
@@ -205,9 +207,9 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   common::Timer timer1("SCOTCH: call SCOTCH_dgraphBuild");
   if (SCOTCH_dgraphBuild(
           &dgrafdat, baseval, vertlocnbr, vertlocnbr,
-          const_cast<SCOTCH_Num*>(vertloctab.data()), NULL, vload.data(), NULL,
-          edgeloctab.size(), edgeloctab.size(),
-          const_cast<SCOTCH_Num*>(edgeloctab.data()), NULL, NULL))
+          const_cast<SCOTCH_Num*>(vertloctab.data()), nullptr, vload.data(),
+          nullptr, edgeloctab.size(), edgeloctab.size(),
+          const_cast<SCOTCH_Num*>(edgeloctab.data()), nullptr, nullptr))
   {
     throw std::runtime_error("Error building SCOTCH graph");
   }
@@ -278,8 +280,9 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
   // Get SCOTCH's locally indexed graph
   common::Timer timer4("Get SCOTCH graph data");
   SCOTCH_Num* edge_ghost_tab;
-  SCOTCH_dgraphData(&dgrafdat, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                    NULL, NULL, NULL, NULL, NULL, &edge_ghost_tab, NULL,
+  SCOTCH_dgraphData(&dgrafdat, nullptr, nullptr, nullptr, nullptr, nullptr,
+                    nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+                    nullptr, nullptr, &edge_ghost_tab, nullptr,
                     (MPI_Comm*)&mpi_comm);
   timer4.stop();
 

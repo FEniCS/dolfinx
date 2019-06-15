@@ -247,7 +247,7 @@ inline void HDF5Interface::write_dataset(
   herr_t status;
 
   // Create a global data space
-  const hid_t filespace0 = H5Screate_simple(rank, dimsf.data(), NULL);
+  const hid_t filespace0 = H5Screate_simple(rank, dimsf.data(), nullptr);
   assert(filespace0 != HDF5_FAIL);
 
   // Set chunking parameters
@@ -283,13 +283,13 @@ inline void HDF5Interface::write_dataset(
   assert(status != HDF5_FAIL);
 
   // Create a local data space
-  const hid_t memspace = H5Screate_simple(rank, count.data(), NULL);
+  const hid_t memspace = H5Screate_simple(rank, count.data(), nullptr);
   assert(memspace != HDF5_FAIL);
 
   // Create a file dataspace within the global space - a hyperslab
   const hid_t filespace1 = H5Dget_space(dset_id);
-  status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(), NULL,
-                               count.data(), NULL);
+  status = H5Sselect_hyperslab(filespace1, H5S_SELECT_SET, offset.data(),
+                               nullptr, count.data(), nullptr);
   assert(status != HDF5_FAIL);
 
   // Set parallel access
@@ -358,7 +358,7 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   std::vector<hsize_t> shape(rank);
 
   // Get size in each dimension
-  const int ndims = H5Sget_simple_extent_dims(dataspace, shape.data(), NULL);
+  const int ndims = H5Sget_simple_extent_dims(dataspace, shape.data(), nullptr);
   assert(ndims == rank);
 
   // Hyperslab selection
@@ -375,11 +375,11 @@ HDF5Interface::read_dataset(const hid_t file_handle,
   // Select a block in the dataset beginning at offset[], with
   // size=count[]
   herr_t status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset.data(),
-                                      NULL, count.data(), NULL);
+                                      nullptr, count.data(), nullptr);
   assert(status != HDF5_FAIL);
 
   // Create a memory dataspace
-  const hid_t memspace = H5Screate_simple(rank, count.data(), NULL);
+  const hid_t memspace = H5Screate_simple(rank, count.data(), nullptr);
   assert(memspace != HDF5_FAIL);
 
   // Create local data to read into
@@ -520,7 +520,7 @@ HDF5Interface::add_attribute_value(const hid_t dset_id,
 
   // Create a vector dataspace
   const hsize_t dimsf = attribute_value.size();
-  const hid_t dataspace_id = H5Screate_simple(1, &dimsf, NULL);
+  const hid_t dataspace_id = H5Screate_simple(1, &dimsf, nullptr);
   assert(dataspace_id != HDF5_FAIL);
 
   // Create an attribute of type size_t in the dataspace

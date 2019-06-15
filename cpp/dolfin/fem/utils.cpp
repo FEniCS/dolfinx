@@ -394,7 +394,7 @@ fem::create_matrix_nest(std::vector<std::vector<const fem::Form*>> a)
   Mat _A;
   MatCreate(a[0][0]->mesh()->mpi_comm(), &_A);
   MatSetType(_A, MATNEST);
-  MatNestSetSubMats(_A, petsc_mats.rows(), NULL, petsc_mats.cols(), NULL,
+  MatNestSetSubMats(_A, petsc_mats.rows(), nullptr, petsc_mats.cols(), nullptr,
                     petsc_mats.data());
   MatSetUp(_A);
 
@@ -463,8 +463,8 @@ la::PETScVector fem::create_vector_nest(std::vector<const fem::Form*> L)
 
   // Create nested (VecNest) vector
   Vec y;
-  VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), NULL, petsc_vecs.data(),
-                &y);
+  VecCreateNest(vecs[0]->mpi_comm(), petsc_vecs.size(), nullptr,
+                petsc_vecs.data(), &y);
   return la::PETScVector(y);
 }
 //-----------------------------------------------------------------------------

@@ -88,7 +88,7 @@ void HDF5Interface::flush_file(const hid_t hdf5_file_handle)
 std::string HDF5Interface::get_filename(hid_t hdf5_file_handle)
 {
   // Get length of filename
-  const ssize_t length = H5Fget_name(hdf5_file_handle, NULL, 0);
+  const ssize_t length = H5Fget_name(hdf5_file_handle, nullptr, 0);
   if (length < 0)
     throw std::runtime_error("Failed to get HDF5 filename from handle.");
 
@@ -382,7 +382,7 @@ HDF5Interface::get_dataset_shape(const hid_t hdf5_file_handle,
 
   // Get size in each dimension
   std::vector<hsize_t> size(rank);
-  const int ndims = H5Sget_simple_extent_dims(space, size.data(), NULL);
+  const int ndims = H5Sget_simple_extent_dims(space, size.data(), nullptr);
   if (ndims < 0)
     throw std::runtime_error("Failed to get dimensionality of dataspace");
   assert(ndims == rank);

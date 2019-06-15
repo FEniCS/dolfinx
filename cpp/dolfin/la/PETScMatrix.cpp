@@ -110,7 +110,7 @@ void PETScMatrix::set_options_prefix(std::string options_prefix)
 std::string PETScMatrix::get_options_prefix() const
 {
   assert(_matA);
-  const char* prefix = NULL;
+  const char* prefix = nullptr;
   MatGetOptionsPrefix(_matA, &prefix);
   return std::string(prefix);
 }

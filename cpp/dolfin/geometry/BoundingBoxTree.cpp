@@ -117,7 +117,7 @@ BoundingBoxTree::compute_collisions(const Eigen::Vector3d& point) const
 {
   // Call recursive find function
   std::vector<unsigned int> entities;
-  _compute_collisions_point(*this, point, num_bboxes() - 1, entities, NULL);
+  _compute_collisions_point(*this, point, num_bboxes() - 1, entities, nullptr);
 
   return entities;
 }
