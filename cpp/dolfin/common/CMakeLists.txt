@@ -17,7 +17,6 @@ set(HEADERS
   types.h
   UniqueIdGenerator.h
   utils.h
-  Variable.h
   PARENT_SCOPE)
 
 set(SOURCES
@@ -34,5 +33,4 @@ set(SOURCES
   timing.cpp
   UniqueIdGenerator.cpp
   utils.cpp
-  Variable.cpp
   PARENT_SCOPE)

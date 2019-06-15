@@ -1,13 +1,13 @@
-// Copyright (C) 2008-2009 Anders Logg
+// Copyright (C) 2008-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "FunctionSpace.h"
-#include "Expression.h"
 #include "Function.h"
 #include <dolfin/common/IndexMap.h>
+#include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -25,24 +25,14 @@ using namespace dolfin::function;
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::GenericDofMap> dofmap)
-    : _mesh(mesh), _element(element), _dofmap(dofmap), _root_space_id(id())
+    : id(common::UniqueIdGenerator::id()), _mesh(mesh), _element(element),
+      _dofmap(dofmap), _root_space_id(id)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh)
-    : _mesh(mesh), _root_space_id(id())
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(const FunctionSpace& V)
-{
-  // Assign data (will be shared)
-  *this = V;
-}
-//-----------------------------------------------------------------------------
-FunctionSpace::~FunctionSpace()
+    : id(common::UniqueIdGenerator::id()), _mesh(mesh), _root_space_id(id)
 {
   // Do nothing
 }
@@ -54,25 +44,11 @@ void FunctionSpace::attach(std::shared_ptr<const fem::FiniteElement> element,
   _dofmap = dofmap;
 }
 //-----------------------------------------------------------------------------
-const FunctionSpace& FunctionSpace::operator=(const FunctionSpace& V)
-{
-  // Assign data (will be shared)
-  _mesh = V._mesh;
-  _element = V._element;
-  _dofmap = V._dofmap;
-  _component = V._component;
-
-  // Call assignment operator for base class
-  common::Variable::operator=(V);
-
-  return *this;
-}
-//-----------------------------------------------------------------------------
 bool FunctionSpace::operator==(const FunctionSpace& V) const
 {
   // Compare pointers to shared objects
-  return _element.get() == V._element.get() && _mesh.get() == V._mesh.get()
-         && _dofmap.get() == V._dofmap.get();
+  return _element.get() == V._element.get() and _mesh.get() == V._mesh.get()
+         and _dofmap.get() == V._dofmap.get();
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator!=(const FunctionSpace& V) const
@@ -157,54 +133,6 @@ void FunctionSpace::interpolate_from_any(
   }
 }
 //-----------------------------------------------------------------------------
-void FunctionSpace::interpolate_from_any(
-    Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-        expansion_coefficients,
-    const Expression& expr) const
-{
-  assert(_mesh);
-
-  const int gdim = _mesh->geometry().dim();
-
-  // Initialize local arrays
-  std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
-
-  // Prepare cell geometry
-  const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
-      = connectivity_g.entity_positions();
-  const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
-      = connectivity_g.connections();
-  // FIXME: Add proper interface for num coordinate dofs
-  const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-      x_g
-      = _mesh->geometry().points();
-
-  // Iterate over mesh and interpolate on each cell
-  EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);;
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
-  {
-    // Get cell coordinate dofs
-    const int cell_index = cell.index();
-    for (int i = 0; i < num_dofs_g; ++i)
-      for (int j = 0; j < gdim; ++j)
-        coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
-
-    // Restrict function to cell
-    expr.restrict(cell_coefficients.data(), *_element, cell, coordinate_dofs);
-
-    // Tabulate dofs
-    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
-        = _dofmap->cell_dofs(cell.index());
-
-    // Copy dofs to vector
-    for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
-      expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
-  }
-}
-//-----------------------------------------------------------------------------
 void FunctionSpace::interpolate(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
@@ -225,7 +153,7 @@ void FunctionSpace::interpolate(
   }
 
   // Check that function dimension match
-  for (std::size_t i = 0; i < _element->value_rank(); ++i)
+  for (int i = 0; i < _element->value_rank(); ++i)
   {
     if (_element->value_dimension(i) != v.value_dimension(i))
     {
@@ -246,40 +174,73 @@ void FunctionSpace::interpolate(
 void FunctionSpace::interpolate(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
         expansion_coefficients,
-    const Expression& expr) const
+    const std::function<void(
+        Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                Eigen::RowMajor>>,
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                            Eigen::Dynamic, Eigen::RowMajor>>)>&
+        f) const
 {
   assert(_mesh);
   assert(_element);
   assert(_dofmap);
 
-  // Check that function ranks match
-  if (_element->value_rank() != expr.value_rank())
-  {
-    throw std::runtime_error("Rank of Expression "
-                             + std::to_string(expr.value_rank())
-                             + " doesn't match the target space.");
-  }
+  // Note: the following does not exploit any block structure, e.g. for
+  // vector Lagrange, which leads to a lot of redundant evaluations.
+  // E.g., for a vector Lagrange element the vector-valued expression is
+  // evaluted three times at the some point.
 
-  // Check that function dims match
-  for (std::size_t i = 0; i < _element->value_rank(); ++i)
+  // Build list of points at which to evaluate the Expression
+  EigenRowArrayXXd x = tabulate_dof_coordinates();
+
+  // Evaluate Expression at points
+  // std::vector<int> vshape = e.value_shape();
+  std::vector<int> vshape(_element->value_rank(), 1);
+  for (std::size_t i = 0; i < vshape.size(); ++i)
+    vshape[i] = _element->value_dimension(i);
+  const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
+                                         1, std::multiplies<>());
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values(x.rows(), value_size);
+  assert(values.rows() == x.rows());
+  f(values, x);
+
+  // FIXME: Dummy coordinate dofs - should limit the interpolation to
+  // Lagrange, in which case we don't need coordinate dofs in
+  // FiniteElement::transform_values.
+  EigenRowArrayXXd coordinate_dofs;
+
+  // FIXME: It would be far more elegant and efficient to avoid the need
+  // to loop over cells to set the expansion corfficients. Would be much
+  // better if the expansion coefficients could be passed straight into
+  // Expresion::eval.
+
+  // Loop over cells
+  const int ndofs = _element->space_dimension();
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values_cell(ndofs, value_size);
+  std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
-    if (_element->value_dimension(i) != expr.value_dimension(i))
+    // Get dofmap for cell
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
+        = _dofmap->cell_dofs(cell.index());
+    for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
     {
-      throw std::runtime_error(
-          "Dimensions of Expression doesn't match the target space.");
+      for (Eigen::Index j = 0; j < value_size; ++j)
+        values_cell(i, j) = values(cell_dofs[i], j);
+
+      // FIXME: For vector-valued Lagrange, this function 'throws away'
+      // the redundant expression evaluations. It should really be made
+      // not necessary.
+      _element->transform_values(cell_coefficients.data(), values_cell,
+                                 coordinate_dofs);
+
+      // Copy into expansion coefficient array
+      for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
+        expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
     }
   }
-
-  // Initialize vector of expansion coefficients
-  // if (expansion_coefficients.size() != _dofmap->global_dimension())
-  // {
-  //   throw std::runtime_error("Cannot interpolate function into function
-  //   space. "
-  //                            "Wrong size of vector");
-  // }
-  // VecSet(expansion_coefficients.vec(), 0.0);
-
-  interpolate_from_any(expansion_coefficients, expr);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
@@ -360,9 +321,13 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   }
 
   // Get local size
+  // Get local size
   assert(_dofmap);
-  std::size_t bs = _dofmap->index_map()->block_size();
-  std::size_t local_size = bs * _dofmap->index_map()->size_local();
+  std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map();
+  assert(index_map);
+  std::size_t bs = index_map->block_size();
+  std::size_t local_size
+      = bs * (index_map->size_local() + index_map->num_ghosts());
 
   // Dof coordinate on reference element
   const EigenRowArrayXXd& X = _element->dof_reference_coordinates();

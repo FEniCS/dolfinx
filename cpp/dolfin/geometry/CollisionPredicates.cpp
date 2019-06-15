@@ -100,7 +100,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
   const std::int32_t* v1 = entity_1.entities(0);
   const std::size_t d0 = entity_0.dim();
   const std::size_t d1 = entity_1.dim();
-  const std::size_t gdim = g0.dim();
+  const int gdim = g0.dim();
   assert(gdim == g1.dim());
 
   // Pick correct specialized implementation

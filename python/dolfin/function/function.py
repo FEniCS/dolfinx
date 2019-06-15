@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2009-2018 Johan Hake, Chris N. Richardson and Garth N. Wells
+# Copyright (C) 2009-2019 Johan Hake, Chris N. Richardson and Garth N. Wells
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
@@ -7,6 +7,7 @@
 """Finite element functions"""
 
 import typing
+from functools import singledispatch
 
 import numpy as np
 from petsc4py import PETSc
@@ -40,9 +41,9 @@ class Function(ufl.Coefficient):
 
         # Set name
         if name is None:
-            self.rename("f_{}".format(self.count()))
+            self.name = "f_{}".format(self.count())
         else:
-            self.rename(name)
+            self.name = name
 
         # Store DOLFIN FunctionSpace object
         self._V = V
@@ -51,10 +52,10 @@ class Function(ufl.Coefficient):
         """Return the FunctionSpace"""
         return self._V
 
-    def value_rank(self):
+    def value_rank(self) -> int:
         return self._cpp_object.value_rank()
 
-    def value_dimension(self, i):
+    def value_dimension(self, i) -> int:
         return self._cpp_object.value_dimension(i)
 
     def value_shape(self):
@@ -107,11 +108,21 @@ class Function(ufl.Coefficient):
     def eval(self, u, x, bb_tree: cpp.geometry.BoundingBoxTree):
         return self._cpp_object.eval(u, x, bb_tree)
 
-    def interpolate(self, u):
-        try:
-            self._cpp_object.interpolate(u._cpp_object)
-        except AttributeError:
-            self._cpp_object.interpolate(u)
+    def interpolate(self, u) -> None:
+        """Interpolate an expression"""
+
+        @singledispatch
+        def _interpolate(u):
+            try:
+                self._cpp_object.interpolate(u)
+            except TypeError:
+                self._cpp_object.interpolate(u._cpp_object)
+
+        @_interpolate.register(int)
+        def _(u, verbose=False):
+            self._cpp_object.interpolate_ptr(u)
+
+        _interpolate(u)
 
     def compute_point_values(self, mesh=None):
         if mesh is not None:
@@ -132,12 +143,8 @@ class Function(ufl.Coefficient):
         return self._cpp_object.vector()
 
     def name(self) -> str:
-        """Get the name of the Function."""
-        return self._cpp_object.name()
-
-    def rename(self, name: str):
-        """Re-name Function."""
-        self._cpp_object.rename(name)
+        """Return name of the Function."""
+        return self._cpp_object.name
 
     @property
     def id(self) -> int:
@@ -146,7 +153,7 @@ class Function(ufl.Coefficient):
 
     def __str__(self):
         """Return a pretty print representation of it self."""
-        return self.name()
+        return self.name
 
     def sub(self, i: int):
         """Return a sub function.

@@ -73,7 +73,7 @@ class HDF5File;
 // template argument and (ii) parts that do not. Same applies to
 // MeshValueCollection.
 
-class XDMFFile : public common::Variable
+class XDMFFile
 {
 public:
   /// File encoding type

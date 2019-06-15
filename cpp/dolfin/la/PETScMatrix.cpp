@@ -32,11 +32,6 @@ PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
   // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::~PETScMatrix()
-{
-  // Do nothing (PETSc matrix is destroyed in base class)
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::set(const PetscScalar* block, std::size_t m,
                       const PetscInt* rows, std::size_t n, const PetscInt* cols)
 {
