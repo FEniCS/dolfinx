@@ -88,8 +88,10 @@ def ufl_domain(self):
     return self._ufl_domain
 
 
+# FIXME: find a way to remove this from public interface. Use gdim =
+# mesh.geometry.dim instead
 def geometric_dimension(self):
-    """Returns geometric dimension for ufl interface"""
+    """Returns geometric dimension for UFL interface"""
     return self.geometry.dim
 
 
