@@ -112,8 +112,8 @@
 # :py:mod:`dolfin` module are imported::
 
 import os
-import random
 
+import numpy as np
 from petsc4py import PETSc
 
 from dolfin import (MPI, CellType, Function, FunctionSpace, NewtonSolver,
@@ -232,7 +232,7 @@ c0, mu0 = split(u0)
 
 
 def u_init(values, x):
-    values[:, 0] = 0.63 + 0.02 * (0.5 - random.random())
+    values[:, 0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[0]))
     values[:, 1] = 0.0
 
 
@@ -326,7 +326,8 @@ u0.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FOR
 
 while (t < T):
     t += dt
-    solver.solve(problem, u.vector())
+    r = solver.solve(problem, u.vector())
+    print("Step, num iterations:", int(t / dt), r[0])
     u.vector().copy(result=u0.vector())
     file.write(u.sub(0), t)
 
