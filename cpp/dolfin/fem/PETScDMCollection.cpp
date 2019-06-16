@@ -798,7 +798,7 @@ PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
   PetscObjectReference((PetscObject)*mat);
 
   // Set optional vector to NULL
-  *vec = NULL;
+  *vec = nullptr;
 
   return 0;
 }

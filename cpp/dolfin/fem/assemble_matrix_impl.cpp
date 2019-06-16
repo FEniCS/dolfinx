@@ -115,6 +115,7 @@ void fem::impl::assemble_cells(
 
   // Iterate over active cells
   PetscErrorCode ierr;
+  const int orientation = 0;
   for (auto& cell_index : active_cells)
   {
     const mesh::Cell cell(mesh, cell_index);
@@ -136,7 +137,8 @@ void fem::impl::assemble_cells(
 
     // Tabulate tensor
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
-    kernel(Ae.data(), coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
+    kernel(Ae.data(), coeff_array.data(), coordinate_dofs.data(), nullptr,
+           &orientation);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -217,7 +219,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
-    const int orient = 1;
+    const int orient = 0;
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
@@ -322,7 +324,7 @@ void fem::impl::assemble_interior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
-    const int orient[2] = {1, 1};
+    const int orient[2] = {0, 0};
 
     // Get cell vertex coordinates
     const int cell_index0 = cell0.index();
