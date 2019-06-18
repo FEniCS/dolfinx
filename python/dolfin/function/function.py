@@ -19,7 +19,7 @@ from dolfin.function import functionspace
 
 class Function(ufl.Coefficient):
     """A finite element function that is represented by a function
-    space (domain, element and dofmap) and a vetor holding the
+    space (domain, element and dofmap) and a vector holding the
     degrees-of-freedom
 
     """
