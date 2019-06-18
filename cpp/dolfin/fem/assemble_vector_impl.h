@@ -47,7 +47,7 @@ void assemble_cells(
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& kernel,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets);
 
 /// Execute kernel over cells and accumulate result in vector
@@ -57,7 +57,7 @@ void assemble_exterior_facets(
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets);
 
 /// Assemble linear form interior facet integrals into an Eigen vector
@@ -67,7 +67,7 @@ void assemble_interior_facets(
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets);
 
 

@@ -52,7 +52,7 @@ void assemble_cells(
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int *, const int*)>& kernel,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets);
 
 /// Execute kernel over exterior facets and  accumulate result in Mat
@@ -63,7 +63,7 @@ void assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets);
 
 void assemble_interior_facets(
@@ -73,7 +73,7 @@ void assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets);
 
 } // namespace impl
