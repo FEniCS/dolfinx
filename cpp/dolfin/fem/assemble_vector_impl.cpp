@@ -355,7 +355,7 @@ void fem::impl::assemble_cells(
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& kernel,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -414,7 +414,7 @@ void fem::impl::assemble_exterior_facets(
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -491,7 +491,7 @@ void fem::impl::assemble_interior_facets(
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
