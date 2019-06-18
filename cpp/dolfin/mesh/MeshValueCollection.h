@@ -10,7 +10,6 @@
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
-#include <dolfin/common/Variable.h>
 #include <map>
 #include <memory>
 #include <utility>
@@ -30,7 +29,7 @@ namespace mesh
 /// means that data may be stored robustly to file.
 
 template <typename T>
-class MeshValueCollection : public common::Variable
+class MeshValueCollection
 {
 public:
   /// Copy constructor
@@ -162,6 +161,9 @@ public:
   ///         An informal representation.
   std::string str(bool verbose) const;
 
+  /// Name
+  std::string name = "f";
+
 private:
   // Associated mesh
   std::shared_ptr<const Mesh> _mesh;
@@ -179,7 +181,7 @@ private:
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
                                             std::size_t dim)
-    : common::Variable("m"), _mesh(mesh), _dim(dim)
+    : _mesh(mesh), _dim(dim)
 {
   // Do nothing
 }
@@ -187,8 +189,7 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
     const MeshFunction<T>& mesh_function)
-    : common::Variable("m"), _mesh(mesh_function.mesh()),
-      _dim(mesh_function.dim())
+    : _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
 {
   assert(_mesh);
   const std::size_t D = _mesh->topology().dim();

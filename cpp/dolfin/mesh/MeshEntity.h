@@ -185,7 +185,7 @@ public:
   ///
   /// @return     std::size_t
   ///         The local index of given entity.
-  std::size_t index(const MeshEntity& entity) const;
+  int index(const MeshEntity& entity) const;
 
   /// Compute midpoint of cell
   ///
@@ -235,7 +235,6 @@ public:
   ///    Owning process
   std::uint32_t owner() const;
 
-  // Note: Not a subclass of Variable for efficiency!
   /// Return informal string representation (pretty-print)
   ///
   /// @param      verbose (bool)

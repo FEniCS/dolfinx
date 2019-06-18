@@ -51,7 +51,7 @@ void assemble_cells(
     int num_dofs_per_cell1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int)>& kernel,
+                             const int *, const int*)>& kernel,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets);
 
@@ -62,7 +62,17 @@ void assemble_exterior_facets(
     const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                             int, int)>& fn,
+                             const int*, const int*)>& fn,
+    std::vector<const function::Function*> coefficients,
+    const std::vector<int>& offsets);
+
+void assemble_interior_facets(
+    Mat A, const mesh::Mesh& mesh,
+    const std::vector<std::int32_t>& active_facets,
+    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
+    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                             const int*, const int*)>& fn,
     std::vector<const function::Function*> coefficients,
     const std::vector<int>& offsets);
 

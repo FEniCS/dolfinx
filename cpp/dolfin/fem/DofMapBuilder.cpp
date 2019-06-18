@@ -332,16 +332,16 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
     entity_indices_global[d].resize(mesh.type().num_entities(d));
   }
 
+  // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
+  const std::vector<std::vector<std::set<int>>>& entity_dofs
+      = element_dof_layout.entity_dofs();
+
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     // Get local (process) and global cell entity indices
     get_cell_entities(entity_indices_local, entity_indices_global, cell,
                       needs_entities);
-
-    // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
-    const std::vector<std::vector<std::set<int>>>& entity_dofs
-        = element_dof_layout.entity_dofs();
 
     // Iterate over topological dimensions
     std::int32_t offset_local = 0;
@@ -662,9 +662,9 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 
   const int D = mesh.topology().dim();
 
-  // Build a simple dofmap based on mesh entity numbering.  Returns:
+  // Build a simple dofmap based on mesh entity numbering. Returns:
   //  - dofmap (local indices)
-  //  - local-to-global dof index map)
+  //  - local-to-global dof index map
   DofMapStructure node_graph0 = build_basic_dofmap(mesh, element_dof_layout);
 
   // Compute global dofmap dimension
@@ -674,9 +674,6 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
     const std::int64_t n = mesh.num_entities_global(d);
     global_dimension += n * element_dof_layout.num_entity_dofs(d);
   }
-
-  // Re-order and switch to local indexing in dofmap when distributed
-  // for process locality and set local_range
 
   // Mark shared and non-shared nodes. Boundary nodes are assigned a
   // random positive integer, interior nodes are marked as -1, interior
@@ -692,11 +689,10 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // (b) owned and shared nodes (and owned and un-owned):
   //    -1: unowned, 0: owned and shared, 1: owned and not shared;
   // (c) map from shared node to sharing processes; and
-  // (d) set of all processes that share dofs with this process
+  std::int32_t num_owned_nodes;
   std::vector<ownership> node_ownership0;
   std::unordered_map<std::int32_t, std::vector<std::int32_t>>
       shared_node_to_processes0;
-  std::int32_t num_owned_nodes;
   std::set<std::int32_t> neighbouring_procs;
   std::tie(num_owned_nodes, node_ownership0, shared_node_to_processes0)
       = compute_ownership(node_graph0, shared_nodes, mesh, global_dimension);

@@ -158,7 +158,8 @@ void compute_physical_coordinates(double* x, int nrows, const double* X,
 
 void tabulate_tensor_bilinear(ufc_scalar_t* A, const ufc_scalar_t* w,
                               const double* coordinate_dofs,
-                              int cell_orientation)
+                              const int* entity_index,
+                              const int* cell_orientation)
 {
   const double J_c0 = -coordinate_dofs[0] + coordinate_dofs[2];
   const double J_c3 = -coordinate_dofs[1] + coordinate_dofs[5];
@@ -181,7 +182,9 @@ void tabulate_tensor_bilinear(ufc_scalar_t* A, const ufc_scalar_t* w,
 }
 
 void tabulate_tensor_linear(ufc_scalar_t* A, const ufc_scalar_t* w,
-                            const double* coordinate_dofs, int cell_orientation)
+                            const double* coordinate_dofs,
+                            const int* entity_index,
+                            const int* cell_orientation)
 {
   // Quadrature rules
   static const ufc_scalar_t weights3[3]
@@ -227,7 +230,8 @@ void tabulate_tensor_linear(ufc_scalar_t* A, const ufc_scalar_t* w,
 void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
                                            const ufc_scalar_t* w,
                                            const double* coordinate_dofs,
-                                           int facet, int cell_orientation)
+                                           const int* facet,
+                                           const int* cell_orientation)
 {
   // Precomputed values of basis functions and precomputations
   // FE* dimensions: [entities][points][dofs]
@@ -250,12 +254,12 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
       = {{-1.0, 1.0}, {0.0, 1.0}, {1.0, 0.0}};
 
   ufc_scalar_t sp[10];
-  sp[0] = J_c0 * triangle_reference_facet_jacobian[facet][0];
-  sp[1] = J_c1 * triangle_reference_facet_jacobian[facet][1];
+  sp[0] = J_c0 * triangle_reference_facet_jacobian[facet[0]][0];
+  sp[1] = J_c1 * triangle_reference_facet_jacobian[facet[0]][1];
   sp[2] = sp[0] + sp[1];
   sp[3] = sp[2] * sp[2];
-  sp[4] = triangle_reference_facet_jacobian[facet][0] * J_c2;
-  sp[5] = triangle_reference_facet_jacobian[facet][1] * J_c3;
+  sp[4] = triangle_reference_facet_jacobian[facet[0]][0] * J_c2;
+  sp[5] = triangle_reference_facet_jacobian[facet[0]][1] * J_c3;
   sp[6] = sp[4] + sp[5];
   sp[7] = sp[6] * sp[6];
   sp[8] = sp[3] + sp[7];
@@ -268,49 +272,15 @@ void tabulate_tensor_linear_exterior_facet(ufc_scalar_t* A,
     // Unstructured varying computations for num_points=2
     ufc_scalar_t w1 = 0.0;
     for (int ic = 0; ic < 3; ++ic)
-      w1 += w[3 + ic] * FE3_C0_F_Q2[facet][iq][ic];
+      w1 += w[3 + ic] * FE3_C0_F_Q2[facet[0]][iq][ic];
 
     const ufc_scalar_t fw0 = sp[9] * w1 * 0.5;
     for (int i = 0; i < 3; ++i)
-      BF0[i] += fw0 * FE3_C0_F_Q2[facet][iq][i];
+      BF0[i] += fw0 * FE3_C0_F_Q2[facet[0]][iq][i];
   }
   for (int i = 0; i < 3; ++i)
     A[i] = BF0[i];
 }
-
-// Source term (right-hand side)
-class Source : public function::Expression
-{
-public:
-  Source() : function::Expression({}) {}
-  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                values,
-            Eigen::Ref<const EigenRowArrayXXd> x) const
-  {
-    for (unsigned int i = 0; i < x.rows(); ++i)
-    {
-      double dx = x(i, 0) - 0.5;
-      double dy = x(i, 1) - 0.5;
-      values(i, 0) = 10 * exp(-(dx * dx + dy * dy) / 0.02);
-    }
-  }
-};
-
-// Normal derivative (Neumann boundary condition)
-class dUdN : public function::Expression
-{
-public:
-  dUdN() : function::Expression({}) {}
-  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                values,
-            Eigen::Ref<const EigenRowArrayXXd> x) const
-  {
-    for (unsigned int i = 0; i != x.rows(); ++i)
-      values(i, 0) = sin(5 * x(i, 0));
-  }
-};
 
 // The ``DirichletBoundary`` is derived from the :cpp:class:`SubDomain`
 // class and defines the part of the boundary to which the Dirichlet
@@ -331,8 +301,6 @@ class DirichletBoundary : public mesh::SubDomain
   }
 };
 
-// Inside the ``main`` function, we begin by defining a mesh of the
-// domain.
 int main(int argc, char* argv[])
 {
   common::SubSystemsManager::init_logging(argc, argv);
@@ -381,8 +349,6 @@ int main(int argc, char* argv[])
   L->register_tabulate_tensor_exterior_facet(
       -1, tabulate_tensor_linear_exterior_facet);
 
-  auto f_expr = Source();
-  auto g_expr = dUdN();
   auto f = std::make_shared<function::Function>(V);
   auto g = std::make_shared<function::Function>(V);
 
@@ -393,8 +359,12 @@ int main(int argc, char* argv[])
       LinearTriangleCoordinateMap::compute_reference_geometry);
   mesh->geometry().coord_mapping = cmap;
 
-  f->interpolate(f_expr);
-  g->interpolate(g_expr);
+  f->interpolate([](auto values, auto x) {
+    auto dx = Eigen::square(x - 0.5);
+    values = 10.0 * Eigen::exp(-(dx.col(0) + dx.col(1)) / 0.02);
+  });
+  g->interpolate(
+      [](auto values, auto x) { values = Eigen::sin(5 * x.col(0)); });
   L->set_coefficients({{0, f}, {1, g}});
 
   // Compute solution

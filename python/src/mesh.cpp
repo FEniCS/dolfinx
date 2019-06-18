@@ -5,10 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include <cfloat>
-#include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/function/Expression.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Connectivity.h>
@@ -75,24 +73,22 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::CoordinateDofs,
              std::shared_ptr<dolfin::mesh::CoordinateDofs>>(
       m, "CoordinateDofs", "CoordinateDofs object")
-      .def("entity_points",
-           [](const dolfin::mesh::CoordinateDofs& self, std::size_t dim) {
-             const dolfin::mesh::Connectivity& connectivity
-                 = self.entity_points(dim);
-             Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-                 connections = connectivity.connections();
-             const int num_entities = connectivity.entity_positions().size();
+      .def("entity_points", [](const dolfin::mesh::CoordinateDofs& self) {
+        const dolfin::mesh::Connectivity& connectivity = self.entity_points();
+        Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+            connections = connectivity.connections();
+        const int num_entities = connectivity.entity_positions().size() - 1;
 
-             // FIXME: mesh::CoordinateDofs should know its dimension
-             // (entity_size) to handle empty case on a process.
-             int entity_size = 0;
-             if (num_entities > 0)
-             {
-               assert(connections.size() % num_entities == 0);
-               entity_size = connections.size() / num_entities;
-             }
-             return py::array({num_entities, entity_size}, connections.data());
-           });
+        // FIXME: mesh::CoordinateDofs should know its dimension
+        // (entity_size) to handle empty case on a process.
+        int entity_size = 0;
+        if (num_entities > 0)
+        {
+          assert(connections.size() % num_entities == 0);
+          entity_size = connections.size() / num_entities;
+        }
+        return py::array({num_entities, entity_size}, connections.data());
+      });
 
   // dolfin::mesh::Geometry class
   py::class_<dolfin::mesh::Geometry, std::shared_ptr<dolfin::mesh::Geometry>>(
@@ -162,7 +158,9 @@ void mesh(py::module& m)
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")
-      .def("coordinate_dofs", &dolfin::mesh::Mesh::coordinate_dofs)
+      .def(
+          "coordinate_dofs",
+          py::overload_cast<>(&dolfin::mesh::Mesh::coordinate_dofs, py::const_))
       .def("degree", &dolfin::mesh::Mesh::degree)
       .def("hash", &dolfin::mesh::Mesh::hash)
       .def("hmax", &dolfin::mesh::Mesh::hmax)
@@ -350,9 +348,8 @@ void mesh(py::module& m)
 // dolfin::mesh::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME)                                \
   py::class_<dolfin::mesh::MeshFunction<SCALAR>,                               \
-             std::shared_ptr<dolfin::mesh::MeshFunction<SCALAR>>,              \
-             dolfin::common::Variable>(m, "MeshFunction" #SCALAR_NAME,         \
-                                       "DOLFIN MeshFunction object")           \
+             std::shared_ptr<dolfin::mesh::MeshFunction<SCALAR>>>(             \
+      m, "MeshFunction" #SCALAR_NAME, "DOLFIN MeshFunction object")            \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t,    \
                     SCALAR>())                                                 \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>,                 \
@@ -376,7 +373,11 @@ void mesh(py::module& m)
       .def("__len__", &dolfin::mesh::MeshFunction<SCALAR>::size)               \
       .def_property_readonly("dim", &dolfin::mesh::MeshFunction<SCALAR>::dim)  \
       .def("size", &dolfin::mesh::MeshFunction<SCALAR>::size)                  \
-      .def("ufl_id", &dolfin::mesh::MeshFunction<SCALAR>::id)                  \
+      .def("ufl_id",                                                           \
+           [](const dolfin::mesh::MeshFunction<SCALAR>& self) {                \
+             return self.id;                                                   \
+           })                                                                  \
+      .def_readwrite("name", &dolfin::mesh::MeshFunction<SCALAR>::name)        \
       .def("mesh", &dolfin::mesh::MeshFunction<SCALAR>::mesh)                  \
       .def("set_values", &dolfin::mesh::MeshFunction<SCALAR>::set_values)      \
       .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR>& self,             \
@@ -398,10 +399,11 @@ void mesh(py::module& m)
 // dolfin::mesh::MeshValueCollection
 #define MESHVALUECOLLECTION_MACRO(SCALAR, SCALAR_NAME)                         \
   py::class_<dolfin::mesh::MeshValueCollection<SCALAR>,                        \
-             std::shared_ptr<dolfin::mesh::MeshValueCollection<SCALAR>>,       \
-             dolfin::common::Variable>(m, "MeshValueCollection_" #SCALAR_NAME, \
-                                       "DOLFIN MeshValueCollection object")    \
+             std::shared_ptr<dolfin::mesh::MeshValueCollection<SCALAR>>>(      \
+      m, "MeshValueCollection_" #SCALAR_NAME,                                  \
+      "DOLFIN MeshValueCollection object")                                     \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t>()) \
+      .def_readwrite("name", &dolfin::mesh::MeshValueCollection<SCALAR>::name) \
       .def_property_readonly("dim",                                            \
                              &dolfin::mesh::MeshValueCollection<SCALAR>::dim)  \
       .def("size", &dolfin::mesh::MeshValueCollection<SCALAR>::size)           \

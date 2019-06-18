@@ -5,13 +5,12 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Function.h"
-#include "Expression.h"
 #include "FunctionSpace.h"
 #include <algorithm>
 #include <cfloat>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/Variable.h>
+#include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -22,7 +21,6 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <unordered_map>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
@@ -62,7 +60,8 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
 
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V)
-    : common::Variable("u"), _function_space(V), _vector(create_vector(*V))
+    : id(common::UniqueIdGenerator::id()), _function_space(V),
+      _vector(create_vector(*V))
 {
   // Check that we don't have a subspace
   if (!V->component().empty())
@@ -73,7 +72,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V)
 }
 //-----------------------------------------------------------------------------
 Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
-    : _function_space(V), _vector(x)
+    : id(common::UniqueIdGenerator::id()), _function_space(V), _vector(x)
 {
   // We do not check for a subspace since this constructor is used for
   // creating subfunctions
@@ -155,9 +154,12 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   const mesh::Mesh& mesh = *_function_space->mesh();
 
   // Find the cell that contains x
+  const int gdim = x.cols();
+  Eigen::Vector3d point = Eigen::Vector3d::Zero();
   for (unsigned int i = 0; i < x.rows(); ++i)
   {
-    const Eigen::Vector3d point = x.row(i).matrix().transpose();
+    // Pad the input point to size 3 (bounding box requires 3d point)
+    point.head(gdim) = x.row(i);
 
     // Get index of first cell containing point
     unsigned int id = bb_tree.compute_first_entity_collision(point, mesh);
@@ -169,7 +171,6 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
       // allow without _allow_extrapolation
       std::pair<unsigned int, double> close
           = bb_tree.compute_closest_entity(point, mesh);
-
       if (close.second < 2.0 * DBL_EPSILON)
         id = close.first;
       else
@@ -222,15 +223,14 @@ void Function::eval(
   // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points(tdim);
+      = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
 
@@ -298,21 +298,26 @@ void Function::interpolate(const Function& v)
   _function_space->interpolate(x.x, v);
 }
 //-----------------------------------------------------------------------------
-void Function::interpolate(const Expression& e)
+void Function::interpolate(
+    const std::function<
+        void(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                     Eigen::Dynamic, Eigen::RowMajor>>,
+             const Eigen::Ref<const Eigen::Array<
+                 double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
+
 {
-  assert(_function_space);
   la::VecWrapper x(_vector.vec());
-  _function_space->interpolate(x.x, e);
+  _function_space->interpolate(x.x, f);
 }
 //-----------------------------------------------------------------------------
-std::size_t Function::value_rank() const
+int Function::value_rank() const
 {
   assert(_function_space);
   assert(_function_space->element());
   return _function_space->element()->value_rank();
 }
 //-----------------------------------------------------------------------------
-std::size_t Function::value_dimension(std::size_t i) const
+int Function::value_dimension(int i) const
 {
   assert(_function_space);
   assert(_function_space->element());
@@ -354,8 +359,8 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   assert(_function_space);
   assert(_function_space->mesh());
 
-  // Check that the mesh matches. Notice that the hash is only
-  // compared if the pointers are not matching.
+  // Check that the mesh matches. Notice that the hash is only compared
+  // if the pointers are not matching.
   if (&mesh != _function_space->mesh().get()
       and mesh.hash() != _function_space->mesh()->hash())
   {
@@ -371,21 +376,18 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
       point_values(mesh.geometry().num_points(), value_size_loc);
 
   const int gdim = mesh.topology().dim();
-  const int tdim = mesh.topology().dim();
-  const mesh::Connectivity& cell_dofs
-      = mesh.coordinate_dofs().entity_points(tdim);
+  const mesh::Connectivity& cell_dofs = mesh.coordinate_dofs().entity_points();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points(tdim);
+      = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
   // Interpolate point values on each cell (using last computed value
@@ -426,7 +428,7 @@ Function::compute_point_values() const
 std::size_t Function::value_size() const
 {
   std::size_t size = 1;
-  for (std::size_t i = 0; i < value_rank(); ++i)
+  for (int i = 0; i < value_rank(); ++i)
     size *= value_dimension(i);
   return size;
 }

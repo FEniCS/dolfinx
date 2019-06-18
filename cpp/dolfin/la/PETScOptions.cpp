@@ -21,14 +21,14 @@ void PETScOptions::clear(std::string option)
     option = '-' + option;
 
   PetscErrorCode ierr;
-  ierr = PetscOptionsClearValue(NULL, option.c_str());
+  ierr = PetscOptionsClearValue(nullptr, option.c_str());
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "PetscOptionsClearValue");
 }
 //-----------------------------------------------------------------------------
 void PETScOptions::clear()
 {
-  PetscErrorCode ierr = PetscOptionsClear(NULL);
+  PetscErrorCode ierr = PetscOptionsClear(nullptr);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "PetscOptionsClear");
 }

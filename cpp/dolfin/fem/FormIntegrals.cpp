@@ -20,274 +20,159 @@ FormIntegrals::FormIntegrals()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar*, const double*, int)>&
-FormIntegrals::get_tabulate_tensor_fn_cell(unsigned int i) const
+const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+                         const int*, const int*)>&
+FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
+                                            unsigned int i) const
 {
-  if (i > _tabulate_tensor_cell.size())
-    throw std::runtime_error("Invalid integral index");
+  int type_index = static_cast<int>(type);
+  const std::vector<struct FormIntegrals::Integral>& integrals
+      = _integrals[type_index];
 
-  return _tabulate_tensor_cell[i];
+  if (i > integrals.size())
+    throw std::runtime_error("Invalid integral index: " + std::to_string(i));
+
+  return integrals[i].tabulate;
 }
 //-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar*, const double*, int,
-                         int)>&
-FormIntegrals::get_tabulate_tensor_fn_exterior_facet(unsigned int i) const
+void FormIntegrals::register_tabulate_tensor(FormIntegrals::Type type, int i,
+                                             void (*fn)(PetscScalar*,
+                                                        const PetscScalar*,
+                                                        const double*,
+                                                        const int*, const int*))
 {
-  if (i > _tabulate_tensor_exterior_facet.size())
-    throw std::runtime_error("Invalid integral index");
+  const int type_index = static_cast<int>(type);
+  std::vector<struct FormIntegrals::Integral>& integrals
+      = _integrals[type_index];
 
-  return _tabulate_tensor_exterior_facet[i];
-}
-//-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar* w, const double*,
-                         const double*, int, int, int, int)>&
-FormIntegrals::get_tabulate_tensor_fn_interior_facet(unsigned int i) const
-{
-  if (i > _tabulate_tensor_interior_facet.size())
-    throw std::runtime_error("Invalid integral index");
-
-  return _tabulate_tensor_interior_facet[i];
-}
-//-----------------------------------------------------------------------------
-void FormIntegrals::register_tabulate_tensor_cell(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*, int))
-{
-  if (std::find(_cell_integral_ids.begin(), _cell_integral_ids.end(), i)
-      != _cell_integral_ids.end())
+  // Find insertion point
+  int pos = 0;
+  for (const auto& q : integrals)
   {
-    throw std::runtime_error("Integral with ID " + std::to_string(i)
-                             + " already exists");
+    if (q.id == i)
+    {
+      throw std::runtime_error("Integral with ID " + std::to_string(i)
+                               + " already exists");
+    }
+    else if (q.id > i)
+      break;
+    ++pos;
   }
 
-  // Find insertion position
-  int pos = std::distance(_cell_integral_ids.begin(),
-                          std::upper_bound(_cell_integral_ids.begin(),
-                                           _cell_integral_ids.end(), i));
+  // Create new Integral and insert
+  struct FormIntegrals::Integral new_integral
+      = {fn, i, std::vector<std::int32_t>()};
 
-  _cell_integral_ids.insert(_cell_integral_ids.begin() + pos, i);
-  _tabulate_tensor_cell.insert(_tabulate_tensor_cell.begin() + pos, fn);
-  _cell_integral_domains.insert(_cell_integral_domains.begin() + pos,
-                                std::vector<std::int32_t>());
-}
-//-----------------------------------------------------------------------------
-void FormIntegrals::register_tabulate_tensor_exterior_facet(
-    int i,
-    void (*fn)(PetscScalar*, const PetscScalar*, const double*, int, int))
-{
-
-  if (std::find(_exterior_facet_integral_ids.begin(),
-                _exterior_facet_integral_ids.end(), i)
-      != _exterior_facet_integral_ids.end())
-  {
-    throw std::runtime_error("Integral with ID " + std::to_string(i)
-                             + " already exists");
-  }
-
-  // Find insertion position
-  int pos
-      = std::distance(_exterior_facet_integral_ids.begin(),
-                      std::upper_bound(_exterior_facet_integral_ids.begin(),
-                                       _exterior_facet_integral_ids.end(), i));
-
-  _exterior_facet_integral_ids.insert(
-      _exterior_facet_integral_ids.begin() + pos, i);
-  _tabulate_tensor_exterior_facet.insert(
-      _tabulate_tensor_exterior_facet.begin() + pos, fn);
-  _exterior_facet_integral_domains.insert(
-      _exterior_facet_integral_domains.begin() + pos,
-      std::vector<std::int32_t>());
-}
-//-----------------------------------------------------------------------------
-void FormIntegrals::register_tabulate_tensor_interior_facet(
-    int i, void (*fn)(PetscScalar*, const PetscScalar* w, const double*,
-                      const double*, int, int, int, int))
-{
-  // At the moment, only accept one integral with index -1
-  if (i != -1)
-  {
-    throw std::runtime_error(
-        "Interior facet integral subdomain not supported. Under development.");
-  }
-
-  if (std::find(_interior_facet_integral_ids.begin(),
-                _interior_facet_integral_ids.end(), i)
-      != _interior_facet_integral_ids.end())
-  {
-    throw std::runtime_error("Integral with ID " + std::to_string(i)
-                             + " already exists");
-  }
-
-  // Find insertion position
-  int pos
-      = std::distance(_interior_facet_integral_ids.begin(),
-                      std::upper_bound(_interior_facet_integral_ids.begin(),
-                                       _interior_facet_integral_ids.end(), i));
-
-  _interior_facet_integral_ids.insert(
-      _interior_facet_integral_ids.begin() + pos, i);
-  _tabulate_tensor_interior_facet.insert(
-      _tabulate_tensor_interior_facet.begin() + pos, fn);
-  _interior_facet_integral_domains.insert(
-      _interior_facet_integral_domains.begin() + pos,
-      std::vector<std::int32_t>());
+  integrals.insert(integrals.begin() + pos, new_integral);
 }
 //-----------------------------------------------------------------------------
 int FormIntegrals::num_integrals(FormIntegrals::Type type) const
 {
-  switch (type)
-  {
-  case Type::cell:
-    return _tabulate_tensor_cell.size();
-  case Type::exterior_facet:
-    return _tabulate_tensor_exterior_facet.size();
-  case Type::interior_facet:
-    return _tabulate_tensor_interior_facet.size();
-  default:
-    throw std::runtime_error("FormIntegral type not supported.");
-  }
-
-  return 0;
+  int type_index = static_cast<int>(type);
+  return _integrals[type_index].size();
 }
 //-----------------------------------------------------------------------------
-const std::vector<int>&
-FormIntegrals::integral_ids(FormIntegrals::Type type) const
+std::vector<int> FormIntegrals::integral_ids(FormIntegrals::Type type) const
 {
-  switch (type)
-  {
-  case Type::cell:
-    return _cell_integral_ids;
-  case Type::exterior_facet:
-    return _exterior_facet_integral_ids;
-  case Type::interior_facet:
-    return _interior_facet_integral_ids;
-  default:
-    throw std::runtime_error("FormIntegral type not supported.");
-  }
+  std::vector<int> ids;
+  int type_index = static_cast<int>(type);
+  for (auto& integral : _integrals[type_index])
+    ids.push_back(integral.id);
 
-  return _cell_integral_ids;
+  return ids;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::int32_t>&
 FormIntegrals::integral_domains(FormIntegrals::Type type, unsigned int i) const
 {
-  switch (type)
-  {
-  case Type::cell:
-    if (i >= _cell_integral_domains.size())
-      throw std::runtime_error("Invalid cell integral:" + std::to_string(i));
-    return _cell_integral_domains[i];
-  case Type::exterior_facet:
-    return _exterior_facet_integral_domains[i];
-  case Type::interior_facet:
-    return _interior_facet_integral_domains[i];
-  default:
-    throw std::runtime_error("FormIntegral type not supported.");
-  }
-
-  return _cell_integral_domains[i];
+  int type_index = static_cast<int>(type);
+  if (i >= _integrals[type_index].size())
+    throw std::runtime_error("Invalid integral:" + std::to_string(i));
+  return _integrals[type_index][i].active_entities;
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_domains(FormIntegrals::Type type,
                                 const mesh::MeshFunction<std::size_t>& marker)
 {
+  int type_index = static_cast<int>(type);
+  std::vector<struct FormIntegrals::Integral>& integrals
+      = _integrals[type_index];
+
+  if (integrals.size() == 0)
+    return;
+
   std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
 
-  if (type == Type::cell)
+  int tdim = mesh->topology().dim();
+  if (type == Type::exterior_facet or type == Type::interior_facet)
+    --tdim;
+  else if (type == Type::vertex)
+    tdim = 1;
+
+  if (tdim != marker.dim())
   {
-    if (mesh->topology().dim() != marker.dim())
-    {
-      throw std::runtime_error("Invalid MeshFunction dimension:"
-                               + std::to_string(marker.dim()));
-    }
+    throw std::runtime_error("Invalid MeshFunction dimension:"
+                             + std::to_string(marker.dim()));
+  }
 
-    if (_cell_integral_ids.size() == 0)
-      throw std::runtime_error("No cell integrals");
-
-    // Create a reverse map
-    std::map<int, int> cell_id_to_integral;
-    for (unsigned int i = 0; i < _cell_integral_ids.size(); ++i)
+  // Create a reverse map
+  std::map<int, int> id_to_integral;
+  for (unsigned int i = 0; i < integrals.size(); ++i)
+  {
+    if (integrals[i].id != -1)
     {
-      if (_cell_integral_ids[i] != -1)
-      {
-        _cell_integral_domains[i].clear();
-        cell_id_to_integral[_cell_integral_ids[i]] = i;
-      }
-    }
-
-    for (unsigned int i = 0; i < marker.size(); ++i)
-    {
-      auto it = cell_id_to_integral.find(marker[i]);
-      if (it != cell_id_to_integral.end())
-        _cell_integral_domains[it->second].push_back(i);
+      integrals[i].active_entities.clear();
+      id_to_integral[integrals[i].id] = i;
     }
   }
-  else if (type == Type::exterior_facet)
+
+  for (unsigned int i = 0; i < marker.size(); ++i)
   {
-    if (mesh->topology().dim() - 1 != marker.dim())
-    {
-      throw std::runtime_error("Invalid MeshFunction dimension:"
-                               + std::to_string(marker.dim()));
-    }
-
-    if (_exterior_facet_integral_ids.size() == 0)
-      throw std::runtime_error("No exterior facet integrals");
-
-    // Create a reverse map
-    std::map<int, int> facet_id_to_integral;
-    for (unsigned int i = 0; i < _exterior_facet_integral_ids.size(); ++i)
-    {
-      if (_exterior_facet_integral_ids[i] != -1)
-      {
-        _exterior_facet_integral_domains[i].clear();
-        facet_id_to_integral[_exterior_facet_integral_ids[i]] = i;
-      }
-    }
-
-    for (unsigned int i = 0; i < marker.size(); ++i)
-    {
-      auto it = facet_id_to_integral.find(marker[i]);
-      if (it != facet_id_to_integral.end())
-        _exterior_facet_integral_domains[it->second].push_back(i);
-    }
+    auto it = id_to_integral.find(marker[i]);
+    if (it != id_to_integral.end())
+      integrals[it->second].active_entities.push_back(i);
   }
-  else
-    throw std::runtime_error("FormIntegral type not supported.");
 }
 //-----------------------------------------------------------------------------
 void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 {
-  int tdim = mesh.topology().dim();
+  const int tdim = mesh.topology().dim();
+
+  std::vector<struct FormIntegrals::Integral>& cell_integrals
+      = _integrals[static_cast<int>(FormIntegrals::Type::cell)];
 
   // If there is a default integral, define it on all cells
-  if (_cell_integral_ids.size() > 0 and _cell_integral_ids[0] == -1)
+  if (cell_integrals.size() > 0 and cell_integrals[0].id == -1)
   {
-    _cell_integral_domains[0].resize(mesh.num_entities(tdim));
-    std::iota(_cell_integral_domains[0].begin(),
-              _cell_integral_domains[0].end(), 0);
+    cell_integrals[0].active_entities.resize(mesh.num_entities(tdim));
+    std::iota(cell_integrals[0].active_entities.begin(),
+              cell_integrals[0].active_entities.end(), 0);
   }
 
-  if (_exterior_facet_integral_ids.size() > 0
-      and _exterior_facet_integral_ids[0] == -1)
+  std::vector<struct FormIntegrals::Integral>& exf_integrals
+      = _integrals[static_cast<int>(FormIntegrals::Type::exterior_facet)];
+  if (exf_integrals.size() > 0 and exf_integrals[0].id == -1)
   {
     // If there is a default integral, define it only on surface facets
-    _exterior_facet_integral_domains[0].clear();
+    exf_integrals[0].active_entities.clear();
     for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
       if (facet.num_global_entities(tdim) == 1)
-        _exterior_facet_integral_domains[0].push_back(facet.index());
+        exf_integrals[0].active_entities.push_back(facet.index());
     }
   }
 
-  if (_interior_facet_integral_ids.size() > 0
-      and _interior_facet_integral_ids[0] == -1)
+  std::vector<struct FormIntegrals::Integral>& inf_integrals
+      = _integrals[static_cast<int>(FormIntegrals::Type::interior_facet)];
+  if (inf_integrals.size() > 0 and inf_integrals[0].id == -1)
   {
     // If there is a default integral, define it only on interior facets
-    _interior_facet_integral_domains[0].clear();
-    _interior_facet_integral_domains[0].reserve(mesh.num_entities(tdim - 1));
+    inf_integrals[0].active_entities.clear();
+    inf_integrals[0].active_entities.reserve(mesh.num_entities(tdim - 1));
     for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
     {
       if (facet.num_global_entities(tdim) != 1)
-        _interior_facet_integral_domains[0].push_back(facet.index());
+        inf_integrals[0].active_entities.push_back(facet.index());
     }
   }
 }

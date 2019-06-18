@@ -85,9 +85,8 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const CoordinateMapping& cmap = *mesh.geometry().coord_mapping;
 
   // Prepare cell geometry
-  const int tdim = mesh.topology().dim();
   const mesh::Connectivity& connectivity_g
-      = mesh.coordinate_dofs().entity_points(tdim);
+      = mesh.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -284,7 +283,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     }
 
     // Check that function dims match
-    for (std::size_t i = 0; i < el->value_rank(); ++i)
+    for (int i = 0; i < el->value_rank(); ++i)
     {
       if (el->value_dimension(i) != elf->value_dimension(i))
       {
@@ -301,7 +300,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Number of dofs associated with each fine point
   unsigned int data_size = 1;
-  for (unsigned data_dim = 0; data_dim < el->value_rank(); data_dim++)
+  for (int data_dim = 0; data_dim < el->value_rank(); data_dim++)
     data_size *= el->value_dimension(data_dim);
 
   // The overall idea is: a fine point can be on a coarse cell in the
@@ -530,7 +529,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = meshc.coordinate_dofs().entity_points(tdim);
+      = meshc.coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -799,7 +798,7 @@ PetscErrorCode PETScDMCollection::create_interpolation(DM dmc, DM dmf, Mat* mat,
   PetscObjectReference((PetscObject)*mat);
 
   // Set optional vector to NULL
-  *vec = NULL;
+  *vec = nullptr;
 
   return 0;
 }

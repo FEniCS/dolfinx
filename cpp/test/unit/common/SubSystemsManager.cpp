@@ -30,8 +30,8 @@ void init_petsc()
 {
   // Test user initialisation of PETSc
   int argc = 0;
-  char** argv = NULL;
-  PetscInitialize(&argc, &argv, NULL, NULL);
+  char** argv = nullptr;
+  PetscInitialize(&argc, &argv, nullptr, nullptr);
 
   Vec x;
   VecCreate(MPI_COMM_WORLD, &x);

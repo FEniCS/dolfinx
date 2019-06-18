@@ -8,9 +8,9 @@
 
 #include <Eigen/Dense>
 #include <cstddef>
-#include <dolfin/common/Variable.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>
+#include <functional>
 #include <map>
 #include <memory>
 #include <petscsys.h>
@@ -31,14 +31,13 @@ class Mesh;
 
 namespace function
 {
-class Expression;
 class Function;
 
 /// This class represents a finite element function space defined by
 /// a mesh, a finite element, and a local-to-global mapping of the
 /// degrees of freedom (dofmap).
 
-class FunctionSpace : public common::Variable
+class FunctionSpace
 {
 public:
   /// Create function space for given mesh, element and dofmap
@@ -66,14 +65,14 @@ protected:
   explicit FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh);
 
 public:
-  /// Copy constructor
-  ///
-  /// @param    V (_FunctionSpace_)
-  ///         The object to be copied.
-  FunctionSpace(const FunctionSpace& V);
+  // Copy constructor (deleted)
+  FunctionSpace(const FunctionSpace& V) = delete;
+
+  /// Move constructor
+  FunctionSpace(FunctionSpace&& V) = default;
 
   /// Destructor
-  virtual ~FunctionSpace();
+  virtual ~FunctionSpace() = default;
 
 protected:
   /// Attach data to an empty function space
@@ -86,11 +85,11 @@ protected:
               std::shared_ptr<const fem::GenericDofMap> dofmap);
 
 public:
-  /// Assignment operator
-  ///
-  /// @param    V (_FunctionSpace_)
-  ///         Another function space.
-  const FunctionSpace& operator=(const FunctionSpace& V);
+  // Assignment operator (delete)
+  FunctionSpace& operator=(const FunctionSpace& V) = delete;
+
+  // Move assignment operator (delete)
+  FunctionSpace& operator=(FunctionSpace&& V) = default;
 
   /// Equality operator
   ///
@@ -147,9 +146,15 @@ public:
   ///         The expansion coefficients.
   /// @param   expr (_Expression_)
   ///         The expression to be interpolated.
-  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-                       expansion_coefficients,
-                   const Expression& expr) const;
+  void interpolate(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          expansion_coefficients,
+      const std::function<void(
+          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>,
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
+      const;
 
   /// Extract subspace for component
   ///
@@ -248,18 +253,15 @@ public:
   /// Print dofmap (useful for debugging)
   void print_dofmap() const;
 
+  /// Unique identifier
+  const std::size_t id;
+
 private:
   // General interpolation from any Function on any mesh
   void interpolate_from_any(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
           expansion_coefficients,
       const Function& v) const;
-
-  // General interpolation from any Expression on any mesh
-  void interpolate_from_any(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-          expansion_coefficients,
-      const Expression& expr) const;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;

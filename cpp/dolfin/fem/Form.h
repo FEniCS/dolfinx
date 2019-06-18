@@ -171,35 +171,13 @@ public:
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
                                                        const PetscScalar*,
-                                                       const double*, int));
+                                                       const double*,
+                                                       const int*, const int*));
 
-  /// Register the function for 'tabulate_tensor' for exterior facet integral i
-  void register_tabulate_tensor_exterior_facet(int i, void (*fn)(PetscScalar*,
-                                                                 const PetscScalar*,
-                                                                 const double*, int, int));
-
-  /// Return exterior facet domains (zero pointer if no domains have
-  /// been specified)
-  ///
-  /// @return     std::shared_ptr<_mesh::MeshFunction_ <std::size_t>>
-  ///         The exterior facet domains.
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-  exterior_facet_domains() const;
-
-  /// Return interior facet domains (zero pointer if no domains have
-  /// been specified)
-  ///
-  /// @return     _mesh::MeshFunction_ <std::size_t>
-  ///         The interior facet domains.
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>>
-  interior_facet_domains() const;
-
-  /// Return vertex domains (zero pointer if no domains have been
-  /// specified)
-  ///
-  /// @return     _mesh::MeshFunction_ <std::size_t>
-  ///         The vertex domains.
-  std::shared_ptr<const mesh::MeshFunction<std::size_t>> vertex_domains() const;
+  /// Register the function for 'tabulate_tensor' for exterior_facet integral i
+  void register_tabulate_tensor_exterior_facet(
+      int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*,
+                        const int*, const int*));
 
   /// Set cell domains
   ///
