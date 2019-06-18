@@ -121,7 +121,7 @@ public:
 
   /// Extract sub finite element for component
   std::shared_ptr<FiniteElement>
-  extract_sub_element(const std::vector<std::size_t>& component) const;
+  extract_sub_element(const std::vector<int>& component) const;
 
 private:
   std::string _signature, _family;
@@ -139,7 +139,7 @@ private:
   // Recursively extract sub finite element
   static std::shared_ptr<FiniteElement>
   extract_sub_element(const FiniteElement& finite_element,
-                      const std::vector<std::size_t>& component);
+                      const std::vector<int>& component);
 
   // Simple hash of the signature string
   std::size_t _hash;

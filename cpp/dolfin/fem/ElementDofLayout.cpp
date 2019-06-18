@@ -122,7 +122,7 @@ ElementDofLayout::entity_closure_dofs() const
 int ElementDofLayout::num_sub_dofmaps() const { return _sub_dofmaps.size(); }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const ElementDofLayout>
-ElementDofLayout::sub_dofmap(const std::vector<std::size_t>& component) const
+ElementDofLayout::sub_dofmap(const std::vector<int>& component) const
 {
   if (component.size() == 0)
     throw std::runtime_error("No sub dofmap specified");
@@ -141,14 +141,14 @@ ElementDofLayout::sub_dofmap(const std::vector<std::size_t>& component) const
 }
 //-----------------------------------------------------------------------------
 std::vector<int>
-ElementDofLayout::sub_view(const std::vector<std::size_t>& component) const
+ElementDofLayout::sub_view(const std::vector<int>& component) const
 {
   // Fill up a list of parent dofs, from which subdofmap will select
   std::vector<int> dof_list(_num_dofs);
   std::iota(dof_list.begin(), dof_list.end(), 0);
 
   const ElementDofLayout* element_dofmap_current = this;
-  for (auto i : component)
+  for (int i : component)
   {
     // Switch to sub-dofmap
     assert(element_dofmap_current);

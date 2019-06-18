@@ -47,7 +47,7 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_parent,
-               const std::vector<std::size_t>& component,
+               const std::vector<int>& component,
                const mesh::Mesh& mesh)
     : _cell_dimension(-1), _global_dimension(-1),
       _index_map(dofmap_parent._index_map)
@@ -264,7 +264,7 @@ DofMap::tabulate_global_dofs() const
 }
 //-----------------------------------------------------------------------------
 std::unique_ptr<GenericDofMap>
-DofMap::extract_sub_dofmap(const std::vector<std::size_t>& component,
+DofMap::extract_sub_dofmap(const std::vector<int>& component,
                            const mesh::Mesh& mesh) const
 {
   return std::unique_ptr<DofMap>(new DofMap(*this, component, mesh));

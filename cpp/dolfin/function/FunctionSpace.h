@@ -53,18 +53,6 @@ public:
                 std::shared_ptr<const fem::FiniteElement> element,
                 std::shared_ptr<const fem::GenericDofMap> dofmap);
 
-protected:
-  /// Create empty function space for later initialization. This
-  /// constructor is intended for use by any sub-classes which need
-  /// to construct objects before the initialisation of the base
-  /// class. Data can be attached to the base class using
-  /// FunctionSpace::attach(...).
-  ///
-  /// @param    mesh (_mesh::Mesh_)
-  ///         The mesh.
-  explicit FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh);
-
-public:
   // Copy constructor (deleted)
   FunctionSpace(const FunctionSpace& V) = delete;
 
@@ -74,17 +62,6 @@ public:
   /// Destructor
   virtual ~FunctionSpace() = default;
 
-protected:
-  /// Attach data to an empty function space
-  ///
-  /// @param    element (_FiniteElement_)
-  ///         The element.
-  /// @param    dofmap (_GenericDofMap_)
-  ///         The dofmap.
-  void attach(std::shared_ptr<const fem::FiniteElement> element,
-              std::shared_ptr<const fem::GenericDofMap> dofmap);
-
-public:
   // Assignment operator (delete)
   FunctionSpace& operator=(const FunctionSpace& V) = delete;
 
@@ -164,7 +141,7 @@ public:
   /// @returns    _FunctionSpace_
   ///         The subspace.
   std::shared_ptr<FunctionSpace>
-  sub(const std::vector<std::size_t>& component) const;
+  sub(const std::vector<int>& component) const;
 
   /// Check whether V is subspace of this, or this itself
   ///
@@ -213,9 +190,9 @@ public:
   /// Return component w.r.t. to root superspace, i.e.
   ///   W.sub(1).sub(0) == [1, 0].
   ///
-  /// @returns   std::vector<std::size_t>
+  /// @returns   std::vector<int>
   ///         The component (w.r.t to root superspace).
-  std::vector<std::size_t> component() const;
+  std::vector<int> component() const;
 
   /// Tabulate the coordinates of all dofs on this process. This
   /// function is typically used by preconditioners that require the
@@ -273,13 +250,13 @@ private:
   std::shared_ptr<const fem::GenericDofMap> _dofmap;
 
   // The component w.r.t. to root space
-  std::vector<std::size_t> _component;
+  std::vector<int> _component;
 
   // The identifier of root space
   std::size_t _root_space_id;
 
   // Cache of subspaces
-  mutable std::map<std::vector<std::size_t>, std::weak_ptr<FunctionSpace>>
+  mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>>
       _subspaces;
 };
 } // namespace function

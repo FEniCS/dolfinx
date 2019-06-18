@@ -88,10 +88,7 @@ std::size_t FiniteElement::reference_value_size() const
   return _reference_value_size;
 }
 //-----------------------------------------------------------------------------
-int FiniteElement::value_rank() const
-{
-  return _value_dimension.size();
-}
+int FiniteElement::value_rank() const { return _value_dimension.size(); }
 //-----------------------------------------------------------------------------
 int FiniteElement::value_dimension(int i) const
 {
@@ -184,8 +181,8 @@ std::size_t FiniteElement::num_sub_elements() const
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::hash() const { return _hash; }
 //-----------------------------------------------------------------------------
-std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(
-    const std::vector<std::size_t>& component) const
+std::shared_ptr<FiniteElement>
+FiniteElement::extract_sub_element(const std::vector<int>& component) const
 {
   // Recursively extract sub element
   std::shared_ptr<FiniteElement> sub_finite_element
@@ -198,7 +195,7 @@ std::shared_ptr<FiniteElement> FiniteElement::extract_sub_element(
 //-----------------------------------------------------------------------------
 std::shared_ptr<FiniteElement>
 FiniteElement::extract_sub_element(const FiniteElement& finite_element,
-                                   const std::vector<std::size_t>& component)
+                                   const std::vector<int>& component)
 {
   // Check if there are any sub systems
   if (finite_element.num_sub_elements() == 0)
@@ -232,8 +229,7 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
     return sub_element;
 
   // Otherwise, recursively extract the sub sub system
-  const std::vector<std::size_t> sub_component(component.begin() + 1,
-                                               component.end());
+  const std::vector<int> sub_component(component.begin() + 1, component.end());
 
   return extract_sub_element(*sub_element, sub_component);
 }
