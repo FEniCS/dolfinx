@@ -82,7 +82,7 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
   assert(V->dofmap()->global_dimension() <= _vector.size());
 }
 //-----------------------------------------------------------------------------
-Function Function::sub(std::size_t i) const
+Function Function::sub(int i) const
 {
   // Extract function subspace
   auto sub_space = _function_space->sub({i});

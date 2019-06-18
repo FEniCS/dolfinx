@@ -31,19 +31,6 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh)
-    : id(common::UniqueIdGenerator::id()), _mesh(mesh), _root_space_id(id)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::attach(std::shared_ptr<const fem::FiniteElement> element,
-                           std::shared_ptr<const fem::GenericDofMap> dofmap)
-{
-  _element = element;
-  _dofmap = dofmap;
-}
-//-----------------------------------------------------------------------------
 bool FunctionSpace::operator==(const FunctionSpace& V) const
 {
   // Compare pointers to shared objects
@@ -244,7 +231,7 @@ void FunctionSpace::interpolate(
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<FunctionSpace>
-FunctionSpace::sub(const std::vector<std::size_t>& component) const
+FunctionSpace::sub(const std::vector<int>& component) const
 {
   assert(_mesh);
   assert(_element);
@@ -276,9 +263,8 @@ FunctionSpace::sub(const std::vector<std::size_t>& component) const
                                component.end());
 
   // Insert new subspace into cache
-  _subspaces.insert(
-      std::pair<std::vector<std::size_t>, std::shared_ptr<FunctionSpace>>(
-          sub_space->_component, sub_space));
+  _subspaces.insert(std::pair<std::vector<int>, std::shared_ptr<FunctionSpace>>(
+      sub_space->_component, sub_space));
 
   return sub_space;
 }
@@ -288,9 +274,7 @@ FunctionSpace::collapse() const
 {
   assert(_mesh);
   if (_component.empty())
-  {
     throw std::runtime_error("Function space is not a subspace");
-  }
 
   // Create collapsed DofMap
   std::shared_ptr<fem::GenericDofMap> collapsed_dofmap;
@@ -305,7 +289,7 @@ FunctionSpace::collapse() const
                         std::move(collapsed_dofs));
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> FunctionSpace::component() const { return _component; }
+std::vector<int> FunctionSpace::component() const { return _component; }
 //-----------------------------------------------------------------------------
 EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 {
