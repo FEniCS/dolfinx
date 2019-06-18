@@ -174,7 +174,7 @@ void FiniteElement::transform_values(
 }
 
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::num_sub_elements() const
+int FiniteElement::num_sub_elements() const
 {
   return _sub_elements.size();
 }

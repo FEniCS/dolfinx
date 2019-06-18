@@ -112,9 +112,9 @@ public:
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Return the number of sub elements (for a mixed element)
-  /// @return std::size_t
+  /// @return int
   ///   number of sub-elements
-  std::size_t num_sub_elements() const;
+  int num_sub_elements() const;
 
   /// Return simple hash of the signature string
   std::size_t hash() const;
