@@ -126,11 +126,11 @@ ElementDofLayout::sub_dofmap(const std::vector<int>& component) const
 {
   if (component.size() == 0)
     throw std::runtime_error("No sub dofmap specified");
-  if (component[0] >= _sub_dofmaps.size())
+  if (component[0] >= (int)_sub_dofmaps.size())
     throw std::runtime_error("Invalid sub dofmap specified");
 
   std::shared_ptr<const ElementDofLayout> current = _sub_dofmaps[component[0]];
-  for (unsigned int i = 1; i < component.size(); ++i)
+  for (std::size_t i = 1; i < component.size(); ++i)
   {
     const int idx = component[i];
     if (idx >= (int)current->_sub_dofmaps.size())
@@ -152,7 +152,7 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
   {
     // Switch to sub-dofmap
     assert(element_dofmap_current);
-    if (i >= element_dofmap_current->_sub_dofmaps.size())
+    if (i >= (int)element_dofmap_current->_sub_dofmaps.size())
       throw std::runtime_error("Invalid component");
     element_dofmap_current = _sub_dofmaps[i].get();
 
