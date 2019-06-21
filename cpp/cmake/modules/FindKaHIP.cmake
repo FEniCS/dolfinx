@@ -43,7 +43,7 @@ message(STATUS "Checking for package 'KaHIP'")
 find_path(KAHIP_INCLUDE_DIRS parhip_interface.h
   HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy/ /usr/local/KaHIP/deploy
   PATH_SUFFIXES kahip
-  DOC "Directory where the KaHIP header is located"
+  DOC "Directory where the KaHIP header files are located"
   )
 
 find_library(KAHIP_LIBRARY kahip
@@ -59,22 +59,21 @@ find_library(KAHIP_LIBRARY kahip
 find_library(MKAHIP_LIBRARY kahip
   HINTS ${KAHIP_ROOT}/deploy/parallel $ENV{KAHIP_ROOT}/deploy/parallel /usr/local/KaHIP/deploy/parallel
   NO_DEFAULT_PATH
-  DOC "Directory where the KaHIP library is located"
+  DOC "Directory where the parallel KaHIP library is located"
 )
 
 find_library(MKAHIP_LIBRARY kahip
-  DOC "Directory where the KaHIP library is located"
+  DOC "Directory where the parallel KaHIP library is located"
 )
 
 find_library(PARHIP_LIBRARY parhip
   HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
   NO_DEFAULT_PATH
-  DOC "Directory where the KaHIP library is located"
+  DOC "Directory where the ParHIP library is located"
 )
 
-
 find_library(PARHIP_LIBRARY parhip
-  DOC "Directory where the KaHIP library is located"
+  DOC "Directory where the ParHIP library is located"
 )
 
 
@@ -92,7 +91,7 @@ check_cxx_source_runs("
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 
-#include <parhip_interface.h>
+#include <kahip_interface.h>
 
 int main()
 {
