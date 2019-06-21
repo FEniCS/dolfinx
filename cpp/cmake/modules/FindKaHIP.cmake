@@ -91,7 +91,7 @@ check_cxx_source_runs("
 #define MPICH_IGNORE_CXX_SEEK 1
 #include <mpi.h>
 
-#include <kahip_interface.h>
+#include <kaHIP_interface.h>
 
 int main()
 {
@@ -123,8 +123,8 @@ double imbalance = 0.03;
 int *part = new int[n];
 int edge_cut = 0;
 int nparts = 2;
-int *vwgt = NULL;
-int *adjcwgt = NULL;
+int *vwgt = nullptr;;
+int *adjcwgt = nullptr;;
 
 kaffpa(&n, vwgt, xadj, adjcwgt, adjncy, &nparts, &imbalance, false, 0, ECO,
        &edge_cut, part);
