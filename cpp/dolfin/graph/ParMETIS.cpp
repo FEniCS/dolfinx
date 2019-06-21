@@ -80,8 +80,8 @@ using namespace dolfin;
 
 //   // Could use GraphBuilder::compute_dual_graph() instead
 //   common::Timer timer1("ParMETIS: call ParMETIS_V3_Mesh2Dual");
-//   idx_t* xadj = NULL;
-//   idx_t* adjncy = NULL;
+//   idx_t* xadj = nullptr;
+//   idx_t* adjncy = nullptr;
 //   idx_t numflag = 0;
 //   int err = ParMETIS_V3_Mesh2Dual(elmdist.data(), eptr.data(), eind.data(),
 //                                   &numflag, &ncommonnodes, &xadj, &adjncy,
@@ -123,7 +123,7 @@ dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
   idx_t ncon = 1;
 
   // Prepare remaining arguments for ParMETIS
-  idx_t* elmwgt = NULL;
+  idx_t* elmwgt = nullptr;
   idx_t wgtflag = 0;
   idx_t edgecut = 0;
   idx_t numflag = 0;
@@ -141,7 +141,7 @@ dolfin::graph::ParMETIS::partition(MPI_Comm mpi_comm,
   int err = ParMETIS_V3_PartKway(
       const_cast<idx_t*>(csr_graph.node_distribution().data()),
       const_cast<idx_t*>(csr_graph.nodes().data()),
-      const_cast<idx_t*>(csr_graph.edges().data()), elmwgt, NULL, &wgtflag,
+      const_cast<idx_t*>(csr_graph.edges().data()), elmwgt, nullptr, &wgtflag,
       &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), options, &edgecut,
       part.data(), &mpi_comm);
   assert(err == METIS_OK);
@@ -284,7 +284,7 @@ std::vector<int> dolfin::graph::ParMETIS::adaptive_repartition(
 
   // Remaining ParMETIS parameters
   idx_t ncon = 1;
-  idx_t* elmwgt = NULL;
+  idx_t* elmwgt = nullptr;
   idx_t wgtflag = 0;
   idx_t edgecut = 0;
   idx_t numflag = 0;
@@ -294,9 +294,9 @@ std::vector<int> dolfin::graph::ParMETIS::adaptive_repartition(
   // Call ParMETIS to repartition graph
   int err = ParMETIS_V3_AdaptiveRepart(
       csr_graph.node_distribution().data(), csr_graph.nodes().data(),
-      csr_graph.edges().data(), elmwgt, NULL, vsize.data(), &wgtflag, &numflag,
-      &ncon, &nparts, tpwgts.data(), ubvec.data(), &_itr, options, &edgecut,
-      part.data(), &mpi_comm);
+      csr_graph.edges().data(), elmwgt, nullptr, vsize.data(), &wgtflag,
+      &numflag, &ncon, &nparts, tpwgts.data(), ubvec.data(), &_itr, options,
+      &edgecut, part.data(), &mpi_comm);
   assert(err == METIS_OK);
   timer1.stop();
 
@@ -334,7 +334,7 @@ std::vector<int> dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm,
   idx_t nparts = dolfin::MPI::size(mpi_comm);
   // Remaining ParMETIS parameters
   idx_t ncon = 1;
-  idx_t* elmwgt = NULL;
+  idx_t* elmwgt = nullptr;
   idx_t wgtflag = 0;
   idx_t edgecut = 0;
   idx_t numflag = 0;
@@ -345,7 +345,7 @@ std::vector<int> dolfin::graph::ParMETIS::refine(MPI_Comm mpi_comm,
   common::Timer timer1("ParMETIS: call ParMETIS_V3_RefineKway");
   int err = ParMETIS_V3_RefineKway(
       csr_graph.node_distribution().data(), csr_graph.nodes().data(),
-      csr_graph.edges().data(), elmwgt, NULL, &wgtflag, &numflag, &ncon,
+      csr_graph.edges().data(), elmwgt, nullptr, &wgtflag, &numflag, &ncon,
       &nparts, tpwgts.data(), ubvec.data(), options, &edgecut, part.data(),
       &mpi_comm);
   assert(err == METIS_OK);

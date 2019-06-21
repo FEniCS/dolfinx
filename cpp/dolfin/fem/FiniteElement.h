@@ -59,10 +59,10 @@ public:
   std::size_t reference_value_size() const;
 
   /// Return the rank of the value space
-  std::size_t value_rank() const;
+  int value_rank() const;
 
   /// Return the dimension of the value space for axis i
-  std::size_t value_dimension(std::size_t i) const;
+  int value_dimension(int i) const;
 
   // FIXME: Is this well-defined? What does it do on non-simplex
   // elements?
@@ -112,16 +112,16 @@ public:
       const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Return the number of sub elements (for a mixed element)
-  /// @return std::size_t
+  /// @return int
   ///   number of sub-elements
-  std::size_t num_sub_elements() const;
+  int num_sub_elements() const;
 
   /// Return simple hash of the signature string
   std::size_t hash() const;
 
   /// Extract sub finite element for component
   std::shared_ptr<FiniteElement>
-  extract_sub_element(const std::vector<std::size_t>& component) const;
+  extract_sub_element(const std::vector<int>& component) const;
 
 private:
   std::string _signature, _family;
@@ -139,7 +139,7 @@ private:
   // Recursively extract sub finite element
   static std::shared_ptr<FiniteElement>
   extract_sub_element(const FiniteElement& finite_element,
-                      const std::vector<std::size_t>& component);
+                      const std::vector<int>& component);
 
   // Simple hash of the signature string
   std::size_t _hash;

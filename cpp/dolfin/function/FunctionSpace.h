@@ -8,9 +8,9 @@
 
 #include <Eigen/Dense>
 #include <cstddef>
-#include <dolfin/common/Variable.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/mesh/Cell.h>
+#include <functional>
 #include <map>
 #include <memory>
 #include <petscsys.h>
@@ -31,14 +31,13 @@ class Mesh;
 
 namespace function
 {
-class Expression;
 class Function;
 
 /// This class represents a finite element function space defined by
 /// a mesh, a finite element, and a local-to-global mapping of the
 /// degrees of freedom (dofmap).
 
-class FunctionSpace : public common::Variable
+class FunctionSpace
 {
 public:
   /// Create function space for given mesh, element and dofmap
@@ -54,43 +53,20 @@ public:
                 std::shared_ptr<const fem::FiniteElement> element,
                 std::shared_ptr<const fem::GenericDofMap> dofmap);
 
-protected:
-  /// Create empty function space for later initialization. This
-  /// constructor is intended for use by any sub-classes which need
-  /// to construct objects before the initialisation of the base
-  /// class. Data can be attached to the base class using
-  /// FunctionSpace::attach(...).
-  ///
-  /// @param    mesh (_mesh::Mesh_)
-  ///         The mesh.
-  explicit FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh);
+  // Copy constructor (deleted)
+  FunctionSpace(const FunctionSpace& V) = delete;
 
-public:
-  /// Copy constructor
-  ///
-  /// @param    V (_FunctionSpace_)
-  ///         The object to be copied.
-  FunctionSpace(const FunctionSpace& V);
+  /// Move constructor
+  FunctionSpace(FunctionSpace&& V) = default;
 
   /// Destructor
-  virtual ~FunctionSpace();
+  virtual ~FunctionSpace() = default;
 
-protected:
-  /// Attach data to an empty function space
-  ///
-  /// @param    element (_FiniteElement_)
-  ///         The element.
-  /// @param    dofmap (_GenericDofMap_)
-  ///         The dofmap.
-  void attach(std::shared_ptr<const fem::FiniteElement> element,
-              std::shared_ptr<const fem::GenericDofMap> dofmap);
+  // Assignment operator (delete)
+  FunctionSpace& operator=(const FunctionSpace& V) = delete;
 
-public:
-  /// Assignment operator
-  ///
-  /// @param    V (_FunctionSpace_)
-  ///         Another function space.
-  const FunctionSpace& operator=(const FunctionSpace& V);
+  // Move assignment operator (delete)
+  FunctionSpace& operator=(FunctionSpace&& V) = default;
 
   /// Equality operator
   ///
@@ -147,9 +123,15 @@ public:
   ///         The expansion coefficients.
   /// @param   expr (_Expression_)
   ///         The expression to be interpolated.
-  void interpolate(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-                       expansion_coefficients,
-                   const Expression& expr) const;
+  void interpolate(
+      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
+          expansion_coefficients,
+      const std::function<void(
+          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>,
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f)
+      const;
 
   /// Extract subspace for component
   ///
@@ -159,7 +141,7 @@ public:
   /// @returns    _FunctionSpace_
   ///         The subspace.
   std::shared_ptr<FunctionSpace>
-  sub(const std::vector<std::size_t>& component) const;
+  sub(const std::vector<int>& component) const;
 
   /// Check whether V is subspace of this, or this itself
   ///
@@ -208,9 +190,9 @@ public:
   /// Return component w.r.t. to root superspace, i.e.
   ///   W.sub(1).sub(0) == [1, 0].
   ///
-  /// @returns   std::vector<std::size_t>
+  /// @returns   std::vector<int>
   ///         The component (w.r.t to root superspace).
-  std::vector<std::size_t> component() const;
+  std::vector<int> component() const;
 
   /// Tabulate the coordinates of all dofs on this process. This
   /// function is typically used by preconditioners that require the
@@ -248,18 +230,15 @@ public:
   /// Print dofmap (useful for debugging)
   void print_dofmap() const;
 
+  /// Unique identifier
+  const std::size_t id;
+
 private:
   // General interpolation from any Function on any mesh
   void interpolate_from_any(
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
           expansion_coefficients,
       const Function& v) const;
-
-  // General interpolation from any Expression on any mesh
-  void interpolate_from_any(
-      Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
-          expansion_coefficients,
-      const Expression& expr) const;
 
   // The mesh
   std::shared_ptr<const mesh::Mesh> _mesh;
@@ -271,13 +250,13 @@ private:
   std::shared_ptr<const fem::GenericDofMap> _dofmap;
 
   // The component w.r.t. to root space
-  std::vector<std::size_t> _component;
+  std::vector<int> _component;
 
   // The identifier of root space
   std::size_t _root_space_id;
 
   // Cache of subspaces
-  mutable std::map<std::vector<std::size_t>, std::weak_ptr<FunctionSpace>>
+  mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>>
       _subspaces;
 };
 } // namespace function

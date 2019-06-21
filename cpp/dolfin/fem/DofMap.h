@@ -65,7 +65,7 @@ public:
 
 private:
   // Create a sub-dofmap (a view) from parent_dofmap
-  DofMap(const DofMap& dofmap_parent, const std::vector<std::size_t>& component,
+  DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
          const mesh::Mesh& mesh);
 
   // Create a collapsed dofmap from parent_dofmap
@@ -181,7 +181,7 @@ public:
 
   /// Extract subdofmap component
   ///
-  /// @param     component (std::vector<std::size_t>)
+  /// @param     component (std::vector<int>)
   ///         The component.
   /// @param     mesh (_mesh::Mesh_)
   ///         The mesh.
@@ -189,7 +189,7 @@ public:
   /// @return     DofMap
   ///         The subdofmap component.
   std::unique_ptr<GenericDofMap>
-  extract_sub_dofmap(const std::vector<std::size_t>& component,
+  extract_sub_dofmap(const std::vector<int>& component,
                      const mesh::Mesh& mesh) const;
 
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)

@@ -43,7 +43,7 @@ public:
   CellType(Type cell_type, Type facet_type);
 
   /// Destructor
-  virtual ~CellType();
+  virtual ~CellType() = default;
 
   /// Create cell type from type (factory function)
   static CellType* create(Type type);

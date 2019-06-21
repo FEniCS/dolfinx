@@ -7,7 +7,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <dolfin/common/Variable.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/la/PETScVector.h>
@@ -31,7 +30,6 @@ class Mesh;
 
 namespace function
 {
-class Expression;
 class FunctionSpace;
 
 /// This class represents a function \f$ u_h \f$ in a finite
@@ -41,7 +39,7 @@ class FunctionSpace;
 /// where \f$ \{\phi_i\}_{i=1}^{n} \f$ is a basis for \f$ V_h \f$,
 /// and \f$ U \f$ is a vector of expansion coefficients for \f$ u_h \f$.
 
-class Function : public common::Variable
+class Function
 {
 public:
   /// Create function on given function space
@@ -81,7 +79,7 @@ public:
   ///         Index of subfunction.
   /// @returns    _Function_
   ///         The subfunction.
-  Function sub(std::size_t i) const;
+  Function sub(int i) const;
 
   /// Collapse a subfunction (view into the Function) to a stand-alone
   /// Function
@@ -111,17 +109,22 @@ public:
   ///         The function to be interpolated.
   void interpolate(const Function& v);
 
-  /// Interpolate expression (on possibly non-matching meshes)
+  /// Interpolate expression
   ///
   /// @param    expr (Expression)
   ///         The expression to be interpolated.
-  void interpolate(const Expression& e);
+  void interpolate(
+      const std::function<void(
+          Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
+                                  Eigen::RowMajor>>,
+          const Eigen::Ref<const Eigen::Array<
+              double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>)>& f);
 
   /// Return value rank
   ///
-  /// @returns std::size_t
+  /// @returns int
   ///         The value rank.
-  std::size_t value_rank() const;
+  int value_rank() const;
 
   /// Return value size
   ///
@@ -130,12 +133,12 @@ public:
 
   /// Return value dimension for given axis
   ///
-  /// @param    i (std::size_t)
+  /// @param    i (int)
   ///         The index of the axis.
   ///
-  /// @returns    std::size_t
+  /// @returns    int
   ///         The value dimension.
-  std::size_t value_dimension(std::size_t i) const;
+  int value_dimension(int i) const;
 
   /// Return value shape
   ///
@@ -204,6 +207,12 @@ public:
   ///         The values at all geometric points
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   compute_point_values() const;
+
+  // Name
+  std::string name = "u";
+
+  /// ID
+  const std::size_t id;
 
 private:
   // The function space

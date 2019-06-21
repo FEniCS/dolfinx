@@ -11,10 +11,10 @@
 #include "Vertex.h"
 #include <Eigen/Dense>
 #include <cstddef>
+#include <dolfin/common/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/common/log.h>
 #include <map>
 
 namespace dolfin
@@ -42,7 +42,7 @@ public:
   SubDomain(const double map_tol = 1.0e-10);
 
   /// Destructor
-  virtual ~SubDomain();
+  virtual ~SubDomain() = default;
 
   /// Return true for points inside the subdomain
   ///

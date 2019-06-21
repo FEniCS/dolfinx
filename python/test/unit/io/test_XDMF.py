@@ -9,11 +9,11 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Edges, Expression, Facets, Function,
+from dolfin import (MPI, Cells, CellType, Edges, Facets, Function,
                     FunctionSpace, MeshEntities, MeshFunction,
                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
-                    Vertices, cpp, function, has_petsc_complex, interpolate)
+                    Vertices, cpp, has_petsc_complex, interpolate)
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement
@@ -66,9 +66,9 @@ def worker_id(request):
 def test_multiple_datasets(tempdir, encoding):
     mesh = UnitSquareMesh(MPI.comm_world, 2, 2)
     cf0 = MeshFunction('size_t', mesh, 2, 11)
-    cf0.rename('cf0')
+    cf0.name = 'cf0'
     cf1 = MeshFunction('size_t', mesh, 2, 22)
-    cf1.rename('cf1')
+    cf1.name = 'cf1'
     filename = os.path.join(tempdir, "multiple_mf.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
         xdmf.write(mesh)
@@ -163,15 +163,13 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
     u_out = Function(V)
 
     if has_petsc_complex:
-        @function.expression.numba_eval
-        def expr_eval(values, x, cell_idx):
+        def expr_eval(values, x):
             values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
-        u_out.interpolate(Expression(expr_eval))
+        u_out.interpolate(expr_eval)
     else:
-        @function.expression.numba_eval
-        def expr_eval(values, x, cell_idx):
+        def expr_eval(values, x):
             values[:, 0] = x[:, 0]
-        u_out.interpolate(Expression(expr_eval))
+        u_out.interpolate(expr_eval)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write_checkpoint(u_out, "u_out", 0)
@@ -202,46 +200,40 @@ def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
 
     if has_petsc_complex:
         if mesh.geometry.dim == 1:
-            @function.expression.numba_eval
-            def expr_eval(values, x, cell_idx):
+            def expr_eval(values, x):
                 values[:, 0] = x[:, 0] + 1.0j * x[:, 0]
-            u_out.interpolate(Expression(expr_eval, shape=(1,)))
+            u_out.interpolate(expr_eval)
 
         elif mesh.geometry.dim == 2:
-            @function.expression.numba_eval
-            def expr_eval(values, x, cell_idx):
+            def expr_eval(values, x):
                 values[:, 0] = 1.0j * x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
-            u_out.interpolate(Expression(expr_eval, shape=(2,)))
+            u_out.interpolate(expr_eval)
 
         elif mesh.geometry.dim == 3:
-            @function.expression.numba_eval
-            def expr_eval(values, x, cell_idx):
+            def expr_eval(values, x):
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0] + 1.0j * x[:, 0]
                 values[:, 2] = x[:, 2]
-            u_out.interpolate(Expression(expr_eval, shape=(3,)))
+            u_out.interpolate(expr_eval)
     else:
         if mesh.geometry.dim == 1:
-            @function.expression.numba_eval
-            def expr_eval(values, x, cell_idx):
+            def expr_eval(values, x):
                 values[:, 0] = x[:, 0]
-            u_out.interpolate(Expression(expr_eval, shape=(1,)))
+            u_out.interpolate(expr_eval)
 
         elif mesh.geometry.dim == 2:
-            @function.expression.numba_eval
-            def expr_eval(values, x, cell_idx):
+            def expr_eval(values, x):
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0]
-            u_out.interpolate(Expression(expr_eval, shape=(2,)))
+            u_out.interpolate(expr_eval)
 
         elif mesh.geometry.dim == 3:
-            @function.expression.numba_eval
-            def expr_eval(values, x, cell_idx):
+            def expr_eval(values, x):
                 values[:, 0] = x[:, 0] * x[:, 1]
                 values[:, 1] = x[:, 0]
                 values[:, 2] = x[:, 2]
-            u_out.interpolate(Expression(expr_eval, shape=(3,)))
+            u_out.interpolate(expr_eval)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write_checkpoint(u_out, "u_out", 0)
@@ -266,13 +258,12 @@ def test_save_and_checkpoint_timeseries(tempdir, encoding):
 
     p = 0.0
 
-    @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx):
+    def expr_eval(values, x):
         values[:, 0] = x[:, 0] * p
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         for i, p in enumerate(times):
-            u_out[i] = interpolate(Expression(expr_eval), V)
+            u_out[i] = interpolate(expr_eval, V)
             file.write_checkpoint(u_out[i], "u_out", p)
 
     with XDMFFile(mesh.mpi_comm(), filename) as file:
@@ -387,7 +378,7 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
     filename = os.path.join(tempdir, "mf_2D_%s.xdmf" % dtype_str)
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
-    mf.rename("cells")
+    mf.name = "cells"
     for cell in Cells(mesh):
         mf[cell] = dtype(cell.index())
 
@@ -410,7 +401,7 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
-    mf.rename("cells")
+    mf.name = "cells"
     for cell in Cells(mesh):
         mf[cell] = dtype(cell.index())
     filename = os.path.join(tempdir, "mf_3D_%s.xdmf" % dtype_str)
@@ -435,7 +426,7 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim - 1, 0)
-    mf.rename("facets")
+    mf.name = "facets"
 
     if (MPI.size(mesh.mpi_comm()) == 1):
         for facet in Facets(mesh):
@@ -464,7 +455,7 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim - 1, 0)
-    mf.rename("facets")
+    mf.name = "facets"
 
     if (MPI.size(mesh.mpi_comm()) == 1):
         for facet in Facets(mesh):
@@ -493,7 +484,7 @@ def test_save_3D_edge_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, 1, 0)
-    mf.rename("edges")
+    mf.name = "edges"
     for edge in Edges(mesh):
         mf[edge] = dtype(edge.index())
 
@@ -508,7 +499,7 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
     mf = MeshFunction(dtype_str, mesh, 0, 0)
-    mf.rename("vertices")
+    mf.name = "vertices"
     for vertex in Vertices(mesh):
         mf[vertex] = dtype(vertex.global_index())
     filename = os.path.join(tempdir, "mf_vertex_2D_%s.xdmf" % dtype_str)
@@ -591,7 +582,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     tdim = mesh.topology.dim
     meshfn = MeshFunction(dtype_str, mesh, mesh.topology.dim, False)
-    meshfn.rename("volume_marker")
+    meshfn.name = "volume_marker"
     for c in Cells(mesh):
         if c.midpoint()[1] > 0.1:
             meshfn[c] = dtype(1)
@@ -600,14 +591,14 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
 
     for mvc_dim in range(0, tdim + 1):
         mvc = MeshValueCollection(dtype_str, mesh, mvc_dim)
-        tag = "dim_%d_marker" % mvc_dim
-        mvc.rename(tag)
+        tag = "dim_{}_marker".format(mvc_dim)
+        mvc.name = tag
         mesh.create_connectivity(mvc_dim, tdim)
         for e in MeshEntities(mesh, mvc_dim):
             if (e.midpoint()[0] > 0.5):
                 mvc.set_value(e.index(), dtype(1))
 
-        filename = os.path.join(tempdir, "mvc_%d.xdmf" % mvc_dim)
+        filename = os.path.join(tempdir, "mvc_{}.xdmf".format(mvc_dim))
 
         with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
             xdmf.write(meshfn)
@@ -631,11 +622,11 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         dim = mesh.topology.dim
 
         vf = MeshFunction(dtype_str, mesh, 0, 0)
-        vf.rename("vertices")
+        vf.name = "vertices"
         ff = MeshFunction(dtype_str, mesh, mesh.topology.dim - 1, 0)
-        ff.rename("facets")
+        ff.name = "facets"
         cf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
-        cf.rename("cells")
+        cf.name = "cells"
 
         if (MPI.size(mesh.mpi_comm()) == 1):
             for vertex in Vertices(mesh):
@@ -686,13 +677,13 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
         mesh.create_global_indices(d)
 
     mvc_v = MeshValueCollection(dtype_str, mesh, 0)
-    mvc_v.rename("vertices")
+    mvc_v.name = "vertices"
     mvc_e = MeshValueCollection(dtype_str, mesh, 1)
-    mvc_e.rename("edges")
+    mvc_e.name = "edges"
     mvc_f = MeshValueCollection(dtype_str, mesh, 2)
-    mvc_f.rename("facets")
+    mvc_f.name = "facets"
     mvc_c = MeshValueCollection(dtype_str, mesh, 3)
-    mvc_c.rename("cells")
+    mvc_c.name = "cells"
 
     mvcs = [mvc_v, mvc_e, mvc_f, mvc_c]
 

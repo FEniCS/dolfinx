@@ -62,13 +62,13 @@ PETScVector PETScOperator::create_vector(std::size_t dim) const
   Vec x = nullptr;
   if (dim == 0)
   {
-    ierr = MatCreateVecs(_matA, NULL, &x);
+    ierr = MatCreateVecs(_matA, nullptr, &x);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "MatCreateVecs");
   }
   else if (dim == 1)
   {
-    ierr = MatCreateVecs(_matA, &x, NULL);
+    ierr = MatCreateVecs(_matA, &x, nullptr);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "MatCreateVecs");
   }

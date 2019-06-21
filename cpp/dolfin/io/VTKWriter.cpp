@@ -211,9 +211,12 @@ void VTKWriter::write_cell_data(const function::Function& u,
   // Write headers
   if (rank == 0)
   {
-    fp << "<CellData  Scalars=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name() << "\"  format=\""
-       << encode_string << "\">";
+    fp << "<CellData  Scalars=\""
+       << "u"
+       << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\""
+       << "u"
+       << "\"  format=\"" << encode_string << "\">";
   }
   else if (rank == 1)
   {
@@ -223,8 +226,11 @@ void VTKWriter::write_cell_data(const function::Function& u,
           "Don't know how to handle vector function with dimension  "
           "other than 2 or 3");
     }
-    fp << "<CellData  Vectors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+    fp << "<CellData  Vectors=\""
+       << "u"
+       << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\""
+       << "u"
        << "\"  NumberOfComponents=\"3\" format=\"" << encode_string << "\">";
   }
   else if (rank == 2)
@@ -234,8 +240,11 @@ void VTKWriter::write_cell_data(const function::Function& u,
       throw std::runtime_error("Don't know how to handle tensor function with "
                                "dimension other than 4 or 9");
     }
-    fp << "<CellData  Tensors=\"" << u.name() << "\"> " << std::endl;
-    fp << "<DataArray  type=\"Float64\"  Name=\"" << u.name()
+    fp << "<CellData  Tensors=\""
+       << "u"
+       << "\"> " << std::endl;
+    fp << "<DataArray  type=\"Float64\"  Name=\""
+       << "u"
        << "\"  NumberOfComponents=\"9\" format=\"" << encode_string << "\">";
   }
 

@@ -37,7 +37,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   PetscScalar value = 0.0;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_fn_cell(i);
+    auto& fn = integrals.get_tabulate_tensor_function(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     value += fem::impl::assemble_cells(mesh, active_cells, fn, coeff_fn,
@@ -46,18 +46,18 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_fn_exterior_facet(i);
-    const std::vector<std::int32_t>& active_facets = integrals.integral_domains(
-        fem::FormIntegrals::Type::exterior_facet, i);
+    auto& fn = integrals.get_tabulate_tensor_function(type::exterior_facet, i);
+    const std::vector<std::int32_t>& active_facets
+        = integrals.integral_domains(type::exterior_facet, i);
     value += fem::impl::assemble_exterior_facets(mesh, active_facets, fn,
                                                  coeff_fn, c_offsets);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_fn_interior_facet(i);
-    const std::vector<std::int32_t>& active_facets = integrals.integral_domains(
-        fem::FormIntegrals::Type::interior_facet, i);
+    auto& fn = integrals.get_tabulate_tensor_function(type::interior_facet, i);
+    const std::vector<std::int32_t>& active_facets
+        = integrals.integral_domains(type::interior_facet, i);
     value += fem::impl::assemble_interior_facets(mesh, active_facets, fn,
                                                  coeff_fn, c_offsets);
   }
@@ -69,7 +69,7 @@ PetscScalar fem::impl::assemble_cells(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -94,8 +94,8 @@ PetscScalar fem::impl::assemble_cells(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over all cells
+  const int orientation = 0;
   PetscScalar cell_value, value(0);
-
   for (const auto& cell_index : active_cells)
   {
     const mesh::Cell cell(mesh, cell_index);
@@ -115,7 +115,8 @@ PetscScalar fem::impl::assemble_cells(
                                 coordinate_dofs);
     }
 
-    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
+    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), nullptr,
+       &orientation);
     value += cell_value;
   }
 
@@ -126,7 +127,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -166,7 +167,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
-    const int orient = 1;
+    const int orient = 0;
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
@@ -193,7 +194,7 @@ PetscScalar fem::impl::assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -234,7 +235,7 @@ PetscScalar fem::impl::assemble_interior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
-    const int orient[2] = {1, 1};
+    const int orient[2] = {0, 0};
 
     // Get cell vertex coordinates
     const int cell0_index = cell0.index();

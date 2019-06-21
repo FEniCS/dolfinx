@@ -111,20 +111,18 @@
 # First, the modules :py:mod:`random` :py:mod:`matplotlib`
 # :py:mod:`dolfin` module are imported::
 
-from dolfin import log
-
 import os
-import random
 
-from dolfin import (MPI, CellType, Expression, Function, FunctionSpace,
-                    NewtonSolver, NonlinearProblem, TestFunctions,
-                    TrialFunction, UnitSquareMesh, function)
+import numpy as np
+from petsc4py import PETSc
+
+from dolfin import (MPI, CellType, Function, FunctionSpace, NewtonSolver,
+                    NonlinearProblem, TestFunctions, TrialFunction,
+                    UnitSquareMesh, log)
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
-from petsc4py import PETSc
 from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
                  variable)
-
 
 # Save all logging to file
 log.set_output_file("log.txt")
@@ -233,14 +231,12 @@ c0, mu0 = split(u0)
 # then interpolated into a finite element space::
 
 
-@function.expression.numba_eval
-def init_cond(values, x, cell):
-    values[:, 0] = 0.63 + 0.02 * (0.5 - random.random())
+def u_init(values, x):
+    values[:, 0] = 0.63 + 0.02 * (0.5 - np.random.rand(x.shape[0]))
     values[:, 1] = 0.0
 
 
 # Create intial conditions and interpolate
-u_init = Expression(init_cond, shape=(2,))
 u.interpolate(u_init)
 
 # The first line creates an object of type ``InitialConditions``.  The
@@ -330,7 +326,8 @@ u0.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FOR
 
 while (t < T):
     t += dt
-    solver.solve(problem, u.vector())
+    r = solver.solve(problem, u.vector())
+    print("Step, num iterations:", int(t / dt), r[0])
     u.vector().copy(result=u0.vector())
     file.write(u.sub(0), t)
 

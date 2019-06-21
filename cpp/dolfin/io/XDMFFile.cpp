@@ -73,7 +73,7 @@ std::string rank_to_string(std::size_t value_rank)
 bool has_cell_centred_data(const function::Function& u)
 {
   std::size_t cell_based_dim = 1;
-  for (std::size_t i = 0; i < u.value_rank(); i++)
+  for (int i = 0; i < u.value_rank(); i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
   return (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim);
 }
@@ -532,9 +532,9 @@ void XDMFFile::write(const function::Function& u)
   {
     std::string attr_name;
     if (component.empty())
-      attr_name = u.name();
+      attr_name = u.name;
     else
-      attr_name = component + "_" + u.name();
+      attr_name = component + "_" + u.name;
 
     // Add attribute node of the current component
     pugi::xml_node attribute_node = grid_node.append_child("Attribute");
@@ -629,7 +629,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
   assert(domain_node);
 
   // Should functions share mesh or not? By default they do not
-  std::string tg_name = "TimeSeries_" + u.name();
+  std::string tg_name = std::string("TimeSeries_") + u.name;
   if (functions_share_mesh)
     tg_name = "TimeSeries";
 
@@ -726,12 +726,12 @@ void XDMFFile::write(const function::Function& u, double time_step)
     std::string dataset_name;
     if (component.empty())
     {
-      attr_name = u.name();
+      attr_name = u.name;
       dataset_name = "/VisualisationVector/" + std::to_string(_counter);
     }
     else
     {
-      attr_name = component + "_" + u.name();
+      attr_name = component + "_" + u.name;
       dataset_name = "/VisualisationVector/" + component + "/"
                      + std::to_string(_counter);
     }
@@ -916,7 +916,7 @@ void XDMFFile::write_mesh_value_collection(
   // Add new grid node, for MVC mesh
   pugi::xml_node mvc_grid_node = domain_node.append_child("Grid");
   assert(mvc_grid_node);
-  mvc_grid_node.append_attribute("Name") = mvc.name().c_str();
+  mvc_grid_node.append_attribute("Name") = mvc.name.c_str();
   mvc_grid_node.append_attribute("GridType") = "Uniform";
 
   // Add topology node and attributes
@@ -984,7 +984,7 @@ void XDMFFile::write_mesh_value_collection(
   // Add attribute node with values
   pugi::xml_node attribute_node = mvc_grid_node.append_child("Attribute");
   assert(attribute_node);
-  attribute_node.append_attribute("Name") = mvc.name().c_str();
+  attribute_node.append_attribute("Name") = mvc.name.c_str();
   attribute_node.append_attribute("AttributeType") = "Scalar";
   attribute_node.append_attribute("Center") = "Cell";
 
@@ -1826,7 +1826,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   // Add attribute node with values
   pugi::xml_node attribute_node = grid_node.append_child("Attribute");
   assert(attribute_node);
-  attribute_node.append_attribute("Name") = meshfunction.name().c_str();
+  attribute_node.append_attribute("Name") = meshfunction.name.c_str();
   attribute_node.append_attribute("AttributeType") = "Scalar";
   attribute_node.append_attribute("Center") = "Cell";
 
