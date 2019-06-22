@@ -200,48 +200,33 @@ MeshValueCollection<T>::MeshValueCollection(
                                       std::vector<std::vector<T>>& topology_data,//Cells This contains the vertices or edges that make up a edge or cell
                                       std::vector<T>& values_data,//Cell_data This contains the tag number. The length is equal to cells
                                       std::size_t dim): _mesh(mesh), _dim(dim)
-{   // FIXME: Check logic 
-  //const int num_verts_per_entity = _dim + 1;
-//
-  //std::vector<std::int32_t> v(num_verts_per_entity);
-//
-  //for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, _dim))
-  //{
-  //  if (_dim == 0)
-  //    v[0] = m.global_index();
-  //  else
-  //  {
-  //    v.clear();
-  //    for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m))
-  //      v.push_back(vtx.global_index());
-  //    std::sort(v.begin(), v.end());
-  //  }
-  //}
-
+{   
   const std::size_t D = _mesh->topology().dim();
 
   // Handle cells as a special case
   if ((int)D == _dim)
   {
-    for (std::size_t cell_index = 0; cell_index < _mesh->topology().size(_dim);
+    for (std::size_t cell_index = 0; cell_index < values_data.size();
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-      //_values.insert({key, *values_data[cell_index]});
-      _values.insert({key, 33});
+      _values.insert({key, values_data[cell_index]});
     }
   }
   else
   {
     _mesh->create_connectivity(_dim, D);
+
     assert(_mesh->topology().connectivity(_dim, D));
     const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
-    for (std::size_t entity_index = 0; entity_index < _mesh->topology().size(_dim);
-         ++entity_index)
+
+    for (std::size_t j = 0; j < values_data.size();
+         ++j)
     {
       // Find the cell
-      assert(connectivity.size(entity_index) > 0);
+      std::size_t entity_index = topology_data[j][0];
 
+      assert(connectivity.size(entity_index) > 0);
 
       const MeshEntity entity(*_mesh, _dim, entity_index);
       for (std::size_t i = 0; i < entity.num_entities(D); ++i)
@@ -249,23 +234,22 @@ MeshValueCollection<T>::MeshValueCollection(
         // Create cell
         const mesh::Cell cell(*_mesh,
                               connectivity.connections(entity_index)[i]);
-
-        std::cout<<std::endl<<"Connectivity :"<<connectivity.connections(entity_index)[i];
+                        
+        std::cout<<"Connectivity :"<<connectivity.connections(entity_index)[i]<<std::endl;
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
-
+        std::cout<<"1";
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        //_values.insert({key, values_data[entity_index]});
-        _values.insert({key, 2});
+        std::cout<<"2";
+        _values.insert({key, values_data[j]});
       }
     }
   }
 
-  std::cout << "Test: ;)" <<D << std::endl;
-
+  std::cout << std::endl << "Test:)" <<D << std::endl;
 
 }
 //---------------------------------------------------------------------------
