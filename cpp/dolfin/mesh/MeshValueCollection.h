@@ -13,6 +13,9 @@
 #include <map>
 #include <memory>
 #include <utility>
+#include <dolfin/mesh/MeshIterator.h>
+#include <dolfin/mesh/Partitioning.h>
+#include <dolfin/mesh/Vertex.h>
 
 namespace dolfin
 {
@@ -52,6 +55,11 @@ public:
   /// @param    dim (std::size_t)
   ///         The mesh entity dimension for the mesh value collection.
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
+
+  MeshValueCollection(std::shared_ptr<const Mesh> mesh,
+                      std::vector<std::vector<std::size_t>> topology_data,//Cells
+                      std::vector<T> values_data,//Cell_data
+                      std::size_t dim);
 
   /// Destructor
   ~MeshValueCollection() = default;
@@ -184,6 +192,37 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
     : _mesh(mesh), _dim(dim)
 {
   // Do nothing
+}
+
+template <typename T>
+MeshValueCollection<T>::MeshValueCollection(
+                                      std::shared_ptr<const Mesh> mesh,
+                                      std::vector<std::vector<std::size_t>> topology_data,//Cells
+                                      std::vector<T> values_data,//Cell_data
+                                      std::size_t dim): _mesh(mesh), _dim(dim)
+{   // FIXME: Check logic 
+  const int num_verts_per_entity = _dim + 1;
+
+  //std::vector<std::int32_t> v(num_verts_per_entity);
+//
+  //for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, _dim))
+  //{
+  //  if (_dim == 0)
+  //    v[0] = m.global_index();
+  //  else
+  //  {
+  //    v.clear();
+  //    for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m))
+  //      v.push_back(vtx.global_index());
+  //    std::sort(v.begin(), v.end());
+  //  }
+  //}
+
+
+  //const std::size_t D = _mesh->topology().dim();
+
+  std::cout << num_verts_per_entity << std::endl;
+
 }
 //---------------------------------------------------------------------------
 template <typename T>
