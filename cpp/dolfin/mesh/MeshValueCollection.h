@@ -57,8 +57,8 @@ public:
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
   MeshValueCollection(std::shared_ptr<const Mesh> mesh,
-                      std::vector<std::vector<std::size_t>> topology_data,//Cells
-                      std::vector<T> values_data,//Cell_data
+                      std::vector<std::vector<T>>& topology_data,//Cells
+                      std::vector<T>& values_data,//Cell_data
                       std::size_t dim);
 
   /// Destructor
@@ -197,8 +197,8 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
                                       std::shared_ptr<const Mesh> mesh,
-                                      std::vector<std::vector<std::size_t>> topology_data,//Cells
-                                      std::vector<T> values_data,//Cell_data
+                                      std::vector<std::vector<T>>& topology_data,//Cells
+                                      std::vector<T>& values_data,//Cell_data
                                       std::size_t dim): _mesh(mesh), _dim(dim)
 {   // FIXME: Check logic 
   const int num_verts_per_entity = _dim + 1;
@@ -221,7 +221,7 @@ MeshValueCollection<T>::MeshValueCollection(
 
   //const std::size_t D = _mesh->topology().dim();
 
-  std::cout << num_verts_per_entity << std::endl;
+  std::cout << "Test: :)" <<num_verts_per_entity << std::endl;
 
 }
 //---------------------------------------------------------------------------
