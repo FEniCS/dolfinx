@@ -32,7 +32,7 @@ public:
   explicit SLEPcEigenSolver(MPI_Comm comm);
 
   /// Create eigenvalue solver from EPS object
-  explicit SLEPcEigenSolver(EPS eps);
+  explicit SLEPcEigenSolver(EPS eps, bool inc_ref_count = true);
 
   /// Destructor
   ~SLEPcEigenSolver();
@@ -60,14 +60,6 @@ public:
   /// Get the number of converged eigenvalues
   std::size_t get_number_converged() const;
 
-  /// Set deflation space. The VectorSpaceBasis does not need to be
-  /// orthonormal.
-  void set_deflation_space(const la::VectorSpaceBasis& deflation_space);
-
-  /// Set inital space. The VectorSpaceBasis does not need to be
-  /// orthonormal.
-  void set_initial_space(const la::VectorSpaceBasis& initial_space);
-
   /// Sets the prefix used by PETSc when searching the PETSc options
   /// database
   void set_options_prefix(std::string options_prefix);
@@ -86,18 +78,6 @@ public:
   MPI_Comm mpi_comm() const;
 
 private:
-  // Set problem type (used for SLEPc internals)
-  void set_problem_type(std::string type);
-
-  // Set spectral transform
-  void set_spectral_transform(std::string transform, double shift);
-
-  // Set solver
-  void set_solver(std::string spectrum);
-
-  // Set tolerance
-  void set_tolerance(double tolerance, int maxiter);
-
   // SLEPc solver pointer
   EPS _eps;
 };
