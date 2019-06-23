@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2009 Igor A. Baratta
+// Copyright (C) 2019 Igor A. Baratta
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -21,7 +21,7 @@ namespace graph
 template <typename T>
 class CSRGraph;
 
-/// This class provides an interface to KaHIP
+/// This class provides an interface to KaHIP parallel partitioner
 class KaHIP
 {
 #ifdef HAS_KAHIP
