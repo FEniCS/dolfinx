@@ -28,23 +28,23 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   common::Timer timer("Compute graph partition (KaHIP)");
 
   // Number of partitions (one for each process)
-  // FIXME: Allow partition on a subset of processes
+  // TODO: Allow partition on a subset of processes
   int nparts = dolfin::MPI::size(mpi_comm);
+  const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
+  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
 
   // Graph does not have vertex or adjacency weights,
   // so we use null pointers as arguments.
-  idxtype* vwgt{nullptr};
-  idxtype* adjcwgt{nullptr};
+  unsigned long long* vwgt{nullptr};
+  unsigned long long* adjcwgt{nullptr};
 
-  // The amount of imbalance that is allowed. (3%)
-  double imbalance = 0.03;
-
-  // Suppress output from the partitioning library.
-  bool suppress_output = true;
-
-  // FIXME: Allow the user to set
+  // TODO: Allow the user to set the parameters
   int mode = ULTRAFASTMESH;
   int seed = 0;
+  // The amount of imbalance that is allowed. (3%)
+  double imbalance = 0.03;
+  // Suppress output from the partitioning library.
+  bool suppress_output = true;
 
   // Call KaHIP to partition graph
   common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
@@ -53,38 +53,38 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   int edgecut = 0;
 
   ParHIPPartitionKWay(
-      const_cast<idxtype*>(csr_graph.node_distribution().data()),
-      const_cast<idxtype*>(csr_graph.nodes().data()),
-      const_cast<idxtype*>(csr_graph.edges().data()), vwgt, adjcwgt, &nparts,
-      &imbalance, suppress_output, seed, mode, &edgecut, part.data(),
+      const_cast<unsigned long long*>(csr_graph.node_distribution().data()),
+      const_cast<unsigned long long*>(csr_graph.nodes().data()),
+      const_cast<unsigned long long*>(csr_graph.edges().data()), vwgt, adjcwgt,
+      &nparts, &imbalance, suppress_output, seed, mode, &edgecut, part.data(),
       &mpi_comm);
   timer1.stop();
 
   common::Timer timer2("Compute graph halo data (KaHIP)");
 
   // Work out halo cells for current division of dual graph
-  const auto& elmdist = csr_graph.node_distribution();
+  const auto& node_distribution = csr_graph.node_distribution();
   const auto& xadj = csr_graph.nodes();
   const auto& adjncy = csr_graph.edges();
-  const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
-  const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
-  const idxtype elm_begin = elmdist[process_number];
-  const idxtype elm_end = elmdist[process_number + 1];
+  const unsigned long long elm_begin = node_distribution[process_number];
+  const unsigned long long elm_end = node_distribution[process_number + 1];
   const std::int32_t ncells = elm_end - elm_begin;
 
-  std::map<idxtype, std::set<std::int32_t>> halo_cell_to_remotes;
+  std::map<unsigned long long, std::set<std::int32_t>> halo_cell_to_remotes;
   // local indexing "i"
   for (int i = 0; i < ncells; i++)
   {
-    for (auto other_cell :
-         csr_graph[i]) // idxtype j = xadj[i]; j != xadj[i + 1]; ++j)
+    // unsigned long long j = xadj[i]; j != xadj[i + 1]; ++j)
+    for (auto other_cell : csr_graph[i])
     {
-      //      const idxtype other_cell = adjncy[j];
+      // const unsigned long long other_cell = adjncy[j];
       if (other_cell < elm_begin || other_cell >= elm_end)
       {
-        const int remote
-            = std::upper_bound(elmdist.begin(), elmdist.end(), other_cell)
-              - elmdist.begin() - 1;
+        const int remote = std::upper_bound(node_distribution.begin(),
+                                            node_distribution.end(), other_cell)
+                           - node_distribution.begin() - 1;
+
+        std::cout << "Remote: " << remote << std::endl;
 
         assert(remote < num_processes);
         if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
@@ -93,6 +93,12 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
       }
     }
   }
+
+  // show content:
+  for (std::map<unsigned long long, std::set<std::int32_t>>::iterator it
+       = halo_cell_to_remotes.begin();
+       it != halo_cell_to_remotes.end(); ++it)
+    std::cout << it->first << " => " << '\n';
 
   // Do halo exchange of cell partition data
   std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
@@ -127,9 +133,9 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   for (std::int32_t i = 0; i < ncells; i++)
   {
     const std::size_t proc_this = part[i];
-    for (idxtype j = xadj[i]; j < xadj[i + 1]; ++j)
+    for (unsigned long long j = xadj[i]; j < xadj[i + 1]; ++j)
     {
-      const idxtype other_cell = adjncy[j];
+      const unsigned long long other_cell = adjncy[j];
       std::size_t proc_other;
 
       if (other_cell < elm_begin || other_cell >= elm_end)
@@ -164,6 +170,17 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   }
 
   timer2.stop();
+  for (auto i : part)
+    std::cout << i << ' ';
+  std::cout << std::endl;
+
+  for (auto it = ghost_procs.cbegin(); it != ghost_procs.cend(); ++it)
+  {
+    std::cout << it->first << " " << std::endl;
+    for (auto i : it->second)
+      std::cout << i << ' ';
+    std::cout << std::endl;
+  }
 
   return std::make_pair(std::vector<int>(part.begin(), part.end()),
                         std::move(ghost_procs));
