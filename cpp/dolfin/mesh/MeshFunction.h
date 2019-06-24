@@ -200,9 +200,8 @@ public:
   const std::size_t id = common::UniqueIdGenerator::id();
 
 private:
-  // Values at the set of mesh entities. We don't use a
-  // std::vector<T> here because it has trouble with bool, which C++
-  // specialises.
+  // Values at the set of mesh entities. We don't use a std::vector<T>
+  // here because it has trouble with bool, which C++ specialises.
   boost::container::vector<T> _values;
 
   // The mesh
