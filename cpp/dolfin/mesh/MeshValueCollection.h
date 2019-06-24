@@ -57,9 +57,9 @@ public:
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
   MeshValueCollection(std::shared_ptr<const Mesh> mesh,
+                      std::size_t dim,
                       std::vector<std::vector<T>>& topology_data,//Cells
-                      std::vector<T>& values_data,//Cell_data
-                      std::size_t dim);
+                      std::vector<T>& values_data); //Cell_data
 
   /// Destructor
   ~MeshValueCollection() = default;
@@ -196,10 +196,10 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
 
 template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
-                                      std::shared_ptr<const Mesh> mesh,
-                                      std::vector<std::vector<T>>& topology_data,//Cells This contains the vertices or edges that make up a edge or cell
-                                      std::vector<T>& values_data,//Cell_data This contains the tag number. The length is equal to cells
-                                      std::size_t dim): _mesh(mesh), _dim(dim)
+                      std::shared_ptr<const Mesh> mesh,
+                      std::size_t dim,
+                      std::vector<std::vector<T>>& topology_data,//Cells
+                      std::vector<T>& values_data): _mesh(mesh), _dim(dim)
 {   
   const std::size_t D = _mesh->topology().dim();
 

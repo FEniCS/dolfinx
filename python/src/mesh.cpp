@@ -404,9 +404,9 @@ void mesh(py::module& m)
       "DOLFIN MeshValueCollection object")                                     \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>, std::size_t>()) \
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>,                 \
+        std::size_t,                                                           \
         std::vector<std::vector<SCALAR>>&,                                     \
-        std::vector<SCALAR>&,                                                  \
-        std::size_t>())                                                        \
+        std::vector<SCALAR>&>())                                               \
       .def_readwrite("name", &dolfin::mesh::MeshValueCollection<SCALAR>::name) \
       .def_property_readonly("dim",                                            \
                              &dolfin::mesh::MeshValueCollection<SCALAR>::dim)  \
