@@ -32,11 +32,6 @@ PETScMatrix::PETScMatrix(Mat A, bool inc_ref_count)
   // Reference count to A is incremented in base class
 }
 //-----------------------------------------------------------------------------
-PETScMatrix::~PETScMatrix()
-{
-  // Do nothing (PETSc matrix is destroyed in base class)
-}
-//-----------------------------------------------------------------------------
 void PETScMatrix::set(const PetscScalar* block, std::size_t m,
                       const PetscInt* rows, std::size_t n, const PetscInt* cols)
 {
@@ -115,7 +110,7 @@ void PETScMatrix::set_options_prefix(std::string options_prefix)
 std::string PETScMatrix::get_options_prefix() const
 {
   assert(_matA);
-  const char* prefix = NULL;
+  const char* prefix = nullptr;
   MatGetOptionsPrefix(_matA, &prefix);
   return std::string(prefix);
 }

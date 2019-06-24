@@ -11,7 +11,6 @@
 #include <dolfin/common/SubSystemsManager.h>
 #include <dolfin/common/Table.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/Variable.h>
 #include <dolfin/common/defines.h>
 #include <dolfin/common/timing.h>
 #include <memory>
@@ -32,14 +31,6 @@ namespace dolfin_wrappers
 // Interface for dolfin/common
 void common(py::module& m)
 {
-  // dolfin::common::Variable
-  py::class_<dolfin::common::Variable,
-             std::shared_ptr<dolfin::common::Variable>>(m, "Variable",
-                                                        "Variable base class")
-      .def_property_readonly("id", &dolfin::common::Variable::id)
-      .def("name", &dolfin::common::Variable::name)
-      .def("rename", &dolfin::common::Variable::rename);
-
   // From dolfin/common/defines.h
   m.attr("has_debug") = dolfin::has_debug();
   m.attr("has_parmetis") = dolfin::has_parmetis();
@@ -76,8 +67,7 @@ void common(py::module& m)
                              "Return list of ghost indices");
 
   // dolfin::Table
-  py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>,
-             dolfin::common::Variable>(m, "Table")
+  py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>>(m, "Table")
       .def(py::init<std::string>())
       .def("str", &dolfin::Table::str);
 

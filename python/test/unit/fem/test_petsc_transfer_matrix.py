@@ -8,8 +8,8 @@
 
 import pytest
 
-from dolfin import (MPI, Expression, Function, FunctionSpace, UnitCubeMesh,
-                    UnitSquareMesh, VectorFunctionSpace, function, interpolate)
+from dolfin import (MPI, Function, FunctionSpace, UnitCubeMesh, UnitSquareMesh,
+                    VectorFunctionSpace, interpolate)
 from dolfin.cpp.fem import PETScDMCollection
 from ufl import FiniteElement, MixedElement, VectorElement
 
@@ -21,11 +21,9 @@ def test_scalar_p1():
     Vc = FunctionSpace(meshc, ("CG", 1))
     Vf = FunctionSpace(meshf, ("CG", 1))
 
-    @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx):
+    def u(values, x):
         values[:, 0] = x[:, 0] + 2.0 * x[:, 1] + 3.0 * x[:, 2]
 
-    u = Expression(expr_eval)
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
@@ -50,11 +48,9 @@ def test_scalar_p1_scaled_mesh():
     Vc = FunctionSpace(meshc, ("CG", 1))
     Vf = FunctionSpace(meshf, ("CG", 1))
 
-    @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx):
+    def u(values, x):
         values[:, 0] = x[:, 0] + 2.0 * x[:, 1] + 3.0 * x[:, 2]
 
-    u = Expression(expr_eval)
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
@@ -90,11 +86,9 @@ def test_scalar_p2():
     Vc = FunctionSpace(meshc, ("CG", 2))
     Vf = FunctionSpace(meshf, ("CG", 2))
 
-    @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx):
+    def u(values, x):
         values[:, 0] = x[:, 0] + 2.0 * x[:, 1] + 3.0 * x[:, 2]
 
-    u = Expression(expr_eval)
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
@@ -116,12 +110,10 @@ def test_vector_p1_2d():
     Vc = VectorFunctionSpace(meshc, ("CG", 1))
     Vf = VectorFunctionSpace(meshf, ("CG", 1))
 
-    @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx):
+    def u(values, x):
         values[:, 0] = x[:, 0] + 2.0 * x[:, 1]
         values[:, 1] = 4.0 * x[:, 0]
 
-    u = Expression(expr_eval, shape=(2,))
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
@@ -143,12 +135,10 @@ def test_vector_p2_2d():
     Vc = VectorFunctionSpace(meshc, ("CG", 2))
     Vf = VectorFunctionSpace(meshf, ("CG", 2))
 
-    @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx):
+    def u(values, x):
         values[:, 0] = x[:, 0] + 2.0 * x[:, 1]
         values[:, 1] = 4.0 * x[:, 0] * x[:, 1]
 
-    u = Expression(expr_eval, shape=(2,))
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
@@ -169,13 +159,11 @@ def test_vector_p1_3d():
     Vc = VectorFunctionSpace(meshc, ("CG", 1))
     Vf = VectorFunctionSpace(meshf, ("CG", 1))
 
-    @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx):
+    def u(values, x):
         values[:, 0] = x[:, 0] + 2.0 * x[:, 1]
         values[:, 1] = 4.0 * x[:, 0]
         values[:, 2] = 3.0 * x[:, 2] + x[:, 0]
 
-    u = Expression(expr_eval, shape=(3,))
     uc = interpolate(u, Vc)
     uf = interpolate(u, Vf)
 
@@ -202,14 +190,12 @@ def test_taylor_hood_cube():
     Zc = FunctionSpace(meshc, Ze)
     Zf = FunctionSpace(meshf, Ze)
 
-    @function.expression.numba_eval
-    def expr_eval(values, x, cell_idx):
+    def z(values, x):
         values[:, 0] = x[:, 0] * x[:, 1]
         values[:, 1] = x[:, 1] * x[:, 2]
         values[:, 2] = x[:, 2] * x[:, 0]
         values[:, 3] = x[:, 0] + 3.0 * x[:, 1] + x[:, 2]
 
-    z = Expression(expr_eval, shape=(4,))
     zc = interpolate(z, Zc)
     zf = interpolate(z, Zf)
 

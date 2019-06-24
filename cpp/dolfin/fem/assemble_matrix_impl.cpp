@@ -48,7 +48,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_fn_cell(i);
+    auto& fn = integrals.get_tabulate_tensor_function(type::cell, i);
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(
@@ -58,7 +58,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_fn_exterior_facet(i);
+    auto& fn = integrals.get_tabulate_tensor_function(type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(A, mesh, active_facets, dofmap0,
@@ -68,7 +68,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
   {
-    auto& fn = integrals.get_tabulate_tensor_fn_interior_facet(i);
+    auto& fn = integrals.get_tabulate_tensor_function(type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(A, mesh, active_facets, dofmap0,
@@ -87,7 +87,7 @@ void fem::impl::assemble_cells(
     const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& kernel,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   assert(A);
@@ -115,6 +115,7 @@ void fem::impl::assemble_cells(
 
   // Iterate over active cells
   PetscErrorCode ierr;
+  const int orientation = 0;
   for (auto& cell_index : active_cells)
   {
     const mesh::Cell cell(mesh, cell_index);
@@ -136,7 +137,8 @@ void fem::impl::assemble_cells(
 
     // Tabulate tensor
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
-    kernel(Ae.data(), coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
+    kernel(Ae.data(), coeff_array.data(), coordinate_dofs.data(), nullptr,
+           &orientation);
 
     // Zero rows/columns for essential bcs
     if (!bc0.empty())
@@ -176,7 +178,7 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -217,7 +219,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
-    const int orient = 1;
+    const int orient = 0;
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
@@ -277,7 +279,7 @@ void fem::impl::assemble_interior_facets(
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -322,7 +324,7 @@ void fem::impl::assemble_interior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
-    const int orient[2] = {1, 1};
+    const int orient[2] = {0, 0};
 
     // Get cell vertex coordinates
     const int cell_index0 = cell0.index();

@@ -130,7 +130,7 @@ Mat dolfin::la::create_petsc_matrix(
 
   // Allocate space for matrix
   ierr = MatXAIJSetPreallocation(A, bs, _nnz_diag.data(), _nnz_offdiag.data(),
-                                 NULL, NULL);
+                                 nullptr, nullptr);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "MatXIJSetPreallocation");
 
@@ -227,7 +227,7 @@ MatNullSpace dolfin::la::create_petsc_nullspace(
   }
 
   // Create PETSC nullspace
-  MatNullSpace petsc_nullspace = NULL;
+  MatNullSpace petsc_nullspace = nullptr;
   ierr = MatNullSpaceCreate(comm, PETSC_FALSE, _nullspace.size(),
                             _nullspace.data(), &petsc_nullspace);
   if (ierr != 0)

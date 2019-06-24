@@ -12,7 +12,7 @@
 #include "Topology.h"
 #include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
-#include <dolfin/common/Variable.h>
+#include <dolfin/common/UniqueIdGenerator.h>
 #include <map>
 #include <memory>
 #include <unordered_set>
@@ -34,7 +34,7 @@ class MeshValueCollection;
 /// domains or boolean markers for mesh refinement.
 
 template <typename T>
-class MeshFunction : public common::Variable
+class MeshFunction
 {
 public:
   /// Create mesh of given dimension on given mesh and initialize
@@ -176,10 +176,15 @@ public:
   ///         An informal representation.
   std::string str(bool verbose) const;
 
+  /// Name
+  std::string name = "m";
+
+  /// ID
+  const std::size_t id = common::UniqueIdGenerator::id();
+
 private:
-  // Values at the set of mesh entities. We don't use a
-  // std::vector<T> here because it has trouble with bool, which C++
-  // specialises.
+  // Values at the set of mesh entities. We don't use a std::vector<T>
+  // here because it has trouble with bool, which C++ specialises.
   boost::container::vector<T> _values;
 
   // The mesh
@@ -211,7 +216,7 @@ template <typename T>
 MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
                               const MeshValueCollection<T>& value_collection,
                               const T& default_value)
-    : common::Variable("f"), _mesh(mesh), _dim(value_collection.dim())
+    : _mesh(mesh), _dim(value_collection.dim())
 {
   assert(_mesh);
   _mesh->create_entities(_dim);

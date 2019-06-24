@@ -16,7 +16,7 @@ __all__ = ["plot"]
 
 _meshfunction_types = (cpp.mesh.MeshFunctionBool, cpp.mesh.MeshFunctionInt,
                        cpp.mesh.MeshFunctionDouble, cpp.mesh.MeshFunctionSizet)
-_matplotlib_plottable_types = (cpp.function.Function, cpp.function.Expression,
+_matplotlib_plottable_types = (cpp.function.Function,
                                cpp.mesh.Mesh,
                                cpp.fem.DirichletBC) + _meshfunction_types
 _all_plottable_types = tuple(set.union(set(_matplotlib_plottable_types)))
@@ -314,8 +314,8 @@ def _plot_matplotlib(obj, mesh, kwargs):
 
     if isinstance(obj, cpp.function.Function):
         return mplot_function(ax, obj, **kwargs)
-    elif isinstance(obj, cpp.function.Expression):
-        return mplot_expression(ax, obj, mesh, **kwargs)
+    # elif isinstance(obj, cpp.function.Expression):
+    #     return mplot_expression(ax, obj, mesh, **kwargs)
     elif isinstance(obj, cpp.mesh.Mesh):
         return mplot_mesh(ax, obj, **kwargs)
     elif isinstance(obj, cpp.fem.DirichletBC):
@@ -410,8 +410,8 @@ def plot(object, *args, **kwargs):
             mesh = object.mesh()
 
     # Expressions do not carry their own mesh
-    if isinstance(object, cpp.function.Expression) and mesh is None:
-        raise RuntimeError("Expecting a mesh as keyword argument")
+    # if isinstance(object, cpp.function.Expression) and mesh is None:
+    #     raise RuntimeError("Expecting a mesh as keyword argument")
 
     backend = kwargs.pop("backend", "matplotlib")
     if backend not in ("matplotlib"):

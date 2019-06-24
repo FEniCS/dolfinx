@@ -33,60 +33,6 @@ class Right : public mesh::SubDomain
   }
 };
 
-// Dirichlet boundary condition for clamp at left end
-class Clamp : public function::Expression
-{
-public:
-  Clamp() : function::Expression({3}) {}
-
-  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                values,
-            Eigen::Ref<const EigenRowArrayXXd> x) const
-  {
-    for (int i = 0; i < x.rows(); ++i)
-    {
-      values(i, 0) = 0.0;
-      values(i, 1) = 0.0;
-      values(i, 2) = 0.0;
-    }
-  }
-};
-
-// Dirichlet boundary condition for rotation at right end
-class Rotation : public function::Expression
-{
-public:
-  Rotation() : function::Expression({3}) {}
-
-  void eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                    Eigen::RowMajor>>
-                values,
-            Eigen::Ref<const EigenRowArrayXXd> x) const
-  {
-    const double scale = 0.005;
-
-    // Center of rotation
-    const double y0 = 0.5;
-    const double z0 = 0.5;
-
-    // Large angle of rotation (60 degrees)
-    double theta = 1.04719755;
-
-    for (int i = 0; i < x.rows(); ++i)
-    {
-      // New coordinates
-      double y = y0 + (x(1, 1) - y0) * cos(theta) - (x(i, 2) - z0) * sin(theta);
-      double z = z0 + (x(i, 1) - y0) * sin(theta) + (x(i, 2) - z0) * cos(theta);
-
-      // Rotate at right end
-      values(i, 0) = 0.0;
-      values(i, 1) = scale * (y - x(i, 1));
-      values(i, 2) = scale * (z - x(i, 2));
-    }
-  }
-};
-
 // Next:
 //
 // .. code-block:: cpp
@@ -207,13 +153,32 @@ int main(int argc, char* argv[])
   auto cmap = a->coordinate_mapping();
   mesh->geometry().coord_mapping = cmap;
 
-  Rotation rotation;
-  Clamp clamp;
-
   auto u_rotation = std::make_shared<function::Function>(V);
-  u_rotation->interpolate(rotation);
+  u_rotation->interpolate([](auto values, auto x) {
+    const double scale = 0.005;
+
+    // Center of rotation
+    const double y0 = 0.5;
+    const double z0 = 0.5;
+
+    // Large angle of rotation (60 degrees)
+    double theta = 1.04719755;
+
+    for (int i = 0; i < x.rows(); ++i)
+    {
+      // New coordinates
+      double y = y0 + (x(1, 1) - y0) * cos(theta) - (x(i, 2) - z0) * sin(theta);
+      double z = z0 + (x(i, 1) - y0) * sin(theta) + (x(i, 2) - z0) * cos(theta);
+
+      // Rotate at right end
+      values(i, 0) = 0.0;
+      values(i, 1) = scale * (y - x(i, 1));
+      values(i, 2) = scale * (z - x(i, 2));
+    }
+  });
+
   auto u_clamp = std::make_shared<function::Function>(V);
-  u_clamp->interpolate(clamp);
+  u_clamp->interpolate([](auto values, auto x) { values = 0.0; });
 
   L->set_coefficients({{"u", u}});
   a->set_coefficients({{"u", u}});
