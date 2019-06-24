@@ -13,7 +13,7 @@ import types
 import typing
 
 import ufl
-from dolfin import cpp, function, mesh
+from dolfin import cpp, function
 
 
 class DirichletBC(cpp.fem.DirichletBC):
