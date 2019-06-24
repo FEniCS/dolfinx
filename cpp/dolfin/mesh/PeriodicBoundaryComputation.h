@@ -16,7 +16,6 @@ namespace dolfin
 namespace mesh
 {
 class Mesh;
-class SubDomain;
 
 /// This class computes map from slave entity to master entity
 
@@ -28,8 +27,12 @@ public:
   /// process, local index on owner). If a master entity is shared
   /// by processes, only one of the owning processes is returned.
   static std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
-  compute_periodic_pairs(const Mesh& mesh, const mesh::SubDomain& sub_domain,
-                         const std::size_t dim);
+  compute_periodic_pairs(
+      const Mesh& mesh,
+      const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+          const Eigen::Ref<
+              const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>& mark,
+      const std::size_t dim, const double tol);
 
   /// This function returns a MeshFunction which marks mesh entities
   /// of dimension dim according to:
@@ -40,10 +43,12 @@ public:
   ///
   /// It is useful for visualising and debugging the Expression::map
   /// function that is used to apply periodic boundary conditions.
-  static MeshFunction<std::size_t>
-  masters_slaves(std::shared_ptr<const Mesh> mesh,
-                 const mesh::SubDomain& sub_domain, const std::size_t dim);
-
+  static MeshFunction<std::size_t> masters_slaves(
+      std::shared_ptr<const Mesh> mesh,
+      const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+          const Eigen::Ref<
+              const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>& mark,
+      const std::size_t dim, const double tol);
 };
 } // namespace mesh
 } // namespace dolfin

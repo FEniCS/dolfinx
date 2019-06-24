@@ -98,7 +98,7 @@ def test_assembly_bcs():
     a = inner(u, v) * dx + inner(u, v) * ds
     L = inner(1.0, v) * dx
 
-    def boundary(x):
+    def boundary(x, only_bndry):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.Function(V)
@@ -142,7 +142,7 @@ def test_matrix_assembly_block():
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
 
-    def boundary(x):
+    def boundary(x, only_bndry):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.Function(V1)
@@ -217,7 +217,7 @@ def test_assembly_solve_block():
     V0 = dolfin.function.functionspace.FunctionSpace(mesh, P0)
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
 
-    def boundary(x):
+    def boundary(x, only_bndry):
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc0 = dolfin.function.Function(V0)
@@ -349,11 +349,11 @@ def test_assembly_solve_taylor_hood(mesh):
     P2 = dolfin.VectorFunctionSpace(mesh, ("Lagrange", 2))
     P1 = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
 
-    def boundary0(x):
+    def boundary0(x, only_bndry):
         """Define boundary x = 0"""
         return x[:, 0] < 10 * numpy.finfo(float).eps
 
-    def boundary1(x):
+    def boundary1(x, only_bndry):
         """Define boundary x = 1"""
         return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
 

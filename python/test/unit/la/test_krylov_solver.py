@@ -92,8 +92,11 @@ def test_krylov_samg_solver_elasticity():
         bc0 = Function(V)
         with bc0.vector().localForm() as bc_local:
             bc_local.set(0.0)
-        bc = DirichletBC(V.sub(0), bc0,
-                         lambda x, on_boundary: on_boundary)
+
+        def boundary(x, only_bndry):
+            return [only_bndry] * x.shape(0)
+
+        bc = DirichletBC(V.sub(0), bc0, boundary)
         u = TrialFunction(V)
         v = TestFunction(V)
 

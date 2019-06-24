@@ -5,34 +5,6 @@
 
 using namespace dolfin;
 
-// Sub domain for clamp at left end
-class Left : public mesh::SubDomain
-{
-  EigenArrayXb inside(Eigen::Ref<const EigenRowArrayXXd> x,
-                      bool on_boundary) const
-  {
-    EigenArrayXb flags(x.rows());
-    for (int i = 0; i < x.rows(); ++i)
-      flags[i] = (std::abs(x(i, 0)) < DBL_EPSILON) and on_boundary;
-
-    return flags;
-  }
-};
-
-// Sub domain for rotation at right end
-class Right : public mesh::SubDomain
-{
-  EigenArrayXb inside(Eigen::Ref<const EigenRowArrayXXd> x,
-                      bool on_boundary) const
-  {
-    EigenArrayXb flags(x.rows());
-    for (int i = 0; i < x.rows(); ++i)
-      flags[i] = (std::abs(x(i, 0) - 1.0) < DBL_EPSILON) and on_boundary;
-
-    return flags;
-  }
-};
-
 // Next:
 //
 // .. code-block:: cpp
@@ -129,10 +101,6 @@ int main(int argc, char* argv[])
   std::free(ufc_map);
   std::free(space);
 
-  // Define Dirichlet boundaries
-  Left left;
-  Right right;
-
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
 
@@ -186,8 +154,24 @@ int main(int argc, char* argv[])
   // Create Dirichlet boundary conditions
   auto u0 = std::make_shared<function::Function>(V);
   std::vector<std::shared_ptr<const fem::DirichletBC>> bcs
-      = {std::make_shared<fem::DirichletBC>(V, u_clamp, left),
-         std::make_shared<fem::DirichletBC>(V, u_rotation, right)};
+      = {std::make_shared<fem::DirichletBC>(
+             V, u_clamp,
+             [](auto x, bool only_boundary) {
+               EigenArrayXb flags(x.rows());
+               for (int i = 0; i < x.rows(); ++i)
+                 flags[i] = (std::abs(x(i, 0)) < DBL_EPSILON) and only_boundary;
+
+               return flags;
+             }),
+         std::make_shared<fem::DirichletBC>(
+             V, u_rotation, [](auto x, bool only_boundary) {
+               EigenArrayXb flags(x.rows());
+               for (int i = 0; i < x.rows(); ++i)
+                 flags[i] = (std::abs(x(i, 0) - 1.0) < DBL_EPSILON)
+                            and only_boundary;
+
+               return flags;
+             })};
 
   HyperElasticProblem problem(u, L, a, bcs);
   nls::NewtonSolver newton_solver(MPI_COMM_WORLD);

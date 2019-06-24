@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (MPI, Cells, CellType, FunctionSpace, SubDomain,
+from dolfin import (MPI, Cells, CellType, FunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     VectorFunctionSpace, cpp, fem)
 from dolfin_utils.test.fixtures import fixture

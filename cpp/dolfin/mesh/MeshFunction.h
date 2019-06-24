@@ -8,8 +8,10 @@
 
 #include "Connectivity.h"
 #include "Mesh.h"
+#include "MeshIterator.h"
 #include "MeshEntity.h"
 #include "Topology.h"
+#include "Vertex.h"
 #include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/UniqueIdGenerator.h>
@@ -158,6 +160,21 @@ public:
   /// @param values (std::vector<T>)
   ///         The values.
   void set_values(const std::vector<T>& values);
+
+  /// Set values
+  ///
+  /// If all vertices of a mesh entity satisfy the marking
+  /// function then the entity is marked with the given value.
+  ///
+  /// @param mark (std::function)
+  ///          Marking function used to identify which
+  ///          mesh entities to set value to.
+  /// @param value (T)
+  void mark(
+      const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+          const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                              Eigen::RowMajor>>& x)>& mark,
+      T value);
 
   /// Get indices where meshfunction is equal to given value
   ///
@@ -385,5 +402,41 @@ std::string MeshFunction<T>::str(bool verbose) const
   return s.str();
 }
 //---------------------------------------------------------------------------
+template <typename T>
+void MeshFunction<T>::mark(
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>>& x)>& mark,
+    T value)
+{
+  // First fetch all vertices of the mesh
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
+      = _mesh->geometry().points();
+
+  // Evaluate the marking function on all vertices
+  EigenArrayXb marked = mark(x);
+
+  for (const auto& entity : mesh::MeshRange<mesh::MeshEntity>(*_mesh.get(), _dim))
+  {
+    // Run over all entities of the dimension of this MeshFunction
+
+    // By default, all vertices are marked
+    bool all_marked = true;
+
+    // And run over all vertices of this mesh entity
+    for (const auto& v : mesh::EntityRange<mesh::Vertex>(entity))
+    {
+      const auto& idx = v.index();
+      all_marked = (marked[idx] && all_marked);
+    }
+
+    // If all vertices belonging to this mesh entity are marked
+    // then also this mesh entity is marked
+    if (all_marked)
+      _values[entity.index()] = value;
+  }
+}
+//---------------------------------------------------------------------------
+
 } // namespace mesh
 } // namespace dolfin
