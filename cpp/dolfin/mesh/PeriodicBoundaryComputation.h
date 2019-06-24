@@ -31,7 +31,7 @@ public:
       const Mesh& mesh,
       const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
           const Eigen::Ref<
-              const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>& mark,
+              const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x)>& mark,
       const std::size_t dim, const double tol);
 
   /// This function returns a MeshFunction which marks mesh entities
@@ -47,7 +47,7 @@ public:
       std::shared_ptr<const Mesh> mesh,
       const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
           const Eigen::Ref<
-              const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&)>& mark,
+              const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x)>& mark,
       const std::size_t dim, const double tol);
 };
 } // namespace mesh

@@ -84,7 +84,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(
     const Mesh& mesh,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<
-            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x)>& mark,
+            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x)>& mark,
     const std::size_t dim, const double tol)
 {
   // MPI communication
@@ -294,7 +294,7 @@ MeshFunction<std::size_t> PeriodicBoundaryComputation::masters_slaves(
     std::shared_ptr<const Mesh> mesh,
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<
-            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>& x)>& mark,
+            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x)>& mark,
     const std::size_t dim, const double tol)
 {
   assert(mesh);

@@ -166,7 +166,7 @@ std::vector<std::int32_t> marked_facets(
 
   // Pack boundary vertices for vectorised marking
   // function
-  for (std::int32_t i = 0; i != mesh.num_entities(0); ++i)
+  for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
 {
     if (boundary_vertex[i] != -1)
       x_boundary.row(boundary_vertex[i]) = x_all.row(i);
@@ -184,7 +184,7 @@ std::vector<std::int32_t> marked_facets(
 
     for (const auto& v : mesh::EntityRange<mesh::Vertex>(facet))
     {
-      const auto& idx = v.index();
+      const std::int32_t idx = v.index();
 
       // The vertex is not marked (marked as false) in two cases:
       // 1. It is a boundary vertex and both evaluations of mark function

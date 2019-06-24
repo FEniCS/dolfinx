@@ -173,7 +173,7 @@ public:
   void mark(
       const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
           const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                              Eigen::RowMajor>>& x)>& mark,
+                                              Eigen::RowMajor>> x)>& mark,
       T value);
 
   /// Get indices where meshfunction is equal to given value
@@ -406,7 +406,7 @@ template <typename T>
 void MeshFunction<T>::mark(
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
         const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                            Eigen::RowMajor>>& x)>& mark,
+                                            Eigen::RowMajor>> x)>& mark,
     T value)
 {
   // First fetch all vertices of the mesh
@@ -426,7 +426,7 @@ void MeshFunction<T>::mark(
     // And run over all vertices of this mesh entity
     for (const auto& v : mesh::EntityRange<mesh::Vertex>(entity))
     {
-      const auto& idx = v.index();
+      const std::int32_t idx = v.index();
       all_marked = (marked[idx] && all_marked);
     }
 
