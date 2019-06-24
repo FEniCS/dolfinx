@@ -58,7 +58,8 @@ public:
 
   MeshValueCollection(std::shared_ptr<const Mesh> mesh,
                       std::size_t dim,
-                      std::vector<std::vector<T>>& topology_data,//Cells
+                      std::vector<std::vector<double>>& points,
+                      std::vector<std::vector<T>>& cells,//Cells
                       std::vector<T>& values_data); //Cell_data
 
   /// Destructor
@@ -198,9 +199,36 @@ template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
                       std::shared_ptr<const Mesh> mesh,
                       std::size_t dim,
-                      std::vector<std::vector<T>>& topology_data,//Cells
+                      std::vector<std::vector<double>>& points,
+                      std::vector<std::vector<T>>& cells,//Cells
                       std::vector<T>& values_data): _mesh(mesh), _dim(dim)
-{   
+{ // A map from co_ordinates to point based on input array
+  std::map<std::vector<double>, size_t> co_ord_point_map;
+  std::cout<<points.size()<< std::endl;
+  for  (int i=0;i<points.size();++i)
+  {
+        std::vector<double> ve = points[i];
+        co_ord_point_map.insert(std::make_pair(ve, i));
+  }
+  // A map from vertex to edge based on dolfin mesh
+  std::vector<std::int32_t> v(2);
+
+  for (auto& edge : mesh::MeshRange<mesh::MeshEntity>(*mesh, 1))
+  {   v.clear();
+      for (auto& vtx : mesh::EntityRange<mesh::Vertex>(edge))
+        v.push_back(vtx.global_index());
+      std::sort(v.begin(), v.end());  
+
+    std::cout<<"Connectivity Test :";
+    std::cout<<v[0];
+    std::cout<<"::"<<v[1]<<std::endl;
+  }
+
+
+
+
+ 
+
   const std::size_t D = _mesh->topology().dim();
 
   // Handle cells as a special case
@@ -224,7 +252,7 @@ MeshValueCollection<T>::MeshValueCollection(
          ++j)
     {
       // Find the cell
-      std::size_t entity_index = topology_data[j][0];
+      std::size_t entity_index = cells[j][0];
 
       assert(connectivity.size(entity_index) > 0);
 
@@ -239,11 +267,11 @@ MeshValueCollection<T>::MeshValueCollection(
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
-        std::cout<<"1";
+        //std::cout<<"1";
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        std::cout<<"2";
+        //std::cout<<"2";
         _values.insert({key, values_data[j]});
       }
     }
