@@ -20,20 +20,17 @@ using namespace dolfin::la;
 //-----------------------------------------------------------------------------
 SLEPcEigenSolver::SLEPcEigenSolver(MPI_Comm comm) { EPSCreate(comm, &_eps); }
 //-----------------------------------------------------------------------------
-SLEPcEigenSolver::SLEPcEigenSolver(EPS eps) : _eps(eps)
+SLEPcEigenSolver::SLEPcEigenSolver(EPS eps, bool inc_ref_count) : _eps(eps)
 {
+  if (!eps)
+    throw std::runtime_error("SLEPc EPS must be initialised before wrapping");
+
   PetscErrorCode ierr;
-  if (_eps)
+  if (inc_ref_count)
   {
-    // Increment reference count since we holding a pointer to it
     ierr = PetscObjectReference((PetscObject)_eps);
     if (ierr != 0)
       petsc_error(ierr, __FILE__, "PetscObjectReference");
-  }
-  else
-  {
-    throw std::runtime_error(
-        "SLEPc EPS must be initialised (EPSCreate) before wrapping");
   }
 }
 //-----------------------------------------------------------------------------
@@ -155,46 +152,6 @@ std::size_t SLEPcEigenSolver::get_number_converged() const
   return num_conv;
 }
 //-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_deflation_space(
-    const la::VectorSpaceBasis& deflation_space)
-{
-  assert(_eps);
-
-  // Get PETSc vector pointers from VectorSpaceBasis
-  std::vector<Vec> petsc_vecs(deflation_space.dim());
-  for (std::size_t i = 0; i < deflation_space.dim(); ++i)
-  {
-    assert(deflation_space[i]);
-    assert(deflation_space[i]->vec());
-    petsc_vecs[i] = deflation_space[i]->vec();
-  }
-
-  PetscErrorCode ierr
-      = EPSSetDeflationSpace(_eps, petsc_vecs.size(), petsc_vecs.data());
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "EPSSetDeflationSpace");
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_initial_space(
-    const la::VectorSpaceBasis& initial_space)
-{
-  assert(_eps);
-
-  // Get PETSc vector pointers from VectorSpaceBasis
-  std::vector<Vec> petsc_vecs(initial_space.dim());
-  for (std::size_t i = 0; i < initial_space.dim(); ++i)
-  {
-    assert(initial_space[i]);
-    assert(initial_space[i]->vec());
-    petsc_vecs[i] = initial_space[i]->vec();
-  }
-
-  PetscErrorCode ierr
-      = EPSSetInitialSpace(_eps, petsc_vecs.size(), petsc_vecs.data());
-  if (ierr != 0)
-    petsc_error(ierr, __FILE__, "EPSSetInitialSpace");
-}
-//-----------------------------------------------------------------------------
 void SLEPcEigenSolver::set_options_prefix(std::string options_prefix)
 {
   assert(_eps);
@@ -219,89 +176,6 @@ void SLEPcEigenSolver::set_from_options() const
   PetscErrorCode ierr = EPSSetFromOptions(_eps);
   if (ierr != 0)
     petsc_error(ierr, __FILE__, "EPSSetFromOptions");
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_problem_type(std::string type)
-{
-  // Do nothing if default type is specified
-  if (type == "default")
-    return;
-
-  assert(_eps);
-  if (type == "hermitian")
-    EPSSetProblemType(_eps, EPS_HEP);
-  else if (type == "non_hermitian")
-    EPSSetProblemType(_eps, EPS_NHEP);
-  else if (type == "gen_hermitian")
-    EPSSetProblemType(_eps, EPS_GHEP);
-  else if (type == "gen_non_hermitian")
-    EPSSetProblemType(_eps, EPS_GNHEP);
-  else if (type == "pos_gen_non_hermitian")
-    EPSSetProblemType(_eps, EPS_PGNHEP);
-  else
-  {
-    throw std::runtime_error("Unknown problem type (" + type + ")");
-  }
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_spectral_transform(std::string transform,
-                                              double shift)
-{
-  if (transform == "default")
-    return;
-
-  assert(_eps);
-  ST st;
-  EPSGetST(_eps, &st);
-  if (transform == "shift-and-invert")
-  {
-    STSetType(st, STSINVERT);
-    STSetShift(st, shift);
-  }
-  else
-  {
-    throw std::runtime_error("Unknown transform (" + transform + ")");
-  }
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_solver(std::string solver)
-{
-  // Do nothing if default type is specified
-  if (solver == "default")
-    return;
-
-  // Choose solver (Note that lanczos will give PETSc error unless
-  // problem_type is set to 'hermitian' or 'gen_hermitian')
-  assert(_eps);
-  if (solver == "power")
-    EPSSetType(_eps, EPSPOWER);
-  else if (solver == "subspace")
-    EPSSetType(_eps, EPSSUBSPACE);
-  else if (solver == "arnoldi")
-    EPSSetType(_eps, EPSARNOLDI);
-  else if (solver == "lanczos")
-    EPSSetType(_eps, EPSLANCZOS);
-  else if (solver == "krylov-schur")
-    EPSSetType(_eps, EPSKRYLOVSCHUR);
-  else if (solver == "lapack")
-    EPSSetType(_eps, EPSLAPACK);
-  else if (solver == "arpack")
-    EPSSetType(_eps, EPSARPACK);
-  else if (solver == "jacobi-davidson")
-    EPSSetType(_eps, EPSJD);
-  else if (solver == "generalized-davidson")
-    EPSSetType(_eps, EPSGD);
-  else
-  {
-    throw std::runtime_error("Unknown solver type (" + solver + ")");
-  }
-}
-//-----------------------------------------------------------------------------
-void SLEPcEigenSolver::set_tolerance(double tolerance, int maxiter)
-{
-  assert(tolerance > 0.0);
-  assert(_eps);
-  EPSSetTolerances(_eps, tolerance, maxiter);
 }
 //-----------------------------------------------------------------------------
 std::size_t SLEPcEigenSolver::get_iteration_number() const
