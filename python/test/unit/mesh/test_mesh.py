@@ -205,6 +205,104 @@ def test_mesh_construction_pygmsh():
     assert mesh.topology.dim == 2
 
 
+def test_mesh_construction_gmsh():
+    import gmsh
+
+    # map from gmsh to type that is also used by meshio
+    mapping = {1: 'line',
+               2: 'triangle',
+               4: 'tetra',
+               8: 'line3',
+               9: 'triangle6',
+               11: 'tetra10',
+               15: 'vertex'
+               }
+    nodes = {'line': 2,
+             'triangle': 3,
+             'tetra': 4,
+             'line3': 3,
+             'triangle6': 6,
+             'tetra10': 10,
+             'vertex': 1
+             }
+    print("Generate mesh")
+    gmsh.initialize(sys.argv)
+    gmsh.model.add('ball')
+    gmsh.model.occ.addSphere(0.0, 0.0, 0.0, 1.0)
+    gmsh.model.occ.synchronize()
+    gmsh.model.mesh.generate()
+    nodeTags, coord, parametricCoord = gmsh.model.mesh.getNodes()
+    dim = 3
+    # reshape to get right format
+    points = numpy.reshape(coord, (numpy.int(coord.size / dim), dim))
+    print(points)
+    elementTypes, elementTags, nodeTags = gmsh.model.mesh.getElements()
+    cells = {}
+    # generate cells dict
+    for num, element in enumerate(elementTypes):
+        name = mapping[element]
+        dim = nodes[name]
+        cells[name] = nodeTags[num] - 1  # since nodes are numbered starting from 0
+        cells[name] = numpy.reshape(cells[name], (numpy.int(cells[name].size / dim), dim))
+    print("End Generate mesh")
+    print(cells)
+    gmsh.finalize()
+
+    mesh = dolfin.cpp.mesh.Mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.CellType.Type.tetrahedron, points,
+                                cells['tetra'], [], dolfin.cpp.mesh.GhostMode.none)
+    assert mesh.degree() == 1
+    assert mesh.geometry.dim == 3
+    assert mesh.topology.dim == 3
+
+    mesh = dolfin.cpp.mesh.Mesh(dolfin.MPI.comm_world,
+                                dolfin.cpp.mesh.CellType.Type.triangle, points,
+                                cells['triangle'], [], dolfin.cpp.mesh.GhostMode.none)
+    assert mesh.degree() == 1
+    assert mesh.geometry.dim == 3
+    assert mesh.topology.dim == 2
+
+    mesh = dolfin.cpp.mesh.Mesh(dolfin.MPI.comm_world,
+                                dolfin.cpp.mesh.CellType.Type.interval, points,
+                                cells['line'], [], dolfin.cpp.mesh.GhostMode.none)
+    assert mesh.degree() == 1
+    assert mesh.geometry.dim == 3
+    assert mesh.topology.dim == 1
+
+    gmsh.initialize(sys.argv)
+    print("Generate 2nd order mesh")
+    gmsh.model.add('ball')
+    gmsh.model.occ.addSphere(0.0, 0.0, 0.0, 1.0)
+    gmsh.model.occ.synchronize()
+    gmsh.model.mesh.generate()
+    gmsh.model.mesh.setOrder(2)
+    nodeTags, coord, parametricCoord = gmsh.model.mesh.getNodes()
+    dim = 3
+    # reshape to get right format
+    points = numpy.reshape(coord, (numpy.int(coord.size / dim), dim))
+    elementTypes, elementTags, nodeTags = gmsh.model.mesh.getElements()
+    cells = {}
+    # generate cells dict
+    for num, element in enumerate(elementTypes):
+        name = mapping[element]
+        dim = nodes[name]
+        cells[name] = nodeTags[num] - 1
+        cells[name] = numpy.reshape(cells[name], (numpy.int(cells[name].size / dim), dim))
+
+    print("End Generate 2nd order mesh")
+    gmsh.finalize()
+    mesh = dolfin.cpp.mesh.Mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.CellType.Type.tetrahedron, points,
+                                cells['tetra10'], [], dolfin.cpp.mesh.GhostMode.none)
+    assert mesh.degree() == 2
+    assert mesh.geometry.dim == 3
+    assert mesh.topology.dim == 3
+
+    mesh = dolfin.cpp.mesh.Mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.CellType.Type.triangle, points,
+                                cells['triangle6'], [], dolfin.cpp.mesh.GhostMode.none)
+    assert mesh.degree() == 2
+    assert mesh.geometry.dim == 3
+    assert mesh.topology.dim == 2
+
+
 def test_UnitSquareMeshDistributed():
     """Create mesh of unit square."""
     mesh = UnitSquareMesh(MPI.comm_world, 5, 7)
