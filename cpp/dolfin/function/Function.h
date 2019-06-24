@@ -79,7 +79,7 @@ public:
   ///         Index of subfunction.
   /// @returns    _Function_
   ///         The subfunction.
-  Function sub(std::size_t i) const;
+  Function sub(int i) const;
 
   /// Collapse a subfunction (view into the Function) to a stand-alone
   /// Function

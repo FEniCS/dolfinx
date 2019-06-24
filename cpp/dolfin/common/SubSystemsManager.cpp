@@ -81,7 +81,7 @@ void SubSystemsManager::init_petsc()
 {
   // Dummy command-line arguments
   int argc = 0;
-  char** argv = NULL;
+  char** argv = nullptr;
 
   // Initialize PETSc
   init_petsc(argc, argv);
@@ -106,10 +106,10 @@ void SubSystemsManager::init_petsc(int argc, char* argv[])
   PetscBool is_initialized;
   PetscInitialized(&is_initialized);
   if (!is_initialized)
-    PetscInitialize(&argc, &argv, NULL, NULL);
+    PetscInitialize(&argc, &argv, nullptr, nullptr);
 
 #ifdef HAS_SLEPC
-  SlepcInitialize(&argc, &argv, NULL, NULL);
+  SlepcInitialize(&argc, &argv, nullptr, nullptr);
 #endif
 
   // Remember that PETSc has been initialized

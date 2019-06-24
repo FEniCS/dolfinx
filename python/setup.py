@@ -22,7 +22,6 @@ REQUIREMENTS = [
     "petsc4py",
     "fenics-ffc",
     "fenics-ufl{}".format(RESTRICT_REQUIREMENTS),
-    "fenics-dijitso{}".format(RESTRICT_REQUIREMENTS),
 ]
 
 

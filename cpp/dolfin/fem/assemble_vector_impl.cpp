@@ -86,6 +86,7 @@ void _lift_bc_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
+  const int orient = 0;
   for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
@@ -129,7 +130,7 @@ void _lift_bc_cells(
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
+    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), nullptr, &orient);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -229,7 +230,7 @@ void _lift_bc_exterior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
-    const int orient = 1;
+    const int orient = 0;
 
     // Get dof maps for cell
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
@@ -354,7 +355,7 @@ void fem::impl::assemble_cells(
     int num_dofs_per_cell,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& kernel,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -378,6 +379,7 @@ void fem::impl::assemble_cells(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over active cells
+  const int orientation = 0;
   for (std::int32_t cell_index : active_cells)
   {
     const mesh::Cell cell(mesh, cell_index);
@@ -397,7 +399,8 @@ void fem::impl::assemble_cells(
     }
 
     // Tabulate vector for cell
-    kernel(be.data(), coeff_array.data(), coordinate_dofs.data(), NULL, NULL);
+    kernel(be.data(), coeff_array.data(), coordinate_dofs.data(), nullptr,
+           &orientation);
 
     // Add local cell vector to global vector
     for (Eigen::Index i = 0; i < num_dofs_per_cell; ++i)
@@ -411,7 +414,7 @@ void fem::impl::assemble_exterior_facets(
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -450,7 +453,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
-    const int orient = 1;
+    const int orient = 0;
 
     // Get cell vertex coordinates
     const int cell_index = cell.index();
@@ -488,7 +491,7 @@ void fem::impl::assemble_interior_facets(
     const fem::GenericDofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
-    std::vector<const function::Function*> coefficients,
+    const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
@@ -528,7 +531,7 @@ void fem::impl::assemble_interior_facets(
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
-    const int orient[2] = {1, 1};
+    const int orient[2] = {0, 0};
 
     // Get cell vertex coordinates
     const int cell_index0 = cell0.index();

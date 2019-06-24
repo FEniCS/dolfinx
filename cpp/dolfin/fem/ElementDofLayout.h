@@ -84,12 +84,12 @@ public:
 
   /// Get sub-dofmap given by list of components, one for each level
   std::shared_ptr<const ElementDofLayout>
-  sub_dofmap(const std::vector<std::size_t>& component) const;
+  sub_dofmap(const std::vector<int>& component) const;
 
   /// Get view for a sub dofmap, defined by the component list (as for
   /// sub_dofmap()), into this dofmap. I.e., the dofs in this dofmap
   /// that are the sub-dofs.
-  std::vector<int> sub_view(const std::vector<std::size_t>& component) const;
+  std::vector<int> sub_view(const std::vector<int>& component) const;
 
   /// Block size
   int block_size() const;
