@@ -211,18 +211,10 @@ MeshValueCollection<T>::MeshValueCollection(
         co_ord_point_map.insert(std::make_pair(ve, i));
   }
   // A map from vertex to edge based on dolfin mesh
-  std::vector<std::int32_t> v(2);
+  
+  // A map from pygmsh to dolfin
 
-  for (auto& edge : mesh::MeshRange<mesh::MeshEntity>(*mesh, 1))
-  {   v.clear();
-      for (auto& vtx : mesh::EntityRange<mesh::Vertex>(edge))
-        v.push_back(vtx.global_index());
-      std::sort(v.begin(), v.end());  
-
-    std::cout<<"Connectivity Test :";
-    std::cout<<v[0];
-    std::cout<<"::"<<v[1]<<std::endl;
-  }
+  // Calculate edge number
 
 
 
