@@ -98,12 +98,13 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Download Install gmsh
+# Download Install Gmsh SDK
 RUN cd /usr/local && \
     wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
     tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
 ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
-# add gmsh python API
+
+# Add gmsh python API
 ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
 
 # Install Python packages (via pip)
