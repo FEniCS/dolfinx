@@ -98,11 +98,14 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Download Install gmsh
+# Download Install Gmsh SDK
 RUN cd /usr/local && \
-    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64.tgz && \
-    tar -xf gmsh-${GMSH_VERSION}-Linux64.tgz
-ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64/bin:$PATH
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
+ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
+
+# Add gmsh python API
+ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
 
 # Install Python packages (via pip)
 # - First set of packages are required to build and run FEniCS.
