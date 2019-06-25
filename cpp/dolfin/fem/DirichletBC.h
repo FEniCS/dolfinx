@@ -22,7 +22,7 @@ class FunctionSpace;
 
 namespace mesh
 {
-class SubDomain;
+class Mesh;
 } // namespace mesh
 
 namespace fem
@@ -42,7 +42,7 @@ namespace fem
 /// The boundary indicators may be specified in a number of different
 /// ways:
 ///
-/// 1. Providing a_SubDomain_ object, using the inside() function to
+/// 1. Providing a marking function, mark(x, only_boundary), to
 ///    specify on which facets the boundary conditions should be
 ///    applied.
 /// 2. Providing list of facets (by index, local to a process).
@@ -62,28 +62,14 @@ namespace fem
 ///    freedom for discontinuous elements (which are all internal to the
 ///    cell).
 ///
-/// 2. geometric approach
+/// 2. (not yet implemented) geometric approach
 ///
 ///    Each dof on each facet that matches the boundary condition will
 ///    be checked.
 ///
-/// 3. pointwise approach.
+/// 3. (not yet implemented) pointwise approach.
 ///
 ///    For pointwise boundary conditions e.g. pointloads..
-///
-///    Note: when using "pointwise", the boolean argument `on_boundary`
-///    in SubDomain::inside will always be false.
-///
-/// The 'check_midpoint' variable can be used to decide whether or not
-/// the midpoint of each facet should be checked when a user-defined
-/// _SubDomain_ is used to define the domain of the boundary condition.
-/// By default, midpoints are always checked. Note that this variable
-/// may be of importance close to corners, in which case it is sometimes
-/// important to check the midpoint to avoid including facets "on the
-/// diagonal close" to a corner. This variable is also of importance for
-/// curved boundaries (like on a sphere or cylinder), in which case it
-/// is important *not* to check the midpoint which will be located in
-/// the interior of a domain defined relative to a radius.
 
 class DirichletBC
 {
@@ -97,32 +83,34 @@ public:
     pointwise
   };
 
-  /// Create boundary condition for subdomain
+  /// Create boundary condition with marking method
   ///
   /// @param[in] V (FunctionSpace)
   ///         The function space
   /// @param[in] g (Function)
   ///         The value
-  /// @param[in] sub_domain (mesh::SubDomain)
-  ///         The subdomain
+  /// @param[in] mark (std::function)
+  ///         The marking method
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying
   ///         the method to identify dofs
   /// @param[in] check_midpoint (bool)
   DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
               std::shared_ptr<const function::Function> g,
-              const mesh::SubDomain& sub_domain,
-              Method method = Method::topological, bool check_midpoint = true);
+              const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<
+            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
+        bool only_boundary)>& mark,
+              Method method = Method::topological);
 
-  /// Create boundary condition for subdomain by boundary markers (facet
-  /// numbers)
+  /// Create boundary condition with facet indices
   ///
   /// @param[in] V (FunctionSpace)
   ///         The function space.
   /// @param[in] g (Function)
   ///         The value.
   /// @param[in] markers (std::vector<std:size_t>&)
-  ///         Subdomain markers (facet index local to process)
+  ///         Boundary markers (facet index local to process)
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying the
   ///         method to identify dofs.

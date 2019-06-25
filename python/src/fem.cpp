@@ -22,10 +22,10 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/SubDomain.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -197,10 +197,12 @@ void fem(py::module& m)
   dirichletbc
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
-                    const dolfin::mesh::SubDomain&,
-                    dolfin::fem::DirichletBC::Method, bool>(),
-           py::arg("V"), py::arg("g"), py::arg("sub_domain"), py::arg("method"),
-           py::arg("check_midpoint"))
+                    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+                        const Eigen::Ref<const Eigen::Array<
+                            double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
+                        bool only_boundary)>&,
+                    dolfin::fem::DirichletBC::Method>(),
+           py::arg("V"), py::arg("g"), py::arg("mark"), py::arg("method"))
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
                     const std::vector<std::int32_t>&,
