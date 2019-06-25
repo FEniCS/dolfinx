@@ -24,7 +24,6 @@ set(HEADERS
   PeriodicBoundaryComputation.h
   PointCell.h
   QuadrilateralCell.h
-  SubDomain.h
   TetrahedronCell.h
   TopologyComputation.h
   TriangleCell.h
@@ -53,7 +52,6 @@ set(SOURCES
   PeriodicBoundaryComputation.cpp
   PointCell.cpp
   QuadrilateralCell.cpp
-  SubDomain.cpp
   TetrahedronCell.cpp
   TopologyComputation.cpp
   TriangleCell.cpp

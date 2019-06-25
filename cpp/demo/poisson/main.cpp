@@ -7,7 +7,6 @@
 // * Create and apply Dirichlet boundary conditions
 // * Define Expressions
 // * Define a FunctionSpace
-// * Create a SubDomain
 //
 // The solution for :math:`u` in this demo will look as follows:
 //
@@ -101,22 +100,6 @@ using namespace dolfin;
 //
 // .. code-block:: cpp
 
-// The ``DirichletBoundary`` is derived from the :cpp:class:`SubDomain`
-// class and defines the part of the boundary to which the Dirichlet
-// boundary condition should be applied.
-//
-// .. code-block:: cpp
-
-// Sub domain for Dirichlet boundary condition
-class DirichletBoundary : public mesh::SubDomain
-{
-  EigenArrayXb inside(Eigen::Ref<const EigenRowArrayXXd> x,
-                      bool on_boundary) const
-  {
-    return (x.col(0) < DBL_EPSILON or x.col(0) > 1.0 - DBL_EPSILON);
-  }
-};
-
 // Inside the ``main`` function, we begin by defining a mesh of the
 // domain. As the unit square is a very standard domain, we can use a
 // built-in mesh provided by the :cpp:class:`UnitSquareMesh` factory. In
@@ -157,8 +140,8 @@ int main(int argc, char* argv[])
   // boundary on which the condition applies. In our example, the function
   // space is ``V``, the value of the boundary condition (0.0) can
   // represented using a :cpp:class:`Function`, and the Dirichlet boundary
-  // is defined by the class :cpp:class:`DirichletBoundary` listed
-  // above. The definition of the Dirichlet boundary condition then looks
+  // is defined by the lambda expression.
+  // The definition of the Dirichlet boundary condition then looks
   // as follows:
   //
   // .. code-block:: cpp
@@ -166,10 +149,11 @@ int main(int argc, char* argv[])
   // FIXME: zero function and make sure ghosts are updated
   // Define boundary condition
   auto u0 = std::make_shared<function::Function>(V);
-  DirichletBoundary boundary;
-  ;
-  std::vector<std::shared_ptr<const fem::DirichletBC>> bc
-      = {std::make_shared<fem::DirichletBC>(V, u0, boundary)};
+
+  std::vector<std::shared_ptr<const fem::DirichletBC>> bc = {
+      std::make_shared<fem::DirichletBC>(V, u0, [](auto x, bool only_boundary) {
+        return (x.col(0) < DBL_EPSILON or x.col(0) > 1.0 - DBL_EPSILON);
+      })};
 
   // Next, we define the variational formulation by initializing the
   // bilinear and linear forms (:math:`a`, :math:`L`) using the previously

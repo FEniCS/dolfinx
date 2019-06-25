@@ -7,9 +7,9 @@
 #include "PeriodicBoundaryComputation.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
+#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshIterator.h"
-#include "SubDomain.h"
 #include <dolfin/common/types.h>
 #include <limits>
 #include <map>
@@ -80,9 +80,12 @@ bool in_bounding_box(const std::vector<double>& point,
 
 //-----------------------------------------------------------------------------
 std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
-PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
-                                                    const SubDomain& sub_domain,
-                                                    const std::size_t dim)
+PeriodicBoundaryComputation::compute_periodic_pairs(
+    const Mesh& mesh,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<
+            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x)>& mark,
+    const std::size_t dim, const double tol)
 {
   // MPI communication
   const MPI_Comm mpi_comm = mesh.mpi_comm();
@@ -108,7 +111,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
 
   // Map from master entity midpoint coordinate to local facet index
   std::map<std::vector<double>, std::int32_t, lt_coordinate>
-      master_coord_to_entity_index((lt_coordinate(sub_domain.map_tolerance)));
+      master_coord_to_entity_index((lt_coordinate(tol)));
 
   // Initialise facet-cell connectivity
   mesh.create_connectivity(tdim - 1, tdim);
@@ -135,7 +138,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
         std::copy(midpoint.data(), midpoint.data() + gdim, x.begin());
 
         // Check if entity lies on a 'master' or 'slave' boundary
-        if (sub_domain.inside(_x, true)[0])
+        if (mark(_x)[0])
         {
           // Build bounding box data for master entity midpoints
           if (x_min_max.empty())
@@ -161,8 +164,11 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
             y[i] = std::numeric_limits<double>::quiet_NaN();
           }
 
-          // Get mapped midpoint (y) of slave entity
-          sub_domain.map(_x, _y);
+          // // Get mapped midpoint (y) of slave entity
+          // sub_domain.map(_x, _y);
+          throw std::runtime_error(
+              "Function map() not implemented by user. (Required "
+              "for periodic boundary conditions)");
 
           // Check for NaNs after the map
           for (size_t i = 0; i < y.size(); i++)
@@ -176,7 +182,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
           }
 
           // Check if entity lies on a 'slave' boundary
-          if (sub_domain.inside(_y, true)[0])
+          if (mark(_y)[0])
           {
             // Store slave local index and midpoint coordinates
             slave_entities.push_back(e.index());
@@ -208,8 +214,7 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
 
       // Check if mapped slave falls within master entity bounding box
       // on process p
-      if (in_bounding_box(slave_mapped_coords[i], bounding_boxes[p],
-                          sub_domain.map_tolerance))
+      if (in_bounding_box(slave_mapped_coords[i], bounding_boxes[p], tol))
       {
         sent_slave_indices[p].push_back(slave_entities[i]);
         slave_mapped_coords_send_p.insert(slave_mapped_coords_send_p.end(),
@@ -285,10 +290,12 @@ PeriodicBoundaryComputation::compute_periodic_pairs(const Mesh& mesh,
   return slave_to_master_entity;
 }
 //-----------------------------------------------------------------------------
-MeshFunction<std::size_t>
-PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
-                                            const SubDomain& sub_domain,
-                                            const std::size_t dim)
+MeshFunction<std::size_t> PeriodicBoundaryComputation::masters_slaves(
+    std::shared_ptr<const Mesh> mesh,
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<
+            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> x)>& mark,
+    const std::size_t dim, const double tol)
 {
   assert(mesh);
 
@@ -297,7 +304,7 @@ PeriodicBoundaryComputation::masters_slaves(std::shared_ptr<const Mesh> mesh,
 
   // Compute marker
   const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>> slaves
-      = compute_periodic_pairs(*mesh, sub_domain, dim);
+      = compute_periodic_pairs(*mesh, mark, dim, tol);
 
   // Mark master and slaves, and pack off-process masters to send
   std::vector<std::vector<std::size_t>> master_dofs_send(
