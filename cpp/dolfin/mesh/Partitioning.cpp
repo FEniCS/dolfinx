@@ -750,18 +750,18 @@ mesh::Mesh Partitioning::build_distributed_mesh(
     const mesh::GhostMode ghost_mode, std::string graph_partitioner)
 {
 
-  MPI_Comm subset_comm = dolfin::MPI::SubsetComm(comm, 3);
+  const int size = dolfin::MPI::size(comm);
+  MPI_Comm subset_comm = dolfin::MPI::SubsetComm(comm, size);
   int result;
   MPI_Comm_compare(subset_comm, comm, &result);
 
-  if (~result)
+  if (result == MPI_SIMILAR)
   {
     std::cout << "Same communicator";
   }
 
   if (MPI_COMM_NULL != subset_comm)
   {
-    const int size = dolfin::MPI::size(comm);
     const int subset_size = dolfin::MPI::size(subset_comm);
 
     std::cout << "Total size is " << size << std::endl;
