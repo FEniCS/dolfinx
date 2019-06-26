@@ -23,7 +23,6 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Ordering.h>
 #include <dolfin/mesh/Partitioning.h>
-#include <dolfin/mesh/PeriodicBoundaryComputation.h>
 #include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/Vertex.h>
 #include <memory>
@@ -457,13 +456,5 @@ void mesh(py::module& m)
       .def_static("is_ordered_simplex",
                   &dolfin::mesh::Ordering::is_ordered_simplex);
 
-  // dolfin::mesh::PeriodicBoundaryComputation
-  py::class_<dolfin::mesh::PeriodicBoundaryComputation>(
-      m, "PeriodicBoundaryComputation")
-      .def_static(
-          "compute_periodic_pairs",
-          &dolfin::mesh::PeriodicBoundaryComputation::compute_periodic_pairs)
-      .def_static("masters_slaves",
-                  &dolfin::mesh::PeriodicBoundaryComputation::masters_slaves);
 } // namespace dolfin_wrappers
 } // namespace dolfin_wrappers
