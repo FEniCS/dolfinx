@@ -749,6 +749,25 @@ mesh::Mesh Partitioning::build_distributed_mesh(
     const std::vector<std::int64_t>& global_cell_indices,
     const mesh::GhostMode ghost_mode, std::string graph_partitioner)
 {
+
+  MPI_Comm subset_comm = dolfin::MPI::SubsetComm(comm, 3);
+  int result;
+  MPI_Comm_compare(subset_comm, comm, &result);
+
+  if (~result)
+  {
+    std::cout << "Same communicator";
+  }
+
+  if (MPI_COMM_NULL != subset_comm)
+  {
+    const int size = dolfin::MPI::size(comm);
+    const int subset_size = dolfin::MPI::size(subset_comm);
+
+    std::cout << "Total size is " << size << std::endl;
+    std::cout << "Subset size is " << subset_size << std::endl;
+  }
+
   // Compute the cell partition
   PartitionData mp = partition_cells(comm, cell_type, cells, graph_partitioner);
 

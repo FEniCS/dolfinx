@@ -59,6 +59,11 @@ std::uint32_t dolfin::MPI::Comm::rank() const
   return dolfin::MPI::rank(_comm);
 }
 //-----------------------------------------------------------------------------
+MPI_Comm dolfin::MPI::Comm::SubsetComm(int num_processes) const
+{
+  return dolfin::MPI::SubsetComm(_comm, num_processes);
+}
+//-----------------------------------------------------------------------------
 std::uint32_t dolfin::MPI::Comm::size() const
 {
   int size;
@@ -291,3 +296,47 @@ MPI_Op dolfin::MPI::MPI_AVG()
   return op;
 }
 //-----------------------------------------------------------------------------
+MPI_Comm dolfin::MPI::SubsetComm(MPI_Comm comm, int num_processes)
+{
+
+  int comm_size = MPI::size(comm);
+
+  if (comm_size < num_processes)
+  {
+    throw std::runtime_error("Cannot create a sub-communicator with more "
+                             "processes than the original communicator.");
+  }
+  else if (comm_size == num_processes)
+  {
+    return comm;
+  }
+  else
+  {
+    // Get the group of all processes in comm
+    MPI_Group comm_group;
+    MPI_Comm_group(comm, &comm_group);
+
+    // Select N processes to compose new communicator
+    // TODO: Could find a better subset of processors?
+    std::vector<int> ranks(num_processes);
+    std::iota(ranks.begin(), ranks.end(), 0);
+
+    // Construct a group containing num_processes first processes
+    MPI_Group new_group;
+    MPI_Group_incl(comm_group, num_processes, ranks.data(), &new_group);
+
+    // Create a new communicator based on the group
+    MPI_Comm new_comm;
+    int err = MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &new_comm);
+
+    MPI_Group_free(&comm_group);
+    MPI_Group_free(&new_group);
+
+    if (err != MPI_SUCCESS)
+    {
+      throw std::runtime_error(
+          "Creation of a new MPI communicator failed (MPI_Comm_create_group)");
+    }
+    return new_comm;
+  }
+}
