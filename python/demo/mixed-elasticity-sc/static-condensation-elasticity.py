@@ -30,8 +30,8 @@ infile.close()
 
 # Se = stress element
 # Ue = displacement element
-Se = ufl.TensorElement("DG", mesh.ufl_cell(), 0, symmetry=True)
-Ue = ufl.VectorElement("CG", mesh.ufl_cell(), 1)
+Se = ufl.TensorElement("DG", mesh.ufl_cell(), 1, symmetry=True)
+Ue = ufl.VectorElement("CG", mesh.ufl_cell(), 2)
 
 S = dolfin.FunctionSpace(mesh, Se)
 U = dolfin.FunctionSpace(mesh, Ue)
