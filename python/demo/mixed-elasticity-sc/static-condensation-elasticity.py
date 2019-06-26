@@ -100,6 +100,9 @@ kernel10 = ufc_form10.create_cell_integral(-1).tabulate_tensor
 
 ffi = cffi.FFI()
 
+numba.cffi_support.register_type(ffi.typeof('double _Complex'),
+                                 numba.types.complex128)
+
 c_signature = numba.types.void(
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
     numba.types.CPointer(numba.typeof(PETSc.ScalarType())),
