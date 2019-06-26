@@ -14,6 +14,7 @@ import os
 import cffi
 import numpy
 import numba
+import numba.cffi_support
 from petsc4py import PETSc
 
 import dolfin
