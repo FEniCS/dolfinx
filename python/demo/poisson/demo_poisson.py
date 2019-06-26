@@ -13,7 +13,6 @@
 # * Solve a linear partial differential equation
 # * Create and apply Dirichlet boundary conditions
 # * Define a FunctionSpace
-# * Create a SubDomain
 #
 # The solution for :math:`u` in this demo will look as follows:
 #
@@ -113,8 +112,8 @@ mesh.geometry.coord_mapping = cmap
 #
 # Next, we want to consider the Dirichlet boundary condition. A simple
 # Python function, returning a boolean, can be used to define the
-# subdomain for the Dirichlet boundary condition (:math:`\Gamma_D`). The
-# function should return ``True`` for those points inside the subdomain
+# boundary for the Dirichlet boundary condition (:math:`\Gamma_D`). The
+# function should return ``True`` for those points inside the boundary
 # and ``False`` for the points outside. In our case, we want to say that
 # the points :math:`(x, y)` such that :math:`x = 0` or :math:`x = 1` are
 # inside on the inside of :math:`\Gamma_D`. (Note that because of
@@ -125,7 +124,7 @@ mesh.geometry.coord_mapping = cmap
 # Define Dirichlet boundary (x = 0 or x = 1)
 
 
-def boundary(x):
+def boundary(x, only_boundary):
     return np.logical_or(x[:, 0] < np.finfo(float).eps,
                          x[:, 0] > 1.0 - np.finfo(float).eps)
 

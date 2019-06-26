@@ -23,7 +23,6 @@ class IndexMap;
 namespace mesh
 {
 class Mesh;
-class SubDomain;
 } // namespace mesh
 
 namespace fem
