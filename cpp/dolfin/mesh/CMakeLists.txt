@@ -21,7 +21,6 @@ set(HEADERS
   MeshValueCollection.h
   Ordering.h
   PartitionData.h
-  PeriodicBoundaryComputation.h
   PointCell.h
   QuadrilateralCell.h
   TetrahedronCell.h
@@ -49,7 +48,6 @@ set(SOURCES
   Topology.cpp
   Ordering.cpp
   PartitionData.cpp
-  PeriodicBoundaryComputation.cpp
   PointCell.cpp
   QuadrilateralCell.cpp
   TetrahedronCell.cpp
