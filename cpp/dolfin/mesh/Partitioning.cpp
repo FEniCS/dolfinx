@@ -597,7 +597,8 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
 // 'cell -> process' vector for cells, and a map 'local cell index ->
 // processes' to which ghost cells must be sent
 PartitionData
-partition_cells(const MPI_Comm& mpi_comm, const mesh::CellType::Type type,
+partition_cells(const MPI_Comm& mpi_comm, int nparts,
+                const mesh::CellType::Type type,
                 const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                 const std::string partitioner)
 {
@@ -620,11 +621,11 @@ partition_cells(const MPI_Comm& mpi_comm, const mesh::CellType::Type type,
     // Require at least two cells per processor for mesh partitioning in
     // parallel. Partitioning small graphs may lead to segfaults or MPI
     // processes with 0 cells.
-    if (num_processes > 1 and global_graph_size / num_processes < 2)
+    if (num_processes > 1 and global_graph_size / nparts < 2)
     {
       throw std::runtime_error("Cannot partition a graph of size "
                                + std::to_string(global_graph_size) + " into "
-                               + std::to_string(num_processes) + " parts.");
+                               + std::to_string(nparts) + " parts.");
     }
 
     // Compute cell partition using partitioner from parameter system
@@ -633,7 +634,7 @@ partition_cells(const MPI_Comm& mpi_comm, const mesh::CellType::Type type,
       graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
       std::vector<std::size_t> weights;
       const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
-      return PartitionData(graph::SCOTCH::partition(mpi_comm, csr_graph,
+      return PartitionData(graph::SCOTCH::partition(mpi_comm, nparts, csr_graph,
                                                     weights, num_ghost_nodes));
     }
     else if (partitioner == "ParMETIS")
@@ -754,13 +755,14 @@ mesh::Mesh Partitioning::build_distributed_mesh(
     const mesh::GhostMode ghost_mode, std::string graph_partitioner)
 {
 
-  const int size = dolfin::MPI::size(comm);
-  int num_proc = size / 2;
+  const int nparts = dolfin::MPI::size(comm);
+  // const int num_proc = size / 2 + 1;
+  const int num_proc = nparts / 2 + 1;
   MPI_Comm subset_comm = dolfin::MPI::SubsetComm(comm, num_proc);
-  assert(subset_comm);
 
   // Compute the cell partition
-  PartitionData mp = partition_cells(comm, cell_type, cells, graph_partitioner);
+  PartitionData mp = partition_cells(subset_comm, nparts, cell_type, cells,
+                                     graph_partitioner);
 
   // Check that we have some ghost information.
   int all_ghosts = dolfin::MPI::sum(comm, mp.num_ghosts());

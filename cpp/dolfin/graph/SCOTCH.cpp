@@ -139,7 +139,7 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
 }
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
+dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm, const int Np,
                                  const CSRGraph<SCOTCH_Num>& local_graph,
                                  const std::vector<std::size_t>& node_weights,
                                  std::int32_t num_ghost_nodes)
@@ -221,8 +221,8 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
     throw std::runtime_error("Consistency error in SCOTCH graph");
 #endif
 
-  // Number of partitions (set equal to number of processes)
-  const SCOTCH_Num npart = num_processes;
+  // Number of partitions
+  const SCOTCH_Num npart = Np;
 
   // Initialise partitioning strategy
   SCOTCH_Strat strat;
