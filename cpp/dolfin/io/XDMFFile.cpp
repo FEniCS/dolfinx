@@ -1081,15 +1081,6 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   std::vector<T> values_data = xdmf_read::get_dataset<T>(
       _mpi_comm.comm(), attribute_data_node, parent_path);
 
-
-  std::cout<<mesh->topology().str(true);
-
-  std::cout<<"Topology Size: "<<topology_data.size()<<std::endl;
-  for(int i=0; i<topology_data.size(); ++i){
-    std::cout<<"XDMF_values: "<<topology_data[i]<<std::endl;
-  }
-  
-
   // Ensure the mesh dimension is initialised
   mesh->create_entities(dim);
   const std::size_t global_vertex_range = mesh->num_entities_global(0);
@@ -1116,7 +1107,6 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
         = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
     send_entities[dest].push_back(m.index());
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
-    std::cout<<"Edge: "<<m.index()<<"::"<< v[0]<<":"<< v[1]<<std::endl;
   }
   MPI::all_to_all(_mpi_comm.comm(), send_entities, recv_entities);
 
@@ -1149,10 +1139,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   for (auto it = topology_data.begin(); it != topology_data.end();
        it += num_verts_per_entity)
   {
-    std::cout<<"PSC before: "<<*it<<":" <<*it + num_verts_per_entity<<"::" << v[0]<<":" << v[1]<<std::endl;
     std::partial_sort_copy(it, it + num_verts_per_entity, v.begin(), v.end());
-    std::cout<<"PSC after: "<<*it<<":" <<*it + num_verts_per_entity<<"::" << v[0]<<":" << v[1]<<std::endl;
-    std::cout<<std::endl;
     std::size_t dest
         = MPI::index_owner(_mpi_comm.comm(), v[0], global_vertex_range);
     send_entities[dest].insert(send_entities[dest].end(), v.begin(), v.end());
@@ -1177,9 +1164,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     {
       auto it = recv_entities[i].begin() + j * num_verts_per_entity;
       std::copy(it, it + num_verts_per_entity, v.begin());
-      auto map_it = entity_map.find(v);//entity map in 1127
-      //find gives an iterator where it finds that value
-
+      auto map_it = entity_map.find(v);
 
       if (map_it == entity_map.end())
       {
@@ -1190,9 +1175,8 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
       {
         const std::int32_t dest = *p;
         assert(dest < num_processes);
-        send_entities[dest].push_back(*(p + 1));//This is edge number
-        send_data[dest].push_back(recv_data[i][j]);// this is tag number
-        std::cout<<"Map: "<<*(p + 1)<<" Rec: "<<recv_data[i][j]<<std::endl;
+        send_entities[dest].push_back(*(p + 1));
+        send_data[dest].push_back(recv_data[i][j]);
       }
     }
   }
@@ -1208,8 +1192,6 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     for (std::size_t j = 0; j != recv_data[i].size(); ++j)
     {
       mvc.set_value(recv_entities[i][j], recv_data[i][j]);
-      std::cout<<"set_value: "<<recv_entities[i][j]<<":"<<recv_data[i][j]<<std::endl;
-
     }
   }
 
