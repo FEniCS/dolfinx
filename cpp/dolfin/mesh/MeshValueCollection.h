@@ -252,8 +252,6 @@ MeshValueCollection<T>::MeshValueCollection(
         const mesh::Cell cell(*_mesh,
                               connectivity.connections(entity_index)[i]);
                         
-        std::cout<<"Connectivity :"<<connectivity.connections(entity_index)[i]<<std::endl;
-
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
   
