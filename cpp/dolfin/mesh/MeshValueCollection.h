@@ -198,9 +198,9 @@ template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
                       std::shared_ptr<const Mesh> mesh,
                       std::size_t dim,
-                      std::vector<std::vector<T>>& cells,//Cells
+                      std::vector<std::vector<T>>& cells,
                       std::vector<T>& values_data): _mesh(mesh), _dim(dim)
-{ // Calculate edge number
+{ 
   std::vector<std::int32_t> v(2);
   std::map<std::vector<int>, size_t> vertex_edge_map;
   for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, _dim))
@@ -214,9 +214,7 @@ MeshValueCollection<T>::MeshValueCollection(
         v.push_back(vtx.global_index());
       std::sort(v.begin(), v.end());
     }
-
     vertex_edge_map[v]=m.index();
-    std::cout<<"Edge: "<<m.index()<<"::"<< v[0]<<":"<< v[1]<<std::endl;
   }
 
   const std::size_t D = _mesh->topology().dim();
@@ -243,7 +241,6 @@ MeshValueCollection<T>::MeshValueCollection(
     {
       // Find the cell
       auto map_it = vertex_edge_map.find({cells[j][0],cells[j][1]});
-      std::cout<<"Edge Number:"<<map_it->second<<std::endl;
       std::size_t entity_index = map_it->second;
 
       assert(connectivity.size(entity_index) > 0);
@@ -259,18 +256,14 @@ MeshValueCollection<T>::MeshValueCollection(
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
-        //std::cout<<"1";
+  
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        //std::cout<<"2";
         _values.insert({key, values_data[j]});
       }
     }
   }
-
-  std::cout << std::endl << "Test:)" <<D << std::endl;
-
 }
 //---------------------------------------------------------------------------
 template <typename T>
