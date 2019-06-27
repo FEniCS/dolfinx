@@ -58,7 +58,6 @@ public:
 
   MeshValueCollection(std::shared_ptr<const Mesh> mesh,
                       std::size_t dim,
-                      std::vector<std::vector<double>>& points,
                       std::vector<std::vector<T>>& cells,//Cells
                       std::vector<T>& values_data); //Cell_data
 
@@ -199,27 +198,26 @@ template <typename T>
 MeshValueCollection<T>::MeshValueCollection(
                       std::shared_ptr<const Mesh> mesh,
                       std::size_t dim,
-                      std::vector<std::vector<double>>& points,
                       std::vector<std::vector<T>>& cells,//Cells
                       std::vector<T>& values_data): _mesh(mesh), _dim(dim)
-{ // A map from co_ordinates to point based on input array
-  std::map<std::vector<double>, size_t> co_ord_point_map;
-  std::cout<<points.size()<< std::endl;
-  for  (int i=0;i<points.size();++i)
+{ // Calculate edge number
+  std::vector<std::int32_t> v(2);
+  std::map<std::vector<int>, size_t> vertex_edge_map;
+  for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, _dim))
   {
-        std::vector<double> ve = points[i];
-        co_ord_point_map.insert(std::make_pair(ve, i));
+    if (dim == 0)
+      v[0] = m.global_index();
+    else
+    {
+      v.clear();
+      for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m))
+        v.push_back(vtx.global_index());
+      std::sort(v.begin(), v.end());
+    }
+
+    vertex_edge_map[v]=m.index();
+    std::cout<<"Edge: "<<m.index()<<"::"<< v[0]<<":"<< v[1]<<std::endl;
   }
-  // A map from vertex to edge based on dolfin mesh
-  
-  // A map from pygmsh to dolfin
-
-  // Calculate edge number
-
-
-
-
- 
 
   const std::size_t D = _mesh->topology().dim();
 
@@ -244,7 +242,9 @@ MeshValueCollection<T>::MeshValueCollection(
          ++j)
     {
       // Find the cell
-      std::size_t entity_index = cells[j][0];
+      auto map_it = vertex_edge_map.find({cells[j][0],cells[j][1]});
+      std::cout<<"Edge Number:"<<map_it->second<<std::endl;
+      std::size_t entity_index = map_it->second;
 
       assert(connectivity.size(entity_index) > 0);
 
