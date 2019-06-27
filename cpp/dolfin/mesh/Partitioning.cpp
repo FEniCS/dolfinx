@@ -756,13 +756,17 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 {
 
   const int nparts = dolfin::MPI::size(comm);
-  // const int num_proc = size / 2 + 1;
+
+  // TODO: Should be defined by the user (for testing only)
   const int num_proc = nparts / 2 + 1;
   MPI_Comm subset_comm = dolfin::MPI::SubsetComm(comm, num_proc);
 
   // Compute the cell partition
   PartitionData mp = partition_cells(subset_comm, nparts, cell_type, cells,
                                      graph_partitioner);
+
+  // subset_comm is only used during the partitioning process
+  MPI_Comm_free(&subset_comm);
 
   // Check that we have some ghost information.
   int all_ghosts = dolfin::MPI::sum(comm, mp.num_ghosts());

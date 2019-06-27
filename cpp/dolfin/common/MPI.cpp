@@ -300,15 +300,29 @@ MPI_Comm dolfin::MPI::SubsetComm(MPI_Comm comm, int num_processes)
 {
 
   int comm_size = MPI::size(comm);
-
-  if (comm_size < num_processes)
+  MPI_Comm new_comm;
+  if (num_processes <= 0)
   {
+
+    throw std::runtime_error(
+        "The sub-communicator should be composed by at least one process.");
+  }
+  else if (comm_size < num_processes)
+  {
+
     throw std::runtime_error("Cannot create a sub-communicator with more "
                              "processes than the original communicator.");
   }
   else if (comm_size == num_processes)
   {
-    return comm;
+    // Make a copy of the orginal communicator
+    int err = MPI_Comm_dup(comm, &new_comm);
+    if (err != MPI_SUCCESS)
+    {
+      throw std::runtime_error(
+          "Duplication of MPI communicator failed (MPI_Comm_dup)");
+    }
+    return new_comm;
   }
   else
   {
@@ -325,18 +339,19 @@ MPI_Comm dolfin::MPI::SubsetComm(MPI_Comm comm, int num_processes)
     MPI_Group new_group;
     MPI_Group_incl(comm_group, num_processes, ranks.data(), &new_group);
 
-    // Create a new communicator based on the group
-    MPI_Comm new_comm;
+    // Create a new communicator based on the group new group
     int err = MPI_Comm_create_group(MPI_COMM_WORLD, new_group, 0, &new_comm);
-
-    MPI_Group_free(&comm_group);
-    MPI_Group_free(&new_group);
 
     if (err != MPI_SUCCESS)
     {
       throw std::runtime_error(
           "Creation of a new MPI communicator failed (MPI_Comm_create_group)");
     }
+
+    // free groups
+    MPI_Group_free(&comm_group);
+    MPI_Group_free(&new_group);
+
     return new_comm;
   }
 }
