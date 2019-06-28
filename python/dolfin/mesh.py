@@ -57,7 +57,7 @@ class MeshValueCollection:
         mvc = _meshvaluecollection_types[value_type]
         # Correct logic here
         if topology_data is not None:
-             return mvc(mesh, dim,topology_data, values_data)
+            return mvc(mesh, dim, topology_data, values_data)
         else: 
             if dim is not None:
                 return mvc(mesh, dim)
