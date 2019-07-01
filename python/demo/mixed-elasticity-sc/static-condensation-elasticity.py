@@ -25,12 +25,12 @@ import ufl
 
 filedir = os.path.dirname(__file__)
 infile = dolfin.io.XDMFFile(dolfin.MPI.comm_world,
-                            os.path.join(filedir, "cooks_tri_mesh.xdmf"))
+                            os.path.join(filedir, "cooks_tri_mesh.xdmf"),
+                            encoding=dolfin.cpp.io.XDMFFile.Encoding.ASCII)
 mesh = infile.read_mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.GhostMode.none)
 infile.close()
 
-# Se = stress element
-# Ue = displacement element
+# Stress (Se) and displacement (Ue) elements
 Se = ufl.TensorElement("DG", mesh.ufl_cell(), 1, symmetry=True)
 Ue = ufl.VectorElement("CG", mesh.ufl_cell(), 2)
 
@@ -38,11 +38,11 @@ S = dolfin.FunctionSpace(mesh, Se)
 U = dolfin.FunctionSpace(mesh, Ue)
 
 # Get local dofmap sizes for later local tensor tabulations
-Ssize = len(S.dofmap().cell_dofs(0))
-Usize = len(U.dofmap().cell_dofs(0))
+Ssize = S.dolfin_element().space_dimension()
+Usize = U.dolfin_element().space_dimension()
 
-sigma, sigmat = dolfin.TrialFunction(S), dolfin.TestFunction(S)
-u, ut = dolfin.TrialFunction(U), dolfin.TestFunction(U)
+sigma, tau = dolfin.TrialFunction(S), dolfin.TestFunction(S)
+u, v = dolfin.TrialFunction(U), dolfin.TestFunction(U)
 
 # Homogeneous boundary condition in displacement
 u_bc = dolfin.Function(U)
@@ -63,16 +63,9 @@ mf = dolfin.mesh.MeshFunction("size_t", mesh, 1, 0)
 mf.mark(free_end, 1)
 
 ds = ufl.Measure("ds", subdomain_data=mf)
-_i, _j, _k, _l = ufl.indices(4)
 
-# Elastic stiffness tensor
-E = 1.0
-# Poisson ratio
-nu = 1.0 / 3
-# First Lame coeff
-lambda_ = E * nu / ((1. + nu) * (1. - 2 * nu))
-# Shear modulus
-mu = E / (2. * (1. + nu))
+# Elastic stiffness tensor and Poisson ratio
+E, nu = 1.0, 1.0/3.0
 
 
 def sigma_u(u):
@@ -82,12 +75,12 @@ def sigma_u(u):
     return sigma
 
 
-a00 = ufl.inner(sigma, sigmat) * ufl.dx
-a10 = - ufl.inner(sigma, ufl.grad(ut)) * ufl.dx
-a01 = - ufl.inner(sigma_u(u), sigmat) * ufl.dx
+a00 = ufl.inner(sigma, tau) * ufl.dx
+a10 = - ufl.inner(sigma, ufl.grad(v)) * ufl.dx
+a01 = - ufl.inner(sigma_u(u), tau) * ufl.dx
 
 f = ufl.as_vector([0.0, 1.0 / 16])
-b1 = - ufl.inner(f, ut) * ds(1)
+b1 = - ufl.inner(f, v) * ds(1)
 
 # JIT compile individual blocks tabulation kernels
 ufc_form00 = dolfin.jit.ffc_jit(a00)
@@ -128,8 +121,7 @@ def tabulate_condensed_tensor_A(A_, w_, coords_, entity_local_index, cell_orient
     kernel10(ffi.from_buffer(A10), w_, coords_, entity_local_index, cell_orientation)
 
     # A = - A10 * A00^{-1} * A01
-    A00inv = numpy.linalg.inv(A00)
-    A[:, :] = - numpy.dot(A10, numpy.dot(A00inv, A01))
+    A[:, :] = - A10 @ numpy.linalg.solve(A00, A01)
 
 
 # Prepare an empty Form and set the condensed tabulation kernel
@@ -151,11 +143,11 @@ with dolfin.io.XDMFFile(dolfin.MPI.comm_world, "uc.xdmf") as outfile:
     outfile.write_checkpoint(uc, "uc")
 
 # Pure displacement based formulation
-a = - ufl.inner(sigma_u(u), ufl.grad(ut)) * ufl.dx
+a = - ufl.inner(sigma_u(u), ufl.grad(v)) * ufl.dx
 A = dolfin.fem.assemble_matrix(a, [bc])
 A.assemble()
 
-# Extract bounding box for function evaluation
+# Create bounding box for function evaluation
 bb_tree = dolfin.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Evaluate at free end midpoint
