@@ -65,7 +65,7 @@ mf.mark(free_end, 1)
 ds = ufl.Measure("ds", subdomain_data=mf)
 
 # Elastic stiffness tensor and Poisson ratio
-E, nu = 1.0, 1.0/3.0
+E, nu = 1.0, 1.0 / 3.0
 
 
 def sigma_u(u):
@@ -158,7 +158,7 @@ try:
 except RuntimeError:
     pass
 
-# Check against standart table value
+# Check against standard table value
 if uc_midpoint is not False:
     assert(numpy.isclose(uc_midpoint[1], 23.95, rtol=1.e-2))
 
