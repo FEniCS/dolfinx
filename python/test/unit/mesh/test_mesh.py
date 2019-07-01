@@ -208,7 +208,7 @@ def test_mesh_construction_pygmsh():
 def test_mesh_construction_gmsh():
     import gmsh
 
-    # map from gmsh to type that is also used by meshio
+    # Map from gmsh to type that is also used by meshio
     mapping = {1: 'line',
                2: 'triangle',
                4: 'tetra',
@@ -225,7 +225,7 @@ def test_mesh_construction_gmsh():
              'tetra10': 10,
              'vertex': 1
              }
-    print("Generate mesh")
+    # Generate mesh
     gmsh.initialize(sys.argv)
     gmsh.model.add('ball')
     gmsh.model.occ.addSphere(0.0, 0.0, 0.0, 1.0)
@@ -233,19 +233,17 @@ def test_mesh_construction_gmsh():
     gmsh.model.mesh.generate()
     nodeTags, coord, parametricCoord = gmsh.model.mesh.getNodes()
     dim = 3
-    # reshape to get right format
+    # Reshape to get right format
     points = numpy.reshape(coord, (numpy.int(coord.size / dim), dim))
-    print(points)
     elementTypes, elementTags, nodeTags = gmsh.model.mesh.getElements()
     cells = {}
-    # generate cells dict
+    # Generate cells dict
     for num, element in enumerate(elementTypes):
         name = mapping[element]
         dim = nodes[name]
         cells[name] = nodeTags[num] - 1  # since nodes are numbered starting from 0
         cells[name] = numpy.reshape(cells[name], (numpy.int(cells[name].size / dim), dim))
-    print("End Generate mesh")
-    print(cells)
+    # End Generate mesh
     gmsh.finalize()
 
     mesh = dolfin.cpp.mesh.Mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.CellType.Type.tetrahedron, points,
@@ -269,7 +267,7 @@ def test_mesh_construction_gmsh():
     assert mesh.topology.dim == 1
 
     gmsh.initialize(sys.argv)
-    print("Generate 2nd order mesh")
+    # Generate 2nd order mesh
     gmsh.model.add('ball')
     gmsh.model.occ.addSphere(0.0, 0.0, 0.0, 1.0)
     gmsh.model.occ.synchronize()
@@ -277,18 +275,18 @@ def test_mesh_construction_gmsh():
     gmsh.model.mesh.setOrder(2)
     nodeTags, coord, parametricCoord = gmsh.model.mesh.getNodes()
     dim = 3
-    # reshape to get right format
+    # Reshape to get right format
     points = numpy.reshape(coord, (numpy.int(coord.size / dim), dim))
     elementTypes, elementTags, nodeTags = gmsh.model.mesh.getElements()
     cells = {}
-    # generate cells dict
+    # Generate cells dict
     for num, element in enumerate(elementTypes):
         name = mapping[element]
         dim = nodes[name]
         cells[name] = nodeTags[num] - 1
         cells[name] = numpy.reshape(cells[name], (numpy.int(cells[name].size / dim), dim))
 
-    print("End Generate 2nd order mesh")
+    # End Generate 2nd order mesh
     gmsh.finalize()
     mesh = dolfin.cpp.mesh.Mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.CellType.Type.tetrahedron, points,
                                 cells['tetra10'], [], dolfin.cpp.mesh.GhostMode.none)
