@@ -50,6 +50,8 @@ void geometry(py::module& m)
                & dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
       .def("compute_first_collision",
            &dolfin::geometry::BoundingBoxTree::compute_first_collision)
+      .def("collides",
+           &dolfin::geometry::BoundingBoxTree::collides)
       .def("compute_first_entity_collision",
            &dolfin::geometry::BoundingBoxTree::compute_first_entity_collision)
       .def("compute_closest_entity",

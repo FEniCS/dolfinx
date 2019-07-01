@@ -150,17 +150,10 @@ A.assemble()
 # Create bounding box for function evaluation
 bb_tree = dolfin.cpp.geometry.BoundingBoxTree(mesh, 2)
 
-# Evaluate at free end midpoint
-# Keep False value in non-owning processes
-uc_midpoint = False
-try:
-    uc_midpoint = uc([48.0, 52.0], bb_tree)
-except RuntimeError:
-    pass
-
 # Check against standard table value
-if uc_midpoint is not False:
-    assert(numpy.isclose(uc_midpoint[1], 23.95, rtol=1.e-2))
+if bb_tree.collides([48.0, 52.0, 0.0]):
+    value = uc([48.0, 52.0], bb_tree)
+    assert(numpy.isclose(value[1], 23.95, rtol=1.e-2))
 
 # Check the equality of displacement based and mixed condensed
 # global matrices, i.e. check that condensation is exact
