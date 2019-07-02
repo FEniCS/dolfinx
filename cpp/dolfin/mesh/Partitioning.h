@@ -65,6 +65,11 @@ public:
   ///     Global index for each cell
   /// @param ghost_mode
   ///     Ghost mode
+  /// @param part_processes_ratio
+  ///     Percentage of active processes that will be used to partition the
+  ///     mesh.
+  /// @param graph_partitioner
+  ///     External Graph Partitioner (SCOTCH, PARMETIS)
   static mesh::Mesh
   build_distributed_mesh(const MPI_Comm& comm, mesh::CellType::Type cell_type,
                          const Eigen::Ref<const EigenRowArrayXXd> points,

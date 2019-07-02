@@ -1316,8 +1316,8 @@ XDMFFile::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
   return read_mesh_function<double>(mesh, name);
 }
 //----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
-                               const mesh::GhostMode ghost_mode) const
+mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm, const mesh::GhostMode ghost_mode,
+                               const double proc_subset_ratio) const
 {
   // Extract parent filepath (required by HDF5 when XDMF stores relative
   // path of the HDF5 files(s) and the XDMF is not opened from its own
@@ -1391,37 +1391,61 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
   assert(gdims.size() == 2);
   assert(gdims[1] == gdim);
 
-  // Geometry
-  const auto geometry_data = xdmf_read::get_dataset<double>(
-      _mpi_comm.comm(), geometry_data_node, parent_path);
-  const std::size_t num_local_points = geometry_data.size() / gdim;
+  // ==============================================================
+  // Use only a subse of processess to read the mesh
+  const int nparts = dolfin::MPI::size(comm);
+  const int num_proc = round(proc_subset_ratio * nparts);
+  MPI_Comm subset_comm = dolfin::MPI::SubsetComm(comm, num_proc);
 
-  Eigen::Map<const EigenRowArrayXXd> points(geometry_data.data(),
-                                            num_local_points, gdim);
-  // Get topology dataset node
-  pugi::xml_node topology_data_node = topology_node.child("DataItem");
-  assert(topology_data_node);
+  if (MPI_COMM_NULL != subset_comm)
+  {
+    // Geometry
+    const auto geometry_data = xdmf_read::get_dataset<double>(
+        subset_comm, geometry_data_node, parent_path);
+    const std::size_t num_local_points = geometry_data.size() / gdim;
 
-  // Topology
-  const std::vector<std::int64_t> tdims
-      = xdmf_utils::get_dataset_shape(topology_data_node);
-  const auto topology_data = xdmf_read::get_dataset<std::int64_t>(
-      _mpi_comm.comm(), topology_data_node, parent_path);
-  const std::size_t npoint_per_cell = tdims[1];
-  const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
-  Eigen::Map<const EigenRowArrayXXi64> cells(topology_data.data(),
-                                             num_local_cells, npoint_per_cell);
+    Eigen::Map<const EigenRowArrayXXd> points(geometry_data.data(),
+                                              num_local_points, gdim);
+    // Get topology dataset node
+    pugi::xml_node topology_data_node = topology_node.child("DataItem");
+    assert(topology_data_node);
 
-  // Set cell global indices by adding offset
-  const std::int64_t cell_index_offset
-      = MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
-  std::vector<std::int64_t> global_cell_indices(num_local_cells);
-  std::iota(global_cell_indices.begin(), global_cell_indices.end(),
-            cell_index_offset);
+    // Topology
+    const std::vector<std::int64_t> tdims
+        = xdmf_utils::get_dataset_shape(topology_data_node);
+    const auto topology_data = xdmf_read::get_dataset<std::int64_t>(
+        subset_comm, topology_data_node, parent_path);
+    const std::size_t npoint_per_cell = tdims[1];
+    const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
+    Eigen::Map<const EigenRowArrayXXi64> cells(
+        topology_data.data(), num_local_cells, npoint_per_cell);
 
-  return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type->cell_type(), points, cells,
-      global_cell_indices, ghost_mode);
+    // Set cell global indices by adding offset
+    const std::int64_t cell_index_offset
+        = MPI::global_offset(subset_comm, num_local_cells, true);
+    std::vector<std::int64_t> global_cell_indices(num_local_cells);
+    std::iota(global_cell_indices.begin(), global_cell_indices.end(),
+              cell_index_offset);
+    std::cout << "Number of local cells :" << num_local_cells << std::endl;
+
+    return mesh::Partitioning::build_distributed_mesh(
+        _mpi_comm.comm(), cell_type->cell_type(), points, cells,
+        global_cell_indices, ghost_mode, proc_subset_ratio);
+  }
+  else
+  {
+    // Get topology dataset node
+    pugi::xml_node topology_data_node = topology_node.child("DataItem");
+    assert(topology_data_node);
+    const std::vector<std::int64_t> tdims
+        = xdmf_utils::get_dataset_shape(topology_data_node);
+    EigenRowArrayXXd points(0, gdim);
+    EigenRowArrayXXi64 cells(0, tdims[1]);
+
+    return mesh::Partitioning::build_distributed_mesh(
+        _mpi_comm.comm(), cell_type->cell_type(), points, cells, {}, ghost_mode,
+        proc_subset_ratio);
+  }
 }
 //----------------------------------------------------------------------------
 function::Function

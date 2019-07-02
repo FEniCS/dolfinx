@@ -635,8 +635,8 @@ partition_cells(const MPI_Comm& mpi_comm, int nparts,
       graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
       std::vector<std::size_t> weights;
       const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
-      return PartitionData(graph::SCOTCH::partition(mpi_comm, nparts, csr_graph,
-                                                    weights, num_ghost_nodes));
+      return PartitionData(graph::SCOTCH::partition(
+          mpi_comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes));
     }
     else if (partitioner == "ParMETIS")
     {
