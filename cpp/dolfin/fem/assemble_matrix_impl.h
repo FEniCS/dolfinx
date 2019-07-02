@@ -28,7 +28,7 @@ class Mesh;
 namespace fem
 {
 class Form;
-class GenericDofMap;
+class DofMap;
 
 namespace impl
 {
@@ -59,7 +59,7 @@ void assemble_cells(
 void assemble_exterior_facets(
     Mat A, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
-    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+    const DofMap& dofmap0, const DofMap& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
@@ -69,7 +69,7 @@ void assemble_exterior_facets(
 void assemble_interior_facets(
     Mat A, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
-    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+    const DofMap& dofmap0, const DofMap& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,

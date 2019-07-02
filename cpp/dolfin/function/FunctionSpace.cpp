@@ -11,8 +11,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -24,7 +24,7 @@ using namespace dolfin::function;
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
-                             std::shared_ptr<const fem::GenericDofMap> dofmap)
+                             std::shared_ptr<const fem::DofMap> dofmap)
     : id(common::UniqueIdGenerator::id()), _mesh(mesh), _element(element),
       _dofmap(dofmap), _root_space_id(id)
 {
@@ -51,7 +51,7 @@ std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
   return _element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const fem::GenericDofMap> FunctionSpace::dofmap() const
+std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
 {
   return _dofmap;
 }
@@ -250,7 +250,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
       = _element->extract_sub_element(component);
 
   // Extract sub dofmap
-  std::shared_ptr<fem::GenericDofMap> dofmap(
+  std::shared_ptr<fem::DofMap> dofmap(
       _dofmap->extract_sub_dofmap(component, *_mesh));
 
   // Create new sub space
@@ -277,7 +277,7 @@ FunctionSpace::collapse() const
     throw std::runtime_error("Function space is not a subspace");
 
   // Create collapsed DofMap
-  std::shared_ptr<fem::GenericDofMap> collapsed_dofmap;
+  std::shared_ptr<fem::DofMap> collapsed_dofmap;
   std::vector<PetscInt> collapsed_dofs;
   std::tie(collapsed_dofmap, collapsed_dofs) = _dofmap->collapse(*_mesh);
 

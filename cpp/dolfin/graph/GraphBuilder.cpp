@@ -11,7 +11,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/log.h>
 #include <dolfin/common/types.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
@@ -299,8 +299,8 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
 //-----------------------------------------------------------------------------
 dolfin::graph::Graph
 dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
-                                         const fem::GenericDofMap& dofmap0,
-                                         const fem::GenericDofMap& dofmap1)
+                                         const fem::DofMap& dofmap0,
+                                         const fem::DofMap& dofmap1)
 {
   common::Timer timer("Build local sparsity graph from dofmaps");
 

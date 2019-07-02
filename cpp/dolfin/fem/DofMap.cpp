@@ -46,8 +46,7 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
   }
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& dofmap_parent,
-               const std::vector<int>& component,
+DofMap::DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
                const mesh::Mesh& mesh)
     : _cell_dimension(-1), _global_dimension(-1),
       _index_map(dofmap_parent._index_map)
@@ -263,14 +262,14 @@ DofMap::tabulate_global_dofs() const
   return dofs;
 }
 //-----------------------------------------------------------------------------
-std::unique_ptr<GenericDofMap>
+std::unique_ptr<DofMap>
 DofMap::extract_sub_dofmap(const std::vector<int>& component,
                            const mesh::Mesh& mesh) const
 {
   return std::unique_ptr<DofMap>(new DofMap(*this, component, mesh));
 }
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<GenericDofMap>, std::vector<PetscInt>>
+std::pair<std::shared_ptr<DofMap>, std::vector<PetscInt>>
 DofMap::collapse(const mesh::Mesh& mesh) const
 {
   assert(_element_dof_layout);
@@ -362,5 +361,81 @@ std::string DofMap::str(bool verbose) const
   }
 
   return s.str();
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<std::size_t, Eigen::Dynamic, 1>
+DofMap::tabulate_local_to_global_dofs() const
+{
+  // FIXME: use common::IndexMap::local_to_global_index?
+
+  const auto idxmap = index_map();
+  assert(idxmap);
+  const std::size_t bs = idxmap->block_size();
+  const auto& local_to_global_unowned = idxmap->ghosts();
+  const std::size_t local_ownership_size = bs * idxmap->size_local();
+
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map(
+      bs * (idxmap->size_local() + idxmap->num_ghosts()));
+
+  const std::size_t global_offset = bs * idxmap->local_range()[0];
+  for (std::size_t i = 0; i < local_ownership_size; ++i)
+    local_to_global_map[i] = i + global_offset;
+
+  for (Eigen::Index node = 0; node < local_to_global_unowned.size(); ++node)
+  {
+    for (std::size_t component = 0; component < bs; ++component)
+    {
+      local_to_global_map[bs * node + component + local_ownership_size]
+          = bs * local_to_global_unowned[node] + component;
+    }
+  }
+
+  return local_to_global_map;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
+                                                       std::size_t dim) const
+{
+  // Check number of dofs per entity (on each cell)
+  const std::size_t num_dofs_per_entity = num_entity_dofs(dim);
+
+  // Return empty vector if not dofs on requested entity
+  if (num_dofs_per_entity == 0)
+    return Eigen::Array<PetscInt, Eigen::Dynamic, 1>();
+
+  // Vector to hold list of dofs
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dof_list(mesh.num_entities(dim)
+                                                     * num_dofs_per_entity);
+
+  // Build local dofs for each entity of dimension dim
+  const mesh::CellType& cell_type = mesh.type();
+  std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs_local;
+  for (std::size_t i = 0; i < cell_type.num_entities(dim); ++i)
+    entity_dofs_local.push_back(tabulate_entity_dofs(dim, i));
+
+  // Iterate over cells
+  for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
+  {
+    // Get local-to-global dofmap for cell
+    const auto cell_dof_list = cell_dofs(c.index());
+
+    // Loop over all entities of dimension dim
+    unsigned int local_index = 0;
+    for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, dim))
+    {
+      // Get dof index and add to list
+      for (Eigen::Index i = 0; i < entity_dofs_local[local_index].size(); ++i)
+      {
+        const std::size_t entity_dof_local = entity_dofs_local[local_index][i];
+        const PetscInt dof_index = cell_dof_list[entity_dof_local];
+        assert((Eigen::Index)(e.index() * num_dofs_per_entity + i)
+               < dof_list.size());
+        dof_list[e.index() * num_dofs_per_entity + i] = dof_index;
+      }
+      ++local_index;
+    }
+  }
+
+  return dof_list;
 }
 //-----------------------------------------------------------------------------

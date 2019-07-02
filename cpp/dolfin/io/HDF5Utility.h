@@ -22,7 +22,7 @@ class PETScVector;
 
 namespace fem
 {
-class GenericDofMap;
+class DofMap;
 }
 
 namespace mesh
@@ -66,7 +66,7 @@ public:
       const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
       const std::vector<std::size_t>& remote_local_dofi,
       std::array<std::int64_t, 2> vector_range,
-      const fem::GenericDofMap& dofmap);
+      const fem::DofMap& dofmap);
 
   /// Get cell owners for an arbitrary set of cells.
   /// Returns (process, local index) pairs
@@ -86,7 +86,7 @@ public:
       const std::vector<std::int64_t>& x_cell_dofs,
       const std::vector<PetscScalar>& vector,
       std::array<std::int64_t, 2> input_vector_range,
-      const fem::GenericDofMap& dofmap);
+      const fem::DofMap& dofmap);
 };
 } // namespace io
 } // namespace dolfin

@@ -12,7 +12,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/log.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
@@ -331,7 +331,7 @@ void results_write(const function::Function& u, std::string vtu_filename)
     cell_based_dim *= mesh.topology().dim();
 
   assert(u.function_space()->dofmap());
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
   if (dofmap.max_element_dofs() == cell_based_dim)
     VTKWriter::write_cell_data(u, vtu_filename);
   else

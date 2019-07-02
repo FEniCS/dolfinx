@@ -6,7 +6,7 @@
 
 #include "assemble_matrix_impl.h"
 #include "Form.h"
-#include "GenericDofMap.h"
+#include "DofMap.h"
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/utils.h>
@@ -27,8 +27,8 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   const mesh::Mesh& mesh = *a.mesh();
 
   // Get dofmap data
-  const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
   Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array0
       = dofmap0.dof_array();
   Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array1
@@ -174,7 +174,7 @@ void fem::impl::assemble_cells(
 void fem::impl::assemble_exterior_facets(
     Mat A, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
-    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+    const DofMap& dofmap0, const DofMap& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
@@ -275,7 +275,7 @@ void fem::impl::assemble_exterior_facets(
 void fem::impl::assemble_interior_facets(
     Mat A, const mesh::Mesh& mesh,
     const std::vector<std::int32_t>& active_facets,
-    const GenericDofMap& dofmap0, const GenericDofMap& dofmap1,
+    const DofMap& dofmap0, const DofMap& dofmap1,
     const std::vector<bool>& bc0, const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,

@@ -21,7 +21,7 @@ namespace dolfin
 
 namespace fem
 {
-class GenericDofMap;
+class DofMap;
 }
 
 namespace mesh
@@ -47,11 +47,11 @@ public:
   ///         The mesh.
   /// @param    element (_FiniteElement_)
   ///         The element.
-  /// @param    dofmap (_GenericDofMap_)
+  /// @param    dofmap (_DofMap_)
   ///         The dofmap.
   FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                 std::shared_ptr<const fem::FiniteElement> element,
-                std::shared_ptr<const fem::GenericDofMap> dofmap);
+                std::shared_ptr<const fem::DofMap> dofmap);
 
   // Copy constructor (deleted)
   FunctionSpace(const FunctionSpace& V) = delete;
@@ -94,9 +94,9 @@ public:
 
   /// Return dofmap
   ///
-  /// @returns _GenericDofMap_
+  /// @returns _DofMap_
   ///         The dofmap.
-  std::shared_ptr<const fem::GenericDofMap> dofmap() const;
+  std::shared_ptr<const fem::DofMap> dofmap() const;
 
   /// Return global dimension of the function space.
   /// Equivalent to dofmap()->global_dimension()
@@ -247,7 +247,7 @@ private:
   std::shared_ptr<const fem::FiniteElement> _element;
 
   // The dofmap
-  std::shared_ptr<const fem::GenericDofMap> _dofmap;
+  std::shared_ptr<const fem::DofMap> _dofmap;
 
   // The component w.r.t. to root space
   std::vector<int> _component;

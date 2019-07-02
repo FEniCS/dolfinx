@@ -11,7 +11,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/Form.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -115,7 +115,7 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
   }
 
   // Get dof maps
-  std::array<const GenericDofMap*, 2> dofmaps
+  std::array<const DofMap*, 2> dofmaps
       = {{a.function_space(0)->dofmap().get(),
           a.function_space(1)->dofmap().get()}};
 
@@ -240,7 +240,7 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
       if (a[row][col])
       {
         // Build sparsity pattern for block
-        std::array<const GenericDofMap*, 2> dofmaps
+        std::array<const DofMap*, 2> dofmaps
             = {{a[row][col]->function_space(0)->dofmap().get(),
                 a[row][col]->function_space(1)->dofmap().get()}};
         // auto sp = std::make_unique<la::SparsityPattern>(

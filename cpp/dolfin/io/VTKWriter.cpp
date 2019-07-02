@@ -8,7 +8,7 @@
 #include <boost/detail/endian.hpp>
 #include <cstdint>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
@@ -187,7 +187,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   assert(u.function_space()->mesh());
   assert(u.function_space()->dofmap());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
 

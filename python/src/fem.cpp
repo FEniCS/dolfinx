@@ -141,38 +141,31 @@ void fem(py::module& m)
       .def("value_dimension", &dolfin::fem::FiniteElement::value_dimension)
       .def("signature", &dolfin::fem::FiniteElement::signature);
 
-  // dolfin::fem::GenericDofMap
-  py::class_<dolfin::fem::GenericDofMap,
-             std::shared_ptr<dolfin::fem::GenericDofMap>>(m, "GenericDofMap",
-                                                          "DofMap object")
-      .def_property_readonly(
-          "global_dimension", &dolfin::fem::GenericDofMap::global_dimension,
-          "The dimension of the global finite element function space")
-      .def_property_readonly("index_map",
-                             &dolfin::fem::GenericDofMap::index_map)
-      .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
-      .def("dofs", &dolfin::fem::GenericDofMap::dofs)
-      .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
-                              dolfin::fem::GenericDofMap::*)(
-                              const dolfin::mesh::Mesh&, std::size_t) const)
-                              & dolfin::fem::GenericDofMap::entity_dofs)
-      .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
-                              dolfin::fem::GenericDofMap::*)(
-                              const dolfin::mesh::Mesh&, std::size_t,
-                              const std::vector<std::size_t>&) const)
-                              & dolfin::fem::GenericDofMap::entity_dofs)
-      .def("num_entity_dofs", &dolfin::fem::GenericDofMap::num_entity_dofs)
-      .def("tabulate_local_to_global_dofs",
-           &dolfin::fem::GenericDofMap::tabulate_local_to_global_dofs)
-      .def("tabulate_entity_dofs",
-           &dolfin::fem::GenericDofMap::tabulate_entity_dofs)
-      .def("set", &dolfin::fem::GenericDofMap::set)
-      .def("dof_array", &dolfin::fem::GenericDofMap::dof_array);
-
   // dolfin::fem::DofMap
-  py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
-             dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
-      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>());
+  py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>>(
+      m, "DofMap", "DofMap object")
+      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>())
+      .def_property_readonly(
+          "global_dimension", &dolfin::fem::DofMap::global_dimension,
+          "The dimension of the global finite element function space")
+      .def_property_readonly("index_map", &dolfin::fem::DofMap::index_map)
+      .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs)
+      .def("dofs", &dolfin::fem::DofMap::dofs)
+      // .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
+      //                         dolfin::fem::DofMap::*)(
+      //                         const dolfin::mesh::Mesh&, std::size_t) const)
+      //                         & dolfin::fem::DofMap::entity_dofs)
+      // .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
+      //                         dolfin::fem::DofMap::*)(
+      //                         const dolfin::mesh::Mesh&, std::size_t,
+      //                         const std::vector<std::size_t>&) const)
+      //                         & dolfin::fem::DofMap::entity_dofs)
+      .def("num_entity_dofs", &dolfin::fem::DofMap::num_entity_dofs)
+      .def("tabulate_local_to_global_dofs",
+           &dolfin::fem::DofMap::tabulate_local_to_global_dofs)
+      .def("tabulate_entity_dofs", &dolfin::fem::DofMap::tabulate_entity_dofs)
+      .def("set", &dolfin::fem::DofMap::set)
+      .def("dof_array", &dolfin::fem::DofMap::dof_array);
 
   // dolfin::fem::CoordinateMapping
   py::class_<dolfin::fem::CoordinateMapping,

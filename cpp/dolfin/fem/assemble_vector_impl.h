@@ -29,7 +29,7 @@ namespace fem
 {
 class DirichletBC;
 class Form;
-class GenericDofMap;
+class DofMap;
 
 namespace impl
 {
@@ -54,7 +54,7 @@ void assemble_cells(
 void assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const fem::GenericDofMap& dofmap,
+    const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
@@ -64,7 +64,7 @@ void assemble_exterior_facets(
 void assemble_interior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const fem::GenericDofMap& dofmap,
+    const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,

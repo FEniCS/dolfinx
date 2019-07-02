@@ -6,7 +6,7 @@
 
 #include "DirichletBC.h"
 #include "FiniteElement.h"
-#include "GenericDofMap.h"
+#include "DofMap.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -292,8 +292,8 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
 
   // Get dofmap
   assert(V.dofmap());
-  const GenericDofMap& dofmap = *V.dofmap();
-  const GenericDofMap* dofmap_g = &dofmap;
+  const DofMap& dofmap = *V.dofmap();
+  const DofMap* dofmap_g = &dofmap;
   if (Vg)
   {
     assert(Vg->dofmap());
@@ -532,9 +532,9 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 
 //   // Get dofmap
 //   assert(V.dofmap());
-//   const GenericDofMap& dofmap = *V.dofmap();
+//   const DofMap& dofmap = *V.dofmap();
 
-//   const GenericDofMap* dofmap_g = &dofmap;
+//   const DofMap* dofmap_g = &dofmap;
 //   if (Vg)
 //   {
 //     assert(Vg->dofmap());

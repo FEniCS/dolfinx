@@ -7,7 +7,7 @@
 #include "DiscreteOperators.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>

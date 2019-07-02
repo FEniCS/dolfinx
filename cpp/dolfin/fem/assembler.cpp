@@ -8,7 +8,7 @@
 
 #include "DirichletBC.h"
 #include "Form.h"
-#include "GenericDofMap.h"
+#include "DofMap.h"
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"

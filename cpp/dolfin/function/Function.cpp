@@ -14,7 +14,7 @@
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
@@ -38,7 +38,7 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
 
   // Get dof map
   assert(V.dofmap());
-  const fem::GenericDofMap& dofmap = *(V.dofmap());
+  const fem::DofMap& dofmap = *(V.dofmap());
 
   // Check that function space is not a subspace (view)
   if (dofmap.is_view())
@@ -343,7 +343,7 @@ void Function::restrict(
   assert(_function_space->dofmap());
 
   // Get dofmap for cell
-  const fem::GenericDofMap& dofmap = *_function_space->dofmap();
+  const fem::DofMap& dofmap = *_function_space->dofmap();
   auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
   // Pick values from vector(s)
