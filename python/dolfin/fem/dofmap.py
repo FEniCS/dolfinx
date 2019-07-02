@@ -38,20 +38,6 @@ class DofMap:
     def __init__(self, dofmap: cpp.fem.DofMap):
         self._cpp_object = dofmap
 
-    @classmethod
-    def fromufc(cls, ufc_dofmap, mesh):
-        """Initialize from UFC dofmap and mesh
-
-        Parameters
-        ----------
-        ufc_dofmap
-            Pointer to ufc_dofmap as returned by FFC JIT
-        mesh: dolfin.cpp.mesh.Mesh
-        """
-        ufc_dofmap = make_ufc_dofmap(ufc_dofmap)
-        cpp_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh)
-        return cls(cpp_dofmap)
-
     @property
     def global_dimension(self):
         return self._cpp_object.global_dimension

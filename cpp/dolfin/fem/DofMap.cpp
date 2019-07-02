@@ -20,14 +20,6 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh)
-    : DofMap(std::make_shared<ElementDofLayout>(
-                 create_element_dof_layout(ufc_dofmap, {}, mesh.type())),
-             mesh)
-{
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                const mesh::Mesh& mesh)
     : _cell_dimension(element_dof_layout->num_dofs()), _global_dimension(-1),

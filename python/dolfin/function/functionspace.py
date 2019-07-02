@@ -49,19 +49,20 @@ class FunctionSpace(ufl.FunctionSpace):
             super().__init__(mesh.ufl_domain(), ufl_element)
 
         # Compile dofmap and element and create DOLFIN objects
-        ufc_element, ufc_dofmap = jit.ffc_jit(
+        ufc_element, ufc_dofmap_ptr = jit.ffc_jit(
             self.ufl_element(),
             form_compiler_parameters=None,
             mpi_comm=mesh.mpi_comm())
 
         ffi = cffi.FFI()
         ufc_element = dofmap.make_ufc_finite_element(ffi.cast("uintptr_t", ufc_element))
-        dolfin_element = cpp.fem.FiniteElement(ufc_element)
-        dolfin_dofmap = dofmap.DofMap.fromufc(ffi.cast("uintptr_t", ufc_dofmap), mesh)
+        cpp_element = cpp.fem.FiniteElement(ufc_element)
+
+        ufc_dofmap = dofmap.make_ufc_dofmap(ffi.cast("uintptr_t", ufc_dofmap_ptr))
+        cpp_dofmap = cpp.fem.create_dofmap(ufc_dofmap, mesh)
 
         # Initialize the cpp.FunctionSpace
-        self._cpp_object = cpp.function.FunctionSpace(
-            mesh, dolfin_element, dolfin_dofmap._cpp_object)
+        self._cpp_object = cpp.function.FunctionSpace(mesh, cpp_element, cpp_dofmap)
 
     def dolfin_element(self):
         """Return the DOLFIN element."""

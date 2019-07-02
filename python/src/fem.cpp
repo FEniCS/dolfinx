@@ -12,6 +12,7 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/ElementDofLayout.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/PETScDMCollection.h>
@@ -126,6 +127,10 @@ void fem(py::module& m)
         },
         py::return_value_policy::take_ownership,
         "Create nested sparse matrix for bilinear forms.");
+  m.def("create_element_dof_layout", &dolfin::fem::create_element_dof_layout,
+        "Create ElementDofLayout object from a ufc dofmap.");
+  m.def("create_dofmap", &dolfin::fem::create_dofmap,
+        "Create DOLFIN DofMap object from a ufc dofmap.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
@@ -141,25 +146,22 @@ void fem(py::module& m)
       .def("value_dimension", &dolfin::fem::FiniteElement::value_dimension)
       .def("signature", &dolfin::fem::FiniteElement::signature);
 
+  // dolfin::fem::ElementDofLayout
+  py::class_<dolfin::fem::ElementDofLayout,
+             std::shared_ptr<dolfin::fem::ElementDofLayout>>(
+      m, "ElementDofLayout", "Object describing the layout of dofs on a cell");
+
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>>(
       m, "DofMap", "DofMap object")
-      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>())
+      .def(py::init<std::shared_ptr<const dolfin::fem::ElementDofLayout>,
+                    const dolfin::mesh::Mesh&>())
       .def_property_readonly(
           "global_dimension", &dolfin::fem::DofMap::global_dimension,
           "The dimension of the global finite element function space")
       .def_property_readonly("index_map", &dolfin::fem::DofMap::index_map)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs)
       .def("dofs", &dolfin::fem::DofMap::dofs)
-      // .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
-      //                         dolfin::fem::DofMap::*)(
-      //                         const dolfin::mesh::Mesh&, std::size_t) const)
-      //                         & dolfin::fem::DofMap::entity_dofs)
-      // .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
-      //                         dolfin::fem::DofMap::*)(
-      //                         const dolfin::mesh::Mesh&, std::size_t,
-      //                         const std::vector<std::size_t>&) const)
-      //                         & dolfin::fem::DofMap::entity_dofs)
       .def("num_entity_dofs", &dolfin::fem::DofMap::num_entity_dofs)
       .def("tabulate_local_to_global_dofs",
            &dolfin::fem::DofMap::tabulate_local_to_global_dofs)
