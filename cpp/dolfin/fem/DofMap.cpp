@@ -376,7 +376,7 @@ DofMap::tabulate_local_to_global_dofs() const
 
   for (Eigen::Index node = 0; node < local_to_global_unowned.size(); ++node)
   {
-    for (std::size_t component = 0; component < bs; ++component)
+    for (int component = 0; component < bs; ++component)
     {
       local_to_global_map[bs * node + component + local_ownership_size]
           = bs * local_to_global_unowned[node] + component;
