@@ -109,7 +109,8 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   std::vector<std::int32_t> dofs_view;
   for (std::int64_t i = 0; i < mesh.num_entities(tdim); ++i)
   {
-    auto cell_dofs = dofmap_view.cell_dofs(i);
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
+        = dofmap_view.cell_dofs(i);
     for (Eigen::Index dof = 0; dof < cell_dofs.rows(); ++dof)
       dofs_view.push_back(cell_dofs[dof]);
   }
@@ -294,8 +295,10 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   const int tdim = mesh.topology().dim();
   for (std::int64_t c = 0; c < mesh.num_entities(tdim); ++c)
   {
-    const auto view_cell_dofs = this->cell_dofs(c);
-    const auto cell_dofs = dofmap_new->cell_dofs(c);
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> view_cell_dofs
+        = this->cell_dofs(c);
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
+        = dofmap_new->cell_dofs(c);
     assert(view_cell_dofs.size() == cell_dofs.size());
 
     for (Eigen::Index j = 0; j < cell_dofs.size(); ++j)
@@ -335,9 +338,8 @@ std::string DofMap::str(bool verbose) const
   {
     // Cell loop
     assert(_dofmap.size() % _cell_dimension == 0);
-    const std::size_t ncells = _dofmap.size() / _cell_dimension;
-
-    for (std::size_t i = 0; i < ncells; ++i)
+    const std::int32_t ncells = _dofmap.size() / _cell_dimension;
+    for (std::int32_t i = 0; i < ncells; ++i)
     {
       s << "Local cell index, cell dofmap dimension: " << i << ", "
         << _cell_dimension << std::endl;
@@ -359,18 +361,17 @@ Eigen::Array<std::size_t, Eigen::Dynamic, 1>
 DofMap::tabulate_local_to_global_dofs() const
 {
   // FIXME: use common::IndexMap::local_to_global_index?
-
-  const auto idxmap = index_map();
-  assert(idxmap);
-  const std::size_t bs = idxmap->block_size();
-  const auto& local_to_global_unowned = idxmap->ghosts();
-  const std::size_t local_ownership_size = bs * idxmap->size_local();
+  assert(_index_map);
+  const int bs = _index_map->block_size();
+  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& local_to_global_unowned
+      = _index_map->ghosts();
+  const std::int32_t local_ownership_size = bs * _index_map->size_local();
 
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map(
-      bs * (idxmap->size_local() + idxmap->num_ghosts()));
+      bs * (_index_map->size_local() + _index_map->num_ghosts()));
 
-  const std::size_t global_offset = bs * idxmap->local_range()[0];
-  for (std::size_t i = 0; i < local_ownership_size; ++i)
+  const std::int64_t global_offset = bs * _index_map->local_range()[0];
+  for (std::int32_t i = 0; i < local_ownership_size; ++i)
     local_to_global_map[i] = i + global_offset;
 
   for (Eigen::Index node = 0; node < local_to_global_unowned.size(); ++node)
@@ -389,7 +390,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
                                                        std::size_t dim) const
 {
   // Check number of dofs per entity (on each cell)
-  const std::size_t num_dofs_per_entity = num_entity_dofs(dim);
+  const int num_dofs_per_entity = num_entity_dofs(dim);
 
   // Return empty vector if not dofs on requested entity
   if (num_dofs_per_entity == 0)
@@ -409,7 +410,8 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Get local-to-global dofmap for cell
-    const auto cell_dof_list = cell_dofs(c.index());
+    Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dof_list
+        = cell_dofs(c.index());
 
     // Loop over all entities of dimension dim
     unsigned int local_index = 0;
