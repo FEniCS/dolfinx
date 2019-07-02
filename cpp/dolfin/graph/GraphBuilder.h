@@ -40,8 +40,7 @@ public:
       FacetCellMap;
 
   /// Build local graph from dofmap
-  static Graph local_graph(const mesh::Mesh& mesh,
-                           const fem::DofMap& dofmap0,
+  static Graph local_graph(const mesh::Mesh& mesh, const fem::DofMap& dofmap0,
                            const fem::DofMap& dofmap1);
 
   /// Build local graph from mesh (general version)

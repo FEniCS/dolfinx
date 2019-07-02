@@ -36,14 +36,14 @@ public:
                     const std::array<const fem::DofMap*, 2> dofmaps);
 
   /// Iterate over interior facets and insert entries into sparsity pattern
-  static void
-  interior_facets(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-                  const std::array<const fem::DofMap*, 2> dofmaps);
+  static void interior_facets(la::SparsityPattern& pattern,
+                              const mesh::Mesh& mesh,
+                              const std::array<const fem::DofMap*, 2> dofmaps);
 
   /// Iterate over exterior facets and insert entries into sparsity pattern
-  static void
-  exterior_facets(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-                  const std::array<const fem::DofMap*, 2> dofmaps);
+  static void exterior_facets(la::SparsityPattern& pattern,
+                              const mesh::Mesh& mesh,
+                              const std::array<const fem::DofMap*, 2> dofmaps);
 };
 } // namespace fem
 } // namespace dolfin

@@ -7,8 +7,8 @@
 #include <petscis.h>
 
 #include "DirichletBC.h"
-#include "Form.h"
 #include "DofMap.h"
+#include "Form.h"
 #include "assemble_matrix_impl.h"
 #include "assemble_scalar_impl.h"
 #include "assemble_vector_impl.h"

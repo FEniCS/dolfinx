@@ -10,8 +10,8 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
-#include <dolfin/fem/Form.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/Form.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>

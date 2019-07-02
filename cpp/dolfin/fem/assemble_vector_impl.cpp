@@ -6,8 +6,8 @@
 
 #include "assemble_vector_impl.h"
 #include "DirichletBC.h"
-#include "Form.h"
 #include "DofMap.h"
+#include "Form.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <dolfin/function/Function.h>

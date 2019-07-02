@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DirichletBC.h"
-#include "FiniteElement.h"
 #include "DofMap.h"
+#include "FiniteElement.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -167,7 +167,7 @@ std::vector<std::int32_t> marked_facets(
   // Pack boundary vertices for vectorised marking
   // function
   for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
-{
+  {
     if (boundary_vertex[i] != -1)
       x_boundary.row(boundary_vertex[i]) = x_all.row(i);
   }
@@ -198,7 +198,7 @@ std::vector<std::int32_t> marked_facets(
            and (all_marked[idx] == false
                 and boundary_marked[boundary_vertex[idx]] == false))
           or (boundary_vertex[idx] == -1 and all_marked[idx] == false))
-  {
+      {
         all_vertices_marked = false;
         break;
       }

@@ -13,8 +13,8 @@
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>

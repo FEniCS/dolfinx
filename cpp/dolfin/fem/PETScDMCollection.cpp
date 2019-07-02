@@ -8,8 +8,8 @@
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -93,8 +93,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
   // Loop over cells and tabulate dofs
@@ -536,8 +535,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = meshc.geometry().points();
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
   ; // cell dofs coordinates vector

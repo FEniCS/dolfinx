@@ -140,8 +140,7 @@ public:
   ///
   /// @returns    _FunctionSpace_
   ///         The subspace.
-  std::shared_ptr<FunctionSpace>
-  sub(const std::vector<int>& component) const;
+  std::shared_ptr<FunctionSpace> sub(const std::vector<int>& component) const;
 
   /// Check whether V is subspace of this, or this itself
   ///
@@ -256,8 +255,7 @@ private:
   std::size_t _root_space_id;
 
   // Cache of subspaces
-  mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>>
-      _subspaces;
+  mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;
 };
 } // namespace function
 } // namespace dolfin

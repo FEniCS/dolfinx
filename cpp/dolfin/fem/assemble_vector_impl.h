@@ -70,7 +70,6 @@ void assemble_interior_facets(
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets);
 
-
 /// Modify b such that:
 ///
 ///   b <- b - scale * A_j (g_j - x0_j)

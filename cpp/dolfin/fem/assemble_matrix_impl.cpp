@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "assemble_matrix_impl.h"
-#include "Form.h"
 #include "DofMap.h"
+#include "Form.h"
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/utils.h>
@@ -173,9 +173,9 @@ void fem::impl::assemble_cells(
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_exterior_facets(
     Mat A, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets,
-    const DofMap& dofmap0, const DofMap& dofmap1,
-    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
+    const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
+    const DofMap& dofmap1, const std::vector<bool>& bc0,
+    const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
@@ -274,9 +274,9 @@ void fem::impl::assemble_exterior_facets(
 //-----------------------------------------------------------------------------
 void fem::impl::assemble_interior_facets(
     Mat A, const mesh::Mesh& mesh,
-    const std::vector<std::int32_t>& active_facets,
-    const DofMap& dofmap0, const DofMap& dofmap1,
-    const std::vector<bool>& bc0, const std::vector<bool>& bc1,
+    const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
+    const DofMap& dofmap1, const std::vector<bool>& bc0,
+    const std::vector<bool>& bc1,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,

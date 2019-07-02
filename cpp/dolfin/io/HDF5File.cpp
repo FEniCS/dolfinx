@@ -270,9 +270,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
           mesh.geometry().global_indices());
     }
 
-    Eigen::Map<
-        Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        varray(_vertex_coords.data(), _vertex_coords.size() / 3, 3);
+    Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> varray(
+        _vertex_coords.data(), _vertex_coords.size() / 3, 3);
 
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         vertex_coords(varray.rows(), gdim);

@@ -65,8 +65,7 @@ public:
       MPI_Comm mpi_comm,
       const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
       const std::vector<std::size_t>& remote_local_dofi,
-      std::array<std::int64_t, 2> vector_range,
-      const fem::DofMap& dofmap);
+      std::array<std::int64_t, 2> vector_range, const fem::DofMap& dofmap);
 
   /// Get cell owners for an arbitrary set of cells.
   /// Returns (process, local index) pairs

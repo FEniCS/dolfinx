@@ -7,8 +7,8 @@
 #include "VTKWriter.h"
 #include <boost/detail/endian.hpp>
 #include <cstdint>
-#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
