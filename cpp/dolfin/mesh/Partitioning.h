@@ -71,6 +71,7 @@ public:
                          const Eigen::Ref<const EigenRowArrayXXi64> cells,
                          const std::vector<std::int64_t>& global_cell_indices,
                          const mesh::GhostMode ghost_mode,
+                         const double part_processes_ratio = 1.0,
                          std::string graph_partitioner = "SCOTCH");
 
   /// Redistribute points to the processes that need them.

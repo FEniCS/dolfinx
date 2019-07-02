@@ -16,6 +16,7 @@
 #include "Topology.h"
 #include "Vertex.h"
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Set.h>
@@ -752,13 +753,19 @@ mesh::Mesh Partitioning::build_distributed_mesh(
     const Eigen::Ref<const EigenRowArrayXXd> points,
     const Eigen::Ref<const EigenRowArrayXXi64> cells,
     const std::vector<std::int64_t>& global_cell_indices,
-    const mesh::GhostMode ghost_mode, std::string graph_partitioner)
+    const mesh::GhostMode ghost_mode, double part_processes_ratio,
+    std::string graph_partitioner)
 {
 
-  const int nparts = dolfin::MPI::size(comm);
+  if (part_processes_ratio < 0 && part_processes_ratio > 1)
+  {
+    throw std::runtime_error("The ratio of processes used for partitioning "
+                             "should be between 0 and 1");
+  }
 
-  // TODO: Should be defined by the user (for testing only)
-  const int num_proc = nparts / 2 + 1;
+  // Select a subset processes for partitioning the mesh
+  const int nparts = dolfin::MPI::size(comm);
+  const int num_proc = round(part_processes_ratio * nparts);
   MPI_Comm subset_comm = dolfin::MPI::SubsetComm(comm, num_proc);
 
   // Compute the cell partition
