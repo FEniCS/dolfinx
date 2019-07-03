@@ -578,6 +578,89 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   return coeffs;
 }
 //-----------------------------------------------------------------------------
+fem::Form fem::create_form(
+    const ufc_form& ufc_form,
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
+{
+  assert(ufc_form.rank == (int)spaces.size());
+
+  // Check argument function spaces
+  for (std::size_t i = 0; i < spaces.size(); ++i)
+  {
+    assert(spaces[i]->element());
+    std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
+        ufc_form.create_finite_element(i), free);
+
+    assert(ufc_element);
+    if (std::string(ufc_element->signature)
+        != spaces[i]->element()->signature())
+    {
+      throw std::runtime_error(
+          "Cannot create form. Wrong type of function space for argument.");
+    }
+  }
+
+  // Get list of integral IDs, and load tabulate tensor into memory for each
+  FormIntegrals integrals;
+  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
+  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
+  for (int id : cell_integral_ids)
+  {
+    ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
+    assert(cell_integral);
+    integrals.register_tabulate_tensor(FormIntegrals::Type::cell, id,
+                                       cell_integral->tabulate_tensor);
+    std::free(cell_integral);
+  }
+
+  std::vector<int> exterior_facet_integral_ids(
+      ufc_form.num_exterior_facet_integrals);
+  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
+  for (int id : exterior_facet_integral_ids)
+  {
+    ufc_integral* exterior_facet_integral
+        = ufc_form.create_exterior_facet_integral(id);
+    assert(exterior_facet_integral);
+    integrals.register_tabulate_tensor(
+        FormIntegrals::Type::exterior_facet, id,
+        exterior_facet_integral->tabulate_tensor);
+    std::free(exterior_facet_integral);
+  }
+
+  std::vector<int> interior_facet_integral_ids(
+      ufc_form.num_interior_facet_integrals);
+  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
+  for (int id : interior_facet_integral_ids)
+  {
+    ufc_integral* interior_facet_integral
+        = ufc_form.create_interior_facet_integral(id);
+    assert(interior_facet_integral);
+    integrals.register_tabulate_tensor(
+        FormIntegrals::Type::interior_facet, id,
+        interior_facet_integral->tabulate_tensor);
+    std::free(interior_facet_integral);
+  }
+
+  // Not currently working
+  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
+  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
+  if (vertex_integral_ids.size() > 0)
+  {
+    throw std::runtime_error(
+        "Vertex integrals not supported. Under development.");
+  }
+
+  // Create CoordinateMapping
+  ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
+  std::shared_ptr<const fem::CoordinateMapping> coord_mapping
+      = fem::get_cmap_from_ufc_cmap(*cmap);
+  std::free(cmap);
+
+  return fem::Form(spaces, integrals,
+                   FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
+                   coord_mapping);
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<const fem::CoordinateMapping>
 fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
 {
