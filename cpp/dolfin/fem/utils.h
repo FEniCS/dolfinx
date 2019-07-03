@@ -87,6 +87,16 @@ ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
 ///         The mesh.
 DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
 
+/// Create form (shared data)
+///
+/// @param[in] ufc_form (ufc_form)
+///         The UFC form.
+/// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
+///         Vector of function spaces.
+Form create_form(
+    const ufc_form& ufc_form,
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
+
 /// Extract coefficients from UFC form
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
 get_coeffs_from_ufc_form(const ufc_form& ufc_form);

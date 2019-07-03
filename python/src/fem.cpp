@@ -131,6 +131,8 @@ void fem(py::module& m)
         "Create ElementDofLayout object from a ufc dofmap.");
   m.def("create_dofmap", &dolfin::fem::create_dofmap,
         "Create DOLFIN DofMap object from a ufc dofmap.");
+  m.def("create_form", &dolfin::fem::create_form,
+        "Create DOLFIN form from a ufc form.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
@@ -263,9 +265,6 @@ void fem(py::module& m)
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
       m, "Form", "Variational form object")
-      .def(py::init<const ufc_form&,
-                    std::vector<std::shared_ptr<
-                        const dolfin::function::FunctionSpace>>>())
       .def(py::init<std::vector<
                std::shared_ptr<const dolfin::function::FunctionSpace>>>())
       .def("num_coefficients",
