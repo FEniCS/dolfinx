@@ -14,8 +14,8 @@ using namespace dolfin::common;
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::size_t>& ghosts,
                    std::size_t block_size)
-    : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts.size()),
-      _ghost_owners(ghosts.size()), _block_size(block_size)
+    : block_size(block_size), _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)),
+      _ghosts(ghosts.size()), _ghost_owners(ghosts.size())
 {
   // Calculate offsets
   MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
@@ -37,8 +37,8 @@ IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::int64_t>& ghosts,
                    std::size_t block_size)
-    : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts.size()),
-      _ghost_owners(ghosts.size()), _block_size(block_size)
+    : block_size(block_size), _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)),
+      _ghosts(ghosts.size()), _ghost_owners(ghosts.size())
 {
   // Calculate offsets
   MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
@@ -61,8 +61,6 @@ std::array<std::int64_t, 2> IndexMap::local_range() const
 {
   return {{_all_ranges[_myrank], _all_ranges[_myrank + 1]}};
 }
-//-----------------------------------------------------------------------------
-int IndexMap::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 std::int32_t IndexMap::num_ghosts() const { return _ghosts.size(); }
 //-----------------------------------------------------------------------------

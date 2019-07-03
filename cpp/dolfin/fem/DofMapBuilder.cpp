@@ -657,7 +657,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
 {
   common::Timer t0("Init dofmap");
 
-  if (element_dof_layout.block_size() != 1)
+  if (element_dof_layout.block_size != 1)
     throw std::runtime_error("Block size of 1 expected when building dofmap.");
 
   const int D = mesh.topology().dim();

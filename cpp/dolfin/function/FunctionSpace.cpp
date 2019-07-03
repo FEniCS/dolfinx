@@ -309,7 +309,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   assert(_dofmap);
   std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map();
   assert(index_map);
-  std::size_t bs = index_map->block_size();
+  std::size_t bs = index_map->block_size;
   std::size_t local_size
       = bs * (index_map->size_local() + index_map->num_ghosts());
 

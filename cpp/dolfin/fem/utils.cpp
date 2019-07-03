@@ -162,7 +162,7 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
     std::array<PetscInt, 2> row_range;
     MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
 
-    assert(index_map_0.block_size() == 1);
+    assert(index_map_0.block_size == 1);
 
     // Set zeros in dense rows in order of increasing column index
     const PetscScalar block = 0.0;
@@ -304,7 +304,7 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
   {
     auto map = maps[0][i];
     std::size_t size = map->size_local() + map->num_ghosts();
-    const int bs0 = map->block_size();
+    const int bs0 = map->block_size;
     for (std::size_t k = 0; k < size; ++k)
     {
       std::size_t index_k = map->local_to_global(k);
@@ -321,7 +321,7 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
   {
     auto map = maps[1][i];
     std::size_t size = map->size_local() + map->num_ghosts();
-    const int bs1 = map->block_size();
+    const int bs1 = map->block_size;
     for (std::size_t k = 0; k < size; ++k)
     {
       std::size_t index_k = map->local_to_global(k);
@@ -422,7 +422,7 @@ la::PETScVector fem::create_vector_block(std::vector<const fem::Form*> L)
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     const common::IndexMap* map = index_maps[i];
-    const int bs = index_maps[i]->block_size();
+    const int bs = index_maps[i]->block_size;
     local_size += map->size_local() * bs;
 
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& field_ghosts
@@ -476,7 +476,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   // FIXME: handle/check block size > 1
 
   // Get process that owns global index
-  const int bs = maps[field]->block_size();
+  const int bs = maps[field]->block_size;
   int owner = maps[field]->owner(index / bs);
 
   // Offset from lower rank processes
@@ -486,7 +486,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
       if (j != field)
-        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size();
+        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size;
     }
   }
 
@@ -494,7 +494,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   for (unsigned int i = 0; i < field; ++i)
   {
     offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner])
-              * maps[i]->block_size();
+              * maps[i]->block_size;
   }
 
   return index + offset;

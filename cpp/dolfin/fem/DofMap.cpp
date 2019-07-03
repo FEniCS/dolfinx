@@ -22,10 +22,9 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                const mesh::Mesh& mesh)
-    : _cell_dimension(element_dof_layout->num_dofs()), _global_dimension(-1),
-      _element_dof_layout(element_dof_layout)
+    : _global_dimension(-1), _element_dof_layout(element_dof_layout)
 {
-  const int bs = _element_dof_layout->block_size();
+  const int bs = _element_dof_layout->block_size;
   if (bs == 1)
   {
     std::tie(_global_dimension, _index_map, _dofmap)
@@ -40,8 +39,7 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
                const mesh::Mesh& mesh)
-    : _cell_dimension(-1), _global_dimension(-1),
-      _index_map(dofmap_parent._index_map)
+    : _global_dimension(-1), _index_map(dofmap_parent._index_map)
 {
   // FIXME: Large objects could be shared (using std::shared_ptr)
   //        between parent and view
@@ -52,7 +50,6 @@ DofMap::DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
   // Set element dof layout and cell dimension
   _element_dof_layout
       = dofmap_parent._element_dof_layout->sub_dofmap(component);
-  _cell_dimension = _element_dof_layout->num_dofs();
 
   // Get components in parent map that correspond to sub-dofs
   assert(dofmap_parent._element_dof_layout);
@@ -80,21 +77,20 @@ DofMap::DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
-    : _cell_dimension(dofmap_view._element_dof_layout->num_dofs()),
-      _global_dimension(dofmap_view._global_dimension),
+    : _global_dimension(dofmap_view._global_dimension),
       _element_dof_layout(
           new ElementDofLayout(*dofmap_view._element_dof_layout, true))
 {
-  if (dofmap_view._index_map->block_size() == 1
-      and _element_dof_layout->block_size() > 1)
+  if (dofmap_view._index_map->block_size == 1
+      and _element_dof_layout->block_size > 1)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
         "than 1 from parent with block size of 1. Create new dofmap first.");
   }
 
-  if (dofmap_view._index_map->block_size() > 1
-      and _element_dof_layout->block_size() > 1)
+  if (dofmap_view._index_map->block_size > 1
+      and _element_dof_layout->block_size > 1)
   {
     throw std::runtime_error(
         "Cannot (yet) collapse dofmap with block size greater "
@@ -119,8 +115,8 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
                   dofs_view.end());
 
   // Get block sizes
-  const int bs_view = dofmap_view._index_map->block_size();
-  const int bs = _element_dof_layout->block_size();
+  const int bs_view = dofmap_view._index_map->block_size;
+  const int bs = _element_dof_layout->block_size;
 
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view._index_map->size_local();
@@ -183,8 +179,10 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   }
 
   // Dimension sanity checks
+  assert(_element_dof_layout);
   assert(_dofmap.size()
-         == (std::size_t)(mesh.num_entities(tdim) * _cell_dimension));
+         == (std::size_t)(mesh.num_entities(tdim)
+                          * _element_dof_layout->num_dofs()));
 }
 //-----------------------------------------------------------------------------
 bool DofMap::is_view() const
@@ -197,10 +195,15 @@ std::int64_t DofMap::global_dimension() const { return _global_dimension; }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 {
-  return _cell_dimension;
+  assert(_element_dof_layout);
+  return _element_dof_layout->num_dofs();
 }
 //-----------------------------------------------------------------------------
-std::size_t DofMap::max_element_dofs() const { return _cell_dimension; }
+std::size_t DofMap::max_element_dofs() const
+{
+  assert(_element_dof_layout);
+  return _element_dof_layout->num_dofs();
+}
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
@@ -247,7 +250,7 @@ DofMap::tabulate_entity_dofs(std::size_t entity_dim,
 Eigen::Array<std::size_t, Eigen::Dynamic, 1>
 DofMap::tabulate_global_dofs() const
 {
-  assert(_global_nodes.empty() or _index_map->block_size() == 1);
+  assert(_global_nodes.empty() or _index_map->block_size == 1);
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> dofs(_global_nodes.size());
   std::size_t i = 0;
   for (auto d : _global_nodes)
@@ -268,8 +271,8 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   assert(_element_dof_layout);
   assert(_index_map);
   std::shared_ptr<DofMap> dofmap_new;
-  if (this->_index_map->block_size() == 1
-      and this->_element_dof_layout->block_size() > 1)
+  if (this->_index_map->block_size == 1
+      and this->_element_dof_layout->block_size > 1)
   {
     // Create new element dof layout and reset parent
     auto collapsed_dof_layout
@@ -290,7 +293,7 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   auto index_map_new = dofmap_new->index_map();
   std::int32_t size
       = (index_map_new->size_local() + index_map_new->num_ghosts())
-        * index_map_new->block_size();
+        * index_map_new->block_size;
   std::vector<PetscInt> collapsed_map(size);
   const int tdim = mesh.topology().dim();
   for (std::int64_t c = 0; c < mesh.num_entities(tdim); ++c)
@@ -337,19 +340,22 @@ std::string DofMap::str(bool verbose) const
   if (verbose)
   {
     // Cell loop
-    assert(_dofmap.size() % _cell_dimension == 0);
-    const std::int32_t ncells = _dofmap.size() / _cell_dimension;
+    assert(_element_dof_layout);
+    const int cell_dimension = _element_dof_layout->num_dofs();
+
+    assert(_dofmap.size() % cell_dimension == 0);
+    const std::int32_t ncells = _dofmap.size() / cell_dimension;
     for (std::int32_t i = 0; i < ncells; ++i)
     {
       s << "Local cell index, cell dofmap dimension: " << i << ", "
-        << _cell_dimension << std::endl;
+        << cell_dimension << std::endl;
 
       // Local dof loop
-      for (int j = 0; j < _cell_dimension; ++j)
+      for (int j = 0; j < cell_dimension; ++j)
       {
         s << "  "
           << "Local, global dof indices: " << j << ", "
-          << _dofmap[i * _cell_dimension + j] << std::endl;
+          << _dofmap[i * cell_dimension + j] << std::endl;
       }
     }
   }
@@ -362,7 +368,7 @@ DofMap::tabulate_local_to_global_dofs() const
 {
   // FIXME: use common::IndexMap::local_to_global_index?
   assert(_index_map);
-  const int bs = _index_map->block_size();
+  const int bs = _index_map->block_size;
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& local_to_global_unowned
       = _index_map->ghosts();
   const std::int32_t local_ownership_size = bs * _index_map->size_local();

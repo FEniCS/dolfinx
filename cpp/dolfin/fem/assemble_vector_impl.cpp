@@ -612,7 +612,7 @@ void fem::impl::apply_lifting(
       auto map1 = V1->dofmap()->index_map();
       assert(map1);
       const int crange
-          = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+          = map1->block_size * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1 = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
       for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])

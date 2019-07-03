@@ -134,10 +134,12 @@ public:
   Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   cell_dofs(std::size_t cell_index) const
   {
-    const std::size_t index = cell_index * _cell_dimension;
-    assert(index + _cell_dimension <= _dofmap.size());
+    assert(_element_dof_layout);
+    const int cell_dimension = _element_dof_layout->num_dofs();
+    const std::size_t index = cell_index * cell_dimension;
+    assert(index + cell_dimension <= _dofmap.size());
     return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
-        &_dofmap[index], _cell_dimension);
+        &_dofmap[index], cell_dimension);
   }
 
   /// Tabulate local-local closure dofs on entity of cell
@@ -235,9 +237,6 @@ private:
 
   // List of global nodes
   std::set<std::size_t> _global_nodes;
-
-  // Cell dimension (fixed for all cells)
-  int _cell_dimension;
 
   // Global dimension
   std::int64_t _global_dimension;

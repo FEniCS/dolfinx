@@ -8,7 +8,9 @@
 import ufl
 from dolfin import cpp
 
-__all__ = ["MeshFunction", "MeshValueCollection"]
+# __all__ = ["MeshFunction", "MeshValueCollection"]
+
+print("__________________")
 
 _meshfunction_types = {
     "bool": cpp.mesh.MeshFunctionBool,
