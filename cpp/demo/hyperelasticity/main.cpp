@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
   ufc_finite_element* ufc_element = space->create_element();
   auto V = std::make_shared<function::FunctionSpace>(
       mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-      std::make_shared<fem::DofMap>(*ufc_map, *mesh));
+      std::make_shared<fem::DofMap>(fem::create_dofmap(*ufc_map, *mesh)));
   std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);
@@ -141,7 +141,8 @@ int main(int argc, char* argv[])
   });
 
   auto u_clamp = std::make_shared<function::Function>(V);
-  u_clamp->interpolate([](auto values, auto x) { values = 0.0; });
+  u_clamp->interpolate([](auto values, auto x) {
+    values = 0.0; });
 
   L->set_coefficients({{"u", u}});
   a->set_coefficients({{"u", u}});
@@ -152,20 +153,19 @@ int main(int argc, char* argv[])
       = {std::make_shared<fem::DirichletBC>(
              V, u_clamp,
              [](auto x, bool only_boundary) {
-               EigenArrayXb flags(x.rows());
-               for (int i = 0; i < x.rows(); ++i)
-                 flags[i] = (std::abs(x(i, 0)) < DBL_EPSILON) and only_boundary;
+    EigenArrayXb flags(x.rows());
+    for (int i = 0; i < x.rows(); ++i)
+      flags[i] = (std::abs(x(i, 0)) < DBL_EPSILON) and only_boundary;
 
-               return flags;
+    return flags;
              }),
          std::make_shared<fem::DirichletBC>(
              V, u_rotation, [](auto x, bool only_boundary) {
-               EigenArrayXb flags(x.rows());
-               for (int i = 0; i < x.rows(); ++i)
-                 flags[i] = (std::abs(x(i, 0) - 1.0) < DBL_EPSILON)
-                            and only_boundary;
+    EigenArrayXb flags(x.rows());
+    for (int i = 0; i < x.rows(); ++i)
+      flags[i] = (std::abs(x(i, 0) - 1.0) < DBL_EPSILON) and only_boundary;
 
-               return flags;
+    return flags;
              })};
 
   HyperElasticProblem problem(u, L, a, bcs);

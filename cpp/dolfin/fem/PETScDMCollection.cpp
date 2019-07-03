@@ -8,8 +8,8 @@
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -64,7 +64,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   assert(V.dofmap());
   assert(V.element());
   assert(V.mesh());
-  const fem::GenericDofMap& dofmap = *V.dofmap();
+  const fem::DofMap& dofmap = *V.dofmap();
   const fem::FiniteElement& element = *V.element();
   const mesh::Mesh& mesh = *V.mesh();
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global
@@ -93,8 +93,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = mesh.geometry().points();
 
   // Loop over cells and tabulate dofs
@@ -246,8 +245,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Initialise bounding box tree and dofmaps
   geometry::BoundingBoxTree treec(meshc, meshc.topology().dim());
-  std::shared_ptr<const fem::GenericDofMap> coarsemap = coarse_space.dofmap();
-  std::shared_ptr<const fem::GenericDofMap> finemap = fine_space.dofmap();
+  std::shared_ptr<const fem::DofMap> coarsemap = coarse_space.dofmap();
+  std::shared_ptr<const fem::DofMap> finemap = fine_space.dofmap();
 
   // Create map from coordinates to dofs sharing that coordinate
   std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
@@ -536,8 +535,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
       = connectivity_g.connections();
   // FIXME: Add proper interface for num coordinate dofs
   const int num_dofs_g = connectivity_g.size(0);
-  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-      x_g
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x_g
       = meshc.geometry().points();
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
   ; // cell dofs coordinates vector

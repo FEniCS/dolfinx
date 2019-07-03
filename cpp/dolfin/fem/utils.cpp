@@ -10,8 +10,8 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
-#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -115,7 +115,7 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
   }
 
   // Get dof maps
-  std::array<const GenericDofMap*, 2> dofmaps
+  std::array<const DofMap*, 2> dofmaps
       = {{a.function_space(0)->dofmap().get(),
           a.function_space(1)->dofmap().get()}};
 
@@ -240,7 +240,7 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
       if (a[row][col])
       {
         // Build sparsity pattern for block
-        std::array<const GenericDofMap*, 2> dofmaps
+        std::array<const DofMap*, 2> dofmaps
             = {{a[row][col]->function_space(0)->dofmap().get(),
                 a[row][col]->function_space(1)->dofmap().get()}};
         // auto sp = std::make_unique<la::SparsityPattern>(
@@ -502,8 +502,8 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
 fem::create_element_dof_layout(const ufc_dofmap& dofmap,
-                               const std::vector<int>& parent_map,
-                               const mesh::CellType& cell_type)
+                               const mesh::CellType& cell_type,
+                               const std::vector<int>& parent_map)
 {
   // Copy over number of dofs per entity type
   std::array<int, 4> num_entity_dofs;
@@ -552,7 +552,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     std::iota(parent_map_sub.begin(), parent_map_sub.end(), offsets[i]);
     sub_dofmaps.push_back(
         std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
-            *ufc_sub_dofmaps[i], parent_map_sub, cell_type)));
+            *ufc_sub_dofmaps[i], cell_type, parent_map_sub)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -561,6 +561,14 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
                                cell_type);
+}
+//-----------------------------------------------------------------------------
+fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
+                               const mesh::Mesh& mesh)
+{
+  return DofMap(std::make_shared<ElementDofLayout>(
+                    create_element_dof_layout(ufc_dofmap, mesh.type())),
+                mesh);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
@@ -683,3 +691,4 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
       ufc_cmap.signature, ufc_cmap.compute_physical_coordinates,
       ufc_cmap.compute_reference_geometry);
 }
+//-----------------------------------------------------------------------------

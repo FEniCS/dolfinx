@@ -7,7 +7,6 @@
 #pragma once
 
 #include "ElementDofLayout.h"
-#include "GenericDofMap.h"
 #include "petscsys.h"
 #include <Eigen/Dense>
 #include <array>
@@ -16,8 +15,6 @@
 #include <set>
 #include <utility>
 #include <vector>
-
-struct ufc_dofmap;
 
 namespace dolfin
 {
@@ -42,17 +39,9 @@ namespace fem
 /// reorder the dofs when running in parallel. Sub-dofmaps, both views
 /// and copies, are supported.
 
-class DofMap : public GenericDofMap
+class DofMap
 {
 public:
-  /// Create dof map on mesh
-  ///
-  /// @param[in] ufc_dofmap (ufc_dofmap)
-  ///         The ufc_dofmap.
-  /// @param[in] mesh (mesh::Mesh&)
-  ///         The mesh.
-  DofMap(const ufc_dofmap& ufc_dofmap, const mesh::Mesh& mesh);
-
   /// Create dof map on mesh
   ///
   /// @param[in] ElementDofLayout
@@ -78,7 +67,7 @@ public:
   DofMap(DofMap&& dofmap) = default;
 
   /// Destructor
-  ~DofMap() = default;
+  virtual ~DofMap() = default;
 
   DofMap& operator=(const DofMap& dofmap) = delete;
 
@@ -187,9 +176,8 @@ public:
   ///
   /// @return     DofMap
   ///         The subdofmap component.
-  std::unique_ptr<GenericDofMap>
-  extract_sub_dofmap(const std::vector<int>& component,
-                     const mesh::Mesh& mesh) const;
+  std::unique_ptr<DofMap> extract_sub_dofmap(const std::vector<int>& component,
+                                             const mesh::Mesh& mesh) const;
 
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
   ///
@@ -200,7 +188,7 @@ public:
   ///
   /// @return    DofMap
   ///         The collapsed dofmap.
-  std::pair<std::shared_ptr<GenericDofMap>, std::vector<PetscInt>>
+  std::pair<std::shared_ptr<DofMap>, std::vector<PetscInt>>
   collapse(const mesh::Mesh& mesh) const;
 
   /// Set dof entries in vector to a specified value. Parallel layout
@@ -229,6 +217,17 @@ public:
 
   /// Get dofmap array
   Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array() const;
+
+  // FIXME: can this be removed?
+  /// Tabulate map between local (process) and global dof indices
+  Eigen::Array<std::size_t, Eigen::Dynamic, 1>
+  tabulate_local_to_global_dofs() const;
+
+  // FIXME: can this be removed?
+  /// Return list of dof indices on this process that belong to mesh
+  /// entities of dimension dim
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
+                                                 std::size_t dim) const;
 
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])

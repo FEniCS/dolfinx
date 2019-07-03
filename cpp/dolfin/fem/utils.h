@@ -7,6 +7,7 @@
 #pragma once
 
 #include "CoordinateMapping.h"
+#include "DofMap.h"
 #include "ElementDofLayout.h"
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
@@ -74,8 +75,17 @@ std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
-                                           const std::vector<int>& parent_map,
-                                           const mesh::CellType& cell_type);
+                                           const mesh::CellType& cell_type,
+                                           const std::vector<int>& parent_map
+                                           = {});
+
+/// Create dof map on mesh from a ufc_dofmap
+///
+/// @param[in] ufc_dofmap (ufc_dofmap)
+///         The ufc_dofmap.
+/// @param[in] mesh (mesh::Mesh&)
+///         The mesh.
+DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
 
 /// Create form (shared data)
 ///
