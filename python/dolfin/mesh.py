@@ -58,7 +58,7 @@ class MeshValueCollection:
         # Correct logic here
         if topology_data is not None:
             return mvc(mesh, dim, topology_data, values_data)
-        else: 
+        else:
             if dim is not None:
                 return mvc(mesh, dim)
             else:
