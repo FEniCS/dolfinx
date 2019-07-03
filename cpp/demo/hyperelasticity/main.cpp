@@ -104,18 +104,13 @@ int main(int argc, char* argv[])
   // Define solution function
   auto u = std::make_shared<function::Function>(V);
 
-  ufc_form* bilinear_form = hyperelasticity_bilinearform_create();
-  auto a = std::make_shared<fem::Form>(
-      *bilinear_form,
-      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
-                                                                            V});
-  std::free(bilinear_form);
+  ufc_form* form_a = hyperelasticity_bilinearform_create();
+  auto a = std::make_shared<fem::Form>(fem::create_form(*form_a, {V, V}));
+  std::free(form_a);
 
-  ufc_form* linear_form = hyperelasticity_linearform_create();
-  auto L = std::make_shared<fem::Form>(
-      *linear_form,
-      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
-  std::free(linear_form);
+  ufc_form* form_L = hyperelasticity_linearform_create();
+  auto L = std::make_shared<fem::Form>(fem::create_form(*form_L, {V}));
+  std::free(form_L) ;
 
   // Attach 'coordinate mapping' to mesh
   auto cmap = a->coordinate_mapping();

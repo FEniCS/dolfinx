@@ -126,6 +126,8 @@ void fem(py::module& m)
         },
         py::return_value_policy::take_ownership,
         "Create nested sparse matrix for bilinear forms.");
+  m.def("create_form", &dolfin::fem::create_form,
+        "Create DOLFIN form from a ufc form.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
@@ -268,9 +270,6 @@ void fem(py::module& m)
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
       m, "Form", "Variational form object")
-      .def(py::init<const ufc_form&,
-                    std::vector<std::shared_ptr<
-                        const dolfin::function::FunctionSpace>>>())
       .def(py::init<std::vector<
                std::shared_ptr<const dolfin::function::FunctionSpace>>>())
       .def("num_coefficients",
