@@ -201,11 +201,15 @@ MeshValueCollection<T>::MeshValueCollection(
                       std::vector<std::vector<T>>& cells,
                       std::vector<T>& values_data): _mesh(mesh), _dim(dim)
 { 
-  std::vector<std::int32_t> v(2);
+  // Ensure the mesh dimension is initialised
+  mesh->create_entities(dim);
+  
+  std::vector<std::int32_t> v(_dim+1);
   std::map<std::vector<int>, size_t> vertex_edge_map;
+
   for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, _dim))
-  {
-    if (dim == 0)
+  { 
+    if (_dim == 0)
       v[0] = m.global_index();
     else
     {
