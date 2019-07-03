@@ -33,8 +33,8 @@ public:
   /// blocks have size block_size.
   ///
   /// Collective
-  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-           const std::vector<std::size_t>& ghosts, std::size_t block_size);
+  // IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
+  //          const std::vector<std::size_t>& ghosts, std::size_t block_size);
 
   /// Create Index map with local_size owned blocks on this process, and
   /// blocks have size block_size.

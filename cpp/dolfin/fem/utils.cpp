@@ -418,7 +418,7 @@ la::PETScVector fem::create_vector_block(std::vector<const fem::Form*> L)
   }
 
   std::size_t local_size = 0;
-  std::vector<std::size_t> ghosts;
+  std::vector<std::int64_t> ghosts;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     const common::IndexMap* map = index_maps[i];
@@ -431,7 +431,7 @@ la::PETScVector fem::create_vector_block(std::vector<const fem::Form*> L)
     {
       for (int k = 0; k < bs; ++k)
       {
-        std::size_t global_index
+        std::int64_t global_index
             = get_global_index(index_maps, i, bs * field_ghosts[j] + k);
         ghosts.push_back(global_index);
       }
