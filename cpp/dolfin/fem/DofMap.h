@@ -166,9 +166,6 @@ public:
   tabulate_entity_dofs(std::size_t entity_dim,
                        std::size_t cell_entity_index) const;
 
-  /// Tabulate globally supported dofs
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> tabulate_global_dofs() const;
-
   /// Extract subdofmap component
   ///
   /// @param     component (std::vector<int>)
@@ -234,9 +231,6 @@ public:
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   std::vector<PetscInt> _dofmap;
-
-  // List of global nodes
-  std::set<std::size_t> _global_nodes;
 
   // Global dimension
   std::int64_t _global_dimension;

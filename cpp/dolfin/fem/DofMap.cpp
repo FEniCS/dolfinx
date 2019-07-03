@@ -247,17 +247,6 @@ DofMap::tabulate_entity_dofs(std::size_t entity_dim,
   return element_dofs;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::size_t, Eigen::Dynamic, 1>
-DofMap::tabulate_global_dofs() const
-{
-  assert(_global_nodes.empty() or _index_map->block_size == 1);
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> dofs(_global_nodes.size());
-  std::size_t i = 0;
-  for (auto d : _global_nodes)
-    dofs[i++] = d;
-  return dofs;
-}
-//-----------------------------------------------------------------------------
 std::unique_ptr<DofMap>
 DofMap::extract_sub_dofmap(const std::vector<int>& component,
                            const mesh::Mesh& mesh) const
