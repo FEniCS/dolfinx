@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Form.h"
-#include "GenericDofMap.h"
+#include "DofMap.h"
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
@@ -24,109 +24,32 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-Form::Form(const ufc_form& ufc_form,
-           const std::vector<std::shared_ptr<const function::FunctionSpace>>
-               function_spaces)
-    : _coefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-      _function_spaces(function_spaces)
+Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+               function_spaces,
+           const FormIntegrals& integrals, const FormCoefficients& coefficients,
+           std::shared_ptr<const CoordinateMapping> coord_mapping)
+    : _integrals(integrals), _coefficients(coefficients),
+      _function_spaces(function_spaces), _coord_mapping(coord_mapping)
 {
-  assert(ufc_form.rank == (int)function_spaces.size());
-
-  // Check argument function spaces
-  for (std::size_t i = 0; i < function_spaces.size(); ++i)
-  {
-    assert(function_spaces[i]->element());
-    std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
-        ufc_form.create_finite_element(i), free);
-
-    if (std::string(ufc_element->signature)
-        != function_spaces[i]->element()->signature())
-    {
-      throw std::runtime_error(
-          "Cannot create form. Wrong type of function space for argument.");
-    }
-  }
-
-  // Set _mesh from function::FunctionSpace and check they are the same
+  // Set _mesh from function::FunctionSpace, and check they are the same
   if (!function_spaces.empty())
     _mesh = function_spaces[0]->mesh();
   for (auto& f : function_spaces)
   {
     if (_mesh != f->mesh())
       throw std::runtime_error("Incompatible mesh");
-  }
-
-  // Get list of integral IDs, and load tabulate tensor into memory for each
-  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
-  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
-  for (int id : cell_integral_ids)
-  {
-    ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
-    assert(cell_integral);
-    _integrals.register_tabulate_tensor(FormIntegrals::Type::cell, id,
-                                        cell_integral->tabulate_tensor);
-    std::free(cell_integral);
-  }
-
-  std::vector<int> exterior_facet_integral_ids(
-      ufc_form.num_exterior_facet_integrals);
-  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
-  for (int id : exterior_facet_integral_ids)
-  {
-    ufc_integral* exterior_facet_integral
-        = ufc_form.create_exterior_facet_integral(id);
-    assert(exterior_facet_integral);
-    _integrals.register_tabulate_tensor(
-        FormIntegrals::Type::exterior_facet, id,
-        exterior_facet_integral->tabulate_tensor);
-    std::free(exterior_facet_integral);
-  }
-
-  std::vector<int> interior_facet_integral_ids(
-      ufc_form.num_interior_facet_integrals);
-  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
-  for (int id : interior_facet_integral_ids)
-  {
-    ufc_integral* interior_facet_integral
-        = ufc_form.create_interior_facet_integral(id);
-    assert(interior_facet_integral);
-    _integrals.register_tabulate_tensor(
-        FormIntegrals::Type::interior_facet, id,
-        interior_facet_integral->tabulate_tensor);
-    std::free(interior_facet_integral);
-  }
-
-  // Not currently working
-  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
-  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
-  if (vertex_integral_ids.size() > 0)
-  {
-    throw std::runtime_error(
-        "Vertex integrals not supported. Under development.");
   }
 
   // Set markers for default integrals
   if (_mesh)
     _integrals.set_default_domains(*_mesh);
-
-  // Create CoordinateMapping
-  ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
-  _coord_mapping = fem::get_cmap_from_ufc_cmap(*cmap);
-  std::free(cmap);
 }
 //-----------------------------------------------------------------------------
-Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
+Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
-    : _coefficients({}), _function_spaces(function_spaces)
+    : Form(function_spaces, FormIntegrals(), FormCoefficients({}), nullptr)
 {
-  // Set _mesh from function::FunctionSpace and check they are the same
-  if (!function_spaces.empty())
-    _mesh = function_spaces[0]->mesh();
-  for (auto& f : function_spaces)
-  {
-    if (_mesh != f->mesh())
-      throw std::runtime_error("Incompatible mesh");
-  }
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::rank() const { return _function_spaces.size(); }

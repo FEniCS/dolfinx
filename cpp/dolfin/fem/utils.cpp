@@ -10,8 +10,8 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/Form.h>
-#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -115,7 +115,7 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
   }
 
   // Get dof maps
-  std::array<const GenericDofMap*, 2> dofmaps
+  std::array<const DofMap*, 2> dofmaps
       = {{a.function_space(0)->dofmap().get(),
           a.function_space(1)->dofmap().get()}};
 
@@ -240,7 +240,7 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
       if (a[row][col])
       {
         // Build sparsity pattern for block
-        std::array<const GenericDofMap*, 2> dofmaps
+        std::array<const DofMap*, 2> dofmaps
             = {{a[row][col]->function_space(0)->dofmap().get(),
                 a[row][col]->function_space(1)->dofmap().get()}};
         // auto sp = std::make_unique<la::SparsityPattern>(
@@ -502,8 +502,8 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
 fem::create_element_dof_layout(const ufc_dofmap& dofmap,
-                               const std::vector<int>& parent_map,
-                               const mesh::CellType& cell_type)
+                               const mesh::CellType& cell_type,
+                               const std::vector<int>& parent_map)
 {
   // Copy over number of dofs per entity type
   std::array<int, 4> num_entity_dofs;
@@ -552,7 +552,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     std::iota(parent_map_sub.begin(), parent_map_sub.end(), offsets[i]);
     sub_dofmaps.push_back(
         std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
-            *ufc_sub_dofmaps[i], parent_map_sub, cell_type)));
+            *ufc_sub_dofmaps[i], cell_type, parent_map_sub)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -561,6 +561,14 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
                                cell_type);
+}
+//-----------------------------------------------------------------------------
+fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
+                               const mesh::Mesh& mesh)
+{
+  return DofMap(std::make_shared<ElementDofLayout>(
+                    create_element_dof_layout(ufc_dofmap, mesh.type())),
+                mesh);
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
@@ -576,6 +584,89 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
             ufc_form.original_coefficient_position(i), names[i], nullptr));
   }
   return coeffs;
+}
+//-----------------------------------------------------------------------------
+fem::Form fem::create_form(
+    const ufc_form& ufc_form,
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
+{
+  assert(ufc_form.rank == (int)spaces.size());
+
+  // Check argument function spaces
+  for (std::size_t i = 0; i < spaces.size(); ++i)
+  {
+    assert(spaces[i]->element());
+    std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
+        ufc_form.create_finite_element(i), free);
+
+    assert(ufc_element);
+    if (std::string(ufc_element->signature)
+        != spaces[i]->element()->signature())
+    {
+      throw std::runtime_error(
+          "Cannot create form. Wrong type of function space for argument.");
+    }
+  }
+
+  // Get list of integral IDs, and load tabulate tensor into memory for each
+  FormIntegrals integrals;
+  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
+  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
+  for (int id : cell_integral_ids)
+  {
+    ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
+    assert(cell_integral);
+    integrals.register_tabulate_tensor(FormIntegrals::Type::cell, id,
+                                       cell_integral->tabulate_tensor);
+    std::free(cell_integral);
+  }
+
+  std::vector<int> exterior_facet_integral_ids(
+      ufc_form.num_exterior_facet_integrals);
+  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
+  for (int id : exterior_facet_integral_ids)
+  {
+    ufc_integral* exterior_facet_integral
+        = ufc_form.create_exterior_facet_integral(id);
+    assert(exterior_facet_integral);
+    integrals.register_tabulate_tensor(
+        FormIntegrals::Type::exterior_facet, id,
+        exterior_facet_integral->tabulate_tensor);
+    std::free(exterior_facet_integral);
+  }
+
+  std::vector<int> interior_facet_integral_ids(
+      ufc_form.num_interior_facet_integrals);
+  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
+  for (int id : interior_facet_integral_ids)
+  {
+    ufc_integral* interior_facet_integral
+        = ufc_form.create_interior_facet_integral(id);
+    assert(interior_facet_integral);
+    integrals.register_tabulate_tensor(
+        FormIntegrals::Type::interior_facet, id,
+        interior_facet_integral->tabulate_tensor);
+    std::free(interior_facet_integral);
+  }
+
+  // Not currently working
+  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
+  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
+  if (vertex_integral_ids.size() > 0)
+  {
+    throw std::runtime_error(
+        "Vertex integrals not supported. Under development.");
+  }
+
+  // Create CoordinateMapping
+  ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
+  std::shared_ptr<const fem::CoordinateMapping> coord_mapping
+      = fem::get_cmap_from_ufc_cmap(*cmap);
+  std::free(cmap);
+
+  return fem::Form(spaces, integrals,
+                   FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
+                   coord_mapping);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::CoordinateMapping>
@@ -600,3 +691,4 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
       ufc_cmap.signature, ufc_cmap.compute_physical_coordinates,
       ufc_cmap.compute_reference_geometry);
 }
+//-----------------------------------------------------------------------------

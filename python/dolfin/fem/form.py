@@ -52,7 +52,7 @@ class Form(ufl.Form):
         ]
 
         # Prepare dolfin.Form and hold it as a member
-        self._cpp_object = cpp.fem.Form(ufc_form, function_spaces)
+        self._cpp_object = cpp.fem.create_form(ufc_form, function_spaces)
 
         # Need to fill the form with coefficients data
         # For every coefficient in form take its CPP object

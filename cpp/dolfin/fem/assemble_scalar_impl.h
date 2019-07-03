@@ -29,7 +29,7 @@ namespace fem
 {
 class DirichletBC;
 class Form;
-class GenericDofMap;
+class DofMap;
 
 namespace impl
 {

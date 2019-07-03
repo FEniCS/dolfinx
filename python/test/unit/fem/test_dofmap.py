@@ -434,7 +434,7 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
         marks=pytest.mark.xfail)
 ])
 def test_dofs_dim(space):
-    """Test function GenericDofMap::dofs(mesh, dim)"""
+    """Test function DofMap::dofs(mesh, dim)"""
     V = eval(space)
     dofmap = V.dofmap()
     mesh = V.mesh()
