@@ -203,7 +203,7 @@ MeshValueCollection<T>::MeshValueCollection(
 { 
   // Ensure the mesh dimension is initialised
   mesh->create_entities(dim);
-  
+
   std::vector<std::int32_t> v(_dim+1);
   std::map<std::vector<int>, size_t> vertex_edge_map;
 
@@ -214,8 +214,12 @@ MeshValueCollection<T>::MeshValueCollection(
     else
     {
       v.clear();
-      for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m))
+      std::cout<<"Ele:"<<m.index()<<"::";
+      for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m)){
         v.push_back(vtx.global_index());
+        std::cout<<":"<<vtx.global_index();
+      }
+      std::cout<<std::endl;
       std::sort(v.begin(), v.end());
     }
     vertex_edge_map[v]=m.index();
