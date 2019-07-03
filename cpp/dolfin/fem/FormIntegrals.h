@@ -41,7 +41,7 @@ public:
     vertex = 3
   };
 
-  /// Initialise the FormIntegrals as empty
+  /// Construct empty object
   FormIntegrals();
 
   /// Get the function for 'tabulate_tensor' for integral i of given type

@@ -47,18 +47,9 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
-    : _coefficients({}), _function_spaces(function_spaces)
+    : Form(function_spaces, FormIntegrals(), FormCoefficients({}), nullptr)
 {
-  // FIXME: could this just call the above constructor?
-
-  // Set _mesh from function::FunctionSpace and check they are the same
-  if (!function_spaces.empty())
-    _mesh = function_spaces[0]->mesh();
-  for (auto& f : function_spaces)
-  {
-    if (_mesh != f->mesh())
-      throw std::runtime_error("Incompatible mesh");
-  }
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 std::size_t Form::rank() const { return _function_spaces.size(); }
