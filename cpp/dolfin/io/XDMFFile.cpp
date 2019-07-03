@@ -1424,7 +1424,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
       global_cell_indices, ghost_mode);
 }
 //----------------------------------------------------------------------------
-std::map<std::string, int> XDMFFile::read_tags() const{
+std::map<std::string, size_t> XDMFFile::read_information() const{
 
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
@@ -1456,19 +1456,20 @@ std::map<std::string, int> XDMFFile::read_tags() const{
   assert(result_tag);
 
   pugi::xml_node main_node = doc.child("main");
+  assert(main_node);
 
   // Creation of Map
-  std::map<std::string, int> mapOfTag;
+  std::map<std::string, size_t> map_of_info;
   for (pugi::xml_node child: main_node.children())
   {
       auto tag_key = child.first_attribute().value();
-      int tag_value = atoi (child.child_value())  ;
+      size_t tag_value = atoi (child.child_value())  ;
 
       // Insert Element in map
-      mapOfTag.insert(std::pair<std::string, int>(tag_key, tag_value));
+      map_of_info.insert(std::pair<std::string, size_t>(tag_key, tag_value));
   }
 
-  return mapOfTag;
+  return map_of_info;
 }
 //----------------------------------------------------------------------------
 function::Function

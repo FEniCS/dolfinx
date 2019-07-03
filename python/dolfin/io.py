@@ -210,8 +210,8 @@ class XDMFFile:
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
-    def read_tags(self):
-        tag = self._cpp_object.read_tags()
+    def read_information(self):
+        tag = self._cpp_object.read_information()
         return tag
 
     def read_checkpoint(self, V, name: str,
