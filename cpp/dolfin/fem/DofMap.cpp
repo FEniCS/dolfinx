@@ -29,37 +29,6 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
-               const mesh::Mesh& mesh)
-    : _index_map(dofmap_parent._index_map)
-{
-  // FIXME: Large objects could be shared (using std::shared_ptr)
-  //        between parent and view
-
-  assert(!component.empty());
-  const int D = mesh.topology().dim();
-
-  // Set element dof layout and cell dimension
-  _element_dof_layout
-      = dofmap_parent._element_dof_layout->sub_dofmap(component);
-
-  // Get components in parent map that correspond to sub-dofs
-  assert(dofmap_parent._element_dof_layout);
-  const std::vector<int> element_map_view
-      = dofmap_parent._element_dof_layout->sub_view(component);
-
-  // Build dofmap by extracting from parent
-  const std::int32_t dofs_per_cell = element_map_view.size();
-  _dofmap.resize(dofs_per_cell * mesh.num_entities(D));
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
-  {
-    const int c = cell.index();
-    auto cell_dmap_parent = dofmap_parent.cell_dofs(c);
-    for (std::int32_t i = 0; i < dofs_per_cell; ++i)
-      _dofmap[c * dofs_per_cell + i] = cell_dmap_parent[element_map_view[i]];
-  }
-}
-//-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
     : _element_dof_layout(
           new ElementDofLayout(*dofmap_view._element_dof_layout, true))
@@ -228,11 +197,11 @@ DofMap::tabulate_entity_dofs(std::size_t entity_dim,
   return element_dofs;
 }
 //-----------------------------------------------------------------------------
-std::unique_ptr<DofMap>
+DofMap
 DofMap::extract_sub_dofmap(const std::vector<int>& component,
                            const mesh::Mesh& mesh) const
 {
-  return std::unique_ptr<DofMap>(new DofMap(*this, component, mesh));
+  return DofMapBuilder::build_submap(*this, component, mesh);
 }
 //-----------------------------------------------------------------------------
 std::pair<std::shared_ptr<DofMap>, std::vector<PetscInt>>

@@ -671,6 +671,36 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   return fem::DofMap(element_dof_layout, index_map, dofmap);
 }
 //-----------------------------------------------------------------------------
+fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
+                                        const std::vector<int>& component,
+                                        const mesh::Mesh& mesh)
+{
+  assert(!component.empty());
+  const int D = mesh.topology().dim();
+
+  // Set element dof layout and cell dimension
+  std::shared_ptr<const ElementDofLayout> element_dof_layout
+      = dofmap_parent._element_dof_layout->sub_dofmap(component);
+
+  // Get components in parent map that correspond to sub-dofs
+  assert(dofmap_parent._element_dof_layout);
+  const std::vector<int> element_map_view
+      = dofmap_parent._element_dof_layout->sub_view(component);
+
+  // Build dofmap by extracting from parent
+  const std::int32_t dofs_per_cell = element_map_view.size();
+  std::vector<PetscInt> dofmap(dofs_per_cell * mesh.num_entities(D));
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  {
+    const int c = cell.index();
+    auto cell_dmap_parent = dofmap_parent.cell_dofs(c);
+    for (std::int32_t i = 0; i < dofs_per_cell; ++i)
+      dofmap[c * dofs_per_cell + i] = cell_dmap_parent[element_map_view[i]];
+  }
+
+  return DofMap(element_dof_layout, dofmap_parent.index_map(), dofmap);
+}
+//-----------------------------------------------------------------------------
 std::tuple<std::unique_ptr<common::IndexMap>, std::vector<PetscInt>>
 DofMapBuilder::build(const mesh::Mesh& mesh,
                      const ElementDofLayout& element_dof_layout,

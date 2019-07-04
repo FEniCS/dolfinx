@@ -41,6 +41,11 @@ public:
   build(const mesh::Mesh& mesh,
         std::shared_ptr<const ElementDofLayout> element_dof_layout);
 
+  /// Build sub-dofmap view
+  static DofMap build_submap(const DofMap& dofmap_parent,
+                               const std::vector<int>& component,
+                               const mesh::Mesh& mesh);
+
   /// Build dofmap
   static std::tuple<std::unique_ptr<common::IndexMap>, std::vector<PetscInt>>
   build(const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout,

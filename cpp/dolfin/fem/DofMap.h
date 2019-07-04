@@ -47,10 +47,6 @@ public:
          const std::vector<PetscInt>& dofmap);
 
 private:
-  // Create a sub-dofmap (a view) from parent_dofmap
-  DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
-         const mesh::Mesh& mesh);
-
   // Create a collapsed dofmap from parent_dofmap
   DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh);
 
@@ -163,8 +159,8 @@ public:
   ///
   /// @return     DofMap
   ///         The subdofmap component.
-  std::unique_ptr<DofMap> extract_sub_dofmap(const std::vector<int>& component,
-                                             const mesh::Mesh& mesh) const;
+  DofMap extract_sub_dofmap(const std::vector<int>& component,
+                            const mesh::Mesh& mesh) const;
 
   /// Create a "collapsed" dofmap (collapses a sub-dofmap)
   ///
@@ -225,6 +221,7 @@ private:
   std::shared_ptr<const common::IndexMap> _index_map;
 
   // Layout of dofs on an element
+public:
   std::shared_ptr<const ElementDofLayout> _element_dof_layout;
 };
 } // namespace fem
