@@ -649,6 +649,28 @@ std::vector<std::int64_t> compute_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
+fem::DofMap
+DofMapBuilder::build(const mesh::Mesh& mesh,
+                     std::shared_ptr<const ElementDofLayout> element_dof_layout)
+{
+  assert(element_dof_layout);
+  const int bs = element_dof_layout->block_size;
+  std::shared_ptr<common::IndexMap> index_map;
+  std::vector<PetscInt> dofmap;
+  if (bs == 1)
+  {
+    std::tie(index_map, dofmap)
+        = DofMapBuilder::build(mesh, *element_dof_layout, 1);
+  }
+  else
+  {
+    std::tie(index_map, dofmap)
+        = DofMapBuilder::build(mesh, *element_dof_layout->sub_dofmap({0}), bs);
+  }
+
+  return fem::DofMap(element_dof_layout, index_map, dofmap);
+}
+//-----------------------------------------------------------------------------
 std::tuple<std::unique_ptr<common::IndexMap>, std::vector<PetscInt>>
 DofMapBuilder::build(const mesh::Mesh& mesh,
                      const ElementDofLayout& element_dof_layout,

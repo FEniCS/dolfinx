@@ -12,6 +12,7 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/DofMapBuilder.h>
 #include <dolfin/fem/ElementDofLayout.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/Form.h>
@@ -134,6 +135,14 @@ void fem(py::module& m)
   m.def("create_form", &dolfin::fem::create_form,
         "Create DOLFIN form from a ufc form.");
 
+  m.def("build_dofmap",
+        [](const dolfin::mesh::Mesh& mesh,
+           std::shared_ptr<const dolfin::fem::ElementDofLayout>
+               element_dof_layout) {
+          return dolfin::fem::DofMapBuilder::build(mesh, element_dof_layout);
+        },
+        "Build and dofmap on a mesh.");
+
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
              std::shared_ptr<dolfin::fem::FiniteElement>>(
@@ -156,8 +165,6 @@ void fem(py::module& m)
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>>(
       m, "DofMap", "DofMap object")
-      .def(py::init<std::shared_ptr<const dolfin::fem::ElementDofLayout>,
-                    const dolfin::mesh::Mesh&>())
       .def_property_readonly("index_map", &dolfin::fem::DofMap::index_map)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs)
       .def("dofs", &dolfin::fem::DofMap::dofs)

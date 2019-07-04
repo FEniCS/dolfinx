@@ -21,21 +21,12 @@ using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
-               const mesh::Mesh& mesh)
-    : _element_dof_layout(element_dof_layout)
+               std::shared_ptr<const common::IndexMap> index_map,
+               const std::vector<PetscInt>& dofmap)
+    : _dofmap(dofmap), _index_map(index_map),
+      _element_dof_layout(element_dof_layout)
 {
-  assert(_element_dof_layout);
-  const int bs = _element_dof_layout->block_size;
-  if (bs == 1)
-  {
-    std::tie(_index_map, _dofmap)
-        = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
-  }
-  else
-  {
-    std::tie(_index_map, _dofmap)
-        = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
-  }
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
@@ -259,7 +250,8 @@ DofMap::collapse(const mesh::Mesh& mesh) const
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
-    dofmap_new = std::make_shared<DofMap>(collapsed_dof_layout, mesh);
+    dofmap_new = std::make_shared<DofMap>(
+        DofMapBuilder::build(mesh, collapsed_dof_layout));
   }
   else
   {

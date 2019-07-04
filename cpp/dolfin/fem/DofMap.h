@@ -42,14 +42,9 @@ namespace fem
 class DofMap
 {
 public:
-  /// Create dof map on mesh
-  ///
-  /// @param[in] ElementDofLayout
-  ///         The layout of dofs on an element.
-  /// @param[in] mesh (mesh::Mesh&)
-  ///         The mesh.
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
-         const mesh::Mesh& mesh);
+         std::shared_ptr<const common::IndexMap> index_map,
+         const std::vector<PetscInt>& dofmap);
 
 private:
   // Create a sub-dofmap (a view) from parent_dofmap

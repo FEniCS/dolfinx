@@ -11,6 +11,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/DofMapBuilder.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/function/Function.h>
@@ -527,9 +528,9 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
                                const mesh::Mesh& mesh)
 {
-  return DofMap(std::make_shared<ElementDofLayout>(
-                    create_element_dof_layout(ufc_dofmap, mesh.type())),
-                mesh);
+  return DofMapBuilder::build(
+      mesh, std::make_shared<ElementDofLayout>(
+                create_element_dof_layout(ufc_dofmap, mesh.type())));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
