@@ -183,18 +183,6 @@ bool DofMap::is_view() const
   return _element_dof_layout->is_view();
 }
 //-----------------------------------------------------------------------------
-std::int64_t DofMap::global_dimension() const
-{
-  if (this->is_view())
-  {
-    throw std::runtime_error(
-        "Global dimension not defined for sub-dofmap views.");
-  }
-
-  assert(_index_map);
-  return _index_map->size_global() * _index_map->block_size;
-}
-//-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 {
   assert(_element_dof_layout);
@@ -333,8 +321,9 @@ std::string DofMap::str(bool verbose) const
   }
   else
   {
-    s << "<DofMap of global dimension " << global_dimension() << ">"
-      << std::endl;
+    assert(_index_map);
+    s << "<DofMap of global dimension "
+      << _index_map->size_global() * _index_map->block_size << ">" << std::endl;
   }
 
   if (verbose)

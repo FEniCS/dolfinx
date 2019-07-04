@@ -79,7 +79,9 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap());
-  assert(V->dofmap()->index_map()->size_global() <= _vector.size());
+  assert(V->dofmap()->index_map()->size_global()
+             * V->dofmap()->index_map()->block_size
+         <= _vector.size());
 }
 //-----------------------------------------------------------------------------
 Function Function::sub(int i) const
@@ -132,7 +134,9 @@ la::PETScVector& Function::vector()
   // Check that this is not a sub function.
   assert(_function_space->dofmap());
   assert(_function_space->dofmap()->index_map());
-  if (_vector.size() != _function_space->dofmap()->index_map()->size_global())
+  if (_vector.size()
+      != _function_space->dofmap()->index_map()->size_global()
+             * _function_space->dofmap()->index_map()->block_size)
   {
     throw std::runtime_error(
         "Cannot access a non-const vector from a subfunction");

@@ -38,10 +38,6 @@ class DofMap:
     def __init__(self, dofmap: cpp.fem.DofMap):
         self._cpp_object = dofmap
 
-    @property
-    def global_dimension(self):
-        return self._cpp_object.global_dimension
-
     def cell_dofs(self, cell_index: int):
         return self._cpp_object.cell_dofs(cell_index)
 

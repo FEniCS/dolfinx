@@ -81,13 +81,6 @@ public:
   ///         another map).
   bool is_view() const;
 
-  /// Return the dimension of the global finite element function
-  /// space. Use index_map()->size() to get the local dimension.
-  ///
-  /// @returns std::int64_t
-  ///         The dimension of the global finite element function space.
-  std::int64_t global_dimension() const;
-
   /// Return the dimension of the local finite element function
   /// space on a cell
   ///

@@ -99,7 +99,6 @@ public:
   std::shared_ptr<const fem::DofMap> dofmap() const;
 
   /// Return global dimension of the function space.
-  /// Equivalent to dofmap()->global_dimension()
   ///
   /// @returns    std::size_t
   ///         The dimension of the function space.

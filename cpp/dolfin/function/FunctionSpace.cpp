@@ -65,7 +65,8 @@ std::int64_t FunctionSpace::dim() const
                              "sub-functions");
   }
 
-  return _dofmap->global_dimension();
+  assert(_dofmap->index_map());
+  return _dofmap->index_map()->size_global() * _dofmap->index_map()->block_size;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
