@@ -440,35 +440,6 @@ void FunctionSpace::set_x(
   }
 }
 //-----------------------------------------------------------------------------
-std::string FunctionSpace::str(bool verbose) const
-{
-  std::stringstream s;
-
-  if (verbose)
-  {
-    s << str(false) << std::endl << std::endl;
-
-    // No verbose output implemented
-  }
-  else
-    s << "<FunctionSpace of dimension " << dim() << ">";
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::print_dofmap() const
-{
-  assert(_mesh);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
-  {
-    auto dofs = _dofmap->cell_dofs(cell.index());
-    std::cout << cell.index() << ":";
-    for (Eigen::Index i = 0; i < dofs.size(); i++)
-      std::cout << " " << static_cast<std::size_t>(dofs[i]);
-    std::cout << std::endl;
-  }
-}
-//-----------------------------------------------------------------------------
 bool FunctionSpace::contains(const FunctionSpace& V) const
 {
   // Is the root space same?
