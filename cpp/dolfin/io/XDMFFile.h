@@ -269,8 +269,7 @@ public:
   ///        Ghost mode for mesh partition
   /// @returns mesh::Mesh
   ///        Mesh
-  mesh::Mesh read_mesh(MPI_Comm comm, const mesh::GhostMode ghost_mode,
-                       const double proc_subset_ratio = 1.0) const;
+  mesh::Mesh read_mesh(MPI_Comm comm, const mesh::GhostMode ghost_mode) const;
 
   /// Read in the data from the first mesh in XDMF file
   ///
