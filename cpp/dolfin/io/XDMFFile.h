@@ -280,7 +280,8 @@ public:
   //        Geometric points on each process (EigenRowArrayXXd),  Topological
   //        cells with global vertex indexing (EigenRowArrayXXi64), and the Cell
   //        type (mesh::CellType::Type)
-  std::tuple<EigenRowArrayXXd, EigenRowArrayXXi64, mesh::CellType::Type>
+  std::tuple<mesh::CellType::Type, EigenRowArrayXXd, EigenRowArrayXXi64,
+             std::vector<std::int64_t>>
   read_mesh_data(MPI_Comm comm) const;
 
   /// Read a function from the XDMF file. Supplied function must
