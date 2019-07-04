@@ -46,10 +46,6 @@ public:
          std::shared_ptr<const common::IndexMap> index_map,
          const std::vector<PetscInt>& dofmap);
 
-private:
-  // Create a collapsed dofmap from parent_dofmap
-  DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh);
-
 public:
   // Copy constructor
   DofMap(const DofMap& dofmap) = delete;
@@ -212,16 +208,16 @@ public:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
                                                  std::size_t dim) const;
 
-private:
+  // private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   std::vector<PetscInt> _dofmap;
 
+  // public:
   // Object containing information about dof distribution across
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;
 
   // Layout of dofs on an element
-public:
   std::shared_ptr<const ElementDofLayout> _element_dof_layout;
 };
 } // namespace fem

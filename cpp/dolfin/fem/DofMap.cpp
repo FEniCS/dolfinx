@@ -19,20 +19,14 @@
 using namespace dolfin;
 using namespace dolfin::fem;
 
-//-----------------------------------------------------------------------------
-DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
-               std::shared_ptr<const common::IndexMap> index_map,
-               const std::vector<PetscInt>& dofmap)
-    : _dofmap(dofmap), _index_map(index_map),
-      _element_dof_layout(element_dof_layout)
+namespace
 {
-  // Do nothing
-}
-//-----------------------------------------------------------------------------
-DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
-    : _element_dof_layout(
-          new ElementDofLayout(*dofmap_view._element_dof_layout, true))
+
+fem::DofMap collapsed_dofmap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
 {
+  auto _element_dof_layout = std::make_shared<ElementDofLayout>(
+      *dofmap_view._element_dof_layout, true);
+
   if (dofmap_view._index_map->block_size == 1
       and _element_dof_layout->block_size > 1)
   {
@@ -113,8 +107,8 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   }
 
   // Create new index map
-  _index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(), num_owned,
-                                                  ghosts, bs);
+  auto _index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
+                                                       num_owned, ghosts, bs);
 
   // Creat array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
@@ -123,7 +117,7 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
     old_to_new[dof] = count++;
 
   // Build new dofmap
-  _dofmap.resize(dofmap_view._dofmap.size());
+  std::vector<PetscInt> _dofmap(dofmap_view._dofmap.size());
   for (std::size_t i = 0; i < _dofmap.size(); ++i)
   {
     PetscInt dof_view = dofmap_view._dofmap[i];
@@ -135,6 +129,19 @@ DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
   assert(_dofmap.size()
          == (std::size_t)(mesh.num_entities(tdim)
                           * _element_dof_layout->num_dofs()));
+
+  return fem::DofMap(_element_dof_layout, _index_map, _dofmap);
+}
+} // namespace
+
+//-----------------------------------------------------------------------------
+DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
+               std::shared_ptr<const common::IndexMap> index_map,
+               const std::vector<PetscInt>& dofmap)
+    : _dofmap(dofmap), _index_map(index_map),
+      _element_dof_layout(element_dof_layout)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
 bool DofMap::is_view() const
@@ -197,9 +204,8 @@ DofMap::tabulate_entity_dofs(std::size_t entity_dim,
   return element_dofs;
 }
 //-----------------------------------------------------------------------------
-DofMap
-DofMap::extract_sub_dofmap(const std::vector<int>& component,
-                           const mesh::Mesh& mesh) const
+DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
+                                  const mesh::Mesh& mesh) const
 {
   return DofMapBuilder::build_submap(*this, component, mesh);
 }
@@ -224,8 +230,9 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   }
   else
   {
-    // Collapse dof map without build and re-ordering from scratch
-    dofmap_new = std::shared_ptr<DofMap>(new DofMap(*this, mesh));
+    // Collapse dof map, without build and re-ordering from scratch
+    // dofmap_new = std::shared_ptr<DofMap>(new DofMap(*this, mesh));
+    dofmap_new = std::make_shared<DofMap>(collapsed_dofmap(*this, mesh));
   }
   assert(dofmap_new);
 
