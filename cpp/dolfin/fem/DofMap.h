@@ -229,6 +229,7 @@ private:
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;
 
+  // Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> _element_dof_layout;
 };
 } // namespace fem

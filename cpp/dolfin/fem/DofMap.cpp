@@ -316,9 +316,7 @@ std::string DofMap::str(bool verbose) const
 {
   std::stringstream s;
   if (this->is_view())
-  {
     s << "<DofMap view>" << std::endl;
-  }
   else
   {
     assert(_index_map);
