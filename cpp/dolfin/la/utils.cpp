@@ -31,7 +31,7 @@
 Vec dolfin::la::create_petsc_vector(const dolfin::common::IndexMap& map)
 {
   return dolfin::la::create_petsc_vector(map.mpi_comm(), map.local_range(),
-                                         map.ghosts(), map.block_size());
+                                         map.ghosts(), map.block_size);
 }
 //-----------------------------------------------------------------------------
 Vec dolfin::la::create_petsc_vector(
@@ -89,8 +89,8 @@ Mat dolfin::la::create_petsc_matrix(
   // Get IndexMaps from sparsity patterm, and block size
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{sparsity_pattern.index_map(0), sparsity_pattern.index_map(1)}};
-  const int bs0 = index_maps[0]->block_size();
-  const int bs1 = index_maps[1]->block_size();
+  const int bs0 = index_maps[0]->block_size;
+  const int bs1 = index_maps[1]->block_size;
 
   // Get global and local dimensions
   const std::size_t M = bs0 * index_maps[0]->size_global();
@@ -245,7 +245,7 @@ std::vector<IS> dolfin::la::compute_petsc_index_sets(
   {
     assert(maps[i]);
     const int size = maps[i]->size_local() + maps[i]->num_ghosts();
-    const int bs = maps[i]->block_size();
+    const int bs = maps[i]->block_size;
     std::vector<PetscInt> index(bs * size);
     std::iota(index.begin(), index.end(), offset);
     ISCreateBlock(MPI_COMM_SELF, 1, index.size(), index.data(),

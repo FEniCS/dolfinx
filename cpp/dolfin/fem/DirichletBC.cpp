@@ -32,11 +32,11 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 {
   std::vector<std::array<PetscInt, 2>> dof_dof_g;
 
-  const std::int32_t bs = map.block_size();
+  const std::int32_t bs = map.block_size;
   const std::int32_t size_owned = map.size_local();
   const std::int32_t size_ghost = map.num_ghosts();
 
-  const std::int32_t bs_g = map_g.block_size();
+  const std::int32_t bs_g = map_g.block_size;
   const std::int32_t size_owned_g = map_g.size_local();
   const std::int32_t size_ghost_g = map_g.num_ghosts();
   const std::array<std::int64_t, 2> range_g = map_g.local_range();
@@ -555,7 +555,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //   common::RangedIndexSet already_visited(
 //       dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
 //                        : dofmap.index_map()->local_range(),
-//       dofmap.index_map()->block_size());
+//       dofmap.index_map()->block_size);
 
 //   // Topological and geometric dimensions
 //   const std::size_t tdim = mesh.topology().dim();
