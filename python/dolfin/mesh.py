@@ -10,8 +10,6 @@ from dolfin import cpp
 
 # __all__ = ["MeshFunction", "MeshValueCollection"]
 
-print("__________________")
-
 _meshfunction_types = {
     "bool": cpp.mesh.MeshFunctionBool,
     "size_t": cpp.mesh.MeshFunctionSizet,

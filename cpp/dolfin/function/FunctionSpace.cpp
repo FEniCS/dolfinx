@@ -59,6 +59,12 @@ std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
 std::int64_t FunctionSpace::dim() const
 {
   assert(_dofmap);
+  if (_dofmap->is_view())
+  {
+    throw std::runtime_error("FunctionSpace dimension not supported for "
+                             "sub-functions");
+  }
+
   return _dofmap->global_dimension();
 }
 //-----------------------------------------------------------------------------

@@ -327,7 +327,16 @@ DofMap::dof_array() const
 std::string DofMap::str(bool verbose) const
 {
   std::stringstream s;
-  s << "<DofMap of global dimension " << global_dimension() << ">" << std::endl;
+  if (this->is_view())
+  {
+    s << "<DofMap view>" << std::endl;
+  }
+  else
+  {
+    s << "<DofMap of global dimension " << global_dimension() << ">"
+      << std::endl;
+  }
+
   if (verbose)
   {
     // Cell loop
