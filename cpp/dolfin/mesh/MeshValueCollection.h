@@ -201,12 +201,18 @@ MeshValueCollection<T>::MeshValueCollection(
                       std::vector<std::vector<T>>& cells,
                       std::vector<T>& values_data): _mesh(mesh), _dim(dim)
 { 
-  // Ensure the mesh dimension is initialised
+  // Ensure the mesh dimension is initialised. 
+  // If the mesh is created from arrays, entities 
+  // of all dimesions are not initialized.
   mesh->create_entities(dim);
 
+  // The number of vertices per entity is _dim+1
   std::vector<std::int32_t> v(_dim+1);
-  std::map<std::vector<int>, size_t> vertex_edge_map;
 
+  // Map from {entity vertex indices} to entity index
+  std::map<std::vector<int>, size_t> entity_map;
+
+  // Loop over all the entities of dimension _dim
   for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, _dim))
   { 
     if (_dim == 0)
@@ -214,15 +220,16 @@ MeshValueCollection<T>::MeshValueCollection(
     else
     {
       v.clear();
-      std::cout<<"Ele:"<<m.index()<<"::";
+      //std::cout<<"Ele:"<<m.index()<<"::";
       for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m)){
         v.push_back(vtx.global_index());
-        std::cout<<":"<<vtx.global_index();
+        //std::cout<<":"<<vtx.global_index();
       }
-      std::cout<<std::endl;
+      //std::cout<<std::endl;
       std::sort(v.begin(), v.end());
     }
-    vertex_edge_map[v]=m.index();
+    // The vector of vertex number is key and entity index is value
+    entity_map[v]=m.index();
   }
 
   const std::size_t D = _mesh->topology().dim();
@@ -248,7 +255,14 @@ MeshValueCollection<T>::MeshValueCollection(
          ++j)
     {
       // Find the cell
-      auto map_it = vertex_edge_map.find({cells[j][0],cells[j][1]});
+      v.clear();
+      // cells[j] is a vector of length _dim+1
+      for (std::size_t i = 0; i < _dim+1; ++i){
+        v.push_back(cells[j][i]);
+      }
+      std::sort(v.begin(), v.end());
+
+      auto map_it = entity_map.find(v);
       std::size_t entity_index = map_it->second;
 
       assert(connectivity.size(entity_index) > 0);
