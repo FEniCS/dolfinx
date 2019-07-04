@@ -24,16 +24,16 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                const mesh::Mesh& mesh)
     : _element_dof_layout(element_dof_layout)
 {
-  std::int64_t global_dimension = -1;
+  assert(_element_dof_layout);
   const int bs = _element_dof_layout->block_size;
   if (bs == 1)
   {
-    std::tie(global_dimension, _index_map, _dofmap)
+    std::tie(_index_map, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
   }
   else
   {
-    std::tie(global_dimension, _index_map, _dofmap)
+    std::tie(_index_map, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
   }
 }
@@ -192,7 +192,7 @@ std::int64_t DofMap::global_dimension() const
   }
 
   assert(_index_map);
-  return _index_map->size_global();
+  return _index_map->size_global() * _index_map->block_size;
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
