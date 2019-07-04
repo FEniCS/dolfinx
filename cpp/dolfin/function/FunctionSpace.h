@@ -216,18 +216,6 @@ public:
   void set_x(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
              PetscScalar value, int component) const;
 
-  /// Return informal string representation (pretty-print)
-  ///
-  /// @param    verbose (bool)
-  ///         Flag to turn on additional output.
-  ///
-  /// @returns    std::string
-  ///         An informal representation of the function space.
-  std::string str(bool verbose) const;
-
-  /// Print dofmap (useful for debugging)
-  void print_dofmap() const;
-
   /// Unique identifier
   const std::size_t id;
 
