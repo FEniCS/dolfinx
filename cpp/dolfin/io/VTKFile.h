@@ -84,12 +84,10 @@ public:
   void write(const function::Function& u, double t);
 
 private:
-
   const std::string _filename;
 
   // Counter for the number of times various data has been written
   std::size_t _counter;
-
 };
 } // namespace io
 } // namespace dolfin

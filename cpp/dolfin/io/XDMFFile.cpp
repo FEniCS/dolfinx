@@ -22,7 +22,7 @@
 #include <dolfin/common/defines.h>
 #include <dolfin/common/log.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/ReferenceCellTopology.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -1651,7 +1651,7 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
   assert(V->mesh());
   const mesh::Mesh& mesh = *V->mesh();
   assert(V->dofmap());
-  const fem::GenericDofMap& dofmap = *V->dofmap();
+  const fem::DofMap& dofmap = *V->dofmap();
 
   // Read cell ordering
   std::vector<std::size_t> cells = xdmf_read::get_dataset<std::size_t>(

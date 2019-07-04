@@ -52,9 +52,8 @@ void common(py::module& m)
                              &dolfin::common::IndexMap::size_global)
       .def_property_readonly("num_ghosts",
                              &dolfin::common::IndexMap::num_ghosts)
-      .def_property_readonly("block_size",
-                             &dolfin::common::IndexMap::block_size,
-                             "Return block size")
+      .def_readonly("block_size", &dolfin::common::IndexMap::block_size,
+                    "Return block size")
       .def_property_readonly("local_range",
                              &dolfin::common::IndexMap::local_range,
                              "Range of indices owned by this map")

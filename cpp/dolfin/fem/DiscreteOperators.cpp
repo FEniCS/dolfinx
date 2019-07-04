@@ -7,7 +7,7 @@
 #include "DiscreteOperators.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>
@@ -77,10 +77,10 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
       = {{V0.dofmap()->index_map(), V1.dofmap()->index_map()}};
   std::vector<std::array<std::int64_t, 2>> local_range
-      = {{index_maps[0]->block_size() * index_maps[0]->local_range()[0],
-          index_maps[0]->block_size() * index_maps[0]->local_range()[1]},
-         {index_maps[1]->block_size() * index_maps[1]->local_range()[0],
-          index_maps[1]->block_size() * index_maps[1]->local_range()[1]}};
+      = {{index_maps[0]->block_size * index_maps[0]->local_range()[0],
+          index_maps[0]->block_size * index_maps[0]->local_range()[1]},
+         {index_maps[1]->block_size * index_maps[1]->local_range()[0],
+          index_maps[1]->block_size * index_maps[1]->local_range()[1]}};
 
   // Initialise sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);

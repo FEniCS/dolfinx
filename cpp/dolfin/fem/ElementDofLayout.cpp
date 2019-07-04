@@ -21,7 +21,7 @@ ElementDofLayout::ElementDofLayout(
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
     const mesh::CellType& cell_type)
-    : _parent_map(parent_map), _block_size(block_size), _num_dofs(0),
+    : block_size(block_size), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
@@ -164,8 +164,6 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
 
   return dof_list;
 }
-//-----------------------------------------------------------------------------
-int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------

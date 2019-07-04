@@ -20,7 +20,7 @@
 // #include <dolfin/common/defines.h>
 // #include <dolfin/common/log.h>
 // #include <dolfin/common/utils.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 // #include <dolfin/fem/ReferenceCellTopology.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>

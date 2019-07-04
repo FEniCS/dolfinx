@@ -23,7 +23,7 @@ class Mesh;
 
 namespace fem
 {
-class GenericDofMap;
+class DofMap;
 
 /// This class provides functions to compute the sparsity pattern
 /// based on DOF maps
@@ -33,17 +33,17 @@ class SparsityPatternBuilder
 public:
   /// Iterate over cells and insert entries into sparsity pattern
   static void cells(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-                    const std::array<const fem::GenericDofMap*, 2> dofmaps);
+                    const std::array<const fem::DofMap*, 2> dofmaps);
 
   /// Iterate over interior facets and insert entries into sparsity pattern
-  static void
-  interior_facets(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-                  const std::array<const fem::GenericDofMap*, 2> dofmaps);
+  static void interior_facets(la::SparsityPattern& pattern,
+                              const mesh::Mesh& mesh,
+                              const std::array<const fem::DofMap*, 2> dofmaps);
 
   /// Iterate over exterior facets and insert entries into sparsity pattern
-  static void
-  exterior_facets(la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-                  const std::array<const fem::GenericDofMap*, 2> dofmaps);
+  static void exterior_facets(la::SparsityPattern& pattern,
+                              const mesh::Mesh& mesh,
+                              const std::array<const fem::DofMap*, 2> dofmaps);
 };
 } // namespace fem
 } // namespace dolfin

@@ -11,8 +11,8 @@
 #include <dolfin/common/types.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -24,7 +24,7 @@ using namespace dolfin::function;
 //-----------------------------------------------------------------------------
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
-                             std::shared_ptr<const fem::GenericDofMap> dofmap)
+                             std::shared_ptr<const fem::DofMap> dofmap)
     : id(common::UniqueIdGenerator::id()), _mesh(mesh), _element(element),
       _dofmap(dofmap), _root_space_id(id)
 {
@@ -51,7 +51,7 @@ std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
   return _element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const fem::GenericDofMap> FunctionSpace::dofmap() const
+std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
 {
   return _dofmap;
 }
@@ -59,7 +59,14 @@ std::shared_ptr<const fem::GenericDofMap> FunctionSpace::dofmap() const
 std::int64_t FunctionSpace::dim() const
 {
   assert(_dofmap);
-  return _dofmap->global_dimension();
+  if (_dofmap->is_view())
+  {
+    throw std::runtime_error("FunctionSpace dimension not supported for "
+                             "sub-functions");
+  }
+
+  assert(_dofmap->index_map());
+  return _dofmap->index_map()->size_global() * _dofmap->index_map()->block_size;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
@@ -250,7 +257,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
       = _element->extract_sub_element(component);
 
   // Extract sub dofmap
-  std::shared_ptr<fem::GenericDofMap> dofmap(
+  std::shared_ptr<fem::DofMap> dofmap(
       _dofmap->extract_sub_dofmap(component, *_mesh));
 
   // Create new sub space
@@ -277,7 +284,7 @@ FunctionSpace::collapse() const
     throw std::runtime_error("Function space is not a subspace");
 
   // Create collapsed DofMap
-  std::shared_ptr<fem::GenericDofMap> collapsed_dofmap;
+  std::shared_ptr<fem::DofMap> collapsed_dofmap;
   std::vector<PetscInt> collapsed_dofs;
   std::tie(collapsed_dofmap, collapsed_dofs) = _dofmap->collapse(*_mesh);
 
@@ -309,7 +316,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   assert(_dofmap);
   std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map();
   assert(index_map);
-  std::size_t bs = index_map->block_size();
+  std::size_t bs = index_map->block_size;
   std::size_t local_size
       = bs * (index_map->size_local() + index_map->num_ghosts());
 
@@ -430,35 +437,6 @@ void FunctionSpace::set_x(
     // Copy coordinate (it may be possible to avoid this)
     for (Eigen::Index i = 0; i < coordinates.rows(); ++i)
       x[dofs[i]] = value * coordinates(i, component);
-  }
-}
-//-----------------------------------------------------------------------------
-std::string FunctionSpace::str(bool verbose) const
-{
-  std::stringstream s;
-
-  if (verbose)
-  {
-    s << str(false) << std::endl << std::endl;
-
-    // No verbose output implemented
-  }
-  else
-    s << "<FunctionSpace of dimension " << dim() << ">";
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::print_dofmap() const
-{
-  assert(_mesh);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
-  {
-    auto dofs = _dofmap->cell_dofs(cell.index());
-    std::cout << cell.index() << ":";
-    for (Eigen::Index i = 0; i < dofs.size(); i++)
-      std::cout << " " << static_cast<std::size_t>(dofs[i]);
-    std::cout << std::endl;
   }
 }
 //-----------------------------------------------------------------------------

@@ -324,7 +324,7 @@ def test_block_size(mesh):
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
         V = FunctionSpace(mesh, P2)
-        assert V.dofmap().block_size() == 1
+        assert V.dofmap().block_size == 1
 
         V = FunctionSpace(mesh, P2 * P2)
         assert V.dofmap().index_map.block_size == 2
@@ -434,7 +434,7 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
         marks=pytest.mark.xfail)
 ])
 def test_dofs_dim(space):
-    """Test function GenericDofMap::dofs(mesh, dim)"""
+    """Test function DofMap::dofs(mesh, dim)"""
     V = eval(space)
     dofmap = V.dofmap()
     mesh = V.mesh()

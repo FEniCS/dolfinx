@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DirichletBC.h"
+#include "DofMap.h"
 #include "FiniteElement.h"
-#include "GenericDofMap.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -32,11 +32,11 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 {
   std::vector<std::array<PetscInt, 2>> dof_dof_g;
 
-  const std::int32_t bs = map.block_size();
+  const std::int32_t bs = map.block_size;
   const std::int32_t size_owned = map.size_local();
   const std::int32_t size_ghost = map.num_ghosts();
 
-  const std::int32_t bs_g = map_g.block_size();
+  const std::int32_t bs_g = map_g.block_size;
   const std::int32_t size_owned_g = map_g.size_local();
   const std::int32_t size_ghost_g = map_g.num_ghosts();
   const std::array<std::int64_t, 2> range_g = map_g.local_range();
@@ -167,7 +167,7 @@ std::vector<std::int32_t> marked_facets(
   // Pack boundary vertices for vectorised marking
   // function
   for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
-{
+  {
     if (boundary_vertex[i] != -1)
       x_boundary.row(boundary_vertex[i]) = x_all.row(i);
   }
@@ -198,7 +198,7 @@ std::vector<std::int32_t> marked_facets(
            and (all_marked[idx] == false
                 and boundary_marked[boundary_vertex[idx]] == false))
           or (boundary_vertex[idx] == -1 and all_marked[idx] == false))
-  {
+      {
         all_vertices_marked = false;
         break;
       }
@@ -292,8 +292,8 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
 
   // Get dofmap
   assert(V.dofmap());
-  const GenericDofMap& dofmap = *V.dofmap();
-  const GenericDofMap* dofmap_g = &dofmap;
+  const DofMap& dofmap = *V.dofmap();
+  const DofMap* dofmap_g = &dofmap;
   if (Vg)
   {
     assert(Vg->dofmap());
@@ -532,9 +532,9 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 
 //   // Get dofmap
 //   assert(V.dofmap());
-//   const GenericDofMap& dofmap = *V.dofmap();
+//   const DofMap& dofmap = *V.dofmap();
 
-//   const GenericDofMap* dofmap_g = &dofmap;
+//   const DofMap* dofmap_g = &dofmap;
 //   if (Vg)
 //   {
 //     assert(Vg->dofmap());
@@ -555,7 +555,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //   common::RangedIndexSet already_visited(
 //       dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
 //                        : dofmap.index_map()->local_range(),
-//       dofmap.index_map()->block_size());
+//       dofmap.index_map()->block_size);
 
 //   // Topological and geometric dimensions
 //   const std::size_t tdim = mesh.topology().dim();
