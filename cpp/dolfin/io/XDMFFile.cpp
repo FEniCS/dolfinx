@@ -1316,6 +1316,117 @@ XDMFFile::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
   return read_mesh_function<double>(mesh, name);
 }
 //----------------------------------------------------------------------------
+std::tuple<EigenRowArrayXXd, EigenRowArrayXXi64, mesh::CellType::Type>
+XDMFFile::read_mesh_data(MPI_Comm comm) const
+{
+  // Extract parent filepath (required by HDF5 when XDMF stores relative
+  // path of the HDF5 files(s) and the XDMF is not opened from its own
+  // directory)
+  boost::filesystem::path xdmf_filename(_filename);
+  const boost::filesystem::path parent_path = xdmf_filename.parent_path();
+
+  if (!boost::filesystem::exists(xdmf_filename))
+    throw std::runtime_error("Cannot open XDMF file. File does not exists.");
+
+  // Load XML doc from file
+  pugi::xml_document xml_doc;
+  pugi::xml_parse_result result = xml_doc.load_file(_filename.c_str());
+  assert(result);
+
+  // Get XDMF node
+  pugi::xml_node xdmf_node = xml_doc.child("Xdmf");
+  assert(xdmf_node);
+
+  // Get domain node
+  pugi::xml_node domain_node = xdmf_node.child("Domain");
+  assert(domain_node);
+
+  // Get grid node
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  assert(grid_node);
+
+  // Get topology node
+  pugi::xml_node topology_node = grid_node.child("Topology");
+  assert(topology_node);
+
+  // Get cell type
+  const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
+
+  const int degree = cell_type_str.second;
+  if (degree == 2)
+    LOG(WARNING) << "Caution: reading quadratic mesh";
+
+  // Get toplogical dimensions
+  std::unique_ptr<mesh::CellType> cell_type(
+      mesh::CellType::create(cell_type_str.first));
+  assert(cell_type);
+
+  // Get geometry node
+  pugi::xml_node geometry_node = grid_node.child("Geometry");
+  assert(geometry_node);
+
+  // Determine geometric dimension
+  pugi::xml_attribute geometry_type_attr
+      = geometry_node.attribute("GeometryType");
+  assert(geometry_type_attr);
+  int gdim = -1;
+  const std::string geometry_type = geometry_type_attr.value();
+  if (geometry_type == "XY")
+    gdim = 2;
+  else if (geometry_type == "XYZ")
+    gdim = 3;
+  else
+  {
+    throw std::runtime_error("Cannot determine geometric dimension. "
+                             "GeometryType \""
+                             + geometry_type
+                             + "\" in XDMF file is unknown or unsupported");
+  }
+
+  // Get number of points from Geometry dataitem node
+  pugi::xml_node geometry_data_node = geometry_node.child("DataItem");
+  assert(geometry_data_node);
+  const std::vector<std::int64_t> gdims
+      = xdmf_utils::get_dataset_shape(geometry_data_node);
+  assert(gdims.size() == 2);
+  assert(gdims[1] == gdim);
+
+  // Get topology dataset node
+  pugi::xml_node topology_data_node = topology_node.child("DataItem");
+  assert(topology_data_node);
+  const std::vector<std::int64_t> tdims
+      = xdmf_utils::get_dataset_shape(topology_data_node);
+  const std::size_t npoint_per_cell = tdims[1];
+
+  if (MPI_COMM_NULL != comm)
+  {
+    // Geometry data
+    const auto geometry_data
+        = xdmf_read::get_dataset<double>(comm, geometry_data_node, parent_path);
+    const std::size_t num_local_points = geometry_data.size() / gdim;
+    Eigen::Map<const EigenRowArrayXXd> points(geometry_data.data(),
+                                              num_local_points, gdim);
+
+    // Topology data
+    const std::vector<std::int64_t> tdims
+        = xdmf_utils::get_dataset_shape(topology_data_node);
+    const auto topology_data = xdmf_read::get_dataset<std::int64_t>(
+        comm, topology_data_node, parent_path);
+    const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
+    Eigen::Map<const EigenRowArrayXXi64> cells(
+        topology_data.data(), num_local_cells, npoint_per_cell);
+  }
+  else
+  {
+    EigenRowArrayXXd points(0, gdim);
+    EigenRowArrayXXi64 cells(0, npoint_per_cell);
+  }
+  EigenRowArrayXXd points(0, gdim);
+  EigenRowArrayXXi64 cells(0, npoint_per_cell);
+  return std::make_tuple(std::move(points), std::move(cells),
+                         std::move(cell_type->cell_type()));
+}
+//----------------------------------------------------------------------------
 mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm, const mesh::GhostMode ghost_mode,
                                const double proc_subset_ratio) const
 {
