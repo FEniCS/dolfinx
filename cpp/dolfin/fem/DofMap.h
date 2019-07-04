@@ -232,9 +232,6 @@ private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   std::vector<PetscInt> _dofmap;
 
-  // Global dimension
-  std::int64_t _global_dimension;
-
   // Object containing information about dof distribution across
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;

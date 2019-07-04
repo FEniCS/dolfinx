@@ -22,24 +22,25 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                const mesh::Mesh& mesh)
-    : _global_dimension(-1), _element_dof_layout(element_dof_layout)
+    : _element_dof_layout(element_dof_layout)
 {
+  std::int64_t global_dimension = -1;
   const int bs = _element_dof_layout->block_size;
   if (bs == 1)
   {
-    std::tie(_global_dimension, _index_map, _dofmap)
+    std::tie(global_dimension, _index_map, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout, bs);
   }
   else
   {
-    std::tie(_global_dimension, _index_map, _dofmap)
+    std::tie(global_dimension, _index_map, _dofmap)
         = DofMapBuilder::build(mesh, *_element_dof_layout->sub_dofmap({0}), bs);
   }
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
                const mesh::Mesh& mesh)
-    : _global_dimension(-1), _index_map(dofmap_parent._index_map)
+    : _index_map(dofmap_parent._index_map)
 {
   // FIXME: Large objects could be shared (using std::shared_ptr)
   //        between parent and view
@@ -66,19 +67,10 @@ DofMap::DofMap(const DofMap& dofmap_parent, const std::vector<int>& component,
     for (std::int32_t i = 0; i < dofs_per_cell; ++i)
       _dofmap[c * dofs_per_cell + i] = cell_dmap_parent[element_map_view[i]];
   }
-
-  // Compute global dimension of sub-map
-  _global_dimension = 0;
-  for (int d = 0; d <= D; ++d)
-  {
-    const std::int64_t n = mesh.num_entities_global(d);
-    _global_dimension += n * _element_dof_layout->num_entity_dofs(d);
-  }
 }
 //-----------------------------------------------------------------------------
 DofMap::DofMap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
-    : _global_dimension(dofmap_view._global_dimension),
-      _element_dof_layout(
+    : _element_dof_layout(
           new ElementDofLayout(*dofmap_view._element_dof_layout, true))
 {
   if (dofmap_view._index_map->block_size == 1
@@ -191,7 +183,17 @@ bool DofMap::is_view() const
   return _element_dof_layout->is_view();
 }
 //-----------------------------------------------------------------------------
-std::int64_t DofMap::global_dimension() const { return _global_dimension; }
+std::int64_t DofMap::global_dimension() const
+{
+  if (this->is_view())
+  {
+    throw std::runtime_error(
+        "Global dimension not defined for sub-dofmap views.");
+  }
+
+  assert(_index_map);
+  return _index_map->size_global();
+}
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 {
