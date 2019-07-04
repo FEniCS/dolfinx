@@ -233,9 +233,8 @@ void io(py::module& m)
       // Mesh
       .def("read_mesh",
            [](dolfin::io::XDMFFile& self, const MPICommWrapper comm,
-              const dolfin::mesh::GhostMode ghost_mode,
-              const double subset_proc_ratio) {
-             return self.read_mesh(comm.get(), ghost_mode, subset_proc_ratio);
+              const dolfin::mesh::GhostMode ghost_mode) {
+             return self.read_mesh(comm.get(), ghost_mode);
            })
       // MeshFunction
       .def("read_mf_int", &dolfin::io::XDMFFile::read_mf_int, py::arg("mesh"),
