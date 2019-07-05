@@ -15,7 +15,7 @@ from dolfin_utils.test.fixtures import tempdir
 assert (tempdir)
 
 
-def test_distributed_mesh_2d(tempdir):
+def xtest_distributed_mesh_2d(tempdir):
     """Read and partition mesh using only a subset of the
        avaialable processes"""
 

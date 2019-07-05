@@ -158,9 +158,6 @@ void fem(py::module& m)
       m, "DofMap", "DofMap object")
       .def(py::init<std::shared_ptr<const dolfin::fem::ElementDofLayout>,
                     const dolfin::mesh::Mesh&>())
-      .def_property_readonly(
-          "global_dimension", &dolfin::fem::DofMap::global_dimension,
-          "The dimension of the global finite element function space")
       .def_property_readonly("index_map", &dolfin::fem::DofMap::index_map)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs)
       .def("dofs", &dolfin::fem::DofMap::dofs)

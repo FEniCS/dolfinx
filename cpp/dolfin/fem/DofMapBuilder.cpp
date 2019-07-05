@@ -649,15 +649,14 @@ std::vector<std::int64_t> compute_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<std::int64_t, std::unique_ptr<common::IndexMap>,
-           std::vector<PetscInt>>
+std::tuple<std::unique_ptr<common::IndexMap>, std::vector<PetscInt>>
 DofMapBuilder::build(const mesh::Mesh& mesh,
                      const ElementDofLayout& element_dof_layout,
                      const std::int32_t block_size)
 {
   common::Timer t0("Init dofmap");
 
-  if (element_dof_layout.block_size() != 1)
+  if (element_dof_layout.block_size != 1)
     throw std::runtime_error("Block size of 1 expected when building dofmap.");
 
   const int D = mesh.topology().dim();
@@ -742,7 +741,6 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
     }
   }
 
-  return std::make_tuple(std::move(block_size * global_dimension),
-                         std::move(index_map), std::move(dofmap));
+  return std::make_tuple(std::move(index_map), std::move(dofmap));
 }
 //-----------------------------------------------------------------------------

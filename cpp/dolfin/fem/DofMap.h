@@ -81,13 +81,6 @@ public:
   ///         another map).
   bool is_view() const;
 
-  /// Return the dimension of the global finite element function
-  /// space. Use index_map()->size() to get the local dimension.
-  ///
-  /// @returns std::int64_t
-  ///         The dimension of the global finite element function space.
-  std::int64_t global_dimension() const;
-
   /// Return the dimension of the local finite element function
   /// space on a cell
   ///
@@ -134,10 +127,12 @@ public:
   Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   cell_dofs(std::size_t cell_index) const
   {
-    const std::size_t index = cell_index * _cell_dimension;
-    assert(index + _cell_dimension <= _dofmap.size());
+    assert(_element_dof_layout);
+    const int cell_dimension = _element_dof_layout->num_dofs();
+    const std::size_t index = cell_index * cell_dimension;
+    assert(index + cell_dimension <= _dofmap.size());
     return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
-        &_dofmap[index], _cell_dimension);
+        &_dofmap[index], cell_dimension);
   }
 
   /// Tabulate local-local closure dofs on entity of cell
@@ -163,9 +158,6 @@ public:
   Eigen::Array<int, Eigen::Dynamic, 1>
   tabulate_entity_dofs(std::size_t entity_dim,
                        std::size_t cell_entity_index) const;
-
-  /// Tabulate globally supported dofs
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> tabulate_global_dofs() const;
 
   /// Extract subdofmap component
   ///
@@ -233,19 +225,11 @@ private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   std::vector<PetscInt> _dofmap;
 
-  // List of global nodes
-  std::set<std::size_t> _global_nodes;
-
-  // Cell dimension (fixed for all cells)
-  int _cell_dimension;
-
-  // Global dimension
-  std::int64_t _global_dimension;
-
   // Object containing information about dof distribution across
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;
 
+  // Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> _element_dof_layout;
 };
 } // namespace fem

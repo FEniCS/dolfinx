@@ -34,13 +34,6 @@ public:
   ///
   /// Collective
   IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-           const std::vector<std::size_t>& ghosts, std::size_t block_size);
-
-  /// Create Index map with local_size owned blocks on this process, and
-  /// blocks have size block_size.
-  ///
-  /// Collective
-  IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
            const std::vector<std::int64_t>& ghosts, std::size_t block_size);
 
   /// Copy constructor
@@ -56,7 +49,7 @@ public:
   std::array<std::int64_t, 2> local_range() const;
 
   /// Block size
-  int block_size() const;
+  const int block_size;
 
   /// Number of ghost indices on this process
   std::int32_t num_ghosts() const;
@@ -140,9 +133,6 @@ private:
 
   // Owning process for each ghost index
   Eigen::Array<std::int32_t, Eigen::Dynamic, 1> _ghost_owners;
-
-  // Block size
-  int _block_size;
 
   template <typename T>
   void scatter_fwd_impl(const std::vector<T>& local_data,

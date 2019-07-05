@@ -7,6 +7,7 @@
 #pragma once
 
 #include "CellType.h"
+#include "PartitionData.h"
 #include <cstdint>
 #include <dolfin/common/types.h>
 #include <map>
@@ -76,8 +77,18 @@ public:
                          const Eigen::Ref<const EigenRowArrayXXi64> cells,
                          const std::vector<std::int64_t>& global_cell_indices,
                          const mesh::GhostMode ghost_mode,
-                         const double part_processes_ratio = 1.0,
                          std::string graph_partitioner = "SCOTCH");
+
+  // Utility to create global vertex indices, needed for higher order
+  // meshes, where there are geometric points which are not at the
+  // vertex nodes
+  static mesh::Mesh
+  build_from_partition(const MPI_Comm& comm, mesh::CellType::Type type,
+                       const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+                       const Eigen::Ref<const EigenRowArrayXXd> points,
+                       const std::vector<std::int64_t>& global_cell_indices,
+                       const mesh::GhostMode ghost_mode,
+                       const PartitionData& cell_partitition);
 
   /// Redistribute points to the processes that need them.
   /// @param mpi_comm

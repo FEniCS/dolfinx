@@ -92,7 +92,7 @@ public:
   std::vector<int> sub_view(const std::vector<int>& component) const;
 
   /// Block size
-  int block_size() const;
+  const int block_size;
 
   /// Is view, i.e. has a parent dofmap
   bool is_view() const;
@@ -100,9 +100,6 @@ public:
 private:
   // Mapping of dofs to this ElementDofLayout's immediate parent
   std::vector<int> _parent_map;
-
-  // Block size
-  const int _block_size;
 
   // Total number of dofs on this element dofmap
   int _num_dofs;
