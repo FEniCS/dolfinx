@@ -656,7 +656,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   assert(element_dof_layout);
   const int bs = element_dof_layout->block_size;
   std::shared_ptr<common::IndexMap> index_map;
-  std::vector<PetscInt> dofmap;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap;
   if (bs == 1)
   {
     std::tie(index_map, dofmap)
@@ -689,7 +689,8 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
 
   // Build dofmap by extracting from parent
   const std::int32_t dofs_per_cell = element_map_view.size();
-  std::vector<PetscInt> dofmap(dofs_per_cell * mesh.num_entities(D));
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(dofs_per_cell
+                                                   * mesh.num_entities(D));
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     const int c = cell.index();
@@ -701,7 +702,8 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
   return DofMap(element_dof_layout, dofmap_parent.index_map(), dofmap);
 }
 //-----------------------------------------------------------------------------
-std::tuple<std::unique_ptr<common::IndexMap>, std::vector<PetscInt>>
+std::tuple<std::unique_ptr<common::IndexMap>,
+           Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
 DofMapBuilder::build(const mesh::Mesh& mesh,
                      const ElementDofLayout& element_dof_layout,
                      const std::int32_t block_size)
@@ -777,7 +779,7 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap, accounting for block size
-  std::vector<PetscInt> dofmap(node_graph0.data.size() * block_size);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(node_graph0.data.size() * block_size);
   for (std::int32_t cell = 0; cell < node_graph0.num_cells(); ++cell)
   {
     const std::int32_t local_dim0 = node_graph0.num_dofs(cell);

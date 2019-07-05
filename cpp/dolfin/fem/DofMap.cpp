@@ -22,7 +22,9 @@ using namespace dolfin::fem;
 namespace
 {
 
-fem::DofMap collapsed_dofmap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
+// Build a collapsed DofMap from a dofmap view
+fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
+                                   const mesh::Mesh& mesh)
 {
   auto _element_dof_layout = std::make_shared<ElementDofLayout>(
       *dofmap_view._element_dof_layout, true);
@@ -117,10 +119,12 @@ fem::DofMap collapsed_dofmap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
     old_to_new[dof] = count++;
 
   // Build new dofmap
-  std::vector<PetscInt> _dofmap(dofmap_view._dofmap.size());
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array_view
+      = dofmap_view.dof_array();
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap(dof_array_view.size());
   for (std::size_t i = 0; i < _dofmap.size(); ++i)
   {
-    PetscInt dof_view = dofmap_view._dofmap[i];
+    PetscInt dof_view = dof_array_view[i];
     _dofmap[i] = old_to_new[dof_view];
   }
 
@@ -137,7 +141,7 @@ fem::DofMap collapsed_dofmap(const DofMap& dofmap_view, const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
-               const std::vector<PetscInt>& dofmap)
+               const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofmap)
     : _dofmap(dofmap), _index_map(index_map),
       _element_dof_layout(element_dof_layout)
 {
@@ -210,12 +214,12 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
   return DofMapBuilder::build_submap(*this, component, mesh);
 }
 //-----------------------------------------------------------------------------
-std::pair<std::shared_ptr<DofMap>, std::vector<PetscInt>>
+std::pair<std::unique_ptr<DofMap>, std::vector<PetscInt>>
 DofMap::collapse(const mesh::Mesh& mesh) const
 {
   assert(_element_dof_layout);
   assert(_index_map);
-  std::shared_ptr<DofMap> dofmap_new;
+  std::unique_ptr<DofMap> dofmap_new;
   if (this->_index_map->block_size == 1
       and this->_element_dof_layout->block_size > 1)
   {
@@ -225,14 +229,14 @@ DofMap::collapse(const mesh::Mesh& mesh) const
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
-    dofmap_new = std::make_shared<DofMap>(
+    dofmap_new = std::make_unique<DofMap>(
         DofMapBuilder::build(mesh, collapsed_dof_layout));
   }
   else
   {
     // Collapse dof map, without build and re-ordering from scratch
     // dofmap_new = std::shared_ptr<DofMap>(new DofMap(*this, mesh));
-    dofmap_new = std::make_shared<DofMap>(collapsed_dofmap(*this, mesh));
+    dofmap_new = std::make_unique<DofMap>(build_collapsed_dofmap(*this, mesh));
   }
   assert(dofmap_new);
 
@@ -258,14 +262,14 @@ DofMap::collapse(const mesh::Mesh& mesh) const
     }
   }
 
-  return std::make_pair(dofmap_new, std::move(collapsed_map));
+  return std::make_pair(std::move(dofmap_new), std::move(collapsed_map));
 }
 //-----------------------------------------------------------------------------
 void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
                  PetscScalar value) const
 {
-  for (auto index : _dofmap)
-    x[index] = value;
+  for (Eigen::Index i = 0; i < _dofmap.rows(); ++i)
+    x[i] = value;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const common::IndexMap> DofMap::index_map() const
@@ -273,11 +277,10 @@ std::shared_ptr<const common::IndexMap> DofMap::index_map() const
   return _index_map;
 }
 //-----------------------------------------------------------------------------
-Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
 DofMap::dof_array() const
 {
-  return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
-      _dofmap.data(), _dofmap.size());
+  return _dofmap;
 }
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const

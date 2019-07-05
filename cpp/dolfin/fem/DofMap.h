@@ -44,7 +44,7 @@ class DofMap
 public:
   DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
          std::shared_ptr<const common::IndexMap> index_map,
-         const std::vector<PetscInt>& dofmap);
+         const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofmap);
 
 public:
   // Copy constructor
@@ -167,7 +167,7 @@ public:
   ///
   /// @return    DofMap
   ///         The collapsed dofmap.
-  std::pair<std::shared_ptr<DofMap>, std::vector<PetscInt>>
+  std::pair<std::unique_ptr<DofMap>, std::vector<PetscInt>>
   collapse(const mesh::Mesh& mesh) const;
 
   /// Set dof entries in vector to a specified value. Parallel layout
@@ -195,7 +195,7 @@ public:
   std::string str(bool verbose) const;
 
   /// Get dofmap array
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array() const;
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array() const;
 
   // FIXME: can this be removed?
   /// Tabulate map between local (process) and global dof indices
@@ -208,11 +208,11 @@ public:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
                                                  std::size_t dim) const;
 
-  // private:
+private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
-  std::vector<PetscInt> _dofmap;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
 
-  // public:
+public:
   // Object containing information about dof distribution across
   // processes
   std::shared_ptr<const common::IndexMap> _index_map;

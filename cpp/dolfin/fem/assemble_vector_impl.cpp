@@ -93,7 +93,7 @@ void _lift_bc_cells(
     assert(!cell.is_ghost());
 
     // Get dof maps for cell
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
         = dofmap1.cell_dofs(cell.index());
 
     // Check if bc is applied to cell
@@ -303,7 +303,7 @@ void fem::impl::assemble_vector(
 
   // Get dofmap data
   const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
       = dofmap.dof_array();
   // FIXME: do this right
   const int num_dofs_per_cell = dofmap.num_element_dofs(0);

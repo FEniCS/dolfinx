@@ -29,9 +29,9 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   // Get dofmap data
   const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
   const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array0
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array0
       = dofmap0.dof_array();
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array1
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array1
       = dofmap1.dof_array();
   // FIXME: do this right
   const int num_dofs_per_cell0 = dofmap0.num_element_dofs(0);

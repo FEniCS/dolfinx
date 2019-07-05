@@ -43,11 +43,12 @@ public:
 
   /// Build sub-dofmap view
   static DofMap build_submap(const DofMap& dofmap_parent,
-                               const std::vector<int>& component,
-                               const mesh::Mesh& mesh);
+                             const std::vector<int>& component,
+                             const mesh::Mesh& mesh);
 
   /// Build dofmap
-  static std::tuple<std::unique_ptr<common::IndexMap>, std::vector<PetscInt>>
+  static std::tuple<std::unique_ptr<common::IndexMap>,
+                    Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   build(const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout,
         const std::int32_t block_size);
 };
