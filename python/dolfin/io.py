@@ -83,10 +83,10 @@ class HDF5File:
         return self._cpp_object.read_vector(mpi_comm, data_path,
                                             use_partition_from_file)
 
-    def read_mesh(self, mpi_comm, data_path: str,
+    def read_mesh(self, data_path: str,
                   use_partition_from_file: bool, ghost_mode):
-        mesh = self._cpp_object.read_mesh(mpi_comm, data_path,
-                                          use_partition_from_file, ghost_mode)
+        mesh = self._cpp_object.read_mesh(data_path, use_partition_from_file,
+                                          ghost_mode)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
