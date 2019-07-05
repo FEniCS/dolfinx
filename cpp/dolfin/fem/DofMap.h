@@ -116,7 +116,7 @@ public:
   {
     assert(_element_dof_layout);
     const int cell_dimension = _element_dof_layout->num_dofs();
-    const std::size_t index = cell_index * cell_dimension;
+    const int index = cell_index * cell_dimension;
     assert(index + cell_dimension <= _dofmap.size());
     return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
         &_dofmap[index], cell_dimension);
