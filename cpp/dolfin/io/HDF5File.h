@@ -155,10 +155,6 @@ public:
   read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
                  const std::string name) const;
 
-  /// Read mesh::MeshFunction from file
-  mesh::MeshFunction<bool> read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
-                                        const std::string name) const;
-
   /// Write mesh::MeshValueCollection to file
   void write(const mesh::MeshValueCollection<std::size_t>& mesh_values,
              const std::string name);

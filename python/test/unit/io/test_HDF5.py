@@ -6,6 +6,7 @@
 
 import os
 
+import numpy
 from petsc4py import PETSc
 
 from dolfin import (MPI, Cell, Function, FunctionSpace, MeshEntities,
@@ -60,7 +61,7 @@ def test_save_and_read_meshfunction_2D(tempdir):
             # NB choose a value to set which will be the same
             # on every process for each entity
             for cell in MeshEntities(mesh, i):
-                mf[cell] = cell.midpoint()[0]
+                mf.values()[cell.index()] = cell.midpoint()[0]
             meshfunctions.append(mf)
             mf_file.write(mf, "/meshfunction/meshfun%d" % i)
 
@@ -68,8 +69,7 @@ def test_save_and_read_meshfunction_2D(tempdir):
     with HDF5File(mesh.mpi_comm(), filename, "r") as mf_file:
         for i in range(0, 3):
             mf2 = mf_file.read_mf_double(mesh, "/meshfunction/meshfun%d" % i)
-            for cell in MeshEntities(mesh, i):
-                assert meshfunctions[i][cell] == mf2[cell]
+            assert numpy.all(meshfunctions[i].values() == mf2.values())
 
 
 def test_save_and_read_meshfunction_3D(tempdir):
@@ -86,7 +86,7 @@ def test_save_and_read_meshfunction_3D(tempdir):
         # NB choose a value to set which will be the same
         # on every process for each entity
         for cell in MeshEntities(mesh, i):
-            mf[cell] = cell.midpoint()[0]
+            mf.values()[cell.index()] = cell.midpoint()[0]
         meshfunctions.append(mf)
         mf_file.write(mf, "/meshfunction/group/%d/meshfun" % i)
     mf_file.close()
@@ -96,8 +96,8 @@ def test_save_and_read_meshfunction_3D(tempdir):
     for i in range(0, 4):
         mf2 = mf_file.read_mf_double(mesh,
                                      "/meshfunction/group/%d/meshfun" % i)
-        for cell in MeshEntities(mesh, i):
-            assert meshfunctions[i][cell] == mf2[cell]
+        assert numpy.all(meshfunctions[i].values() == mf2.values())
+
     mf_file.close()
 
 

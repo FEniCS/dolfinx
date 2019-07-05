@@ -81,7 +81,7 @@ void ParallelRefinement::mark(const mesh::MeshFunction<bool>& refinement_marker)
   for (const auto& entity :
        mesh::MeshRange<mesh::MeshEntity>(_mesh, entity_dim))
   {
-    if (refinement_marker[entity])
+    if (refinement_marker.values()[entity.index()])
     {
       for (const auto& edge : mesh::EntityRange<mesh::Edge>(entity))
         mark(edge.index());

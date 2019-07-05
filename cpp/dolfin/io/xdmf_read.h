@@ -292,7 +292,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   {
     assert(receive_values[i].size() == receive_topology[i].size());
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-      meshfunction[receive_topology[i][j]] = receive_values[i][j];
+      meshfunction.values()[receive_topology[i][j]] = receive_values[i][j];
   }
 }
 //----------------------------------------------------------------------------

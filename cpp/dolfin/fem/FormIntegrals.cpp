@@ -126,9 +126,9 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
   }
 
-  for (unsigned int i = 0; i < marker.size(); ++i)
+  for (unsigned int i = 0; i < marker.values().size(); ++i)
   {
-    auto it = id_to_integral.find(marker[i]);
+    auto it = id_to_integral.find(marker.values()[i]);
     if (it != id_to_integral.end())
       integrals[it->second].active_entities.push_back(i);
   }

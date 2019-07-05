@@ -469,23 +469,9 @@ void HDF5File::write(const mesh::MeshFunction<bool>& meshfunction,
   // so copy to int with values 1 and 0
   mesh::MeshFunction<int> mf(mesh, cell_dim, -1);
   for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
-    mf[cell.index()] = (meshfunction[cell.index()] ? 1 : 0);
+    mf.values()[cell.index()] = (meshfunction.values()[cell.index()] ? 1 : 0);
 
   write_mesh_function(mf, name);
-}
-//-----------------------------------------------------------------------------
-mesh::MeshFunction<bool>
-HDF5File::read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
-                       const std::string name) const
-{
-  // HDF5 does not support bool, so use int instead
-  mesh::MeshFunction<int> mf_int = read_mesh_function<int>(mesh, name);
-
-  mesh::MeshFunction<bool> mf(mesh, mf_int.dim(), false);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, mf_int.dim()))
-    mf[cell.index()] = (mf_int[cell.index()] != 0);
-
-  return mf;
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -677,7 +663,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   {
     assert(receive_values[i].size() == receive_topology[i].size());
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-      mf[receive_topology[i][j]] = receive_values[i][j];
+      mf.values()[receive_topology[i][j]] = receive_values[i][j];
   }
 
   return mf;
@@ -687,7 +673,7 @@ template <typename T>
 void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
                                    const std::string name)
 {
-  if (meshfunction.size() == 0)
+  if (meshfunction.values().size() == 0)
     throw std::runtime_error("Cannot save empty mesh::MeshFunction.");
 
   const mesh::Mesh& mesh = *meshfunction.mesh();
@@ -703,8 +689,8 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
   if (cell_dim == mesh.topology().dim() || _mpi_comm.size() == 1)
   {
     // No duplicates - ignore ghost cells if present
-    data_values.assign(meshfunction.values(),
-                       meshfunction.values()
+    data_values.assign(meshfunction.values().data(),
+                       meshfunction.values().data()
                            + mesh.topology().ghost_offset(cell_dim));
   }
   else
@@ -750,7 +736,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     for (auto& ent : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
     {
       if (non_local_entities.find(ent.index()) == non_local_entities.end())
-        data_values.push_back(meshfunction[ent]);
+        data_values.push_back(meshfunction.values()[ent.index()]);
     }
   }
 

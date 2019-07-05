@@ -120,31 +120,3 @@ def test_Assign(f, cube):
     f[3] = 10
     v = Vertex(cube, 3)
     assert f[v] == 10
-
-
-@skip_in_parallel
-def test_meshfunction_where_equal():
-    mesh = UnitSquareMesh(MPI.comm_self, 2, 2)
-
-    cf = MeshFunction("size_t", mesh, mesh.topology.dim, 0)
-    cf.set_all(1)
-    cf[0] = 3
-    cf[3] = 3
-    assert list(cf.where_equal(3)) == [0, 3]
-    assert list(cf.where_equal(1)) == [1, 2, 4, 5, 6, 7]
-
-    ff = MeshFunction("size_t", mesh, mesh.topology.dim - 1, 100)
-    ff.set_all(0)
-    ff[0] = 1
-    ff[2] = 3
-    ff[3] = 3
-    assert list(ff.where_equal(1)) == [0]
-    assert list(ff.where_equal(3)) == [2, 3]
-    assert list(ff.where_equal(0)) == [1] + list(range(4, ff.size()))
-
-    vf = MeshFunction("size_t", mesh, 0, 0)
-    vf.set_all(3)
-    vf[1] = 1
-    vf[2] = 1
-    assert list(vf.where_equal(1)) == [1, 2]
-    assert list(vf.where_equal(3)) == [0] + list(range(3, vf.size()))
