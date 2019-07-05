@@ -18,7 +18,7 @@ def test_radius_ratio_triangle():
     mesh = UnitSquareMesh(MPI.comm_world, 12, 12)
     ratios = MeshQuality.radius_ratios(mesh)
     for c in Cells(mesh):
-        assert round(ratios[c] - 0.828427124746, 7) == 0
+        assert round(ratios.values()[c.index()] - 0.828427124746, 7) == 0
 
 
 def test_radius_ratio_tetrahedron():
@@ -27,7 +27,7 @@ def test_radius_ratio_tetrahedron():
     mesh = UnitCubeMesh(MPI.comm_world, 14, 14, 14)
     ratios = MeshQuality.radius_ratios(mesh)
     for c in Cells(mesh):
-        assert round(ratios[c] - 0.717438935214, 7) == 0
+        assert round(ratios.values()[c.index()] - 0.717438935214, 7) == 0
 
 
 def test_radius_ratio_triangle_min_max():
