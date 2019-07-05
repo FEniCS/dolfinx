@@ -598,15 +598,14 @@ void distribute_cell_layer(
 // Compute cell partitioning from local mesh data. Returns a vector
 // 'cell -> process' vector for cells, and a map 'local cell index ->
 // processes' to which ghost cells must be sent
-PartitionData
-partition_cells(const MPI_Comm& mpi_comm, int nparts,
-                const mesh::CellType::Type type,
-                const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                const std::string partitioner)
+PartitionData Partitioning::partition_cells(
+    const MPI_Comm& mpi_comm, int nparts, const mesh::CellType::Type type,
+    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const std::string partitioner)
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
-  if (MPI_COMM_NULL != mpi_comm)
+  if (mpi_comm != MPI_COMM_NULL)
   {
     std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
     assert(cell_type);
