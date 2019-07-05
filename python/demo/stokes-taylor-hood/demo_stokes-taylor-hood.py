@@ -130,7 +130,7 @@ class NoSlip:
 
 
 # Extract subdomain facet arrays
-mf = sub_domains.array()
+mf = sub_domains.values()
 mf0 = np.where(mf == 0)
 mf1 = np.where(mf == 1)
 
