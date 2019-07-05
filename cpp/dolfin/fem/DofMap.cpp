@@ -268,7 +268,7 @@ void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
                  PetscScalar value) const
 {
   for (Eigen::Index i = 0; i < _dofmap.rows(); ++i)
-    x[i] = value;
+    x[_dofmap[i]] = value;
 }
 //-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
