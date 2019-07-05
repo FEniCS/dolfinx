@@ -205,8 +205,8 @@ class XDMFFile:
 
     # ----------------------------------------------------------
 
-    def read_mesh(self, mpi_comm, ghost_mode):
-        mesh = self._cpp_object.read_mesh(mpi_comm, ghost_mode)
+    def read_mesh(self, ghost_mode):
+        mesh = self._cpp_object.read_mesh(ghost_mode)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 

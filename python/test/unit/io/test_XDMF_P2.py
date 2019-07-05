@@ -25,7 +25,7 @@ def test_read_write_p2_mesh(tempdir):
         xdmf.write(mesh)
 
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        mesh2 = xdmf.read_mesh(mesh.mpi_comm(), cpp.mesh.GhostMode.none)
+        mesh2 = xdmf.read_mesh(cpp.mesh.GhostMode.none)
 
     assert mesh2.num_entities_global(
         mesh.topology.dim) == mesh.num_entities_global(mesh.topology.dim)

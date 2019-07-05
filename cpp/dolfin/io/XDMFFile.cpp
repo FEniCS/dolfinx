@@ -1316,8 +1316,7 @@ XDMFFile::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
   return read_mesh_function<double>(mesh, name);
 }
 //----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
-                               const mesh::GhostMode ghost_mode) const
+mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
 {
   // Extract parent filepath (required by HDF5 when XDMF stores relative
   // path of the HDF5 files(s) and the XDMF is not opened from its own
