@@ -309,9 +309,9 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
     throw std::runtime_error("Graph building not support for dofmap views.");
 
   // Create empty graph
-  assert(dofmap0.index_map());
+  assert(dofmap0.index_map);
   const std::int32_t n
-      = dofmap0.index_map()->size_local() + dofmap0.index_map()->num_ghosts();
+      = dofmap0.index_map->size_local() + dofmap0.index_map->num_ghosts();
   Graph graph(n);
 
   // Build graph

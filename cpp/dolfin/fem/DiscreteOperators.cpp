@@ -75,7 +75,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
   // Copy index maps from dofmaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      = {{V0.dofmap()->index_map(), V1.dofmap()->index_map()}};
+      = {{V0.dofmap()->index_map, V1.dofmap()->index_map}};
   std::vector<std::array<std::int64_t, 2>> local_range
       = {{index_maps[0]->block_size * index_maps[0]->local_range()[0],
           index_maps[0]->block_size * index_maps[0]->local_range()[1]},

@@ -103,7 +103,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
-      = dofmap.index_map()->size_local() * dofmap.index_map()->block_size;
+      = dofmap.index_map->size_local() * dofmap.index_map->block_size;
   std::vector<bool> already_visited(local_size, false);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -259,12 +259,12 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   std::size_t N = coarse_space.dim();
 
   // Local dimension of the dofs and of the transfer matrix
-  std::array<std::int64_t, 2> m = finemap->index_map()->local_range();
-  std::array<std::int64_t, 2> n = coarsemap->index_map()->local_range();
-  m[0] *= finemap->index_map()->block_size;
-  m[1] *= finemap->index_map()->block_size;
-  n[0] *= coarsemap->index_map()->block_size;
-  n[1] *= coarsemap->index_map()->block_size;
+  std::array<std::int64_t, 2> m = finemap->index_map->local_range();
+  std::array<std::int64_t, 2> n = coarsemap->index_map->local_range();
+  m[0] *= finemap->index_map->block_size;
+  m[1] *= finemap->index_map->block_size;
+  n[0] *= coarsemap->index_map->block_size;
+  n[1] *= coarsemap->index_map->block_size;
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
@@ -568,7 +568,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     {
       const unsigned int fine_row = i * data_size + k;
       const std::size_t global_fine_dof = global_row_indices[fine_row];
-      int p = finemap->index_map()->owner(global_fine_dof / data_size);
+      int p = finemap->index_map->owner(global_fine_dof / data_size);
 
       // Loop over the coarse dofs and stuff their contributions
       for (unsigned j = 0; j < eldim; j++)
@@ -581,7 +581,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
         // Set the value
         values(fine_row, j) = temp_values(0, j, k);
 
-        int pc = coarsemap->index_map()->owner(coarse_dof / data_size);
+        int pc = coarsemap->index_map->owner(coarse_dof / data_size);
         if (p == pc)
           send_dnnz[p].push_back(global_fine_dof);
         else

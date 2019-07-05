@@ -182,9 +182,6 @@ public:
   void set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
            PetscScalar value) const;
 
-  /// Return the map
-  std::shared_ptr<const common::IndexMap> index_map() const;
-
   /// Return informal string representation (pretty-print)
   ///
   /// @param     verbose (bool)
@@ -208,14 +205,15 @@ public:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
                                                  std::size_t dim) const;
 
+  /// Object containing information about dof distribution across
+  /// processes
+  const std::shared_ptr<const common::IndexMap> index_map;
+
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
 
 public:
-  // Object containing information about dof distribution across
-  // processes
-  std::shared_ptr<const common::IndexMap> _index_map;
 
   // Layout of dofs on an element
   std::shared_ptr<const ElementDofLayout> _element_dof_layout;

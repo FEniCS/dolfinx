@@ -65,8 +65,8 @@ std::int64_t FunctionSpace::dim() const
                              "sub-functions");
   }
 
-  assert(_dofmap->index_map());
-  return _dofmap->index_map()->size_global() * _dofmap->index_map()->block_size;
+  assert(_dofmap->index_map);
+  return _dofmap->index_map->size_global() * _dofmap->index_map->block_size;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
@@ -314,7 +314,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   // Get local size
   // Get local size
   assert(_dofmap);
-  std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map();
+  std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map;
   assert(index_map);
   std::size_t bs = index_map->block_size;
   std::size_t local_size

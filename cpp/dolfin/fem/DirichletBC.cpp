@@ -412,8 +412,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   // were found by other processes, e.g. a vertex dof on this process that
   // has no connected factes on the boundary.
   const std::vector<std::array<PetscInt, 2>> dofs_remote
-      = get_remote_bcs(*V->dofmap()->index_map(),
-                       *g->function_space()->dofmap()->index_map(), dofs_local);
+      = get_remote_bcs(*V->dofmap()->index_map,
+                       *g->function_space()->dofmap()->index_map, dofs_local);
 
   // Add received bc indices to dofs_local
   for (auto& dof_remote : dofs_remote)

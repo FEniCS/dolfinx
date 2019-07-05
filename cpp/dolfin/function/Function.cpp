@@ -48,8 +48,8 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
                        "collapsing the function space");
   }
 
-  assert(dofmap.index_map());
-  la::PETScVector v = la::PETScVector(*dofmap.index_map());
+  assert(dofmap.index_map);
+  la::PETScVector v = la::PETScVector(*dofmap.index_map);
   la::VecWrapper _v(v.vec());
   _v.x.setZero();
 
@@ -79,8 +79,8 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap());
-  assert(V->dofmap()->index_map()->size_global()
-             * V->dofmap()->index_map()->block_size
+  assert(V->dofmap()->index_map->size_global()
+             * V->dofmap()->index_map->block_size
          <= _vector.size());
 }
 //-----------------------------------------------------------------------------
@@ -133,10 +133,10 @@ la::PETScVector& Function::vector()
 {
   // Check that this is not a sub function.
   assert(_function_space->dofmap());
-  assert(_function_space->dofmap()->index_map());
+  assert(_function_space->dofmap()->index_map);
   if (_vector.size()
-      != _function_space->dofmap()->index_map()->size_global()
-             * _function_space->dofmap()->index_map()->block_size)
+      != _function_space->dofmap()->index_map->size_global()
+             * _function_space->dofmap()->index_map->block_size)
   {
     throw std::runtime_error(
         "Cannot access a non-const vector from a subfunction");

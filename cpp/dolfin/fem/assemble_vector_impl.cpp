@@ -609,7 +609,7 @@ void fem::impl::apply_lifting(
     {
       auto V1 = a[j]->function_space(1);
       assert(V1);
-      auto map1 = V1->dofmap()->index_map();
+      auto map1 = V1->dofmap()->index_map;
       assert(map1);
       const int crange
           = map1->block_size * (map1->size_local() + map1->num_ghosts());

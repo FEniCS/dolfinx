@@ -699,7 +699,7 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
       dofmap[c * dofs_per_cell + i] = cell_dmap_parent[element_map_view[i]];
   }
 
-  return DofMap(element_dof_layout, dofmap_parent.index_map(), dofmap);
+  return DofMap(element_dof_layout, dofmap_parent.index_map, dofmap);
 }
 //-----------------------------------------------------------------------------
 std::tuple<std::unique_ptr<common::IndexMap>,

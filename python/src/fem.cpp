@@ -165,7 +165,7 @@ void fem(py::module& m)
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>>(
       m, "DofMap", "DofMap object")
-      .def_property_readonly("index_map", &dolfin::fem::DofMap::index_map)
+      .def_readonly("index_map", &dolfin::fem::DofMap::index_map)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs)
       .def("dofs", &dolfin::fem::DofMap::dofs)
       .def("num_entity_dofs", &dolfin::fem::DofMap::num_entity_dofs)

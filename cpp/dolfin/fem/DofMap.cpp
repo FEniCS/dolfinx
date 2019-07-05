@@ -29,7 +29,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   auto _element_dof_layout = std::make_shared<ElementDofLayout>(
       *dofmap_view._element_dof_layout, true);
 
-  if (dofmap_view._index_map->block_size == 1
+  if (dofmap_view.index_map->block_size == 1
       and _element_dof_layout->block_size > 1)
   {
     throw std::runtime_error(
@@ -37,7 +37,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
         "than 1 from parent with block size of 1. Create new dofmap first.");
   }
 
-  if (dofmap_view._index_map->block_size > 1
+  if (dofmap_view.index_map->block_size > 1
       and _element_dof_layout->block_size > 1)
   {
     throw std::runtime_error(
@@ -63,11 +63,11 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                   dofs_view.end());
 
   // Get block sizes
-  const int bs_view = dofmap_view._index_map->block_size;
+  const int bs_view = dofmap_view.index_map->block_size;
   const int bs = _element_dof_layout->block_size;
 
   // Compute sizes
-  const std::int32_t num_owned_view = dofmap_view._index_map->size_local();
+  const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
   const auto it_unowned0 = std::lower_bound(dofs_view.begin(), dofs_view.end(),
                                             num_owned_view * bs_view);
   const std::int64_t num_owned
@@ -83,7 +83,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
       = dolfin::MPI::global_offset(mesh.mpi_comm(), num_owned, true);
 
   // For owned dofs, compute new global index
-  std::vector<std::int64_t> global_index(dofmap_view._index_map->size_local(),
+  std::vector<std::int64_t> global_index(dofmap_view.index_map->size_local(),
                                          -1);
   for (auto it = dofs_view.begin(); it != it_unowned0; ++it)
   {
@@ -95,8 +95,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   // Send new global indices for owned dofs to non-owning process, and
   // receive new global indices from owner
   std::vector<std::int64_t> global_index_remote(
-      dofmap_view._index_map->num_ghosts(), -1);
-  dofmap_view._index_map->scatter_fwd(global_index, global_index_remote, 1);
+      dofmap_view.index_map->num_ghosts(), -1);
+  dofmap_view.index_map->scatter_fwd(global_index, global_index_remote, 1);
 
   // Compute ghosts for collapsed dofmap
   std::vector<std::int64_t> ghosts(num_unowned);
@@ -109,8 +109,8 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Create new index map
-  auto _index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
-                                                       num_owned, ghosts, bs);
+  auto index_map = std::make_shared<common::IndexMap>(mesh.mpi_comm(),
+                                                      num_owned, ghosts, bs);
 
   // Creat array from dofs in view to new dof indices
   std::vector<std::int32_t> old_to_new(dofs_view.back() + 1, -1);
@@ -122,7 +122,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array_view
       = dofmap_view.dof_array();
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap(dof_array_view.size());
-  for (std::size_t i = 0; i < _dofmap.size(); ++i)
+  for (Eigen::Index i = 0; i < _dofmap.size(); ++i)
   {
     PetscInt dof_view = dof_array_view[i];
     _dofmap[i] = old_to_new[dof_view];
@@ -131,10 +131,9 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   // Dimension sanity checks
   assert(_element_dof_layout);
   assert(_dofmap.size()
-         == (std::size_t)(mesh.num_entities(tdim)
-                          * _element_dof_layout->num_dofs()));
+         == (mesh.num_entities(tdim) * _element_dof_layout->num_dofs()));
 
-  return fem::DofMap(_element_dof_layout, _index_map, _dofmap);
+  return fem::DofMap(_element_dof_layout, index_map, _dofmap);
 }
 } // namespace
 
@@ -142,7 +141,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
                const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofmap)
-    : _dofmap(dofmap), _index_map(index_map),
+    : index_map(index_map), _dofmap(dofmap),
       _element_dof_layout(element_dof_layout)
 {
   // Do nothing
@@ -218,9 +217,9 @@ std::pair<std::unique_ptr<DofMap>, std::vector<PetscInt>>
 DofMap::collapse(const mesh::Mesh& mesh) const
 {
   assert(_element_dof_layout);
-  assert(_index_map);
+  assert(index_map);
   std::unique_ptr<DofMap> dofmap_new;
-  if (this->_index_map->block_size == 1
+  if (this->index_map->block_size == 1
       and this->_element_dof_layout->block_size > 1)
   {
     // Create new element dof layout and reset parent
@@ -241,7 +240,7 @@ DofMap::collapse(const mesh::Mesh& mesh) const
   assert(dofmap_new);
 
   // Build map from collapsed dof index to original dof index
-  auto index_map_new = dofmap_new->index_map();
+  auto index_map_new = dofmap_new->index_map;
   std::int32_t size
       = (index_map_new->size_local() + index_map_new->num_ghosts())
         * index_map_new->block_size;
@@ -272,11 +271,6 @@ void DofMap::set(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     x[i] = value;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const common::IndexMap> DofMap::index_map() const
-{
-  return _index_map;
-}
-//-----------------------------------------------------------------------------
 Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
 DofMap::dof_array() const
 {
@@ -290,9 +284,9 @@ std::string DofMap::str(bool verbose) const
     s << "<DofMap view>" << std::endl;
   else
   {
-    assert(_index_map);
+    assert(index_map);
     s << "<DofMap of global dimension "
-      << _index_map->size_global() * _index_map->block_size << ">" << std::endl;
+      << index_map->size_global() * index_map->block_size << ">" << std::endl;
   }
 
   if (verbose)
@@ -325,16 +319,16 @@ Eigen::Array<std::size_t, Eigen::Dynamic, 1>
 DofMap::tabulate_local_to_global_dofs() const
 {
   // FIXME: use common::IndexMap::local_to_global_index?
-  assert(_index_map);
-  const int bs = _index_map->block_size;
+  assert(index_map);
+  const int bs = index_map->block_size;
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& local_to_global_unowned
-      = _index_map->ghosts();
-  const std::int32_t local_ownership_size = bs * _index_map->size_local();
+      = index_map->ghosts();
+  const std::int32_t local_ownership_size = bs * index_map->size_local();
 
   Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map(
-      bs * (_index_map->size_local() + _index_map->num_ghosts()));
+      bs * (index_map->size_local() + index_map->num_ghosts()));
 
-  const std::int64_t global_offset = bs * _index_map->local_range()[0];
+  const std::int64_t global_offset = bs * index_map->local_range()[0];
   for (std::int32_t i = 0; i < local_ownership_size; ++i)
     local_to_global_map[i] = i + global_offset;
 
