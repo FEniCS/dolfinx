@@ -184,10 +184,10 @@ void VTKWriter::write_cell_data(const function::Function& u,
                                 std::string filename)
 {
   // For brevity
-  assert(u.function_space()->mesh());
-  assert(u.function_space()->dofmap());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  const fem::DofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->mesh);
+  assert(u.function_space()->dofmap);
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
 

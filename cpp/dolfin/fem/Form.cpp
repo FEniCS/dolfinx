@@ -33,10 +33,10 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
 {
   // Set _mesh from function::FunctionSpace, and check they are the same
   if (!function_spaces.empty())
-    _mesh = function_spaces[0]->mesh();
-  for (auto& f : function_spaces)
+    _mesh = function_spaces[0]->mesh;
+  for (auto& V : function_spaces)
   {
-    if (_mesh != f->mesh())
+    if (_mesh != V->mesh)
       throw std::runtime_error("Incompatible mesh");
   }
 
@@ -80,9 +80,9 @@ std::size_t Form::max_element_tensor_size() const
   std::size_t num_entries = 1;
   for (auto& V : _function_spaces)
   {
-    assert(V->dofmap());
-    assert(V->dofmap()->element_dof_layout);
-    num_entries *= V->dofmap()->element_dof_layout->num_dofs();
+    assert(V->dofmap);
+    assert(V->dofmap->element_dof_layout);
+    num_entries *= V->dofmap->element_dof_layout->num_dofs();
   }
   return num_entries;
 }

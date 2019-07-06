@@ -286,18 +286,18 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
                             const std::vector<std::int32_t>& facets)
 {
   // Get mesh
-  assert(V.mesh());
-  const mesh::Mesh& mesh = *V.mesh();
+  assert(V.mesh);
+  const mesh::Mesh& mesh = *V.mesh;
   const std::size_t tdim = mesh.topology().dim();
 
   // Get dofmap
-  assert(V.dofmap());
-  const DofMap& dofmap = *V.dofmap();
+  assert(V.dofmap);
+  const DofMap& dofmap = *V.dofmap;
   const DofMap* dofmap_g = &dofmap;
   if (Vg)
   {
-    assert(Vg->dofmap());
-    dofmap_g = Vg->dofmap().get();
+    assert(Vg->dofmap);
+    dofmap_g = Vg->dofmap.get();
   }
 
   // Initialise facet-cell connectivity
@@ -360,7 +360,7 @@ DirichletBC::DirichletBC(
             const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
         bool only_boundary)>& mark,
     Method method)
-    : DirichletBC(V, g, marked_facets(*V->mesh(), mark), method)
+    : DirichletBC(V, g, marked_facets(*V->mesh, mark), method)
 {
   // Do nothing
 }
@@ -376,16 +376,16 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   assert(g->function_space());
   if (V != g->function_space())
   {
-    assert(V->mesh());
-    assert(g->function_space()->mesh());
-    if (V->mesh() != g->function_space()->mesh())
+    assert(V->mesh);
+    assert(g->function_space()->mesh);
+    if (V->mesh != g->function_space()->mesh)
     {
       throw std::runtime_error("Boundary condition function and constrained "
                                "function do not share mesh.");
     }
 
-    assert(g->function_space()->element());
-    if (!V->has_element(*g->function_space()->element()))
+    assert(g->function_space()->element);
+    if (!V->has_element(*g->function_space()->element))
     {
       throw std::runtime_error("Boundary condition function and constrained "
                                "function do not have same element.");
@@ -417,8 +417,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   // were found by other processes, e.g. a vertex dof on this process that
   // has no connected factes on the boundary.
   const std::vector<std::array<PetscInt, 2>> dofs_remote
-      = get_remote_bcs(*V->dofmap()->index_map,
-                       *g->function_space()->dofmap()->index_map, dofs_local);
+      = get_remote_bcs(*V->dofmap->index_map,
+                       *g->function_space()->dofmap->index_map, dofs_local);
 
   // Add received bc indices to dofs_local
   for (auto& dof_remote : dofs_remote)
@@ -529,26 +529,26 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //                                        const std::vector<std::int32_t>&
 //                                        facets)
 // {
-//   assert(V.element());
+//   assert(V.element);
 
 //   // Get mesh
-//   assert(V.mesh());
-//   const mesh::Mesh& mesh = *V.mesh();
+//   assert(V.mesh);
+//   const mesh::Mesh& mesh = *V.mesh;
 
 //   // Get dofmap
-//   assert(V.dofmap());
-//   const DofMap& dofmap = *V.dofmap();
+//   assert(V.dofmap);
+//   const DofMap& dofmap = *V.dofmap;
 
 //   const DofMap* dofmap_g = &dofmap;
 //   if (Vg)
 //   {
-//     assert(Vg->dofmap());
-//     dofmap_g = Vg->dofmap().get();
+//     assert(Vg->dofmap);
+//     dofmap_g = Vg->dofmap.get();
 //   }
 
 //   // Get finite element
-//   assert(V.element());
-//   const FiniteElement& element = *V.element();
+//   assert(V.element);
+//   const FiniteElement& element = *V.element;
 
 //   // Initialize facets, needed for geometric search
 //   // glog::info("Computing facets, needed for geometric application of

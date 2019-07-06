@@ -822,11 +822,11 @@ void HDF5File::write(const function::Function& u, const std::string name)
   assert(_hdf5_file_id > 0);
 
   // Get mesh and dofmap
-  assert(u.function_space()->mesh());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  assert(u.function_space()->mesh);
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
 
-  assert(u.function_space()->dofmap());
-  const fem::DofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->dofmap);
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
 
   // FIXME:
   // Possibly sort cell_dofs into global cell order before writing?
@@ -881,7 +881,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
   write_data(name + "/cells", cells, global_size, mpi_io);
 
   HDF5Interface::add_attribute(_hdf5_file_id, name, "signature",
-                               u.function_space()->element()->signature());
+                               u.function_space()->element->signature());
 
   // Save vector
   write(u.vector(), name + "/vector_0");
@@ -967,10 +967,10 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
-  assert(u.function_space()->mesh());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  assert(u.function_space()->dofmap());
-  const fem::DofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->mesh);
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
+  assert(u.function_space()->dofmap);
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
 
   // Get dimension of dataset
   const std::vector<std::int64_t> dataset_shape
