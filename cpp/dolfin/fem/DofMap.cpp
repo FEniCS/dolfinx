@@ -258,35 +258,6 @@ std::string DofMap::str(bool verbose) const
   return s.str();
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<std::size_t, Eigen::Dynamic, 1>
-DofMap::tabulate_local_to_global_dofs() const
-{
-  // FIXME: use common::IndexMap::local_to_global_index?
-  assert(index_map);
-  const int bs = index_map->block_size;
-  const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& local_to_global_unowned
-      = index_map->ghosts();
-  const std::int32_t local_ownership_size = bs * index_map->size_local();
-
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map(
-      bs * (index_map->size_local() + index_map->num_ghosts()));
-
-  const std::int64_t global_offset = bs * index_map->local_range()[0];
-  for (std::int32_t i = 0; i < local_ownership_size; ++i)
-    local_to_global_map[i] = i + global_offset;
-
-  for (Eigen::Index node = 0; node < local_to_global_unowned.size(); ++node)
-  {
-    for (int component = 0; component < bs; ++component)
-    {
-      local_to_global_map[bs * node + component + local_ownership_size]
-          = bs * local_to_global_unowned[node] + component;
-    }
-  }
-
-  return local_to_global_map;
-}
-//-----------------------------------------------------------------------------
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
                                                        std::size_t dim) const
 {

@@ -128,11 +128,6 @@ public:
   Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array() const;
 
   // FIXME: can this be removed?
-  /// Tabulate map between local (process) and global dof indices
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1>
-  tabulate_local_to_global_dofs() const;
-
-  // FIXME: can this be removed?
   /// Return list of dof indices on this process that belong to mesh
   /// entities of dimension dim
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,

@@ -11,6 +11,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdio>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/log.h>
@@ -839,8 +840,8 @@ void HDF5File::write(const function::Function& u, const std::string name)
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
-      = dofmap.tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map
+      = dofmap.index_map->indices(true);
 
   for (std::size_t i = 0; i != n_cells; ++i)
   {

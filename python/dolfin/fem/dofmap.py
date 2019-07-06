@@ -44,9 +44,6 @@ class DofMap:
     def dofs(self, mesh, entity_dim: int):
         return self._cpp_object.dofs(mesh, entity_dim)
 
-    def tabulate_local_to_global_dofs(self):
-        return self._cpp_object.tabulate_local_to_global_dofs()
-
     def set(self, x, value):
         self._cpp_object.set(x, value)
 

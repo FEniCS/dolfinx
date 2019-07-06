@@ -65,10 +65,10 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
       = V1.dofmap()->dofs(mesh, 0);
 
   // Build maps from local dof numbering to global
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map0
-      = V0.dofmap()->tabulate_local_to_global_dofs();
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map1
-      = V1.dofmap()->tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map0
+      = V0.dofmap()->index_map->indices(true);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map1
+      = V1.dofmap()->index_map->indices(true);
 
   // Initialize edge -> vertex connections
   mesh.create_connectivity(1, 0);

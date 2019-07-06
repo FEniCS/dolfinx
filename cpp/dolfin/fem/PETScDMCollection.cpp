@@ -54,10 +54,10 @@ struct lt_coordinate
   const double TOL;
 };
 
-std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+std::map<std::vector<double>, std::vector<std::int64_t>, lt_coordinate>
 tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 {
-  std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+  std::map<std::vector<double>, std::vector<std::int64_t>, lt_coordinate>
       coords_to_dofs(lt_coordinate(1.0e-12));
 
   // Extract mesh, dofmap and element
@@ -67,8 +67,8 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
   const fem::DofMap& dofmap = *V.dofmap();
   const fem::FiniteElement& element = *V.element();
   const mesh::Mesh& mesh = *V.mesh();
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global
-      = dofmap.tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global
+      = dofmap.index_map->indices(true);
 
   // Geometric dimension
   const int gdim = mesh.geometry().dim();
@@ -249,7 +249,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   std::shared_ptr<const fem::DofMap> finemap = fine_space.dofmap();
 
   // Create map from coordinates to dofs sharing that coordinate
-  std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+  std::map<std::vector<double>, std::vector<std::int64_t>, lt_coordinate>
       coords_to_dofs = tabulate_coordinates_to_dofs(fine_space);
 
   // Global dimensions of the dofs and of the transfer matrix (M-by-N,
@@ -514,8 +514,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Initialise local to global dof maps (needed to allocate the
   // entries of the transfer matrix with the correct global indices)
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> coarse_local_to_global_dofs
-      = coarsemap->tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> coarse_local_to_global_dofs
+      = coarsemap->index_map->indices(true);
 
   // Loop over the found coarse cells
   Eigen::Map<const EigenRowArrayXXd> x(found_points.data(), found_ids.size(),

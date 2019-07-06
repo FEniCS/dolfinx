@@ -66,6 +66,25 @@ IndexMap::ghost_owners() const
   return _ghost_owners;
 }
 //----------------------------------------------------------------------------
+Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
+IndexMap::indices(bool unroll_block) const
+{
+  const int bs = unroll_block ? this->block_size : 1;
+  const std::array<std::int64_t, 2> local_range = this->local_range();
+  const std::int32_t size_local = this->size_local() * bs;
+
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indx(size_local
+                                                    + num_ghosts() * bs);
+  std::iota(indx.data(), indx.data() + size_local, bs*local_range[0]);
+  for (Eigen::Index i = 0; i < num_ghosts(); ++i)
+  {
+    for (Eigen::Index j = 0; j < bs; ++j)
+      indx[size_local + j] = bs * _ghosts[i] + j;
+  }
+
+  return indx;
+}
+//----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }
 //----------------------------------------------------------------------------
 void IndexMap::scatter_fwd(const std::vector<std::int64_t>& local_data,
