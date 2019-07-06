@@ -79,7 +79,7 @@ IndexMap::indices(bool unroll_block) const
   for (Eigen::Index i = 0; i < num_ghosts(); ++i)
   {
     for (Eigen::Index j = 0; j < bs; ++j)
-      indx[size_local + j] = bs * _ghosts[i] + j;
+      indx[size_local + bs*i + j] = bs * _ghosts[i] + j;
   }
 
   return indx;
