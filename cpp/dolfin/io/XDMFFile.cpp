@@ -72,7 +72,7 @@ std::string rank_to_string(std::size_t value_rank)
 // Returns true for DG0 function::Functions
 bool has_cell_centred_data(const function::Function& u)
 {
-  std::size_t cell_based_dim = 1;
+  int cell_based_dim = 1;
   for (int i = 0; i < u.value_rank(); i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
 
