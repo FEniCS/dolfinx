@@ -326,7 +326,7 @@ void results_write(const function::Function& u, std::string vtu_filename)
   // Test for cell-based element type
   assert(u.function_space()->mesh());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
-  std::size_t cell_based_dim = 1;
+  int cell_based_dim = 1;
   for (std::size_t i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
 
@@ -602,7 +602,7 @@ void pvtu_write(const function::Function& u, const std::string filename,
                 const std::string fname, const std::size_t counter)
 {
   assert(u.function_space()->element());
-  const std::size_t rank = u.function_space()->element()->value_rank();
+  const int rank = u.function_space()->element()->value_rank();
   if (rank > 2)
   {
     throw std::runtime_error(
@@ -610,7 +610,7 @@ void pvtu_write(const function::Function& u, const std::string filename,
   }
 
   // Get number of components
-  const std::size_t dim = u.value_size();
+  const int dim = u.value_size();
 
   // Get mesh
   assert(u.function_space()->mesh());
@@ -618,9 +618,9 @@ void pvtu_write(const function::Function& u, const std::string filename,
 
   // Test for cell-based element type
   std::string data_type = "point";
-  std::size_t cell_based_dim = 1;
+  int cell_based_dim = 1;
   assert(u.function_space()->dofmap());
-  for (std::size_t i = 0; i < rank; i++)
+  for (int i = 0; i < rank; i++)
     cell_based_dim *= mesh.topology().dim();
   assert(u.function_space()->dofmap()->element_dof_layout);
   if (u.function_space()->dofmap()->element_dof_layout->num_dofs()
@@ -629,7 +629,7 @@ void pvtu_write(const function::Function& u, const std::string filename,
     data_type = "cell";
   }
 
-  const std::size_t num_processes = MPI::size(mesh.mpi_comm());
+  const int num_processes = MPI::size(mesh.mpi_comm());
   pvtu_write_function(dim, rank, data_type, "u", filename, fname, counter,
                       num_processes);
 }
