@@ -46,7 +46,7 @@ from .cpp.mesh import (Mesh, Topology, Geometry, CellType, Cell, Facet,
                        Face, Edge, Vertex, MeshEntity, Cells, Facets, Faces,
                        Edges, Vertices, MeshEntities, CellRange, FacetRange,
                        FaceRange, EdgeRange, VertexRange, EntityRange,
-                       SubDomain, MeshQuality)
+                       MeshQuality)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
 

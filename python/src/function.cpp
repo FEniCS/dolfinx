@@ -7,7 +7,7 @@
 #include "casters.h"
 #include <cstdint>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -138,7 +138,7 @@ void function(py::module& m)
       m, "FunctionSpace", py::dynamic_attr())
       .def(py::init<std::shared_ptr<dolfin::mesh::Mesh>,
                     std::shared_ptr<dolfin::fem::FiniteElement>,
-                    std::shared_ptr<dolfin::fem::GenericDofMap>>())
+                    std::shared_ptr<dolfin::fem::DofMap>>())
       .def_readonly("id", &dolfin::function::FunctionSpace::id)
       .def("__eq__", &dolfin::function::FunctionSpace::operator==)
       .def("dim", &dolfin::function::FunctionSpace::dim)

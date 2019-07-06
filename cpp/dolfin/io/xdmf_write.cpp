@@ -14,7 +14,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/log.h>
 #include <dolfin/common/utils.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
@@ -696,7 +696,7 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   // dofmaps (cell_dofs)
 
   assert(u.function_space()->dofmap());
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
 
   const std::size_t tdim = mesh.topology().dim();
   std::vector<PetscInt> cell_dofs;

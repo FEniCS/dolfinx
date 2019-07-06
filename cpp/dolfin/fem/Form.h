@@ -70,23 +70,22 @@ namespace fem
 class Form
 {
 public:
-  /// Create form (shared data)
-  ///
-  /// @param[in] ufc_form (ufc_form)
-  ///         The UFC form.
-  /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
-  ///         Vector of function spaces.
-  Form(const ufc_form& ufc_form,
-       const std::vector<std::shared_ptr<const function::FunctionSpace>>
-           function_spaces);
+  /// Create form
+  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+           function_spaces,
+       const FormIntegrals& integrals, const FormCoefficients& coefficients,
+       std::shared_ptr<const CoordinateMapping> coord_mapping);
 
   /// Create form (no UFC integrals). Integrals can be attached later
   /// using FormIntegrals::set_cell_tabulate_tensor. Experimental.
   ///
   /// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
   ///         Vector of function spaces.
-  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>
+  Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces);
+
+  /// Move constructor
+  Form(Form&& form) = default;
 
   /// Destructor
   virtual ~Form() = default;

@@ -14,7 +14,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/log.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
@@ -270,9 +270,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
           mesh.geometry().global_indices());
     }
 
-    Eigen::Map<
-        Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        varray(_vertex_coords.data(), _vertex_coords.size() / 3, 3);
+    Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> varray(
+        _vertex_coords.data(), _vertex_coords.size() / 3, 3);
 
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         vertex_coords(varray.rows(), gdim);
@@ -826,7 +825,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
   const mesh::Mesh& mesh = *u.function_space()->mesh();
 
   assert(u.function_space()->dofmap());
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
 
   // FIXME:
   // Possibly sort cell_dofs into global cell order before writing?
@@ -970,7 +969,7 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
   assert(u.function_space()->mesh());
   const mesh::Mesh& mesh = *u.function_space()->mesh();
   assert(u.function_space()->dofmap());
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  const fem::DofMap& dofmap = *u.function_space()->dofmap();
 
   // Get dimension of dataset
   const std::vector<std::int64_t> dataset_shape

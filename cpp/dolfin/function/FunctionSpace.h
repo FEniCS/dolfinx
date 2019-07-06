@@ -21,7 +21,7 @@ namespace dolfin
 
 namespace fem
 {
-class GenericDofMap;
+class DofMap;
 }
 
 namespace mesh
@@ -47,11 +47,11 @@ public:
   ///         The mesh.
   /// @param    element (_FiniteElement_)
   ///         The element.
-  /// @param    dofmap (_GenericDofMap_)
+  /// @param    dofmap (_DofMap_)
   ///         The dofmap.
   FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                 std::shared_ptr<const fem::FiniteElement> element,
-                std::shared_ptr<const fem::GenericDofMap> dofmap);
+                std::shared_ptr<const fem::DofMap> dofmap);
 
   // Copy constructor (deleted)
   FunctionSpace(const FunctionSpace& V) = delete;
@@ -94,12 +94,11 @@ public:
 
   /// Return dofmap
   ///
-  /// @returns _GenericDofMap_
+  /// @returns _DofMap_
   ///         The dofmap.
-  std::shared_ptr<const fem::GenericDofMap> dofmap() const;
+  std::shared_ptr<const fem::DofMap> dofmap() const;
 
   /// Return global dimension of the function space.
-  /// Equivalent to dofmap()->global_dimension()
   ///
   /// @returns    std::size_t
   ///         The dimension of the function space.
@@ -140,8 +139,7 @@ public:
   ///
   /// @returns    _FunctionSpace_
   ///         The subspace.
-  std::shared_ptr<FunctionSpace>
-  sub(const std::vector<int>& component) const;
+  std::shared_ptr<FunctionSpace> sub(const std::vector<int>& component) const;
 
   /// Check whether V is subspace of this, or this itself
   ///
@@ -218,18 +216,6 @@ public:
   void set_x(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
              PetscScalar value, int component) const;
 
-  /// Return informal string representation (pretty-print)
-  ///
-  /// @param    verbose (bool)
-  ///         Flag to turn on additional output.
-  ///
-  /// @returns    std::string
-  ///         An informal representation of the function space.
-  std::string str(bool verbose) const;
-
-  /// Print dofmap (useful for debugging)
-  void print_dofmap() const;
-
   /// Unique identifier
   const std::size_t id;
 
@@ -247,7 +233,7 @@ private:
   std::shared_ptr<const fem::FiniteElement> _element;
 
   // The dofmap
-  std::shared_ptr<const fem::GenericDofMap> _dofmap;
+  std::shared_ptr<const fem::DofMap> _dofmap;
 
   // The component w.r.t. to root space
   std::vector<int> _component;
@@ -256,8 +242,7 @@ private:
   std::size_t _root_space_id;
 
   // Cache of subspaces
-  mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>>
-      _subspaces;
+  mutable std::map<std::vector<int>, std::weak_ptr<FunctionSpace>> _subspaces;
 };
 } // namespace function
 } // namespace dolfin

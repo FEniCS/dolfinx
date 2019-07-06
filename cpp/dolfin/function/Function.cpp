@@ -13,8 +13,8 @@
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/CoordinateMapping.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
@@ -38,7 +38,7 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
 
   // Get dof map
   assert(V.dofmap());
-  const fem::GenericDofMap& dofmap = *(V.dofmap());
+  const fem::DofMap& dofmap = *(V.dofmap());
 
   // Check that function space is not a subspace (view)
   if (dofmap.is_view())
@@ -79,7 +79,9 @@ Function::Function(std::shared_ptr<const FunctionSpace> V, Vec x)
 
   // Assertion uses '<=' to deal with sub-functions
   assert(V->dofmap());
-  assert(V->dofmap()->global_dimension() <= _vector.size());
+  assert(V->dofmap()->index_map()->size_global()
+             * V->dofmap()->index_map()->block_size
+         <= _vector.size());
 }
 //-----------------------------------------------------------------------------
 Function Function::sub(int i) const
@@ -129,10 +131,12 @@ std::shared_ptr<const FunctionSpace> Function::function_space() const
 //-----------------------------------------------------------------------------
 la::PETScVector& Function::vector()
 {
-  assert(_function_space->dofmap());
-
   // Check that this is not a sub function.
-  if (_vector.size() != _function_space->dofmap()->global_dimension())
+  assert(_function_space->dofmap());
+  assert(_function_space->dofmap()->index_map());
+  if (_vector.size()
+      != _function_space->dofmap()->index_map()->size_global()
+             * _function_space->dofmap()->index_map()->block_size)
   {
     throw std::runtime_error(
         "Cannot access a non-const vector from a subfunction");
@@ -343,7 +347,7 @@ void Function::restrict(
   assert(_function_space->dofmap());
 
   // Get dofmap for cell
-  const fem::GenericDofMap& dofmap = *_function_space->dofmap();
+  const fem::DofMap& dofmap = *_function_space->dofmap();
   auto dofs = dofmap.cell_dofs(dolfin_cell.index());
 
   // Pick values from vector(s)

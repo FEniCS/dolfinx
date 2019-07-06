@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (MPI, Cells, CellType, FunctionSpace, SubDomain,
+from dolfin import (MPI, Cells, CellType, FunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     VectorFunctionSpace, cpp, fem)
 from dolfin_utils.test.fixtures import fixture
@@ -129,16 +129,8 @@ def test_tabulate_dofs(mesh_factory):
                      (UnitSquareMesh,
                       (MPI.comm_world, 4, 4, CellType.Type.quadrilateral))])
 def test_tabulate_coord_periodic(mesh_factory):
-    class PeriodicBoundary2(SubDomain):
-        def inside(self, x, on_boundary):
-            return x[0] < np.finfo(float).eps
-
-        def map(self, x, y):
-            y[0] = x[0] - 1.0
-            y[1] = x[1]
-
-    # Create periodic boundary condition
-    periodic_boundary = PeriodicBoundary2()
+    def periodic_boundary(x):
+        return x[0] < np.finfo(float).eps
 
     func, args = mesh_factory
     mesh = func(*args)
@@ -332,7 +324,7 @@ def test_block_size(mesh):
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
         V = FunctionSpace(mesh, P2)
-        assert V.dofmap().block_size() == 1
+        assert V.dofmap().block_size == 1
 
         V = FunctionSpace(mesh, P2 * P2)
         assert V.dofmap().index_map.block_size == 2
@@ -442,7 +434,7 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
         marks=pytest.mark.xfail)
 ])
 def test_dofs_dim(space):
-    """Test function GenericDofMap::dofs(mesh, dim)"""
+    """Test function DofMap::dofs(mesh, dim)"""
     V = eval(space)
     dofmap = V.dofmap()
     mesh = V.mesh()
