@@ -502,67 +502,6 @@ void distribute_cell_layer(
   }
 }
 //-----------------------------------------------------------------------------
-// Compute cell partitioning from local mesh data. Returns a vector
-// 'cell -> process' vector for cells, and a map 'local cell index ->
-// processes' to which ghost cells must be sent
-PartitionData
-partition_cells(const MPI_Comm& mpi_comm, int nparts,
-                const mesh::CellType::Type type,
-                const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-                const std::string partitioner)
-{
-  LOG(INFO) << "Compute partition of cells across processes";
-  if (MPI_COMM_NULL != mpi_comm)
-  {
-    std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
-    assert(cell_type);
-
-    // Compute dual graph (for this partition)
-    std::vector<std::vector<std::size_t>> local_graph;
-    std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
-    std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
-        mpi_comm, cell_vertices, *cell_type);
-
-    const std::size_t global_graph_size
-        = MPI::sum(mpi_comm, local_graph.size());
-    const std::size_t num_processes = MPI::size(mpi_comm);
-
-    // Require at least two cells per processor for mesh partitioning in
-    // parallel. Partitioning small graphs may lead to segfaults or MPI
-    // processes with 0 cells.
-    if (num_processes > 1 and global_graph_size / nparts < 2)
-    {
-      throw std::runtime_error("Cannot partition a graph of size "
-                               + std::to_string(global_graph_size) + " into "
-                               + std::to_string(nparts) + " parts.");
-    }
-
-    // Compute cell partition using partitioner from parameter system
-    if (partitioner == "SCOTCH")
-    {
-      graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
-      std::vector<std::size_t> weights;
-      const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
-      return PartitionData(graph::SCOTCH::partition(
-          mpi_comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes));
-    }
-    else if (partitioner == "ParMETIS")
-    {
-#ifdef HAS_PARMETIS
-      graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
-      return PartitionData(graph::ParMETIS::partition(mpi_comm, csr_graph));
-#else
-      throw std::runtime_error("ParMETIS not available");
-#endif
-    }
-    else
-      throw std::runtime_error("Unknown graph partitioner");
-
-    return PartitionData({}, {});
-  }
-  return PartitionData({}, {});
-}
-//-----------------------------------------------------------------------------
 // // FIXME: make clearer what goes in and what comes out
 // // Reorder cells by Gibbs-Poole-Stockmeyer algorithm (via SCOTCH).
 // // Returns the tuple (reordered_shared_cells, reordered_cell_vertices,
@@ -655,6 +594,67 @@ partition_cells(const MPI_Comm& mpi_comm, int nparts,
 
 } // namespace
 
+//-----------------------------------------------------------------------------
+// Compute cell partitioning from local mesh data. Returns a vector
+// 'cell -> process' vector for cells, and a map 'local cell index ->
+// processes' to which ghost cells must be sent
+PartitionData Partitioning::partition_cells(
+    const MPI_Comm& mpi_comm, int nparts, const mesh::CellType::Type type,
+    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
+    const std::string partitioner)
+{
+  LOG(INFO) << "Compute partition of cells across processes";
+
+  if (mpi_comm != MPI_COMM_NULL)
+  {
+    std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
+    assert(cell_type);
+
+    // Compute dual graph (for this partition)
+    std::vector<std::vector<std::size_t>> local_graph;
+    std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
+    std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
+        mpi_comm, cell_vertices, *cell_type);
+
+    const std::size_t global_graph_size
+        = MPI::sum(mpi_comm, local_graph.size());
+    const std::size_t num_processes = MPI::size(mpi_comm);
+
+    // Require at least two cells per processor for mesh partitioning in
+    // parallel. Partitioning small graphs may lead to segfaults or MPI
+    // processes with 0 cells.
+    if (num_processes > 1 and global_graph_size / nparts < 2)
+    {
+      throw std::runtime_error("Cannot partition a graph of size "
+                               + std::to_string(global_graph_size) + " into "
+                               + std::to_string(nparts) + " parts.");
+    }
+
+    // Compute cell partition using partitioner from parameter system
+    if (partitioner == "SCOTCH")
+    {
+      graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
+      std::vector<std::size_t> weights;
+      const std::int32_t num_ghost_nodes = std::get<0>(graph_info);
+      return PartitionData(graph::SCOTCH::partition(
+          mpi_comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes));
+    }
+    else if (partitioner == "ParMETIS")
+    {
+#ifdef HAS_PARMETIS
+      graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
+      return PartitionData(graph::ParMETIS::partition(mpi_comm, csr_graph));
+#else
+      throw std::runtime_error("ParMETIS not available");
+#endif
+    }
+    else
+      throw std::runtime_error("Unknown graph partitioner");
+
+    return PartitionData({}, {});
+  }
+  return PartitionData({}, {});
+}
 //-----------------------------------------------------------------------------
 // Build a distributed mesh from local mesh data with a computed
 // partition

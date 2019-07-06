@@ -1399,7 +1399,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
       = xdmf_utils::get_dataset_shape(topology_data_node);
   const std::size_t npoint_per_cell = tdims[1];
 
-  if (MPI_COMM_NULL != comm)
+  if (comm != MPI_COMM_NULL)
   {
     // Geometry data
     const auto geometry_data
