@@ -97,13 +97,13 @@ int ElementDofLayout::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_entity_dofs(int dim) const
 {
-  assert(dim < _num_entity_dofs.size());
+  assert(dim < (int)_num_entity_dofs.size());
   return _num_entity_dofs[dim];
 }
 //-----------------------------------------------------------------------------
 int ElementDofLayout::num_entity_closure_dofs(int dim) const
 {
-  assert(dim < _num_entity_closure_dofs.size());
+  assert(dim < (int)_num_entity_closure_dofs.size());
   return _num_entity_closure_dofs[dim];
 }
 //-----------------------------------------------------------------------------

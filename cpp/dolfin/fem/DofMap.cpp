@@ -28,6 +28,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 {
   auto element_dof_layout = std::make_shared<ElementDofLayout>(
       *dofmap_view.element_dof_layout, true);
+  assert(element_dof_layout);
 
   if (dofmap_view.index_map->block_size == 1
       and element_dof_layout->block_size > 1)
@@ -249,8 +250,9 @@ DofMap::dof_array() const
 //-----------------------------------------------------------------------------
 std::string DofMap::str(bool verbose) const
 {
-  std::stringstream s;
   assert(element_dof_layout);
+
+  std::stringstream s;
   if (element_dof_layout->is_view())
     s << "<DofMap view>" << std::endl;
   else
