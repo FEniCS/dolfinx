@@ -160,12 +160,18 @@ void fem(py::module& m)
   // dolfin::fem::ElementDofLayout
   py::class_<dolfin::fem::ElementDofLayout,
              std::shared_ptr<dolfin::fem::ElementDofLayout>>(
-      m, "ElementDofLayout", "Object describing the layout of dofs on a cell");
+      m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
+      .def_property_readonly("num_dofs",
+                             &dolfin::fem::ElementDofLayout::num_dofs)
+      .def("num_entity_dofs", &dolfin::fem::ElementDofLayout::num_entity_dofs)
+      .def("num_entity_closure_dofs",
+           &dolfin::fem::ElementDofLayout::num_entity_closure_dofs);
 
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>>(
       m, "DofMap", "DofMap object")
       .def_readonly("index_map", &dolfin::fem::DofMap::index_map)
+      .def_readonly("dof_layout", &dolfin::fem::DofMap::element_dof_layout)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs)
       .def("dofs", &dolfin::fem::DofMap::dofs)
       .def("tabulate_local_to_global_dofs",

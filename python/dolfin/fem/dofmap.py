@@ -50,9 +50,6 @@ class DofMap:
     def entity_dofs(self, mesh, entity_dim: int, entity_index: int):
         return self._cpp_object.entity_dofs(mesh, entity_dim, entity_index)
 
-    def num_entity_dofs(self, entity_dim: int):
-        return self._cpp_object.num_entity_dofs(entity_dim)
-
     def tabulate_local_to_global_dofs(self):
         return self._cpp_object.tabulate_local_to_global_dofs()
 
@@ -60,13 +57,17 @@ class DofMap:
         return self._cpp_object.tabulate_entity_dofs(entity_dim,
                                                      cell_entity_index)
 
-    @property
-    def dof_array(self):
-        return self._cpp_object.dof_array()
-
     def set(self, x, value):
         self._cpp_object.set(x, value)
 
     @property
+    def dof_layout(self):
+        return self._cpp_object.dof_layout
+
+    @property
     def index_map(self):
         return self._cpp_object.index_map
+
+    @property
+    def dof_array(self):
+        return self._cpp_object.dof_array()

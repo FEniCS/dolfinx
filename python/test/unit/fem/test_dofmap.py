@@ -190,34 +190,34 @@ def test_global_dof_builder(mesh_factory):
 def test_entity_dofs(mesh):
     """Test that num entity dofs is correctly wrapped to dolfin::DofMap"""
     V = FunctionSpace(mesh, ("CG", 1))
-    assert V.dofmap().num_entity_dofs(0) == 1
-    assert V.dofmap().num_entity_dofs(1) == 0
-    assert V.dofmap().num_entity_dofs(2) == 0
+    assert V.dofmap().dof_layout.num_entity_dofs(0) == 1
+    assert V.dofmap().dof_layout.num_entity_dofs(1) == 0
+    assert V.dofmap().dof_layout.num_entity_dofs(2) == 0
 
     V = VectorFunctionSpace(mesh, ("CG", 1))
-    assert V.dofmap().num_entity_dofs(0) == 2
-    assert V.dofmap().num_entity_dofs(1) == 0
-    assert V.dofmap().num_entity_dofs(2) == 0
+    assert V.dofmap().dof_layout.num_entity_dofs(0) == 2
+    assert V.dofmap().dof_layout.num_entity_dofs(1) == 0
+    assert V.dofmap().dof_layout.num_entity_dofs(2) == 0
 
     V = FunctionSpace(mesh, ("CG", 2))
-    assert V.dofmap().num_entity_dofs(0) == 1
-    assert V.dofmap().num_entity_dofs(1) == 1
-    assert V.dofmap().num_entity_dofs(2) == 0
+    assert V.dofmap().dof_layout.num_entity_dofs(0) == 1
+    assert V.dofmap().dof_layout.num_entity_dofs(1) == 1
+    assert V.dofmap().dof_layout.num_entity_dofs(2) == 0
 
     V = FunctionSpace(mesh, ("CG", 3))
-    assert V.dofmap().num_entity_dofs(0) == 1
-    assert V.dofmap().num_entity_dofs(1) == 2
-    assert V.dofmap().num_entity_dofs(2) == 1
+    assert V.dofmap().dof_layout.num_entity_dofs(0) == 1
+    assert V.dofmap().dof_layout.num_entity_dofs(1) == 2
+    assert V.dofmap().dof_layout.num_entity_dofs(2) == 1
 
     V = FunctionSpace(mesh, ("DG", 0))
-    assert V.dofmap().num_entity_dofs(0) == 0
-    assert V.dofmap().num_entity_dofs(1) == 0
-    assert V.dofmap().num_entity_dofs(2) == 1
+    assert V.dofmap().dof_layout.num_entity_dofs(0) == 0
+    assert V.dofmap().dof_layout.num_entity_dofs(1) == 0
+    assert V.dofmap().dof_layout.num_entity_dofs(2) == 1
 
     V = FunctionSpace(mesh, ("DG", 1))
-    assert V.dofmap().num_entity_dofs(0) == 0
-    assert V.dofmap().num_entity_dofs(1) == 0
-    assert V.dofmap().num_entity_dofs(2) == 3
+    assert V.dofmap().dof_layout.num_entity_dofs(0) == 0
+    assert V.dofmap().dof_layout.num_entity_dofs(1) == 0
+    assert V.dofmap().dof_layout.num_entity_dofs(2) == 3
 
     V = VectorFunctionSpace(mesh, ("CG", 1))
 
@@ -253,7 +253,7 @@ def test_entity_closure_dofs(mesh_factory):
                 dofs_on_this_entity = V.dofmap().entity_dofs(mesh, d, entities)
                 closure_dofs = V.dofmap().entity_closure_dofs(
                     mesh, d, entities)
-                assert len(dofs_on_this_entity) == V.dofmap().num_entity_dofs(
+                assert len(dofs_on_this_entity) == V.dofmap().dof_layout.num_entity_dofs(
                     d)
                 assert len(dofs_on_this_entity) <= len(closure_dofs)
                 covered.update(dofs_on_this_entity)
@@ -262,7 +262,7 @@ def test_entity_closure_dofs(mesh_factory):
                 mesh, d, all_entities)
             closure_dofs_on_all_entities = V.dofmap().entity_closure_dofs(
                 mesh, d, all_entities)
-            assert len(dofs_on_all_entities) == V.dofmap().num_entity_dofs(
+            assert len(dofs_on_all_entities) == V.dofmap().dof_layout.num_entity_dofs(
                 d) * mesh.num_entities(d)
             assert covered == set(dofs_on_all_entities)
             assert covered2 == set(closure_dofs_on_all_entities)
@@ -442,7 +442,7 @@ def test_dofs_dim(space):
         edofs = dofmap.dofs(mesh, dim)
         if mesh.topology.connectivity(dim, 0) is not None:
             num_mesh_entities = mesh.num_entities(dim)
-            dofs_per_entity = dofmap.num_entity_dofs(dim)
+            dofs_per_entity = dofmap.dof_layout.num_entity_dofs(dim)
             assert len(edofs) == dofs_per_entity * num_mesh_entities
 
 
