@@ -114,8 +114,8 @@ public:
   Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
   cell_dofs(std::size_t cell_index) const
   {
-    assert(_element_dof_layout);
-    const int cell_dimension = _element_dof_layout->num_dofs();
+    assert(element_dof_layout);
+    const int cell_dimension = element_dof_layout->num_dofs();
     const int index = cell_index * cell_dimension;
     assert(index + cell_dimension <= _dofmap.size());
     return Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>>(
@@ -205,6 +205,9 @@ public:
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofs(const mesh::Mesh& mesh,
                                                  std::size_t dim) const;
 
+  /// Layout of dofs on an element
+  const std::shared_ptr<const ElementDofLayout> element_dof_layout;
+
   /// Object containing information about dof distribution across
   /// processes
   const std::shared_ptr<const common::IndexMap> index_map;
@@ -213,10 +216,6 @@ private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
 
-public:
-
-  // Layout of dofs on an element
-  std::shared_ptr<const ElementDofLayout> _element_dof_layout;
 };
 } // namespace fem
 } // namespace dolfin

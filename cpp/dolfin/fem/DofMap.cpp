@@ -26,11 +26,11 @@ namespace
 fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
                                    const mesh::Mesh& mesh)
 {
-  auto _element_dof_layout = std::make_shared<ElementDofLayout>(
-      *dofmap_view._element_dof_layout, true);
+  auto element_dof_layout = std::make_shared<ElementDofLayout>(
+      *dofmap_view.element_dof_layout, true);
 
   if (dofmap_view.index_map->block_size == 1
-      and _element_dof_layout->block_size > 1)
+      and element_dof_layout->block_size > 1)
   {
     throw std::runtime_error(
         "Cannot collapse dofmap with block size greater "
@@ -38,7 +38,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   if (dofmap_view.index_map->block_size > 1
-      and _element_dof_layout->block_size > 1)
+      and element_dof_layout->block_size > 1)
   {
     throw std::runtime_error(
         "Cannot (yet) collapse dofmap with block size greater "
@@ -64,7 +64,7 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 
   // Get block sizes
   const int bs_view = dofmap_view.index_map->block_size;
-  const int bs = _element_dof_layout->block_size;
+  const int bs = element_dof_layout->block_size;
 
   // Compute sizes
   const std::int32_t num_owned_view = dofmap_view.index_map->size_local();
@@ -129,11 +129,11 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
   }
 
   // Dimension sanity checks
-  assert(_element_dof_layout);
+  assert(element_dof_layout);
   assert(_dofmap.size()
-         == (mesh.num_entities(tdim) * _element_dof_layout->num_dofs()));
+         == (mesh.num_entities(tdim) * element_dof_layout->num_dofs()));
 
-  return fem::DofMap(_element_dof_layout, index_map, _dofmap);
+  return fem::DofMap(element_dof_layout, index_map, _dofmap);
 }
 } // namespace
 
@@ -141,40 +141,40 @@ fem::DofMap build_collapsed_dofmap(const DofMap& dofmap_view,
 DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
                std::shared_ptr<const common::IndexMap> index_map,
                const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& dofmap)
-    : index_map(index_map), _dofmap(dofmap),
-      _element_dof_layout(element_dof_layout)
+    : element_dof_layout(element_dof_layout), index_map(index_map),
+      _dofmap(dofmap)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
 bool DofMap::is_view() const
 {
-  assert(_element_dof_layout);
-  return _element_dof_layout->is_view();
+  assert(element_dof_layout);
+  return element_dof_layout->is_view();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
 {
-  assert(_element_dof_layout);
-  return _element_dof_layout->num_dofs();
+  assert(element_dof_layout);
+  return element_dof_layout->num_dofs();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::max_element_dofs() const
 {
-  assert(_element_dof_layout);
-  return _element_dof_layout->num_dofs();
+  assert(element_dof_layout);
+  return element_dof_layout->num_dofs();
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
 {
-  assert(_element_dof_layout);
-  return _element_dof_layout->num_entity_dofs(entity_dim);
+  assert(element_dof_layout);
+  return element_dof_layout->num_entity_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
 {
-  assert(_element_dof_layout);
-  return _element_dof_layout->num_entity_closure_dofs(entity_dim);
+  assert(element_dof_layout);
+  return element_dof_layout->num_entity_closure_dofs(entity_dim);
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1>
@@ -182,7 +182,7 @@ DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
                                      std::size_t cell_entity_index) const
 {
   const std::vector<std::vector<std::set<int>>>& dofs
-      = _element_dof_layout->entity_closure_dofs();
+      = element_dof_layout->entity_closure_dofs();
   assert(entity_dim < dofs.size());
   assert(cell_entity_index < dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
@@ -197,7 +197,7 @@ DofMap::tabulate_entity_dofs(std::size_t entity_dim,
                              std::size_t cell_entity_index) const
 {
   const std::vector<std::vector<std::set<int>>>& dofs
-      = _element_dof_layout->entity_dofs();
+      = element_dof_layout->entity_dofs();
   assert(entity_dim < dofs.size());
   assert(cell_entity_index < dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
@@ -216,15 +216,15 @@ DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
 std::pair<std::unique_ptr<DofMap>, std::vector<PetscInt>>
 DofMap::collapse(const mesh::Mesh& mesh) const
 {
-  assert(_element_dof_layout);
+  assert(element_dof_layout);
   assert(index_map);
   std::unique_ptr<DofMap> dofmap_new;
   if (this->index_map->block_size == 1
-      and this->_element_dof_layout->block_size > 1)
+      and this->element_dof_layout->block_size > 1)
   {
     // Create new element dof layout and reset parent
     auto collapsed_dof_layout
-        = std::make_shared<ElementDofLayout>(*_element_dof_layout, true);
+        = std::make_shared<ElementDofLayout>(*element_dof_layout, true);
 
     // Parent does not have block structure but sub-map does, so build
     // new submap to get block structure for collapsed dofmap.
@@ -292,8 +292,8 @@ std::string DofMap::str(bool verbose) const
   if (verbose)
   {
     // Cell loop
-    assert(_element_dof_layout);
-    const int cell_dimension = _element_dof_layout->num_dofs();
+    assert(element_dof_layout);
+    const int cell_dimension = element_dof_layout->num_dofs();
 
     assert(_dofmap.size() % cell_dimension == 0);
     const std::int32_t ncells = _dofmap.size() / cell_dimension;

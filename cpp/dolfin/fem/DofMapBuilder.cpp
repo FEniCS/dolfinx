@@ -680,12 +680,12 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
 
   // Set element dof layout and cell dimension
   std::shared_ptr<const ElementDofLayout> element_dof_layout
-      = dofmap_parent._element_dof_layout->sub_dofmap(component);
+      = dofmap_parent.element_dof_layout->sub_dofmap(component);
 
   // Get components in parent map that correspond to sub-dofs
-  assert(dofmap_parent._element_dof_layout);
+  assert(dofmap_parent.element_dof_layout);
   const std::vector<int> element_map_view
-      = dofmap_parent._element_dof_layout->sub_view(component);
+      = dofmap_parent.element_dof_layout->sub_view(component);
 
   // Build dofmap by extracting from parent
   const std::int32_t dofs_per_cell = element_map_view.size();
@@ -779,7 +779,8 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap, accounting for block size
-  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(node_graph0.data.size() * block_size);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(node_graph0.data.size()
+                                                   * block_size);
   for (std::int32_t cell = 0; cell < node_graph0.num_cells(); ++cell)
   {
     const std::int32_t local_dim0 = node_graph0.num_dofs(cell);
