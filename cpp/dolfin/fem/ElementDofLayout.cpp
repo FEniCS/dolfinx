@@ -109,8 +109,8 @@ int ElementDofLayout::num_entity_closure_dofs(int dim) const
 Eigen::Array<int, Eigen::Dynamic, 1>
 ElementDofLayout::entity_dofs(int entity_dim, int cell_entity_index) const
 {
-  assert(entity_dim < _entity_dofs.size());
-  assert(cell_entity_index < _entity_dofs[entity_dim].size());
+  assert(entity_dim < (int)_entity_dofs.size());
+  assert(cell_entity_index < (int)_entity_dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> dofs(
       _entity_dofs[entity_dim][cell_entity_index].size());
   std::copy(_entity_dofs[entity_dim][cell_entity_index].begin(),
@@ -119,11 +119,11 @@ ElementDofLayout::entity_dofs(int entity_dim, int cell_entity_index) const
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1>
-ElementDofLayout::entity_closure_dofs(std::size_t entity_dim,
-                                      std::size_t cell_entity_index) const
+ElementDofLayout::entity_closure_dofs(int entity_dim,
+                                      int cell_entity_index) const
 {
-  assert(entity_dim < _entity_closure_dofs.size());
-  assert(cell_entity_index < _entity_closure_dofs[entity_dim].size());
+  assert(entity_dim < (int)_entity_closure_dofs.size());
+  assert(cell_entity_index < (int)_entity_closure_dofs[entity_dim].size());
   Eigen::Array<int, Eigen::Dynamic, 1> dofs(
       _entity_closure_dofs[entity_dim][cell_entity_index].size());
   std::copy(_entity_closure_dofs[entity_dim][cell_entity_index].begin(),

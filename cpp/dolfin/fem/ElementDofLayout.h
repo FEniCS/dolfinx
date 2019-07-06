@@ -108,15 +108,15 @@ public:
   /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
   ///         Degrees of freedom on a single element.
   Eigen::Array<int, Eigen::Dynamic, 1>
-  entity_closure_dofs(std::size_t entity_dim,
-                      std::size_t cell_entity_index) const;
+  entity_closure_dofs(int entity_dim, int cell_entity_index) const;
 
   /// Direct access to all entity dofs (dof = _entity_dofs[dim][entity][i])
   const std::vector<std::vector<std::set<int>>>& entity_dofs_all() const;
 
   /// Direct access to all entity closure dofs (dof =
   /// _entity_dofs[dim][entity][i])
-  const std::vector<std::vector<std::set<int>>>& entity_closure_dofs_all() const;
+  const std::vector<std::vector<std::set<int>>>&
+  entity_closure_dofs_all() const;
 
   /// Get number of sub-dofmaps
   int num_sub_dofmaps() const;
