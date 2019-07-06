@@ -148,35 +148,6 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, 1>
-DofMap::entity_closure_dofs(std::size_t entity_dim,
-                            std::size_t cell_entity_index) const
-{
-  const std::vector<std::vector<std::set<int>>>& dofs
-      = element_dof_layout->entity_closure_dofs();
-  assert(entity_dim < dofs.size());
-  assert(cell_entity_index < dofs[entity_dim].size());
-  Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
-      dofs[entity_dim][cell_entity_index].size());
-  std::copy(dofs[entity_dim][cell_entity_index].begin(),
-            dofs[entity_dim][cell_entity_index].end(), element_dofs.data());
-  return element_dofs;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, 1>
-DofMap::entity_dofs(std::size_t entity_dim, std::size_t cell_entity_index) const
-{
-  const std::vector<std::vector<std::set<int>>>& dofs
-      = element_dof_layout->entity_dofs();
-  assert(entity_dim < dofs.size());
-  assert(cell_entity_index < dofs[entity_dim].size());
-  Eigen::Array<int, Eigen::Dynamic, 1> element_dofs(
-      dofs[entity_dim][cell_entity_index].size());
-  std::copy(dofs[entity_dim][cell_entity_index].begin(),
-            dofs[entity_dim][cell_entity_index].end(), element_dofs.data());
-  return element_dofs;
-}
-//-----------------------------------------------------------------------------
 DofMap DofMap::extract_sub_dofmap(const std::vector<int>& component,
                                   const mesh::Mesh& mesh) const
 {
@@ -336,7 +307,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
   const mesh::CellType& cell_type = mesh.type();
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs_local;
   for (std::size_t i = 0; i < cell_type.num_entities(dim); ++i)
-    entity_dofs_local.push_back(entity_dofs(dim, i));
+    entity_dofs_local.push_back(element_dof_layout->entity_dofs(dim, i));
 
   // Iterate over cells
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))

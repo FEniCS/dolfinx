@@ -79,29 +79,6 @@ public:
         &_dofmap[index], cell_dimension);
   }
 
-  /// Tabulate local-local closure dofs on entity of cell
-  ///
-  /// @param   entity_dim (std::size_t)
-  ///         The entity dimension.
-  /// @param    cell_entity_index (std::size_t)
-  ///         The local entity index on the cell.
-  /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
-  ///         Degrees of freedom on a single element.
-  Eigen::Array<int, Eigen::Dynamic, 1>
-  entity_closure_dofs(std::size_t entity_dim,
-                      std::size_t cell_entity_index) const;
-
-  /// Tabulate local-local mapping of dofs on entity of cell
-  ///
-  /// @param   entity_dim (std::size_t)
-  ///         The entity dimension.
-  /// @param    cell_entity_index (std::size_t)
-  ///         The local entity index on the cell.
-  /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
-  ///         Degrees of freedom on a single element.
-  Eigen::Array<int, Eigen::Dynamic, 1>
-  entity_dofs(std::size_t entity_dim, std::size_t cell_entity_index) const;
-
   /// Extract subdofmap component
   ///
   /// @param     component (std::vector<int>)

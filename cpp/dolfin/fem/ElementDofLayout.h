@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <array>
 #include <dolfin/common/types.h>
 #include <memory>
@@ -87,12 +88,35 @@ public:
   ///         Number of dofs associated with closure of given entity dimension
   int num_entity_closure_dofs(int dim) const;
 
+  /// Local-local mapping of dofs on entity of cell
+  ///
+  /// @param   entity_dim (std::size_t)
+  ///         The entity dimension.
+  /// @param    cell_entity_index (std::size_t)
+  ///         The local entity index on the cell.
+  /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
+  ///         Degrees of freedom on a single element.
+  Eigen::Array<int, Eigen::Dynamic, 1> entity_dofs(int entity_dim,
+                                                   int cell_entity_index) const;
+
+  /// Local-local closure dofs on entity of cell
+  ///
+  /// @param   entity_dim (std::size_t)
+  ///         The entity dimension.
+  /// @param    cell_entity_index (std::size_t)
+  ///         The local entity index on the cell.
+  /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
+  ///         Degrees of freedom on a single element.
+  Eigen::Array<int, Eigen::Dynamic, 1>
+  entity_closure_dofs(std::size_t entity_dim,
+                      std::size_t cell_entity_index) const;
+
   /// Direct access to all entity dofs (dof = _entity_dofs[dim][entity][i])
-  const std::vector<std::vector<std::set<int>>>& entity_dofs() const;
+  const std::vector<std::vector<std::set<int>>>& entity_dofs_all() const;
 
   /// Direct access to all entity closure dofs (dof =
   /// _entity_dofs[dim][entity][i])
-  const std::vector<std::vector<std::set<int>>>& entity_closure_dofs() const;
+  const std::vector<std::vector<std::set<int>>>& entity_closure_dofs_all() const;
 
   /// Get number of sub-dofmaps
   int num_sub_dofmaps() const;

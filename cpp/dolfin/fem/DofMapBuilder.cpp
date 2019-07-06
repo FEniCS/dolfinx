@@ -334,7 +334,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
 
   // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
   const std::vector<std::vector<std::set<int>>>& entity_dofs
-      = element_dof_layout.entity_dofs();
+      = element_dof_layout.entity_dofs_all();
 
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -400,7 +400,7 @@ compute_sharing_markers(const DofMapStructure& dofmap,
 
   // Get facet closure dofs
   const std::vector<std::set<int>>& facet_table
-      = element_dof_layout.entity_closure_dofs()[D - 1];
+      = element_dof_layout.entity_closure_dofs_all()[D - 1];
 
   // Mark dofs associated ghost cells as ghost dofs, provisionally
   bool has_ghost_cells = false;

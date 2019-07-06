@@ -165,7 +165,10 @@ void fem(py::module& m)
                              &dolfin::fem::ElementDofLayout::num_dofs)
       .def("num_entity_dofs", &dolfin::fem::ElementDofLayout::num_entity_dofs)
       .def("num_entity_closure_dofs",
-           &dolfin::fem::ElementDofLayout::num_entity_closure_dofs);
+           &dolfin::fem::ElementDofLayout::num_entity_closure_dofs)
+      .def("entity_dofs", &dolfin::fem::ElementDofLayout::entity_dofs)
+      .def("entity_closure_dofs",
+           &dolfin::fem::ElementDofLayout::entity_closure_dofs);
 
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>>(
@@ -176,7 +179,6 @@ void fem(py::module& m)
       .def("dofs", &dolfin::fem::DofMap::dofs)
       .def("tabulate_local_to_global_dofs",
            &dolfin::fem::DofMap::tabulate_local_to_global_dofs)
-      .def("entity_dofs", &dolfin::fem::DofMap::entity_dofs)
       .def("set", &dolfin::fem::DofMap::set)
       .def("dof_array", &dolfin::fem::DofMap::dof_array);
 
