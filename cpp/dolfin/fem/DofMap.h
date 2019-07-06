@@ -88,8 +88,8 @@ public:
   /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
   ///         Degrees of freedom on a single element.
   Eigen::Array<int, Eigen::Dynamic, 1>
-  tabulate_entity_closure_dofs(std::size_t entity_dim,
-                               std::size_t cell_entity_index) const;
+  entity_closure_dofs(std::size_t entity_dim,
+                      std::size_t cell_entity_index) const;
 
   /// Tabulate local-local mapping of dofs on entity of cell
   ///
@@ -100,8 +100,7 @@ public:
   /// @return     Eigen::Array<int, Eigen::Dynamic, 1>
   ///         Degrees of freedom on a single element.
   Eigen::Array<int, Eigen::Dynamic, 1>
-  tabulate_entity_dofs(std::size_t entity_dim,
-                       std::size_t cell_entity_index) const;
+  entity_dofs(std::size_t entity_dim, std::size_t cell_entity_index) const;
 
   /// Extract subdofmap component
   ///
@@ -172,7 +171,6 @@ public:
 private:
   // Cell-local-to-dof map (dofs for cell dofmap[i])
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> _dofmap;
-
 };
 } // namespace fem
 } // namespace dolfin

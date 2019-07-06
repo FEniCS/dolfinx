@@ -176,7 +176,7 @@ void fem(py::module& m)
       .def("dofs", &dolfin::fem::DofMap::dofs)
       .def("tabulate_local_to_global_dofs",
            &dolfin::fem::DofMap::tabulate_local_to_global_dofs)
-      .def("tabulate_entity_dofs", &dolfin::fem::DofMap::tabulate_entity_dofs)
+      .def("entity_dofs", &dolfin::fem::DofMap::entity_dofs)
       .def("set", &dolfin::fem::DofMap::set)
       .def("dof_array", &dolfin::fem::DofMap::dof_array);
 

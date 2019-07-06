@@ -225,7 +225,7 @@ def test_entity_dofs(mesh):
     # is here just to check that we get correct numbers mapped from ufc
     # generated code to dolfin
     for i, cdofs in enumerate([[0, 3], [1, 4], [2, 5]]):
-        dofs = V.dofmap().tabulate_entity_dofs(0, i)
+        dofs = V.dofmap().entity_dofs(0, i)
         assert all(d == cd for d, cd in zip(dofs, cdofs))
 
 
@@ -482,7 +482,7 @@ def test_high_order_lagrange():
         assert len(edges) == 2
         dofmap = V.dofmap()
         dofs = [dofmap.cell_dofs(c) for c in range(len(edges))]
-        edge_dofs_local = [dofmap.tabulate_entity_dofs(1, e) for e in edges]
+        edge_dofs_local = [dofmap.entity_dofs(1, e) for e in edges]
         for edofs in edge_dofs_local:
             assert len(edofs) == 2
         edge_dofs = [dofs[0][edge_dofs_local[0]], dofs[1][edge_dofs_local[1]]]

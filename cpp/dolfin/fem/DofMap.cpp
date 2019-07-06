@@ -149,8 +149,8 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1>
-DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
-                                     std::size_t cell_entity_index) const
+DofMap::entity_closure_dofs(std::size_t entity_dim,
+                            std::size_t cell_entity_index) const
 {
   const std::vector<std::vector<std::set<int>>>& dofs
       = element_dof_layout->entity_closure_dofs();
@@ -164,8 +164,7 @@ DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1>
-DofMap::tabulate_entity_dofs(std::size_t entity_dim,
-                             std::size_t cell_entity_index) const
+DofMap::entity_dofs(std::size_t entity_dim, std::size_t cell_entity_index) const
 {
   const std::vector<std::vector<std::set<int>>>& dofs
       = element_dof_layout->entity_dofs();
@@ -337,7 +336,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
   const mesh::CellType& cell_type = mesh.type();
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs_local;
   for (std::size_t i = 0; i < cell_type.num_entities(dim); ++i)
-    entity_dofs_local.push_back(tabulate_entity_dofs(dim, i));
+    entity_dofs_local.push_back(entity_dofs(dim, i));
 
   // Iterate over cells
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))

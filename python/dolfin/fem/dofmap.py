@@ -47,15 +47,11 @@ class DofMap:
     def entity_dofs_all(self, mesh, entity_dim: int):
         return self._cpp_object.entity_dofs(mesh, entity_dim)
 
-    def entity_dofs(self, mesh, entity_dim: int, entity_index: int):
-        return self._cpp_object.entity_dofs(mesh, entity_dim, entity_index)
-
     def tabulate_local_to_global_dofs(self):
         return self._cpp_object.tabulate_local_to_global_dofs()
 
-    def tabulate_entity_dofs(self, entity_dim: int, cell_entity_index: int):
-        return self._cpp_object.tabulate_entity_dofs(entity_dim,
-                                                     cell_entity_index)
+    def entity_dofs(self, entity_dim: int, cell_entity_index: int):
+        return self._cpp_object.entity_dofs(entity_dim, cell_entity_index)
 
     def set(self, x, value):
         self._cpp_object.set(x, value)
