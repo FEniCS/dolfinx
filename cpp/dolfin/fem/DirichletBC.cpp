@@ -305,7 +305,9 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
   mesh.create_connectivity(tdim - 1, tdim);
 
   // Allocate space
-  const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(tdim - 1);
+  assert(dofmap.element_dof_layout);
+  const std::size_t num_facet_dofs
+      = dofmap.element_dof_layout->num_entity_closure_dofs(tdim - 1);
 
   // Build vector local dofs for each cell facet
   const mesh::CellType& cell_type = mesh.type();

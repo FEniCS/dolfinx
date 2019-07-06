@@ -41,7 +41,8 @@ la::PETScVector create_vector(const function::FunctionSpace& V)
   const fem::DofMap& dofmap = *(V.dofmap());
 
   // Check that function space is not a subspace (view)
-  if (dofmap.is_view())
+  assert(dofmap.element_dof_layout);
+  if (dofmap.element_dof_layout->is_view())
   {
     std::runtime_error("Cannot initialize vector of degrees of freedom for "
                        "function. Cannot be created from subspace. Consider "

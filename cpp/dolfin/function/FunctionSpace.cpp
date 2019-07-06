@@ -59,7 +59,8 @@ std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
 std::int64_t FunctionSpace::dim() const
 {
   assert(_dofmap);
-  if (_dofmap->is_view())
+  assert(_dofmap->element_dof_layout);
+  if (_dofmap->element_dof_layout->is_view())
   {
     throw std::runtime_error("FunctionSpace dimension not supported for "
                              "sub-functions");
@@ -74,17 +75,19 @@ void FunctionSpace::interpolate_from_any(
         expansion_coefficients,
     const Function& v) const
 {
-  assert(_mesh);
-  const int gdim = _mesh->geometry().dim();
-
-  // Initialize local arrays
-  std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
-
   if (!v.function_space()->has_element(*_element))
   {
     throw std::runtime_error("Restricting finite elements function in "
                              "different elements not suppoted.");
   }
+
+  assert(_mesh);
+  const int gdim = _mesh->geometry().dim();
+
+  // Initialize local arrays
+  assert(_dofmap->element_dof_layout);
+  std::vector<PetscScalar> cell_coefficients(
+      _dofmap->element_dof_layout->num_dofs());
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -213,7 +216,8 @@ void FunctionSpace::interpolate(
   const int ndofs = _element->space_dimension();
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values_cell(ndofs, value_size);
-  std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
+  assert(_dofmap->element_dof_layout);
+  std::vector<PetscScalar> cell_coefficients(_dofmap->element_dof_layout->num_dofs());
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
   {
     // Get dofmap for cell

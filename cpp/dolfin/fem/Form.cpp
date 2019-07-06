@@ -81,7 +81,8 @@ std::size_t Form::max_element_tensor_size() const
   for (auto& V : _function_spaces)
   {
     assert(V->dofmap());
-    num_entries *= V->dofmap()->max_element_dofs();
+    assert(V->dofmap()->element_dof_layout);
+    num_entries *= V->dofmap()->element_dof_layout->num_dofs();
   }
   return num_entries;
 }

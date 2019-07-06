@@ -147,36 +147,6 @@ DofMap::DofMap(std::shared_ptr<const ElementDofLayout> element_dof_layout,
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-bool DofMap::is_view() const
-{
-  assert(element_dof_layout);
-  return element_dof_layout->is_view();
-}
-//-----------------------------------------------------------------------------
-std::size_t DofMap::num_element_dofs(std::size_t cell_index) const
-{
-  assert(element_dof_layout);
-  return element_dof_layout->num_dofs();
-}
-//-----------------------------------------------------------------------------
-std::size_t DofMap::max_element_dofs() const
-{
-  assert(element_dof_layout);
-  return element_dof_layout->num_dofs();
-}
-//-----------------------------------------------------------------------------
-std::size_t DofMap::num_entity_dofs(std::size_t entity_dim) const
-{
-  assert(element_dof_layout);
-  return element_dof_layout->num_entity_dofs(entity_dim);
-}
-//-----------------------------------------------------------------------------
-std::size_t DofMap::num_entity_closure_dofs(std::size_t entity_dim) const
-{
-  assert(element_dof_layout);
-  return element_dof_layout->num_entity_closure_dofs(entity_dim);
-}
-//-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, 1>
 DofMap::tabulate_entity_closure_dofs(std::size_t entity_dim,
                                      std::size_t cell_entity_index) const
@@ -280,7 +250,8 @@ DofMap::dof_array() const
 std::string DofMap::str(bool verbose) const
 {
   std::stringstream s;
-  if (this->is_view())
+  assert(element_dof_layout);
+  if (element_dof_layout->is_view())
     s << "<DofMap view>" << std::endl;
   else
   {
@@ -347,8 +318,10 @@ DofMap::tabulate_local_to_global_dofs() const
 Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
                                                        std::size_t dim) const
 {
+  assert(element_dof_layout);
+
   // Check number of dofs per entity (on each cell)
-  const int num_dofs_per_entity = num_entity_dofs(dim);
+  const int num_dofs_per_entity = element_dof_layout->num_entity_dofs(dim);
 
   // Return empty vector if not dofs on requested entity
   if (num_dofs_per_entity == 0)

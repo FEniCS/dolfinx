@@ -305,8 +305,9 @@ void fem::impl::assemble_vector(
   const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
   Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
       = dofmap.dof_array();
-  // FIXME: do this right
-  const int num_dofs_per_cell = dofmap.num_element_dofs(0);
+
+  assert(dofmap.element_dof_layout);
+  const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
 
   // Prepare coefficients
   const FormCoefficients& coefficients = L.coeffs();

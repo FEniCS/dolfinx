@@ -61,49 +61,6 @@ public:
   /// Move assignment
   DofMap& operator=(DofMap&& dofmap) = default;
 
-  /// True iff dof map is a view into another map
-  ///
-  /// @returns bool
-  ///         True if the dof map is a sub-dof map (a view into
-  ///         another map).
-  bool is_view() const;
-
-  /// Return the dimension of the local finite element function
-  /// space on a cell
-  ///
-  /// @param      cell_index (std::size_t)
-  ///         Index of cell
-  ///
-  /// @return     std::size_t
-  ///         Dimension of the local finite element function space.
-  std::size_t num_element_dofs(std::size_t cell_index) const;
-
-  /// Return the maximum dimension of the local finite element
-  /// function space
-  ///
-  /// @return     std::size_t
-  ///         Maximum dimension of the local finite element function
-  ///         space.
-  std::size_t max_element_dofs() const;
-
-  /// Return the number of dofs for a given entity dimension
-  ///
-  /// @param     entity_dim (std::size_t)
-  ///         Entity dimension
-  ///
-  /// @return     std::size_t
-  ///         Number of dofs associated with given entity dimension
-  virtual std::size_t num_entity_dofs(std::size_t entity_dim) const;
-
-  /// Return the number of closure dofs for a given entity dimension
-  /// s
-  /// @param     entity_dim (std::size_t)
-  ///         Entity dimension
-  ///
-  /// @return     std::size_t
-  ///         Number of dofs associated with closure of given entity dimension
-  virtual std::size_t num_entity_closure_dofs(std::size_t entity_dim) const;
-
   /// Local-to-global mapping of dofs on a cell
   ///
   /// @param     cell_index (std::size_t)

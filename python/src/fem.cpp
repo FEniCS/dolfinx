@@ -168,7 +168,6 @@ void fem(py::module& m)
       .def_readonly("index_map", &dolfin::fem::DofMap::index_map)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs)
       .def("dofs", &dolfin::fem::DofMap::dofs)
-      .def("num_entity_dofs", &dolfin::fem::DofMap::num_entity_dofs)
       .def("tabulate_local_to_global_dofs",
            &dolfin::fem::DofMap::tabulate_local_to_global_dofs)
       .def("tabulate_entity_dofs", &dolfin::fem::DofMap::tabulate_entity_dofs)

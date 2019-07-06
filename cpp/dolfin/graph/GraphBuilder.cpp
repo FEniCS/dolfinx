@@ -305,8 +305,13 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
 {
   common::Timer timer("Build local sparsity graph from dofmaps");
 
-  if (dofmap0.is_view() or dofmap1.is_view())
+  assert(dofmap0.element_dof_layout);
+  assert(dofmap1.element_dof_layout);
+  if (dofmap0.element_dof_layout->is_view()
+      or dofmap1.element_dof_layout->is_view())
+  {
     throw std::runtime_error("Graph building not support for dofmap views.");
+  }
 
   // Create empty graph
   assert(dofmap0.index_map);

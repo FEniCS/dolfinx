@@ -62,15 +62,30 @@ public:
   /// Move assignment
   ElementDofLayout& operator=(ElementDofLayout&& dofmap) = default;
 
-  /// Number of dofs on element
+  /// Return the dimension of the local finite element function
+  /// space on a cell (number of dofs on element)
+  ///
+  /// @return     int
+  ///         Dimension of the local finite element function space.
   int num_dofs() const;
 
-  /// Number of dofs associated with entities of dimension dim
-  int num_entity_dofs(unsigned int dim) const;
+  /// Return the number of dofs for a given entity dimension
+  ///
+  /// @param     entity_dim (int)
+  ///         Entity dimension
+  ///
+  /// @return     int
+  ///         Number of dofs associated with given entity dimension
+  int num_entity_dofs(int dim) const;
 
-  /// Number of dofs associated with entities of dimension dim (plus
-  /// connected entities of lower dim)
-  int num_entity_closure_dofs(unsigned int dim) const;
+  /// Return the number of closure dofs for a given entity dimension
+  ///
+  /// @param     entity_dim (int)
+  ///         Entity dimension
+  ///
+  /// @return     int
+  ///         Number of dofs associated with closure of given entity dimension
+  int num_entity_closure_dofs(int dim) const;
 
   /// Direct access to all entity dofs (dof = _entity_dofs[dim][entity][i])
   const std::vector<std::vector<std::set<int>>>& entity_dofs() const;
@@ -94,7 +109,11 @@ public:
   /// Block size
   const int block_size;
 
-  /// Is view, i.e. has a parent dofmap
+  /// True iff dof map is a view into another map
+  ///
+  /// @returns bool
+  ///         True if the dof map is a sub-dof map (a view into
+  ///         another map).
   bool is_view() const;
 
 private:

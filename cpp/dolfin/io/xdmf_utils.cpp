@@ -275,11 +275,12 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   std::vector<PetscInt> dof_set;
   dof_set.reserve(local_size);
   const auto dofmap = u.function_space()->dofmap();
+  assert(dofmap->element_dof_layout);
+  const int ndofs = dofmap->element_dof_layout->num_dofs();
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell.index());
-    const std::size_t ndofs = dofmap->num_element_dofs(cell.index());
     assert(ndofs == value_size);
     for (std::size_t i = 0; i < ndofs; ++i)
       dof_set.push_back(dofs[i]);

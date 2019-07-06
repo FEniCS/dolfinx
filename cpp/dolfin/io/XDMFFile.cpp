@@ -75,7 +75,12 @@ bool has_cell_centred_data(const function::Function& u)
   std::size_t cell_based_dim = 1;
   for (int i = 0; i < u.value_rank(); i++)
     cell_based_dim *= u.function_space()->mesh()->topology().dim();
-  return (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim);
+
+  assert(u.function_space());
+  assert(u.function_space()->dofmap());
+  assert(u.function_space()->dofmap()->element_dof_layout);
+  return (u.function_space()->dofmap()->element_dof_layout->num_dofs()
+          == cell_based_dim);
 }
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
