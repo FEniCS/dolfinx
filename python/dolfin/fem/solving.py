@@ -134,7 +134,7 @@ def _solve_varproblem(*args, **kwargs):
         A = fem.assemble_matrix(a._cpp_object, bcs)
         A.assemble()
 
-        comm = L._cpp_object.mesh.mpi_comm()
+        comm = L._cpp_object.mesh().mpi_comm()
         solver = cpp.la.PETScKrylovSolver(comm)
 
         solver.set_options_prefix("dolfin_solve_")
