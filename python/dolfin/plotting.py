@@ -82,7 +82,7 @@ def mplot_expression(ax, f, mesh, **kwargs):
 
 
 def mplot_function(ax, f, **kwargs):
-    mesh = f.function_space().mesh()
+    mesh = f.function_space().mesh
     gdim = mesh.geometry.dim
     tdim = mesh.topology.dim
 
@@ -241,7 +241,7 @@ def mplot_function(ax, f, **kwargs):
 
 
 def mplot_meshfunction(ax, obj, **kwargs):
-    mesh = obj.mesh()
+    mesh = obj.mesh
     tdim = mesh.topology.dim
     d = obj.dim
     if tdim == 2 and d == 2:
@@ -405,9 +405,9 @@ def plot(object, *args, **kwargs):
 
     if mesh is None:
         if isinstance(object, cpp.function.Function):
-            mesh = object.function_space().mesh()
+            mesh = object.function_space().mesh
         elif hasattr(object, "mesh"):
-            mesh = object.mesh()
+            mesh = object.mesh
 
     # Expressions do not carry their own mesh
     # if isinstance(object, cpp.function.Expression) and mesh is None:
@@ -424,7 +424,7 @@ def plot(object, *args, **kwargs):
             cpp.log.info("Object cannot be plotted directly, projecting to "
                          "piecewise linears.")
             object = project(object, mesh=mesh)
-            mesh = object.function_space().mesh()
+            mesh = object.function_space().mesh
             object = object._cpp_object
         except Exception as e:
             msg = "Don't know how to plot given object:\n  %s\n" \

@@ -11,6 +11,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdio>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/log.h>
@@ -821,11 +822,11 @@ void HDF5File::write(const function::Function& u, const std::string name)
   assert(_hdf5_file_id > 0);
 
   // Get mesh and dofmap
-  assert(u.function_space()->mesh());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  assert(u.function_space()->mesh);
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
 
-  assert(u.function_space()->dofmap());
-  const fem::DofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->dofmap);
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
 
   // FIXME:
   // Possibly sort cell_dofs into global cell order before writing?
@@ -839,8 +840,8 @@ void HDF5File::write(const function::Function& u, const std::string name)
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
-      = dofmap.tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map
+      = dofmap.index_map->indices(true);
 
   for (std::size_t i = 0; i != n_cells; ++i)
   {
@@ -880,7 +881,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
   write_data(name + "/cells", cells, global_size, mpi_io);
 
   HDF5Interface::add_attribute(_hdf5_file_id, name, "signature",
-                               u.function_space()->element()->signature());
+                               u.function_space()->element->signature());
 
   // Save vector
   write(u.vector(), name + "/vector_0");
@@ -966,10 +967,10 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
-  assert(u.function_space()->mesh());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  assert(u.function_space()->dofmap());
-  const fem::DofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->mesh);
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
+  assert(u.function_space()->dofmap);
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
 
   // Get dimension of dataset
   const std::vector<std::int64_t> dataset_shape

@@ -263,7 +263,7 @@ def test_custom_mesh_loop_rank1():
     c = mesh.topology.connectivity(2, 0).connections()
     pos = mesh.topology.connectivity(2, 0).pos()
     geom = mesh.geometry.points
-    dofs = V.dofmap().dof_array
+    dofs = V.dofmap.dof_array
 
     # Assemble with pure Numba function (two passes, first will include JIT overhead)
     b0 = dolfin.Function(V)
@@ -324,7 +324,7 @@ def test_custom_mesh_loop_ctypes_rank2():
     c = mesh.topology.connectivity(2, 0).connections()
     pos = mesh.topology.connectivity(2, 0).pos()
     geom = mesh.geometry.points
-    dofs = V.dofmap().dof_array
+    dofs = V.dofmap.dof_array
 
     # Generated case with general assembler
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
@@ -377,7 +377,7 @@ def test_custom_mesh_loop_cffi_rank2(set_vals):
     c = mesh.topology.connectivity(2, 0).connections()
     pos = mesh.topology.connectivity(2, 0).pos()
     geom = mesh.geometry.points
-    dofs = V.dofmap().dof_array
+    dofs = V.dofmap.dof_array
 
     A1 = A0.copy()
     for i in range(2):
