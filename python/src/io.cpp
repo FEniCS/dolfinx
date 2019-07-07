@@ -177,6 +177,11 @@ void io(py::module& m)
            py::overload_cast<const dolfin::mesh::Mesh&>(
                &dolfin::io::XDMFFile::write),
            py::arg("mesh"))
+      // Information
+      .def("write",
+           py::overload_cast<const std::map<std::string, size_t>&>(
+               &dolfin::io::XDMFFile::write),
+           py::arg("information"))
       // MeshFunction
       .def("write",
            py::overload_cast<const dolfin::mesh::MeshFunction<std::size_t>&>(
