@@ -11,6 +11,7 @@
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/DofMapBuilder.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/function/Function.h>
@@ -74,8 +75,8 @@ fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>> a)
       if (a[i][j])
       {
         assert(a[i][j]->rank() == 2);
-        auto m0 = a[i][j]->function_space(0)->dofmap()->index_map();
-        auto m1 = a[i][j]->function_space(1)->dofmap()->index_map();
+        auto m0 = a[i][j]->function_space(0)->dofmap->index_map;
+        auto m1 = a[i][j]->function_space(1)->dofmap->index_map;
         if (!maps[0][i])
           maps[0][i] = m0;
         else
@@ -115,9 +116,8 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
   }
 
   // Get dof maps
-  std::array<const DofMap*, 2> dofmaps
-      = {{a.function_space(0)->dofmap().get(),
-          a.function_space(1)->dofmap().get()}};
+  std::array<const DofMap*, 2> dofmaps = {
+      {a.function_space(0)->dofmap.get(), a.function_space(1)->dofmap.get()}};
 
   // Get mesh
   assert(a.mesh());
@@ -127,7 +127,7 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
 
   // Get common::IndexMaps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
+      = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
 
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
@@ -180,9 +180,9 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
   // Extract and check row/column ranges
   // std::vector<std::shared_ptr<const common::IndexMap>> rmaps, cmaps;
   // for (std::size_t row = 0; row < a.size(); ++row)
-  //   rmaps.push_back(a[row][0]->function_space(0)->dofmap()->index_map());
+  //   rmaps.push_back(a[row][0]->function_space(0)->dofmap->index_map;
   // for (std::size_t col = 0; col < a[0].size(); ++col)
-  //   cmaps.push_back(a[0][col]->function_space(1)->dofmap()->index_map());
+  //   cmaps.push_back(a[0][col]->function_space(1)->dofmap->index_map;
 
   std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
       = blocked_index_sets(a);
@@ -202,15 +202,15 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
       {
         // Build sparsity pattern for block
         std::array<const DofMap*, 2> dofmaps
-            = {{a[row][col]->function_space(0)->dofmap().get(),
-                a[row][col]->function_space(1)->dofmap().get()}};
+            = {{a[row][col]->function_space(0)->dofmap.get(),
+                a[row][col]->function_space(1)->dofmap.get()}};
         // auto sp = std::make_unique<la::SparsityPattern>(
         //     SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps,
         //     true,
         //                                   false, false));
 
         std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-            = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
+            = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
         auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(),
                                                         index_maps);
         if (a[row][col]->integrals().num_integrals(
@@ -374,7 +374,7 @@ la::PETScVector fem::create_vector_block(std::vector<const fem::Form*> L)
   {
     assert(form);
     assert(form->rank() == 1);
-    auto map = form->function_space(0)->dofmap()->index_map();
+    auto map = form->function_space(0)->dofmap->index_map;
     index_maps.push_back(map.get());
   }
 
@@ -414,7 +414,7 @@ la::PETScVector fem::create_vector_nest(std::vector<const fem::Form*> L)
     if (L[i])
     {
       const common::IndexMap& index_map
-          = *L[i]->function_space(0)->dofmap()->index_map();
+          = *L[i]->function_space(0)->dofmap->index_map;
       vecs[i] = std::make_shared<la::PETScVector>(index_map);
       petsc_vecs[i] = vecs[i]->vec();
     }
@@ -527,9 +527,9 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
                                const mesh::Mesh& mesh)
 {
-  return DofMap(std::make_shared<ElementDofLayout>(
-                    create_element_dof_layout(ufc_dofmap, mesh.type())),
-                mesh);
+  return DofMapBuilder::build(
+      mesh, std::make_shared<ElementDofLayout>(
+                create_element_dof_layout(ufc_dofmap, mesh.type())));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
@@ -556,13 +556,12 @@ fem::Form fem::create_form(
   // Check argument function spaces
   for (std::size_t i = 0; i < spaces.size(); ++i)
   {
-    assert(spaces[i]->element());
+    assert(spaces[i]->element);
     std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
         ufc_form.create_finite_element(i), free);
 
     assert(ufc_element);
-    if (std::string(ufc_element->signature)
-        != spaces[i]->element()->signature())
+    if (std::string(ufc_element->signature) != spaces[i]->element->signature())
     {
       throw std::runtime_error(
           "Cannot create form. Wrong type of function space for argument.");
