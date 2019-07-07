@@ -1424,6 +1424,31 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
       global_cell_indices, ghost_mode);
 }
 //----------------------------------------------------------------------------
+void XDMFFile::write(const std::map<std::string, size_t>& information){
+  pugi::xml_node domain_node;
+  std::string hdf_filemode = "a";
+  if (_xml_doc->child("Xdmf").empty())
+  {
+    throw std::runtime_error("Cannot add Information to file. "
+                               "Empty XDMF file.");
+  }
+  else{
+    domain_node = _xml_doc->child("Xdmf").child("Domain");
+  }
+
+  assert(domain_node);
+
+  pugi::xml_node information_node = domain_node.append_child("Information");
+
+  xdmf_write::add_information(_mpi_comm.comm(), information_node, information);
+
+  // Save XML file (on process 0 only)
+  if (_mpi_comm.rank() == 0)
+    _xml_doc->save_file(_filename.c_str(), "  ");
+
+  ++_counter;
+}
+
 std::map<std::string, size_t> XDMFFile::read_information() const{
 
   boost::filesystem::path xdmf_filename(_filename);

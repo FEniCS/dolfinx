@@ -48,6 +48,10 @@ std::set<std::uint32_t> compute_nonlocal_entities(const mesh::Mesh& mesh,
 void add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
                 const std::vector<Eigen::Vector3d>& points);
 
+/// Add set of points to XDMF xml_node and write data
+void add_information(MPI_Comm comm, pugi::xml_node& xdmf_node,
+                const std::map<std::string, size_t>& information);
+
 /// Add topology node to xml_node (includes writing data to XML or HDF5
 /// file)
 void add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node, hid_t h5_id,
