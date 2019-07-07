@@ -334,7 +334,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
 
   // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
   const std::vector<std::vector<std::set<int>>>& entity_dofs
-      = element_dof_layout.entity_dofs();
+      = element_dof_layout.entity_dofs_all();
 
   // Build dofmaps from ElementDofmap
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
@@ -400,7 +400,7 @@ compute_sharing_markers(const DofMapStructure& dofmap,
 
   // Get facet closure dofs
   const std::vector<std::set<int>>& facet_table
-      = element_dof_layout.entity_closure_dofs()[D - 1];
+      = element_dof_layout.entity_closure_dofs_all()[D - 1];
 
   // Mark dofs associated ghost cells as ghost dofs, provisionally
   bool has_ghost_cells = false;
@@ -649,7 +649,61 @@ std::vector<std::int64_t> compute_global_indices(
 } // namespace
 
 //-----------------------------------------------------------------------------
-std::tuple<std::unique_ptr<common::IndexMap>, std::vector<PetscInt>>
+fem::DofMap
+DofMapBuilder::build(const mesh::Mesh& mesh,
+                     std::shared_ptr<const ElementDofLayout> element_dof_layout)
+{
+  assert(element_dof_layout);
+  const int bs = element_dof_layout->block_size;
+  std::shared_ptr<common::IndexMap> index_map;
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap;
+  if (bs == 1)
+  {
+    std::tie(index_map, dofmap)
+        = DofMapBuilder::build(mesh, *element_dof_layout, 1);
+  }
+  else
+  {
+    std::tie(index_map, dofmap)
+        = DofMapBuilder::build(mesh, *element_dof_layout->sub_dofmap({0}), bs);
+  }
+
+  return fem::DofMap(element_dof_layout, index_map, dofmap);
+}
+//-----------------------------------------------------------------------------
+fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
+                                        const std::vector<int>& component,
+                                        const mesh::Mesh& mesh)
+{
+  assert(!component.empty());
+  const int D = mesh.topology().dim();
+
+  // Set element dof layout and cell dimension
+  std::shared_ptr<const ElementDofLayout> element_dof_layout
+      = dofmap_parent.element_dof_layout->sub_dofmap(component);
+
+  // Get components in parent map that correspond to sub-dofs
+  assert(dofmap_parent.element_dof_layout);
+  const std::vector<int> element_map_view
+      = dofmap_parent.element_dof_layout->sub_view(component);
+
+  // Build dofmap by extracting from parent
+  const std::int32_t dofs_per_cell = element_map_view.size();
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(dofs_per_cell
+                                                   * mesh.num_entities(D));
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  {
+    const int c = cell.index();
+    auto cell_dmap_parent = dofmap_parent.cell_dofs(c);
+    for (std::int32_t i = 0; i < dofs_per_cell; ++i)
+      dofmap[c * dofs_per_cell + i] = cell_dmap_parent[element_map_view[i]];
+  }
+
+  return DofMap(element_dof_layout, dofmap_parent.index_map, dofmap);
+}
+//-----------------------------------------------------------------------------
+std::tuple<std::unique_ptr<common::IndexMap>,
+           Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
 DofMapBuilder::build(const mesh::Mesh& mesh,
                      const ElementDofLayout& element_dof_layout,
                      const std::int32_t block_size)
@@ -725,7 +779,8 @@ DofMapBuilder::build(const mesh::Mesh& mesh,
   // FIXME: There is an assumption here on the dof order for an element.
   //        It should come from the ElementDofLayout.
   // Build re-ordered dofmap, accounting for block size
-  std::vector<PetscInt> dofmap(node_graph0.data.size() * block_size);
+  Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(node_graph0.data.size()
+                                                   * block_size);
   for (std::int32_t cell = 0; cell < node_graph0.num_cells(); ++cell)
   {
     const std::int32_t local_dim0 = node_graph0.num_dofs(cell);
