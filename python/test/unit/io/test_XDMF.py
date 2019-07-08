@@ -364,8 +364,10 @@ def test_save_1d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mf_1D.xdmf")
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     mf = MeshFunction("size_t", mesh, mesh.topology.dim, 0)
-    for cell in Cells(mesh):
-        mf.values[cell.index()] = cell.index()
+
+    cell_indices = numpy.arange(mesh.num_entities(1))
+    mf.values[:] = cell_indices
+
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
 
@@ -378,8 +380,9 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
-    for cell in Cells(mesh):
-        mf.values[cell.index()] = dtype(cell.index())
+
+    cell_indices = numpy.arange(mesh.num_entities(2), dtype=dtype)
+    mf.values[:] = cell_indices
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
@@ -399,14 +402,15 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
-    for cell in Cells(mesh):
-        mf.values[cell.index()] = dtype(cell.index())
+
+    cell_indices = numpy.arange(mesh.num_entities(3), dtype=dtype)
+    mf.values[:] = cell_indices
+
     filename = os.path.join(tempdir, "mf_3D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
 
-    # mf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "cells")
@@ -476,8 +480,9 @@ def test_save_3D_edge_function(tempdir, encoding, data_type):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, 1, 0)
     mf.name = "edges"
-    for edge in Edges(mesh):
-        mf.values[edge.index()] = dtype(edge.index())
+
+    edge_indices = numpy.arange(mesh.num_entities(1), dtype=dtype)
+    mf.values[:] = edge_indices
 
     filename = os.path.join(tempdir, "mf_edge_3D_%s.xdmf" % dtype_str)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:

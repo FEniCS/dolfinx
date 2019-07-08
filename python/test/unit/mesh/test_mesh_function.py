@@ -8,7 +8,7 @@ import numpy
 import numpy.random
 import pytest
 
-from dolfin import MPI, MeshFunction, UnitCubeMesh
+from dolfin import MPI, MeshFunction, UnitCubeMesh, Cell
 from dolfin_utils.test.fixtures import fixture
 
 
@@ -36,3 +36,6 @@ def test_numpy_access(dtype, mesh):
     values = mf.values
     values[:] = numpy.random.rand(len(values))
     assert numpy.all(values == mf.values)
+
+    cell = Cell(mesh, 0)
+    print(cell.index())
