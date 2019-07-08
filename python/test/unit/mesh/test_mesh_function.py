@@ -25,7 +25,7 @@ def test_data_types(dtype, mesh):
     dtype_str, dtype = dtype
     mf = MeshFunction(dtype_str, mesh, 0, 0)
 
-    assert isinstance(mf.values()[0], dtype)
+    assert isinstance(mf.values[0], dtype)
 
 
 @pytest.mark.parametrize("dtype", dtypes)
@@ -33,6 +33,6 @@ def test_numpy_access(dtype, mesh):
     dtype_str, dtype = dtype
     mf = MeshFunction(dtype_str, mesh, 0, 0)
 
-    values = mf.values()
+    values = mf.values
     values[:] = numpy.random.rand(len(values))
-    assert numpy.all(values == mf.values())
+    assert numpy.all(values == mf.values)

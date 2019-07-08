@@ -77,7 +77,7 @@ def test_multiple_datasets(tempdir, encoding):
         mesh = xdmf.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
         cf0 = xdmf.read_mf_size_t(mesh, "cf0")
         cf1 = xdmf.read_mf_size_t(mesh, "cf1")
-    assert (cf0.values()[0] == 11 and cf1.values()[0] == 22)
+    assert (cf0.values[0] == 11 and cf1.values[0] == 22)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -365,7 +365,7 @@ def test_save_1d_mesh(tempdir, encoding):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     mf = MeshFunction("size_t", mesh, mesh.topology.dim, 0)
     for cell in Cells(mesh):
-        mf.values()[cell.index()] = cell.index()
+        mf.values[cell.index()] = cell.index()
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
 
@@ -379,7 +379,7 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
     for cell in Cells(mesh):
-        mf.values()[cell.index()] = dtype(cell.index())
+        mf.values[cell.index()] = dtype(cell.index())
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
@@ -388,7 +388,7 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "cells")
 
-    diff = mf_in.values() - mf.values()
+    diff = mf_in.values - mf.values
     assert numpy.all(diff == 0)
 
 
@@ -400,7 +400,7 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
     for cell in Cells(mesh):
-        mf.values()[cell.index()] = dtype(cell.index())
+        mf.values[cell.index()] = dtype(cell.index())
     filename = os.path.join(tempdir, "mf_3D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -411,7 +411,7 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "cells")
 
-    diff = mf_in.values() - mf.values()
+    diff = mf_in.values - mf.values
     assert numpy.all(diff == 0)
 
 
@@ -425,10 +425,10 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
 
     if (MPI.size(mesh.mpi_comm()) == 1):
         for facet in Facets(mesh):
-            mf.values()[facet.index()] = dtype(facet.index())
+            mf.values[facet.index()] = dtype(facet.index())
     else:
         for facet in Facets(mesh):
-            mf.values()[facet.index()] = dtype(facet.global_index())
+            mf.values[facet.index()] = dtype(facet.global_index())
     filename = os.path.join(tempdir, "mf_facet_2D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
@@ -438,7 +438,7 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "facets")
 
-    diff = mf_in.values() - mf.values()
+    diff = mf_in.values - mf.values
     assert numpy.all(diff == 0)
 
 
@@ -452,10 +452,10 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
 
     if (MPI.size(mesh.mpi_comm()) == 1):
         for facet in Facets(mesh):
-            mf.values()[facet.index()] = dtype(facet.index())
+            mf.values[facet.index()] = dtype(facet.index())
     else:
         for facet in Facets(mesh):
-            mf.values()[facet.index()] = dtype(facet.global_index())
+            mf.values[facet.index()] = dtype(facet.global_index())
     filename = os.path.join(tempdir, "mf_facet_3D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
@@ -465,7 +465,7 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "facets")
 
-    diff = mf_in.values() - mf.values()
+    diff = mf_in.values - mf.values
     assert numpy.all(diff == 0)
 
 
@@ -477,7 +477,7 @@ def test_save_3D_edge_function(tempdir, encoding, data_type):
     mf = MeshFunction(dtype_str, mesh, 1, 0)
     mf.name = "edges"
     for edge in Edges(mesh):
-        mf.values()[edge.index()] = dtype(edge.index())
+        mf.values[edge.index()] = dtype(edge.index())
 
     filename = os.path.join(tempdir, "mf_edge_3D_%s.xdmf" % dtype_str)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -492,7 +492,7 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     mf.name = "vertices"
     for vertex in Vertices(mesh):
-        mf.values()[vertex.index()] = dtype(vertex.global_index())
+        mf.values[vertex.index()] = dtype(vertex.global_index())
     filename = os.path.join(tempdir, "mf_vertex_2D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -502,7 +502,7 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "vertices")
 
-    diff = mf_in.values() - mf.values()
+    diff = mf_in.values - mf.values
     assert numpy.all(diff == 0)
 
 
@@ -514,7 +514,7 @@ def test_save_3D_vertex_function(tempdir, encoding, data_type):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     for vertex in Vertices(mesh):
-        mf.values()[vertex.index()] = dtype(vertex.index())
+        mf.values[vertex.index()] = dtype(vertex.index())
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
@@ -574,9 +574,9 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
     meshfn.name = "volume_marker"
     for c in Cells(mesh):
         if c.midpoint()[1] > 0.1:
-            meshfn.values()[c.index()] = dtype(1)
+            meshfn.values[c.index()] = dtype(1)
         if c.midpoint()[1] > 0.9:
-            meshfn.values()[c.index()] = dtype(2)
+            meshfn.values[c.index()] = dtype(2)
 
     for mvc_dim in range(0, tdim + 1):
         mvc = MeshValueCollection(dtype_str, mesh, mvc_dim)
@@ -619,18 +619,18 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
 
         if (MPI.size(mesh.mpi_comm()) == 1):
             for vertex in Vertices(mesh):
-                vf.values()[vertex.index()] = dtype(vertex.index())
+                vf.values[vertex.index()] = dtype(vertex.index())
             for facet in Facets(mesh):
-                ff.values()[facet.index()] = dtype(facet.index())
+                ff.values[facet.index()] = dtype(facet.index())
             for cell in Cells(mesh):
-                cf.values()[cell.index()] = dtype(cell.index())
+                cf.values[cell.index()] = dtype(cell.index())
         else:
             for vertex in Vertices(mesh):
-                vf.values()[vertex.index()] = dtype(vertex.global_index())
+                vf.values[vertex.index()] = dtype(vertex.global_index())
             for facet in Facets(mesh):
-                ff.values()[facet.index()] = dtype(facet.global_index())
+                ff.values[facet.index()] = dtype(facet.global_index())
             for cell in Cells(mesh):
-                cf.values()[cell.index()] = dtype(cell.global_index())
+                cf.values[cell.index()] = dtype(cell.global_index())
 
         filename = os.path.join(tempdir, "appended_mf_%dD.xdmf" % dim)
 
@@ -646,9 +646,9 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
             ff_in = read_function(mesh, "facets")
             cf_in = read_function(mesh, "cells")
 
-        diff_vf = vf_in.values() - vf.values()
-        diff_ff = ff_in.values() - ff.values()
-        diff_cf = cf_in.values() - cf.values()
+        diff_vf = vf_in.values - vf.values
+        diff_ff = ff_in.values - ff.values
+        diff_cf = cf_in.values - cf.values
 
         assert numpy.all(diff_vf == 0)
         assert numpy.all(diff_ff == 0)
@@ -700,7 +700,7 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
         mf = MeshFunction(dtype_str, mesh, mvc, 0)
         mf_in = MeshFunction(dtype_str, mesh, mvc_in, 0)
 
-        diff = mf_in.values() - mf.values()
+        diff = mf_in.values - mf.values
         assert numpy.all(diff == 0)
 
 

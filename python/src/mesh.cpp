@@ -361,8 +361,8 @@ void mesh(py::module& m)
           return self.id;                                                      \
           })                                                                   \
       .def("mark", &dolfin::mesh::MeshFunction<SCALAR>::mark)                  \
-      .def("values", py::overload_cast<>(                                      \
-          &dolfin::mesh::MeshFunction<SCALAR>::values));
+      .def_property_readonly("values", py::overload_cast<>(                                      \
+                    &dolfin::mesh::MeshFunction<SCALAR>::values));
 
   MESHFUNCTION_MACRO(int, Int);
   MESHFUNCTION_MACRO(double, Double);

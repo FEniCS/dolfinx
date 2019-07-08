@@ -82,11 +82,11 @@ def test_mesh_function_assign_2D_cells():
     ncells = mesh.num_cells()
     f = MeshFunction("int", mesh, mesh.topology.dim, 0)
     for cell in Cells(mesh):
-        f.values()[cell.index()] = ncells - cell.index()
+        f.values[cell.index()] = ncells - cell.index()
 
     g = MeshValueCollection("int", mesh, 2)
     g.assign(f)
-    assert ncells == len(f.values())
+    assert ncells == len(f.values)
     assert ncells == g.size()
 
     f2 = MeshFunction("int", mesh, g, 0)
@@ -94,7 +94,7 @@ def test_mesh_function_assign_2D_cells():
     for cell in Cells(mesh):
         value = ncells - cell.index()
         assert value == g.get_value(cell.index(), 0)
-        assert f2.values()[cell.index()] == g.get_value(cell.index(), 0)
+        assert f2.values[cell.index()] == g.get_value(cell.index(), 0)
 
     h = MeshValueCollection("int", mesh, 2)
     global_indices = mesh.topology.global_indices(2)
@@ -107,7 +107,7 @@ def test_mesh_function_assign_2D_cells():
 
     f3 = MeshFunction("int", mesh, h, 0)
 
-    values = f3.values()
+    values = f3.values
     values[values > ncells_global] = 0.
 
     assert MPI.sum(mesh.mpi_comm(), values.sum() * 1.0) == 140.
@@ -120,11 +120,11 @@ def test_mesh_function_assign_2D_facets():
     f = MeshFunction("int", mesh, tdim - 1, 25)
     for cell in Cells(mesh):
         for i, facet in enumerate(FacetRange(cell)):
-            assert 25 == f.values()[facet.index()]
+            assert 25 == f.values[facet.index()]
 
     g = MeshValueCollection("int", mesh, 1)
     g.assign(f)
-    assert mesh.num_entities(tdim - 1) == len(f.values())
+    assert mesh.num_entities(tdim - 1) == len(f.values)
     assert mesh.num_cells() * 3 == g.size()
     for cell in Cells(mesh):
         for i, facet in enumerate(FacetRange(cell)):
@@ -134,7 +134,7 @@ def test_mesh_function_assign_2D_facets():
 
     for cell in Cells(mesh):
         for i, facet in enumerate(FacetRange(cell)):
-            assert f2.values()[facet.index()] == g.get_value(cell.index(), i)
+            assert f2.values[facet.index()] == g.get_value(cell.index(), i)
 
 
 def test_mesh_function_assign_2D_vertices():
@@ -143,7 +143,7 @@ def test_mesh_function_assign_2D_vertices():
     f = MeshFunction("int", mesh, 0, 25)
     g = MeshValueCollection("int", mesh, 0)
     g.assign(f)
-    assert mesh.num_entities(0) == len(f.values())
+    assert mesh.num_entities(0) == len(f.values)
     assert mesh.num_cells() * 3 == g.size()
 
     f2 = MeshFunction("int", mesh, g, 0)
@@ -151,4 +151,4 @@ def test_mesh_function_assign_2D_vertices():
     for cell in Cells(mesh):
         for i, vert in enumerate(VertexRange(cell)):
             assert 25 == g.get_value(cell.index(), i)
-            assert f2.values()[vert.index()] == g.get_value(cell.index(), i)
+            assert f2.values[vert.index()] == g.get_value(cell.index(), i)
