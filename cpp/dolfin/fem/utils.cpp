@@ -10,8 +10,9 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/types.h>
+#include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/DofMapBuilder.h>
 #include <dolfin/fem/Form.h>
-#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/fem/SparsityPatternBuilder.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
@@ -74,8 +75,8 @@ fem::blocked_index_sets(const std::vector<std::vector<const fem::Form*>> a)
       if (a[i][j])
       {
         assert(a[i][j]->rank() == 2);
-        auto m0 = a[i][j]->function_space(0)->dofmap()->index_map();
-        auto m1 = a[i][j]->function_space(1)->dofmap()->index_map();
+        auto m0 = a[i][j]->function_space(0)->dofmap->index_map;
+        auto m1 = a[i][j]->function_space(1)->dofmap->index_map;
         if (!maps[0][i])
           maps[0][i] = m0;
         else
@@ -115,9 +116,8 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
   }
 
   // Get dof maps
-  std::array<const GenericDofMap*, 2> dofmaps
-      = {{a.function_space(0)->dofmap().get(),
-          a.function_space(1)->dofmap().get()}};
+  std::array<const DofMap*, 2> dofmaps = {
+      {a.function_space(0)->dofmap.get(), a.function_space(1)->dofmap.get()}};
 
   // Get mesh
   assert(a.mesh());
@@ -127,7 +127,7 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
 
   // Get common::IndexMaps for each dimension
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
+      = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
 
   // Create and build sparsity pattern
   la::SparsityPattern pattern(mesh.mpi_comm(), index_maps);
@@ -146,45 +146,6 @@ la::PETScMatrix dolfin::fem::create_matrix(const Form& a)
   common::Timer t1("Init tensor");
   la::PETScMatrix A(a.mesh()->mpi_comm(), pattern);
   t1.stop();
-
-  // Insert zeros to dense rows in increasing order of column index
-  // to avoid CSR data reallocation when assembling in random order
-  // resulting in quadratic complexity; this has to be done before
-  // inserting to diagonal below
-
-  // Tabulate indices of dense rows
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> global_dofs
-      = dofmaps[0]->tabulate_global_dofs();
-  if (global_dofs.size() > 0)
-  {
-    // Get local row range
-    const common::IndexMap& index_map_0 = *dofmaps[0]->index_map();
-    std::array<PetscInt, 2> row_range;
-    MatGetOwnershipRange(A.mat(), &row_range[0], &row_range[1]);
-
-    assert(index_map_0.block_size() == 1);
-
-    // Set zeros in dense rows in order of increasing column index
-    const PetscScalar block = 0.0;
-    PetscInt IJ[2];
-    for (Eigen::Index i = 0; i < global_dofs.size(); ++i)
-    {
-      const std::int64_t I = index_map_0.local_to_global(global_dofs[i]);
-      if (I >= row_range[0] && I < row_range[1])
-      {
-        IJ[0] = I;
-        for (std::int64_t J = 0; J < A.size()[1]; J++)
-        {
-          IJ[1] = J;
-          A.set(&block, 1, &IJ[0], 1, &IJ[1]);
-        }
-      }
-    }
-
-    // Eventually wait with assembly flush for keep_diagonal
-    if (!keep_diagonal)
-      A.apply(la::PETScMatrix::AssemblyType::FLUSH);
-  }
 
   // FIXME: Check if there is a PETSc function for this
   // Insert zeros on the diagonal as diagonal entries may be
@@ -219,9 +180,9 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
   // Extract and check row/column ranges
   // std::vector<std::shared_ptr<const common::IndexMap>> rmaps, cmaps;
   // for (std::size_t row = 0; row < a.size(); ++row)
-  //   rmaps.push_back(a[row][0]->function_space(0)->dofmap()->index_map());
+  //   rmaps.push_back(a[row][0]->function_space(0)->dofmap->index_map;
   // for (std::size_t col = 0; col < a[0].size(); ++col)
-  //   cmaps.push_back(a[0][col]->function_space(1)->dofmap()->index_map());
+  //   cmaps.push_back(a[0][col]->function_space(1)->dofmap->index_map;
 
   std::vector<std::vector<std::shared_ptr<const common::IndexMap>>> maps
       = blocked_index_sets(a);
@@ -240,16 +201,16 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
       if (a[row][col])
       {
         // Build sparsity pattern for block
-        std::array<const GenericDofMap*, 2> dofmaps
-            = {{a[row][col]->function_space(0)->dofmap().get(),
-                a[row][col]->function_space(1)->dofmap().get()}};
+        std::array<const DofMap*, 2> dofmaps
+            = {{a[row][col]->function_space(0)->dofmap.get(),
+                a[row][col]->function_space(1)->dofmap.get()}};
         // auto sp = std::make_unique<la::SparsityPattern>(
         //     SparsityPatternBuilder::build(mesh.mpi_comm(), mesh, dofmaps,
         //     true,
         //                                   false, false));
 
         std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-            = {{dofmaps[0]->index_map(), dofmaps[1]->index_map()}};
+            = {{dofmaps[0]->index_map, dofmaps[1]->index_map}};
         auto sp = std::make_unique<la::SparsityPattern>(mesh.mpi_comm(),
                                                         index_maps);
         if (a[row][col]->integrals().num_integrals(
@@ -304,7 +265,7 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
   {
     auto map = maps[0][i];
     std::size_t size = map->size_local() + map->num_ghosts();
-    const int bs0 = map->block_size();
+    const int bs0 = map->block_size;
     for (std::size_t k = 0; k < size; ++k)
     {
       std::size_t index_k = map->local_to_global(k);
@@ -321,7 +282,7 @@ fem::create_matrix_block(std::vector<std::vector<const fem::Form*>> a)
   {
     auto map = maps[1][i];
     std::size_t size = map->size_local() + map->num_ghosts();
-    const int bs1 = map->block_size();
+    const int bs1 = map->block_size;
     for (std::size_t k = 0; k < size; ++k)
     {
       std::size_t index_k = map->local_to_global(k);
@@ -413,16 +374,16 @@ la::PETScVector fem::create_vector_block(std::vector<const fem::Form*> L)
   {
     assert(form);
     assert(form->rank() == 1);
-    auto map = form->function_space(0)->dofmap()->index_map();
+    auto map = form->function_space(0)->dofmap->index_map;
     index_maps.push_back(map.get());
   }
 
   std::size_t local_size = 0;
-  std::vector<std::size_t> ghosts;
+  std::vector<std::int64_t> ghosts;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     const common::IndexMap* map = index_maps[i];
-    const int bs = index_maps[i]->block_size();
+    const int bs = index_maps[i]->block_size;
     local_size += map->size_local() * bs;
 
     const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& field_ghosts
@@ -431,7 +392,7 @@ la::PETScVector fem::create_vector_block(std::vector<const fem::Form*> L)
     {
       for (int k = 0; k < bs; ++k)
       {
-        std::size_t global_index
+        std::int64_t global_index
             = get_global_index(index_maps, i, bs * field_ghosts[j] + k);
         ghosts.push_back(global_index);
       }
@@ -453,7 +414,7 @@ la::PETScVector fem::create_vector_nest(std::vector<const fem::Form*> L)
     if (L[i])
     {
       const common::IndexMap& index_map
-          = *L[i]->function_space(0)->dofmap()->index_map();
+          = *L[i]->function_space(0)->dofmap->index_map;
       vecs[i] = std::make_shared<la::PETScVector>(index_map);
       petsc_vecs[i] = vecs[i]->vec();
     }
@@ -476,7 +437,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   // FIXME: handle/check block size > 1
 
   // Get process that owns global index
-  const int bs = maps[field]->block_size();
+  const int bs = maps[field]->block_size;
   int owner = maps[field]->owner(index / bs);
 
   // Offset from lower rank processes
@@ -486,7 +447,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
     for (std::size_t j = 0; j < maps.size(); ++j)
     {
       if (j != field)
-        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size();
+        offset += maps[j]->_all_ranges[owner] * maps[j]->block_size;
     }
   }
 
@@ -494,7 +455,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
   for (unsigned int i = 0; i < field; ++i)
   {
     offset += (maps[i]->_all_ranges[owner + 1] - maps[i]->_all_ranges[owner])
-              * maps[i]->block_size();
+              * maps[i]->block_size;
   }
 
   return index + offset;
@@ -502,8 +463,8 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
 fem::create_element_dof_layout(const ufc_dofmap& dofmap,
-                               const std::vector<int>& parent_map,
-                               const mesh::CellType& cell_type)
+                               const mesh::CellType& cell_type,
+                               const std::vector<int>& parent_map)
 {
   // Copy over number of dofs per entity type
   std::array<int, 4> num_entity_dofs;
@@ -552,7 +513,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
     std::iota(parent_map_sub.begin(), parent_map_sub.end(), offsets[i]);
     sub_dofmaps.push_back(
         std::make_shared<fem::ElementDofLayout>(create_element_dof_layout(
-            *ufc_sub_dofmaps[i], parent_map_sub, cell_type)));
+            *ufc_sub_dofmaps[i], cell_type, parent_map_sub)));
   }
 
   // Check for "block structure". This should ultimately be replaced,
@@ -561,6 +522,14 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
 
   return fem::ElementDofLayout(block_size, entity_dofs, parent_map, sub_dofmaps,
                                cell_type);
+}
+//-----------------------------------------------------------------------------
+fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
+                               const mesh::Mesh& mesh)
+{
+  return DofMapBuilder::build(
+      mesh, std::make_shared<ElementDofLayout>(
+                create_element_dof_layout(ufc_dofmap, mesh.type())));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
@@ -576,6 +545,88 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
             ufc_form.original_coefficient_position(i), names[i], nullptr));
   }
   return coeffs;
+}
+//-----------------------------------------------------------------------------
+fem::Form fem::create_form(
+    const ufc_form& ufc_form,
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
+{
+  assert(ufc_form.rank == (int)spaces.size());
+
+  // Check argument function spaces
+  for (std::size_t i = 0; i < spaces.size(); ++i)
+  {
+    assert(spaces[i]->element);
+    std::unique_ptr<ufc_finite_element, decltype(free)*> ufc_element(
+        ufc_form.create_finite_element(i), free);
+
+    assert(ufc_element);
+    if (std::string(ufc_element->signature) != spaces[i]->element->signature())
+    {
+      throw std::runtime_error(
+          "Cannot create form. Wrong type of function space for argument.");
+    }
+  }
+
+  // Get list of integral IDs, and load tabulate tensor into memory for each
+  FormIntegrals integrals;
+  std::vector<int> cell_integral_ids(ufc_form.num_cell_integrals);
+  ufc_form.get_cell_integral_ids(cell_integral_ids.data());
+  for (int id : cell_integral_ids)
+  {
+    ufc_integral* cell_integral = ufc_form.create_cell_integral(id);
+    assert(cell_integral);
+    integrals.register_tabulate_tensor(FormIntegrals::Type::cell, id,
+                                       cell_integral->tabulate_tensor);
+    std::free(cell_integral);
+  }
+
+  std::vector<int> exterior_facet_integral_ids(
+      ufc_form.num_exterior_facet_integrals);
+  ufc_form.get_exterior_facet_integral_ids(exterior_facet_integral_ids.data());
+  for (int id : exterior_facet_integral_ids)
+  {
+    ufc_integral* exterior_facet_integral
+        = ufc_form.create_exterior_facet_integral(id);
+    assert(exterior_facet_integral);
+    integrals.register_tabulate_tensor(
+        FormIntegrals::Type::exterior_facet, id,
+        exterior_facet_integral->tabulate_tensor);
+    std::free(exterior_facet_integral);
+  }
+
+  std::vector<int> interior_facet_integral_ids(
+      ufc_form.num_interior_facet_integrals);
+  ufc_form.get_interior_facet_integral_ids(interior_facet_integral_ids.data());
+  for (int id : interior_facet_integral_ids)
+  {
+    ufc_integral* interior_facet_integral
+        = ufc_form.create_interior_facet_integral(id);
+    assert(interior_facet_integral);
+    integrals.register_tabulate_tensor(
+        FormIntegrals::Type::interior_facet, id,
+        interior_facet_integral->tabulate_tensor);
+    std::free(interior_facet_integral);
+  }
+
+  // Not currently working
+  std::vector<int> vertex_integral_ids(ufc_form.num_vertex_integrals);
+  ufc_form.get_vertex_integral_ids(vertex_integral_ids.data());
+  if (vertex_integral_ids.size() > 0)
+  {
+    throw std::runtime_error(
+        "Vertex integrals not supported. Under development.");
+  }
+
+  // Create CoordinateMapping
+  ufc_coordinate_mapping* cmap = ufc_form.create_coordinate_mapping();
+  std::shared_ptr<const fem::CoordinateMapping> coord_mapping
+      = fem::get_cmap_from_ufc_cmap(*cmap);
+  std::free(cmap);
+
+  return fem::Form(spaces, integrals,
+                   FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
+                   coord_mapping);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::CoordinateMapping>
@@ -600,3 +651,4 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
       ufc_cmap.signature, ufc_cmap.compute_physical_coordinates,
       ufc_cmap.compute_reference_geometry);
 }
+//-----------------------------------------------------------------------------

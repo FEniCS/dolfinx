@@ -33,7 +33,6 @@ public:
   static std::vector<int> compute_cuthill_mckee(
       const std::set<std::pair<std::size_t, std::size_t>>& edges,
       std::size_t size, bool reverse = false);
-
 };
 } // namespace graph
 } // namespace dolfin

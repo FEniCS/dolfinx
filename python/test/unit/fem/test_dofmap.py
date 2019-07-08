@@ -54,8 +54,8 @@ def test_tabulate_all_coordinates(mesh_factory):
     W = FunctionSpace(mesh, W0 * W1)
 
     D = mesh.geometry.dim
-    V_dofmap = V.dofmap()
-    W_dofmap = W.dofmap()
+    V_dofmap = V.dofmap
+    W_dofmap = W.dofmap
 
     all_coords_V = V.tabulate_dof_coordinates()
     all_coords_W = W.tabulate_dof_coordinates()
@@ -107,15 +107,15 @@ def test_tabulate_dofs(mesh_factory):
     L11 = L1.sub(1)
 
     for i, cell in enumerate(Cells(mesh)):
-        dofs0 = L0.dofmap().cell_dofs(cell.index())
-        dofs1 = L01.dofmap().cell_dofs(cell.index())
-        dofs2 = L11.dofmap().cell_dofs(cell.index())
-        dofs3 = L1.dofmap().cell_dofs(cell.index())
+        dofs0 = L0.dofmap.cell_dofs(cell.index())
+        dofs1 = L01.dofmap.cell_dofs(cell.index())
+        dofs2 = L11.dofmap.cell_dofs(cell.index())
+        dofs3 = L1.dofmap.cell_dofs(cell.index())
 
-        assert np.array_equal(dofs0, L0.dofmap().cell_dofs(i))
-        assert np.array_equal(dofs1, L01.dofmap().cell_dofs(i))
-        assert np.array_equal(dofs2, L11.dofmap().cell_dofs(i))
-        assert np.array_equal(dofs3, L1.dofmap().cell_dofs(i))
+        assert np.array_equal(dofs0, L0.dofmap.cell_dofs(i))
+        assert np.array_equal(dofs1, L01.dofmap.cell_dofs(i))
+        assert np.array_equal(dofs2, L11.dofmap.cell_dofs(i))
+        assert np.array_equal(dofs3, L1.dofmap.cell_dofs(i))
 
         assert len(np.intersect1d(dofs0, dofs1)) == 0
         assert len(np.intersect1d(dofs0, dofs2)) == 0
@@ -147,18 +147,18 @@ def test_tabulate_coord_periodic(mesh_factory):
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
-    sdim = V.element().space_dimension()
+    sdim = V.element.space_dimension()
     coord0 = np.zeros((sdim, 2), dtype="d")
     coord1 = np.zeros((sdim, 2), dtype="d")
     coord2 = np.zeros((sdim, 2), dtype="d")
     coord3 = np.zeros((sdim, 2), dtype="d")
 
     for cell in Cells(mesh):
-        coord0 = V.element().tabulate_dof_coordinates(cell)
-        coord1 = L0.element().tabulate_dof_coordinates(cell)
-        coord2 = L01.element().tabulate_dof_coordinates(cell)
-        coord3 = L11.element().tabulate_dof_coordinates(cell)
-        coord4 = L1.element().tabulate_dof_coordinates(cell)
+        coord0 = V.element.tabulate_dof_coordinates(cell)
+        coord1 = L0.element.tabulate_dof_coordinates(cell)
+        coord2 = L01.element.tabulate_dof_coordinates(cell)
+        coord3 = L11.element.tabulate_dof_coordinates(cell)
+        coord4 = L1.element.tabulate_dof_coordinates(cell)
 
         assert (coord0 == coord1).all()
         assert (coord0 == coord2).all()
@@ -190,34 +190,34 @@ def test_global_dof_builder(mesh_factory):
 def test_entity_dofs(mesh):
     """Test that num entity dofs is correctly wrapped to dolfin::DofMap"""
     V = FunctionSpace(mesh, ("CG", 1))
-    assert V.dofmap().num_entity_dofs(0) == 1
-    assert V.dofmap().num_entity_dofs(1) == 0
-    assert V.dofmap().num_entity_dofs(2) == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
+    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
     V = VectorFunctionSpace(mesh, ("CG", 1))
-    assert V.dofmap().num_entity_dofs(0) == 2
-    assert V.dofmap().num_entity_dofs(1) == 0
-    assert V.dofmap().num_entity_dofs(2) == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(0) == 2
+    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
     V = FunctionSpace(mesh, ("CG", 2))
-    assert V.dofmap().num_entity_dofs(0) == 1
-    assert V.dofmap().num_entity_dofs(1) == 1
-    assert V.dofmap().num_entity_dofs(2) == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
+    assert V.dofmap.dof_layout.num_entity_dofs(1) == 1
+    assert V.dofmap.dof_layout.num_entity_dofs(2) == 0
 
     V = FunctionSpace(mesh, ("CG", 3))
-    assert V.dofmap().num_entity_dofs(0) == 1
-    assert V.dofmap().num_entity_dofs(1) == 2
-    assert V.dofmap().num_entity_dofs(2) == 1
+    assert V.dofmap.dof_layout.num_entity_dofs(0) == 1
+    assert V.dofmap.dof_layout.num_entity_dofs(1) == 2
+    assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
 
     V = FunctionSpace(mesh, ("DG", 0))
-    assert V.dofmap().num_entity_dofs(0) == 0
-    assert V.dofmap().num_entity_dofs(1) == 0
-    assert V.dofmap().num_entity_dofs(2) == 1
+    assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(2) == 1
 
     V = FunctionSpace(mesh, ("DG", 1))
-    assert V.dofmap().num_entity_dofs(0) == 0
-    assert V.dofmap().num_entity_dofs(1) == 0
-    assert V.dofmap().num_entity_dofs(2) == 3
+    assert V.dofmap.dof_layout.num_entity_dofs(0) == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(1) == 0
+    assert V.dofmap.dof_layout.num_entity_dofs(2) == 3
 
     V = VectorFunctionSpace(mesh, ("CG", 1))
 
@@ -225,7 +225,7 @@ def test_entity_dofs(mesh):
     # is here just to check that we get correct numbers mapped from ufc
     # generated code to dolfin
     for i, cdofs in enumerate([[0, 3], [1, 4], [2, 5]]):
-        dofs = V.dofmap().tabulate_entity_dofs(0, i)
+        dofs = V.dofmap.dof_layout.entity_dofs(0, i)
         assert all(d == cd for d, cd in zip(dofs, cdofs))
 
 
@@ -250,26 +250,26 @@ def test_entity_closure_dofs(mesh_factory):
                 dtype=np.uintp)
             for entity in all_entities:
                 entities = np.array([entity], dtype=np.uintp)
-                dofs_on_this_entity = V.dofmap().entity_dofs(mesh, d, entities)
-                closure_dofs = V.dofmap().entity_closure_dofs(
+                dofs_on_this_entity = V.dofmap.entity_dofs(mesh, d, entities)
+                closure_dofs = V.dofmap.entity_closure_dofs(
                     mesh, d, entities)
-                assert len(dofs_on_this_entity) == V.dofmap().num_entity_dofs(
+                assert len(dofs_on_this_entity) == V.dofmap.dof_layout.num_entity_dofs(
                     d)
                 assert len(dofs_on_this_entity) <= len(closure_dofs)
                 covered.update(dofs_on_this_entity)
                 covered2.update(closure_dofs)
-            dofs_on_all_entities = V.dofmap().entity_dofs(
+            dofs_on_all_entities = V.dofmap.entity_dofs(
                 mesh, d, all_entities)
-            closure_dofs_on_all_entities = V.dofmap().entity_closure_dofs(
+            closure_dofs_on_all_entities = V.dofmap.entity_closure_dofs(
                 mesh, d, all_entities)
-            assert len(dofs_on_all_entities) == V.dofmap().num_entity_dofs(
+            assert len(dofs_on_all_entities) == V.dofmap.dof_layout.num_entity_dofs(
                 d) * mesh.num_entities(d)
             assert covered == set(dofs_on_all_entities)
             assert covered2 == set(closure_dofs_on_all_entities)
         d = tdim
         all_cells = np.array(
             [entity for entity in range(mesh.num_entities(d))], dtype=np.uintp)
-        assert set(V.dofmap().entity_closure_dofs(mesh, d, all_cells)) == set(
+        assert set(V.dofmap.entity_closure_dofs(mesh, d, all_cells)) == set(
             range(V.dim))
 
 
@@ -284,7 +284,7 @@ def test_clear_sub_map_data_scalar(mesh):
     assert (V1)
 
     # Clean sub-map data
-    V.dofmap().clear_sub_map_data()
+    V.dofmap.clear_sub_map_data()
 
     # Can still get previously computed map
     V1 = V.sub(1)
@@ -301,9 +301,9 @@ def test_clear_sub_map_data_vector(mesh):
     W = FunctionSpace(mesh, P1 * P1)
 
     # Check block size
-    assert W.dofmap().index_map.block_size == 2
+    assert W.dofmap.index_map.block_size == 2
 
-    W.dofmap().clear_sub_map_data()
+    W.dofmap.clear_sub_map_data()
     with pytest.raises(RuntimeError):
         W0 = W.sub(0)
         assert (W0)
@@ -324,17 +324,17 @@ def test_block_size(mesh):
         P2 = FiniteElement("Lagrange", mesh.ufl_cell(), 2)
 
         V = FunctionSpace(mesh, P2)
-        assert V.dofmap().block_size() == 1
+        assert V.dofmap.block_size == 1
 
         V = FunctionSpace(mesh, P2 * P2)
-        assert V.dofmap().index_map.block_size == 2
+        assert V.dofmap.index_map.block_size == 2
 
         for i in range(1, 6):
             W = FunctionSpace(mesh, MixedElement(i * [P2]))
-            assert W.dofmap().index_map.block_size == i
+            assert W.dofmap.index_map.block_size == i
 
         V = VectorFunctionSpace(mesh, ("Lagrange", 2))
-        assert V.dofmap().index_map.block_size == mesh.geometry.dim
+        assert V.dofmap.index_map.block_size == mesh.geometry.dim
 
 
 @pytest.mark.skip
@@ -343,7 +343,7 @@ def test_block_size_real(mesh):
     V = FiniteElement('DG', mesh.ufl_cell(), 0)
     R = FiniteElement('R', mesh.ufl_cell(), 0)
     X = FunctionSpace(mesh, V * R)
-    assert X.dofmap().index_map.block_size == 1
+    assert X.dofmap.index_map.block_size == 1
 
 
 @pytest.mark.skip
@@ -364,7 +364,7 @@ def test_local_dimension(mesh_factory):
     W = FunctionSpace(mesh, w)
 
     for space in [V, Q, W]:
-        dofmap = space.dofmap()
+        dofmap = space.dofmap
         local_to_global_map = dofmap.tabulate_local_to_global_dofs()
         ownership_range = dofmap.index_set.size_local * dofmap.index_set.block_size
         dim1 = dofmap().index_map.size_local()
@@ -434,15 +434,15 @@ xfail_ffc = pytest.mark.xfail(raises=Exception)
         marks=pytest.mark.xfail)
 ])
 def test_dofs_dim(space):
-    """Test function GenericDofMap::dofs(mesh, dim)"""
+    """Test function DofMap::dofs(mesh, dim)"""
     V = eval(space)
-    dofmap = V.dofmap()
-    mesh = V.mesh()
+    dofmap = V.dofmap
+    mesh = V.mesh
     for dim in range(0, mesh.topology.dim):
         edofs = dofmap.dofs(mesh, dim)
         if mesh.topology.connectivity(dim, 0) is not None:
             num_mesh_entities = mesh.num_entities(dim)
-            dofs_per_entity = dofmap.num_entity_dofs(dim)
+            dofs_per_entity = dofmap.dof_layout.num_entity_dofs(dim)
             assert len(edofs) == dofs_per_entity * num_mesh_entities
 
 
@@ -452,14 +452,14 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     view into the data; in particular test lifetime of data
     owner"""
     V = FunctionSpace(mesh, "P", 1)
-    dofmap = V.dofmap()
+    dofmap = V.dofmap
     index_map = dofmap().index_map
 
     rc = sys.getrefcount(dofmap)
     l2gu = dofmap.local_to_global_unowned()
     assert sys.getrefcount(dofmap) == rc + 1 if l2gu.size else rc
     assert not l2gu.flags.writeable
-    assert all(l2gu < V.dofmap().global_dimension())
+    assert all(l2gu < V.dofmap.global_dimension())
     del l2gu
     assert sys.getrefcount(dofmap) == rc
 
@@ -467,7 +467,7 @@ def test_readonly_view_local_to_global_unwoned(mesh):
     l2gu = index_map.local_to_global_unowned()
     assert sys.getrefcount(index_map) == rc + 1 if l2gu.size else rc
     assert not l2gu.flags.writeable
-    assert all(l2gu < V.dofmap().global_dimension())
+    assert all(l2gu < V.dofmap.global_dimension())
     del l2gu
     assert sys.getrefcount(index_map) == rc
 
@@ -480,15 +480,15 @@ def test_high_order_lagrange():
         V = FunctionSpace(mesh, ("Lagrange", 3))
 
         assert len(edges) == 2
-        dofmap = V.dofmap()
+        dofmap = V.dofmap
         dofs = [dofmap.cell_dofs(c) for c in range(len(edges))]
-        edge_dofs_local = [dofmap.tabulate_entity_dofs(1, e) for e in edges]
+        edge_dofs_local = [dofmap.dof_layout.entity_dofs(1, e) for e in edges]
         for edofs in edge_dofs_local:
             assert len(edofs) == 2
         edge_dofs = [dofs[0][edge_dofs_local[0]], dofs[1][edge_dofs_local[1]]]
         assert set(edge_dofs[0]) == set(edge_dofs[1])
 
-        X = V.element().dof_reference_coordinates()
+        X = V.element.dof_reference_coordinates()
         coord_dofs = mesh.coordinate_dofs().entity_points()
         x_g = mesh.geometry.points
         x_dofs = []

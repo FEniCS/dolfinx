@@ -72,7 +72,7 @@ def project(v,
 
     # Ensure we have a mesh and attach to measure
     if mesh is None:
-        mesh = V.mesh()
+        mesh = V.mesh
     dx = ufl.dx(mesh)
 
     # Define variational problem for projection
@@ -117,7 +117,7 @@ def _extract_function_space(expression, mesh):
         functions = ufl.algorithms.extract_coefficients(expression)
         for f in functions:
             if isinstance(f, function.Function):
-                mesh = f.function_space().mesh()
+                mesh = f.function_space().mesh
                 if mesh is not None:
                     break
 

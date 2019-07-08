@@ -174,10 +174,7 @@ void FiniteElement::transform_values(
 }
 
 //-----------------------------------------------------------------------------
-int FiniteElement::num_sub_elements() const
-{
-  return _sub_elements.size();
-}
+int FiniteElement::num_sub_elements() const { return _sub_elements.size(); }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::hash() const { return _hash; }
 //-----------------------------------------------------------------------------

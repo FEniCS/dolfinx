@@ -7,7 +7,7 @@
 #include "SparsityPatternBuilder.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
@@ -20,7 +20,7 @@ using namespace dolfin::fem;
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::cells(
     la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-    const std::array<const fem::GenericDofMap*, 2> dofmaps)
+    const std::array<const fem::DofMap*, 2> dofmaps)
 {
   assert(dofmaps[0]);
   assert(dofmaps[1]);
@@ -33,7 +33,7 @@ void SparsityPatternBuilder::cells(
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::interior_facets(
     la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-    const std::array<const fem::GenericDofMap*, 2> dofmaps)
+    const std::array<const fem::DofMap*, 2> dofmaps)
 {
   assert(dofmaps[0]);
   assert(dofmaps[1]);
@@ -76,7 +76,7 @@ void SparsityPatternBuilder::interior_facets(
 //-----------------------------------------------------------------------------
 void SparsityPatternBuilder::exterior_facets(
     la::SparsityPattern& pattern, const mesh::Mesh& mesh,
-    const std::array<const fem::GenericDofMap*, 2> dofmaps)
+    const std::array<const fem::DofMap*, 2> dofmaps)
 {
   const std::size_t D = mesh.topology().dim();
   mesh.create_entities(D - 1);

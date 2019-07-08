@@ -15,7 +15,6 @@ set(HEADERS
   Form.h
   FormCoefficients.h
   FormIntegrals.h
-  GenericDofMap.h
   PETScDMCollection.h
   ReferenceCellTopology.h
   SparsityPatternBuilder.h
@@ -37,7 +36,6 @@ set(SOURCES
   Form.cpp
   FormCoefficients.cpp
   FormIntegrals.cpp
-  GenericDofMap.cpp
   PETScDMCollection.cpp
   ReferenceCellTopology.cpp
   SparsityPatternBuilder.cpp

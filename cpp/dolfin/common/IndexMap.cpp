@@ -12,33 +12,10 @@ using namespace dolfin::common;
 
 //-----------------------------------------------------------------------------
 IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
-                   const std::vector<std::size_t>& ghosts,
-                   std::size_t block_size)
-    : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts.size()),
-      _ghost_owners(ghosts.size()), _block_size(block_size)
-{
-  // Calculate offsets
-  MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
-
-  const std::size_t mpi_size = dolfin::MPI::size(_mpi_comm);
-  for (std::size_t i = 1; i < mpi_size; ++i)
-    _all_ranges[i] += _all_ranges[i - 1];
-
-  _all_ranges.insert(_all_ranges.begin(), 0);
-
-  for (std::size_t i = 0; i < ghosts.size(); ++i)
-  {
-    _ghosts[i] = ghosts[i];
-    _ghost_owners[i] = owner(ghosts[i]);
-    assert(_ghost_owners[i] != _myrank);
-  }
-}
-//-----------------------------------------------------------------------------
-IndexMap::IndexMap(MPI_Comm mpi_comm, std::int32_t local_size,
                    const std::vector<std::int64_t>& ghosts,
                    std::size_t block_size)
-    : _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)), _ghosts(ghosts.size()),
-      _ghost_owners(ghosts.size()), _block_size(block_size)
+    : block_size(block_size), _mpi_comm(mpi_comm), _myrank(MPI::rank(mpi_comm)),
+      _ghosts(ghosts.size()), _ghost_owners(ghosts.size())
 {
   // Calculate offsets
   MPI::all_gather(_mpi_comm, (std::int64_t)local_size, _all_ranges);
@@ -61,8 +38,6 @@ std::array<std::int64_t, 2> IndexMap::local_range() const
 {
   return {{_all_ranges[_myrank], _all_ranges[_myrank + 1]}};
 }
-//-----------------------------------------------------------------------------
-int IndexMap::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 std::int32_t IndexMap::num_ghosts() const { return _ghosts.size(); }
 //-----------------------------------------------------------------------------
@@ -89,6 +64,25 @@ const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>&
 IndexMap::ghost_owners() const
 {
   return _ghost_owners;
+}
+//----------------------------------------------------------------------------
+Eigen::Array<std::int64_t, Eigen::Dynamic, 1>
+IndexMap::indices(bool unroll_block) const
+{
+  const int bs = unroll_block ? this->block_size : 1;
+  const std::array<std::int64_t, 2> local_range = this->local_range();
+  const std::int32_t size_local = this->size_local() * bs;
+
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> indx(size_local
+                                                    + num_ghosts() * bs);
+  std::iota(indx.data(), indx.data() + size_local, bs*local_range[0]);
+  for (Eigen::Index i = 0; i < num_ghosts(); ++i)
+  {
+    for (Eigen::Index j = 0; j < bs; ++j)
+      indx[size_local + bs*i + j] = bs * _ghosts[i] + j;
+  }
+
+  return indx;
 }
 //----------------------------------------------------------------------------
 MPI_Comm IndexMap::mpi_comm() const { return _mpi_comm; }

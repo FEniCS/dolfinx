@@ -21,7 +21,7 @@ ElementDofLayout::ElementDofLayout(
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
     const mesh::CellType& cell_type)
-    : _parent_map(parent_map), _block_size(block_size), _num_dofs(0),
+    : block_size(block_size), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
@@ -92,29 +92,54 @@ ElementDofLayout::ElementDofLayout(const ElementDofLayout& element_dof_layout,
   _parent_map.clear();
 }
 //-----------------------------------------------------------------------------
-
 int ElementDofLayout::num_dofs() const { return _num_dofs; }
 //-----------------------------------------------------------------------------
-int ElementDofLayout::num_entity_dofs(unsigned int dim) const
+int ElementDofLayout::num_entity_dofs(int dim) const
 {
-  assert(dim < _num_entity_dofs.size());
+  assert(dim < (int)_num_entity_dofs.size());
   return _num_entity_dofs[dim];
 }
 //-----------------------------------------------------------------------------
-int ElementDofLayout::num_entity_closure_dofs(unsigned int dim) const
+int ElementDofLayout::num_entity_closure_dofs(int dim) const
 {
-  assert(dim < _num_entity_closure_dofs.size());
+  assert(dim < (int)_num_entity_closure_dofs.size());
   return _num_entity_closure_dofs[dim];
 }
 //-----------------------------------------------------------------------------
+Eigen::Array<int, Eigen::Dynamic, 1>
+ElementDofLayout::entity_dofs(int entity_dim, int cell_entity_index) const
+{
+  assert(entity_dim < (int)_entity_dofs.size());
+  assert(cell_entity_index < (int)_entity_dofs[entity_dim].size());
+  Eigen::Array<int, Eigen::Dynamic, 1> dofs(
+      _entity_dofs[entity_dim][cell_entity_index].size());
+  std::copy(_entity_dofs[entity_dim][cell_entity_index].begin(),
+            _entity_dofs[entity_dim][cell_entity_index].end(), dofs.data());
+  return dofs;
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<int, Eigen::Dynamic, 1>
+ElementDofLayout::entity_closure_dofs(int entity_dim,
+                                      int cell_entity_index) const
+{
+  assert(entity_dim < (int)_entity_closure_dofs.size());
+  assert(cell_entity_index < (int)_entity_closure_dofs[entity_dim].size());
+  Eigen::Array<int, Eigen::Dynamic, 1> dofs(
+      _entity_closure_dofs[entity_dim][cell_entity_index].size());
+  std::copy(_entity_closure_dofs[entity_dim][cell_entity_index].begin(),
+            _entity_closure_dofs[entity_dim][cell_entity_index].end(),
+            dofs.data());
+  return dofs;
+}
+//-----------------------------------------------------------------------------
 const std::vector<std::vector<std::set<int>>>&
-ElementDofLayout::entity_dofs() const
+ElementDofLayout::entity_dofs_all() const
 {
   return _entity_dofs;
 }
 //-----------------------------------------------------------------------------
 const std::vector<std::vector<std::set<int>>>&
-ElementDofLayout::entity_closure_dofs() const
+ElementDofLayout::entity_closure_dofs_all() const
 {
   return _entity_closure_dofs;
 }
@@ -164,8 +189,6 @@ ElementDofLayout::sub_view(const std::vector<int>& component) const
 
   return dof_list;
 }
-//-----------------------------------------------------------------------------
-int ElementDofLayout::block_size() const { return _block_size; }
 //-----------------------------------------------------------------------------
 bool ElementDofLayout::is_view() const { return !_parent_map.empty(); }
 //-----------------------------------------------------------------------------

@@ -75,7 +75,7 @@ def test_multiple_datasets(tempdir, encoding):
         xdmf.write(cf0)
         xdmf.write(cf1)
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        mesh = xdmf.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
+        mesh = xdmf.read_mesh(cpp.mesh.GhostMode.none)
         cf0 = xdmf.read_mf_size_t(mesh, "cf0")
         cf1 = xdmf.read_mf_size_t(mesh, "cf1")
     assert (cf0[0] == 11 and cf1[0] == 22)
@@ -88,7 +88,7 @@ def test_save_and_load_1d_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:
-        mesh2 = file.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
+        mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology.dim
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
@@ -101,7 +101,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:
-        mesh2 = file.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
+        mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology.dim
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
@@ -114,7 +114,7 @@ def test_save_and_load_2d_quad_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:
-        mesh2 = file.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
+        mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology.dim
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
@@ -127,7 +127,7 @@ def test_save_and_load_3d_mesh(tempdir, encoding):
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:
-        mesh2 = file.read_mesh(MPI.comm_world, cpp.mesh.GhostMode.none)
+        mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology.dim
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)

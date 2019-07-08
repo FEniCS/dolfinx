@@ -6,8 +6,8 @@
 
 #include "assemble_vector_impl.h"
 #include "DirichletBC.h"
+#include "DofMap.h"
 #include "Form.h"
-#include "GenericDofMap.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
 #include <dolfin/function/Function.h>
@@ -40,11 +40,11 @@ void _lift_bc_cells(
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap());
+  assert(a.function_space(0)->dofmap);
   assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap());
-  const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
+  assert(a.function_space(1)->dofmap);
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap;
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap;
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
@@ -56,7 +56,7 @@ void _lift_bc_cells(
     coefficients_ptr[i] = coefficients.get(i).get();
     n.push_back(
         n.back()
-        + coefficients_ptr[i]->function_space()->element()->space_dimension());
+        + coefficients_ptr[i]->function_space()->element->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -93,7 +93,7 @@ void _lift_bc_cells(
     assert(!cell.is_ghost());
 
     // Get dof maps for cell
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
         = dofmap1.cell_dofs(cell.index());
 
     // Check if bc is applied to cell
@@ -173,11 +173,11 @@ void _lift_bc_exterior_facets(
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap());
+  assert(a.function_space(0)->dofmap);
   assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap());
-  const fem::GenericDofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::GenericDofMap& dofmap1 = *a.function_space(1)->dofmap();
+  assert(a.function_space(1)->dofmap);
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap;
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap;
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
@@ -189,7 +189,7 @@ void _lift_bc_exterior_facets(
     coefficients_ptr[i] = coefficients.get(i).get();
     n.push_back(
         n.back()
-        + coefficients_ptr[i]->function_space()->element()->space_dimension());
+        + coefficients_ptr[i]->function_space()->element->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -302,11 +302,12 @@ void fem::impl::assemble_vector(
   const mesh::Mesh& mesh = *L.mesh();
 
   // Get dofmap data
-  const fem::GenericDofMap& dofmap = *L.function_space(0)->dofmap();
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
+  const fem::DofMap& dofmap = *L.function_space(0)->dofmap;
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
       = dofmap.dof_array();
-  // FIXME: do this right
-  const int num_dofs_per_cell = dofmap.num_element_dofs(0);
+
+  assert(dofmap.element_dof_layout);
+  const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
 
   // Prepare coefficients
   const FormCoefficients& coefficients = L.coeffs();
@@ -411,7 +412,7 @@ void fem::impl::assemble_cells(
 void fem::impl::assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const fem::GenericDofMap& dofmap,
+    const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
@@ -488,7 +489,7 @@ void fem::impl::assemble_exterior_facets(
 void fem::impl::assemble_interior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const fem::GenericDofMap& dofmap,
+    const fem::DofMap& dofmap,
     const std::function<void(PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
@@ -609,10 +610,10 @@ void fem::impl::apply_lifting(
     {
       auto V1 = a[j]->function_space(1);
       assert(V1);
-      auto map1 = V1->dofmap()->index_map();
+      auto map1 = V1->dofmap->index_map;
       assert(map1);
       const int crange
-          = map1->block_size() * (map1->size_local() + map1->num_ghosts());
+          = map1->block_size * (map1->size_local() + map1->num_ghosts());
       bc_markers1.assign(crange, false);
       bc_values1 = Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>::Zero(crange);
       for (std::shared_ptr<const DirichletBC>& bc : bcs1[j])

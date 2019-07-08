@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "DirichletBC.h"
+#include "DofMap.h"
 #include "FiniteElement.h"
-#include "GenericDofMap.h"
 #include <array>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -32,11 +32,11 @@ get_remote_bcs(const common::IndexMap& map, const common::IndexMap& map_g,
 {
   std::vector<std::array<PetscInt, 2>> dof_dof_g;
 
-  const std::int32_t bs = map.block_size();
+  const std::int32_t bs = map.block_size;
   const std::int32_t size_owned = map.size_local();
   const std::int32_t size_ghost = map.num_ghosts();
 
-  const std::int32_t bs_g = map_g.block_size();
+  const std::int32_t bs_g = map_g.block_size;
   const std::int32_t size_owned_g = map_g.size_local();
   const std::int32_t size_ghost_g = map_g.num_ghosts();
   const std::array<std::int64_t, 2> range_g = map_g.local_range();
@@ -167,7 +167,7 @@ std::vector<std::int32_t> marked_facets(
   // Pack boundary vertices for vectorised marking
   // function
   for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
-{
+  {
     if (boundary_vertex[i] != -1)
       x_boundary.row(boundary_vertex[i]) = x_all.row(i);
   }
@@ -198,7 +198,7 @@ std::vector<std::int32_t> marked_facets(
            and (all_marked[idx] == false
                 and boundary_marked[boundary_vertex[idx]] == false))
           or (boundary_vertex[idx] == -1 and all_marked[idx] == false))
-  {
+      {
         all_vertices_marked = false;
         break;
       }
@@ -286,18 +286,18 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
                             const std::vector<std::int32_t>& facets)
 {
   // Get mesh
-  assert(V.mesh());
-  const mesh::Mesh& mesh = *V.mesh();
+  assert(V.mesh);
+  const mesh::Mesh& mesh = *V.mesh;
   const std::size_t tdim = mesh.topology().dim();
 
   // Get dofmap
-  assert(V.dofmap());
-  const GenericDofMap& dofmap = *V.dofmap();
-  const GenericDofMap* dofmap_g = &dofmap;
+  assert(V.dofmap);
+  const DofMap& dofmap = *V.dofmap;
+  const DofMap* dofmap_g = &dofmap;
   if (Vg)
   {
-    assert(Vg->dofmap());
-    dofmap_g = Vg->dofmap().get();
+    assert(Vg->dofmap);
+    dofmap_g = Vg->dofmap.get();
   }
 
   // Initialise facet-cell connectivity
@@ -305,13 +305,18 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
   mesh.create_connectivity(tdim - 1, tdim);
 
   // Allocate space
-  const std::size_t num_facet_dofs = dofmap.num_entity_closure_dofs(tdim - 1);
+  assert(dofmap.element_dof_layout);
+  const std::size_t num_facet_dofs
+      = dofmap.element_dof_layout->num_entity_closure_dofs(tdim - 1);
 
   // Build vector local dofs for each cell facet
   const mesh::CellType& cell_type = mesh.type();
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> facet_dofs;
   for (std::size_t i = 0; i < cell_type.num_entities(tdim - 1); ++i)
-    facet_dofs.push_back(dofmap.tabulate_entity_closure_dofs(tdim - 1, i));
+  {
+    facet_dofs.push_back(
+        dofmap.element_dof_layout->entity_closure_dofs(tdim - 1, i));
+  }
 
   // Iterate over marked facets
   std::vector<std::array<PetscInt, 2>> bc_dofs;
@@ -355,7 +360,7 @@ DirichletBC::DirichletBC(
             const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
         bool only_boundary)>& mark,
     Method method)
-    : DirichletBC(V, g, marked_facets(*V->mesh(), mark), method)
+    : DirichletBC(V, g, marked_facets(*V->mesh, mark), method)
 {
   // Do nothing
 }
@@ -371,16 +376,16 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   assert(g->function_space());
   if (V != g->function_space())
   {
-    assert(V->mesh());
-    assert(g->function_space()->mesh());
-    if (V->mesh() != g->function_space()->mesh())
+    assert(V->mesh);
+    assert(g->function_space()->mesh);
+    if (V->mesh != g->function_space()->mesh)
     {
       throw std::runtime_error("Boundary condition function and constrained "
                                "function do not share mesh.");
     }
 
-    assert(g->function_space()->element());
-    if (!V->has_element(*g->function_space()->element()))
+    assert(g->function_space()->element);
+    if (!V->has_element(*g->function_space()->element))
     {
       throw std::runtime_error("Boundary condition function and constrained "
                                "function do not have same element.");
@@ -412,8 +417,8 @@ DirichletBC::DirichletBC(std::shared_ptr<const function::FunctionSpace> V,
   // were found by other processes, e.g. a vertex dof on this process that
   // has no connected factes on the boundary.
   const std::vector<std::array<PetscInt, 2>> dofs_remote
-      = get_remote_bcs(*V->dofmap()->index_map(),
-                       *g->function_space()->dofmap()->index_map(), dofs_local);
+      = get_remote_bcs(*V->dofmap->index_map,
+                       *g->function_space()->dofmap->index_map, dofs_local);
 
   // Add received bc indices to dofs_local
   for (auto& dof_remote : dofs_remote)
@@ -524,26 +529,26 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //                                        const std::vector<std::int32_t>&
 //                                        facets)
 // {
-//   assert(V.element());
+//   assert(V.element);
 
 //   // Get mesh
-//   assert(V.mesh());
-//   const mesh::Mesh& mesh = *V.mesh();
+//   assert(V.mesh);
+//   const mesh::Mesh& mesh = *V.mesh;
 
 //   // Get dofmap
-//   assert(V.dofmap());
-//   const GenericDofMap& dofmap = *V.dofmap();
+//   assert(V.dofmap);
+//   const DofMap& dofmap = *V.dofmap;
 
-//   const GenericDofMap* dofmap_g = &dofmap;
+//   const DofMap* dofmap_g = &dofmap;
 //   if (Vg)
 //   {
-//     assert(Vg->dofmap());
-//     dofmap_g = Vg->dofmap().get();
+//     assert(Vg->dofmap);
+//     dofmap_g = Vg->dofmap.get();
 //   }
 
 //   // Get finite element
-//   assert(V.element());
-//   const FiniteElement& element = *V.element();
+//   assert(V.element);
+//   const FiniteElement& element = *V.element;
 
 //   // Initialize facets, needed for geometric search
 //   // glog::info("Computing facets, needed for geometric application of
@@ -555,7 +560,7 @@ void DirichletBC::mark_dofs(std::vector<bool>& markers) const
 //   common::RangedIndexSet already_visited(
 //       dofmap.is_view() ? std::array<std::int64_t, 2>{{0, 0}}
 //                        : dofmap.index_map()->local_range(),
-//       dofmap.index_map()->block_size());
+//       dofmap.index_map()->block_size);
 
 //   // Topological and geometric dimensions
 //   const std::size_t tdim = mesh.topology().dim();

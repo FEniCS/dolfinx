@@ -128,7 +128,7 @@ int main(int argc, char* argv[])
   ufc_finite_element* ufc_element = space->create_element();
   auto V = std::make_shared<function::FunctionSpace>(
       mesh, std::make_shared<fem::FiniteElement>(*ufc_element),
-      std::make_shared<fem::DofMap>(*ufc_map, *mesh));
+      std::make_shared<fem::DofMap>(fem::create_dofmap(*ufc_map, *mesh)));
   std::free(ufc_element);
   std::free(ufc_map);
   std::free(space);
@@ -164,18 +164,13 @@ int main(int argc, char* argv[])
   // .. code-block:: cpp
 
   // Define variational forms
-  ufc_form* bilinear_form = poisson_bilinearform_create();
-  auto a = std::make_shared<fem::Form>(
-      *bilinear_form,
-      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V,
-                                                                            V});
-  std::free(bilinear_form);
+  ufc_form* form_a = poisson_bilinearform_create();
+  auto a = std::make_shared<fem::Form>(fem::create_form(*form_a, {V, V}));
+  std::free(form_a);
 
-  ufc_form* linear_form = poisson_linearform_create();
-  auto L = std::make_shared<fem::Form>(
-      *linear_form,
-      std::initializer_list<std::shared_ptr<const function::FunctionSpace>>{V});
-  std::free(linear_form);
+  ufc_form* form_L = poisson_linearform_create();
+  auto L = std::make_shared<fem::Form>(fem::create_form(*form_L, {V}));
+  std::free(form_L);
 
   auto f = std::make_shared<function::Function>(V);
   auto g = std::make_shared<function::Function>(V);
@@ -206,7 +201,7 @@ int main(int argc, char* argv[])
   // Compute solution
   function::Function u(V);
   la::PETScMatrix A = fem::create_matrix(*a);
-  la::PETScVector b(*L->function_space(0)->dofmap()->index_map());
+  la::PETScVector b(*L->function_space(0)->dofmap->index_map);
 
   MatZeroEntries(A.mat());
   dolfin::fem::assemble_matrix(A.mat(), *a, bc);
