@@ -1300,7 +1300,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   return mvc;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
+mesh::Mesh HDF5File::read_mesh(const std::string data_path,
                                bool use_partition_from_file,
                                const mesh::GhostMode ghost_mode) const
 {
@@ -1356,11 +1356,11 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
   int gdim = coords_shape[1];
 
   // Build mesh from data in HDF5 file
-  return read_mesh(comm, topology_path, geometry_path, gdim, *cell_type, -1,
+  return read_mesh(topology_path, geometry_path, gdim, *cell_type, -1,
                    coords_shape[0], use_partition_from_file, ghost_mode);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
+mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
                                const std::string geometry_path, const int gdim,
                                const mesh::CellType& cell_type,
                                const std::int64_t expected_num_global_cells,

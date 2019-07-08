@@ -27,7 +27,7 @@ filedir = os.path.dirname(__file__)
 infile = dolfin.io.XDMFFile(dolfin.MPI.comm_world,
                             os.path.join(filedir, "cooks_tri_mesh.xdmf"),
                             encoding=dolfin.cpp.io.XDMFFile.Encoding.ASCII)
-mesh = infile.read_mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.GhostMode.none)
+mesh = infile.read_mesh(dolfin.cpp.mesh.GhostMode.none)
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
