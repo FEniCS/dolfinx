@@ -137,10 +137,6 @@ public:
   void write(const mesh::MeshFunction<double>& meshfunction,
              const std::string name);
 
-  /// Write mesh::MeshFunction to file in a format suitable for re-reading
-  void write(const mesh::MeshFunction<bool>& meshfunction,
-             const std::string name);
-
   /// Read mesh::MeshFunction from file
   mesh::MeshFunction<std::size_t>
   read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh,

@@ -459,22 +459,6 @@ HDF5File::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
   return read_mesh_function<double>(mesh, name);
 }
 //-----------------------------------------------------------------------------
-void HDF5File::write(const mesh::MeshFunction<bool>& meshfunction,
-                     const std::string name)
-{
-  std::shared_ptr<const mesh::Mesh> mesh = meshfunction.mesh();
-  assert(mesh);
-  const std::size_t cell_dim = meshfunction.dim();
-
-  // HDF5 does not support a boolean type,
-  // so copy to int with values 1 and 0
-  mesh::MeshFunction<int> mf(mesh, cell_dim, -1);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
-    mf.values()[cell.index()] = (meshfunction.values()[cell.index()] ? 1 : 0);
-
-  write_mesh_function(mf, name);
-}
-//-----------------------------------------------------------------------------
 template <typename T>
 mesh::MeshFunction<T>
 HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
