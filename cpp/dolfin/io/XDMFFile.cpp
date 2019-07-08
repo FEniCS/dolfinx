@@ -1435,7 +1435,6 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
   else
   {
     const std::size_t num_local_cells = 0;
-
     MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
     EigenRowArrayXXd points(num_local_cells, gdim);
     EigenRowArrayXXi64 cells(num_local_cells, npoint_per_cell);
@@ -1459,9 +1458,10 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
       = read_mesh_data(_mpi_comm.comm());
 
   return mesh::Partitioning::build_distributed_mesh(
-      comm, cell_type, points, cells, global_cell_indices, ghost_mode);
-
-} //----------------------------------------------------------------------------
+      _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
+      ghost_mode);
+}
+//----------------------------------------------------------------------------
 function::Function
 XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
                           std::string func_name, std::int64_t counter) const
