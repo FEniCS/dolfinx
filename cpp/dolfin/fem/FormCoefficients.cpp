@@ -36,7 +36,7 @@ std::vector<int> FormCoefficients::offsets() const
   {
     if (!c)
       throw std::runtime_error("Not all form coefficients have been set.");
-    n.push_back(n.back() + c->function_space()->element()->space_dimension());
+    n.push_back(n.back() + c->function_space()->element->space_dimension());
   }
   return n;
 }

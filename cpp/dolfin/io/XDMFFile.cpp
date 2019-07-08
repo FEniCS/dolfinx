@@ -72,10 +72,15 @@ std::string rank_to_string(std::size_t value_rank)
 // Returns true for DG0 function::Functions
 bool has_cell_centred_data(const function::Function& u)
 {
-  std::size_t cell_based_dim = 1;
+  int cell_based_dim = 1;
   for (int i = 0; i < u.value_rank(); i++)
-    cell_based_dim *= u.function_space()->mesh()->topology().dim();
-  return (u.function_space()->dofmap()->max_element_dofs() == cell_based_dim);
+    cell_based_dim *= u.function_space()->mesh->topology().dim();
+
+  assert(u.function_space());
+  assert(u.function_space()->dofmap);
+  assert(u.function_space()->dofmap->element_dof_layout);
+  return (u.function_space()->dofmap->element_dof_layout->num_dofs()
+          == cell_based_dim);
 }
 //-----------------------------------------------------------------------------
 // Get data width - normally the same as u.value_size(), but expand for
@@ -116,7 +121,7 @@ std::string to_string(X x, Y y)
 // // edges) flattened as a 2D array
 // std::vector<PetscScalar> get_p2_data_values(const function::Function& u)
 // {
-//   const auto mesh = u.function_space()->mesh();
+//   const auto mesh = u.function_space()->mesh;
 
 //   const std::size_t value_size = u.value_size();
 //   const std::size_t value_rank = u.value_rank();
@@ -126,8 +131,8 @@ std::string to_string(X x, Y y)
 //   std::vector<PetscScalar> data_values(width * num_local_points);
 //   std::vector<PetscInt> data_dofs(data_values.size(), 0);
 
-//   assert(u.function_space()->dofmap());
-//   const auto dofmap = u.function_space()->dofmap();
+//   assert(u.function_space()->dofmap);
+//   const auto dofmap = u.function_space()->dofmap;
 
 //   // function::Function can be P1 or P2
 //   if (dofmap->num_entity_dofs(1) == 0)
@@ -409,7 +414,7 @@ void XDMFFile::write_checkpoint(const function::Function& u,
   std::string function_time_name
       = function_name + "_" + std::to_string(counter);
 
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
   xdmf_write::add_mesh(_mpi_comm.comm(), func_temporal_grid_node, h5_id, mesh,
                        function_name + "/" + function_time_name);
 
@@ -472,7 +477,7 @@ void XDMFFile::write(const function::Function& u)
                              "Not writing a time series");
   }
 
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
 
   // Clear pugi doc
   _xml_doc->reset();
@@ -580,7 +585,7 @@ void XDMFFile::write(const function::Function& u, double time_step)
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
   }
 
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
 
   // Clear the pugi doc the first time
   if (_counter == 0)
@@ -1441,8 +1446,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
   }
 }
 //----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
-                               const mesh::GhostMode ghost_mode) const
+mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
 {
 
   mesh::CellType::Type cell_type;
@@ -1452,7 +1456,7 @@ mesh::Mesh XDMFFile::read_mesh(MPI_Comm comm,
 
   // Read local mesh data
   std::tie(cell_type, points, cells, global_cell_indices)
-      = read_mesh_data(comm);
+      = read_mesh_data(_mpi_comm.comm());
 
   return mesh::Partitioning::build_distributed_mesh(
       comm, cell_type, points, cells, global_cell_indices, ghost_mode);
@@ -1547,10 +1551,10 @@ XDMFFile::read_checkpoint(std::shared_ptr<const function::FunctionSpace> V,
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
   assert(V);
-  assert(V->mesh());
-  const mesh::Mesh& mesh = *V->mesh();
-  assert(V->dofmap());
-  const fem::DofMap& dofmap = *V->dofmap();
+  assert(V->mesh);
+  const mesh::Mesh& mesh = *V->mesh;
+  assert(V->dofmap);
+  const fem::DofMap& dofmap = *V->dofmap;
 
   // Read cell ordering
   std::vector<std::size_t> cells = xdmf_read::get_dataset<std::size_t>(

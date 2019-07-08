@@ -29,12 +29,12 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   // easier to build matrix sparsity patterns.
 
   // Get mesh
-  assert(V0.mesh());
-  const mesh::Mesh& mesh = *(V0.mesh());
+  assert(V0.mesh);
+  const mesh::Mesh& mesh = *(V0.mesh);
 
   // Check that mesh is the same for both function spaces
-  assert(V1.mesh());
-  if (&mesh != V1.mesh().get())
+  assert(V1.mesh);
+  if (&mesh != V1.mesh.get())
   {
     throw std::runtime_error(
         "Ccompute discrete gradient operator. Function spaces "
@@ -60,22 +60,22 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
   // Build maps from entities to local dof indices
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1> edge_to_dof
-      = V0.dofmap()->dofs(mesh, 1);
+      = V0.dofmap->dofs(mesh, 1);
   const Eigen::Array<PetscInt, Eigen::Dynamic, 1> vertex_to_dof
-      = V1.dofmap()->dofs(mesh, 0);
+      = V1.dofmap->dofs(mesh, 0);
 
   // Build maps from local dof numbering to global
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map0
-      = V0.dofmap()->tabulate_local_to_global_dofs();
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map1
-      = V1.dofmap()->tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map0
+      = V0.dofmap->index_map->indices(true);
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map1
+      = V1.dofmap->index_map->indices(true);
 
   // Initialize edge -> vertex connections
   mesh.create_connectivity(1, 0);
 
   // Copy index maps from dofmaps
   std::array<std::shared_ptr<const common::IndexMap>, 2> index_maps
-      = {{V0.dofmap()->index_map(), V1.dofmap()->index_map()}};
+      = {{V0.dofmap->index_map, V1.dofmap->index_map}};
   std::vector<std::array<std::int64_t, 2>> local_range
       = {{index_maps[0]->block_size * index_maps[0]->local_range()[0],
           index_maps[0]->block_size * index_maps[0]->local_range()[1]},

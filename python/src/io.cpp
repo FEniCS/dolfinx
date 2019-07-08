@@ -40,11 +40,11 @@ void io(py::module& m)
       .def("flush", &dolfin::io::HDF5File::flush)
       // read
       .def("read_mesh",
-           [](dolfin::io::HDF5File& self, const MPICommWrapper comm,
-              const std::string data_path, bool use_partition_from_file,
+           [](dolfin::io::HDF5File& self, const std::string data_path,
+              bool use_partition_from_file,
               const dolfin::mesh::GhostMode ghost_mode) {
-             return self.read_mesh(comm.get(), data_path,
-                                   use_partition_from_file, ghost_mode);
+             return self.read_mesh(data_path, use_partition_from_file,
+                                   ghost_mode);
            })
       .def("read_vector",
            [](dolfin::io::HDF5File& self, const MPICommWrapper comm,
@@ -232,9 +232,9 @@ void io(py::module& m)
   xdmf_file
       // Mesh
       .def("read_mesh",
-           [](dolfin::io::XDMFFile& self, const MPICommWrapper comm,
+           [](dolfin::io::XDMFFile& self,
               const dolfin::mesh::GhostMode ghost_mode) {
-             return self.read_mesh(comm.get(), ghost_mode);
+             return self.read_mesh(ghost_mode);
            })
       // MeshFunction
       .def("read_mf_int", &dolfin::io::XDMFFile::read_mf_int, py::arg("mesh"),

@@ -6,8 +6,8 @@
 
 #include "casters.h"
 #include <cstdint>
-#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/FiniteElement.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -113,14 +113,15 @@ void function(py::module& m)
              if (!V)
                throw py::value_error("Function has no function space. "
                                      "You must supply a mesh.");
-             auto mesh = V->mesh();
-             if (!mesh)
+             if (!V->mesh)
+             {
                throw py::value_error("Function has no function space "
                                      "mesh. You must supply a mesh.");
-             return self.compute_point_values(*mesh);
+             }
+             return self.compute_point_values(*V->mesh);
            },
            "Compute values at all mesh points by using the mesh "
-           "function.function_space().mesh()")
+           "function.function_space().mesh")
       .def("function_space", &dolfin::function::Function::function_space);
 
   // FIXME: why is this floating here?
@@ -145,9 +146,9 @@ void function(py::module& m)
       .def("collapse", &dolfin::function::FunctionSpace::collapse)
       .def("component", &dolfin::function::FunctionSpace::component)
       .def("contains", &dolfin::function::FunctionSpace::contains)
-      .def("element", &dolfin::function::FunctionSpace::element)
-      .def("mesh", &dolfin::function::FunctionSpace::mesh)
-      .def("dofmap", &dolfin::function::FunctionSpace::dofmap)
+      .def_readonly("element", &dolfin::function::FunctionSpace::element)
+      .def_readonly("mesh", &dolfin::function::FunctionSpace::mesh)
+      .def_readonly("dofmap", &dolfin::function::FunctionSpace::dofmap)
       .def("set_x", &dolfin::function::FunctionSpace::set_x)
       .def("sub", &dolfin::function::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",

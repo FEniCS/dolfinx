@@ -58,7 +58,7 @@ def increase_order(V: function.FunctionSpace) -> function.FunctionSpace:
 
     """
     e = ufl.algorithms.elementtransformations.increase_order(V.ufl_element())
-    return function.FunctionSpace(V.mesh(), e)
+    return function.FunctionSpace(V.mesh, e)
 
 
 def change_regularity(V: function.FunctionSpace,
@@ -70,7 +70,7 @@ def change_regularity(V: function.FunctionSpace,
     """
     e = ufl.algorithms.elementtransformations.change_regularity(
         V.ufl_element(), family)
-    return function.FunctionSpace(V.mesh(), e)
+    return function.FunctionSpace(V.mesh, e)
 
 
 def tear(V: function.FunctionSpace) -> function.FunctionSpace:
