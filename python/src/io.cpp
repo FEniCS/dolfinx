@@ -96,11 +96,6 @@ void io(py::module& m)
            py::arg("mvc"), py::arg("name"))
       .def("write",
            (void (dolfin::io::HDF5File::*)(
-               const dolfin::mesh::MeshFunction<bool>&, std::string))
-               & dolfin::io::HDF5File::write,
-           py::arg("meshfunction"), py::arg("name"))
-      .def("write",
-           (void (dolfin::io::HDF5File::*)(
                const dolfin::mesh::MeshFunction<std::size_t>&, std::string))
                & dolfin::io::HDF5File::write,
            py::arg("meshfunction"), py::arg("name"))
