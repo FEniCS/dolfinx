@@ -25,8 +25,8 @@ using namespace dolfin::function;
 FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
                              std::shared_ptr<const fem::FiniteElement> element,
                              std::shared_ptr<const fem::DofMap> dofmap)
-    : id(common::UniqueIdGenerator::id()), _mesh(mesh), _element(element),
-      _dofmap(dofmap), _root_space_id(id)
+    : mesh(mesh), element(element), dofmap(dofmap),
+      id(common::UniqueIdGenerator::id()), _root_space_id(id)
 {
   // Do nothing
 }
@@ -34,8 +34,8 @@ FunctionSpace::FunctionSpace(std::shared_ptr<const mesh::Mesh> mesh,
 bool FunctionSpace::operator==(const FunctionSpace& V) const
 {
   // Compare pointers to shared objects
-  return _element.get() == V._element.get() and _mesh.get() == V._mesh.get()
-         and _dofmap.get() == V._dofmap.get();
+  return element.get() == V.element.get() and mesh.get() == V.mesh.get()
+         and dofmap.get() == V.dofmap.get();
 }
 //-----------------------------------------------------------------------------
 bool FunctionSpace::operator!=(const FunctionSpace& V) const
@@ -44,29 +44,18 @@ bool FunctionSpace::operator!=(const FunctionSpace& V) const
   return !(*this == V);
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const mesh::Mesh> FunctionSpace::mesh() const { return _mesh; }
-//-----------------------------------------------------------------------------
-std::shared_ptr<const fem::FiniteElement> FunctionSpace::element() const
-{
-  return _element;
-}
-//-----------------------------------------------------------------------------
-std::shared_ptr<const fem::DofMap> FunctionSpace::dofmap() const
-{
-  return _dofmap;
-}
-//-----------------------------------------------------------------------------
 std::int64_t FunctionSpace::dim() const
 {
-  assert(_dofmap);
-  if (_dofmap->is_view())
+  assert(dofmap);
+  assert(dofmap->element_dof_layout);
+  if (dofmap->element_dof_layout->is_view())
   {
     throw std::runtime_error("FunctionSpace dimension not supported for "
                              "sub-functions");
   }
 
-  assert(_dofmap->index_map());
-  return _dofmap->index_map()->size_global() * _dofmap->index_map()->block_size;
+  assert(dofmap->index_map);
+  return dofmap->index_map->size_global() * dofmap->index_map->block_size;
 }
 //-----------------------------------------------------------------------------
 void FunctionSpace::interpolate_from_any(
@@ -74,21 +63,23 @@ void FunctionSpace::interpolate_from_any(
         expansion_coefficients,
     const Function& v) const
 {
-  assert(_mesh);
-  const int gdim = _mesh->geometry().dim();
-
-  // Initialize local arrays
-  std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
-
-  if (!v.function_space()->has_element(*_element))
+  if (!v.function_space()->has_element(*element))
   {
     throw std::runtime_error("Restricting finite elements function in "
                              "different elements not suppoted.");
   }
 
+  assert(mesh);
+  const int gdim = mesh->geometry().dim();
+
+  // Initialize local arrays
+  assert(dofmap->element_dof_layout);
+  std::vector<PetscScalar> cell_coefficients(
+      dofmap->element_dof_layout->num_dofs());
+
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
+      = mesh->coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -97,11 +88,11 @@ void FunctionSpace::interpolate_from_any(
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
-      = _mesh->geometry().points();
+      = mesh->geometry().points();
 
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
   {
     // FIXME: Move this out
     if (!v.function_space()->has_cell(cell))
@@ -120,7 +111,7 @@ void FunctionSpace::interpolate_from_any(
     v.restrict(cell_coefficients.data(), cell, coordinate_dofs);
 
     // Tabulate dofs
-    auto cell_dofs = _dofmap->cell_dofs(cell.index());
+    auto cell_dofs = dofmap->cell_dofs(cell.index());
 
     for (Eigen::Index i = 0; i < cell_dofs.size(); ++i)
       expansion_coefficients[cell_dofs[i]] = cell_coefficients[i];
@@ -132,24 +123,24 @@ void FunctionSpace::interpolate(
         expansion_coefficients,
     const Function& v) const
 {
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
+  assert(mesh);
+  assert(element);
+  assert(dofmap);
 
   // Check that function ranks match
-  if (_element->value_rank() != v.value_rank())
+  if (element->value_rank() != v.value_rank())
   {
     throw std::runtime_error("Cannot interpolate function into function space. "
                              "Rank of function ("
                              + std::to_string(v.value_rank())
                              + ") does not match rank of function space ("
-                             + std::to_string(element()->value_rank()) + ")");
+                             + std::to_string(element->value_rank()) + ")");
   }
 
   // Check that function dimension match
-  for (int i = 0; i < _element->value_rank(); ++i)
+  for (int i = 0; i < element->value_rank(); ++i)
   {
-    if (_element->value_dimension(i) != v.value_dimension(i))
+    if (element->value_dimension(i) != v.value_dimension(i))
     {
       throw std::runtime_error(
           "Cannot interpolate function into function space. "
@@ -157,7 +148,7 @@ void FunctionSpace::interpolate(
           + std::to_string(i) + " of function ("
           + std::to_string(v.value_dimension(i)) + ") does not match dimension "
           + std::to_string(i) + " of function space("
-          + std::to_string(element()->value_dimension(i)) + ")");
+          + std::to_string(element->value_dimension(i)) + ")");
     }
   }
 
@@ -175,9 +166,9 @@ void FunctionSpace::interpolate(
                                             Eigen::Dynamic, Eigen::RowMajor>>)>&
         f) const
 {
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
+  assert(mesh);
+  assert(element);
+  assert(dofmap);
 
   // Note: the following does not exploit any block structure, e.g. for
   // vector Lagrange, which leads to a lot of redundant evaluations.
@@ -189,9 +180,9 @@ void FunctionSpace::interpolate(
 
   // Evaluate Expression at points
   // std::vector<int> vshape = e.value_shape();
-  std::vector<int> vshape(_element->value_rank(), 1);
+  std::vector<int> vshape(element->value_rank(), 1);
   for (std::size_t i = 0; i < vshape.size(); ++i)
-    vshape[i] = _element->value_dimension(i);
+    vshape[i] = element->value_dimension(i);
   const int value_size = std::accumulate(std::begin(vshape), std::end(vshape),
                                          1, std::multiplies<>());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -210,15 +201,17 @@ void FunctionSpace::interpolate(
   // Expresion::eval.
 
   // Loop over cells
-  const int ndofs = _element->space_dimension();
+  const int ndofs = element->space_dimension();
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values_cell(ndofs, value_size);
-  std::vector<PetscScalar> cell_coefficients(_dofmap->max_element_dofs());
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
+  assert(dofmap->element_dof_layout);
+  std::vector<PetscScalar> cell_coefficients(
+      dofmap->element_dof_layout->num_dofs());
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
   {
     // Get dofmap for cell
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
-        = _dofmap->cell_dofs(cell.index());
+        = dofmap->cell_dofs(cell.index());
     for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
     {
       for (Eigen::Index j = 0; j < value_size; ++j)
@@ -227,8 +220,8 @@ void FunctionSpace::interpolate(
       // FIXME: For vector-valued Lagrange, this function 'throws away'
       // the redundant expression evaluations. It should really be made
       // not necessary.
-      _element->transform_values(cell_coefficients.data(), values_cell,
-                                 coordinate_dofs);
+      element->transform_values(cell_coefficients.data(), values_cell,
+                                coordinate_dofs);
 
       // Copy into expansion coefficient array
       for (Eigen::Index i = 0; i < cell_dofs.rows(); ++i)
@@ -240,9 +233,9 @@ void FunctionSpace::interpolate(
 std::shared_ptr<FunctionSpace>
 FunctionSpace::sub(const std::vector<int>& component) const
 {
-  assert(_mesh);
-  assert(_element);
-  assert(_dofmap);
+  assert(mesh);
+  assert(element);
+  assert(dofmap);
 
   // Check if sub space is already in the cache and not expired
   auto subspace_it = _subspaces.find(component);
@@ -254,14 +247,14 @@ FunctionSpace::sub(const std::vector<int>& component) const
 
   // Extract sub-element
   std::shared_ptr<fem::FiniteElement> element
-      = _element->extract_sub_element(component);
+      = this->element->extract_sub_element(component);
 
   // Extract sub dofmap
-  std::shared_ptr<fem::DofMap> dofmap(
-      _dofmap->extract_sub_dofmap(component, *_mesh));
+  auto dofmap = std::make_shared<fem::DofMap>(
+      this->dofmap->extract_sub_dofmap(component, *mesh));
 
   // Create new sub space
-  auto sub_space = std::make_shared<FunctionSpace>(_mesh, element, dofmap);
+  auto sub_space = std::make_shared<FunctionSpace>(mesh, element, dofmap);
 
   // Set root space id and component w.r.t. root
   sub_space->_root_space_id = _root_space_id;
@@ -279,18 +272,18 @@ FunctionSpace::sub(const std::vector<int>& component) const
 std::pair<std::shared_ptr<FunctionSpace>, std::vector<PetscInt>>
 FunctionSpace::collapse() const
 {
-  assert(_mesh);
+  assert(mesh);
   if (_component.empty())
     throw std::runtime_error("Function space is not a subspace");
 
   // Create collapsed DofMap
   std::shared_ptr<fem::DofMap> collapsed_dofmap;
   std::vector<PetscInt> collapsed_dofs;
-  std::tie(collapsed_dofmap, collapsed_dofs) = _dofmap->collapse(*_mesh);
+  std::tie(collapsed_dofmap, collapsed_dofs) = dofmap->collapse(*mesh);
 
   // Create new FunctionSpace and return
   auto collapsed_sub_space
-      = std::make_shared<FunctionSpace>(_mesh, _element, collapsed_dofmap);
+      = std::make_shared<FunctionSpace>(mesh, element, collapsed_dofmap);
 
   return std::make_pair(std::move(collapsed_sub_space),
                         std::move(collapsed_dofs));
@@ -301,9 +294,9 @@ std::vector<int> FunctionSpace::component() const { return _component; }
 EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 {
   // Geometric dimension
-  assert(_mesh);
-  assert(_element);
-  const int gdim = _mesh->geometry().dim();
+  assert(mesh);
+  assert(element);
+  const int gdim = mesh->geometry().dim();
 
   if (!_component.empty())
   {
@@ -313,31 +306,31 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
 
   // Get local size
   // Get local size
-  assert(_dofmap);
-  std::shared_ptr<const common::IndexMap> index_map = _dofmap->index_map();
+  assert(dofmap);
+  std::shared_ptr<const common::IndexMap> index_map = dofmap->index_map;
   assert(index_map);
   std::size_t bs = index_map->block_size;
   std::size_t local_size
       = bs * (index_map->size_local() + index_map->num_ghosts());
 
   // Dof coordinate on reference element
-  const EigenRowArrayXXd& X = _element->dof_reference_coordinates();
+  const EigenRowArrayXXd& X = element->dof_reference_coordinates();
 
   // Arrray to hold coordinates and return
   EigenRowArrayXXd x(local_size, gdim);
 
   // Get coordinate mapping
-  if (!_mesh->geometry().coord_mapping)
+  if (!mesh->geometry().coord_mapping)
   {
     throw std::runtime_error(
         "CoordinateMapping has not been attached to mesh.");
   }
-  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateMapping& cmap = *mesh->geometry().coord_mapping;
 
   // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
+      = mesh->coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -346,12 +339,12 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
-      = _mesh->geometry().points();
+      = mesh->geometry().points();
 
   // Loop over cells and tabulate dofs
-  EigenRowArrayXXd coordinates(_element->space_dimension(), gdim);
+  EigenRowArrayXXd coordinates(element->space_dimension(), gdim);
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
   {
     // Update cell
     const int cell_index = cell.index();
@@ -360,7 +353,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get local-to-global map
-    auto dofs = _dofmap->cell_dofs(cell.index());
+    auto dofs = dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates on cell
     cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
@@ -381,16 +374,16 @@ void FunctionSpace::set_x(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
     PetscScalar value, int component) const
 {
-  assert(_mesh);
-  assert(_dofmap);
-  assert(_element);
+  assert(mesh);
+  assert(dofmap);
+  assert(element);
 
-  const int gdim = _mesh->geometry().dim();
+  const int gdim = mesh->geometry().dim();
   std::vector<PetscScalar> x_values;
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
-      = _mesh->coordinate_dofs().entity_points();
+      = mesh->coordinate_dofs().entity_points();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> pos_g
       = connectivity_g.entity_positions();
   const Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>> cell_g
@@ -399,25 +392,25 @@ void FunctionSpace::set_x(
   const int num_dofs_g = connectivity_g.size(0);
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
       x_g
-      = _mesh->geometry().points();
+      = mesh->geometry().points();
 
   // Dof coordinate on reference element
   const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>& X
-      = _element->dof_reference_coordinates();
+      = element->dof_reference_coordinates();
 
   // Get coordinate mapping
-  if (!_mesh->geometry().coord_mapping)
+  if (!mesh->geometry().coord_mapping)
   {
     throw std::runtime_error(
         "CoordinateMapping has not been attached to mesh.");
   }
-  const fem::CoordinateMapping& cmap = *_mesh->geometry().coord_mapping;
+  const fem::CoordinateMapping& cmap = *mesh->geometry().coord_mapping;
 
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      coordinates(_element->space_dimension(), _mesh->geometry().dim());
+      coordinates(element->space_dimension(), mesh->geometry().dim());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
+  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
   {
     // Update UFC cell
     const int cell_index = cell.index();
@@ -426,7 +419,7 @@ void FunctionSpace::set_x(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Get cell local-to-global map
-    auto dofs = _dofmap->cell_dofs(cell.index());
+    auto dofs = dofmap->cell_dofs(cell.index());
 
     // Tabulate dof coordinates
     cmap.compute_physical_coordinates(coordinates, X, coordinate_dofs);
@@ -437,35 +430,6 @@ void FunctionSpace::set_x(
     // Copy coordinate (it may be possible to avoid this)
     for (Eigen::Index i = 0; i < coordinates.rows(); ++i)
       x[dofs[i]] = value * coordinates(i, component);
-  }
-}
-//-----------------------------------------------------------------------------
-std::string FunctionSpace::str(bool verbose) const
-{
-  std::stringstream s;
-
-  if (verbose)
-  {
-    s << str(false) << std::endl << std::endl;
-
-    // No verbose output implemented
-  }
-  else
-    s << "<FunctionSpace of dimension " << dim() << ">";
-
-  return s.str();
-}
-//-----------------------------------------------------------------------------
-void FunctionSpace::print_dofmap() const
-{
-  assert(_mesh);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*_mesh))
-  {
-    auto dofs = _dofmap->cell_dofs(cell.index());
-    std::cout << cell.index() << ":";
-    for (Eigen::Index i = 0; i < dofs.size(); i++)
-      std::cout << " " << static_cast<std::size_t>(dofs[i]);
-    std::cout << std::endl;
   }
 }
 //-----------------------------------------------------------------------------

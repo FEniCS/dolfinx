@@ -210,7 +210,7 @@ std::int64_t xdmf_utils::get_num_cells(const pugi::xml_node& topology_node)
 std::vector<PetscScalar>
 xdmf_utils::get_point_data_values(const function::Function& u)
 {
-  auto mesh = u.function_space()->mesh();
+  auto mesh = u.function_space()->mesh;
   assert(mesh);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       data_values = u.compute_point_values(*mesh);
@@ -261,27 +261,28 @@ xdmf_utils::get_point_data_values(const function::Function& u)
 std::vector<PetscScalar>
 xdmf_utils::get_cell_data_values(const function::Function& u)
 {
-  assert(u.function_space()->dofmap());
-  const auto mesh = u.function_space()->mesh();
-  const std::size_t value_size = u.value_size();
-  const std::size_t value_rank = u.value_rank();
+  assert(u.function_space()->dofmap);
+  const auto mesh = u.function_space()->mesh;
+  const int value_size = u.value_size();
+  const int value_rank = u.value_rank();
 
   // Allocate memory for function values at cell centres
-  const std::size_t tdim = mesh->topology().dim();
-  const std::size_t num_local_cells = mesh->topology().ghost_offset(tdim);
-  const std::size_t local_size = num_local_cells * value_size;
+  const int tdim = mesh->topology().dim();
+  const std::int32_t num_local_cells = mesh->topology().ghost_offset(tdim);
+  const std::int32_t local_size = num_local_cells * value_size;
 
   // Build lists of dofs and create map
   std::vector<PetscInt> dof_set;
   dof_set.reserve(local_size);
-  const auto dofmap = u.function_space()->dofmap();
+  const auto dofmap = u.function_space()->dofmap;
+  assert(dofmap->element_dof_layout);
+  const int ndofs = dofmap->element_dof_layout->num_dofs();
   for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell.index());
-    const std::size_t ndofs = dofmap->num_element_dofs(cell.index());
     assert(ndofs == value_size);
-    for (std::size_t i = 0; i < ndofs; ++i)
+    for (int i = 0; i < ndofs; ++i)
       dof_set.push_back(dofs[i]);
   }
 

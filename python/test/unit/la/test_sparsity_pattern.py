@@ -31,7 +31,7 @@ def V(mesh):
 
 
 def xtest_str(mesh, V):
-    dm = V.dofmap()
+    dm = V.dofmap
     index_map = dm.index_map
     assert index_map
 
@@ -47,7 +47,7 @@ def xtest_str(mesh, V):
 
 @pytest.mark.xfail
 def test_insert_local(mesh, V):
-    dm = V.dofmap()
+    dm = V.dofmap
     index_map = dm.index_map
     assert index_map
 
@@ -73,7 +73,7 @@ def test_insert_local(mesh, V):
 
 
 def xtest_insert_global(mesh, V):
-    dm = V.dofmap()
+    dm = V.dofmap
     index_map = dm.index_map
     local_range = index_map.local_range()
 
@@ -121,7 +121,7 @@ def xtest_insert_global(mesh, V):
 
 
 def xtest_insert_local_global(mesh, V):
-    dm = V.dofmap()
+    dm = V.dofmap
     index_map = dm.index_map
     local_range = index_map.local_range()
 
