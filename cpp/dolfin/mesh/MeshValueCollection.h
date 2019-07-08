@@ -194,6 +194,10 @@ MeshValueCollection<T>::MeshValueCollection(
   assert(_mesh);
   const std::size_t D = _mesh->topology().dim();
 
+  // Prefetch values of mesh function
+  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+      = mesh_function.values();
+
   // Handle cells as a special case
   if ((int)D == _dim)
   {
@@ -201,7 +205,7 @@ MeshValueCollection<T>::MeshValueCollection(
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-      _values.insert({key, mesh_function.values()[cell_index]});
+      _values.insert({key, mf_values[cell_index]});
     }
   }
   else
@@ -226,7 +230,7 @@ MeshValueCollection<T>::MeshValueCollection(
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        _values.insert({key, mesh_function.values()[entity_index]});
+        _values.insert({key, mf_values[entity_index]});
       }
     }
   }
@@ -244,6 +248,10 @@ operator=(const MeshFunction<T>& mesh_function)
 
   // FIXME: Use iterators
 
+  // Prefetch values of mesh function
+  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+      = mesh_function.values();
+
   // Handle cells as a special case
   if ((int)D == _dim)
   {
@@ -251,7 +259,7 @@ operator=(const MeshFunction<T>& mesh_function)
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-      _values.insert({key, mesh_function.values()[cell_index]});
+      _values.insert({key, mf_values[cell_index]});
     }
   }
   else
@@ -277,7 +285,7 @@ operator=(const MeshFunction<T>& mesh_function)
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        _values.insert({key, mesh_function.values()[entity_index]});
+        _values.insert({key, mf_values[entity_index]});
       }
     }
   }

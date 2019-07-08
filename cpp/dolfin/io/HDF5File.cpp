@@ -660,11 +660,15 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // At this point, receive_topology should only list the local indices
   // and received values should have the appropriate values for each
   mesh::MeshFunction<T> mf(mesh, dim, 0);
+
+  // Prefetch mesh function data array
+  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> mf_values = mf.values();
+
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
     assert(receive_values[i].size() == receive_topology[i].size());
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-      mf.values()[receive_topology[i][j]] = receive_values[i][j];
+      mf_values[receive_topology[i][j]] = receive_values[i][j];
   }
 
   return mf;
@@ -734,10 +738,14 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       }
     }
 
+    // Prefetch mesh function data array
+    Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+        = meshfunction.values();
+
     for (auto& ent : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
     {
       if (non_local_entities.find(ent.index()) == non_local_entities.end())
-        data_values.push_back(meshfunction.values()[ent.index()]);
+        data_values.push_back(mf_values[ent.index()]);
     }
   }
 
