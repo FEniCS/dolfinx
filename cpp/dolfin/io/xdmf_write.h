@@ -171,10 +171,14 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
     std::set<std::uint32_t> non_local_entities
         = xdmf_write::compute_nonlocal_entities(*mesh, cell_dim);
 
+    // Get reference to mesh function data array
+    Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+        = meshfunction.values();
+
     for (auto& e : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
     {
       if (non_local_entities.find(e.index()) == non_local_entities.end())
-        value_data.push_back(meshfunction.values()[e.index()]);
+        value_data.push_back(mf_values[e.index()]);
     }
   }
 

@@ -26,7 +26,7 @@ void refinement(py::module& m)
 
   m.def("refine",
         py::overload_cast<const dolfin::mesh::Mesh&,
-                          const dolfin::mesh::MeshFunction<bool>&, bool>(
+                          const dolfin::mesh::MeshFunction<int>&, bool>(
             &dolfin::refinement::refine),
         py::arg("mesh"), py::arg("marker"), py::arg("redistribute") = true);
 }

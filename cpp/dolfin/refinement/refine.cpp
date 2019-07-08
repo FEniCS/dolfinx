@@ -40,7 +40,7 @@ mesh::Mesh dolfin::refinement::refine(const mesh::Mesh& mesh, bool redistribute)
 //-----------------------------------------------------------------------------
 mesh::Mesh
 dolfin::refinement::refine(const mesh::Mesh& mesh,
-                           const mesh::MeshFunction<bool>& cell_markers,
+                           const mesh::MeshFunction<int>& cell_markers,
                            bool redistribute)
 {
   if (mesh.type().cell_type() != mesh::CellType::Type::triangle

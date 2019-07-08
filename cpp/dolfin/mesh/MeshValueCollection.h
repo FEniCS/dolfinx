@@ -201,7 +201,7 @@ MeshValueCollection<T>::MeshValueCollection(
   // Handle cells as a special case
   if ((int)D == _dim)
   {
-    for (std::size_t cell_index = 0; cell_index < mesh_function.values().size();
+    for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
@@ -212,7 +212,7 @@ MeshValueCollection<T>::MeshValueCollection(
   {
     _mesh->create_connectivity(_dim, D);
     const Connectivity& connectivity = _mesh->topology().connectivity(_dim, D);
-    for (std::size_t entity_index = 0; entity_index < mesh_function.values().size();
+    for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
       // Find the cell
@@ -255,7 +255,7 @@ operator=(const MeshFunction<T>& mesh_function)
   // Handle cells as a special case
   if ((int)D == _dim)
   {
-    for (std::size_t cell_index = 0; cell_index < mesh_function.values().size();
+    for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
@@ -267,7 +267,7 @@ operator=(const MeshFunction<T>& mesh_function)
     _mesh->create_connectivity(_dim, D);
     assert(_mesh->topology().connectivity(_dim, D));
     const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
-    for (std::size_t entity_index = 0; entity_index < mesh_function.values().size();
+    for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
       // Find the cell

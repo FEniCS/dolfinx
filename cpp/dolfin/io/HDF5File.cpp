@@ -645,7 +645,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // and received values should have the appropriate values for each
   mesh::MeshFunction<T> mf(mesh, dim, 0);
 
-  // Prefetch mesh function data array
+  // Get reference to mesh function data array
   Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> mf_values = mf.values();
 
   for (std::size_t i = 0; i < receive_values.size(); ++i)
@@ -722,7 +722,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       }
     }
 
-    // Prefetch mesh function data array
+    // Get reference to mesh function data array
     Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
         = meshfunction.values();
 
