@@ -75,13 +75,18 @@ void ParallelRefinement::mark(const mesh::MeshEntity& entity)
     mark(edge.index());
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::mark(const mesh::MeshFunction<bool>& refinement_marker)
+void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
 {
   const std::size_t entity_dim = refinement_marker.dim();
+
+  // Get reference to mesh function data array
+  Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> mf_values
+      = refinement_marker.values();
+
   for (const auto& entity :
        mesh::MeshRange<mesh::MeshEntity>(_mesh, entity_dim))
   {
-    if (refinement_marker[entity])
+    if (mf_values[entity.index()] == 1)
     {
       for (const auto& edge : mesh::EntityRange<mesh::Edge>(entity))
         mark(edge.index());

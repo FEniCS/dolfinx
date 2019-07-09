@@ -187,10 +187,6 @@ class XDMFFile:
         """Read MeshValueCollection of type float"""
         return self._cpp_object.read_mvc_double(mesh, name)
 
-    def read_mf_bool(self, mesh, name: str = ""):
-        """Read MeshFunction of type bool"""
-        return self._cpp_object.read_mf_bool(mesh, name)
-
     def read_mf_int(self, mesh, name: str = ""):
         """Read MeshFunction of type int"""
         return self._cpp_object.read_mf_int(mesh, name)
