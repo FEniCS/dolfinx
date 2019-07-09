@@ -53,6 +53,11 @@ public:
   ///         The mesh entity dimension for the mesh value collection.
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
+  MeshValueCollection(std::shared_ptr<const Mesh> mesh,
+                    std::size_t dim,
+                    std::vector<std::vector<T>>& cells,//Cells
+                    std::vector<T>& values_data); //Cell_data
+
   /// Destructor
   ~MeshValueCollection() = default;
 
@@ -184,6 +189,99 @@ MeshValueCollection<T>::MeshValueCollection(std::shared_ptr<const Mesh> mesh,
     : _mesh(mesh), _dim(dim)
 {
   // Do nothing
+}
+
+
+template <typename T>
+MeshValueCollection<T>::MeshValueCollection(
+                      std::shared_ptr<const Mesh> mesh,
+                      std::size_t dim,
+                      std::vector<std::vector<T>>& cells,
+                      std::vector<T>& values_data): _mesh(mesh), _dim(dim)
+{ 
+  // Ensure the mesh dimension is initialised. 
+  // If the mesh is created from arrays, entities 
+  // of all dimesions are not initialized.
+  mesh->create_entities(dim);
+
+  // The number of vertices per entity is _dim+1
+  std::vector<std::int32_t> v(_dim+1);
+
+  // Map from {entity vertex indices} to entity index
+  std::map<std::vector<int>, size_t> entity_map;
+
+  // Loop over all the entities of dimension _dim
+  for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, _dim))
+  { 
+    if (_dim == 0)
+      v[0] = m.global_index();
+    else
+    {
+      v.clear();
+      //std::cout<<"Ele:"<<m.index()<<"::";
+      for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m)){
+        v.push_back(vtx.global_index());
+        //std::cout<<":"<<vtx.global_index();
+      }
+      //std::cout<<std::endl;
+      std::sort(v.begin(), v.end());
+    }
+    // The vector of vertex number is key and entity index is value
+    entity_map[v]=m.index();
+  }
+
+  const std::size_t D = _mesh->topology().dim();
+
+  // Handle cells as a special case
+  if ((int)D == _dim)
+  {
+    for (std::size_t cell_index = 0; cell_index < values_data.size();
+         ++cell_index)
+    {
+      const std::pair<std::size_t, std::size_t> key(cell_index, 0);
+      _values.insert({key, values_data[cell_index]});
+    }
+  }
+  else
+  {
+    _mesh->create_connectivity(_dim, D);
+
+    assert(_mesh->topology().connectivity(_dim, D));
+    const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
+
+    for (std::size_t j = 0; j < values_data.size();
+         ++j)
+    {
+      // Find the cell
+      v.clear();
+      // cells[j] is a vector of length _dim+1
+      for (std::size_t i = 0; i < _dim+1; ++i){
+        v.push_back(cells[j][i]);
+      }
+      std::sort(v.begin(), v.end());
+
+      auto map_it = entity_map.find(v);
+      std::size_t entity_index = map_it->second;
+
+      assert(connectivity.size(entity_index) > 0);
+
+      const MeshEntity entity(*_mesh, _dim, entity_index);
+      for (std::size_t i = 0; i < entity.num_entities(D); ++i)
+      {
+        // Create cell
+        const mesh::Cell cell(*_mesh,
+                              connectivity.connections(entity_index)[i]);
+
+        // Find the local entity index
+        const std::size_t local_entity = cell.index(entity);
+
+        // Insert into map
+        const std::pair<std::size_t, std::size_t> key(cell.index(),
+                                                      local_entity);
+        _values.insert({key, values_data[j]});
+      }
+    }
+  }
 }
 //---------------------------------------------------------------------------
 template <typename T>
