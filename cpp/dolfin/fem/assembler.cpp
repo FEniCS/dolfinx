@@ -191,7 +191,7 @@ void _assemble_vector_block(
 
     // Get size for block i
     assert(L[i]);
-    auto map = L[i]->function_space(0)->dofmap()->index_map();
+    auto map = L[i]->function_space(0)->dofmap->index_map;
     const int bs = map->block_size;
     const int map_size0 = map->size_local() * bs;
     const int map_size1 = map->num_ghosts() * bs;
@@ -210,7 +210,7 @@ void _assemble_vector_block(
   int offset1 = 0;
   for (auto& _L : L)
   {
-    auto map = _L->function_space(0)->dofmap()->index_map();
+    auto map = _L->function_space(0)->dofmap->index_map;
     const int bs = map->block_size;
     offset1 += map->size_local() * bs;
   }
@@ -219,7 +219,7 @@ void _assemble_vector_block(
   for (std::size_t i = 0; i < L.size(); ++i)
   {
     assert(L[i]);
-    auto map = L[i]->function_space(0)->dofmap()->index_map();
+    auto map = L[i]->function_space(0)->dofmap->index_map;
     const int bs = map->block_size;
     const int map_size0 = map->size_local() * bs;
     const int map_size1 = map->num_ghosts() * bs;
@@ -248,7 +248,7 @@ void _assemble_vector_block(
   int offset = 0;
   for (std::size_t i = 0; i < L.size(); ++i)
   {
-    auto map = L[i]->function_space(0)->dofmap()->index_map();
+    auto map = L[i]->function_space(0)->dofmap->index_map;
     const int bs = map->block_size;
     const int map_size0 = map->size_local() * bs;
     Eigen::Map<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> vec(
@@ -392,8 +392,8 @@ void fem::assemble_matrix(Mat A, const Form& a,
                           double diagonal)
 {
   // Index maps for dof ranges
-  auto map0 = a.function_space(0)->dofmap()->index_map();
-  auto map1 = a.function_space(1)->dofmap()->index_map();
+  auto map0 = a.function_space(0)->dofmap->index_map;
+  auto map1 = a.function_space(1)->dofmap->index_map;
 
   // Build dof markers
   std::vector<bool> dof_marker0, dof_marker1;

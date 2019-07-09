@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <dolfin/fem/DofMap.h>
 #include <memory>
 #include <petscsys.h>
 #include <tuple>
@@ -35,13 +36,20 @@ class DofMapBuilder
 {
 
 public:
-  /// Build dofmap.
-  ///
-  /// @param[out] dofmap
-  /// @param[in] dolfin_mesh
-  static std::tuple<std::unique_ptr<common::IndexMap>, std::vector<PetscInt>>
-  build(const mesh::Mesh& dolfin_mesh,
-        const ElementDofLayout& element_dof_layout,
+  /// Build dofmap
+  static DofMap
+  build(const mesh::Mesh& mesh,
+        std::shared_ptr<const ElementDofLayout> element_dof_layout);
+
+  /// Build sub-dofmap view
+  static DofMap build_submap(const DofMap& dofmap_parent,
+                             const std::vector<int>& component,
+                             const mesh::Mesh& mesh);
+
+  /// Build dofmap
+  static std::tuple<std::unique_ptr<common::IndexMap>,
+                    Eigen::Array<PetscInt, Eigen::Dynamic, 1>>
+  build(const mesh::Mesh& mesh, const ElementDofLayout& element_dof_layout,
         const std::int32_t block_size);
 };
 } // namespace fem

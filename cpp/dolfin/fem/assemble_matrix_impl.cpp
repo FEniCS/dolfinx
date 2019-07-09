@@ -27,15 +27,17 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   const mesh::Mesh& mesh = *a.mesh();
 
   // Get dofmap data
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array0
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap;
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap;
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array0
       = dofmap0.dof_array();
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array1
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array1
       = dofmap1.dof_array();
-  // FIXME: do this right
-  const int num_dofs_per_cell0 = dofmap0.num_element_dofs(0);
-  const int num_dofs_per_cell1 = dofmap1.num_element_dofs(0);
+
+  assert(dofmap0.element_dof_layout);
+  assert(dofmap1.element_dof_layout);
+  const int num_dofs_per_cell0 = dofmap0.element_dof_layout->num_dofs();
+  const int num_dofs_per_cell1 = dofmap1.element_dof_layout->num_dofs();
 
   // Prepare coefficients
   const FormCoefficients& coefficients = a.coeffs();

@@ -54,21 +54,21 @@ struct lt_coordinate
   const double TOL;
 };
 
-std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+std::map<std::vector<double>, std::vector<std::int64_t>, lt_coordinate>
 tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 {
-  std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+  std::map<std::vector<double>, std::vector<std::int64_t>, lt_coordinate>
       coords_to_dofs(lt_coordinate(1.0e-12));
 
   // Extract mesh, dofmap and element
-  assert(V.dofmap());
-  assert(V.element());
-  assert(V.mesh());
-  const fem::DofMap& dofmap = *V.dofmap();
-  const fem::FiniteElement& element = *V.element();
-  const mesh::Mesh& mesh = *V.mesh();
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global
-      = dofmap.tabulate_local_to_global_dofs();
+  assert(V.dofmap);
+  assert(V.element);
+  assert(V.mesh);
+  const fem::DofMap& dofmap = *V.dofmap;
+  const fem::FiniteElement& element = *V.element;
+  const mesh::Mesh& mesh = *V.mesh;
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global
+      = dofmap.index_map->indices(true);
 
   // Geometric dimension
   const int gdim = mesh.geometry().dim();
@@ -103,7 +103,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 
   // Speed up the computations by only visiting (most) dofs once
   const std::int64_t local_size
-      = dofmap.index_map()->size_local() * dofmap.index_map()->block_size;
+      = dofmap.index_map->size_local() * dofmap.index_map->block_size;
   std::vector<bool> already_visited(local_size, false);
 
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
@@ -160,8 +160,8 @@ PETScDMCollection::PETScDMCollection(
     assert(_spaces[i].get());
 
     // Get MPI communicator from mesh::Mesh
-    assert(_spaces[i]->mesh());
-    MPI_Comm comm = _spaces[i]->mesh()->mpi_comm();
+    assert(_spaces[i]->mesh);
+    MPI_Comm comm = _spaces[i]->mesh->mpi_comm();
 
     // Create DM
     DMShellCreate(comm, &_dms[i]);
@@ -234,8 +234,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   // FIXME: refactor and split up
 
   // Get coarse mesh and dimension of the domain
-  assert(coarse_space.mesh());
-  const mesh::Mesh& meshc = *coarse_space.mesh();
+  assert(coarse_space.mesh);
+  const mesh::Mesh& meshc = *coarse_space.mesh;
   const int gdim = meshc.geometry().dim();
   const int tdim = meshc.topology().dim();
 
@@ -245,11 +245,11 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Initialise bounding box tree and dofmaps
   geometry::BoundingBoxTree treec(meshc, meshc.topology().dim());
-  std::shared_ptr<const fem::DofMap> coarsemap = coarse_space.dofmap();
-  std::shared_ptr<const fem::DofMap> finemap = fine_space.dofmap();
+  std::shared_ptr<const fem::DofMap> coarsemap = coarse_space.dofmap;
+  std::shared_ptr<const fem::DofMap> finemap = fine_space.dofmap;
 
   // Create map from coordinates to dofs sharing that coordinate
-  std::map<std::vector<double>, std::vector<std::size_t>, lt_coordinate>
+  std::map<std::vector<double>, std::vector<std::int64_t>, lt_coordinate>
       coords_to_dofs = tabulate_coordinates_to_dofs(fine_space);
 
   // Global dimensions of the dofs and of the transfer matrix (M-by-N,
@@ -259,20 +259,20 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
   std::size_t N = coarse_space.dim();
 
   // Local dimension of the dofs and of the transfer matrix
-  std::array<std::int64_t, 2> m = finemap->index_map()->local_range();
-  std::array<std::int64_t, 2> n = coarsemap->index_map()->local_range();
-  m[0] *= finemap->index_map()->block_size;
-  m[1] *= finemap->index_map()->block_size;
-  n[0] *= coarsemap->index_map()->block_size;
-  n[1] *= coarsemap->index_map()->block_size;
+  std::array<std::int64_t, 2> m = finemap->index_map->local_range();
+  std::array<std::int64_t, 2> n = coarsemap->index_map->local_range();
+  m[0] *= finemap->index_map->block_size;
+  m[1] *= finemap->index_map->block_size;
+  n[0] *= coarsemap->index_map->block_size;
+  n[1] *= coarsemap->index_map->block_size;
 
   // Get finite element for the coarse space. This will be needed to
   // evaluate the basis functions for each cell.
-  std::shared_ptr<const fem::FiniteElement> el = coarse_space.element();
+  std::shared_ptr<const fem::FiniteElement> el = coarse_space.element;
 
   // Check that it is the same kind of element on each space.
   {
-    std::shared_ptr<const fem::FiniteElement> elf = fine_space.element();
+    std::shared_ptr<const fem::FiniteElement> elf = fine_space.element;
     // Check that function ranks match
     if (el->value_rank() != elf->value_rank())
     {
@@ -514,8 +514,8 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
 
   // Initialise local to global dof maps (needed to allocate the
   // entries of the transfer matrix with the correct global indices)
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> coarse_local_to_global_dofs
-      = coarsemap->tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> coarse_local_to_global_dofs
+      = coarsemap->index_map->indices(true);
 
   // Loop over the found coarse cells
   Eigen::Map<const EigenRowArrayXXd> x(found_points.data(), found_ids.size(),
@@ -568,7 +568,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     {
       const unsigned int fine_row = i * data_size + k;
       const std::size_t global_fine_dof = global_row_indices[fine_row];
-      int p = finemap->index_map()->owner(global_fine_dof / data_size);
+      int p = finemap->index_map->owner(global_fine_dof / data_size);
 
       // Loop over the coarse dofs and stuff their contributions
       for (unsigned j = 0; j < eldim; j++)
@@ -581,7 +581,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
         // Set the value
         values(fine_row, j) = temp_values(0, j, k);
 
-        int pc = coarsemap->index_map()->owner(coarse_dof / data_size);
+        int pc = coarsemap->index_map->owner(coarse_dof / data_size);
         if (p == pc)
           send_dnnz[p].push_back(global_fine_dof);
         else

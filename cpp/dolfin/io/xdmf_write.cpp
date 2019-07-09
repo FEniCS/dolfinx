@@ -11,6 +11,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/log.h>
 #include <dolfin/common/utils.h>
@@ -635,10 +636,9 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 {
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
-  std::string element_family = u.function_space()->element()->family();
-  const std::size_t element_degree = u.function_space()->element()->degree();
-  const CellType element_cell_type
-      = u.function_space()->element()->cell_shape();
+  std::string element_family = u.function_space()->element->family();
+  const std::size_t element_degree = u.function_space()->element->degree();
+  const CellType element_cell_type = u.function_space()->element->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
   const std::map<std::string, std::string> family_abbr
@@ -695,8 +695,8 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   // Prepare and save number of dofs per cell (x_cell_dofs) and cell
   // dofmaps (cell_dofs)
 
-  assert(u.function_space()->dofmap());
-  const fem::DofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->dofmap);
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
 
   const std::size_t tdim = mesh.topology().dim();
   std::vector<PetscInt> cell_dofs;
@@ -704,8 +704,8 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
-      = dofmap.tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map
+      = dofmap.index_map->indices(true);
 
   // Add number of dofs for each cell
   // Add cell dofmap
