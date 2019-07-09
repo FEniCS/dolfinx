@@ -605,6 +605,7 @@ PartitionData Partitioning::partition_cells(
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
+  // If this process is not in the (new) communicator, it will be MPI_COMM_NULL.
   if (mpi_comm != MPI_COMM_NULL)
   {
     std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
@@ -663,14 +664,14 @@ mesh::Mesh Partitioning::build_from_partition(
     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXd> points,
     const std::vector<std::int64_t>& global_cell_indices,
-    const mesh::GhostMode ghost_mode, const PartitionData& cell_partitition)
+    const mesh::GhostMode ghost_mode, const PartitionData& cell_partition)
 {
   LOG(INFO) << "Distribute mesh cells";
 
   common::Timer timer("Distribute mesh cells");
 
   // Check that we have some ghost information.
-  int all_ghosts = dolfin::MPI::sum(comm, cell_partitition.num_ghosts());
+  int all_ghosts = dolfin::MPI::sum(comm, cell_partition.num_ghosts());
   if (all_ghosts == 0 and ghost_mode != mesh::GhostMode::none)
     throw std::runtime_error("Ghost cell information not available");
 
@@ -681,7 +682,7 @@ mesh::Mesh Partitioning::build_from_partition(
   // Topological dimension
   const int tdim = cell_type->dim();
 
-  // Send cells to owning process according to cell_partitition, and
+  // Send cells to owning process according to cell_partition, and
   // receive cells that belong to this process. Also compute auxiliary
   // data related to sharing.
   EigenRowArrayXXi64 new_cell_vertices;
@@ -692,7 +693,7 @@ mesh::Mesh Partitioning::build_from_partition(
   std::tie(new_cell_vertices, new_global_cell_indices, new_cell_partition,
            shared_cells, num_regular_cells)
       = distribute_cells(comm, cell_vertices, global_cell_indices,
-                         cell_partitition);
+                         cell_partition);
 
   if (ghost_mode == mesh::GhostMode::shared_vertex)
   {
@@ -769,13 +770,13 @@ mesh::Mesh Partitioning::build_distributed_mesh(
   const int nparts = dolfin::MPI::size(comm);
 
   // Compute the cell partition
-  PartitionData cell_partitition
+  PartitionData cell_partition
       = partition_cells(comm, nparts, cell_type, cells, graph_partitioner);
 
   // Build mesh from local mesh data and provided cell partition
   mesh::Mesh mesh = Partitioning::build_from_partition(
       comm, cell_type, cells, points, global_cell_indices, ghost_mode,
-      cell_partitition);
+      cell_partition);
 
   // Initialise number of globally connected cells to each facet. This
   // is necessary to distinguish between facets on an exterior boundary

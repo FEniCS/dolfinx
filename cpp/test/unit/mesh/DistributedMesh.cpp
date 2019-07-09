@@ -74,9 +74,16 @@ void test_distributed_mesh()
 
   // Build mesh from local mesh data, ghost mode, and provided cell partition
   auto ghost_mode = mesh::GhostMode::none;
-  mesh::Mesh new_mesh = mesh::Partitioning::build_from_partition(
-      mpi_comm.comm(), cell_type, cells, points, global_cell_indices,
-      ghost_mode, cell_partition);
+  auto new_mesh
+      = std::make_shared<mesh::Mesh>(mesh::Partitioning::build_from_partition(
+          mpi_comm.comm(), cell_type, cells, points, global_cell_indices,
+          ghost_mode, cell_partition));
+
+  CHECK(dolfin::MPI::max(mpi_comm.comm(), mesh->hmax())
+        == dolfin::MPI::max(mpi_comm.comm(), new_mesh->hmax()));
+
+  CHECK(dolfin::MPI::min(mpi_comm.comm(), mesh->hmin())
+        == dolfin::MPI::min(mpi_comm.comm(), new_mesh->hmin()));
 }
 } // namespace
 

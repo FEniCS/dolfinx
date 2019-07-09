@@ -99,7 +99,7 @@ public:
                        const Eigen::Ref<const EigenRowArrayXXd> points,
                        const std::vector<std::int64_t>& global_cell_indices,
                        const mesh::GhostMode ghost_mode,
-                       const PartitionData& cell_partitition);
+                       const PartitionData& cell_partition);
 
   /// Partition mesh cells using an external Graph Partitioner
   /// @param comm

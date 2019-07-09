@@ -1404,6 +1404,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
       = xdmf_utils::get_dataset_shape(topology_data_node);
   const std::size_t npoint_per_cell = tdims[1];
 
+  // If this process is not in the (new) communicator, it will be MPI_COMM_NULL.
   if (comm != MPI_COMM_NULL)
   {
     // Geometry data
@@ -1434,6 +1435,8 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
   }
   else
   {
+    // Create empty mesh data for processes that don't belong to the
+    // communicator.
     const std::size_t num_local_cells = 0;
     MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
     EigenRowArrayXXd points(num_local_cells, gdim);
