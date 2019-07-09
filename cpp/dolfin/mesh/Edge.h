@@ -35,7 +35,7 @@ public:
   Edge(MeshEntity& entity) : MeshEntity(entity.mesh(), 1, entity.index()) {}
 
   /// Destructor
-  ~Edge() {}
+  ~Edge() = default;
 
   /// Compute Euclidean length of edge
   ///
