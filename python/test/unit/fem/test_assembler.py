@@ -54,7 +54,7 @@ def test_assemble_derivatives():
     du = dolfin.TrialFunction(Q)
     b = dolfin.Function(Q)
     with b.vector().localForm() as b_local:
-        b_local.set(1.0)
+        b_local.set(2.0)
 
     # derivative eliminates 'u'
     L = b * inner(u, v) * dx
@@ -63,7 +63,7 @@ def test_assemble_derivatives():
     A.assemble()
     Anorm1 = A.norm()
 
-    a = inner(v, du) * dx
+    a = b * inner(v, du) * dx
     A = dolfin.fem.assemble_matrix(a)
     A.assemble()
     Anorm2 = A.norm()
