@@ -9,7 +9,7 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Edges, Facets, Function,
+from dolfin import (MPI, Cells, CellType, Facets, Function,
                     FunctionSpace, MeshEntities, MeshFunction,
                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
