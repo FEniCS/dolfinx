@@ -14,7 +14,7 @@ import dolfin
 import ufl
 from dolfin.function.specialfunctions import SpatialCoordinate
 from petsc4py import PETSc
-from ufl import ds, dx, inner
+from ufl import ds, dx, inner, derivative
 
 
 def nest_matrix_norm(A):
@@ -43,6 +43,31 @@ def test_assemble_functional():
     value = dolfin.MPI.sum(mesh.mpi_comm(), value)
     assert value == pytest.approx(0.5, 1e-12)
 
+
+def test_assemble_derivatives():
+    """ This test checks the original_coefficient_positions, which may change
+    under differentiation (some coefficients are eliminated) """
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
+    Q = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    u = dolfin.Function(Q)
+    v = dolfin.TestFunction(Q)
+    du = dolfin.TrialFunction(Q)
+    b = dolfin.Function(Q)
+    with b.vector().localForm() as b_local:
+        b_local.set(1.0)
+
+    # derivative eliminates 'u'
+    L = b*inner(u, v) * dx
+    a = derivative(L, u, du)
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    Anorm1 = A.norm()
+
+    a = inner(v, du) * dx
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    Anorm2 = A.norm()
+    assert Anorm1 == pytest.approx(Anorm2)
 
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
