@@ -62,7 +62,7 @@ def test_assemble_derivatives():
     A1 = dolfin.fem.assemble_matrix(a)
     A1.assemble()
 
-    a = b * inner(v, du) * dx
+    a = b * inner(du, v) * dx
     A2 = dolfin.fem.assemble_matrix(a)
     A2.assemble()
 
