@@ -8,7 +8,7 @@ import numpy
 import numpy.random
 import pytest
 
-from dolfin import MPI, MeshFunction, UnitCubeMesh, Cell
+from dolfin import MPI, MeshFunction, UnitCubeMesh
 from dolfin_utils.test.fixtures import fixture
 
 
