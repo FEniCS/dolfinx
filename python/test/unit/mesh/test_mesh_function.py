@@ -36,6 +36,3 @@ def test_numpy_access(dtype, mesh):
     values = mf.values
     values[:] = numpy.random.rand(len(values))
     assert numpy.all(values == mf.values)
-
-    cell = Cell(mesh, 0)
-    print(cell.index())

@@ -365,8 +365,7 @@ def test_save_1d_mesh(tempdir, encoding):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     mf = MeshFunction("size_t", mesh, mesh.topology.dim, 0)
 
-    cell_indices = numpy.arange(mesh.num_entities(1))
-    mf.values[:] = cell_indices
+    mf.values[:] = numpy.arange(mesh.num_entities(1))
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
@@ -381,8 +380,7 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
 
-    cell_indices = numpy.arange(mesh.num_entities(2), dtype=dtype)
-    mf.values[:] = cell_indices
+    mf.values[:] = numpy.arange(mesh.num_entities(2), dtype=dtype)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
@@ -403,8 +401,7 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
 
-    cell_indices = numpy.arange(mesh.num_entities(3), dtype=dtype)
-    mf.values[:] = cell_indices
+    mf.values[:] = numpy.arange(mesh.num_entities(3), dtype=dtype)
 
     filename = os.path.join(tempdir, "mf_3D_%s.xdmf" % dtype_str)
 
@@ -481,8 +478,7 @@ def test_save_3D_edge_function(tempdir, encoding, data_type):
     mf = MeshFunction(dtype_str, mesh, 1, 0)
     mf.name = "edges"
 
-    edge_indices = numpy.arange(mesh.num_entities(1), dtype=dtype)
-    mf.values[:] = edge_indices
+    mf.values[:] = numpy.arange(mesh.num_entities(1), dtype=dtype)
 
     filename = os.path.join(tempdir, "mf_edge_3D_%s.xdmf" % dtype_str)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
