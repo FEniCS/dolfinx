@@ -1717,7 +1717,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
   }
 
-  if (meshfunction.size() == 0)
+  if (meshfunction.values().size() == 0)
     throw std::runtime_error("No values in MeshFunction");
 
   // Get mesh
