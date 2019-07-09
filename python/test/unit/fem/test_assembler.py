@@ -57,7 +57,7 @@ def test_assemble_derivatives():
         b_local.set(1.0)
 
     # derivative eliminates 'u'
-    L = b*inner(u, v) * dx
+    L = b * inner(u, v) * dx
     a = derivative(L, u, du)
     A = dolfin.fem.assemble_matrix(a)
     A.assemble()
@@ -68,6 +68,7 @@ def test_assemble_derivatives():
     A.assemble()
     Anorm2 = A.norm()
     assert Anorm1 == pytest.approx(Anorm2)
+
 
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
