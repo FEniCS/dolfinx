@@ -66,7 +66,8 @@ def test_assemble_derivatives():
     A2 = dolfin.fem.assemble_matrix(a)
     A2.assemble()
 
-    assert (A1-A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
+    assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
+
 
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
