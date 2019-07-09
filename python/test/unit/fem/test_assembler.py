@@ -47,7 +47,7 @@ def test_assemble_functional():
 def test_assemble_derivatives():
     """ This test checks the original_coefficient_positions, which may change
     under differentiation (some coefficients are eliminated) """
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 1, 1)
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     Q = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.Function(Q)
     v = dolfin.TestFunction(Q)
@@ -59,16 +59,14 @@ def test_assemble_derivatives():
     # derivative eliminates 'u'
     L = b * inner(u, v) * dx
     a = derivative(L, u, du)
-    A = dolfin.fem.assemble_matrix(a)
-    A.assemble()
-    Anorm1 = A.norm()
+    A1 = dolfin.fem.assemble_matrix(a)
+    A1.assemble()
 
     a = b * inner(v, du) * dx
-    A = dolfin.fem.assemble_matrix(a)
-    A.assemble()
-    Anorm2 = A.norm()
-    assert Anorm1 == pytest.approx(Anorm2)
+    A2 = dolfin.fem.assemble_matrix(a)
+    A2.assemble()
 
+    assert (A1-A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
