@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from dolfin import (MPI, Cells, FacetRange, MeshFunction, MeshValueCollection,
-                    UnitSquareMesh, VertexRange, cpp)
+                    UnitSquareMesh, VertexRange)
 
 
 def test_assign_2D_cells():
@@ -152,23 +152,3 @@ def test_mesh_function_assign_2D_vertices():
         for i, vert in enumerate(VertexRange(cell)):
             assert 25 == g.get_value(cell.index(), i)
             assert f2.values[vert.index()] == g.get_value(cell.index(), i)
-
-
-def test_mvc_construction_array():
-    import pygmsh
-
-    geom = pygmsh.opencascade.Geometry()
-    rectangle = geom.add_rectangle([-1.0, -1.0, 0.0], 2.0, 2.0)
-    geom.add_physical(rectangle, label="rect")
-    pygmsh_mesh = pygmsh.generate_mesh(geom)
-    points, cells, cell_data = pygmsh_mesh.points, pygmsh_mesh.cells, pygmsh_mesh.cell_data
-
-    mesh = cpp.mesh.Mesh(MPI.comm_world,
-                         cpp.mesh.CellType.Type.triangle, points,
-                         cells['triangle'], [], cpp.mesh.GhostMode.none)
-    assert mesh.degree() == 1
-    assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 2
-
-    f = MeshValueCollection("int", mesh, 2, cells["triangle"], cell_data["triangle"]['gmsh:physical'])
-    assert mesh.num_entities(2) == f.size()
