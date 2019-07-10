@@ -18,7 +18,7 @@ namespace dolfin
 {
 namespace fem
 {
-class GenericDofMap;
+class DofMap;
 }
 
 namespace mesh
@@ -40,9 +40,8 @@ public:
       FacetCellMap;
 
   /// Build local graph from dofmap
-  static Graph local_graph(const mesh::Mesh& mesh,
-                           const fem::GenericDofMap& dofmap0,
-                           const fem::GenericDofMap& dofmap1);
+  static Graph local_graph(const mesh::Mesh& mesh, const fem::DofMap& dofmap0,
+                           const fem::DofMap& dofmap1);
 
   /// Build local graph from mesh (general version)
   static Graph local_graph(const mesh::Mesh& mesh,

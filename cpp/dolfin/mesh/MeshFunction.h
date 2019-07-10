@@ -8,8 +8,10 @@
 
 #include "Connectivity.h"
 #include "Mesh.h"
+#include "MeshIterator.h"
 #include "MeshEntity.h"
 #include "Topology.h"
+#include "Vertex.h"
 #include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/UniqueIdGenerator.h>
@@ -37,7 +39,7 @@ template <typename T>
 class MeshFunction
 {
 public:
-  /// Create mesh of given dimension on given mesh and initialize
+  /// Create MeshFunction of given dimension on given mesh and initialize
   /// to a value
   ///
   /// @param     mesh (_Mesh_)
@@ -49,7 +51,7 @@ public:
   MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
                const T& value);
 
-  /// Create function from a MeshValueCollecion (shared_ptr version)
+  /// Create mesh function from a MeshValueCollecion
   ///
   /// @param mesh (_Mesh_)
   ///         The mesh to create mesh function on.
@@ -76,7 +78,7 @@ public:
   /// Destructor
   ~MeshFunction() = default;
 
-  /// Assign mesh function to other mesh function
+  /// Assign MeshFunction to other mesh function
   /// Assignment operator
   ///
   /// @param f (_MeshFunction_)
@@ -95,86 +97,32 @@ public:
   ///         The dimension.
   int dim() const;
 
-  /// Return size (number of entities)
-  ///
-  /// @return std::size_t
-  ///         The size.
-  std::size_t size() const;
-
   /// Return array of values (const. version)
   ///
   /// return T
   ///         The values.
-  const T* values() const;
+  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> values() const;
 
   /// Return array of values
   ///
   /// return T
   ///         The values.
-  T* values();
-
-  /// Return value at given mesh entity
-  ///
-  /// @param entity (_MeshEntity_)
-  ///         The mesh entity.
-  ///
-  /// return    T
-  ///         The value at the given entity.
-  T& operator[](const MeshEntity& entity);
-
-  /// Return value at given mesh entity (const version)
-  ///
-  /// @param entity (_MeshEntity_)
-  ///         The mesh entity.
-  ///
-  /// @return T
-  ///         The value at the given entity.
-  const T& operator[](const MeshEntity& entity) const;
-
-  /// Return value at given index
-  ///
-  /// @param index (std::size_t)
-  ///         The index.
-  ///
-  /// @return T
-  ///         The value at the given index.
-  T& operator[](std::size_t index);
-
-  /// Return value at given index  (const version)
-  ///
-  /// @param index (std::size_t)
-  ///         The index.
-  ///
-  /// @return T
-  ///         The value at the given index.
-  const T& operator[](std::size_t index) const;
-
-  /// Set all values to given value
-  /// @param value (T)
-  MeshFunction<T>& operator=(const T& value);
+  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> values();
 
   /// Set values
   ///
-  /// @param values (std::vector<T>)
-  ///         The values.
-  void set_values(const std::vector<T>& values);
-
-  /// Get indices where meshfunction is equal to given value
+  /// If all vertices of a mesh entity satisfy the marking
+  /// function then the entity is marked with the given value.
   ///
+  /// @param mark (std::function)
+  ///          Marking function used to identify which
+  ///          mesh entities to set value to.
   /// @param value (T)
-  ///         The value.
-  /// @returns std::vector<T>
-  ///         The indices.
-  std::vector<std::size_t> where_equal(T value);
-
-  /// Return informal string representation (pretty-print)
-  ///
-  /// @param verbose (bool)
-  ///         Flag to turn on additional output.
-  ///
-  /// @return std::string
-  ///         An informal representation.
-  std::string str(bool verbose) const;
+  void mark(
+      const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+          const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                              Eigen::RowMajor>> x)>& mark,
+      T value);
 
   /// Name
   std::string name = "m";
@@ -183,9 +131,9 @@ public:
   const std::size_t id = common::UniqueIdGenerator::id();
 
 private:
-  // Values at the set of mesh entities. We don't use a std::vector<T>
-  // here because it has trouble with bool, which C++ specialises.
-  boost::container::vector<T> _values;
+
+  // Underlying data array
+  Eigen::Array<T, Eigen::Dynamic, 1> _values;
 
   // The mesh
   std::shared_ptr<const Mesh> _mesh;
@@ -193,11 +141,6 @@ private:
   // Topological dimension
   int _dim;
 };
-
-template <>
-std::string MeshFunction<double>::str(bool verbose) const;
-template <>
-std::string MeshFunction<std::size_t>::str(bool verbose) const;
 
 //---------------------------------------------------------------------------
 // Implementation of MeshFunction
@@ -209,7 +152,8 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh, std::size_t dim,
 {
   assert(mesh);
   mesh->create_entities(dim);
-  _values.resize(mesh->num_entities(dim), value);
+  _values.resize(mesh->num_entities(dim));
+  _values = value;
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -222,7 +166,8 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
   _mesh->create_entities(_dim);
 
   // Initialise values with default
-  _values.resize(_mesh->topology().size(_dim), default_value);
+  _values.resize(_mesh->topology().size(_dim));
+  _values = default_value;
 
   // Get mesh connectivity D --> d
   const std::size_t d = _dim;
@@ -266,13 +211,6 @@ MeshFunction<T>::MeshFunction(std::shared_ptr<const Mesh> mesh,
     // Add entity index to set (used to check that all values are set)
     entities_values_set.insert(entity_index);
   }
-
-  // Check that all values have been set, if not issue a debug message
-  // if (entities_values_set.size() != _values.size())
-  // {
-  //       "Mesh value collection does not contain all values for all
-  //       entities");
-  // }
 }
 //---------------------------------------------------------------------------
 template <typename T>
@@ -289,100 +227,52 @@ int MeshFunction<T>::dim() const
 }
 //---------------------------------------------------------------------------
 template <typename T>
-std::size_t MeshFunction<T>::size() const
+Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> MeshFunction<T>::values() const
 {
-  return _values.size();
+  return _values;
 }
 //---------------------------------------------------------------------------
 template <typename T>
-const T* MeshFunction<T>::values() const
+Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> MeshFunction<T>::values()
 {
-  return _values.data();
+  return _values;
 }
 //---------------------------------------------------------------------------
 template <typename T>
-T* MeshFunction<T>::values()
+void MeshFunction<T>::mark(
+    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
+                                            Eigen::RowMajor>> x)>& mark,
+    T value)
 {
-  return _values.data();
-}
-//---------------------------------------------------------------------------
-template <typename T>
-T& MeshFunction<T>::operator[](const MeshEntity& entity)
-{
-  assert(&entity.mesh() == _mesh.get());
-  assert(entity.dim() == _dim);
-  assert((std::uint32_t)entity.index() < _values.size());
-  return _values[entity.index()];
-}
-//---------------------------------------------------------------------------
-template <typename T>
-const T& MeshFunction<T>::operator[](const MeshEntity& entity) const
-{
-  assert(&entity.mesh() == _mesh.get());
-  assert(entity.dim() == _dim);
-  assert((std::uint32_t)entity.index() < _values.size());
-  return _values[entity.index()];
-}
-//---------------------------------------------------------------------------
-template <typename T>
-T& MeshFunction<T>::operator[](std::size_t index)
-{
-  assert(index < _values.size());
-  return _values[index];
-}
-//---------------------------------------------------------------------------
-template <typename T>
-const T& MeshFunction<T>::operator[](std::size_t index) const
-{
-  assert(index < _values.size());
-  return _values[index];
-}
-//---------------------------------------------------------------------------
-template <typename T>
-MeshFunction<T>& MeshFunction<T>::operator=(const T& value)
-{
-  std::fill(_values.begin(), _values.end(), value);
-  return *this;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-void MeshFunction<T>::set_values(const std::vector<T>& values)
-{
-  assert(_values.size() == values.size());
-  std::copy(values.begin(), values.end(), _values.begin());
-}
-//---------------------------------------------------------------------------
-template <typename T>
-std::vector<std::size_t> MeshFunction<T>::where_equal(T value)
-{
-  std::size_t n = std::count(_values.begin(), _values.end(), value);
-  std::vector<std::size_t> indices;
-  indices.reserve(n);
-  for (std::size_t i = 0; i < size(); ++i)
-  {
-    if (_values[i] == value)
-      indices.push_back(i);
-  }
-  return indices;
-}
-//---------------------------------------------------------------------------
-template <typename T>
-std::string MeshFunction<T>::str(bool verbose) const
-{
-  std::stringstream s;
-  if (verbose)
-  {
-    s << str(false) << std::endl << std::endl;
-    // Verbose output of MeshFunctions must be implemented manually.;
-  }
-  else
-  {
-    s << "<MeshFunction of topological dimension " << dim() << " containing "
-      << size() << " values>";
-  }
+  // First fetch all vertices of the mesh
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& x
+      = _mesh->geometry().points();
 
-  return s.str();
+  // Evaluate the marking function on all vertices
+  EigenArrayXb marked = mark(x);
+
+  for (const auto& entity : mesh::MeshRange<mesh::MeshEntity>(*_mesh.get(), _dim))
+  {
+    // Run over all entities of the dimension of this MeshFunction
+
+    // By default, all vertices are marked
+    bool all_marked = true;
+
+    // And run over all vertices of this mesh entity
+    for (const auto& v : mesh::EntityRange<mesh::Vertex>(entity))
+    {
+      const std::int32_t idx = v.index();
+      all_marked = (marked[idx] && all_marked);
+    }
+
+    // If all vertices belonging to this mesh entity are marked
+    // then also this mesh entity is marked
+    if (all_marked)
+      _values[entity.index()] = value;
+  }
 }
 //---------------------------------------------------------------------------
+
 } // namespace mesh
 } // namespace dolfin

@@ -286,13 +286,17 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   MPI::all_to_all(comm, send_topology, receive_topology);
   MPI::all_to_all(comm, send_values, receive_values);
 
+  // Get reference to mesh function data array
+  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+      = meshfunction.values();
+
   // At this point, receive_topology should only list the local indices
   // and received values should have the appropriate values for each
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
     assert(receive_values[i].size() == receive_topology[i].size());
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-      meshfunction[receive_topology[i][j]] = receive_values[i][j];
+      mf_values[receive_topology[i][j]] = receive_values[i][j];
   }
 }
 //----------------------------------------------------------------------------

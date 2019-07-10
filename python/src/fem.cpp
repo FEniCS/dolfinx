@@ -12,6 +12,8 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/DofMapBuilder.h>
+#include <dolfin/fem/ElementDofLayout.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/Form.h>
 #include <dolfin/fem/PETScDMCollection.h>
@@ -22,10 +24,10 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
-#include <dolfin/mesh/SubDomain.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/pytypes.h>
@@ -126,6 +128,20 @@ void fem(py::module& m)
         },
         py::return_value_policy::take_ownership,
         "Create nested sparse matrix for bilinear forms.");
+  m.def("create_element_dof_layout", &dolfin::fem::create_element_dof_layout,
+        "Create ElementDofLayout object from a ufc dofmap.");
+  m.def("create_dofmap", &dolfin::fem::create_dofmap,
+        "Create DOLFIN DofMap object from a ufc dofmap.");
+  m.def("create_form", &dolfin::fem::create_form,
+        "Create DOLFIN form from a ufc form.");
+
+  m.def("build_dofmap",
+        [](const dolfin::mesh::Mesh& mesh,
+           std::shared_ptr<const dolfin::fem::ElementDofLayout>
+               element_dof_layout) {
+          return dolfin::fem::DofMapBuilder::build(mesh, element_dof_layout);
+        },
+        "Build and dofmap on a mesh.");
 
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
@@ -141,38 +157,28 @@ void fem(py::module& m)
       .def("value_dimension", &dolfin::fem::FiniteElement::value_dimension)
       .def("signature", &dolfin::fem::FiniteElement::signature);
 
-  // dolfin::fem::GenericDofMap
-  py::class_<dolfin::fem::GenericDofMap,
-             std::shared_ptr<dolfin::fem::GenericDofMap>>(m, "GenericDofMap",
-                                                          "DofMap object")
-      .def_property_readonly(
-          "global_dimension", &dolfin::fem::GenericDofMap::global_dimension,
-          "The dimension of the global finite element function space")
-      .def_property_readonly("index_map",
-                             &dolfin::fem::GenericDofMap::index_map)
-      .def("cell_dofs", &dolfin::fem::GenericDofMap::cell_dofs)
-      .def("dofs", &dolfin::fem::GenericDofMap::dofs)
-      .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
-                              dolfin::fem::GenericDofMap::*)(
-                              const dolfin::mesh::Mesh&, std::size_t) const)
-                              & dolfin::fem::GenericDofMap::entity_dofs)
-      .def("entity_dofs", (Eigen::Array<PetscInt, Eigen::Dynamic, 1>(
-                              dolfin::fem::GenericDofMap::*)(
-                              const dolfin::mesh::Mesh&, std::size_t,
-                              const std::vector<std::size_t>&) const)
-                              & dolfin::fem::GenericDofMap::entity_dofs)
-      .def("num_entity_dofs", &dolfin::fem::GenericDofMap::num_entity_dofs)
-      .def("tabulate_local_to_global_dofs",
-           &dolfin::fem::GenericDofMap::tabulate_local_to_global_dofs)
-      .def("tabulate_entity_dofs",
-           &dolfin::fem::GenericDofMap::tabulate_entity_dofs)
-      .def("set", &dolfin::fem::GenericDofMap::set)
-      .def("dof_array", &dolfin::fem::GenericDofMap::dof_array);
+  // dolfin::fem::ElementDofLayout
+  py::class_<dolfin::fem::ElementDofLayout,
+             std::shared_ptr<dolfin::fem::ElementDofLayout>>(
+      m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
+      .def_property_readonly("num_dofs",
+                             &dolfin::fem::ElementDofLayout::num_dofs)
+      .def("num_entity_dofs", &dolfin::fem::ElementDofLayout::num_entity_dofs)
+      .def("num_entity_closure_dofs",
+           &dolfin::fem::ElementDofLayout::num_entity_closure_dofs)
+      .def("entity_dofs", &dolfin::fem::ElementDofLayout::entity_dofs)
+      .def("entity_closure_dofs",
+           &dolfin::fem::ElementDofLayout::entity_closure_dofs);
 
   // dolfin::fem::DofMap
-  py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>,
-             dolfin::fem::GenericDofMap>(m, "DofMap", "DofMap object")
-      .def(py::init<const ufc_dofmap&, const dolfin::mesh::Mesh&>());
+  py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>>(
+      m, "DofMap", "DofMap object")
+      .def_readonly("index_map", &dolfin::fem::DofMap::index_map)
+      .def_readonly("dof_layout", &dolfin::fem::DofMap::element_dof_layout)
+      .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs)
+      .def("dofs", &dolfin::fem::DofMap::dofs)
+      .def("set", &dolfin::fem::DofMap::set)
+      .def("dof_array", &dolfin::fem::DofMap::dof_array);
 
   // dolfin::fem::CoordinateMapping
   py::class_<dolfin::fem::CoordinateMapping,
@@ -197,10 +203,12 @@ void fem(py::module& m)
   dirichletbc
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
-                    const dolfin::mesh::SubDomain&,
-                    dolfin::fem::DirichletBC::Method, bool>(),
-           py::arg("V"), py::arg("g"), py::arg("sub_domain"), py::arg("method"),
-           py::arg("check_midpoint"))
+                    const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+                        const Eigen::Ref<const Eigen::Array<
+                            double, Eigen::Dynamic, 3, Eigen::RowMajor>>&,
+                        bool only_boundary)>&,
+                    dolfin::fem::DirichletBC::Method>(),
+           py::arg("V"), py::arg("g"), py::arg("mark"), py::arg("method"))
       .def(py::init<std::shared_ptr<const dolfin::function::FunctionSpace>,
                     std::shared_ptr<const dolfin::function::Function>,
                     const std::vector<std::int32_t>&,
@@ -266,9 +274,6 @@ void fem(py::module& m)
   // dolfin::fem::Form
   py::class_<dolfin::fem::Form, std::shared_ptr<dolfin::fem::Form>>(
       m, "Form", "Variational form object")
-      .def(py::init<const ufc_form&,
-                    std::vector<std::shared_ptr<
-                        const dolfin::function::FunctionSpace>>>())
       .def(py::init<std::vector<
                std::shared_ptr<const dolfin::function::FunctionSpace>>>())
       .def("num_coefficients",

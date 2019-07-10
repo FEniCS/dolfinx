@@ -154,7 +154,7 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
 {
   // Create vector to store data
   std::vector<T> value_data;
-  value_data.reserve(meshfunction.size());
+  value_data.reserve(meshfunction.values().size());
 
   // Get mesh communicator
   const auto mesh = meshfunction.mesh();
@@ -166,19 +166,23 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
   {
     // FIXME: fail with ghosts?
-    value_data.resize(meshfunction.size());
-    std::copy(meshfunction.values(),
-              meshfunction.values() + meshfunction.size(), value_data.begin());
+    value_data.resize(meshfunction.values().size());
+    std::copy(meshfunction.values().data(),
+              meshfunction.values().data() + meshfunction.values().size(), value_data.begin());
   }
   else
   {
     std::set<std::uint32_t> non_local_entities
         = xdmf_write::compute_nonlocal_entities(*mesh, cell_dim);
 
+    // Get reference to mesh function data array
+    Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+        = meshfunction.values();
+
     for (auto& e : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
     {
       if (non_local_entities.find(e.index()) == non_local_entities.end())
-        value_data.push_back(meshfunction[e]);
+        value_data.push_back(mf_values[e.index()]);
     }
   }
 

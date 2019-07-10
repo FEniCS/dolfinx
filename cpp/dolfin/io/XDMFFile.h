@@ -269,7 +269,7 @@ public:
   ///        Ghost mode for mesh partition
   /// @returns mesh::Mesh
   ///        Mesh
-  mesh::Mesh read_mesh(MPI_Comm comm, const mesh::GhostMode ghost_mode) const;
+  mesh::Mesh read_mesh(const mesh::GhostMode ghost_mode) const;
 
   std::map<std::string, size_t> read_information() const;
   void write(const std::map<std::string, size_t>& information);

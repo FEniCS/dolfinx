@@ -21,9 +21,9 @@
 #    docker run -p 8888:8888 -v "$(pwd)":/tmp quay.io/fenicsproject/dolfinx:notebook
 #
 
-ARG GMSH_VERSION=4.3.0
+ARG GMSH_VERSION=4.4.0
 ARG PYBIND11_VERSION=2.3.0
-ARG PETSC_VERSION=3.11.2
+ARG PETSC_VERSION=3.11.3
 ARG SLEPC_VERSION=3.11.1
 ARG PETSC4PY_VERSION=3.11.0
 ARG SLEPC4PY_VERSION=3.11.0
@@ -98,11 +98,14 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-# Download Install gmsh
+# Download Install Gmsh SDK
 RUN cd /usr/local && \
-    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64.tgz && \
-    tar -xf gmsh-${GMSH_VERSION}-Linux64.tgz
-ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64/bin:$PATH
+    wget -nc --quiet http://gmsh.info/bin/Linux/gmsh-${GMSH_VERSION}-Linux64-sdk.tgz && \
+    tar -xf gmsh-${GMSH_VERSION}-Linux64-sdk.tgz
+ENV PATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/bin:$PATH
+
+# Add gmsh python API
+ENV PYTHONPATH=/usr/local/gmsh-${GMSH_VERSION}-Linux64-sdk/lib
 
 # Install Python packages (via pip)
 # - First set of packages are required to build and run FEniCS.

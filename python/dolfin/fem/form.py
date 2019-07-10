@@ -52,7 +52,7 @@ class Form(ufl.Form):
         ]
 
         # Prepare dolfin.Form and hold it as a member
-        self._cpp_object = cpp.fem.Form(ufc_form, function_spaces)
+        self._cpp_object = cpp.fem.create_form(ufc_form, function_spaces)
 
         # Need to fill the form with coefficients data
         # For every coefficient in form take its CPP object
@@ -60,7 +60,7 @@ class Form(ufl.Form):
         for i in range(self._cpp_object.num_coefficients()):
             j = self._cpp_object.original_coefficient_position(i)
             self._cpp_object.set_coefficient(
-                j, original_coefficients[i]._cpp_object)
+                i, original_coefficients[j]._cpp_object)
 
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")

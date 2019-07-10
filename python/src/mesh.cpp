@@ -23,13 +23,12 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Ordering.h>
 #include <dolfin/mesh/Partitioning.h>
-#include <dolfin/mesh/PeriodicBoundaryComputation.h>
-#include <dolfin/mesh/SubDomain.h>
 #include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/Vertex.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/eval.h>
+#include <pybind11/functional.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -355,42 +354,16 @@ void mesh(py::module& m)
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>,                 \
                     const dolfin::mesh::MeshValueCollection<SCALAR>&,          \
                     const SCALAR&>())                                          \
-      .def("__getitem__",                                                      \
-           (const SCALAR& (dolfin::mesh::MeshFunction<SCALAR>::*)(std::size_t) \
-                const)                                                         \
-               & dolfin::mesh::MeshFunction<SCALAR>::operator[])               \
-      .def("__setitem__",                                                      \
-           [](dolfin::mesh::MeshFunction<SCALAR>& self, std::size_t index,     \
-              SCALAR value) { self.operator[](index) = value; })               \
-      .def("__getitem__",                                                      \
-           (const SCALAR& (dolfin::mesh::MeshFunction<                         \
-                           SCALAR>::*)(const dolfin::mesh::MeshEntity&)const)  \
-               & dolfin::mesh::MeshFunction<SCALAR>::operator[])               \
-      .def("__setitem__",                                                      \
-           [](dolfin::mesh::MeshFunction<SCALAR>& self,                        \
-              const dolfin::mesh::MeshEntity& index,                           \
-              SCALAR value) { self.operator[](index) = value; })               \
-      .def("__len__", &dolfin::mesh::MeshFunction<SCALAR>::size)               \
       .def_property_readonly("dim", &dolfin::mesh::MeshFunction<SCALAR>::dim)  \
-      .def("size", &dolfin::mesh::MeshFunction<SCALAR>::size)                  \
-      .def("ufl_id",                                                           \
-           [](const dolfin::mesh::MeshFunction<SCALAR>& self) {                \
-             return self.id;                                                   \
-           })                                                                  \
       .def_readwrite("name", &dolfin::mesh::MeshFunction<SCALAR>::name)        \
       .def("mesh", &dolfin::mesh::MeshFunction<SCALAR>::mesh)                  \
-      .def("set_values", &dolfin::mesh::MeshFunction<SCALAR>::set_values)      \
-      .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR>& self,             \
-                         const SCALAR& value) { self = value; })               \
-      .def("where_equal", &dolfin::mesh::MeshFunction<SCALAR>::where_equal)    \
-      .def("array",                                                            \
-           [](dolfin::mesh::MeshFunction<SCALAR>& self) {                      \
-             return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(       \
-                 self.values(), self.size());                                  \
-           },                                                                  \
-           py::return_value_policy::reference_internal)
+      .def("ufl_id", [](const dolfin::mesh::MeshFunction<SCALAR>& self){       \
+          return self.id;                                                      \
+          })                                                                   \
+      .def("mark", &dolfin::mesh::MeshFunction<SCALAR>::mark)                  \
+      .def_property_readonly("values", py::overload_cast<>(                                      \
+                    &dolfin::mesh::MeshFunction<SCALAR>::values));
 
-  MESHFUNCTION_MACRO(bool, Bool);
   MESHFUNCTION_MACRO(int, Int);
   MESHFUNCTION_MACRO(double, Double);
   MESHFUNCTION_MACRO(std::size_t, Sizet);
@@ -455,58 +428,10 @@ void mesh(py::module& m)
       .def_static("dihedral_angles_min_max",
                   &dolfin::mesh::MeshQuality::dihedral_angles_min_max);
 
-  // dolfin::SubDomain trampoline class for user overloading from
-  // Python
-  class PySubDomain : public dolfin::mesh::SubDomain
-  {
-    using dolfin::mesh::SubDomain::SubDomain;
-
-    dolfin::EigenArrayXb inside(Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
-                                bool on_boundary) const override
-    {
-      PYBIND11_OVERLOAD(dolfin::EigenArrayXb, dolfin::mesh::SubDomain, inside,
-                        x, on_boundary);
-    }
-
-    void map(Eigen::Ref<const dolfin::EigenArrayXd> x,
-             Eigen::Ref<dolfin::EigenArrayXd> y) const override
-    {
-      PYBIND11_OVERLOAD(void, dolfin::mesh::SubDomain, map, x, y);
-    }
-  };
-
   py::class_<dolfin::mesh::Ordering>(m, "Ordering", "Order mesh cell entities")
       .def_static("order_simplex", &dolfin::mesh::Ordering::order_simplex)
       .def_static("is_ordered_simplex",
                   &dolfin::mesh::Ordering::is_ordered_simplex);
 
-  // dolfin::mesh::SubDomain
-  py::class_<dolfin::mesh::SubDomain, std::shared_ptr<dolfin::mesh::SubDomain>,
-             PySubDomain>(m, "SubDomain", "Sub-domain object")
-      .def(py::init<double>(), py::arg("map_tol") = DBL_EPSILON)
-      .def("inside", &dolfin::mesh::SubDomain::inside, py::arg("x").noconvert(),
-           py::arg("on_boundary"))
-      .def("map", &dolfin::mesh::SubDomain::map, py::arg("x").noconvert(),
-           py::arg("y").noconvert())
-      .def("mark", &dolfin::mesh::SubDomain::mark<std::size_t>,
-           py::arg("meshfunction"), py::arg("marker"),
-           py::arg("check_midpoint") = true)
-      .def("mark", &dolfin::mesh::SubDomain::mark<bool>,
-           py::arg("meshfunction"), py::arg("marker"),
-           py::arg("check_midpoint") = true)
-      .def("mark", &dolfin::mesh::SubDomain::mark<int>, py::arg("meshfunction"),
-           py::arg("marker"), py::arg("check_midpoint") = true)
-      .def("mark", &dolfin::mesh::SubDomain::mark<double>,
-           py::arg("meshfunction"), py::arg("marker"),
-           py::arg("check_midpoint") = true);
-
-  // dolfin::mesh::PeriodicBoundaryComputation
-  py::class_<dolfin::mesh::PeriodicBoundaryComputation>(
-      m, "PeriodicBoundaryComputation")
-      .def_static(
-          "compute_periodic_pairs",
-          &dolfin::mesh::PeriodicBoundaryComputation::compute_periodic_pairs)
-      .def_static("masters_slaves",
-                  &dolfin::mesh::PeriodicBoundaryComputation::masters_slaves);
 } // namespace dolfin_wrappers
 } // namespace dolfin_wrappers

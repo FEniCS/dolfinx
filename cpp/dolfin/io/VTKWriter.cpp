@@ -7,8 +7,8 @@
 #include "VTKWriter.h"
 #include <boost/detail/endian.hpp>
 #include <cstdint>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/fem/GenericDofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
@@ -184,10 +184,10 @@ void VTKWriter::write_cell_data(const function::Function& u,
                                 std::string filename)
 {
   // For brevity
-  assert(u.function_space()->mesh());
-  assert(u.function_space()->dofmap());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->mesh);
+  assert(u.function_space()->dofmap);
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
   const std::size_t tdim = mesh.topology().dim();
   const std::size_t num_cells = mesh.topology().ghost_offset(tdim);
 
@@ -255,15 +255,17 @@ void VTKWriter::write_cell_data(const function::Function& u,
   std::vector<PetscInt> dof_set;
   std::vector<std::size_t> offset(size + 1);
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
+  assert(dofmap.element_dof_layout);
+  const int num_dofs_cell = dofmap.element_dof_layout->num_dofs();
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Tabulate dofs
     auto dofs = dofmap.cell_dofs(cell.index());
-    for (std::size_t i = 0; i < dofmap.num_element_dofs(cell.index()); ++i)
+    for (int i = 0; i < num_dofs_cell; ++i)
       dof_set.push_back(dofs[i]);
 
     // Add local dimension to cell offset and increment
-    *(cell_offset + 1) = *(cell_offset) + dofmap.num_element_dofs(cell.index());
+    *(cell_offset + 1) = *(cell_offset) + num_dofs_cell;
     ++cell_offset;
   }
 

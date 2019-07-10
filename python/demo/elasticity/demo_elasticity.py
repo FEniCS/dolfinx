@@ -26,7 +26,7 @@ def build_nullspace(V):
     """Function to build null space for 3D elasticity"""
 
     # Create list of vectors for null space
-    index_map = V.dofmap().index_map
+    index_map = V.dofmap.index_map
     nullspace_basis = [cpp.la.create_vector(index_map) for i in range(6)]
 
     with ExitStack() as stack:
@@ -34,9 +34,9 @@ def build_nullspace(V):
         basis = [np.asarray(x) for x in vec_local]
 
         # Build translational null space basis
-        V.sub(0).dofmap().set(basis[0], 1.0)
-        V.sub(1).dofmap().set(basis[1], 1.0)
-        V.sub(2).dofmap().set(basis[2], 1.0)
+        V.sub(0).dofmap.set(basis[0], 1.0)
+        V.sub(1).dofmap.set(basis[1], 1.0)
+        V.sub(2).dofmap.set(basis[2], 1.0)
 
         # Build rotational null space basis
         V.sub(0).set_x(basis[3], -1.0, 1)
@@ -74,7 +74,7 @@ mesh.geometry.coord_mapping = cmap
 #    return (x[0]*x[0] + x[1]*x[1]) < r*r and on_boundary
 
 
-def boundary(x, on_boundary):
+def boundary(x, only_boundary):
     return np.logical_or(x[:, 0] < 10.0 * np.finfo(float).eps,
                          x[:, 0] > 1.0 - 10.0 * np.finfo(float).eps)
 

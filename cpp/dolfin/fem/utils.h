@@ -7,6 +7,7 @@
 #pragma once
 
 #include "CoordinateMapping.h"
+#include "DofMap.h"
 #include "ElementDofLayout.h"
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
@@ -74,8 +75,27 @@ std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
-                                           const std::vector<int>& parent_map,
-                                           const mesh::CellType& cell_type);
+                                           const mesh::CellType& cell_type,
+                                           const std::vector<int>& parent_map
+                                           = {});
+
+/// Create dof map on mesh from a ufc_dofmap
+///
+/// @param[in] ufc_dofmap (ufc_dofmap)
+///         The ufc_dofmap.
+/// @param[in] mesh (mesh::Mesh&)
+///         The mesh.
+DofMap create_dofmap(const ufc_dofmap& dofmap, const mesh::Mesh& mesh);
+
+/// Create form (shared data)
+///
+/// @param[in] ufc_form (ufc_form)
+///         The UFC form.
+/// @param[in] function_spaces (std::vector<_function::FunctionSpace_>)
+///         Vector of function spaces.
+Form create_form(
+    const ufc_form& ufc_form,
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces);
 
 /// Extract coefficients from UFC form
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>

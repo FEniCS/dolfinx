@@ -21,10 +21,8 @@ set(HEADERS
   MeshValueCollection.h
   Ordering.h
   PartitionData.h
-  PeriodicBoundaryComputation.h
   PointCell.h
   QuadrilateralCell.h
-  SubDomain.h
   TetrahedronCell.h
   TopologyComputation.h
   TriangleCell.h
@@ -43,17 +41,14 @@ set(SOURCES
   IntervalCell.cpp
   Mesh.cpp
   MeshEntity.cpp
-  MeshFunction.cpp
   Geometry.cpp
   Partitioning.cpp
   MeshQuality.cpp
   Topology.cpp
   Ordering.cpp
   PartitionData.cpp
-  PeriodicBoundaryComputation.cpp
   PointCell.cpp
   QuadrilateralCell.cpp
-  SubDomain.cpp
   TetrahedronCell.cpp
   TopologyComputation.cpp
   TriangleCell.cpp

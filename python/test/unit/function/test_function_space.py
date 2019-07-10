@@ -127,11 +127,11 @@ def test_collapse(W, V):
     Vs = W.sub(2)
     with pytest.raises(RuntimeError):
         Function(Vs)
-    assert Vs.dofmap().cell_dofs(0)[0] != V.dofmap().cell_dofs(0)[0]
+    assert Vs.dofmap.cell_dofs(0)[0] != V.dofmap.cell_dofs(0)[0]
 
     # Collapse the space it should now be the same as V
     Vc, dofmap_new_old = Vs.collapse(True)
-    assert Vc.dofmap().cell_dofs(0)[0] == V.dofmap().cell_dofs(0)[0]
+    assert Vc.dofmap.cell_dofs(0)[0] == V.dofmap.cell_dofs(0)[0]
     f0 = Function(V)
     f1 = Function(Vc)
     assert f0.vector().getSize() == f1.vector().getSize()

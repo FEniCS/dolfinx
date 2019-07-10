@@ -11,10 +11,11 @@
 #include <boost/filesystem.hpp>
 #include <boost/unordered_map.hpp>
 #include <cstdio>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/log.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
@@ -270,9 +271,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
           mesh.geometry().global_indices());
     }
 
-    Eigen::Map<
-        Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        varray(_vertex_coords.data(), _vertex_coords.size() / 3, 3);
+    Eigen::Map<Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>> varray(
+        _vertex_coords.data(), _vertex_coords.size() / 3, 3);
 
     Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
         vertex_coords(varray.rows(), gdim);
@@ -457,36 +457,6 @@ HDF5File::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
                          const std::string name) const
 {
   return read_mesh_function<double>(mesh, name);
-}
-//-----------------------------------------------------------------------------
-void HDF5File::write(const mesh::MeshFunction<bool>& meshfunction,
-                     const std::string name)
-{
-  std::shared_ptr<const mesh::Mesh> mesh = meshfunction.mesh();
-  assert(mesh);
-  const std::size_t cell_dim = meshfunction.dim();
-
-  // HDF5 does not support a boolean type,
-  // so copy to int with values 1 and 0
-  mesh::MeshFunction<int> mf(mesh, cell_dim, -1);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
-    mf[cell.index()] = (meshfunction[cell.index()] ? 1 : 0);
-
-  write_mesh_function(mf, name);
-}
-//-----------------------------------------------------------------------------
-mesh::MeshFunction<bool>
-HDF5File::read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
-                       const std::string name) const
-{
-  // HDF5 does not support bool, so use int instead
-  mesh::MeshFunction<int> mf_int = read_mesh_function<int>(mesh, name);
-
-  mesh::MeshFunction<bool> mf(mesh, mf_int.dim(), false);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, mf_int.dim()))
-    mf[cell.index()] = (mf_int[cell.index()] != 0);
-
-  return mf;
 }
 //-----------------------------------------------------------------------------
 template <typename T>
@@ -674,11 +644,15 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // At this point, receive_topology should only list the local indices
   // and received values should have the appropriate values for each
   mesh::MeshFunction<T> mf(mesh, dim, 0);
+
+  // Get reference to mesh function data array
+  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> mf_values = mf.values();
+
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
     assert(receive_values[i].size() == receive_topology[i].size());
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-      mf[receive_topology[i][j]] = receive_values[i][j];
+      mf_values[receive_topology[i][j]] = receive_values[i][j];
   }
 
   return mf;
@@ -688,7 +662,7 @@ template <typename T>
 void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
                                    const std::string name)
 {
-  if (meshfunction.size() == 0)
+  if (meshfunction.values().size() == 0)
     throw std::runtime_error("Cannot save empty mesh::MeshFunction.");
 
   const mesh::Mesh& mesh = *meshfunction.mesh();
@@ -704,8 +678,8 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
   if (cell_dim == mesh.topology().dim() || _mpi_comm.size() == 1)
   {
     // No duplicates - ignore ghost cells if present
-    data_values.assign(meshfunction.values(),
-                       meshfunction.values()
+    data_values.assign(meshfunction.values().data(),
+                       meshfunction.values().data()
                            + mesh.topology().ghost_offset(cell_dim));
   }
   else
@@ -748,10 +722,14 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       }
     }
 
+    // Get reference to mesh function data array
+    Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+        = meshfunction.values();
+
     for (auto& ent : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
     {
       if (non_local_entities.find(ent.index()) == non_local_entities.end())
-        data_values.push_back(meshfunction[ent]);
+        data_values.push_back(mf_values[ent.index()]);
     }
   }
 
@@ -822,11 +800,11 @@ void HDF5File::write(const function::Function& u, const std::string name)
   assert(_hdf5_file_id > 0);
 
   // Get mesh and dofmap
-  assert(u.function_space()->mesh());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
+  assert(u.function_space()->mesh);
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
 
-  assert(u.function_space()->dofmap());
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->dofmap);
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
 
   // FIXME:
   // Possibly sort cell_dofs into global cell order before writing?
@@ -840,8 +818,8 @@ void HDF5File::write(const function::Function& u, const std::string name)
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
-      = dofmap.tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map
+      = dofmap.index_map->indices(true);
 
   for (std::size_t i = 0; i != n_cells; ++i)
   {
@@ -881,7 +859,7 @@ void HDF5File::write(const function::Function& u, const std::string name)
   write_data(name + "/cells", cells, global_size, mpi_io);
 
   HDF5Interface::add_attribute(_hdf5_file_id, name, "signature",
-                               u.function_space()->element()->signature());
+                               u.function_space()->element->signature());
 
   // Save vector
   write(u.vector(), name + "/vector_0");
@@ -967,10 +945,10 @@ HDF5File::read(std::shared_ptr<const function::FunctionSpace> V,
 
   // Get existing mesh and dofmap - these should be pre-existing
   // and set up by user when defining the function::Function
-  assert(u.function_space()->mesh());
-  const mesh::Mesh& mesh = *u.function_space()->mesh();
-  assert(u.function_space()->dofmap());
-  const fem::GenericDofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->mesh);
+  const mesh::Mesh& mesh = *u.function_space()->mesh;
+  assert(u.function_space()->dofmap);
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
 
   // Get dimension of dataset
   const std::vector<std::int64_t> dataset_shape
@@ -1322,7 +1300,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   return mvc;
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
+mesh::Mesh HDF5File::read_mesh(const std::string data_path,
                                bool use_partition_from_file,
                                const mesh::GhostMode ghost_mode) const
 {
@@ -1378,11 +1356,11 @@ mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string data_path,
   int gdim = coords_shape[1];
 
   // Build mesh from data in HDF5 file
-  return read_mesh(comm, topology_path, geometry_path, gdim, *cell_type, -1,
+  return read_mesh(topology_path, geometry_path, gdim, *cell_type, -1,
                    coords_shape[0], use_partition_from_file, ghost_mode);
 }
 //-----------------------------------------------------------------------------
-mesh::Mesh HDF5File::read_mesh(MPI_Comm comm, const std::string topology_path,
+mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
                                const std::string geometry_path, const int gdim,
                                const mesh::CellType& cell_type,
                                const std::int64_t expected_num_global_cells,

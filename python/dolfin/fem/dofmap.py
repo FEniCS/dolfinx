@@ -38,53 +38,23 @@ class DofMap:
     def __init__(self, dofmap: cpp.fem.DofMap):
         self._cpp_object = dofmap
 
-    @classmethod
-    def fromufc(cls, ufc_dofmap, mesh):
-        """Initialize from UFC dofmap and mesh
-
-        Parameters
-        ----------
-        ufc_dofmap
-            Pointer to ufc_dofmap as returned by FFC JIT
-        mesh: dolfin.cpp.mesh.Mesh
-        """
-        ufc_dofmap = make_ufc_dofmap(ufc_dofmap)
-        cpp_dofmap = cpp.fem.DofMap(ufc_dofmap, mesh)
-        return cls(cpp_dofmap)
-
-    @property
-    def global_dimension(self):
-        return self._cpp_object.global_dimension
-
     def cell_dofs(self, cell_index: int):
         return self._cpp_object.cell_dofs(cell_index)
 
     def dofs(self, mesh, entity_dim: int):
         return self._cpp_object.dofs(mesh, entity_dim)
 
-    def entity_dofs_all(self, mesh, entity_dim: int):
-        return self._cpp_object.entity_dofs(mesh, entity_dim)
-
-    def entity_dofs(self, mesh, entity_dim: int, entity_index: int):
-        return self._cpp_object.entity_dofs(mesh, entity_dim, entity_index)
-
-    def num_entity_dofs(self, entity_dim: int):
-        return self._cpp_object.num_entity_dofs(entity_dim)
-
-    def tabulate_local_to_global_dofs(self):
-        return self._cpp_object.tabulate_local_to_global_dofs()
-
-    def tabulate_entity_dofs(self, entity_dim: int, cell_entity_index: int):
-        return self._cpp_object.tabulate_entity_dofs(entity_dim,
-                                                     cell_entity_index)
-
-    @property
-    def dof_array(self):
-        return self._cpp_object.dof_array()
-
     def set(self, x, value):
         self._cpp_object.set(x, value)
 
     @property
+    def dof_layout(self):
+        return self._cpp_object.dof_layout
+
+    @property
     def index_map(self):
         return self._cpp_object.index_map
+
+    @property
+    def dof_array(self):
+        return self._cpp_object.dof_array()

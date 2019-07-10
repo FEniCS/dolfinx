@@ -14,9 +14,8 @@ import dolfin
 import FIAT
 from dolfin import (MPI, BoxMesh, Cell, Cells, CellType, MeshEntities,
                     MeshEntity, MeshFunction, RectangleMesh,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, Vertex,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     cpp)
-from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -249,25 +248,6 @@ def test_UnitHexMesh():
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
     assert mesh.geometry.dim == 3
-
-
-@skip_in_parallel
-def test_Assign(mesh, f):
-    """Assign value of mesh function."""
-    f = f
-    f[3] = 10
-    v = Vertex(mesh, 3)
-    assert f[v] == 10
-
-
-@skip_in_parallel
-def test_Write(f):
-    """Construct and save a simple meshfunction."""
-    f = f
-    f[0] = 1
-    f[1] = 2
-    file = XDMFFile(f.mesh().mpi_comm(), "saved_mesh_function.xdmf")
-    file.write(f)
 
 
 def test_hash():

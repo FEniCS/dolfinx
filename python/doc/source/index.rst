@@ -12,6 +12,7 @@ https://github.com/FEniCS/dolfinx.
 
    installation
    api
+   demos
    developer
    contributing
 

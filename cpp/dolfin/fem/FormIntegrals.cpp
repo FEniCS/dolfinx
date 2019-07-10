@@ -126,9 +126,13 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     }
   }
 
-  for (unsigned int i = 0; i < marker.size(); ++i)
+  // Get reference to mesh function data array
+  Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>> mf_values
+      = marker.values();
+
+  for (Eigen::Index i = 0; i < mf_values.size(); ++i)
   {
-    auto it = id_to_integral.find(marker[i]);
+    auto it = id_to_integral.find(mf_values[i]);
     if (it != id_to_integral.end())
       integrals[it->second].active_entities.push_back(i);
   }

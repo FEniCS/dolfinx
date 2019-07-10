@@ -5,30 +5,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import types
-
 import ufl
 from dolfin import cpp
 
-__all__ = ["MeshFunction", "MeshValueCollection"]
-
-
-def create_subdomain(
-        inside_function: types.FunctionType) -> cpp.mesh.SubDomain:
-    """Create a SubDomain object from a user provided 'inside' function"""
-
-    class AutoSubDomain(cpp.mesh.SubDomain):
-        def inside(self, x, on_boundary):
-            if inside_function.__code__.co_argcount == 1:
-                return inside_function(x)
-            else:
-                return inside_function(x, on_boundary)
-
-    return AutoSubDomain()
-
+# __all__ = ["MeshFunction", "MeshValueCollection"]
 
 _meshfunction_types = {
-    "bool": cpp.mesh.MeshFunctionBool,
     "size_t": cpp.mesh.MeshFunctionSizet,
     "int": cpp.mesh.MeshFunctionInt,
     "double": cpp.mesh.MeshFunctionDouble

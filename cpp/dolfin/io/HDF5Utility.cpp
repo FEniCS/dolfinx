@@ -5,9 +5,10 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "HDF5Utility.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/fem/GenericDofMap.h>
+#include <dolfin/fem/DofMap.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
@@ -95,8 +96,7 @@ std::vector<PetscInt> HDF5Utility::get_global_dof(
     const MPI_Comm mpi_comm,
     const std::vector<std::pair<std::size_t, std::size_t>>& cell_ownership,
     const std::vector<std::size_t>& remote_local_dofi,
-    const std::array<std::int64_t, 2> vector_range,
-    const fem::GenericDofMap& dofmap)
+    const std::array<std::int64_t, 2> vector_range, const fem::DofMap& dofmap)
 {
   const std::size_t num_processes = MPI::size(mpi_comm);
   std::vector<std::vector<std::size_t>> send_cell_dofs(num_processes);
@@ -114,8 +114,8 @@ std::vector<PetscInt> HDF5Utility::get_global_dof(
   std::vector<std::vector<std::size_t>> receive_cell_dofs(num_processes);
   MPI::all_to_all(mpi_comm, send_cell_dofs, receive_cell_dofs);
 
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
-      = dofmap.tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map
+      = dofmap.index_map->indices(true);
 
   // Return back the global dof to the process the request came from
   std::vector<std::vector<PetscInt>> send_global_dof_back(num_processes);
@@ -281,7 +281,7 @@ void HDF5Utility::set_local_vector_values(
     const std::vector<std::int64_t>& x_cell_dofs,
     const std::vector<PetscScalar>& vector,
     const std::array<std::int64_t, 2> input_vector_range,
-    const fem::GenericDofMap& dofmap)
+    const fem::DofMap& dofmap)
 {
   // FIXME: Revise to avoid data copying. Set directly in PETSc Vec.
 

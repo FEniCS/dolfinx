@@ -23,7 +23,7 @@ def test_assembly_dx_domains(mesh):
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
     marker = dolfin.MeshFunction("size_t", mesh, mesh.topology.dim, 0)
-    values = marker.array()
+    values = marker.values
     # Mark first, second and all other
     # Their union is the whole domain
     values[0] = 111
@@ -101,17 +101,10 @@ def test_assembly_ds_domains(mesh):
     def right(x):
         return numpy.isclose(x[:, 0], 1.0)
 
-    bottom_subdomain = dolfin.mesh.create_subdomain(bottom)
-    bottom_subdomain.mark(marker, 111)
-
-    top_subdomain = dolfin.mesh.create_subdomain(top)
-    top_subdomain.mark(marker, 222)
-
-    left_subdomain = dolfin.mesh.create_subdomain(left)
-    left_subdomain.mark(marker, 333)
-
-    right_subdomain = dolfin.mesh.create_subdomain(right)
-    right_subdomain.mark(marker, 444)
+    marker.mark(bottom, 111)
+    marker.mark(top, 222)
+    marker.mark(left, 333)
+    marker.mark(right, 444)
 
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 
