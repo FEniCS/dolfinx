@@ -23,7 +23,7 @@ def test_assembly_dx_domains(mesh):
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
     marker = dolfin.MeshFunction("size_t", mesh, mesh.topology.dim, 0)
-    values = marker.array()
+    values = marker.values
     # Mark first, second and all other
     # Their union is the whole domain
     values[0] = 111

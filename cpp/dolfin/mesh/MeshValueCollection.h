@@ -292,21 +292,25 @@ MeshValueCollection<T>::MeshValueCollection(
   assert(_mesh);
   const std::size_t D = _mesh->topology().dim();
 
+  // Prefetch values of mesh function
+  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+      = mesh_function.values();
+
   // Handle cells as a special case
   if ((int)D == _dim)
   {
-    for (std::size_t cell_index = 0; cell_index < mesh_function.size();
+    for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-      _values.insert({key, mesh_function[cell_index]});
+      _values.insert({key, mf_values[cell_index]});
     }
   }
   else
   {
     _mesh->create_connectivity(_dim, D);
     const Connectivity& connectivity = _mesh->topology().connectivity(_dim, D);
-    for (std::size_t entity_index = 0; entity_index < mesh_function.size();
+    for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
       // Find the cell
@@ -324,7 +328,7 @@ MeshValueCollection<T>::MeshValueCollection(
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        _values.insert({key, mesh_function[entity_index]});
+        _values.insert({key, mf_values[entity_index]});
       }
     }
   }
@@ -342,14 +346,18 @@ operator=(const MeshFunction<T>& mesh_function)
 
   // FIXME: Use iterators
 
+  // Prefetch values of mesh function
+  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+      = mesh_function.values();
+
   // Handle cells as a special case
   if ((int)D == _dim)
   {
-    for (std::size_t cell_index = 0; cell_index < mesh_function.size();
+    for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-      _values.insert({key, mesh_function[cell_index]});
+      _values.insert({key, mf_values[cell_index]});
     }
   }
   else
@@ -357,7 +365,7 @@ operator=(const MeshFunction<T>& mesh_function)
     _mesh->create_connectivity(_dim, D);
     assert(_mesh->topology().connectivity(_dim, D));
     const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
-    for (std::size_t entity_index = 0; entity_index < mesh_function.size();
+    for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
       // Find the cell
@@ -375,7 +383,7 @@ operator=(const MeshFunction<T>& mesh_function)
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        _values.insert({key, mesh_function[entity_index]});
+        _values.insert({key, mf_values[entity_index]});
       }
     }
   }

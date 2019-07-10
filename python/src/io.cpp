@@ -56,8 +56,6 @@ void io(py::module& m)
              return _x;
            },
            py::return_value_policy::take_ownership)
-      .def("read_mf_bool", &dolfin::io::HDF5File::read_mf_bool, py::arg("mesh"),
-           py::arg("name"))
       .def("read_mf_int", &dolfin::io::HDF5File::read_mf_int, py::arg("mesh"),
            py::arg("name"))
       .def("read_mf_size_t", &dolfin::io::HDF5File::read_mf_size_t,
@@ -96,11 +94,6 @@ void io(py::module& m)
                const dolfin::mesh::MeshValueCollection<double>&, std::string))
                & dolfin::io::HDF5File::write,
            py::arg("mvc"), py::arg("name"))
-      .def("write",
-           (void (dolfin::io::HDF5File::*)(
-               const dolfin::mesh::MeshFunction<bool>&, std::string))
-               & dolfin::io::HDF5File::write,
-           py::arg("meshfunction"), py::arg("name"))
       .def("write",
            (void (dolfin::io::HDF5File::*)(
                const dolfin::mesh::MeshFunction<std::size_t>&, std::string))

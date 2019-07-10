@@ -14,8 +14,8 @@ from dolfin import cpp, fem, function
 
 __all__ = ["plot"]
 
-_meshfunction_types = (cpp.mesh.MeshFunctionBool, cpp.mesh.MeshFunctionInt,
-                       cpp.mesh.MeshFunctionDouble, cpp.mesh.MeshFunctionSizet)
+_meshfunction_types = (cpp.mesh.MeshFunctionInt, cpp.mesh.MeshFunctionDouble,
+                       cpp.mesh.MeshFunctionSizet)
 _matplotlib_plottable_types = (cpp.function.Function,
                                cpp.mesh.Mesh,
                                cpp.fem.DirichletBC) + _meshfunction_types
