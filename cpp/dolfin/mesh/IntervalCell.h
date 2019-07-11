@@ -23,11 +23,11 @@ class MeshFunction;
 
 /// This class implements functionality for interval cell meshes.
 
-class IntervalCell : public mesh::CellType
+class IntervalCell : public mesh::CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  IntervalCell() : mesh::CellType(Type::interval, Type::point) {}
+  IntervalCell() : mesh::CellTypeOld(CellType::interval, CellType::point) {}
 
   /// Check if cell is a simplex
   bool is_simplex() const { return true; }

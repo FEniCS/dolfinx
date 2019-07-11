@@ -1063,8 +1063,8 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   // Get description of MVC cell type and dimension from topology node
   auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
-  std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(mesh::CellType::string2type(cell_type_str.first)));
+  std::unique_ptr<mesh::CellTypeOld> cell_type(
+      mesh::CellTypeOld::create(mesh::to_type(cell_type_str.first)));
   assert(cell_type);
   const int dim = cell_type->dim();
   const int num_verts_per_entity = cell_type->num_vertices();
@@ -1361,8 +1361,8 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
     LOG(WARNING) << "Caution: reading quadratic mesh";
 
   // Get toplogical dimensions
-  std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(mesh::CellType::string2type(cell_type_str.first)));
+  std::unique_ptr<mesh::CellTypeOld> cell_type(
+      mesh::CellTypeOld::create(mesh::to_type(cell_type_str.first)));
   assert(cell_type);
 
   // Get geometry node
@@ -1671,8 +1671,8 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // mesh::Mesh)
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
-  std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(mesh::CellType::string2type(cell_type_str.first)));
+  std::unique_ptr<mesh::CellTypeOld> cell_type(
+      mesh::CellTypeOld::create(mesh::to_type(cell_type_str.first)));
   assert(cell_type);
   const std::uint32_t num_vertices_per_cell = cell_type->num_entities(0);
   const std::uint32_t dim = cell_type->dim();
@@ -1784,8 +1784,8 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   {
     pugi::xml_node topology_node = grid_node.child("Topology");
     assert(topology_node);
-    auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
-    if (mesh::CellType::type2string(mesh->type().type) != cell_type_str.first)
+    std::pair<std::string, int> cell_type_str = xdmf_utils::get_cell_type(topology_node);
+    if (mesh::to_string(mesh->type().type) != cell_type_str.first)
     {
       throw std::runtime_error(
           "Incompatible Mesh type. Try writing the Mesh to XDMF first");

@@ -18,11 +18,14 @@ class Cell;
 
 /// This class implements functionality for hexahedral cell  meshes.
 
-class HexahedronCell : public mesh::CellType
+class HexahedronCell : public mesh::CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  HexahedronCell() : mesh::CellType(Type::hexahedron, Type::quadrilateral) {}
+  HexahedronCell()
+      : mesh::CellTypeOld(CellType::hexahedron, CellType::quadrilateral)
+  {
+  }
 
   /// Check if cell is a simplex
   bool is_simplex() const { return false; }

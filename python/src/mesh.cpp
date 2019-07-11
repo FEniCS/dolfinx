@@ -25,6 +25,7 @@
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/utils.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/eval.h>
@@ -43,24 +44,22 @@ namespace dolfin_wrappers
 void mesh(py::module& m)
 {
 
+  py::enum_<dolfin::mesh::CellType>(m, "CellType")
+      .value("point", dolfin::mesh::CellType::point)
+      .value("interval", dolfin::mesh::CellType::interval)
+      .value("triangle", dolfin::mesh::CellType::triangle)
+      .value("quadrilateral", dolfin::mesh::CellType::quadrilateral)
+      .value("tetrahedron", dolfin::mesh::CellType::tetrahedron)
+      .value("hexahedron", dolfin::mesh::CellType::hexahedron);
+
   // dolfin::mesh::CellType
-  py::class_<dolfin::mesh::CellType> celltype(m, "CellType");
-
-  // dolfin::mesh::CellType enums
-  py::enum_<dolfin::mesh::CellType::Type>(celltype, "Type")
-      .value("point", dolfin::mesh::CellType::Type::point)
-      .value("interval", dolfin::mesh::CellType::Type::interval)
-      .value("triangle", dolfin::mesh::CellType::Type::triangle)
-      .value("quadrilateral", dolfin::mesh::CellType::Type::quadrilateral)
-      .value("tetrahedron", dolfin::mesh::CellType::Type::tetrahedron)
-      .value("hexahedron", dolfin::mesh::CellType::Type::hexahedron);
-
-  celltype.def("type2string", &dolfin::mesh::CellType::type2string)
-      .def("string2type", &dolfin::mesh::CellType::string2type)
-      .def_readonly("type", &dolfin::mesh::CellType::type)
-      .def("num_entities", &dolfin::mesh::CellType::num_entities)
-      .def("description", &dolfin::mesh::CellType::description)
-      .def_property_readonly("is_simplex", &dolfin::mesh::CellType::is_simplex);
+  py::class_<dolfin::mesh::CellTypeOld,
+             std::shared_ptr<dolfin::mesh::CellTypeOld>>(m, "CellType")
+      .def_readonly("type", &dolfin::mesh::CellTypeOld::type)
+      .def("num_entities", &dolfin::mesh::CellTypeOld::num_entities)
+      .def("description", &dolfin::mesh::CellTypeOld::description)
+      .def_property_readonly("is_simplex",
+                             &dolfin::mesh::CellTypeOld::is_simplex);
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")
@@ -137,7 +136,7 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Mesh, std::shared_ptr<dolfin::mesh::Mesh>>(
       m, "Mesh", py::dynamic_attr(), "Mesh object")
       .def(py::init(
-          [](const MPICommWrapper comm, dolfin::mesh::CellType::Type type,
+          [](const MPICommWrapper comm, dolfin::mesh::CellType type,
              const Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
              const Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology,
              const std::vector<std::int64_t>& global_cell_indices,
@@ -186,7 +185,7 @@ void mesh(py::module& m)
       .def("ufl_id", &dolfin::mesh::Mesh::id)
       .def_property_readonly("id", &dolfin::mesh::Mesh::id)
       .def("cell_name", [](const dolfin::mesh::Mesh& self) {
-        return dolfin::mesh::CellType::type2string(self.type().type);
+        return dolfin::mesh::to_string(self.type().type);
       });
 
   // dolfin::mesh::Connectivity class

@@ -76,7 +76,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
   // Get cell type
-  const CellType& cell_type = mesh.type();
+  const mesh::CellTypeOld& cell_type = mesh.type();
 
   // Initialize local array of entities
   const std::int8_t num_entities = cell_type.num_entities(dim);
@@ -268,8 +268,8 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
   assert(d0 > d1);
 
   // Get the type of entity d0
-  std::unique_ptr<CellType> cell_type(
-      CellType::create(mesh.type().entity_type(d0)));
+  std::unique_ptr<mesh::CellTypeOld> cell_type(
+      mesh::CellTypeOld::create(mesh.type().entity_type(d0)));
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
   boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
@@ -338,7 +338,7 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
   }
 
   // Call specialised function to compute entities
-  const CellType& cell_type = mesh.type();
+  const mesh::CellTypeOld& cell_type = mesh.type();
   const std::int8_t num_entity_vertices = cell_type.num_vertices(dim);
   std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
              std::int32_t>

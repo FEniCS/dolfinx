@@ -642,7 +642,7 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   std::string element_family = u.function_space()->element->family();
   const std::size_t element_degree = u.function_space()->element->degree();
-  const CellType element_cell_type = u.function_space()->element->cell_shape();
+  const mesh::CellType element_cell_type = u.function_space()->element->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
   const std::map<std::string, std::string> family_abbr
@@ -656,12 +656,12 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
          {"Q", "Q"},
          {"DQ", "DQ"}};
 
-  const std::map<CellType, std::string> cell_shape_repr
-      = {{CellType::interval, "interval"},
-         {CellType::triangle, "triangle"},
-         {CellType::tetrahedron, "tetrahedron"},
-         {CellType::quadrilateral, "quadrilateral"},
-         {CellType::hexahedron, "hexahedron"}};
+  const std::map<mesh::CellType, std::string> cell_shape_repr
+      = {{mesh::CellType::interval, "interval"},
+         {mesh::CellType::triangle, "triangle"},
+         {mesh::CellType::tetrahedron, "tetrahedron"},
+         {mesh::CellType::quadrilateral, "quadrilateral"},
+         {mesh::CellType::hexahedron, "hexahedron"}};
 
   // Check that element is supported
   auto const it = family_abbr.find(element_family);

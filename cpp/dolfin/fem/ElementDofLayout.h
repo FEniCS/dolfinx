@@ -18,7 +18,7 @@ namespace dolfin
 
 namespace mesh
 {
-class CellType;
+class CellTypeOld;
 }
 
 namespace fem
@@ -42,7 +42,7 @@ public:
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-      const mesh::CellType& cell_type);
+      const mesh::CellTypeOld& cell_type);
 
   // Copy-like constructor with option to reset (clear) parent map
   ElementDofLayout(const ElementDofLayout& element_dof_layout,

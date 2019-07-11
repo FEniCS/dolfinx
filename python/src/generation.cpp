@@ -46,7 +46,7 @@ void generation(py::module& m)
           "create",
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
              std::array<std::size_t, 2> n,
-             dolfin::mesh::CellType::Type cell_type,
+             dolfin::mesh::CellType cell_type,
              dolfin::mesh::GhostMode ghost_mode, std::string diagonal) {
             return dolfin::generation::RectangleMesh::create(
                 comm.get(), p, n, cell_type, ghost_mode, diagonal);
@@ -73,7 +73,7 @@ void generation(py::module& m)
           "create",
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
              std::array<std::size_t, 3> n,
-             dolfin::mesh::CellType::Type cell_type,
+             dolfin::mesh::CellType cell_type,
              const dolfin::mesh::GhostMode ghost_mode) {
             return dolfin::generation::BoxMesh::create(comm.get(), p, n,
                                                        cell_type, ghost_mode);

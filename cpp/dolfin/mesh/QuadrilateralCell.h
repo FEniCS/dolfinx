@@ -17,11 +17,14 @@ class Cell;
 
 /// This class implements functionality for quadrilaterial cells.
 
-class QuadrilateralCell : public CellType
+class QuadrilateralCell : public CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  QuadrilateralCell() : mesh::CellType(Type::quadrilateral, Type::interval) {}
+  QuadrilateralCell()
+      : mesh::CellTypeOld(CellType::quadrilateral, CellType::interval)
+  {
+  }
 
   /// Check if cell is a simplex
   bool is_simplex() const { return false; }

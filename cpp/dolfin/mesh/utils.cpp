@@ -9,21 +9,21 @@
 using namespace dolfin;
 
 //-----------------------------------------------------------------------------
-std::string mesh::to_string(mesh::CellTypeNew type)
+std::string mesh::to_string(mesh::CellType type)
 {
   switch (type)
   {
-  case mesh::CellTypeNew::point:
+  case mesh::CellType::point:
     return "point";
-  case mesh::CellTypeNew::interval:
+  case mesh::CellType::interval:
     return "interval";
-  case mesh::CellTypeNew::triangle:
+  case mesh::CellType::triangle:
     return "triangle";
-  case mesh::CellTypeNew::tetrahedron:
+  case mesh::CellType::tetrahedron:
     return "tetrahedron";
-  case mesh::CellTypeNew::quadrilateral:
+  case mesh::CellType::quadrilateral:
     return "quadrilateral";
-  case mesh::CellTypeNew::hexahedron:
+  case mesh::CellType::hexahedron:
     return "hexahedron";
   default:
     throw std::runtime_error("Unknown cell type");
@@ -32,24 +32,24 @@ std::string mesh::to_string(mesh::CellTypeNew type)
   return "";
 }
 //-----------------------------------------------------------------------------
-mesh::CellTypeNew mesh::to_type(std::string type)
+mesh::CellType mesh::to_type(std::string type)
 {
   if (type == "point")
-    return mesh::CellTypeNew::point;
+    return mesh::CellType::point;
   else if (type == "interval")
-    return mesh::CellTypeNew::interval;
+    return mesh::CellType::interval;
   else if (type == "triangle")
-    return mesh::CellTypeNew::triangle;
+    return mesh::CellType::triangle;
   else if (type == "tetrahedron")
-    return mesh::CellTypeNew::tetrahedron;
+    return mesh::CellType::tetrahedron;
   else if (type == "quadrilateral")
-    return mesh::CellTypeNew::quadrilateral;
+    return mesh::CellType::quadrilateral;
   else if (type == "hexahedron")
-    return mesh::CellTypeNew::hexahedron;
+    return mesh::CellType::hexahedron;
   else
     throw std::runtime_error("Unknown cell type (" + type + ")");
 
   // Should no reach this point
-  return mesh::CellTypeNew::interval;
+  return mesh::CellType::interval;
 }
 //-----------------------------------------------------------------------------

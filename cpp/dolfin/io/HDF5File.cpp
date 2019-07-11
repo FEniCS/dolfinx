@@ -251,8 +251,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   assert(_hdf5_file_id > 0);
 
-  mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
-  std::unique_ptr<mesh::CellType> celltype(mesh::CellType::create(cell_type));
+  mesh::CellType cell_type = mesh.type().entity_type(cell_dim);
+  std::unique_ptr<mesh::CellTypeOld> celltype(mesh::CellTypeOld::create(cell_type));
   std::size_t num_cell_points = celltype->num_entities(0);
 
   // ---------- Vertices (coordinates)
@@ -405,7 +405,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
 
     // Add cell type attribute
     HDF5Interface::add_attribute(_hdf5_file_id, topology_dataset, "celltype",
-                                 mesh::CellType::type2string(cell_type));
+                                 mesh::to_string(cell_type));
 
     // Add partitioning attribute to dataset
     std::vector<std::size_t> partitions;
@@ -1083,8 +1083,8 @@ void HDF5File::write_mesh_value_collection(
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
       = mesh_values.values();
 
-  std::unique_ptr<mesh::CellType> entity_type(
-      mesh::CellType::create(mesh->type().entity_type(dim)));
+  std::unique_ptr<mesh::CellTypeOld> entity_type(
+      mesh::CellTypeOld::create(mesh->type().entity_type(dim)));
   const std::size_t num_vertices_per_entity
       = (dim == 0) ? 1 : entity_type->num_vertices();
 
@@ -1140,8 +1140,8 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   std::size_t dim = HDF5Interface::get_attribute<std::size_t>(
       _hdf5_file_id, name, "dimension");
   assert(mesh);
-  std::unique_ptr<mesh::CellType> entity_type(
-      mesh::CellType::create(mesh->type().entity_type(dim)));
+  std::unique_ptr<mesh::CellTypeOld> entity_type(
+      mesh::CellTypeOld::create(mesh->type().entity_type(dim)));
   const std::size_t num_verts_per_entity = entity_type->num_entities(0);
 
   const std::string values_name = name + "/values";
@@ -1324,8 +1324,8 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
   }
 
   // Create CellType from string
-  std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(mesh::CellType::string2type(cell_type_str)));
+  std::unique_ptr<mesh::CellTypeOld> cell_type(
+      mesh::CellTypeOld::create(mesh::to_type(cell_type_str)));
   assert(cell_type);
 
   // Check that coordinate data set is found in HDF5 file
@@ -1362,7 +1362,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
 //-----------------------------------------------------------------------------
 mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
                                const std::string geometry_path, const int gdim,
-                               const mesh::CellType& cell_type,
+                               const mesh::CellTypeOld& cell_type,
                                const std::int64_t expected_num_global_cells,
                                const std::int64_t expected_num_global_points,
                                bool use_partition_from_file,
@@ -1388,7 +1388,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   {
     std::string cell_type_str = HDF5Interface::get_attribute<std::string>(
         _hdf5_file_id, topology_path, "celltype");
-    if (cell_type.type != mesh::CellType::string2type(cell_type_str))
+    if (cell_type.type != mesh::to_type(cell_type_str))
     {
       throw std::runtime_error(
           "Inconsistency between expected cell type and cell type "

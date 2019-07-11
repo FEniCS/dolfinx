@@ -16,11 +16,11 @@ namespace mesh
 
 /// This class implements functionality for triangular meshes.
 
-class TriangleCell : public CellType
+class TriangleCell : public CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  TriangleCell() : CellType(Type::triangle, Type::interval) {}
+  TriangleCell() : CellTypeOld(CellType::triangle, CellType::interval) {}
 
   /// Check if cell is a simplex
   bool is_simplex() const { return true; }

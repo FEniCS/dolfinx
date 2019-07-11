@@ -32,7 +32,7 @@ public:
   ///         Vertex points.
   /// @param    n (std::array<std::size_t, 2>)
   ///         Number of cells in each direction
-  /// @param    cell_type (dolfin::CellType::Type)
+  /// @param    cell_type (dolfin::CellType)
   ///         Cell type
   /// @param    diagonal (string)
   ///         Direction of diagonals: "left", "right", "left/right", "crossed"
@@ -49,7 +49,7 @@ public:
   /// @endcode
   static mesh::Mesh
     create(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
-         std::array<std::size_t, 2> n, mesh::CellType::Type cell_type,
+         std::array<std::size_t, 2> n, mesh::CellType cell_type,
          const mesh::GhostMode ghost_mode, std::string diagonal = "right");
 };
 } // namespace generation

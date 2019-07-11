@@ -30,7 +30,7 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
-class CellType;
+class CellTypeOld;
 
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
@@ -66,7 +66,7 @@ public:
   /// @param ghost_mode
   ///     Ghost mode
   static mesh::Mesh
-  build_distributed_mesh(const MPI_Comm& comm, mesh::CellType::Type cell_type,
+  build_distributed_mesh(const MPI_Comm& comm, mesh::CellType cell_type,
                          const Eigen::Ref<const EigenRowArrayXXd> points,
                          const Eigen::Ref<const EigenRowArrayXXi64> cells,
                          const std::vector<std::int64_t>& global_cell_indices,

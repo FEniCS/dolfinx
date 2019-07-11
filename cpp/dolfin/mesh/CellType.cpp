@@ -20,27 +20,27 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-CellType::CellType(Type cell_type, Type facet_type)
+CellTypeOld::CellTypeOld(CellType cell_type, CellType facet_type)
     : type(cell_type), facet_type(facet_type)
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-CellType* CellType::create(Type type)
+CellTypeOld* CellTypeOld::create(CellType type)
 {
   switch (type)
   {
-  case Type::point:
+  case CellType::point:
     return new PointCell();
-  case Type::interval:
+  case CellType::interval:
     return new IntervalCell();
-  case Type::triangle:
+  case CellType::triangle:
     return new TriangleCell();
-  case Type::tetrahedron:
+  case CellType::tetrahedron:
     return new TetrahedronCell();
-  case Type::quadrilateral:
+  case CellType::quadrilateral:
     return new QuadrilateralCell();
-  case Type::hexahedron:
+  case CellType::hexahedron:
     return new HexahedronCell();
   default:
     throw std::runtime_error("Unknown cell type");
@@ -49,62 +49,18 @@ CellType* CellType::create(Type type)
   return nullptr;
 }
 //-----------------------------------------------------------------------------
-CellType::Type CellType::string2type(std::string type)
-{
-  if (type == "point")
-    return Type::point;
-  else if (type == "interval")
-    return Type::interval;
-  else if (type == "triangle")
-    return Type::triangle;
-  else if (type == "tetrahedron")
-    return Type::tetrahedron;
-  else if (type == "quadrilateral")
-    return Type::quadrilateral;
-  else if (type == "hexahedron")
-    return Type::hexahedron;
-  else
-    throw std::runtime_error("Unknown cell type (" + type + ")");
-
-  // Should no reach this point
-  return Type::interval;
-}
-//-----------------------------------------------------------------------------
-std::string CellType::type2string(Type type)
-{
-  switch (type)
-  {
-  case Type::point:
-    return "point";
-  case Type::interval:
-    return "interval";
-  case Type::triangle:
-    return "triangle";
-  case Type::tetrahedron:
-    return "tetrahedron";
-  case Type::quadrilateral:
-    return "quadrilateral";
-  case Type::hexahedron:
-    return "hexahedron";
-  default:
-    throw std::runtime_error("Unknown cell type");
-  }
-
-  return "";
-}
-//-----------------------------------------------------------------------------
-CellType::Type CellType::entity_type(std::size_t i) const
+CellType CellTypeOld::entity_type(std::size_t i) const
 {
   if (i == dim())
     return type;
   else if (i == dim() - 1)
     return facet_type;
   else if (i == 1)
-    return Type::interval;
-  return Type::point;
+    return CellType::interval;
+  return CellType::point;
 }
 //-----------------------------------------------------------------------------
-double CellType::h(const MeshEntity& entity) const
+double CellTypeOld::h(const MeshEntity& entity) const
 {
   // Get mesh geometry
   const Geometry& geometry = entity.mesh().geometry();
@@ -131,11 +87,11 @@ double CellType::h(const MeshEntity& entity) const
   return h;
 }
 //-----------------------------------------------------------------------------
-double CellType::inradius(const Cell& cell) const
+double CellTypeOld::inradius(const Cell& cell) const
 {
   // Check cell type
-  if (type != Type::interval and type != Type::triangle
-      and type != Type::tetrahedron)
+  if (type != CellType::interval and type != CellType::triangle
+      and type != CellType::tetrahedron)
   {
     throw std::runtime_error(
         "inradius function not implemented for non-simplicial cells");
@@ -162,7 +118,7 @@ double CellType::inradius(const Cell& cell) const
   return d * V / A;
 }
 //-----------------------------------------------------------------------------
-double CellType::radius_ratio(const Cell& cell) const
+double CellTypeOld::radius_ratio(const Cell& cell) const
 {
   const double r = inradius(cell);
 

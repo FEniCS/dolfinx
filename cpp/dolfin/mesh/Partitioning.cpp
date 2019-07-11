@@ -503,7 +503,7 @@ void distribute_cell_layer(
 //-----------------------------------------------------------------------------
 // Build a distributed mesh from local mesh data with a computed
 // partition
-mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
+mesh::Mesh build(const MPI_Comm& comm, mesh::CellType type,
                  const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                  const Eigen::Ref<const EigenRowArrayXXd> points,
                  const std::vector<std::int64_t>& global_cell_indices,
@@ -514,7 +514,7 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
   common::Timer timer("Distribute mesh cells");
 
   // Create CellType objects based on current cell type
-  std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
+  std::unique_ptr<mesh::CellTypeOld> cell_type(mesh::CellTypeOld ::create(type));
   assert(cell_type);
 
   // Topological dimension
@@ -597,13 +597,13 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType::Type type,
 // 'cell -> process' vector for cells, and a map 'local cell index ->
 // processes' to which ghost cells must be sent
 PartitionData
-partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
+partition_cells(const MPI_Comm& mpi_comm, mesh::CellType type,
                 const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                 const std::string partitioner)
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
-  std::unique_ptr<mesh::CellType> cell_type(mesh::CellType::create(type));
+  std::unique_ptr<mesh::CellTypeOld> cell_type(mesh::CellTypeOld::create(type));
   assert(cell_type);
 
   // Compute dual graph (for this partition)
@@ -743,7 +743,7 @@ partition_cells(const MPI_Comm& mpi_comm, mesh::CellType::Type type,
 
 //-----------------------------------------------------------------------------
 mesh::Mesh Partitioning::build_distributed_mesh(
-    const MPI_Comm& comm, mesh::CellType::Type cell_type,
+    const MPI_Comm& comm, mesh::CellType cell_type,
     const Eigen::Ref<const EigenRowArrayXXd> points,
     const Eigen::Ref<const EigenRowArrayXXi64> cells,
     const std::vector<std::int64_t>& global_cell_indices,

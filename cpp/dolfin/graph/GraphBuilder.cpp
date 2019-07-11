@@ -37,7 +37,7 @@ std::tuple<std::vector<std::vector<std::size_t>>,
 compute_local_dual_graph_keyed(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const mesh::CellTypeOld& cell_type)
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
@@ -156,7 +156,7 @@ compute_local_dual_graph_keyed(
 std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type,
+    const mesh::CellTypeOld& cell_type,
     const graph::GraphBuilder::FacetCellMap& facet_cell_map,
     std::vector<std::vector<std::size_t>>& local_graph)
 {
@@ -426,7 +426,7 @@ std::pair<std::vector<std::vector<std::size_t>>,
 graph::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const mesh::CellTypeOld& cell_type)
 {
   LOG(INFO) << "Build mesh dual graph";
 
@@ -459,7 +459,7 @@ std::tuple<std::vector<std::vector<std::size_t>>,
 dolfin::graph::GraphBuilder::compute_local_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const mesh::CellTypeOld& cell_type)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
 

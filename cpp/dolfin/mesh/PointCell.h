@@ -15,11 +15,11 @@ namespace mesh
 {
 /// This class implements functionality for point cell meshes.
 
-class PointCell : public CellType
+class PointCell : public CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  PointCell() : CellType(Type::point, Type::point) {}
+  PointCell() : CellTypeOld(CellType::point, CellType::point) {}
 
   /// Check if cell is a simplex
   bool is_simplex() const { return true; }

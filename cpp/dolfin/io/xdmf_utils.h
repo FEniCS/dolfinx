@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <dolfin/mesh/utils.h>
 
 namespace pugi
 {
@@ -36,7 +37,7 @@ class Function;
 
 // namespace mesh
 // {
-// class CellType::Type;
+// class CellType;
 // } // namespace mesh
 
 namespace io
@@ -66,7 +67,7 @@ std::vector<PetscScalar> get_point_data_values(const function::Function& u);
 /// Get cell data values as a flattened 2D array
 std::vector<PetscScalar> get_cell_data_values(const function::Function& u);
 
-std::string vtk_cell_type_str(mesh::CellType::Type cell_type, int order);
+std::string vtk_cell_type_str(mesh::CellType cell_type, int order);
 
 } // namespace xdmf_utils
 } // namespace io

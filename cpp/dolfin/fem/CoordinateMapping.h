@@ -10,6 +10,7 @@
 #include <Eigen/Dense>
 #include <cstdint>
 #include <dolfin/mesh/CellType.h>
+#include <dolfin/mesh/utils.h>
 #include <functional>
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -34,7 +35,7 @@ public:
   /// @param compute_reference_geometry
   ///
   CoordinateMapping(
-      CellType cell_type, int topological_dimension, int geometric_dimension,
+      mesh::CellType cell_type, int topological_dimension, int geometric_dimension,
       std::string signature,
       std::function<void(double*, int, const double*, const double*)>
           compute_physical_coordinates,
@@ -51,7 +52,7 @@ public:
 
   /// Return the cell shape
   /// @return CellType
-  CellType cell_shape() const;
+  mesh::CellType cell_shape() const;
 
   /// Return the topological dimension of the cell shape
   /// @return std::size_t
@@ -89,7 +90,7 @@ public:
 private:
   int _tdim, _gdim;
 
-  CellType _cell;
+  mesh::CellType _cell;
 
   std::string _signature;
 

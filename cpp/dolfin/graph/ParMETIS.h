@@ -26,7 +26,7 @@ namespace dolfin
 
 namespace mesh
 {
-class CellType;
+class CellTypeOld;
 }
 
 namespace graph

@@ -90,12 +90,12 @@ compute_cell_node_map(std::int32_t num_vertices_per_cell,
 } // namespace
 
 //-----------------------------------------------------------------------------
-Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
+Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
            const Eigen::Ref<const EigenRowArrayXXd> points,
            const Eigen::Ref<const EigenRowArrayXXi64> cells,
            const std::vector<std::int64_t>& global_cell_indices,
            const GhostMode ghost_mode, std::int32_t num_ghost_cells)
-    : _cell_type(mesh::CellType::create(type)), _degree(1), _mpi_comm(comm),
+    : _cell_type(mesh::CellTypeOld::create(type)), _degree(1), _mpi_comm(comm),
       _ghost_mode(ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 {
   const std::size_t tdim = _cell_type->dim();
@@ -111,19 +111,19 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 
   // Permutation from VTK to DOLFIN order for cell geometric nodes
   // FIXME: should do this also for quad/hex
-  // FIXME: remove duplication in CellType::vtk_mapping()
+  // FIXME: remove duplication in CellTypeOld::vtk_mapping()
   std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
 
   // Infer if the mesh has P2 geometry (P1 has num_vertices_per_cell ==
   // cells.cols())
   if (num_vertices_per_cell != cells.cols())
   {
-    if (type == mesh::CellType::Type::triangle and cells.cols() == 6)
+    if (type == mesh::CellType::triangle and cells.cols() == 6)
     {
       _degree = 2;
       cell_permutation = {0, 1, 2, 5, 3, 4};
     }
-    else if (type == mesh::CellType::Type::tetrahedron and cells.cols() == 10)
+    else if (type == mesh::CellType::tetrahedron and cells.cols() == 10)
     {
       _degree = 2;
       cell_permutation = {0, 1, 2, 3, 9, 6, 8, 7, 5, 4};
@@ -238,7 +238,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : _cell_type(CellType::create(mesh._cell_type->type)),
+    : _cell_type(CellTypeOld::create(mesh._cell_type->type)),
       _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)),
       _coordinate_dofs(new CoordinateDofs(*mesh._coordinate_dofs)),
@@ -250,7 +250,7 @@ Mesh::Mesh(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
-    : _cell_type(CellType::create(mesh._cell_type->type)),
+    : _cell_type(CellTypeOld::create(mesh._cell_type->type)),
       _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _coordinate_dofs(std::move(mesh._coordinate_dofs)), _degree(mesh._degree),
@@ -276,7 +276,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   _degree = mesh._degree;
 
   if (mesh._cell_type)
-    _cell_type.reset(mesh::CellType::create(mesh._cell_type->type));
+    _cell_type.reset(mesh::CellTypeOld::create(mesh._cell_type->type));
   else
     _cell_type.reset();
 
@@ -322,13 +322,13 @@ const Geometry& Mesh::geometry() const
   return *_geometry;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType& Mesh::type()
+mesh::CellTypeOld& Mesh::type()
 {
   assert(_cell_type);
   return *_cell_type;
 }
 //-----------------------------------------------------------------------------
-const mesh::CellType& Mesh::type() const
+const mesh::CellTypeOld& Mesh::type() const
 {
   assert(_cell_type);
   return *_cell_type;

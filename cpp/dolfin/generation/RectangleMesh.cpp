@@ -27,7 +27,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 3);
     return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::triangle, geom, topo, {}, ghost_mode);
+        comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
   }
 
   // Check options
@@ -192,7 +192,7 @@ mesh::Mesh build_tri(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
   }
 
   return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::triangle, geom, topo, {}, ghost_mode);
+      comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
@@ -205,7 +205,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 4);
     return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, ghost_mode);
+        comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
   }
 
   const std::size_t nx = n[0];
@@ -249,7 +249,7 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
     }
 
   return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::quadrilateral, geom, topo, {}, ghost_mode);
+      comm, mesh::CellType::quadrilateral, geom, topo, {}, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 } // namespace
@@ -258,13 +258,13 @@ mesh::Mesh build_quad(MPI_Comm comm, const std::array<Eigen::Vector3d, 2>& p,
 mesh::Mesh RectangleMesh::create(MPI_Comm comm,
                                  const std::array<Eigen::Vector3d, 2>& p,
                                  std::array<std::size_t, 2> n,
-                                 mesh::CellType::Type cell_type,
+                                 mesh::CellType cell_type,
                                  const mesh::GhostMode ghost_mode,
                                  std::string diagonal)
 {
-  if (cell_type == mesh::CellType::Type::triangle)
+  if (cell_type == mesh::CellType::triangle)
     return build_tri(comm, p, n, ghost_mode, diagonal);
-  else if (cell_type == mesh::CellType::Type::quadrilateral)
+  else if (cell_type == mesh::CellType::quadrilateral)
     return build_quad(comm, p, n, ghost_mode);
   else
     throw std::runtime_error("Generate rectangle mesh. Wrong cell type");

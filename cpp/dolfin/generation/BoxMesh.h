@@ -50,7 +50,7 @@ public:
   static mesh::Mesh create(MPI_Comm comm,
                            const std::array<Eigen::Vector3d, 2>& p,
                            std::array<std::size_t, 3> n,
-                           mesh::CellType::Type cell_type,
+                           mesh::CellType cell_type,
                            const mesh::GhostMode ghost_mode);
 };
 } // namespace generation

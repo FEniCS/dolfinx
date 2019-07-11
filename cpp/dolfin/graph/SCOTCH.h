@@ -24,11 +24,6 @@ extern "C"
 
 namespace dolfin
 {
-// Forward declarations
-namespace mesh
-{
-class CellType;
-}
 
 namespace graph
 {

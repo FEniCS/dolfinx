@@ -12,7 +12,7 @@ namespace dolfin
 {
 namespace mesh
 {
-enum class CellTypeNew : int
+enum class CellType : int
 {
   point,
   interval,
@@ -22,12 +22,11 @@ enum class CellTypeNew : int
   hexahedron
 };
 
-  /// Convert from cell type to string
-  std::string to_string(CellTypeNew type);
+/// Convert from cell type to string
+std::string to_string(CellType type);
 
-
-  /// Convert from string to cell type
-  CellTypeNew to_type(std::string type);
+/// Convert from string to cell type
+CellType to_type(std::string type);
 
 } // namespace mesh
 } // namespace dolfin

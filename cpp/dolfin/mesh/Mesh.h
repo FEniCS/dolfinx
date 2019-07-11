@@ -7,6 +7,7 @@
 #pragma once
 
 #include "CellType.h"
+#include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
@@ -75,7 +76,7 @@ public:
   ///
   /// @param comm (MPI_Comm)
   ///         MPI Communicator
-  /// @param type (CellType::Type)
+  /// @param type (CellType)
   ///         Cell type
   /// @param points
   ///         Array of geometric points, arranged in global index order
@@ -91,7 +92,7 @@ public:
   ///         cells)
   // FIXME: What about global vertex indices?
   // FIXME: Be explicit in passing geometry degree/type
-  Mesh(MPI_Comm comm, mesh::CellType::Type type,
+  Mesh(MPI_Comm comm, mesh::CellType type,
        const Eigen::Ref<const EigenRowArrayXXd> points,
        const Eigen::Ref<const EigenRowArrayXXi64> cells,
        const std::vector<std::int64_t>& global_cell_indices,
@@ -170,12 +171,12 @@ public:
 
   /// Get mesh cell type.
   ///
-  /// @return CellType&
+  /// @return CellTypeOld&
   ///         The cell type object associated with the mesh.
-  mesh::CellType& type();
+  mesh::CellTypeOld& type();
 
   /// Get mesh cell type (const version).
-  const mesh::CellType& type() const;
+  const mesh::CellTypeOld& type() const;
 
   /// Create entities of given topological dimension.
   ///
@@ -283,7 +284,7 @@ public:
 
 private:
   // Cell type
-  std::unique_ptr<mesh::CellType> _cell_type;
+  std::unique_ptr<mesh::CellTypeOld> _cell_type;
 
   // Mesh topology
   std::unique_ptr<Topology> _topology;

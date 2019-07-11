@@ -25,7 +25,7 @@ mesh::Mesh UnitTetrahedronMesh::create()
   // Create cell
   topo << 0, 1, 2, 3;
 
-  return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::Type::tetrahedron, geom,
+  return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::tetrahedron, geom,
                     topo, {}, mesh::GhostMode::none);
 }
 //-----------------------------------------------------------------------------

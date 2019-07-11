@@ -38,7 +38,7 @@ class FunctionSpace;
 
 namespace mesh
 {
-class CellType;
+class CellTypeOld;
 class Geometry;
 class Mesh;
 } // namespace mesh
@@ -75,7 +75,7 @@ std::size_t get_global_index(const std::vector<const common::IndexMap*> maps,
 
 /// Create an ElementDofLayout from a ufc_dofmap
 ElementDofLayout create_element_dof_layout(const ufc_dofmap& dofmap,
-                                           const mesh::CellType& cell_type,
+                                           const mesh::CellTypeOld& cell_type,
                                            const std::vector<int>& parent_map
                                            = {});
 

@@ -17,11 +17,14 @@ class Cell;
 
 /// This class implements functionality for tetrahedral cell meshes.
 
-class TetrahedronCell : public CellType
+class TetrahedronCell : public CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  TetrahedronCell() : mesh::CellType(Type::tetrahedron, Type::triangle) {}
+  TetrahedronCell()
+      : mesh::CellTypeOld(CellType::tetrahedron, CellType::triangle)
+  {
+  }
 
   /// Check if cell is a simplex
   bool is_simplex() const { return true; }

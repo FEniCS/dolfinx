@@ -41,20 +41,19 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
   switch (_shape)
   {
   case interval:
-    _cell_shape = CellType::interval;
+    _cell_shape = mesh::CellType::interval;
     break;
   case triangle:
-    _cell_shape = CellType::triangle;
+    _cell_shape = mesh::CellType::triangle;
     break;
   case quadrilateral:
-    _cell_shape = CellType::quadrilateral;
+    _cell_shape = mesh::CellType::quadrilateral;
     break;
   case tetrahedron:
-    _cell_shape = CellType::tetrahedron;
+    _cell_shape = mesh::CellType::tetrahedron;
     break;
   case hexahedron:
-    _cell_shape = CellType::hexahedron;
-    break;
+    _cell_shape = mesh::CellType::hexahedron;
   default:
     throw std::runtime_error("Unknown UFC cell type");
   }
@@ -75,7 +74,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
 //-----------------------------------------------------------------------------
 std::string FiniteElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
-CellType FiniteElement::cell_shape() const { return _cell_shape; }
+mesh::CellType FiniteElement::cell_shape() const { return _cell_shape; }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::topological_dimension() const { return _tdim; }
 //-----------------------------------------------------------------------------

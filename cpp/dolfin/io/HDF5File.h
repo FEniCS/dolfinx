@@ -33,7 +33,7 @@ class FunctionSpace;
 
 namespace mesh
 {
-class CellType;
+class CellTypeOld;
 }
 
 namespace io
@@ -119,7 +119,7 @@ public:
   /// file
   mesh::Mesh read_mesh(const std::string topology_path,
                        const std::string geometry_path, const int gdim,
-                       const mesh::CellType& cell_type,
+                       const mesh::CellTypeOld& cell_type,
                        const std::int64_t expected_num_global_cells,
                        const std::int64_t expected_num_global_points,
                        bool use_partition_from_file,

@@ -287,7 +287,7 @@ bool ordered_cell_simplex(
 //-----------------------------------------------------------------------------
 void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
 {
-  const mesh::CellType& cell_type = mesh.type();
+  const mesh::CellTypeOld& cell_type = mesh.type();
   if (!cell_type.is_simplex())
     throw std::runtime_error("Mesh ordering is for simplex cell types only.");
 
@@ -379,7 +379,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
 {
-  const mesh::CellType& cell_type = mesh.type();
+  const mesh::CellTypeOld& cell_type = mesh.type();
   if (!cell_type.is_simplex())
   {
     throw std::runtime_error(

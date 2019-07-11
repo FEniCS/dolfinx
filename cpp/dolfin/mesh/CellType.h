@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "utils.h"
 #include <Eigen/Dense>
 #include <cstdint>
 #include <string>
@@ -23,37 +24,20 @@ class MeshEntity;
 /// Each cell type implements mesh functionality that is specific to
 /// a certain type of cell.
 
-class CellType
+class CellTypeOld
 {
 public:
-  /// Enum for different cell types
-  enum class Type : int
-  {
-    point,
-    interval,
-    triangle,
-    quadrilateral,
-    tetrahedron,
-    hexahedron
-  };
-
   /// Constructor
-  CellType(Type cell_type, Type facet_type);
+  CellTypeOld(CellType cell_type, CellType facet_type);
 
   /// Destructor
-  virtual ~CellType() = default;
+  virtual ~CellTypeOld() = default;
 
   /// Create cell type from type (factory function)
-  static CellType* create(Type type);
-
-  /// Convert from string to cell type
-  static Type string2type(std::string type);
-
-  /// Convert from cell type to string
-  static std::string type2string(Type type);
+  static CellTypeOld* create(CellType type);
 
   /// Return type of cell for entity of dimension i
-  Type entity_type(std::size_t i) const;
+  CellType entity_type(std::size_t i) const;
 
   /// Check if cell is a simplex
   virtual bool is_simplex() const = 0;
@@ -116,8 +100,8 @@ public:
   /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
   virtual std::vector<std::int8_t> vtk_mapping() const = 0;
 
-  const Type type;
-  const Type facet_type;
+  const CellType type;
+  const CellType facet_type;
 };
 } // namespace mesh
 } // namespace dolfin

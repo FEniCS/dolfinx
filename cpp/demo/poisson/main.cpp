@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
                                     Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::Type::triangle,
+      MPI_COMM_WORLD, pt, {{32, 32}}, mesh::CellType::triangle,
       mesh::GhostMode::none));
 
   mesh::Ordering::order_simplex(*mesh);
