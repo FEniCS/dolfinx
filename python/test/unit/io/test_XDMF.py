@@ -109,7 +109,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_2d_quad_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh_2D_quad.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, CellType.quadrilateral)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:

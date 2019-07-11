@@ -11,7 +11,7 @@ def test_manifold_point_search():
     vertices = [(0.0, 0.0, 1.0), (1.0, 1.0, 1.0), (1.0, 0.0, 0.0), (0.0, 1.0,
                                                                     0.0)]
     cells = [(0, 1, 2), (0, 1, 3)]
-    mesh = Mesh(MPI.comm_world, CellType.Type.triangle,
+    mesh = Mesh(MPI.comm_world, CellType.triangle,
                 numpy.array(vertices, dtype=numpy.float64),
                 numpy.array(cells, dtype=numpy.int32), [],
                 cpp.mesh.GhostMode.none)

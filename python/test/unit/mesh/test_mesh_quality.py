@@ -70,7 +70,7 @@ def test_radius_ratio_min_radius_ratio_max():
     mesh2d = RectangleMesh(
         MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
                          numpy.array([1.0, 1.0, 0.0])], [1, 1],
-        CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
+        CellType.triangle, cpp.mesh.GhostMode.none, 'left')
     x = mesh2d.geometry.points
     x[3, :2] += 0.5 * (sqrt(3.0) - 1.0)
 

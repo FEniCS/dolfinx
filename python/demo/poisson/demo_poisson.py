@@ -97,7 +97,7 @@ from ufl import ds, dx, grad, inner
 mesh = RectangleMesh(
     MPI.comm_world,
     [np.array([0, 0, 0]), np.array([1, 1, 0])], [32, 32],
-    CellType.Type.triangle, dolfin.cpp.mesh.GhostMode.none)
+    CellType.triangle, dolfin.cpp.mesh.GhostMode.none)
 V = FunctionSpace(mesh, ("Lagrange", 1))
 
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())

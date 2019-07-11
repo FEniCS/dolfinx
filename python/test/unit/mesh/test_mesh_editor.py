@@ -12,7 +12,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 
 @skip_in_parallel
 def test_triangle_mesh():
-    mesh = Mesh(MPI.comm_world, CellType.Type.triangle,
+    mesh = Mesh(MPI.comm_world, CellType.triangle,
                 numpy.array([[0.0, 0.0],
                              [1.0, 0.0],
                             [0.0, 1.0]], dtype=numpy.float64),

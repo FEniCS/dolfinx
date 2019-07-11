@@ -52,9 +52,12 @@ void mesh(py::module& m)
       .value("tetrahedron", dolfin::mesh::CellType::tetrahedron)
       .value("hexahedron", dolfin::mesh::CellType::hexahedron);
 
+  m.def("to_string", &dolfin::mesh::to_string);
+  m.def("to_type", &dolfin::mesh::to_type);
+
   // dolfin::mesh::CellType
   py::class_<dolfin::mesh::CellTypeOld,
-             std::shared_ptr<dolfin::mesh::CellTypeOld>>(m, "CellType")
+             std::shared_ptr<dolfin::mesh::CellTypeOld>>(m, "CellTypeOld")
       .def_readonly("type", &dolfin::mesh::CellTypeOld::type)
       .def("num_entities", &dolfin::mesh::CellTypeOld::num_entities)
       .def("description", &dolfin::mesh::CellTypeOld::description)

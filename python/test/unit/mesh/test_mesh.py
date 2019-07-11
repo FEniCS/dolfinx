@@ -34,7 +34,7 @@ def mesh2d():
     mesh2d = RectangleMesh(
         MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
                          numpy.array([1., 1., 0.0])], [1, 1],
-        CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
+        CellType.triangle, cpp.mesh.GhostMode.none, 'left')
     mesh2d.geometry.points[3, :2] += 0.5 * (sqrt(3.0) - 1.0)
     return mesh2d
 
@@ -81,7 +81,7 @@ def rectangle():
     return RectangleMesh(
         MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
                          numpy.array([2.0, 2.0, 0.0])], [5, 5],
-        CellType.Type.triangle, cpp.mesh.GhostMode.none)
+        CellType.triangle, cpp.mesh.GhostMode.none)
 
 
 @fixture
@@ -92,7 +92,7 @@ def cube():
 @fixture
 def box():
     return BoxMesh(MPI.comm_world, [numpy.array([0, 0, 0]),
-                                    numpy.array([2, 2, 2])], [2, 2, 5], CellType.Type.tetrahedron,
+                                    numpy.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
                    cpp.mesh.GhostMode.none)
 
 
@@ -153,21 +153,21 @@ def test_mesh_construction_pygmsh():
         }
 
     mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.Type.tetrahedron, points,
+        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
         cells['tetra'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
     mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.Type.triangle, points,
+                                dolfin.cpp.mesh.CellType.triangle, points,
                                 cells['triangle'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
     mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.Type.interval, points,
+                                dolfin.cpp.mesh.CellType.interval, points,
                                 cells['line'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
@@ -190,14 +190,14 @@ def test_mesh_construction_pygmsh():
         }
 
     mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.Type.tetrahedron, points,
+        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
         cells['tetra10'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
     mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.Type.triangle, points,
+        MPI.comm_world, dolfin.cpp.mesh.CellType.triangle, points,
         cells['triangle6'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
@@ -237,14 +237,14 @@ def test_UnitCubeMeshLocal():
 
 
 def test_UnitQuadMesh():
-    mesh = UnitSquareMesh(MPI.comm_world, 5, 7, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 5, 7, CellType.quadrilateral)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
     assert mesh.geometry.dim == 2
 
 
 def test_UnitHexMesh():
-    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9, CellType.Type.hexahedron)
+    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9, CellType.hexahedron)
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
     assert mesh.geometry.dim == 3
@@ -329,8 +329,8 @@ mesh_factories = [
     (UnitIntervalMesh, (MPI.comm_world, 8)),
     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)),
+    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.quadrilateral)),
+    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.hexahedron)),
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
@@ -342,8 +342,8 @@ mesh_factories_broken_shared_entities = [
     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
     # FIXME: Problem in test_shared_entities
     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)),
+    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.quadrilateral)),
+    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.hexahedron)),
 ]
 
 # FIXME: Fix this xfail
@@ -407,7 +407,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     cpp.mesh.Ordering.order_simplex(mesh)
 
     # Create FIAT cell
-    cell_name = CellType.type2string(mesh.type().type)
+    cell_name = cpp.mesh.to_string(mesh.type().type)
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities

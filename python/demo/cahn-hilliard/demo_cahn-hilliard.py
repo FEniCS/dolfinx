@@ -189,7 +189,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
-mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.Type.triangle)
+mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.triangle)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 ME = FunctionSpace(mesh, P1 * P1)
 

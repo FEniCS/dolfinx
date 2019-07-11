@@ -68,7 +68,7 @@ def test_issue_568():
 
 def test_volume_quadrilateralR2():
 
-    mesh = UnitSquareMesh(MPI.comm_self, 1, 1, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_self, 1, 1, CellType.quadrilateral)
     cell = Cell(mesh, 0)
 
     assert cell.volume() == 1.0
@@ -80,7 +80,7 @@ def test_volume_quadrilateralR2():
      [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(coordinates):
 
-    mesh = Mesh(MPI.comm_world, CellType.Type.quadrilateral,
+    mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
                 numpy.array(coordinates, dtype=numpy.float64),
                 numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
                 cpp.mesh.GhostMode.none)
@@ -101,7 +101,7 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
         # vertex is distorted so that the vertices are clearly non
         # coplanar
         mesh = Mesh(
-            MPI.comm_world, CellType.Type.quadrilateral,
+            MPI.comm_world, CellType.quadrilateral,
             numpy.array(
                 [[scaling, 0.5 * scaling, 0.6 * scaling], [0.0, scaling, 0.0],
                  [0.0, 0.0, scaling], [0.0, scaling, scaling]],
@@ -125,7 +125,7 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
         # Unit square cell scaled down by 'scaling' and the first
         # vertex is distorted so that the vertices are clearly non
         # coplanar
-        mesh = Mesh(MPI.comm_world, CellType.Type.quadrilateral,
+        mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
                     numpy.array(
                         [[1.0, 0.5, 0.6], [0.0, scaling, 0.0],
                          [0.0, 0.0, scaling], [0.0, 1.0, 1.0]],
