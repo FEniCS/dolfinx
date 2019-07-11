@@ -27,7 +27,7 @@ std::string mesh::to_string(mesh::CellType type)
   case mesh::CellType::hexahedron:
     return "hexahedron";
   default:
-    throw std::runtime_error("Unknown cell type");
+    throw std::runtime_error("Unknown cell type.");
   }
 
   return "";

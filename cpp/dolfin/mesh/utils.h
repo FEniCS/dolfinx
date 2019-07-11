@@ -12,7 +12,7 @@ namespace dolfin
 {
 namespace mesh
 {
-enum class CellType : int
+enum class CellType : short int
 {
   point,
   interval,

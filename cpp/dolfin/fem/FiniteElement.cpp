@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include <iostream>
+
 #include "FiniteElement.h"
 #include <dolfin/common/log.h>
 #include <functional>
@@ -54,6 +56,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
     break;
   case hexahedron:
     _cell_shape = mesh::CellType::hexahedron;
+    break;
   default:
     throw std::runtime_error("Unknown UFC cell type when building FiniteElement.");
   }
