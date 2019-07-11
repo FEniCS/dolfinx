@@ -6,11 +6,12 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import pytest
 import numpy
+import pytest
 
-from dolfin import (MPI, CellType, FunctionSpace, RectangleMesh,
-                    TestFunction, TrialFunction)
+from dolfin import (MPI, FunctionSpace, RectangleMesh, TestFunction,
+                    TrialFunction)
+from dolfin.cpp.mesh import CellType
 from ufl import dx, grad, inner, lhs, rhs, system
 
 

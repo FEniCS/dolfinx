@@ -8,7 +8,8 @@
 import numpy as np
 import pytest
 
-from dolfin import MPI, CellType, FunctionSpace, UnitSquareMesh, cpp
+from dolfin import MPI, FunctionSpace, UnitSquareMesh, cpp
+from dolfin.cpp.mesh import CellType
 from dolfin_utils.test.fixtures import fixture
 
 
