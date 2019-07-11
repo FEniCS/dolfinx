@@ -9,11 +9,12 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Facets, Function,
-                    FunctionSpace, MeshEntities, MeshFunction,
-                    MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
-                    Vertices, cpp, has_petsc_complex, interpolate)
+from dolfin import (MPI, Cells, Facets, Function, FunctionSpace, MeshEntities,
+                    MeshFunction, MeshValueCollection, TensorFunctionSpace,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+                    VectorFunctionSpace, Vertices, cpp, has_petsc_complex,
+                    interpolate)
+from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement
