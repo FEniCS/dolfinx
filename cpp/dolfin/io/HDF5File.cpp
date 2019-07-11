@@ -1388,7 +1388,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   {
     std::string cell_type_str = HDF5Interface::get_attribute<std::string>(
         _hdf5_file_id, topology_path, "celltype");
-    if (cell_type.cell_type() != mesh::CellType::string2type(cell_type_str))
+    if (cell_type.type != mesh::CellType::string2type(cell_type_str))
     {
       throw std::runtime_error(
           "Inconsistency between expected cell type and cell type "
@@ -1553,7 +1553,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   t.stop();
 
   return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type.cell_type(), points, cells,
+      _mpi_comm.comm(), cell_type.type, points, cells,
       global_cell_indices, ghost_mode);
 }
 //-----------------------------------------------------------------------------

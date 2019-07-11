@@ -1424,8 +1424,8 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
             cell_index_offset);
 
   return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type->cell_type(), points, cells,
-      global_cell_indices, ghost_mode);
+      _mpi_comm.comm(), cell_type->type, points, cells, global_cell_indices,
+      ghost_mode);
 }
 //----------------------------------------------------------------------------
 function::Function
@@ -1785,8 +1785,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     pugi::xml_node topology_node = grid_node.child("Topology");
     assert(topology_node);
     auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
-    if (mesh::CellType::type2string(mesh->type().cell_type())
-        != cell_type_str.first)
+    if (mesh::CellType::type2string(mesh->type().type) != cell_type_str.first)
     {
       throw std::runtime_error(
           "Incompatible Mesh type. Try writing the Mesh to XDMF first");

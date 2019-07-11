@@ -407,7 +407,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     cpp.mesh.Ordering.order_simplex(mesh)
 
     # Create FIAT cell
-    cell_name = CellType.type2string(mesh.type().cell_type())
+    cell_name = CellType.type2string(mesh.type().type)
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities
