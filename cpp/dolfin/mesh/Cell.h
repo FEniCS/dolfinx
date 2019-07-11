@@ -50,7 +50,7 @@ public:
   Cell& operator=(const Cell& cell) = default;
 
   /// Return type of cell
-  CellType::Type type() const { return _mesh->type().cell_type(); }
+  CellType::Type type() const { return _mesh->type().type; }
 
   /// Return number of vertices of cell
   std::size_t num_vertices() const { return _mesh->type().num_vertices(); }

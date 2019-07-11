@@ -128,7 +128,7 @@ public:
 
 private:
   // Number of mesh vertices
-  std::int32_t _num_vertices;
+  const std::int32_t _num_vertices;
 
   // Number of ghost indices for each topological dimension (local
   // or global??)

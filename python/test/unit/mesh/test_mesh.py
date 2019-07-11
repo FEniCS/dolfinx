@@ -14,9 +14,8 @@ import dolfin
 import FIAT
 from dolfin import (MPI, BoxMesh, Cell, Cells, CellType, MeshEntities,
                     MeshEntity, MeshFunction, RectangleMesh,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, Vertex,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     cpp)
-from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -251,25 +250,6 @@ def test_UnitHexMesh():
     assert mesh.geometry.dim == 3
 
 
-@skip_in_parallel
-def test_Assign(mesh, f):
-    """Assign value of mesh function."""
-    f = f
-    f[3] = 10
-    v = Vertex(mesh, 3)
-    assert f[v] == 10
-
-
-@skip_in_parallel
-def test_Write(f):
-    """Construct and save a simple meshfunction."""
-    f = f
-    f[0] = 1
-    f[1] = 2
-    file = XDMFFile(f.mesh().mpi_comm(), "saved_mesh_function.xdmf")
-    file.write(f)
-
-
 def test_hash():
     h1 = UnitSquareMesh(MPI.comm_world, 4, 4).hash()
     h2 = UnitSquareMesh(MPI.comm_world, 4, 5).hash()
@@ -427,7 +407,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     cpp.mesh.Ordering.order_simplex(mesh)
 
     # Create FIAT cell
-    cell_name = CellType.type2string(mesh.type().cell_type())
+    cell_name = CellType.type2string(mesh.type().type)
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities

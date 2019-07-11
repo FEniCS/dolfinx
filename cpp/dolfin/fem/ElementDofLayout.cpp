@@ -27,15 +27,15 @@ ElementDofLayout::ElementDofLayout(
   // TODO: Handle global support dofs
 
   dolfin::CellType _cell = dolfin::CellType::point;
-  if (cell_type.cell_type() == mesh::CellType::Type::interval)
+  if (cell_type.type == mesh::CellType::Type::interval)
     _cell = dolfin::CellType::interval;
-  else if (cell_type.cell_type() == mesh::CellType::Type::triangle)
+  else if (cell_type.type == mesh::CellType::Type::triangle)
     _cell = dolfin::CellType::triangle;
-  else if (cell_type.cell_type() == mesh::CellType::Type::quadrilateral)
+  else if (cell_type.type == mesh::CellType::Type::quadrilateral)
     _cell = dolfin::CellType::quadrilateral;
-  else if (cell_type.cell_type() == mesh::CellType::Type::tetrahedron)
+  else if (cell_type.type == mesh::CellType::Type::tetrahedron)
     _cell = dolfin::CellType::tetrahedron;
-  else if (cell_type.cell_type() == mesh::CellType::Type::hexahedron)
+  else if (cell_type.type == mesh::CellType::Type::hexahedron)
     _cell = dolfin::CellType::hexahedron;
   else
     throw std::runtime_error("Ooops");

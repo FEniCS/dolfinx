@@ -49,14 +49,15 @@ public:
   ///    Input mesh to be refined
   /// @param refinement_marker
   ///    MeshFunction listing MeshEntities which should be split by this
-  ///    refinement
+  ///    refinement. Value == 1 means "refine", any other value means
+  ///    "do not refine".
   /// @param redistribute
   ///     Flag to call the Mesh Partitioner to redistribute after refinement
   /// @returns mesh::Mesh
   ///    New Mesh
   ///
   static mesh::Mesh refine(const mesh::Mesh& mesh,
-                           const mesh::MeshFunction<bool>& refinement_marker,
+                           const mesh::MeshFunction<int>& refinement_marker,
                            bool redistribute);
 
   /// Get the subdivision of an original simplex into smaller

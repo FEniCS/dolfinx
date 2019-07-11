@@ -1461,7 +1461,7 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
       = read_mesh_data(_mpi_comm.comm());
 
   return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
+      _mpi_comm.comm(), cell_type->type, points, cells, global_cell_indices,
       ghost_mode);
 }
 //----------------------------------------------------------------------------
@@ -1754,7 +1754,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
         "Cannot write ASCII XDMF in parallel (use HDF5 encoding).");
   }
 
-  if (meshfunction.size() == 0)
+  if (meshfunction.values().size() == 0)
     throw std::runtime_error("No values in MeshFunction");
 
   // Get mesh
@@ -1822,8 +1822,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     pugi::xml_node topology_node = grid_node.child("Topology");
     assert(topology_node);
     auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
-    if (mesh::CellType::type2string(mesh->type().cell_type())
-        != cell_type_str.first)
+    if (mesh::CellType::type2string(mesh->type().type) != cell_type_str.first)
     {
       throw std::runtime_error(
           "Incompatible Mesh type. Try writing the Mesh to XDMF first");

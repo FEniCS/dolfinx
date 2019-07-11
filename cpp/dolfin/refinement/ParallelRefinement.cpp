@@ -75,13 +75,18 @@ void ParallelRefinement::mark(const mesh::MeshEntity& entity)
     mark(edge.index());
 }
 //-----------------------------------------------------------------------------
-void ParallelRefinement::mark(const mesh::MeshFunction<bool>& refinement_marker)
+void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
 {
   const std::size_t entity_dim = refinement_marker.dim();
+
+  // Get reference to mesh function data array
+  Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> mf_values
+      = refinement_marker.values();
+
   for (const auto& entity :
        mesh::MeshRange<mesh::MeshEntity>(_mesh, entity_dim))
   {
-    if (refinement_marker[entity])
+    if (mf_values[entity.index()] == 1)
     {
       for (const auto& edge : mesh::EntityRange<mesh::Edge>(entity))
         mark(edge.index());
@@ -238,8 +243,8 @@ mesh::Mesh ParallelRefinement::build_local() const
   Eigen::Map<const EigenRowArrayXXi64> topology(_new_cell_topology.data(),
                                                 num_cells, num_cell_vertices);
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.type().cell_type(), geometry,
-                  topology, {}, _mesh.get_ghost_mode());
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.type().type, geometry, topology, {},
+                  _mesh.get_ghost_mode());
 
   return mesh;
 }
@@ -265,8 +270,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
                                             num_local_vertices, 3);
 
   return mesh::Partitioning::build_distributed_mesh(
-      _mesh.mpi_comm(), _mesh.type().cell_type(), points, cells,
-      global_cell_indices, _mesh.get_ghost_mode());
+      _mesh.mpi_comm(), _mesh.type().type, points, cells, global_cell_indices,
+      _mesh.get_ghost_mode());
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::int64_t>& idx)
