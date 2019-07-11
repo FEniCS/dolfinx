@@ -11,9 +11,9 @@ import sys
 import numpy as np
 import pytest
 
-from dolfin import (MPI, Cells, CellType, FunctionSpace,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorFunctionSpace, cpp, fem)
+from dolfin import (MPI, Cells, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
+                    UnitSquareMesh, VectorFunctionSpace, cpp, fem)
+from dolfin.cpp.mesh import CellType
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 from ufl import FiniteElement, MixedElement, VectorElement

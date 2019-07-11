@@ -55,7 +55,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
   case hexahedron:
     _cell_shape = mesh::CellType::hexahedron;
   default:
-    throw std::runtime_error("Unknown UFC cell type");
+    throw std::runtime_error("Unknown UFC cell type when building FiniteElement.");
   }
   assert(ReferenceCellTopology::dim(_cell_shape) == _tdim);
 
