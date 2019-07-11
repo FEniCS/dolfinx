@@ -27,6 +27,7 @@ set(HEADERS
   TopologyComputation.h
   TriangleCell.h
   Vertex.h
+  utils.h
   PARENT_SCOPE)
 
 set(SOURCES
@@ -52,4 +53,5 @@ set(SOURCES
   TetrahedronCell.cpp
   TopologyComputation.cpp
   TriangleCell.cpp
+  utils.cpp
   PARENT_SCOPE)

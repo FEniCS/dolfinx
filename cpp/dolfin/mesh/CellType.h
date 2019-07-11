@@ -46,9 +46,6 @@ public:
   /// Create cell type from type (factory function)
   static CellType* create(Type type);
 
-  /// Create cell type from string (factory function)
-  static CellType* create(std::string type);
-
   /// Convert from string to cell type
   static Type string2type(std::string type);
 

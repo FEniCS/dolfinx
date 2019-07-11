@@ -46,12 +46,7 @@ CellType* CellType::create(Type type)
     throw std::runtime_error("Unknown cell type");
   }
 
-  return 0;
-}
-//-----------------------------------------------------------------------------
-CellType* CellType::create(std::string type)
-{
-  return create(string2type(type));
+  return nullptr;
 }
 //-----------------------------------------------------------------------------
 CellType::Type CellType::string2type(std::string type)

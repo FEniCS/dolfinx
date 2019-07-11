@@ -1064,7 +1064,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
   std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(cell_type_str.first));
+      mesh::CellType::create(mesh::CellType::string2type(cell_type_str.first)));
   assert(cell_type);
   const int dim = cell_type->dim();
   const int num_verts_per_entity = cell_type->num_vertices();
@@ -1362,7 +1362,7 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
 
   // Get toplogical dimensions
   std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(cell_type_str.first));
+      mesh::CellType::create(mesh::CellType::string2type(cell_type_str.first)));
   assert(cell_type);
 
   // Get geometry node
@@ -1672,7 +1672,7 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
   std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(cell_type_str.first));
+      mesh::CellType::create(mesh::CellType::string2type(cell_type_str.first)));
   assert(cell_type);
   const std::uint32_t num_vertices_per_cell = cell_type->num_entities(0);
   const std::uint32_t dim = cell_type->dim();

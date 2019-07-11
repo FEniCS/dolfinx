@@ -1325,7 +1325,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
 
   // Create CellType from string
   std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(cell_type_str));
+      mesh::CellType::create(mesh::CellType::string2type(cell_type_str)));
   assert(cell_type);
 
   // Check that coordinate data set is found in HDF5 file
@@ -1553,8 +1553,8 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   t.stop();
 
   return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type.type, points, cells,
-      global_cell_indices, ghost_mode);
+      _mpi_comm.comm(), cell_type.type, points, cells, global_cell_indices,
+      ghost_mode);
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const
