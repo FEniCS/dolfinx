@@ -6,7 +6,8 @@
 
 import numpy
 
-from dolfin import MPI, CellType, Mesh, cpp
+from dolfin import MPI, Mesh, cpp
+from dolfin.cpp.mesh import CellType
 from dolfin_utils.test.skips import skip_in_parallel
 
 

@@ -12,10 +12,10 @@ import pytest
 
 import dolfin
 import FIAT
-from dolfin import (MPI, BoxMesh, Cell, Cells, CellType, MeshEntities,
-                    MeshEntity, MeshFunction, RectangleMesh,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    cpp)
+from dolfin import (MPI, BoxMesh, Cell, Cells, MeshEntities, MeshEntity,
+                    MeshFunction, RectangleMesh, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh, cpp)
+from dolfin.cpp.mesh import CellType
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
