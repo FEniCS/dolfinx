@@ -14,11 +14,12 @@ import numpy as np
 from petsc4py import PETSc
 
 import dolfin
-from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function,
+from dolfin import (MPI, BoxMesh, DirichletBC, Function,
                     TestFunction, TrialFunction, VectorFunctionSpace, cpp)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.io import XDMFFile
 from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
+from dolfin.cpp.mesh import CellType
 from ufl import Identity, as_vector, dx, grad, inner, sym, tr
 
 

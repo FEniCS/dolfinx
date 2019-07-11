@@ -80,10 +80,11 @@ import numpy as np
 import dolfin
 import dolfin.plotting
 import ufl
-from dolfin import (MPI, CellType, DirichletBC, Function, FunctionSpace,
+from dolfin import (MPI, DirichletBC, Function, FunctionSpace,
                     RectangleMesh, TestFunction, TrialFunction, solve)
 from dolfin.function.specialfunctions import SpatialCoordinate
 from dolfin.io import XDMFFile
+from dolfin.cpp.mesh import CellType
 from ufl import ds, dx, grad, inner
 
 # We begin by defining a mesh of the domain and a finite element
