@@ -109,7 +109,7 @@ public:
   ///         Object to be moved.
   Mesh(Mesh&& mesh);
 
-  /// Destructor.
+  /// Destructor
   ~Mesh();
 
   /// Assignment operator
