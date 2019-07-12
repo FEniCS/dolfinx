@@ -122,11 +122,11 @@ int mesh::cell_num_entities(mesh::CellType type, int dim)
     switch (dim)
     {
     case 0:
-      return 1; // vertices
+      return 4; // vertices
     case 1:
-      return 2; // edges
+      return 4; // edges
     case 2:
-      return 4; // cells
+      return 1; // cells
     }
   case mesh::CellType::hexahedron:
     switch (dim)
