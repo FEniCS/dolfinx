@@ -67,9 +67,6 @@ public:
   /// Compute the area/length of given facet with respect to the cell
   double facet_area(const mesh::Cell& cell, std::size_t facet) const;
 
-  /// Return description of cell type
-  std::string description(bool plural) const;
-
 private:
   // Find local index of edge i according to ordering convention
   std::size_t find_edge(std::size_t i, const mesh::Cell& cell) const;

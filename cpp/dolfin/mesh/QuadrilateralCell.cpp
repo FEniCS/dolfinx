@@ -238,10 +238,3 @@ double QuadrilateralCell::facet_area(const Cell& cell, std::size_t facet) const
   return (p0 - p1).norm();
 }
 //-----------------------------------------------------------------------------
-std::string QuadrilateralCell::description(bool plural) const
-{
-  if (plural)
-    return "quadrilaterals";
-  return "quadrilateral";
-}
-//-----------------------------------------------------------------------------

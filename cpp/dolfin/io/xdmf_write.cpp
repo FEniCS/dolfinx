@@ -207,7 +207,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   MPI_Comm comm = mesh.mpi_comm();
 
   const std::vector<std::int8_t> perm = mesh::vtk_mapping(mesh.type().type);
-    const int tdim = mesh.topology().dim();
+  const int tdim = mesh.topology().dim();
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
   {
     // Simple case when nothing is shared between processes
@@ -642,7 +642,8 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   std::string element_family = u.function_space()->element->family();
   const std::size_t element_degree = u.function_space()->element->degree();
-  const mesh::CellType element_cell_type = u.function_space()->element->cell_shape();
+  const mesh::CellType element_cell_type
+      = u.function_space()->element->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
   const std::map<std::string, std::string> family_abbr

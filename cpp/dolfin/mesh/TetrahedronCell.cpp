@@ -319,13 +319,6 @@ double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
   return 0.5 * sqrt(v0 * v0 + v1 * v1 + v2 * v2);
 }
 //-----------------------------------------------------------------------------
-std::string TetrahedronCell::description(bool plural) const
-{
-  if (plural)
-    return "tetrahedra";
-  return "tetrahedron";
-}
-//-----------------------------------------------------------------------------
 std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges

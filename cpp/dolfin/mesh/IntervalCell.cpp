@@ -188,11 +188,3 @@ double IntervalCell::facet_area(const Cell& cell, std::size_t facet) const
   return 1.0;
 }
 //-----------------------------------------------------------------------------
-std::string IntervalCell::description(bool plural) const
-{
-  if (plural)
-    return "intervals";
-  else
-    return "interval";
-}
-//-----------------------------------------------------------------------------

@@ -187,10 +187,3 @@ double HexahedronCell::facet_area(const mesh::Cell& cell,
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-std::string HexahedronCell::description(bool plural) const
-{
-  if (plural)
-    return "hexahedra";
-  return "hexahedron";
-}
-//-----------------------------------------------------------------------------

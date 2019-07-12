@@ -88,9 +88,6 @@ public:
   /// Compute the area/length of given facet with respect to the cell
   virtual double facet_area(const Cell& cell, std::size_t facet) const = 0;
 
-  /// Return description of cell type
-  virtual std::string description(bool plural) const = 0;
-
   const CellType type;
   const CellType facet_type;
 };

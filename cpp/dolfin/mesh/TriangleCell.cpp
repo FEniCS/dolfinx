@@ -343,13 +343,6 @@ double TriangleCell::facet_area(const Cell& cell, std::size_t facet) const
   return (p1 - p0).norm();
 }
 //-----------------------------------------------------------------------------
-std::string TriangleCell::description(bool plural) const
-{
-  if (plural)
-    return "triangles";
-  return "triangle";
-}
-//-----------------------------------------------------------------------------
 std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges

@@ -94,13 +94,6 @@ double PointCell::facet_area(const Cell& cell, std::size_t facet) const
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-std::string PointCell::description(bool plural) const
-{
-  if (plural)
-    return "points";
-  return "points";
-}
-//-----------------------------------------------------------------------------
 std::size_t PointCell::find_edge(std::size_t i, const Cell& cell) const
 {
   throw std::runtime_error("Not defined");
