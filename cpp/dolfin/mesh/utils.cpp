@@ -57,11 +57,11 @@ mesh::CellType mesh::to_type(std::string type)
 //-----------------------------------------------------------------------------
 bool mesh::is_simplex(mesh::CellType type)
 {
-  return static_cast<short int>(type) > 0;
+  return static_cast<int>(type) > 0;
 }
 //-----------------------------------------------------------------------------
 int mesh::num_cell_vertices(mesh::CellType type)
 {
-  return std::abs(static_cast<short int>(type));
+  return std::abs(static_cast<int>(type));
 }
 //-----------------------------------------------------------------------------
