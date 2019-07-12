@@ -18,23 +18,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-int QuadrilateralCell::num_entities(int dim) const
-{
-  switch (dim)
-  {
-  case 0:
-    return 4; // vertices
-  case 1:
-    return 4; // edges
-  case 2:
-    return 1; // cells
-  default:
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
 int QuadrilateralCell::num_vertices(int dim) const
 {
   switch (dim)

@@ -15,21 +15,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-int IntervalCell::num_entities(int dim) const
-{
-  switch (dim)
-  {
-  case 0:
-    return 2; // vertices
-  case 1:
-    return 1; // cells
-  default:
-    throw std::invalid_argument("Illegal dimension");
-  }
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
 int IntervalCell::num_vertices(int dim) const
 {
   switch (dim)

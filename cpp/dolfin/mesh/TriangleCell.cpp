@@ -16,23 +16,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-int TriangleCell::num_entities(int dim) const
-{
-  switch (dim)
-  {
-  case 0:
-    return 3; // vertices
-  case 1:
-    return 3; // edges
-  case 2:
-    return 1; // cells
-  default:
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
 int TriangleCell::num_vertices(int dim) const
 {
   switch (dim)

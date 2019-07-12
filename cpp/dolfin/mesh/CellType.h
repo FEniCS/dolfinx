@@ -39,9 +39,6 @@ public:
   /// Return type of cell for entity of dimension i
   CellType entity_type(int i) const;
 
-  /// Return number of entities of given topological dimension
-  // virtual int num_entities(int dim) const = 0;
-
   /// Return number of vertices for entity of given topological
   /// dimension
   virtual int num_vertices(int dim) const = 0;

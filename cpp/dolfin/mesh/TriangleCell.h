@@ -22,9 +22,6 @@ public:
   /// Specify cell type and facet type
   TriangleCell() : CellTypeOld(CellType::triangle, CellType::interval) {}
 
-  /// Return number of entities of given topological dimension
-  int num_entities(int dim) const;
-
   /// Return number of vertices for entity of given topological dimension
   int num_vertices(int dim) const;
 
