@@ -46,23 +46,13 @@ bool is_simplex(CellType type);
 int num_cell_vertices(CellType type);
 
 /// Compute (generalized) volume of mesh entities of given dimension
-Eigen::ArrayXd volume(const Mesh& mesh,
-                      const Eigen::Ref<const Eigen::ArrayXi> entities, int dim);
+Eigen::ArrayXd cell_volumes(const Mesh& mesh,
+                            const Eigen::Ref<const Eigen::ArrayXi> entities);
 
-/// Compute (generalized) volume of mesh entity
-double volume(const MeshEntity& entity);
-
-/// Compute (generalized) volume of mesh entity
-double volume_interval(const MeshEntity& interval);
-
-/// Compute (generalized) volume of mesh entity
-double volume_triangle(const MeshEntity& triangle);
-
-/// Compute (generalized) volume of mesh entity
-double volume_quadrilateral(const MeshEntity& quadrilateral);
-
-/// Compute (generalized) volume of mesh entity
-double volume_tetrahedron(const MeshEntity& tetrahedron);
+/// Compute (generalized) volume of mesh entity. Note: this function is
+/// not very efficient. Use the vectorised version for computing
+/// multiple volumes.
+double volume(const MeshEntity& e);
 
 /// Compute inradius of cell
 // double inradius(const Cell& cell);
