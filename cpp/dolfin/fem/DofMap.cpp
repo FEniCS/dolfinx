@@ -277,7 +277,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
   // Build local dofs for each entity of dimension dim
   const mesh::CellTypeOld& cell_type = mesh.type();
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> entity_dofs_local;
-  for (std::size_t i = 0; i < cell_type.num_entities(dim); ++i)
+  for (int i = 0; i < cell_type.num_entities(dim); ++i)
     entity_dofs_local.push_back(element_dof_layout->entity_dofs(dim, i));
 
   // Iterate over cells
