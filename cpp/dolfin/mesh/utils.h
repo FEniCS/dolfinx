@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <Eigen/Dense>
 #include <string>
 #include <vector>
 
@@ -13,6 +14,7 @@ namespace dolfin
 {
 namespace mesh
 {
+class Mesh;
 class MeshEntity;
 
 enum class CellType : int
@@ -42,6 +44,10 @@ bool is_simplex(CellType type);
 
 /// Check if cell is a simplex
 int num_cell_vertices(CellType type);
+
+/// Compute (generalized) volume of mesh entities of given dimension
+Eigen::ArrayXd volume(const Mesh& mesh,
+                      const Eigen::Ref<const Eigen::ArrayXi> entities, int dim);
 
 /// Compute (generalized) volume of mesh entity
 double volume(const MeshEntity& entity);
