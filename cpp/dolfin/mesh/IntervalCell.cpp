@@ -45,23 +45,6 @@ void IntervalCell::create_entities(
   e(1, 0) = v[1];
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::volume(const MeshEntity& interval) const
-{
-  // Check that we get an interval
-  if (interval.dim() != 1)
-    throw std::invalid_argument("Illegal dimension");
-
-  // Get mesh geometry
-  const Geometry& geometry = interval.mesh().geometry();
-
-  // Get the coordinates of the two vertices
-  const std::int32_t* vertices = interval.entities(0);
-  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-
-  return (x1 - x0).norm();
-}
-//-----------------------------------------------------------------------------
 double IntervalCell::circumradius(const MeshEntity& interval) const
 {
   // Check that we get an interval

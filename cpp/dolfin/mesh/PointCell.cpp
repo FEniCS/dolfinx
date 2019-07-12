@@ -48,12 +48,6 @@ void PointCell::create_entities(
   throw std::runtime_error("Not defined");
 }
 //-----------------------------------------------------------------------------
-double PointCell::volume(const MeshEntity& triangle) const
-{
-  throw std::runtime_error("Not defined");
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
 double PointCell::circumradius(const MeshEntity& point) const
 {
   throw std::runtime_error("Not defined");

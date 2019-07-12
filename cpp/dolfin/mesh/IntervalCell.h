@@ -38,9 +38,6 @@ public:
                                     Eigen::Dynamic, Eigen::RowMajor>& e,
                        std::size_t dim, const std::int32_t* v) const;
 
-  /// Compute (generalized) volume (length) of interval
-  double volume(const MeshEntity& interval) const;
-
   /// Compute circumradius of interval
   double circumradius(const MeshEntity& interval) const;
 

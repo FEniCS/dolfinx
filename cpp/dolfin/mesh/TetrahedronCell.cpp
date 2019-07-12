@@ -85,43 +85,6 @@ void TetrahedronCell::create_entities(
   }
 }
 //-----------------------------------------------------------------------------
-double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
-{
-  // Check that we get a tetrahedron
-  if (tetrahedron.dim() != 3)
-    throw std::runtime_error("Illegal topological dimension");
-
-  // Get mesh geometry
-  const Geometry& geometry = tetrahedron.mesh().geometry();
-
-  // Only know how to compute the volume when embedded in R^3
-  if (geometry.dim() != 3)
-    throw std::runtime_error("Illegal geometric dimension");
-
-  // Get the coordinates of the four vertices
-  const std::int32_t* vertices = tetrahedron.entities(0);
-  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-  const Eigen::Vector3d x2 = geometry.x(vertices[2]);
-  const Eigen::Vector3d x3 = geometry.x(vertices[3]);
-
-  // Formula for volume from http://mathworld.wolfram.com
-  const double v = (x0[0]
-                        * (x1[1] * x2[2] + x3[1] * x1[2] + x2[1] * x3[2]
-                           - x2[1] * x1[2] - x1[1] * x3[2] - x3[1] * x2[2])
-                    - x1[0]
-                          * (x0[1] * x2[2] + x3[1] * x0[2] + x2[1] * x3[2]
-                             - x2[1] * x0[2] - x0[1] * x3[2] - x3[1] * x2[2])
-                    + x2[0]
-                          * (x0[1] * x1[2] + x3[1] * x0[2] + x1[1] * x3[2]
-                             - x1[1] * x0[2] - x0[1] * x3[2] - x3[1] * x1[2])
-                    - x3[0]
-                          * (x0[1] * x1[2] + x1[1] * x2[2] + x2[1] * x0[2]
-                             - x1[1] * x0[2] - x2[1] * x1[2] - x0[1] * x2[2]));
-
-  return std::abs(v) / 6.0;
-}
-//-----------------------------------------------------------------------------
 double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
 {
   // Check that we get a tetrahedron

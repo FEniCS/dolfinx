@@ -34,9 +34,6 @@ public:
                                     Eigen::Dynamic, Eigen::RowMajor>& e,
                        std::size_t dim, const std::int32_t* v) const;
 
-  /// Compute volume of tetrahedron
-  double volume(const MeshEntity& tetrahedron) const;
-
   /// Compute circumradius of tetrahedron
   double circumradius(const MeshEntity& tetrahedron) const;
 

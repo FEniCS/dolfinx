@@ -56,53 +56,6 @@ void TriangleCell::create_entities(
   e(2, 1) = v[1];
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::volume(const MeshEntity& triangle) const
-{
-  // Check that we get a triangle
-  if (triangle.dim() != 2)
-  {
-    throw std::runtime_error("Illegal mesh entity");
-  }
-
-  // Get mesh geometry
-  const Geometry& geometry = triangle.mesh().geometry();
-
-  // Get the coordinates of the three vertices
-  const std::int32_t* vertices = triangle.entities(0);
-  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-  const Eigen::Vector3d x2 = geometry.x(vertices[2]);
-
-  if (geometry.dim() == 2)
-  {
-    // Compute area of triangle embedded in R^2
-    double v2 = (x0[0] * x1[1] + x0[1] * x2[0] + x1[0] * x2[1])
-                - (x2[0] * x1[1] + x2[1] * x0[0] + x1[0] * x0[1]);
-
-    // Formula for volume from http://mathworld.wolfram.com
-    return 0.5 * std::abs(v2);
-  }
-  else if (geometry.dim() == 3)
-  {
-    // Compute area of triangle embedded in R^3
-    const double v0 = (x0[1] * x1[2] + x0[2] * x2[1] + x1[1] * x2[2])
-                      - (x2[1] * x1[2] + x2[2] * x0[1] + x1[1] * x0[2]);
-    const double v1 = (x0[2] * x1[0] + x0[0] * x2[2] + x1[2] * x2[0])
-                      - (x2[2] * x1[0] + x2[0] * x0[2] + x1[2] * x0[0]);
-    const double v2 = (x0[0] * x1[1] + x0[1] * x2[0] + x1[0] * x2[1])
-                      - (x2[0] * x1[1] + x2[1] * x0[0] + x1[0] * x0[1]);
-
-    // Formula for volume from http://mathworld.wolfram.com
-    return 0.5 * sqrt(v0 * v0 + v1 * v1 + v2 * v2);
-  }
-  else
-  {
-    throw std::runtime_error("Illegal geometric dimension");
-  }
-
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
 double TriangleCell::circumradius(const MeshEntity& triangle) const
 {
   // Check that we get a triangle

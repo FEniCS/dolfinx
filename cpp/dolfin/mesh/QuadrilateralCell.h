@@ -26,7 +26,7 @@ public:
   {
   }
 
-   /// Return number of vertices for entity of given topological
+  /// Return number of vertices for entity of given topological
   /// dimension
   int num_vertices(int dim) const;
 
@@ -34,9 +34,6 @@ public:
   void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,
                                     Eigen::Dynamic, Eigen::RowMajor>& e,
                        std::size_t dim, const std::int32_t* v) const;
-
-  /// Compute (generalized) volume (area) of triangle
-  double volume(const MeshEntity& triangle) const;
 
   /// Compute circumradius of triangle
   double circumradius(const MeshEntity& triangle) const;

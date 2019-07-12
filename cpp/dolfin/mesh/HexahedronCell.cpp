@@ -107,16 +107,6 @@ void HexahedronCell::create_entities(
   }
 }
 //-----------------------------------------------------------------------------
-double HexahedronCell::volume(const MeshEntity& cell) const
-{
-  if (cell.dim() != 2)
-    throw std::runtime_error("Illegal topological dimension");
-
-  throw std::runtime_error("Not Implemented");
-
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
 double HexahedronCell::circumradius(const MeshEntity& cell) const
 {
   // Check that we get a cell

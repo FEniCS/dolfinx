@@ -60,47 +60,6 @@ void QuadrilateralCell::create_entities(
   e(3, 1) = v[3];
 }
 //-----------------------------------------------------------------------------
-double QuadrilateralCell::volume(const MeshEntity& cell) const
-{
-  if (cell.dim() != 2)
-    throw std::runtime_error("Illegal topological dimension");
-
-  // Get mesh geometry
-  const Geometry& geometry = cell.mesh().geometry();
-
-  // Get the coordinates of the four vertices
-  const std::int32_t* vertices = cell.entities(0);
-  const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-  const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-  const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-  const Eigen::Vector3d p3 = geometry.x(vertices[3]);
-
-  if (geometry.dim() != 2 && geometry.dim() != 3)
-  {
-    throw std::runtime_error("Illegal geometric dimension");
-  }
-
-  const Eigen::Vector3d c = (p0 - p3).cross(p1 - p2);
-  const double volume = 0.5 * c.norm();
-
-  if (geometry.dim() == 3)
-  {
-    // Vertices are coplanar if det(p1-p0 | p3-p0 | p2-p0) is zero
-    Eigen::Matrix<double, 3, 3, Eigen::RowMajor> m;
-    m.row(0) = (p1 - p0).transpose();
-    m.row(1) = (p3 - p0).transpose();
-    m.row(2) = (p2 - p0).transpose();
-
-    const double copl = m.determinant();
-    const double h = std::min(1.0, std::pow(volume, 1.5));
-    // Check for coplanarity
-    if (std::abs(copl) > h * DBL_EPSILON)
-      throw std::runtime_error("Not coplanar");
-  }
-
-  return volume;
-}
-//-----------------------------------------------------------------------------
 double QuadrilateralCell::circumradius(const MeshEntity& cell) const
 {
   // Check that we get a cell

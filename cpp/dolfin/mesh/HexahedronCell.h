@@ -39,9 +39,6 @@ public:
                                     Eigen::Dynamic, Eigen::RowMajor>& e,
                        std::size_t dim, const std::int32_t* v) const;
 
-  /// Compute (generalized) volume (area) of triangle
-  double volume(const MeshEntity& triangle) const;
-
   /// Compute diameter of triangle
   double circumradius(const MeshEntity& triangle) const;
 
