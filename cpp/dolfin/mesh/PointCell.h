@@ -63,9 +63,6 @@ public:
   /// Return description of cell type
   std::string description(bool plural) const;
 
-  /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-  std::vector<std::int8_t> vtk_mapping() const { return {0}; }
-
 private:
   // Find local index of edge i according to ordering convention
   std::size_t find_edge(std::size_t i, const mesh::Cell& cell) const;

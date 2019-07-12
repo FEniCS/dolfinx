@@ -206,8 +206,8 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  const std::vector<std::int8_t> perm = mesh.type().vtk_mapping();
-  const int tdim = mesh.topology().dim();
+  const std::vector<std::int8_t> perm = mesh::vtk_mapping(mesh.type().type);
+    const int tdim = mesh.topology().dim();
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
   {
     // Simple case when nothing is shared between processes

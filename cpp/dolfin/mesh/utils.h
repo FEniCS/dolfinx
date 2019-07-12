@@ -7,6 +7,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace dolfin
 {
@@ -34,6 +35,9 @@ bool is_simplex(CellType type);
 
 /// Check if cell is a simplex
 int num_cell_vertices(CellType type);
+
+/// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
+std::vector<std::int8_t> vtk_mapping(CellType type);
 
 } // namespace mesh
 } // namespace dolfin

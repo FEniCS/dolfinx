@@ -18,6 +18,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/utils.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -140,7 +141,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 
   std::unique_ptr<mesh::CellTypeOld> celltype(
       mesh::CellTypeOld::create(mesh.type().entity_type(cell_dim)));
-  const std::vector<std::int8_t> perm = celltype->vtk_mapping();
+  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype->type);
   for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
   {
     for (unsigned int i = 0; i != c.num_entities(0); ++i)

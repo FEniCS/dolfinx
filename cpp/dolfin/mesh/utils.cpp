@@ -65,3 +65,26 @@ int mesh::num_cell_vertices(mesh::CellType type)
   return std::abs(static_cast<int>(type));
 }
 //-----------------------------------------------------------------------------
+std::vector<std::int8_t> mesh::vtk_mapping(mesh::CellType type)
+{
+  switch (type)
+  {
+  case mesh::CellType::point:
+    return {0};
+  case mesh::CellType::interval:
+    return {0, 1};
+  case mesh::CellType::triangle:
+    return {0, 1, 2};
+  case mesh::CellType::tetrahedron:
+    return {0, 1, 2, 3};
+  case mesh::CellType::quadrilateral:
+    return {0, 1, 3, 2};
+  case mesh::CellType::hexahedron:
+    return { 0, 1, 3, 2, 4, 5, 7, 6 };
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+
+  return std::vector<std::int8_t>();
+}
+//-----------------------------------------------------------------------------

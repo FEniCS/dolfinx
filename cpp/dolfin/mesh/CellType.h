@@ -91,9 +91,6 @@ public:
   /// Return description of cell type
   virtual std::string description(bool plural) const = 0;
 
-  /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-  virtual std::vector<std::int8_t> vtk_mapping() const = 0;
-
   const CellType type;
   const CellType facet_type;
 };

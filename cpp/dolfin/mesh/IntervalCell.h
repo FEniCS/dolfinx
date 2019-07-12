@@ -78,8 +78,6 @@ public:
   /// Return description of cell type
   std::string description(bool plural) const;
 
-  /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
-  std::vector<std::int8_t> vtk_mapping() const { return {0, 1}; }
 };
 } // namespace mesh
 } // namespace dolfin
