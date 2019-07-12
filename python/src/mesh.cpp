@@ -270,6 +270,7 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
              dolfin::mesh::MeshEntity>(m, "Cell", "DOLFIN Cell object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
+      .def("squared_distance", &dolfin::mesh::Cell::squared_distance)
       .def("facet_area", &dolfin::mesh::Cell::facet_area)
       .def("h", &dolfin::mesh::Cell::h)
       .def("inradius", &dolfin::mesh::Cell::inradius)
