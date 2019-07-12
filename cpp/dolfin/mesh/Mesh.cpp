@@ -98,7 +98,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
     : _cell_type(mesh::CellTypeOld::create(type)), _degree(1), _mpi_comm(comm),
       _ghost_mode(ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 {
-  const std::size_t tdim = _cell_type->dim();
+  const int tdim = mesh::cell_dim(_cell_type->type);
   const std::int32_t num_vertices_per_cell
       = mesh::num_cell_vertices(_cell_type->type);
 
@@ -469,7 +469,7 @@ std::string Mesh::str(bool verbose) const
     std::string cell_type("undefined cell type");
     const int tdim = _topology->dim();
     if (_cell_type)
-      cell_type = _cell_type->description(true);
+      cell_type = mesh::to_string(_cell_type->type);
 
     s << "<Mesh of topological dimension " << tdim << " (" << cell_type
       << ") with " << num_entities(0) << " vertices and " << num_entities(tdim)

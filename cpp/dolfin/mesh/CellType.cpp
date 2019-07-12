@@ -51,12 +51,14 @@ CellTypeOld* CellTypeOld::create(CellType type)
 //-----------------------------------------------------------------------------
 CellType CellTypeOld::entity_type(std::size_t i) const
 {
-  if (i == dim())
+  const int dim = mesh::cell_dim(this->type);
+  if (i == dim)
     return type;
-  else if (i == dim() - 1)
+  else if (i == dim - 1)
     return facet_type;
   else if (i == 1)
     return CellType::interval;
+
   return CellType::point;
 }
 //-----------------------------------------------------------------------------
@@ -98,7 +100,7 @@ double CellTypeOld::inradius(const Cell& cell) const
   }
 
   // Pick dim
-  const size_t d = dim();
+  const int d = mesh::cell_dim(this->type);
 
   // Compute volume
   const double V = volume(cell);
@@ -126,6 +128,6 @@ double CellTypeOld::radius_ratio(const Cell& cell) const
   if (r == 0.0)
     return 0.0;
   else
-    return dim() * r / circumradius(cell);
+    return mesh::cell_dim(this->type) * r / circumradius(cell);
 }
 //-----------------------------------------------------------------------------

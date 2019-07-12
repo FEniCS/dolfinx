@@ -30,9 +30,6 @@ public:
   /// Check if cell is a simplex
   bool is_simplex() const { return false; }
 
-  /// Return topological dimension of cell
-  std::size_t dim() const;
-
   /// Return number of entities of given topological dimension
   std::size_t num_entities(std::size_t dim) const;
 

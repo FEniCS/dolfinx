@@ -116,7 +116,8 @@ public:
   double inradius() const
   {
     // We would need facet areas
-    _mesh->create_entities(_mesh->type().dim() - 1);
+    const int dim = mesh::cell_dim(_mesh->type().type);
+    _mesh->create_entities(dim - 1);
 
     return _mesh->type().inradius(*this);
   }
@@ -140,7 +141,8 @@ public:
   double radius_ratio() const
   {
     // We would need facet areas
-    _mesh->create_entities(_mesh->type().dim() - 1);
+    const int dim = mesh::cell_dim(_mesh->type().type);
+    _mesh->create_entities(dim - 1);
 
     return _mesh->type().radius_ratio(*this);
   }

@@ -29,9 +29,6 @@ public:
   /// Specify cell type and facet type
   IntervalCell() : mesh::CellTypeOld(CellType::interval, CellType::point) {}
 
-  /// Return topological dimension of cell
-  std::size_t dim() const;
-
   /// Return number of entities of given topological dimension
   std::size_t num_entities(std::size_t dim) const;
 

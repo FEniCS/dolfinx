@@ -14,6 +14,7 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/utils.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <numeric>
@@ -41,7 +42,7 @@ compute_local_dual_graph_keyed(
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
-  const std::int8_t tdim = cell_type.dim();
+  const std::int8_t tdim = mesh::cell_dim(cell_type.type);
   const std::int32_t num_local_cells = cell_vertices.rows();
   const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
   const std::int8_t num_facets_per_cell = cell_type.num_entities(tdim - 1);
@@ -171,7 +172,7 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   // At this stage facet_cell map only contains facets->cells with
   // edge facets either interprocess or external boundaries
 
-  const int tdim = cell_type.dim();
+  const int tdim = mesh::cell_dim(cell_type.type);
 
   // List of cell vertices
   const std::int32_t num_local_cells = cell_vertices.rows();
@@ -463,7 +464,7 @@ dolfin::graph::GraphBuilder::compute_local_dual_graph(
 {
   LOG(INFO) << "Build local part of mesh dual graph";
 
-  const std::int8_t tdim = cell_type.dim();
+  const std::int8_t tdim = mesh::cell_dim(cell_type.type);
   const std::int8_t num_entity_vertices = cell_type.num_vertices(tdim - 1);
   switch (num_entity_vertices)
   {

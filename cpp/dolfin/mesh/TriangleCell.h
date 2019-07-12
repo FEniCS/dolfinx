@@ -22,9 +22,6 @@ public:
   /// Specify cell type and facet type
   TriangleCell() : CellTypeOld(CellType::triangle, CellType::interval) {}
 
-  /// Return topological dimension of cell
-  std::size_t dim() const;
-
   /// Return number of entities of given topological dimension
   std::size_t num_entities(std::size_t dim) const;
 

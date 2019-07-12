@@ -14,8 +14,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-std::size_t PointCell::dim() const { return 0; }
-//-----------------------------------------------------------------------------
 std::size_t PointCell::num_entities(std::size_t dim) const
 {
   switch (dim)

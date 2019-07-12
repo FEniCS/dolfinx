@@ -30,6 +30,9 @@ std::string to_string(CellType type);
 /// Convert from string to cell type
 CellType to_type(std::string type);
 
+/// Return topological dimension of cell type
+int  cell_dim(CellType type);
+
 /// Check if cell is a simplex
 bool is_simplex(CellType type);
 

@@ -18,8 +18,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-std::size_t QuadrilateralCell::dim() const { return 2; }
-//-----------------------------------------------------------------------------
 std::size_t QuadrilateralCell::num_entities(std::size_t dim) const
 {
   switch (dim)
@@ -82,9 +80,7 @@ void QuadrilateralCell::create_entities(
 double QuadrilateralCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
-  {
     throw std::runtime_error("Illegal topological dimension");
-  }
 
   // Get mesh geometry
   const Geometry& geometry = cell.mesh().geometry();

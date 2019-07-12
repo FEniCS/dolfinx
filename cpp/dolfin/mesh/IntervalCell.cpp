@@ -15,8 +15,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-std::size_t IntervalCell::dim() const { return 1; }
-//-----------------------------------------------------------------------------
 std::size_t IntervalCell::num_entities(std::size_t dim) const
 {
   switch (dim)
@@ -66,9 +64,7 @@ double IntervalCell::volume(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if (interval.dim() != 1)
-  {
     throw std::invalid_argument("Illegal dimension");
-  }
 
   // Get mesh geometry
   const Geometry& geometry = interval.mesh().geometry();
@@ -85,9 +81,7 @@ double IntervalCell::circumradius(const MeshEntity& interval) const
 {
   // Check that we get an interval
   if (interval.dim() != 1)
-  {
     throw std::invalid_argument("Illegal dimension");
-  }
 
   // Circumradius is half the volume for an interval (line segment)
   return volume(interval) / 2.0;

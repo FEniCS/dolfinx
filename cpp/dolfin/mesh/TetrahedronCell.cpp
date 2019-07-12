@@ -17,8 +17,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-std::size_t TetrahedronCell::dim() const { return 3; }
-//-----------------------------------------------------------------------------
 std::size_t TetrahedronCell::num_entities(std::size_t dim) const
 {
   switch (dim)
@@ -110,18 +108,14 @@ double TetrahedronCell::volume(const MeshEntity& tetrahedron) const
 {
   // Check that we get a tetrahedron
   if (tetrahedron.dim() != 3)
-  {
     throw std::runtime_error("Illegal topological dimension");
-  }
 
   // Get mesh geometry
   const Geometry& geometry = tetrahedron.mesh().geometry();
 
   // Only know how to compute the volume when embedded in R^3
   if (geometry.dim() != 3)
-  {
     throw std::runtime_error("Illegal geometric dimension");
-  }
 
   // Get the coordinates of the four vertices
   const std::int32_t* vertices = tetrahedron.entities(0);

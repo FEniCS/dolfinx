@@ -15,8 +15,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-std::size_t HexahedronCell::dim() const { return 3; }
-//-----------------------------------------------------------------------------
 std::size_t HexahedronCell::num_entities(std::size_t dim) const
 {
   switch (dim)
@@ -131,9 +129,7 @@ void HexahedronCell::create_entities(
 double HexahedronCell::volume(const MeshEntity& cell) const
 {
   if (cell.dim() != 2)
-  {
     throw std::runtime_error("Illegal topological dimension");
-  }
 
   throw std::runtime_error("Not Implemented");
 

@@ -55,6 +55,29 @@ mesh::CellType mesh::to_type(std::string type)
   return mesh::CellType::interval;
 }
 //-----------------------------------------------------------------------------
+int mesh::cell_dim(mesh::CellType type)
+{
+  switch (type)
+  {
+  case mesh::CellType::point:
+    return 0;
+  case mesh::CellType::interval:
+    return 1;
+  case mesh::CellType::triangle:
+    return 2;
+  case mesh::CellType::tetrahedron:
+    return 3;
+  case mesh::CellType::quadrilateral:
+    return 2;
+  case mesh::CellType::hexahedron:
+    return 3;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+  }
+
+  return -1;
+}
+//-----------------------------------------------------------------------------
 bool mesh::is_simplex(mesh::CellType type)
 {
   return static_cast<int>(type) > 0;
@@ -80,7 +103,7 @@ std::vector<std::int8_t> mesh::vtk_mapping(mesh::CellType type)
   case mesh::CellType::quadrilateral:
     return {0, 1, 3, 2};
   case mesh::CellType::hexahedron:
-    return { 0, 1, 3, 2, 4, 5, 7, 6 };
+    return {0, 1, 3, 2, 4, 5, 7, 6};
   default:
     throw std::runtime_error("Unknown cell type.");
   }

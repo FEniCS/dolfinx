@@ -518,7 +518,7 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType type,
   assert(cell_type);
 
   // Topological dimension
-  const int tdim = cell_type->dim();
+  const int tdim = mesh::cell_dim(cell_type->type);
 
   // Send cells to owning process according to mp cell partition, and
   // receive cells that belong to this process. Also compute auxiliary
