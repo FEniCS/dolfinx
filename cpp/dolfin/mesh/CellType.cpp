@@ -111,7 +111,7 @@ double CellTypeOld::inradius(const Cell& cell) const
 
   // Compute total area of facets
   double A = 0;
-  for (std::size_t i = 0; i <= d; i++)
+  for (int i = 0; i <= d; i++)
     A += facet_area(cell, i);
 
   // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
