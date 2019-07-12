@@ -26,9 +26,6 @@ public:
   {
   }
 
-  /// Check if cell is a simplex
-  bool is_simplex() const { return true; }
-
   /// Return topological dimension of cell
   std::size_t dim() const;
 

@@ -12,14 +12,15 @@ namespace dolfin
 {
 namespace mesh
 {
-enum class CellType : short int
+enum class CellType : int
 {
-  point,
-  interval,
-  triangle,
-  quadrilateral,
-  tetrahedron,
-  hexahedron
+  // NOTE: Simplex cell have index > 0, see mesh::is_simplex.
+  point = 1,
+  interval = 2,
+  triangle = 3,
+  tetrahedron = 4,
+  quadrilateral = -4,
+  hexahedron = -8
 };
 
 /// Convert from cell type to string
@@ -27,6 +28,12 @@ std::string to_string(CellType type);
 
 /// Convert from string to cell type
 CellType to_type(std::string type);
+
+/// Check if cell is a simplex
+bool is_simplex(CellType type);
+
+/// Check if cell is a simplex
+int num_cell_vertices(CellType type);
 
 } // namespace mesh
 } // namespace dolfin

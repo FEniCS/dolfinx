@@ -54,15 +54,14 @@ void mesh(py::module& m)
 
   m.def("to_string", &dolfin::mesh::to_string);
   m.def("to_type", &dolfin::mesh::to_type);
+  m.def("is_simplex", &dolfin::mesh::is_simplex);
 
   // dolfin::mesh::CellType
   py::class_<dolfin::mesh::CellTypeOld,
              std::shared_ptr<dolfin::mesh::CellTypeOld>>(m, "CellTypeOld")
       .def_readonly("type", &dolfin::mesh::CellTypeOld::type)
       .def("num_entities", &dolfin::mesh::CellTypeOld::num_entities)
-      .def("description", &dolfin::mesh::CellTypeOld::description)
-      .def_property_readonly("is_simplex",
-                             &dolfin::mesh::CellTypeOld::is_simplex);
+      .def("description", &dolfin::mesh::CellTypeOld::description);
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")

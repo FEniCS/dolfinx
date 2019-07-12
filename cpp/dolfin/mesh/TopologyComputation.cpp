@@ -11,14 +11,14 @@
 #include "Mesh.h"
 #include "MeshIterator.h"
 #include "Topology.h"
+#include "utils.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/utils.h>
-
 #include <dolfin/common/log.h>
+#include <dolfin/common/utils.h>
 #include <memory>
 #include <numeric>
 #include <string>
@@ -85,7 +85,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   // Create map from cell vertices to entity vertices
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       e_vertices(num_entities, num_vertices);
-  const int num_vertices_per_cell = cell_type.num_vertices();
+  const int num_vertices_per_cell = mesh::num_cell_vertices(cell_type.type);
   std::vector<std::int32_t> v(num_vertices_per_cell);
   std::iota(v.begin(), v.end(), 0);
   cell_type.create_entities(e_vertices, dim, v.data());

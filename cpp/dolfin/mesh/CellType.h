@@ -39,17 +39,11 @@ public:
   /// Return type of cell for entity of dimension i
   CellType entity_type(std::size_t i) const;
 
-  /// Check if cell is a simplex
-  virtual bool is_simplex() const = 0;
-
   /// Return topological dimension of cell
   virtual std::size_t dim() const = 0;
 
   /// Return number of entities of given topological dimension
   virtual std::size_t num_entities(std::size_t dim) const = 0;
-
-  /// Return number of vertices for cell
-  int num_vertices() const { return num_vertices(dim()); }
 
   /// Return number of vertices for entity of given topological
   /// dimension

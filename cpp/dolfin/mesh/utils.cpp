@@ -54,3 +54,13 @@ mesh::CellType mesh::to_type(std::string type)
   return mesh::CellType::interval;
 }
 //-----------------------------------------------------------------------------
+bool mesh::is_simplex(mesh::CellType type)
+{
+  return static_cast<short int>(type) > 0;
+}
+//-----------------------------------------------------------------------------
+int mesh::num_cell_vertices(mesh::CellType type)
+{
+  return static_cast<short int>(type);
+}
+//-----------------------------------------------------------------------------

@@ -41,7 +41,7 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity,
                                    const Eigen::Vector3d& point)
 {
   // Intersection is only implemented for simplex meshes
-  if (!entity.mesh().type().is_simplex())
+  if (!mesh::is_simplex(entity.mesh().type().type))
   {
     throw std::runtime_error(
         "Cannot intersect cell and point. "
@@ -85,8 +85,9 @@ bool CollisionPredicates::collides(const mesh::MeshEntity& entity_0,
                                    const mesh::MeshEntity& entity_1)
 {
   // Intersection is only implemented for simplex meshes
-  if (!entity_0.mesh().type().is_simplex()
-      or !entity_1.mesh().type().is_simplex())
+  if (!mesh::is_simplex(entity_0.mesh().type().type)
+      or !mesh::is_simplex(entity_1.mesh().type().type))
+
   {
     throw std::runtime_error(
         "Cannot intersect cell and point. "

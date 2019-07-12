@@ -252,7 +252,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   assert(_hdf5_file_id > 0);
 
   mesh::CellType cell_type = mesh.type().entity_type(cell_dim);
-  std::unique_ptr<mesh::CellTypeOld> celltype(mesh::CellTypeOld::create(cell_type));
+  std::unique_ptr<mesh::CellTypeOld> celltype(
+      mesh::CellTypeOld::create(cell_type));
   std::size_t num_cell_points = celltype->num_entities(0);
 
   // ---------- Vertices (coordinates)
@@ -1086,7 +1087,7 @@ void HDF5File::write_mesh_value_collection(
   std::unique_ptr<mesh::CellTypeOld> entity_type(
       mesh::CellTypeOld::create(mesh->type().entity_type(dim)));
   const std::size_t num_vertices_per_entity
-      = (dim == 0) ? 1 : entity_type->num_vertices();
+      = (dim == 0) ? 1 : mesh::num_cell_vertices(entity_type->type);
 
   std::vector<std::size_t> topology;
   std::vector<T> value_data;

@@ -99,7 +99,8 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
       _ghost_mode(ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 {
   const std::size_t tdim = _cell_type->dim();
-  const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
+  const std::int32_t num_vertices_per_cell
+      = mesh::num_cell_vertices(_cell_type->type);
 
   // Check size of global cell indices. If empty, construct later.
   if (global_cell_indices.size() > 0

@@ -9,15 +9,15 @@ from math import sqrt
 
 import numpy
 import pytest
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_in_parallel
 
 import dolfin
 import FIAT
 from dolfin import (MPI, BoxMesh, Cell, Cells, MeshEntities, MeshEntity,
                     MeshFunction, RectangleMesh, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, cpp)
-from dolfin.cpp.mesh import CellType
-from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfin.cpp.mesh import CellType, is_simplex
 
 
 @fixture
@@ -400,7 +400,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    if not mesh.type().is_simplex:
+    if not is_simplex(mesh.type().type):
         return
 
     # Order mesh

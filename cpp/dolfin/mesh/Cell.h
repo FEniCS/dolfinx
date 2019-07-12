@@ -54,7 +54,10 @@ public:
   CellType type() const { return _mesh->type().type; }
 
   /// Return number of vertices of cell
-  std::size_t num_vertices() const { return _mesh->type().num_vertices(); }
+  std::size_t num_vertices() const
+  {
+    return mesh::num_cell_vertices(_mesh->type().type);
+  }
 
   /// Compute (generalized) volume of cell
   ///

@@ -28,6 +28,7 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
+#include <dolfin/mesh/utils.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
@@ -1067,7 +1068,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
       mesh::CellTypeOld::create(mesh::to_type(cell_type_str.first)));
   assert(cell_type);
   const int dim = cell_type->dim();
-  const int num_verts_per_entity = cell_type->num_vertices();
+  const int num_verts_per_entity = mesh::num_cell_vertices(cell_type->type);
 
   // Read MVC topology
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
