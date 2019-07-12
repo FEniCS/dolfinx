@@ -40,11 +40,11 @@ public:
   CellType entity_type(int i) const;
 
   /// Return number of entities of given topological dimension
-  virtual std::size_t num_entities(std::size_t dim) const = 0;
+  virtual int num_entities(int dim) const = 0;
 
   /// Return number of vertices for entity of given topological
   /// dimension
-  virtual std::size_t num_vertices(std::size_t dim) const = 0;
+  virtual int num_vertices(int dim) const = 0;
 
   /// Create entities e of given topological dimension from vertices v
   virtual void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,

@@ -30,11 +30,11 @@ public:
   IntervalCell() : mesh::CellTypeOld(CellType::interval, CellType::point) {}
 
   /// Return number of entities of given topological dimension
-  std::size_t num_entities(std::size_t dim) const;
+  int num_entities(int dim) const;
 
   /// Return number of vertices for entity of given topological
   /// dimension
-  std::size_t num_vertices(std::size_t dim) const;
+  int num_vertices(int dim) const;
 
   /// Create entities e of given topological dimension from vertices v
   void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,

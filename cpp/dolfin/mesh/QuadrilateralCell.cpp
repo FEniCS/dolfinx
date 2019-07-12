@@ -18,7 +18,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-std::size_t QuadrilateralCell::num_entities(std::size_t dim) const
+int QuadrilateralCell::num_entities(int dim) const
 {
   switch (dim)
   {
@@ -35,7 +35,7 @@ std::size_t QuadrilateralCell::num_entities(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-std::size_t QuadrilateralCell::num_vertices(std::size_t dim) const
+int QuadrilateralCell::num_vertices(int dim) const
 {
   switch (dim)
   {

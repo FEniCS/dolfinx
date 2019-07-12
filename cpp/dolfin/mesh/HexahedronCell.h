@@ -27,14 +27,12 @@ public:
   {
   }
 
-  /// Check if cell is a simplex
-  bool is_simplex() const { return false; }
-
   /// Return number of entities of given topological dimension
-  std::size_t num_entities(std::size_t dim) const;
+  int num_entities(int dim) const;
 
-  /// Return number of vertices for entity of given topological dimension
-  std::size_t num_vertices(std::size_t dim) const;
+  /// Return number of vertices for entity of given topological
+  /// dimension
+  int num_vertices(int dim) const;
 
   /// Return orientation of the cell
   std::size_t orientation(const mesh::Cell& cell) const;

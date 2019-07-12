@@ -16,7 +16,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-std::size_t TriangleCell::num_entities(std::size_t dim) const
+int TriangleCell::num_entities(int dim) const
 {
   switch (dim)
   {
@@ -33,7 +33,7 @@ std::size_t TriangleCell::num_entities(std::size_t dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-std::size_t TriangleCell::num_vertices(std::size_t dim) const
+int TriangleCell::num_vertices(int dim) const
 {
   switch (dim)
   {
