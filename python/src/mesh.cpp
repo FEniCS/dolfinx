@@ -59,8 +59,7 @@ void mesh(py::module& m)
   // dolfin::mesh::CellType
   py::class_<dolfin::mesh::CellTypeOld,
              std::shared_ptr<dolfin::mesh::CellTypeOld>>(m, "CellTypeOld")
-      .def_readonly("type", &dolfin::mesh::CellTypeOld::type)
-      .def("num_entities", &dolfin::mesh::CellTypeOld::num_entities);
+      .def_readonly("type", &dolfin::mesh::CellTypeOld::type);
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")

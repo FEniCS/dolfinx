@@ -314,8 +314,9 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
 
-  const int num_edges = cell_type.num_entities(1);
-  const int num_faces = (tdim > 1) ? cell_type.num_entities(2) : -1;
+  const int num_edges = mesh::cell_num_entities(cell_type.type, 1);
+  const int num_faces
+      = (tdim > 1) ? mesh::cell_num_entities(cell_type.type, 2) : -1;
 
   std::shared_ptr<mesh::Connectivity> connect_1_0, connect_2_0, connect_2_1,
       connect_3_0, connect_3_1, connect_3_2;

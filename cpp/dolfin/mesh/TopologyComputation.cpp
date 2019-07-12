@@ -79,7 +79,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   const mesh::CellTypeOld& cell_type = mesh.type();
 
   // Initialize local array of entities
-  const std::int8_t num_entities = cell_type.num_entities(dim);
+  const std::int8_t num_entities = mesh::cell_num_entities(cell_type.type, dim);
   const int num_vertices = cell_type.num_vertices(dim);
 
   // Create map from cell vertices to entity vertices
@@ -285,7 +285,8 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
   }
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connections(mesh.num_entities(d0), cell_type->num_entities(d1));
+      connections(mesh.num_entities(d0),
+                  mesh::cell_num_entities(cell_type->type, d1));
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;

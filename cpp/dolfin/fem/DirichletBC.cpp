@@ -312,7 +312,7 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
   // Build vector local dofs for each cell facet
   const mesh::CellTypeOld& cell_type = mesh.type();
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> facet_dofs;
-  for (int i = 0; i < cell_type.num_entities(tdim - 1); ++i)
+  for (int i = 0; i < mesh::cell_num_entities(cell_type.type, tdim - 1); ++i)
   {
     facet_dofs.push_back(
         dofmap.element_dof_layout->entity_closure_dofs(tdim - 1, i));
