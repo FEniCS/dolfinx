@@ -26,7 +26,6 @@ public:
   {
   }
 
-
   /// Return number of vertices for entity of given topological dimension
   int num_vertices(int dim) const;
 

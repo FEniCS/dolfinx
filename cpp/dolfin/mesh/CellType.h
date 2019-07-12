@@ -49,8 +49,8 @@ public:
                                std::size_t dim,
                                const std::int32_t* v) const = 0;
 
-  /// Compute (generalized) volume of mesh entity
-  virtual double volume(const MeshEntity& entity) const = 0;
+  // /// Compute (generalized) volume of mesh entity
+  // virtual double volume(const MeshEntity& entity) const = 0;
 
   /// Compute greatest distance between any two vertices
   virtual double h(const MeshEntity& entity) const;

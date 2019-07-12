@@ -71,7 +71,7 @@ public:
   ///         log::info("%g", cell.volume());
   ///
   /// @endcode
-  double volume() const { return _mesh->type().volume(*this); }
+  double volume() const { return mesh::volume(*this); }
 
   /// Compute greatest distance between any two vertices
   ///

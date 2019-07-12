@@ -13,6 +13,8 @@ namespace dolfin
 {
 namespace mesh
 {
+class MeshEntity;
+
 enum class CellType : int
 {
   // NOTE: Simplex cell have index > 0, see mesh::is_simplex.
@@ -40,6 +42,24 @@ bool is_simplex(CellType type);
 
 /// Check if cell is a simplex
 int num_cell_vertices(CellType type);
+
+/// Compute (generalized) volume of mesh entity
+double volume(const MeshEntity& entity);
+
+/// Compute (generalized) volume of mesh entity
+double volume_interval(const MeshEntity& interval);
+
+/// Compute (generalized) volume of mesh entity
+double volume_triangle(const MeshEntity& triangle);
+
+/// Compute (generalized) volume of mesh entity
+double volume_quadrilateral(const MeshEntity& quadrilateral);
+
+/// Compute (generalized) volume of mesh entity
+double volume_tetrahedron(const MeshEntity& tetrahedron);
+
+/// Compute inradius of cell
+// double inradius(const Cell& cell);
 
 /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
 std::vector<std::int8_t> vtk_mapping(CellType type);

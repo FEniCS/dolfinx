@@ -95,9 +95,7 @@ double QuadrilateralCell::volume(const MeshEntity& cell) const
     const double h = std::min(1.0, std::pow(volume, 1.5));
     // Check for coplanarity
     if (std::abs(copl) > h * DBL_EPSILON)
-    {
       throw std::runtime_error("Not coplanar");
-    }
   }
 
   return volume;
