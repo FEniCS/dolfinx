@@ -49,7 +49,7 @@ CellTypeOld* CellTypeOld::create(CellType type)
   return nullptr;
 }
 //-----------------------------------------------------------------------------
-CellType CellTypeOld::entity_type(std::size_t i) const
+CellType CellTypeOld::entity_type(int i) const
 {
   const int dim = mesh::cell_dim(this->type);
   if (i == dim)

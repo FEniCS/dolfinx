@@ -37,7 +37,7 @@ public:
   static CellTypeOld* create(CellType type);
 
   /// Return type of cell for entity of dimension i
-  CellType entity_type(std::size_t i) const;
+  CellType entity_type(int i) const;
 
   /// Return number of entities of given topological dimension
   virtual std::size_t num_entities(std::size_t dim) const = 0;
