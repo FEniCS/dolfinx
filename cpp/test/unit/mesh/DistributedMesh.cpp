@@ -37,6 +37,8 @@ void test_distributed_mesh()
       MPI_COMM_WORLD, pt, {{64, 64}}, mesh::CellType::Type::triangle,
       mesh::GhostMode::none));
 
+  int dim = mesh->geometry().dim();
+
   // Save mesh in XDMF format
   io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf");
   file.write(*mesh);
@@ -65,11 +67,16 @@ void test_distributed_mesh()
           mpi_comm.comm(), cell_type, cells, points, global_cell_indices,
           ghost_mode, cell_partition));
 
+  // Check mesh features
   CHECK(dolfin::MPI::max(mpi_comm.comm(), mesh->hmax())
         == dolfin::MPI::max(mpi_comm.comm(), new_mesh->hmax()));
 
   CHECK(dolfin::MPI::min(mpi_comm.comm(), mesh->hmin())
         == dolfin::MPI::min(mpi_comm.comm(), new_mesh->hmin()));
+
+  CHECK(mesh->num_entities_global(0) == new_mesh->num_entities_global(0));
+
+  CHECK(mesh->num_entities_global(dim) == new_mesh->num_entities_global(dim));
 }
 } // namespace
 

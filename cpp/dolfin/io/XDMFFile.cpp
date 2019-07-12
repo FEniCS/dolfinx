@@ -1430,8 +1430,8 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     std::iota(global_cell_indices.begin(), global_cell_indices.end(),
               cell_index_offset);
 
-    return std::make_tuple(std::move(cell_type->cell_type()), std::move(points),
-                           std::move(cells), std::move(global_cell_indices));
+    return std::make_tuple(cell_type->type, std::move(points), std::move(cells),
+                           std::move(global_cell_indices));
   }
   else
   {
@@ -1443,8 +1443,8 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     EigenRowArrayXXi64 cells(num_local_cells, npoint_per_cell);
     std::vector<std::int64_t> global_cell_indices(num_local_cells);
 
-    return std::make_tuple(std::move(cell_type->cell_type()), std::move(points),
-                           std::move(cells), std::move(global_cell_indices));
+    return std::make_tuple(cell_type->type, std::move(points), std::move(cells),
+                           std::move(global_cell_indices));
   }
 }
 //----------------------------------------------------------------------------
@@ -1461,7 +1461,7 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
       = read_mesh_data(_mpi_comm.comm());
 
   return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type->type, points, cells, global_cell_indices,
+      _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
       ghost_mode);
 }
 //----------------------------------------------------------------------------
