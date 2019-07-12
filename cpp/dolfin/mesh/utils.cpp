@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
+#include <cstdlib>
 #include <stdexcept>
 
 using namespace dolfin;
@@ -61,6 +62,6 @@ bool mesh::is_simplex(mesh::CellType type)
 //-----------------------------------------------------------------------------
 int mesh::num_cell_vertices(mesh::CellType type)
 {
-  return static_cast<short int>(type);
+  return std::abs(static_cast<short int>(type));
 }
 //-----------------------------------------------------------------------------
