@@ -78,6 +78,74 @@ int mesh::cell_dim(mesh::CellType type)
   return -1;
 }
 //-----------------------------------------------------------------------------
+int mesh::cell_num_entities(mesh::CellType type, int dim)
+{
+  switch (type)
+  {
+  case mesh::CellType::point:
+    switch (dim)
+    {
+    case 0:
+      return 1; // vertices
+    }
+  case mesh::CellType::interval:
+    switch (dim)
+    {
+    case 0:
+      return 2; // vertices
+    case 1:
+      return 1; // cells
+    }
+  case mesh::CellType::triangle:
+    switch (dim)
+    {
+    case 0:
+      return 3; // vertices
+    case 1:
+      return 3; // edges
+    case 2:
+      return 1; // cells
+    }
+  case mesh::CellType::tetrahedron:
+    switch (dim)
+    {
+    case 0:
+      return 4; // vertices
+    case 1:
+      return 6; // edges
+    case 2:
+      return 4; // faces
+    case 3:
+      return 1; // cells
+    }
+  case mesh::CellType::quadrilateral:
+    switch (dim)
+    {
+    case 0:
+      return 1; // vertices
+    case 1:
+      return 2; // edges
+    case 2:
+      return 4; // cells
+    }
+  case mesh::CellType::hexahedron:
+    switch (dim)
+    {
+    case 0:
+      return 8; // vertices
+    case 1:
+      return 12; // edges
+    case 2:
+      return 6; // faces
+    case 3:
+      return 1; // cells
+    }
+  default:
+    throw std::runtime_error("Unknown cell type.");
+    return -1;
+  }
+}
+//-----------------------------------------------------------------------------
 bool mesh::is_simplex(mesh::CellType type)
 {
   return static_cast<int>(type) > 0;

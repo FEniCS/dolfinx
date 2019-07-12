@@ -477,7 +477,7 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
   std::vector<int> work_array;
   for (int dim = 0; dim <= tdim; ++dim)
   {
-    const int num_entities = cell_type.num_entities(dim);
+    const int num_entities = mesh::cell_num_entities(cell_type.type, dim);
     entity_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {

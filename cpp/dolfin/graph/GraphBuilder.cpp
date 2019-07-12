@@ -14,9 +14,9 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/utils.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/utils.h>
 #include <numeric>
 #include <set>
 #include <unordered_set>
@@ -44,8 +44,10 @@ compute_local_dual_graph_keyed(
 
   const std::int8_t tdim = mesh::cell_dim(cell_type.type);
   const std::int32_t num_local_cells = cell_vertices.rows();
-  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
-  const std::int8_t num_facets_per_cell = cell_type.num_entities(tdim - 1);
+  const std::int8_t num_vertices_per_cell
+      = mesh::cell_num_entities(cell_type.type, 0);
+  const std::int8_t num_facets_per_cell
+      = mesh::cell_num_entities(cell_type.type, tdim - 1);
   const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
 
   assert(N == num_vertices_per_facet);

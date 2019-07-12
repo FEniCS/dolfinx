@@ -1675,7 +1675,7 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   std::unique_ptr<mesh::CellTypeOld> cell_type(
       mesh::CellTypeOld::create(mesh::to_type(cell_type_str.first)));
   assert(cell_type);
-  const std::uint32_t num_vertices_per_cell = cell_type->num_entities(0);
+  const std::uint32_t num_vertices_per_cell = mesh::cell_num_entities(cell_type->type, 0);
   const std::uint32_t dim = mesh::cell_dim(cell_type->type);
 
   const std::int64_t num_entities_global

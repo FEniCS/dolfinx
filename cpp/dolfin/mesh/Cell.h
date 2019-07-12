@@ -158,17 +158,6 @@ public:
     return _mesh->type().squared_distance(*this, point);
   }
 
-  /// Compute distance to given point.
-  ///
-  ///  @param    point
-  ///         The point.
-  /// @return     double
-  ///         The distance to the point.
-  double distance(const Eigen::Vector3d& point) const
-  {
-    return sqrt(squared_distance(point));
-  }
-
   /// Compute normal of given facet with respect to the cell
   ///
   /// @param    facet

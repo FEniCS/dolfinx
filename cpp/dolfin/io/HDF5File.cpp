@@ -254,7 +254,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   mesh::CellType cell_type = mesh.type().entity_type(cell_dim);
   std::unique_ptr<mesh::CellTypeOld> celltype(
       mesh::CellTypeOld::create(cell_type));
-  std::size_t num_cell_points = celltype->num_entities(0);
+  std::size_t num_cell_points = mesh::cell_num_entities(celltype->type, 0);
 
   // ---------- Vertices (coordinates)
   {
@@ -1143,7 +1143,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   assert(mesh);
   std::unique_ptr<mesh::CellTypeOld> entity_type(
       mesh::CellTypeOld::create(mesh->type().entity_type(dim)));
-  const std::size_t num_verts_per_entity = entity_type->num_entities(0);
+  const std::size_t num_verts_per_entity = mesh::cell_num_entities(entity_type->type, 0);
 
   const std::string values_name = name + "/values";
   const std::string topology_name = name + "/topology";
@@ -1377,7 +1377,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   // --- Topology ---
 
   // Get number of vertices per cell from CellType
-  const int num_vertices_per_cell = cell_type.num_entities(0);
+  const int num_vertices_per_cell = mesh::cell_num_entities(cell_type.type, 0);
 
   // Discover shape of the topology data set in HDF5 file
   std::vector<std::int64_t> topology_shape
