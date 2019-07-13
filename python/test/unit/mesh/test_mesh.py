@@ -290,9 +290,8 @@ def test_cell_circumradius(c0, c1, c5):
 
 @skip_in_parallel
 def test_cell_h(c0, c1, c5):
-    assert round(c0.h() - sqrt(2.0), 7) == 0
-    assert round(c1.h() - sqrt(2.0), 7) == 0
-    assert round(c5.h() - sqrt(2.0), 7) == 0
+    for c in [c0, c1, c5]:
+        assert cpp.mesh.h(c.mesh(), [c.index()], c.dim) == pytest.approx(sqrt(2.0))
 
 
 @skip_in_parallel
