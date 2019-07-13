@@ -73,20 +73,6 @@ public:
   /// @endcode
   double volume() const { return mesh::volume(*this); }
 
-  /// Compute greatest distance between any two vertices
-  ///
-  /// @return     double
-  ///         The greatest distance between any two vertices of the cell.
-  ///
-  /// @code{.cpp}
-  ///
-  ///         UnitSquareMesh mesh(1, 1);
-  ///         Cell cell(mesh, 0);
-  ///         log::info("%g", cell.h());
-  ///
-  /// @endcode
-  double h() const { return _mesh->type().h(*this); }
-
   /// Compute circumradius of cell
   ///
   /// @return     double

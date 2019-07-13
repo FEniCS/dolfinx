@@ -26,6 +26,18 @@ using namespace dolfin::mesh;
 namespace
 {
 //-----------------------------------------------------------------------------
+Eigen::ArrayXd cell_h(const mesh::Mesh& mesh)
+{
+  const int dim = mesh.topology().dim();
+  const int num_cells = mesh.num_entities(dim);
+  if (num_cells == 0)
+    throw std::runtime_error("Cannnot compute h min/max. No cells.");
+
+  Eigen::ArrayXi cells(num_cells);
+  std::iota(cells.data(), cells.data() + cells.size(), 0);
+  return mesh::h(mesh, cells, dim);
+}
+//-----------------------------------------------------------------------------
 // Compute map from global node indices to local (contiguous) node
 // indices, and remap cell node topology accordingly
 //
@@ -404,21 +416,9 @@ void Mesh::clean()
   }
 }
 //-----------------------------------------------------------------------------
-double Mesh::hmin() const
-{
-  double h = std::numeric_limits<double>::max();
-  for (auto& cell : MeshRange<Cell>(*this))
-    h = std::min(h, cell.h());
-  return h;
-}
+double Mesh::hmin() const { return cell_h(*this).minCoeff(); }
 //-----------------------------------------------------------------------------
-double Mesh::hmax() const
-{
-  double h = 0.0;
-  for (auto& cell : MeshRange<Cell>(*this))
-    h = std::max(h, cell.h());
-  return h;
-}
+double Mesh::hmax() const { return cell_h(*this).maxCoeff(); }
 //-----------------------------------------------------------------------------
 double Mesh::rmin() const
 {

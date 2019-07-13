@@ -62,33 +62,6 @@ CellType CellTypeOld::entity_type(int d) const
   return CellType::point;
 }
 //-----------------------------------------------------------------------------
-double CellTypeOld::h(const MeshEntity& entity) const
-{
-  // Get mesh geometry
-  const Geometry& geometry = entity.mesh().geometry();
-
-  // Get number of cell vertices
-  const int num_vertices = entity.num_entities(0);
-
-  // Get the coordinates (Points) of the vertices
-  const std::int32_t* vertices = entity.entities(0);
-  assert(vertices);
-  std::array<Eigen::Vector3d, 8> points;
-  assert(num_vertices <= 8);
-  for (int i = 0; i < num_vertices; ++i)
-    points[i] = geometry.x(vertices[i]);
-
-  // Get maximum edge length
-  double h = 0.0;
-  for (int i = 0; i < num_vertices; ++i)
-  {
-    for (int j = i + 1; j < num_vertices; ++j)
-      h = std::max(h, (points[i] - points[j]).norm());
-  }
-
-  return h;
-}
-//-----------------------------------------------------------------------------
 double CellTypeOld::inradius(const Cell& cell) const
 {
   // Check cell type

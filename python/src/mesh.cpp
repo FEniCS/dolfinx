@@ -59,6 +59,8 @@ void mesh(py::module& m)
         "Generalised volume of cells.");
   m.def("volume_entities", &dolfin::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
+  m.def("h", &dolfin::mesh::h,
+        "Compute maximum distance between any two vertices.");
 
   // dolfin::mesh::CellType
   py::class_<dolfin::mesh::CellTypeOld,
@@ -275,7 +277,6 @@ void mesh(py::module& m)
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("squared_distance", &dolfin::mesh::Cell::squared_distance)
       .def("facet_area", &dolfin::mesh::Cell::facet_area)
-      .def("h", &dolfin::mesh::Cell::h)
       .def("inradius", &dolfin::mesh::Cell::inradius)
       .def("normal", &dolfin::mesh::Cell::normal)
       .def("circumradius", &dolfin::mesh::Cell::circumradius)

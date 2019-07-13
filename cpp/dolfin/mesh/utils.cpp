@@ -8,6 +8,7 @@
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include <Eigen/Dense>
+#include <algorithm>
 #include <cfloat>
 #include <cstdlib>
 #include <stdexcept>
@@ -373,6 +374,41 @@ double mesh::volume(const mesh::MeshEntity& e)
   return v[0];
 }
 //-----------------------------------------------------------------------------
+Eigen::ArrayXd mesh::h(const Mesh& mesh,
+                       const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+{
+  // Get number of cell vertices
+  const mesh::CellTypeOld& cell_type_obj = mesh.type();
+  const mesh::CellType type = cell_type_obj.entity_type(dim);
+  const int num_vertices = num_cell_vertices(type);
+
+  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Topology& topology = mesh.topology();
+  assert(topology.connectivity(dim, 0));
+  const mesh::Connectivity& connectivity = *topology.connectivity(dim, 0);
+
+  Eigen::ArrayXd h_cells = Eigen::ArrayXd::Zero(entities.rows());
+  assert(num_vertices <= 8);
+  std::array<Eigen::Vector3d, 8> points;
+  for (Eigen::Index e = 0; e < entities.rows(); ++e)
+  {
+    // Get the coordinates  of the vertices
+    const std::int32_t* vertices = connectivity.connections(entities[e]);
+    for (int i = 0; i < num_vertices; ++i)
+      points[i] = geometry.x(vertices[i]);
+
+    // Get maximum edge length
+    for (int i = 0; i < num_vertices; ++i)
+    {
+      for (int j = i + 1; j < num_vertices; ++j)
+        h_cells[e] = std::max(h_cells[e], (points[i] - points[j]).norm());
+    }
+  }
+
+  return h_cells;
+}
+//-----------------------------------------------------------------------------
+
 // double mesh::inradius(const mesh::Cell& cell)
 // {
 

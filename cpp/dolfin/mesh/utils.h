@@ -42,7 +42,7 @@ int cell_num_entities(mesh::CellType type, int dim);
 /// Check if cell is a simplex
 bool is_simplex(CellType type);
 
-/// Check if cell is a simplex
+/// Num vertices for a cell type
 int num_cell_vertices(CellType type);
 
 /// Compute (generalized) volume of mesh entities of given dimension
@@ -58,6 +58,10 @@ Eigen::ArrayXd volume_entities(const Mesh& mesh,
 /// not very efficient. Use the vectorised version for computing
 /// multiple volumes.
 double volume(const MeshEntity& e);
+
+/// Compute greatest distance between any two vertices
+Eigen::ArrayXd h(const Mesh& mesh,
+                 const Eigen::Ref<const Eigen::ArrayXi> entities, int dim);
 
 /// Compute inradius of cell
 // double inradius(const Cell& cell);

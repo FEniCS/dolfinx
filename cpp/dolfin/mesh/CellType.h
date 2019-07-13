@@ -49,9 +49,6 @@ public:
                                std::size_t dim,
                                const std::int32_t* v) const = 0;
 
-  /// Compute greatest distance between any two vertices
-  virtual double h(const MeshEntity& entity) const;
-
   /// Compute circumradius of mesh entity
   virtual double circumradius(const MeshEntity& entity) const = 0;
 

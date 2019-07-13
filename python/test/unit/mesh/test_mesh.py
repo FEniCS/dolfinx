@@ -303,14 +303,14 @@ def test_cell_radius_ratio(c0, c1, c5):
 
 
 @skip_in_parallel
-def xtest_hmin_hmax(mesh1d, mesh2d, mesh3d):
-    assert round(mesh1d.hmin() - 0.0, 7) == 0
+def test_hmin_hmax(mesh1d, mesh2d, mesh3d):
+    # assert round(mesh1d.hmin() - 0.0, 7) == 0
     assert round(mesh1d.hmax() - 0.25, 7) == 0
-    assert round(mesh2d.hmin() - sqrt(2.0), 7) == 0
-    assert round(mesh2d.hmax() - 2.0 * sqrt(6.0) / 3.0, 7) == 0
-    # nans are not taken into account in hmax and hmin
-    assert round(mesh3d.hmin() - sqrt(3.0), 7) == 0
-    assert round(mesh3d.hmax() - sqrt(3.0), 7) == 0
+    # assert round(mesh2d.hmin() - sqrt(2.0), 7) == 0
+    # assert round(mesh2d.hmax() - 2.0 * sqrt(6.0) / 3.0, 7) == 0
+    # # nans are not taken into account in hmax and hmin
+    # assert round(mesh3d.hmin() - sqrt(3.0), 7) == 0
+    # assert round(mesh3d.hmax() - sqrt(3.0), 7) == 0
 
 
 @skip_in_parallel
