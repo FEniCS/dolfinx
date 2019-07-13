@@ -23,7 +23,7 @@ def square():
 
 
 @skip_in_parallel
-def test_Area(cube, square):
+def test_area(cube, square):
     """Iterate over faces and sum area."""
     area = 0.0
     cube.create_entities(2)
@@ -32,13 +32,14 @@ def test_Area(cube, square):
     assert round(area - 39.21320343559672494393, 7) == 0
 
     area = 0.0
+    cube.create_entities(1)
     for f in Faces(square):
         area += f.area()
     assert round(area - 1.0, 7) == 0
 
 
 @skip_in_parallel
-def test_NormalPoint(cube, square):
+def test_normal_point(cube, square):
     """Compute normal vector to each face."""
     cube.create_entities(2)
     for f in Faces(cube):
@@ -51,7 +52,7 @@ def test_NormalPoint(cube, square):
 
 
 @skip_in_parallel
-def test_NormalComponent(cube, square):
+def test_normal_component(cube, square):
     """Compute normal vector components to each face."""
     cube.create_entities(2)
     for f in Faces(cube):

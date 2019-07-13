@@ -101,11 +101,9 @@ def UnitSquareMesh(comm,
         Direction of diagonal
 
     """
-    print("AAAAAAAAA")
     mesh = RectangleMesh(comm, [numpy.array([0.0, 0.0, 0.0]),
                                 numpy.array([1.0, 1.0, 0.0])],
                          [nx, ny], cell_type, ghost_mode, diagonal)
-    print("BBBBBBBBB")
     mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
     return mesh
 

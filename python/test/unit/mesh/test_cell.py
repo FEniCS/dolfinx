@@ -42,30 +42,21 @@ def test_distance_tetrahedron():
     assert round(cell.squared_distance(numpy.array([0.5, 0.5, 0.5])) - 0.0, 7) == 0
 
 
-@pytest.mark.xfail
-@skip_in_release
-@skip_in_parallel
-def test_issue_568():
-    mesh = UnitSquareMesh(MPI.comm_self, 4, 4)
-    cell = Cell(mesh, 0)
-
-    # This no longer fails because serial mesh now is building facets, using
-    # same pipeline as parallel.
-
-    # Should throw an error, not just segfault (only works in DEBUG mode!)
-    with pytest.raises(RuntimeError):
-        cell.facet_area(0)
-
-    # Should work after initializing the connectivity
-    mesh.create_connectivity(2, 1)
-    cell.facet_area(0)
+@pytest.mark.parametrize(
+    'mesh', [UnitIntervalMesh(MPI.comm_world, 8),
+             UnitSquareMesh(MPI.comm_world, 8, 9, CellType.triangle),
+             UnitSquareMesh(MPI.comm_world, 8, 9, CellType.quadrilateral),
+             UnitCubeMesh(MPI.comm_world, 8, 9, 5, CellType.tetrahedron)])
+def test_volume_cells(mesh):
+    num_cells = mesh.num_entities(mesh.topology.dim)
+    v = cpp.mesh.volume_cells(mesh, range(num_cells))
+    v = MPI.sum(mesh.mpi_comm(), v.sum())
+    assert v == pytest.approx(1.0, rel=1e-9)
 
 
 def test_volume_quadrilateralR2():
-
     mesh = UnitSquareMesh(MPI.comm_self, 1, 1, CellType.quadrilateral)
     cell = Cell(mesh, 0)
-
     assert cell.volume() == 1.0
 
 
@@ -92,9 +83,8 @@ def test_volume_quadrilateralR3(coordinates):
 def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
     with pytest.raises(RuntimeError) as error:
-        # Unit square cell scaled down by 'scaling' and the first
-        # vertex is distorted so that the vertices are clearly non
-        # coplanar
+        # Unit square cell scaled down by 'scaling' and the first vertex
+        # is distorted so that the vertices are clearly non coplanar
         mesh = Mesh(
             MPI.comm_world, CellType.quadrilateral,
             numpy.array(
@@ -115,11 +105,9 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
 # The cell is degenerate when scale is below 1e-17, it is expected to fail the test.
 @pytest.mark.parametrize('scaling', [1e0, 1e-5, 1e-10, 1e-15])
 def test_volume_quadrilateral_coplanarity_check_2(scaling):
-
     with pytest.raises(RuntimeError) as error:
-        # Unit square cell scaled down by 'scaling' and the first
-        # vertex is distorted so that the vertices are clearly non
-        # coplanar
+        # Unit square cell scaled down by 'scaling' and the first vertex
+        # is distorted so that the vertices are clearly non coplanar
         mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
                     numpy.array(
                         [[1.0, 0.5, 0.6], [0.0, scaling, 0.0],

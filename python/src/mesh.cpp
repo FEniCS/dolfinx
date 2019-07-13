@@ -55,6 +55,10 @@ void mesh(py::module& m)
   m.def("to_string", &dolfin::mesh::to_string);
   m.def("to_type", &dolfin::mesh::to_type);
   m.def("is_simplex", &dolfin::mesh::is_simplex);
+  m.def("volume_cells", &dolfin::mesh::volume_cells,
+        "Generalised volume of cells.");
+  m.def("volume_entities", &dolfin::mesh::volume_entities,
+        "Generalised volume of entities of given dimension.");
 
   // dolfin::mesh::CellType
   py::class_<dolfin::mesh::CellTypeOld,

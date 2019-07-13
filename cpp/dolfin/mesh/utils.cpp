@@ -32,8 +32,9 @@ Eigen::ArrayXd volume_interval(const mesh::Mesh& mesh,
     const std::int32_t* vertices = connectivity.connections(entities[i]);
     const Eigen::Vector3d x0 = geometry.x(vertices[0]);
     const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-    v[entities[i]] = (x1 - x0).norm();
+    v[i] = (x1 - x0).norm();
   }
+
   return v;
 }
 //-----------------------------------------------------------------------------
@@ -48,23 +49,32 @@ Eigen::ArrayXd volume_triangle(const mesh::Mesh& mesh,
   const int gdim = geometry.dim();
   assert(gdim == 2 or gdim == 3);
   Eigen::ArrayXd v(entities.rows());
-  for (Eigen::Index i = 0; i < entities.rows(); ++i)
+  if (gdim == 2)
   {
-    const std::int32_t* vertices = connectivity.connections(entities[i]);
-    const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d x2 = geometry.x(vertices[2]);
-    if (gdim == 2)
+    for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
+      const std::int32_t* vertices = connectivity.connections(entities[i]);
+      const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+      const Eigen::Vector3d x1 = geometry.x(vertices[1]);
+      const Eigen::Vector3d x2 = geometry.x(vertices[2]);
+
       // Compute area of triangle embedded in R^2
       double v2 = (x0[0] * x1[1] + x0[1] * x2[0] + x1[0] * x2[1])
                   - (x2[0] * x1[1] + x2[1] * x0[0] + x1[0] * x0[1]);
 
       // Formula for volume from http://mathworld.wolfram.com
-      v[entities[i]] = 0.5 * std::abs(v2);
+      v[i] = 0.5 * std::abs(v2);
     }
-    else if (gdim == 3)
+  }
+  else if (gdim == 3)
+  {
+    for (Eigen::Index i = 0; i < entities.rows(); ++i)
     {
+      const std::int32_t* vertices = connectivity.connections(entities[i]);
+      const Eigen::Vector3d x0 = geometry.x(vertices[0]);
+      const Eigen::Vector3d x1 = geometry.x(vertices[1]);
+      const Eigen::Vector3d x2 = geometry.x(vertices[2]);
+
       // Compute area of triangle embedded in R^3
       const double v0 = (x0[1] * x1[2] + x0[2] * x2[1] + x1[1] * x2[2])
                         - (x2[1] * x1[2] + x2[2] * x0[1] + x1[1] * x0[2]);
@@ -74,9 +84,11 @@ Eigen::ArrayXd volume_triangle(const mesh::Mesh& mesh,
                         - (x2[0] * x1[1] + x2[1] * x0[0] + x1[0] * x0[1]);
 
       // Formula for volume from http://mathworld.wolfram.com
-      v[entities[i]] = 0.5 * sqrt(v0 * v0 + v1 * v1 + v2 * v2);
+      v[i] = 0.5 * sqrt(v0 * v0 + v1 * v1 + v2 * v2);
     }
   }
+  else
+    throw std::runtime_error("Unexpected geometric dimension.");
 
   return v;
 }
@@ -115,8 +127,9 @@ volume_tetrahedron(const mesh::Mesh& mesh,
                  * (x0[1] * x1[2] + x1[1] * x2[2] + x2[1] * x0[2]
                     - x1[1] * x0[2] - x2[1] * x1[2] - x0[1] * x2[2]));
 
-    v[entities[i]] = std::abs(v_tmp) / 6.0;
+    v[i] = std::abs(v_tmp) / 6.0;
   }
+
   return v;
 }
 //-----------------------------------------------------------------------------
@@ -151,14 +164,14 @@ volume_quadrilateral(const mesh::Mesh& mesh,
       m.row(1) = (p3 - p0).transpose();
       m.row(2) = (p2 - p0).transpose();
 
+      // Check for coplanarity
       const double copl = m.determinant();
       const double h = std::min(1.0, std::pow(volume, 1.5));
-      // Check for coplanarity
       if (std::abs(copl) > h * DBL_EPSILON)
         throw std::runtime_error("Not coplanar");
     }
 
-    v[entities[i]] = volume;
+    v[i] = volume;
   }
   return v;
 }
@@ -185,9 +198,8 @@ std::string mesh::to_string(mesh::CellType type)
     return "hexahedron";
   default:
     throw std::runtime_error("Unknown cell type.");
+    return std::string();
   }
-
-  return "";
 }
 //-----------------------------------------------------------------------------
 mesh::CellType mesh::to_type(std::string type)
@@ -312,8 +324,16 @@ int mesh::num_cell_vertices(mesh::CellType type)
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
-mesh::cell_volumes(const mesh::Mesh& mesh,
+mesh::volume_cells(const mesh::Mesh& mesh,
                    const Eigen::Ref<const Eigen::ArrayXi> entities)
+{
+  const int dim = mesh::cell_dim(mesh.type().type);
+  return mesh::volume_entities(mesh, entities, dim);
+}
+//-----------------------------------------------------------------------------
+Eigen::ArrayXd
+mesh::volume_entities(const mesh::Mesh& mesh,
+                      const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
 {
   // if (entities.rows() > mesh.num_entities(dim))
   // {
@@ -321,7 +341,8 @@ mesh::cell_volumes(const mesh::Mesh& mesh,
   //       "Too many entities requested for volume computation.");
   // }
 
-  const mesh::CellType type = mesh.type().type;
+  const mesh::CellTypeOld& cell_type_obj = mesh.type();
+  const mesh::CellType type = cell_type_obj.entity_type(dim);
   switch (type)
   {
   case mesh::CellType::point:
@@ -347,7 +368,7 @@ double mesh::volume(const mesh::MeshEntity& e)
 {
   Eigen::ArrayXi index(1);
   index = e.index();
-  Eigen::ArrayXd v = cell_volumes(e.mesh(), index);
+  Eigen::ArrayXd v = volume_entities(e.mesh(), index, e.dim());
   assert(v.rows() == 1);
   return v[0];
 }
