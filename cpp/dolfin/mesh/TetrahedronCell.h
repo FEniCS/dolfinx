@@ -21,10 +21,7 @@ class TetrahedronCell : public CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  TetrahedronCell()
-      : mesh::CellTypeOld(CellType::tetrahedron, CellType::triangle)
-  {
-  }
+  TetrahedronCell() : mesh::CellTypeOld(CellType::tetrahedron) {}
 
   /// Return number of vertices for entity of given topological dimension
   int num_vertices(int dim) const;

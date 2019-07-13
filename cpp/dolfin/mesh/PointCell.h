@@ -19,7 +19,7 @@ class PointCell : public CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  PointCell() : CellTypeOld(CellType::point, CellType::point) {}
+  PointCell() : CellTypeOld(CellType::point) {}
 
   /// Return number of entities of given topological dimension
   int num_entities(int dim) const;

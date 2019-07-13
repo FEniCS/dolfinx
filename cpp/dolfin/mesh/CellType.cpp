@@ -20,11 +20,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-CellTypeOld::CellTypeOld(CellType cell_type, CellType facet_type)
-    : type(cell_type), facet_type(facet_type)
-{
-  // Do nothing
-}
+CellTypeOld::CellTypeOld(CellType cell_type) : type(cell_type) {}
 //-----------------------------------------------------------------------------
 CellTypeOld* CellTypeOld::create(CellType type)
 {

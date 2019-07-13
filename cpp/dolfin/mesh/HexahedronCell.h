@@ -22,10 +22,7 @@ class HexahedronCell : public mesh::CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  HexahedronCell()
-      : mesh::CellTypeOld(CellType::hexahedron, CellType::quadrilateral)
-  {
-  }
+  HexahedronCell() : mesh::CellTypeOld(CellType::hexahedron) {}
 
   /// Return number of vertices for entity of given topological
   /// dimension

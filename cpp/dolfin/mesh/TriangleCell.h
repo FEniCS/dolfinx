@@ -20,7 +20,7 @@ class TriangleCell : public CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  TriangleCell() : CellTypeOld(CellType::triangle, CellType::interval) {}
+  TriangleCell() : CellTypeOld(CellType::triangle) {}
 
   /// Return number of vertices for entity of given topological dimension
   int num_vertices(int dim) const;

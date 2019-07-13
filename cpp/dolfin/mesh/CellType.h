@@ -28,7 +28,7 @@ class CellTypeOld
 {
 public:
   /// Constructor
-  CellTypeOld(CellType cell_type, CellType facet_type);
+  CellTypeOld(CellType cell_type);
 
   /// Destructor
   virtual ~CellTypeOld() = default;
@@ -74,7 +74,6 @@ public:
   virtual double facet_area(const Cell& cell, std::size_t facet) const = 0;
 
   const CellType type;
-  const CellType facet_type;
 };
 } // namespace mesh
 } // namespace dolfin

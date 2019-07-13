@@ -15,16 +15,13 @@ namespace mesh
 {
 class Cell;
 
-/// This class implements functionality for quadrilaterial cells.
+/// This class implements functionality for quadrilateral cells.
 
 class QuadrilateralCell : public CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  QuadrilateralCell()
-      : mesh::CellTypeOld(CellType::quadrilateral, CellType::interval)
-  {
-  }
+  QuadrilateralCell() : mesh::CellTypeOld(CellType::quadrilateral) {}
 
   /// Return number of vertices for entity of given topological
   /// dimension

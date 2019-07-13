@@ -27,7 +27,7 @@ class IntervalCell : public mesh::CellTypeOld
 {
 public:
   /// Specify cell type and facet type
-  IntervalCell() : mesh::CellTypeOld(CellType::interval, CellType::point) {}
+  IntervalCell() : mesh::CellTypeOld(CellType::interval) {}
 
   /// Return number of vertices for entity of given topological
   /// dimension
