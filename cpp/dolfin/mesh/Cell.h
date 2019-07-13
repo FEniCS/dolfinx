@@ -172,10 +172,10 @@ public:
   ///
   /// @return     double
   ///         Area/length of the facet.
-  double facet_area(std::size_t facet) const
-  {
-    return _mesh->type().facet_area(*this, facet);
-  }
+  // double facet_area(std::size_t facet) const
+  // {
+  //   return _mesh->type().facet_area(*this, facet);
+  // }
 
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
   /// Local facet index, used typically in eval functions

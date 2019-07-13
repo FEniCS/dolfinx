@@ -321,8 +321,8 @@ def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
     assert round(mesh3d.rmin() - 0.0, 7) == 0
     assert round(mesh3d.rmax() - sqrt(3.0) / 6.0, 7) == 0
 
-
 # - Facilities to run tests on combination of meshes
+
 
 mesh_factories = [
     (UnitIntervalMesh, (MPI.comm_world, 8)),

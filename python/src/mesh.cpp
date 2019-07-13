@@ -156,7 +156,8 @@ void mesh(py::module& m)
              const std::uint32_t tdim = self.topology().dim();
              return py::array(
                  {(std::int32_t)self.topology().size(tdim),
-                  (std::int32_t)dolfin::mesh::num_cell_vertices(self.type().type)},
+                  (std::int32_t)dolfin::mesh::num_cell_vertices(
+                      self.type().type)},
                  self.topology().connectivity(tdim, 0)->connections().data());
            })
       .def_property_readonly("geometry",
@@ -261,8 +262,7 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,
              dolfin::mesh::MeshEntity>(m, "Face", "Face object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def("normal", &dolfin::mesh::Face::normal)
-      .def("area", &dolfin::mesh::Face::area);
+      .def("normal", &dolfin::mesh::Face::normal);
 
   // dolfin::mesh::Facet
   py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
@@ -276,7 +276,6 @@ void mesh(py::module& m)
              dolfin::mesh::MeshEntity>(m, "Cell", "DOLFIN Cell object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("squared_distance", &dolfin::mesh::Cell::squared_distance)
-      .def("facet_area", &dolfin::mesh::Cell::facet_area)
       .def("inradius", &dolfin::mesh::Cell::inradius)
       .def("normal", &dolfin::mesh::Cell::normal)
       .def("circumradius", &dolfin::mesh::Cell::circumradius)

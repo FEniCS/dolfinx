@@ -48,8 +48,8 @@ CellTypeOld* CellTypeOld::create(CellType type)
 double CellTypeOld::inradius(const Cell& cell) const
 {
   // Check cell type
-  if (type != CellType::interval and type != CellType::triangle
-      and type != CellType::tetrahedron)
+  mesh::CellType type = cell.type();
+  if (!mesh::is_simplex(type))
   {
     throw std::runtime_error(
         "inradius function not implemented for non-simplicial cells");
@@ -66,9 +66,19 @@ double CellTypeOld::inradius(const Cell& cell) const
     return 0.0;
 
   // Compute total area of facets
-  double A = 0;
+  // double A = 0.0;
+  // for (int i = 0; i <= d; i++)
+  //   A += facet_area(cell, i);
+
+  const mesh::Topology& topology = cell.mesh().topology();
+  assert(topology.connectivity(d, d-1));
+  const mesh::Connectivity& connectivity = *topology.connectivity(d, d - 1);
+
+  const std::int32_t* facets = connectivity.connections(cell.index());
+  Eigen::ArrayXi facet_list(d + 1);
   for (int i = 0; i <= d; i++)
-    A += facet_area(cell, i);
+    facet_list[i] = facets[i];
+  const double A = mesh::volume_entities(cell.mesh(), facet_list, d - 1).sum();
 
   // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
   // Element?, online:

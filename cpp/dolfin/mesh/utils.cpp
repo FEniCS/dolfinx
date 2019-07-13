@@ -381,7 +381,7 @@ mesh::volume_entities(const mesh::Mesh& mesh,
   switch (type)
   {
   case mesh::CellType::point:
-    return Eigen::ArrayXd::Zero(entities.rows());
+    return Eigen::ArrayXd::Ones(entities.rows());
   case mesh::CellType::interval:
     return volume_interval(mesh, entities);
   case mesh::CellType::triangle:

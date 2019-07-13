@@ -24,10 +24,6 @@ public:
   /// Specify cell type and facet type
   HexahedronCell() : mesh::CellTypeOld(CellType::hexahedron) {}
 
-  /// Return number of vertices for entity of given topological
-  /// dimension
-  int num_vertices(int dim) const;
-
   /// Return orientation of the cell
   std::size_t orientation(const mesh::Cell& cell) const;
 
