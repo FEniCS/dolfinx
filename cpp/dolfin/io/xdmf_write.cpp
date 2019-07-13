@@ -513,7 +513,7 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
   // Get VTK string for cell type and degree (linear or quadratic)
   const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh.type().entity_type(cell_dim), degree);
+      mesh::cell_entity_type(mesh.type().type, cell_dim), degree);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);

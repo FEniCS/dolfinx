@@ -224,6 +224,41 @@ mesh::CellType mesh::to_type(std::string type)
   return mesh::CellType::interval;
 }
 //-----------------------------------------------------------------------------
+mesh::CellType mesh::cell_entity_type(mesh::CellType type, int d)
+{
+  const int dim = mesh::cell_dim(type);
+  if (d == dim)
+    return type;
+  else if (d == 1)
+    return CellType::interval;
+  else if (d == (dim - 1))
+    return mesh::cell_facet_type(type);
+
+  return CellType::point;
+}
+//-----------------------------------------------------------------------------
+mesh::CellType mesh::cell_facet_type(mesh::CellType type)
+{
+  switch (type)
+  {
+  case mesh::CellType::point:
+    return mesh::CellType::point;
+  case mesh::CellType::interval:
+    return mesh::CellType::point;
+  case mesh::CellType::triangle:
+    return mesh::CellType::interval;
+  case mesh::CellType::tetrahedron:
+    return mesh::CellType::triangle;
+  case mesh::CellType::quadrilateral:
+    return mesh::CellType::interval;
+  case mesh::CellType::hexahedron:
+    return mesh::CellType::quadrilateral;
+  default:
+    throw std::runtime_error("Unknown cell type.");
+    return mesh::CellType::point;
+  }
+}
+//-----------------------------------------------------------------------------
 int mesh::cell_dim(mesh::CellType type)
 {
   switch (type)
@@ -342,8 +377,7 @@ mesh::volume_entities(const mesh::Mesh& mesh,
   //       "Too many entities requested for volume computation.");
   // }
 
-  const mesh::CellTypeOld& cell_type_obj = mesh.type();
-  const mesh::CellType type = cell_type_obj.entity_type(dim);
+  const mesh::CellType type = cell_entity_type(mesh.type().type, dim);
   switch (type)
   {
   case mesh::CellType::point:
@@ -378,8 +412,7 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
 {
   // Get number of cell vertices
-  const mesh::CellTypeOld& cell_type_obj = mesh.type();
-  const mesh::CellType type = cell_type_obj.entity_type(dim);
+  const mesh::CellType type = cell_entity_type(mesh.type().type, dim);
   const int num_vertices = num_cell_vertices(type);
 
   const mesh::Geometry& geometry = mesh.geometry();

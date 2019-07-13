@@ -28,7 +28,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
-#include <dolfin/mesh/utils.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
@@ -38,6 +37,7 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/utils.h>
 #include <iomanip>
 #include <memory>
 #include <petscvec.h>
@@ -929,7 +929,7 @@ void XDMFFile::write_mesh_value_collection(
   const std::size_t cell_dim = mvc.dim();
   const std::size_t degree = 1;
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh->type().entity_type(cell_dim), degree);
+      mesh::cell_entity_type(mesh->type().type, cell_dim), degree);
   const std::int64_t num_vertices_per_cell
       = mesh->type().num_vertices(cell_dim);
 
@@ -1675,7 +1675,8 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   std::unique_ptr<mesh::CellTypeOld> cell_type(
       mesh::CellTypeOld::create(mesh::to_type(cell_type_str.first)));
   assert(cell_type);
-  const std::uint32_t num_vertices_per_cell = mesh::cell_num_entities(cell_type->type, 0);
+  const std::uint32_t num_vertices_per_cell
+      = mesh::cell_num_entities(cell_type->type, 0);
   const std::uint32_t dim = mesh::cell_dim(cell_type->type);
 
   const std::int64_t num_entities_global
@@ -1785,7 +1786,8 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   {
     pugi::xml_node topology_node = grid_node.child("Topology");
     assert(topology_node);
-    std::pair<std::string, int> cell_type_str = xdmf_utils::get_cell_type(topology_node);
+    std::pair<std::string, int> cell_type_str
+        = xdmf_utils::get_cell_type(topology_node);
     if (mesh::to_string(mesh->type().type) != cell_type_str.first)
     {
       throw std::runtime_error(

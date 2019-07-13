@@ -65,7 +65,8 @@ const int* ReferenceCellTopology::num_entities(mesh::CellType cell_type)
   return nullptr;
 }
 //---------------------------------------------------------------------
-mesh::CellType ReferenceCellTopology::entity_type(mesh::CellType cell_type, int dim, int k)
+mesh::CellType ReferenceCellTopology::entity_type(mesh::CellType cell_type,
+                                                  int dim, int k)
 {
   switch (cell_type)
   {
@@ -135,7 +136,8 @@ mesh::CellType ReferenceCellTopology::entity_type(mesh::CellType cell_type, int 
   return mesh::CellType::point;
 }
 //-----------------------------------------------------------------------------
-mesh::CellType ReferenceCellTopology::facet_type(mesh::CellType cell_type, int k)
+mesh::CellType ReferenceCellTopology::facet_type(mesh::CellType cell_type,
+                                                 int k)
 {
   switch (cell_type)
   {
@@ -322,7 +324,8 @@ ReferenceCellTopology::entity_closure(mesh::CellType cell_type)
       if (dim == 2)
       {
         assert(face_e);
-        mesh::CellType face_type = ReferenceCellTopology::entity_type(cell_type, 2);
+        mesh::CellType face_type
+            = ReferenceCellTopology::entity_type(cell_type, 2);
         const int num_edges = ReferenceCellTopology::num_entities(face_type)[1];
         for (int e = 0; e < num_edges; ++e)
         {

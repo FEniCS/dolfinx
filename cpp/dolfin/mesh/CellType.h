@@ -36,9 +36,6 @@ public:
   /// Create cell type from type (factory function)
   static CellTypeOld* create(CellType type);
 
-  /// Return type of cell for entity of dimension d
-  CellType entity_type(int d) const;
-
   /// Return number of vertices for entity of given topological
   /// dimension
   virtual int num_vertices(int dim) const = 0;

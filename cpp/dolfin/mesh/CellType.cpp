@@ -49,19 +49,6 @@ CellTypeOld* CellTypeOld::create(CellType type)
   return nullptr;
 }
 //-----------------------------------------------------------------------------
-CellType CellTypeOld::entity_type(int d) const
-{
-  const int dim = mesh::cell_dim(this->type);
-  if (d == dim)
-    return type;
-  else if (d == 1)
-    return CellType::interval;
-  else if (d == (dim - 1))
-    return facet_type;
-
-  return CellType::point;
-}
-//-----------------------------------------------------------------------------
 double CellTypeOld::inradius(const Cell& cell) const
 {
   // Check cell type

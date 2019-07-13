@@ -251,7 +251,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   assert(_hdf5_file_id > 0);
 
-  mesh::CellType cell_type = mesh.type().entity_type(cell_dim);
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.type().type, cell_dim);
   std::unique_ptr<mesh::CellTypeOld> celltype(
       mesh::CellTypeOld::create(cell_type));
   std::size_t num_cell_points = mesh::cell_num_entities(celltype->type, 0);
@@ -1084,8 +1084,8 @@ void HDF5File::write_mesh_value_collection(
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
       = mesh_values.values();
 
-  std::unique_ptr<mesh::CellTypeOld> entity_type(
-      mesh::CellTypeOld::create(mesh->type().entity_type(dim)));
+  std::unique_ptr<mesh::CellTypeOld> entity_type(mesh::CellTypeOld::create(
+      mesh::cell_entity_type(mesh->type().type, dim)));
   const std::size_t num_vertices_per_entity
       = (dim == 0) ? 1 : mesh::num_cell_vertices(entity_type->type);
 
@@ -1141,9 +1141,10 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   std::size_t dim = HDF5Interface::get_attribute<std::size_t>(
       _hdf5_file_id, name, "dimension");
   assert(mesh);
-  std::unique_ptr<mesh::CellTypeOld> entity_type(
-      mesh::CellTypeOld::create(mesh->type().entity_type(dim)));
-  const std::size_t num_verts_per_entity = mesh::cell_num_entities(entity_type->type, 0);
+  std::unique_ptr<mesh::CellTypeOld> entity_type(mesh::CellTypeOld::create(
+      mesh::cell_entity_type(mesh->type().type, dim)));
+  const std::size_t num_verts_per_entity
+      = mesh::cell_num_entities(entity_type->type, 0);
 
   const std::string values_name = name + "/values";
   const std::string topology_name = name + "/topology";

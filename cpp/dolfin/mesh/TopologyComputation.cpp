@@ -269,7 +269,7 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
 
   // Get the type of entity d0
   std::unique_ptr<mesh::CellTypeOld> cell_type(
-      mesh::CellTypeOld::create(mesh.type().entity_type(d0)));
+      mesh::CellTypeOld::create(mesh::cell_entity_type(mesh.type().type, d0)));
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
   boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
