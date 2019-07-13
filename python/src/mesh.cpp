@@ -156,7 +156,7 @@ void mesh(py::module& m)
              const std::uint32_t tdim = self.topology().dim();
              return py::array(
                  {(std::int32_t)self.topology().size(tdim),
-                  (std::int32_t)self.type().num_vertices(tdim)},
+                  (std::int32_t)dolfin::mesh::num_cell_vertices(self.type().type)},
                  self.topology().connectivity(tdim, 0)->connections().data());
            })
       .def_property_readonly("geometry",
