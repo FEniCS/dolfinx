@@ -27,19 +27,6 @@ int PointCell::num_entities(int dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-int PointCell::num_vertices(int dim) const
-{
-  switch (dim)
-  {
-  case 0:
-    return 1; // vertices
-  default:
-    throw std::runtime_error("Illegal dimension");
-  }
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
 void PointCell::create_entities(
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         e,

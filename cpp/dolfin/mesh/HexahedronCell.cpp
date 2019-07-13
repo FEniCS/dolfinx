@@ -15,25 +15,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-int HexahedronCell::num_vertices(int dim) const
-{
-  switch (dim)
-  {
-  case 0:
-    return 1; // vertices
-  case 1:
-    return 2; // edges
-  case 2:
-    return 4; // faces
-  case 3:
-    return 8; // cells
-  default:
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
 void HexahedronCell::create_entities(
     Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
         e,

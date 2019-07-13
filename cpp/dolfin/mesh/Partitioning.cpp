@@ -514,7 +514,8 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType type,
   common::Timer timer("Distribute mesh cells");
 
   // Create CellType objects based on current cell type
-  std::unique_ptr<mesh::CellTypeOld> cell_type(mesh::CellTypeOld ::create(type));
+  std::unique_ptr<mesh::CellTypeOld> cell_type(
+      mesh::CellTypeOld ::create(type));
   assert(cell_type);
 
   // Topological dimension

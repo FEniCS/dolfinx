@@ -8,8 +8,8 @@
 
 #include "Connectivity.h"
 #include "Mesh.h"
-#include "MeshIterator.h"
 #include "MeshEntity.h"
+#include "MeshIterator.h"
 #include "Topology.h"
 #include "Vertex.h"
 #include <boost/container/vector.hpp>
@@ -118,11 +118,12 @@ public:
   ///          Marking function used to identify which
   ///          mesh entities to set value to.
   /// @param value (T)
-  void mark(
-      const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-          const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                              Eigen::RowMajor>> x)>& mark,
-      T value);
+  void
+  mark(const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
+           const Eigen::Ref<
+               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+               x)>& mark,
+       T value);
 
   /// Name
   std::string name = "m";
@@ -131,7 +132,6 @@ public:
   const std::size_t id = common::UniqueIdGenerator::id();
 
 private:
-
   // Underlying data array
   Eigen::Array<T, Eigen::Dynamic, 1> _values;
 
@@ -227,7 +227,8 @@ int MeshFunction<T>::dim() const
 }
 //---------------------------------------------------------------------------
 template <typename T>
-Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> MeshFunction<T>::values() const
+Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>>
+MeshFunction<T>::values() const
 {
   return _values;
 }
@@ -241,8 +242,9 @@ Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> MeshFunction<T>::values()
 template <typename T>
 void MeshFunction<T>::mark(
     const std::function<Eigen::Array<bool, Eigen::Dynamic, 1>(
-        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3,
-                                            Eigen::RowMajor>> x)>& mark,
+        const Eigen::Ref<
+            const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+            x)>& mark,
     T value)
 {
   // First fetch all vertices of the mesh
@@ -252,7 +254,8 @@ void MeshFunction<T>::mark(
   // Evaluate the marking function on all vertices
   EigenArrayXb marked = mark(x);
 
-  for (const auto& entity : mesh::MeshRange<mesh::MeshEntity>(*_mesh.get(), _dim))
+  for (const auto& entity :
+       mesh::MeshRange<mesh::MeshEntity>(*_mesh.get(), _dim))
   {
     // Run over all entities of the dimension of this MeshFunction
 

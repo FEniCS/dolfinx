@@ -23,9 +23,6 @@ public:
   /// Specify cell type and facet type
   TetrahedronCell() : mesh::CellTypeOld(CellType::tetrahedron) {}
 
-  /// Return number of vertices for entity of given topological dimension
-  int num_vertices(int dim) const;
-
   /// Create entities e of given topological dimension from vertices v
   void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,
                                     Eigen::Dynamic, Eigen::RowMajor>& e,

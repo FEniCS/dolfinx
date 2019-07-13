@@ -36,10 +36,6 @@ public:
   /// Create cell type from type (factory function)
   static CellTypeOld* create(CellType type);
 
-  // /// Return number of vertices for entity of given topological
-  // /// dimension
-  // virtual int num_vertices(int dim) const = 0;
-
   /// Create entities e of given topological dimension from vertices v
   virtual void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,
                                             Eigen::Dynamic, Eigen::RowMajor>& e,
