@@ -48,7 +48,8 @@ compute_local_dual_graph_keyed(
       = mesh::cell_num_entities(cell_type.type, 0);
   const std::int8_t num_facets_per_cell
       = mesh::cell_num_entities(cell_type.type, tdim - 1);
-  const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
+  const std::int8_t num_vertices_per_facet = mesh::num_cell_vertices(
+      mesh::cell_entity_type(cell_type.type, tdim - 1));
 
   assert(N == num_vertices_per_facet);
   assert(num_local_cells == (int)cell_vertices.rows());
@@ -179,7 +180,8 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   // List of cell vertices
   const std::int32_t num_local_cells = cell_vertices.rows();
   //  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
-  const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
+  const std::int8_t num_vertices_per_facet = mesh::num_cell_vertices(
+      mesh::cell_entity_type(cell_type.type, tdim - 1));
 
   assert(num_local_cells == (int)cell_vertices.rows());
   //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
@@ -467,7 +469,9 @@ dolfin::graph::GraphBuilder::compute_local_dual_graph(
   LOG(INFO) << "Build local part of mesh dual graph";
 
   const std::int8_t tdim = mesh::cell_dim(cell_type.type);
-  const std::int8_t num_entity_vertices = cell_type.num_vertices(tdim - 1);
+  const std::int8_t num_entity_vertices = mesh::num_cell_vertices(
+      mesh::cell_entity_type(cell_type.type, tdim - 1));
+
   switch (num_entity_vertices)
   {
   case 1:

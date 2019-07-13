@@ -930,8 +930,8 @@ void XDMFFile::write_mesh_value_collection(
   const std::size_t degree = 1;
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
       mesh::cell_entity_type(mesh->type().type, cell_dim), degree);
-  const std::int64_t num_vertices_per_cell
-      = mesh->type().num_vertices(cell_dim);
+  const std::int32_t num_vertices_per_cell
+      = mesh::num_cell_vertices(cell_entity_type(mesh->type().type, cell_dim));
 
   const std::map<std::pair<std::size_t, std::size_t>, T>& values = mvc.values();
   const std::int64_t num_cells = values.size();

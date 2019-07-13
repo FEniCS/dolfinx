@@ -199,7 +199,9 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
                                                 int cell_dim)
 {
   // Create vector to store topology data
-  const int num_vertices_per_cell = mesh.type().num_vertices(cell_dim);
+  const int num_vertices_per_cell = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.type().type, cell_dim));
+
   std::vector<std::int64_t> topology_data;
   topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
 
@@ -508,7 +510,8 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 {
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
-  int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
+  int num_nodes_per_cell = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.type().type, cell_dim));
 
   // Get VTK string for cell type and degree (linear or quadratic)
   const std::size_t degree = mesh.degree();
