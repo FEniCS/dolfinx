@@ -4,13 +4,11 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import math
 import sys
-from math import sqrt
 
 import numpy
 import pytest
-from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel
 
 import dolfin
 import FIAT
@@ -18,11 +16,13 @@ from dolfin import (MPI, BoxMesh, Cell, Cells, MeshEntities, MeshEntity,
                     MeshFunction, RectangleMesh, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @fixture
 def mesh1d():
-    # Create 1D mesh with degenerate cell
+    """Create 1D mesh with degenerate cell"""
     mesh1d = UnitIntervalMesh(MPI.comm_world, 4)
     mesh1d.geometry.points[4] = mesh1d.geometry.points[3]
     return mesh1d
@@ -30,18 +30,18 @@ def mesh1d():
 
 @fixture
 def mesh2d():
-    # Create 2D mesh with one equilateral triangle
+    """Create 2D mesh with one equilateral triangle"""
     mesh2d = RectangleMesh(
         MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
                          numpy.array([1., 1., 0.0])], [1, 1],
         CellType.triangle, cpp.mesh.GhostMode.none, 'left')
-    mesh2d.geometry.points[3, :2] += 0.5 * (sqrt(3.0) - 1.0)
+    mesh2d.geometry.points[3, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
     return mesh2d
 
 
 @fixture
 def mesh3d():
-    # Create 3D mesh with regular tetrahedron and degenerate cells
+    """Create 3D mesh with regular tetrahedron and degenerate cells"""
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
     mesh3d.geometry.points[6][0] = 1.0
     mesh3d.geometry.points[3][1] = 0.0
@@ -50,7 +50,7 @@ def mesh3d():
 
 @fixture
 def c0(mesh3d):
-    # Original tetrahedron from UnitCubeMesh(MPI.comm_world, 1, 1, 1)
+    """Original tetrahedron from UnitCubeMesh(MPI.comm_world, 1, 1, 1)"""
     return Cell(mesh3d, 0)
 
 
@@ -273,53 +273,52 @@ def test_GetCells():
 
 @skip_in_parallel
 def test_cell_inradius(c0, c1, c5):
-    assert round(c0.inradius() - (3.0 - sqrt(3.0)) / 6.0, 7) == 0
+    assert round(c0.inradius() - (3.0 - math.sqrt(3.0)) / 6.0, 7) == 0
     assert round(c1.inradius() - 0.0, 7) == 0
-    assert round(c5.inradius() - sqrt(3.0) / 6.0, 7) == 0
+    assert round(c5.inradius() - math.sqrt(3.0) / 6.0, 7) == 0
 
 
 @skip_in_parallel
 def test_cell_circumradius(c0, c1, c5):
     from math import isnan
-    assert round(c0.circumradius() - sqrt(3.0) / 2.0, 7) == 0
+    assert round(c0.circumradius() - math.sqrt(3.0) / 2.0, 7) == 0
     # Implementation of diameter() does not work accurately
     # for degenerate cells - sometimes yields NaN
     assert isnan(c1.circumradius())
-    assert round(c5.circumradius() - sqrt(3.0) / 2.0, 7) == 0
+    assert round(c5.circumradius() - math.sqrt(3.0) / 2.0, 7) == 0
 
 
 @skip_in_parallel
 def test_cell_h(c0, c1, c5):
     for c in [c0, c1, c5]:
-        assert cpp.mesh.h(c.mesh(), [c.index()], c.dim) == pytest.approx(sqrt(2.0))
+        assert cpp.mesh.h(c.mesh(), [c.index()], c.dim) == pytest.approx(math.sqrt(2.0))
 
 
 @skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
-    assert round(c0.radius_ratio() - sqrt(3.0) + 1.0, 7) == 0
+    assert round(c0.radius_ratio() - math.sqrt(3.0) + 1.0, 7) == 0
     assert round(c1.radius_ratio() - 0.0, 7) == 0
     assert round(c5.radius_ratio() - 1.0, 7) == 0
 
 
 @skip_in_parallel
 def test_hmin_hmax(mesh1d, mesh2d, mesh3d):
-    # assert round(mesh1d.hmin() - 0.0, 7) == 0
-    assert round(mesh1d.hmax() - 0.25, 7) == 0
-    # assert round(mesh2d.hmin() - sqrt(2.0), 7) == 0
-    # assert round(mesh2d.hmax() - 2.0 * sqrt(6.0) / 3.0, 7) == 0
-    # # nans are not taken into account in hmax and hmin
-    # assert round(mesh3d.hmin() - sqrt(3.0), 7) == 0
-    # assert round(mesh3d.hmax() - sqrt(3.0), 7) == 0
+    assert mesh1d.hmin() == pytest.approx(0.0)
+    assert mesh1d.hmax() == pytest.approx(0.25)
+    assert mesh2d.hmin() == pytest.approx(math.sqrt(2.0))
+    assert mesh2d.hmax() == pytest.approx(math.sqrt(2.0))
+    assert mesh3d.hmin() == pytest.approx(math.sqrt(2.0))
+    assert mesh3d.hmax() == pytest.approx(math.sqrt(2.0))
 
 
 @skip_in_parallel
 def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
     assert round(mesh1d.rmin() - 0.0, 7) == 0
     assert round(mesh1d.rmax() - 0.125, 7) == 0
-    assert round(mesh2d.rmin() - 1.0 / (2.0 + sqrt(2.0)), 7) == 0
-    assert round(mesh2d.rmax() - sqrt(6.0) / 6.0, 7) == 0
+    assert round(mesh2d.rmin() - 1.0 / (2.0 + math.sqrt(2.0)), 7) == 0
+    assert round(mesh2d.rmax() - math.sqrt(6.0) / 6.0, 7) == 0
     assert round(mesh3d.rmin() - 0.0, 7) == 0
-    assert round(mesh3d.rmax() - sqrt(3.0) / 6.0, 7) == 0
+    assert round(mesh3d.rmax() - math.sqrt(3.0) / 6.0, 7) == 0
 
 # - Facilities to run tests on combination of meshes
 
