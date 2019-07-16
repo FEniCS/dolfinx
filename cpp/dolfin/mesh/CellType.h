@@ -46,11 +46,6 @@ public:
   virtual double squared_distance(const Cell& cell,
                                   const Eigen::Vector3d& point) const = 0;
 
-  /// Compute component i of normal of given facet with respect to the
-  /// cell
-  virtual double normal(const Cell& cell, std::size_t facet,
-                        std::size_t i) const = 0;
-
   /// Compute of given facet with respect to the cell
   virtual Eigen::Vector3d normal(const Cell& cell, std::size_t facet) const = 0;
 

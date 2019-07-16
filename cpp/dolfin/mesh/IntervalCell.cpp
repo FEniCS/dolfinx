@@ -66,12 +66,6 @@ double IntervalCell::squared_distance(const Eigen::Vector3d& point,
   return std::max(v0.dot(v0) - a0 * a0 / v01.dot(v01), 0.0);
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::normal(const Cell& cell, std::size_t facet,
-                            std::size_t i) const
-{
-  return normal(cell, facet)[i];
-}
-//-----------------------------------------------------------------------------
 Eigen::Vector3d IntervalCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Get mesh geometry

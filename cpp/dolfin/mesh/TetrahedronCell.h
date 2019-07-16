@@ -32,11 +32,8 @@ public:
   double squared_distance(const mesh::Cell& cell,
                           const Eigen::Vector3d& point) const;
 
-  /// Compute component i of normal of given facet with respect to
+  /// Compute component normal of given facet with respect to
   /// the cell
-  double normal(const mesh::Cell& cell, std::size_t facet, std::size_t i) const;
-
-  /// Compute normal of given facet with respect to the cell
   Eigen::Vector3d normal(const mesh::Cell& cell, std::size_t facet) const;
 
   /// Compute normal to given cell (viewed as embedded in 4D ...)

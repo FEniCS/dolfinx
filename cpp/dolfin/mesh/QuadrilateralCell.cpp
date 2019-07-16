@@ -50,12 +50,6 @@ double QuadrilateralCell::squared_distance(const Cell& cell,
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double QuadrilateralCell::normal(const Cell& cell, std::size_t facet,
-                                 std::size_t i) const
-{
-  return normal(cell, facet)[i];
-}
-//-----------------------------------------------------------------------------
 Eigen::Vector3d QuadrilateralCell::normal(const Cell& cell,
                                           std::size_t facet) const
 {

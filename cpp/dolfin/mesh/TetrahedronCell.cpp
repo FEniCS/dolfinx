@@ -109,12 +109,6 @@ double TetrahedronCell::squared_distance(const Cell& cell,
   return r2;
 }
 //-----------------------------------------------------------------------------
-double TetrahedronCell::normal(const Cell& cell, std::size_t facet,
-                               std::size_t i) const
-{
-  return normal(cell, facet)[i];
-}
-//-----------------------------------------------------------------------------
 Eigen::Vector3d TetrahedronCell::normal(const Cell& cell,
                                         std::size_t facet) const
 {

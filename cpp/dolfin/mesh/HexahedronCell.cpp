@@ -96,12 +96,6 @@ double HexahedronCell::squared_distance(const mesh::Cell& cell,
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double HexahedronCell::normal(const mesh::Cell& cell, std::size_t facet,
-                              std::size_t i) const
-{
-  return normal(cell, facet)[i];
-}
-//-----------------------------------------------------------------------------
 Eigen::Vector3d HexahedronCell::normal(const mesh::Cell& cell,
                                        std::size_t facet) const
 {

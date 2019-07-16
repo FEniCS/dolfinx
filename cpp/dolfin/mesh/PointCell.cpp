@@ -42,13 +42,6 @@ double PointCell::squared_distance(const Cell& cell,
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-double PointCell::normal(const Cell& cell, std::size_t facet,
-                         std::size_t i) const
-{
-  throw std::runtime_error("Not defined");
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
 Eigen::Vector3d PointCell::normal(const Cell& cell, std::size_t facet) const
 {
   throw std::runtime_error("Not defined");

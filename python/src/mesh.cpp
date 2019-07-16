@@ -59,7 +59,7 @@ void mesh(py::module& m)
         "Generalised volume of cells.");
   m.def("volume_entities", &dolfin::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
-  m.def("h", &dolfin::mesh::h5
+  m.def("h", &dolfin::mesh::h,
         "Compute maximum distance between any two vertices.");
   m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
   m.def("radius_ratio", &dolfin::mesh::radius_ratio);

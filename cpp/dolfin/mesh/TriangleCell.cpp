@@ -127,12 +127,6 @@ double TriangleCell::squared_distance(const Eigen::Vector3d& point,
   return pn * pn;
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::normal(const Cell& cell, std::size_t facet,
-                            std::size_t i) const
-{
-  return normal(cell, facet)[i];
-}
-//-----------------------------------------------------------------------------
 Eigen::Vector3d TriangleCell::normal(const Cell& cell, std::size_t facet) const
 {
   // Make sure we have facets
