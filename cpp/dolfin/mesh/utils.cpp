@@ -5,8 +5,8 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include "Geometry.h"
 #include "Cell.h"
+#include "Geometry.h"
 #include "MeshEntity.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -19,15 +19,16 @@ using namespace dolfin;
 namespace
 {
 //-----------------------------------------------------------------------------
-Eigen::ArrayXd volume_interval(const mesh::Mesh& mesh,
-                               const Eigen::Ref<const Eigen::ArrayXi> entities)
+template <typename T>
+T volume_interval(const mesh::Mesh& mesh,
+                  const Eigen::Ref<const Eigen::ArrayXi> entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
   assert(topology.connectivity(1, 0));
   const mesh::Connectivity& connectivity = *topology.connectivity(1, 0);
 
-  Eigen::ArrayXd v(entities.rows());
+  T v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the two vertices
@@ -40,8 +41,9 @@ Eigen::ArrayXd volume_interval(const mesh::Mesh& mesh,
   return v;
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXd volume_triangle(const mesh::Mesh& mesh,
-                               const Eigen::Ref<const Eigen::ArrayXi> entities)
+template <typename T>
+T volume_triangle(const mesh::Mesh& mesh,
+                  const Eigen::Ref<const Eigen::ArrayXi> entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -50,7 +52,7 @@ Eigen::ArrayXd volume_triangle(const mesh::Mesh& mesh,
 
   const int gdim = geometry.dim();
   assert(gdim == 2 or gdim == 3);
-  Eigen::ArrayXd v(entities.rows());
+  T v(entities.rows());
   if (gdim == 2)
   {
     for (Eigen::Index i = 0; i < entities.rows(); ++i)
@@ -95,9 +97,9 @@ Eigen::ArrayXd volume_triangle(const mesh::Mesh& mesh,
   return v;
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXd
-volume_tetrahedron(const mesh::Mesh& mesh,
-                   const Eigen::Ref<const Eigen::ArrayXi> entities)
+template <typename T>
+T volume_tetrahedron(const mesh::Mesh& mesh,
+                     const Eigen::Ref<const Eigen::ArrayXi> entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -135,9 +137,9 @@ volume_tetrahedron(const mesh::Mesh& mesh,
   return v;
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXd
-volume_quadrilateral(const mesh::Mesh& mesh,
-                     const Eigen::Ref<const Eigen::ArrayXi> entities)
+template <typename T>
+T volume_quadrilateral(const mesh::Mesh& mesh,
+                       const Eigen::Ref<const Eigen::ArrayXi> entities)
 {
   const mesh::Geometry& geometry = mesh.geometry();
   const mesh::Topology& topology = mesh.topology();
@@ -145,7 +147,7 @@ volume_quadrilateral(const mesh::Mesh& mesh,
   const mesh::Connectivity& connectivity = *topology.connectivity(2, 0);
 
   const int gdim = geometry.dim();
-  Eigen::ArrayXd v(entities.rows());
+  T v(entities.rows());
   for (Eigen::Index i = 0; i < entities.rows(); ++i)
   {
     // Get the coordinates of the four vertices
@@ -178,6 +180,39 @@ volume_quadrilateral(const mesh::Mesh& mesh,
   return v;
 }
 //-----------------------------------------------------------------------------
+/// Compute (generalized) volume of mesh entities of given dimension.
+/// This templated versions allows for fixed size (statically allocated)
+/// return arrays, which can be important for performance when computing
+/// for a small number of entities.
+template <typename T>
+T volume_entities_tmpl(const mesh::Mesh& mesh,
+                       const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+{
+  const mesh::CellType type = cell_entity_type(mesh.type().type, dim);
+  switch (type)
+  {
+  case mesh::CellType::point:
+  {
+    T v(entities.rows());
+    v.setOnes();
+    return v;
+  }
+  case mesh::CellType::interval:
+    return volume_interval<T>(mesh, entities);
+  case mesh::CellType::triangle:
+    return volume_triangle<T>(mesh, entities);
+  case mesh::CellType::tetrahedron:
+    return volume_tetrahedron<T>(mesh, entities);
+  case mesh::CellType::quadrilateral:
+    return volume_quadrilateral<T>(mesh, entities);
+  case mesh::CellType::hexahedron:
+    throw std::runtime_error(
+        "Volume computation for hexahedral cell not supported.");
+  default:
+    throw std::runtime_error("Unknown cell type.");
+    return T();
+  }
+}
 
 } // namespace
 
@@ -365,39 +400,14 @@ mesh::volume_cells(const mesh::Mesh& mesh,
                    const Eigen::Ref<const Eigen::ArrayXi> entities)
 {
   const int dim = mesh::cell_dim(mesh.type().type);
-  return mesh::volume_entities(mesh, entities, dim);
+  return volume_entities_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
 mesh::volume_entities(const mesh::Mesh& mesh,
                       const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
 {
-  // if (entities.rows() > mesh.num_entities(dim))
-  // {
-  //   throw std::runtime_error(
-  //       "Too many entities requested for volume computation.");
-  // }
-
-  const mesh::CellType type = cell_entity_type(mesh.type().type, dim);
-  switch (type)
-  {
-  case mesh::CellType::point:
-    return Eigen::ArrayXd::Ones(entities.rows());
-  case mesh::CellType::interval:
-    return volume_interval(mesh, entities);
-  case mesh::CellType::triangle:
-    return volume_triangle(mesh, entities);
-  case mesh::CellType::tetrahedron:
-    return volume_tetrahedron(mesh, entities);
-  case mesh::CellType::quadrilateral:
-    return volume_quadrilateral(mesh, entities);
-  case mesh::CellType::hexahedron:
-    throw std::runtime_error(
-        "Volume computation for hexahedral cell not supported.");
-  default:
-    throw std::runtime_error("Unknown cell type.");
-    return Eigen::ArrayXd();
-  }
+  return volume_entities_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
 }
 //-----------------------------------------------------------------------------
 double mesh::volume(const mesh::MeshEntity& e)
@@ -442,45 +452,67 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   return h_cells;
 }
 //-----------------------------------------------------------------------------
-double mesh::inradius(const mesh::Cell& cell)
+Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
+                              const Eigen::Ref<const Eigen::ArrayXi> entities)
+// double mesh::inradius(const mesh::Cell& cell)
 {
+  // Cell type
+  const mesh::CellType type = mesh.type().type;
+
   // Check cell type
-  mesh::CellType type = cell.mesh().type().type;
   if (!mesh::is_simplex(type))
   {
     throw std::runtime_error(
         "inradius function not implemented for non-simplicial cells");
   }
 
-  // Pick dim
+  // Get cell dimension
   const int d = mesh::cell_dim(type);
-
-  // Compute volume
-  const double V = volume(cell);
-
-  // Handle degenerate case
-  if (V == 0.0)
-    return 0.0;
-
-  // Compute total area of facets
-  // double A = 0.0;
-  // for (int i = 0; i <= d; i++)
-  //   A += facet_area(cell, i);
-
-  const mesh::Topology& topology = cell.mesh().topology();
-  assert(topology.connectivity(d, d-1));
+  const mesh::Topology& topology = mesh.topology();
+  assert(topology.connectivity(d, d - 1));
   const mesh::Connectivity& connectivity = *topology.connectivity(d, d - 1);
 
-  const std::int32_t* facets = connectivity.connections(cell.index());
-  Eigen::ArrayXi facet_list(d + 1);
-  for (int i = 0; i <= d; i++)
-    facet_list[i] = facets[i];
-  const double A = mesh::volume_entities(cell.mesh(), facet_list, d - 1).sum();
+  const Eigen::ArrayXd volumes = mesh::volume_cells(mesh, entities);
 
-  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
-  // Element?, online:
-  // http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-  return d * V / A;
+  // // Build list of facets
+  // Eigen::ArrayXi facet_list = ;
+  // for (Eigen::Index c = 0; c < entities.rows(); ++c)
+  //   const std::int32_t* facets = connectivity.connections(entities[c]);
+  // for (int i = 0; i <= d; i++)
+  //   facet_list[i] = facets[i];
+
+  // FIXME: This computes all facets
+  // Eigen::ArrayXi facet_list(mesh.num_entities(d - 1));
+  // std::iota(facet_list.data(), facet_list.data() + facet_list.size(), 0);
+  // const Eigen::ArrayXd facet_areas
+  //     = mesh::volume_entities(mesh, facet_list, d - 1);
+
+  Eigen::ArrayXd r(entities.rows());
+  Eigen::ArrayXi facet_list(d + 1);
+  for (Eigen::Index c = 0; c < entities.rows(); ++c)
+  {
+    if (volumes[c] == 0.0)
+    {
+      r[c] = 0.0;
+      continue;
+    }
+
+    const std::int32_t* facets = connectivity.connections(entities[c]);
+    for (int i = 0; i <= d; i++)
+      facet_list[i] = facets[i];
+    const double A = volume_entities_tmpl<Eigen::Array<double, 4, 1>>(
+                         mesh, facet_list, d - 1)
+                         .head(d + 1)
+                         .sum();
+
+    // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
+    // Element?, online:
+    // http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
+    // return d * V / A;
+    r[c] = d * volumes[c] / A;
+  }
+
+  return r;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int8_t> mesh::vtk_mapping(mesh::CellType type)

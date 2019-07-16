@@ -18,37 +18,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-MeshFunction<double>
-MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
-{
-  // Create MeshFunction
-  MeshFunction<double> cf(mesh, mesh->topology().dim(), 0.0);
-
-  // Get reference to mesh function data array
-  Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> mf_values = cf.values();
-
-  // Compute radius ration
-  for (auto& cell : MeshRange<Cell>(*mesh))
-    mf_values[cell.index()] = cell.radius_ratio();
-
-  return cf;
-}
-//-----------------------------------------------------------------------------
-std::array<double, 2> MeshQuality::radius_ratio_min_max(const Mesh& mesh)
-{
-  double qmin = std::numeric_limits<double>::max();
-  double qmax = 0.0;
-  for (auto& cell : MeshRange<Cell>(mesh))
-  {
-    qmin = std::min(qmin, cell.radius_ratio());
-    qmax = std::max(qmax, cell.radius_ratio());
-  }
-
-  qmin = MPI::min(mesh.mpi_comm(), qmin);
-  qmax = MPI::max(mesh.mpi_comm(), qmax);
-  return {{qmin, qmax}};
-}
-//-----------------------------------------------------------------------------
 std::pair<std::vector<double>, std::vector<std::size_t>>
 MeshQuality::radius_ratio_histogram_data(const Mesh& mesh, std::size_t num_bins)
 {

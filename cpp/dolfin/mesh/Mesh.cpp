@@ -38,6 +38,24 @@ Eigen::ArrayXd cell_h(const mesh::Mesh& mesh)
   return mesh::h(mesh, cells, dim);
 }
 //-----------------------------------------------------------------------------
+Eigen::ArrayXd cell_r(const mesh::Mesh& mesh)
+{
+  const int dim = mesh.topology().dim();
+  const int num_cells = mesh.num_entities(dim);
+  if (num_cells == 0)
+    throw std::runtime_error("Cannnot compute inradius min/max. No cells.");
+
+  Eigen::ArrayXi cells(num_cells);
+  std::iota(cells.data(), cells.data() + cells.size(), 0);
+  return mesh::inradius(mesh, cells);
+
+  // return cell_r(*this).minCoeff();
+  // double r = std::numeric_limits<double>::max();
+  // for (auto& cell : MeshRange<Cell>(*this))
+  //   r = std::min(r, cell.inradius());
+  // return r;
+}
+//-----------------------------------------------------------------------------
 // Compute map from global node indices to local (contiguous) node
 // indices, and remap cell node topology accordingly
 //
@@ -422,18 +440,20 @@ double Mesh::hmax() const { return cell_h(*this).maxCoeff(); }
 //-----------------------------------------------------------------------------
 double Mesh::rmin() const
 {
-  double r = std::numeric_limits<double>::max();
-  for (auto& cell : MeshRange<Cell>(*this))
-    r = std::min(r, cell.inradius());
-  return r;
+  return cell_r(*this).minCoeff();
+  // double r = std::numeric_limits<double>::max();
+  // for (auto& cell : MeshRange<Cell>(*this))
+  //   r = std::min(r, cell.inradius());
+  // return r;
 }
 //-----------------------------------------------------------------------------
 double Mesh::rmax() const
 {
-  double r = 0.0;
-  for (auto& cell : MeshRange<Cell>(*this))
-    r = std::max(r, cell.inradius());
-  return r;
+  return cell_r(*this).maxCoeff();
+  // double r = 0.0;
+  // for (auto& cell : MeshRange<Cell>(*this))
+  //   r = std::max(r, cell.inradius());
+  // return r;
 }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const

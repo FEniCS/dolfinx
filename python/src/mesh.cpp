@@ -61,6 +61,7 @@ void mesh(py::module& m)
         "Generalised volume of entities of given dimension.");
   m.def("h", &dolfin::mesh::h,
         "Compute maximum distance between any two vertices.");
+  m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
 
   // dolfin::mesh::CellType
   py::class_<dolfin::mesh::CellTypeOld,
@@ -273,10 +274,10 @@ void mesh(py::module& m)
 
   // dolfin::mesh::Cell
   py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
-             dolfin::mesh::MeshEntity>(m, "Cell", "DOLFIN Cell object")
+             dolfin::mesh::MeshEntity>(m, "Cell", "Cell object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("squared_distance", &dolfin::mesh::Cell::squared_distance)
-      .def("inradius", &dolfin::mesh::Cell::inradius)
+      //  .def("inradius", &dolfin::mesh::Cell::inradius)
       .def("normal", &dolfin::mesh::Cell::normal)
       .def("circumradius", &dolfin::mesh::Cell::circumradius)
       .def("radius_ratio", &dolfin::mesh::Cell::radius_ratio)
@@ -417,15 +418,12 @@ void mesh(py::module& m)
 
   // dolfin::mesh::MeshQuality
   py::class_<dolfin::mesh::MeshQuality>(m, "MeshQuality", "MeshQuality class")
-      .def_static("radius_ratios", &dolfin::mesh::MeshQuality::radius_ratios)
       .def_static("radius_ratio_histogram_data",
                   &dolfin::mesh::MeshQuality::radius_ratio_histogram_data,
                   py::arg("mesh"), py::arg("num_bins") = 50)
       .def_static("dihedral_angle_histogram_data",
                   &dolfin::mesh::MeshQuality::dihedral_angle_histogram_data,
                   py::arg("mesh"), py::arg("num_bins") = 50)
-      .def_static("radius_ratio_min_max",
-                  &dolfin::mesh::MeshQuality::radius_ratio_min_max)
       .def_static("dihedral_angles_min_max",
                   &dolfin::mesh::MeshQuality::dihedral_angles_min_max);
 

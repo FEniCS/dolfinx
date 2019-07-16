@@ -70,11 +70,9 @@ double volume(const MeshEntity& e);
 Eigen::ArrayXd h(const Mesh& mesh,
                  const Eigen::Ref<const Eigen::ArrayXi> entities, int dim);
 
-/// Compute inradius of cell
-double inradius(const Cell& cell);
-
-/// Compute inradius of cell
-// double inradius(const Cell& cell);
+/// Compute inradius of cells
+Eigen::ArrayXd inradius(const Mesh& mesh,
+                        const Eigen::Ref<const Eigen::ArrayXi> entities);
 
 /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
 std::vector<std::int8_t> vtk_mapping(CellType type);
