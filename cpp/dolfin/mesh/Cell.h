@@ -85,7 +85,14 @@ public:
   ///         log::info("%g", cell.circumradius());
   ///
   /// @endcode
-  double circumradius() const { return _mesh->type().circumradius(*this); }
+  double circumradius() const
+  {
+    Eigen::ArrayXi cells(1);
+    cells[0] = this->index();
+    return mesh::circumradius(this->mesh(), cells, this->dim())[0];
+
+    // return _mesh->type().circumradius(*this);
+  }
 
   /// Compute inradius of cell
   ///
@@ -126,14 +133,14 @@ public:
   ///         log::info("%g", cell.radius_ratio());
   ///
   /// @endcode
-  double radius_ratio() const
-  {
-    // We would need facet areas
-    const int dim = mesh::cell_dim(_mesh->type().type);
-    _mesh->create_entities(dim - 1);
+  // double radius_ratio() const
+  // {
+  //   // We would need facet areas
+  //   const int dim = mesh::cell_dim(_mesh->type().type);
+  //   _mesh->create_entities(dim - 1);
 
-    return _mesh->type().radius_ratio(*this);
-  }
+  //   return _mesh->type().radius_ratio(*this);
+  // }
 
   /// Compute squared distance to given point.
   ///

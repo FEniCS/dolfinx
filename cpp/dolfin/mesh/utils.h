@@ -66,6 +66,11 @@ Eigen::ArrayXd volume_entities(const Mesh& mesh,
 /// multiple volumes.
 double volume(const MeshEntity& e);
 
+/// Compute circumradius of mesh entities
+Eigen::ArrayXd circumradius(const Mesh& mesh,
+                            const Eigen::Ref<const Eigen::ArrayXi> entities,
+                            int dim);
+
 /// Compute greatest distance between any two vertices
 Eigen::ArrayXd h(const Mesh& mesh,
                  const Eigen::Ref<const Eigen::ArrayXi> entities, int dim);
@@ -73,6 +78,10 @@ Eigen::ArrayXd h(const Mesh& mesh,
 /// Compute inradius of cells
 Eigen::ArrayXd inradius(const Mesh& mesh,
                         const Eigen::Ref<const Eigen::ArrayXi> entities);
+
+/// Compute dim*inradius/circumradius for given cells
+Eigen::ArrayXd radius_ratio(const Mesh& mesh,
+                            const Eigen::Ref<const Eigen::ArrayXi> entities);
 
 /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
 std::vector<std::int8_t> vtk_mapping(CellType type);

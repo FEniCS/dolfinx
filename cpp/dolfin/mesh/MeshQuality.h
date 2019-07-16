@@ -36,14 +36,6 @@ public:
   ///
   static std::array<double, 2> radius_ratio_min_max(const Mesh& mesh);
 
-  /// Create (ratio, number of cells) data for creating a histogram
-  /// of cell quality
-  /// @param mesh (const Mesh&)
-  /// @param num_bins (std::size_t)
-  /// @return std::pair<std::vector<double>, std::vector<std::size_t>>
-  static std::pair<std::vector<double>, std::vector<std::size_t>>
-  radius_ratio_histogram_data(const Mesh& mesh, std::size_t num_bins);
-
   /// Get internal dihedral angles of a tetrahedral cell
   static std::array<double, 6> dihedral_angles(const mesh::Cell& cell);
 

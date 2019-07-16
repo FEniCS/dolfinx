@@ -43,19 +43,6 @@ void QuadrilateralCell::create_entities(
   e(3, 1) = v[3];
 }
 //-----------------------------------------------------------------------------
-double QuadrilateralCell::circumradius(const MeshEntity& cell) const
-{
-  // Check that we get a cell
-  if (cell.dim() != 2)
-  {
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  throw std::runtime_error("Not supported");
-
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
 double QuadrilateralCell::squared_distance(const Cell& cell,
                                            const Eigen::Vector3d& point) const
 {
@@ -137,23 +124,5 @@ Eigen::Vector3d QuadrilateralCell::cell_normal(const Cell& cell) const
   n /= n.norm();
 
   return n;
-}
-//-----------------------------------------------------------------------------
-double QuadrilateralCell::facet_area(const Cell& cell, std::size_t facet) const
-{
-  // Create facet from the mesh and local facet number
-  const Facet f(cell.mesh(), cell.entities(1)[facet]);
-
-  // Get global index of vertices on the facet
-  const std::size_t v0 = f.entities(0)[0];
-  const std::size_t v1 = f.entities(0)[1];
-
-  // Get mesh geometry
-  const Geometry& geometry = cell.mesh().geometry();
-
-  const Eigen::Vector3d p0 = geometry.x(v0);
-  const Eigen::Vector3d p1 = geometry.x(v1);
-
-  return (p0 - p1).norm();
 }
 //-----------------------------------------------------------------------------

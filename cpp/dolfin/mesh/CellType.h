@@ -42,12 +42,6 @@ public:
                                std::size_t dim,
                                const std::int32_t* v) const = 0;
 
-  /// Compute circumradius of mesh entity
-  virtual double circumradius(const MeshEntity& entity) const = 0;
-
-  /// Compute dim*inradius/circumradius for given cell
-  virtual double radius_ratio(const Cell& cell) const;
-
   /// Compute squared distance to given point
   virtual double squared_distance(const Cell& cell,
                                   const Eigen::Vector3d& point) const = 0;
@@ -62,9 +56,6 @@ public:
 
   /// Compute normal to given cell (viewed as embedded in 3D)
   virtual Eigen::Vector3d cell_normal(const Cell& cell) const = 0;
-
-  // /// Compute the area/length of given facet with respect to the cell
-  // virtual double facet_area(const Cell& cell, std::size_t facet) const = 0;
 
   const CellType type;
 };

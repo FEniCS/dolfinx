@@ -280,11 +280,10 @@ def test_cell_inradius(c0, c1, c5):
 
 @skip_in_parallel
 def test_cell_circumradius(c0, c1, c5):
-    from math import isnan
     assert round(c0.circumradius() - math.sqrt(3.0) / 2.0, 7) == 0
     # Implementation of diameter() does not work accurately
     # for degenerate cells - sometimes yields NaN
-    assert isnan(c1.circumradius())
+    assert math.isnan(c1.circumradius())
     assert round(c5.circumradius() - math.sqrt(3.0) / 2.0, 7) == 0
 
 
@@ -296,9 +295,9 @@ def test_cell_h(c0, c1, c5):
 
 @skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
-    assert round(c0.radius_ratio() - math.sqrt(3.0) + 1.0, 7) == 0
-    assert round(c1.radius_ratio() - 0.0, 7) == 0
-    assert round(c5.radius_ratio() - 1.0, 7) == 0
+    assert cpp.mesh.radius_ratio(c0.mesh(), [c0.index()]) == pytest.approx(math.sqrt(3.0) - 1.0)
+    assert numpy.isnan(cpp.mesh.radius_ratio(c1.mesh(), [c1.index()]))
+    assert cpp.mesh.radius_ratio(c5.mesh(), [c5.index()]) == pytest.approx(1.0)
 
 
 @skip_in_parallel

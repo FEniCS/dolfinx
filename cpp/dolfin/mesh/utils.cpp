@@ -213,6 +213,112 @@ T volume_entities_tmpl(const mesh::Mesh& mesh,
     return T();
   }
 }
+//-----------------------------------------------------------------------------
+template <typename T>
+T circumradius_triangle(const mesh::Mesh& mesh,
+                        const Eigen::Ref<const Eigen::ArrayXi> entities)
+{
+  // Get mesh geometry
+  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Topology& topology = mesh.topology();
+  assert(topology.connectivity(2, 0));
+  const mesh::Connectivity& connectivity = *topology.connectivity(2, 0);
+
+  T volumes = volume_entities_tmpl<T>(mesh, entities, 2);
+
+  T cr(entities.rows());
+  for (Eigen::Index e = 0; e < entities.rows(); ++e)
+  {
+    const std::int32_t* vertices = connectivity.connections(entities[e]);
+    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+
+    // Compute side lengths
+    const double a = (p1 - p2).norm();
+    const double b = (p0 - p2).norm();
+    const double c = (p0 - p1).norm();
+
+    // Formula for circumradius from
+    // http://mathworld.wolfram.com/Triangle.html
+    cr[e] = a * b * c / (4.0 * volumes[e]);
+  }
+  return cr;
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+T circumradius_tetrahedron(const mesh::Mesh& mesh,
+                           const Eigen::Ref<const Eigen::ArrayXi> entities)
+{
+  // Get mesh geometry
+  const mesh::Geometry& geometry = mesh.geometry();
+  const mesh::Topology& topology = mesh.topology();
+  assert(topology.connectivity(3, 0));
+  const mesh::Connectivity& connectivity = *topology.connectivity(3, 0);
+
+  T volumes = volume_entities_tmpl<T>(mesh, entities, 3);
+
+  T cr(entities.rows());
+  for (Eigen::Index e = 0; e < entities.rows(); ++e)
+  {
+    const std::int32_t* vertices = connectivity.connections(entities[e]);
+    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+    const Eigen::Vector3d p3 = geometry.x(vertices[3]);
+
+    // Compute side lengths
+    const double a = (p1 - p2).norm();
+    const double b = (p0 - p2).norm();
+    const double c = (p0 - p1).norm();
+    const double aa = (p0 - p3).norm();
+    const double bb = (p1 - p3).norm();
+    const double cc = (p2 - p3).norm();
+
+    // Compute "area" of triangle with strange side lengths
+    const double la = a * aa;
+    const double lb = b * bb;
+    const double lc = c * cc;
+    const double s = 0.5 * (la + lb + lc);
+    const double area = sqrt(s * (s - la) * (s - lb) * (s - lc));
+
+    // Formula for circumradius from
+    // http://mathworld.wolfram.com/Tetrahedron.html
+    cr[e] = area / (6.0 * volumes[e]);
+  }
+  return cr;
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+T circumradius_tmpl(const mesh::Mesh& mesh,
+                    const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+{
+  const mesh::CellType type = cell_entity_type(mesh.type().type, dim);
+  switch (type)
+  {
+  case mesh::CellType::point:
+  {
+    T cr(entities.rows());
+    cr.setZero();
+    return cr;
+  }
+  case mesh::CellType::interval:
+    return volume_interval<T>(mesh, entities) / 2;
+  case mesh::CellType::triangle:
+    return circumradius_triangle<T>(mesh, entities);
+  case mesh::CellType::tetrahedron:
+    return circumradius_tetrahedron<T>(mesh, entities);
+  // case mesh::CellType::quadrilateral:
+  //   // continue;
+  // case mesh::CellType::hexahedron:
+  //   // continue;
+  default:
+    throw std::runtime_error(
+        "Unsupported cell type for circumradius computation.");
+    return T();
+  }
+}
+//-----------------------------------------------------------------------------
 
 } // namespace
 
@@ -419,6 +525,13 @@ double mesh::volume(const mesh::MeshEntity& e)
   return v[0];
 }
 //-----------------------------------------------------------------------------
+Eigen::ArrayXd
+mesh::circumradius(const mesh::Mesh& mesh,
+                   const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+{
+  return circumradius_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
+}
+//-----------------------------------------------------------------------------
 Eigen::ArrayXd mesh::h(const Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
 {
@@ -513,6 +626,17 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
   }
 
   return r;
+}
+//-----------------------------------------------------------------------------
+Eigen::ArrayXd
+mesh::radius_ratio(const mesh::Mesh& mesh,
+                   const Eigen::Ref<const Eigen::ArrayXi> entities)
+{
+  const mesh::CellType type = mesh.type().type;
+  const int dim = mesh::cell_dim(type);
+  Eigen::ArrayXd r = mesh::inradius(mesh, entities);
+  Eigen::ArrayXd cr = mesh::circumradius(mesh, entities, dim);
+  return mesh::cell_dim(mesh.type().type) * r / cr;
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int8_t> mesh::vtk_mapping(mesh::CellType type)

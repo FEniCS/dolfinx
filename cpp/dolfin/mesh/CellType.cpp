@@ -45,17 +45,3 @@ CellTypeOld* CellTypeOld::create(CellType type)
   return nullptr;
 }
 //-----------------------------------------------------------------------------
-double CellTypeOld::radius_ratio(const Cell& cell) const
-{
-  // const double r = inradius(cell);
-  Eigen::ArrayXi cells(1);
-  cells[0] = cell.index();
-  Eigen::ArrayXd r = mesh::inradius(cell.mesh(), cells);
-
-  // Handle degenerate case
-  if (r[0] == 0.0)
-    return 0.0;
-  else
-    return mesh::cell_dim(this->type) * r[0] / circumradius(cell);
-}
-//-----------------------------------------------------------------------------

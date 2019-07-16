@@ -18,33 +18,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-std::pair<std::vector<double>, std::vector<std::size_t>>
-MeshQuality::radius_ratio_histogram_data(const Mesh& mesh, std::size_t num_bins)
-{
-  std::vector<double> bins(num_bins);
-  std::vector<std::size_t> values(num_bins, 0);
-  const double interval = 1.0 / static_cast<double>(num_bins);
-  for (std::size_t i = 0; i < num_bins; ++i)
-    bins[i] = static_cast<double>(i) * interval + interval / 2.0;
-
-  for (auto& cell : MeshRange<Cell>(mesh))
-  {
-    const double ratio = cell.radius_ratio();
-
-    // Compute 'bin' index, and handle special case that ratio = 1.0
-    const std::size_t slot
-        = std::min(static_cast<std::size_t>(ratio / interval), num_bins - 1);
-
-    values[slot] += 1;
-  }
-
-  // FIXME: This is terrible. Avoid MPI calls inside loop.
-  for (std::size_t i = 0; i < values.size(); ++i)
-    values[i] = MPI::sum(mesh.mpi_comm(), values[i]);
-
-  return {bins, values};
-}
-//-----------------------------------------------------------------------------
 std::array<double, 6> MeshQuality::dihedral_angles(const Cell& cell)
 {
   if (cell.dim() != 3)

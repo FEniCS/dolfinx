@@ -66,50 +66,6 @@ void TetrahedronCell::create_entities(
   }
 }
 //-----------------------------------------------------------------------------
-double TetrahedronCell::circumradius(const MeshEntity& tetrahedron) const
-{
-  // Check that we get a tetrahedron
-  if (tetrahedron.dim() != 3)
-  {
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  // Get mesh geometry
-  const Geometry& geometry = tetrahedron.mesh().geometry();
-
-  // Only know how to compute the volume when embedded in R^3
-  if (geometry.dim() != 3)
-  {
-    throw std::runtime_error("Illegal geometric dimension");
-  }
-
-  // Get the coordinates of the four vertices
-  const std::int32_t* vertices = tetrahedron.entities(0);
-  const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-  const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-  const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-  const Eigen::Vector3d p3 = geometry.x(vertices[3]);
-
-  // Compute side lengths
-  const double a = (p1 - p2).norm();
-  const double b = (p0 - p2).norm();
-  const double c = (p0 - p1).norm();
-  const double aa = (p0 - p3).norm();
-  const double bb = (p1 - p3).norm();
-  const double cc = (p2 - p3).norm();
-
-  // Compute "area" of triangle with strange side lengths
-  const double la = a * aa;
-  const double lb = b * bb;
-  const double lc = c * cc;
-  const double s = 0.5 * (la + lb + lc);
-  const double area = sqrt(s * (s - la) * (s - lb) * (s - lc));
-
-  // Formula for circumradius from
-  // http://mathworld.wolfram.com/Tetrahedron.html
-  return area / (6.0 * volume(tetrahedron));
-}
-//-----------------------------------------------------------------------------
 double TetrahedronCell::squared_distance(const Cell& cell,
                                          const Eigen::Vector3d& point) const
 {
@@ -207,35 +163,6 @@ Eigen::Vector3d TetrahedronCell::cell_normal(const Cell& cell) const
 {
   throw std::runtime_error("Not Implemented");
   return Eigen::Vector3d();
-}
-//-----------------------------------------------------------------------------
-double TetrahedronCell::facet_area(const Cell& cell, std::size_t facet) const
-{
-  assert(cell.mesh().topology().dim() == 3);
-  assert(cell.mesh().geometry().dim() == 3);
-
-  // Create facet from the mesh and local facet number
-  Facet f(cell.mesh(), cell.entities(2)[facet]);
-
-  // Get mesh geometry
-  const Geometry& geometry = f.mesh().geometry();
-
-  // Get the coordinates of the three vertices
-  const std::int32_t* vertices = f.entities(0);
-  const Eigen::Vector3d x0 = geometry.x(vertices[0]);
-  const Eigen::Vector3d x1 = geometry.x(vertices[1]);
-  const Eigen::Vector3d x2 = geometry.x(vertices[2]);
-
-  // Compute area of triangle embedded in R^3
-  double v0 = (x0[1] * x1[2] + x0[2] * x2[1] + x1[1] * x2[2])
-              - (x2[1] * x1[2] + x2[2] * x0[1] + x1[1] * x0[2]);
-  double v1 = (x0[2] * x1[0] + x0[0] * x2[2] + x1[2] * x2[0])
-              - (x2[2] * x1[0] + x2[0] * x0[2] + x1[2] * x0[0]);
-  double v2 = (x0[0] * x1[1] + x0[1] * x2[0] + x1[0] * x2[1])
-              - (x2[0] * x1[1] + x2[1] * x0[0] + x1[0] * x0[1]);
-
-  // Formula for area from http://mathworld.wolfram.com
-  return 0.5 * sqrt(v0 * v0 + v1 * v1 + v2 * v2);
 }
 //-----------------------------------------------------------------------------
 std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const

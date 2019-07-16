@@ -39,42 +39,6 @@ void TriangleCell::create_entities(
   e(2, 1) = v[1];
 }
 //-----------------------------------------------------------------------------
-double TriangleCell::circumradius(const MeshEntity& triangle) const
-{
-  // Check that we get a triangle
-  if (triangle.dim() != 2)
-  {
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  // Get mesh geometry
-  const Geometry& geometry = triangle.mesh().geometry();
-
-  // Only know how to compute the diameter when embedded in R^2 or R^3
-  if (geometry.dim() != 2 && geometry.dim() != 3)
-  {
-    throw std::runtime_error("Illegal geometric dimension");
-  }
-
-  // Get the coordinates of the three vertices
-  const std::int32_t* vertices = triangle.entities(0);
-  const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-  const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-  const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-
-  // FIXME: Assuming 3D coordinates, could be more efficient if
-  // FIXME: if we assumed 2D coordinates in 2D
-
-  // Compute side lengths
-  const double a = (p1 - p2).norm();
-  const double b = (p0 - p2).norm();
-  const double c = (p0 - p1).norm();
-
-  // Formula for circumradius from
-  // http://mathworld.wolfram.com/Triangle.html
-  return a * b * c / (4.0 * volume(triangle));
-}
-//-----------------------------------------------------------------------------
 double TriangleCell::squared_distance(const Cell& cell,
                                       const Eigen::Vector3d& point) const
 {
@@ -239,25 +203,6 @@ Eigen::Vector3d TriangleCell::cell_normal(const Cell& cell) const
   n /= n.norm();
 
   return n;
-}
-//-----------------------------------------------------------------------------
-double TriangleCell::facet_area(const Cell& cell, std::size_t facet) const
-{
-  // Create facet from the mesh and local facet number
-  const Facet f(cell.mesh(), cell.entities(1)[facet]);
-
-  // Get global index of vertices on the facet
-  const std::size_t v0 = f.entities(0)[0];
-  const std::size_t v1 = f.entities(0)[1];
-
-  // Get mesh geometry
-  const Geometry& geometry = cell.mesh().geometry();
-
-  // Get the coordinates of the two vertices
-  const Eigen::Vector3d p0 = geometry.x(v0);
-  const Eigen::Vector3d p1 = geometry.x(v1);
-
-  return (p1 - p0).norm();
 }
 //-----------------------------------------------------------------------------
 std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const

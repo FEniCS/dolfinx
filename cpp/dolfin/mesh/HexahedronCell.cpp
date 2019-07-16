@@ -88,19 +88,6 @@ void HexahedronCell::create_entities(
   }
 }
 //-----------------------------------------------------------------------------
-double HexahedronCell::circumradius(const MeshEntity& cell) const
-{
-  // Check that we get a cell
-  if (cell.dim() != 2)
-  {
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  throw std::runtime_error("Not Implemented");
-
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
 double HexahedronCell::squared_distance(const mesh::Cell& cell,
                                         const Eigen::Vector3d& point) const
 {
@@ -126,12 +113,5 @@ Eigen::Vector3d HexahedronCell::cell_normal(const mesh::Cell& cell) const
 {
   throw std::runtime_error("Not implemented");
   return Eigen::Vector3d();
-}
-//-----------------------------------------------------------------------------
-double HexahedronCell::facet_area(const mesh::Cell& cell,
-                                  std::size_t facet) const
-{
-  throw std::runtime_error("Not implemented");
-  return 0.0;
 }
 //-----------------------------------------------------------------------------

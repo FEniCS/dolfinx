@@ -59,9 +59,10 @@ void mesh(py::module& m)
         "Generalised volume of cells.");
   m.def("volume_entities", &dolfin::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
-  m.def("h", &dolfin::mesh::h,
+  m.def("h", &dolfin::mesh::h5
         "Compute maximum distance between any two vertices.");
   m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
+  m.def("radius_ratio", &dolfin::mesh::radius_ratio);
 
   // dolfin::mesh::CellType
   py::class_<dolfin::mesh::CellTypeOld,
@@ -280,7 +281,6 @@ void mesh(py::module& m)
       //  .def("inradius", &dolfin::mesh::Cell::inradius)
       .def("normal", &dolfin::mesh::Cell::normal)
       .def("circumradius", &dolfin::mesh::Cell::circumradius)
-      .def("radius_ratio", &dolfin::mesh::Cell::radius_ratio)
       .def("volume", &dolfin::mesh::Cell::volume);
 
   py::class_<
@@ -418,9 +418,6 @@ void mesh(py::module& m)
 
   // dolfin::mesh::MeshQuality
   py::class_<dolfin::mesh::MeshQuality>(m, "MeshQuality", "MeshQuality class")
-      .def_static("radius_ratio_histogram_data",
-                  &dolfin::mesh::MeshQuality::radius_ratio_histogram_data,
-                  py::arg("mesh"), py::arg("num_bins") = 50)
       .def_static("dihedral_angle_histogram_data",
                   &dolfin::mesh::MeshQuality::dihedral_angle_histogram_data,
                   py::arg("mesh"), py::arg("num_bins") = 50)

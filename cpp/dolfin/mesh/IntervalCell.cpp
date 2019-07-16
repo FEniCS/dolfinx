@@ -30,16 +30,6 @@ void IntervalCell::create_entities(
   e(1, 0) = v[1];
 }
 //-----------------------------------------------------------------------------
-double IntervalCell::circumradius(const MeshEntity& interval) const
-{
-  // Check that we get an interval
-  if (interval.dim() != 1)
-    throw std::invalid_argument("Illegal dimension");
-
-  // Circumradius is half the volume for an interval (line segment)
-  return volume(interval) / 2.0;
-}
-//-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell,
                                       const Eigen::Vector3d& point) const
 {
@@ -128,10 +118,5 @@ Eigen::Vector3d IntervalCell::cell_normal(const Cell& cell) const
   n /= n.norm();
 
   return n;
-}
-//-----------------------------------------------------------------------------
-double IntervalCell::facet_area(const Cell& cell, std::size_t facet) const
-{
-  return 1.0;
 }
 //-----------------------------------------------------------------------------
