@@ -4,14 +4,9 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from math import pi, sqrt
+from math import pi
 
-import numpy
-
-from dolfin import (MPI, Cells, MeshQuality, RectangleMesh, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, cpp)
-from dolfin.cpp.mesh import CellType
-from dolfin_utils.test.skips import skip_in_parallel
+from dolfin import MPI, MeshQuality, UnitCubeMesh
 
 
 def test_dihedral_angles_min_max():
