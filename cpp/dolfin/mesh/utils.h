@@ -14,6 +14,7 @@ namespace dolfin
 {
 namespace mesh
 {
+class Cell;
 class Mesh;
 class MeshEntity;
 
@@ -68,6 +69,9 @@ double volume(const MeshEntity& e);
 /// Compute greatest distance between any two vertices
 Eigen::ArrayXd h(const Mesh& mesh,
                  const Eigen::Ref<const Eigen::ArrayXi> entities, int dim);
+
+/// Compute inradius of cell
+double inradius(const Cell& cell);
 
 /// Compute inradius of cell
 // double inradius(const Cell& cell);

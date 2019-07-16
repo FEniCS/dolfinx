@@ -6,6 +6,7 @@
 
 #include "utils.h"
 #include "Geometry.h"
+#include "Cell.h"
 #include "MeshEntity.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -441,11 +442,46 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   return h_cells;
 }
 //-----------------------------------------------------------------------------
+double mesh::inradius(const mesh::Cell& cell)
+{
+  // Check cell type
+  mesh::CellType type = cell.mesh().type().type;
+  if (!mesh::is_simplex(type))
+  {
+    throw std::runtime_error(
+        "inradius function not implemented for non-simplicial cells");
+  }
 
-// double mesh::inradius(const mesh::Cell& cell)
-// {
+  // Pick dim
+  const int d = mesh::cell_dim(type);
 
-// }
+  // Compute volume
+  const double V = volume(cell);
+
+  // Handle degenerate case
+  if (V == 0.0)
+    return 0.0;
+
+  // Compute total area of facets
+  // double A = 0.0;
+  // for (int i = 0; i <= d; i++)
+  //   A += facet_area(cell, i);
+
+  const mesh::Topology& topology = cell.mesh().topology();
+  assert(topology.connectivity(d, d-1));
+  const mesh::Connectivity& connectivity = *topology.connectivity(d, d - 1);
+
+  const std::int32_t* facets = connectivity.connections(cell.index());
+  Eigen::ArrayXi facet_list(d + 1);
+  for (int i = 0; i <= d; i++)
+    facet_list[i] = facets[i];
+  const double A = mesh::volume_entities(cell.mesh(), facet_list, d - 1).sum();
+
+  // See Jonathan Richard Shewchuk: What Is a Good Linear Finite
+  // Element?, online:
+  // http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
+  return d * V / A;
+}
 //-----------------------------------------------------------------------------
 std::vector<std::int8_t> mesh::vtk_mapping(mesh::CellType type)
 {

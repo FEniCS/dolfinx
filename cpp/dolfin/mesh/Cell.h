@@ -105,7 +105,7 @@ public:
     const int dim = mesh::cell_dim(_mesh->type().type);
     _mesh->create_entities(dim - 1);
 
-    return _mesh->type().inradius(*this);
+    return mesh::inradius(*this);
   }
 
   /// Compute ratio of inradius to circumradius times dim for cell.

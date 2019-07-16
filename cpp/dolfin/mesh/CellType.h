@@ -45,9 +45,6 @@ public:
   /// Compute circumradius of mesh entity
   virtual double circumradius(const MeshEntity& entity) const = 0;
 
-  /// Compute inradius of cell
-  virtual double inradius(const Cell& cell) const;
-
   /// Compute dim*inradius/circumradius for given cell
   virtual double radius_ratio(const Cell& cell) const;
 
