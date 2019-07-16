@@ -438,23 +438,9 @@ double Mesh::hmin() const { return cell_h(*this).minCoeff(); }
 //-----------------------------------------------------------------------------
 double Mesh::hmax() const { return cell_h(*this).maxCoeff(); }
 //-----------------------------------------------------------------------------
-double Mesh::rmin() const
-{
-  return cell_r(*this).minCoeff();
-  // double r = std::numeric_limits<double>::max();
-  // for (auto& cell : MeshRange<Cell>(*this))
-  //   r = std::min(r, cell.inradius());
-  // return r;
-}
+double Mesh::rmin() const { return cell_r(*this).minCoeff(); }
 //-----------------------------------------------------------------------------
-double Mesh::rmax() const
-{
-  return cell_r(*this).maxCoeff();
-  // double r = 0.0;
-  // for (auto& cell : MeshRange<Cell>(*this))
-  //   r = std::max(r, cell.inradius());
-  // return r;
-}
+double Mesh::rmax() const { return cell_r(*this).maxCoeff(); }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::hash() const
 {
