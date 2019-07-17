@@ -24,7 +24,7 @@ public:
   Face(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 2, index) {}
 
   /// Destructor
-  ~Face() {}
+  ~Face() = default;
 
   /// Calculate the area of the face (triangle)
   double area() const;
