@@ -33,7 +33,7 @@ class MeshFunction:
 
 
 class MeshValueCollection:
-    def __new__(cls, value_type, mesh, dim=None, topology_data=None, values_data=None):
+    def __new__(cls, value_type, mesh, dim=None):
         if value_type not in _meshvaluecollection_types.keys():
             raise KeyError("MeshValueCollection type not recognised")
         mvc = _meshvaluecollection_types[value_type]

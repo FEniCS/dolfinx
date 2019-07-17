@@ -13,9 +13,6 @@
 #include <map>
 #include <memory>
 #include <utility>
-#include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Partitioning.h>
-#include <dolfin/mesh/Vertex.h>
 
 namespace dolfin
 {
