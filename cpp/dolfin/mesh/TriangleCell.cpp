@@ -16,29 +16,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-void TriangleCell::create_entities(
-    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        e,
-    std::size_t dim, const std::int32_t* v) const
-{
-  // We only need to know how to create edges
-  if (dim != 1)
-  {
-    throw std::runtime_error("Illegal topological dimension");
-  }
-
-  // Resize data structure
-  e.resize(3, 2);
-
-  // Create the three edges
-  e(0, 0) = v[1];
-  e(0, 1) = v[2];
-  e(1, 0) = v[0];
-  e(1, 1) = v[2];
-  e(2, 0) = v[0];
-  e(2, 1) = v[1];
-}
-//-----------------------------------------------------------------------------
 double TriangleCell::squared_distance(const Cell& cell,
                                       const Eigen::Vector3d& point) const
 {

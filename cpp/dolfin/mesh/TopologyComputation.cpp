@@ -89,7 +89,8 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   const int num_vertices_per_cell = mesh::num_cell_vertices(cell_type.type);
   std::vector<std::int32_t> v(num_vertices_per_cell);
   std::iota(v.begin(), v.end(), 0);
-  cell_type.create_entities(e_vertices, dim, v.data());
+  // cell_type.create_entities(e_vertices, dim, v.data());
+  mesh::create_entities(e_vertices, dim, v.data(), cell_type.type);
 
   assert(N == num_vertices);
 
@@ -298,7 +299,8 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
   for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
   {
     entities.clear();
-    cell_type->create_entities(keys, d1, e.entities(0));
+    // cell_type->create_entities(keys, d1, e.entities(0));
+    mesh::create_entities(keys, d1, e.entities(0), cell_type->type);
     for (Eigen::Index i = 0; i < keys.rows(); ++i)
     {
       std::partial_sort_copy(keys.row(i).data(),

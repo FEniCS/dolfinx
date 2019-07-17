@@ -24,11 +24,6 @@ public:
   /// Return number of entities of given topological dimension
   int num_entities(int dim) const;
 
-  /// Create entities e of given topological dimension from vertices v
-  void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                    Eigen::Dynamic, Eigen::RowMajor>& e,
-                       std::size_t dim, const std::int32_t* v) const;
-
   /// Compute squared distance to given point
   double squared_distance(const mesh::Cell& cell,
                           const Eigen::Vector3d& point) const;

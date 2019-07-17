@@ -27,14 +27,6 @@ int PointCell::num_entities(int dim) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-void PointCell::create_entities(
-    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        e,
-    std::size_t dim, const std::int32_t* v) const
-{
-  throw std::runtime_error("Not defined");
-}
-//-----------------------------------------------------------------------------
 double PointCell::squared_distance(const Cell& cell,
                                    const Eigen::Vector3d& point) const
 {

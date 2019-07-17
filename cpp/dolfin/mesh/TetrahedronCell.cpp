@@ -17,55 +17,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-void TetrahedronCell::create_entities(
-    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        e,
-    std::size_t dim, const std::int32_t* v) const
-{
-  // We only need to know how to create edges and faces
-  switch (dim)
-  {
-  case 1:
-    // Resize data structure
-    e.resize(6, 2);
-
-    // Create the six edges
-    e(0, 0) = v[2];
-    e(0, 1) = v[3];
-    e(1, 0) = v[1];
-    e(1, 1) = v[3];
-    e(2, 0) = v[1];
-    e(2, 1) = v[2];
-    e(3, 0) = v[0];
-    e(3, 1) = v[3];
-    e(4, 0) = v[0];
-    e(4, 1) = v[2];
-    e(5, 0) = v[0];
-    e(5, 1) = v[1];
-    break;
-  case 2:
-    // Resize data structure
-    e.resize(4, 3);
-
-    // Create the four faces
-    e(0, 0) = v[1];
-    e(0, 1) = v[2];
-    e(0, 2) = v[3];
-    e(1, 0) = v[0];
-    e(1, 1) = v[2];
-    e(1, 2) = v[3];
-    e(2, 0) = v[0];
-    e(2, 1) = v[1];
-    e(2, 2) = v[3];
-    e(3, 0) = v[0];
-    e(3, 1) = v[1];
-    e(3, 2) = v[2];
-    break;
-  default:
-    throw std::runtime_error("Illegal topological dimension");
-  }
-}
-//-----------------------------------------------------------------------------
 double TetrahedronCell::squared_distance(const Cell& cell,
                                          const Eigen::Vector3d& point) const
 {

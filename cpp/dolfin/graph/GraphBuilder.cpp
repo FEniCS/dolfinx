@@ -70,7 +70,8 @@ compute_local_dual_graph_keyed(
       facet_vertices(num_facets_per_cell, num_vertices_per_facet);
   std::vector<std::int32_t> v(num_vertices_per_cell);
   std::iota(v.begin(), v.end(), 0);
-  cell_type.create_entities(facet_vertices, tdim - 1, v.data());
+  // cell_type.create_entities(facet_vertices, tdim - 1, v.data());
+  mesh::create_entities(facet_vertices, tdim - 1, v.data(), cell_type.type);
 
   // Vector-of-arrays data structure, which is considerably faster than
   // vector-of-vectors.

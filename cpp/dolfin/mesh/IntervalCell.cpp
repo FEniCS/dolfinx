@@ -15,21 +15,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-void IntervalCell::create_entities(
-    Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>&
-        e,
-    std::size_t dim, const std::int32_t* v) const
-{
-  // For completeness, IntervalCell has two 'edges'
-  assert(dim == 0);
-
-  // Resize data structure
-  e.resize(2, 1);
-  // Create the three edges
-  e(0, 0) = v[0];
-  e(1, 0) = v[1];
-}
-//-----------------------------------------------------------------------------
 double IntervalCell::squared_distance(const Cell& cell,
                                       const Eigen::Vector3d& point) const
 {
