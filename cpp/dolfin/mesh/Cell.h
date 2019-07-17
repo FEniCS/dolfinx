@@ -117,31 +117,6 @@ public:
     return mesh::inradius(this->mesh(), cells)[0];
   }
 
-  /// Compute ratio of inradius to circumradius times dim for cell.
-  /// Useful as cell quality measure. Returns 1. for equilateral
-  /// and 0. for degenerate cell.
-  /// See Jonathan Richard Shewchuk: What Is a Good Linear Finite Element?,
-  /// online: http://www.cs.berkeley.edu/~jrs/papers/elemj.pdf
-  ///
-  /// @return     double
-  ///         topological_dimension * inradius / circumradius
-  ///
-  /// @code{.cpp}
-  ///
-  ///         UnitSquareMesh mesh(1, 1);
-  ///         Cell cell(mesh, 0);
-  ///         log::info("%g", cell.radius_ratio());
-  ///
-  /// @endcode
-  // double radius_ratio() const
-  // {
-  //   // We would need facet areas
-  //   const int dim = mesh::cell_dim(_mesh->type().type);
-  //   _mesh->create_entities(dim - 1);
-
-  //   return _mesh->type().radius_ratio(*this);
-  // }
-
   /// Compute squared distance to given point.
   ///
   /// @param     point
@@ -151,18 +126,6 @@ public:
   double squared_distance(const Eigen::Vector3d& point) const
   {
     return _mesh->type().squared_distance(*this, point);
-  }
-
-  /// Compute normal of given facet with respect to the cell
-  ///
-  /// @param    facet
-  ///         Index of facet.
-  ///
-  /// @return Eigen::Vector3d
-  ///         Normal of the facet.
-  Eigen::Vector3d normal(std::size_t facet) const
-  {
-    return _mesh->type().normal(*this, facet);
   }
 
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet

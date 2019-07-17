@@ -90,6 +90,9 @@ Eigen::ArrayXd radius_ratio(const Mesh& mesh,
 /// Compute normal to given cell (viewed as embedded in 3D)
 Eigen::Vector3d cell_normal(const Cell& cell);
 
+/// Compute of given facet with respect to the cell
+Eigen::Vector3d normal(const Cell& cell, int facet);
+
 /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
 std::vector<std::int8_t> vtk_mapping(CellType type);
 

@@ -263,23 +263,19 @@ void mesh(py::module& m)
   // dolfin::mesh::Face
   py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,
              dolfin::mesh::MeshEntity>(m, "Face", "Face object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def("normal", &dolfin::mesh::Face::normal);
+      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>());
 
   // dolfin::mesh::Facet
   py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
              dolfin::mesh::MeshEntity>(m, "Facet", "Facet object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def("exterior", &dolfin::mesh::Facet::exterior)
-      .def("normal", &dolfin::mesh::Facet::normal);
+      .def("exterior", &dolfin::mesh::Facet::exterior);
 
   // dolfin::mesh::Cell
   py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
              dolfin::mesh::MeshEntity>(m, "Cell", "Cell object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def("squared_distance", &dolfin::mesh::Cell::squared_distance)
-      //  .def("inradius", &dolfin::mesh::Cell::inradius)
-      .def("normal", &dolfin::mesh::Cell::normal)
       .def("circumradius", &dolfin::mesh::Cell::circumradius)
       .def("volume", &dolfin::mesh::Cell::volume);
 

@@ -13,21 +13,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-Eigen::Vector3d Facet::normal() const
-{
-  const std::size_t D = _mesh->topology().dim();
-  _mesh->create_entities(D - 1);
-  _mesh->create_connectivity(D - 1, D);
-
-  // Get cell to which face belong (first cell when there is more than one)
-  const Cell cell(*_mesh, this->entities(D)[0]);
-
-  // Get local index of facet with respect to the cell
-  const std::size_t local_facet = cell.index(*this);
-
-  return cell.normal(local_facet);
-}
-//-----------------------------------------------------------------------------
 double Facet::squared_distance(const Eigen::Vector3d& point) const
 {
   if (_dim == 1)

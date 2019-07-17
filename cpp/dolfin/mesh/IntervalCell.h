@@ -40,10 +40,6 @@ public:
   static double squared_distance(const Eigen::Vector3d& point,
                                  const Eigen::Vector3d& a,
                                  const Eigen::Vector3d& b);
-
-  /// Compute of given facet with respect to the cell
-  Eigen::Vector3d normal(const mesh::Cell& cell, std::size_t facet) const;
-
 };
 } // namespace mesh
 } // namespace dolfin

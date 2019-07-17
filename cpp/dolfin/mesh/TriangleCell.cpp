@@ -104,49 +104,6 @@ double TriangleCell::squared_distance(const Eigen::Vector3d& point,
   return pn * pn;
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d TriangleCell::normal(const Cell& cell, std::size_t facet) const
-{
-  // Make sure we have facets
-  cell.mesh().create_connectivity(2, 1);
-
-  // Create facet from the mesh and local facet number
-  Facet f(cell.mesh(), cell.entities(1)[facet]);
-
-  // The normal vector is currently only defined for a triangle in R^2
-  // MER: This code is super for a triangle in R^3 too, this error
-  // could be removed, unless it is here for some other reason.
-  if (cell.mesh().geometry().dim() != 2)
-  {
-    throw std::runtime_error("Illegal geometric dimension");
-  }
-
-  // Get global index of opposite vertex
-  const std::size_t v0 = cell.entities(0)[facet];
-
-  // Get global index of vertices on the facet
-  const std::size_t v1 = f.entities(0)[0];
-  const std::size_t v2 = f.entities(0)[1];
-
-  // Get mesh geometry
-  const Geometry& geometry = cell.mesh().geometry();
-
-  // Get the coordinates of the three vertices
-  const Eigen::Vector3d p0 = geometry.x(v0);
-  const Eigen::Vector3d p1 = geometry.x(v1);
-  const Eigen::Vector3d p2 = geometry.x(v2);
-
-  // Subtract projection of p2 - p0 onto p2 - p1
-  Eigen::Vector3d t = p2 - p1;
-  t /= t.norm();
-  Eigen::Vector3d n = p2 - p0;
-  n -= t * n.dot(t);
-
-  // Normalize
-  n /= n.norm();
-
-  return n;
-}
-//-----------------------------------------------------------------------------
 std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges

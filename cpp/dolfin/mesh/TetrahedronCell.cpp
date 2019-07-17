@@ -60,50 +60,6 @@ double TetrahedronCell::squared_distance(const Cell& cell,
   return r2;
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d TetrahedronCell::normal(const Cell& cell,
-                                        std::size_t facet) const
-{
-  // Make sure we have facets
-  cell.mesh().create_connectivity(3, 2);
-
-  // Create facet from the mesh and local facet number
-  Facet f(cell.mesh(), cell.entities(2)[facet]);
-
-  // Get global index of opposite vertex
-  const std::size_t v0 = cell.entities(0)[facet];
-
-  // Get global index of vertices on the facet
-  std::size_t v1 = f.entities(0)[0];
-  std::size_t v2 = f.entities(0)[1];
-  std::size_t v3 = f.entities(0)[2];
-
-  // Get mesh geometry
-  const Geometry& geometry = cell.mesh().geometry();
-
-  // Get the coordinates of the four vertices
-  const Eigen::Vector3d P0 = geometry.x(v0);
-  const Eigen::Vector3d P1 = geometry.x(v1);
-  const Eigen::Vector3d P2 = geometry.x(v2);
-  const Eigen::Vector3d P3 = geometry.x(v3);
-
-  // Create vectors
-  Eigen::Vector3d V0 = P0 - P1;
-  Eigen::Vector3d V1 = P2 - P1;
-  Eigen::Vector3d V2 = P3 - P1;
-
-  // Compute normal vector
-  Eigen::Vector3d n = V1.cross(V2);
-
-  // Normalize
-  n /= n.norm();
-
-  // Flip direction of normal so it points outward
-  if (n.dot(V0) > 0)
-    n *= -1.0;
-
-  return n;
-}
-//-----------------------------------------------------------------------------
 std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges

@@ -32,9 +32,6 @@ public:
   /// Destructor
   ~Facet() = default;
 
-  /// Compute normal to the facet
-  Eigen::Vector3d normal() const;
-
   /// Compute squared distance to given point.
   ///
   /// @param     point (_Eigen::Vector3d_)

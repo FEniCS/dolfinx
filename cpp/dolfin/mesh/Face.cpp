@@ -42,37 +42,3 @@ using namespace dolfin::mesh;
 //   }
 // }
 // //-----------------------------------------------------------------------------
-Eigen::Vector3d Face::normal() const
-{
-  assert(_mesh);
-
-  const std::size_t tD = _mesh->topology().dim();
-  const std::size_t gD = _mesh->geometry().dim();
-
-  // Check for when Cell has the same topological dimension as Face and we are
-  // in R^2
-  if (tD == 2 && gD == 2)
-  {
-    throw std::runtime_error("Don't know how to compute Face normal for a Face "
-                             "in a 2D mesh embedded in R^2.");
-  }
-
-  // Check for when Cell has the same topological dimension as Face and we are
-  // in R^3
-  if (tD == 2 && gD == 3)
-  {
-    throw std::runtime_error("Not implemented");
-  }
-
-  // Initialize needed connectivity
-  _mesh->create_connectivity(2, tD);
-
-  // Get cell to which face belong (first cell when there is more than one)
-  const Cell cell(*_mesh, this->entities(tD)[0]);
-
-  // Get local index of facet with respect to the cell
-  const std::size_t local_facet = cell.index(*this);
-
-  return cell.normal(local_facet);
-}
-//-----------------------------------------------------------------------------

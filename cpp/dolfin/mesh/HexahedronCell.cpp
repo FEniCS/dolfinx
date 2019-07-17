@@ -23,10 +23,3 @@ double HexahedronCell::squared_distance(const mesh::Cell& cell,
   return 0.0;
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d HexahedronCell::normal(const mesh::Cell& cell,
-                                       std::size_t facet) const
-{
-  throw std::runtime_error("Not implemented");
-  return Eigen::Vector3d();
-}
-//-----------------------------------------------------------------------------
