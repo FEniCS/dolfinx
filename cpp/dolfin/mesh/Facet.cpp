@@ -8,6 +8,7 @@
 #include "Cell.h"
 #include "IntervalCell.h"
 #include "TriangleCell.h"
+#include <dolfin/geometry/utils.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -36,13 +37,12 @@ double Facet::squared_distance(const Eigen::Vector3d& point) const
     const Eigen::Vector3d c = geometry.x(vertices[2]);
 
     // Compute squared distance
-    return TriangleCell::squared_distance(point, a, b, c);
+    return geometry::squared_distance_triangle(point, a, b, c);
   }
 
   throw std::runtime_error(" Compute (squared) distance to facet not "
                            "implemented for facets of dimension "
                            + std::to_string(_dim));
-
   return 0.0;
 }
 //-----------------------------------------------------------------------------

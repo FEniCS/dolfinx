@@ -12,6 +12,7 @@
 #include "Vertex.h"
 #include <algorithm>
 #include <cmath>
+#include <dolfin/geometry/utils.h>
 
 using namespace dolfin;
 using namespace dolfin::mesh;
@@ -39,19 +40,19 @@ double TetrahedronCell::squared_distance(const Cell& cell,
 
   // Check face ABC
   if (point_outside_of_plane(point, a, b, c, d))
-    r2 = std::min(r2, TriangleCell::squared_distance(point, a, b, c));
+    r2 = std::min(r2, geometry::squared_distance_triangle(point, a, b, c));
 
   // Check face ACD
   if (point_outside_of_plane(point, a, c, d, b))
-    r2 = std::min(r2, TriangleCell::squared_distance(point, a, c, d));
+    r2 = std::min(r2, geometry::squared_distance_triangle(point, a, c, d));
 
   // Check face ADB
   if (point_outside_of_plane(point, a, d, b, c))
-    r2 = std::min(r2, TriangleCell::squared_distance(point, a, d, b));
+    r2 = std::min(r2, geometry::squared_distance_triangle(point, a, d, b));
 
   // Check facet BDC
   if (point_outside_of_plane(point, b, d, c, a))
-    r2 = std::min(r2, TriangleCell::squared_distance(point, b, d, c));
+    r2 = std::min(r2, geometry::squared_distance_triangle(point, b, d, c));
 
   // Point is inside tetrahedron so distance is zero
   if (r2 == std::numeric_limits<double>::max())
