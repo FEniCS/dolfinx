@@ -91,7 +91,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   // std::iota(v.begin(), v.end(), 0);
   // cell_type.create_entities(e_vertices, dim, v.data());
   // mesh::create_entities(e_vertices, dim, v.data(), cell_type.type);
-  Eigen::ArrayXXi e_vertices = mesh::create_entities(cell_type.type, dim);
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices = mesh::create_entities(cell_type.type, dim);
 
   assert(N == num_vertices);
 
@@ -298,9 +298,9 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
   // Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
   //     keys;
 
-  const Eigen::ArrayXXi e_vertices_ref
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices_ref
       = mesh::create_entities(cell_type->type, d1);
-  Eigen::ArrayXXi keys = e_vertices_ref;
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> keys = e_vertices_ref;
   for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
   {
     entities.clear();

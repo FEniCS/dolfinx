@@ -319,22 +319,22 @@ T circumradius_tmpl(const mesh::Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXXi create_entities_interval(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_interval(int dim)
 {
   assert(dim == 0);
-  Eigen::ArrayXXi e(2, 1);
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(2, 1);
   e(0, 0) = 0;
   e(1, 0) = 1;
   return e;
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXXi create_entities_triangle(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_triangle(int dim)
 {
   // We only need to know how to create edges
   assert(dim == 1);
 
   // Create the three edges
-  Eigen::ArrayXXi e(3, 2);
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(3, 2);
   e(0, 0) = 1;
   e(0, 1) = 2;
   e(1, 0) = 0;
@@ -345,12 +345,12 @@ Eigen::ArrayXXi create_entities_triangle(int dim)
   return e;
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXXi create_entities_quadrilateral(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_quadrilateral(int dim)
 {
   assert(dim == 1);
 
   // Create the four edges
-  Eigen::ArrayXXi e(4, 2);
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(4, 2);
   e(0, 0) = 0;
   e(0, 1) = 1;
   e(1, 0) = 2;
@@ -363,10 +363,10 @@ Eigen::ArrayXXi create_entities_quadrilateral(int dim)
   return e;
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXXi create_entities_tetrahedron(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_tetrahedron(int dim)
 {
   // We only need to know how to create edges and faces
-  Eigen::ArrayXXi e;
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e;
   switch (dim)
   {
   case 1:
@@ -412,11 +412,11 @@ Eigen::ArrayXXi create_entities_tetrahedron(int dim)
   return e;
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXXi create_entities_hexahedron(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_hexahedron(int dim)
 {
   // We need to know how to create edges and faces
 
-  Eigen::ArrayXXi e;
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e;
   switch (dim)
   {
   case 1:
@@ -568,7 +568,7 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXXi mesh::create_entities(mesh::CellType type, int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> mesh::create_entities(mesh::CellType type, int dim)
 {
   switch (type)
   {
@@ -586,7 +586,7 @@ Eigen::ArrayXXi mesh::create_entities(mesh::CellType type, int dim)
     return create_entities_hexahedron(dim);
   default:
     throw std::runtime_error("Unsupported cell type.");
-    return Eigen::ArrayXXi();
+    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
   }
 }
 //-----------------------------------------------------------------------------
