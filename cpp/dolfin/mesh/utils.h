@@ -42,9 +42,7 @@ CellType cell_entity_type(CellType type, int d);
 CellType cell_facet_type(CellType type);
 
 /// Create entities e of given topological dimension from vertices v
-void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic,
-                                  Eigen::RowMajor>& e,
-                     std::size_t dim, const std::int32_t* v, CellType type);
+Eigen::ArrayXXi create_entities(CellType type, int dim);
 
 /// Return topological dimension of cell type
 int cell_dim(CellType type);

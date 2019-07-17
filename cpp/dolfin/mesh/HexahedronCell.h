@@ -27,11 +27,6 @@ public:
   /// Return orientation of the cell
   std::size_t orientation(const mesh::Cell& cell) const;
 
-  /// Create entities e of given topological dimension from vertices v
-  void create_entities(Eigen::Array<std::int32_t, Eigen::Dynamic,
-                                    Eigen::Dynamic, Eigen::RowMajor>& e,
-                       std::size_t dim, const std::int32_t* v) const;
-
   /// Compute squared distance to given point (3D enabled)
   double squared_distance(const mesh::Cell& cell,
                           const Eigen::Vector3d& point) const;

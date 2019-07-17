@@ -44,8 +44,8 @@ compute_local_dual_graph_keyed(
 
   const std::int8_t tdim = mesh::cell_dim(cell_type.type);
   const std::int32_t num_local_cells = cell_vertices.rows();
-  const std::int8_t num_vertices_per_cell
-      = mesh::cell_num_entities(cell_type.type, 0);
+  // const std::int8_t num_vertices_per_cell
+  //     = mesh::cell_num_entities(cell_type.type, 0);
   const std::int8_t num_facets_per_cell
       = mesh::cell_num_entities(cell_type.type, tdim - 1);
   const std::int8_t num_vertices_per_facet = mesh::num_cell_vertices(
@@ -66,12 +66,14 @@ compute_local_dual_graph_keyed(
       = dolfin::MPI::global_offset(mpi_comm, num_local_cells, true);
 
   // Create map from cell vertices to entity vertices
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      facet_vertices(num_facets_per_cell, num_vertices_per_facet);
-  std::vector<std::int32_t> v(num_vertices_per_cell);
-  std::iota(v.begin(), v.end(), 0);
+  // Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  //     facet_vertices(num_facets_per_cell, num_vertices_per_facet);
+  // std::vector<std::int32_t> v(num_vertices_per_cell);
+  // std::iota(v.begin(), v.end(), 0);
   // cell_type.create_entities(facet_vertices, tdim - 1, v.data());
-  mesh::create_entities(facet_vertices, tdim - 1, v.data(), cell_type.type);
+  // mesh::create_entities(facet_vertices, tdim - 1, v.data(), cell_type.type);
+  const Eigen::ArrayXXi facet_vertices
+      = mesh::create_entities(cell_type.type, tdim - 1);
 
   // Vector-of-arrays data structure, which is considerably faster than
   // vector-of-vectors.

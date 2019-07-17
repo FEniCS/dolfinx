@@ -84,13 +84,14 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
       = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type.type, dim));
 
   // Create map from cell vertices to entity vertices
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      e_vertices(num_entities, num_vertices);
-  const int num_vertices_per_cell = mesh::num_cell_vertices(cell_type.type);
-  std::vector<std::int32_t> v(num_vertices_per_cell);
-  std::iota(v.begin(), v.end(), 0);
+  // Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  //     e_vertices(num_entities, num_vertices);
+  // const int num_vertices_per_cell = mesh::num_cell_vertices(cell_type.type);
+  // std::vector<std::int32_t> v(num_vertices_per_cell);
+  // std::iota(v.begin(), v.end(), 0);
   // cell_type.create_entities(e_vertices, dim, v.data());
-  mesh::create_entities(e_vertices, dim, v.data(), cell_type.type);
+  // mesh::create_entities(e_vertices, dim, v.data(), cell_type.type);
+  Eigen::ArrayXXi e_vertices = mesh::create_entities(cell_type.type, dim);
 
   assert(N == num_vertices);
 
@@ -294,13 +295,21 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      keys;
+  // Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  //     keys;
+
+  const Eigen::ArrayXXi e_vertices_ref
+      = mesh::create_entities(cell_type->type, d1);
+  Eigen::ArrayXXi keys = e_vertices_ref;
   for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
   {
     entities.clear();
     // cell_type->create_entities(keys, d1, e.entities(0));
-    mesh::create_entities(keys, d1, e.entities(0), cell_type->type);
+    // mesh::create_entities(keys, d1, e.entities(0), cell_type->type);
+    const std::int32_t* e0 = e.entities(0);
+    for (Eigen::Index i = 0; i < e_vertices_ref.rows(); ++i)
+      for (Eigen::Index j = 0; j < e_vertices_ref.cols(); ++j)
+        keys(i, j) = e0[e_vertices_ref(i, j)];
     for (Eigen::Index i = 0; i < keys.rows(); ++i)
     {
       std::partial_sort_copy(keys.row(i).data(),
