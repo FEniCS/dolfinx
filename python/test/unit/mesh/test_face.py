@@ -4,11 +4,10 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import numpy
 import pytest
 
 import dolfin
-from dolfin import MPI, Face, Faces, UnitCubeMesh, UnitSquareMesh
+from dolfin import MPI, UnitCubeMesh, UnitSquareMesh
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
