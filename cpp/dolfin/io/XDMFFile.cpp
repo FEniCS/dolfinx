@@ -1422,7 +1422,6 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
   std::vector<std::int64_t> global_cell_indices(num_local_cells);
   std::iota(global_cell_indices.begin(), global_cell_indices.end(),
             cell_index_offset);
-  std::cout<<"Partitioning:"<<points.size()<<std::endl;
 
   return mesh::Partitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type->cell_type(), points, cells,

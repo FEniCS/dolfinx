@@ -37,14 +37,10 @@ class MeshValueCollection:
         if value_type not in _meshvaluecollection_types.keys():
             raise KeyError("MeshValueCollection type not recognised")
         mvc = _meshvaluecollection_types[value_type]
-        # Correct logic here
-        if topology_data is not None:
-            return mvc(mesh, dim, topology_data, values_data)
+        if dim is not None:
+            return mvc(mesh, dim)
         else:
-            if dim is not None:
-                return mvc(mesh, dim)
-            else:
-                return mvc(mesh)
+            return mvc(mesh)
 
 
 # Functions to extend cpp.mesh.Mesh with

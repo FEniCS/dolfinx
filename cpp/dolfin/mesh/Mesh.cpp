@@ -98,7 +98,6 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
     : _cell_type(mesh::CellType::create(type)), _degree(1), _mpi_comm(comm),
       _ghost_mode(ghost_mode), _unique_id(common::UniqueIdGenerator::id())
 {
-  std::cout<<"I am on process"<<dolfin::MPI::rank(comm)<<" "<<points.size()<<std::endl;
   const std::size_t tdim = _cell_type->dim();
   const std::int32_t num_vertices_per_cell = _cell_type->num_vertices();
 

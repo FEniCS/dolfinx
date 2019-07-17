@@ -507,7 +507,7 @@ void xdmf_write::add_information(MPI_Comm comm, pugi::xml_node& information_node
                 const std::map<std::string, size_t>& information){
   std::cout<<"Add Information"<<std::endl;
   information_node.append_attribute("Name")
-      = "BoundaryTags";
+      = "Information";
   auto it = information.begin();
 
   pugi::xml_document cdata_doc;
@@ -523,7 +523,6 @@ void xdmf_write::add_information(MPI_Comm comm, pugi::xml_node& information_node
 
     map_node.append_child(pugi::node_pcdata).set_value(std::to_string(number_tag).c_str());
     
-    //std::cout << word << " :: " << number << std::endl;
     it++;
   }
   // Write complete xml document to string stream

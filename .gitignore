@@ -124,4 +124,3 @@ build/
 .vscode
 *.egg-info
 .pytest_cache
-python/dist/
