@@ -146,9 +146,11 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       = _integrals[static_cast<int>(FormIntegrals::Type::cell)];
 
   // If there is a default integral, define it on all cells
+  // (excluding ghost cells)
   if (cell_integrals.size() > 0 and cell_integrals[0].id == -1)
   {
-    cell_integrals[0].active_entities.resize(mesh.num_entities(tdim));
+    const int num_regular_cells = mesh.topology().ghost_offset(tdim);
+    cell_integrals[0].active_entities.resize(num_regular_cells);
     std::iota(cell_integrals[0].active_entities.begin(),
               cell_integrals[0].active_entities.end(), 0);
   }
@@ -159,7 +161,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on surface facets
     exf_integrals[0].active_entities.clear();
-    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+    for (const mesh::Facet& facet :
+         mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::REGULAR))
     {
       if (facet.num_global_entities(tdim) == 1)
         exf_integrals[0].active_entities.push_back(facet.index());
@@ -173,7 +176,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // If there is a default integral, define it only on interior facets
     inf_integrals[0].active_entities.clear();
     inf_integrals[0].active_entities.reserve(mesh.num_entities(tdim - 1));
-    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+    for (const mesh::Facet& facet :
+         mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::REGULAR))
     {
       if (facet.num_global_entities(tdim) != 1)
         inf_integrals[0].active_entities.push_back(facet.index());
