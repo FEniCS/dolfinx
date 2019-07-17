@@ -26,10 +26,11 @@ public:
   Facet(const Mesh& mesh, std::size_t index)
       : MeshEntity(mesh, mesh.topology().dim() - 1, index)
   {
+    // Do nothing
   }
 
   /// Destructor
-  ~Facet() {}
+  ~Facet() = default;
 
   /// Compute normal to the facet
   Eigen::Vector3d normal() const;
