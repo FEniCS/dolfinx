@@ -7,6 +7,7 @@
 #include "FormIntegrals.h"
 #include <cstdlib>
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -176,11 +177,37 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // If there is a default integral, define it only on interior facets
     inf_integrals[0].active_entities.clear();
     inf_integrals[0].active_entities.reserve(mesh.num_entities(tdim - 1));
-    for (const mesh::Facet& facet :
-         mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::REGULAR))
+
+    const int rank = MPI::rank(mesh.mpi_comm());
+
+    if (MPI::size(mesh.mpi_comm()) > 1)
     {
-      if (facet.num_global_entities(tdim) != 1)
-        inf_integrals[0].active_entities.push_back(facet.index());
+      for (const mesh::Facet& facet :
+           mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::ALL))
+      {
+        if (facet.num_entities(tdim) == 2)
+        {
+          const std::int32_t* cells = facet.entities(tdim);
+          mesh::Cell c0(mesh, cells[0]);
+          mesh::Cell c1(mesh, cells[1]);
+          const int c0owner = c0.is_ghost() ? c0.owner() : rank;
+          const int c1owner = c1.is_ghost() ? c1.owner() : rank;
+
+          if ((c0owner == rank and c1owner == rank)
+              or (c0owner == rank and c1owner > rank)
+              or (c1owner == rank and c0owner > rank))
+            inf_integrals[0].active_entities.push_back(facet.index());
+        }
+      }
+    }
+    else
+    {
+      for (const mesh::Facet& facet :
+           mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::REGULAR))
+      {
+        if (facet.num_global_entities(tdim) != 1)
+          inf_integrals[0].active_entities.push_back(facet.index());
+      }
     }
   }
 }
