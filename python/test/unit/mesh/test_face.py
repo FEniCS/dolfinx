@@ -33,30 +33,3 @@ def test_area(cube, square):
     cube.create_entities(1)
     area = dolfin.cpp.mesh.volume_entities(square, range(square.num_entities(2)), 2).sum()
     assert area == pytest.approx(1.0)
-
-
-@skip_in_parallel
-def test_normal_point(cube, square):
-    """Compute normal vector to each face."""
-    cube.create_entities(2)
-    for f in Faces(cube):
-        n = f.normal()
-        assert round(numpy.linalg.norm(n) - 1.0, 7) == 0
-
-    f = Face(square, 0)
-    with pytest.raises(RuntimeError):
-        f.normal()
-
-
-@skip_in_parallel
-def test_normal_component(cube, square):
-    """Compute normal vector components to each face."""
-    cube.create_entities(2)
-    for f in Faces(cube):
-        n = f.normal()
-        norm = sum([x * x for x in n])
-        assert round(norm - 1.0, 7) == 0
-
-    f = Face(square, 0)
-    with pytest.raises(RuntimeError):
-        f.normal()
