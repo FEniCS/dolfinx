@@ -17,9 +17,7 @@ from petsc4py import PETSc
 from ufl import ds, dx, dS, inner, avg
 
 
-@pytest.mark.parametrize("mode", [pytest.param(GhostMode.none,
-                                               marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
-                                                                       reason="Shared ghost modes fail in serial")),
+@pytest.mark.parametrize("mode", [pytest.param(GhostMode.none),
                                   pytest.param(GhostMode.shared_facet,
                                                marks=pytest.mark.xfail(condition=MPI.size(MPI.comm_world) == 1,
                                                                        reason="Shared ghost modes fail in serial")),
