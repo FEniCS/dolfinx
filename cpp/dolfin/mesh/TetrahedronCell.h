@@ -28,9 +28,6 @@ public:
                           const Eigen::Vector3d& point) const;
 
 private:
-  // Find local index of edge i according to ordering convention
-  std::size_t find_edge(std::size_t i, const mesh::Cell& cell) const;
-
   // Check whether point is outside region defined by facet ABC.
   // The fourth vertex is needed to define the orientation.
   bool point_outside_of_plane(const Eigen::Vector3d& point,

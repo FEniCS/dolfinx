@@ -21,19 +21,9 @@ public:
   /// Specify cell type and facet type
   PointCell() : CellTypeOld(CellType::point) {}
 
-  /// Return number of entities of given topological dimension
-  int num_entities(int dim) const;
-
   /// Compute squared distance to given point
   double squared_distance(const mesh::Cell& cell,
                           const Eigen::Vector3d& point) const;
-
-  /// Compute of given facet with respect to the cell
-  Eigen::Vector3d normal(const mesh::Cell& cell, std::size_t facet) const;
-
-private:
-  // Find local index of edge i according to ordering convention
-  std::size_t find_edge(std::size_t i, const mesh::Cell& cell) const;
 };
 } // namespace mesh
 } // namespace dolfin

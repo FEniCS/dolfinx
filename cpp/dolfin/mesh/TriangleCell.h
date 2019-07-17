@@ -34,10 +34,6 @@ public:
                                  const Eigen::Vector3d& a,
                                  const Eigen::Vector3d& b,
                                  const Eigen::Vector3d& c);
-
-private:
-  // Find local index of edge i according to ordering convention
-  std::size_t find_edge(std::size_t i, const mesh::Cell& cell) const;
 };
 } // namespace mesh
 } // namespace dolfin

@@ -60,36 +60,6 @@ double TetrahedronCell::squared_distance(const Cell& cell,
   return r2;
 }
 //-----------------------------------------------------------------------------
-std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
-{
-  // Get vertices and edges
-  const std::int32_t* v = cell.entities(0);
-  const std::int32_t* e = cell.entities(1);
-  assert(v);
-  assert(e);
-
-  // Ordering convention for edges (order of non-incident vertices)
-  static const std::size_t EV[6][2]
-      = {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {1, 3}, {2, 3}};
-
-  // Look for edge satisfying ordering convention
-  auto connectivity = cell.mesh().topology().connectivity(1, 0);
-  assert(connectivity);
-  for (std::size_t j = 0; j < 6; j++)
-  {
-    const std::int32_t* ev = connectivity->connections(e[j]);
-    assert(ev);
-    const std::int32_t v0 = v[EV[i][0]];
-    const std::int32_t v1 = v[EV[i][1]];
-    if (ev[0] != v0 && ev[0] != v1 && ev[1] != v0 && ev[1] != v1)
-      return j;
-  }
-
-  // We should not reach this
-  throw std::runtime_error("Edge not found");
-  return 0;
-}
-//-----------------------------------------------------------------------------
 bool TetrahedronCell::point_outside_of_plane(const Eigen::Vector3d& point,
                                              const Eigen::Vector3d& a,
                                              const Eigen::Vector3d& b,

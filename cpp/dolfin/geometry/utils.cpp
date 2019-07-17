@@ -1,39 +1,18 @@
-// Copyright (C) 2006-2014 Anders Logg
+// Copyright (C) 2006-2019 Anders Logg and Garth N. Wells
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "TriangleCell.h"
-#include "Cell.h"
-#include "Facet.h"
-#include "MeshEntity.h"
-#include "Vertex.h"
-#include <algorithm>
-#include <cmath>
+#include "utils.h"
 
 using namespace dolfin;
-using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-double TriangleCell::squared_distance(const Cell& cell,
-                                      const Eigen::Vector3d& point) const
-{
-  // Get the vertices as points
-  const Geometry& geometry = cell.mesh().geometry();
-  const std::int32_t* vertices = cell.entities(0);
-  const Eigen::Vector3d a = geometry.x(vertices[0]);
-  const Eigen::Vector3d b = geometry.x(vertices[1]);
-  const Eigen::Vector3d c = geometry.x(vertices[2]);
-
-  // Call function to compute squared distance
-  return squared_distance(point, a, b, c);
-}
-//-----------------------------------------------------------------------------
-double TriangleCell::squared_distance(const Eigen::Vector3d& point,
-                                      const Eigen::Vector3d& a,
-                                      const Eigen::Vector3d& b,
-                                      const Eigen::Vector3d& c)
+double geometry::squared_distance_triangle(const Eigen::Vector3d& point,
+                                           const Eigen::Vector3d& a,
+                                           const Eigen::Vector3d& b,
+                                           const Eigen::Vector3d& c)
 {
   // Algorithm from Real-time collision detection by Christer Ericson:
   // Closest Pt Point Triangle on page 141, Section 5.1.5.

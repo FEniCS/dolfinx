@@ -14,29 +14,10 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-int PointCell::num_entities(int dim) const
-{
-  switch (dim)
-  {
-  case 0:
-    return 1; // vertices
-  default:
-    throw std::runtime_error("Illegal dimension");
-  }
-
-  return 0;
-}
-//-----------------------------------------------------------------------------
 double PointCell::squared_distance(const Cell& cell,
                                    const Eigen::Vector3d& point) const
 {
   throw std::runtime_error("Not defined");
   return 0.0;
-}
-//-----------------------------------------------------------------------------
-std::size_t PointCell::find_edge(std::size_t i, const Cell& cell) const
-{
-  throw std::runtime_error("Not defined");
-  return 0;
 }
 //-----------------------------------------------------------------------------
