@@ -42,7 +42,8 @@ CellType cell_entity_type(CellType type, int d);
 CellType cell_facet_type(CellType type);
 
 /// Create entities e of given topological dimension from vertices v
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities(CellType type, int dim);
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+create_entities(CellType type, int dim);
 
 /// Return topological dimension of cell type
 int cell_dim(CellType type);
@@ -85,6 +86,9 @@ Eigen::ArrayXd inradius(const Mesh& mesh,
 /// Compute dim*inradius/circumradius for given cells
 Eigen::ArrayXd radius_ratio(const Mesh& mesh,
                             const Eigen::Ref<const Eigen::ArrayXi> entities);
+
+/// Compute normal to given cell (viewed as embedded in 3D)
+Eigen::Vector3d cell_normal(const Cell& cell);
 
 /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
 std::vector<std::int8_t> vtk_mapping(CellType type);

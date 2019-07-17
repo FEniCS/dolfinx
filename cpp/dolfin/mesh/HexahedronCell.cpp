@@ -30,9 +30,3 @@ Eigen::Vector3d HexahedronCell::normal(const mesh::Cell& cell,
   return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d HexahedronCell::cell_normal(const mesh::Cell& cell) const
-{
-  throw std::runtime_error("Not implemented");
-  return Eigen::Vector3d();
-}
-//-----------------------------------------------------------------------------

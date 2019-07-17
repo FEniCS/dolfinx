@@ -319,7 +319,8 @@ T circumradius_tmpl(const mesh::Mesh& mesh,
   }
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_interval(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+create_entities_interval(int dim)
 {
   assert(dim == 0);
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(2, 1);
@@ -328,7 +329,8 @@ Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entiti
   return e;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_triangle(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+create_entities_triangle(int dim)
 {
   // We only need to know how to create edges
   assert(dim == 1);
@@ -345,7 +347,8 @@ Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entiti
   return e;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_quadrilateral(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+create_entities_quadrilateral(int dim)
 {
   assert(dim == 1);
 
@@ -363,7 +366,8 @@ Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entiti
   return e;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_tetrahedron(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+create_entities_tetrahedron(int dim)
 {
   // We only need to know how to create edges and faces
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e;
@@ -412,7 +416,8 @@ Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entiti
   return e;
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> create_entities_hexahedron(int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+create_entities_hexahedron(int dim)
 {
   // We need to know how to create edges and faces
 
@@ -568,7 +573,8 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
   }
 }
 //-----------------------------------------------------------------------------
-Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> mesh::create_entities(mesh::CellType type, int dim)
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+mesh::create_entities(mesh::CellType type, int dim)
 {
   switch (type)
   {
@@ -826,6 +832,60 @@ mesh::radius_ratio(const mesh::Mesh& mesh,
   Eigen::ArrayXd r = mesh::inradius(mesh, entities);
   Eigen::ArrayXd cr = mesh::circumradius(mesh, entities, dim);
   return mesh::cell_dim(mesh.type().type) * r / cr;
+}
+//-----------------------------------------------------------------------------
+Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
+{
+  const int gdim = cell.mesh().geometry().dim();
+  const mesh::CellType type = cell.type();
+  const mesh::Geometry& geometry = cell.mesh().geometry();
+
+  switch (type)
+  {
+  case (mesh::CellType::interval):
+  {
+    if (gdim > 2)
+      throw std::invalid_argument("Interval cell normal undefined in 3D");
+
+    // Get the two vertices as points
+    const std::int32_t* vertices = cell.entities(0);
+    Eigen::Vector3d p0 = geometry.x(vertices[0]);
+    Eigen::Vector3d p1 = geometry.x(vertices[1]);
+
+    // Define normal by rotating tangent counter-clockwise
+    Eigen::Vector3d t = p1 - p0;
+    Eigen::Vector3d n(-t[1], t[0], 0.0);
+    return n.normalized();
+  }
+  case (mesh::CellType::triangle):
+  {
+    // Get the three vertices as points
+    const std::int32_t* vertices = cell.entities(0);
+    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+
+    // Define cell normal via cross product of first two edges
+    return ((p1 - p0).cross(p2 - p0)).normalized();
+  }
+  case (mesh::CellType::quadrilateral):
+  {
+    // TODO: check
+
+    // Get three vertices as points
+    const std::int32_t* vertices = cell.entities(0);
+    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+
+    // Defined cell normal via cross product of first two edges:
+    return ((p1 - p0).cross(p2 - p0)).normalized();
+  }
+  default:
+    throw std::invalid_argument(
+        "cell_normal not supported for this cell type.");
+  }
+  return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
 std::vector<std::int8_t> mesh::vtk_mapping(mesh::CellType type)

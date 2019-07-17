@@ -104,12 +104,6 @@ Eigen::Vector3d TetrahedronCell::normal(const Cell& cell,
   return n;
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d TetrahedronCell::cell_normal(const Cell& cell) const
-{
-  throw std::runtime_error("Not Implemented");
-  return Eigen::Vector3d();
-}
-//-----------------------------------------------------------------------------
 std::size_t TetrahedronCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges

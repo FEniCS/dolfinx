@@ -147,35 +147,6 @@ Eigen::Vector3d TriangleCell::normal(const Cell& cell, std::size_t facet) const
   return n;
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d TriangleCell::cell_normal(const Cell& cell) const
-{
-  // Get mesh geometry
-  const Geometry& geometry = cell.mesh().geometry();
-
-  // Cell_normal only defined for gdim = 2, 3:
-  const std::size_t gdim = geometry.dim();
-  if (gdim > 3)
-  {
-    throw std::runtime_error("Illegal geometric dimension");
-  }
-
-  // Get the three vertices as points
-  const std::int32_t* vertices = cell.entities(0);
-  const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-  const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-  const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-
-  // Defined cell normal via cross product of first two edges:
-  const Eigen::Vector3d v01 = p1 - p0;
-  const Eigen::Vector3d v02 = p2 - p0;
-  Eigen::Vector3d n = v01.cross(v02);
-
-  // Normalize
-  n /= n.norm();
-
-  return n;
-}
-//-----------------------------------------------------------------------------
 std::size_t TriangleCell::find_edge(std::size_t i, const Cell& cell) const
 {
   // Get vertices and edges

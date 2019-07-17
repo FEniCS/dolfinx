@@ -40,12 +40,6 @@ Eigen::Vector3d PointCell::normal(const Cell& cell, std::size_t facet) const
   return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d PointCell::cell_normal(const Cell& cell) const
-{
-  throw std::runtime_error("Not defined");
-  return Eigen::Vector3d();
-}
-//-----------------------------------------------------------------------------
 std::size_t PointCell::find_edge(std::size_t i, const Cell& cell) const
 {
   throw std::runtime_error("Not defined");

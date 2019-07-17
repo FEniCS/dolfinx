@@ -29,9 +29,6 @@ public:
 
   /// Compute of given facet with respect to the cell
   Eigen::Vector3d normal(const mesh::Cell& cell, std::size_t facet) const;
-
-  /// Compute normal to given cell (viewed as embedded in 3D)
-  Eigen::Vector3d cell_normal(const mesh::Cell& cell) const;
 };
 } // namespace mesh
 } // namespace dolfin

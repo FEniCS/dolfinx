@@ -165,27 +165,6 @@ public:
     return _mesh->type().normal(*this, facet);
   }
 
-  /// Compute normal to cell itself (viewed as embedded in 3D)
-  ///
-  /// @return geometry::Point
-  ///         Normal of the cell
-  Eigen::Vector3d cell_normal() const
-  {
-    return _mesh->type().cell_normal(*this);
-  }
-
-  /// Compute the area/length of given facet with respect to the cell
-  ///
-  /// @param    facet
-  ///         Index of the facet.
-  ///
-  /// @return     double
-  ///         Area/length of the facet.
-  // double facet_area(std::size_t facet) const
-  // {
-  //   return _mesh->type().facet_area(*this, facet);
-  // }
-
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
   /// Local facet index, used typically in eval functions
   mutable int local_facet;

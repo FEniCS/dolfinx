@@ -64,11 +64,11 @@ compute_local_dual_graph_keyed(
       = dolfin::MPI::global_offset(mpi_comm, num_local_cells, true);
 
   // Create map from cell vertices to entity vertices
-  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> facet_vertices
-      = mesh::create_entities(cell_type.type, tdim - 1);
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      facet_vertices = mesh::create_entities(cell_type.type, tdim - 1);
 
   // Vector-of-arrays data structure, which is considerably faster than
-  // vector-of-vectors.
+  // vector-of-vectors
   std::vector<std::pair<std::array<std::int32_t, N>, std::int32_t>> facets(
       num_facets_per_cell * num_local_cells);
 

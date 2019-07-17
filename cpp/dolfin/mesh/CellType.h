@@ -43,9 +43,6 @@ public:
   /// Compute of given facet with respect to the cell
   virtual Eigen::Vector3d normal(const Cell& cell, std::size_t facet) const = 0;
 
-  /// Compute normal to given cell (viewed as embedded in 3D)
-  virtual Eigen::Vector3d cell_normal(const Cell& cell) const = 0;
-
   const CellType type;
 };
 } // namespace mesh
