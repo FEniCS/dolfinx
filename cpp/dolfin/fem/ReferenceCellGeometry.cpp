@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "ReferenceCellTopology.h"
+#include "ReferenceCellGeometry.h"
 #include <cassert>
 #include <stdexcept>
 
@@ -12,8 +12,8 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-const ReferenceCellTopology::Point*
-ReferenceCellTopology::get_vertices(mesh::CellType cell_type)
+const ReferenceCellGeometry::Point*
+ReferenceCellGeometry::get_vertices(mesh::CellType cell_type)
 {
   static const double interval[][3] = {{0.0}, {1.0}};
   static const double triangle[][3] = {{0.0, 0.0}, {1.0, 0.0}, {0.0, 1.0}};

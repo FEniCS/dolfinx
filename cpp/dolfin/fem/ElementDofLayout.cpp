@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ElementDofLayout.h"
-#include "ReferenceCellTopology.h"
 #include <array>
 #include <map>
 #include <numeric>
@@ -24,9 +23,6 @@ ElementDofLayout::ElementDofLayout(
       _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
-
-  // const int* num_entities = ReferenceCellTopology::num_entities(cell_type);
-  // assert(num_entities);
 
   // Compute closure entities
   // [dim, entity] -> closure{sub_dim, (sub_entities)}

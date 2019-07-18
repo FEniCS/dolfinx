@@ -18,7 +18,7 @@ namespace dolfin
 namespace fem
 {
 
-class ReferenceCellTopology
+class ReferenceCellGeometry
 {
 public:
   typedef double Point[3];

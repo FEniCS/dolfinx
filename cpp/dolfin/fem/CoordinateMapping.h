@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "ReferenceCellTopology.h"
 #include <Eigen/Dense>
 #include <cstdint>
 #include <dolfin/mesh/cell_types.h>
