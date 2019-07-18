@@ -21,15 +21,7 @@ namespace fem
 class ReferenceCellTopology
 {
 public:
-  typedef int Edge[2];
-
-  /// Get vertex indices of all edges
-  static const Edge* get_edge_vertices(mesh::CellType cell_type);
-
   typedef int Face[4];
-
-  /// Get vertex indices of all faces
-  static const Face* get_face_vertices(mesh::CellType cell_type);
 
   /// Get edge indices of all faces
   static const Face* get_face_edges(mesh::CellType cell_type);

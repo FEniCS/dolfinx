@@ -12,68 +12,6 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-const ReferenceCellTopology::Edge*
-ReferenceCellTopology::get_edge_vertices(mesh::CellType cell_type)
-{
-  static const int interval[][2] = {{0, 1}};
-  static const int triangle[][2] = {{1, 2}, {0, 2}, {0, 1}};
-  static const int quadrilateral[][2] = {{0, 1}, {2, 3}, {0, 2}, {1, 3}};
-  static const int tetrahedron[][2]
-      = {{2, 3}, {1, 3}, {1, 2}, {0, 3}, {0, 2}, {0, 1}};
-  static const int hexahedron[][2]
-      = {{0, 1}, {2, 3}, {4, 5}, {6, 7}, {0, 2}, {1, 3},
-         {4, 6}, {5, 7}, {0, 4}, {1, 5}, {2, 6}, {3, 7}};
-
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    return nullptr;
-  case mesh::CellType::interval:
-    return interval;
-  case mesh::CellType::triangle:
-    return triangle;
-  case mesh::CellType::quadrilateral:
-    return quadrilateral;
-  case mesh::CellType::tetrahedron:
-    return tetrahedron;
-  case mesh::CellType::hexahedron:
-    return hexahedron;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return nullptr;
-}
-//-----------------------------------------------------------------------------
-const ReferenceCellTopology::Face*
-ReferenceCellTopology::get_face_vertices(mesh::CellType cell_type)
-{
-  static const int tetrahedron[][4]
-      = {{1, 2, 3, -1}, {0, 2, 3, -1}, {0, 1, 3, -1}, {0, 1, 2, -1}};
-  static const int hexahedron[][4] = {{0, 1, 2, 3}, {4, 5, 6, 7}, {0, 1, 4, 5},
-                                      {2, 3, 6, 7}, {0, 2, 4, 6}, {1, 3, 5, 7}};
-
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    return nullptr;
-  case mesh::CellType::interval:
-    return nullptr;
-  case mesh::CellType::triangle:
-    return nullptr;
-  case mesh::CellType::quadrilateral:
-    return nullptr;
-  case mesh::CellType::tetrahedron:
-    return tetrahedron;
-  case mesh::CellType::hexahedron:
-    return hexahedron;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return nullptr;
-}
-//-----------------------------------------------------------------------------
 const ReferenceCellTopology::Face*
 ReferenceCellTopology::get_face_edges(mesh::CellType cell_type)
 {
@@ -145,18 +83,17 @@ ReferenceCellTopology::get_vertices(mesh::CellType cell_type)
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
 ReferenceCellTopology::entity_closure(mesh::CellType cell_type)
 {
-  const int dim = mesh::cell_dim(cell_type);
+  const int cell_dim = mesh::cell_dim(cell_type);
   std::array<int, 4> num_entities{};
-  for (int i = 0; i <= dim; ++i)
+  for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = mesh::cell_num_entities(cell_type, i);
 
-  const ReferenceCellTopology::Edge* edge_v
-      = ReferenceCellTopology::get_edge_vertices(cell_type);
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> edge_v
+      = mesh::create_entities(cell_type, 1);
   const ReferenceCellTopology::Face* face_e
       = ReferenceCellTopology::get_face_edges(cell_type);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;
-  const int cell_dim = mesh::cell_dim(cell_type);
   for (int dim = 0; dim <= cell_dim; ++dim)
   {
     for (int entity = 0; entity < num_entities[dim]; ++entity)
@@ -189,15 +126,15 @@ ReferenceCellTopology::entity_closure(mesh::CellType cell_type)
           for (int v = 0; v < 2; ++v)
           {
             // Add vertex connected to edge
-            entity_closure[{{dim, entity}}][0].insert(edge_v[edge_index][v]);
+            entity_closure[{{dim, entity}}][0].insert(edge_v(edge_index, v));
           }
         }
       }
 
       if (dim == 1)
       {
-        entity_closure[{{dim, entity}}][0].insert(edge_v[entity][0]);
-        entity_closure[{{dim, entity}}][0].insert(edge_v[entity][1]);
+        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 0));
+        entity_closure[{{dim, entity}}][0].insert(edge_v(entity, 1));
       }
     }
   }

@@ -41,7 +41,9 @@ CellType cell_entity_type(CellType type, int d);
 /// Return facet type of cell
 CellType cell_facet_type(CellType type);
 
-/// Create entities e of given topological dimension from vertices v
+/// Return array entities(num entities, num vertices per entity), where
+/// entities(e, k) is the local vertex index for the kth vertex of
+/// entity e.
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 create_entities(CellType type, int dim);
 

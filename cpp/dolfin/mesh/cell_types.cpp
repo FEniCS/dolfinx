@@ -23,11 +23,19 @@ namespace
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 create_entities_interval(int dim)
 {
-  assert(dim == 0);
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e(2, 1);
-  e(0, 0) = 0;
-  e(1, 0) = 1;
-  return e;
+  static Eigen::Array<int, 2, 1> e0
+      = (Eigen::Array<int, 2, 1>() << 0, 1).finished();
+  static Eigen::Array<int, 1, 2, Eigen::RowMajor> e1
+      = (Eigen::Array<int, 1, 2, Eigen::RowMajor>() << 0, 1).finished();
+  switch (dim)
+  {
+  case 0:
+    return e0;
+  case 1:
+    return e1;
+  default:
+    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
+  }
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
