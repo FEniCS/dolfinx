@@ -16,12 +16,3 @@
 
 using namespace dolfin;
 using namespace dolfin::mesh;
-
-//-----------------------------------------------------------------------------
-double QuadrilateralCell::squared_distance(const Cell& cell,
-                                           const Eigen::Vector3d& point) const
-{
-  throw std::runtime_error("Not implemented");
-  return 0.0;
-}
-//-----------------------------------------------------------------------------

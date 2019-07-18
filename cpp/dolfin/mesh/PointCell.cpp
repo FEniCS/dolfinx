@@ -13,11 +13,3 @@
 using namespace dolfin;
 using namespace dolfin::mesh;
 
-//-----------------------------------------------------------------------------
-double PointCell::squared_distance(const Cell& cell,
-                                   const Eigen::Vector3d& point) const
-{
-  throw std::runtime_error("Not defined");
-  return 0.0;
-}
-//-----------------------------------------------------------------------------

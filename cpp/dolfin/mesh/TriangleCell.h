@@ -22,10 +22,6 @@ public:
   /// Specify cell type and facet type
   TriangleCell() : CellTypeOld(CellType::triangle) {}
 
-  /// Compute squared distance to given point (3D enabled)
-  double squared_distance(const mesh::Cell& cell,
-                          const Eigen::Vector3d& point) const;
-
 };
 } // namespace mesh
 } // namespace dolfin

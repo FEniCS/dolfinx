@@ -20,10 +20,6 @@ class PointCell : public CellTypeOld
 public:
   /// Specify cell type and facet type
   PointCell() : CellTypeOld(CellType::point) {}
-
-  /// Compute squared distance to given point
-  double squared_distance(const mesh::Cell& cell,
-                          const Eigen::Vector3d& point) const;
 };
 } // namespace mesh
 } // namespace dolfin

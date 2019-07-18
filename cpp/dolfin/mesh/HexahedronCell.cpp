@@ -14,12 +14,3 @@
 using namespace dolfin;
 using namespace dolfin::mesh;
 
-//-----------------------------------------------------------------------------
-double HexahedronCell::squared_distance(const mesh::Cell& cell,
-                                        const Eigen::Vector3d& point) const
-{
-
-  throw std::runtime_error("Not implemented");
-  return 0.0;
-}
-//-----------------------------------------------------------------------------
