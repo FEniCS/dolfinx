@@ -46,15 +46,14 @@ def test_distance_tetrahedron():
              UnitCubeMesh(MPI.comm_world, 8, 9, 5, CellType.tetrahedron)])
 def test_volume_cells(mesh):
     num_cells = mesh.num_entities(mesh.topology.dim)
-    v = cpp.mesh.volume_cells(mesh, range(num_cells))
+    v = cpp.mesh.volume_entities(mesh, range(num_cells), mesh.topology.dim)
     v = MPI.sum(mesh.mpi_comm(), v.sum())
     assert v == pytest.approx(1.0, rel=1e-9)
 
 
 def test_volume_quadrilateralR2():
     mesh = UnitSquareMesh(MPI.comm_self, 1, 1, CellType.quadrilateral)
-    cell = Cell(mesh, 0)
-    assert cpp.mesh.volume(cell) == 1.0
+    assert cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
 
 @pytest.mark.parametrize(
@@ -62,23 +61,19 @@ def test_volume_quadrilateralR2():
     [[[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [1.0, 1.0, 0.0]],
      [[0.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0], [0.0, 1.0, 1.0]]])
 def test_volume_quadrilateralR3(coordinates):
-
     mesh = Mesh(MPI.comm_world, CellType.quadrilateral,
                 numpy.array(coordinates, dtype=numpy.float64),
                 numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
                 cpp.mesh.GhostMode.none)
-
     mesh.create_connectivity_all()
-    cell = Cell(mesh, 0)
+    assert cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
-    assert cpp.mesh.volume(cell) == 1.0
 
 
 @pytest.mark.parametrize(
     'scaling',
     [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30, 1e5, 1e10, 1e15, 1e20, 1e30])
 def test_volume_quadrilateral_coplanarity_check_1(scaling):
-
     with pytest.raises(RuntimeError) as error:
         # Unit square cell scaled down by 'scaling' and the first vertex
         # is distorted so that the vertices are clearly non coplanar
@@ -92,8 +87,8 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
                         dtype=numpy.int32), [], cpp.mesh.GhostMode.none)
 
         mesh.create_connectivity_all()
-        cell = Cell(mesh, 0)
-        cpp.mesh.volume(cell)
+        cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
+
 
     assert "Not coplanar" in str(error.value)
 
@@ -113,7 +108,7 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
                     numpy.array([[0, 1, 2, 3]], dtype=numpy.int32), [],
                     cpp.mesh.GhostMode.none)
         mesh.create_connectivity_all()
-        cell = Cell(mesh, 0)
-        cpp.mesh.volume(cell)
+        cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
+
 
     assert "Not coplanar" in str(error.value)

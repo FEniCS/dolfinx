@@ -19,18 +19,9 @@ class Mesh;
 class MeshEntity;
 
 /// Compute (generalized) volume of mesh entities of given dimension
-Eigen::ArrayXd volume_cells(const Mesh& mesh,
-                            const Eigen::Ref<const Eigen::ArrayXi> entities);
-
-/// Compute (generalized) volume of mesh entities of given dimension
 Eigen::ArrayXd volume_entities(const Mesh& mesh,
                                const Eigen::Ref<const Eigen::ArrayXi> entities,
                                int dim);
-
-/// Compute (generalized) volume of mesh entity. Note: this function is
-/// not very efficient. Use the vectorised version for computing
-/// multiple volumes.
-double volume(const MeshEntity& e);
 
 /// Compute circumradius of mesh entities
 Eigen::ArrayXd circumradius(const Mesh& mesh,

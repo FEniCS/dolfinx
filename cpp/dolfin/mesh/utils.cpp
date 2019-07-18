@@ -326,27 +326,10 @@ T circumradius_tmpl(const mesh::Mesh& mesh,
 
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
-mesh::volume_cells(const mesh::Mesh& mesh,
-                   const Eigen::Ref<const Eigen::ArrayXi> entities)
-{
-  const int dim = mesh::cell_dim(mesh.cell_type);
-  return volume_entities_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
-}
-//-----------------------------------------------------------------------------
-Eigen::ArrayXd
 mesh::volume_entities(const mesh::Mesh& mesh,
                       const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
 {
   return volume_entities_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
-}
-//-----------------------------------------------------------------------------
-double mesh::volume(const mesh::MeshEntity& e)
-{
-  Eigen::ArrayXi index(1);
-  index = e.index();
-  Eigen::ArrayXd v = volume_entities(e.mesh(), index, e.dim());
-  assert(v.rows() == 1);
-  return v[0];
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd
@@ -409,20 +392,7 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
   assert(topology.connectivity(d, d - 1));
   const mesh::Connectivity& connectivity = *topology.connectivity(d, d - 1);
 
-  const Eigen::ArrayXd volumes = mesh::volume_cells(mesh, entities);
-
-  // // Build list of facets
-  // Eigen::ArrayXi facet_list = ;
-  // for (Eigen::Index c = 0; c < entities.rows(); ++c)
-  //   const std::int32_t* facets = connectivity.connections(entities[c]);
-  // for (int i = 0; i <= d; i++)
-  //   facet_list[i] = facets[i];
-
-  // FIXME: This computes all facets
-  // Eigen::ArrayXi facet_list(mesh.num_entities(d - 1));
-  // std::iota(facet_list.data(), facet_list.data() + facet_list.size(), 0);
-  // const Eigen::ArrayXd facet_areas
-  //     = mesh::volume_entities(mesh, facet_list, d - 1);
+  const Eigen::ArrayXd volumes = mesh::volume_entities(mesh, entities, d);
 
   Eigen::ArrayXd r(entities.rows());
   Eigen::ArrayXi facet_list(d + 1);
