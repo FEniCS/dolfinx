@@ -88,7 +88,7 @@ Eigen::Vector3d MeshEntity::midpoint() const
   return x;
 }
 //-----------------------------------------------------------------------------
-std::uint32_t MeshEntity::owner() const
+std::int32_t MeshEntity::owner() const
 {
   if (_dim != _mesh->topology().dim())
   {
