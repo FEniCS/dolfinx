@@ -644,7 +644,7 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
 
   mesh::CellType cell_type = it->second;
   assert(ufc_cmap.topological_dimension
-         == ReferenceCellTopology::dim(cell_type));
+         == mesh::cell_dim(cell_type));
 
   return std::make_shared<fem::CoordinateMapping>(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,

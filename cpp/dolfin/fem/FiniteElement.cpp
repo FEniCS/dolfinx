@@ -6,6 +6,7 @@
 
 #include "FiniteElement.h"
 #include <dolfin/common/log.h>
+#include <dolfin/mesh/utils.h>
 #include <functional>
 #include <memory>
 #include <ufc.h>
@@ -59,7 +60,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
     throw std::runtime_error(
         "Unknown UFC cell type when building FiniteElement.");
   }
-  assert(ReferenceCellTopology::dim(_cell_shape) == _tdim);
+  assert(mesh::cell_dim(_cell_shape) == _tdim);
 
   // Fill value dimension
   for (int i = 0; i < element.value_rank; ++i)

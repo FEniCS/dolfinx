@@ -12,29 +12,6 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-int ReferenceCellTopology::dim(mesh::CellType cell_type)
-{
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    return 0;
-  case mesh::CellType::interval:
-    return 1;
-  case mesh::CellType::triangle:
-    return 2;
-  case mesh::CellType::quadrilateral:
-    return 2;
-  case mesh::CellType::tetrahedron:
-    return 3;
-  case mesh::CellType::hexahedron:
-    return 3;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return -1;
-}
-//-----------------------------------------------------------------------------
 const int* ReferenceCellTopology::num_entities(mesh::CellType cell_type)
 {
   static const int point[4] = {1, 0, 0, 0};
@@ -301,7 +278,7 @@ ReferenceCellTopology::entity_closure(mesh::CellType cell_type)
       = ReferenceCellTopology::get_face_edges(cell_type);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;
-  const int cell_dim = ReferenceCellTopology::dim(cell_type);
+  const int cell_dim = mesh::cell_dim(cell_type);
   for (int dim = 0; dim <= cell_dim; ++dim)
   {
     for (int entity = 0; entity < num_entities[dim]; ++entity)

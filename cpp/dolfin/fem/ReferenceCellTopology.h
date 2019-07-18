@@ -21,9 +21,6 @@ namespace fem
 class ReferenceCellTopology
 {
 public:
-  /// Topological dimension of cells of type cell_type
-  static int dim(mesh::CellType cell_type);
-
   /// Number of entities of each topological dimension (0, 1, 2, 3)
   /// for cells of type cell_type
   static const int* num_entities(mesh::CellType cell_type);
