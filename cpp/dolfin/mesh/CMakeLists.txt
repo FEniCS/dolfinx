@@ -38,8 +38,6 @@ set(SOURCES
   Edge.cpp
   Face.cpp
   Facet.cpp
-  HexahedronCell.cpp
-  IntervalCell.cpp
   Mesh.cpp
   MeshEntity.cpp
   Geometry.cpp
@@ -48,10 +46,6 @@ set(SOURCES
   Topology.cpp
   Ordering.cpp
   PartitionData.cpp
-  PointCell.cpp
-  QuadrilateralCell.cpp
-  TetrahedronCell.cpp
   TopologyComputation.cpp
-  TriangleCell.cpp
   utils.cpp
   PARENT_SCOPE)

@@ -22,7 +22,6 @@ class TetrahedronCell : public CellTypeOld
 public:
   /// Specify cell type and facet type
   TetrahedronCell() : mesh::CellTypeOld(CellType::tetrahedron) {}
-
 };
 } // namespace mesh
 } // namespace dolfin
