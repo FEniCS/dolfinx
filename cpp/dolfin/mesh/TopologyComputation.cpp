@@ -6,19 +6,18 @@
 
 #include "TopologyComputation.h"
 #include "Cell.h"
-#include "CellType.h"
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "MeshIterator.h"
 #include "Topology.h"
+#include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <boost/unordered_map.hpp>
 #include <cstdint>
 #include <dolfin/common/Timer.h>
-#include <dolfin/common/utils.h>
-
 #include <dolfin/common/log.h>
+#include <dolfin/common/utils.h>
 #include <memory>
 #include <numeric>
 #include <string>
@@ -75,20 +74,14 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   // Start timer
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
-  // Get cell type
-  const CellType& cell_type = mesh.type();
-
   // Initialize local array of entities
-  const std::int8_t num_entities = cell_type.num_entities(dim);
-  const int num_vertices = cell_type.num_vertices(dim);
+  const std::int8_t num_entities = mesh::cell_num_entities(mesh.cell_type, dim);
+  const int num_vertices
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, dim));
 
   // Create map from cell vertices to entity vertices
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      e_vertices(num_entities, num_vertices);
-  const int num_vertices_per_cell = cell_type.num_vertices();
-  std::vector<std::int32_t> v(num_vertices_per_cell);
-  std::iota(v.begin(), v.end(), 0);
-  cell_type.create_entities(e_vertices, dim, v.data());
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
+      = mesh::get_entity_vertices(mesh.cell_type, dim);
 
   assert(N == num_vertices);
 
@@ -268,14 +261,15 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
   assert(d0 > d1);
 
   // Get the type of entity d0
-  std::unique_ptr<CellType> cell_type(
-      CellType::create(mesh.type().entity_type(d0)));
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, d0);
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
   boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
   entity_to_index.reserve(mesh.num_entities(d1));
 
-  const std::size_t num_verts_d1 = mesh.type().num_vertices(d1);
+  const std::size_t num_verts_d1
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, d1));
+
   std::vector<std::int32_t> key(num_verts_d1);
   for (auto& e : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
   {
@@ -285,16 +279,22 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
   }
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      connections(mesh.num_entities(d0), cell_type->num_entities(d1));
+      connections(mesh.num_entities(d0),
+                  mesh::cell_num_entities(cell_type, d1));
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      keys;
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      e_vertices_ref = mesh::get_entity_vertices(cell_type, d1);
+  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> keys
+      = e_vertices_ref;
   for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
   {
     entities.clear();
-    cell_type->create_entities(keys, d1, e.entities(0));
+    const std::int32_t* e0 = e.entities(0);
+    for (Eigen::Index i = 0; i < e_vertices_ref.rows(); ++i)
+      for (Eigen::Index j = 0; j < e_vertices_ref.cols(); ++j)
+        keys(i, j) = e0[e_vertices_ref(i, j)];
     for (Eigen::Index i = 0; i < keys.rows(); ++i)
     {
       std::partial_sort_copy(keys.row(i).data(),
@@ -338,8 +338,9 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
   }
 
   // Call specialised function to compute entities
-  const CellType& cell_type = mesh.type();
-  const std::int8_t num_entity_vertices = cell_type.num_vertices(dim);
+  const std::int8_t num_entity_vertices
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, dim));
+
   std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
              std::int32_t>
       data;

@@ -11,6 +11,7 @@
 
 #include "BoundingBoxTree.h"
 #include "CollisionPredicates.h"
+#include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/log.h>
 #include <dolfin/mesh/Cell.h>
@@ -588,7 +589,7 @@ void BoundingBoxTree::_compute_closest_entity(const BoundingBoxTree& tree,
     mesh::Cell cell(mesh, entity_index);
 
     // If entity is closer than best result so far, then return it
-    const double r2 = cell.squared_distance(point);
+    const double r2 = squared_distance(cell, point);
     if (r2 < R2)
     {
       closest_entity = entity_index;

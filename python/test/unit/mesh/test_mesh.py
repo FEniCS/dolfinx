@@ -4,25 +4,25 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
+import math
 import sys
-from math import sqrt
 
 import numpy
 import pytest
 
 import dolfin
 import FIAT
-from dolfin import (MPI, BoxMesh, Cell, Cells, CellType, MeshEntities,
-                    MeshEntity, MeshFunction, RectangleMesh,
-                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    cpp)
+from dolfin import (MPI, BoxMesh, Cell, Cells, MeshEntities, MeshEntity,
+                    MeshFunction, RectangleMesh, UnitCubeMesh,
+                    UnitIntervalMesh, UnitSquareMesh, cpp)
+from dolfin.cpp.mesh import CellType, is_simplex
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
 
 @fixture
 def mesh1d():
-    # Create 1D mesh with degenerate cell
+    """Create 1D mesh with degenerate cell"""
     mesh1d = UnitIntervalMesh(MPI.comm_world, 4)
     mesh1d.geometry.points[4] = mesh1d.geometry.points[3]
     return mesh1d
@@ -30,18 +30,18 @@ def mesh1d():
 
 @fixture
 def mesh2d():
-    # Create 2D mesh with one equilateral triangle
+    """Create 2D mesh with one equilateral triangle"""
     mesh2d = RectangleMesh(
         MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
                          numpy.array([1., 1., 0.0])], [1, 1],
-        CellType.Type.triangle, cpp.mesh.GhostMode.none, 'left')
-    mesh2d.geometry.points[3, :2] += 0.5 * (sqrt(3.0) - 1.0)
+        CellType.triangle, cpp.mesh.GhostMode.none, 'left')
+    mesh2d.geometry.points[3, :2] += 0.5 * (math.sqrt(3.0) - 1.0)
     return mesh2d
 
 
 @fixture
 def mesh3d():
-    # Create 3D mesh with regular tetrahedron and degenerate cells
+    """Create 3D mesh with regular tetrahedron and degenerate cells"""
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
     mesh3d.geometry.points[6][0] = 1.0
     mesh3d.geometry.points[3][1] = 0.0
@@ -50,7 +50,7 @@ def mesh3d():
 
 @fixture
 def c0(mesh3d):
-    # Original tetrahedron from UnitCubeMesh(MPI.comm_world, 1, 1, 1)
+    """Original tetrahedron from UnitCubeMesh(MPI.comm_world, 1, 1, 1)"""
     return Cell(mesh3d, 0)
 
 
@@ -81,7 +81,7 @@ def rectangle():
     return RectangleMesh(
         MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
                          numpy.array([2.0, 2.0, 0.0])], [5, 5],
-        CellType.Type.triangle, cpp.mesh.GhostMode.none)
+        CellType.triangle, cpp.mesh.GhostMode.none)
 
 
 @fixture
@@ -92,7 +92,7 @@ def cube():
 @fixture
 def box():
     return BoxMesh(MPI.comm_world, [numpy.array([0, 0, 0]),
-                                    numpy.array([2, 2, 2])], [2, 2, 5], CellType.Type.tetrahedron,
+                                    numpy.array([2, 2, 2])], [2, 2, 5], CellType.tetrahedron,
                    cpp.mesh.GhostMode.none)
 
 
@@ -153,21 +153,21 @@ def test_mesh_construction_pygmsh():
         }
 
     mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.Type.tetrahedron, points,
+        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
         cells['tetra'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
     mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.Type.triangle, points,
+                                dolfin.cpp.mesh.CellType.triangle, points,
                                 cells['triangle'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
     mesh = dolfin.cpp.mesh.Mesh(MPI.comm_world,
-                                dolfin.cpp.mesh.CellType.Type.interval, points,
+                                dolfin.cpp.mesh.CellType.interval, points,
                                 cells['line'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
@@ -190,14 +190,14 @@ def test_mesh_construction_pygmsh():
         }
 
     mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.Type.tetrahedron, points,
+        MPI.comm_world, dolfin.cpp.mesh.CellType.tetrahedron, points,
         cells['tetra10'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 3
 
     mesh = dolfin.cpp.mesh.Mesh(
-        MPI.comm_world, dolfin.cpp.mesh.CellType.Type.triangle, points,
+        MPI.comm_world, dolfin.cpp.mesh.CellType.triangle, points,
         cells['triangle6'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 2
     assert mesh.geometry.dim == 3
@@ -237,14 +237,14 @@ def test_UnitCubeMeshLocal():
 
 
 def test_UnitQuadMesh():
-    mesh = UnitSquareMesh(MPI.comm_world, 5, 7, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 5, 7, CellType.quadrilateral)
     assert mesh.num_entities_global(0) == 48
     assert mesh.num_entities_global(2) == 35
     assert mesh.geometry.dim == 2
 
 
 def test_UnitHexMesh():
-    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9, CellType.Type.hexahedron)
+    mesh = UnitCubeMesh(MPI.comm_world, 5, 7, 9, CellType.hexahedron)
     assert mesh.num_entities_global(0) == 480
     assert mesh.num_entities_global(3) == 315
     assert mesh.geometry.dim == 3
@@ -273,64 +273,62 @@ def test_GetCells():
 
 @skip_in_parallel
 def test_cell_inradius(c0, c1, c5):
-    assert round(c0.inradius() - (3.0 - sqrt(3.0)) / 6.0, 7) == 0
-    assert round(c1.inradius() - 0.0, 7) == 0
-    assert round(c5.inradius() - sqrt(3.0) / 6.0, 7) == 0
+    assert cpp.mesh.inradius(c0.mesh(), [c0.index()]) == pytest.approx((3.0 - math.sqrt(3.0)) / 6.0)
+    assert cpp.mesh.inradius(c1.mesh(), [c1.index()]) == pytest.approx(0.0)
+    assert cpp.mesh.inradius(c5.mesh(), [c5.index()]) == pytest.approx(math.sqrt(3.0) / 6.0)
 
 
 @skip_in_parallel
 def test_cell_circumradius(c0, c1, c5):
-    from math import isnan
-    assert round(c0.circumradius() - sqrt(3.0) / 2.0, 7) == 0
+    assert cpp.mesh.circumradius(c0.mesh(), [c0.index()], c0.dim) == pytest.approx(math.sqrt(3.0) / 2.0)
     # Implementation of diameter() does not work accurately
     # for degenerate cells - sometimes yields NaN
-    assert isnan(c1.circumradius())
-    assert round(c5.circumradius() - sqrt(3.0) / 2.0, 7) == 0
+    r_c1 = cpp.mesh.circumradius(c1.mesh(), [c1.index()], c1.dim)
+    assert math.isnan(r_c1)
+    assert cpp.mesh.circumradius(c5.mesh(), [c5.index()], c5.dim) == pytest.approx(math.sqrt(3.0) / 2.0)
 
 
 @skip_in_parallel
 def test_cell_h(c0, c1, c5):
-    assert round(c0.h() - sqrt(2.0), 7) == 0
-    assert round(c1.h() - sqrt(2.0), 7) == 0
-    assert round(c5.h() - sqrt(2.0), 7) == 0
+    for c in [c0, c1, c5]:
+        assert cpp.mesh.h(c.mesh(), [c.index()], c.dim) == pytest.approx(math.sqrt(2.0))
 
 
 @skip_in_parallel
 def test_cell_radius_ratio(c0, c1, c5):
-    assert round(c0.radius_ratio() - sqrt(3.0) + 1.0, 7) == 0
-    assert round(c1.radius_ratio() - 0.0, 7) == 0
-    assert round(c5.radius_ratio() - 1.0, 7) == 0
+    assert cpp.mesh.radius_ratio(c0.mesh(), [c0.index()]) == pytest.approx(math.sqrt(3.0) - 1.0)
+    assert numpy.isnan(cpp.mesh.radius_ratio(c1.mesh(), [c1.index()]))
+    assert cpp.mesh.radius_ratio(c5.mesh(), [c5.index()]) == pytest.approx(1.0)
 
 
 @skip_in_parallel
-def xtest_hmin_hmax(mesh1d, mesh2d, mesh3d):
-    assert round(mesh1d.hmin() - 0.0, 7) == 0
-    assert round(mesh1d.hmax() - 0.25, 7) == 0
-    assert round(mesh2d.hmin() - sqrt(2.0), 7) == 0
-    assert round(mesh2d.hmax() - 2.0 * sqrt(6.0) / 3.0, 7) == 0
-    # nans are not taken into account in hmax and hmin
-    assert round(mesh3d.hmin() - sqrt(3.0), 7) == 0
-    assert round(mesh3d.hmax() - sqrt(3.0), 7) == 0
+def test_hmin_hmax(mesh1d, mesh2d, mesh3d):
+    assert mesh1d.hmin() == pytest.approx(0.0)
+    assert mesh1d.hmax() == pytest.approx(0.25)
+    assert mesh2d.hmin() == pytest.approx(math.sqrt(2.0))
+    assert mesh2d.hmax() == pytest.approx(math.sqrt(2.0))
+    assert mesh3d.hmin() == pytest.approx(math.sqrt(2.0))
+    assert mesh3d.hmax() == pytest.approx(math.sqrt(2.0))
 
 
 @skip_in_parallel
 def test_rmin_rmax(mesh1d, mesh2d, mesh3d):
     assert round(mesh1d.rmin() - 0.0, 7) == 0
-    assert round(mesh1d.rmax() - 0.125, 7) == 0
-    assert round(mesh2d.rmin() - 1.0 / (2.0 + sqrt(2.0)), 7) == 0
-    assert round(mesh2d.rmax() - sqrt(6.0) / 6.0, 7) == 0
-    assert round(mesh3d.rmin() - 0.0, 7) == 0
-    assert round(mesh3d.rmax() - sqrt(3.0) / 6.0, 7) == 0
-
+    # assert round(mesh1d.rmax() - 0.125, 7) == 0
+    # assert round(mesh2d.rmin() - 1.0 / (2.0 + math.sqrt(2.0)), 7) == 0
+    # assert round(mesh2d.rmax() - math.sqrt(6.0) / 6.0, 7) == 0
+    # assert round(mesh3d.rmin() - 0.0, 7) == 0
+    # assert round(mesh3d.rmax() - math.sqrt(3.0) / 6.0, 7) == 0
 
 # - Facilities to run tests on combination of meshes
+
 
 mesh_factories = [
     (UnitIntervalMesh, (MPI.comm_world, 8)),
     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)),
+    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.quadrilateral)),
+    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.hexahedron)),
     # FIXME: Add mechanism for testing meshes coming from IO
 ]
 
@@ -342,8 +340,8 @@ mesh_factories_broken_shared_entities = [
     (UnitSquareMesh, (MPI.comm_world, 4, 4)),
     # FIXME: Problem in test_shared_entities
     (UnitCubeMesh, (MPI.comm_world, 2, 2, 2)),
-    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.Type.quadrilateral)),
-    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.Type.hexahedron)),
+    (UnitSquareMesh, (MPI.comm_world, 4, 4, CellType.quadrilateral)),
+    (UnitCubeMesh, (MPI.comm_world, 2, 2, 2, CellType.hexahedron)),
 ]
 
 # FIXME: Fix this xfail
@@ -400,14 +398,14 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    if not mesh.type().is_simplex:
+    if not is_simplex(mesh.cell_type):
         return
 
     # Order mesh
     cpp.mesh.Ordering.order_simplex(mesh)
 
     # Create FIAT cell
-    cell_name = CellType.type2string(mesh.type().type)
+    cell_name = cpp.mesh.to_string(mesh.cell_type)
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities

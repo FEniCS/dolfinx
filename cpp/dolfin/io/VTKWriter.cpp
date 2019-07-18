@@ -18,6 +18,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>
@@ -34,21 +35,21 @@ namespace
 std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
 {
   // Get cell type
-  mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
 
   // Determine VTK cell type
   std::uint8_t vtk_cell_type = 0;
-  if (cell_type == mesh::CellType::Type::tetrahedron)
+  if (cell_type == mesh::CellType::tetrahedron)
     vtk_cell_type = 10;
-  else if (cell_type == mesh::CellType::Type::hexahedron)
+  else if (cell_type == mesh::CellType::hexahedron)
     vtk_cell_type = 12;
-  else if (cell_type == mesh::CellType::Type::quadrilateral)
+  else if (cell_type == mesh::CellType::quadrilateral)
     vtk_cell_type = 9;
-  else if (cell_type == mesh::CellType::Type::triangle)
+  else if (cell_type == mesh::CellType::triangle)
     vtk_cell_type = 5;
-  else if (cell_type == mesh::CellType::Type::interval)
+  else if (cell_type == mesh::CellType::interval)
     vtk_cell_type = 3;
-  else if (cell_type == mesh::CellType::Type::point)
+  else if (cell_type == mesh::CellType::point)
     vtk_cell_type = 1;
   else
   {
@@ -107,7 +108,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
                       std::string filename)
 {
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
-  const std::size_t num_cell_vertices = mesh.type().num_vertices(cell_dim);
+  const std::size_t num_cell_vertices = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.cell_type, cell_dim));
 
   // Get VTK cell type
   const std::size_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim);
@@ -138,9 +140,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-  std::unique_ptr<mesh::CellType> celltype(
-      mesh::CellType::create(mesh.type().entity_type(cell_dim)));
-  const std::vector<std::int8_t> perm = celltype->vtk_mapping();
+  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
   for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
   {
     for (unsigned int i = 0; i != c.num_entities(0); ++i)

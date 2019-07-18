@@ -8,7 +8,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Edge.h>
@@ -25,6 +24,8 @@
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/cell_types.h>
+#include <dolfin/mesh/utils.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/eval.h>
@@ -43,24 +44,26 @@ namespace dolfin_wrappers
 void mesh(py::module& m)
 {
 
-  // dolfin::mesh::CellType
-  py::class_<dolfin::mesh::CellType> celltype(m, "CellType");
+  py::enum_<dolfin::mesh::CellType>(m, "CellType")
+      .value("point", dolfin::mesh::CellType::point)
+      .value("interval", dolfin::mesh::CellType::interval)
+      .value("triangle", dolfin::mesh::CellType::triangle)
+      .value("quadrilateral", dolfin::mesh::CellType::quadrilateral)
+      .value("tetrahedron", dolfin::mesh::CellType::tetrahedron)
+      .value("hexahedron", dolfin::mesh::CellType::hexahedron);
 
-  // dolfin::mesh::CellType enums
-  py::enum_<dolfin::mesh::CellType::Type>(celltype, "Type")
-      .value("point", dolfin::mesh::CellType::Type::point)
-      .value("interval", dolfin::mesh::CellType::Type::interval)
-      .value("triangle", dolfin::mesh::CellType::Type::triangle)
-      .value("quadrilateral", dolfin::mesh::CellType::Type::quadrilateral)
-      .value("tetrahedron", dolfin::mesh::CellType::Type::tetrahedron)
-      .value("hexahedron", dolfin::mesh::CellType::Type::hexahedron);
+  m.def("to_string", &dolfin::mesh::to_string);
+  m.def("to_type", &dolfin::mesh::to_type);
+  m.def("is_simplex", &dolfin::mesh::is_simplex);
 
-  celltype.def("type2string", &dolfin::mesh::CellType::type2string)
-      .def("string2type", &dolfin::mesh::CellType::string2type)
-      .def_readonly("type", &dolfin::mesh::CellType::type)
-      .def("num_entities", &dolfin::mesh::CellType::num_entities)
-      .def("description", &dolfin::mesh::CellType::description)
-      .def_property_readonly("is_simplex", &dolfin::mesh::CellType::is_simplex);
+  m.def("volume_entities", &dolfin::mesh::volume_entities,
+        "Generalised volume of entities of given dimension.");
+
+  m.def("circumradius", &dolfin::mesh::circumradius);
+  m.def("h", &dolfin::mesh::h,
+        "Compute maximum distance between any two vertices.");
+  m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
+  m.def("radius_ratio", &dolfin::mesh::radius_ratio);
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")
@@ -137,7 +140,7 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Mesh, std::shared_ptr<dolfin::mesh::Mesh>>(
       m, "Mesh", py::dynamic_attr(), "Mesh object")
       .def(py::init(
-          [](const MPICommWrapper comm, dolfin::mesh::CellType::Type type,
+          [](const MPICommWrapper comm, dolfin::mesh::CellType type,
              const Eigen::Ref<const dolfin::EigenRowArrayXXd> geometry,
              const Eigen::Ref<const dolfin::EigenRowArrayXXi64> topology,
              const std::vector<std::int64_t>& global_cell_indices,
@@ -146,14 +149,15 @@ void mesh(py::module& m)
                 comm.get(), type, geometry, topology, global_cell_indices,
                 ghost_mode);
           }))
-      .def("cells",
-           [](const dolfin::mesh::Mesh& self) {
-             const std::uint32_t tdim = self.topology().dim();
-             return py::array(
-                 {(std::int32_t)self.topology().size(tdim),
-                  (std::int32_t)self.type().num_vertices(tdim)},
-                 self.topology().connectivity(tdim, 0)->connections().data());
-           })
+      .def(
+          "cells",
+          [](const dolfin::mesh::Mesh& self) {
+            const std::uint32_t tdim = self.topology().dim();
+            return py::array(
+                {(std::int32_t)self.topology().size(tdim),
+                 (std::int32_t)dolfin::mesh::num_cell_vertices(self.cell_type)},
+                self.topology().connectivity(tdim, 0)->connections().data());
+          })
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")
@@ -181,12 +185,11 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfin::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def("type", py::overload_cast<>(&dolfin::mesh::Mesh::type, py::const_),
-           py::return_value_policy::reference)
+      .def_readonly("cell_type", &dolfin::mesh::Mesh::cell_type)
       .def("ufl_id", &dolfin::mesh::Mesh::id)
       .def_property_readonly("id", &dolfin::mesh::Mesh::id)
       .def("cell_name", [](const dolfin::mesh::Mesh& self) {
-        return dolfin::mesh::CellType::type2string(self.type().type);
+        return dolfin::mesh::to_string(self.cell_type);
       });
 
   // dolfin::mesh::Connectivity class
@@ -255,29 +258,18 @@ void mesh(py::module& m)
   // dolfin::mesh::Face
   py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,
              dolfin::mesh::MeshEntity>(m, "Face", "Face object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def("normal", &dolfin::mesh::Face::normal)
-      .def("area", &dolfin::mesh::Face::area);
+      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>());
 
   // dolfin::mesh::Facet
   py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
              dolfin::mesh::MeshEntity>(m, "Facet", "Facet object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def("exterior", &dolfin::mesh::Facet::exterior)
-      .def("normal", &dolfin::mesh::Facet::normal);
+      .def("exterior", &dolfin::mesh::Facet::exterior);
 
   // dolfin::mesh::Cell
   py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
-             dolfin::mesh::MeshEntity>(m, "Cell", "DOLFIN Cell object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def("distance", &dolfin::mesh::Cell::distance)
-      .def("facet_area", &dolfin::mesh::Cell::facet_area)
-      .def("h", &dolfin::mesh::Cell::h)
-      .def("inradius", &dolfin::mesh::Cell::inradius)
-      .def("normal", &dolfin::mesh::Cell::normal)
-      .def("circumradius", &dolfin::mesh::Cell::circumradius)
-      .def("radius_ratio", &dolfin::mesh::Cell::radius_ratio)
-      .def("volume", &dolfin::mesh::Cell::volume);
+             dolfin::mesh::MeshEntity>(m, "Cell", "Cell object")
+      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
 
   py::class_<
       dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
@@ -414,15 +406,9 @@ void mesh(py::module& m)
 
   // dolfin::mesh::MeshQuality
   py::class_<dolfin::mesh::MeshQuality>(m, "MeshQuality", "MeshQuality class")
-      .def_static("radius_ratios", &dolfin::mesh::MeshQuality::radius_ratios)
-      .def_static("radius_ratio_histogram_data",
-                  &dolfin::mesh::MeshQuality::radius_ratio_histogram_data,
-                  py::arg("mesh"), py::arg("num_bins") = 50)
       .def_static("dihedral_angle_histogram_data",
                   &dolfin::mesh::MeshQuality::dihedral_angle_histogram_data,
                   py::arg("mesh"), py::arg("num_bins") = 50)
-      .def_static("radius_ratio_min_max",
-                  &dolfin::mesh::MeshQuality::radius_ratio_min_max)
       .def_static("dihedral_angles_min_max",
                   &dolfin::mesh::MeshQuality::dihedral_angles_min_max);
 

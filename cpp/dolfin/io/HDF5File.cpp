@@ -28,6 +28,7 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -251,9 +252,8 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
   const bool mpi_io = _mpi_comm.size() > 1 ? true : false;
   assert(_hdf5_file_id > 0);
 
-  mesh::CellType::Type cell_type = mesh.type().entity_type(cell_dim);
-  std::unique_ptr<mesh::CellType> celltype(mesh::CellType::create(cell_type));
-  std::size_t num_cell_points = celltype->num_entities(0);
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  std::size_t num_cell_points = mesh::cell_num_entities(cell_type, 0);
 
   // ---------- Vertices (coordinates)
   {
@@ -291,7 +291,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     const auto& global_vertices = mesh.topology().global_indices(0);
 
     // Permutation to VTK ordering
-    const std::vector<std::int8_t> perm = celltype->vtk_mapping();
+    const std::vector<std::int8_t> perm = mesh::vtk_mapping(cell_type);
 
     if (cell_dim == tdim or !mpi_io)
     {
@@ -405,7 +405,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
 
     // Add cell type attribute
     HDF5Interface::add_attribute(_hdf5_file_id, topology_dataset, "celltype",
-                                 mesh::CellType::type2string(cell_type));
+                                 mesh::to_string(cell_type));
 
     // Add partitioning attribute to dataset
     std::vector<std::size_t> partitions;
@@ -1083,10 +1083,10 @@ void HDF5File::write_mesh_value_collection(
   const std::map<std::pair<std::size_t, std::size_t>, T>& values
       = mesh_values.values();
 
-  std::unique_ptr<mesh::CellType> entity_type(
-      mesh::CellType::create(mesh->type().entity_type(dim)));
+  const mesh::CellType entity_type
+      = mesh::cell_entity_type(mesh->cell_type, dim);
   const std::size_t num_vertices_per_entity
-      = (dim == 0) ? 1 : entity_type->num_vertices();
+      = (dim == 0) ? 1 : mesh::num_cell_vertices(entity_type);
 
   std::vector<std::size_t> topology;
   std::vector<T> value_data;
@@ -1140,9 +1140,10 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   std::size_t dim = HDF5Interface::get_attribute<std::size_t>(
       _hdf5_file_id, name, "dimension");
   assert(mesh);
-  std::unique_ptr<mesh::CellType> entity_type(
-      mesh::CellType::create(mesh->type().entity_type(dim)));
-  const std::size_t num_verts_per_entity = entity_type->num_entities(0);
+  const mesh::CellType entity_type
+      = mesh::cell_entity_type(mesh->cell_type, dim);
+  const std::size_t num_verts_per_entity
+      = mesh::cell_num_entities(entity_type, 0);
 
   const std::string values_name = name + "/values";
   const std::string topology_name = name + "/topology";
@@ -1324,9 +1325,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
   }
 
   // Create CellType from string
-  std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(cell_type_str));
-  assert(cell_type);
+  mesh::CellType cell_type = mesh::to_type(cell_type_str);
 
   // Check that coordinate data set is found in HDF5 file
   const std::string geometry_path = data_path + "/coordinates";
@@ -1356,13 +1355,13 @@ mesh::Mesh HDF5File::read_mesh(const std::string data_path,
   int gdim = coords_shape[1];
 
   // Build mesh from data in HDF5 file
-  return read_mesh(topology_path, geometry_path, gdim, *cell_type, -1,
+  return read_mesh(topology_path, geometry_path, gdim, cell_type, -1,
                    coords_shape[0], use_partition_from_file, ghost_mode);
 }
 //-----------------------------------------------------------------------------
 mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
                                const std::string geometry_path, const int gdim,
-                               const mesh::CellType& cell_type,
+                               const mesh::CellType cell_type,
                                const std::int64_t expected_num_global_cells,
                                const std::int64_t expected_num_global_points,
                                bool use_partition_from_file,
@@ -1376,7 +1375,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   // --- Topology ---
 
   // Get number of vertices per cell from CellType
-  const int num_vertices_per_cell = cell_type.num_entities(0);
+  const int num_vertices_per_cell = mesh::cell_num_entities(cell_type, 0);
 
   // Discover shape of the topology data set in HDF5 file
   std::vector<std::int64_t> topology_shape
@@ -1388,7 +1387,7 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   {
     std::string cell_type_str = HDF5Interface::get_attribute<std::string>(
         _hdf5_file_id, topology_path, "celltype");
-    if (cell_type.type != mesh::CellType::string2type(cell_type_str))
+    if (cell_type != mesh::to_type(cell_type_str))
     {
       throw std::runtime_error(
           "Inconsistency between expected cell type and cell type "
@@ -1553,8 +1552,8 @@ mesh::Mesh HDF5File::read_mesh(const std::string topology_path,
   t.stop();
 
   return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type.type, points, cells,
-      global_cell_indices, ghost_mode);
+      _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
+      ghost_mode);
 }
 //-----------------------------------------------------------------------------
 bool HDF5File::has_dataset(const std::string dataset_name) const

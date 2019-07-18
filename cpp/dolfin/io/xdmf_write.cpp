@@ -199,14 +199,16 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
                                                 int cell_dim)
 {
   // Create vector to store topology data
-  const int num_vertices_per_cell = mesh.type().num_vertices(cell_dim);
+  const int num_vertices_per_cell = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.cell_type, cell_dim));
+
   std::vector<std::int64_t> topology_data;
   topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
 
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  const std::vector<std::int8_t> perm = mesh.type().vtk_mapping();
+  const std::vector<std::int8_t> perm = mesh::vtk_mapping(mesh.cell_type);
   const int tdim = mesh.topology().dim();
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
   {
@@ -508,12 +510,13 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 {
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
-  int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
+  int num_nodes_per_cell = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.cell_type, cell_dim));
 
   // Get VTK string for cell type and degree (linear or quadratic)
   const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh.type().entity_type(cell_dim), degree);
+      mesh::cell_entity_type(mesh.cell_type, cell_dim), degree);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
@@ -642,7 +645,8 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   std::string element_family = u.function_space()->element->family();
   const std::size_t element_degree = u.function_space()->element->degree();
-  const CellType element_cell_type = u.function_space()->element->cell_shape();
+  const mesh::CellType element_cell_type
+      = u.function_space()->element->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
   const std::map<std::string, std::string> family_abbr
@@ -656,12 +660,12 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
          {"Q", "Q"},
          {"DQ", "DQ"}};
 
-  const std::map<CellType, std::string> cell_shape_repr
-      = {{CellType::interval, "interval"},
-         {CellType::triangle, "triangle"},
-         {CellType::tetrahedron, "tetrahedron"},
-         {CellType::quadrilateral, "quadrilateral"},
-         {CellType::hexahedron, "hexahedron"}};
+  const std::map<mesh::CellType, std::string> cell_shape_repr
+      = {{mesh::CellType::interval, "interval"},
+         {mesh::CellType::triangle, "triangle"},
+         {mesh::CellType::tetrahedron, "tetrahedron"},
+         {mesh::CellType::quadrilateral, "quadrilateral"},
+         {mesh::CellType::hexahedron, "hexahedron"}};
 
   // Check that element is supported
   auto const it = family_abbr.find(element_family);

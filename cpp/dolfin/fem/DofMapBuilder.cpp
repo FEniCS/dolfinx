@@ -328,8 +328,9 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
   std::vector<std::vector<int64_t>> entity_indices_global(D + 1);
   for (int d = 0; d <= D; ++d)
   {
-    entity_indices_local[d].resize(mesh.type().num_entities(d));
-    entity_indices_global[d].resize(mesh.type().num_entities(d));
+    const int num_entities = mesh::cell_num_entities(mesh.cell_type, d);
+    entity_indices_local[d].resize(num_entities);
+    entity_indices_global[d].resize(num_entities);
   }
 
   // Entity dofs on cell (dof = entity_dofs[dim][entity][index])
