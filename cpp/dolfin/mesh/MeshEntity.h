@@ -15,8 +15,8 @@ namespace dolfin
 
 namespace mesh
 {
-/// A MeshEntity represents a mesh entity associated with
-/// a specific topological dimension of some _Mesh_.
+/// A MeshEntity represents a mesh entity associated with a specific
+/// topological dimension of some _Mesh_.
 
 class MeshEntity
 {
@@ -29,7 +29,7 @@ public:
   ///         The topological dimension.
   /// @param     index (std::size_t)
   ///         The index.
-  MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index)
+  MeshEntity(const Mesh& mesh, int dim, std::int32_t index)
       : _mesh(&mesh), _dim(dim), _local_index(index)
   {
     // Do nothing
@@ -59,8 +59,8 @@ public:
   ///         True if the two mesh entities are equal.
   bool operator==(const MeshEntity& e) const
   {
-    return (_mesh == e._mesh && _dim == e._dim
-            && _local_index == e._local_index);
+    return (_mesh == e._mesh and _dim == e._dim
+            and _local_index == e._local_index);
   }
 
   /// Comparison Operator

@@ -36,7 +36,14 @@ public:
   /// mesh, so this function will return false for facets on partition
   /// boundaries). Facet connectivity must be initialized before calling
   /// this function.
-  bool exterior() const;
+  bool exterior() const
+  {
+    const std::size_t D = _mesh->topology().dim();
+    if (this->num_global_entities(D) == 1)
+      return true;
+    else
+      return false;
+  }
 };
 } // namespace mesh
 } // namespace dolfin

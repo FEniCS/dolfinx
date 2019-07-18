@@ -54,7 +54,7 @@ def test_volume_cells(mesh):
 def test_volume_quadrilateralR2():
     mesh = UnitSquareMesh(MPI.comm_self, 1, 1, CellType.quadrilateral)
     cell = Cell(mesh, 0)
-    assert cell.volume() == 1.0
+    assert cpp.mesh.volume(cell) == 1.0
 
 
 @pytest.mark.parametrize(
@@ -71,7 +71,7 @@ def test_volume_quadrilateralR3(coordinates):
     mesh.create_connectivity_all()
     cell = Cell(mesh, 0)
 
-    assert cell.volume() == 1.0
+    assert cpp.mesh.volume(cell) == 1.0
 
 
 @pytest.mark.parametrize(
@@ -93,7 +93,7 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
         mesh.create_connectivity_all()
         cell = Cell(mesh, 0)
-        cell.volume()
+        cpp.mesh.volume(cell)
 
     assert "Not coplanar" in str(error.value)
 
@@ -114,6 +114,6 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
                     cpp.mesh.GhostMode.none)
         mesh.create_connectivity_all()
         cell = Cell(mesh, 0)
-        cell.volume()
+        cpp.mesh.volume(cell)
 
     assert "Not coplanar" in str(error.value)

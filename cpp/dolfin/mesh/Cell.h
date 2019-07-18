@@ -32,7 +32,7 @@ public:
   ///         The mesh.
   /// @param    index
   ///         The index.
-  Cell(const Mesh& mesh, std::size_t index)
+  Cell(const Mesh& mesh, std::int32_t index)
       : MeshEntity(mesh, mesh.topology().dim(), index), local_facet(-1)
   {
   }
@@ -58,20 +58,6 @@ public:
     return mesh::num_cell_vertices(_mesh->cell_type);
   }
 
-  /// Compute (generalized) volume of cell
-  ///
-  /// @return     double
-  ///         The volume of the cell.
-  ///
-  /// @code{.cpp}
-  ///
-  ///         UnitSquare mesh(1, 1);
-  ///         Cell cell(mesh, 0);
-  ///         log::info("%g", cell.volume());
-  ///
-  /// @endcode
-  double volume() const { return mesh::volume(*this); }
-
   /// Compute circumradius of cell
   ///
   /// @return     double
@@ -89,29 +75,6 @@ public:
     Eigen::ArrayXi cells(1);
     cells[0] = this->index();
     return mesh::circumradius(this->mesh(), cells, this->dim())[0];
-  }
-
-  /// Compute inradius of cell
-  ///
-  /// @return     double
-  ///         Radius of the sphere inscribed in the cell.
-  ///
-  /// @code{.cpp}
-  ///
-  ///         UnitSquareMesh mesh(1, 1);
-  ///         Cell cell(mesh, 0);
-  ///         log::info("%g", cell.inradius());
-  ///
-  /// @endcode
-  double inradius() const
-  {
-    // We would need facet areas
-    const int dim = mesh::cell_dim(_mesh->cell_type);
-    _mesh->create_entities(dim - 1);
-
-    Eigen::ArrayXi cells(1);
-    cells[0] = this->index();
-    return mesh::inradius(this->mesh(), cells)[0];
   }
 
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet

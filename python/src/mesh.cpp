@@ -54,6 +54,7 @@ void mesh(py::module& m)
   m.def("to_string", &dolfin::mesh::to_string);
   m.def("to_type", &dolfin::mesh::to_type);
   m.def("is_simplex", &dolfin::mesh::is_simplex);
+  m.def("volume", &dolfin::mesh::volume);
   m.def("volume_cells", &dolfin::mesh::volume_cells,
         "Generalised volume of cells.");
   m.def("volume_entities", &dolfin::mesh::volume_entities,
@@ -268,8 +269,7 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
              dolfin::mesh::MeshEntity>(m, "Cell", "Cell object")
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def("circumradius", &dolfin::mesh::Cell::circumradius)
-      .def("volume", &dolfin::mesh::Cell::volume);
+      .def("circumradius", &dolfin::mesh::Cell::circumradius);
 
   py::class_<
       dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
