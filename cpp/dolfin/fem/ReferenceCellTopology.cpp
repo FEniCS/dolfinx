@@ -12,40 +12,6 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-const ReferenceCellTopology::Face*
-ReferenceCellTopology::get_face_edges(mesh::CellType cell_type)
-{
-  static const int triangle[][4] = {
-      {0, 1, 2, -1},
-  };
-  static const int tetrahedron[][4]
-      = {{0, 1, 2, -1}, {0, 3, 4, -1}, {1, 3, 5, -1}, {2, 4, 5, -1}};
-  static const int quadrilateral[][4] = {{0, 3, 1, 2}};
-  static const int hexahedron[][4]
-      = {{0, 1, 4, 5},   {2, 3, 6, 7},  {0, 2, 8, 9},
-         {1, 3, 10, 11}, {4, 6, 8, 10}, {5, 7, 9, 11}};
-
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    return nullptr;
-  case mesh::CellType::interval:
-    return nullptr;
-  case mesh::CellType::triangle:
-    return triangle;
-  case mesh::CellType::quadrilateral:
-    return quadrilateral;
-  case mesh::CellType::tetrahedron:
-    return tetrahedron;
-  case mesh::CellType::hexahedron:
-    return hexahedron;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return nullptr;
-}
-//-----------------------------------------------------------------------------
 const ReferenceCellTopology::Point*
 ReferenceCellTopology::get_vertices(mesh::CellType cell_type)
 {
@@ -88,10 +54,10 @@ ReferenceCellTopology::entity_closure(mesh::CellType cell_type)
   for (int i = 0; i <= cell_dim; ++i)
     num_entities[i] = mesh::cell_num_entities(cell_type, i);
 
-  Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> edge_v
-      = mesh::create_entities(cell_type, 1);
-  const ReferenceCellTopology::Face* face_e
-      = ReferenceCellTopology::get_face_edges(cell_type);
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      edge_v = mesh::create_entities(cell_type, 1);
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      face_e = mesh::get_sub_entities(cell_type, 2, 1);
 
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure;
   for (int dim = 0; dim <= cell_dim; ++dim)
@@ -115,13 +81,12 @@ ReferenceCellTopology::entity_closure(mesh::CellType cell_type)
 
       if (dim == 2)
       {
-        assert(face_e);
         mesh::CellType face_type = mesh::cell_entity_type(cell_type, 2);
         const int num_edges = mesh::cell_num_entities(face_type, 1);
         for (int e = 0; e < num_edges; ++e)
         {
           // Add edge
-          const int edge_index = face_e[entity][e];
+          const int edge_index = face_e(entity, e);
           entity_closure[{{dim, entity}}][1].insert(edge_index);
           for (int v = 0; v < 2; ++v)
           {

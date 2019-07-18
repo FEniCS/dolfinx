@@ -23,9 +23,9 @@ namespace
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 create_entities_interval(int dim)
 {
-  static Eigen::Array<int, 2, 1> e0
+  const static Eigen::Array<int, 2, 1> e0
       = (Eigen::Array<int, 2, 1>() << 0, 1).finished();
-  static Eigen::Array<int, 1, 2, Eigen::RowMajor> e1
+  const static Eigen::Array<int, 1, 2, Eigen::RowMajor> e1
       = (Eigen::Array<int, 1, 2, Eigen::RowMajor>() << 0, 1).finished();
   switch (dim)
   {
@@ -303,6 +303,63 @@ mesh::create_entities(mesh::CellType type, int dim)
     throw std::runtime_error("Unsupported cell type.");
     return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
   }
+}
+//-----------------------------------------------------------------------------
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+mesh::get_sub_entities(CellType type, int dim0, int dim1)
+{
+  if (dim0 != 2)
+  {
+    throw std::runtime_error(
+        "mesh::get_sub_entities supports faces (d=2) only at present.");
+  }
+  if (dim1 != 1)
+  {
+    throw std::runtime_error(
+        "mesh::get_sub_entities supports getting edges (d=1) at present.");
+  }
+
+  const static Eigen::Array<int, 1, 3, Eigen::RowMajor> triangle
+      = (Eigen::Array<int, 1, 3, Eigen::RowMajor>() << 0, 1, 2).finished();
+  const static Eigen::Array<int, 1, 4, Eigen::RowMajor> quadrilateral
+      = (Eigen::Array<int, 1, 4, Eigen::RowMajor>() << 0, 3, 1, 2).finished();
+  const static Eigen::Array<int, 4, 3, Eigen::RowMajor> tetrahedron
+      = (Eigen::Array<int, 4, 3, Eigen::RowMajor>() << 0, 1, 2, 0, 3, 4, 1, 3,
+         5, 2, 4, 5)
+            .finished();
+  const static Eigen::Array<int, 6, 4, Eigen::RowMajor> hexahedron
+      = (Eigen::Array<int, 6, 4, Eigen::RowMajor>() << 0, 1, 4, 5, 2, 3, 6, 7,
+         0, 2, 8, 9, 1, 3, 10, 11, 4, 6, 8, 10, 5, 7, 9, 11)
+            .finished();
+
+  switch (type)
+  {
+  case mesh::CellType::interval:
+    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
+  case mesh::CellType::point:
+    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
+  case mesh::CellType::triangle:
+    return triangle;
+  case mesh::CellType::tetrahedron:
+    return tetrahedron;
+  case mesh::CellType::quadrilateral:
+    return quadrilateral;
+  case mesh::CellType::hexahedron:
+    return hexahedron;
+  default:
+    throw std::runtime_error("Unsupported cell type.");
+    return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
+  }
+
+  // static const int triangle[][4] = {
+  //     {0, 1, 2, -1},
+  // };
+  // static const int tetrahedron[][4]
+  //     = {{0, 1, 2, -1}, {0, 3, 4, -1}, {1, 3, 5, -1}, {2, 4, 5, -1}};
+  // static const int quadrilateral[][4] = {{0, 3, 1, 2}};
+  // static const int hexahedron[][4]
+  //     = {{0, 1, 4, 5},   {2, 3, 6, 7},  {0, 2, 8, 9},
+  //        {1, 3, 10, 11}, {4, 6, 8, 10}, {5, 7, 9, 11}};
 }
 //-----------------------------------------------------------------------------
 int mesh::cell_dim(mesh::CellType type)

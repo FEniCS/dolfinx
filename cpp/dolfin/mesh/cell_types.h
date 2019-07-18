@@ -47,6 +47,9 @@ CellType cell_facet_type(CellType type);
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 create_entities(CellType type, int dim);
 
+Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+get_sub_entities(CellType type, int dim0, int dim1);
+
 /// Return topological dimension of cell type
 int cell_dim(CellType type);
 
