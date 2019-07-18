@@ -19,7 +19,6 @@
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
-#include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>

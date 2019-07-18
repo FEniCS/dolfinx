@@ -58,25 +58,6 @@ public:
     return mesh::num_cell_vertices(_mesh->cell_type);
   }
 
-  /// Compute circumradius of cell
-  ///
-  /// @return     double
-  ///         The circumradius of the cell.
-  ///
-  /// @code{.cpp}
-  ///
-  ///         UnitSquareMesh mesh(1, 1);
-  ///         Cell cell(mesh, 0);
-  ///         log::info("%g", cell.circumradius());
-  ///
-  /// @endcode
-  double circumradius() const
-  {
-    Eigen::ArrayXi cells(1);
-    cells[0] = this->index();
-    return mesh::circumradius(this->mesh(), cells, this->dim())[0];
-  }
-
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
   /// Local facet index, used typically in eval functions
   mutable int local_facet;

@@ -55,11 +55,14 @@ void mesh(py::module& m)
   m.def("to_string", &dolfin::mesh::to_string);
   m.def("to_type", &dolfin::mesh::to_type);
   m.def("is_simplex", &dolfin::mesh::is_simplex);
+
   m.def("volume", &dolfin::mesh::volume);
   m.def("volume_cells", &dolfin::mesh::volume_cells,
         "Generalised volume of cells.");
   m.def("volume_entities", &dolfin::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
+
+  m.def("circumradius", &dolfin::mesh::circumradius);
   m.def("h", &dolfin::mesh::h,
         "Compute maximum distance between any two vertices.");
   m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
@@ -269,8 +272,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Cell
   py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
              dolfin::mesh::MeshEntity>(m, "Cell", "Cell object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
-      .def("circumradius", &dolfin::mesh::Cell::circumradius);
+      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
 
   py::class_<
       dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
