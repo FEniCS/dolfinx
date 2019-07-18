@@ -321,66 +321,27 @@ int mesh::cell_dim(mesh::CellType type)
 //-----------------------------------------------------------------------------
 int mesh::cell_num_entities(mesh::CellType type, int dim)
 {
+  assert(dim <= 3);
+  static const int point[4] = {1, 0, 0, 0};
+  static const int interval[4] = {2, 1, 0, 0};
+  static const int triangle[4] = {3, 3, 1, 0};
+  static const int quadrilateral[4] = {4, 4, 1, 0};
+  static const int tetrahedron[4] = {4, 6, 4, 1};
+  static const int hexahedron[4] = {8, 12, 6, 1};
   switch (type)
   {
   case mesh::CellType::point:
-    switch (dim)
-    {
-    case 0:
-      return 1; // vertices
-    }
+    return point[dim];
   case mesh::CellType::interval:
-    switch (dim)
-    {
-    case 0:
-      return 2; // vertices
-    case 1:
-      return 1; // cells
-    }
+    return interval[dim];
   case mesh::CellType::triangle:
-    switch (dim)
-    {
-    case 0:
-      return 3; // vertices
-    case 1:
-      return 3; // edges
-    case 2:
-      return 1; // cells
-    }
+    return triangle[dim];
   case mesh::CellType::tetrahedron:
-    switch (dim)
-    {
-    case 0:
-      return 4; // vertices
-    case 1:
-      return 6; // edges
-    case 2:
-      return 4; // faces
-    case 3:
-      return 1; // cells
-    }
+    return tetrahedron[dim];
   case mesh::CellType::quadrilateral:
-    switch (dim)
-    {
-    case 0:
-      return 4; // vertices
-    case 1:
-      return 4; // edges
-    case 2:
-      return 1; // cells
-    }
+    return quadrilateral[dim];
   case mesh::CellType::hexahedron:
-    switch (dim)
-    {
-    case 0:
-      return 8; // vertices
-    case 1:
-      return 12; // edges
-    case 2:
-      return 6; // faces
-    case 3:
-      return 1; // cells
-    }
+    return hexahedron[dim];
   default:
     throw std::runtime_error("Unknown cell type.");
     return -1;

@@ -12,131 +12,6 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-const int* ReferenceCellTopology::num_entities(mesh::CellType cell_type)
-{
-  static const int point[4] = {1, 0, 0, 0};
-  static const int interval[4] = {2, 1, 0, 0};
-  static const int triangle[4] = {3, 3, 1, 0};
-  static const int quadrilateral[4] = {4, 4, 1, 0};
-  static const int tetrahedron[4] = {4, 6, 4, 1};
-  static const int hexahedron[4] = {8, 12, 6, 1};
-
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    return point;
-  case mesh::CellType::interval:
-    return interval;
-  case mesh::CellType::triangle:
-    return triangle;
-  case mesh::CellType::quadrilateral:
-    return quadrilateral;
-  case mesh::CellType::tetrahedron:
-    return tetrahedron;
-  case mesh::CellType::hexahedron:
-    return hexahedron;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return nullptr;
-}
-//---------------------------------------------------------------------
-mesh::CellType ReferenceCellTopology::entity_type(mesh::CellType cell_type,
-                                                  int dim, int k)
-{
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    switch (dim)
-    {
-    case 0:
-      return mesh::CellType::point;
-    }
-  case mesh::CellType::interval:
-    switch (dim)
-    {
-    case 0:
-      return mesh::CellType::point;
-    case 1:
-      return mesh::CellType::interval;
-    }
-  case mesh::CellType::triangle:
-    switch (dim)
-    {
-    case 0:
-      return mesh::CellType::point;
-    case 1:
-      return mesh::CellType::interval;
-    case 2:
-      return mesh::CellType::triangle;
-    }
-  case mesh::CellType::quadrilateral:
-    switch (dim)
-    {
-    case 0:
-      return mesh::CellType::point;
-    case 1:
-      return mesh::CellType::interval;
-    case 2:
-      return mesh::CellType::quadrilateral;
-    }
-  case mesh::CellType::tetrahedron:
-    switch (dim)
-    {
-    case 0:
-      return mesh::CellType::point;
-    case 1:
-      return mesh::CellType::interval;
-    case 2:
-      return mesh::CellType::triangle;
-    case 3:
-      return mesh::CellType::tetrahedron;
-    }
-  case mesh::CellType::hexahedron:
-    switch (dim)
-    {
-    case 0:
-      return mesh::CellType::point;
-    case 1:
-      return mesh::CellType::interval;
-    case 2:
-      return mesh::CellType::quadrilateral;
-    case 3:
-      return mesh::CellType::hexahedron;
-    }
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  throw std::runtime_error("Failed to get sub-cell type.");
-  return mesh::CellType::point;
-}
-//-----------------------------------------------------------------------------
-mesh::CellType ReferenceCellTopology::facet_type(mesh::CellType cell_type,
-                                                 int k)
-{
-  switch (cell_type)
-  {
-  case mesh::CellType::point:
-    return mesh::CellType::point;
-  case mesh::CellType::interval:
-    return mesh::CellType::point;
-  case mesh::CellType::triangle:
-    return mesh::CellType::interval;
-  case mesh::CellType::quadrilateral:
-    return mesh::CellType::interval;
-  case mesh::CellType::tetrahedron:
-    return mesh::CellType::triangle;
-  case mesh::CellType::hexahedron:
-    return mesh::CellType::quadrilateral;
-  default:
-    throw std::runtime_error("Unknown cell type.");
-  }
-
-  return mesh::CellType::point;
-}
-//-----------------------------------------------------------------------------
 const ReferenceCellTopology::Edge*
 ReferenceCellTopology::get_edge_vertices(mesh::CellType cell_type)
 {
@@ -270,8 +145,11 @@ ReferenceCellTopology::get_vertices(mesh::CellType cell_type)
 std::map<std::array<int, 2>, std::vector<std::set<int>>>
 ReferenceCellTopology::entity_closure(mesh::CellType cell_type)
 {
-  const int* num_entities = ReferenceCellTopology::num_entities(cell_type);
-  assert(num_entities);
+  const int dim = mesh::cell_dim(cell_type);
+  std::array<int, 4> num_entities{};
+  for (int i = 0; i <= dim; ++i)
+    num_entities[i] = mesh::cell_num_entities(cell_type, i);
+
   const ReferenceCellTopology::Edge* edge_v
       = ReferenceCellTopology::get_edge_vertices(cell_type);
   const ReferenceCellTopology::Face* face_e
@@ -301,9 +179,8 @@ ReferenceCellTopology::entity_closure(mesh::CellType cell_type)
       if (dim == 2)
       {
         assert(face_e);
-        mesh::CellType face_type
-            = ReferenceCellTopology::entity_type(cell_type, 2);
-        const int num_edges = ReferenceCellTopology::num_entities(face_type)[1];
+        mesh::CellType face_type = mesh::cell_entity_type(cell_type, 2);
+        const int num_edges = mesh::cell_num_entities(face_type, 1);
         for (int e = 0; e < num_edges; ++e)
         {
           // Add edge

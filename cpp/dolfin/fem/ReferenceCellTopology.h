@@ -7,10 +7,10 @@
 #pragma once
 
 #include <array>
+#include <dolfin/mesh/cell_types.h>
 #include <map>
 #include <set>
 #include <vector>
-#include <dolfin/mesh/cell_types.h>
 
 namespace dolfin
 {
@@ -21,19 +21,6 @@ namespace fem
 class ReferenceCellTopology
 {
 public:
-  /// Number of entities of each topological dimension (0, 1, 2, 3)
-  /// for cells of type cell_type
-  static const int* num_entities(mesh::CellType cell_type);
-
-  /// Get CellType of subentity of this cell_type, which has dimension dim.
-  /// FIXME: currently k does nothing.
-  static mesh::CellType entity_type(mesh::CellType cell_type, int dim, int k = 0);
-
-  /// Get CellType of facets of cell_type, e.g. for tetrahedron, this is
-  /// triangle. Equivalent to entity_type(cell_type, dim(cell_type) -1)
-  /// FIXME: currently k does nothing.
-  static mesh::CellType facet_type(mesh::CellType cell_type, int k = 0);
-
   typedef int Edge[2];
 
   /// Get vertex indices of all edges
