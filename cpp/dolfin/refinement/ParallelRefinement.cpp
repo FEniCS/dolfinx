@@ -251,8 +251,7 @@ mesh::Mesh ParallelRefinement::build_local() const
 //-----------------------------------------------------------------------------
 mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 {
-  const int num_vertices_per_cell
-      = mesh::cell_num_entities(_mesh.cell_type, 0);
+  const int num_vertices_per_cell = mesh::cell_num_entities(_mesh.cell_type, 0);
 
   // Copy data to mesh::LocalMeshData structures
   const std::int32_t num_local_cells

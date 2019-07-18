@@ -129,8 +129,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
       _unique_id(common::UniqueIdGenerator::id())
 {
   const int tdim = mesh::cell_dim(cell_type);
-  const std::int32_t num_vertices_per_cell
-      = mesh::num_cell_vertices(cell_type);
+  const std::int32_t num_vertices_per_cell = mesh::num_cell_vertices(cell_type);
 
   // Check size of global cell indices. If empty, construct later.
   if (global_cell_indices.size() > 0
@@ -280,11 +279,11 @@ Mesh::Mesh(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
-    : cell_type(mesh.cell_type),
+    : cell_type(std::move(mesh.cell_type)),
       _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
-      _coordinate_dofs(std::move(mesh._coordinate_dofs)), _degree(mesh._degree),
-      _mpi_comm(std::move(mesh._mpi_comm)),
+      _coordinate_dofs(std::move(mesh._coordinate_dofs)),
+      _degree(std::move(mesh._degree)), _mpi_comm(std::move(mesh._mpi_comm)),
       _ghost_mode(std::move(mesh._ghost_mode)),
       _unique_id(std::move(mesh._unique_id))
 {
@@ -295,21 +294,6 @@ Mesh::~Mesh()
 {
   // Do nothing
 }
-//-----------------------------------------------------------------------------
-// Mesh& Mesh::operator=(const Mesh& mesh)
-// {
-//   // Assign data
-//   cell_type = mesh.cell_type;
-//   assert(mesh._topology);
-//   _topology = std::make_unique<Topology>(*mesh._topology);
-//   _geometry = std::make_unique<Geometry>(*mesh._geometry);
-//   _coordinate_dofs = std::make_unique<CoordinateDofs>(*mesh._coordinate_dofs);
-//   _degree = mesh._degree;
-//   _ghost_mode = mesh._ghost_mode;
-//   _unique_id = common::UniqueIdGenerator::id();
-
-//   return *this;
-// }
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::num_entities(int d) const
 {
@@ -455,9 +439,9 @@ std::string Mesh::str(bool verbose) const
   else
   {
     const int tdim = _topology->dim();
-    s << "<Mesh of topological dimension " << tdim << " (" << mesh::to_string(cell_type)
-      << ") with " << num_entities(0) << " vertices and " << num_entities(tdim)
-      << " cells >";
+    s << "<Mesh of topological dimension " << tdim << " ("
+      << mesh::to_string(cell_type) << ") with " << num_entities(0)
+      << " vertices and " << num_entities(tdim) << " cells >";
   }
 
   return s.str();

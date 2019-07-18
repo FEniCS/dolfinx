@@ -89,8 +89,6 @@ public:
     Eigen::ArrayXi cells(1);
     cells[0] = this->index();
     return mesh::circumradius(this->mesh(), cells, this->dim())[0];
-
-    // return _mesh->type().circumradius(*this);
   }
 
   /// Compute inradius of cell
@@ -115,17 +113,6 @@ public:
     cells[0] = this->index();
     return mesh::inradius(this->mesh(), cells)[0];
   }
-
-  /// Compute squared distance to given point.
-  ///
-  /// @param     point
-  ///         The point.
-  /// @return     double
-  ///         The squared distance to the point.
-  // double squared_distance(const Eigen::Vector3d& point) const
-  // {
-  //   return _mesh->type().squared_distance(*this, point);
-  // }
 
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
   /// Local facet index, used typically in eval functions

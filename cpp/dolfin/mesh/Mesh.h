@@ -112,17 +112,14 @@ public:
   /// Destructor
   ~Mesh();
 
-  /// Assignment operator
-  ///
-  /// @param mesh (Mesh)
-  ///         Another Mesh object.
-  // Mesh& operator=(const Mesh& mesh);
+  // Assignment operator
+  Mesh& operator=(const Mesh& mesh) = delete;
 
   /// Assignment move operator
   ///
   /// @param mesh (Mesh)
   ///         Another Mesh object.
-  // Mesh& operator=(Mesh&& mesh) = default;
+  Mesh& operator=(Mesh&& mesh) = default;
 
   /// Get number of entities of given topological dimension.
   ///

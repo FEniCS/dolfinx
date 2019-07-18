@@ -26,9 +26,6 @@ public:
   /// Destructor
   ~Face() = default;
 
-  // /// Calculate the area of the face (triangle)
-  // double area() const;
-
   /// Compute normal to the face
   Eigen::Vector3d normal() const;
 };

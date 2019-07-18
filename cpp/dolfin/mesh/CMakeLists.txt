@@ -28,8 +28,6 @@ set(SOURCES
   CoordinateDofs.cpp
   DistributedMeshTools.cpp
   Edge.cpp
-  Face.cpp
-  Facet.cpp
   Mesh.cpp
   MeshEntity.cpp
   Geometry.cpp
