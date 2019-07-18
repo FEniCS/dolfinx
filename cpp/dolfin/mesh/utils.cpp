@@ -332,13 +332,6 @@ mesh::volume_entities(const mesh::Mesh& mesh,
   return volume_entities_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
 }
 //-----------------------------------------------------------------------------
-Eigen::ArrayXd
-mesh::circumradius(const mesh::Mesh& mesh,
-                   const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
-{
-  return circumradius_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
-}
-//-----------------------------------------------------------------------------
 Eigen::ArrayXd mesh::h(const Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
 {
@@ -370,6 +363,13 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
   }
 
   return h_cells;
+}
+//-----------------------------------------------------------------------------
+Eigen::ArrayXd
+mesh::circumradius(const mesh::Mesh& mesh,
+                   const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
+{
+  return circumradius_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
 }
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,

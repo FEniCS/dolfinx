@@ -69,7 +69,6 @@ def test_volume_quadrilateralR3(coordinates):
     assert cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim) == 1.0
 
 
-
 @pytest.mark.parametrize(
     'scaling',
     [1e0, 1e-5, 1e-10, 1e-15, 1e-20, 1e-30, 1e5, 1e10, 1e15, 1e20, 1e30])
@@ -88,7 +87,6 @@ def test_volume_quadrilateral_coplanarity_check_1(scaling):
 
         mesh.create_connectivity_all()
         cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
-
 
     assert "Not coplanar" in str(error.value)
 
@@ -109,6 +107,5 @@ def test_volume_quadrilateral_coplanarity_check_2(scaling):
                     cpp.mesh.GhostMode.none)
         mesh.create_connectivity_all()
         cpp.mesh.volume_entities(mesh, [0], mesh.topology.dim)
-
 
     assert "Not coplanar" in str(error.value)
