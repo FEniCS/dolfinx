@@ -25,27 +25,13 @@ ElementDofLayout::ElementDofLayout(
 {
   // TODO: Handle global support dofs
 
-  mesh::CellType _cell = mesh::CellType::point;
-  if (cell_type == mesh::CellType::interval)
-    _cell = mesh::CellType::interval;
-  else if (cell_type == mesh::CellType::triangle)
-    _cell = mesh::CellType::triangle;
-  else if (cell_type == mesh::CellType::quadrilateral)
-    _cell = mesh::CellType::quadrilateral;
-  else if (cell_type == mesh::CellType::tetrahedron)
-    _cell = mesh::CellType::tetrahedron;
-  else if (cell_type == mesh::CellType::hexahedron)
-    _cell = mesh::CellType::hexahedron;
-  else
-    throw std::runtime_error("Ooops");
-
-  const int* num_entities = ReferenceCellTopology::num_entities(_cell);
+  const int* num_entities = ReferenceCellTopology::num_entities(cell_type);
   assert(num_entities);
 
   // Compute closure entities
   // [dim, entity] -> closure{sub_dim, (sub_entities)}
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
-      = ReferenceCellTopology::entity_closure(_cell);
+      = ReferenceCellTopology::entity_closure(cell_type);
 
   // dof = _entity_dofs[dim][entity_index][i]
   _entity_closure_dofs = entity_dofs;
