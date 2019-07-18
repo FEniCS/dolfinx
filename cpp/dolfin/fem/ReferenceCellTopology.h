@@ -25,10 +25,6 @@ public:
 
   /// Get geometric points for all vertices
   static const Point* get_vertices(mesh::CellType cell_type);
-
-  // Map from entity {dim_e, entity_e} to map {dim_c, (entities_c)}
-  static std::map<std::array<int, 2>, std::vector<std::set<int>>>
-  entity_closure(mesh::CellType cell_type);
 };
 } // namespace fem
 } // namespace dolfin

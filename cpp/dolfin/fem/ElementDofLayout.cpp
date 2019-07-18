@@ -31,7 +31,7 @@ ElementDofLayout::ElementDofLayout(
   // Compute closure entities
   // [dim, entity] -> closure{sub_dim, (sub_entities)}
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
-      = ReferenceCellTopology::entity_closure(cell_type);
+      = mesh::cell_entity_closure(cell_type);
 
   // dof = _entity_dofs[dim][entity_index][i]
   _entity_closure_dofs = entity_dofs;

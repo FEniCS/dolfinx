@@ -7,6 +7,9 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <array>
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -60,6 +63,14 @@ bool is_simplex(CellType type);
 
 /// Num vertices for a cell type
 int num_cell_vertices(CellType type);
+
+  // [dim, entity] -> closure{sub_dim, (sub_entities)}
+
+/// Closure entities for a cell, i.e., all lower-dimensional entities
+/// attached to a cell entity. Map from entity {dim_e, entity_e} to
+/// closure{sub_dim, (sub_entities)}
+std::map<std::array<int, 2>, std::vector<std::set<int>>>
+cell_entity_closure(mesh::CellType cell_type);
 
 /// Mapping of DOLFIN/UFC vertex ordering to VTK/XDMF ordering
 std::vector<std::int8_t> vtk_mapping(CellType type);
