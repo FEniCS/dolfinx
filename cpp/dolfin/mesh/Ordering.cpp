@@ -8,6 +8,7 @@
 #include "Cell.h"
 #include "Mesh.h"
 #include "MeshIterator.h"
+#include "cell_types.h"
 #include <array>
 #include <vector>
 

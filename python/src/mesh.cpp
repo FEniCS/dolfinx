@@ -24,6 +24,7 @@
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/cell_types.h>
 #include <dolfin/mesh/utils.h>
 #include <memory>
 #include <pybind11/eigen.h>

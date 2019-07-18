@@ -20,6 +20,7 @@ set(HEADERS
   PartitionData.h
   TopologyComputation.h
   Vertex.h
+  cell_types.h
   utils.h
   PARENT_SCOPE)
 
@@ -37,5 +38,6 @@ set(SOURCES
   Ordering.cpp
   PartitionData.cpp
   TopologyComputation.cpp
+  cell_types.cpp
   utils.cpp
   PARENT_SCOPE)

@@ -19,7 +19,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
 
 namespace pugi
 {

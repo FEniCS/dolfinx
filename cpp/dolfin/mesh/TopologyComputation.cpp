@@ -10,7 +10,7 @@
 #include "Mesh.h"
 #include "MeshIterator.h"
 #include "Topology.h"
-#include "utils.h"
+#include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
 #include <boost/unordered_map.hpp>

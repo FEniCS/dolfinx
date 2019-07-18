@@ -28,6 +28,7 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
 #include <iostream>

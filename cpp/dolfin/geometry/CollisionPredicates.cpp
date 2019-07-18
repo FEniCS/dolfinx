@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/MeshEntity.h>
+#include <dolfin/mesh/cell_types.h>
 
 using namespace dolfin;
 using namespace dolfin::geometry;

@@ -18,7 +18,8 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
+#include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
 #include <ostream>

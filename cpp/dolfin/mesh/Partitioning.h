@@ -8,7 +8,7 @@
 
 #include <cstdint>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
 #include <map>
 #include <set>
 #include <string>

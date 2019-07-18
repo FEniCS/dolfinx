@@ -16,7 +16,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
 #include <numeric>
 #include <set>
 #include <unordered_set>
@@ -174,8 +174,8 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
 
   // List of cell vertices
   const std::int32_t num_local_cells = cell_vertices.rows();
-  const std::int8_t num_vertices_per_facet = mesh::num_cell_vertices(
-      mesh::cell_entity_type(cell_type, tdim - 1));
+  const std::int8_t num_vertices_per_facet
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(num_local_cells == (int)cell_vertices.rows());
   //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
@@ -463,8 +463,8 @@ dolfin::graph::GraphBuilder::compute_local_dual_graph(
   LOG(INFO) << "Build local part of mesh dual graph";
 
   const std::int8_t tdim = mesh::cell_dim(cell_type);
-  const std::int8_t num_entity_vertices = mesh::num_cell_vertices(
-      mesh::cell_entity_type(cell_type, tdim - 1));
+  const std::int8_t num_entity_vertices
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   switch (num_entity_vertices)
   {

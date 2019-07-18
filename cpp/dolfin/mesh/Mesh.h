@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "utils.h"
+#include "cell_types.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>

@@ -7,8 +7,8 @@
 #pragma once
 
 #include "ReferenceCellTopology.h"
-#include <dolfin/mesh/utils.h>
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <petscsys.h>

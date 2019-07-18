@@ -9,7 +9,7 @@
 #include "ReferenceCellTopology.h"
 #include <Eigen/Dense>
 #include <cstdint>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
 #include <functional>
 #include <string>
 #include <unsupported/Eigen/CXX11/Tensor>

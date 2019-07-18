@@ -16,6 +16,7 @@
 #include "Topology.h"
 #include "TopologyComputation.h"
 #include "Vertex.h"
+#include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/utils.h>

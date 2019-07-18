@@ -11,7 +11,7 @@
 #include "ElementDofLayout.h"
 #include <dolfin/common/types.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
 #include <memory>
 #include <vector>
 

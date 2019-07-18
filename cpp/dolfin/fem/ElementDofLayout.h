@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 #include <array>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
 #include <memory>
 #include <set>
 #include <vector>

@@ -10,7 +10,7 @@
 #include <cstdint>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
 #include <tuple>
 #include <utility>
 #include <vector>

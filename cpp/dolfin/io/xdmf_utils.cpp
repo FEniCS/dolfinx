@@ -32,7 +32,7 @@
 // #include <dolfin/mesh/Edge.h>
 // #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
 // #include <dolfin/mesh/MeshValueCollection.h>
 // #include <dolfin/mesh/Partitioning.h>
 // #include <dolfin/mesh/Vertex.h>

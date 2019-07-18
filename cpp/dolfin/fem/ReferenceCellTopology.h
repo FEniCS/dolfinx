@@ -10,7 +10,7 @@
 #include <map>
 #include <set>
 #include <vector>
-#include <dolfin/mesh/utils.h>
+#include <dolfin/mesh/cell_types.h>
 
 namespace dolfin
 {
