@@ -36,10 +36,6 @@ public:
   /// Create cell type from type (factory function)
   static CellTypeOld* create(CellType type);
 
-  /// Compute squared distance to given point
-  virtual double squared_distance(const Cell& cell,
-                                  const Eigen::Vector3d& point) const = 0;
-
   const CellType type;
 };
 } // namespace mesh

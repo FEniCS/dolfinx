@@ -123,10 +123,10 @@ public:
   ///         The point.
   /// @return     double
   ///         The squared distance to the point.
-  double squared_distance(const Eigen::Vector3d& point) const
-  {
-    return _mesh->type().squared_distance(*this, point);
-  }
+  // double squared_distance(const Eigen::Vector3d& point) const
+  // {
+  //   return _mesh->type().squared_distance(*this, point);
+  // }
 
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
   /// Local facet index, used typically in eval functions
