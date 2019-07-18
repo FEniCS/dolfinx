@@ -7,7 +7,6 @@
 #include "ElementDofLayout.h"
 #include "ReferenceCellTopology.h"
 #include <array>
-#include <dolfin/mesh/CellType.h>
 #include <map>
 #include <numeric>
 #include <set>
@@ -20,22 +19,22 @@ ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-    const mesh::CellTypeOld& cell_type)
+    const mesh::CellType cell_type)
     : block_size(block_size), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
 
   mesh::CellType _cell = mesh::CellType::point;
-  if (cell_type.type == mesh::CellType::interval)
+  if (cell_type == mesh::CellType::interval)
     _cell = mesh::CellType::interval;
-  else if (cell_type.type == mesh::CellType::triangle)
+  else if (cell_type == mesh::CellType::triangle)
     _cell = mesh::CellType::triangle;
-  else if (cell_type.type == mesh::CellType::quadrilateral)
+  else if (cell_type == mesh::CellType::quadrilateral)
     _cell = mesh::CellType::quadrilateral;
-  else if (cell_type.type == mesh::CellType::tetrahedron)
+  else if (cell_type == mesh::CellType::tetrahedron)
     _cell = mesh::CellType::tetrahedron;
-  else if (cell_type.type == mesh::CellType::hexahedron)
+  else if (cell_type == mesh::CellType::hexahedron)
     _cell = mesh::CellType::hexahedron;
   else
     throw std::runtime_error("Ooops");

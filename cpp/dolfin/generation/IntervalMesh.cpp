@@ -6,7 +6,6 @@
 
 #include "IntervalMesh.h"
 #include "dolfin/common/MPI.h"
-#include "dolfin/mesh/CellType.h"
 #include "dolfin/mesh/Partitioning.h"
 #include <Eigen/Dense>
 #include <cfloat>

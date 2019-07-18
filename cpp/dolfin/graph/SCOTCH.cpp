@@ -12,7 +12,6 @@
 #include <dolfin/common/Set.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/common/log.h>
-#include <dolfin/mesh/CellType.h>
 #include <map>
 #include <numeric>
 #include <set>

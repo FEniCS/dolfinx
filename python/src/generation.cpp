@@ -10,7 +10,6 @@
 #include <dolfin/generation/RectangleMesh.h>
 #include <dolfin/generation/UnitDiscMesh.h>
 #include <dolfin/generation/UnitTriangleMesh.h>
-#include <dolfin/mesh/CellType.h>
 #include <iostream>
 #include <memory>
 #include <pybind11/eigen.h>

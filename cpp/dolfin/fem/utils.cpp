@@ -463,7 +463,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
 fem::create_element_dof_layout(const ufc_dofmap& dofmap,
-                               const mesh::CellTypeOld& cell_type,
+                               const mesh::CellType cell_type,
                                const std::vector<int>& parent_map)
 {
   // Copy over number of dofs per entity type
@@ -472,12 +472,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
             num_entity_dofs.data());
 
   // Fill entity dof indices
-  const int tdim = mesh::cell_dim(cell_type.type);
+  const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
   std::vector<int> work_array;
   for (int dim = 0; dim <= tdim; ++dim)
   {
-    const int num_entities = mesh::cell_num_entities(cell_type.type, dim);
+    const int num_entities = mesh::cell_num_entities(cell_type, dim);
     entity_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
@@ -529,7 +529,7 @@ fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
 {
   return DofMapBuilder::build(
       mesh, std::make_shared<ElementDofLayout>(
-                create_element_dof_layout(ufc_dofmap, mesh.type())));
+                create_element_dof_layout(ufc_dofmap, mesh.cell_type)));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>

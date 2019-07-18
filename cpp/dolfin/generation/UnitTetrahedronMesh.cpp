@@ -7,7 +7,6 @@
 #include "UnitTetrahedronMesh.h"
 #include <Eigen/Dense>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;

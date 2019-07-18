@@ -6,8 +6,6 @@
 
 #include "Facet.h"
 #include "Cell.h"
-#include "IntervalCell.h"
-#include "TriangleCell.h"
 #include <dolfin/geometry/utils.h>
 
 using namespace dolfin;

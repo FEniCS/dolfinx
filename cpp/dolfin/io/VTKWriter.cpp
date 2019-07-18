@@ -35,7 +35,7 @@ namespace
 std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim)
 {
   // Get cell type
-  mesh::CellType cell_type = mesh::cell_entity_type(mesh.type().type, cell_dim);
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, cell_dim);
 
   // Determine VTK cell type
   std::uint8_t vtk_cell_type = 0;
@@ -109,7 +109,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 {
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
   const std::size_t num_cell_vertices = mesh::num_cell_vertices(
-      mesh::cell_entity_type(mesh.type().type, cell_dim));
+      mesh::cell_entity_type(mesh.cell_type, cell_dim));
 
   // Get VTK cell type
   const std::size_t _vtk_cell_type = vtk_cell_type(mesh, cell_dim);
@@ -140,9 +140,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-  std::unique_ptr<mesh::CellTypeOld> celltype(mesh::CellTypeOld::create(
-      mesh::cell_entity_type(mesh.type().type, cell_dim)));
-  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype->type);
+  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
   for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
   {
     for (unsigned int i = 0; i != c.num_entities(0); ++i)

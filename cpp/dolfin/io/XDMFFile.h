@@ -8,7 +8,6 @@
 
 #include <cstdint>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/CellType.h>
 #include <hdf5.h>
 #include <memory>
 #include <petscsys.h>

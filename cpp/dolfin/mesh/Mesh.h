@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "CellType.h"
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/UniqueIdGenerator.h>
@@ -117,7 +116,7 @@ public:
   ///
   /// @param mesh (Mesh)
   ///         Another Mesh object.
-  Mesh& operator=(const Mesh& mesh);
+  // Mesh& operator=(const Mesh& mesh);
 
   /// Assignment move operator
   ///
@@ -168,15 +167,6 @@ public:
   /// @return Geometry
   ///         The geometry object associated with the mesh.
   const Geometry& geometry() const;
-
-  /// Get mesh cell type.
-  ///
-  /// @return CellTypeOld&
-  ///         The cell type object associated with the mesh.
-  mesh::CellTypeOld& type();
-
-  /// Get mesh cell type (const version).
-  const mesh::CellTypeOld& type() const;
 
   /// Create entities of given topological dimension.
   ///
@@ -282,10 +272,10 @@ public:
   // FIXME: This should be with Geometry
   std::int32_t degree() const;
 
-private:
-  // Cell type
-  std::unique_ptr<mesh::CellTypeOld> _cell_type;
+  /// Cell type
+  const mesh::CellType cell_type;
 
+private:
   // Mesh topology
   std::unique_ptr<Topology> _topology;
 

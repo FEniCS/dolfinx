@@ -125,12 +125,12 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
            const Eigen::Ref<const EigenRowArrayXXi64> cells,
            const std::vector<std::int64_t>& global_cell_indices,
            const GhostMode ghost_mode, std::int32_t num_ghost_cells)
-    : _cell_type(mesh::CellTypeOld::create(type)), _degree(1), _mpi_comm(comm),
-      _ghost_mode(ghost_mode), _unique_id(common::UniqueIdGenerator::id())
+    : cell_type(type), _degree(1), _mpi_comm(comm), _ghost_mode(ghost_mode),
+      _unique_id(common::UniqueIdGenerator::id())
 {
-  const int tdim = mesh::cell_dim(_cell_type->type);
+  const int tdim = mesh::cell_dim(cell_type);
   const std::int32_t num_vertices_per_cell
-      = mesh::num_cell_vertices(_cell_type->type);
+      = mesh::num_cell_vertices(cell_type);
 
   // Check size of global cell indices. If empty, construct later.
   if (global_cell_indices.size() > 0
@@ -142,7 +142,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
 
   // Permutation from VTK to DOLFIN order for cell geometric nodes
   // FIXME: should do this also for quad/hex
-  // FIXME: remove duplication in CellTypeOld::vtk_mapping()
+  // FIXME: remove duplication in mesh::vtk_mapping()
   std::vector<std::uint8_t> cell_permutation = {0, 1, 2, 3, 4, 5, 6, 7};
 
   // Infer if the mesh has P2 geometry (P1 has num_vertices_per_cell ==
@@ -269,8 +269,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : _cell_type(CellTypeOld::create(mesh._cell_type->type)),
-      _topology(new Topology(*mesh._topology)),
+    : cell_type(mesh.cell_type), _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)),
       _coordinate_dofs(new CoordinateDofs(*mesh._coordinate_dofs)),
       _degree(mesh._degree), _mpi_comm(mesh.mpi_comm()),
@@ -281,7 +280,7 @@ Mesh::Mesh(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
-    : _cell_type(CellTypeOld::create(mesh._cell_type->type)),
+    : cell_type(mesh.cell_type),
       _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _coordinate_dofs(std::move(mesh._coordinate_dofs)), _degree(mesh._degree),
@@ -297,25 +296,20 @@ Mesh::~Mesh()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Mesh& Mesh::operator=(const Mesh& mesh)
-{
-  // Assign data
-  assert(mesh._topology);
-  _topology = std::make_unique<Topology>(*mesh._topology);
-  _geometry = std::make_unique<Geometry>(*mesh._geometry);
-  _coordinate_dofs = std::make_unique<CoordinateDofs>(*mesh._coordinate_dofs);
-  _degree = mesh._degree;
+// Mesh& Mesh::operator=(const Mesh& mesh)
+// {
+//   // Assign data
+//   cell_type = mesh.cell_type;
+//   assert(mesh._topology);
+//   _topology = std::make_unique<Topology>(*mesh._topology);
+//   _geometry = std::make_unique<Geometry>(*mesh._geometry);
+//   _coordinate_dofs = std::make_unique<CoordinateDofs>(*mesh._coordinate_dofs);
+//   _degree = mesh._degree;
+//   _ghost_mode = mesh._ghost_mode;
+//   _unique_id = common::UniqueIdGenerator::id();
 
-  if (mesh._cell_type)
-    _cell_type.reset(mesh::CellTypeOld::create(mesh._cell_type->type));
-  else
-    _cell_type.reset();
-
-  _ghost_mode = mesh._ghost_mode;
-  _unique_id = common::UniqueIdGenerator::id();
-
-  return *this;
-}
+//   return *this;
+// }
 //-----------------------------------------------------------------------------
 std::int32_t Mesh::num_entities(int d) const
 {
@@ -351,18 +345,6 @@ const Geometry& Mesh::geometry() const
 {
   assert(_geometry);
   return *_geometry;
-}
-//-----------------------------------------------------------------------------
-mesh::CellTypeOld& Mesh::type()
-{
-  assert(_cell_type);
-  return *_cell_type;
-}
-//-----------------------------------------------------------------------------
-const mesh::CellTypeOld& Mesh::type() const
-{
-  assert(_cell_type);
-  return *_cell_type;
 }
 //-----------------------------------------------------------------------------
 std::size_t Mesh::create_entities(int dim) const
@@ -472,12 +454,8 @@ std::string Mesh::str(bool verbose) const
   }
   else
   {
-    std::string cell_type("undefined cell type");
     const int tdim = _topology->dim();
-    if (_cell_type)
-      cell_type = mesh::to_string(_cell_type->type);
-
-    s << "<Mesh of topological dimension " << tdim << " (" << cell_type
+    s << "<Mesh of topological dimension " << tdim << " (" << mesh::to_string(cell_type)
       << ") with " << num_entities(0) << " vertices and " << num_entities(tdim)
       << " cells >";
   }

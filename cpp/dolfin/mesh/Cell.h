@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "CellType.h"
 #include "CoordinateDofs.h"
 #include "Geometry.h"
 #include "Mesh.h"
@@ -51,12 +50,12 @@ public:
   Cell& operator=(const Cell& cell) = default;
 
   /// Return type of cell
-  CellType type() const { return _mesh->type().type; }
+  CellType type() const { return _mesh->cell_type; }
 
   /// Return number of vertices of cell
   std::size_t num_vertices() const
   {
-    return mesh::num_cell_vertices(_mesh->type().type);
+    return mesh::num_cell_vertices(_mesh->cell_type);
   }
 
   /// Compute (generalized) volume of cell
@@ -109,7 +108,7 @@ public:
   double inradius() const
   {
     // We would need facet areas
-    const int dim = mesh::cell_dim(_mesh->type().type);
+    const int dim = mesh::cell_dim(_mesh->cell_type);
     _mesh->create_entities(dim - 1);
 
     Eigen::ArrayXi cells(1);

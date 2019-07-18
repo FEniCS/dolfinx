@@ -1,6 +1,5 @@
 set(HEADERS
   Cell.h
-  CellType.h
   Connectivity.h
   CoordinateDofs.h
   DistributedMeshTools.h
@@ -8,8 +7,6 @@ set(HEADERS
   Edge.h
   Face.h
   Facet.h
-  HexahedronCell.h
-  IntervalCell.h
   Mesh.h
   MeshEntity.h
   MeshFunction.h
@@ -21,17 +18,12 @@ set(HEADERS
   MeshValueCollection.h
   Ordering.h
   PartitionData.h
-  PointCell.h
-  QuadrilateralCell.h
-  TetrahedronCell.h
   TopologyComputation.h
-  TriangleCell.h
   Vertex.h
   utils.h
   PARENT_SCOPE)
 
 set(SOURCES
-  CellType.cpp
   Connectivity.cpp
   CoordinateDofs.cpp
   DistributedMeshTools.cpp

@@ -397,14 +397,14 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     func, args = mesh_factory
     xfail_ghosted_quads_hexes(func, ghost_mode)
     mesh = func(*args)
-    if not is_simplex(mesh.type().type):
+    if not is_simplex(mesh.cell_type):
         return
 
     # Order mesh
     cpp.mesh.Ordering.order_simplex(mesh)
 
     # Create FIAT cell
-    cell_name = cpp.mesh.to_string(mesh.type().type)
+    cell_name = cpp.mesh.to_string(mesh.cell_type)
     fiat_cell = FIAT.ufc_cell(cell_name)
 
     # Initialize all mesh entities and connectivities

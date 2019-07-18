@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Partitioning.h"
-#include "CellType.h"
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "Mesh.h"
@@ -503,7 +502,7 @@ void distribute_cell_layer(
 //-----------------------------------------------------------------------------
 // Build a distributed mesh from local mesh data with a computed
 // partition
-mesh::Mesh build(const MPI_Comm& comm, mesh::CellType type,
+mesh::Mesh build(const MPI_Comm& comm, mesh::CellType cell_type,
                  const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                  const Eigen::Ref<const EigenRowArrayXXd> points,
                  const std::vector<std::int64_t>& global_cell_indices,
@@ -513,13 +512,8 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType type,
 
   common::Timer timer("Distribute mesh cells");
 
-  // Create CellType objects based on current cell type
-  std::unique_ptr<mesh::CellTypeOld> cell_type(
-      mesh::CellTypeOld ::create(type));
-  assert(cell_type);
-
   // Topological dimension
-  const int tdim = mesh::cell_dim(cell_type->type);
+  const int tdim = mesh::cell_dim(cell_type);
 
   // Send cells to owning process according to mp cell partition, and
   // receive cells that belong to this process. Also compute auxiliary
@@ -575,7 +569,7 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType type,
   // Build mesh from points and distributed cells
   const std::int32_t num_ghosts = new_cell_vertices.rows() - num_regular_cells;
 
-  mesh::Mesh mesh(comm, type, points, new_cell_vertices,
+  mesh::Mesh mesh(comm, cell_type, points, new_cell_vertices,
                   new_global_cell_indices, ghost_mode, num_ghosts);
 
   if (ghost_mode == mesh::GhostMode::none)
@@ -598,20 +592,17 @@ mesh::Mesh build(const MPI_Comm& comm, mesh::CellType type,
 // 'cell -> process' vector for cells, and a map 'local cell index ->
 // processes' to which ghost cells must be sent
 PartitionData
-partition_cells(const MPI_Comm& mpi_comm, mesh::CellType type,
+partition_cells(const MPI_Comm& mpi_comm, mesh::CellType cell_type,
                 const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                 const std::string partitioner)
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
-  std::unique_ptr<mesh::CellTypeOld> cell_type(mesh::CellTypeOld::create(type));
-  assert(cell_type);
-
   // Compute dual graph (for this partition)
   std::vector<std::vector<std::size_t>> local_graph;
   std::tuple<std::int32_t, std::int32_t, std::int32_t> graph_info;
   std::tie(local_graph, graph_info) = graph::GraphBuilder::compute_dual_graph(
-      mpi_comm, cell_vertices, *cell_type);
+      mpi_comm, cell_vertices, cell_type);
 
   const std::size_t global_graph_size = MPI::sum(mpi_comm, local_graph.size());
   const std::size_t num_processes = MPI::size(mpi_comm);

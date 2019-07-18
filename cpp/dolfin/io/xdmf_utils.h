@@ -15,7 +15,6 @@
 // #include <dolfin/mesh/MeshValueCollection.h>
 // #include <memory>
 #include <array>
-#include <dolfin/mesh/CellType.h>
 #include <petscsys.h>
 #include <string>
 #include <utility>

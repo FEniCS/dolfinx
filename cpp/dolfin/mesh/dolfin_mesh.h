@@ -12,7 +12,6 @@ namespace dolfin
 // DOLFIN mesh interface
 
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Face.h>
@@ -27,3 +26,4 @@ namespace dolfin
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Topology.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/utils.h>

@@ -38,16 +38,16 @@ std::tuple<std::vector<std::vector<std::size_t>>,
 compute_local_dual_graph_keyed(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellTypeOld& cell_type)
+    const mesh::CellType cell_type)
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
-  const std::int8_t tdim = mesh::cell_dim(cell_type.type);
+  const std::int8_t tdim = mesh::cell_dim(cell_type);
   const std::int32_t num_local_cells = cell_vertices.rows();
   const std::int8_t num_facets_per_cell
-      = mesh::cell_num_entities(cell_type.type, tdim - 1);
-  const std::int8_t num_vertices_per_facet = mesh::num_cell_vertices(
-      mesh::cell_entity_type(cell_type.type, tdim - 1));
+      = mesh::cell_num_entities(cell_type, tdim - 1);
+  const std::int8_t num_vertices_per_facet
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(N == num_vertices_per_facet);
   assert(num_local_cells == (int)cell_vertices.rows());
@@ -65,7 +65,7 @@ compute_local_dual_graph_keyed(
 
   // Create map from cell vertices to entity vertices
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      facet_vertices = mesh::create_entities(cell_type.type, tdim - 1);
+      facet_vertices = mesh::create_entities(cell_type, tdim - 1);
 
   // Vector-of-arrays data structure, which is considerably faster than
   // vector-of-vectors
@@ -155,7 +155,7 @@ compute_local_dual_graph_keyed(
 std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellTypeOld& cell_type,
+    const mesh::CellType cell_type,
     const graph::GraphBuilder::FacetCellMap& facet_cell_map,
     std::vector<std::vector<std::size_t>>& local_graph)
 {
@@ -170,13 +170,12 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   // At this stage facet_cell map only contains facets->cells with
   // edge facets either interprocess or external boundaries
 
-  const int tdim = mesh::cell_dim(cell_type.type);
+  const int tdim = mesh::cell_dim(cell_type);
 
   // List of cell vertices
   const std::int32_t num_local_cells = cell_vertices.rows();
-  //  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
   const std::int8_t num_vertices_per_facet = mesh::num_cell_vertices(
-      mesh::cell_entity_type(cell_type.type, tdim - 1));
+      mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(num_local_cells == (int)cell_vertices.rows());
   //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
@@ -426,7 +425,7 @@ std::pair<std::vector<std::vector<std::size_t>>,
 graph::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellTypeOld& cell_type)
+    const mesh::CellType cell_type)
 {
   LOG(INFO) << "Build mesh dual graph";
 
@@ -459,13 +458,13 @@ std::tuple<std::vector<std::vector<std::size_t>>,
 dolfin::graph::GraphBuilder::compute_local_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellTypeOld& cell_type)
+    const mesh::CellType cell_type)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
 
-  const std::int8_t tdim = mesh::cell_dim(cell_type.type);
+  const std::int8_t tdim = mesh::cell_dim(cell_type);
   const std::int8_t num_entity_vertices = mesh::num_cell_vertices(
-      mesh::cell_entity_type(cell_type.type, tdim - 1));
+      mesh::cell_entity_type(cell_type, tdim - 1));
 
   switch (num_entity_vertices)
   {

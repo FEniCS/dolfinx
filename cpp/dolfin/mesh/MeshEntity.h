@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "CellType.h"
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "Topology.h"

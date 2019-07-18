@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "CellType.h"
 #include <cstdint>
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/utils.h>
 #include <map>
 #include <set>
 #include <string>
@@ -30,7 +30,6 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
-class CellTypeOld;
 
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int

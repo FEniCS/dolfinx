@@ -8,7 +8,6 @@
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/Edge.h>
@@ -63,11 +62,6 @@ void mesh(py::module& m)
         "Compute maximum distance between any two vertices.");
   m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
   m.def("radius_ratio", &dolfin::mesh::radius_ratio);
-
-  // dolfin::mesh::CellType
-  py::class_<dolfin::mesh::CellTypeOld,
-             std::shared_ptr<dolfin::mesh::CellTypeOld>>(m, "CellTypeOld")
-      .def_readonly("type", &dolfin::mesh::CellTypeOld::type);
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")
@@ -153,15 +147,15 @@ void mesh(py::module& m)
                 comm.get(), type, geometry, topology, global_cell_indices,
                 ghost_mode);
           }))
-      .def("cells",
-           [](const dolfin::mesh::Mesh& self) {
-             const std::uint32_t tdim = self.topology().dim();
-             return py::array(
-                 {(std::int32_t)self.topology().size(tdim),
-                  (std::int32_t)dolfin::mesh::num_cell_vertices(
-                      self.type().type)},
-                 self.topology().connectivity(tdim, 0)->connections().data());
-           })
+      .def(
+          "cells",
+          [](const dolfin::mesh::Mesh& self) {
+            const std::uint32_t tdim = self.topology().dim();
+            return py::array(
+                {(std::int32_t)self.topology().size(tdim),
+                 (std::int32_t)dolfin::mesh::num_cell_vertices(self.cell_type)},
+                self.topology().connectivity(tdim, 0)->connections().data());
+          })
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")
@@ -189,12 +183,11 @@ void mesh(py::module& m)
       .def_property_readonly(
           "topology", py::overload_cast<>(&dolfin::mesh::Mesh::topology),
           "Mesh topology", py::return_value_policy::reference_internal)
-      .def("type", py::overload_cast<>(&dolfin::mesh::Mesh::type, py::const_),
-           py::return_value_policy::reference)
+      .def_readonly("cell_type", &dolfin::mesh::Mesh::cell_type)
       .def("ufl_id", &dolfin::mesh::Mesh::id)
       .def_property_readonly("id", &dolfin::mesh::Mesh::id)
       .def("cell_name", [](const dolfin::mesh::Mesh& self) {
-        return dolfin::mesh::to_string(self.type().type);
+        return dolfin::mesh::to_string(self.cell_type);
       });
 
   // dolfin::mesh::Connectivity class

@@ -929,9 +929,9 @@ void XDMFFile::write_mesh_value_collection(
   const std::size_t cell_dim = mvc.dim();
   const std::size_t degree = 1;
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh::cell_entity_type(mesh->type().type, cell_dim), degree);
+      mesh::cell_entity_type(mesh->cell_type, cell_dim), degree);
   const std::int32_t num_vertices_per_cell
-      = mesh::num_cell_vertices(cell_entity_type(mesh->type().type, cell_dim));
+      = mesh::num_cell_vertices(cell_entity_type(mesh->cell_type, cell_dim));
 
   const std::map<std::pair<std::size_t, std::size_t>, T>& values = mvc.values();
   const std::int64_t num_cells = values.size();
@@ -1064,11 +1064,9 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   // Get description of MVC cell type and dimension from topology node
   auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
-  std::unique_ptr<mesh::CellTypeOld> cell_type(
-      mesh::CellTypeOld::create(mesh::to_type(cell_type_str.first)));
-  assert(cell_type);
-  const int dim = mesh::cell_dim(cell_type->type);
-  const int num_verts_per_entity = mesh::num_cell_vertices(cell_type->type);
+  const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
+  const int dim = mesh::cell_dim(cell_type);
+  const int num_verts_per_entity = mesh::num_cell_vertices(cell_type);
 
   // Read MVC topology
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
@@ -1362,9 +1360,7 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
     LOG(WARNING) << "Caution: reading quadratic mesh";
 
   // Get toplogical dimensions
-  std::unique_ptr<mesh::CellTypeOld> cell_type(
-      mesh::CellTypeOld::create(mesh::to_type(cell_type_str.first)));
-  assert(cell_type);
+  mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Get geometry node
   pugi::xml_node geometry_node = grid_node.child("Geometry");
@@ -1425,7 +1421,7 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
             cell_index_offset);
 
   return mesh::Partitioning::build_distributed_mesh(
-      _mpi_comm.comm(), cell_type->type, points, cells, global_cell_indices,
+      _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
       ghost_mode);
 }
 //----------------------------------------------------------------------------
@@ -1672,12 +1668,10 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // mesh::Mesh)
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
-  std::unique_ptr<mesh::CellTypeOld> cell_type(
-      mesh::CellTypeOld::create(mesh::to_type(cell_type_str.first)));
-  assert(cell_type);
+  mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
   const std::uint32_t num_vertices_per_cell
-      = mesh::cell_num_entities(cell_type->type, 0);
-  const std::uint32_t dim = mesh::cell_dim(cell_type->type);
+      = mesh::cell_num_entities(cell_type, 0);
+  const std::uint32_t dim = mesh::cell_dim(cell_type);
 
   const std::int64_t num_entities_global
       = xdmf_utils::get_num_cells(topology_node);
@@ -1788,7 +1782,7 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
     assert(topology_node);
     std::pair<std::string, int> cell_type_str
         = xdmf_utils::get_cell_type(topology_node);
-    if (mesh::to_string(mesh->type().type) != cell_type_str.first)
+    if (mesh::to_string(mesh->cell_type) != cell_type_str.first)
     {
       throw std::runtime_error(
           "Incompatible Mesh type. Try writing the Mesh to XDMF first");

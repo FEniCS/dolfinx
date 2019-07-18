@@ -189,7 +189,7 @@ template <typename T>
 T volume_entities_tmpl(const mesh::Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
 {
-  const mesh::CellType type = cell_entity_type(mesh.type().type, dim);
+  const mesh::CellType type = cell_entity_type(mesh.cell_type, dim);
   switch (type)
   {
   case mesh::CellType::point:
@@ -294,7 +294,7 @@ template <typename T>
 T circumradius_tmpl(const mesh::Mesh& mesh,
                     const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
 {
-  const mesh::CellType type = cell_entity_type(mesh.type().type, dim);
+  const mesh::CellType type = cell_entity_type(mesh.cell_type, dim);
   switch (type)
   {
   case mesh::CellType::point:
@@ -701,7 +701,7 @@ Eigen::ArrayXd
 mesh::volume_cells(const mesh::Mesh& mesh,
                    const Eigen::Ref<const Eigen::ArrayXi> entities)
 {
-  const int dim = mesh::cell_dim(mesh.type().type);
+  const int dim = mesh::cell_dim(mesh.cell_type);
   return volume_entities_tmpl<Eigen::ArrayXd>(mesh, entities, dim);
 }
 //-----------------------------------------------------------------------------
@@ -732,7 +732,7 @@ Eigen::ArrayXd mesh::h(const Mesh& mesh,
                        const Eigen::Ref<const Eigen::ArrayXi> entities, int dim)
 {
   // Get number of cell vertices
-  const mesh::CellType type = cell_entity_type(mesh.type().type, dim);
+  const mesh::CellType type = cell_entity_type(mesh.cell_type, dim);
   const int num_vertices = num_cell_vertices(type);
 
   const mesh::Geometry& geometry = mesh.geometry();
@@ -766,7 +766,7 @@ Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
 // double mesh::inradius(const mesh::Cell& cell)
 {
   // Cell type
-  const mesh::CellType type = mesh.type().type;
+  const mesh::CellType type = mesh.cell_type;
 
   // Check cell type
   if (!mesh::is_simplex(type))
@@ -828,11 +828,11 @@ Eigen::ArrayXd
 mesh::radius_ratio(const mesh::Mesh& mesh,
                    const Eigen::Ref<const Eigen::ArrayXi> entities)
 {
-  const mesh::CellType type = mesh.type().type;
+  const mesh::CellType type = mesh.cell_type;
   const int dim = mesh::cell_dim(type);
   Eigen::ArrayXd r = mesh::inradius(mesh, entities);
   Eigen::ArrayXd cr = mesh::circumradius(mesh, entities, dim);
-  return mesh::cell_dim(mesh.type().type) * r / cr;
+  return mesh::cell_dim(mesh.cell_type) * r / cr;
 }
 //-----------------------------------------------------------------------------
 Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)

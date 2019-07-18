@@ -6,7 +6,6 @@
 
 #include "TopologyComputation.h"
 #include "Cell.h"
-#include "CellType.h"
 #include "Connectivity.h"
 #include "Mesh.h"
 #include "MeshIterator.h"
@@ -75,17 +74,14 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   // Start timer
   common::Timer timer("Compute entities of dim = " + std::to_string(dim));
 
-  // Get cell type
-  const mesh::CellTypeOld& cell_type = mesh.type();
-
   // Initialize local array of entities
-  const std::int8_t num_entities = mesh::cell_num_entities(cell_type.type, dim);
+  const std::int8_t num_entities = mesh::cell_num_entities(mesh.cell_type, dim);
   const int num_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type.type, dim));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, dim));
 
   // Create map from cell vertices to entity vertices
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e_vertices
-      = mesh::create_entities(cell_type.type, dim);
+      = mesh::create_entities(mesh.cell_type, dim);
 
   assert(N == num_vertices);
 
@@ -265,15 +261,14 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
   assert(d0 > d1);
 
   // Get the type of entity d0
-  std::unique_ptr<mesh::CellTypeOld> cell_type(
-      mesh::CellTypeOld::create(mesh::cell_entity_type(mesh.type().type, d0)));
+  mesh::CellType cell_type = mesh::cell_entity_type(mesh.cell_type, d0);
 
   // Make a map from the sorted d1 entity vertices to the d1 entity index
   boost::unordered_map<std::vector<std::int32_t>, std::int32_t> entity_to_index;
   entity_to_index.reserve(mesh.num_entities(d1));
 
   const std::size_t num_verts_d1
-      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.type().type, d1));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, d1));
 
   std::vector<std::int32_t> key(num_verts_d1);
   for (auto& e : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
@@ -285,12 +280,12 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
 
   Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       connections(mesh.num_entities(d0),
-                  mesh::cell_num_entities(cell_type->type, d1));
+                  mesh::cell_num_entities(cell_type, d1));
 
   // Search for d1 entities of d0 in map, and recover index
   std::vector<std::int32_t> entities;
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      e_vertices_ref = mesh::create_entities(cell_type->type, d1);
+      e_vertices_ref = mesh::create_entities(cell_type, d1);
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> keys
       = e_vertices_ref;
   for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
@@ -344,7 +339,7 @@ void TopologyComputation::compute_entities(Mesh& mesh, int dim)
 
   // Call specialised function to compute entities
   const std::int8_t num_entity_vertices
-      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.type().type, dim));
+      = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, dim));
 
   std::tuple<std::shared_ptr<Connectivity>, std::shared_ptr<Connectivity>,
              std::int32_t>

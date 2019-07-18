@@ -9,7 +9,6 @@
 #include "ReferenceCellTopology.h"
 #include <Eigen/Dense>
 #include <cstdint>
-#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/utils.h>
 #include <functional>
 #include <string>

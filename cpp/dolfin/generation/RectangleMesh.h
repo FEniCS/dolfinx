@@ -8,7 +8,6 @@
 
 #include <array>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
 #include <string>
 
