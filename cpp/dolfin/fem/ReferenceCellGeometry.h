@@ -21,10 +21,9 @@ namespace fem
 class ReferenceCellGeometry
 {
 public:
-  typedef double Point[3];
-
   /// Get geometric points for all vertices
-  static const Point* get_vertices(mesh::CellType cell_type);
+  static Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  get_vertices(mesh::CellType cell_type);
 };
 } // namespace fem
 } // namespace dolfin

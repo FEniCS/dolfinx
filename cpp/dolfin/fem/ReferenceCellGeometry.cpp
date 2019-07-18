@@ -12,23 +12,33 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-const ReferenceCellGeometry::Point*
+Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 ReferenceCellGeometry::get_vertices(mesh::CellType cell_type)
 {
-  static const double interval[][3] = {{0.0}, {1.0}};
-  static const double triangle[][3] = {{0.0, 0.0}, {1.0, 0.0}, {0.0, 1.0}};
-  static const double quadrilateral[][3]
-      = {{0.0, 0.0}, {0.0, 1.0}, {1.0, 0.0}, {1.0, 1.0}};
-  static const double tetrahedron[][3]
-      = {{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
-  static const double hexahedron[][3]
-      = {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}, {0.0, 1.0, 0.0}, {0.0, 1.0, 1.0},
-         {1.0, 0.0, 0.0}, {1.0, 0.0, 1.0}, {1.0, 1.0, 0.0}, {1.0, 1.0, 1.0}};
+  const static Eigen::Array<double, 1, 1> point
+      = (Eigen::Array<double, 1, 1>() << 0.0).finished();
+  const static Eigen::Array<double, 2, 1> interval
+      = (Eigen::Array<double, 2, 1>() << 0.0, 1.0).finished();
+  const static Eigen::Array<double, 3, 2, Eigen::RowMajor> triangle
+      = (Eigen::Array<double, 3, 2, Eigen::RowMajor>() << 0, 0, 1, 0, 0, 1)
+            .finished();
+  const static Eigen::Array<double, 4, 2, Eigen::RowMajor> quadrilateral
+      = (Eigen::Array<double, 4, 2, Eigen::RowMajor>() << 0, 0, 0, 1, 1, 0, 1,
+         1)
+            .finished();
+  const static Eigen::Array<double, 4, 3, Eigen::RowMajor> tetrahedron
+      = (Eigen::Array<double, 4, 3, Eigen::RowMajor>() << 0, 0, 0, 1, 0, 0, 0,
+         1, 0, 0, 0, 1)
+            .finished();
+  const static Eigen::Array<double, 6, 4, Eigen::RowMajor> hexahedron
+      = (Eigen::Array<double, 6, 4, Eigen::RowMajor>() << 0, 0, 0, 0, 0, 1, 0,
+         1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1)
+            .finished();
 
   switch (cell_type)
   {
   case mesh::CellType::point:
-    return nullptr;
+    return point;
   case mesh::CellType::interval:
     return interval;
   case mesh::CellType::triangle:
@@ -43,6 +53,7 @@ ReferenceCellGeometry::get_vertices(mesh::CellType cell_type)
     throw std::runtime_error("Unknown cell type.");
   }
 
-  return nullptr;
+  return Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
+                      Eigen::RowMajor>();
 }
 //-----------------------------------------------------------------------------
