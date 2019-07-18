@@ -46,10 +46,12 @@ CellType cell_facet_type(CellType type);
 
 /// Return array entities(num entities, num vertices per entity), where
 /// entities(e, k) is the local vertex index for the kth vertex of
-/// entity e.
+/// entity e of dimension dim
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-create_entities(CellType type, int dim);
+get_entity_vertices(CellType type, int dim);
 
+// Get entities of dimsion dim1 and that make up entities of dimension
+// dim0
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
 get_sub_entities(CellType type, int dim0, int dim1);
 

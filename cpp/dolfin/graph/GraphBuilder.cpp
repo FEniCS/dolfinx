@@ -65,7 +65,7 @@ compute_local_dual_graph_keyed(
 
   // Create map from cell vertices to entity vertices
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      facet_vertices = mesh::create_entities(cell_type, tdim - 1);
+      facet_vertices = mesh::get_entity_vertices(cell_type, tdim - 1);
 
   // Vector-of-arrays data structure, which is considerably faster than
   // vector-of-vectors

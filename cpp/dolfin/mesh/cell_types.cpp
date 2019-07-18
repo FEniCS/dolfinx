@@ -21,7 +21,7 @@ namespace
 {
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-create_entities_interval(int dim)
+get_entity_vertices_interval(int dim)
 {
   const static Eigen::Array<int, 2, 1> e0
       = (Eigen::Array<int, 2, 1>() << 0, 1).finished();
@@ -39,7 +39,7 @@ create_entities_interval(int dim)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-create_entities_triangle(int dim)
+get_entity_vertices_triangle(int dim)
 {
   // We only need to know how to create edges
   assert(dim == 1);
@@ -57,7 +57,7 @@ create_entities_triangle(int dim)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-create_entities_quadrilateral(int dim)
+get_entity_vertices_quadrilateral(int dim)
 {
   assert(dim == 1);
 
@@ -76,7 +76,7 @@ create_entities_quadrilateral(int dim)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-create_entities_tetrahedron(int dim)
+get_entity_vertices_tetrahedron(int dim)
 {
   // We only need to know how to create edges and faces
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> e;
@@ -126,7 +126,7 @@ create_entities_tetrahedron(int dim)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-create_entities_hexahedron(int dim)
+get_entity_vertices_hexahedron(int dim)
 {
   // We need to know how to create edges and faces
 
@@ -283,22 +283,22 @@ mesh::CellType mesh::cell_facet_type(mesh::CellType type)
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-mesh::create_entities(mesh::CellType type, int dim)
+mesh::get_entity_vertices(mesh::CellType type, int dim)
 {
   switch (type)
   {
   // case mesh::CellType::point:
   //   return create_entities_point(e, v);
   case mesh::CellType::interval:
-    return create_entities_interval(dim);
+    return get_entity_vertices_interval(dim);
   case mesh::CellType::triangle:
-    return create_entities_triangle(dim);
+    return get_entity_vertices_triangle(dim);
   case mesh::CellType::tetrahedron:
-    return create_entities_tetrahedron(dim);
+    return get_entity_vertices_tetrahedron(dim);
   case mesh::CellType::quadrilateral:
-    return create_entities_quadrilateral(dim);
+    return get_entity_vertices_quadrilateral(dim);
   case mesh::CellType::hexahedron:
-    return create_entities_hexahedron(dim);
+    return get_entity_vertices_hexahedron(dim);
   default:
     throw std::runtime_error("Unsupported cell type.");
     return Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>();
@@ -432,7 +432,7 @@ mesh::cell_entity_closure(mesh::CellType cell_type)
     num_entities[i] = mesh::cell_num_entities(cell_type, i);
 
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      edge_v = mesh::create_entities(cell_type, 1);
+      edge_v = mesh::get_entity_vertices(cell_type, 1);
   const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       face_e = mesh::get_sub_entities(cell_type, 2, 1);
 
