@@ -6,10 +6,11 @@
 
 #pragma once
 
-#include "CellType.h"
 #include "PartitionData.h"
+
 #include <cstdint>
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/cell_types.h>
 #include <map>
 #include <set>
 #include <string>
@@ -31,7 +32,6 @@ template <typename T>
 class MeshFunction;
 template <typename T>
 class MeshValueCollection;
-class CellType;
 
 /// Enum for different partitioning ghost modes
 enum class GhostMode : int
@@ -69,7 +69,7 @@ public:
   /// @param graph_partitioner
   ///     External Graph Partitioner (SCOTCH, PARMETIS)
   static mesh::Mesh
-  build_distributed_mesh(const MPI_Comm& comm, mesh::CellType::Type cell_type,
+  build_distributed_mesh(const MPI_Comm& comm, mesh::CellType cell_type,
                          const Eigen::Ref<const EigenRowArrayXXd> points,
                          const Eigen::Ref<const EigenRowArrayXXi64> cells,
                          const std::vector<std::int64_t>& global_cell_indices,
@@ -94,7 +94,7 @@ public:
   /// @param PartitionData
   ///     Cell partition data (PartitionData object)
   static mesh::Mesh
-  build_from_partition(const MPI_Comm& comm, mesh::CellType::Type type,
+  build_from_partition(const MPI_Comm& comm, mesh::CellType type,
                        const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                        const Eigen::Ref<const EigenRowArrayXXd> points,
                        const std::vector<std::int64_t>& global_cell_indices,
@@ -119,7 +119,7 @@ public:
   ///     Cell partition data (PartitionData object)
   static PartitionData
   partition_cells(const MPI_Comm& mpi_comm, int nparts,
-                  const mesh::CellType::Type cell_type,
+                  const mesh::CellType cell_type,
                   const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                   const std::string partitioner);
 

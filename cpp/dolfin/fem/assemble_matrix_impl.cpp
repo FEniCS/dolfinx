@@ -214,7 +214,8 @@ void fem::impl::assemble_exterior_facets(
     const mesh::Facet facet(mesh, facet_index);
     assert(facet.num_global_entities(tdim) == 1);
 
-    // TODO: check ghosting sanity?
+    // Check that facet is not a ghost (will be assembled on another process)
+    assert(!facet.is_ghost());
 
     // Create attached cell
     const mesh::Cell cell(mesh, facet.entities(tdim)[0]);

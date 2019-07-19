@@ -243,7 +243,7 @@ mesh::Mesh ParallelRefinement::build_local() const
   Eigen::Map<const EigenRowArrayXXi64> topology(_new_cell_topology.data(),
                                                 num_cells, num_cell_vertices);
 
-  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.type().type, geometry, topology, {},
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type, geometry, topology, {},
                   _mesh.get_ghost_mode());
 
   return mesh;
@@ -251,15 +251,15 @@ mesh::Mesh ParallelRefinement::build_local() const
 //-----------------------------------------------------------------------------
 mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 {
-  const std::size_t num_vertices_per_cell = _mesh.type().num_entities(0);
+  const int num_vertices_per_cell = mesh::cell_num_entities(_mesh.cell_type, 0);
 
   // Copy data to mesh::LocalMeshData structures
-  const std::size_t num_local_cells
+  const std::int32_t num_local_cells
       = _new_cell_topology.size() / num_vertices_per_cell;
   std::vector<std::int64_t> global_cell_indices(num_local_cells);
   const std::size_t idx_global_offset
       = MPI::global_offset(_mesh.mpi_comm(), num_local_cells, true);
-  for (std::size_t i = 0; i < num_local_cells; i++)
+  for (std::int32_t i = 0; i < num_local_cells; i++)
     global_cell_indices[i] = idx_global_offset + i;
 
   Eigen::Map<const EigenRowArrayXXi64> cells(
@@ -270,7 +270,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
                                             num_local_vertices, 3);
 
   return mesh::Partitioning::build_distributed_mesh(
-      _mesh.mpi_comm(), _mesh.type().type, points, cells, global_cell_indices,
+      _mesh.mpi_comm(), _mesh.cell_type, points, cells, global_cell_indices,
       _mesh.get_ghost_mode());
 }
 //-----------------------------------------------------------------------------

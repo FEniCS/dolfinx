@@ -7,6 +7,8 @@
 #include <Eigen/Dense>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/CollisionPredicates.h>
+#include <dolfin/geometry/utils.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>
 #include <pybind11/eigen.h>
@@ -19,14 +21,14 @@ namespace py = pybind11;
 
 namespace dolfin_wrappers
 {
-
 void geometry(py::module& m)
 {
+  m.def("squared_distance", &dolfin::geometry::squared_distance);
+
   // dolfin::geometry::BoundingBoxTree
   py::class_<dolfin::geometry::BoundingBoxTree,
              std::shared_ptr<dolfin::geometry::BoundingBoxTree>>(
       m, "BoundingBoxTree")
-      // .def(py::init<std::size_t>())
       .def(py::init<const dolfin::mesh::Mesh&, std::size_t>())
       .def(py::init<const std::vector<Eigen::Vector3d>&, std::size_t>())
       .def("compute_collisions",
@@ -50,8 +52,7 @@ void geometry(py::module& m)
                & dolfin::geometry::BoundingBoxTree::compute_entity_collisions)
       .def("compute_first_collision",
            &dolfin::geometry::BoundingBoxTree::compute_first_collision)
-      .def("collides",
-           &dolfin::geometry::BoundingBoxTree::collides)
+      .def("collides", &dolfin::geometry::BoundingBoxTree::collides)
       .def("compute_first_entity_collision",
            &dolfin::geometry::BoundingBoxTree::compute_first_entity_collision)
       .def("compute_closest_entity",
@@ -59,9 +60,8 @@ void geometry(py::module& m)
       .def("str", &dolfin::geometry::BoundingBoxTree::str);
 
   // These classes are wrapped only to be able to write tests in python.
-  // They are not imported into the dolfin namespace in python, but must be
-  // accessed through
-  // dolfin.cpp.geometry
+  // They are not imported into the dolfin namespace in python, but must
+  // be accessed through dolfin.cpp.geometry
   py::class_<dolfin::geometry::CollisionPredicates>(m, "CollisionPredicates")
       .def_static(
           "collides_segment_point_2d",

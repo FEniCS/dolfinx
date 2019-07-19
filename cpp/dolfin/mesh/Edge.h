@@ -26,7 +26,7 @@ public:
   ///         The mesh.
   /// @param    index (std::size_t)
   ///         Index of the edge.
-  Edge(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 1, index) {}
+  Edge(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 1, index) {}
 
   /// Create edge from mesh entity
   ///
@@ -51,23 +51,6 @@ public:
   /// @endcode
   double length() const;
 
-  /// Compute dot product between edge and other edge
-  ///
-  /// @param    edge (_Edge_)
-  ///         Another edge.
-  ///
-  /// @return     double
-  ///         The dot product.
-  ///
-  /// @code{.cpp}
-  ///
-  ///         UnitSquare mesh(2, 2);
-  ///         Edge edge1(mesh, 0);
-  ///         Edge edge2(mesh, 1);
-  ///         log::info("%g", edge1.dot(edge2));
-  ///
-  /// @endcode
-  double dot(const Edge& edge) const;
 };
 } // namespace mesh
 } // namespace dolfin

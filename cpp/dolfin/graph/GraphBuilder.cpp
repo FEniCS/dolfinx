@@ -16,6 +16,7 @@
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/cell_types.h>
 #include <numeric>
 #include <set>
 #include <unordered_set>
@@ -37,15 +38,16 @@ std::tuple<std::vector<std::vector<std::size_t>>,
 compute_local_dual_graph_keyed(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const mesh::CellType cell_type)
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
-  const std::int8_t tdim = cell_type.dim();
+  const std::int8_t tdim = mesh::cell_dim(cell_type);
   const std::int32_t num_local_cells = cell_vertices.rows();
-  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
-  const std::int8_t num_facets_per_cell = cell_type.num_entities(tdim - 1);
-  const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
+  const std::int8_t num_facets_per_cell
+      = mesh::cell_num_entities(cell_type, tdim - 1);
+  const std::int8_t num_vertices_per_facet
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(N == num_vertices_per_facet);
   assert(num_local_cells == (int)cell_vertices.rows());
@@ -62,14 +64,11 @@ compute_local_dual_graph_keyed(
       = dolfin::MPI::global_offset(mpi_comm, num_local_cells, true);
 
   // Create map from cell vertices to entity vertices
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      facet_vertices(num_facets_per_cell, num_vertices_per_facet);
-  std::vector<std::int32_t> v(num_vertices_per_cell);
-  std::iota(v.begin(), v.end(), 0);
-  cell_type.create_entities(facet_vertices, tdim - 1, v.data());
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      facet_vertices = mesh::get_entity_vertices(cell_type, tdim - 1);
 
   // Vector-of-arrays data structure, which is considerably faster than
-  // vector-of-vectors.
+  // vector-of-vectors
   std::vector<std::pair<std::array<std::int32_t, N>, std::int32_t>> facets(
       num_facets_per_cell * num_local_cells);
 
@@ -156,7 +155,7 @@ compute_local_dual_graph_keyed(
 std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type,
+    const mesh::CellType cell_type,
     const graph::GraphBuilder::FacetCellMap& facet_cell_map,
     std::vector<std::vector<std::size_t>>& local_graph)
 {
@@ -171,12 +170,12 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   // At this stage facet_cell map only contains facets->cells with
   // edge facets either interprocess or external boundaries
 
-  const int tdim = cell_type.dim();
+  const int tdim = mesh::cell_dim(cell_type);
 
   // List of cell vertices
   const std::int32_t num_local_cells = cell_vertices.rows();
-  //  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
-  const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
+  const std::int8_t num_vertices_per_facet
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(num_local_cells == (int)cell_vertices.rows());
   //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
@@ -426,7 +425,7 @@ std::pair<std::vector<std::vector<std::size_t>>,
 graph::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const mesh::CellType cell_type)
 {
   LOG(INFO) << "Build mesh dual graph";
 
@@ -459,12 +458,14 @@ std::tuple<std::vector<std::vector<std::size_t>>,
 dolfin::graph::GraphBuilder::compute_local_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const mesh::CellType cell_type)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
 
-  const std::int8_t tdim = cell_type.dim();
-  const std::int8_t num_entity_vertices = cell_type.num_vertices(tdim - 1);
+  const std::int8_t tdim = mesh::cell_dim(cell_type);
+  const std::int8_t num_entity_vertices
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
+
   switch (num_entity_vertices)
   {
   case 1:

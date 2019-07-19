@@ -24,7 +24,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n,
     EigenRowArrayXXd geom(0, 2);
     EigenRowArrayXXi64 topo(0, 6);
     return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::triangle, geom, topo, {}, ghost_mode);
+        comm, mesh::CellType::triangle, geom, topo, {}, ghost_mode);
   }
 
   EigenRowArrayXXd points(1 + 3 * (2 * n + 1) * 2 * n, 2);
@@ -96,7 +96,7 @@ mesh::Mesh UnitDiscMesh::create(MPI_Comm comm, std::size_t n,
   }
 
   return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::triangle, points, cells, {}, ghost_mode);
+      comm, mesh::CellType::triangle, points, cells, {}, ghost_mode);
 }
 
 //-----------------------------------------------------------------------------

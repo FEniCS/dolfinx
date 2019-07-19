@@ -9,17 +9,13 @@
 #include <Eigen/Dense>
 #include <array>
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/cell_types.h>
 #include <memory>
 #include <set>
 #include <vector>
 
 namespace dolfin
 {
-
-namespace mesh
-{
-class CellType;
-}
 
 namespace fem
 {
@@ -42,7 +38,7 @@ public:
       const std::vector<std::vector<std::set<int>>>& entity_dofs,
       const std::vector<int>& parent_map,
       const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-      const mesh::CellType& cell_type);
+      const mesh::CellType cell_type);
 
   // Copy-like constructor with option to reset (clear) parent map
   ElementDofLayout(const ElementDofLayout& element_dof_layout,

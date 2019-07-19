@@ -23,7 +23,6 @@
 #include <dolfin/common/log.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/DofMap.h>
-#include <dolfin/fem/ReferenceCellTopology.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
@@ -37,6 +36,7 @@
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/cell_types.h>
 #include <iomanip>
 #include <memory>
 #include <petscvec.h>
@@ -928,9 +928,9 @@ void XDMFFile::write_mesh_value_collection(
   const std::size_t cell_dim = mvc.dim();
   const std::size_t degree = 1;
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh->type().entity_type(cell_dim), degree);
-  const std::int64_t num_vertices_per_cell
-      = mesh->type().num_vertices(cell_dim);
+      mesh::cell_entity_type(mesh->cell_type, cell_dim), degree);
+  const std::int32_t num_vertices_per_cell
+      = mesh::num_cell_vertices(cell_entity_type(mesh->cell_type, cell_dim));
 
   const std::map<std::pair<std::size_t, std::size_t>, T>& values = mvc.values();
   const std::int64_t num_cells = values.size();
@@ -1063,11 +1063,9 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   // Get description of MVC cell type and dimension from topology node
   auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
-  std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(cell_type_str.first));
-  assert(cell_type);
-  const int dim = cell_type->dim();
-  const int num_verts_per_entity = cell_type->num_vertices();
+  const mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
+  const int dim = mesh::cell_dim(cell_type);
+  const int num_verts_per_entity = mesh::num_cell_vertices(cell_type);
 
   // Read MVC topology
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
@@ -1203,7 +1201,10 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   return mvc;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<Eigen::Vector3d>& points)
+void XDMFFile::write(
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+        points)
 {
   // Check that encoding
   if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
@@ -1241,11 +1242,13 @@ void XDMFFile::write(const std::vector<Eigen::Vector3d>& points)
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const std::vector<Eigen::Vector3d>& points,
+void XDMFFile::write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                                         3, Eigen::RowMajor>>
+                         points,
                      const std::vector<double>& values)
 {
   // Write clouds of points to XDMF/HDF5 with values
-  assert(points.size() == values.size());
+  assert((std::size_t)points.rows() == values.size());
 
   // Check that encoding is supported
   if (_encoding == Encoding::ASCII and _mpi_comm.size() != 1)
@@ -1321,7 +1324,7 @@ XDMFFile::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
   return read_mesh_function<double>(mesh, name);
 }
 //----------------------------------------------------------------------------
-std::tuple<mesh::CellType::Type, EigenRowArrayXXd, EigenRowArrayXXi64,
+std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
            std::vector<std::int64_t>>
 XDMFFile::read_mesh_data(MPI_Comm comm) const
 {
@@ -1363,9 +1366,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     LOG(WARNING) << "Caution: reading quadratic mesh";
 
   // Get toplogical dimensions
-  std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(cell_type_str.first));
-  assert(cell_type);
+  mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
 
   // Get geometry node
   pugi::xml_node geometry_node = grid_node.child("Geometry");
@@ -1430,7 +1431,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     std::iota(global_cell_indices.begin(), global_cell_indices.end(),
               cell_index_offset);
 
-    return std::make_tuple(cell_type->type, std::move(points), std::move(cells),
+    return std::make_tuple(cell_type, std::move(points), std::move(cells),
                            std::move(global_cell_indices));
   }
   else
@@ -1443,7 +1444,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
     EigenRowArrayXXi64 cells(num_local_cells, npoint_per_cell);
     std::vector<std::int64_t> global_cell_indices(num_local_cells);
 
-    return std::make_tuple(cell_type->type, std::move(points), std::move(cells),
+    return std::make_tuple(cell_type, std::move(points), std::move(cells),
                            std::move(global_cell_indices));
   }
 }
@@ -1451,7 +1452,7 @@ XDMFFile::read_mesh_data(MPI_Comm comm) const
 mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
 {
 
-  mesh::CellType::Type cell_type;
+  mesh::CellType cell_type;
   EigenRowArrayXXd points;
   EigenRowArrayXXi64 cells;
   std::vector<std::int64_t> global_cell_indices;
@@ -1708,11 +1709,10 @@ XDMFFile::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // mesh::Mesh)
   const auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
   assert(cell_type_str.second == 1);
-  std::unique_ptr<mesh::CellType> cell_type(
-      mesh::CellType::create(cell_type_str.first));
-  assert(cell_type);
-  const std::uint32_t num_vertices_per_cell = cell_type->num_entities(0);
-  const std::uint32_t dim = cell_type->dim();
+  mesh::CellType cell_type = mesh::to_type(cell_type_str.first);
+  const std::uint32_t num_vertices_per_cell
+      = mesh::cell_num_entities(cell_type, 0);
+  const std::uint32_t dim = mesh::cell_dim(cell_type);
 
   const std::int64_t num_entities_global
       = xdmf_utils::get_num_cells(topology_node);
@@ -1821,8 +1821,9 @@ void XDMFFile::write_mesh_function(const mesh::MeshFunction<T>& meshfunction)
   {
     pugi::xml_node topology_node = grid_node.child("Topology");
     assert(topology_node);
-    auto cell_type_str = xdmf_utils::get_cell_type(topology_node);
-    if (mesh::CellType::type2string(mesh->type().type) != cell_type_str.first)
+    std::pair<std::string, int> cell_type_str
+        = xdmf_utils::get_cell_type(topology_node);
+    if (mesh::to_string(mesh->cell_type) != cell_type_str.first)
     {
       throw std::runtime_error(
           "Incompatible Mesh type. Try writing the Mesh to XDMF first");

@@ -8,7 +8,6 @@
 
 #include <cstdint>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/CellType.h>
 #include <hdf5.h>
 #include <memory>
 #include <petscsys.h>
@@ -246,7 +245,9 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const std::vector<Eigen::Vector3d>& points);
+  void write(const
+      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+          points);
 
   /// Save a cloud of points, with scalar values using an associated
   /// HDF5 file, or storing the data inline as XML.
@@ -258,8 +259,10 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const std::vector<Eigen::Vector3d>& points,
-             const std::vector<double>& values);
+  void write(const
+      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+          points,
+      const std::vector<double>& values);
 
   /// Read in the first mesh::Mesh in XDMF file
   ///
@@ -278,8 +281,8 @@ public:
   /// @returns
   //        Geometric points on each process (EigenRowArrayXXd),  Topological
   //        cells with global vertex indexing (EigenRowArrayXXi64), and the Cell
-  //        type (mesh::CellType::Type)
-  std::tuple<mesh::CellType::Type, EigenRowArrayXXd, EigenRowArrayXXi64,
+  //        type (mesh::CellType)
+  std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
              std::vector<std::int64_t>>
   read_mesh_data(MPI_Comm comm) const;
 
