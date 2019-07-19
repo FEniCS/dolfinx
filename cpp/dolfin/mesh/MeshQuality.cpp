@@ -37,10 +37,12 @@ std::array<double, 6> MeshQuality::dihedral_angles(const Cell& cell)
     const std::size_t i1 = cell.entities(0)[edges[i][1]];
     const std::size_t i2 = cell.entities(0)[edges[5 - i][0]];
     const std::size_t i3 = cell.entities(0)[edges[5 - i][1]];
-    const Eigen::Vector3d p0 = Vertex(mesh, i0).x();
-    Eigen::Vector3d v1 = Vertex(mesh, i1).x() - p0;
-    Eigen::Vector3d v2 = Vertex(mesh, i2).x() - p0;
-    Eigen::Vector3d v3 = Vertex(mesh, i3).x() - p0;
+
+    const Eigen::Vector3d p0 = mesh.geometry().x(i0);
+    Eigen::Vector3d v1 = mesh.geometry().x(i1) - p0;
+    Eigen::Vector3d v2 = mesh.geometry().x(i2) - p0;
+    Eigen::Vector3d v3 = mesh.geometry().x(i3) - p0;
+
     v1 /= v1.norm();
     v2 /= v2.norm();
     v3 /= v3.norm();

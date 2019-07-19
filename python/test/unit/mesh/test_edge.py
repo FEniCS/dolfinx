@@ -46,11 +46,3 @@ def test_3DEdgeLength(cube):
     for e in Edges(cube):
         length += e.length()
     assert round(length - 278.58049080280125053832, 7) == 0
-
-
-def test_EdgeDot(meshes):
-    """Iterate over edges compute dot product with ."""
-    meshes.create_entities(1)
-    for e in Edges(meshes):
-        dot = e.dot(e) / (e.length()**2)
-        assert round(dot - 1.0, 7) == 0

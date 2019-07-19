@@ -52,12 +52,6 @@ public:
   /// Return type of cell
   CellType type() const { return _mesh->cell_type; }
 
-  /// Return number of vertices of cell
-  std::size_t num_vertices() const
-  {
-    return mesh::num_cell_vertices(_mesh->cell_type);
-  }
-
   /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
   /// Local facet index, used typically in eval functions
   mutable int local_facet;

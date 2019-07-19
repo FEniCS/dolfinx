@@ -21,7 +21,7 @@ class Face : public MeshEntity
 {
 public:
   /// Constructor
-  Face(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 2, index) {}
+  Face(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 2, index) {}
 
   /// Destructor
   ~Face() = default;

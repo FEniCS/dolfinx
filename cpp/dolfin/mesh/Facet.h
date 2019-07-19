@@ -23,7 +23,7 @@ class Facet : public MeshEntity
 {
 public:
   /// Constructor
-  Facet(const Mesh& mesh, std::size_t index)
+  Facet(const Mesh& mesh, std::int32_t index)
       : MeshEntity(mesh, mesh.topology().dim() - 1, index)
   {
     // Do nothing

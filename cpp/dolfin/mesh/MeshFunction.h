@@ -7,6 +7,7 @@
 #pragma once
 
 #include "Connectivity.h"
+#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
