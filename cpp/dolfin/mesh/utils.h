@@ -15,6 +15,7 @@ namespace dolfin
 namespace mesh
 {
 class Cell;
+class Facet;
 class Mesh;
 class MeshEntity;
 

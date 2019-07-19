@@ -25,9 +25,6 @@ public:
 
   /// Destructor
   ~Face() = default;
-
-  /// Compute normal to the face
-  Eigen::Vector3d normal() const;
 };
 } // namespace mesh
 } // namespace dolfin
