@@ -28,7 +28,6 @@ set(SOURCES
   Connectivity.cpp
   CoordinateDofs.cpp
   DistributedMeshTools.cpp
-  Edge.cpp
   Mesh.cpp
   MeshEntity.cpp
   Geometry.cpp

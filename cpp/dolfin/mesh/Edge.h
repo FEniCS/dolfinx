@@ -36,21 +36,6 @@ public:
 
   /// Destructor
   ~Edge() = default;
-
-  /// Compute Euclidean length of edge
-  ///
-  /// @return     double
-  ///         Euclidean length of edge.
-  ///
-  /// @code{.cpp}
-  ///
-  ///         UnitSquare mesh(2, 2);
-  ///         Edge edge(mesh, 0);
-  ///         log::info("%g", edge.length());
-  ///
-  /// @endcode
-  double length() const;
-
 };
 } // namespace mesh
 } // namespace dolfin

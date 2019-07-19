@@ -25,24 +25,3 @@ def square():
 def meshes(cube, square, request):
     mesh = [cube, square]
     return mesh[request.param]
-
-
-@skip_in_parallel
-def test_2DEdgeLength(square):
-    """Iterate over edges and sum length."""
-    length = 0.0
-    square.create_entities(1)
-    print(square.num_entities(1))
-    for e in Edges(square):
-        length += e.length()
-    assert round(length - 19.07106781186544708362, 7) == 0
-
-
-@skip_in_parallel
-def test_3DEdgeLength(cube):
-    """Iterate over edges and sum length."""
-    length = 0.0
-    cube.create_entities(1)
-    for e in Edges(cube):
-        length += e.length()
-    assert round(length - 278.58049080280125053832, 7) == 0

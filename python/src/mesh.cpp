@@ -250,8 +250,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Edge
   py::class_<dolfin::mesh::Edge, std::shared_ptr<dolfin::mesh::Edge>,
              dolfin::mesh::MeshEntity>(m, "Edge", "Edge object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>())
-      .def("length", &dolfin::mesh::Edge::length);
+      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
 
   // dolfin::mesh::Face
   py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,

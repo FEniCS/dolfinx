@@ -436,7 +436,7 @@ mesh::radius_ratio(const mesh::Mesh& mesh,
 Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
 {
   const int gdim = cell.mesh().geometry().dim();
-  const mesh::CellType type = cell.type();
+  const mesh::CellType type = cell.mesh().cell_type;
   const mesh::Geometry& geometry = cell.mesh().geometry();
 
   switch (type)
@@ -490,8 +490,7 @@ Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
 Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
 {
   const mesh::Geometry& geometry = cell.mesh().geometry();
-  const mesh::CellType type = cell.type();
-
+  const mesh::CellType type = cell.mesh().cell_type;
   switch (type)
   {
   case (mesh::CellType::interval):
