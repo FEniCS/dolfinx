@@ -34,7 +34,7 @@ void test_distributed_mesh()
   std::array<Eigen::Vector3d, 2> pt{Eigen::Vector3d(0.0, 0.0, 0.0),
                                     Eigen::Vector3d(1.0, 1.0, 0.0)};
   auto mesh = std::make_shared<mesh::Mesh>(generation::RectangleMesh::create(
-      MPI_COMM_WORLD, pt, {{64, 64}}, mesh::CellType::Type::triangle,
+      MPI_COMM_WORLD, pt, {{64, 64}}, mesh::CellType::triangle,
       mesh::GhostMode::none));
 
   int dim = mesh->geometry().dim();
@@ -43,7 +43,7 @@ void test_distributed_mesh()
   io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf");
   file.write(*mesh);
 
-  mesh::CellType::Type cell_type;
+  mesh::CellType cell_type;
   EigenRowArrayXXd points;
   EigenRowArrayXXi64 cells;
   std::vector<std::int64_t> global_cell_indices;
