@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "Geometry.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include <dolfin/common/types.h>
@@ -22,7 +21,7 @@ class Vertex : public MeshEntity
 {
 public:
   /// Create vertex on given mesh
-  Vertex(const Mesh& mesh, std::size_t index) : MeshEntity(mesh, 0, index) {}
+  Vertex(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 0, index) {}
 
   /// Create vertex from mesh entity
   Vertex(MeshEntity& entity) : MeshEntity(entity.mesh(), 0, entity.index()) {}
@@ -35,12 +34,6 @@ public:
 
   /// Destructor
   ~Vertex() = default;
-
-  /// Return array of vertex coordinates (const version)
-  Eigen::Ref<const Eigen::Vector3d> x() const
-  {
-    return _mesh->geometry().x(_local_index);
-  }
 };
 } // namespace mesh
 } // namespace dolfin

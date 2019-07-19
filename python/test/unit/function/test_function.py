@@ -164,24 +164,9 @@ def test_call(R, V, W, Q, mesh):
     u2.interpolate(e2)
     u3.interpolate(e3)
 
-    p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0)
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
-
     tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-
-    assert np.allclose(u0(x0, tree), u0(x0, tree))
-    assert np.allclose(u0(x0, tree), u0(p0, tree))
-    assert np.allclose(u1(x0, tree), u1(x0, tree))
-    assert np.allclose(u1(x0, tree), u1(p0, tree))
-    assert np.allclose(u2(x0, tree)[0], u1(p0, tree))
-
-    assert np.allclose(u2(x0, tree), u2(p0, tree))
     assert np.allclose(u3(x0, tree)[:3], u2(x0, tree), rtol=1e-15, atol=1e-15)
-
-    p0_list = [p for p in p0]
-    x0_list = [x for x in x0]
-    assert np.allclose(u0(x0_list, tree), u0(x0_list, tree))
-    assert np.allclose(u0(x0_list, tree), u0(p0_list, tree))
 
     with pytest.raises(ValueError):
         u0([0, 0, 0, 0], tree)
@@ -258,7 +243,7 @@ def test_near_evaluations(R, mesh):
     bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)
     u0.vector().set(1.0)
-    a = Vertex(mesh, 0).point()
+    a = mesh.geometry.x(0)
     offset = 0.99 * np.finfo(float).eps
 
     a_shift_x = np.array([a[0] - offset, a[1], a[2]])
