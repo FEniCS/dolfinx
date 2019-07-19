@@ -83,10 +83,10 @@ class HDF5File:
         return self._cpp_object.read_vector(mpi_comm, data_path,
                                             use_partition_from_file)
 
-    def read_mesh(self, mpi_comm, data_path: str,
+    def read_mesh(self, data_path: str,
                   use_partition_from_file: bool, ghost_mode):
-        mesh = self._cpp_object.read_mesh(mpi_comm, data_path,
-                                          use_partition_from_file, ghost_mode)
+        mesh = self._cpp_object.read_mesh(data_path, use_partition_from_file,
+                                          ghost_mode)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
@@ -187,10 +187,6 @@ class XDMFFile:
         """Read MeshValueCollection of type float"""
         return self._cpp_object.read_mvc_double(mesh, name)
 
-    def read_mf_bool(self, mesh, name: str = ""):
-        """Read MeshFunction of type bool"""
-        return self._cpp_object.read_mf_bool(mesh, name)
-
     def read_mf_int(self, mesh, name: str = ""):
         """Read MeshFunction of type int"""
         return self._cpp_object.read_mf_int(mesh, name)
@@ -205,8 +201,8 @@ class XDMFFile:
 
     # ----------------------------------------------------------
 
-    def read_mesh(self, mpi_comm, ghost_mode):
-        mesh = self._cpp_object.read_mesh(mpi_comm, ghost_mode)
+    def read_mesh(self, ghost_mode):
+        mesh = self._cpp_object.read_mesh(ghost_mode)
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 

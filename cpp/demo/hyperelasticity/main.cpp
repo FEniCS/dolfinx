@@ -17,7 +17,7 @@ public:
                       std::shared_ptr<fem::Form> J,
                       std::vector<std::shared_ptr<const fem::DirichletBC>> bcs)
       : _u(u), _l(L), _j(J), _bcs(bcs),
-        _b(*L->function_space(0)->dofmap()->index_map()),
+        _b(*L->function_space(0)->dofmap->index_map),
         _matA(fem::create_matrix(*J))
   {
     // Do nothing

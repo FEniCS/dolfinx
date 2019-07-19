@@ -238,7 +238,7 @@ Mesh::Mesh(MPI_Comm comm, mesh::CellType::Type type,
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(const Mesh& mesh)
-    : _cell_type(CellType::create(mesh._cell_type->cell_type())),
+    : _cell_type(CellType::create(mesh._cell_type->type)),
       _topology(new Topology(*mesh._topology)),
       _geometry(new Geometry(*mesh._geometry)),
       _coordinate_dofs(new CoordinateDofs(*mesh._coordinate_dofs)),
@@ -250,7 +250,7 @@ Mesh::Mesh(const Mesh& mesh)
 }
 //-----------------------------------------------------------------------------
 Mesh::Mesh(Mesh&& mesh)
-    : _cell_type(CellType::create(mesh._cell_type->cell_type())),
+    : _cell_type(CellType::create(mesh._cell_type->type)),
       _topology(std::move(mesh._topology)),
       _geometry(std::move(mesh._geometry)),
       _coordinate_dofs(std::move(mesh._coordinate_dofs)), _degree(mesh._degree),
@@ -276,7 +276,7 @@ Mesh& Mesh::operator=(const Mesh& mesh)
   _degree = mesh._degree;
 
   if (mesh._cell_type)
-    _cell_type.reset(mesh::CellType::create(mesh._cell_type->cell_type()));
+    _cell_type.reset(mesh::CellType::create(mesh._cell_type->type));
   else
     _cell_type.reset();
 

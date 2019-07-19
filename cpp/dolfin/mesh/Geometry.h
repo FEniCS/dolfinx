@@ -94,7 +94,7 @@ private:
       _coordinates;
 
   // Geometric dimension
-  int _dim;
+  const int _dim;
 
   // Global indices for points
   std::vector<std::int64_t> _global_indices;

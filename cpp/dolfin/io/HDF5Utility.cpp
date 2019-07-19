@@ -5,6 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "HDF5Utility.h"
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
 #include <dolfin/fem/DofMap.h>
@@ -113,8 +114,8 @@ std::vector<PetscInt> HDF5Utility::get_global_dof(
   std::vector<std::vector<std::size_t>> receive_cell_dofs(num_processes);
   MPI::all_to_all(mpi_comm, send_cell_dofs, receive_cell_dofs);
 
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
-      = dofmap.tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map
+      = dofmap.index_map->indices(true);
 
   // Return back the global dof to the process the request came from
   std::vector<std::vector<PetscInt>> send_global_dof_back(num_processes);

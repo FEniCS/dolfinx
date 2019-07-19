@@ -24,9 +24,13 @@ MeshQuality::radius_ratios(std::shared_ptr<const Mesh> mesh)
   // Create MeshFunction
   MeshFunction<double> cf(mesh, mesh->topology().dim(), 0.0);
 
+  // Get reference to mesh function data array
+  Eigen::Ref<Eigen::Array<double, Eigen::Dynamic, 1>> mf_values
+      = cf.values();
+
   // Compute radius ration
   for (auto& cell : MeshRange<Cell>(*mesh))
-    cf[cell] = cell.radius_ratio();
+    mf_values[cell.index()] = cell.radius_ratio();
 
   return cf;
 }

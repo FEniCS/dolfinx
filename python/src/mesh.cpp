@@ -57,7 +57,7 @@ void mesh(py::module& m)
 
   celltype.def("type2string", &dolfin::mesh::CellType::type2string)
       .def("string2type", &dolfin::mesh::CellType::string2type)
-      .def("cell_type", &dolfin::mesh::CellType::cell_type)
+      .def_readonly("type", &dolfin::mesh::CellType::type)
       .def("num_entities", &dolfin::mesh::CellType::num_entities)
       .def("description", &dolfin::mesh::CellType::description)
       .def_property_readonly("is_simplex", &dolfin::mesh::CellType::is_simplex);
@@ -186,7 +186,7 @@ void mesh(py::module& m)
       .def("ufl_id", &dolfin::mesh::Mesh::id)
       .def_property_readonly("id", &dolfin::mesh::Mesh::id)
       .def("cell_name", [](const dolfin::mesh::Mesh& self) {
-        return dolfin::mesh::CellType::type2string(self.type().cell_type());
+        return dolfin::mesh::CellType::type2string(self.type().type);
       });
 
   // dolfin::mesh::Connectivity class
@@ -354,43 +354,18 @@ void mesh(py::module& m)
       .def(py::init<std::shared_ptr<const dolfin::mesh::Mesh>,                 \
                     const dolfin::mesh::MeshValueCollection<SCALAR>&,          \
                     const SCALAR&>())                                          \
-      .def("__getitem__",                                                      \
-           (const SCALAR& (dolfin::mesh::MeshFunction<SCALAR>::*)(std::size_t) \
-                const)                                                         \
-               & dolfin::mesh::MeshFunction<SCALAR>::operator[])               \
-      .def("__setitem__",                                                      \
-           [](dolfin::mesh::MeshFunction<SCALAR>& self, std::size_t index,     \
-              SCALAR value) { self.operator[](index) = value; })               \
-      .def("__getitem__",                                                      \
-           (const SCALAR& (dolfin::mesh::MeshFunction<                         \
-                           SCALAR>::*)(const dolfin::mesh::MeshEntity&)const)  \
-               & dolfin::mesh::MeshFunction<SCALAR>::operator[])               \
-      .def("__setitem__",                                                      \
-           [](dolfin::mesh::MeshFunction<SCALAR>& self,                        \
-              const dolfin::mesh::MeshEntity& index,                           \
-              SCALAR value) { self.operator[](index) = value; })               \
-      .def("__len__", &dolfin::mesh::MeshFunction<SCALAR>::size)               \
       .def_property_readonly("dim", &dolfin::mesh::MeshFunction<SCALAR>::dim)  \
-      .def("size", &dolfin::mesh::MeshFunction<SCALAR>::size)                  \
+      .def_readwrite("name", &dolfin::mesh::MeshFunction<SCALAR>::name)        \
+      .def("mesh", &dolfin::mesh::MeshFunction<SCALAR>::mesh)                  \
       .def("ufl_id",                                                           \
            [](const dolfin::mesh::MeshFunction<SCALAR>& self) {                \
              return self.id;                                                   \
            })                                                                  \
-      .def_readwrite("name", &dolfin::mesh::MeshFunction<SCALAR>::name)        \
-      .def("mesh", &dolfin::mesh::MeshFunction<SCALAR>::mesh)                  \
-      .def("set_values", &dolfin::mesh::MeshFunction<SCALAR>::set_values)      \
       .def("mark", &dolfin::mesh::MeshFunction<SCALAR>::mark)                  \
-      .def("set_all", [](dolfin::mesh::MeshFunction<SCALAR>& self,             \
-                         const SCALAR& value) { self = value; })               \
-      .def("where_equal", &dolfin::mesh::MeshFunction<SCALAR>::where_equal)    \
-      .def("array",                                                            \
-           [](dolfin::mesh::MeshFunction<SCALAR>& self) {                      \
-             return Eigen::Map<Eigen::Array<SCALAR, Eigen::Dynamic, 1>>(       \
-                 self.values(), self.size());                                  \
-           },                                                                  \
-           py::return_value_policy::reference_internal)
+      .def_property_readonly(                                                  \
+          "values",                                                            \
+          py::overload_cast<>(&dolfin::mesh::MeshFunction<SCALAR>::values));
 
-  MESHFUNCTION_MACRO(bool, Bool);
   MESHFUNCTION_MACRO(int, Int);
   MESHFUNCTION_MACRO(double, Double);
   MESHFUNCTION_MACRO(std::size_t, Sizet);

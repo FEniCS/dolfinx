@@ -41,7 +41,6 @@ set(SOURCES
   IntervalCell.cpp
   Mesh.cpp
   MeshEntity.cpp
-  MeshFunction.cpp
   Geometry.cpp
   Partitioning.cpp
   MeshQuality.cpp
