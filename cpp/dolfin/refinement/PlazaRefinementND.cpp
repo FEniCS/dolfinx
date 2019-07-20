@@ -315,9 +315,13 @@ face_long_edge(const mesh::Mesh& mesh)
     edge_ratio_ok.resize(mesh.num_entities(2));
 
   // Store all edge lengths in Mesh to save recalculating for each Face
+  const mesh::Geometry& geometry = mesh.geometry();
   std::vector<double> edge_length(mesh.num_entities(1));
   for (const auto& e : mesh::MeshRange<mesh::Edge>(mesh))
-    edge_length[e.index()] = e.length();
+  {
+    const std::int32_t* v = e.entities(0);
+    edge_length[e.index()] = (geometry.x(v[0]) - geometry.x(v[1])).norm();
+  }
 
   // Get longest edge of each face
   for (const auto& f : mesh::MeshRange<mesh::Face>(mesh))

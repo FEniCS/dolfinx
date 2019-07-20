@@ -94,6 +94,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
 
   // Loop over cells to build list of keyed (by vertices) entities
   int entity_counter = 0;
+  const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
   for (auto& c : MeshRange<Cell>(mesh, MeshRangeType::ALL))
   {
     // Get vertices from cell
@@ -117,7 +118,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
       // Attach (local index, cell index), making local_index negative
       // if it is not a ghost cell. This ensures that non-ghosts come
       // before ghosts when sorted. The index is corrected later.
-      if (!c.is_ghost())
+      if (c.index() < ghost_offset_c)
         std::get<1>(keyed_entities[entity_counter]) = {-i - 1, cell_index};
       else
         std::get<1>(keyed_entities[entity_counter]) = {i, cell_index};

@@ -21,7 +21,6 @@
 // Unit tests for SubSystemsManager
 
 #include <catch.hpp>
-#include <dolfin.h>
 #include <petscvec.h>
 
 namespace

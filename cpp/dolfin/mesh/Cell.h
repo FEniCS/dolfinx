@@ -33,7 +33,7 @@ public:
   /// @param    index
   ///         The index.
   Cell(const Mesh& mesh, std::int32_t index)
-      : MeshEntity(mesh, mesh.topology().dim(), index), local_facet(-1)
+      : MeshEntity(mesh, mesh.topology().dim(), index)
   {
   }
 
@@ -46,15 +46,8 @@ public:
   /// Destructor
   ~Cell() = default;
 
-  /// Assignement operator
+  /// Assignment operator
   Cell& operator=(const Cell& cell) = default;
-
-  /// Return type of cell
-  CellType type() const { return _mesh->cell_type; }
-
-  /// Note: This is a (likely temporary) replacement for ufc::cell::local_facet
-  /// Local facet index, used typically in eval functions
-  mutable int local_facet;
 };
 } // namespace mesh
 } // namespace dolfin

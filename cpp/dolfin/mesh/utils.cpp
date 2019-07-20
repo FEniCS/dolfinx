@@ -9,6 +9,8 @@
 #include "Facet.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
+#include "MeshIterator.h"
+#include "Vertex.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -436,7 +438,7 @@ mesh::radius_ratio(const mesh::Mesh& mesh,
 Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
 {
   const int gdim = cell.mesh().geometry().dim();
-  const mesh::CellType type = cell.type();
+  const mesh::CellType type = cell.mesh().cell_type;
   const mesh::Geometry& geometry = cell.mesh().geometry();
 
   switch (type)
@@ -490,8 +492,7 @@ Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
 Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
 {
   const mesh::Geometry& geometry = cell.mesh().geometry();
-  const mesh::CellType type = cell.type();
-
+  const mesh::CellType type = cell.mesh().cell_type;
   switch (type)
   {
   case (mesh::CellType::interval):
@@ -612,5 +613,28 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
   }
 
   return Eigen::Vector3d();
+}
+//-----------------------------------------------------------------------------
+Eigen::Vector3d mesh::midpoint(const mesh::MeshEntity& e)
+{
+  const mesh::Mesh& mesh = e.mesh();
+  const mesh::Geometry& geometry = mesh.geometry();
+
+  // Special case: a vertex is its own midpoint (don't check neighbors)
+  if (e.dim() == 0)
+    return geometry.x(e.index());
+
+  // Otherwise iterate over incident vertices and compute average
+  int num_vertices = 0;
+  Eigen::Vector3d x = Eigen::Vector3d::Zero();
+  for (auto& v : mesh::EntityRange<mesh::Vertex>(e))
+  {
+    x += geometry.x(v.index());
+    ++num_vertices;
+  }
+
+  assert(num_vertices > 0);
+  x /= double(num_vertices);
+  return x;
 }
 //-----------------------------------------------------------------------------

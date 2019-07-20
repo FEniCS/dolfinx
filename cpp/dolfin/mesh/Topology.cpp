@@ -18,6 +18,7 @@ Topology::Topology(std::size_t dim, std::int32_t num_vertices,
                    std::int64_t num_vertices_global)
     : _num_vertices(num_vertices), _ghost_offset_index(dim + 1, 0),
       _global_num_entities(dim + 1, -1), _global_indices(dim + 1),
+      _shared_entities(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<Connectivity>>(dim + 1))
 {
@@ -113,13 +114,15 @@ bool Topology::have_global_indices(std::size_t dim) const
   return !_global_indices[dim].empty();
 }
 //-----------------------------------------------------------------------------
-bool Topology::have_shared_entities(int dim) const
-{
-  return (_shared_entities.find(dim) != _shared_entities.end());
-}
-//-----------------------------------------------------------------------------
 std::map<std::int32_t, std::set<std::int32_t>>&
 Topology::shared_entities(int dim)
+{
+  assert(dim <= this->dim());
+  return _shared_entities[dim];
+}
+//-----------------------------------------------------------------------------
+const std::map<std::int32_t, std::set<std::int32_t>>&
+Topology::shared_entities(int dim) const
 {
   assert(dim <= this->dim());
   return _shared_entities[dim];
@@ -154,19 +157,6 @@ void Topology::set_connectivity(std::shared_ptr<Connectivity> c, std::size_t d0,
   assert(d0 < _connectivity.size());
   assert(d1 < _connectivity[d0].size());
   _connectivity[d0][d1] = c;
-}
-//-----------------------------------------------------------------------------
-const std::map<std::int32_t, std::set<std::int32_t>>&
-Topology::shared_entities(int dim) const
-{
-  auto e = _shared_entities.find(dim);
-  if (e == _shared_entities.end())
-  {
-    throw std::runtime_error(
-        "Shared mesh entities have not been computed for dim "
-        + std::to_string(dim));
-  }
-  return e->second;
 }
 //-----------------------------------------------------------------------------
 size_t Topology::hash() const

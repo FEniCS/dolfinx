@@ -15,6 +15,7 @@ namespace dolfin
 namespace mesh
 {
 class Cell;
+class Facet;
 class Mesh;
 class MeshEntity;
 
@@ -45,6 +46,9 @@ Eigen::Vector3d cell_normal(const Cell& cell);
 
 /// Compute of given facet with respect to the cell
 Eigen::Vector3d normal(const Cell& cell, int facet);
+
+/// Compute midpoint of MeshEntity
+Eigen::Vector3d midpoint(const mesh::MeshEntity& e);
 
 } // namespace mesh
 } // namespace dolfin
