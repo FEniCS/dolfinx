@@ -131,8 +131,6 @@ void mesh(py::module& m)
              auto& indices = self.global_indices(dim);
              return py::array_t<std::int64_t>(indices.size(), indices.data());
            })
-      .def("have_shared_entities",
-           &dolfin::mesh::Topology::have_shared_entities)
       .def("shared_entities",
            py::overload_cast<int>(&dolfin::mesh::Topology::shared_entities))
       .def("str", &dolfin::mesh::Topology::str);
@@ -235,7 +233,6 @@ void mesh(py::module& m)
                  self.entities(dim), self.num_entities(dim));
            },
            py::return_value_policy::reference_internal)
-      .def("is_shared", &dolfin::mesh::MeshEntity::is_shared)
       .def("__str__",
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
 

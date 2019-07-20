@@ -178,20 +178,6 @@ public:
   ///         The local index of given entity.
   int index(const MeshEntity& entity) const;
 
-  /// Determine if an entity is shared or not
-  /// @return bool
-  ///    True if entity is shared
-  bool is_shared() const
-  {
-    if (_mesh->topology().have_shared_entities(_dim))
-    {
-      const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
-          = _mesh->topology().shared_entities(_dim);
-      return (sharing_map.find(_local_index) != sharing_map.end());
-    }
-    return false;
-  }
-
   /// Return informal string representation (pretty-print)
   ///
   /// @param      verbose (bool)

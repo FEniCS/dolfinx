@@ -407,12 +407,15 @@ compute_sharing_markers(const DofMapStructure& dofmap,
   bool has_ghost_cells = false;
   const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(D);
   const std::int32_t ghost_offset_f = mesh.topology().ghost_offset(D - 1);
+  const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_c
+      = mesh.topology().shared_entities(D);
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
     const bool ghost_cell = c.index() >= ghost_offset_c;
     const PetscInt* cell_nodes = dofmap.dofs(c.index());
-    if (c.is_shared())
+    if (sharing_map_c.find(c.index()) != sharing_map_c.end())
     {
+      // Cell is shared
       const sharing_marker status = ghost_cell
                                         ? sharing_marker::ghost
                                         : sharing_marker::interior_ghost_layer;
@@ -449,12 +452,19 @@ compute_sharing_markers(const DofMapStructure& dofmap,
     return shared_nodes;
 
   // Mark nodes on inter-process boundary
+  const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_f
+      = mesh.topology().shared_entities(D - 1);
   for (auto& f : mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::ALL))
   {
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems
-    if (!f.is_shared() and f.num_entities(D) == 2)
+    if ((sharing_map_f.find(f.index()) == sharing_map_f.end())
+        and f.num_entities(D) == 2)
+    {
       continue;
+    }
+    // if (!f.is_shared() and f.num_entities(D) == 2)
+    //   continue;
 
     // Get cell to which facet belongs (pick first)
     const mesh::Cell cell0(mesh, f.entities(D)[0]);
