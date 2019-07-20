@@ -178,26 +178,6 @@ public:
   ///         The local index of given entity.
   int index(const MeshEntity& entity) const;
 
-  /// Compute midpoint of cell
-  ///
-  /// @return geometry::Point
-  ///         The midpoint of the cell.
-  Eigen::Vector3d midpoint() const;
-
-  /// Return set of sharing processes
-  /// @return std::set<std::uint32_t>
-  ///   List of sharing processes
-  std::set<std::int32_t> sharing_processes() const
-  {
-    const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
-        = _mesh->topology().shared_entities(_dim);
-    const auto map_it = sharing_map.find(_local_index);
-    if (map_it == sharing_map.end())
-      return std::set<std::int32_t>();
-    else
-      return map_it->second;
-  }
-
   /// Determine if an entity is shared or not
   /// @return bool
   ///    True if entity is shared

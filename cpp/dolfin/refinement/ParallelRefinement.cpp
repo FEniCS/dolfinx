@@ -14,6 +14,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Partitioning.h>
+#include <dolfin/mesh/utils.h>
 #include <map>
 #include <vector>
 
@@ -165,7 +166,8 @@ void ParallelRefinement::create_new_vertices()
       // list
       if (owner)
       {
-        const Eigen::Vector3d midpoint = mesh::Edge(_mesh, local_i).midpoint();
+        const Eigen::Vector3d midpoint
+            = mesh::midpoint(mesh::Edge(_mesh, local_i));
         for (std::size_t j = 0; j < 3; ++j)
           _new_vertex_coordinates.push_back(midpoint[j]);
         _local_edge_to_new_vertex[local_i] = n++;

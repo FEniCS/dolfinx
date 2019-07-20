@@ -648,7 +648,7 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   // Create list of midpoints for all cells
   std::vector<Eigen::Vector3d> points;
   for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
-    points.push_back(cell.midpoint());
+    points.push_back(mesh::midpoint(cell));
 
   // Build tree
   _point_search_tree

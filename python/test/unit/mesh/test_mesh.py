@@ -357,39 +357,6 @@ def xfail_ghosted_quads_hexes(mesh_factory, ghost_mode):
                          "mode".format(mesh_factory, ghost_mode))
 
 
-@pytest.mark.parametrize('mesh_factory', mesh_factories_broken_shared_entities)
-def test_shared_entities(mesh_factory):
-    func, args = mesh_factory
-    # xfail_ghosted_quads_hexes(func, ghost_mode)
-    mesh = func(*args)
-    dim = mesh.topology.dim
-
-    # FIXME: Implement a proper test
-    for shared_dim in range(dim + 1):
-        # Initialise global indices (if not already)
-        mesh.create_global_indices(shared_dim)
-
-        assert isinstance(mesh.topology.shared_entities(shared_dim), dict)
-        assert isinstance(
-            mesh.topology.global_indices(shared_dim), numpy.ndarray)
-
-        if mesh.topology.have_shared_entities(shared_dim):
-            for e in MeshEntities(mesh, shared_dim):
-                sharing = e.sharing_processes()
-                assert isinstance(sharing, set)
-                assert (len(sharing) > 0) == e.is_shared()
-
-        shared_entities = mesh.topology.shared_entities(shared_dim)
-
-        # Check that sum(local-shared) = global count
-        rank = MPI.rank(mesh.mpi_comm())
-        ct = sum(1 for val in shared_entities.values() if list(val)[0] < rank)
-        num_entities_global = MPI.sum(mesh.mpi_comm(),
-                                      mesh.num_entities(shared_dim) - ct)
-
-        assert num_entities_global == mesh.num_entities_global(shared_dim)
-
-
 @pytest.mark.parametrize('mesh_factory', mesh_factories)
 def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.none):
     """Test that mesh cells have topology matching to FIAT reference

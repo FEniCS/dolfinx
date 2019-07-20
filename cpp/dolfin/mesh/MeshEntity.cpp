@@ -40,29 +40,6 @@ int MeshEntity::index(const MeshEntity& entity) const
   return 0;
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d MeshEntity::midpoint() const
-{
-  // Special case: a vertex is its own midpoint (don't check neighbors)
-  if (_dim == 0)
-    return _mesh->geometry().x(_local_index);
-
-  // Otherwise iterate over incident vertices and compute average
-  std::size_t num_vertices = 0;
-
-  Eigen::Vector3d x = Eigen::Vector3d::Zero();
-  assert(_mesh);
-  for (auto& v : EntityRange<Vertex>(*this))
-  {
-    x += _mesh->geometry().x(v.index());
-    ++num_vertices;
-  }
-
-  assert(num_vertices > 0);
-  x /= double(num_vertices);
-
-  return x;
-}
-//-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const
 {
   if (verbose)

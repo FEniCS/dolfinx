@@ -64,6 +64,7 @@ void mesh(py::module& m)
         "Compute maximum distance between any two vertices.");
   m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
   m.def("radius_ratio", &dolfin::mesh::radius_ratio);
+  m.def("midpoint", &dolfin::mesh::midpoint);
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")
@@ -234,9 +235,6 @@ void mesh(py::module& m)
                  self.entities(dim), self.num_entities(dim));
            },
            py::return_value_policy::reference_internal)
-      .def("midpoint", &dolfin::mesh::MeshEntity::midpoint,
-           "Midpoint of Entity")
-      .def("sharing_processes", &dolfin::mesh::MeshEntity::sharing_processes)
       .def("is_shared", &dolfin::mesh::MeshEntity::is_shared)
       .def("__str__",
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
