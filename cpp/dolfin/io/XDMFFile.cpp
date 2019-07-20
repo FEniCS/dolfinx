@@ -1428,7 +1428,8 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
       ghost_mode);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::write(const std::map<std::string, size_t>& information){
+void 
+XDMFFile::write_information_size_t(const std::map<std::string, size_t>& information){
   pugi::xml_node domain_node;
   std::string hdf_filemode = "a";
   if (_xml_doc->child("Xdmf").empty())
@@ -1452,8 +1453,20 @@ void XDMFFile::write(const std::map<std::string, size_t>& information){
 
   ++_counter;
 }
-
-std::map<std::string, size_t> XDMFFile::read_information() const{
+//-----------------------------------------------------------------------------
+std::map<std::string, size_t> 
+XDMFFile::read_information_size_t() const{
+  return read_information<std::string, size_t>();
+}
+//-----------------------------------------------------------------------------
+std::map<std::string, std::string> 
+XDMFFile::read_information_string() const{
+  return read_information<std::string, std::string>();
+}
+//-----------------------------------------------------------------------------
+template <typename X, typename Y>
+std::map<X, Y> 
+XDMFFile::read_information() const{
 
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
@@ -1488,14 +1501,22 @@ std::map<std::string, size_t> XDMFFile::read_information() const{
   assert(main_node);
 
   // Creation of Map
-  std::map<std::string, size_t> map_of_info;
+  std::map<X, Y> map_of_info;
   for (pugi::xml_node child: main_node.children())
   {
-      auto tag_key = child.first_attribute().value();
-      size_t tag_value = atoi (child.child_value())  ;
+      X tag_key = child.first_attribute().value();
+      Y tag_value;
+      //auto tag_value = atoi (child.child_value())  ;
+      if (typeid(Y) == typeid(std::string)){
+        //tag_value = child.child_value();
+        std::cout<<":)";
+      }
+      else{
+        tag_value = atoi (child.child_value())  ;
+      }
 
       // Insert Element in map
-      map_of_info.insert(std::pair<std::string, size_t>(tag_key, tag_value));
+      map_of_info.insert(std::pair<X, Y>(tag_key, tag_value));
   }
 
   return map_of_info;

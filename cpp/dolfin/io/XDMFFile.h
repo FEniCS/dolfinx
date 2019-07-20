@@ -270,9 +270,31 @@ public:
   /// @returns mesh::Mesh
   ///        Mesh
   mesh::Mesh read_mesh(const mesh::GhostMode ghost_mode) const;
+  
+  /// Read <Information> tag data from file.
+  /// @returns std::map<std::string, size_t>
+  std::map<std::string, size_t> 
+  read_information_size_t() const;
 
-  std::map<std::string, size_t> read_information() const;
-  void write(const std::map<std::string, size_t>& information);
+  /// Read <Information> tag data from file.
+  /// @returns std::map<std::string, size_t>
+  std::map<std::string, std::string> 
+  read_information_string() const;
+
+  // Generic <Information> tag reader
+  template <typename X, typename Y>
+  std::map<X, Y> read_information() const;
+
+  /// Save a std::map<std::string, size_t> to XDMF
+  /// The map is stored in information element.
+  /// @param information
+  ///        map from string key to size_t value
+  void 
+  write_information_size_t(const std::map<std::string, size_t>& information);
+
+  // Generic <Information> tag writer
+  template <typename X, typename Y>
+  void write(const std::map<X, Y>& information);
 
   /// Read a function from the XDMF file. Supplied function must
   /// come with already initialized and compatible function space.
