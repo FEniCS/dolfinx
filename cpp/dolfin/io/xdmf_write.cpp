@@ -465,9 +465,11 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   return non_local_entities;
 }
 //-----------------------------------------------------------------------------
-void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
-                            hid_t h5_id,
-                            const std::vector<Eigen::Vector3d>& points)
+void xdmf_write::add_points(
+    MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+        points)
 {
   xdmf_node.append_attribute("Version") = "3.0";
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
@@ -482,7 +484,7 @@ void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
 
   pugi::xml_node topology_node = grid_node.append_child("Topology");
   assert(topology_node);
-  const std::size_t n = points.size();
+  const std::size_t n = points.rows();
   const std::int64_t nglobal = dolfin::MPI::sum(comm, n);
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(nglobal).c_str();
@@ -494,10 +496,11 @@ void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
   geometry_node.append_attribute("GeometryType") = "XYZ";
 
   // Pack data
-  std::vector<double> x(3 * n);
-  for (std::size_t i = 0; i < n; ++i)
-    for (std::size_t j = 0; j < 3; ++j)
-      x[3 * i + j] = points[i][j];
+  std::vector<double> x(points.data(), points.data() + points.size());
+  // std::vector<double> x(3 * n);
+  // for (std::size_t i = 0; i < n; ++i)
+  //   for (std::size_t j = 0; j < 3; ++j)
+  //     x[3 * i + j] = points[i][j];
 
   const std::vector<std::int64_t> shape = {nglobal, 3};
   add_data_item(comm, geometry_node, h5_id, "/Points/coordinates", x, shape,

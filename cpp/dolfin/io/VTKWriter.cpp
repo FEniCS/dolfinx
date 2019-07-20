@@ -129,7 +129,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "\">";
   for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
   {
-    Eigen::Vector3d p = v.x();
+    Eigen::Vector3d p = mesh.geometry().x(v.index());
     file << p[0] << " " << p[1] << " " << p[2] << "  ";
   }
   file << "</DataArray>" << std::endl << "</Points>" << std::endl;
