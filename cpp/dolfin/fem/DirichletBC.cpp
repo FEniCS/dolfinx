@@ -140,9 +140,9 @@ std::vector<std::int32_t> marked_facets(
   // If a vertex is on the boundary, give it an index from [0, count)
   std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
   std::size_t count = 0;
-  assert(mesh.topology().connectivity(tdim - 1, tdim));
+  assert(mesh.topology().connectivity(dim, tdim));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
-      = mesh.topology().connectivity(tdim - 1, tdim);
+      = mesh.topology().connectivity(dim, tdim);
   for (const auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
     if (connectivity_facet_cell->size_global(facet.index()) == 1)
