@@ -84,7 +84,7 @@ void get_cell_entities(
       const std::vector<std::int64_t>& global_indices
           = topology.global_indices(d);
       const std::int32_t* entities = cell.entities(d);
-      for (std::size_t i = 0; i < cell.num_entities(d); ++i)
+      for (int i = 0; i < cell.num_entities(d); ++i)
       {
         entity_indices_local[d][i] = entities[i];
         entity_indices_global[d][i] = global_indices[entities[i]];

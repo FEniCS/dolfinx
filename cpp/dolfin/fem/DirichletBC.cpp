@@ -148,7 +148,7 @@ std::vector<std::int32_t> marked_facets(
     if (connectivity_facet_cell->size_global(facet.index()) == 1)
     {
       const std::int32_t* v = facet.entities(0);
-      for (unsigned int i = 0; i != facet.num_entities(0); ++i)
+      for (int i = 0; i != facet.num_entities(0); ++i)
       {
         if (boundary_vertex[v[i]] == -1)
         {
