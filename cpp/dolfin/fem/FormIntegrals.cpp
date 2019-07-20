@@ -162,10 +162,13 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on surface facets
     exf_integrals[0].active_entities.clear();
+    assert(mesh.topology().connectivity(tdim - 1, tdim));
+    std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+        = mesh.topology().connectivity(tdim - 1, tdim);
     for (const mesh::Facet& facet :
          mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::REGULAR))
     {
-      if (facet.num_global_entities(tdim) == 1)
+      if (connectivity_facet_cell->size_global(facet.index()) == 1)
         exf_integrals[0].active_entities.push_back(facet.index());
     }
   }
@@ -182,30 +185,37 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 
     if (MPI::size(mesh.mpi_comm()) > 1)
     {
+      // Get owner (MPI ranks) of ghost cells
+      const std::vector<std::int32_t>& cell_owners
+          = mesh.topology().cell_owner();
+      const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
+
       for (const mesh::Facet& facet :
            mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::ALL))
       {
         if (facet.num_entities(tdim) == 2)
         {
-          const std::int32_t* cells = facet.entities(tdim);
-          mesh::Cell c0(mesh, cells[0]);
-          mesh::Cell c1(mesh, cells[1]);
-          const int c0owner = c0.is_ghost() ? c0.owner() : rank;
-          const int c1owner = c1.is_ghost() ? c1.owner() : rank;
-
-          if ((c0owner == rank and c1owner == rank)
-              or (c0owner == rank and c1owner > rank)
-              or (c1owner == rank and c0owner > rank))
+          const std::int32_t* c = facet.entities(tdim);
+          const int owner0
+              = c[0] >= ghost_offset ? cell_owners[c[0] - ghost_offset] : rank;
+          const int owner1
+              = c[1] >= ghost_offset ? cell_owners[c[1] - ghost_offset] : rank;
+          if ((owner0 == rank and owner1 == rank)
+              or (owner0 == rank and owner1 > rank)
+              or (owner1 == rank and owner0 > rank))
             inf_integrals[0].active_entities.push_back(facet.index());
         }
       }
     }
     else
     {
+      assert(mesh.topology().connectivity(tdim - 1, tdim));
+      std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+          = mesh.topology().connectivity(tdim - 1, tdim);
       for (const mesh::Facet& facet :
            mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::REGULAR))
       {
-        if (facet.num_global_entities(tdim) != 1)
+        if (connectivity_facet_cell->size_global(facet.index()) != 1)
           inf_integrals[0].active_entities.push_back(facet.index());
       }
     }

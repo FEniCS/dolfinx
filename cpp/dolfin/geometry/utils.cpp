@@ -33,7 +33,7 @@ bool point_outside_of_plane(const Eigen::Vector3d& point,
 double geometry::squared_distance(const mesh::Cell& cell,
                                   const Eigen::Vector3d& point)
 {
-  const mesh::CellType type = cell.type();
+  const mesh::CellType type = cell.mesh().cell_type;
   const mesh::Geometry& geometry = cell.mesh().geometry();
   switch (type)
   {

@@ -6,8 +6,9 @@
 """Unit tests for BoundingBoxTree"""
 
 import numpy
+
 from dolfin import (MPI, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh)
+                    UnitSquareMesh, cpp)
 from dolfin.geometry import BoundingBoxTree
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -39,8 +40,7 @@ def test_compute_collisions_point_2d():
         tree = BoundingBoxTree(mesh, mesh.topology.dim)
         entities = tree.compute_collisions_point(p)
         for e in entities:
-            ent = MeshEntity(mesh, dim, e)
-            mp = ent.midpoint()
+            mp = cpp.mesh.midpoint(MeshEntity(mesh, dim, e))
             x = (mp[0], mp[1])
             print("test: {}".format(x))
         # assert set(entities) == reference[dim]

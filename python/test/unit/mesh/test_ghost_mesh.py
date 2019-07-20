@@ -84,22 +84,22 @@ def test_ghost_connectivities(mode):
     reference = {}
     for facet in Facets(meshR):
         fidx = facet.index()
-        facet_mp = tuple(facet.midpoint()[:])
+        facet_mp = tuple(cpp.mesh.midpoint(facet)[:])
         reference[facet_mp] = []
         for cidx in meshR.topology.connectivity(1, 2).connections(fidx):
             cell = Cell(meshR, cidx)
-            cell_mp = tuple(cell.midpoint()[:])
+            cell_mp = tuple(cpp.mesh.midpoint(cell)[:])
             reference[facet_mp].append(cell_mp)
 
     # Loop through ghosted mesh and check connectivities
     allowable_cell_indices = [c.index() for c in Cells(meshG, cpp.mesh.MeshRangeType.ALL)]
     for facet in Facets(meshG, cpp.mesh.MeshRangeType.REGULAR):
         fidx = facet.index()
-        facet_mp = tuple(facet.midpoint()[:])
+        facet_mp = tuple(cpp.mesh.midpoint(facet)[:])
         assert facet_mp in reference
 
         for cidx in meshG.topology.connectivity(1, 2).connections(fidx):
             assert cidx in allowable_cell_indices
             cell = Cell(meshG, cidx)
-            cell_mp = tuple(cell.midpoint()[:])
+            cell_mp = tuple(cpp.mesh.midpoint(cell)[:])
             assert cell_mp in reference[facet_mp]

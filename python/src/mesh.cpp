@@ -64,6 +64,7 @@ void mesh(py::module& m)
         "Compute maximum distance between any two vertices.");
   m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
   m.def("radius_ratio", &dolfin::mesh::radius_ratio);
+  m.def("midpoint", &dolfin::mesh::midpoint);
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")
@@ -130,8 +131,6 @@ void mesh(py::module& m)
              auto& indices = self.global_indices(dim);
              return py::array_t<std::int64_t>(indices.size(), indices.data());
            })
-      .def("have_shared_entities",
-           &dolfin::mesh::Topology::have_shared_entities)
       .def("shared_entities",
            py::overload_cast<int>(&dolfin::mesh::Topology::shared_entities))
       .def("str", &dolfin::mesh::Topology::str);
@@ -225,20 +224,12 @@ void mesh(py::module& m)
            "Global index")
       .def("num_entities", &dolfin::mesh::MeshEntity::num_entities,
            "Number of incident entities of given dimension")
-      .def("num_global_entities",
-           &dolfin::mesh::MeshEntity::num_global_entities,
-           "Global number of incident entities of given dimension")
       .def("entities",
            [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(
                  self.entities(dim), self.num_entities(dim));
            },
            py::return_value_policy::reference_internal)
-      .def("midpoint", &dolfin::mesh::MeshEntity::midpoint,
-           "Midpoint of Entity")
-      .def("sharing_processes", &dolfin::mesh::MeshEntity::sharing_processes)
-      .def("is_shared", &dolfin::mesh::MeshEntity::is_shared)
-      .def("is_ghost", &dolfin::mesh::MeshEntity::is_ghost)
       .def("__str__",
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
 
@@ -250,8 +241,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Edge
   py::class_<dolfin::mesh::Edge, std::shared_ptr<dolfin::mesh::Edge>,
              dolfin::mesh::MeshEntity>(m, "Edge", "Edge object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>())
-      .def("length", &dolfin::mesh::Edge::length);
+      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
 
   // dolfin::mesh::Face
   py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,
@@ -261,8 +251,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Facet
   py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
              dolfin::mesh::MeshEntity>(m, "Facet", "Facet object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>())
-      .def("exterior", &dolfin::mesh::Facet::exterior);
+      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
 
   // dolfin::mesh::Cell
   py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
