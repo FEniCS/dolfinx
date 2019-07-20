@@ -139,6 +139,7 @@ dolfin::graph::SCOTCH::compute_reordering(const Graph& graph,
 //-----------------------------------------------------------------------------
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
 dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
+                                 const SCOTCH_Num nparts,
                                  const CSRGraph<SCOTCH_Num>& local_graph,
                                  const std::vector<std::size_t>& node_weights,
                                  std::int32_t num_ghost_nodes)
@@ -220,20 +221,17 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
     throw std::runtime_error("Consistency error in SCOTCH graph");
 #endif
 
-  // Number of partitions (set equal to number of processes)
-  const SCOTCH_Num npart = num_processes;
-
   // Initialise partitioning strategy
   SCOTCH_Strat strat;
   SCOTCH_stratInit(&strat);
 
   // Set SCOTCH strategy
-  // SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATDEFAULT, npart, npart,
+  // SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATDEFAULT, nparts, nparts,
   // 0.05);
-  SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSPEED, npart, npart, 0.05);
-  // SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATQUALITY, npart, npart,
+  SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSPEED, nparts, nparts, 0.05);
+  // SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATQUALITY, nparts, nparts,
   // 0.05);
-  // SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSCALABILITY, npart, npart,
+  // SCOTCH_stratDgraphMapBuild(&strat, SCOTCH_STRATSCALABILITY, nparts, nparts,
   // 0.15);
 
   // Resize vector to hold cell partition indices with enough extra
@@ -249,7 +247,7 @@ dolfin::graph::SCOTCH::partition(const MPI_Comm mpi_comm,
 
   // Partition graph
   common::Timer timer2("SCOTCH: call SCOTCH_dgraphPart");
-  if (SCOTCH_dgraphPart(&dgrafdat, npart, &strat, _cell_partition.data()))
+  if (SCOTCH_dgraphPart(&dgrafdat, nparts, &strat, _cell_partition.data()))
     throw std::runtime_error("Error during SCOTCH partitioning");
   timer2.stop();
 

@@ -1201,8 +1201,9 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   return mvc;
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const
-    Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+void XDMFFile::write(
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
         points)
 {
   // Check that encoding
@@ -1241,10 +1242,10 @@ void XDMFFile::write(const
     _xml_doc->save_file(_filename.c_str(), "  ");
 }
 //-----------------------------------------------------------------------------
-void XDMFFile::write(const
-    Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
-        points,
-    const std::vector<double>& values)
+void XDMFFile::write(const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
+                                                         3, Eigen::RowMajor>>
+                         points,
+                     const std::vector<double>& values)
 {
   // Write clouds of points to XDMF/HDF5 with values
   assert((std::size_t)points.rows() == values.size());
@@ -1323,7 +1324,9 @@ XDMFFile::read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
   return read_mesh_function<double>(mesh, name);
 }
 //----------------------------------------------------------------------------
-mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
+std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
+           std::vector<std::int64_t>>
+XDMFFile::read_mesh_data(MPI_Comm comm) const
 {
   // Extract parent filepath (required by HDF5 when XDMF stores relative
   // path of the HDF5 files(s) and the XDMF is not opened from its own
@@ -1395,33 +1398,68 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
   assert(gdims.size() == 2);
   assert(gdims[1] == gdim);
 
-  // Geometry
-  const auto geometry_data = xdmf_read::get_dataset<double>(
-      _mpi_comm.comm(), geometry_data_node, parent_path);
-  const std::size_t num_local_points = geometry_data.size() / gdim;
-
-  Eigen::Map<const EigenRowArrayXXd> points(geometry_data.data(),
-                                            num_local_points, gdim);
   // Get topology dataset node
   pugi::xml_node topology_data_node = topology_node.child("DataItem");
   assert(topology_data_node);
-
-  // Topology
   const std::vector<std::int64_t> tdims
       = xdmf_utils::get_dataset_shape(topology_data_node);
-  const auto topology_data = xdmf_read::get_dataset<std::int64_t>(
-      _mpi_comm.comm(), topology_data_node, parent_path);
   const std::size_t npoint_per_cell = tdims[1];
-  const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
-  Eigen::Map<const EigenRowArrayXXi64> cells(topology_data.data(),
-                                             num_local_cells, npoint_per_cell);
 
-  // Set cell global indices by adding offset
-  const std::int64_t cell_index_offset
-      = MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
-  std::vector<std::int64_t> global_cell_indices(num_local_cells);
-  std::iota(global_cell_indices.begin(), global_cell_indices.end(),
-            cell_index_offset);
+  // If this process is not in the (new) communicator, it will be MPI_COMM_NULL.
+  if (comm != MPI_COMM_NULL)
+  {
+    // Geometry data
+    const auto geometry_data
+        = xdmf_read::get_dataset<double>(comm, geometry_data_node, parent_path);
+    const std::size_t num_local_points = geometry_data.size() / gdim;
+    Eigen::Map<const EigenRowArrayXXd> points(geometry_data.data(),
+                                              num_local_points, gdim);
+
+    // Topology data
+    const std::vector<std::int64_t> tdims
+        = xdmf_utils::get_dataset_shape(topology_data_node);
+    const auto topology_data = xdmf_read::get_dataset<std::int64_t>(
+        comm, topology_data_node, parent_path);
+    const std::size_t num_local_cells = topology_data.size() / npoint_per_cell;
+    Eigen::Map<const EigenRowArrayXXi64> cells(
+        topology_data.data(), num_local_cells, npoint_per_cell);
+
+    // Set cell global indices by adding offset
+    const std::int64_t cell_index_offset
+        = MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
+    std::vector<std::int64_t> global_cell_indices(num_local_cells);
+    std::iota(global_cell_indices.begin(), global_cell_indices.end(),
+              cell_index_offset);
+
+    return std::make_tuple(cell_type, std::move(points), std::move(cells),
+                           std::move(global_cell_indices));
+  }
+  else
+  {
+    // Create empty mesh data for processes that don't belong to the
+    // communicator.
+    const std::size_t num_local_cells = 0;
+    MPI::global_offset(_mpi_comm.comm(), num_local_cells, true);
+    EigenRowArrayXXd points(num_local_cells, gdim);
+    EigenRowArrayXXi64 cells(num_local_cells, npoint_per_cell);
+    std::vector<std::int64_t> global_cell_indices(num_local_cells);
+
+    return std::make_tuple(cell_type, std::move(points), std::move(cells),
+                           std::move(global_cell_indices));
+  }
+}
+//----------------------------------------------------------------------------
+mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
+{
+
+  mesh::CellType cell_type;
+  EigenRowArrayXXd points;
+  EigenRowArrayXXi64 cells;
+  std::vector<std::int64_t> global_cell_indices;
+
+  // Read local mesh data
+  std::tie(cell_type, points, cells, global_cell_indices)
+      = read_mesh_data(_mpi_comm.comm());
 
   return mesh::Partitioning::build_distributed_mesh(
       _mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
