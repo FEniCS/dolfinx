@@ -260,8 +260,7 @@ void mesh(py::module& m)
   // dolfin::mesh::Facet
   py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
              dolfin::mesh::MeshEntity>(m, "Facet", "Facet object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>())
-      .def("exterior", &dolfin::mesh::Facet::exterior);
+      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
 
   // dolfin::mesh::Cell
   py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,

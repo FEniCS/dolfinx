@@ -453,10 +453,13 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   {
     // Iterate through ghost cells, adding non-ghost entities which are
     // in lower rank process cells
+    const std::vector<std::int32_t>& cell_owners = mesh.topology().cell_owner();
+    const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
     for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
              mesh, tdim, mesh::MeshRangeType::GHOST))
     {
-      const int cell_owner = c.owner();
+      assert(c.index() >= ghost_offset);
+      const int cell_owner = cell_owners[c.index() - ghost_offset];
       for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
         if (!e.is_ghost() && cell_owner < mpi_rank)
           non_local_entities.insert(e.index());

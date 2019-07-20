@@ -220,6 +220,7 @@ void _lift_bc_exterior_facets(
   // Iterate over all cells
   for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
+    // Move to next facet if this one is an interior facet
     if (facet.num_global_entities(tdim) != 1)
       continue;
 
@@ -445,9 +446,11 @@ void fem::impl::assemble_exterior_facets(
   {
     const mesh::Facet facet(mesh, facet_index);
 
+    // Check that facet is an exterior facet
     assert(facet.num_global_entities(tdim) == 1);
 
-    // Check that facet is not a ghost (will be assembled on another process)
+    // Check that facet is not a ghost (will be assembled on another
+    // process)
     assert(!facet.is_ghost());
 
     // Create attached cell

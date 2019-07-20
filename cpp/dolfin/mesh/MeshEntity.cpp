@@ -85,19 +85,6 @@ Eigen::Vector3d MeshEntity::midpoint() const
   return x;
 }
 //-----------------------------------------------------------------------------
-std::int32_t MeshEntity::owner() const
-{
-  if (_dim != _mesh->topology().dim())
-    throw std::runtime_error("Entity ownership is only defined for cells");
-
-  const std::int32_t offset = _mesh->topology().ghost_offset(_dim);
-  if (_local_index < offset)
-    throw std::runtime_error("Ownership of non-ghost cells is local process");
-
-  assert((int)_mesh->topology().cell_owner().size() > _local_index - offset);
-  return _mesh->topology().cell_owner()[_local_index - offset];
-}
-//-----------------------------------------------------------------------------
 std::string MeshEntity::str(bool verbose) const
 {
   if (verbose)

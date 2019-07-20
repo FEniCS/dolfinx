@@ -230,11 +230,6 @@ public:
     return false;
   }
 
-  /// Get ownership of this entity - only really valid for cells
-  /// @return std::uint32_t
-  ///    Owning process
-  std::int32_t owner() const;
-
   /// Return informal string representation (pretty-print)
   ///
   /// @param      verbose (bool)

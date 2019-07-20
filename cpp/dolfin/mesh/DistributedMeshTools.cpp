@@ -1149,23 +1149,26 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Map shared facets
     std::map<std::size_t, std::size_t> global_to_local_facet;
 
+    const std::vector<std::int32_t>& cell_owners = mesh.topology().cell_owner();
+    const std::int32_t ghost_offset = mesh.topology().ghost_offset(D);
     for (auto& f :
          mesh::MeshRange<MeshEntity>(mesh, D - 1, mesh::MeshRangeType::ALL))
     {
       // Insert shared facets into mapping
       if (f.is_shared())
         global_to_local_facet.insert({f.global_index(), f.index()});
+
       // Copy local values
-      const std::size_t n_cells = f.num_entities(D);
+      const int n_cells = f.num_entities(D);
       num_global_neighbors[f.index()] = n_cells;
 
       if (f.is_ghost() && n_cells == 1)
       {
         // Singly attached ghost facet - check with owner of attached
         // cell
-        const mesh::Cell c(mesh, f.entities(D)[0]);
-        assert(c.is_ghost());
-        send_facet[c.owner()].push_back(f.global_index());
+        assert(f.entities(D)[0] >= ghost_offset);
+        const int owner = cell_owners[f.entities(D)[0] - ghost_offset ];
+        send_facet[owner].push_back(f.global_index());
       }
     }
 
