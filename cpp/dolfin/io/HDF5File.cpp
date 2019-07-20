@@ -1113,7 +1113,8 @@ void HDF5File::write_mesh_value_collection(
   mesh->create_connectivity(tdim, dim);
   for (auto& p : values)
   {
-    mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
+    // mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
+    mesh::MeshEntity cell(*mesh, tdim, p.first.first);
     if (dim != tdim)
     {
       const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
