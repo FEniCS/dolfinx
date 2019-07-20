@@ -82,7 +82,7 @@ public:
   ///
   /// @return     std::size_t
   ///         The dimension.
-  inline int dim() const { return _dim; }
+  int dim() const { return _dim; }
 
   /// Return index of mesh entity
   ///
@@ -113,7 +113,7 @@ public:
   /// @return     std::size_t
   /// The number of local incident MeshEntity objects of given
   /// dimension.
-  inline std::size_t num_entities(int dim) const
+  int num_entities(int dim) const
   {
     if (dim == _dim)
       return 1;
