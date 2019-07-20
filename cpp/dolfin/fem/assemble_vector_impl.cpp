@@ -215,10 +215,13 @@ void _lift_bc_exterior_facets(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
+  assert(mesh.topology().connectivity(tdim - 1, tdim));
+  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+      = mesh.topology().connectivity(tdim - 1, tdim);
   for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
     // Move to next facet if this one is an interior facet
-    if (facet.num_global_entities(tdim) != 1)
+    if (connectivity_facet_cell->size_global(facet.index()) != 1)
       continue;
 
     // FIXME: sort out ghosts
@@ -442,9 +445,6 @@ void fem::impl::assemble_exterior_facets(
   {
     const mesh::Facet facet(mesh, facet_index);
 
-    // Check that facet is an exterior facet
-    assert(facet.num_global_entities(tdim) == 1);
-
     // Create attached cell
     const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
 
@@ -518,7 +518,7 @@ void fem::impl::assemble_interior_facets(
   {
     const mesh::Facet facet(mesh, facet_index);
 
-    assert(facet.num_global_entities(tdim) == 2);
+    // assert(facet.num_global_entities(tdim) == 2);
 
     // TODO: check ghosting sanity?
 

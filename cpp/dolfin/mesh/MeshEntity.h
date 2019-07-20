@@ -124,27 +124,6 @@ public:
     }
   }
 
-  /// Return global number of incident mesh entities of given
-  /// topological dimension
-  ///
-  /// @param     dim (int)
-  ///         The topological dimension.
-  ///
-  /// @return     std::size_t
-  ///         The number of global incident MeshEntity objects of given
-  ///         dimension.
-  std::size_t num_global_entities(int dim) const
-  {
-    if (dim == _dim)
-      return 1;
-    else
-    {
-      assert(_mesh->topology().connectivity(_dim, dim));
-      return _mesh->topology().connectivity(_dim, dim)->size_global(
-          _local_index);
-    }
-  }
-
   /// Return array of indices for incident mesh entities of given
   /// topological dimension
   ///

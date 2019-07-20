@@ -209,7 +209,7 @@ void fem::impl::assemble_exterior_facets(
   for (const auto& facet_index : active_facets)
   {
     const mesh::Facet facet(mesh, facet_index);
-    assert(facet.num_global_entities(tdim) == 1);
+    // assert(facet.num_global_entities(tdim) == 1);
 
     // Create attached cell
     const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
@@ -311,7 +311,7 @@ void fem::impl::assemble_interior_facets(
   for (const auto& facet_index : active_facets)
   {
     const mesh::Facet facet(mesh, facet_index);
-    assert(facet.num_global_entities(tdim) == 2);
+    // assert(facet.num_global_entities(tdim) == 2);
 
     // TODO: check ghosting sanity?
 

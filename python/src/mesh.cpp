@@ -224,9 +224,6 @@ void mesh(py::module& m)
            "Global index")
       .def("num_entities", &dolfin::mesh::MeshEntity::num_entities,
            "Number of incident entities of given dimension")
-      .def("num_global_entities",
-           &dolfin::mesh::MeshEntity::num_global_entities,
-           "Global number of incident entities of given dimension")
       .def("entities",
            [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(
