@@ -123,7 +123,7 @@ void fem::impl::assemble_cells(
     const mesh::Cell cell(mesh, cell_index);
 
     // Check that cell is not a ghost
-    assert(!cell.is_ghost());
+    // assert(!cell.is_ghost());
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
@@ -214,8 +214,9 @@ void fem::impl::assemble_exterior_facets(
     const mesh::Facet facet(mesh, facet_index);
     assert(facet.num_global_entities(tdim) == 1);
 
-    // Check that facet is not a ghost (will be assembled on another process)
-    assert(!facet.is_ghost());
+    // Check that facet is not a ghost (will be assembled on another
+    // process)
+    // assert(!facet.is_ghost());
 
     // Create attached cell
     const mesh::Cell cell(mesh, facet.entities(tdim)[0]);

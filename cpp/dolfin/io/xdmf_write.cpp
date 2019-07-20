@@ -429,15 +429,14 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
 
   const int mpi_rank = dolfin::MPI::rank(mesh.mpi_comm());
+  const mesh::Topology& topology = mesh.topology();
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-      = mesh.topology().shared_entities(cell_dim);
+      = topology.shared_entities(cell_dim);
 
   std::set<std::uint32_t> non_local_entities;
 
   const int tdim = mesh.topology().dim();
-  bool ghosted
-      = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
-
+  bool ghosted = (topology.size(tdim) > topology.ghost_offset(tdim));
   if (!ghosted)
   {
     // No ghost cells - exclude shared entities which are on lower rank
@@ -453,16 +452,20 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   {
     // Iterate through ghost cells, adding non-ghost entities which are
     // in lower rank process cells
-    const std::vector<std::int32_t>& cell_owners = mesh.topology().cell_owner();
-    const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
+    const std::vector<std::int32_t>& cell_owners = topology.cell_owner();
+    const std::int32_t ghost_offset_c = topology.ghost_offset(tdim);
+    const std::int32_t ghost_offset_e = topology.ghost_offset(cell_dim);
     for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
              mesh, tdim, mesh::MeshRangeType::GHOST))
     {
-      assert(c.index() >= ghost_offset);
-      const int cell_owner = cell_owners[c.index() - ghost_offset];
+      assert(c.index() >= ghost_offset_c);
+      const int cell_owner = cell_owners[c.index() - ghost_offset_c];
       for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
-        if (!e.is_ghost() && cell_owner < mpi_rank)
+      {
+        const bool not_ghost = e.index() < ghost_offset_e;
+        if (not_ghost and cell_owner < mpi_rank)
           non_local_entities.insert(e.index());
+      }
     }
   }
   return non_local_entities;

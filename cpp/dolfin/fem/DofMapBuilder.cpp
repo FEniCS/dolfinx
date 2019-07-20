@@ -405,12 +405,15 @@ compute_sharing_markers(const DofMapStructure& dofmap,
 
   // Mark dofs associated ghost cells as ghost dofs, provisionally
   bool has_ghost_cells = false;
+  const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(D);
+  const std::int32_t ghost_offset_f = mesh.topology().ghost_offset(D - 1);
   for (auto& c : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
   {
+    const bool ghost_cell = c.index() >= ghost_offset_c;
     const PetscInt* cell_nodes = dofmap.dofs(c.index());
     if (c.is_shared())
     {
-      const sharing_marker status = (c.is_ghost())
+      const sharing_marker status = ghost_cell
                                         ? sharing_marker::ghost
                                         : sharing_marker::interior_ghost_layer;
       for (std::int32_t i = 0; i < dofmap.num_dofs(c.index()); ++i)
@@ -422,13 +425,15 @@ compute_sharing_markers(const DofMapStructure& dofmap,
     }
 
     // Change all non-ghost facet dofs of ghost cells to boundary dofs
-    if (c.is_ghost())
+    if (ghost_cell)
     {
+      // Is a ghost cell
       has_ghost_cells = true;
       for (auto& f : mesh::EntityRange<mesh::Facet>(c))
       {
-        if (!f.is_ghost())
+        if (!(f.index() >= ghost_offset_f))
         {
+          // Not a ghost facet
           const std::set<int>& facet_nodes = facet_table[c.index(f)];
           for (auto facet_node : facet_nodes)
           {

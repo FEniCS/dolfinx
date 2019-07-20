@@ -168,15 +168,6 @@ public:
     }
   }
 
-  /// Check if given entity is incident
-  ///
-  /// @param     entity (_MeshEntity_)
-  ///         The entity.
-  ///
-  ///  @return    bool
-  ///         True if the given entity is incident
-  bool incident(const MeshEntity& entity) const;
-
   /// Compute local index of given incident entity (error if not
   /// found)
   ///
@@ -192,15 +183,6 @@ public:
   /// @return geometry::Point
   ///         The midpoint of the cell.
   Eigen::Vector3d midpoint() const;
-
-  /// Determine whether an entity is a 'ghost' from another
-  /// process
-  /// @return bool
-  ///    True if entity is a ghost entity
-  bool is_ghost() const
-  {
-    return (_local_index >= (std::int32_t)_mesh->topology().ghost_offset(_dim));
-  }
 
   /// Return set of sharing processes
   /// @return std::set<std::uint32_t>

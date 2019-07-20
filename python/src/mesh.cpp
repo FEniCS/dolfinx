@@ -238,7 +238,6 @@ void mesh(py::module& m)
            "Midpoint of Entity")
       .def("sharing_processes", &dolfin::mesh::MeshEntity::sharing_processes)
       .def("is_shared", &dolfin::mesh::MeshEntity::is_shared)
-      .def("is_ghost", &dolfin::mesh::MeshEntity::is_ghost)
       .def("__str__",
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
 

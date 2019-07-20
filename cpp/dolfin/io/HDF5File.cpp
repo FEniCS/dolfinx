@@ -345,15 +345,20 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         // exclusion from output
         const std::vector<std::int32_t>& cell_owners
             = mesh.topology().cell_owner();
-        const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
+        const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
+        const std::int32_t ghost_offset_e
+            = mesh.topology().ghost_offset(cell_dim);
         for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
                  mesh, tdim, mesh::MeshRangeType::GHOST))
         {
-          assert(c.index() >= ghost_offset);
-          const int cell_owner = cell_owners[c.index() - ghost_offset];
-          for (auto& ent : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
-            if (!ent.is_ghost() and cell_owner < mpi_rank)
-              non_local_entities.insert(ent.index());
+          assert(c.index() >= ghost_offset_c);
+          const int cell_owner = cell_owners[c.index() - ghost_offset_c];
+          for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
+          {
+            const bool not_ghost = e.index() < ghost_offset_e;
+            if (not_ghost and cell_owner < mpi_rank)
+              non_local_entities.insert(e.index());
+          }
         }
       }
 
@@ -716,16 +721,19 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       // from output
       const std::vector<std::int32_t>& cell_owners
           = mesh.topology().cell_owner();
-      const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
+      const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
+      const std::int32_t ghost_offset_e
+          = mesh.topology().ghost_offset(cell_dim);
       for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
                mesh, tdim, mesh::MeshRangeType::GHOST))
       {
-        assert(c.index() >= ghost_offset);
-        const int cell_owner = cell_owners[c.index() - ghost_offset];
-        for (auto& ent : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
+        assert(c.index() >= ghost_offset_c);
+        const int cell_owner = cell_owners[c.index() - ghost_offset_c];
+        for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
         {
-          if (!ent.is_ghost() and cell_owner < mpi_rank)
-            non_local_entities.insert(ent.index());
+          const bool not_ghost = e.index() < ghost_offset_e;
+          if (not_ghost and cell_owner < mpi_rank)
+            non_local_entities.insert(e.index());
         }
       }
     }
@@ -734,10 +742,10 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
         = meshfunction.values();
 
-    for (auto& ent : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+    for (auto& e : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
     {
-      if (non_local_entities.find(ent.index()) == non_local_entities.end())
-        data_values.push_back(mf_values[ent.index()]);
+      if (non_local_entities.find(e.index()) == non_local_entities.end())
+        data_values.push_back(mf_values[e.index()]);
     }
   }
 

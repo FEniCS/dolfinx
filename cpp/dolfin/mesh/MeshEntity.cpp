@@ -16,28 +16,6 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-bool MeshEntity::incident(const MeshEntity& entity) const
-{
-  // Must be in the same mesh to be incident
-  if (_mesh != entity._mesh)
-    return false;
-
-  // Get list of entities for given topological dimension
-  const std::int32_t* entities = _mesh->topology()
-                                     .connectivity(_dim, entity._dim)
-                                     ->connections(_local_index);
-  const std::size_t num_entities
-      = _mesh->topology().connectivity(_dim, entity._dim)->size(_local_index);
-
-  // Check if any entity matches
-  for (std::size_t i = 0; i < num_entities; ++i)
-    if (entities[i] == entity._local_index)
-      return true;
-
-  // Entity was not found
-  return false;
-}
-//-----------------------------------------------------------------------------
 int MeshEntity::index(const MeshEntity& entity) const
 {
   // Must be in the same mesh to be incident

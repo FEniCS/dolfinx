@@ -90,7 +90,7 @@ void _lift_bc_cells(
   for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Check that cell is not a ghost
-    assert(!cell.is_ghost());
+    // assert(!cell.is_ghost());
 
     // Get dof maps for cell
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
@@ -385,7 +385,7 @@ void fem::impl::assemble_cells(
   for (std::int32_t cell_index : active_cells)
   {
     const mesh::Cell cell(mesh, cell_index);
-    assert(!cell.is_ghost());
+    // assert(!cell.is_ghost());
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
@@ -451,7 +451,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Check that facet is not a ghost (will be assembled on another
     // process)
-    assert(!facet.is_ghost());
+    // assert(!facet.is_ghost());
 
     // Create attached cell
     const mesh::Cell cell(mesh, facet.entities(tdim)[0]);

@@ -101,7 +101,7 @@ PetscScalar fem::impl::assemble_cells(
     const mesh::Cell cell(mesh, cell_index);
 
     // Check that cell is not a ghost
-    assert(!cell.is_ghost());
+    // assert(!cell.is_ghost());
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
