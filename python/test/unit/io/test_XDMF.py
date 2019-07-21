@@ -588,8 +588,8 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
         with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
             read_function = getattr(xdmf, "read_mvc_" + dtype_str)
             mvc = read_function(mesh, tag)
-            read_function = getattr(xdmf, "read_information_" + dtype_str)
-            tags = read_function()
+            # read_function = getattr(xdmf, "read_information_" + dtype_str)
+            # tags = read_function()
 
 
 @pytest.mark.parametrize("encoding", encodings)
