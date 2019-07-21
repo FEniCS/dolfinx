@@ -1454,20 +1454,29 @@ XDMFFile::write_information_size_t(const std::map<std::string, size_t>& informat
   ++_counter;
 }
 //-----------------------------------------------------------------------------
-std::map<std::string, size_t> 
-XDMFFile::read_information_size_t() const{
-  return read_information<std::string, size_t>();
-}
-//-----------------------------------------------------------------------------
 std::map<std::string, std::string> 
 XDMFFile::read_information_string() const{
-  return read_information<std::string, std::string>();
+  return read_information<std::string>();
 }
 //-----------------------------------------------------------------------------
-template <typename X, typename Y>
-std::map<X, Y> 
+std::map<std::string, double> 
+XDMFFile::read_information_double() const{
+  return read_information<double>();
+}
+//-----------------------------------------------------------------------------
+std::map<std::string, int> 
+XDMFFile::read_information_int() const{
+  return read_information<int>();
+}
+//-----------------------------------------------------------------------------
+std::map<std::string, size_t> 
+XDMFFile::read_information_size_t() const{
+  return read_information<size_t>();
+}
+//-----------------------------------------------------------------------------
+template <typename T>
+std::map<std::string, T> 
 XDMFFile::read_information() const{
-
   boost::filesystem::path xdmf_filename(_filename);
   const boost::filesystem::path parent_path = xdmf_filename.parent_path();
 
@@ -1501,24 +1510,15 @@ XDMFFile::read_information() const{
   assert(main_node);
 
   // Creation of Map
-  std::map<X, Y> map_of_info;
+  std::map<std::string, T> map_of_info;
   for (pugi::xml_node child: main_node.children())
   {
-      X tag_key = child.first_attribute().value();
-      Y tag_value;
-      //auto tag_value = atoi (child.child_value())  ;
-      if (typeid(Y) == typeid(std::string)){
-        //tag_value = child.child_value();
-        std::cout<<":)";
-      }
-      else{
-        tag_value = atoi (child.child_value())  ;
-      }
-
+      std::string tag_key = child.first_attribute().value();
+      T tag_value = boost::lexical_cast<T>(child.child_value())  ;
+      
       // Insert Element in map
-      map_of_info.insert(std::pair<X, Y>(tag_key, tag_value));
+      map_of_info.insert(std::pair<std::string, T>(tag_key, tag_value));
   }
-
   return map_of_info;
 }
 //----------------------------------------------------------------------------

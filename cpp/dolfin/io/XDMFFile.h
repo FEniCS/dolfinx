@@ -277,13 +277,23 @@ public:
   read_information_size_t() const;
 
   /// Read <Information> tag data from file.
-  /// @returns std::map<std::string, size_t>
+  /// @returns std::map<std::string, std::string>
   std::map<std::string, std::string> 
   read_information_string() const;
 
+  /// Read <Information> tag data from file.
+  /// @returns std::map<std::string, std::string>
+  std::map<std::string, double> 
+  read_information_double() const;
+
+  /// Read <Information> tag data from file.
+  /// @returns std::map<std::string, std::string>
+  std::map<std::string, int> 
+  read_information_int() const;
+
   // Generic <Information> tag reader
-  template <typename X, typename Y>
-  std::map<X, Y> read_information() const;
+  template <typename T>
+  std::map<std::string, T> read_information() const;
 
   /// Save a std::map<std::string, size_t> to XDMF
   /// The map is stored in information element.
