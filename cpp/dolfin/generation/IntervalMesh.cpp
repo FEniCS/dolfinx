@@ -6,7 +6,6 @@
 
 #include "IntervalMesh.h"
 #include "dolfin/common/MPI.h"
-#include "dolfin/mesh/CellType.h"
 #include "dolfin/mesh/Partitioning.h"
 #include <Eigen/Dense>
 #include <cfloat>
@@ -26,7 +25,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     EigenRowArrayXXd geom(0, 1);
     EigenRowArrayXXi64 topo(0, 2);
     return mesh::Partitioning::build_distributed_mesh(
-        comm, mesh::CellType::Type::interval, geom, topo, {}, ghost_mode);
+        comm, mesh::CellType::interval, geom, topo, {}, ghost_mode);
   }
 
   const double a = x[0];
@@ -60,7 +59,7 @@ mesh::Mesh build(MPI_Comm comm, std::size_t nx, std::array<double, 2> x,
     topo.row(ix) << ix, ix + 1;
 
   return mesh::Partitioning::build_distributed_mesh(
-      comm, mesh::CellType::Type::interval, geom, topo, {}, ghost_mode);
+      comm, mesh::CellType::interval, geom, topo, {}, ghost_mode);
 }
 } // namespace
 

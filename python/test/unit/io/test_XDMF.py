@@ -9,11 +9,12 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Facets, Function,
-                    FunctionSpace, MeshEntities, MeshFunction,
-                    MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
-                    Vertices, cpp, has_petsc_complex, interpolate)
+from dolfin import (MPI, Cells, Facets, Function, FunctionSpace, MeshEntities,
+                    MeshFunction, MeshValueCollection, TensorFunctionSpace,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+                    VectorFunctionSpace, Vertices, cpp, has_petsc_complex,
+                    interpolate)
+from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement
@@ -109,7 +110,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_2d_quad_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh_2D_quad.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, CellType.quadrilateral)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:
@@ -524,18 +525,13 @@ def test_save_3D_vertex_function(tempdir, encoding, data_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_2D(tempdir, encoding):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
-    points, values = [], []
-    for v in Vertices(mesh):
-        points.append(v.point())
-        values.append(numpy.linalg.norm(v.point()))
-    vals = numpy.array(values)
-
+    points = mesh.geometry.points
+    vals = numpy.linalg.norm(points, axis=1)
     with XDMFFile(
             mesh.mpi_comm(),
             os.path.join(tempdir, "points_2D.xdmf"),
             encoding=encoding) as file:
         file.write(points)
-
     with XDMFFile(
             mesh.mpi_comm(),
             os.path.join(tempdir, "points_values_2D.xdmf"),
@@ -546,18 +542,13 @@ def test_save_points_2D(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_3D(tempdir, encoding):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
-    points, values = [], []
-    for v in Vertices(mesh):
-        points.append(v.point())
-        values.append(numpy.linalg.norm(v.point()))
-    vals = numpy.array(values)
-
+    points = mesh.geometry.points
+    vals = numpy.linalg.norm(points, axis=1)
     with XDMFFile(
             mesh.mpi_comm(),
             os.path.join(tempdir, "points_3D.xdmf"),
             encoding=encoding) as file:
         file.write(points)
-
     with XDMFFile(
             mesh.mpi_comm(),
             os.path.join(tempdir, "points_values_3D.xdmf"),
@@ -574,9 +565,9 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
     meshfn = MeshFunction(dtype_str, mesh, mesh.topology.dim, False)
     meshfn.name = "volume_marker"
     for c in Cells(mesh):
-        if c.midpoint()[1] > 0.1:
+        if cpp.mesh.midpoint(c)[1] > 0.1:
             meshfn.values[c.index()] = dtype(1)
-        if c.midpoint()[1] > 0.9:
+        if cpp.mesh.midpoint(c)[1] > 0.9:
             meshfn.values[c.index()] = dtype(2)
 
     for mvc_dim in range(0, tdim + 1):
@@ -585,7 +576,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
         mvc.name = tag
         mesh.create_connectivity(mvc_dim, tdim)
         for e in MeshEntities(mesh, mvc_dim):
-            if (e.midpoint()[0] > 0.5):
+            if (cpp.mesh.midpoint(e)[0] > 0.5):
                 mvc.set_value(e.index(), dtype(1))
 
         filename = os.path.join(tempdir, "mvc_{}.xdmf".format(mvc_dim))

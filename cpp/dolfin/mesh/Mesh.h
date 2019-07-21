@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "CellType.h"
+#include "cell_types.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/UniqueIdGenerator.h>
 #include <dolfin/common/types.h>
@@ -75,7 +75,7 @@ public:
   ///
   /// @param comm (MPI_Comm)
   ///         MPI Communicator
-  /// @param type (CellType::Type)
+  /// @param type (CellType)
   ///         Cell type
   /// @param points
   ///         Array of geometric points, arranged in global index order
@@ -91,7 +91,7 @@ public:
   ///         cells)
   // FIXME: What about global vertex indices?
   // FIXME: Be explicit in passing geometry degree/type
-  Mesh(MPI_Comm comm, mesh::CellType::Type type,
+  Mesh(MPI_Comm comm, mesh::CellType type,
        const Eigen::Ref<const EigenRowArrayXXd> points,
        const Eigen::Ref<const EigenRowArrayXXi64> cells,
        const std::vector<std::int64_t>& global_cell_indices,
@@ -112,17 +112,14 @@ public:
   /// Destructor
   ~Mesh();
 
-  /// Assignment operator
-  ///
-  /// @param mesh (Mesh)
-  ///         Another Mesh object.
-  Mesh& operator=(const Mesh& mesh);
+  // Assignment operator
+  Mesh& operator=(const Mesh& mesh) = delete;
 
   /// Assignment move operator
   ///
   /// @param mesh (Mesh)
   ///         Another Mesh object.
-  // Mesh& operator=(Mesh&& mesh) = default;
+  Mesh& operator=(Mesh&& mesh) = default;
 
   /// Get number of entities of given topological dimension.
   ///
@@ -167,15 +164,6 @@ public:
   /// @return Geometry
   ///         The geometry object associated with the mesh.
   const Geometry& geometry() const;
-
-  /// Get mesh cell type.
-  ///
-  /// @return CellType&
-  ///         The cell type object associated with the mesh.
-  mesh::CellType& type();
-
-  /// Get mesh cell type (const version).
-  const mesh::CellType& type() const;
 
   /// Create entities of given topological dimension.
   ///
@@ -281,10 +269,10 @@ public:
   // FIXME: This should be with Geometry
   std::int32_t degree() const;
 
-private:
-  // Cell type
-  std::unique_ptr<mesh::CellType> _cell_type;
+  /// Cell type
+  const mesh::CellType cell_type;
 
+private:
   // Mesh topology
   std::unique_ptr<Topology> _topology;
 

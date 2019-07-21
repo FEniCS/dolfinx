@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
   pt[1] << 1., 1., 1.;
 
   auto mesh = std::make_shared<mesh::Mesh>(generation::BoxMesh::create(
-      MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::Type::tetrahedron,
+      MPI_COMM_WORLD, pt, {{8, 8, 8}}, mesh::CellType::tetrahedron,
       mesh::GhostMode::none));
   mesh::Ordering::order_simplex(*mesh);
 

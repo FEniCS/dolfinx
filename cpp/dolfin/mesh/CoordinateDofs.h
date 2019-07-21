@@ -67,7 +67,6 @@ private:
   // Connectivity from cells to points
   std::shared_ptr<Connectivity> _coord_dofs;
 
-
   // FIXME: ideally remove this, but would need to harmonise the dof
   // ordering between dolfin/ffc/gmsh
   // Permutation required to transform to/from VTK/gmsh ordering to

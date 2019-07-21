@@ -87,6 +87,7 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         doxygen \
         git \
         graphviz \
+        sudo \
         valgrind \
         wget && \
     apt-get -y install \
