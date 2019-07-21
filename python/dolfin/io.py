@@ -206,9 +206,17 @@ class XDMFFile:
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
-    def read_information(self):
-        tag = self._cpp_object.read_information()
-        return tag
+    def read_information_int(self):
+        return self._cpp_object.read_information_int()
+
+    def read_information_size_t(self):
+        return self._cpp_object.read_information_size_t()
+
+    def read_information_double(self):
+        return self._cpp_object.read_information_double()
+
+    def read_information_string(self):
+        return self._cpp_object.read_information_string()
 
     def read_checkpoint(self, V, name: str,
                         counter: int = -1) -> function.Function:

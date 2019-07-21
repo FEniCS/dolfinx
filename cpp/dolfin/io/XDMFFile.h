@@ -300,7 +300,7 @@ public:
   /// @param information
   ///        map from string key to size_t value
   void 
-  write_information_size_t(const std::map<std::string, size_t>& information);
+  write(const std::map<std::string, size_t>& information);
 
   // Generic <Information> tag writer
   template <typename X, typename Y>

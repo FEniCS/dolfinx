@@ -234,9 +234,18 @@ void io(py::module& m)
               const dolfin::mesh::GhostMode ghost_mode) {
              return self.read_mesh(ghost_mode);
            })
-      .def("read_information",
-           [](dolfin::io::XDMFFile& self) {
-             return self.read_information();
+      // Information
+      .def("read_information_int",[](dolfin::io::XDMFFile& self) {
+             return self.read_information_int();
+           })
+      .def("read_information_size_t",[](dolfin::io::XDMFFile& self) {
+             return self.read_information_size_t();
+           })
+      .def("read_information_double",[](dolfin::io::XDMFFile& self) {
+             return self.read_information_double();
+           })
+      .def("read_information_string",[](dolfin::io::XDMFFile& self) {
+             return self.read_information_string();
            })
       // MeshFunction
       .def("read_mf_int", &dolfin::io::XDMFFile::read_mf_int, py::arg("mesh"),
