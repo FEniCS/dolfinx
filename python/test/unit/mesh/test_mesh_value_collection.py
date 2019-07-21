@@ -5,7 +5,7 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
 from dolfin import (MPI, Cells, FacetRange, MeshFunction, MeshValueCollection,
-                    UnitSquareMesh, VertexRange)
+                    UnitSquareMesh, cpp)
 
 
 def test_assign_2D_cells():
@@ -58,11 +58,13 @@ def test_assign_2D_vertices():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_connectivity(2, 0)
     ncells = mesh.num_cells()
+    num_cell_vertices = cpp.mesh.cell_num_vertices(mesh.cell_type)
+
     f = MeshValueCollection("int", mesh, 0)
     all_new = True
     for cell in Cells(mesh):
         value = ncells - cell.index()
-        for i, vert in enumerate(VertexRange(cell)):
+        for i in range(num_cell_vertices):
             all_new = all_new and f.set_value(cell.index(), i, value + i)
 
     g = MeshValueCollection("int", mesh, 0)
@@ -73,7 +75,7 @@ def test_assign_2D_vertices():
 
     for cell in Cells(mesh):
         value = ncells - cell.index()
-        for i, vert in enumerate(VertexRange(cell)):
+        for i in range(num_cell_vertices):
             assert value + i == g.get_value(cell.index(), i)
 
 
@@ -148,7 +150,11 @@ def test_mesh_function_assign_2D_vertices():
 
     f2 = MeshFunction("int", mesh, g, 0)
 
+    num_cell_vertices = cpp.mesh.cell_num_vertices(mesh.cell_type)
+    tdim = mesh.topology.dim
+    connectivity = mesh.topology.connectivity(tdim, 0)
     for cell in Cells(mesh):
-        for i, vert in enumerate(VertexRange(cell)):
+        vertices = connectivity.connections(cell.index())
+        for i in range(num_cell_vertices):
             assert 25 == g.get_value(cell.index(), i)
-            assert f2.values[vert.index()] == g.get_value(cell.index(), i)
+            assert f2.values[vertices[i]] == g.get_value(cell.index(), i)
