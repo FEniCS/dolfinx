@@ -44,7 +44,7 @@ from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
 
 from .cpp.mesh import (Mesh, Topology, Geometry, Cell, Facet,
                        Face, Edge, Vertex, MeshEntity, Cells, Facets,
-                       Vertices, MeshEntities,
+                       MeshEntities,
                        EntityRange, MeshQuality)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)

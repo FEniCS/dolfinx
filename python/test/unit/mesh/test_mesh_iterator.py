@@ -7,32 +7,7 @@
 import numpy
 import pytest
 
-from dolfin import MPI, Cells, Facets, UnitCubeMesh, Vertices
-
-
-def test_vertex_iterators():
-    """Iterate over vertices"""
-
-    mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5)
-    for i in range(4):
-        mesh.create_connectivity(0, i)
-
-    connectivities = [(i, mesh.topology.connectivity(0, i)) for i in range(4)]
-
-    # Test writability
-    for i, connectivity in connectivities:
-        def assign(con, i):
-            connectivity.connecgtions(i)[0] = 1
-        with pytest.raises(Exception):
-            assign(connectivity, i)
-
-    n = 0
-    for i, v in enumerate(Vertices(mesh)):
-        n += 1
-        for j, connectivity in connectivities:
-            assert numpy.all(connectivity.connections(i) == v.entities(j))
-
-    assert n == mesh.num_entities(0)
+from dolfin import MPI, Cells, Facets, UnitCubeMesh
 
 
 def test_facet_iterators():

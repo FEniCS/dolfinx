@@ -12,7 +12,7 @@ import pytest
 from dolfin import (MPI, Cells, Facets, Function, FunctionSpace, MeshEntities,
                     MeshFunction, MeshValueCollection, TensorFunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorFunctionSpace, Vertices, cpp, has_petsc_complex,
+                    VectorFunctionSpace, Vertex, cpp, has_petsc_complex,
                     interpolate)
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
@@ -493,8 +493,8 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     mf.name = "vertices"
-    for vertex in Vertices(mesh):
-        mf.values[vertex.index()] = dtype(vertex.global_index())
+    for v in range(mesh.num_entities(0)):
+        mf.values[v] = dtype(Vertex(mesh, v).global_index())
     filename = os.path.join(tempdir, "mf_vertex_2D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -515,8 +515,8 @@ def test_save_3D_vertex_function(tempdir, encoding, data_type):
     filename = os.path.join(tempdir, "mf_vertex_3D_%s.xdmf" % dtype_str)
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, 0, 0)
-    for vertex in Vertices(mesh):
-        mf.values[vertex.index()] = dtype(vertex.index())
+    for v in range(mesh.num_entities(0)):
+        mf.values[v] = dtype(v)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
@@ -610,15 +610,15 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         cf.name = "cells"
 
         if (MPI.size(mesh.mpi_comm()) == 1):
-            for vertex in Vertices(mesh):
-                vf.values[vertex.index()] = dtype(vertex.index())
+            for v in range(mesh.num_entities(0)):
+                vf.values[v] = dtype(v)
             for facet in Facets(mesh):
                 ff.values[facet.index()] = dtype(facet.index())
             for cell in Cells(mesh):
                 cf.values[cell.index()] = dtype(cell.index())
         else:
-            for vertex in Vertices(mesh):
-                vf.values[vertex.index()] = dtype(vertex.global_index())
+            for v in range(mesh.num_entities(0)):
+                vf.values[v] = dtype(Vertex(mesh, v).vertex.global_index())
             for facet in Facets(mesh):
                 ff.values[facet.index()] = dtype(facet.global_index())
             for cell in Cells(mesh):
