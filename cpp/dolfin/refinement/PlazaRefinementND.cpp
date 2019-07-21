@@ -38,13 +38,13 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
     update_count = 0;
     p_ref.update_logical_edgefunction();
 
-    for (const auto& f : mesh::MeshRange<mesh::Face>(mesh))
+    for (const auto& f : mesh::MeshRange<mesh::MeshEntity>(mesh, 2))
     {
       const std::int32_t long_e = long_edge[f.index()];
       if (p_ref.is_marked(long_e))
         continue;
       bool any_marked = false;
-      for (const auto& e : mesh::EntityRange<mesh::Edge>(f))
+      for (const auto& e : mesh::EntityRange<mesh::MeshEntity>(f, 1))
         any_marked |= p_ref.is_marked(e.index());
       if (any_marked)
       {
@@ -111,14 +111,14 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
       // Need longest edges of each facet in cell local indexing
       std::vector<std::int32_t> longest_edge;
-      for (const auto& f : mesh::EntityRange<mesh::Face>(cell))
+      for (const auto& f : mesh::EntityRange<mesh::MeshEntity>(cell, 2))
         longest_edge.push_back(long_edge[f.index()]);
 
       // Convert to cell local index
       for (auto& p : longest_edge)
       {
         int i = 0;
-        for (const auto& ej : mesh::EntityRange<mesh::Edge>(cell))
+        for (const auto& ej : mesh::EntityRange<mesh::MeshEntity>(cell, 1))
         {
           if (p == ej.index())
           {
@@ -317,14 +317,14 @@ face_long_edge(const mesh::Mesh& mesh)
   // Store all edge lengths in Mesh to save recalculating for each Face
   const mesh::Geometry& geometry = mesh.geometry();
   std::vector<double> edge_length(mesh.num_entities(1));
-  for (const auto& e : mesh::MeshRange<mesh::Edge>(mesh))
+  for (const auto& e : mesh::MeshRange<mesh::MeshEntity>(mesh, 1))
   {
     const std::int32_t* v = e.entities(0);
     edge_length[e.index()] = (geometry.x(v[0]) - geometry.x(v[1])).norm();
   }
 
   // Get longest edge of each face
-  for (const auto& f : mesh::MeshRange<mesh::Face>(mesh))
+  for (const auto& f : mesh::MeshRange<mesh::MeshEntity>(mesh, 2))
   {
     const std::int32_t* face_edges = f.entities(1);
 

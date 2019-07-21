@@ -72,7 +72,7 @@ ParallelRefinement::edge_to_new_vertex() const
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(const mesh::MeshEntity& entity)
 {
-  for (const auto& edge : mesh::EntityRange<mesh::Edge>(entity))
+  for (const auto& edge : mesh::EntityRange<mesh::MeshEntity>(entity, 1))
     mark(edge.index());
 }
 //-----------------------------------------------------------------------------
@@ -89,7 +89,7 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
   {
     if (mf_values[entity.index()] == 1)
     {
-      for (const auto& edge : mesh::EntityRange<mesh::Edge>(entity))
+      for (const auto& edge : mesh::EntityRange<mesh::MeshEntity>(entity, 1))
         mark(edge.index());
     }
   }
@@ -99,9 +99,8 @@ std::vector<std::size_t>
 ParallelRefinement::marked_edge_list(const mesh::MeshEntity& cell) const
 {
   std::vector<std::size_t> result;
-
   std::size_t i = 0;
-  for (const auto& edge : mesh::EntityRange<mesh::Edge>(cell))
+  for (auto& edge : mesh::EntityRange<mesh::MeshEntity>(cell, 1))
   {
     if (_marked_edges[edge.index()])
       result.push_back(i);
@@ -167,8 +166,10 @@ void ParallelRefinement::create_new_vertices()
       if (owner)
       {
         const Eigen::Vector3d midpoint
-            = mesh::midpoint(mesh::Edge(_mesh, local_i));
-        for (std::size_t j = 0; j < 3; ++j)
+            = mesh::midpoint(mesh::MeshEntity(_mesh, 1, local_i));
+        // const Eigen::Vector3d midpoint
+        //     = mesh::midpoint(mesh::Edge(_mesh, local_i));
+        for (int j = 0; j < 3; ++j)
           _new_vertex_coordinates.push_back(midpoint[j]);
         _local_edge_to_new_vertex[local_i] = n++;
       }

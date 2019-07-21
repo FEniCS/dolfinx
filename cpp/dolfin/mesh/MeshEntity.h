@@ -50,28 +50,6 @@ public:
   /// Move assignement operator
   MeshEntity& operator=(MeshEntity&& e) = default;
 
-  /// Comparison Operator
-  ///
-  /// @param e (MeshEntity)
-  ///         Another mesh entity
-  ///
-  ///  @return    bool
-  ///         True if the two mesh entities are equal.
-  bool operator==(const MeshEntity& e) const
-  {
-    return (_mesh == e._mesh and _dim == e._dim
-            and _local_index == e._local_index);
-  }
-
-  /// Comparison Operator
-  ///
-  /// @param e (MeshEntity)
-  ///         Another mesh entity.
-  ///
-  /// @return     bool
-  ///         True if the two mesh entities are NOT equal.
-  bool operator!=(const MeshEntity& e) const { return !operator==(e); }
-
   /// Return mesh associated with mesh entity
   ///
   /// @return Mesh

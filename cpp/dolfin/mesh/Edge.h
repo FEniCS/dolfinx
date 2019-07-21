@@ -17,25 +17,25 @@ class Mesh;
 
 /// An Edge is a _MeshEntity_ of topological dimension 1.
 
-class Edge : public MeshEntity
-{
-public:
-  /// Create edge on given mesh
-  ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh.
-  /// @param    index (std::size_t)
-  ///         Index of the edge.
-  Edge(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 1, index) {}
+// class Edge : public MeshEntity
+// {
+// public:
+//   /// Create edge on given mesh
+//   ///
+//   /// @param    mesh (_Mesh_)
+//   ///         The mesh.
+//   /// @param    index (std::size_t)
+//   ///         Index of the edge.
+//   Edge(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 1, index) {}
 
-  /// Create edge from mesh entity
-  ///
-  /// @param    entity (_MeshEntity_)
-  ///         The mesh entity to create an edge from.
-  Edge(MeshEntity& entity) : MeshEntity(entity.mesh(), 1, entity.index()) {}
+//   /// Create edge from mesh entity
+//   ///
+//   /// @param    entity (_MeshEntity_)
+//   ///         The mesh entity to create an edge from.
+//   Edge(MeshEntity& entity) : MeshEntity(entity.mesh(), 1, entity.index()) {}
 
-  /// Destructor
-  ~Edge() = default;
-};
+//   /// Destructor
+//   ~Edge() = default;
+// };
 } // namespace mesh
 } // namespace dolfin
