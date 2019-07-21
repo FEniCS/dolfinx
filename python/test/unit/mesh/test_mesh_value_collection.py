@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (MPI, Cells, FacetRange, MeshFunction, MeshValueCollection,
+from dolfin import (MPI, Cells, MeshFunction, MeshValueCollection,
                     UnitSquareMesh, cpp)
 
 
@@ -34,12 +34,15 @@ def test_assign_2D_cells():
 def test_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_connectivity(2, 1)
+    tdim = mesh.topology.dim
+    num_cell_facets = cpp.mesh.cell_num_entities(mesh.cell_type, tdim - 1)
     ncells = mesh.num_cells()
+
     f = MeshValueCollection("int", mesh, 1)
     all_new = True
     for cell in Cells(mesh):
         value = ncells - cell.index()
-        for i, facet in enumerate(FacetRange(cell)):
+        for i in range(num_cell_facets):
             all_new = all_new and f.set_value(cell.index(), i, value + i)
 
     g = MeshValueCollection("int", mesh, 1)
@@ -50,7 +53,7 @@ def test_assign_2D_facets():
 
     for cell in Cells(mesh):
         value = ncells - cell.index()
-        for i, facet in enumerate(FacetRange(cell)):
+        for i in range(num_cell_facets):
             assert value + i == g.get_value(cell.index(), i)
 
 
@@ -119,24 +122,30 @@ def test_mesh_function_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_entities(1)
     tdim = mesh.topology.dim
+    num_cell_facets = cpp.mesh.cell_num_entities(mesh.cell_type, tdim - 1)
+
     f = MeshFunction("int", mesh, tdim - 1, 25)
+    connectivity = mesh.topology.connectivity(tdim, tdim - 1)
     for cell in Cells(mesh):
-        for i, facet in enumerate(FacetRange(cell)):
-            assert 25 == f.values[facet.index()]
+        facets = connectivity.connections(cell.index())
+        for i in range(num_cell_facets):
+            assert 25 == f.values[facets[i]]
 
     g = MeshValueCollection("int", mesh, 1)
     g.assign(f)
     assert mesh.num_entities(tdim - 1) == len(f.values)
     assert mesh.num_cells() * 3 == g.size()
     for cell in Cells(mesh):
-        for i, facet in enumerate(FacetRange(cell)):
+        for i in range(num_cell_facets):
             assert 25 == g.get_value(cell.index(), i)
 
     f2 = MeshFunction("int", mesh, g, 0)
 
+    connectivity = mesh.topology.connectivity(tdim, tdim - 1)
     for cell in Cells(mesh):
-        for i, facet in enumerate(FacetRange(cell)):
-            assert f2.values[facet.index()] == g.get_value(cell.index(), i)
+        facets = connectivity.connections(cell.index())
+        for i in range(num_cell_facets):
+            assert f2.values[facets[i]] == g.get_value(cell.index(), i)
 
 
 def test_mesh_function_assign_2D_vertices():
