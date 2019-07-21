@@ -76,6 +76,9 @@ public:
     /// if it hasn't already been initialised.
     std::uint32_t size() const;
 
+    /// Create a new comm with a subset of processes
+    MPI_Comm SubsetComm(int num_processes) const;
+
     /// Set a barrier (synchronization point)
     void barrier() const;
 
@@ -89,6 +92,9 @@ public:
 
   /// Return process rank for the communicator
   static std::uint32_t rank(MPI_Comm comm);
+
+  /// Create a new comm with a subset of processes
+  static MPI_Comm SubsetComm(MPI_Comm comm, int num_processes);
 
   /// Return size of the group (number of processes) associated with
   /// the communicator

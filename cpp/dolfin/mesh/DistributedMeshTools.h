@@ -94,7 +94,6 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           values,
       const std::vector<std::int64_t>& global_indices);
-
 };
 } // namespace mesh
 } // namespace dolfin

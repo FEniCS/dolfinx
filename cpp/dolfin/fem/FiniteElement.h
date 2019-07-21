@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "ReferenceCellTopology.h"
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <petscsys.h>
@@ -40,7 +40,7 @@ public:
 
   /// Return the cell shape
   /// @return CellShape
-  CellType cell_shape() const;
+  mesh::CellType cell_shape() const;
 
   /// Return the topological dimension of the cell shape
   /// @return std::size_t
@@ -126,7 +126,7 @@ public:
 private:
   std::string _signature, _family;
 
-  CellType _cell_shape;
+  mesh::CellType _cell_shape;
 
   int _tdim, _space_dim, _value_size, _reference_value_size, _degree;
 

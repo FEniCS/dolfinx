@@ -551,7 +551,7 @@ def test_basic_interior_facet_assembly():
 
     mesh = dolfin.RectangleMesh(dolfin.MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
                                                         numpy.array([1.0, 1.0, 0.0])], [5, 5],
-                                cell_type=dolfin.cpp.mesh.CellType.Type.triangle,
+                                cell_type=dolfin.cpp.mesh.CellType.triangle,
                                 ghost_mode=ghost_mode)
 
     V = dolfin.function.FunctionSpace(mesh, ("DG", 1))

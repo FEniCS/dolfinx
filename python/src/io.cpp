@@ -14,6 +14,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <memory>
+#include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -204,20 +205,17 @@ void io(py::module& m)
            py::arg("mvc"))
       // Points
       .def("write",
-           [](dolfin::io::XDMFFile& instance, py::list points) {
-             auto _points = points.cast<std::vector<Eigen::Vector3d>>();
-             instance.write(_points);
-           },
+           py::overload_cast<const Eigen::Ref<
+               const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>>(
+               &dolfin::io::XDMFFile::write),
            py::arg("points"))
-      // Points with values
       .def("write",
-           [](dolfin::io::XDMFFile& instance, py::list points,
-              std::vector<double>& values) {
-             auto _points = points.cast<std::vector<Eigen::Vector3d>>();
-             instance.write(_points, values);
-           },
+           py::overload_cast<const Eigen::Ref<const Eigen::Array<
+                                 double, Eigen::Dynamic, 3, Eigen::RowMajor>>,
+                             const std::vector<double>&>(
+               &dolfin::io::XDMFFile::write),
            py::arg("points"), py::arg("values"))
-      // Check points
+      // Checkpoints
       .def("write_checkpoint",
            [](dolfin::io::XDMFFile& instance,
               const dolfin::function::Function& u, std::string function_name,

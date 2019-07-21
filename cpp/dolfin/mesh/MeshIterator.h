@@ -127,7 +127,6 @@ public:
         = *e.mesh().topology().connectivity(e.dim(), _entity.dim());
 
     // Pointer to array of connections
-    // assert(!c.empty());
     _connections = c.connections(e.index()) + pos;
   }
 
