@@ -814,6 +814,26 @@ void XDMFFile::write(const mesh::MeshValueCollection<double>& mvc)
   write_mesh_value_collection(mvc);
 }
 //-----------------------------------------------------------------------------
+void XDMFFile::write(const std::map<std::string, size_t>& information)
+{
+  write_information<size_t>(information);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const std::map<std::string, double>& information)
+{
+  write_information<double>(information);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const std::map<std::string, int>& information)
+{
+  write_information<int>(information);
+}
+//-----------------------------------------------------------------------------
+void XDMFFile::write(const std::map<std::string, std::string>& information)
+{
+  write_information<std::string>(information);
+}
+//-----------------------------------------------------------------------------
 template <typename T>
 void XDMFFile::write_mesh_value_collection(
     const mesh::MeshValueCollection<T>& mvc)
@@ -1466,7 +1486,8 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
       ghost_mode);
 }
 //----------------------------------------------------------------------------
-void XDMFFile::write(const std::map<std::string, size_t>& information){
+template <typename T>
+void XDMFFile::write_information(const std::map<std::string, T>& information){
   pugi::xml_node domain_node;
   std::string hdf_filemode = "a";
   if (_xml_doc->child("Xdmf").empty())
@@ -1482,7 +1503,7 @@ void XDMFFile::write(const std::map<std::string, size_t>& information){
 
   pugi::xml_node information_node = domain_node.append_child("Information");
 
-  xdmf_write::add_information(_mpi_comm.comm(), information_node, information);
+  xdmf_write::add_information<T>(_mpi_comm.comm(), information_node, information);
 
   // Save XML file (on process 0 only)
   if (_mpi_comm.rank() == 0)

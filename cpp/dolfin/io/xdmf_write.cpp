@@ -513,36 +513,6 @@ void xdmf_write::add_points(
                 "");
 }
 //----------------------------------------------------------------------------
-/// Add set of points to XDMF xml_node and write data
-void xdmf_write::add_information(MPI_Comm comm, pugi::xml_node& information_node,
-                const std::map<std::string, size_t>& information){
-  std::cout<<"Add Information"<<std::endl;
-  information_node.append_attribute("Name")
-      = "Information";
-  auto it = information.begin();
-
-  pugi::xml_document cdata_doc;
-  pugi::xml_node main_node = cdata_doc.append_child("main");
-
-  while (it != information.end()) {
-    std::string string_tag = it->first;
-    int number_tag = it->second;
-
-    pugi::xml_node map_node = main_node.append_child("map");
-    map_node.append_attribute("key")
-      = string_tag.c_str();
-
-    map_node.append_child(pugi::node_pcdata).set_value(std::to_string(number_tag).c_str());
-    
-    it++;
-  }
-  // Write complete xml document to string stream
-  std::stringstream cdata_ss;
-  cdata_doc.save(cdata_ss,"  ");
-  information_node.append_child(pugi::node_cdata).set_value(cdata_ss.str().c_str());
-
-}
-//----------------------------------------------------------------------------
 void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
                                    hid_t h5_id, const std::string path_prefix,
                                    const mesh::Mesh& mesh, int cell_dim)

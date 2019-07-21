@@ -9,6 +9,7 @@
 #include "HDF5Interface.h"
 #include "pugixml.hpp"
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/function/Function.h>
@@ -51,8 +52,34 @@ void add_points(MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
                     points);
 
 /// Add set of points to XDMF xml_node and write data
-void add_information(MPI_Comm comm, pugi::xml_node& xdmf_node,
-                const std::map<std::string, size_t>& information);
+template <typename T>
+void add_information(MPI_Comm comm, pugi::xml_node& information_node,
+                const std::map<std::string, T>& information){
+  information_node.append_attribute("Name") = "Information";
+  auto it = information.begin();
+
+  pugi::xml_document cdata_doc;
+  pugi::xml_node main_node = cdata_doc.append_child("main");
+
+  while (it != information.end()) {
+    std::string key_tag = it->first;
+    T value_tag = it->second;
+
+    pugi::xml_node map_node = main_node.append_child("map");
+    map_node.append_attribute("key")
+      = key_tag.c_str();
+
+    std::string value_tag_str = boost::lexical_cast<std::string>(value_tag);
+    map_node.append_child(pugi::node_pcdata).set_value(value_tag_str.c_str());
+    
+    it++;
+  }
+  // Write complete xml document to string stream
+  std::stringstream cdata_ss;
+  cdata_doc.save(cdata_ss,"  ");
+  information_node.append_child(pugi::node_cdata).set_value(cdata_ss.str().c_str());
+}
+//----------------------------------------------------------------------------
 
 /// Add topology node to xml_node (includes writing data to XML or HDF5
 /// file)

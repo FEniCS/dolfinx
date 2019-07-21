@@ -303,10 +303,13 @@ public:
   /// @param information
   ///        map from string key to size_t value
   void write(const std::map<std::string, size_t>& information);
+  void write(const std::map<std::string, double>& information);
+  void write(const std::map<std::string, int>& information);
+  void write(const std::map<std::string, std::string>& information);
 
   // Generic <Information> tag writer
-  //template <typename X, typename Y>
-  //void write(const std::map<X, Y>& information);
+  template <typename T>
+  void write_information(const std::map<std::string, T>& information);
 
   /// Read in the data from the first mesh in XDMF file
   ///
