@@ -8,11 +8,8 @@
 
 #include <catch.hpp>
 #include <cmath>
+#include <dolfin.h>
 #include <dolfin/common/MPI.h>
-#include <dolfin/generation/RectangleMesh.h>
-#include <dolfin/io/XDMFFile.h>
-#include <dolfin/mesh/Geometry.h>
-#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/PartitionData.h>
 #include <dolfin/mesh/Partitioning.h>
 
@@ -43,7 +40,7 @@ void test_distributed_mesh()
   int dim = mesh->geometry().dim();
 
   // Save mesh in XDMF format
-  io::XDMFFile file(MPI_COMM_WORLD, "mesha.xdmf");
+  io::XDMFFile file(MPI_COMM_WORLD, "mesh.xdmf");
   file.write(*mesh);
 
   mesh::CellType cell_type;
