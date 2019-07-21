@@ -302,12 +302,11 @@ public:
   /// The map is stored in information element.
   /// @param information
   ///        map from string key to size_t value
-  void 
-  write(const std::map<std::string, size_t>& information);
+  void write(const std::map<std::string, size_t>& information);
 
   // Generic <Information> tag writer
-  template <typename X, typename Y>
-  void write(const std::map<X, Y>& information);
+  //template <typename X, typename Y>
+  //void write(const std::map<X, Y>& information);
 
   /// Read in the data from the first mesh in XDMF file
   ///

@@ -1466,8 +1466,7 @@ mesh::Mesh XDMFFile::read_mesh(const mesh::GhostMode ghost_mode) const
       ghost_mode);
 }
 //----------------------------------------------------------------------------
-void 
-XDMFFile::write(const std::map<std::string, size_t>& information){
+void XDMFFile::write(const std::map<std::string, size_t>& information){
   pugi::xml_node domain_node;
   std::string hdf_filemode = "a";
   if (_xml_doc->child("Xdmf").empty())
