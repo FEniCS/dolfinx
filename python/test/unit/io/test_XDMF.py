@@ -618,7 +618,7 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
                 cf.values[cell.index()] = dtype(cell.index())
         else:
             for v in range(mesh.num_entities(0)):
-                vf.values[v] = dtype(Vertex(mesh, v).vertex.global_index())
+                vf.values[v] = dtype(Vertex(mesh, v).global_index())
             for facet in Facets(mesh):
                 ff.values[facet.index()] = dtype(facet.global_index())
             for cell in Cells(mesh):
