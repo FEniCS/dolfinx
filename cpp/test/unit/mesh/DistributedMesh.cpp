@@ -10,6 +10,10 @@
 #include <cmath>
 #include <dolfin.h>
 #include <dolfin/common/MPI.h>
+#include <dolfin/generation/RectangleMesh.h>
+#include <dolfin/io/XDMFFile.h>
+#include <dolfin/mesh/Geometry.h>
+#include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/PartitionData.h>
 #include <dolfin/mesh/Partitioning.h>
 
