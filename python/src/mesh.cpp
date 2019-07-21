@@ -318,8 +318,6 @@ void mesh(py::module& m)
 
   MESHENTITYITERATOR_MACRO(CellRange, mesh::Cell);
   MESHENTITYITERATOR_MACRO(FacetRange, mesh::Facet);
-  MESHENTITYITERATOR_MACRO(FaceRange, mesh::Face);
-  MESHENTITYITERATOR_MACRO(EdgeRange, mesh::Edge);
   MESHENTITYITERATOR_MACRO(VertexRange, mesh::Vertex);
 #undef MESHENTITYITERATOR_MACRO
 
