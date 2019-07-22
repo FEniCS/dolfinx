@@ -57,8 +57,10 @@ public:
 
   /// Mark all edges incident on entities indicated by refinement
   /// marker
-  /// @param refinement_marker (const mesh::MeshFunction<bool>)
-  void mark(const mesh::MeshFunction<bool>& refinement_marker);
+  /// @param refinement_marker (const mesh::MeshFunction<int>)
+  ///   Value 1 means "refine",
+  ///   any other value means "do not refine".
+  void mark(const mesh::MeshFunction<int>& refinement_marker);
 
   /// Mark all incident edges of an entity
   /// @param cell (mesh::MeshEntity)

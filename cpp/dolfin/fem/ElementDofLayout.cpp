@@ -5,9 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "ElementDofLayout.h"
-#include "ReferenceCellTopology.h"
 #include <array>
-#include <dolfin/mesh/CellType.h>
 #include <map>
 #include <numeric>
 #include <set>
@@ -20,33 +18,16 @@ ElementDofLayout::ElementDofLayout(
     int block_size, const std::vector<std::vector<std::set<int>>>& entity_dofs,
     const std::vector<int>& parent_map,
     const std::vector<std::shared_ptr<const ElementDofLayout>> sub_dofmaps,
-    const mesh::CellType& cell_type)
+    const mesh::CellType cell_type)
     : block_size(block_size), _parent_map(parent_map), _num_dofs(0),
       _entity_dofs(entity_dofs), _sub_dofmaps(sub_dofmaps)
 {
   // TODO: Handle global support dofs
 
-  dolfin::CellType _cell = dolfin::CellType::point;
-  if (cell_type.cell_type() == mesh::CellType::Type::interval)
-    _cell = dolfin::CellType::interval;
-  else if (cell_type.cell_type() == mesh::CellType::Type::triangle)
-    _cell = dolfin::CellType::triangle;
-  else if (cell_type.cell_type() == mesh::CellType::Type::quadrilateral)
-    _cell = dolfin::CellType::quadrilateral;
-  else if (cell_type.cell_type() == mesh::CellType::Type::tetrahedron)
-    _cell = dolfin::CellType::tetrahedron;
-  else if (cell_type.cell_type() == mesh::CellType::Type::hexahedron)
-    _cell = dolfin::CellType::hexahedron;
-  else
-    throw std::runtime_error("Ooops");
-
-  const int* num_entities = ReferenceCellTopology::num_entities(_cell);
-  assert(num_entities);
-
   // Compute closure entities
   // [dim, entity] -> closure{sub_dim, (sub_entities)}
   std::map<std::array<int, 2>, std::vector<std::set<int>>> entity_closure
-      = ReferenceCellTopology::entity_closure(_cell);
+      = mesh::cell_entity_closure(cell_type);
 
   // dof = _entity_dofs[dim][entity_index][i]
   _entity_closure_dofs = entity_dofs;

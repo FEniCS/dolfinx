@@ -41,31 +41,18 @@ mesh::Mesh refine(const mesh::Mesh& mesh, bool redistribute = true);
 ///
 /// @param  mesh (_mesh::Mesh_)
 ///         The mesh to refine.
-/// @param cell_markers (_mesh::MeshFunction<bool>_)
-///         A mesh function over booleans specifying which cells
-///         that should be refined (and which should not).
+/// @param cell_markers (_mesh::MeshFunction<int>_)
+///         A mesh function over integers specifying which cells
+///         should be refined (value == 1) (and which should not
+///         (any other integer value)).
 /// @param redistribute (_bool_)
 ///         Optional argument to redistribute the refined mesh if mesh is a
 ///         distributed mesh.
 ///
 /// @return _mesh::Mesh_
 ///         The locally refined mesh.
-///
-/// @code{.cpp}
-///         mesh::MeshFunction<bool> cell_markers(mesh, mesh->topology().dim());
-///         cell_markers.set_all(false);
-///         Point origin(0.0, 0.0, 0.0);
-///         for (CellIterator cell(mesh); !cell.end(); ++cell)
-///         {
-///             Point p = cell->midpoint();
-///             if (p.distance(origin) < 0.1)
-///                 cell_markers[*cell] = true;
-///         }
-///         mesh = refine(mesh, cell_markers);
-/// @endcode
-///
 mesh::Mesh refine(const mesh::Mesh& mesh,
-                  const mesh::MeshFunction<bool>& cell_markers,
+                  const mesh::MeshFunction<int>& cell_markers,
                   bool redistribute = true);
 
 } // namespace refinement

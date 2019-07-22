@@ -89,9 +89,6 @@ void _lift_bc_cells(
   const int orient = 0;
   for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    // Check that cell is not a ghost
-    assert(!cell.is_ghost());
-
     // Get dof maps for cell
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
         = dofmap1.cell_dofs(cell.index());
@@ -218,9 +215,13 @@ void _lift_bc_exterior_facets(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
+  assert(mesh.topology().connectivity(tdim - 1, tdim));
+  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+      = mesh.topology().connectivity(tdim - 1, tdim);
   for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
-    if (facet.num_global_entities(tdim) != 1)
+    // Move to next facet if this one is an interior facet
+    if (connectivity_facet_cell->size_global(facet.index()) != 1)
       continue;
 
     // FIXME: sort out ghosts
@@ -384,7 +385,6 @@ void fem::impl::assemble_cells(
   for (std::int32_t cell_index : active_cells)
   {
     const mesh::Cell cell(mesh, cell_index);
-    assert(!cell.is_ghost());
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
@@ -444,10 +444,6 @@ void fem::impl::assemble_exterior_facets(
   for (const auto& facet_index : active_facets)
   {
     const mesh::Facet facet(mesh, facet_index);
-
-    assert(facet.num_global_entities(tdim) == 1);
-
-    // TODO: check ghosting sanity?
 
     // Create attached cell
     const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
@@ -522,7 +518,7 @@ void fem::impl::assemble_interior_facets(
   {
     const mesh::Facet facet(mesh, facet_index);
 
-    assert(facet.num_global_entities(tdim) == 2);
+    // assert(facet.num_global_entities(tdim) == 2);
 
     // TODO: check ghosting sanity?
 

@@ -191,8 +191,7 @@ void mesh_function_write(T& meshfunction, const std::string filename,
      << "\"  format=\"ascii\">";
 
   // Write data
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
-    fp << meshfunction[cell.index()] << " ";
+  fp << meshfunction.values();
 
   // Write footers
   fp << "</DataArray>" << std::endl;

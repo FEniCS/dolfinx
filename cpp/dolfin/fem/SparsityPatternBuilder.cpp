@@ -44,11 +44,13 @@ void SparsityPatternBuilder::interior_facets(
 
   // Array to store macro-dofs, if required (for interior facets)
   std::array<Eigen::Array<PetscInt, Eigen::Dynamic, 1>, 2> macro_dofs;
-
+  assert(mesh.topology().connectivity(D - 1, D));
+  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+      = mesh.topology().connectivity(D - 1, D);
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
     // Continue if facet is exterior facet
-    if (facet.num_global_entities(D) == 1)
+    if (connectivity_facet_cell->size_global(facet.index()) == 1)
       continue;
 
     // FIXME: sort out ghosting
@@ -82,10 +84,13 @@ void SparsityPatternBuilder::exterior_facets(
   mesh.create_entities(D - 1);
   mesh.create_connectivity(D - 1, D);
 
+  assert(mesh.topology().connectivity(D - 1, D));
+  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+      = mesh.topology().connectivity(D - 1, D);
   for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
     // Skip interior facets
-    if (facet.num_global_entities(D) > 1)
+    if (connectivity_facet_cell->size_global(facet.index()) > 1)
       continue;
 
     // FIXME: sort out ghosting

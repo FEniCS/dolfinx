@@ -7,8 +7,7 @@
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, Edges, Faces, Facets, UnitCubeMesh,
-                    VertexRange, Vertices)
+from dolfin import MPI, Cells, Edges, Faces, Facets, UnitCubeMesh, Vertices
 
 
 def test_vertex_iterators():
@@ -117,14 +116,3 @@ def test_cell_iterators():
             assert numpy.all(connectivity.connections(i) == c.entities(j))
 
     assert n == mesh.num_cells()
-
-
-def test_mixed_iterators():
-    """Iterate over vertices of cells"""
-
-    mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5)
-    n = 0
-    for c in Cells(mesh):
-        for v in VertexRange(c):
-            n += 1
-    assert n == 4 * mesh.num_cells()

@@ -31,10 +31,6 @@ namespace function
 class FunctionSpace;
 } // namespace function
 
-namespace mesh
-{
-class CellType;
-}
 
 namespace io
 {
@@ -119,7 +115,7 @@ public:
   /// file
   mesh::Mesh read_mesh(const std::string topology_path,
                        const std::string geometry_path, const int gdim,
-                       const mesh::CellType& cell_type,
+                       const mesh::CellType cell_type,
                        const std::int64_t expected_num_global_cells,
                        const std::int64_t expected_num_global_points,
                        bool use_partition_from_file,
@@ -137,10 +133,6 @@ public:
   void write(const mesh::MeshFunction<double>& meshfunction,
              const std::string name);
 
-  /// Write mesh::MeshFunction to file in a format suitable for re-reading
-  void write(const mesh::MeshFunction<bool>& meshfunction,
-             const std::string name);
-
   /// Read mesh::MeshFunction from file
   mesh::MeshFunction<std::size_t>
   read_mf_size_t(std::shared_ptr<const mesh::Mesh> mesh,
@@ -154,10 +146,6 @@ public:
   mesh::MeshFunction<double>
   read_mf_double(std::shared_ptr<const mesh::Mesh> mesh,
                  const std::string name) const;
-
-  /// Read mesh::MeshFunction from file
-  mesh::MeshFunction<bool> read_mf_bool(std::shared_ptr<const mesh::Mesh> mesh,
-                                        const std::string name) const;
 
   /// Write mesh::MeshValueCollection to file
   void write(const mesh::MeshValueCollection<std::size_t>& mesh_values,

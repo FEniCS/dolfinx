@@ -14,7 +14,7 @@ import dolfin
 import ufl
 from dolfin.function.specialfunctions import SpatialCoordinate
 from petsc4py import PETSc
-from ufl import ds, dx, inner
+from ufl import ds, dx, inner, derivative
 
 
 def nest_matrix_norm(A):
@@ -42,6 +42,31 @@ def test_assemble_functional():
     value = dolfin.fem.assemble_scalar(M)
     value = dolfin.MPI.sum(mesh.mpi_comm(), value)
     assert value == pytest.approx(0.5, 1e-12)
+
+
+def test_assemble_derivatives():
+    """ This test checks the original_coefficient_positions, which may change
+    under differentiation (some coefficients are eliminated) """
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
+    Q = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    u = dolfin.Function(Q)
+    v = dolfin.TestFunction(Q)
+    du = dolfin.TrialFunction(Q)
+    b = dolfin.Function(Q)
+    with b.vector().localForm() as b_local:
+        b_local.set(2.0)
+
+    # derivative eliminates 'u'
+    L = b * inner(u, v) * dx
+    a = derivative(L, u, du)
+    A1 = dolfin.fem.assemble_matrix(a)
+    A1.assemble()
+
+    a = b * inner(du, v) * dx
+    A2 = dolfin.fem.assemble_matrix(a)
+    A2.assemble()
+
+    assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
 
 
 def test_basic_assembly():
@@ -526,7 +551,7 @@ def test_basic_interior_facet_assembly():
 
     mesh = dolfin.RectangleMesh(dolfin.MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
                                                         numpy.array([1.0, 1.0, 0.0])], [5, 5],
-                                cell_type=dolfin.cpp.mesh.CellType.Type.triangle,
+                                cell_type=dolfin.cpp.mesh.CellType.triangle,
                                 ghost_mode=ghost_mode)
 
     V = dolfin.function.FunctionSpace(mesh, ("DG", 1))

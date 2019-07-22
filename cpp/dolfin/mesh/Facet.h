@@ -23,30 +23,14 @@ class Facet : public MeshEntity
 {
 public:
   /// Constructor
-  Facet(const Mesh& mesh, std::size_t index)
+  Facet(const Mesh& mesh, std::int32_t index)
       : MeshEntity(mesh, mesh.topology().dim() - 1, index)
   {
+    // Do nothing
   }
 
   /// Destructor
-  ~Facet() {}
-
-  /// Compute normal to the facet
-  Eigen::Vector3d normal() const;
-
-  /// Compute squared distance to given point.
-  ///
-  /// @param     point (_Eigen::Vector3d_)
-  ///         The point.
-  /// @return     double
-  ///         The squared distance to the point.
-  double squared_distance(const Eigen::Vector3d& point) const;
-
-  /// Return true if facet is an exterior facet (relative to global
-  /// mesh, so this function will return false for facets on partition
-  /// boundaries). Facet connectivity must be initialized before calling
-  /// this function.
-  bool exterior() const;
+  ~Facet() = default;
 };
 } // namespace mesh
 } // namespace dolfin

@@ -9,11 +9,12 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, CellType, Edges, Facets, Function,
-                    FunctionSpace, MeshEntities, MeshFunction,
-                    MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
-                    UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace,
-                    Vertices, cpp, has_petsc_complex, interpolate)
+from dolfin import (MPI, Cells, Facets, Function, FunctionSpace, MeshEntities,
+                    MeshFunction, MeshValueCollection, TensorFunctionSpace,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
+                    VectorFunctionSpace, Vertices, cpp, has_petsc_complex,
+                    interpolate)
+from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
 from dolfin_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement
@@ -27,7 +28,6 @@ else:
     encodings = (XDMFFile.Encoding.HDF5, XDMFFile.Encoding.ASCII)
 
 # Data types supported in templating
-# data_types = (('int', int), ('size_t', int), ('double', float), ('bool', bool))
 data_types = (('int', int), ('size_t', int), ('double', float))
 
 # Finite elements tested
@@ -78,7 +78,7 @@ def test_multiple_datasets(tempdir, encoding):
         mesh = xdmf.read_mesh(cpp.mesh.GhostMode.none)
         cf0 = xdmf.read_mf_size_t(mesh, "cf0")
         cf1 = xdmf.read_mf_size_t(mesh, "cf1")
-    assert (cf0[0] == 11 and cf1[0] == 22)
+    assert (cf0.values[0] == 11 and cf1.values[0] == 22)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -110,7 +110,7 @@ def test_save_and_load_2d_mesh(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_and_load_2d_quad_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mesh_2D_quad.xdmf")
-    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, CellType.Type.quadrilateral)
+    mesh = UnitSquareMesh(MPI.comm_world, 32, 32, CellType.quadrilateral)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:
@@ -365,8 +365,9 @@ def test_save_1d_mesh(tempdir, encoding):
     filename = os.path.join(tempdir, "mf_1D.xdmf")
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     mf = MeshFunction("size_t", mesh, mesh.topology.dim, 0)
-    for cell in Cells(mesh):
-        mf[cell] = cell.index()
+
+    mf.values[:] = numpy.arange(mesh.num_entities(1))
+
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
 
@@ -379,8 +380,8 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
-    for cell in Cells(mesh):
-        mf[cell] = dtype(cell.index())
+
+    mf.values[:] = numpy.arange(mesh.num_entities(2), dtype=dtype)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
@@ -389,10 +390,8 @@ def test_save_2D_cell_function(tempdir, encoding, data_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "cells")
 
-    diff = 0
-    for cell in Cells(mesh):
-        diff += (mf_in[cell] - mf[cell])
-    assert diff == 0
+    diff = mf_in.values - mf.values
+    assert numpy.all(diff == 0)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -402,22 +401,20 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     mf.name = "cells"
-    for cell in Cells(mesh):
-        mf[cell] = dtype(cell.index())
+
+    mf.values[:] = numpy.arange(mesh.num_entities(3), dtype=dtype)
+
     filename = os.path.join(tempdir, "mf_3D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
 
-    # mf_in = MeshFunction(dtype_str, mesh, mesh.topology.dim, 0)
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "cells")
 
-    diff = 0
-    for cell in Cells(mesh):
-        diff += (mf_in[cell] - mf[cell])
-    assert diff == 0
+    diff = mf_in.values - mf.values
+    assert numpy.all(diff == 0)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -430,10 +427,10 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
 
     if (MPI.size(mesh.mpi_comm()) == 1):
         for facet in Facets(mesh):
-            mf[facet] = dtype(facet.index())
+            mf.values[facet.index()] = dtype(facet.index())
     else:
         for facet in Facets(mesh):
-            mf[facet] = dtype(facet.global_index())
+            mf.values[facet.index()] = dtype(facet.global_index())
     filename = os.path.join(tempdir, "mf_facet_2D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
@@ -443,10 +440,8 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "facets")
 
-    diff = 0
-    for facet in Facets(mesh):
-        diff += (mf_in[facet] - mf[facet])
-    assert diff == 0
+    diff = mf_in.values - mf.values
+    assert numpy.all(diff == 0)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -459,10 +454,10 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
 
     if (MPI.size(mesh.mpi_comm()) == 1):
         for facet in Facets(mesh):
-            mf[facet] = dtype(facet.index())
+            mf.values[facet.index()] = dtype(facet.index())
     else:
         for facet in Facets(mesh):
-            mf[facet] = dtype(facet.global_index())
+            mf.values[facet.index()] = dtype(facet.global_index())
     filename = os.path.join(tempdir, "mf_facet_3D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
@@ -472,10 +467,8 @@ def test_save_3D_facet_function(tempdir, encoding, data_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "facets")
 
-    diff = 0
-    for facet in Facets(mesh):
-        diff += (mf_in[facet] - mf[facet])
-    assert diff == 0
+    diff = mf_in.values - mf.values
+    assert numpy.all(diff == 0)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -485,8 +478,8 @@ def test_save_3D_edge_function(tempdir, encoding, data_type):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, 1, 0)
     mf.name = "edges"
-    for edge in Edges(mesh):
-        mf[edge] = dtype(edge.index())
+
+    mf.values[:] = numpy.arange(mesh.num_entities(1), dtype=dtype)
 
     filename = os.path.join(tempdir, "mf_edge_3D_%s.xdmf" % dtype_str)
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -501,7 +494,7 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     mf.name = "vertices"
     for vertex in Vertices(mesh):
-        mf[vertex] = dtype(vertex.global_index())
+        mf.values[vertex.index()] = dtype(vertex.global_index())
     filename = os.path.join(tempdir, "mf_vertex_2D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
@@ -511,10 +504,8 @@ def test_save_2D_vertex_function(tempdir, encoding, data_type):
         read_function = getattr(xdmf, "read_mf_" + dtype_str)
         mf_in = read_function(mesh, "vertices")
 
-    diff = 0
-    for v in Vertices(mesh):
-        diff += (mf_in[v] - mf[v])
-    assert diff == 0
+    diff = mf_in.values - mf.values
+    assert numpy.all(diff == 0)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -525,7 +516,7 @@ def test_save_3D_vertex_function(tempdir, encoding, data_type):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
     mf = MeshFunction(dtype_str, mesh, 0, 0)
     for vertex in Vertices(mesh):
-        mf[vertex] = dtype(vertex.index())
+        mf.values[vertex.index()] = dtype(vertex.index())
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as file:
         file.write(mf)
@@ -534,18 +525,13 @@ def test_save_3D_vertex_function(tempdir, encoding, data_type):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_2D(tempdir, encoding):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
-    points, values = [], []
-    for v in Vertices(mesh):
-        points.append(v.point())
-        values.append(numpy.linalg.norm(v.point()))
-    vals = numpy.array(values)
-
+    points = mesh.geometry.points
+    vals = numpy.linalg.norm(points, axis=1)
     with XDMFFile(
             mesh.mpi_comm(),
             os.path.join(tempdir, "points_2D.xdmf"),
             encoding=encoding) as file:
         file.write(points)
-
     with XDMFFile(
             mesh.mpi_comm(),
             os.path.join(tempdir, "points_values_2D.xdmf"),
@@ -556,18 +542,13 @@ def test_save_points_2D(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 def test_save_points_3D(tempdir, encoding):
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
-    points, values = [], []
-    for v in Vertices(mesh):
-        points.append(v.point())
-        values.append(numpy.linalg.norm(v.point()))
-    vals = numpy.array(values)
-
+    points = mesh.geometry.points
+    vals = numpy.linalg.norm(points, axis=1)
     with XDMFFile(
             mesh.mpi_comm(),
             os.path.join(tempdir, "points_3D.xdmf"),
             encoding=encoding) as file:
         file.write(points)
-
     with XDMFFile(
             mesh.mpi_comm(),
             os.path.join(tempdir, "points_values_3D.xdmf"),
@@ -584,10 +565,10 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
     meshfn = MeshFunction(dtype_str, mesh, mesh.topology.dim, False)
     meshfn.name = "volume_marker"
     for c in Cells(mesh):
-        if c.midpoint()[1] > 0.1:
-            meshfn[c] = dtype(1)
-        if c.midpoint()[1] > 0.9:
-            meshfn[c] = dtype(2)
+        if cpp.mesh.midpoint(c)[1] > 0.1:
+            meshfn.values[c.index()] = dtype(1)
+        if cpp.mesh.midpoint(c)[1] > 0.9:
+            meshfn.values[c.index()] = dtype(2)
 
     for mvc_dim in range(0, tdim + 1):
         mvc = MeshValueCollection(dtype_str, mesh, mvc_dim)
@@ -595,7 +576,7 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
         mvc.name = tag
         mesh.create_connectivity(mvc_dim, tdim)
         for e in MeshEntities(mesh, mvc_dim):
-            if (e.midpoint()[0] > 0.5):
+            if (cpp.mesh.midpoint(e)[0] > 0.5):
                 mvc.set_value(e.index(), dtype(1))
 
         filename = os.path.join(tempdir, "mvc_{}.xdmf".format(mvc_dim))
@@ -630,18 +611,18 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
 
         if (MPI.size(mesh.mpi_comm()) == 1):
             for vertex in Vertices(mesh):
-                vf[vertex] = dtype(vertex.index())
+                vf.values[vertex.index()] = dtype(vertex.index())
             for facet in Facets(mesh):
-                ff[facet] = dtype(facet.index())
+                ff.values[facet.index()] = dtype(facet.index())
             for cell in Cells(mesh):
-                cf[cell] = dtype(cell.index())
+                cf.values[cell.index()] = dtype(cell.index())
         else:
             for vertex in Vertices(mesh):
-                vf[vertex] = dtype(vertex.global_index())
+                vf.values[vertex.index()] = dtype(vertex.global_index())
             for facet in Facets(mesh):
-                ff[facet] = dtype(facet.global_index())
+                ff.values[facet.index()] = dtype(facet.global_index())
             for cell in Cells(mesh):
-                cf[cell] = dtype(cell.global_index())
+                cf.values[cell.index()] = dtype(cell.global_index())
 
         filename = os.path.join(tempdir, "appended_mf_%dD.xdmf" % dim)
 
@@ -657,14 +638,13 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
             ff_in = read_function(mesh, "facets")
             cf_in = read_function(mesh, "cells")
 
-        diff = 0
-        for vertex in Vertices(mesh):
-            diff += (vf_in[vertex] - vf[vertex])
-        for facet in Facets(mesh):
-            diff += (ff_in[facet] - ff[facet])
-        for cell in Cells(mesh):
-            diff += (cf_in[cell] - cf[cell])
-        assert diff == 0
+        diff_vf = vf_in.values - vf.values
+        diff_ff = ff_in.values - ff.values
+        diff_cf = cf_in.values - cf.values
+
+        assert numpy.all(diff_vf == 0)
+        assert numpy.all(diff_ff == 0)
+        assert numpy.all(diff_cf == 0)
 
 
 @pytest.mark.parametrize("encoding", encodings)
@@ -712,10 +692,8 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
         mf = MeshFunction(dtype_str, mesh, mvc, 0)
         mf_in = MeshFunction(dtype_str, mesh, mvc_in, 0)
 
-        diff = 0
-        for ent in MeshEntities(mesh, mf.dim):
-            diff += (mf_in[ent] - mf[ent])
-        assert (diff == 0)
+        diff = mf_in.values - mf.values
+        assert numpy.all(diff == 0)
 
 
 def test_xdmf_timeseries_write_to_closed_hdf5_using_with(tempdir):

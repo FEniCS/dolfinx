@@ -15,8 +15,8 @@ namespace dolfin
 
 namespace mesh
 {
-/// A MeshEntity represents a mesh entity associated with
-/// a specific topological dimension of some _Mesh_.
+/// A MeshEntity represents a mesh entity associated with a specific
+/// topological dimension of some _Mesh_.
 
 class MeshEntity
 {
@@ -29,7 +29,7 @@ public:
   ///         The topological dimension.
   /// @param     index (std::size_t)
   ///         The index.
-  MeshEntity(const Mesh& mesh, std::size_t dim, std::size_t index)
+  MeshEntity(const Mesh& mesh, int dim, std::int32_t index)
       : _mesh(&mesh), _dim(dim), _local_index(index)
   {
     // Do nothing
@@ -59,8 +59,8 @@ public:
   ///         True if the two mesh entities are equal.
   bool operator==(const MeshEntity& e) const
   {
-    return (_mesh == e._mesh && _dim == e._dim
-            && _local_index == e._local_index);
+    return (_mesh == e._mesh and _dim == e._dim
+            and _local_index == e._local_index);
   }
 
   /// Comparison Operator
@@ -82,7 +82,7 @@ public:
   ///
   /// @return     std::size_t
   ///         The dimension.
-  inline int dim() const { return _dim; }
+  int dim() const { return _dim; }
 
   /// Return index of mesh entity
   ///
@@ -113,7 +113,7 @@ public:
   /// @return     std::size_t
   /// The number of local incident MeshEntity objects of given
   /// dimension.
-  inline std::size_t num_entities(int dim) const
+  int num_entities(int dim) const
   {
     if (dim == _dim)
       return 1;
@@ -121,27 +121,6 @@ public:
     {
       assert(_mesh->topology().connectivity(_dim, dim));
       return _mesh->topology().connectivity(_dim, dim)->size(_local_index);
-    }
-  }
-
-  /// Return global number of incident mesh entities of given
-  /// topological dimension
-  ///
-  /// @param     dim (int)
-  ///         The topological dimension.
-  ///
-  /// @return     std::size_t
-  ///         The number of global incident MeshEntity objects of given
-  ///         dimension.
-  std::size_t num_global_entities(int dim) const
-  {
-    if (dim == _dim)
-      return 1;
-    else
-    {
-      assert(_mesh->topology().connectivity(_dim, dim));
-      return _mesh->topology().connectivity(_dim, dim)->size_global(
-          _local_index);
     }
   }
 
@@ -168,15 +147,6 @@ public:
     }
   }
 
-  /// Check if given entity is incident
-  ///
-  /// @param     entity (_MeshEntity_)
-  ///         The entity.
-  ///
-  ///  @return    bool
-  ///         True if the given entity is incident
-  bool incident(const MeshEntity& entity) const;
-
   /// Compute local index of given incident entity (error if not
   /// found)
   ///
@@ -186,54 +156,6 @@ public:
   /// @return     std::size_t
   ///         The local index of given entity.
   int index(const MeshEntity& entity) const;
-
-  /// Compute midpoint of cell
-  ///
-  /// @return geometry::Point
-  ///         The midpoint of the cell.
-  Eigen::Vector3d midpoint() const;
-
-  /// Determine whether an entity is a 'ghost' from another
-  /// process
-  /// @return bool
-  ///    True if entity is a ghost entity
-  bool is_ghost() const
-  {
-    return (_local_index >= (std::int32_t)_mesh->topology().ghost_offset(_dim));
-  }
-
-  /// Return set of sharing processes
-  /// @return std::set<std::uint32_t>
-  ///   List of sharing processes
-  std::set<std::int32_t> sharing_processes() const
-  {
-    const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
-        = _mesh->topology().shared_entities(_dim);
-    const auto map_it = sharing_map.find(_local_index);
-    if (map_it == sharing_map.end())
-      return std::set<std::int32_t>();
-    else
-      return map_it->second;
-  }
-
-  /// Determine if an entity is shared or not
-  /// @return bool
-  ///    True if entity is shared
-  bool is_shared() const
-  {
-    if (_mesh->topology().have_shared_entities(_dim))
-    {
-      const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map
-          = _mesh->topology().shared_entities(_dim);
-      return (sharing_map.find(_local_index) != sharing_map.end());
-    }
-    return false;
-  }
-
-  /// Get ownership of this entity - only really valid for cells
-  /// @return std::uint32_t
-  ///    Owning process
-  std::uint32_t owner() const;
 
   /// Return informal string representation (pretty-print)
   ///

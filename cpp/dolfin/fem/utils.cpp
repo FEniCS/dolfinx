@@ -463,7 +463,7 @@ dolfin::fem::get_global_index(const std::vector<const common::IndexMap*> maps,
 //-----------------------------------------------------------------------------
 fem::ElementDofLayout
 fem::create_element_dof_layout(const ufc_dofmap& dofmap,
-                               const mesh::CellType& cell_type,
+                               const mesh::CellType cell_type,
                                const std::vector<int>& parent_map)
 {
   // Copy over number of dofs per entity type
@@ -472,12 +472,12 @@ fem::create_element_dof_layout(const ufc_dofmap& dofmap,
             num_entity_dofs.data());
 
   // Fill entity dof indices
-  const int tdim = cell_type.dim();
+  const int tdim = mesh::cell_dim(cell_type);
   std::vector<std::vector<std::set<int>>> entity_dofs(tdim + 1);
   std::vector<int> work_array;
   for (int dim = 0; dim <= tdim; ++dim)
   {
-    const int num_entities = cell_type.num_entities(dim);
+    const int num_entities = mesh::cell_num_entities(cell_type, dim);
     entity_dofs[dim].resize(num_entities);
     for (int i = 0; i < num_entities; ++i)
     {
@@ -529,7 +529,7 @@ fem::DofMap fem::create_dofmap(const ufc_dofmap& ufc_dofmap,
 {
   return DofMapBuilder::build(
       mesh, std::make_shared<ElementDofLayout>(
-                create_element_dof_layout(ufc_dofmap, mesh.type())));
+                create_element_dof_layout(ufc_dofmap, mesh.cell_type)));
 }
 //-----------------------------------------------------------------------------
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
@@ -632,19 +632,19 @@ fem::Form fem::create_form(
 std::shared_ptr<const fem::CoordinateMapping>
 fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
 {
-  static const std::map<ufc_shape, CellType> ufc_to_cell
-      = {{vertex, CellType::point},
-         {interval, CellType::interval},
-         {triangle, CellType::triangle},
-         {tetrahedron, CellType::tetrahedron},
-         {quadrilateral, CellType::quadrilateral},
-         {hexahedron, CellType::hexahedron}};
+  static const std::map<ufc_shape, mesh::CellType> ufc_to_cell
+      = {{vertex, mesh::CellType::point},
+         {interval, mesh::CellType::interval},
+         {triangle, mesh::CellType::triangle},
+         {tetrahedron, mesh::CellType::tetrahedron},
+         {quadrilateral, mesh::CellType::quadrilateral},
+         {hexahedron, mesh::CellType::hexahedron}};
   const auto it = ufc_to_cell.find(ufc_cmap.cell_shape);
   assert(it != ufc_to_cell.end());
 
-  CellType cell_type = it->second;
+  mesh::CellType cell_type = it->second;
   assert(ufc_cmap.topological_dimension
-         == ReferenceCellTopology::dim(cell_type));
+         == mesh::cell_dim(cell_type));
 
   return std::make_shared<fem::CoordinateMapping>(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,

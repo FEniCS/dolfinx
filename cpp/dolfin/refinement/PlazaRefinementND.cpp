@@ -315,9 +315,13 @@ face_long_edge(const mesh::Mesh& mesh)
     edge_ratio_ok.resize(mesh.num_entities(2));
 
   // Store all edge lengths in Mesh to save recalculating for each Face
+  const mesh::Geometry& geometry = mesh.geometry();
   std::vector<double> edge_length(mesh.num_entities(1));
   for (const auto& e : mesh::MeshRange<mesh::Edge>(mesh))
-    edge_length[e.index()] = e.length();
+  {
+    const std::int32_t* v = e.entities(0);
+    edge_length[e.index()] = (geometry.x(v[0]) - geometry.x(v[1])).norm();
+  }
 
   // Get longest edge of each face
   for (const auto& f : mesh::MeshRange<mesh::Face>(mesh))
@@ -366,8 +370,8 @@ face_long_edge(const mesh::Mesh& mesh)
 //-----------------------------------------------------------------------------
 mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 {
-  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
-      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
+  if (mesh.cell_type != mesh::CellType::triangle
+      and mesh.cell_type != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }
@@ -386,11 +390,11 @@ mesh::Mesh PlazaRefinementND::refine(const mesh::Mesh& mesh, bool redistribute)
 //-----------------------------------------------------------------------------
 mesh::Mesh
 PlazaRefinementND::refine(const mesh::Mesh& mesh,
-                          const mesh::MeshFunction<bool>& refinement_marker,
+                          const mesh::MeshFunction<int>& refinement_marker,
                           bool redistribute)
 {
-  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
-      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
+  if (mesh.cell_type != mesh::CellType::triangle
+      and mesh.cell_type != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Cell type not supported");
   }

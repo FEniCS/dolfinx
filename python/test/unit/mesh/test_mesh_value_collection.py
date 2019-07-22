@@ -4,8 +4,8 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (MPI, Cells, FacetRange, MeshFunction, MeshValueCollection,
-                    UnitSquareMesh, VertexRange)
+from dolfin import (MPI, Cells, MeshFunction, MeshValueCollection,
+                    UnitSquareMesh, cpp)
 
 
 def test_assign_2D_cells():
@@ -34,12 +34,15 @@ def test_assign_2D_cells():
 def test_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_connectivity(2, 1)
+    tdim = mesh.topology.dim
+    num_cell_facets = cpp.mesh.cell_num_entities(mesh.cell_type, tdim - 1)
     ncells = mesh.num_cells()
+
     f = MeshValueCollection("int", mesh, 1)
     all_new = True
     for cell in Cells(mesh):
         value = ncells - cell.index()
-        for i, facet in enumerate(FacetRange(cell)):
+        for i in range(num_cell_facets):
             all_new = all_new and f.set_value(cell.index(), i, value + i)
 
     g = MeshValueCollection("int", mesh, 1)
@@ -50,7 +53,7 @@ def test_assign_2D_facets():
 
     for cell in Cells(mesh):
         value = ncells - cell.index()
-        for i, facet in enumerate(FacetRange(cell)):
+        for i in range(num_cell_facets):
             assert value + i == g.get_value(cell.index(), i)
 
 
@@ -58,11 +61,13 @@ def test_assign_2D_vertices():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_connectivity(2, 0)
     ncells = mesh.num_cells()
+    num_cell_vertices = cpp.mesh.cell_num_vertices(mesh.cell_type)
+
     f = MeshValueCollection("int", mesh, 0)
     all_new = True
     for cell in Cells(mesh):
         value = ncells - cell.index()
-        for i, vert in enumerate(VertexRange(cell)):
+        for i in range(num_cell_vertices):
             all_new = all_new and f.set_value(cell.index(), i, value + i)
 
     g = MeshValueCollection("int", mesh, 0)
@@ -73,7 +78,7 @@ def test_assign_2D_vertices():
 
     for cell in Cells(mesh):
         value = ncells - cell.index()
-        for i, vert in enumerate(VertexRange(cell)):
+        for i in range(num_cell_vertices):
             assert value + i == g.get_value(cell.index(), i)
 
 
@@ -82,11 +87,11 @@ def test_mesh_function_assign_2D_cells():
     ncells = mesh.num_cells()
     f = MeshFunction("int", mesh, mesh.topology.dim, 0)
     for cell in Cells(mesh):
-        f[cell] = ncells - cell.index()
+        f.values[cell.index()] = ncells - cell.index()
 
     g = MeshValueCollection("int", mesh, 2)
     g.assign(f)
-    assert ncells == f.size()
+    assert ncells == len(f.values)
     assert ncells == g.size()
 
     f2 = MeshFunction("int", mesh, g, 0)
@@ -94,7 +99,7 @@ def test_mesh_function_assign_2D_cells():
     for cell in Cells(mesh):
         value = ncells - cell.index()
         assert value == g.get_value(cell.index(), 0)
-        assert f2[cell] == g.get_value(cell.index(), 0)
+        assert f2.values[cell.index()] == g.get_value(cell.index(), 0)
 
     h = MeshValueCollection("int", mesh, 2)
     global_indices = mesh.topology.global_indices(2)
@@ -107,7 +112,7 @@ def test_mesh_function_assign_2D_cells():
 
     f3 = MeshFunction("int", mesh, h, 0)
 
-    values = f3.array()
+    values = f3.values
     values[values > ncells_global] = 0.
 
     assert MPI.sum(mesh.mpi_comm(), values.sum() * 1.0) == 140.
@@ -117,24 +122,30 @@ def test_mesh_function_assign_2D_facets():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     mesh.create_entities(1)
     tdim = mesh.topology.dim
+    num_cell_facets = cpp.mesh.cell_num_entities(mesh.cell_type, tdim - 1)
+
     f = MeshFunction("int", mesh, tdim - 1, 25)
+    connectivity = mesh.topology.connectivity(tdim, tdim - 1)
     for cell in Cells(mesh):
-        for i, facet in enumerate(FacetRange(cell)):
-            assert 25 == f[facet]
+        facets = connectivity.connections(cell.index())
+        for i in range(num_cell_facets):
+            assert 25 == f.values[facets[i]]
 
     g = MeshValueCollection("int", mesh, 1)
     g.assign(f)
-    assert mesh.num_entities(tdim - 1) == f.size()
+    assert mesh.num_entities(tdim - 1) == len(f.values)
     assert mesh.num_cells() * 3 == g.size()
     for cell in Cells(mesh):
-        for i, facet in enumerate(FacetRange(cell)):
+        for i in range(num_cell_facets):
             assert 25 == g.get_value(cell.index(), i)
 
     f2 = MeshFunction("int", mesh, g, 0)
 
+    connectivity = mesh.topology.connectivity(tdim, tdim - 1)
     for cell in Cells(mesh):
-        for i, facet in enumerate(FacetRange(cell)):
-            assert f2[facet] == g.get_value(cell.index(), i)
+        facets = connectivity.connections(cell.index())
+        for i in range(num_cell_facets):
+            assert f2.values[facets[i]] == g.get_value(cell.index(), i)
 
 
 def test_mesh_function_assign_2D_vertices():
@@ -143,12 +154,16 @@ def test_mesh_function_assign_2D_vertices():
     f = MeshFunction("int", mesh, 0, 25)
     g = MeshValueCollection("int", mesh, 0)
     g.assign(f)
-    assert mesh.num_entities(0) == f.size()
+    assert mesh.num_entities(0) == len(f.values)
     assert mesh.num_cells() * 3 == g.size()
 
     f2 = MeshFunction("int", mesh, g, 0)
 
+    num_cell_vertices = cpp.mesh.cell_num_vertices(mesh.cell_type)
+    tdim = mesh.topology.dim
+    connectivity = mesh.topology.connectivity(tdim, 0)
     for cell in Cells(mesh):
-        for i, vert in enumerate(VertexRange(cell)):
+        vertices = connectivity.connections(cell.index())
+        for i in range(num_cell_vertices):
             assert 25 == g.get_value(cell.index(), i)
-            assert f2[vert] == g.get_value(cell.index(), i)
+            assert f2.values[vertices[i]] == g.get_value(cell.index(), i)
