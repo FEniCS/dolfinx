@@ -10,7 +10,6 @@
 #include "GraphBuilder.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>
-#include <dolfin/mesh/CellType.h>
 
 #ifdef HAS_KAHIP
 #include <parhip_interface.h>
