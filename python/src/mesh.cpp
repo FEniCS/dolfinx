@@ -56,6 +56,9 @@ void mesh(py::module& m)
   m.def("to_type", &dolfin::mesh::to_type);
   m.def("is_simplex", &dolfin::mesh::is_simplex);
 
+  m.def("cell_num_entities", &dolfin::mesh::cell_num_entities);
+  m.def("cell_num_vertices", &dolfin::mesh::num_cell_vertices);
+
   m.def("volume_entities", &dolfin::mesh::volume_entities,
         "Generalised volume of entities of given dimension.");
 
@@ -303,25 +306,6 @@ void mesh(py::module& m)
   MESHITERATOR_MACRO(Edges, mesh::Edge);
   MESHITERATOR_MACRO(Vertices, mesh::Vertex);
 #undef MESHITERATOR_MACRO
-
-#define MESHENTITYITERATOR_MACRO(TYPE, ENTITYNAME)                             \
-  py::class_<dolfin::mesh::EntityRange<dolfin::ENTITYNAME>,                    \
-             std::shared_ptr<dolfin::mesh::EntityRange<dolfin::ENTITYNAME>>>(  \
-      m, #TYPE,                                                                \
-      "Range for iterating over entities of type " #ENTITYNAME                 \
-      " incident to a MeshEntity")                                             \
-      .def(py::init<const dolfin::mesh::MeshEntity&>())                        \
-      .def("__iter__",                                                         \
-           [](const dolfin::mesh::EntityRange<dolfin::ENTITYNAME>& c) {        \
-             return py::make_iterator(c.begin(), c.end());                     \
-           });
-
-  MESHENTITYITERATOR_MACRO(CellRange, mesh::Cell);
-  MESHENTITYITERATOR_MACRO(FacetRange, mesh::Facet);
-  MESHENTITYITERATOR_MACRO(FaceRange, mesh::Face);
-  MESHENTITYITERATOR_MACRO(EdgeRange, mesh::Edge);
-  MESHENTITYITERATOR_MACRO(VertexRange, mesh::Vertex);
-#undef MESHENTITYITERATOR_MACRO
 
 // dolfin::mesh::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME)                                \
