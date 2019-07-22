@@ -32,9 +32,9 @@ del sys
 from .cpp import __version__
 
 
-from dolfin.common import (has_debug, has_petsc_complex,
-                           has_parmetis, git_commit_hash, TimingType,
-                           timing, timings, list_timings)
+from dolfin.common import (has_debug, has_petsc_complex, has_parmetis,
+                           git_commit_hash, TimingType, timing, timings,
+                           list_timings)
 
 import dolfin.MPI
 import dolfin.log
@@ -42,9 +42,8 @@ import dolfin.log
 from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from .cpp.mesh import (Mesh, Topology, Geometry, Cell, Facet,
-                       Face, Edge, Vertex, MeshEntity, Cells, Facets, Faces,
-                       Edges, Vertices, MeshEntities,
+from .cpp.mesh import (Mesh, Topology, Geometry, Cell, Facet, Face, Edge,
+                       Vertex, MeshEntity, Cells, Facets, MeshEntities,
                        EntityRange, MeshQuality)
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
@@ -60,7 +59,8 @@ from .function.functionspace import (FunctionSpace, VectorFunctionSpace,
 from .function.function import Function
 from .function.argument import (TestFunction, TrialFunction, TestFunctions,
                                 TrialFunctions)
-from .function.specialfunctions import (FacetNormal, CellVolume, CellNormal, CellDiameter, Circumradius)
+from .function.specialfunctions import (FacetNormal, CellVolume, CellNormal,
+                                        CellDiameter, Circumradius)
 
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection
