@@ -24,11 +24,6 @@
 namespace dolfin
 {
 
-namespace mesh
-{
-class CellType;
-}
-
 namespace graph
 {
 

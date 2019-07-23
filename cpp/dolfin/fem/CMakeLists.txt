@@ -16,7 +16,7 @@ set(HEADERS
   FormCoefficients.h
   FormIntegrals.h
   PETScDMCollection.h
-  ReferenceCellTopology.h
+  ReferenceCellGeometry.h
   SparsityPatternBuilder.h
   PARENT_SCOPE)
 
@@ -37,6 +37,6 @@ set(SOURCES
   FormCoefficients.cpp
   FormIntegrals.cpp
   PETScDMCollection.cpp
-  ReferenceCellTopology.cpp
+  ReferenceCellGeometry.cpp
   SparsityPatternBuilder.cpp
   PARENT_SCOPE)

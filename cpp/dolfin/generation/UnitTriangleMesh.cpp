@@ -7,7 +7,6 @@
 #include "UnitTriangleMesh.h"
 #include <Eigen/Dense>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Partitioning.h>
 
 using namespace dolfin;
@@ -24,7 +23,7 @@ mesh::Mesh UnitTriangleMesh::create()
 
   topo << 0, 1, 2;
 
-  return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::Type::triangle, geom, topo,
+  return mesh::Mesh(MPI_COMM_SELF, mesh::CellType::triangle, geom, topo,
                     {}, mesh::GhostMode::none);
 }
 //-----------------------------------------------------------------------------

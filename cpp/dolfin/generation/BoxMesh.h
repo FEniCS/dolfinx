@@ -9,7 +9,6 @@
 #include <array>
 #include <cstddef>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/CellType.h>
 #include <dolfin/mesh/Mesh.h>
 
 namespace dolfin
@@ -50,7 +49,7 @@ public:
   static mesh::Mesh create(MPI_Comm comm,
                            const std::array<Eigen::Vector3d, 2>& p,
                            std::array<std::size_t, 3> n,
-                           mesh::CellType::Type cell_type,
+                           mesh::CellType cell_type,
                            const mesh::GhostMode ghost_mode);
 };
 } // namespace generation

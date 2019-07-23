@@ -21,18 +21,17 @@
 // #include <dolfin/common/log.h>
 // #include <dolfin/common/utils.h>
 #include <dolfin/fem/DofMap.h>
-// #include <dolfin/fem/ReferenceCellTopology.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 // #include <dolfin/la/PETScVector.h>
 // #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/CellType.h>
 // #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 // #include <dolfin/mesh/Edge.h>
 // #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <dolfin/mesh/cell_types.h>
 // #include <dolfin/mesh/MeshValueCollection.h>
 // #include <dolfin/mesh/Partitioning.h>
 // #include <dolfin/mesh/Vertex.h>
@@ -326,19 +325,19 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   return data_values;
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::vtk_cell_type_str(mesh::CellType::Type cell_type,
+std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
                                           int order)
 {
   // FIXME: Move to CellType?
   switch (cell_type)
   {
-  case mesh::CellType::Type::point:
+  case mesh::CellType::point:
     switch (order)
     {
     case 1:
       return "PolyVertex";
     }
-  case mesh::CellType::Type::interval:
+  case mesh::CellType::interval:
     switch (order)
     {
     case 1:
@@ -346,7 +345,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType::Type cell_type,
     case 2:
       return "Edge_3";
     }
-  case mesh::CellType::Type::triangle:
+  case mesh::CellType::triangle:
     switch (order)
     {
     case 1:
@@ -354,7 +353,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType::Type cell_type,
     case 2:
       return "Triangle_6";
     }
-  case mesh::CellType::Type::quadrilateral:
+  case mesh::CellType::quadrilateral:
     switch (order)
     {
     case 1:
@@ -362,7 +361,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType::Type cell_type,
     case 2:
       return "Quadrilateral_8";
     }
-  case mesh::CellType::Type::tetrahedron:
+  case mesh::CellType::tetrahedron:
     switch (order)
     {
     case 1:
@@ -370,7 +369,7 @@ std::string xdmf_utils::vtk_cell_type_str(mesh::CellType::Type cell_type,
     case 2:
       return "Tetrahedron_10";
     }
-  case mesh::CellType::Type::hexahedron:
+  case mesh::CellType::hexahedron:
     switch (order)
     {
     case 1:

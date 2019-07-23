@@ -7,6 +7,7 @@
 #include "FormIntegrals.h"
 #include <cstdlib>
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
@@ -146,9 +147,11 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       = _integrals[static_cast<int>(FormIntegrals::Type::cell)];
 
   // If there is a default integral, define it on all cells
+  // (excluding ghost cells)
   if (cell_integrals.size() > 0 and cell_integrals[0].id == -1)
   {
-    cell_integrals[0].active_entities.resize(mesh.num_entities(tdim));
+    const int num_regular_cells = mesh.topology().ghost_offset(tdim);
+    cell_integrals[0].active_entities.resize(num_regular_cells);
     std::iota(cell_integrals[0].active_entities.begin(),
               cell_integrals[0].active_entities.end(), 0);
   }
@@ -159,9 +162,13 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   {
     // If there is a default integral, define it only on surface facets
     exf_integrals[0].active_entities.clear();
-    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+    assert(mesh.topology().connectivity(tdim - 1, tdim));
+    std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+        = mesh.topology().connectivity(tdim - 1, tdim);
+    for (const mesh::Facet& facet :
+         mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::REGULAR))
     {
-      if (facet.num_global_entities(tdim) == 1)
+      if (connectivity_facet_cell->size_global(facet.index()) == 1)
         exf_integrals[0].active_entities.push_back(facet.index());
     }
   }
@@ -173,10 +180,44 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     // If there is a default integral, define it only on interior facets
     inf_integrals[0].active_entities.clear();
     inf_integrals[0].active_entities.reserve(mesh.num_entities(tdim - 1));
-    for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+
+    const int rank = MPI::rank(mesh.mpi_comm());
+
+    if (MPI::size(mesh.mpi_comm()) > 1)
     {
-      if (facet.num_global_entities(tdim) != 1)
-        inf_integrals[0].active_entities.push_back(facet.index());
+      // Get owner (MPI ranks) of ghost cells
+      const std::vector<std::int32_t>& cell_owners
+          = mesh.topology().cell_owner();
+      const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
+
+      for (const mesh::Facet& facet :
+           mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::ALL))
+      {
+        if (facet.num_entities(tdim) == 2)
+        {
+          const std::int32_t* c = facet.entities(tdim);
+          const int owner0
+              = c[0] >= ghost_offset ? cell_owners[c[0] - ghost_offset] : rank;
+          const int owner1
+              = c[1] >= ghost_offset ? cell_owners[c[1] - ghost_offset] : rank;
+          if ((owner0 == rank and owner1 == rank)
+              or (owner0 == rank and owner1 > rank)
+              or (owner1 == rank and owner0 > rank))
+            inf_integrals[0].active_entities.push_back(facet.index());
+        }
+      }
+    }
+    else
+    {
+      assert(mesh.topology().connectivity(tdim - 1, tdim));
+      std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+          = mesh.topology().connectivity(tdim - 1, tdim);
+      for (const mesh::Facet& facet :
+           mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::REGULAR))
+      {
+        if (connectivity_facet_cell->size_global(facet.index()) != 1)
+          inf_integrals[0].active_entities.push_back(facet.index());
+      }
     }
   }
 }

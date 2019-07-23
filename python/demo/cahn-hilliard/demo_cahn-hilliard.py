@@ -116,11 +116,12 @@ import os
 import numpy as np
 from petsc4py import PETSc
 
-from dolfin import (MPI, CellType, Function, FunctionSpace, NewtonSolver,
+from dolfin import (MPI, Function, FunctionSpace, NewtonSolver,
                     NonlinearProblem, TestFunctions, TrialFunction,
                     UnitSquareMesh, log)
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
+from dolfin.cpp.mesh import CellType
 from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
                  variable)
 
@@ -189,7 +190,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
-mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.Type.triangle)
+mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.triangle)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 ME = FunctionSpace(mesh, P1 * P1)
 
