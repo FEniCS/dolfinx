@@ -9,7 +9,7 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Function, FunctionSpace, MeshEntities, MeshFunction,
+from dolfin import (MPI, Function, FunctionSpace, MeshFunction,
                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     has_petsc_complex, interpolate)
@@ -636,40 +636,42 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
     mvcs = [mvc_v, mvc_e, mvc_f, mvc_c]
 
     filename = os.path.join(tempdir, "appended_mvcs.xdmf")
+
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         for mvc in mvcs:
-            for ent in MeshEntities(mesh, mvc.dim):
-                assert (mvc.set_value(ent.index(), dtype(ent.global_index())))
+            global_indices = mesh.topology.global_indices(mvc.dim)
+            for ent in range(mesh.num_entities(mvc.dim)):
+                assert (mvc.set_value(ent, global_indices[ent]))
             xdmf.write(mvc)
 
-    mvc_v_in = MeshValueCollection(dtype_str, mesh, 0)
-    mvc_e_in = MeshValueCollection(dtype_str, mesh, 1)
-    mvc_f_in = MeshValueCollection(dtype_str, mesh, 2)
-    mvc_c_in = MeshValueCollection(dtype_str, mesh, 3)
+    mvc_v_in=MeshValueCollection(dtype_str, mesh, 0)
+    mvc_e_in=MeshValueCollection(dtype_str, mesh, 1)
+    mvc_f_in=MeshValueCollection(dtype_str, mesh, 2)
+    mvc_c_in=MeshValueCollection(dtype_str, mesh, 3)
 
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
-        read_function = getattr(xdmf, "read_mvc_" + dtype_str)
-        mvc_v_in = read_function(mesh, "vertices")
-        mvc_e_in = read_function(mesh, "edges")
-        mvc_f_in = read_function(mesh, "facets")
-        mvc_c_in = read_function(mesh, "cells")
+        read_function=getattr(xdmf, "read_mvc_" + dtype_str)
+        mvc_v_in=read_function(mesh, "vertices")
+        mvc_e_in=read_function(mesh, "edges")
+        mvc_f_in=read_function(mesh, "facets")
+        mvc_c_in=read_function(mesh, "cells")
 
-    mvcs_in = [mvc_v_in, mvc_e_in, mvc_f_in, mvc_c_in]
+    mvcs_in=[mvc_v_in, mvc_e_in, mvc_f_in, mvc_c_in]
 
     for (mvc, mvc_in) in zip(mvcs, mvcs_in):
-        mf = MeshFunction(dtype_str, mesh, mvc, 0)
-        mf_in = MeshFunction(dtype_str, mesh, mvc_in, 0)
+        mf=MeshFunction(dtype_str, mesh, mvc, 0)
+        mf_in=MeshFunction(dtype_str, mesh, mvc_in, 0)
 
-        diff = mf_in.values - mf.values
+        diff=mf_in.values - mf.values
         assert numpy.all(diff == 0)
 
 
 def test_xdmf_timeseries_write_to_closed_hdf5_using_with(tempdir):
-    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
-    V = FunctionSpace(mesh, ("CG", 1))
-    u = Function(V)
+    mesh=UnitCubeMesh(MPI.comm_world, 2, 2, 2)
+    V=FunctionSpace(mesh, ("CG", 1))
+    u=Function(V)
 
-    filename = os.path.join(tempdir, "time_series_closed_append.xdmf")
+    filename=os.path.join(tempdir, "time_series_closed_append.xdmf")
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         xdmf.write(u, float(0.0))
 
