@@ -168,6 +168,7 @@ def test_mesh_function_assign_2D_vertices():
             assert 25 == g.get_value(cell.index(), i)
             assert f2.values[vertices[i]] == g.get_value(cell.index(), i)
 
+
 def test_mvc_construction_array():
     import pygmsh
 
@@ -195,7 +196,7 @@ def test_mvc_construction_array():
     points, cells, cell_data = pygmsh_mesh.points, pygmsh_mesh.cells, pygmsh_mesh.cell_data
 
     mesh = cpp.mesh.Mesh(MPI.comm_world,
-                         cpp.mesh.CellType.Type.triangle, points,
+                         cpp.mesh.CellType.triangle, points,
                          cells['triangle'], [], cpp.mesh.GhostMode.none)
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
