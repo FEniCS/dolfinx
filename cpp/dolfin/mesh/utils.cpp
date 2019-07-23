@@ -435,11 +435,12 @@ mesh::radius_ratio(const mesh::Mesh& mesh,
   return mesh::cell_dim(mesh.cell_type) * r / cr;
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+mesh::cell_normals(const mesh::Mesh& mesh, int dim)
 {
-  const int gdim = cell.mesh().geometry().dim();
-  const mesh::CellType type = cell.mesh().cell_type;
-  const mesh::Geometry& geometry = cell.mesh().geometry();
+  const int gdim = mesh.geometry().dim();
+  const mesh::CellType type = mesh::cell_entity_type(mesh.cell_type, dim);
+  const mesh::Geometry& geometry = mesh.geometry();
 
   switch (type)
   {
@@ -448,45 +449,64 @@ Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
 
-    // Get the two vertices as points
-    const std::int32_t* vertices = cell.entities(0);
-    Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    Eigen::Vector3d p1 = geometry.x(vertices[1]);
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
+        mesh.num_entities(1), 3);
+    for (int i = 0; i < mesh.num_entities(1); ++i)
+    {
+      // Get the two vertices as points
+      const mesh::MeshEntity e(mesh, 1, i);
+      const std::int32_t* vertices = e.entities(0);
+      Eigen::Vector3d p0 = geometry.x(vertices[0]);
+      Eigen::Vector3d p1 = geometry.x(vertices[1]);
 
-    // Define normal by rotating tangent counter-clockwise
-    Eigen::Vector3d t = p1 - p0;
-    Eigen::Vector3d n(-t[1], t[0], 0.0);
-    return n.normalized();
+      // Define normal by rotating tangent counter-clockwise
+      Eigen::Vector3d t = p1 - p0;
+      n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
+    }
+    return n;
   }
   case (mesh::CellType::triangle):
   {
-    // Get the three vertices as points
-    const std::int32_t* vertices = cell.entities(0);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
+        mesh.num_entities(2), 3);
+    for (int i = 0; i < mesh.num_entities(2); ++i)
+    {
+      // Get the three vertices as points
+      const mesh::MeshEntity e(mesh, 2, i);
+      const std::int32_t* vertices = e.entities(0);
+      const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+      const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+      const Eigen::Vector3d p2 = geometry.x(vertices[2]);
 
-    // Define cell normal via cross product of first two edges
-    return ((p1 - p0).cross(p2 - p0)).normalized();
+      // Define cell normal via cross product of first two edges
+      n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
+    }
+    return n;
   }
   case (mesh::CellType::quadrilateral):
   {
     // TODO: check
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
+        mesh.num_entities(2), 3);
+    for (int i = 0; i < mesh.num_entities(2); ++i)
+    {
+      // Get three vertices as points
+      const mesh::MeshEntity e(mesh, 2, i);
+      const std::int32_t* vertices = e.entities(0);
+      const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+      const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+      const Eigen::Vector3d p2 = geometry.x(vertices[2]);
 
-    // Get three vertices as points
-    const std::int32_t* vertices = cell.entities(0);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-
-    // Defined cell normal via cross product of first two edges:
-    return ((p1 - p0).cross(p2 - p0)).normalized();
+      // Defined cell normal via cross product of first two edges:
+      n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
+    }
+    return n;
   }
   default:
     throw std::invalid_argument(
         "cell_normal not supported for this cell type.");
   }
-  return Eigen::Vector3d();
+  return Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>();
 }
 //-----------------------------------------------------------------------------
 Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
@@ -615,26 +635,41 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
   return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d mesh::midpoint(const mesh::MeshEntity& e)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
+    const mesh::Mesh& mesh, int dim,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> entities)
 {
-  const mesh::Mesh& mesh = e.mesh();
   const mesh::Geometry& geometry = mesh.geometry();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
+      = geometry.points();
 
-  // Special case: a vertex is its own midpoint (don't check neighbors)
-  if (e.dim() == 0)
-    return geometry.x(e.index());
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(entities.rows(),
+                                                             3);
 
-  // Otherwise iterate over incident vertices and compute average
-  int num_vertices = 0;
-  Eigen::Vector3d x = Eigen::Vector3d::Zero();
-  for (auto& v : mesh::EntityRange<mesh::Vertex>(e))
+  // Special case: a vertex is its own midpoint
+  if (dim == 0)
   {
-    x += geometry.x(v.index());
-    ++num_vertices;
+    for (Eigen::Index e = 0; e < entities.rows(); ++e)
+      x.row(e) = points.row(entities[e]);
+  }
+  else
+  {
+    const mesh::Topology& topology = mesh.topology();
+    assert(topology.connectivity(dim, 0));
+    std::shared_ptr<const mesh::Connectivity> connectivity
+        = topology.connectivity(dim, 0);
+    const int num_vertices
+        = mesh::cell_num_entities(cell_entity_type(mesh.cell_type, dim), 0);
+    for (Eigen::Index e = 0; e < entities.rows(); ++e)
+    {
+      const std::int32_t* vertices = connectivity->connections(entities[e]);
+      x.row(e) = 0.0;
+      for (int i = 0; i < num_vertices; ++i)
+        x.row(e) += points.row(vertices[i]);
+    }
+    x /= num_vertices;
   }
 
-  assert(num_vertices > 0);
-  x /= double(num_vertices);
   return x;
 }
 //-----------------------------------------------------------------------------

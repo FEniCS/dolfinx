@@ -67,7 +67,7 @@ void mesh(py::module& m)
         "Compute maximum distance between any two vertices.");
   m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
   m.def("radius_ratio", &dolfin::mesh::radius_ratio);
-  m.def("midpoint", &dolfin::mesh::midpoint);
+  m.def("midpoints", &dolfin::mesh::midpoints);
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")
