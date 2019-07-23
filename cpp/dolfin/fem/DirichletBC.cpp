@@ -18,6 +18,7 @@
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/cell_types.h>
 #include <map>
 #include <utility>
 
@@ -139,12 +140,15 @@ std::vector<std::int32_t> marked_facets(
   // If a vertex is on the boundary, give it an index from [0, count)
   std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
   std::size_t count = 0;
+  assert(mesh.topology().connectivity(dim, tdim));
+  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+      = mesh.topology().connectivity(dim, tdim);
   for (const auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
   {
-    if (facet.num_global_entities(tdim) == 1)
+    if (connectivity_facet_cell->size_global(facet.index()) == 1)
     {
       const std::int32_t* v = facet.entities(0);
-      for (unsigned int i = 0; i != facet.num_entities(0); ++i)
+      for (int i = 0; i != facet.num_entities(0); ++i)
       {
         if (boundary_vertex[v[i]] == -1)
         {
@@ -310,9 +314,8 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
       = dofmap.element_dof_layout->num_entity_closure_dofs(tdim - 1);
 
   // Build vector local dofs for each cell facet
-  const mesh::CellType& cell_type = mesh.type();
   std::vector<Eigen::Array<int, Eigen::Dynamic, 1>> facet_dofs;
-  for (std::size_t i = 0; i < cell_type.num_entities(tdim - 1); ++i)
+  for (int i = 0; i < mesh::cell_num_entities(mesh.cell_type, tdim - 1); ++i)
   {
     facet_dofs.push_back(
         dofmap.element_dof_layout->entity_closure_dofs(tdim - 1, i));

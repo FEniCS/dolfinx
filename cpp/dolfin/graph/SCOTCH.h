@@ -24,11 +24,6 @@ extern "C"
 
 namespace dolfin
 {
-// Forward declarations
-namespace mesh
-{
-class CellType;
-}
 
 namespace graph
 {
@@ -44,7 +39,8 @@ public:
   // Compute cell partitions from distributed dual graph. Returns
   // (partition, ghost_proc)
   static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  partition(const MPI_Comm mpi_comm, const CSRGraph<SCOTCH_Num>& local_graph,
+  partition(const MPI_Comm mpi_comm, const SCOTCH_Num nparts,
+            const CSRGraph<SCOTCH_Num>& local_graph,
             const std::vector<std::size_t>& node_weights,
             std::int32_t num_ghost_nodes);
 

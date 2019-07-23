@@ -8,7 +8,8 @@
 import numpy as np
 import pytest
 
-from dolfin import MPI, CellType, FunctionSpace, UnitSquareMesh, cpp
+from dolfin import MPI, FunctionSpace, UnitSquareMesh, cpp
+from dolfin.cpp.mesh import CellType
 from dolfin_utils.test.fixtures import fixture
 
 
@@ -22,7 +23,7 @@ def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):
 
 @fixture
 def mesh():
-    return UnitSquareMesh(MPI.comm_world, 4, 4, CellType.Type.triangle)
+    return UnitSquareMesh(MPI.comm_world, 4, 4, CellType.triangle)
 
 
 @fixture

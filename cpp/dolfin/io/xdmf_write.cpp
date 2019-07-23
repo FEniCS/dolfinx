@@ -199,14 +199,16 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
                                                 int cell_dim)
 {
   // Create vector to store topology data
-  const int num_vertices_per_cell = mesh.type().num_vertices(cell_dim);
+  const int num_vertices_per_cell = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.cell_type, cell_dim));
+
   std::vector<std::int64_t> topology_data;
   topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
 
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  const std::vector<std::int8_t> perm = mesh.type().vtk_mapping();
+  const std::vector<std::int8_t> perm = mesh::vtk_mapping(mesh.cell_type);
   const int tdim = mesh.topology().dim();
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
   {
@@ -222,7 +224,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
       for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
       {
         const std::int32_t* entities = c.entities(0);
-        for (std::uint32_t i = 0; i != c.num_entities(0); ++i)
+        for (int i = 0; i < c.num_entities(0); ++i)
           topology_data.push_back(global_vertices[entities[perm[i]]]);
       }
     }
@@ -250,7 +252,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
         // If not excluded, add to topology
         if (non_local_entities.find(e.index()) == non_local_entities.end())
         {
-          for (std::uint32_t i = 0; i != e.num_entities(0); ++i)
+          for (int i = 0; i != e.num_entities(0); ++i)
           {
             const std::int32_t local_idx = e.entities(0)[perm[i]];
             topology_data.push_back(global_vertices[local_idx]);
@@ -427,15 +429,14 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
 
   const int mpi_rank = dolfin::MPI::rank(mesh.mpi_comm());
+  const mesh::Topology& topology = mesh.topology();
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-      = mesh.topology().shared_entities(cell_dim);
+      = topology.shared_entities(cell_dim);
 
   std::set<std::uint32_t> non_local_entities;
 
   const int tdim = mesh.topology().dim();
-  bool ghosted
-      = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
-
+  bool ghosted = (topology.size(tdim) > topology.ghost_offset(tdim));
   if (!ghosted)
   {
     // No ghost cells - exclude shared entities which are on lower rank
@@ -451,21 +452,30 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   {
     // Iterate through ghost cells, adding non-ghost entities which are
     // in lower rank process cells
+    const std::vector<std::int32_t>& cell_owners = topology.cell_owner();
+    const std::int32_t ghost_offset_c = topology.ghost_offset(tdim);
+    const std::int32_t ghost_offset_e = topology.ghost_offset(cell_dim);
     for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
              mesh, tdim, mesh::MeshRangeType::GHOST))
     {
-      const int cell_owner = c.owner();
+      assert(c.index() >= ghost_offset_c);
+      const int cell_owner = cell_owners[c.index() - ghost_offset_c];
       for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
-        if (!e.is_ghost() && cell_owner < mpi_rank)
+      {
+        const bool not_ghost = e.index() < ghost_offset_e;
+        if (not_ghost and cell_owner < mpi_rank)
           non_local_entities.insert(e.index());
+      }
     }
   }
   return non_local_entities;
 }
 //-----------------------------------------------------------------------------
-void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
-                            hid_t h5_id,
-                            const std::vector<Eigen::Vector3d>& points)
+void xdmf_write::add_points(
+    MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+        points)
 {
   xdmf_node.append_attribute("Version") = "3.0";
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
@@ -480,7 +490,7 @@ void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
 
   pugi::xml_node topology_node = grid_node.append_child("Topology");
   assert(topology_node);
-  const std::size_t n = points.size();
+  const std::size_t n = points.rows();
   const std::int64_t nglobal = dolfin::MPI::sum(comm, n);
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(nglobal).c_str();
@@ -492,10 +502,11 @@ void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
   geometry_node.append_attribute("GeometryType") = "XYZ";
 
   // Pack data
-  std::vector<double> x(3 * n);
-  for (std::size_t i = 0; i < n; ++i)
-    for (std::size_t j = 0; j < 3; ++j)
-      x[3 * i + j] = points[i][j];
+  std::vector<double> x(points.data(), points.data() + points.size());
+  // std::vector<double> x(3 * n);
+  // for (std::size_t i = 0; i < n; ++i)
+  //   for (std::size_t j = 0; j < 3; ++j)
+  //     x[3 * i + j] = points[i][j];
 
   const std::vector<std::int64_t> shape = {nglobal, 3};
   add_data_item(comm, geometry_node, h5_id, "/Points/coordinates", x, shape,
@@ -508,12 +519,13 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 {
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
-  int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
+  int num_nodes_per_cell = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.cell_type, cell_dim));
 
   // Get VTK string for cell type and degree (linear or quadratic)
   const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh.type().entity_type(cell_dim), degree);
+      mesh::cell_entity_type(mesh.cell_type, cell_dim), degree);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
@@ -642,7 +654,8 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 
   std::string element_family = u.function_space()->element->family();
   const std::size_t element_degree = u.function_space()->element->degree();
-  const CellType element_cell_type = u.function_space()->element->cell_shape();
+  const mesh::CellType element_cell_type
+      = u.function_space()->element->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
   const std::map<std::string, std::string> family_abbr
@@ -656,12 +669,12 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
          {"Q", "Q"},
          {"DQ", "DQ"}};
 
-  const std::map<CellType, std::string> cell_shape_repr
-      = {{CellType::interval, "interval"},
-         {CellType::triangle, "triangle"},
-         {CellType::tetrahedron, "tetrahedron"},
-         {CellType::quadrilateral, "quadrilateral"},
-         {CellType::hexahedron, "hexahedron"}};
+  const std::map<mesh::CellType, std::string> cell_shape_repr
+      = {{mesh::CellType::interval, "interval"},
+         {mesh::CellType::triangle, "triangle"},
+         {mesh::CellType::tetrahedron, "tetrahedron"},
+         {mesh::CellType::quadrilateral, "quadrilateral"},
+         {mesh::CellType::hexahedron, "hexahedron"}};
 
   // Check that element is supported
   auto const it = family_abbr.find(element_family);
