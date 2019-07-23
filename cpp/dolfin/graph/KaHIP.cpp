@@ -41,7 +41,7 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   int mode = ULTRAFASTMESH;
   int seed = 0;
   // The amount of imbalance that is allowed. (3%)
-  double imbalance = 0.03;
+  double imbalance = 0.06;
   // Suppress output from the partitioning library.
   bool suppress_output = true;
 
