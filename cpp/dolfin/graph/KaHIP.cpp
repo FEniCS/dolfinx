@@ -83,8 +83,6 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
                                             node_distribution.end(), other_cell)
                            - node_distribution.begin() - 1;
 
-        std::cout << "Remote: " << remote << std::endl;
-
         assert(remote < num_processes);
         if (halo_cell_to_remotes.find(i) == halo_cell_to_remotes.end())
           halo_cell_to_remotes[i] = std::set<std::int32_t>();
@@ -92,12 +90,6 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
       }
     }
   }
-
-  // show content:
-  for (std::map<unsigned long long, std::set<std::int32_t>>::iterator it
-       = halo_cell_to_remotes.begin();
-       it != halo_cell_to_remotes.end(); ++it)
-    std::cout << it->first << " => " << '\n';
 
   // Do halo exchange of cell partition data
   std::vector<std::vector<std::int64_t>> send_cell_partition(num_processes);
@@ -169,17 +161,6 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   }
 
   timer2.stop();
-  for (auto i : part)
-    std::cout << i << ' ';
-  std::cout << std::endl;
-
-  for (auto it = ghost_procs.cbegin(); it != ghost_procs.cend(); ++it)
-  {
-    std::cout << it->first << " " << std::endl;
-    for (auto i : it->second)
-      std::cout << i << ' ';
-    std::cout << std::endl;
-  }
 
   return std::make_pair(std::vector<int>(part.begin(), part.end()),
                         std::move(ghost_procs));
