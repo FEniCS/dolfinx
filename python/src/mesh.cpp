@@ -301,8 +301,6 @@ void mesh(py::module& m)
            });
 
   MESHITERATOR_MACRO(Cells, mesh::Cell);
-  MESHITERATOR_MACRO(Facets, mesh::Facet);
-  // MESHITERATOR_MACRO(Vertices, mesh::Vertex);
 #undef MESHITERATOR_MACRO
 
 // dolfin::mesh::MeshFunction

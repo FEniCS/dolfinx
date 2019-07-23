@@ -7,16 +7,7 @@
 import numpy
 import pytest
 
-from dolfin import MPI, Cells, Facets, UnitCubeMesh
-
-
-def test_facet_iterators():
-    """Iterate over facets"""
-    mesh = UnitCubeMesh(MPI.comm_world, 5, 5, 5)
-    n = 0
-    for f in Facets(mesh):
-        n += 1
-    assert n == mesh.num_entities(mesh.topology.dim - 1)
+from dolfin import MPI, Cells, UnitCubeMesh
 
 
 def test_cell_iterators():

@@ -9,7 +9,7 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Cells, Facets, Function, FunctionSpace, MeshEntities,
+from dolfin import (MPI, Cells, Facet, Function, FunctionSpace, MeshEntities,
                     MeshFunction, MeshValueCollection, TensorFunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     VectorFunctionSpace, Vertex, cpp, has_petsc_complex,
@@ -422,15 +422,18 @@ def test_save_3D_cell_function(tempdir, encoding, data_type):
 def test_save_2D_facet_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     mesh = UnitSquareMesh(MPI.comm_world, 32, 32)
-    mf = MeshFunction(dtype_str, mesh, mesh.topology.dim - 1, 0)
+    tdim = mesh.topology.dim
+    mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
 
+    tdim = mesh.topology.dim
     if (MPI.size(mesh.mpi_comm()) == 1):
-        for facet in Facets(mesh):
-            mf.values[facet.index()] = dtype(facet.index())
+        for i in range(mesh.num_entities(tdim - 1)):
+            mf.values[i] = dtype(i)
     else:
-        for facet in Facets(mesh):
-            mf.values[facet.index()] = dtype(facet.global_index())
+        for i in range(mesh.num_entities(tdim - 1)):
+            f = Facet(mesh, i)
+            mf.values[i] = dtype(f.global_index())
     filename = os.path.join(tempdir, "mf_facet_2D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
@@ -449,15 +452,17 @@ def test_save_2D_facet_function(tempdir, encoding, data_type):
 def test_save_3D_facet_function(tempdir, encoding, data_type):
     dtype_str, dtype = data_type
     mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 4)
-    mf = MeshFunction(dtype_str, mesh, mesh.topology.dim - 1, 0)
+    tdim = mesh.topology.dim
+    mf = MeshFunction(dtype_str, mesh, tdim - 1, 0)
     mf.name = "facets"
 
     if (MPI.size(mesh.mpi_comm()) == 1):
-        for facet in Facets(mesh):
-            mf.values[facet.index()] = dtype(facet.index())
+        for i in range(mesh.num_entities(tdim - 1)):
+            mf.values[i] = dtype(i)
     else:
-        for facet in Facets(mesh):
-            mf.values[facet.index()] = dtype(facet.global_index())
+        for i in range(mesh.num_entities(tdim - 1)):
+            f = Facet(mesh, i)
+            mf.values[i] = dtype(f.global_index())
     filename = os.path.join(tempdir, "mf_facet_3D_%s.xdmf" % dtype_str)
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding=encoding) as xdmf:
@@ -612,15 +617,15 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
         if (MPI.size(mesh.mpi_comm()) == 1):
             for v in range(mesh.num_entities(0)):
                 vf.values[v] = dtype(v)
-            for facet in Facets(mesh):
-                ff.values[facet.index()] = dtype(facet.index())
+            for f in range(mesh.num_entities(dim - 1)):
+                ff.values[f] = dtype(f)
             for cell in Cells(mesh):
                 cf.values[cell.index()] = dtype(cell.index())
         else:
             for v in range(mesh.num_entities(0)):
                 vf.values[v] = dtype(Vertex(mesh, v).global_index())
-            for facet in Facets(mesh):
-                ff.values[facet.index()] = dtype(facet.global_index())
+            for f in range(mesh.num_entities(dim - 1)):
+                ff.values[f] = dtype(Facet(mesh, f).global_index())
             for cell in Cells(mesh):
                 cf.values[cell.index()] = dtype(cell.global_index())
 
