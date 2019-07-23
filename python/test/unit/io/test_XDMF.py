@@ -8,15 +8,14 @@ import os
 
 import numpy
 import pytest
-from dolfin_utils.test.fixtures import tempdir
 
-from dolfin import (MPI, Cell, Facet, Function, FunctionSpace, MeshEntities,
+from dolfin import (MPI, Cell, Function, FunctionSpace, MeshEntities,
                     MeshFunction, MeshValueCollection, TensorFunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
-                    VectorFunctionSpace, Vertex, cpp, has_petsc_complex,
-                    interpolate)
+                    VectorFunctionSpace, cpp, has_petsc_complex, interpolate)
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
+from dolfin_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement
 
 assert (tempdir)
