@@ -47,7 +47,7 @@ Eigen::Vector3d cell_normal(const Cell& cell);
 /// Compute of given facet with respect to the cell
 Eigen::Vector3d normal(const Cell& cell, int facet);
 
-/// Compute midpoint of MeshEntity
+/// Compute midpoints or mesh entities of a given dimension
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
     const mesh::Mesh& mesh, int dim,
     const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> entities);
