@@ -89,7 +89,7 @@ def test_ghost_connectivities(mode):
     reference = dict.fromkeys([tuple(row) for row in facet_mp], [])
     for i in range(meshR.num_entities(tdim - 1)):
         for cidx in meshR.topology.connectivity(1, 2).connections(i):
-            reference[tuple(facet_mp[i])].append(cell_mp[cidx])
+            reference[tuple(facet_mp[i])].append(cell_mp[cidx].tolist())
 
     # Loop through ghosted mesh and check connectivities
     tdim = meshG.topology.dim
@@ -98,8 +98,7 @@ def test_ghost_connectivities(mode):
     facet_mp = cpp.mesh.midpoints(meshG, tdim - 1, range(meshG.num_entities(tdim - 1)))
     cell_mp = cpp.mesh.midpoints(meshG, tdim, range(meshG.num_entities(tdim)))
     for i in range(num_facets):
-        assert facet_mp[i] in reference
-
+        assert tuple(facet_mp[i]) in reference
         for cidx in meshG.topology.connectivity(1, 2).connections(i):
             assert cidx in allowable_cell_indices
-            assert cell_mp[cidx] in reference[facet_mp[i]]
+            assert cell_mp[cidx].tolist() in reference[tuple(facet_mp[i])]
