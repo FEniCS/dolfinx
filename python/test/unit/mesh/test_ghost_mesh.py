@@ -6,7 +6,7 @@
 
 import pytest
 
-from dolfin import (MPI, Cell, Cells, Facet, UnitCubeMesh, UnitIntervalMesh,
+from dolfin import (MPI, Cell, Facet, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, cpp)
 
 # See https://bitbucket.org/fenics-project/dolfin/issues/579
@@ -97,7 +97,7 @@ def test_ghost_connectivities(mode):
     # Loop through ghosted mesh and check connectivities
     tdim = meshG.topology.dim
     num_facets = meshG.num_entities(tdim - 1) - meshG.topology.ghost_offset(tdim - 1)
-    allowable_cell_indices = [c.index() for c in Cells(meshG, cpp.mesh.MeshRangeType.ALL)]
+    allowable_cell_indices = range(meshG.num_cells())
     for i in range(num_facets):
         facet = Facet(meshG, i)
         facet_mp = tuple(cpp.mesh.midpoint(facet)[:])

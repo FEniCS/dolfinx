@@ -8,15 +8,15 @@ import os
 
 import numpy
 import pytest
+from dolfin_utils.test.fixtures import tempdir
 
-from dolfin import (MPI, Cells, Facet, Function, FunctionSpace, MeshEntities,
+from dolfin import (MPI, Cell, Facet, Function, FunctionSpace, MeshEntities,
                     MeshFunction, MeshValueCollection, TensorFunctionSpace,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh,
                     VectorFunctionSpace, Vertex, cpp, has_petsc_complex,
                     interpolate)
 from dolfin.cpp.mesh import CellType
 from dolfin.io import XDMFFile
-from dolfin_utils.test.fixtures import tempdir
 from ufl import FiniteElement, VectorElement
 
 assert (tempdir)
@@ -569,7 +569,8 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
     tdim = mesh.topology.dim
     meshfn = MeshFunction(dtype_str, mesh, mesh.topology.dim, False)
     meshfn.name = "volume_marker"
-    for c in Cells(mesh):
+    for i in range(mesh.num_cells()):
+        c = Cell(mesh, i)
         if cpp.mesh.midpoint(c)[1] > 0.1:
             meshfn.values[c.index()] = dtype(1)
         if cpp.mesh.midpoint(c)[1] > 0.9:
@@ -619,15 +620,15 @@ def test_append_and_load_mesh_functions(tempdir, encoding, data_type):
                 vf.values[v] = dtype(v)
             for f in range(mesh.num_entities(dim - 1)):
                 ff.values[f] = dtype(f)
-            for cell in Cells(mesh):
-                cf.values[cell.index()] = dtype(cell.index())
+            for c in range(mesh.num_entities(dim)):
+                cf.values[c] = dtype(c)
         else:
             for v in range(mesh.num_entities(0)):
                 vf.values[v] = dtype(Vertex(mesh, v).global_index())
             for f in range(mesh.num_entities(dim - 1)):
                 ff.values[f] = dtype(Facet(mesh, f).global_index())
-            for cell in Cells(mesh):
-                cf.values[cell.index()] = dtype(cell.global_index())
+            for c in range(mesh.num_entities(dim)):
+                cf.values[c] = dtype(Cell(mesh, c).global_index())
 
         filename = os.path.join(tempdir, "appended_mf_%dD.xdmf" % dim)
 
