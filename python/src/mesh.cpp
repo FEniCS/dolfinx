@@ -281,30 +281,6 @@ void mesh(py::module& m)
              return py::make_iterator(r.begin(), r.end());
            });
 
-  // dolfin::mesh::MeshRangeType enums
-  py::enum_<dolfin::mesh::MeshRangeType>(m, "MeshRangeType")
-      .value("REGULAR", dolfin::mesh::MeshRangeType::REGULAR)
-      .value("ALL", dolfin::mesh::MeshRangeType::ALL)
-      .value("GHOST", dolfin::mesh::MeshRangeType::GHOST);
-
-// dolfin::mesh::MeshIterator (Cells, Facets, Faces, Edges, Vertices)
-#define MESHITERATOR_MACRO(TYPE, ENTITYNAME)                                   \
-  py::class_<dolfin::mesh::MeshRange<dolfin::ENTITYNAME>,                      \
-             std::shared_ptr<dolfin::mesh::MeshRange<dolfin::ENTITYNAME>>>(    \
-      m, #TYPE,                                                                \
-      "Range for iterating over entities of type " #ENTITYNAME " of a Mesh")   \
-      .def(py::init<const dolfin::mesh::Mesh&>())                              \
-      .def(py::init<const dolfin::mesh::Mesh&, dolfin::mesh::MeshRangeType>()) \
-      .def("__iter__",                                                         \
-           [](const dolfin::mesh::MeshRange<dolfin::ENTITYNAME>& c) {          \
-             return py::make_iterator(c.begin(), c.end());                     \
-           });
-
-  MESHITERATOR_MACRO(Cells, mesh::Cell);
-  MESHITERATOR_MACRO(Facets, mesh::Facet);
-  // MESHITERATOR_MACRO(Vertices, mesh::Vertex);
-#undef MESHITERATOR_MACRO
-
 // dolfin::mesh::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME)                                \
   py::class_<dolfin::mesh::MeshFunction<SCALAR>,                               \

@@ -9,15 +9,15 @@ import sys
 
 import numpy
 import pytest
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_in_parallel
 
 import dolfin
 import FIAT
-from dolfin import (MPI, BoxMesh, Cell, Cells, MeshEntity, MeshFunction,
+from dolfin import (MPI, BoxMesh, Cell, MeshEntity, MeshFunction,
                     RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
-from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel
 
 
 @fixture
@@ -378,7 +378,8 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     # Initialize all mesh entities and connectivities
     mesh.create_connectivity_all()
 
-    for cell in Cells(mesh):
+    for i in range(mesh.num_cells()):
+        cell = Cell(mesh, i)
         # Get mesh-global (MPI-local) indices of cell vertices
         vertex_global_indices = cell.entities(0)
 
@@ -388,7 +389,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
             # Get entities of dimension d on the cell
             entities = cell.entities(d)
             if len(entities) == 0:  # Fixup for highest dimension
-                entities = (cell.index(), )
+                entities = (i, )
 
             # Loop over all entities of fixed dimension d
             for entity_index, entity_topology in d_topology.items():
