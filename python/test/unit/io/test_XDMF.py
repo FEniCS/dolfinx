@@ -544,21 +544,22 @@ def test_save_mesh_value_collection(tempdir, encoding, data_type):
     tdim = mesh.topology.dim
     meshfn = MeshFunction(dtype_str, mesh, mesh.topology.dim, False)
     meshfn.name = "volume_marker"
+    mp = cpp.mesh.midpoints(mesh, tdim, range(mesh.num_entities(tdim)))
     for i in range(mesh.num_cells()):
-        c = Cell(mesh, i)
-        if cpp.mesh.midpoint(c)[1] > 0.1:
-            meshfn.values[c.index()] = dtype(1)
-        if cpp.mesh.midpoint(c)[1] > 0.9:
-            meshfn.values[c.index()] = dtype(2)
+        if mp[i, 1] > 0.1:
+            meshfn.values[i] = 1
+        if mp[i, 1] > 0.9:
+            meshfn.values[i] = 2
 
     for mvc_dim in range(0, tdim + 1):
         mvc = MeshValueCollection(dtype_str, mesh, mvc_dim)
         tag = "dim_{}_marker".format(mvc_dim)
         mvc.name = tag
         mesh.create_connectivity(mvc_dim, tdim)
-        for e in MeshEntities(mesh, mvc_dim):
-            if (cpp.mesh.midpoint(e)[0] > 0.5):
-                mvc.set_value(e.index(), dtype(1))
+        mp = cpp.mesh.midpoints(mesh, mvc_dim, range(mesh.num_entities(mvc_dim)))
+        for e in range(mesh.num_entities(mvc_dim)):
+            if (mp[e, 0] > 0.5):
+                mvc.set_value(e, dtype(1))
 
         filename = os.path.join(tempdir, "mvc_{}.xdmf".format(mvc_dim))
 

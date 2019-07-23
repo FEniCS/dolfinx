@@ -52,16 +52,15 @@ def test_save_and_read_meshfunction_2D(tempdir):
 
     # Write to file
     mesh = UnitSquareMesh(MPI.comm_world, 20, 20)
+    tdim = mesh.topology.dim
     with HDF5File(mesh.mpi_comm(), filename, "w") as mf_file:
-
         # save meshfuns to compare when reading back
         meshfunctions = []
         for i in range(0, 3):
             mf = MeshFunction('double', mesh, i, 0.0)
-            # NB choose a value to set which will be the same
-            # on every process for each entity
-            for cell in MeshEntities(mesh, i):
-                mf.values[cell.index()] = cpp.mesh.midpoint(cell)[0]
+            # NB choose a value to set which will be the same on every
+            # process for each entity
+            mf.values[:] = cpp.mesh.midpoints(mesh, i, range(mesh.num_entities(i)))[:, 0]
             meshfunctions.append(mf)
             mf_file.write(mf, "/meshfunction/meshfun%d" % i)
 
@@ -83,10 +82,11 @@ def test_save_and_read_meshfunction_3D(tempdir):
     meshfunctions = []
     for i in range(0, 4):
         mf = MeshFunction('double', mesh, i, 0.0)
-        # NB choose a value to set which will be the same
-        # on every process for each entity
-        for cell in MeshEntities(mesh, i):
-            mf.values[cell.index()] = cpp.mesh.midpoint(cell)[0]
+        mp = cpp.mesh.midpoints(mesh, i, range(mesh.num_entities(i)))
+
+        # NB choose a value to set which will be the same on every
+        # process for each entity
+        mf.values[:] = mp[:, 0]
         meshfunctions.append(mf)
         mf_file.write(mf, "/meshfunction/group/%d/meshfun" % i)
     mf_file.close()
@@ -114,22 +114,23 @@ def test_save_and_read_mesh_value_collection(tempdir):
         for dim in range(mesh.topology.dim):
             mvc = MeshValueCollection("size_t", mesh, dim)
             mesh.create_entities(dim)
-            for e in MeshEntities(mesh, dim):
+            mp = cpp.mesh.midpoints(mesh, dim, range(mesh.num_entities(dim)))
+            for e in range(mesh.num_entities(dim)):
                 # this can be easily computed to the check the value
-                val = int(ndiv * sum(point2list(cpp.mesh.midpoint(e)))) + 1
-                mvc.set_value(e.index(), val)
+                val = int(ndiv * mp[e].sum()) +1
+                mvc.set_value(e, val)
             f.write(mvc, "/mesh_value_collection_{}".format(dim))
 
     # read from file
     with HDF5File(mesh.mpi_comm(), filename, 'r') as f:
         for dim in range(mesh.topology.dim):
-            mvc = f.read_mvc_size_t(mesh,
-                                    "/mesh_value_collection_{}".format(dim))
+            mvc = f.read_mvc_size_t(mesh, "/mesh_value_collection_{}".format(dim))
+            mp = cpp.mesh.midpoints(mesh, dim, range(mesh.num_entities(dim)))
             # check the values
             for (cell, lidx), val in mvc.values().items():
                 eidx = Cell(mesh, cell).entities(dim)[lidx]
-                mid = point2list(cpp.mesh.midpoint(MeshEntity(mesh, dim, eidx)))
-                assert val == int(ndiv * sum(mid)) + 1
+                mid =mp[eidx]
+                assert val == int(ndiv * mid.sum()) + 1
 
 
 def test_save_and_read_mesh_value_collection_with_only_one_marked_entity(

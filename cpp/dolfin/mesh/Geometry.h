@@ -65,7 +65,6 @@ public:
   /// Return array of coordinates for all points
   Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points();
 
-  // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points (const version)
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
   points() const;

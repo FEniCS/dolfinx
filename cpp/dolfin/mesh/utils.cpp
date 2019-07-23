@@ -615,26 +615,41 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
   return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d mesh::midpoint(const mesh::MeshEntity& e)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
+    const mesh::Mesh& mesh, int dim,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> entities)
 {
-  const mesh::Mesh& mesh = e.mesh();
   const mesh::Geometry& geometry = mesh.geometry();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
+      = geometry.points();
 
-  // Special case: a vertex is its own midpoint (don't check neighbors)
-  if (e.dim() == 0)
-    return geometry.x(e.index());
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(entities.rows(),
+                                                             3);
 
-  // Otherwise iterate over incident vertices and compute average
-  int num_vertices = 0;
-  Eigen::Vector3d x = Eigen::Vector3d::Zero();
-  for (auto& v : mesh::EntityRange<mesh::Vertex>(e))
+  // Special case: a vertex is its own midpoint
+  if (dim == 0)
   {
-    x += geometry.x(v.index());
-    ++num_vertices;
+    for (Eigen::Index e = 0; e < entities.rows(); ++e)
+      x.row(e) = points.row(entities[e]);
+  }
+  else
+  {
+    const mesh::Topology& topology = mesh.topology();
+    assert(topology.connectivity(dim, 0));
+    std::shared_ptr<const mesh::Connectivity> connectivity
+        = topology.connectivity(dim, 0);
+    const int num_vertices
+        = mesh::cell_num_entities(cell_entity_type(mesh.cell_type, dim), 0);
+    for (Eigen::Index e = 0; e < entities.rows(); ++e)
+    {
+      const std::int32_t* vertices = connectivity->connections(entities[e]);
+      x.row(e) = 0.0;
+      for (int i = 0; i < num_vertices; ++i)
+        x.row(e) += points.row(vertices[i]);
+    }
+    x /= num_vertices;
   }
 
-  assert(num_vertices > 0);
-  x /= double(num_vertices);
   return x;
 }
 //-----------------------------------------------------------------------------

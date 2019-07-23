@@ -48,7 +48,9 @@ Eigen::Vector3d cell_normal(const Cell& cell);
 Eigen::Vector3d normal(const Cell& cell, int facet);
 
 /// Compute midpoint of MeshEntity
-Eigen::Vector3d midpoint(const mesh::MeshEntity& e);
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(
+    const mesh::Mesh& mesh, int dim,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> entities);
 
 } // namespace mesh
 } // namespace dolfin
