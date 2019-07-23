@@ -437,7 +437,6 @@ mesh::radius_ratio(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 mesh::cell_normals(const mesh::Mesh& mesh, int dim)
-// Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
 {
   const int gdim = mesh.geometry().dim();
   const mesh::CellType type = mesh::cell_entity_type(mesh.cell_type, dim);
@@ -454,9 +453,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
         mesh.num_entities(1), 3);
     for (int i = 0; i < mesh.num_entities(1); ++i)
     {
-      const mesh::MeshEntity e(mesh, 1, i);
-
       // Get the two vertices as points
+      const mesh::MeshEntity e(mesh, 1, i);
       const std::int32_t* vertices = e.entities(0);
       Eigen::Vector3d p0 = geometry.x(vertices[0]);
       Eigen::Vector3d p1 = geometry.x(vertices[1]);
@@ -473,9 +471,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
         mesh.num_entities(2), 3);
     for (int i = 0; i < mesh.num_entities(2); ++i)
     {
-      const mesh::MeshEntity e(mesh, 2, i);
-
       // Get the three vertices as points
+      const mesh::MeshEntity e(mesh, 2, i);
       const std::int32_t* vertices = e.entities(0);
       const Eigen::Vector3d p0 = geometry.x(vertices[0]);
       const Eigen::Vector3d p1 = geometry.x(vertices[1]);
@@ -493,9 +490,8 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
         mesh.num_entities(2), 3);
     for (int i = 0; i < mesh.num_entities(2); ++i)
     {
-      const mesh::MeshEntity e(mesh, 2, i);
-
       // Get three vertices as points
+      const mesh::MeshEntity e(mesh, 2, i);
       const std::int32_t* vertices = e.entities(0);
       const Eigen::Vector3d p0 = geometry.x(vertices[0]);
       const Eigen::Vector3d p1 = geometry.x(vertices[1]);
