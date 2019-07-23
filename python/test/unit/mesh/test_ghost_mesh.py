@@ -6,8 +6,7 @@
 
 import pytest
 
-from dolfin import (MPI, Cell, Facet, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp)
+from dolfin import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp
 
 # See https://bitbucket.org/fenics-project/dolfin/issues/579
 
@@ -87,7 +86,7 @@ def test_ghost_connectivities(mode):
     reference = {}
     facet_mp = cpp.mesh.midpoints(meshR, tdim - 1, range(meshR.num_entities(tdim - 1)))
     cell_mp = cpp.mesh.midpoints(meshR, tdim, range(meshR.num_entities(tdim)))
-    reference = dict.fromkeys([tuple(row) for row in facet_mp],[])
+    reference = dict.fromkeys([tuple(row) for row in facet_mp], [])
     for i in range(meshR.num_entities(tdim - 1)):
         for cidx in meshR.topology.connectivity(1, 2).connections(i):
             reference[tuple(facet_mp[i])].append(cell_mp[cidx])

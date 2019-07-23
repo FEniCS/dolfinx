@@ -7,8 +7,7 @@
 
 import numpy
 
-from dolfin import (MPI, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp)
+from dolfin import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfin.geometry import BoundingBoxTree
 from dolfin_utils.test.skips import skip_in_parallel
 

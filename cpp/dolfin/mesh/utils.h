@@ -42,7 +42,8 @@ Eigen::ArrayXd radius_ratio(const Mesh& mesh,
                             const Eigen::Ref<const Eigen::ArrayXi> entities);
 
 /// Compute normal to given cell (viewed as embedded in 3D)
-Eigen::Vector3d cell_normal(const Cell& cell);
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+cell_normals(const Mesh& mesh, int dim);
 
 /// Compute of given facet with respect to the cell
 Eigen::Vector3d normal(const Cell& cell, int facet);

@@ -9,8 +9,7 @@ import os
 import numpy
 from petsc4py import PETSc
 
-from dolfin import (MPI, Cell, Function, FunctionSpace, MeshEntities,
-                    MeshEntity, MeshFunction, MeshValueCollection,
+from dolfin import (MPI, Cell, Function, FunctionSpace, MeshFunction, MeshValueCollection,
                     UnitCubeMesh, UnitSquareMesh, cpp)
 from dolfin.io import HDF5File
 from dolfin_utils.test.fixtures import tempdir
@@ -52,7 +51,6 @@ def test_save_and_read_meshfunction_2D(tempdir):
 
     # Write to file
     mesh = UnitSquareMesh(MPI.comm_world, 20, 20)
-    tdim = mesh.topology.dim
     with HDF5File(mesh.mpi_comm(), filename, "w") as mf_file:
         # save meshfuns to compare when reading back
         meshfunctions = []
@@ -117,7 +115,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
             mp = cpp.mesh.midpoints(mesh, dim, range(mesh.num_entities(dim)))
             for e in range(mesh.num_entities(dim)):
                 # this can be easily computed to the check the value
-                val = int(ndiv * mp[e].sum()) +1
+                val = int(ndiv * mp[e].sum()) + 1
                 mvc.set_value(e, val)
             f.write(mvc, "/mesh_value_collection_{}".format(dim))
 
@@ -129,7 +127,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
             # check the values
             for (cell, lidx), val in mvc.values().items():
                 eidx = Cell(mesh, cell).entities(dim)[lidx]
-                mid =mp[eidx]
+                mid = mp[eidx]
                 assert val == int(ndiv * mid.sum()) + 1
 
 
