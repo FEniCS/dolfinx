@@ -271,9 +271,17 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   Eigen::Map<const EigenRowArrayXXd> points(_new_vertex_coordinates.data(),
                                             num_local_vertices, 3);
 
-  return mesh::Partitioning::build_distributed_mesh(
-      _mesh.mpi_comm(), _mesh.cell_type, points, cells, global_cell_indices,
-      _mesh.get_ghost_mode());
+  if (redistribute)
+  {
+    return mesh::Partitioning::build_distributed_mesh(
+        _mesh.mpi_comm(), _mesh.cell_type, points, cells, global_cell_indices,
+        _mesh.get_ghost_mode());
+  }
+
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type, points, cells,
+                  global_cell_indices, _mesh.get_ghost_mode());
+
+  return std::move(mesh);
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::int64_t>& idx)
