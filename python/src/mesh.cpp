@@ -231,11 +231,6 @@ void mesh(py::module& m)
       .def("__str__",
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
 
-  // dolfin::mesh::Cell
-  py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
-             dolfin::mesh::MeshEntity>(m, "Cell", "Cell object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
   py::class_<
       dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
       std::shared_ptr<dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>>>(

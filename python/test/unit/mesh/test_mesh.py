@@ -9,15 +9,14 @@ import sys
 
 import numpy
 import pytest
-from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_in_parallel
 
 import dolfin
 import FIAT
-from dolfin import (MPI, BoxMesh, Cell, MeshEntity, MeshFunction,
-                    RectangleMesh, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp)
+from dolfin import (MPI, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
+                    UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_in_parallel
 
 
 @fixture
@@ -51,19 +50,19 @@ def mesh3d():
 @fixture
 def c0(mesh3d):
     """Original tetrahedron from UnitCubeMesh(MPI.comm_world, 1, 1, 1)"""
-    return Cell(mesh3d, 0)
+    return MeshEntity(mesh3d, mesh3d.topology.dim, 0)
 
 
 @fixture
 def c1(mesh3d):
     # Degenerate cell
-    return Cell(mesh3d, 1)
+    return MeshEntity(mesh3d, mesh3d.topology.dim, 1)
 
 
 @fixture
 def c5(mesh3d):
     # Regular tetrahedron with edge sqrt(2)
-    return Cell(mesh3d, 5)
+    return MeshEntity(mesh3d, mesh3d.topology.dim, 5)
 
 
 @fixture
@@ -379,7 +378,7 @@ def test_mesh_topology_against_fiat(mesh_factory, ghost_mode=cpp.mesh.GhostMode.
     mesh.create_connectivity_all()
 
     for i in range(mesh.num_cells()):
-        cell = Cell(mesh, i)
+        cell = MeshEntity(mesh, mesh.topology.dim, i)
         # Get mesh-global (MPI-local) indices of cell vertices
         vertex_global_indices = cell.entities(0)
 

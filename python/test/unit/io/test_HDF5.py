@@ -9,8 +9,8 @@ import os
 import numpy
 from petsc4py import PETSc
 
-from dolfin import (MPI, Cell, Function, FunctionSpace, MeshFunction, MeshValueCollection,
-                    UnitCubeMesh, UnitSquareMesh, cpp)
+from dolfin import (MPI, Function, FunctionSpace, MeshEntity, MeshFunction,
+                    MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
 from dolfin.io import HDF5File
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import xfail_if_complex
