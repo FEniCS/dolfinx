@@ -219,7 +219,8 @@ void _lift_bc_exterior_facets(
   assert(mesh.topology().connectivity(tdim - 1, tdim));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(tdim - 1, tdim);
-  for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  for (const mesh::MeshEntity& facet :
+       mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
   {
     // Move to next facet if this one is an interior facet
     if (connectivity_facet_cell->size_global(facet.index()) != 1)
@@ -444,7 +445,7 @@ void fem::impl::assemble_exterior_facets(
 
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // Create attached cell
     const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
@@ -517,7 +518,7 @@ void fem::impl::assemble_interior_facets(
 
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // assert(facet.num_global_entities(tdim) == 2);
 

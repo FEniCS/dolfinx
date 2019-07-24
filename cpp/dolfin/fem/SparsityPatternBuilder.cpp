@@ -46,7 +46,7 @@ void SparsityPatternBuilder::interior_facets(
   assert(mesh.topology().connectivity(D - 1, D));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(D - 1, D);
-  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  for (auto& facet : mesh::MeshRange<mesh::MeshEntity>(mesh, D - 1))
   {
     // Continue if facet is exterior facet
     if (connectivity_facet_cell->size_global(facet.index()) == 1)
@@ -86,7 +86,7 @@ void SparsityPatternBuilder::exterior_facets(
   assert(mesh.topology().connectivity(D - 1, D));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(D - 1, D);
-  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  for (auto& facet : mesh::MeshRange<mesh::MeshEntity>(mesh, D - 1))
   {
     // Skip interior facets
     if (connectivity_facet_cell->size_global(facet.index()) > 1)

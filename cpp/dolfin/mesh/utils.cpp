@@ -510,6 +510,8 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet_local)
 {
   const mesh::Geometry& geometry = cell.mesh().geometry();
   const mesh::CellType type = cell.mesh().cell_type;
+  const int tdim = cell.mesh().topology().dim();
+
   switch (type)
   {
   case (mesh::CellType::interval):
@@ -531,7 +533,7 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet_local)
       throw std::runtime_error("Illegal geometric dimension");
 
     cell.mesh().create_connectivity(2, 1);
-    mesh::Facet f(cell.mesh(), cell.entities(1)[facet_local]);
+    mesh::MeshEntity f(cell.mesh(), tdim - 1, cell.entities(1)[facet_local]);
 
     // Get global index of opposite vertex
     const std::int32_t v0 = cell.entities(0)[facet_local];
@@ -563,7 +565,7 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet_local)
     cell.mesh().create_connectivity(2, 1);
 
     // Create facet from the mesh and local facet number
-    Facet f(cell.mesh(), cell.entities(1)[facet_local]);
+    MeshEntity f(cell.mesh(), tdim - 1, cell.entities(1)[facet_local]);
 
     // Get global index of opposite vertex
     const std::int32_t v0 = cell.entities(0)[facet_local];
@@ -591,7 +593,7 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet_local)
     cell.mesh().create_connectivity(3, 2);
 
     // Create facet from the mesh and local facet number
-    Facet f(cell.mesh(), cell.entities(2)[facet_local]);
+    MeshEntity f(cell.mesh(), tdim - 1, cell.entities(2)[facet_local]);
 
     // Get global index of opposite vertex
     const std::int32_t v0 = cell.entities(0)[facet_local];

@@ -154,7 +154,7 @@ PetscScalar fem::impl::assemble_exterior_facets(
   PetscScalar cell_value, value(0);
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // TODO: check ghosting sanity?
 
@@ -219,7 +219,7 @@ PetscScalar fem::impl::assemble_interior_facets(
   PetscScalar cell_value, value(0);
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // TODO: check ghosting sanity?
 

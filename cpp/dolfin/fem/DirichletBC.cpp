@@ -141,7 +141,7 @@ std::vector<std::int32_t> marked_facets(
   assert(mesh.topology().connectivity(dim, tdim));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(dim, tdim);
-  for (const auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  for (const auto& facet : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim - 1))
   {
     if (connectivity_facet_cell->size_global(facet.index()) == 1)
     {
@@ -178,9 +178,8 @@ std::vector<std::int32_t> marked_facets(
   EigenArrayXb boundary_marked = mark(x_boundary, true);
   assert(boundary_marked.rows() == x_boundary.rows());
 
-  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  for (auto& facet : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim - 1))
   {
-
     // By default, all vertices on this facet are marked
     bool all_vertices_marked = true;
 
@@ -324,7 +323,7 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
   for (std::size_t f = 0; f < facets.size(); ++f)
   {
     // Create facet and attached cell
-    const mesh::Facet facet(mesh, facets[f]);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facets[f]);
     assert(facet.num_entities(tdim) > 0);
     const std::size_t cell_index = facet.entities(tdim)[0];
     const mesh::Cell cell(mesh, cell_index);

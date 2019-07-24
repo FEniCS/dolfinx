@@ -187,15 +187,15 @@ protected:
 };
 
 /// A Facet is a MeshEntity of topological codimension 1.
-class Facet : public MeshEntity
-{
-public:
-  /// Constructor
-  Facet(const Mesh& mesh, std::int32_t index)
-      : MeshEntity(mesh, mesh.topology().dim() - 1, index)
-  {
-  }
-};
+// class Facet : public MeshEntity
+// {
+// public:
+//   /// Constructor
+//   Facet(const Mesh& mesh, std::int32_t index)
+//       : MeshEntity(mesh, mesh.topology().dim() - 1, index)
+//   {
+//   }
+// };
 
 /// A Cell is a MeshEntity of topological codimension 0.
 class Cell : public MeshEntity

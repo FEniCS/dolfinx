@@ -431,7 +431,7 @@ compute_sharing_markers(const DofMapStructure& dofmap,
     {
       // Is a ghost cell
       has_ghost_cells = true;
-      for (auto& f : mesh::EntityRange<mesh::Facet>(c))
+      for (auto& f : mesh::EntityRange<mesh::MeshEntity>(c, D - 1))
       {
         if (!(f.index() >= ghost_offset_f))
         {
@@ -453,7 +453,8 @@ compute_sharing_markers(const DofMapStructure& dofmap,
   // Mark nodes on inter-process boundary
   const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_f
       = mesh.topology().shared_entities(D - 1);
-  for (auto& f : mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::ALL))
+  for (auto& f :
+       mesh::MeshRange<mesh::MeshEntity>(mesh, D - 1, mesh::MeshRangeType::ALL))
   {
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems

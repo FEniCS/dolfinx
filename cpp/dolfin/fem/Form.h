@@ -37,7 +37,6 @@ class Mesh;
 template <typename T>
 class MeshFunction;
 class Cell;
-class Facet;
 } // namespace mesh
 
 namespace fem
