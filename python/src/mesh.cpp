@@ -257,16 +257,6 @@ void mesh(py::module& m)
       .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
 
   py::class_<
-      dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
-      std::shared_ptr<dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>>>(
-      m, "MeshEntities", "Range for iteration over entities of a Mesh")
-      .def(py::init<const dolfin::mesh::Mesh&, int>())
-      .def("__iter__",
-           [](const dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>& r) {
-             return py::make_iterator(r.begin(), r.end());
-           });
-
-  py::class_<
       dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
       std::shared_ptr<dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>>>(
       m, "EntityRange", "Range for iteration over entities of another entity")

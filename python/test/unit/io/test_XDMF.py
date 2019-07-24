@@ -9,7 +9,7 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Function, FunctionSpace, MeshEntities, MeshFunction,
+from dolfin import (MPI, Function, FunctionSpace, MeshFunction,
                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     has_petsc_complex, interpolate)
@@ -636,10 +636,12 @@ def test_append_and_load_mesh_value_collections(tempdir, encoding, data_type):
     mvcs = [mvc_v, mvc_e, mvc_f, mvc_c]
 
     filename = os.path.join(tempdir, "appended_mvcs.xdmf")
+
     with XDMFFile(mesh.mpi_comm(), filename) as xdmf:
         for mvc in mvcs:
-            for ent in MeshEntities(mesh, mvc.dim):
-                assert (mvc.set_value(ent.index(), dtype(ent.global_index())))
+            global_indices = mesh.topology.global_indices(mvc.dim)
+            for ent in range(mesh.num_entities(mvc.dim)):
+                assert (mvc.set_value(ent, global_indices[ent]))
             xdmf.write(mvc)
 
     mvc_v_in = MeshValueCollection(dtype_str, mesh, 0)
