@@ -194,27 +194,6 @@ public:
   Vertex(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 0, index) {}
 };
 
-/// An Edge is a MeshEntity of topological dimension 1.
-class Edge : public MeshEntity
-{
-public:
-  /// Create edge on given mesh
-  ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh.
-  /// @param    index (std::size_t)
-  ///         Index of the edge.
-  Edge(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 1, index) {}
-};
-
-/// A Face is a MeshEntity of topological dimension 2.
-class Face : public MeshEntity
-{
-public:
-  /// Create face on given mesh
-  Face(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 2, index) {}
-};
-
 /// A Facet is a MeshEntity of topological codimension 1.
 class Facet : public MeshEntity
 {
