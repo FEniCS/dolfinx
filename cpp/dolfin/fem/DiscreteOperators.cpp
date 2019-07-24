@@ -115,7 +115,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
   // Build discrete gradient operator/matrix
   const std::vector<std::int64_t>& global_indices
-      = mesh.topology().global_indices(1);
+      = mesh.topology().global_indices(0);
   for (auto& edge : mesh::MeshRange<mesh::Edge>(mesh))
   {
     PetscInt row;
@@ -129,7 +129,6 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
     cols[0] = local_to_global_map1[vertex_to_dof[v0.index()]];
     cols[1] = local_to_global_map1[vertex_to_dof[v1.index()]];
-    if (v1.global_index() < v0.global_index())
     if (global_indices[v1.index()] < global_indices[v0.index()])
     {
       values[0] = 1.0;

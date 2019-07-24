@@ -218,8 +218,8 @@ void mesh(py::module& m)
       .def("index",
            py::overload_cast<>(&dolfin::mesh::MeshEntity::index, py::const_),
            "Index")
-      .def("global_index", &dolfin::mesh::MeshEntity::global_index,
-           "Global index")
+     //  .def("global_index", &dolfin::mesh::MeshEntity::global_index,
+     //       "Global index")
       .def("num_entities", &dolfin::mesh::MeshEntity::num_entities,
            "Number of incident entities of given dimension")
       .def("entities",
