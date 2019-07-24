@@ -6,7 +6,6 @@
 
 #include "Partitioning.h"
 #include "DistributedMeshTools.h"
-#include "Facet.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"

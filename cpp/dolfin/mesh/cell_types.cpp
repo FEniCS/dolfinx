@@ -6,7 +6,6 @@
 
 #include "cell_types.h"
 #include "Cell.h"
-#include "Facet.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include <Eigen/Dense>

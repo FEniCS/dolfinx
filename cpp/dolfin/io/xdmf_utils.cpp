@@ -323,8 +323,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   return data_values;
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
-                                          int order)
+std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
 {
   // FIXME: Move to CellType?
   switch (cell_type)

@@ -10,8 +10,8 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 
 using namespace dolfin;

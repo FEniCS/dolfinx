@@ -6,7 +6,6 @@
 
 #include "DistributedMeshTools.h"
 #include "Cell.h"
-#include "Facet.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"

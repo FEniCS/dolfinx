@@ -4,7 +4,6 @@ set(HEADERS
   CoordinateDofs.h
   DistributedMeshTools.h
   dolfin_mesh.h
-  Facet.h
   Mesh.h
   MeshEntity.h
   MeshFunction.h

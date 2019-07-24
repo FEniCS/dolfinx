@@ -6,7 +6,6 @@
 
 #include "utils.h"
 #include "Cell.h"
-#include "Facet.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
