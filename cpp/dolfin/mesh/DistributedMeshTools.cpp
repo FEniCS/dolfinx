@@ -616,7 +616,7 @@ DistributedMeshTools::number_entities(
     {
       entity.second = local_index;
       entity.first = std::vector<std::size_t>();
-      for (auto& vertex : EntityRange<Vertex>(e))
+      for (auto& vertex : EntityRange<MeshEntity>(e, 0))
         entity.first.push_back(vertex.global_index());
       std::sort(entity.first.begin(), entity.first.end());
       entities.insert(entity);

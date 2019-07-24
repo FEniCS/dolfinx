@@ -186,14 +186,6 @@ protected:
   std::int32_t _local_index;
 };
 
-/// A Vertex is a MeshEntity of topological dimension 0.
-class Vertex : public MeshEntity
-{
-public:
-  /// Create vertex on given mesh
-  Vertex(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 0, index) {}
-};
-
 /// A Facet is a MeshEntity of topological codimension 1.
 class Facet : public MeshEntity
 {

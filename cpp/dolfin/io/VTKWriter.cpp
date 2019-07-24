@@ -126,7 +126,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
        << "ascii"
        << "\">";
-  for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
+  for (auto& v : mesh::MeshRange<mesh::MeshEntity>(mesh, 0))
   {
     Eigen::Vector3d p = mesh.geometry().x(v.index());
     file << p[0] << " " << p[1] << " " << p[2] << "  ";

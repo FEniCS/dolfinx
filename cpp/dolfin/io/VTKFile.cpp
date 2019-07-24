@@ -389,7 +389,7 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
   std::ostringstream ss;
   ss << std::scientific;
   ss << std::setprecision(16);
-  for (auto& vertex : mesh::MeshRange<mesh::Vertex>(mesh))
+  for (auto& vertex : mesh::MeshRange<mesh::MeshEntity>(mesh, 0))
   {
     if (rank == 1 && dim == 2)
     {

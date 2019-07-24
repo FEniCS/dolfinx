@@ -79,7 +79,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
     std::int32_t j = 0;
-    for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+    for (const auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
       indices[j++] = v.global_index();
 
     marked_edge_list = p_ref.marked_edge_list(cell);
@@ -87,7 +87,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     {
       // Copy over existing Cell to new topology
       std::vector<std::int64_t> cell_topology;
-      for (const auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+      for (const auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
         cell_topology.push_back(v.global_index());
       p_ref.new_cells(cell_topology);
       parent_cell.push_back(cell.index());
@@ -346,8 +346,8 @@ face_long_edge(const mesh::Mesh& mesh)
         // If edges are the same length, compare global index of
         // opposite vertex.  Only important so that tetrahedral faces
         // have a matching refinement pattern across processes.
-        const mesh::Vertex vmax(mesh, f.entities(0)[imax]);
-        const mesh::Vertex vi(mesh, f.entities(0)[i]);
+        const mesh::MeshEntity vmax(mesh, 0, f.entities(0)[imax]);
+        const mesh::MeshEntity vi(mesh, 0, f.entities(0)[i]);
         if (vi.global_index() > vmax.global_index())
           imax = i;
       }

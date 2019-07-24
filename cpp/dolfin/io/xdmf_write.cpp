@@ -110,7 +110,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
       cell_topology.push_back(cell.global_index());
     else
     {
-      for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+      for (auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
         cell_topology.push_back(v.global_index());
     }
 
@@ -216,7 +216,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     // Simple case when nothing is shared between processes
     if (cell_dim == 0)
     {
-      for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
+      for (auto& v : mesh::MeshRange<mesh::MeshEntity>(mesh, 0))
         topology_data.push_back(v.global_index());
     }
     else
@@ -238,7 +238,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     if (cell_dim == 0)
     {
       // Special case for mesh of points
-      for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
+      for (auto& v : mesh::MeshRange<mesh::MeshEntity>(mesh, 0))
       {
         if (non_local_entities.find(v.index()) == non_local_entities.end())
           topology_data.push_back(v.global_index());

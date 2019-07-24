@@ -96,8 +96,8 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
     if (row >= local_range[0][0] and row < local_range[0][1])
     {
       // Column indices (global indices)
-      const mesh::Vertex v0(mesh, edge.entities(0)[0]);
-      const mesh::Vertex v1(mesh, edge.entities(0)[1]);
+      const mesh::MeshEntity v0(mesh, 0, edge.entities(0)[0]);
+      const mesh::MeshEntity v1(mesh, 0, edge.entities(0)[1]);
       std::size_t col0 = local_to_global_map1[vertex_to_dof[v0.index()]];
       std::size_t col1 = local_to_global_map1[vertex_to_dof[v1.index()]];
       cols.push_back(col0);
@@ -122,8 +122,8 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
     row = local_to_global_map0[edge_to_dof[edge.index()]];
 
-    mesh::Vertex v0(mesh, edge.entities(0)[0]);
-    mesh::Vertex v1(mesh, edge.entities(0)[1]);
+    mesh::MeshEntity v0(mesh, 0, edge.entities(0)[0]);
+    mesh::MeshEntity v1(mesh, 0, edge.entities(0)[1]);
 
     cols[0] = local_to_global_map1[vertex_to_dof[v0.index()]];
     cols[1] = local_to_global_map1[vertex_to_dof[v1.index()]];
