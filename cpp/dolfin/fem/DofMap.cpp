@@ -13,8 +13,8 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;

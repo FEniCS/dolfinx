@@ -19,8 +19,8 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>

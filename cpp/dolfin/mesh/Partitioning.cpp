@@ -13,7 +13,6 @@
 #include "MeshValueCollection.h"
 #include "PartitionData.h"
 #include "Topology.h"
-#include "Vertex.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>

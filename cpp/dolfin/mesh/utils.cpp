@@ -10,7 +10,6 @@
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
-#include "Vertex.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>

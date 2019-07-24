@@ -15,9 +15,9 @@
 #include <dolfin/la/utils.h>
 #include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>

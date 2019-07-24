@@ -4,8 +4,6 @@ set(HEADERS
   CoordinateDofs.h
   DistributedMeshTools.h
   dolfin_mesh.h
-  Edge.h
-  Face.h
   Facet.h
   Mesh.h
   MeshEntity.h
@@ -19,7 +17,6 @@ set(HEADERS
   Ordering.h
   PartitionData.h
   TopologyComputation.h
-  Vertex.h
   cell_types.h
   utils.h
   PARENT_SCOPE)

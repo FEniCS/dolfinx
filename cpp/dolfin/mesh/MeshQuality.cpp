@@ -7,9 +7,9 @@
 #include "MeshQuality.h"
 #include "Cell.h"
 #include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshIterator.h"
-#include "Vertex.h"
 #include <dolfin/common/MPI.h>
 #include <math.h>
 #include <sstream>

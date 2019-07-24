@@ -11,11 +11,11 @@
 #include "DistributedMeshTools.h"
 #include "Facet.h"
 #include "Geometry.h"
+#include "MeshEntity.h"
 #include "MeshIterator.h"
 #include "Partitioning.h"
 #include "Topology.h"
 #include "TopologyComputation.h"
-#include "Vertex.h"
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>

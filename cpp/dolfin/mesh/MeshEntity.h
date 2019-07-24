@@ -185,5 +185,32 @@ protected:
   // Local index of entity within topological dimension
   std::int32_t _local_index;
 };
+
+class Vertex : public MeshEntity
+{
+public:
+  /// Create vertex on given mesh
+  Vertex(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 0, index) {}
+};
+
+class Edge : public MeshEntity
+{
+public:
+  /// Create edge on given mesh
+  ///
+  /// @param    mesh (_Mesh_)
+  ///         The mesh.
+  /// @param    index (std::size_t)
+  ///         Index of the edge.
+  Edge(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 1, index) {}
+};
+
+class Face : public MeshEntity
+{
+public:
+  /// Create face on given mesh
+  Face(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 2, index) {}
+};
+
 } // namespace mesh
 } // namespace dolfin
