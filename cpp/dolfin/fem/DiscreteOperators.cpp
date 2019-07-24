@@ -11,10 +11,9 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>
-#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <vector>
 
 using namespace dolfin;

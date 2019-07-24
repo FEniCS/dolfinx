@@ -12,12 +12,10 @@
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
 #include <map>
 #include <utility>

@@ -27,15 +27,13 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
-#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Partitioning.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
 #include <iomanip>
 #include <memory>

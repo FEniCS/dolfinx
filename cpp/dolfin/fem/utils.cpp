@@ -20,8 +20,8 @@
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <memory>
 #include <ufc.h>
 
@@ -643,8 +643,7 @@ fem::get_cmap_from_ufc_cmap(const ufc_coordinate_mapping& ufc_cmap)
   assert(it != ufc_to_cell.end());
 
   mesh::CellType cell_type = it->second;
-  assert(ufc_cmap.topological_dimension
-         == mesh::cell_dim(cell_type));
+  assert(ufc_cmap.topological_dimension == mesh::cell_dim(cell_type));
 
   return std::make_shared<fem::CoordinateMapping>(
       cell_type, ufc_cmap.topological_dimension, ufc_cmap.geometric_dimension,

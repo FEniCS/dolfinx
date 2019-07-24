@@ -7,8 +7,7 @@
 #include "FormIntegrals.h"
 #include <cstdlib>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 
@@ -146,8 +145,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
   std::vector<struct FormIntegrals::Integral>& cell_integrals
       = _integrals[static_cast<int>(FormIntegrals::Type::cell)];
 
-  // If there is a default integral, define it on all cells
-  // (excluding ghost cells)
+  // If there is a default integral, define it on all cells (excluding
+  // ghost cells)
   if (cell_integrals.size() > 0 and cell_integrals[0].id == -1)
   {
     const int num_regular_cells = mesh.topology().ghost_offset(tdim);

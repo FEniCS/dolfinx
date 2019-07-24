@@ -14,7 +14,9 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/CoordinateDofs.h>
+#include <dolfin/mesh/Geometry.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscdmshell.h>
 #include <petscmat.h>
