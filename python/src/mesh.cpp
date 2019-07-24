@@ -231,31 +231,6 @@ void mesh(py::module& m)
       .def("__str__",
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
 
-  // dolfin::mesh::Vertex
-  py::class_<dolfin::mesh::Vertex, std::shared_ptr<dolfin::mesh::Vertex>,
-             dolfin::mesh::MeshEntity>(m, "Vertex", "Vertex object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  // dolfin::mesh::Edge
-  py::class_<dolfin::mesh::Edge, std::shared_ptr<dolfin::mesh::Edge>,
-             dolfin::mesh::MeshEntity>(m, "Edge", "Edge object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  // dolfin::mesh::Face
-  py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,
-             dolfin::mesh::MeshEntity>(m, "Face", "Face object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  // dolfin::mesh::Facet
-  py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
-             dolfin::mesh::MeshEntity>(m, "Facet", "Facet object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  // dolfin::mesh::Cell
-  py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
-             dolfin::mesh::MeshEntity>(m, "Cell", "Cell object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
   py::class_<
       dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
       std::shared_ptr<dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>>>(

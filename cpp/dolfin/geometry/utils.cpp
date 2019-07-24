@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 
 using namespace dolfin;
 
@@ -30,23 +30,23 @@ bool point_outside_of_plane(const Eigen::Vector3d& point,
 } // namespace
 
 //-----------------------------------------------------------------------------
-double geometry::squared_distance(const mesh::Cell& cell,
+double geometry::squared_distance(const mesh::MeshEntity& entity,
                                   const Eigen::Vector3d& point)
 {
-  const mesh::CellType type = cell.mesh().cell_type;
-  const mesh::Geometry& geometry = cell.mesh().geometry();
+  const mesh::CellType type = entity.mesh().cell_type;
+  const mesh::Geometry& geometry = entity.mesh().geometry();
   switch (type)
   {
   case (mesh::CellType::interval):
   {
-    const std::int32_t* vertices = cell.entities(0);
+    const std::int32_t* vertices = entity.entities(0);
     const Eigen::Vector3d a = geometry.x(vertices[0]);
     const Eigen::Vector3d b = geometry.x(vertices[1]);
     return geometry::squared_distance_interval(point, a, b);
   }
   case (mesh::CellType::triangle):
   {
-    const std::int32_t* vertices = cell.entities(0);
+    const std::int32_t* vertices = entity.entities(0);
     const Eigen::Vector3d a = geometry.x(vertices[0]);
     const Eigen::Vector3d b = geometry.x(vertices[1]);
     const Eigen::Vector3d c = geometry.x(vertices[2]);
@@ -61,7 +61,7 @@ double geometry::squared_distance(const mesh::Cell& cell,
     // only return the distance to that point.
 
     // Get the vertices as points
-    const std::int32_t* vertices = cell.entities(0);
+    const std::int32_t* vertices = entity.entities(0);
     const Eigen::Vector3d a = geometry.x(vertices[0]);
     const Eigen::Vector3d b = geometry.x(vertices[1]);
     const Eigen::Vector3d c = geometry.x(vertices[2]);

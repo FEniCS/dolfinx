@@ -13,7 +13,7 @@ import pytest
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
 
-from dolfin import (MPI, Cell, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
+from dolfin import (MPI, MeshEntity, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, VectorFunctionSpace, cpp, fem)
 from dolfin.cpp.mesh import CellType
 from ufl import FiniteElement, MixedElement, VectorElement
@@ -70,7 +70,7 @@ def test_tabulate_all_coordinates(mesh_factory):
 
     # Check that all coordinates are within the cell it should be
     for i in range(mesh.num_cells()):
-        cell = Cell(mesh, i)
+        cell = MeshEntity(mesh, mesh.topology.dim, i)
         dofs_V = V_dofmap.cell_dofs(i)
         for di in dofs_V:
             if di >= local_size_V:
@@ -149,7 +149,7 @@ def test_tabulate_coord_periodic(mesh_factory):
     coord3 = np.zeros((sdim, 2), dtype="d")
 
     for i in range(mesh.num_cells()):
-        cell = Cell(mesh, i)
+        cell = MeshEntity(mesh, mesh.topology.dim, i)
         coord0 = V.element.tabulate_dof_coordinates(cell)
         coord1 = L0.element.tabulate_dof_coordinates(cell)
         coord2 = L01.element.tabulate_dof_coordinates(cell)

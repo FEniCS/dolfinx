@@ -9,8 +9,8 @@ import os
 import numpy
 from petsc4py import PETSc
 
-from dolfin import (MPI, Cell, Function, FunctionSpace, MeshFunction, MeshValueCollection,
-                    UnitCubeMesh, UnitSquareMesh, cpp)
+from dolfin import (MPI, Function, FunctionSpace, MeshEntity, MeshFunction,
+                    MeshValueCollection, UnitCubeMesh, UnitSquareMesh, cpp)
 from dolfin.io import HDF5File
 from dolfin_utils.test.fixtures import tempdir
 from dolfin_utils.test.skips import xfail_if_complex
@@ -104,9 +104,6 @@ def test_save_and_read_mesh_value_collection(tempdir):
     filename = os.path.join(tempdir, "mesh_value_collection.h5")
     mesh = UnitCubeMesh(MPI.comm_world, ndiv, ndiv, ndiv)
 
-    def point2list(p):
-        return [p[0], p[1], p[2]]
-
     # write to file
     with HDF5File(mesh.mpi_comm(), filename, 'w') as f:
         for dim in range(mesh.topology.dim):
@@ -126,7 +123,7 @@ def test_save_and_read_mesh_value_collection(tempdir):
             mp = cpp.mesh.midpoints(mesh, dim, range(mesh.num_entities(dim)))
             # check the values
             for (cell, lidx), val in mvc.values().items():
-                eidx = Cell(mesh, cell).entities(dim)[lidx]
+                eidx = MeshEntity(mesh, mesh.topology.dim, cell).entities(dim)[lidx]
                 mid = mp[eidx]
                 assert val == int(ndiv * mid.sum()) + 1
 
