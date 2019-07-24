@@ -25,16 +25,15 @@
 #include <dolfin/function/FunctionSpace.h>
 // #include <dolfin/la/PETScVector.h>
 // #include <dolfin/la/utils.h>
-#include <dolfin/mesh/Cell.h>
 // #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
-// #include <dolfin/mesh/Edge.h>
 // #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/cell_types.h>
+#include <dolfin/mesh/Geometry.h>
 // #include <dolfin/mesh/MeshValueCollection.h>
 // #include <dolfin/mesh/Partitioning.h>
-// #include <dolfin/mesh/Vertex.h>
 // #include <iomanip>
 // #include <memory>
 // #include <petscvec.h>
@@ -325,8 +324,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   return data_values;
 }
 //-----------------------------------------------------------------------------
-std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type,
-                                          int order)
+std::string xdmf_utils::vtk_cell_type_str(mesh::CellType cell_type, int order)
 {
   // FIXME: Move to CellType?
   switch (cell_type)

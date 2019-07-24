@@ -7,15 +7,12 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <string>
-#include <vector>
 
 namespace dolfin
 {
 namespace mesh
 {
 class Cell;
-class Facet;
 class Mesh;
 class MeshEntity;
 
@@ -46,7 +43,7 @@ Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
 cell_normals(const Mesh& mesh, int dim);
 
 /// Compute of given facet with respect to the cell
-Eigen::Vector3d normal(const Cell& cell, int facet);
+Eigen::Vector3d normal(const Cell& cell, int facet_local);
 
 /// Compute midpoints or mesh entities of a given dimension
 Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints(

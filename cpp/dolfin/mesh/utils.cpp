@@ -5,12 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include "Cell.h"
-#include "Facet.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
-#include "Vertex.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -509,7 +506,7 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   return Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>();
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
+Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet_local)
 {
   const mesh::Geometry& geometry = cell.mesh().geometry();
   const mesh::CellType type = cell.mesh().cell_type;
@@ -520,7 +517,7 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
     const std::int32_t* vertices = cell.entities(0);
     Eigen::Vector3d n = geometry.x(vertices[0]) - geometry.x(vertices[1]);
     n.normalize();
-    if (facet == 1)
+    if (facet_local == 1)
       return -1.0 * n;
     else
       return n;
@@ -534,14 +531,14 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
       throw std::runtime_error("Illegal geometric dimension");
 
     cell.mesh().create_connectivity(2, 1);
-    mesh::Facet f(cell.mesh(), cell.entities(1)[facet]);
+    mesh::Facet f(cell.mesh(), cell.entities(1)[facet_local]);
 
     // Get global index of opposite vertex
-    const int v0 = cell.entities(0)[facet];
+    const std::int32_t v0 = cell.entities(0)[facet_local];
 
     // Get global index of vertices on the facet
-    const int v1 = f.entities(0)[0];
-    const int v2 = f.entities(0)[1];
+    const std::int32_t v1 = f.entities(0)[0];
+    const std::int32_t v2 = f.entities(0)[1];
 
     // Get the coordinates of the three vertices
     const Eigen::Vector3d p0 = geometry.x(v0);
@@ -559,21 +556,21 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
   }
   case (mesh::CellType::quadrilateral):
   {
+    if (cell.mesh().geometry().dim() != 2)
+      throw std::runtime_error("Illegal geometric dimension");
+
     // Make sure we have facets
     cell.mesh().create_connectivity(2, 1);
 
     // Create facet from the mesh and local facet number
-    Facet f(cell.mesh(), cell.entities(1)[facet]);
-
-    if (cell.mesh().geometry().dim() != 2)
-      throw std::runtime_error("Illegal geometric dimension");
+    Facet f(cell.mesh(), cell.entities(1)[facet_local]);
 
     // Get global index of opposite vertex
-    const std::size_t v0 = cell.entities(0)[facet];
+    const std::int32_t v0 = cell.entities(0)[facet_local];
 
     // Get global index of vertices on the facet
-    const std::size_t v1 = f.entities(0)[0];
-    const std::size_t v2 = f.entities(0)[1];
+    const std::int32_t v1 = f.entities(0)[0];
+    const std::int32_t v2 = f.entities(0)[1];
 
     // Get the coordinates of the three vertices
     const Eigen::Vector3d p0 = geometry.x(v0);
@@ -594,35 +591,30 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
     cell.mesh().create_connectivity(3, 2);
 
     // Create facet from the mesh and local facet number
-    Facet f(cell.mesh(), cell.entities(2)[facet]);
+    Facet f(cell.mesh(), cell.entities(2)[facet_local]);
 
     // Get global index of opposite vertex
-    const std::size_t v0 = cell.entities(0)[facet];
+    const std::int32_t v0 = cell.entities(0)[facet_local];
 
     // Get global index of vertices on the facet
-    std::size_t v1 = f.entities(0)[0];
-    std::size_t v2 = f.entities(0)[1];
-    std::size_t v3 = f.entities(0)[2];
+    const std::int32_t v1 = f.entities(0)[0];
+    const std::int32_t v2 = f.entities(0)[1];
+    const std::int32_t v3 = f.entities(0)[2];
 
     // Get the coordinates of the four vertices
-    const Eigen::Vector3d P0 = geometry.x(v0);
-    const Eigen::Vector3d P1 = geometry.x(v1);
-    const Eigen::Vector3d P2 = geometry.x(v2);
-    const Eigen::Vector3d P3 = geometry.x(v3);
-
-    // Create vectors
-    Eigen::Vector3d V0 = P0 - P1;
-    Eigen::Vector3d V1 = P2 - P1;
-    Eigen::Vector3d V2 = P3 - P1;
+    const Eigen::Vector3d p0 = geometry.x(v0);
+    const Eigen::Vector3d p1 = geometry.x(v1);
+    const Eigen::Vector3d p2 = geometry.x(v2);
+    const Eigen::Vector3d p3 = geometry.x(v3);
 
     // Compute normal vector
-    Eigen::Vector3d n = V1.cross(V2);
+    Eigen::Vector3d n = (p2 - p1).cross(p3 - p1);
 
     // Normalize
     n.normalize();
 
     // Flip direction of normal so it points outward
-    if (n.dot(V0) > 0)
+    if (n.dot(p0 - p1) > 0)
       n *= -1.0;
 
     return n;

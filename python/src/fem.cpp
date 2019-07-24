@@ -24,6 +24,7 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>

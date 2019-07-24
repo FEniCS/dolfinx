@@ -5,7 +5,7 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 

@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "Cell.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"

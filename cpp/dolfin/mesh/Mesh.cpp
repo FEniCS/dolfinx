@@ -5,17 +5,15 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Mesh.h"
-#include "Cell.h"
 #include "Connectivity.h"
 #include "CoordinateDofs.h"
 #include "DistributedMeshTools.h"
-#include "Facet.h"
 #include "Geometry.h"
+#include "MeshEntity.h"
 #include "MeshIterator.h"
 #include "Partitioning.h"
 #include "Topology.h"
 #include "TopologyComputation.h"
-#include "Vertex.h"
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/Timer.h>

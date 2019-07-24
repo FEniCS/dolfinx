@@ -7,12 +7,8 @@
 #include <cfloat>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/CoordinateDofs.h>
-#include <dolfin/mesh/Edge.h>
-#include <dolfin/mesh/Face.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -23,7 +19,6 @@
 #include <dolfin/mesh/Ordering.h>
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Topology.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
 #include <dolfin/mesh/utils.h>
 #include <memory>

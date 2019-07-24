@@ -7,12 +7,10 @@
 #include "PlazaRefinementND.h"
 #include "ParallelRefinement.h"
 #include <dolfin/common/Timer.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Edge.h>
-#include <dolfin/mesh/Face.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <limits>
 #include <map>
 #include <vector>
