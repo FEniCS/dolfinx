@@ -12,7 +12,6 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 

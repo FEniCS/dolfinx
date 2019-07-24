@@ -27,7 +27,6 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Mesh.h>

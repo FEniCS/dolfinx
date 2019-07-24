@@ -18,7 +18,9 @@
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Topology.h>

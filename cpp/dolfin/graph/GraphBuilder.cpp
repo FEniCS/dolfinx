@@ -13,7 +13,6 @@
 #include <dolfin/common/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/DofMap.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/cell_types.h>

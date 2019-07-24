@@ -226,5 +226,21 @@ public:
   }
 };
 
+/// A Cell is a MeshEntity of topological codimension 0.
+class Cell : public MeshEntity
+{
+public:
+  /// Create cell on given mesh with given index
+  ///
+  /// @param    mesh
+  ///         The mesh.
+  /// @param    index
+  ///         The index.
+  Cell(const Mesh& mesh, std::int32_t index)
+      : MeshEntity(mesh, mesh.topology().dim(), index)
+  {
+  }
+};
+
 } // namespace mesh
 } // namespace dolfin

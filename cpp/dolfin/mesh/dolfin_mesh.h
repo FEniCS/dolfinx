@@ -11,7 +11,6 @@ namespace dolfin
 
 // DOLFIN mesh interface
 
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>

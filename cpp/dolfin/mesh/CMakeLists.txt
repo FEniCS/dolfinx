@@ -1,5 +1,4 @@
 set(HEADERS
-  Cell.h
   Connectivity.h
   CoordinateDofs.h
   DistributedMeshTools.h

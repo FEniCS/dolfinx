@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <functional>
 #include <map>
 #include <memory>

@@ -7,7 +7,6 @@
 #include "refine.h"
 #include "PlazaRefinementND.h"
 #include <dolfin/common/log.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>

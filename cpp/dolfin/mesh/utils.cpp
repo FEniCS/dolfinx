@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include "Cell.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
