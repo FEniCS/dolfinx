@@ -248,7 +248,7 @@ FunctionSpace::sub(const std::vector<int>& component) const
   }
 
   // Extract sub-element
-  std::shared_ptr<fem::FiniteElement> element
+  std::shared_ptr<const fem::FiniteElement> element
       = this->element->extract_sub_element(component);
 
   // Extract sub dofmap
