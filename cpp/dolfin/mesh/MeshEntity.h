@@ -90,19 +90,19 @@ public:
   ///         The index.
   std::int32_t index() const { return _local_index; }
 
-  /// Return global index of mesh entity
-  ///
-  /// @return     std::size_t
-  ///         The global index. Set to -1  if global index
-  ///         has not been computed
-  std::int64_t global_index() const
-  {
-    const std::vector<std::int64_t>& global_indices
-        = _mesh->topology().global_indices(_dim);
-    if (global_indices.empty())
-      return -1;
-    return global_indices[_local_index];
-  }
+  // /// Return global index of mesh entity
+  // ///
+  // /// @return     std::size_t
+  // ///         The global index. Set to -1  if global index
+  // ///         has not been computed
+  // std::int64_t global_index() const
+  // {
+  //   const std::vector<std::int64_t>& global_indices
+  //       = _mesh->topology().global_indices(_dim);
+  //   if (global_indices.empty())
+  //     return -1;
+  //   return global_indices[_local_index];
+  // }
 
   /// Return local number of incident mesh entities of given
   /// topological dimension
