@@ -236,16 +236,6 @@ void mesh(py::module& m)
              dolfin::mesh::MeshEntity>(m, "Vertex", "Vertex object")
       .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
 
-  // dolfin::mesh::Edge
-  py::class_<dolfin::mesh::Edge, std::shared_ptr<dolfin::mesh::Edge>,
-             dolfin::mesh::MeshEntity>(m, "Edge", "Edge object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  // dolfin::mesh::Face
-  py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,
-             dolfin::mesh::MeshEntity>(m, "Face", "Face object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
   // dolfin::mesh::Facet
   py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
              dolfin::mesh::MeshEntity>(m, "Facet", "Facet object")
