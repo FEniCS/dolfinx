@@ -672,7 +672,9 @@ void BoundingBoxTree::compute_bbox_of_entity(double* b,
 
   // Get mesh entity data
   const mesh::Geometry& geometry = entity.mesh().geometry();
-  const int num_vertices = entity.num_entities(0);
+  const mesh::CellType entity_type
+      = mesh::cell_entity_type(entity.mesh().cell_type, entity.dim());
+  const int num_vertices = mesh::cell_num_entities(entity_type, 0);
   const std::int32_t* vertices = entity.entities(0);
   assert(num_vertices >= 2);
 

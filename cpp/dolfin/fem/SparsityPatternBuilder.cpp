@@ -55,7 +55,7 @@ void SparsityPatternBuilder::interior_facets(
     // FIXME: sort out ghosting
 
     // Get cells incident with facet
-    assert(facet.num_entities(D) == 2);
+    assert(connectivity_facet_cell->size(facet.index()) == 2);
     const mesh::Cell cell0(mesh, facet.entities(D)[0]);
     const mesh::Cell cell1(mesh, facet.entities(D)[1]);
 
@@ -94,7 +94,7 @@ void SparsityPatternBuilder::exterior_facets(
 
     // FIXME: sort out ghosting
 
-    assert(facet.num_entities(D) == 1);
+    assert(connectivity_facet_cell->size(facet.index()) == 1);
     mesh::Cell cell(mesh, facet.entities(D)[0]);
     pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
                          dofmaps[1]->cell_dofs(cell.index()));

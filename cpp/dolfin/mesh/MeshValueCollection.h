@@ -191,14 +191,14 @@ MeshValueCollection<T>::MeshValueCollection(
     : _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
 {
   assert(_mesh);
-  const std::size_t D = _mesh->topology().dim();
+  const int D = _mesh->topology().dim();
 
   // Prefetch values of mesh function
   Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
       = mesh_function.values();
 
   // Handle cells as a special case
-  if ((int)D == _dim)
+  if (D == _dim)
   {
     for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
          ++cell_index)
@@ -217,7 +217,7 @@ MeshValueCollection<T>::MeshValueCollection(
       // Find the cell
       assert(connectivity.size(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (std::size_t i = 0; i < entity.num_entities(D); ++i)
+      for (int i = 0; i < connectivity.size(entity_index); ++i)
       {
         // Create cell
         const mesh::Cell cell(*_mesh,
@@ -243,7 +243,7 @@ operator=(const MeshFunction<T>& mesh_function)
   _dim = mesh_function.dim();
 
   assert(_mesh);
-  const std::size_t D = _mesh->topology().dim();
+  const int D = _mesh->topology().dim();
 
   // FIXME: Use iterators
 
@@ -252,7 +252,7 @@ operator=(const MeshFunction<T>& mesh_function)
       = mesh_function.values();
 
   // Handle cells as a special case
-  if ((int)D == _dim)
+  if (D == _dim)
   {
     for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
          ++cell_index)
@@ -272,7 +272,7 @@ operator=(const MeshFunction<T>& mesh_function)
       // Find the cell
       assert(connectivity.size(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (std::size_t i = 0; i < entity.num_entities(D); ++i)
+      for (std::size_t i = 0; i < connectivity.size(entity_index); ++i)
       {
         // Create cell
         const mesh::Cell cell(*_mesh,

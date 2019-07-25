@@ -141,12 +141,14 @@ std::vector<std::int32_t> marked_facets(
   assert(mesh.topology().connectivity(dim, tdim));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(dim, tdim);
+  const int num_facet_vertices = mesh::cell_num_entities(
+      mesh::cell_entity_type(mesh.cell_type, tdim - 1), 0);
   for (const auto& facet : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim - 1))
   {
     if (connectivity_facet_cell->size_global(facet.index()) == 1)
     {
       const std::int32_t* v = facet.entities(0);
-      for (int i = 0; i != facet.num_entities(0); ++i)
+      for (int i = 0; i < num_facet_vertices; ++i)
       {
         if (boundary_vertex[v[i]] == -1)
         {
@@ -324,7 +326,6 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
   {
     // Create facet and attached cell
     const mesh::MeshEntity facet(mesh, tdim - 1, facets[f]);
-    assert(facet.num_entities(tdim) > 0);
     const std::size_t cell_index = facet.entities(tdim)[0];
     const mesh::Cell cell(mesh, cell_index);
 

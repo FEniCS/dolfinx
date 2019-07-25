@@ -331,8 +331,15 @@ public:
   const MeshEntityIterator<T> end() const
   {
     auto it = MeshEntityIterator<T>(_entity, 0);
-    std::size_t n
-        = (_entity._dim == it->_dim) ? 1 : _entity.num_entities(it->_dim);
+    // const int n
+    //     = (_entity._dim == it->_dim) ? 1 :
+    //     _entity.num_entities(it->_dim);
+    const int n = (_entity._dim == it->_dim)
+                      ? 1
+                      : _entity.mesh()
+                            .topology()
+                            .connectivity(_entity._dim, it->_dim)
+                            ->size(_entity.index());
     it._connections += n;
     return it;
   }
@@ -366,7 +373,11 @@ public:
   /// MeshEntityIterator of MeshEntity pointing to end of range (const)
   const MeshEntityIterator<MeshEntity> end() const
   {
-    std::size_t n = (_entity._dim == _dim) ? 1 : _entity.num_entities(_dim);
+    const int n = (_entity._dim == _dim) ? 1
+                                         : _entity.mesh()
+                                               .topology()
+                                               .connectivity(_entity._dim, _dim)
+                                               ->size(_entity.index());
     return MeshEntityIterator<MeshEntity>(_entity, _dim, n);
   }
 
