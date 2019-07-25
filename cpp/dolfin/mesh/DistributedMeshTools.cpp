@@ -1129,8 +1129,10 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
   if (mesh.topology().ghost_offset(D) == mesh.topology().size(D))
   {
     // Copy local values
+    assert(mesh.topology().connectivity(D - 1, D));
+    auto connectivity = mesh.topology().connectivity(D - 1, D);
     for (auto& f : mesh::MeshRange<mesh::Facet>(mesh))
-      num_global_neighbors[f.index()] = f.num_entities(D);
+      num_global_neighbors[f.index()] = connectivity->size(f.index());
 
     // All shared facets must have two cells, if no ghost cells
     for (auto f_it = shared_facets.begin(); f_it != shared_facets.end(); ++f_it)
@@ -1153,7 +1155,9 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     const std::int32_t ghost_offset_f = mesh.topology().ghost_offset(D - 1);
     const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_f
         = mesh.topology().shared_entities(D - 1);
-    const auto& global_facets = mesh.topology().global_indices(D-1);
+    const auto& global_facets = mesh.topology().global_indices(D - 1);
+    assert(mesh.topology().connectivity(D - 1, D));
+    auto connectivity = mesh.topology().connectivity(D - 1, D);
     for (auto& f :
          mesh::MeshRange<MeshEntity>(mesh, D - 1, mesh::MeshRangeType::ALL))
     {
@@ -1162,7 +1166,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
         global_to_local_facet.insert({global_facets[f.index()], f.index()});
 
       // Copy local values
-      const int n_cells = f.num_entities(D);
+      const int n_cells = connectivity->size(f.index());
       num_global_neighbors[f.index()] = n_cells;
 
       if ((f.index() >= ghost_offset_f) and n_cells == 1)
@@ -1180,14 +1184,15 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Convert received global facet index into number of attached cells
     // and return to sender
     std::vector<std::vector<std::size_t>> send_response(mpi_size);
-    for (std::int32_t p = 0; p != mpi_size; ++p)
+    for (std::int32_t p = 0; p < mpi_size; ++p)
     {
       for (auto r = recv_facet[p].begin(); r != recv_facet[p].end(); ++r)
       {
         auto map_it = global_to_local_facet.find(*r);
         assert(map_it != global_to_local_facet.end());
-        const mesh::Facet local_facet(mesh, map_it->second);
-        const std::size_t n_cells = local_facet.num_entities(D);
+        // const mesh::Facet local_facet(mesh, map_it->second);
+        // const int n_cells = local_facet.num_entities(D);
+        const int n_cells = connectivity->size(map_it->second);
         send_response[p].push_back(n_cells);
       }
     }

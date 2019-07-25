@@ -90,20 +90,6 @@ public:
   ///         The index.
   std::int32_t index() const { return _local_index; }
 
-  // /// Return global index of mesh entity
-  // ///
-  // /// @return     std::size_t
-  // ///         The global index. Set to -1  if global index
-  // ///         has not been computed
-  // std::int64_t global_index() const
-  // {
-  //   const std::vector<std::int64_t>& global_indices
-  //       = _mesh->topology().global_indices(_dim);
-  //   if (global_indices.empty())
-  //     return -1;
-  //   return global_indices[_local_index];
-  // }
-
   /// Return local number of incident mesh entities of given
   /// topological dimension
   ///
@@ -113,16 +99,15 @@ public:
   /// @return     std::size_t
   /// The number of local incident MeshEntity objects of given
   /// dimension.
-  int num_entities(int dim) const
-  {
-    if (dim == _dim)
-      return 1;
-    else
-    {
-      assert(_mesh->topology().connectivity(_dim, dim));
-      return _mesh->topology().connectivity(_dim, dim)->size(_local_index);
-    }
-  }
+  // int num_entities(int dim) const
+  // {
+  //     return 1;
+  //   else
+  //   {
+  //     assert(_mesh->topology().connectivity(_dim, dim));
+  //     return _mesh->topology().connectivity(_dim, dim)->size(_local_index);
+  //   }
+  // }
 
   /// Return array of indices for incident mesh entities of given
   /// topological dimension

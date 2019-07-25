@@ -189,10 +189,12 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
           = mesh.topology().cell_owner();
       const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
 
+      assert(mesh.topology().connectivity(tdim - 1, tdim));
+      auto connectivity = mesh.topology().connectivity(tdim - 1, tdim);
       for (const mesh::Facet& facet :
            mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::ALL))
       {
-        if (facet.num_entities(tdim) == 2)
+        if (connectivity->size(facet.index()))
         {
           const std::int32_t* c = facet.entities(tdim);
           const int owner0

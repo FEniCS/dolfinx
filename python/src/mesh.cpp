@@ -218,12 +218,25 @@ void mesh(py::module& m)
       .def("index",
            py::overload_cast<>(&dolfin::mesh::MeshEntity::index, py::const_),
            "Index")
-      .def("num_entities", &dolfin::mesh::MeshEntity::num_entities,
-           "Number of incident entities of given dimension")
+      //  .def("num_entities", &dolfin::mesh::MeshEntity::num_entities,
+      //       "Number of incident entities of given dimension")
       .def("entities",
            [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
-             return Eigen::Map<const dolfin::EigenArrayXi32>(
-                 self.entities(dim), self.num_entities(dim));
+             if (self.dim() == dim)
+             {
+               return Eigen::Map<const dolfin::EigenArrayXi32>(
+                   self.entities(dim), 1);
+             }
+             else
+             {
+               assert(self.mesh.topology().connectivity(self.dim(), dim));
+               const int num_entities = self.mesh()
+                                            .topology()
+                                            .connectivity(self.dim(), dim)
+                                            ->size(self.index());
+               return Eigen::Map<const dolfin::EigenArrayXi32>(
+                   self.entities(dim), num_entities);
+             }
            },
            py::return_value_policy::reference_internal)
       .def("__str__",
