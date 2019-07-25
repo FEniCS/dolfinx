@@ -74,13 +74,15 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
   std::vector<std::size_t> marked_edge_list;
   std::vector<std::int32_t> simplex_set;
 
+  const std::vector<std::int64_t>& global_indices
+      = mesh.topology().global_indices(0);
   for (const auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
     std::int32_t j = 0;
     for (const auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
-      indices[j++] = v.global_index();
+      indices[j++] = global_indices[v.index()];
 
     marked_edge_list = p_ref.marked_edge_list(cell);
     if (marked_edge_list.size() == 0)
@@ -88,7 +90,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
       // Copy over existing Cell to new topology
       std::vector<std::int64_t> cell_topology;
       for (const auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
-        cell_topology.push_back(v.global_index());
+        cell_topology.push_back(global_indices[v.index()]);
       p_ref.new_cells(cell_topology);
       parent_cell.push_back(cell.index());
     }
@@ -322,6 +324,8 @@ face_long_edge(const mesh::Mesh& mesh)
   }
 
   // Get longest edge of each face
+  const std::vector<std::int64_t>& global_indices
+      = mesh.topology().global_indices(0);
   for (const auto& f : mesh::MeshRange<mesh::MeshEntity>(mesh, 2))
   {
     const std::int32_t* face_edges = f.entities(1);
@@ -348,7 +352,7 @@ face_long_edge(const mesh::Mesh& mesh)
         // have a matching refinement pattern across processes.
         const mesh::MeshEntity vmax(mesh, 0, f.entities(0)[imax]);
         const mesh::MeshEntity vi(mesh, 0, f.entities(0)[i]);
-        if (vi.global_index() > vmax.global_index())
+        if (global_indices[vi.index()] > global_indices[vmax.index()])
           imax = i;
       }
     }

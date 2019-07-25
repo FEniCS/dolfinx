@@ -609,6 +609,7 @@ DistributedMeshTools::number_entities(
   // Exclude any slave entities.
   std::map<std::vector<std::size_t>, std::int32_t> entities;
   std::pair<std::vector<std::size_t>, std::int32_t> entity;
+  const auto& global_vertices = mesh.topology().global_indices(0);
   for (auto& e : mesh::MeshRange<MeshEntity>(mesh, d, mesh::MeshRangeType::ALL))
   {
     const std::size_t local_index = e.index();
@@ -617,7 +618,7 @@ DistributedMeshTools::number_entities(
       entity.second = local_index;
       entity.first = std::vector<std::size_t>();
       for (auto& vertex : EntityRange<MeshEntity>(e, 0))
-        entity.first.push_back(vertex.global_index());
+        entity.first.push_back(global_vertices[vertex.index()]);
       std::sort(entity.first.begin(), entity.first.end());
       entities.insert(entity);
     }
@@ -1152,12 +1153,13 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     const std::int32_t ghost_offset_f = mesh.topology().ghost_offset(D - 1);
     const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_f
         = mesh.topology().shared_entities(D - 1);
+    const auto& global_facets = mesh.topology().global_indices(D-1);
     for (auto& f :
          mesh::MeshRange<MeshEntity>(mesh, D - 1, mesh::MeshRangeType::ALL))
     {
       // Insert shared facets into mapping
       if (sharing_map_f.find(f.index()) != sharing_map_f.end())
-        global_to_local_facet.insert({f.global_index(), f.index()});
+        global_to_local_facet.insert({global_facets[f.index()], f.index()});
 
       // Copy local values
       const int n_cells = f.num_entities(D);
@@ -1169,7 +1171,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
         // cell
         assert(f.entities(D)[0] >= ghost_offset_c);
         const int owner = cell_owners[f.entities(D)[0] - ghost_offset_c];
-        send_facet[owner].push_back(f.global_index());
+        send_facet[owner].push_back(global_facets[f.index()]);
       }
     }
 
