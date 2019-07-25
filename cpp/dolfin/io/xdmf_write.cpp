@@ -224,10 +224,12 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     }
     else
     {
+      const int num_vertices = mesh::cell_num_entities(
+          mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
       for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
       {
         const std::int32_t* entities = c.entities(0);
-        for (int i = 0; i < c.num_entities(0); ++i)
+        for (int i = 0; i < num_vertices; ++i)
           topology_data.push_back(global_vertices[entities[perm[i]]]);
       }
     }
@@ -250,12 +252,14 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     else
     {
       // Local-to-global map for point indices
+      const int num_vertices = mesh::cell_num_entities(
+          mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
       for (auto& e : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
       {
         // If not excluded, add to topology
         if (non_local_entities.find(e.index()) == non_local_entities.end())
         {
-          for (int i = 0; i != e.num_entities(0); ++i)
+          for (int i = 0; i < num_vertices; ++i)
           {
             const std::int32_t local_idx = e.entities(0)[perm[i]];
             topology_data.push_back(global_vertices[local_idx]);

@@ -303,12 +303,16 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       }
       else
       {
+        const int num_vertices = mesh::cell_num_entities(
+            mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
         for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
-          for (int i = 0; i != c.num_entities(0); ++i)
+        {
+          for (int i = 0; i < num_vertices; ++i)
           {
-            const unsigned int local_idx = c.entities(0)[perm[i]];
+            const int local_idx = c.entities(0)[perm[i]];
             topological_data.push_back(global_vertices[local_idx]);
           }
+        }
       }
     }
     else
@@ -371,12 +375,14 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       }
       else
       {
+        const int num_vertices = mesh::cell_num_entities(
+            mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
         for (auto& ent : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
         {
           // If not excluded, add to topology
           if (non_local_entities.find(ent.index()) == non_local_entities.end())
           {
-            for (int i = 0; i < ent.num_entities(0); ++i)
+            for (int i = 0; i < num_vertices; ++i)
             {
               const int local_idx = ent.entities(0)[perm[i]];
               topological_data.push_back(global_vertices[local_idx]);
