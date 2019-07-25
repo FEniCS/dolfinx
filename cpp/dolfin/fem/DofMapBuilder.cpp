@@ -90,10 +90,13 @@ void get_cell_entities(
       }
     }
   }
+
   // Handle cell index separately because cell.entities(D) doesn't work.
   if (needs_mesh_entities[D])
   {
-    entity_indices_global[D][0] = cell.global_index();
+    const std::vector<std::int64_t>& global_indices
+        = topology.global_indices(D);
+    entity_indices_global[D][0] = global_indices[cell.index()];
     entity_indices_local[D][0] = cell.index();
   }
 }

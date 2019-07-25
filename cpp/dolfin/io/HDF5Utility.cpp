@@ -230,8 +230,8 @@ void HDF5Utility::cell_owners_in_range(
   // MPI communicator
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
-  const std::size_t n_global_cells
-      = mesh.num_entities_global(mesh.topology().dim());
+  const int tdim = mesh.topology().dim();
+  const std::size_t n_global_cells = mesh.num_entities_global(tdim);
   const std::size_t num_processes = MPI::size(mpi_comm);
 
   // Communicate global ownership of cells to matching process
@@ -239,10 +239,12 @@ void HDF5Utility::cell_owners_in_range(
       = MPI::local_range(mpi_comm, n_global_cells);
   global_owner.resize(range[1] - range[0]);
 
+  const std::vector<std::int64_t>& global_indices
+      = mesh.topology().global_indices(tdim);
   std::vector<std::vector<std::size_t>> send_owned_global(num_processes);
   for (auto& mesh_cell : mesh::MeshRange<mesh::Cell>(mesh))
   {
-    const std::size_t global_i = mesh_cell.global_index();
+    const std::size_t global_i = global_indices[mesh_cell.index()];
     const std::size_t local_i = mesh_cell.index();
     const std::size_t po_proc
         = MPI::index_owner(mpi_comm, global_i, n_global_cells);

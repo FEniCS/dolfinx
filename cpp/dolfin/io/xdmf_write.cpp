@@ -102,16 +102,18 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   // directly to the right place
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = dolfin::MPI::rank(comm);
+  const std::vector<std::int64_t>& global_indices
+      = mesh->topology().global_indices(0);
   for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim,
                                                       mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
     if (cell_dim == 0)
-      cell_topology.push_back(cell.global_index());
+      cell_topology.push_back(global_indices[cell.index()]);
     else
     {
       for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-        cell_topology.push_back(v.global_index());
+        cell_topology.push_back(global_indices[v.index()]);
     }
 
     std::sort(cell_topology.begin(), cell_topology.end());
@@ -211,17 +213,17 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
 
   const std::vector<std::int8_t> perm = mesh::vtk_mapping(mesh.cell_type);
   const int tdim = mesh.topology().dim();
+  const auto& global_vertices = mesh.topology().global_indices(0);
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
   {
     // Simple case when nothing is shared between processes
     if (cell_dim == 0)
     {
       for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
-        topology_data.push_back(v.global_index());
+        topology_data.push_back(global_vertices[v.index()]);
     }
     else
     {
-      const auto& global_vertices = mesh.topology().global_indices(0);
       for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
       {
         const std::int32_t* entities = c.entities(0);
@@ -235,19 +237,19 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     std::set<std::uint32_t> non_local_entities
         = xdmf_write::compute_nonlocal_entities(mesh, cell_dim);
 
+    const auto& global_vertices = mesh.topology().global_indices(0);
     if (cell_dim == 0)
     {
       // Special case for mesh of points
       for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
       {
         if (non_local_entities.find(v.index()) == non_local_entities.end())
-          topology_data.push_back(v.global_index());
+          topology_data.push_back(global_vertices[v.index()]);
       }
     }
     else
     {
       // Local-to-global map for point indices
-      const auto& global_vertices = mesh.topology().global_indices(0);
       for (auto& e : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
       {
         // If not excluded, add to topology
