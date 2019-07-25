@@ -23,7 +23,8 @@ void SparsityPatternBuilder::cells(
 {
   assert(dofmaps[0]);
   assert(dofmaps[1]);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  const int D = mesh.topology().dim();
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, D))
   {
     pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
                          dofmaps[1]->cell_dofs(cell.index()));
@@ -56,8 +57,8 @@ void SparsityPatternBuilder::interior_facets(
 
     // Get cells incident with facet
     assert(connectivity_facet_cell->size(facet.index()) == 2);
-    const mesh::Cell cell0(mesh, facet.entities(D)[0]);
-    const mesh::Cell cell1(mesh, facet.entities(D)[1]);
+    const mesh::MeshEntity cell0(mesh, D, facet.entities(D)[0]);
+    const mesh::MeshEntity cell1(mesh, D, facet.entities(D)[1]);
 
     // Tabulate dofs for each dimension on macro element
     for (std::size_t i = 0; i < 2; i++)
@@ -95,7 +96,7 @@ void SparsityPatternBuilder::exterior_facets(
     // FIXME: sort out ghosting
 
     assert(connectivity_facet_cell->size(facet.index()) == 1);
-    mesh::Cell cell(mesh, facet.entities(D)[0]);
+    mesh::MeshEntity cell(mesh, D, facet.entities(D)[0]);
     pattern.insert_local(dofmaps[0]->cell_dofs(cell.index()),
                          dofmaps[1]->cell_dofs(cell.index()));
   }

@@ -327,7 +327,7 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
     // Create facet and attached cell
     const mesh::MeshEntity facet(mesh, tdim - 1, facets[f]);
     const std::size_t cell_index = facet.entities(tdim)[0];
-    const mesh::Cell cell(mesh, cell_index);
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell dofmap
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs

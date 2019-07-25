@@ -73,6 +73,7 @@ void FunctionSpace::interpolate_from_any(
 
   assert(mesh);
   const int gdim = mesh->geometry().dim();
+  const int tdim = mesh->topology().dim();
 
   // Initialize local arrays
   assert(dofmap->element_dof_layout);
@@ -94,7 +95,7 @@ void FunctionSpace::interpolate_from_any(
 
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, tdim))
   {
     // FIXME: Move this out
     if (!v.function_space()->has_cell(cell))
@@ -171,6 +172,7 @@ void FunctionSpace::interpolate(
   assert(mesh);
   assert(element);
   assert(dofmap);
+  const int tdim = mesh->topology().dim();
 
   // Note: the following does not exploit any block structure, e.g. for
   // vector Lagrange, which leads to a lot of redundant evaluations.
@@ -209,7 +211,7 @@ void FunctionSpace::interpolate(
   assert(dofmap->element_dof_layout);
   std::vector<PetscScalar> cell_coefficients(
       dofmap->element_dof_layout->num_dofs());
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, tdim))
   {
     // Get dofmap for cell
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
@@ -299,6 +301,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   assert(mesh);
   assert(element);
   const int gdim = mesh->geometry().dim();
+  const int tdim = mesh->topology().dim();
 
   if (!_component.empty())
   {
@@ -346,7 +349,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(element->space_dimension(), gdim);
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, tdim))
   {
     // Update cell
     const int cell_index = cell.index();
@@ -381,6 +384,7 @@ void FunctionSpace::set_x(
   assert(element);
 
   const int gdim = mesh->geometry().dim();
+  const int tdim = mesh->topology().dim();
   std::vector<PetscScalar> x_values;
 
   // Prepare cell geometry
@@ -412,7 +416,7 @@ void FunctionSpace::set_x(
       coordinates(element->space_dimension(), mesh->geometry().dim());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(*mesh))
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, tdim))
   {
     // Update UFC cell
     const int cell_index = cell.index();

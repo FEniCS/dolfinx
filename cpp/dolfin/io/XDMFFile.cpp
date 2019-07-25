@@ -952,7 +952,7 @@ void XDMFFile::write_mesh_value_collection(
   mesh->create_connectivity(tdim, cell_dim);
   for (auto& p : values)
   {
-    mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
+    mesh::MeshEntity cell(*mesh, tdim, p.first.first);
     if (cell_dim != tdim)
     {
       const std::int32_t entity_local_idx

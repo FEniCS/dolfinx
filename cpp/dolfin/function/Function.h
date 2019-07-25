@@ -24,7 +24,6 @@ class BoundingBoxTree;
 }
 namespace mesh
 {
-class Cell;
 class Mesh;
 } // namespace mesh
 
@@ -161,7 +160,7 @@ public:
        const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic,
                                            Eigen::Dynamic, Eigen::RowMajor>>
            x,
-       const mesh::Cell& cell) const;
+       const mesh::MeshEntity& cell) const;
 
   /// Evaluate function at given coordinates
   ///
@@ -189,7 +188,7 @@ public:
   /// @param  coordinate_dofs (double *)
   ///         The coordinates
   void
-  restrict(PetscScalar* w, const mesh::Cell& cell,
+  restrict(PetscScalar* w, const mesh::MeshEntity& cell,
            const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
 
   /// Compute values at all mesh points

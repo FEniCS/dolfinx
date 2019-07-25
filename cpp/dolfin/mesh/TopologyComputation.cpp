@@ -95,7 +95,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   // Loop over cells to build list of keyed (by vertices) entities
   int entity_counter = 0;
   const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
-  for (auto& c : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& c : MeshRange<MeshEntity>(mesh, tdim, MeshRangeType::ALL))
   {
     // Get vertices from cell
     const std::int32_t* vertices = c.entities(0);

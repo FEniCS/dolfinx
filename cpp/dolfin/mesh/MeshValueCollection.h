@@ -220,8 +220,8 @@ MeshValueCollection<T>::MeshValueCollection(
       for (int i = 0; i < connectivity.size(entity_index); ++i)
       {
         // Create cell
-        const mesh::Cell cell(*_mesh,
-                              connectivity.connections(entity_index)[i]);
+        const mesh::MeshEntity cell(*_mesh, D,
+                                    connectivity.connections(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -275,8 +275,8 @@ operator=(const MeshFunction<T>& mesh_function)
       for (std::size_t i = 0; i < connectivity.size(entity_index); ++i)
       {
         // Create cell
-        const mesh::Cell cell(*_mesh,
-                              connectivity.connections(entity_index)[i]);
+        const mesh::MeshEntity cell(*_mesh, D,
+                                    connectivity.connections(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -381,8 +381,8 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   // Find the cell
   assert(connectivity.size(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
-  const mesh::Cell cell(
-      *_mesh, connectivity.connections(entity_index)[0]); // choose first
+  const mesh::MeshEntity cell(
+      *_mesh, D, connectivity.connections(entity_index)[0]); // choose first
 
   // Find the local entity index
   const std::size_t local_entity = cell.index(entity);

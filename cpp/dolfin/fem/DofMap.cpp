@@ -279,7 +279,8 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
     entity_dofs_local.push_back(element_dof_layout->entity_dofs(dim, i));
 
   // Iterate over cells
-  for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
+  const int tdim = mesh.topology().dim();
+  for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
   {
     // Get local-to-global dofmap for cell
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dof_list

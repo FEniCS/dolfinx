@@ -36,7 +36,6 @@ namespace mesh
 class Mesh;
 template <typename T>
 class MeshFunction;
-class Cell;
 } // namespace mesh
 
 namespace fem

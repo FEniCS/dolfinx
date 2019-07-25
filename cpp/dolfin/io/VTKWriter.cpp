@@ -258,7 +258,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
   assert(dofmap.element_dof_layout);
   const int num_dofs_cell = dofmap.element_dof_layout->num_dofs();
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
   {
     // Tabulate dofs
     auto dofs = dofmap.cell_dofs(cell.index());

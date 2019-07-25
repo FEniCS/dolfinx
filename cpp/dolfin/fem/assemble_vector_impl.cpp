@@ -87,8 +87,9 @@ void _lift_bc_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
+  const int tdim = mesh.geometry().dim();
   const int orient = 0;
-  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (const mesh::MeshEntity& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
   {
     // Get dof maps for cell
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
@@ -229,7 +230,7 @@ void _lift_bc_exterior_facets(
     // FIXME: sort out ghosts
 
     // Create attached cell
-    mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
@@ -363,6 +364,7 @@ void fem::impl::assemble_cells(
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -386,7 +388,7 @@ void fem::impl::assemble_cells(
   const int orientation = 0;
   for (std::int32_t cell_index : active_cells)
   {
-    const mesh::Cell cell(mesh, cell_index);
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
@@ -448,7 +450,7 @@ void fem::impl::assemble_exterior_facets(
     const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // Create attached cell
-    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
@@ -525,8 +527,8 @@ void fem::impl::assemble_interior_facets(
     // TODO: check ghosting sanity?
 
     // Create attached cells
-    const mesh::Cell cell0(mesh, facet.entities(tdim)[0]);
-    const mesh::Cell cell1(mesh, facet.entities(tdim)[1]);
+    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};

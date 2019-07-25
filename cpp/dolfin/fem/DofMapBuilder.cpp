@@ -71,10 +71,11 @@ struct DofMapStructure
 void get_cell_entities(
     std::vector<std::vector<std::int32_t>>& entity_indices_local,
     std::vector<std::vector<std::int64_t>>& entity_indices_global,
-    const mesh::Cell& cell, const std::vector<bool>& needs_mesh_entities)
+    const mesh::MeshEntity& cell, const std::vector<bool>& needs_mesh_entities)
 {
   const mesh::Topology& topology = cell.mesh().topology();
   const int D = topology.dim();
+  assert(cell.dim() == D);
   for (int d = 0; d < D; ++d)
   {
     if (needs_mesh_entities[d])
@@ -342,7 +343,7 @@ DofMapStructure build_basic_dofmap(const mesh::Mesh& mesh,
       = element_dof_layout.entity_dofs_all();
 
   // Build dofmaps from ElementDofmap
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, D, mesh::MeshRangeType::ALL))
   {
     // Get local (process) and global cell entity indices
     get_cell_entities(entity_indices_local, entity_indices_global, cell,
@@ -413,7 +414,7 @@ compute_sharing_markers(const DofMapStructure& dofmap,
   const std::int32_t ghost_offset_f = mesh.topology().ghost_offset(D - 1);
   const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_c
       = mesh.topology().shared_entities(D);
-  for (auto& c : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
+  for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, D, mesh::MeshRangeType::ALL))
   {
     const bool ghost_cell = c.index() >= ghost_offset_c;
     const PetscInt* cell_nodes = dofmap.dofs(c.index());
@@ -467,7 +468,7 @@ compute_sharing_markers(const DofMapStructure& dofmap,
       continue;
 
     // Get cell to which facet belongs (pick first)
-    const mesh::Cell cell0(mesh, f.entities(D)[0]);
+    const mesh::MeshEntity cell0(mesh, D, f.entities(D)[0]);
 
     // Get dofs (process-wise indices) on cell
     const PetscInt* cell_nodes = dofmap.dofs(cell0.index());
@@ -707,7 +708,7 @@ fem::DofMap DofMapBuilder::build_submap(const DofMap& dofmap_parent,
   const std::int32_t dofs_per_cell = element_map_view.size();
   Eigen::Array<PetscInt, Eigen::Dynamic, 1> dofmap(dofs_per_cell
                                                    * mesh.num_entities(D));
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, D))
   {
     const int c = cell.index();
     auto cell_dmap_parent = dofmap_parent.cell_dofs(c);

@@ -318,7 +318,8 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   Graph graph(n);
 
   // Build graph
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  const int tdim = mesh.topology().dim();
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
   {
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs0
         = dofmap0.cell_dofs(cell.index());

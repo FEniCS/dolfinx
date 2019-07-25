@@ -158,6 +158,7 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   assert(_function_space);
   assert(_function_space->mesh);
   const mesh::Mesh& mesh = *_function_space->mesh;
+  const int tdim = mesh.topology().dim();
 
   // Find the cell that contains x
   const int gdim = x.cols();
@@ -187,7 +188,7 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
     }
 
     // Create cell that contains point
-    const mesh::Cell cell(mesh, id);
+    const mesh::MeshEntity cell(mesh, tdim, id);
 
     // Call evaluate function
     eval(values.row(i), x.row(i), cell);
@@ -201,7 +202,7 @@ void Function::eval(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>
         x,
-    const mesh::Cell& cell) const
+    const mesh::MeshEntity& cell) const
 {
   // FIXME: This function needs to be changed to handle an arbitrary
   // number of points for efficiency
@@ -215,6 +216,10 @@ void Function::eval(
         "Cell passed to Function::eval is from a different mesh.");
   }
 
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+  assert(cell.dim() == tdim);
+
   assert(x.rows() == values.rows());
   assert(_function_space->element);
   const fem::FiniteElement& element = *_function_space->element;
@@ -222,9 +227,6 @@ void Function::eval(
   // Create work vector for expansion coefficients
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
       element.space_dimension());
-
-  const int gdim = mesh.geometry().dim();
-  const int tdim = mesh.topology().dim();
 
   // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
@@ -341,12 +343,14 @@ std::vector<std::size_t> Function::value_shape() const
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(
-    PetscScalar* w, const mesh::Cell& dolfin_cell,
+    PetscScalar* w, const mesh::MeshEntity& dolfin_cell,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   assert(w);
   assert(_function_space);
   assert(_function_space->dofmap);
+  assert(_function_space->mesh);
+  assert(_function_space->mesh->topology().dim() == dolfin_cell.dim());
 
   // Get dofmap for cell
   const fem::DofMap& dofmap = *_function_space->dofmap;
@@ -373,6 +377,8 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
     throw std::runtime_error(
         "Cannot interpolate function values at points. Non-matching mesh");
   }
+
+  const int tdim = mesh.topology().dim();
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
@@ -401,7 +407,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   EigenRowArrayXXd x(num_dofs_g, mesh.geometry().dim());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_dofs_g, value_size_loc);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim, mesh::MeshRangeType::ALL))
   {
     // Get coordinates for all points in cell
     const int cell_index = cell.index();

@@ -373,7 +373,6 @@ mesh::circumradius(const mesh::Mesh& mesh,
 //-----------------------------------------------------------------------------
 Eigen::ArrayXd mesh::inradius(const mesh::Mesh& mesh,
                               const Eigen::Ref<const Eigen::ArrayXi> entities)
-// double mesh::inradius(const mesh::Cell& cell)
 {
   // Cell type
   const mesh::CellType type = mesh.cell_type;
@@ -506,11 +505,12 @@ mesh::cell_normals(const mesh::Mesh& mesh, int dim)
   return Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>();
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet_local)
+Eigen::Vector3d mesh::normal(const mesh::MeshEntity& cell, int facet_local)
 {
   const mesh::Geometry& geometry = cell.mesh().geometry();
   const mesh::CellType type = cell.mesh().cell_type;
   const int tdim = cell.mesh().topology().dim();
+  assert(cell.dim() == tdim);
 
   switch (type)
   {

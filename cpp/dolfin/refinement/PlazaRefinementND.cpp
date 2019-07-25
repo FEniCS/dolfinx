@@ -76,7 +76,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
   const std::vector<std::int64_t>& global_indices
       = mesh.topology().global_indices(0);
-  for (const auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (const auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
