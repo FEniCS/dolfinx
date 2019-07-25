@@ -197,11 +197,11 @@ void mesh(py::module& m)
            [](const dolfin::mesh::Connectivity& self, std::size_t i) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(
                  self.connections(i), self.size(i));
-           },
+           }, "Connections for a single mesh entity",
            py::return_value_policy::reference_internal)
       .def("connections",
            py::overload_cast<>(&dolfin::mesh::Connectivity::connections),
-           "Return all connectivities")
+           "Connections for all mesh entities")
       .def("pos",
            py::overload_cast<>(&dolfin::mesh::Connectivity::entity_positions),
            "Index to each entity in the connectivity array")
@@ -217,15 +217,12 @@ void mesh(py::module& m)
       .def("mesh", &dolfin::mesh::MeshEntity::mesh, "Associated mesh")
       .def("index",
            py::overload_cast<>(&dolfin::mesh::MeshEntity::index, py::const_),
-           "Index")
-      //  .def("num_entities", &dolfin::mesh::MeshEntity::num_entities,
-      //       "Number of incident entities of given dimension")
+           "Entity index")
       .def("entities",
            [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
              if (self.dim() == dim)
              {
-               return Eigen::Map<const dolfin::EigenArrayXi32>(
-                   self.entities(dim), 1);
+               return py::array(1, self.entities(dim));
              }
              else
              {
@@ -234,8 +231,7 @@ void mesh(py::module& m)
                                             .topology()
                                             .connectivity(self.dim(), dim)
                                             ->size(self.index());
-               return Eigen::Map<const dolfin::EigenArrayXi32>(
-                   self.entities(dim), num_entities);
+               return py::array(num_entities, self.entities(dim));
              }
            },
            py::return_value_policy::reference_internal)

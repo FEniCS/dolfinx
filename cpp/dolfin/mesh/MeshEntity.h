@@ -90,25 +90,6 @@ public:
   ///         The index.
   std::int32_t index() const { return _local_index; }
 
-  /// Return local number of incident mesh entities of given
-  /// topological dimension
-  ///
-  /// @param     dim (int)
-  ///         The topological dimension.
-  ///
-  /// @return     std::size_t
-  /// The number of local incident MeshEntity objects of given
-  /// dimension.
-  // int num_entities(int dim) const
-  // {
-  //     return 1;
-  //   else
-  //   {
-  //     assert(_mesh->topology().connectivity(_dim, dim));
-  //     return _mesh->topology().connectivity(_dim, dim)->size(_local_index);
-  //   }
-  // }
-
   /// Return array of indices for incident mesh entities of given
   /// topological dimension
   ///
