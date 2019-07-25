@@ -194,7 +194,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       for (const mesh::Facet& facet :
            mesh::MeshRange<mesh::Facet>(mesh, mesh::MeshRangeType::ALL))
       {
-        if (connectivity->size(facet.index()))
+        if (connectivity->size(facet.index()) == 2)
         {
           const std::int32_t* c = facet.entities(tdim);
           const int owner0
