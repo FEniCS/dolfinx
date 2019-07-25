@@ -238,7 +238,7 @@ Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
   // Compute number of connections for each e0
   std::vector<std::int32_t> num_connections(topology.size(d0), 0);
   for (auto& e1 : MeshRange(mesh, d1, MeshRangeType::ALL))
-    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
+    for (auto& e0 : EntityRange(e1, d0))
       num_connections[e0.index()]++;
 
   // Compute offsets
@@ -249,7 +249,7 @@ Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
   std::vector<std::int32_t> counter(num_connections.size(), 0);
   std::vector<std::int32_t> connections(offsets.back());
   for (auto& e1 : MeshRange(mesh, d1, MeshRangeType::ALL))
-    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
+    for (auto& e0 : EntityRange(e1, d0))
       connections[offsets[e0.index()] + counter[e0.index()]++] = e1.index();
 
   return Connectivity(connections, offsets);

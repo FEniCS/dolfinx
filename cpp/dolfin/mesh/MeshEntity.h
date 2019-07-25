@@ -134,10 +134,8 @@ public:
 
 protected:
   friend class MeshRange;
-  template <typename T>
   friend class EntityRange;
   friend class MeshIterator;
-  template <typename T>
   friend class MeshEntityIterator;
 
   // The mesh

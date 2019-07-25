@@ -437,7 +437,7 @@ compute_sharing_markers(const DofMapStructure& dofmap,
     {
       // Is a ghost cell
       has_ghost_cells = true;
-      for (auto& f : mesh::EntityRange<mesh::MeshEntity>(c, D - 1))
+      for (auto& f : mesh::EntityRange(c, D - 1))
       {
         if (!(f.index() >= ghost_offset_f))
         {

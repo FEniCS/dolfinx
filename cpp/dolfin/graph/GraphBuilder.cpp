@@ -373,7 +373,7 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
         const mesh::MeshEntity entity(mesh, coloring_type[level - 1],
                                       *entity_index);
         for (auto& neighbor :
-             mesh::EntityRange<mesh::MeshEntity>(entity, coloring_type[level]))
+             mesh::EntityRange(entity, coloring_type[level]))
         {
           entity_list1.insert(neighbor.index());
         }
@@ -407,9 +407,9 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   {
     const std::int32_t colored_entity_index = colored_entity.index();
     for (auto& entity :
-         mesh::EntityRange<mesh::MeshEntity>(colored_entity, dim1))
+         mesh::EntityRange(colored_entity, dim1))
     {
-      for (auto& neighbor : mesh::EntityRange<mesh::MeshEntity>(entity, dim0))
+      for (auto& neighbor : mesh::EntityRange(entity, dim0))
       {
         if (colored_entity_index != neighbor.index())
           graph[colored_entity_index].insert(neighbor.index());

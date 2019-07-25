@@ -185,7 +185,7 @@ std::vector<std::int32_t> marked_facets(
     // By default, all vertices on this facet are marked
     bool all_vertices_marked = true;
 
-    for (const auto& v : mesh::EntityRange<mesh::MeshEntity>(facet, 0))
+    for (const auto& v : mesh::EntityRange(facet, 0))
     {
       const std::int32_t idx = v.index();
 

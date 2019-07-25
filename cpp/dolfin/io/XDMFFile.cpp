@@ -965,7 +965,7 @@ void XDMFFile::write_mesh_value_collection(
       topology_data.push_back(global_indices[cell.index()]);
     else
     {
-      for (auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
+      for (auto& v : mesh::EntityRange(cell, 0))
         topology_data.push_back(global_indices[v.index()]);
     }
 
@@ -1103,7 +1103,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     else
     {
       v.clear();
-      for (auto& vtx : mesh::EntityRange<mesh::MeshEntity>(m, 0))
+      for (auto& vtx : mesh::EntityRange(m, 0))
         v.push_back(global_indices[vtx.index()]);
       std::sort(v.begin(), v.end());
     }

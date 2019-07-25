@@ -42,7 +42,7 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
       if (p_ref.is_marked(long_e))
         continue;
       bool any_marked = false;
-      for (const auto& e : mesh::EntityRange<mesh::MeshEntity>(f, 1))
+      for (const auto& e : mesh::EntityRange(f, 1))
         any_marked |= p_ref.is_marked(e.index());
       if (any_marked)
       {
@@ -81,7 +81,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
     std::int32_t j = 0;
-    for (const auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
+    for (const auto& v : mesh::EntityRange(cell, 0))
       indices[j++] = global_indices[v.index()];
 
     marked_edge_list = p_ref.marked_edge_list(cell);
@@ -89,7 +89,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
     {
       // Copy over existing Cell to new topology
       std::vector<std::int64_t> cell_topology;
-      for (const auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
+      for (const auto& v : mesh::EntityRange(cell, 0))
         cell_topology.push_back(global_indices[v.index()]);
       p_ref.new_cells(cell_topology);
       parent_cell.push_back(cell.index());
@@ -111,14 +111,14 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
       // Need longest edges of each facet in cell local indexing
       std::vector<std::int32_t> longest_edge;
-      for (const auto& f : mesh::EntityRange<mesh::MeshEntity>(cell, 2))
+      for (const auto& f : mesh::EntityRange(cell, 2))
         longest_edge.push_back(long_edge[f.index()]);
 
       // Convert to cell local index
       for (auto& p : longest_edge)
       {
         int i = 0;
-        for (const auto& ej : mesh::EntityRange<mesh::MeshEntity>(cell, 1))
+        for (const auto& ej : mesh::EntityRange(cell, 1))
         {
           if (p == ej.index())
           {

@@ -219,7 +219,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
       cell_topology.push_back(global_indices[cell.index()]);
     else
     {
-      for (auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
+      for (auto& v : mesh::EntityRange(cell, 0))
         cell_topology.push_back(global_indices[v.index()]);
     }
 

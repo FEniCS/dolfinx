@@ -355,7 +355,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         {
           assert(c.index() >= ghost_offset_c);
           const int cell_owner = cell_owners[c.index() - ghost_offset_c];
-          for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
+          for (auto& e : mesh::EntityRange(c, cell_dim))
           {
             const bool not_ghost = e.index() < ghost_offset_e;
             if (not_ghost and cell_owner < mpi_rank)
@@ -588,7 +588,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
        mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
-    for (auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
+    for (auto& v : mesh::EntityRange(cell, 0))
       cell_topology.push_back(global_indices[v.index()]);
     std::sort(cell_topology.begin(), cell_topology.end());
 
@@ -735,7 +735,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       {
         assert(c.index() >= ghost_offset_c);
         const int cell_owner = cell_owners[c.index() - ghost_offset_c];
-        for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
+        for (auto& e : mesh::EntityRange(c, cell_dim))
         {
           const bool not_ghost = e.index() < ghost_offset_e;
           if (not_ghost and cell_owner < mpi_rank)
@@ -1128,7 +1128,7 @@ void HDF5File::write_mesh_value_collection(
       const unsigned int entity_local_idx = cell.entities(dim)[p.first.second];
       cell = mesh::MeshEntity(*mesh, dim, entity_local_idx);
     }
-    for (auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
+    for (auto& v : mesh::EntityRange(cell, 0))
       topology.push_back(global_indices[v.index()]);
     value_data.push_back(p.second);
   }
@@ -1229,7 +1229,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
     else
     {
       v.clear();
-      for (auto& vtx : mesh::EntityRange<mesh::MeshEntity>(m, 0))
+      for (auto& vtx : mesh::EntityRange(m, 0))
         v.push_back(global_indices[vtx.index()]);
       std::sort(v.begin(), v.end());
     }

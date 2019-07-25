@@ -288,7 +288,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
 
     // Loop over all entities of dimension dim
     unsigned int local_index = 0;
-    for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, dim))
+    for (auto& e : mesh::EntityRange(c, dim))
     {
       // Get dof index and add to list
       for (Eigen::Index i = 0; i < entity_dofs_local[local_index].size(); ++i)

@@ -263,7 +263,7 @@ void MeshFunction<T>::mark(
     bool all_marked = true;
 
     // And run over all vertices of this mesh entity
-    for (const auto& v : mesh::EntityRange<mesh::MeshEntity>(entity, 0))
+    for (const auto& v : mesh::EntityRange(entity, 0))
     {
       const std::int32_t idx = v.index();
       all_marked = (marked[idx] && all_marked);

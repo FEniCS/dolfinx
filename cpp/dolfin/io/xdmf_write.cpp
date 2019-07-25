@@ -112,7 +112,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
       cell_topology.push_back(global_indices[cell.index()]);
     else
     {
-      for (auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
+      for (auto& v : mesh::EntityRange(cell, 0))
         cell_topology.push_back(global_indices[v.index()]);
     }
 
@@ -467,7 +467,7 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
     {
       assert(c.index() >= ghost_offset_c);
       const int cell_owner = cell_owners[c.index() - ghost_offset_c];
-      for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
+      for (auto& e : mesh::EntityRange(c, cell_dim))
       {
         const bool not_ghost = e.index() < ghost_offset_e;
         if (not_ghost and cell_owner < mpi_rank)
