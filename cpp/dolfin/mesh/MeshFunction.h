@@ -255,7 +255,7 @@ void MeshFunction<T>::mark(
   EigenArrayXb marked = mark(x);
 
   for (const auto& entity :
-       mesh::MeshRange<mesh::MeshEntity>(*_mesh.get(), _dim))
+       mesh::MeshRange(*_mesh.get(), _dim))
   {
     // Run over all entities of the dimension of this MeshFunction
 

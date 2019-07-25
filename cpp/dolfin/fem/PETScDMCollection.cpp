@@ -109,7 +109,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       = dofmap.index_map->size_local() * dofmap.index_map->block_size;
   std::vector<bool> already_visited(local_size, false);
 
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
+  for (auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Get cell coordinates
     const int cell_index = cell.index();

@@ -89,7 +89,7 @@ void _lift_bc_cells(
   // Iterate over all cells
   const int tdim = mesh.geometry().dim();
   const int orient = 0;
-  for (const mesh::MeshEntity& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
+  for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
   {
     // Get dof maps for cell
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
@@ -221,7 +221,7 @@ void _lift_bc_exterior_facets(
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(tdim - 1, tdim);
   for (const mesh::MeshEntity& facet :
-       mesh::MeshRange<mesh::MeshEntity>(mesh, tdim - 1))
+       mesh::MeshRange(mesh, tdim - 1))
   {
     // Move to next facet if this one is an interior facet
     if (connectivity_facet_cell->size_global(facet.index()) != 1)

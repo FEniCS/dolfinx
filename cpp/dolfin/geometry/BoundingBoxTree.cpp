@@ -64,7 +64,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   // Create bounding boxes for all entities (leaves)
   const unsigned int num_leaves = mesh.num_entities(tdim);
   std::vector<double> leaf_bboxes(2 * _gdim * num_leaves);
-  for (auto& it : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
+  for (auto& it : mesh::MeshRange(mesh, tdim))
   {
     compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it,
                            _gdim);

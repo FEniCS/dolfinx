@@ -36,7 +36,7 @@ void enforce_rules(ParallelRefinement& p_ref, const mesh::Mesh& mesh,
     update_count = 0;
     p_ref.update_logical_edgefunction();
 
-    for (const auto& f : mesh::MeshRange<mesh::MeshEntity>(mesh, 2))
+    for (const auto& f : mesh::MeshRange(mesh, 2))
     {
       const std::int32_t long_e = long_edge[f.index()];
       if (p_ref.is_marked(long_e))
@@ -76,7 +76,7 @@ mesh::Mesh compute_refinement(const mesh::Mesh& mesh, ParallelRefinement& p_ref,
 
   const std::vector<std::int64_t>& global_indices
       = mesh.topology().global_indices(0);
-  for (const auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
+  for (const auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Create vector of indices in the order [vertices][edges], 3+3 in
     // 2D, 4+6 in 3D
@@ -317,7 +317,7 @@ face_long_edge(const mesh::Mesh& mesh)
   // Store all edge lengths in Mesh to save recalculating for each Face
   const mesh::Geometry& geometry = mesh.geometry();
   std::vector<double> edge_length(mesh.num_entities(1));
-  for (const auto& e : mesh::MeshRange<mesh::MeshEntity>(mesh, 1))
+  for (const auto& e : mesh::MeshRange(mesh, 1))
   {
     const std::int32_t* v = e.entities(0);
     edge_length[e.index()] = (geometry.x(v[0]) - geometry.x(v[1])).norm();
@@ -326,7 +326,7 @@ face_long_edge(const mesh::Mesh& mesh)
   // Get longest edge of each face
   const std::vector<std::int64_t>& global_indices
       = mesh.topology().global_indices(0);
-  for (const auto& f : mesh::MeshRange<mesh::MeshEntity>(mesh, 2))
+  for (const auto& f : mesh::MeshRange(mesh, 2))
   {
     const std::int32_t* face_edges = f.entities(1);
 

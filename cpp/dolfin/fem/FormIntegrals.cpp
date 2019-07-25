@@ -164,7 +164,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     assert(mesh.topology().connectivity(tdim - 1, tdim));
     std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
         = mesh.topology().connectivity(tdim - 1, tdim);
-    for (const mesh::MeshEntity& facet : mesh::MeshRange<mesh::MeshEntity>(
+    for (const mesh::MeshEntity& facet : mesh::MeshRange(
              mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
     {
       if (connectivity_facet_cell->size_global(facet.index()) == 1)
@@ -191,7 +191,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 
       assert(mesh.topology().connectivity(tdim - 1, tdim));
       auto connectivity = mesh.topology().connectivity(tdim - 1, tdim);
-      for (const mesh::MeshEntity& facet : mesh::MeshRange<mesh::MeshEntity>(
+      for (const mesh::MeshEntity& facet : mesh::MeshRange(
                mesh, tdim - 1, mesh::MeshRangeType::ALL))
       {
         if (connectivity->size(facet.index()) == 2)
@@ -213,7 +213,7 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       assert(mesh.topology().connectivity(tdim - 1, tdim));
       std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
           = mesh.topology().connectivity(tdim - 1, tdim);
-      for (const mesh::MeshEntity& facet : mesh::MeshRange<mesh::MeshEntity>(
+      for (const mesh::MeshEntity& facet : mesh::MeshRange(
                mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
       {
         if (connectivity_facet_cell->size_global(facet.index()) != 1)

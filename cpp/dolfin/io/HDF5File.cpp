@@ -298,14 +298,14 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       // process.
       if (cell_dim == 0)
       {
-        for (auto& v : mesh::MeshRange<mesh::MeshEntity>(mesh, 0))
+        for (auto& v : mesh::MeshRange(mesh, 0))
           topological_data.push_back(global_vertices[v.index()]);
       }
       else
       {
         const int num_vertices = mesh::cell_num_entities(
             mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
-        for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+        for (auto& c : mesh::MeshRange(mesh, cell_dim))
         {
           for (int i = 0; i < num_vertices; ++i)
           {
@@ -350,7 +350,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
         const std::int32_t ghost_offset_e
             = mesh.topology().ghost_offset(cell_dim);
-        for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
+        for (auto& c : mesh::MeshRange(
                  mesh, tdim, mesh::MeshRangeType::GHOST))
         {
           assert(c.index() >= ghost_offset_c);
@@ -367,7 +367,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       if (cell_dim == 0)
       {
         // Special case for mesh of points
-        for (auto& v : mesh::MeshRange<mesh::MeshEntity>(mesh, 0))
+        for (auto& v : mesh::MeshRange(mesh, 0))
         {
           if (non_local_entities.find(v.index()) == non_local_entities.end())
             topological_data.push_back(global_vertices[v.index()]);
@@ -377,7 +377,7 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
       {
         const int num_vertices = mesh::cell_num_entities(
             mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
-        for (auto& ent : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+        for (auto& ent : mesh::MeshRange(mesh, cell_dim))
         {
           // If not excluded, add to topology
           if (non_local_entities.find(ent.index()) == non_local_entities.end())
@@ -585,7 +585,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
   for (auto& cell :
-       mesh::MeshRange<mesh::MeshEntity>(*mesh, dim, mesh::MeshRangeType::ALL))
+       mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
     for (auto& v : mesh::EntityRange<mesh::MeshEntity>(cell, 0))
@@ -730,7 +730,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
       const std::int32_t ghost_offset_e
           = mesh.topology().ghost_offset(cell_dim);
-      for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
+      for (auto& c : mesh::MeshRange(
                mesh, tdim, mesh::MeshRangeType::GHOST))
       {
         assert(c.index() >= ghost_offset_c);
@@ -748,7 +748,7 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
     Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
         = meshfunction.values();
 
-    for (auto& e : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+    for (auto& e : mesh::MeshRange(mesh, cell_dim))
     {
       if (non_local_entities.find(e.index()) == non_local_entities.end())
         data_values.push_back(mf_values[e.index()]);
@@ -1222,7 +1222,7 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   std::vector<std::vector<std::size_t>> recv_entities(num_processes);
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
-  for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, dim))
+  for (auto& m : mesh::MeshRange(*mesh, dim))
   {
     if (dim == 0)
       v[0] = global_indices[m.index()];

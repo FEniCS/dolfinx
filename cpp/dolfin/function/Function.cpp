@@ -407,7 +407,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   EigenRowArrayXXd x(num_dofs_g, mesh.geometry().dim());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_dofs_g, value_size_loc);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim, mesh::MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::ALL))
   {
     // Get coordinates for all points in cell
     const int cell_index = cell.index();

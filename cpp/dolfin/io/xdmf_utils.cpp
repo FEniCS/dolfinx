@@ -275,7 +275,7 @@ xdmf_utils::get_cell_data_values(const function::Function& u)
   const auto dofmap = u.function_space()->dofmap;
   assert(dofmap->element_dof_layout);
   const int ndofs = dofmap->element_dof_layout->num_dofs();
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, tdim))
+  for (auto& cell : mesh::MeshRange(*mesh, tdim))
   {
     // Tabulate dofs
     auto dofs = dofmap->cell_dofs(cell.index());

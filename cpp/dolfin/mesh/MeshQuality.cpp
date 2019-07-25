@@ -60,7 +60,7 @@ std::array<double, 2> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
   double d_ang_max = -1.0;
 
   const int tdim = mesh.topology().dim();
-  for (auto& cell : MeshRange<MeshEntity>(mesh, tdim))
+  for (auto& cell : MeshRange(mesh, tdim))
   {
     // Get the angles from the next cell
     std::array<double, 6> angles = dihedral_angles(cell);
@@ -92,7 +92,7 @@ MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh,
     bins[i] = static_cast<double>(i) * interval + interval / 2.0;
 
   const int tdim = mesh.topology().dim();
-  for (auto& cell : MeshRange<MeshEntity>(mesh, tdim))
+  for (auto& cell : MeshRange(mesh, tdim))
   {
     // this one should return the value of the angle
     std::array<double, 6> angles = dihedral_angles(cell);

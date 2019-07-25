@@ -95,7 +95,7 @@ void FunctionSpace::interpolate_from_any(
 
   // Iterate over mesh and interpolate on each cell
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, tdim))
+  for (auto& cell : mesh::MeshRange(*mesh, tdim))
   {
     // FIXME: Move this out
     if (!v.function_space()->has_cell(cell))
@@ -211,7 +211,7 @@ void FunctionSpace::interpolate(
   assert(dofmap->element_dof_layout);
   std::vector<PetscScalar> cell_coefficients(
       dofmap->element_dof_layout->num_dofs());
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, tdim))
+  for (auto& cell : mesh::MeshRange(*mesh, tdim))
   {
     // Get dofmap for cell
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs
@@ -349,7 +349,7 @@ EigenRowArrayXXd FunctionSpace::tabulate_dof_coordinates() const
   // Loop over cells and tabulate dofs
   EigenRowArrayXXd coordinates(element->space_dimension(), gdim);
   EigenRowArrayXXd coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, tdim))
+  for (auto& cell : mesh::MeshRange(*mesh, tdim))
   {
     // Update cell
     const int cell_index = cell.index();
@@ -416,7 +416,7 @@ void FunctionSpace::set_x(
       coordinates(element->space_dimension(), mesh->geometry().dim());
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       coordinate_dofs(num_dofs_g, gdim);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, tdim))
+  for (auto& cell : mesh::MeshRange(*mesh, tdim))
   {
     // Update UFC cell
     const int cell_index = cell.index();

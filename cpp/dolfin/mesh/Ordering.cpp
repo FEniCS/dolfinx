@@ -335,7 +335,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   }
 
   // Iterate over all cells
-  for (mesh::MeshEntity& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
+  for (mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
   {
     // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
@@ -398,7 +398,7 @@ bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
       = mesh.topology().global_indices(0);
 
   // Check if all cells are ordered
-  for (const mesh::MeshEntity& cell : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
+  for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
   {
     if (!ordered_cell_simplex(global_vertex_indices, cell))
       return false;

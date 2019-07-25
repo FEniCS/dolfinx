@@ -1096,7 +1096,7 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
   std::vector<std::int32_t> v(num_verts_per_entity);
-  for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, dim))
+  for (auto& m : mesh::MeshRange(*mesh, dim))
   {
     if (dim == 0)
       v[0] = global_indices[m.index()];

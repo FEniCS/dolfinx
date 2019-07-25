@@ -24,8 +24,7 @@ namespace mesh
 // implementations.
 
 /// Iterator for entities of type T over a Mesh
-template <class T>
-class MeshIterator : public std::iterator<std::forward_iterator_tag, T>
+class MeshIterator : public std::iterator<std::forward_iterator_tag, MeshEntity>
 {
 public:
   /// Constructor for entities of dimension d
@@ -33,9 +32,6 @@ public:
       : _entity(mesh, dim, pos)
   {
   }
-
-  /// Constructor for entities of type T
-  MeshIterator(const Mesh& mesh, std::size_t pos) : _entity(mesh, pos) {}
 
   /// Copy constructor
   MeshIterator(const MeshIterator& it) = default;
@@ -70,14 +66,14 @@ public:
   }
 
   /// Member access
-  T* operator->() { return &_entity; }
+  MeshEntity* operator->() { return &_entity; }
 
   /// Dereference
-  T& operator*() { return _entity; }
+  MeshEntity& operator*() { return _entity; }
 
 private:
   // MeshEntity
-  T _entity;
+  MeshEntity _entity;
 };
 
 /// Iterator for entities of specified dimension that are incident to a
@@ -196,69 +192,11 @@ enum class MeshRangeType
   GHOST
 };
 
-/// Representation of a collection of entities of type T
-/// over a mesh. Provides begin() and end() methods for
-/// iterating over entities of the Mesh
-template <class T>
-class MeshRange
-{
-public:
-  /// Constructor
-  MeshRange(const Mesh& mesh, MeshRangeType type = MeshRangeType::REGULAR)
-      : _mesh(mesh), _type(type)
-  {
-  }
-
-  /// MeshIterator of type T pointing to start of range (const)
-  const MeshIterator<T> begin() const
-  {
-    if (_type == MeshRangeType::GHOST)
-    {
-      auto it = MeshIterator<T>(_mesh, 0);
-      it->_local_index = _mesh.topology().ghost_offset(it->_dim);
-      return it;
-    }
-
-    return MeshIterator<T>(_mesh, 0);
-  }
-
-  /// MeshIterator of type T pointing to start of range (non-const)
-  MeshIterator<T> begin()
-  {
-    if (_type == MeshRangeType::GHOST)
-    {
-      auto it = MeshIterator<T>(_mesh, 0);
-      it->_local_index = _mesh.topology().ghost_offset(it->_dim);
-      return it;
-    }
-
-    return MeshIterator<T>(_mesh, 0);
-  }
-
-  /// MeshIterator of type T pointing to end of range (const)
-  const MeshIterator<T> end() const
-  {
-    auto it = MeshIterator<T>(_mesh, 0);
-    if (_type == MeshRangeType::REGULAR)
-      it->_local_index = _mesh.topology().ghost_offset(it->dim());
-    else
-      it->_local_index = _mesh.topology().size(it->dim());
-
-    return it;
-  }
-
-private:
-  // Mesh being iterated over
-  const Mesh& _mesh;
-
-  MeshRangeType _type;
-};
 
 /// Representation of a collection of entities of given dimension
 /// over a mesh. Provides begin() and end() methods for
 /// iterating over entities of the Mesh
-template <>
-class MeshRange<MeshEntity>
+class MeshRange
 {
 public:
   /// Constructor
@@ -269,33 +207,33 @@ public:
   }
 
   /// MeshIterator of MeshEntity pointing to start of range (const)
-  const MeshIterator<MeshEntity> begin() const
+  const MeshIterator begin() const
   {
     if (_type == MeshRangeType::GHOST)
-      return MeshIterator<MeshEntity>(_mesh, _dim,
+      return MeshIterator(_mesh, _dim,
                                       _mesh.topology().ghost_offset(_dim));
 
-    return MeshIterator<MeshEntity>(_mesh, _dim, 0);
+    return MeshIterator(_mesh, _dim, 0);
   }
 
   /// MeshIterator of MeshEntity pointing to start of range (non-const)
-  MeshIterator<MeshEntity> begin()
+  MeshIterator begin()
   {
     if (_type == MeshRangeType::GHOST)
-      return MeshIterator<MeshEntity>(_mesh, _dim,
+      return MeshIterator(_mesh, _dim,
                                       _mesh.topology().ghost_offset(_dim));
 
-    return MeshIterator<MeshEntity>(_mesh, _dim, 0);
+    return MeshIterator(_mesh, _dim, 0);
   }
 
   /// MeshIterator of MeshEntity pointing to end of range (const)
-  const MeshIterator<MeshEntity> end() const
+  const MeshIterator end() const
   {
     if (_type == MeshRangeType::REGULAR)
-      return MeshIterator<MeshEntity>(_mesh, _dim,
+      return MeshIterator(_mesh, _dim,
                                       _mesh.topology().ghost_offset(_dim));
 
-    return MeshIterator<MeshEntity>(_mesh, _dim, _mesh.topology().size(_dim));
+    return MeshIterator(_mesh, _dim, _mesh.topology().size(_dim));
   }
 
 private:

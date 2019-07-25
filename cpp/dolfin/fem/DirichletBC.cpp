@@ -143,7 +143,7 @@ std::vector<std::int32_t> marked_facets(
       = mesh.topology().connectivity(dim, tdim);
   const int num_facet_vertices = mesh::cell_num_entities(
       mesh::cell_entity_type(mesh.cell_type, tdim - 1), 0);
-  for (const auto& facet : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim - 1))
+  for (const auto& facet : mesh::MeshRange(mesh, tdim - 1))
   {
     if (connectivity_facet_cell->size_global(facet.index()) == 1)
     {
@@ -180,7 +180,7 @@ std::vector<std::int32_t> marked_facets(
   EigenArrayXb boundary_marked = mark(x_boundary, true);
   assert(boundary_marked.rows() == x_boundary.rows());
 
-  for (auto& facet : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim - 1))
+  for (auto& facet : mesh::MeshRange(mesh, tdim - 1))
   {
     // By default, all vertices on this facet are marked
     bool all_vertices_marked = true;

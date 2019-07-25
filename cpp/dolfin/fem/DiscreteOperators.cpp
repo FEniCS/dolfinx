@@ -87,7 +87,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   // Build sparsity pattern
   std::vector<PetscInt> rows;
   std::vector<PetscInt> cols;
-  for (auto& edge : mesh::MeshRange<mesh::MeshEntity>(mesh, 1))
+  for (auto& edge : mesh::MeshRange(mesh, 1))
   {
     // Row index (global indices)
     const std::int64_t row = local_to_global_map0[edge_to_dof[edge.index()]];
@@ -116,7 +116,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   // Build discrete gradient operator/matrix
   const std::vector<std::int64_t>& global_indices
       = mesh.topology().global_indices(0);
-  for (auto& edge : mesh::MeshRange<mesh::MeshEntity>(mesh, 1))
+  for (auto& edge : mesh::MeshRange(mesh, 1))
   {
     PetscInt row;
     PetscInt cols[2];
