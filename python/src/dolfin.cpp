@@ -48,10 +48,6 @@ PYBIND11_MODULE(cpp, m)
   py::module function = m.def_submodule("function", "Function module");
   dolfin_wrappers::function(function);
 
-  // Create math submodule [math]
-  py::module math = m.def_submodule("math", "Math library module");
-  dolfin_wrappers::math(math);
-
   // Create mesh submodule [mesh]
   py::module mesh = m.def_submodule("mesh", "Mesh library module");
   dolfin_wrappers::mesh(mesh);
