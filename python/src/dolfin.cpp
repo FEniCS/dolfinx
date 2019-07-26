@@ -22,7 +22,6 @@ void geometry(py::module& m);
 void graph(py::module& m);
 void io(py::module& m);
 void la(py::module& m);
-void math(py::module& m);
 void mesh(py::module& m);
 void nls(py::module& m);
 void refinement(py::module& m);
