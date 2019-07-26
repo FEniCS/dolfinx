@@ -89,7 +89,7 @@ std::shared_ptr<const mesh::Mesh> Form::mesh() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 {
-  assert(i < _function_spaces.size());
+  assert(i < (int)_function_spaces.size());
   return _function_spaces[i];
 }
 //-----------------------------------------------------------------------------
