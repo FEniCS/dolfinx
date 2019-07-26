@@ -12,4 +12,3 @@ namespace dolfin
 // DOLFIN math
 
 #include <dolfin/math/Lagrange.h>
-#include <dolfin/math/Legendre.h>
