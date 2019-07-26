@@ -179,5 +179,5 @@ class Function(ufl.Coefficient):
     def collapse(self):
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = functionspace.FunctionSpace(None, self.ufl_element(),
-                                                  u_collapsed.function_space)
+                                                  u_collapsed.function_space())
         return Function(V_collapsed, u_collapsed.vector())

@@ -82,7 +82,7 @@ def mplot_expression(ax, f, mesh, **kwargs):
 
 
 def mplot_function(ax, f, **kwargs):
-    mesh = f.function_space().mesh
+    mesh = f.function_space.mesh
     gdim = mesh.geometry.dim
     tdim = mesh.topology.dim
 
@@ -91,7 +91,7 @@ def mplot_function(ax, f, **kwargs):
     try:
         fvec = f.vector()
     except RuntimeError:
-        fspace = f.function_space()
+        fspace = f.function_space
         try:
             fspace = fspace.collapse()
         except RuntimeError:

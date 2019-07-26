@@ -82,8 +82,10 @@ void function(py::module& m)
            },
            "Return the vector associated with the finite element Function")
       .def("value_dimension", &dolfin::function::Function::value_dimension)
-      .def_property_readonly("value_size", &dolfin::function::Function::value_size)
-      .def_property_readonly("value_rank", &dolfin::function::Function::value_rank)
+      .def_property_readonly("value_size",
+                             &dolfin::function::Function::value_size)
+      .def_property_readonly("value_rank",
+                             &dolfin::function::Function::value_rank)
       .def_property_readonly("value_shape",
                              &dolfin::function::Function::value_shape)
       .def("eval",
@@ -106,8 +108,7 @@ void function(py::module& m)
       .def("compute_point_values",
            &dolfin::function::Function::compute_point_values,
            "Compute values at all mesh points")
-      .def_property_readonly("function_space",
-                             &dolfin::function::Function::function_space);
+      .def("function_space", &dolfin::function::Function::function_space);
 
   // FIXME: why is this floating here?
   m.def("interpolate",
