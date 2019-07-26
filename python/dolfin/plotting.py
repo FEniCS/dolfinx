@@ -132,10 +132,10 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank() == 0:
+    elif f.value_rank == 0:
         # Scalar function, interpolated to vertices
         # TODO: Handle DG1?
-        C = f.compute_point_values(mesh)
+        C = f.compute_point_values()
         if (C.dtype.type is np.complex128):
             warnings.warn("Plotting real part of complex data")
             C = np.real(C)
