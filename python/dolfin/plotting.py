@@ -405,7 +405,7 @@ def plot(object, *args, **kwargs):
 
     if mesh is None:
         if isinstance(object, cpp.function.Function):
-            mesh = object.function_space().mesh
+            mesh = object.function_space.mesh
         elif hasattr(object, "mesh"):
             mesh = object.mesh
 
