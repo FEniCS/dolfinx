@@ -59,8 +59,8 @@ def test_compute_point_values(V, W, mesh):
     with u.vector().localForm() as u_local, v.vector().localForm() as v_local:
         u_local.set(1.0)
         v_local.set(1.0)
-    u_values = u.compute_point_values(mesh)
-    v_values = v.compute_point_values(mesh)
+    u_values = u.compute_point_values()
+    v_values = v.compute_point_values()
 
     u_ones = np.ones_like(u_values, dtype=np.float64)
     assert np.all(np.isclose(u_values, u_ones))

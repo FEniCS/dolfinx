@@ -82,8 +82,8 @@ void function(py::module& m)
            },
            "Return the vector associated with the finite element Function")
       .def("value_dimension", &dolfin::function::Function::value_dimension)
-      .def("value_size", &dolfin::function::Function::value_size)
-      .def("value_rank", &dolfin::function::Function::value_rank)
+      .def_property_readonly("value_size", &dolfin::function::Function::value_size)
+      .def_property_readonly("value_rank", &dolfin::function::Function::value_rank)
       .def_property_readonly("value_shape",
                              &dolfin::function::Function::value_shape)
       .def("eval",
@@ -104,25 +104,10 @@ void function(py::module& m)
            py::arg("values"), py::arg("x"), py::arg("bb_tree"),
            "Evaluate Function")
       .def("compute_point_values",
-           py::overload_cast<const dolfin::mesh::Mesh&>(
-               &dolfin::function::Function::compute_point_values, py::const_),
+           &dolfin::function::Function::compute_point_values,
            "Compute values at all mesh points")
-      .def("compute_point_values",
-           [](dolfin::function::Function& self) {
-             auto V = self.function_space();
-             if (!V)
-               throw py::value_error("Function has no function space. "
-                                     "You must supply a mesh.");
-             if (!V->mesh)
-             {
-               throw py::value_error("Function has no function space "
-                                     "mesh. You must supply a mesh.");
-             }
-             return self.compute_point_values(*V->mesh);
-           },
-           "Compute values at all mesh points by using the mesh "
-           "function.function_space().mesh")
-      .def("function_space", &dolfin::function::Function::function_space);
+      .def_property_readonly("function_space",
+                             &dolfin::function::Function::function_space);
 
   // FIXME: why is this floating here?
   m.def("interpolate",

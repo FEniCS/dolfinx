@@ -27,7 +27,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   const mesh::Mesh& mesh = *M.mesh();
 
   // Prepare coefficients
-  const FormCoefficients& coefficients = M.coeffs();
+  const FormCoefficients& coefficients = M.coefficients();
   std::vector<const function::Function*> coeff_fn(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
     coeff_fn[i] = coefficients.get(i).get();

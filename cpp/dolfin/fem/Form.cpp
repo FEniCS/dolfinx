@@ -51,7 +51,7 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-std::size_t Form::rank() const { return _function_spaces.size(); }
+int Form::rank() const { return _function_spaces.size(); }
 //-----------------------------------------------------------------------------
 void Form::set_coefficients(
     std::map<std::size_t, std::shared_ptr<const function::Function>>
@@ -69,21 +69,9 @@ void Form::set_coefficients(
     _coefficients.set(c.first, c.second);
 }
 //-----------------------------------------------------------------------------
-std::size_t Form::original_coefficient_position(std::size_t i) const
+int Form::original_coefficient_position(int i) const
 {
   return _coefficients.original_position(i);
-}
-//-----------------------------------------------------------------------------
-std::size_t Form::max_element_tensor_size() const
-{
-  std::size_t num_entries = 1;
-  for (auto& V : _function_spaces)
-  {
-    assert(V->dofmap);
-    assert(V->dofmap->element_dof_layout);
-    num_entries *= V->dofmap->element_dof_layout->num_dofs();
-  }
-  return num_entries;
 }
 //-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
@@ -99,17 +87,10 @@ std::shared_ptr<const mesh::Mesh> Form::mesh() const
   return _mesh;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<const function::FunctionSpace>
-Form::function_space(std::size_t i) const
+std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 {
   assert(i < _function_spaces.size());
   return _function_spaces[i];
-}
-//-----------------------------------------------------------------------------
-std::vector<std::shared_ptr<const function::FunctionSpace>>
-Form::function_spaces() const
-{
-  return _function_spaces;
 }
 //-----------------------------------------------------------------------------
 void Form::register_tabulate_tensor_cell(
@@ -145,6 +126,15 @@ void Form::set_vertex_domains(
 {
   _integrals.set_domains(FormIntegrals::Type::vertex, vertex_domains);
 }
+//-----------------------------------------------------------------------------
+fem::FormCoefficients& Form::coefficients() { return _coefficients; }
+//-----------------------------------------------------------------------------
+const fem::FormCoefficients& Form::coefficients() const
+{
+  return _coefficients;
+}
+//-----------------------------------------------------------------------------
+const fem::FormIntegrals& Form::integrals() const { return _integrals; }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::CoordinateMapping> Form::coordinate_mapping() const
 {

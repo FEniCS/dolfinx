@@ -350,7 +350,8 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
   fp.precision(16);
 
   // Get function values at vertices
-  auto values = u.compute_point_values(mesh);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values = u.compute_point_values();
 
   if (rank == 0)
   {

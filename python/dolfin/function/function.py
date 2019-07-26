@@ -52,8 +52,9 @@ class Function(ufl.Coefficient):
         """Return the FunctionSpace"""
         return self._V
 
+    @property
     def value_rank(self) -> int:
-        return self._cpp_object.value_rank()
+        return self._cpp_object.value_rank
 
     def value_dimension(self, i) -> int:
         return self._cpp_object.value_dimension(i)
@@ -124,11 +125,8 @@ class Function(ufl.Coefficient):
 
         _interpolate(u)
 
-    def compute_point_values(self, mesh=None):
-        if mesh is not None:
-            return self._cpp_object.compute_point_values(mesh)
-        else:
-            return self._cpp_object.compute_point_values()
+    def compute_point_values(self):
+        return self._cpp_object.compute_point_values()
 
     def copy(self):
         """Return a copy of the Function. The FunctionSpace is shared and the
