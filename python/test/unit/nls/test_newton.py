@@ -20,7 +20,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
 
     def __init__(self, F, u, bc):
         super().__init__()
-        V = u.function_space()
+        V = u.function_space
         du = function.TrialFunction(V)
         self.L = F
         self.a = derivative(F, u, du)
@@ -58,7 +58,7 @@ class NonlinearPDEProblem(dolfin.cpp.nls.NonlinearProblem):
 class NonlinearPDE_SNESProblem():
     def __init__(self, F, u, bc):
         super().__init__()
-        V = u.function_space()
+        V = u.function_space
         du = function.TrialFunction(V)
         self.L = F
         self.a = derivative(F, u, du)

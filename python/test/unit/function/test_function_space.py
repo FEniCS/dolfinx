@@ -43,7 +43,7 @@ def f(V):
 
 @fixture
 def V2(f):
-    return f.function_space()
+    return f.function_space
 
 
 @fixture
@@ -53,7 +53,7 @@ def g(W):
 
 @fixture
 def W2(g):
-    return g.function_space()
+    return g.function_space
 
 
 def test_python_interface(V, V2, W, W2, Q):

@@ -196,9 +196,9 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank() == 1:
+    elif f.value_rank == 1:
         # Vector function, interpolated to vertices
-        w0 = f.compute_point_values(mesh)
+        w0 = f.compute_point_values()
         if (w0.dtype.type is np.complex128):
             warnings.warn("Plotting real part of complex data")
             w0 = np.real(w0)
@@ -424,7 +424,7 @@ def plot(object, *args, **kwargs):
             cpp.log.info("Object cannot be plotted directly, projecting to "
                          "piecewise linears.")
             object = project(object, mesh=mesh)
-            mesh = object.function_space().mesh
+            mesh = object.function_space.mesh
             object = object._cpp_object
         except Exception as e:
             msg = "Don't know how to plot given object:\n  %s\n" \

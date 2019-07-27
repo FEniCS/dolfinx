@@ -108,7 +108,7 @@ void function(py::module& m)
       .def("compute_point_values",
            &dolfin::function::Function::compute_point_values,
            "Compute values at all mesh points")
-      .def("function_space", &dolfin::function::Function::function_space);
+      .def_property_readonly("function_space", &dolfin::function::Function::function_space);
 
   // FIXME: why is this floating here?
   m.def("interpolate",

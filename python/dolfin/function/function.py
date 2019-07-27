@@ -48,6 +48,7 @@ class Function(ufl.Coefficient):
         # Store DOLFIN FunctionSpace object
         self._V = V
 
+    @property
     def function_space(self) -> function.functionspace.FunctionSpace:
         """Return the FunctionSpace"""
         return self._V
@@ -171,7 +172,7 @@ class Function(ufl.Coefficient):
         function resides in the subspace of the mixed space.
 
         """
-        num_sub_spaces = self.function_space().num_sub_spaces()
+        num_sub_spaces = self.function_space.num_sub_spaces()
         if num_sub_spaces == 1:
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
@@ -179,5 +180,5 @@ class Function(ufl.Coefficient):
     def collapse(self):
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = functionspace.FunctionSpace(None, self.ufl_element(),
-                                                  u_collapsed.function_space())
+                                                  u_collapsed.function_space)
         return Function(V_collapsed, u_collapsed.vector())
