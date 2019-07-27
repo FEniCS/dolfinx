@@ -76,11 +76,11 @@ void function(py::module& m)
              self.interpolate(_f);
            },
            "Interpolate using a pointer to an expression with a C signature")
-      .def("vector",
-           [](const dolfin::function::Function& self) {
-             return self.vector().vec();
-           },
-           "Return the vector associated with the finite element Function")
+      .def_property_readonly(
+          "vector",
+          [](const dolfin::function::Function&
+                 self) { return self.vector().vec(); },
+          "Return the vector associated with the finite element Function")
       .def("value_dimension", &dolfin::function::Function::value_dimension)
       .def_property_readonly("value_size",
                              &dolfin::function::Function::value_size)
@@ -108,7 +108,8 @@ void function(py::module& m)
       .def("compute_point_values",
            &dolfin::function::Function::compute_point_values,
            "Compute values at all mesh points")
-      .def_property_readonly("function_space", &dolfin::function::Function::function_space);
+      .def_property_readonly("function_space",
+                             &dolfin::function::Function::function_space);
 
   // FIXME: why is this floating here?
   m.def("interpolate",

@@ -135,11 +135,12 @@ class Function(ufl.Coefficient):
 
         """
         return function.Function(self.function_space(),
-                                 self._cpp_object.vector().copy())
+                                 self._cpp_object.vector.copy())
 
+    @property
     def vector(self):
         """Return the vector holding Function degrees-of-freedom."""
-        return self._cpp_object.vector()
+        return self._cpp_object.vector
 
     def name(self) -> str:
         """Return name of the Function."""
@@ -162,7 +163,7 @@ class Function(ufl.Coefficient):
 
         """
         return Function(
-            self._V.sub(i), self.vector(), name="{}-{}".format(str(self), i))
+            self._V.sub(i), self.vector, name="{}-{}".format(str(self), i))
 
     def split(self):
         """Extract any sub functions.
@@ -181,4 +182,4 @@ class Function(ufl.Coefficient):
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = functionspace.FunctionSpace(None, self.ufl_element(),
                                                   u_collapsed.function_space)
-        return Function(V_collapsed, u_collapsed.vector())
+        return Function(V_collapsed, u_collapsed.vector)

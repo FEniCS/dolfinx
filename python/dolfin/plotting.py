@@ -89,14 +89,14 @@ def mplot_function(ax, f, **kwargs):
     # Extract the function vector in a way that also works for
     # subfunctions
     try:
-        fvec = f.vector()
+        fvec = f.vector
     except RuntimeError:
         fspace = f.function_space
         try:
             fspace = fspace.collapse()
         except RuntimeError:
             return
-        fvec = fem.interpolate(f, fspace).vector()
+        fvec = fem.interpolate(f, fspace).vector
 
     if fvec.getSize() == mesh.num_entities(tdim):
         # DG0 cellwise function

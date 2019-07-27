@@ -173,8 +173,8 @@ def test_save_and_read_function(tempdir):
     # Read back from file
     hdf5_file = HDF5File(mesh.mpi_comm(), filename, "r")
     F1 = hdf5_file.read_function(Q, "/function")
-    F0.vector().axpy(-1.0, F1.vector())
-    assert F0.vector().norm() < 1.0e-12
+    F0.vector.axpy(-1.0, F1.vector)
+    assert F0.vector.norm() < 1.0e-12
     hdf5_file.close()
 
 

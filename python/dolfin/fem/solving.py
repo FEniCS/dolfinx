@@ -143,7 +143,7 @@ def _solve_varproblem(*args, **kwargs):
         solver.set_from_options()
 
         solver.set_operator(A)
-        solver.solve(u.vector(), b)
+        solver.solve(u.vector, b)
 
     # Solve nonlinear variational problem
     else:

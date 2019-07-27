@@ -191,7 +191,7 @@ L = inner(f, v) * dx
 # Compute solution
 w = Function(W)
 solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
-                                     "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
+                                     "pc_type": "lu", "pc_factor_mat_solver_type": "umfpack"})
 
 # Split the mixed solution and collapse
 u = w.sub(0).collapse()
@@ -199,11 +199,11 @@ p = w.sub(1).collapse()
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("Norm of velocity coefficient vector: %.15g" % u.vector().norm())
-print("Norm of pressure coefficient vector: %.15g" % p.vector().norm())
+print("Norm of velocity coefficient vector: %.15g" % u.vector.norm())
+print("Norm of pressure coefficient vector: %.15g" % p.vector.norm())
 
 # Check pressure norm
-pnorm = p.vector().norm()
+pnorm = p.vector.norm()
 assert np.isclose(pnorm, 4147.69457577)
 
 # Finally, we can save and plot the solutions::
