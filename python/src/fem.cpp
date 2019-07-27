@@ -153,8 +153,6 @@ void fem(py::module& m)
       .def("dof_reference_coordinates",
            &dolfin::fem::FiniteElement::dof_reference_coordinates)
       .def("space_dimension", &dolfin::fem::FiniteElement::space_dimension)
-      .def("topological_dimension",
-           &dolfin::fem::FiniteElement::topological_dimension)
       .def("value_dimension", &dolfin::fem::FiniteElement::value_dimension)
       .def("signature", &dolfin::fem::FiniteElement::signature);
 
@@ -278,14 +276,16 @@ void fem(py::module& m)
       .def(py::init<std::vector<
                std::shared_ptr<const dolfin::function::FunctionSpace>>>())
       .def("num_coefficients",
-           [](const dolfin::fem::Form& self) { return self.coeffs().size(); },
+           [](const dolfin::fem::Form& self) {
+             return self.coefficients().size();
+           },
            "Return number of coefficients in form")
       .def("original_coefficient_position",
            &dolfin::fem::Form::original_coefficient_position)
       .def("set_coefficient",
            [](dolfin::fem::Form& self, std::size_t i,
               std::shared_ptr<const dolfin::function::Function> f) {
-             self.coeffs().set(i, f);
+             self.coefficients().set(i, f);
            })
       .def("set_mesh", &dolfin::fem::Form::set_mesh)
       .def("set_cell_domains", &dolfin::fem::Form::set_cell_domains)

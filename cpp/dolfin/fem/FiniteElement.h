@@ -42,10 +42,6 @@ public:
   /// @return CellShape
   mesh::CellType cell_shape() const;
 
-  /// Return the topological dimension of the cell shape
-  /// @return std::size_t
-  std::size_t topological_dimension() const;
-
   /// Return the dimension of the finite element function space
   /// @return std::size_t
   std::size_t space_dimension() const;

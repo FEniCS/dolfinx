@@ -31,7 +31,7 @@ FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
 {
   // Store dof coordinates on reference element
   assert(ufc_element.tabulate_reference_dof_coordinates);
-  _refX.resize(this->space_dimension(), this->topological_dimension());
+  _refX.resize(_space_dim, _tdim);
   if (ufc_element.tabulate_reference_dof_coordinates(_refX.data()) == -1)
   {
     throw std::runtime_error(
@@ -79,7 +79,7 @@ std::string FiniteElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
 mesh::CellType FiniteElement::cell_shape() const { return _cell_shape; }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::topological_dimension() const { return _tdim; }
+// std::size_t FiniteElement::topological_dimension() const { return _tdim; }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::space_dimension() const { return _space_dim; }
 //-----------------------------------------------------------------------------

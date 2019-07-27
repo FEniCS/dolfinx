@@ -95,7 +95,7 @@ public:
   ///
   /// @return std::size_t
   ///         The rank of the form.
-  std::size_t rank() const;
+  int rank() const;
 
   /// Set coefficient with given number (shared pointer version)
   ///
@@ -123,19 +123,7 @@ public:
   /// @return std::size_t
   ///         The position of coefficient i in original ufl form
   ///         coefficients.
-  std::size_t original_coefficient_position(std::size_t i) const;
-
-  // FIXME: remove this function. Assembler should calculate or put in
-  // utils.
-
-  /// Return the size of the element tensor, needed to create temporary
-  /// space for assemblers. If the largest number of per-element dofs in
-  /// function::FunctionSpace i is N_i, then for a linear form this is
-  /// N_0, and for a bilinear form, N_0*N_1.
-  ///
-  /// @return std::size_t The maximum number of values in a local
-  ///         element tensor
-  std::size_t max_element_tensor_size() const;
+  int original_coefficient_position(int i) const;
 
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
@@ -157,15 +145,7 @@ public:
   ///
   /// @return function::FunctionSpace
   ///         Function space shared pointer.
-  std::shared_ptr<const function::FunctionSpace>
-  function_space(std::size_t i) const;
-
-  /// Return function spaces for arguments
-  ///
-  /// @return    std::vector<_function::FunctionSpace_>
-  ///         Vector of function space shared pointers.
-  std::vector<std::shared_ptr<const function::FunctionSpace>>
-  function_spaces() const;
+  std::shared_ptr<const function::FunctionSpace> function_space(int i) const;
 
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
@@ -201,13 +181,13 @@ public:
   set_vertex_domains(const mesh::MeshFunction<std::size_t>& vertex_domains);
 
   /// Access coefficients (non-const)
-  FormCoefficients& coeffs() { return _coefficients; }
+  FormCoefficients& coefficients();
 
   /// Access coefficients (const)
-  const FormCoefficients& coeffs() const { return _coefficients; }
+  const FormCoefficients& coefficients() const;
 
   /// Access form integrals (const)
-  const FormIntegrals& integrals() const { return _integrals; }
+  const FormIntegrals& integrals() const;
 
   /// Get coordinate_mapping (experimental)
   std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const;

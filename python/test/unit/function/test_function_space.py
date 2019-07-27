@@ -43,7 +43,7 @@ def f(V):
 
 @fixture
 def V2(f):
-    return f.function_space()
+    return f.function_space
 
 
 @fixture
@@ -53,7 +53,7 @@ def g(W):
 
 @fixture
 def W2(g):
-    return g.function_space()
+    return g.function_space
 
 
 def test_python_interface(V, V2, W, W2, Q):
@@ -134,7 +134,7 @@ def test_collapse(W, V):
     assert Vc.dofmap.cell_dofs(0)[0] == V.dofmap.cell_dofs(0)[0]
     f0 = Function(V)
     f1 = Function(Vc)
-    assert f0.vector().getSize() == f1.vector().getSize()
+    assert f0.vector.getSize() == f1.vector.getSize()
 
 
 def test_argument_equality(mesh, V, V2, W, W2):

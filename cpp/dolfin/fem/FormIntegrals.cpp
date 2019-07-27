@@ -68,8 +68,7 @@ void FormIntegrals::register_tabulate_tensor(FormIntegrals::Type type, int i,
 //-----------------------------------------------------------------------------
 int FormIntegrals::num_integrals(FormIntegrals::Type type) const
 {
-  int type_index = static_cast<int>(type);
-  return _integrals[type_index].size();
+  return _integrals[static_cast<int>(type)].size();
 }
 //-----------------------------------------------------------------------------
 std::vector<int> FormIntegrals::integral_ids(FormIntegrals::Type type) const
@@ -86,7 +85,7 @@ const std::vector<std::int32_t>&
 FormIntegrals::integral_domains(FormIntegrals::Type type, unsigned int i) const
 {
   int type_index = static_cast<int>(type);
-  if (i >= _integrals[type_index].size())
+  if (i > _integrals[type_index].size())
     throw std::runtime_error("Invalid integral:" + std::to_string(i));
   return _integrals[type_index][i].active_entities;
 }
@@ -102,7 +101,6 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
     return;
 
   std::shared_ptr<const mesh::Mesh> mesh = marker.mesh();
-
   int tdim = mesh->topology().dim();
   if (type == Type::exterior_facet or type == Type::interior_facet)
     --tdim;
@@ -129,7 +127,6 @@ void FormIntegrals::set_domains(FormIntegrals::Type type,
   // Get reference to mesh function data array
   Eigen::Ref<const Eigen::Array<std::size_t, Eigen::Dynamic, 1>> mf_values
       = marker.values();
-
   for (Eigen::Index i = 0; i < mf_values.size(); ++i)
   {
     auto it = id_to_integral.find(mf_values[i]);

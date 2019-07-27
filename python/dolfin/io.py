@@ -112,7 +112,7 @@ class HDF5File:
 
         V_cpp = getattr(V, "_cpp_object", V)
         u_cpp = self._cpp_object.read(V_cpp, name)
-        return function.Function(V, u_cpp.vector())
+        return function.Function(V, u_cpp.vector)
 
 
 class XDMFFile:
@@ -233,7 +233,7 @@ class XDMFFile:
 
         V_cpp = getattr(V, "_cpp_object", V)
         u_cpp = self._cpp_object.read_checkpoint(V_cpp, name, counter)
-        return function.Function(V, u_cpp.vector())
+        return function.Function(V, u_cpp.vector)
 
     def write_checkpoint(self, u, name: str, time_step: float = 0.0) -> None:
         """Write finite element Function in checkpointing format
