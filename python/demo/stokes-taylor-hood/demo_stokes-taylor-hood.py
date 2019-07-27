@@ -191,7 +191,7 @@ L = inner(f, v) * dx
 # Compute solution
 w = Function(W)
 solve(a == L, w, bcs, petsc_options={"ksp_type": "preonly",
-                                     "pc_type": "lu", "pc_factor_mat_solver_type": "umfpack"})
+                                     "pc_type": "lu", "pc_factor_mat_solver_type": "mumps"})
 
 # Split the mixed solution and collapse
 u = w.sub(0).collapse()

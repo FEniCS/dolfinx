@@ -142,9 +142,14 @@ class Function(ufl.Coefficient):
         """Return the vector holding Function degrees-of-freedom."""
         return self._cpp_object.vector
 
+    @property
     def name(self) -> str:
         """Return name of the Function."""
         return self._cpp_object.name
+
+    @name.setter
+    def name(self, name):
+        self._cpp_object.name = name
 
     @property
     def id(self) -> int:
