@@ -144,7 +144,7 @@ class Function(ufl.Coefficient):
 
     @property
     def name(self) -> str:
-        """Return name of the Function."""
+        """Name of the Function."""
         return self._cpp_object.name
 
     @name.setter
