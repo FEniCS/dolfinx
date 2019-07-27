@@ -82,21 +82,21 @@ def mplot_expression(ax, f, mesh, **kwargs):
 
 
 def mplot_function(ax, f, **kwargs):
-    mesh = f.function_space().mesh
+    mesh = f.function_space.mesh
     gdim = mesh.geometry.dim
     tdim = mesh.topology.dim
 
     # Extract the function vector in a way that also works for
     # subfunctions
     try:
-        fvec = f.vector()
+        fvec = f.vector
     except RuntimeError:
-        fspace = f.function_space()
+        fspace = f.function_space
         try:
             fspace = fspace.collapse()
         except RuntimeError:
             return
-        fvec = fem.interpolate(f, fspace).vector()
+        fvec = fem.interpolate(f, fspace).vector
 
     if fvec.getSize() == mesh.num_entities(tdim):
         # DG0 cellwise function
@@ -132,10 +132,10 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank() == 0:
+    elif f.value_rank == 0:
         # Scalar function, interpolated to vertices
         # TODO: Handle DG1?
-        C = f.compute_point_values(mesh)
+        C = f.compute_point_values()
         if (C.dtype.type is np.complex128):
             warnings.warn("Plotting real part of complex data")
             C = np.real(C)
@@ -196,9 +196,9 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank() == 1:
+    elif f.value_rank == 1:
         # Vector function, interpolated to vertices
-        w0 = f.compute_point_values(mesh)
+        w0 = f.compute_point_values()
         if (w0.dtype.type is np.complex128):
             warnings.warn("Plotting real part of complex data")
             w0 = np.real(w0)
@@ -405,7 +405,7 @@ def plot(object, *args, **kwargs):
 
     if mesh is None:
         if isinstance(object, cpp.function.Function):
-            mesh = object.function_space().mesh
+            mesh = object.function_space.mesh
         elif hasattr(object, "mesh"):
             mesh = object.mesh
 
@@ -424,7 +424,7 @@ def plot(object, *args, **kwargs):
             cpp.log.info("Object cannot be plotted directly, projecting to "
                          "piecewise linears.")
             object = project(object, mesh=mesh)
-            mesh = object.function_space().mesh
+            mesh = object.function_space.mesh
             object = object._cpp_object
         except Exception as e:
             msg = "Don't know how to plot given object:\n  %s\n" \

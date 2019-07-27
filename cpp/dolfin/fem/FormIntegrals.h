@@ -24,11 +24,9 @@ class MeshFunction;
 namespace fem
 {
 
-// FIXME: This class would be greatly simplified if all integrals types
-// (cell, facet, etc) were the same type.
-
 /// Integrals of a Form, including those defined over cells, interior
 /// and exterior facets, and vertices.
+
 class FormIntegrals
 {
 public:

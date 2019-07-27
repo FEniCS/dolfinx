@@ -211,7 +211,7 @@ xdmf_utils::get_point_data_values(const function::Function& u)
   auto mesh = u.function_space()->mesh;
   assert(mesh);
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      data_values = u.compute_point_values(*mesh);
+      data_values = u.compute_point_values();
   std::int64_t width = get_padded_width(u);
 
   // FIXME: Unpick the below code for the new layout of data from

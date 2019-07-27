@@ -102,7 +102,7 @@ public:
   ///         The vector of expansion coefficients (const).
   const la::PETScVector& vector() const;
 
-  /// Interpolate function (on possibly non-matching meshes)
+  /// Interpolate a Function (on possibly non-matching meshes)
   ///
   /// @param    v (Function)
   ///         The function to be interpolated.
@@ -127,8 +127,8 @@ public:
 
   /// Return value size
   ///
-  /// @returns std::size_t
-  std::size_t value_size() const;
+  /// @returns int
+  int value_size() const;
 
   /// Return value dimension for given axis
   ///
@@ -141,9 +141,9 @@ public:
 
   /// Return value shape
   ///
-  /// @returns std::vector<std::size_t>
+  /// @returns std::vector<int>
   ///         The value shape.
-  std::vector<std::size_t> value_shape() const;
+  std::vector<int> value_shape() const;
 
   /// Evaluate at given point in given cell
   ///
@@ -190,15 +190,6 @@ public:
   void
   restrict(PetscScalar* w, const mesh::MeshEntity& cell,
            const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const;
-
-  /// Compute values at all mesh points
-  ///
-  /// @param    mesh (_mesh::Mesh_)
-  ///         The mesh.
-  /// @returns  point_values (EigenRowArrayXXd)
-  ///         The values at all geometric points
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-  compute_point_values(const mesh::Mesh& mesh) const;
 
   /// Compute values at all mesh points
   ///

@@ -92,7 +92,7 @@ def project(v,
     # Solve linear system for projection
     if funct is None:
         funct = function.Function(V)
-    la.solve(A, funct.vector(), b)
+    la.solve(A, funct.vector, b)
 
     return funct
 

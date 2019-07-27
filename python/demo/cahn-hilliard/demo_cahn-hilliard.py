@@ -322,14 +322,14 @@ if "CI" in os.environ.keys():
 else:
     T = 50 * dt
 
-u.vector().copy(result=u0.vector())
-u0.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+u.vector.copy(result=u0.vector)
+u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
 while (t < T):
     t += dt
-    r = solver.solve(problem, u.vector())
+    r = solver.solve(problem, u.vector)
     print("Step, num iterations:", int(t / dt), r[0])
-    u.vector().copy(result=u0.vector())
+    u.vector.copy(result=u0.vector)
     file.write(u.sub(0), t)
 
 # The string ``"compressed"`` indicates that the output data should be
@@ -337,8 +337,8 @@ while (t < T):
 # solution vector associated with ``u`` is copied to ``u0`` at the
 # beginning of each time step, and the nonlinear problem is solved by
 # calling
-# :py:func:`solver.solve(problem,u.vector())<dolfin.cpp.NewtonSolver.solve>`,
+# :py:func:`solver.solve(problem,u.vector)<dolfin.cpp.NewtonSolver.solve>`,
 # with the new solution vector returned in
-# :py:func:`u.vector()<dolfin.cpp.Function.vector>`. The ``c`` component
+# :py:func:`u.vector<dolfin.cpp.Function.vector>`. The ``c`` component
 # of the solution (the first component of ``u``) is then written to file
 # at every time step.

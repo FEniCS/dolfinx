@@ -22,7 +22,6 @@ void geometry(py::module& m);
 void graph(py::module& m);
 void io(py::module& m);
 void la(py::module& m);
-void math(py::module& m);
 void mesh(py::module& m);
 void nls(py::module& m);
 void refinement(py::module& m);
@@ -48,10 +47,6 @@ PYBIND11_MODULE(cpp, m)
   // Create function submodule [function]
   py::module function = m.def_submodule("function", "Function module");
   dolfin_wrappers::function(function);
-
-  // Create math submodule [math]
-  py::module math = m.def_submodule("math", "Math library module");
-  dolfin_wrappers::math(math);
 
   // Create mesh submodule [mesh]
   py::module mesh = m.def_submodule("mesh", "Mesh library module");

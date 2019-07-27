@@ -31,7 +31,7 @@ def test_ghost_mesh_assembly(mode):
     u, v = TrialFunction(V), TestFunction(V)
 
     f = Function(V)
-    with f.vector().localForm() as f_local:
+    with f.vector.localForm() as f_local:
         f_local.set(10.0)
     a = inner(f * u, v) * dx + inner(u, v) * ds
     L = inner(f, v) * dx + inner(2.0, v) * ds
