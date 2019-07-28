@@ -203,4 +203,3 @@ def test_mvc_construction_array():
 
     f = MeshValueCollection("size_t", mesh, 1, cells["line"], cell_data["line"]['gmsh:physical'])
     assert f.get_value(1, 1) == 1
-
