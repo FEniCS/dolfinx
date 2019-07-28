@@ -10,12 +10,12 @@ import sys
 
 import numpy as np
 import pytest
-
-from dolfin import (MPI, Cells, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, VectorFunctionSpace, cpp, fem)
-from dolfin.cpp.mesh import CellType
 from dolfin_utils.test.fixtures import fixture
 from dolfin_utils.test.skips import skip_in_parallel
+
+from dolfin import (MPI, MeshEntity, FunctionSpace, UnitCubeMesh, UnitIntervalMesh,
+                    UnitSquareMesh, VectorFunctionSpace, cpp, fem)
+from dolfin.cpp.mesh import CellType
 from ufl import FiniteElement, MixedElement, VectorElement
 
 xfail = pytest.mark.xfail(strict=True)
@@ -69,8 +69,9 @@ def test_tabulate_all_coordinates(mesh_factory):
     checked_W = [False] * local_size_W
 
     # Check that all coordinates are within the cell it should be
-    for cell in Cells(mesh):
-        dofs_V = V_dofmap.cell_dofs(cell.index())
+    for i in range(mesh.num_cells()):
+        cell = MeshEntity(mesh, mesh.topology.dim, i)
+        dofs_V = V_dofmap.cell_dofs(i)
         for di in dofs_V:
             if di >= local_size_V:
                 continue
@@ -106,17 +107,11 @@ def test_tabulate_dofs(mesh_factory):
     L01 = L1.sub(0)
     L11 = L1.sub(1)
 
-    for i, cell in enumerate(Cells(mesh)):
-        dofs0 = L0.dofmap.cell_dofs(cell.index())
-        dofs1 = L01.dofmap.cell_dofs(cell.index())
-        dofs2 = L11.dofmap.cell_dofs(cell.index())
-        dofs3 = L1.dofmap.cell_dofs(cell.index())
-
-        assert np.array_equal(dofs0, L0.dofmap.cell_dofs(i))
-        assert np.array_equal(dofs1, L01.dofmap.cell_dofs(i))
-        assert np.array_equal(dofs2, L11.dofmap.cell_dofs(i))
-        assert np.array_equal(dofs3, L1.dofmap.cell_dofs(i))
-
+    for i in range(mesh.num_cells()):
+        dofs0 = L0.dofmap.cell_dofs(i)
+        dofs1 = L01.dofmap.cell_dofs(i)
+        dofs2 = L11.dofmap.cell_dofs(i)
+        dofs3 = L1.dofmap.cell_dofs(i)
         assert len(np.intersect1d(dofs0, dofs1)) == 0
         assert len(np.intersect1d(dofs0, dofs2)) == 0
         assert len(np.intersect1d(dofs1, dofs2)) == 0
@@ -153,7 +148,8 @@ def test_tabulate_coord_periodic(mesh_factory):
     coord2 = np.zeros((sdim, 2), dtype="d")
     coord3 = np.zeros((sdim, 2), dtype="d")
 
-    for cell in Cells(mesh):
+    for i in range(mesh.num_cells()):
+        cell = MeshEntity(mesh, mesh.topology.dim, i)
         coord0 = V.element.tabulate_dof_coordinates(cell)
         coord1 = L0.element.tabulate_dof_coordinates(cell)
         coord2 = L01.element.tabulate_dof_coordinates(cell)

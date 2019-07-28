@@ -6,11 +6,8 @@
 
 #pragma once
 
-#include <array>
+#include <Eigen/Dense>
 #include <dolfin/mesh/cell_types.h>
-#include <map>
-#include <set>
-#include <vector>
 
 namespace dolfin
 {

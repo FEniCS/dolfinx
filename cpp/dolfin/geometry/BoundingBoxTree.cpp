@@ -14,10 +14,11 @@
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/log.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <dolfin/mesh/utils.h>
 
 using namespace dolfin;
 using namespace dolfin::geometry;
@@ -646,9 +647,15 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   LOG(INFO) << "Building point search tree to accelerate distance queries.";
 
   // Create list of midpoints for all cells
-  std::vector<Eigen::Vector3d> points;
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
-    points.push_back(mesh::midpoint(cell));
+  const int dim = mesh.topology().dim();
+  Eigen::Array<int, Eigen::Dynamic, 1> entities(mesh.num_entities(dim));
+  std::iota(entities.data(), entities.data() + entities.rows(), 0);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
+      = mesh::midpoints(mesh, dim, entities);
+
+  std::vector<Eigen::Vector3d> points(entities.rows());
+  for (std::size_t i = 0; i < points.size(); ++i)
+    points[i] = midpoints.row(i);
 
   // Build tree
   _point_search_tree
@@ -665,7 +672,9 @@ void BoundingBoxTree::compute_bbox_of_entity(double* b,
 
   // Get mesh entity data
   const mesh::Geometry& geometry = entity.mesh().geometry();
-  const int num_vertices = entity.num_entities(0);
+  const mesh::CellType entity_type
+      = mesh::cell_entity_type(entity.mesh().cell_type, entity.dim());
+  const int num_vertices = mesh::cell_num_entities(entity_type, 0);
   const std::int32_t* vertices = entity.entities(0);
   assert(num_vertices >= 2);
 

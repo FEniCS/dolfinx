@@ -13,11 +13,10 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
@@ -142,9 +141,10 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 
   mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
   const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
+  const int num_vertices = mesh::cell_num_entities(celltype, 0);
   for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
   {
-    for (int i = 0; i != c.num_entities(0); ++i)
+    for (int i = 0; i < num_vertices; ++i)
       file << c.entities(0)[perm[i]] << " ";
     file << " ";
   }

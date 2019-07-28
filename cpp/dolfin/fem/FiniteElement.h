@@ -29,7 +29,7 @@ public:
   /// Create finite element from UFC finite element
   /// @param element (ufc::finite_element)
   ///  UFC finite element
-  FiniteElement(const ufc_finite_element& element);
+  FiniteElement(const ufc_finite_element& ufc_element);
 
   /// Destructor
   virtual ~FiniteElement() = default;
@@ -41,10 +41,6 @@ public:
   /// Return the cell shape
   /// @return CellShape
   mesh::CellType cell_shape() const;
-
-  /// Return the topological dimension of the cell shape
-  /// @return std::size_t
-  std::size_t topological_dimension() const;
 
   /// Return the dimension of the finite element function space
   /// @return std::size_t
@@ -120,7 +116,7 @@ public:
   std::size_t hash() const;
 
   /// Extract sub finite element for component
-  std::shared_ptr<FiniteElement>
+  std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
 
 private:
@@ -134,10 +130,10 @@ private:
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
 
   // List of sub-elements (if any)
-  std::vector<std::shared_ptr<FiniteElement>> _sub_elements;
+  std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
 
   // Recursively extract sub finite element
-  static std::shared_ptr<FiniteElement>
+  static std::shared_ptr<const FiniteElement>
   extract_sub_element(const FiniteElement& finite_element,
                       const std::vector<int>& component);
 

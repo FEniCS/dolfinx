@@ -113,7 +113,7 @@ a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
 u0 = Function(V)
-with u0.vector().localForm() as bc_local:
+with u0.vector.localForm() as bc_local:
     bc_local.set(0.0)
 
 # Set up boundary condition on inner surface
@@ -162,13 +162,13 @@ solver.set_from_options()
 solver.set_operator(A)
 
 # Compute solution
-solver.solve(u.vector(), b)
+solver.solve(u.vector, b)
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
 file.write(u)
 
-unorm = u.vector().norm()
+unorm = u.vector.norm()
 if MPI.rank(mesh.mpi_comm()) == 0:
     print("Solution vector norm:", unorm)
 

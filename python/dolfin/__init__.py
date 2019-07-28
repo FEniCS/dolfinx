@@ -42,9 +42,7 @@ import dolfin.log
 from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from .cpp.mesh import (Mesh, Topology, Geometry, Cell, Facet, Face, Edge,
-                       Vertex, MeshEntity, Cells, Facets, MeshEntities,
-                       EntityRange, MeshQuality)
+from .cpp.mesh import Mesh, Topology, Geometry, MeshEntity, EntityRange, MeshQuality
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
 

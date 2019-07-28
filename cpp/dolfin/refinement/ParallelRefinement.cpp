@@ -8,9 +8,9 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
-#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Partitioning.h>
@@ -140,6 +140,12 @@ void ParallelRefinement::create_new_vertices()
       _mesh.geometry().points().data(),
       _mesh.geometry().points().data() + _mesh.geometry().points().size());
 
+  // Compute all edge mid-points
+  Eigen::Array<int, Eigen::Dynamic, 1> edges(_mesh.num_entities(1));
+  std::iota(edges.data(), edges.data() + edges.rows(), 0);
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
+      = mesh::midpoints(_mesh, 1, edges);
+
   // Tally up unshared marked edges, and shared marked edges which are
   // owned on this process.  Index them sequentially from zero.
   std::size_t n = 0;
@@ -166,10 +172,8 @@ void ParallelRefinement::create_new_vertices()
       // list
       if (owner)
       {
-        const Eigen::Vector3d midpoint
-            = mesh::midpoint(mesh::Edge(_mesh, local_i));
         for (std::size_t j = 0; j < 3; ++j)
-          _new_vertex_coordinates.push_back(midpoint[j]);
+          _new_vertex_coordinates.push_back(midpoints(local_i, j));
         _local_edge_to_new_vertex[local_i] = n++;
       }
     }

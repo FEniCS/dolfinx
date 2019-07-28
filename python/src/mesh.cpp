@@ -7,12 +7,8 @@
 #include <cfloat>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Connectivity.h>
 #include <dolfin/mesh/CoordinateDofs.h>
-#include <dolfin/mesh/Edge.h>
-#include <dolfin/mesh/Face.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
@@ -23,7 +19,6 @@
 #include <dolfin/mesh/Ordering.h>
 #include <dolfin/mesh/Partitioning.h>
 #include <dolfin/mesh/Topology.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
 #include <dolfin/mesh/utils.h>
 #include <memory>
@@ -67,7 +62,7 @@ void mesh(py::module& m)
         "Compute maximum distance between any two vertices.");
   m.def("inradius", &dolfin::mesh::inradius, "Compute inradius of cells.");
   m.def("radius_ratio", &dolfin::mesh::radius_ratio);
-  m.def("midpoint", &dolfin::mesh::midpoint);
+  m.def("midpoints", &dolfin::mesh::midpoints);
 
   // dolfin::mesh::GhostMode enums
   py::enum_<dolfin::mesh::GhostMode>(m, "GhostMode")
@@ -202,11 +197,11 @@ void mesh(py::module& m)
            [](const dolfin::mesh::Connectivity& self, std::size_t i) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(
                  self.connections(i), self.size(i));
-           },
+           }, "Connections for a single mesh entity",
            py::return_value_policy::reference_internal)
       .def("connections",
            py::overload_cast<>(&dolfin::mesh::Connectivity::connections),
-           "Return all connectivities")
+           "Connections for all mesh entities")
       .def("pos",
            py::overload_cast<>(&dolfin::mesh::Connectivity::entity_positions),
            "Index to each entity in the connectivity array")
@@ -222,54 +217,26 @@ void mesh(py::module& m)
       .def("mesh", &dolfin::mesh::MeshEntity::mesh, "Associated mesh")
       .def("index",
            py::overload_cast<>(&dolfin::mesh::MeshEntity::index, py::const_),
-           "Index")
-      .def("global_index", &dolfin::mesh::MeshEntity::global_index,
-           "Global index")
-      .def("num_entities", &dolfin::mesh::MeshEntity::num_entities,
-           "Number of incident entities of given dimension")
+           "Entity index")
       .def("entities",
            [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
-             return Eigen::Map<const dolfin::EigenArrayXi32>(
-                 self.entities(dim), self.num_entities(dim));
+             if (self.dim() == dim)
+             {
+               return py::array(1, self.entities(dim));
+             }
+             else
+             {
+               assert(self.mesh.topology().connectivity(self.dim(), dim));
+               const int num_entities = self.mesh()
+                                            .topology()
+                                            .connectivity(self.dim(), dim)
+                                            ->size(self.index());
+               return py::array(num_entities, self.entities(dim));
+             }
            },
            py::return_value_policy::reference_internal)
       .def("__str__",
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
-
-  // dolfin::mesh::Vertex
-  py::class_<dolfin::mesh::Vertex, std::shared_ptr<dolfin::mesh::Vertex>,
-             dolfin::mesh::MeshEntity>(m, "Vertex", "Vertex object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  // dolfin::mesh::Edge
-  py::class_<dolfin::mesh::Edge, std::shared_ptr<dolfin::mesh::Edge>,
-             dolfin::mesh::MeshEntity>(m, "Edge", "Edge object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  // dolfin::mesh::Face
-  py::class_<dolfin::mesh::Face, std::shared_ptr<dolfin::mesh::Face>,
-             dolfin::mesh::MeshEntity>(m, "Face", "Face object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  // dolfin::mesh::Facet
-  py::class_<dolfin::mesh::Facet, std::shared_ptr<dolfin::mesh::Facet>,
-             dolfin::mesh::MeshEntity>(m, "Facet", "Facet object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  // dolfin::mesh::Cell
-  py::class_<dolfin::mesh::Cell, std::shared_ptr<dolfin::mesh::Cell>,
-             dolfin::mesh::MeshEntity>(m, "Cell", "Cell object")
-      .def(py::init<const dolfin::mesh::Mesh&, std::int32_t>());
-
-  py::class_<
-      dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>,
-      std::shared_ptr<dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>>>(
-      m, "MeshEntities", "Range for iteration over entities of a Mesh")
-      .def(py::init<const dolfin::mesh::Mesh&, int>())
-      .def("__iter__",
-           [](const dolfin::mesh::MeshRange<dolfin::mesh::MeshEntity>& r) {
-             return py::make_iterator(r.begin(), r.end());
-           });
 
   py::class_<
       dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
@@ -280,30 +247,6 @@ void mesh(py::module& m)
            [](const dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>& r) {
              return py::make_iterator(r.begin(), r.end());
            });
-
-  // dolfin::mesh::MeshRangeType enums
-  py::enum_<dolfin::mesh::MeshRangeType>(m, "MeshRangeType")
-      .value("REGULAR", dolfin::mesh::MeshRangeType::REGULAR)
-      .value("ALL", dolfin::mesh::MeshRangeType::ALL)
-      .value("GHOST", dolfin::mesh::MeshRangeType::GHOST);
-
-// dolfin::mesh::MeshIterator (Cells, Facets, Faces, Edges, Vertices)
-#define MESHITERATOR_MACRO(TYPE, ENTITYNAME)                                   \
-  py::class_<dolfin::mesh::MeshRange<dolfin::ENTITYNAME>,                      \
-             std::shared_ptr<dolfin::mesh::MeshRange<dolfin::ENTITYNAME>>>(    \
-      m, #TYPE,                                                                \
-      "Range for iterating over entities of type " #ENTITYNAME " of a Mesh")   \
-      .def(py::init<const dolfin::mesh::Mesh&>())                              \
-      .def(py::init<const dolfin::mesh::Mesh&, dolfin::mesh::MeshRangeType>()) \
-      .def("__iter__",                                                         \
-           [](const dolfin::mesh::MeshRange<dolfin::ENTITYNAME>& c) {          \
-             return py::make_iterator(c.begin(), c.end());                     \
-           });
-
-  MESHITERATOR_MACRO(Cells, mesh::Cell);
-  MESHITERATOR_MACRO(Facets, mesh::Facet);
-  // MESHITERATOR_MACRO(Vertices, mesh::Vertex);
-#undef MESHITERATOR_MACRO
 
 // dolfin::mesh::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME)                                \

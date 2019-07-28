@@ -48,12 +48,14 @@ class Function(ufl.Coefficient):
         # Store DOLFIN FunctionSpace object
         self._V = V
 
+    @property
     def function_space(self) -> function.functionspace.FunctionSpace:
         """Return the FunctionSpace"""
         return self._V
 
+    @property
     def value_rank(self) -> int:
-        return self._cpp_object.value_rank()
+        return self._cpp_object.value_rank
 
     def value_dimension(self, i) -> int:
         return self._cpp_object.value_dimension(i)
@@ -124,11 +126,8 @@ class Function(ufl.Coefficient):
 
         _interpolate(u)
 
-    def compute_point_values(self, mesh=None):
-        if mesh is not None:
-            return self._cpp_object.compute_point_values(mesh)
-        else:
-            return self._cpp_object.compute_point_values()
+    def compute_point_values(self):
+        return self._cpp_object.compute_point_values()
 
     def copy(self):
         """Return a copy of the Function. The FunctionSpace is shared and the
@@ -136,15 +135,21 @@ class Function(ufl.Coefficient):
 
         """
         return function.Function(self.function_space(),
-                                 self._cpp_object.vector().copy())
+                                 self._cpp_object.vector.copy())
 
+    @property
     def vector(self):
         """Return the vector holding Function degrees-of-freedom."""
-        return self._cpp_object.vector()
+        return self._cpp_object.vector
 
+    @property
     def name(self) -> str:
-        """Return name of the Function."""
+        """Name of the Function."""
         return self._cpp_object.name
+
+    @name.setter
+    def name(self, name):
+        self._cpp_object.name = name
 
     @property
     def id(self) -> int:
@@ -163,7 +168,7 @@ class Function(ufl.Coefficient):
 
         """
         return Function(
-            self._V.sub(i), self.vector(), name="{}-{}".format(str(self), i))
+            self._V.sub(i), self.vector, name="{}-{}".format(str(self), i))
 
     def split(self):
         """Extract any sub functions.
@@ -173,7 +178,7 @@ class Function(ufl.Coefficient):
         function resides in the subspace of the mixed space.
 
         """
-        num_sub_spaces = self.function_space().num_sub_spaces()
+        num_sub_spaces = self.function_space.num_sub_spaces()
         if num_sub_spaces == 1:
             raise RuntimeError("No subfunctions to extract")
         return tuple(self.sub(i) for i in range(num_sub_spaces))
@@ -181,5 +186,5 @@ class Function(ufl.Coefficient):
     def collapse(self):
         u_collapsed = self._cpp_object.collapse()
         V_collapsed = functionspace.FunctionSpace(None, self.ufl_element(),
-                                                  u_collapsed.function_space())
-        return Function(V_collapsed, u_collapsed.vector())
+                                                  u_collapsed.function_space)
+        return Function(V_collapsed, u_collapsed.vector)

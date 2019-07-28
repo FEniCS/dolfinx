@@ -6,14 +6,12 @@
 
 #include "Partitioning.h"
 #include "DistributedMeshTools.h"
-#include "Facet.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
 #include "MeshValueCollection.h"
 #include "PartitionData.h"
 #include "Topology.h"
-#include "Vertex.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdint>

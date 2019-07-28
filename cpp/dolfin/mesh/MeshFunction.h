@@ -12,7 +12,6 @@
 #include "MeshEntity.h"
 #include "MeshIterator.h"
 #include "Topology.h"
-#include "Vertex.h"
 #include <boost/container/vector.hpp>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/UniqueIdGenerator.h>

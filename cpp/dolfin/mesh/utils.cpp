@@ -5,12 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "utils.h"
-#include "Cell.h"
-#include "Facet.h"
 #include "Geometry.h"
 #include "MeshEntity.h"
 #include "MeshIterator.h"
-#include "Vertex.h"
 #include "cell_types.h"
 #include <Eigen/Dense>
 #include <algorithm>
@@ -435,11 +432,12 @@ mesh::radius_ratio(const mesh::Mesh& mesh,
   return mesh::cell_dim(mesh.cell_type) * r / cr;
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
+mesh::cell_normals(const mesh::Mesh& mesh, int dim)
 {
-  const int gdim = cell.mesh().geometry().dim();
-  const mesh::CellType type = cell.mesh().cell_type;
-  const mesh::Geometry& geometry = cell.mesh().geometry();
+  const int gdim = mesh.geometry().dim();
+  const mesh::CellType type = mesh::cell_entity_type(mesh.cell_type, dim);
+  const mesh::Geometry& geometry = mesh.geometry();
 
   switch (type)
   {
@@ -448,48 +446,67 @@ Eigen::Vector3d mesh::cell_normal(const mesh::Cell& cell)
     if (gdim > 2)
       throw std::invalid_argument("Interval cell normal undefined in 3D");
 
-    // Get the two vertices as points
-    const std::int32_t* vertices = cell.entities(0);
-    Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    Eigen::Vector3d p1 = geometry.x(vertices[1]);
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
+        mesh.num_entities(1), 3);
+    for (int i = 0; i < mesh.num_entities(1); ++i)
+    {
+      // Get the two vertices as points
+      const mesh::MeshEntity e(mesh, 1, i);
+      const std::int32_t* vertices = e.entities(0);
+      Eigen::Vector3d p0 = geometry.x(vertices[0]);
+      Eigen::Vector3d p1 = geometry.x(vertices[1]);
 
-    // Define normal by rotating tangent counter-clockwise
-    Eigen::Vector3d t = p1 - p0;
-    Eigen::Vector3d n(-t[1], t[0], 0.0);
-    return n.normalized();
+      // Define normal by rotating tangent counter-clockwise
+      Eigen::Vector3d t = p1 - p0;
+      n.row(i) = Eigen::Vector3d(-t[1], t[0], 0.0).normalized();
+    }
+    return n;
   }
   case (mesh::CellType::triangle):
   {
-    // Get the three vertices as points
-    const std::int32_t* vertices = cell.entities(0);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
+        mesh.num_entities(2), 3);
+    for (int i = 0; i < mesh.num_entities(2); ++i)
+    {
+      // Get the three vertices as points
+      const mesh::MeshEntity e(mesh, 2, i);
+      const std::int32_t* vertices = e.entities(0);
+      const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+      const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+      const Eigen::Vector3d p2 = geometry.x(vertices[2]);
 
-    // Define cell normal via cross product of first two edges
-    return ((p1 - p0).cross(p2 - p0)).normalized();
+      // Define cell normal via cross product of first two edges
+      n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
+    }
+    return n;
   }
   case (mesh::CellType::quadrilateral):
   {
     // TODO: check
+    Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> n(
+        mesh.num_entities(2), 3);
+    for (int i = 0; i < mesh.num_entities(2); ++i)
+    {
+      // Get three vertices as points
+      const mesh::MeshEntity e(mesh, 2, i);
+      const std::int32_t* vertices = e.entities(0);
+      const Eigen::Vector3d p0 = geometry.x(vertices[0]);
+      const Eigen::Vector3d p1 = geometry.x(vertices[1]);
+      const Eigen::Vector3d p2 = geometry.x(vertices[2]);
 
-    // Get three vertices as points
-    const std::int32_t* vertices = cell.entities(0);
-    const Eigen::Vector3d p0 = geometry.x(vertices[0]);
-    const Eigen::Vector3d p1 = geometry.x(vertices[1]);
-    const Eigen::Vector3d p2 = geometry.x(vertices[2]);
-
-    // Defined cell normal via cross product of first two edges:
-    return ((p1 - p0).cross(p2 - p0)).normalized();
+      // Defined cell normal via cross product of first two edges:
+      n.row(i) = ((p1 - p0).cross(p2 - p0)).normalized();
+    }
+    return n;
   }
   default:
     throw std::invalid_argument(
         "cell_normal not supported for this cell type.");
   }
-  return Eigen::Vector3d();
+  return Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>();
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
+Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet_local)
 {
   const mesh::Geometry& geometry = cell.mesh().geometry();
   const mesh::CellType type = cell.mesh().cell_type;
@@ -500,7 +517,7 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
     const std::int32_t* vertices = cell.entities(0);
     Eigen::Vector3d n = geometry.x(vertices[0]) - geometry.x(vertices[1]);
     n.normalize();
-    if (facet == 1)
+    if (facet_local == 1)
       return -1.0 * n;
     else
       return n;
@@ -514,14 +531,14 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
       throw std::runtime_error("Illegal geometric dimension");
 
     cell.mesh().create_connectivity(2, 1);
-    mesh::Facet f(cell.mesh(), cell.entities(1)[facet]);
+    mesh::Facet f(cell.mesh(), cell.entities(1)[facet_local]);
 
     // Get global index of opposite vertex
-    const int v0 = cell.entities(0)[facet];
+    const std::int32_t v0 = cell.entities(0)[facet_local];
 
     // Get global index of vertices on the facet
-    const int v1 = f.entities(0)[0];
-    const int v2 = f.entities(0)[1];
+    const std::int32_t v1 = f.entities(0)[0];
+    const std::int32_t v2 = f.entities(0)[1];
 
     // Get the coordinates of the three vertices
     const Eigen::Vector3d p0 = geometry.x(v0);
@@ -539,21 +556,21 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
   }
   case (mesh::CellType::quadrilateral):
   {
+    if (cell.mesh().geometry().dim() != 2)
+      throw std::runtime_error("Illegal geometric dimension");
+
     // Make sure we have facets
     cell.mesh().create_connectivity(2, 1);
 
     // Create facet from the mesh and local facet number
-    Facet f(cell.mesh(), cell.entities(1)[facet]);
-
-    if (cell.mesh().geometry().dim() != 2)
-      throw std::runtime_error("Illegal geometric dimension");
+    Facet f(cell.mesh(), cell.entities(1)[facet_local]);
 
     // Get global index of opposite vertex
-    const std::size_t v0 = cell.entities(0)[facet];
+    const std::int32_t v0 = cell.entities(0)[facet_local];
 
     // Get global index of vertices on the facet
-    const std::size_t v1 = f.entities(0)[0];
-    const std::size_t v2 = f.entities(0)[1];
+    const std::int32_t v1 = f.entities(0)[0];
+    const std::int32_t v2 = f.entities(0)[1];
 
     // Get the coordinates of the three vertices
     const Eigen::Vector3d p0 = geometry.x(v0);
@@ -574,35 +591,30 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
     cell.mesh().create_connectivity(3, 2);
 
     // Create facet from the mesh and local facet number
-    Facet f(cell.mesh(), cell.entities(2)[facet]);
+    Facet f(cell.mesh(), cell.entities(2)[facet_local]);
 
     // Get global index of opposite vertex
-    const std::size_t v0 = cell.entities(0)[facet];
+    const std::int32_t v0 = cell.entities(0)[facet_local];
 
     // Get global index of vertices on the facet
-    std::size_t v1 = f.entities(0)[0];
-    std::size_t v2 = f.entities(0)[1];
-    std::size_t v3 = f.entities(0)[2];
+    const std::int32_t v1 = f.entities(0)[0];
+    const std::int32_t v2 = f.entities(0)[1];
+    const std::int32_t v3 = f.entities(0)[2];
 
     // Get the coordinates of the four vertices
-    const Eigen::Vector3d P0 = geometry.x(v0);
-    const Eigen::Vector3d P1 = geometry.x(v1);
-    const Eigen::Vector3d P2 = geometry.x(v2);
-    const Eigen::Vector3d P3 = geometry.x(v3);
-
-    // Create vectors
-    Eigen::Vector3d V0 = P0 - P1;
-    Eigen::Vector3d V1 = P2 - P1;
-    Eigen::Vector3d V2 = P3 - P1;
+    const Eigen::Vector3d p0 = geometry.x(v0);
+    const Eigen::Vector3d p1 = geometry.x(v1);
+    const Eigen::Vector3d p2 = geometry.x(v2);
+    const Eigen::Vector3d p3 = geometry.x(v3);
 
     // Compute normal vector
-    Eigen::Vector3d n = V1.cross(V2);
+    Eigen::Vector3d n = (p2 - p1).cross(p3 - p1);
 
     // Normalize
     n.normalize();
 
     // Flip direction of normal so it points outward
-    if (n.dot(V0) > 0)
+    if (n.dot(p0 - p1) > 0)
       n *= -1.0;
 
     return n;
@@ -615,26 +627,41 @@ Eigen::Vector3d mesh::normal(const mesh::Cell& cell, int facet)
   return Eigen::Vector3d();
 }
 //-----------------------------------------------------------------------------
-Eigen::Vector3d mesh::midpoint(const mesh::MeshEntity& e)
+Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> mesh::midpoints(
+    const mesh::Mesh& mesh, int dim,
+    const Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> entities)
 {
-  const mesh::Mesh& mesh = e.mesh();
   const mesh::Geometry& geometry = mesh.geometry();
+  const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points
+      = geometry.points();
 
-  // Special case: a vertex is its own midpoint (don't check neighbors)
-  if (e.dim() == 0)
-    return geometry.x(e.index());
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> x(entities.rows(),
+                                                             3);
 
-  // Otherwise iterate over incident vertices and compute average
-  int num_vertices = 0;
-  Eigen::Vector3d x = Eigen::Vector3d::Zero();
-  for (auto& v : mesh::EntityRange<mesh::Vertex>(e))
+  // Special case: a vertex is its own midpoint
+  if (dim == 0)
   {
-    x += geometry.x(v.index());
-    ++num_vertices;
+    for (Eigen::Index e = 0; e < entities.rows(); ++e)
+      x.row(e) = points.row(entities[e]);
+  }
+  else
+  {
+    const mesh::Topology& topology = mesh.topology();
+    assert(topology.connectivity(dim, 0));
+    std::shared_ptr<const mesh::Connectivity> connectivity
+        = topology.connectivity(dim, 0);
+    const int num_vertices
+        = mesh::cell_num_entities(cell_entity_type(mesh.cell_type, dim), 0);
+    for (Eigen::Index e = 0; e < entities.rows(); ++e)
+    {
+      const std::int32_t* vertices = connectivity->connections(entities[e]);
+      x.row(e) = 0.0;
+      for (int i = 0; i < num_vertices; ++i)
+        x.row(e) += points.row(vertices[i]);
+    }
+    x /= num_vertices;
   }
 
-  assert(num_vertices > 0);
-  x /= double(num_vertices);
   return x;
 }
 //-----------------------------------------------------------------------------

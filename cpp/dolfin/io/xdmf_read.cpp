@@ -21,7 +21,6 @@
 // #include <dolfin/mesh/Mesh.h>
 // #include <dolfin/mesh/MeshIterator.h>
 // #include <dolfin/mesh/Topology.h>
-// #include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
 using namespace dolfin::io;

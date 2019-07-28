@@ -7,9 +7,9 @@
 #include "MeshEntity.h"
 #include "Geometry.h"
 #include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshIterator.h"
 #include "Topology.h"
-#include "Vertex.h"
 #include <dolfin/common/log.h>
 
 using namespace dolfin;
