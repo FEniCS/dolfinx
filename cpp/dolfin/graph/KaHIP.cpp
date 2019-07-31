@@ -38,10 +38,10 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   unsigned long long* adjcwgt{nullptr};
 
   // TODO: Allow the user to set the parameters
-  int mode = ECOMESH;
+  int mode = ULTRAFASTMESH;
   int seed = 0;
   // The amount of imbalance that is allowed. (3%)
-  double imbalance = 0.06;
+  double imbalance = 0.03;
   // Suppress output from the partitioning library.
   bool suppress_output = true;
 
