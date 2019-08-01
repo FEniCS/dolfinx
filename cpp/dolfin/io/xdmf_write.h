@@ -56,6 +56,7 @@ template <typename T>
 void add_information(MPI_Comm comm, pugi::xml_node& information_node,
                 const std::map<std::string, T>& information){
   information_node.append_attribute("Name") = "Information";
+  information_node.append_attribute("Value") = information.size();
   auto it = information.begin();
 
   pugi::xml_document cdata_doc;

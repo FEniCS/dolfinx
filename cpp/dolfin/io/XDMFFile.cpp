@@ -1501,7 +1501,11 @@ void XDMFFile::write_information(const std::map<std::string, T>& information){
 
   assert(domain_node);
 
-  pugi::xml_node information_node = domain_node.append_child("Information");
+  // Get grid node
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  assert(grid_node);
+
+  pugi::xml_node information_node = grid_node.append_child("Information");
 
   xdmf_write::add_information<T>(_mpi_comm.comm(), information_node, information);
 
@@ -1554,8 +1558,12 @@ XDMFFile::read_information() const{
   pugi::xml_node domain_node = xdmf_node.child("Domain");
   assert(domain_node); 
 
+  // Get grid node
+  pugi::xml_node grid_node = domain_node.child("Grid");
+  assert(grid_node);
+
   // Get information node
-  pugi::xml_node information_node = domain_node.child("Information");
+  pugi::xml_node information_node = grid_node.child("Information");
   assert(information_node);
 
   // Get CDATA
@@ -1571,7 +1579,7 @@ XDMFFile::read_information() const{
   std::map<std::string, T> map_of_info;
   for (pugi::xml_node child: main_node.children())
   {
-      std::string tag_key = child.first_attribute().value();
+      std::string tag_key = child.attribute("key").value();
       T tag_value = boost::lexical_cast<T>(child.child_value())  ;
       
       // Insert Element in map
