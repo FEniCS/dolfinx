@@ -36,3 +36,5 @@ All documented demos
    demos/cahn-hilliard/demo_cahn-hilliard.py.rst
    demos/stokes-taylor-hood/demo_stokes-taylor-hood.py.rst
    demos/tagging-mesh-entities/demo_tagging_mesh_entities.py.rst
+   demos/poisson-subdomain/demo_poisson_subdomain.py.rst
+
