@@ -5,8 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Ordering.h"
-#include "Cell.h"
+#include "CoordinateDofs.h"
 #include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshIterator.h"
 #include "cell_types.h"
 #include <array>

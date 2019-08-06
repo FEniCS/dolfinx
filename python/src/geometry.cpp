@@ -8,8 +8,8 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/geometry/CollisionPredicates.h>
 #include <dolfin/geometry/utils.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <memory>
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>

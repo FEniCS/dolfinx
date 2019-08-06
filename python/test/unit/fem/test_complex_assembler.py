@@ -115,5 +115,5 @@ def test_complex_assembly_solve():
     u_ref = dolfin.interpolate(ref_eval, V)
 
     xnorm = x.norm(PETSc.NormType.N2)
-    x_ref_norm = u_ref.vector().norm(PETSc.NormType.N2)
+    x_ref_norm = u_ref.vector.norm(PETSc.NormType.N2)
     assert np.isclose(xnorm, x_ref_norm)

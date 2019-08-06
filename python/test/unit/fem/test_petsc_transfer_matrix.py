@@ -30,10 +30,10 @@ def test_scalar_p1():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector(), Vuc.vector())
+    mat.mult(uc.vector, Vuc.vector)
 
-    diff = Vuc.vector()
-    diff.axpy(-1, uf.vector())
+    diff = Vuc.vector
+    diff.axpy(-1, uf.vector)
 
     assert diff.norm() < 1.0e-12
 
@@ -57,10 +57,10 @@ def test_scalar_p1_scaled_mesh():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector(), Vuc.vector())
+    mat.mult(uc.vector, Vuc.vector)
 
-    diff = Vuc.vector()
-    diff.axpy(-1, uf.vector())
+    diff = Vuc.vector
+    diff.axpy(-1, uf.vector)
 
     assert diff.norm() < 1.0e-12
 
@@ -71,10 +71,10 @@ def test_scalar_p1_scaled_mesh():
 
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
-    mat.mult(uc.vector(), Vuc.vector())
+    mat.mult(uc.vector, Vuc.vector)
 
-    diff = Vuc.vector()
-    diff.axpy(-1, uf.vector())
+    diff = Vuc.vector
+    diff.axpy(-1, uf.vector)
 
     assert diff.norm() < 1.0e-12
 
@@ -95,10 +95,10 @@ def test_scalar_p2():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector(), Vuc.vector())
+    mat.mult(uc.vector, Vuc.vector)
 
-    diff = Vuc.vector()
-    diff.axpy(-1, uf.vector())
+    diff = Vuc.vector
+    diff.axpy(-1, uf.vector)
 
     assert diff.norm() < 1.0e-12
 
@@ -121,10 +121,10 @@ def test_vector_p1_2d():
                                                    Vf._cpp_object)
 
     Vuc = Function(Vf)
-    mat.mult(uc.vector(), Vuc.vector())
+    mat.mult(uc.vector, Vuc.vector)
 
-    diff = Vuc.vector()
-    diff.axpy(-1, uf.vector())
+    diff = Vuc.vector
+    diff.axpy(-1, uf.vector)
     assert diff.norm() < 1.0e-12
 
 
@@ -145,10 +145,10 @@ def test_vector_p2_2d():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector(), Vuc.vector())
+    mat.mult(uc.vector, Vuc.vector)
 
-    diff = Vuc.vector()
-    diff.axpy(-1, uf.vector())
+    diff = Vuc.vector
+    diff.axpy(-1, uf.vector)
     assert diff.norm() < 1.0e-12
 
 
@@ -170,10 +170,10 @@ def test_vector_p1_3d():
     mat = PETScDMCollection.create_transfer_matrix(Vc._cpp_object,
                                                    Vf._cpp_object)
     Vuc = Function(Vf)
-    mat.mult(uc.vector(), Vuc.vector())
+    mat.mult(uc.vector, Vuc.vector)
 
-    diff = Vuc.vector()
-    diff.axpy(-1, uf.vector())
+    diff = Vuc.vector
+    diff.axpy(-1, uf.vector)
     assert diff.norm() < 1.0e-12
 
 
@@ -201,9 +201,9 @@ def test_taylor_hood_cube():
 
     mat = PETScDMCollection.create_transfer_matrix(Zc, Zf)
     Zuc = Function(Zf)
-    mat.mult(zc.vector(), Zuc.vector())
-    Zuc.vector().update_ghost_values()
+    mat.mult(zc.vector, Zuc.vector)
+    Zuc.vector.update_ghost_values()
 
     diff = Function(Zf)
     diff.assign(Zuc - zf)
-    assert diff.vector().norm("l2") < 1.0e-12
+    assert diff.vector.norm("l2") < 1.0e-12

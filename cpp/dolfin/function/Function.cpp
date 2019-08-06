@@ -18,9 +18,11 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
+#include <dolfin/mesh/CoordinateDofs.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
@@ -321,6 +323,14 @@ int Function::value_rank() const
   return _function_space->element->value_rank();
 }
 //-----------------------------------------------------------------------------
+int Function::value_size() const
+{
+  int size = 1;
+  for (int i = 0; i < value_rank(); ++i)
+    size *= value_dimension(i);
+  return size;
+}
+//-----------------------------------------------------------------------------
 int Function::value_dimension(int i) const
 {
   assert(_function_space);
@@ -328,18 +338,18 @@ int Function::value_dimension(int i) const
   return _function_space->element->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> Function::value_shape() const
+std::vector<int> Function::value_shape() const
 {
   assert(_function_space);
   assert(_function_space->element);
-  std::vector<std::size_t> _shape(this->value_rank(), 1);
+  std::vector<int> _shape(this->value_rank(), 1);
   for (std::size_t i = 0; i < _shape.size(); ++i)
     _shape[i] = this->value_dimension(i);
   return _shape;
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(
-    PetscScalar* w, const mesh::Cell& dolfin_cell,
+    PetscScalar* w, const mesh::Cell& cell,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   assert(w);
@@ -348,7 +358,7 @@ void Function::restrict(
 
   // Get dofmap for cell
   const fem::DofMap& dofmap = *_function_space->dofmap;
-  auto dofs = dofmap.cell_dofs(dolfin_cell.index());
+  auto dofs = dofmap.cell_dofs(cell.index());
 
   // Pick values from vector(s)
   la::VecReadWrapper v(_vector.vec());
@@ -358,19 +368,11 @@ void Function::restrict(
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-Function::compute_point_values(const mesh::Mesh& mesh) const
+Function::compute_point_values() const
 {
   assert(_function_space);
   assert(_function_space->mesh);
-
-  // Check that the mesh matches. Notice that the hash is only compared
-  // if the pointers are not matching.
-  if (&mesh != _function_space->mesh.get()
-      and mesh.hash() != _function_space->mesh->hash())
-  {
-    throw std::runtime_error(
-        "Cannot interpolate function values at points. Non-matching mesh");
-  }
+  const mesh::Mesh& mesh = *_function_space->mesh;
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
@@ -419,21 +421,6 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   }
 
   return point_values;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-Function::compute_point_values() const
-{
-  assert(_function_space);
-  assert(_function_space->mesh);
-  return compute_point_values(*_function_space->mesh);
-}
-//-----------------------------------------------------------------------------
-std::size_t Function::value_size() const
-{
-  std::size_t size = 1;
-  for (int i = 0; i < value_rank(); ++i)
-    size *= value_dimension(i);
-  return size;
+
 }
 //-----------------------------------------------------------------------------

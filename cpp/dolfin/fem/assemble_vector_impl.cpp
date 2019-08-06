@@ -12,9 +12,10 @@
 #include <dolfin/common/types.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/CoordinateDofs.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscsys.h>
 
@@ -48,7 +49,7 @@ void _lift_bc_cells(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const FormCoefficients& coefficients = a.coeffs();
+  const FormCoefficients& coefficients = a.coefficients();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
@@ -178,7 +179,7 @@ void _lift_bc_exterior_facets(
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const FormCoefficients& coefficients = a.coeffs();
+  const FormCoefficients& coefficients = a.coefficients();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
@@ -311,7 +312,7 @@ void fem::impl::assemble_vector(
   const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
 
   // Prepare coefficients
-  const FormCoefficients& coefficients = L.coeffs();
+  const FormCoefficients& coefficients = L.coefficients();
   std::vector<const function::Function*> coeff_fn(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
     coeff_fn[i] = coefficients.get(i).get();

@@ -15,10 +15,9 @@
 #include <dolfin/graph/BoostGraphOrdering.h>
 #include <dolfin/graph/GraphBuilder.h>
 #include <dolfin/graph/SCOTCH.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <memory>
 #include <numeric>
@@ -83,18 +82,23 @@ void get_cell_entities(
       assert(topology.have_global_indices(d));
       const std::vector<std::int64_t>& global_indices
           = topology.global_indices(d);
+      const int cell_num_entities
+          = mesh::cell_num_entities(cell.mesh().cell_type, d);
       const std::int32_t* entities = cell.entities(d);
-      for (int i = 0; i < cell.num_entities(d); ++i)
+      for (int i = 0; i < cell_num_entities; ++i)
       {
         entity_indices_local[d][i] = entities[i];
         entity_indices_global[d][i] = global_indices[entities[i]];
       }
     }
   }
+
   // Handle cell index separately because cell.entities(D) doesn't work.
   if (needs_mesh_entities[D])
   {
-    entity_indices_global[D][0] = cell.global_index();
+    const std::vector<std::int64_t>& global_indices
+        = topology.global_indices(D);
+    entity_indices_global[D][0] = global_indices[cell.index()];
     entity_indices_local[D][0] = cell.index();
   }
 }
@@ -458,13 +462,8 @@ compute_sharing_markers(const DofMapStructure& dofmap,
   {
     // Skip if facet is not shared
     // NOTE: second test is for periodic problems
-    if ((sharing_map_f.find(f.index()) == sharing_map_f.end())
-        and f.num_entities(D) == 2)
-    {
+    if (sharing_map_f.find(f.index()) == sharing_map_f.end())
       continue;
-    }
-    // if (!f.is_shared() and f.num_entities(D) == 2)
-    //   continue;
 
     // Get cell to which facet belongs (pick first)
     const mesh::Cell cell0(mesh, f.entities(D)[0]);

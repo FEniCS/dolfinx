@@ -11,10 +11,9 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/SparsityPattern.h>
-#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <vector>
 
 using namespace dolfin;
@@ -115,6 +114,8 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
   la::PETScMatrix A(mesh.mpi_comm(), pattern);
 
   // Build discrete gradient operator/matrix
+  const std::vector<std::int64_t>& global_indices
+      = mesh.topology().global_indices(0);
   for (auto& edge : mesh::MeshRange<mesh::Edge>(mesh))
   {
     PetscInt row;
@@ -128,7 +129,7 @@ DiscreteOperators::build_gradient(const function::FunctionSpace& V0,
 
     cols[0] = local_to_global_map1[vertex_to_dof[v0.index()]];
     cols[1] = local_to_global_map1[vertex_to_dof[v1.index()]];
-    if (v1.global_index() < v0.global_index())
+    if (global_indices[v1.index()] < global_indices[v0.index()])
     {
       values[0] = 1.0;
       values[1] = -1.0;

@@ -20,14 +20,13 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/MeshValueCollection.h>
 #include <dolfin/mesh/Partitioning.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
 #include <fstream>
 #include <iomanip>
@@ -297,20 +296,23 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
     {
       // Usual case, with cell output, and/or none shared with another
       // process.
-
       if (cell_dim == 0)
       {
         for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
-          topological_data.push_back(v.global_index());
+          topological_data.push_back(global_vertices[v.index()]);
       }
       else
       {
+        const int num_vertices = mesh::cell_num_entities(
+            mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
         for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
-          for (int i = 0; i != c.num_entities(0); ++i)
+        {
+          for (int i = 0; i < num_vertices; ++i)
           {
-            const unsigned int local_idx = c.entities(0)[perm[i]];
+            const int local_idx = c.entities(0)[perm[i]];
             topological_data.push_back(global_vertices[local_idx]);
           }
+        }
       }
     }
     else
@@ -368,17 +370,19 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
         {
           if (non_local_entities.find(v.index()) == non_local_entities.end())
-            topological_data.push_back(v.global_index());
+            topological_data.push_back(global_vertices[v.index()]);
         }
       }
       else
       {
+        const int num_vertices = mesh::cell_num_entities(
+            mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
         for (auto& ent : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
         {
           // If not excluded, add to topology
           if (non_local_entities.find(ent.index()) == non_local_entities.end())
           {
-            for (int i = 0; i < ent.num_entities(0); ++i)
+            for (int i = 0; i < num_vertices; ++i)
             {
               const int local_idx = ent.entities(0)[perm[i]];
               topological_data.push_back(global_vertices[local_idx]);
@@ -578,12 +582,14 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   // directly to the right place
   std::vector<std::vector<std::size_t>> send_requests(num_processes);
   const std::size_t process_number = _mpi_comm.rank();
+  const std::vector<std::int64_t>& global_indices
+      = mesh->topology().global_indices(0);
   for (auto& cell :
        mesh::MeshRange<mesh::MeshEntity>(*mesh, dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
     for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-      cell_topology.push_back(v.global_index());
+      cell_topology.push_back(global_indices[v.index()]);
     std::sort(cell_topology.begin(), cell_topology.end());
 
     // Use first vertex to decide where to send this request
@@ -1111,6 +1117,8 @@ void HDF5File::write_mesh_value_collection(
 
   const std::size_t tdim = mesh->topology().dim();
   mesh->create_connectivity(tdim, dim);
+  const std::vector<std::int64_t>& global_indices
+      = mesh->topology().global_indices(0);
   for (auto& p : values)
   {
     // mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
@@ -1121,7 +1129,7 @@ void HDF5File::write_mesh_value_collection(
       cell = mesh::MeshEntity(*mesh, dim, entity_local_idx);
     }
     for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-      topology.push_back(v.global_index());
+      topology.push_back(global_indices[v.index()]);
     value_data.push_back(p.second);
   }
 
@@ -1212,16 +1220,17 @@ HDF5File::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
 
   std::vector<std::vector<std::size_t>> send_entities(num_processes);
   std::vector<std::vector<std::size_t>> recv_entities(num_processes);
-
+  const std::vector<std::int64_t>& global_indices
+      = mesh->topology().global_indices(0);
   for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, dim))
   {
     if (dim == 0)
-      v[0] = m.global_index();
+      v[0] = global_indices[m.index()];
     else
     {
       v.clear();
       for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m))
-        v.push_back(vtx.global_index());
+        v.push_back(global_indices[vtx.index()]);
       std::sort(v.begin(), v.end());
     }
 

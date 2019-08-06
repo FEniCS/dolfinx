@@ -90,7 +90,7 @@ def test_krylov_samg_solver_elasticity():
         mesh = UnitSquareMesh(MPI.comm_world, N, N)
         V = VectorFunctionSpace(mesh, 'Lagrange', 1)
         bc0 = Function(V)
-        with bc0.vector().localForm() as bc_local:
+        with bc0.vector.localForm() as bc_local:
             bc_local.set(0.0)
 
         def boundary(x, only_boundary):
@@ -115,7 +115,7 @@ def test_krylov_samg_solver_elasticity():
         u = Function(V)
 
         # Create near null space basis and orthonormalize
-        null_space = build_nullspace(V, u.vector())
+        null_space = build_nullspace(V, u.vector)
 
         # Attached near-null space to matrix
         A.set_near_nullspace(null_space)
@@ -131,7 +131,7 @@ def test_krylov_samg_solver_elasticity():
         solver.set_operator(A)
 
         # Compute solution and return number of iterations
-        return solver.solve(u.vector(), b)
+        return solver.solve(u.vector, b)
 
     # Set some multigrid smoother parameters
     PETScOptions.set("mg_levels_ksp_type", "chebyshev")
