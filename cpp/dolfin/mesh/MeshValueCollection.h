@@ -220,12 +220,9 @@ MeshValueCollection<T>::MeshValueCollection(
     else
     {
       v.clear();
-      //std::cout<<"Ele:"<<m.index()<<"::";
       for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m)){
         v.push_back(global_indices[vtx.index()]);
-        //std::cout<<":"<<vtx.global_index();
       }
-      //std::cout<<std::endl;
       std::sort(v.begin(), v.end());
     }
     // The vector of vertex number is key and entity index is value
@@ -259,16 +256,12 @@ MeshValueCollection<T>::MeshValueCollection(
       // cells[j] is a vector of length _dim+1
       for (std::size_t i = 0; i < _dim+1; ++i){
         v.push_back(cells[j][i]);
-        //std::cout<<cells[j][i]<<std::endl;
       }
       std::sort(v.begin(), v.end());
 
       auto map_it = entity_map.find(v);
       std::size_t entity_index = map_it->second;
-      //std::cout<<entity_index<<":>"<<std::endl;
       assert(connectivity.size(entity_index) > 0);
-
-      std::cout<<connectivity.size(entity_index)<<":>";
 
       const MeshEntity entity(*_mesh, _dim, entity_index);
       for (std::size_t i = 0; i < connectivity.size(entity_index); ++i)
