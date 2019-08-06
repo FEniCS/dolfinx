@@ -38,12 +38,12 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   unsigned long long* adjcwgt{nullptr};
 
   // TODO: Allow the user to set the parameters
-  int mode = 4;
+  int mode = 0;
   int seed = 0;
   // The amount of imbalance that is allowed. (3%)
-  double imbalance = 0.03;
+  double imbalance = 0.06;
   // Suppress output from the partitioning library.
-  bool suppress_output = false;
+  bool suppress_output = true;
 
   // Call KaHIP to partition graph
   common::Timer timer1("KaHIP: call ParHIPPartitionKWay");
