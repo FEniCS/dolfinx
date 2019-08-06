@@ -91,8 +91,8 @@ Docker container
 ================
 
 A Docker container is available at
-https://hub.docker.com/r/fenicsproject/dolfinx/. The `Dockerfile
-<https://github.com/FEniCS/dolfinx/blob/master/Dockerfile>`_. Dockerfile
+https://quay.io/repository/fenicsproject/dolfinx. The `Dockerfile
+<https://github.com/FEniCS/dolfinx/blob/master/Dockerfile>`_
 provides a definitive build recipe.
 
 
