@@ -285,6 +285,8 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type, points, cells,
                   global_cell_indices, _mesh.get_ghost_mode());
 
+  mesh::DistributedMeshTools::init_facet_cell_connections(mesh);
+
   return std::move(mesh);
 }
 //-----------------------------------------------------------------------------
