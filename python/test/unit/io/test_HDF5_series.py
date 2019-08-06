@@ -45,6 +45,6 @@ def test_save_and_read_function_timeseries(tempdir):
         F0 = hdf5_file.read_function(Q, vec_name)
         # timestamp = hdf5_file.attributes(vec_name)["timestamp"]
         # assert timestamp == t
-        F0.vector().axpy(-1.0, F1.vector())
-        assert F0.vector().norm() < 1.0e-12
+        F0.vector.axpy(-1.0, F1.vector)
+        assert F0.vector.norm() < 1.0e-12
     hdf5_file.close()

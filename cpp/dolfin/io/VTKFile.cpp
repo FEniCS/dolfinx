@@ -16,11 +16,10 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScVector.h>
-#include <dolfin/mesh/Cell.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
@@ -351,7 +350,8 @@ void write_point_data(const function::Function& u, const mesh::Mesh& mesh,
   fp.precision(16);
 
   // Get function values at vertices
-  auto values = u.compute_point_values(mesh);
+  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      values = u.compute_point_values();
 
   if (rank == 0)
   {

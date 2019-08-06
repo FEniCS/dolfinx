@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TopologyComputation.h"
-#include "Cell.h"
 #include "Connectivity.h"
 #include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshIterator.h"
 #include "Topology.h"
 #include "cell_types.h"

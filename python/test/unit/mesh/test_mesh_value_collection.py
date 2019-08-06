@@ -4,8 +4,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from dolfin import (MPI, Cells, MeshFunction, MeshValueCollection,
-                    UnitSquareMesh, cpp)
+from dolfin import MPI, MeshFunction, MeshValueCollection, UnitSquareMesh, cpp
 
 
 def test_assign_2D_cells():
@@ -13,18 +12,18 @@ def test_assign_2D_cells():
     ncells = mesh.num_cells()
     f = MeshValueCollection("int", mesh, 2)
     all_new = True
-    for cell in Cells(mesh):
-        value = ncells - cell.index()
-        all_new = all_new and f.set_value(cell.index(), value)
+    for c in range(ncells):
+        value = ncells - c
+        all_new = all_new and f.set_value(c, value)
     g = MeshValueCollection("int", mesh, 2)
     g.assign(f)
     assert ncells == f.size()
     assert ncells == g.size()
     assert all_new
 
-    for cell in Cells(mesh):
-        value = ncells - cell.index()
-        assert value, g.get_value(cell.index() == 0)
+    for c in range(ncells):
+        value = ncells - c
+        assert value, g.get_value(c == 0)
 
     old_value = g.get_value(0, 0)
     g.set_value(0, 0, old_value + 1)
@@ -40,10 +39,10 @@ def test_assign_2D_facets():
 
     f = MeshValueCollection("int", mesh, 1)
     all_new = True
-    for cell in Cells(mesh):
-        value = ncells - cell.index()
+    for c in range(ncells):
+        value = ncells - c
         for i in range(num_cell_facets):
-            all_new = all_new and f.set_value(cell.index(), i, value + i)
+            all_new = all_new and f.set_value(c, i, value + i)
 
     g = MeshValueCollection("int", mesh, 1)
     g.assign(f)
@@ -51,10 +50,10 @@ def test_assign_2D_facets():
     assert ncells * 3 == g.size()
     assert all_new
 
-    for cell in Cells(mesh):
-        value = ncells - cell.index()
+    for c in range(ncells):
+        value = ncells - c
         for i in range(num_cell_facets):
-            assert value + i == g.get_value(cell.index(), i)
+            assert value + i == g.get_value(c, i)
 
 
 def test_assign_2D_vertices():
@@ -65,10 +64,10 @@ def test_assign_2D_vertices():
 
     f = MeshValueCollection("int", mesh, 0)
     all_new = True
-    for cell in Cells(mesh):
-        value = ncells - cell.index()
+    for c in range(ncells):
+        value = ncells - c
         for i in range(num_cell_vertices):
-            all_new = all_new and f.set_value(cell.index(), i, value + i)
+            all_new = all_new and f.set_value(c, i, value + i)
 
     g = MeshValueCollection("int", mesh, 0)
     g.assign(f)
@@ -76,18 +75,18 @@ def test_assign_2D_vertices():
     assert ncells * 3 == g.size()
     assert all_new
 
-    for cell in Cells(mesh):
-        value = ncells - cell.index()
+    for c in range(ncells):
+        value = ncells - c
         for i in range(num_cell_vertices):
-            assert value + i == g.get_value(cell.index(), i)
+            assert value + i == g.get_value(c, i)
 
 
 def test_mesh_function_assign_2D_cells():
     mesh = UnitSquareMesh(MPI.comm_world, 3, 3)
     ncells = mesh.num_cells()
     f = MeshFunction("int", mesh, mesh.topology.dim, 0)
-    for cell in Cells(mesh):
-        f.values[cell.index()] = ncells - cell.index()
+    for c in range(ncells):
+        f.values[c] = ncells - c
 
     g = MeshValueCollection("int", mesh, 2)
     g.assign(f)
@@ -96,19 +95,19 @@ def test_mesh_function_assign_2D_cells():
 
     f2 = MeshFunction("int", mesh, g, 0)
 
-    for cell in Cells(mesh):
-        value = ncells - cell.index()
-        assert value == g.get_value(cell.index(), 0)
-        assert f2.values[cell.index()] == g.get_value(cell.index(), 0)
+    for c in range(mesh.num_cells()):
+        value = ncells - c
+        assert value == g.get_value(c, 0)
+        assert f2.values[c] == g.get_value(c, 0)
 
     h = MeshValueCollection("int", mesh, 2)
     global_indices = mesh.topology.global_indices(2)
     ncells_global = mesh.num_entities_global(2)
-    for cell in Cells(mesh):
-        if global_indices[cell.index()] in [5, 8, 10]:
+    for c in range(mesh.num_cells()):
+        if global_indices[c] in [5, 8, 10]:
             continue
-        value = ncells_global - global_indices[cell.index()]
-        h.set_value(cell.index(), int(value))
+        value = ncells_global - global_indices[c]
+        h.set_value(c, int(value))
 
     f3 = MeshFunction("int", mesh, h, 0)
 
@@ -126,8 +125,8 @@ def test_mesh_function_assign_2D_facets():
 
     f = MeshFunction("int", mesh, tdim - 1, 25)
     connectivity = mesh.topology.connectivity(tdim, tdim - 1)
-    for cell in Cells(mesh):
-        facets = connectivity.connections(cell.index())
+    for c in range(mesh.num_cells()):
+        facets = connectivity.connections(c)
         for i in range(num_cell_facets):
             assert 25 == f.values[facets[i]]
 
@@ -135,17 +134,17 @@ def test_mesh_function_assign_2D_facets():
     g.assign(f)
     assert mesh.num_entities(tdim - 1) == len(f.values)
     assert mesh.num_cells() * 3 == g.size()
-    for cell in Cells(mesh):
+    for c in range(mesh.num_cells()):
         for i in range(num_cell_facets):
-            assert 25 == g.get_value(cell.index(), i)
+            assert 25 == g.get_value(c, i)
 
     f2 = MeshFunction("int", mesh, g, 0)
 
     connectivity = mesh.topology.connectivity(tdim, tdim - 1)
-    for cell in Cells(mesh):
-        facets = connectivity.connections(cell.index())
+    for c in range(mesh.num_cells()):
+        facets = connectivity.connections(c)
         for i in range(num_cell_facets):
-            assert f2.values[facets[i]] == g.get_value(cell.index(), i)
+            assert f2.values[facets[i]] == g.get_value(c, i)
 
 
 def test_mesh_function_assign_2D_vertices():
@@ -162,8 +161,8 @@ def test_mesh_function_assign_2D_vertices():
     num_cell_vertices = cpp.mesh.cell_num_vertices(mesh.cell_type)
     tdim = mesh.topology.dim
     connectivity = mesh.topology.connectivity(tdim, 0)
-    for cell in Cells(mesh):
-        vertices = connectivity.connections(cell.index())
+    for c in range(mesh.num_cells()):
+        vertices = connectivity.connections(c)
         for i in range(num_cell_vertices):
-            assert 25 == g.get_value(cell.index(), i)
-            assert f2.values[vertices[i]] == g.get_value(cell.index(), i)
+            assert 25 == g.get_value(c, i)
+            assert f2.values[vertices[i]] == g.get_value(c, i)

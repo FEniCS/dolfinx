@@ -15,30 +15,30 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-FiniteElement::FiniteElement(const ufc_finite_element& element)
-    : _signature(element.signature), _family(element.family),
-      _tdim(element.topological_dimension), _space_dim(element.space_dimension),
-      _value_size(element.value_size),
-      _reference_value_size(element.reference_value_size),
-      _degree(element.degree), _hash(std::hash<std::string>{}(_signature)),
-      _evaluate_reference_basis(element.evaluate_reference_basis),
+FiniteElement::FiniteElement(const ufc_finite_element& ufc_element)
+    : _signature(ufc_element.signature), _family(ufc_element.family),
+      _tdim(ufc_element.topological_dimension),
+      _space_dim(ufc_element.space_dimension),
+      _value_size(ufc_element.value_size),
+      _reference_value_size(ufc_element.reference_value_size),
+      _degree(ufc_element.degree), _hash(std::hash<std::string>{}(_signature)),
+      _evaluate_reference_basis(ufc_element.evaluate_reference_basis),
       _evaluate_reference_basis_derivatives(
-          element.evaluate_reference_basis_derivatives),
+          ufc_element.evaluate_reference_basis_derivatives),
       _transform_reference_basis_derivatives(
-          element.transform_reference_basis_derivatives),
-      _transform_values(element.transform_values)
+          ufc_element.transform_reference_basis_derivatives),
+      _transform_values(ufc_element.transform_values)
 {
   // Store dof coordinates on reference element
-  _refX.resize(this->space_dimension(), this->topological_dimension());
-  assert(element.tabulate_reference_dof_coordinates);
-  int ret = element.tabulate_reference_dof_coordinates(_refX.data());
-  if (ret == -1)
+  assert(ufc_element.tabulate_reference_dof_coordinates);
+  _refX.resize(_space_dim, _tdim);
+  if (ufc_element.tabulate_reference_dof_coordinates(_refX.data()) == -1)
   {
     throw std::runtime_error(
         "Generated code returned error in tabulate_reference_dof_coordinates");
   }
 
-  const ufc_shape _shape = element.cell_shape;
+  const ufc_shape _shape = ufc_element.cell_shape;
   switch (_shape)
   {
   case interval:
@@ -63,13 +63,13 @@ FiniteElement::FiniteElement(const ufc_finite_element& element)
   assert(mesh::cell_dim(_cell_shape) == _tdim);
 
   // Fill value dimension
-  for (int i = 0; i < element.value_rank; ++i)
-    _value_dimension.push_back(element.value_dimension(i));
+  for (int i = 0; i < ufc_element.value_rank; ++i)
+    _value_dimension.push_back(ufc_element.value_dimension(i));
 
   // Create all sub-elements
-  for (int i = 0; i < element.num_sub_elements; ++i)
+  for (int i = 0; i < ufc_element.num_sub_elements; ++i)
   {
-    ufc_finite_element* ufc_sub_element = element.create_sub_element(i);
+    ufc_finite_element* ufc_sub_element = ufc_element.create_sub_element(i);
     _sub_elements.push_back(std::make_shared<FiniteElement>(*ufc_sub_element));
     std::free(ufc_sub_element);
   }
@@ -79,7 +79,7 @@ std::string FiniteElement::signature() const { return _signature; }
 //-----------------------------------------------------------------------------
 mesh::CellType FiniteElement::cell_shape() const { return _cell_shape; }
 //-----------------------------------------------------------------------------
-std::size_t FiniteElement::topological_dimension() const { return _tdim; }
+// std::size_t FiniteElement::topological_dimension() const { return _tdim; }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::space_dimension() const { return _space_dim; }
 //-----------------------------------------------------------------------------
@@ -107,8 +107,8 @@ void FiniteElement::evaluate_reference_basis(
     Eigen::Tensor<double, 3, Eigen::RowMajor>& reference_values,
     const Eigen::Ref<const EigenRowArrayXXd> X) const
 {
-  std::size_t num_points = X.rows();
   assert(_evaluate_reference_basis);
+  const int num_points = X.rows();
   int ret = _evaluate_reference_basis(reference_values.data(), num_points,
                                       X.data());
   if (ret == -1)
@@ -126,8 +126,8 @@ void FiniteElement::transform_reference_basis(
     const Eigen::Ref<const EigenArrayXd> detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
-  std::size_t num_points = X.rows();
   assert(_transform_reference_basis_derivatives);
+  const int num_points = X.rows();
   int ret = _transform_reference_basis_derivatives(
       values.data(), 0, num_points, reference_values.data(), X.data(), J.data(),
       detJ.data(), K.data(), 1);
@@ -146,8 +146,8 @@ void FiniteElement::transform_reference_basis_derivatives(
     const Eigen::Ref<const EigenArrayXd> detJ,
     const Eigen::Tensor<double, 3, Eigen::RowMajor>& K) const
 {
-  std::size_t num_points = X.rows();
   assert(_transform_reference_basis_derivatives);
+  const int num_points = X.rows();
   int ret = _transform_reference_basis_derivatives(
       values.data(), order, num_points, reference_values.data(), X.data(),
       J.data(), detJ.data(), K.data(), 1);
@@ -180,19 +180,18 @@ int FiniteElement::num_sub_elements() const { return _sub_elements.size(); }
 //-----------------------------------------------------------------------------
 std::size_t FiniteElement::hash() const { return _hash; }
 //-----------------------------------------------------------------------------
-std::shared_ptr<FiniteElement>
+std::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const std::vector<int>& component) const
 {
   // Recursively extract sub element
-  std::shared_ptr<FiniteElement> sub_finite_element
+  std::shared_ptr<const FiniteElement> sub_finite_element
       = extract_sub_element(*this, component);
-  DLOG(INFO) << "Extracted finite element for sub system:"
+  DLOG(INFO) << "Extracted finite element for sub-system: "
              << sub_finite_element->signature().c_str();
-
   return sub_finite_element;
 }
 //-----------------------------------------------------------------------------
-std::shared_ptr<FiniteElement>
+std::shared_ptr<const FiniteElement>
 FiniteElement::extract_sub_element(const FiniteElement& finite_element,
                                    const std::vector<int>& component)
 {
@@ -219,7 +218,7 @@ FiniteElement::extract_sub_element(const FiniteElement& finite_element,
   }
 
   // Get sub system
-  std::shared_ptr<FiniteElement> sub_element
+  std::shared_ptr<const FiniteElement> sub_element
       = finite_element._sub_elements[component[0]];
   assert(sub_element);
 
