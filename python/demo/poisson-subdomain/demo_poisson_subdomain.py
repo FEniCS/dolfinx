@@ -183,18 +183,18 @@ u = TrialFunction(V)
 v = TestFunction(V)
 
 u5 = Function(V)
-with u5.vector().localForm() as bc_local:
+with u5.vector.localForm() as bc_local:
     bc_local.set(5.0)
 
 u0 = Function(V)
-with u0.vector().localForm() as bc_local:
+with u0.vector.localForm() as bc_local:
     bc_local.set(0.0)
 
 # With this function space, we can define the essential (Dirichlet)
 # boundary conditions on the top and bottom boundaries. These boundaries
 # correspond to the mesh function tagged by string tag ``TOP`` and ``BOTTOM``,
 # respectively, in the ``mf_line`` mesh function: ::
-
+print(tag_info)
 # Define Dirichlet boundary conditions at top and bottom boundaries
 bcs = [DirichletBC(V, u5, np.where(mf_line.values == tag_info['TOP'])[0]),
        DirichletBC(V, u0, np.where(mf_line.values == tag_info['BOTTOM'])[0])]
