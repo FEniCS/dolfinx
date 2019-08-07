@@ -287,7 +287,7 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
 
   mesh::DistributedMeshTools::init_facet_cell_connections(mesh);
 
-  return std::move(mesh);
+  return mesh;
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::int64_t>& idx)
