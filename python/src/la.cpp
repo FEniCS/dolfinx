@@ -6,8 +6,6 @@
 
 #include "casters.h"
 #include <dolfin/common/IndexMap.h>
-#include <dolfin/la/PETScKrylovSolver.h>
-#include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/VectorSpaceBasis.h>
@@ -75,11 +73,7 @@ void la(py::module& m)
            py::arg("tol") = 1.0e-10)
       .def("is_orthogonal", &dolfin::la::VectorSpaceBasis::is_orthogonal,
            py::arg("tol") = 1.0e-10)
-      .def("in_nullspace",
-           [](const dolfin::la::VectorSpaceBasis& self, Mat A, double tol) {
-             dolfin::la::PETScMatrix _A(A);
-             return self.in_nullspace(_A, tol);
-           },
+      .def("in_nullspace", &dolfin::la::VectorSpaceBasis::in_nullspace,
            py::arg("A"), py::arg("tol") = 1.0e-10)
       .def("orthogonalize", &dolfin::la::VectorSpaceBasis::orthogonalize)
       .def("orthonormalize", &dolfin::la::VectorSpaceBasis::orthonormalize,

@@ -12,6 +12,7 @@
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/log.h>
 #include <dolfin/la/PETScVector.h>
+#include <petscmat.h>
 #include <slepcversion.h>
 
 using namespace dolfin;
