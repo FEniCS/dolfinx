@@ -91,20 +91,24 @@ bool VectorSpaceBasis::in_nullspace(const Mat A, double tol) const
   assert(A);
   Vec y = nullptr;
   MatCreateVecs(A, nullptr, &y);
+
+  bool in_space = true;
   for (auto x : _basis)
   {
+    assert(x);
+    assert(x->vec());
     MatMult(A, x->vec(), y);
     PetscReal norm = 0.0;
     VecNorm(y, NORM_2, &norm);
     if (norm > tol)
     {
-      VecDestroy(&y);
-      return false;
+      in_space = false;
+      break;
     }
   }
 
   VecDestroy(&y);
-  return true;
+  return in_space;
 }
 //-----------------------------------------------------------------------------
 void VectorSpaceBasis::orthogonalize(PETScVector& x) const
