@@ -528,23 +528,7 @@ def test_assembly_solve_taylor_hood(mesh):
     assert x0.norm() == pytest.approx(x2.norm(), 1e-8)
 
 
-def test_projection():
-    mesh = dolfin.UnitCubeMesh(dolfin.MPI.comm_world, 4, 4, 4)
-    V = dolfin.function.FunctionSpace(mesh, ("CG", 1))
-
-    x = ufl.SpatialCoordinate(mesh)
-    expr = x[0] ** 2
-
-    f = dolfin.project(expr, V)
-    integral = dolfin.fem.assemble_scalar(f * ufl.dx)
-    integral = dolfin.MPI.sum(mesh.mpi_comm(), integral)
-
-    integral_analytic = 1.0 / 3
-    assert integral == pytest.approx(integral_analytic, rel=1.e-6, abs=1.e-12)
-
-
 def test_basic_interior_facet_assembly():
-
     ghost_mode = dolfin.cpp.mesh.GhostMode.none
     if (dolfin.MPI.size(dolfin.MPI.comm_world) > 1):
         ghost_mode = dolfin.cpp.mesh.GhostMode.shared_facet
