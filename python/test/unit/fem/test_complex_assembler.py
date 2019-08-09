@@ -108,7 +108,7 @@ def test_complex_assembly_solve():
     solver.ksp.setFromOptions()
     x = A.createVecRight()
     solver.ksp.setOperators(A)
-    solver.solve(x, b)
+    solver.ksp.solve(b, x)
 
     # Reference Solution
     def ref_eval(values, x):

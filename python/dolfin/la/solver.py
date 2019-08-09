@@ -31,5 +31,5 @@ def solve(A, x, b):
 
     solver = cpp.la.PETScKrylovSolver(cpp.MPI.comm_world)
     solver.ksp.setOperators(A)
-    solver.solve(x, b)
+    solver.ksp.solve(b, x)
     return x

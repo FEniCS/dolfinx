@@ -160,7 +160,7 @@ solver.ksp.setOperators(A)
 
 # Compute solution
 solver.ksp.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
-solver.solve(u.vector, b)
+solver.ksp.solve(b, u.vector)
 solver.ksp.view()
 
 # Save solution to XDMF format

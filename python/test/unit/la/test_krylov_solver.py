@@ -43,7 +43,7 @@ def test_krylov_solver_lu():
     solver.ksp.setFromOptions()
     x = A.createVecRight()
     solver.ksp.setOperators(A)
-    solver.solve(x, b)
+    solver.ksp.solve(b, x)
 
     # *Tight* tolerance for LU solves
     assert x.norm(PETSc.NormType.N2) == pytest.approx(norm, abs=1.0e-12)
@@ -132,7 +132,7 @@ def test_krylov_samg_solver_elasticity():
         solver.ksp.setOperators(A)
 
         # Compute solution and return number of iterations
-        return solver.solve(u.vector, b)
+        return solver.ksp.solve(b, u.vector)
 
     # Set some multigrid smoother paramete rs
     opts = PETSc.Options()

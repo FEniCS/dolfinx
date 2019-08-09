@@ -66,11 +66,6 @@ void la(py::module& m)
              return std::make_unique<dolfin::la::PETScKrylovSolver>(comm.get());
            }),
            py::arg("comm"))
-      .def(py::init<KSP, bool>(), py::arg("comm"),
-           py::arg("inc_ref_count") = true)
-      .def("solve", &dolfin::la::PETScKrylovSolver::solve,
-           "Solve linear system", py::arg("x"), py::arg("b"),
-           py::arg("transpose") = false)
       .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
       .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
       .def_property_readonly("ksp", &dolfin::la::PETScKrylovSolver::ksp);
