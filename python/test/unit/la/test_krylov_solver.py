@@ -126,13 +126,14 @@ def test_krylov_samg_solver_elasticity():
 
         # Create PETSC smoothed aggregation AMG preconditioner, and
         # create CG solver
-        solver = PETScKrylovSolver("cg", method)
+        solver = PETSc.KSP().create(mesh.mpi_comm)
+        solver.setType("cg")
 
         # Set matrix operator
-        solver.ksp.setOperators(A)
+        solver.setOperators(A)
 
         # Compute solution and return number of iterations
-        return solver.ksp.solve(b, u.vector)
+        return solver.solve(b, u.vector)
 
     # Set some multigrid smoother paramete rs
     opts = PETSc.Options()
