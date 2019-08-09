@@ -64,7 +64,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   // Create bounding boxes for all entities (leaves)
   const unsigned int num_leaves = mesh.num_entities(tdim);
   std::vector<double> leaf_bboxes(2 * _gdim * num_leaves);
-  for (auto& it : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
+  for (auto& it : mesh::MeshRange(mesh, tdim))
   {
     compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it,
                            _gdim);
@@ -379,7 +379,7 @@ void BoundingBoxTree::_compute_collisions_point(
     if (mesh)
     {
       // Get cell
-      mesh::Cell cell(*mesh, entity_index);
+      mesh::MeshEntity cell(*mesh, mesh->topology().dim(), entity_index);
       if (CollisionPredicates::collides(cell, point))
         entities.push_back(entity_index);
     }
@@ -426,8 +426,8 @@ void BoundingBoxTree::_compute_collisions_tree(
     if (mesh_A)
     {
       assert(mesh_B);
-      mesh::Cell cell_A(*mesh_A, entity_index_A);
-      mesh::Cell cell_B(*mesh_B, entity_index_B);
+      mesh::MeshEntity cell_A(*mesh_A, mesh_A->topology().dim(), entity_index_A);
+      mesh::MeshEntity cell_B(*mesh_B, mesh_B->topology().dim(), entity_index_B);
       if (CollisionPredicates::collides(cell_A, cell_B))
       {
         entities_A.push_back(entity_index_A);
@@ -540,7 +540,7 @@ unsigned int BoundingBoxTree::_compute_first_entity_collision(
     // Get entity (child_1 denotes entity index for leaves)
     assert(tree._tdim == mesh.topology().dim());
     const unsigned int entity_index = bbox[1];
-    mesh::Cell cell(mesh, entity_index);
+    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
     // Check entity
 
@@ -587,7 +587,7 @@ void BoundingBoxTree::_compute_closest_entity(const BoundingBoxTree& tree,
     // Get entity (child_1 denotes entity index for leaves)
     assert(tree._tdim == mesh.topology().dim());
     const unsigned int entity_index = bbox[1];
-    mesh::Cell cell(mesh, entity_index);
+    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
     // If entity is closer than best result so far, then return it
     const double r2 = squared_distance(cell, point);

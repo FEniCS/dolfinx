@@ -17,7 +17,6 @@ namespace dolfin
 {
 namespace mesh
 {
-class Cell;
 class Mesh;
 class MeshEntity;
 

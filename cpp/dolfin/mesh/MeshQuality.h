@@ -17,8 +17,8 @@ namespace dolfin
 {
 namespace mesh
 {
-class Cell;
 class Mesh;
+class MeshEntity;
 
 /// The class provides functions to quantify mesh quality
 
@@ -37,7 +37,7 @@ public:
   static std::array<double, 2> radius_ratio_min_max(const Mesh& mesh);
 
   /// Get internal dihedral angles of a tetrahedral cell
-  static std::array<double, 6> dihedral_angles(const mesh::Cell& cell);
+  static std::array<double, 6> dihedral_angles(const mesh::MeshEntity& cell);
 
   /// Get internal minimum and maximum dihedral angles of a 3D mesh
   static std::array<double, 2> dihedral_angles_min_max(const Mesh& mesh);

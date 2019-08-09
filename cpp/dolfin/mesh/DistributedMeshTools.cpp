@@ -610,14 +610,14 @@ DistributedMeshTools::number_entities(
   std::map<std::vector<std::size_t>, std::int32_t> entities;
   std::pair<std::vector<std::size_t>, std::int32_t> entity;
   const auto& global_vertices = mesh.topology().global_indices(0);
-  for (auto& e : mesh::MeshRange<MeshEntity>(mesh, d, mesh::MeshRangeType::ALL))
+  for (auto& e : mesh::MeshRange(mesh, d, mesh::MeshRangeType::ALL))
   {
     const std::size_t local_index = e.index();
     if (!exclude[local_index])
     {
       entity.second = local_index;
       entity.first = std::vector<std::size_t>();
-      for (auto& vertex : EntityRange<Vertex>(e))
+      for (auto& vertex : EntityRange(e, 0))
         entity.first.push_back(global_vertices[vertex.index()]);
       std::sort(entity.first.begin(), entity.first.end());
       entities.insert(entity);
@@ -1131,7 +1131,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Copy local values
     assert(mesh.topology().connectivity(D - 1, D));
     auto connectivity = mesh.topology().connectivity(D - 1, D);
-    for (auto& f : mesh::MeshRange<mesh::Facet>(mesh))
+    for (auto& f : mesh::MeshRange(mesh, D - 1))
       num_global_neighbors[f.index()] = connectivity->size(f.index());
 
     // All shared facets must have two cells, if no ghost cells
@@ -1159,7 +1159,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     assert(mesh.topology().connectivity(D - 1, D));
     auto connectivity = mesh.topology().connectivity(D - 1, D);
     for (auto& f :
-         mesh::MeshRange<MeshEntity>(mesh, D - 1, mesh::MeshRangeType::ALL))
+         mesh::MeshRange(mesh, D - 1, mesh::MeshRangeType::ALL))
     {
       // Insert shared facets into mapping
       if (sharing_map_f.find(f.index()) != sharing_map_f.end())
@@ -1190,8 +1190,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
       {
         auto map_it = global_to_local_facet.find(*r);
         assert(map_it != global_to_local_facet.end());
-        // const mesh::Facet local_facet(mesh, map_it->second);
-        // const int n_cells = local_facet.num_entities(D);
+        const mesh::MeshEntity local_facet(mesh, D - 1, map_it->second);
         const int n_cells = connectivity->size(map_it->second);
         send_response[p].push_back(n_cells);
       }
