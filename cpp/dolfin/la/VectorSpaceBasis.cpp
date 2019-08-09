@@ -97,10 +97,13 @@ bool VectorSpaceBasis::in_nullspace(const Mat A, double tol) const
     PetscReal norm = 0.0;
     VecNorm(y, NORM_2, &norm);
     if (norm > tol)
+    {
+      VecDestroy(&y);
       return false;
+    }
   }
-  VecDestroy(&y);
 
+  VecDestroy(&y);
   return true;
 }
 //-----------------------------------------------------------------------------
