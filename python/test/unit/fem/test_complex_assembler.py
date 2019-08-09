@@ -102,11 +102,12 @@ def test_complex_assembly_solve():
 
     # Create solver
     solver = dolfin.cpp.la.PETScKrylovSolver(mesh.mpi_comm())
-    dolfin.cpp.la.PETScOptions.set("ksp_type", "preonly")
-    dolfin.cpp.la.PETScOptions.set("pc_type", "lu")
-    solver.set_from_options()
+    opts = PETSc.Options()
+    opts["ksp_type"] = "preonly"
+    opts["pc_type"] = "lu"
+    solver.ksp.setFromOptions()
     x = A.createVecRight()
-    solver.set_operator(A)
+    solver.ksp.setOperators(A)
     solver.solve(x, b)
 
     # Reference Solution

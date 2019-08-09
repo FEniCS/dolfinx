@@ -68,14 +68,12 @@ void la(py::module& m)
            py::arg("comm"))
       .def(py::init<KSP, bool>(), py::arg("comm"),
            py::arg("inc_ref_count") = true)
-      .def("set_operator", &dolfin::la::PETScKrylovSolver::set_operator)
-      .def("set_operators", &dolfin::la::PETScKrylovSolver::set_operators)
       .def("solve", &dolfin::la::PETScKrylovSolver::solve,
            "Solve linear system", py::arg("x"), py::arg("b"),
            py::arg("transpose") = false)
       .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
       .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
-      .def("ksp", &dolfin::la::PETScKrylovSolver::ksp);
+      .def_property_readonly("ksp", &dolfin::la::PETScKrylovSolver::ksp);
 
   // dolfin::la::VectorSpaceBasis
   py::class_<dolfin::la::VectorSpaceBasis,
@@ -94,13 +92,12 @@ void la(py::module& m)
            py::arg("tol") = 1.0e-10)
       .def("is_orthogonal", &dolfin::la::VectorSpaceBasis::is_orthogonal,
            py::arg("tol") = 1.0e-10)
-      .def(
-          "in_nullspace",
-          [](const dolfin::la::VectorSpaceBasis& self, Mat A, double tol) {
-            dolfin::la::PETScMatrix _A(A);
-            return self.in_nullspace(_A, tol);
-          },
-          py::arg("A"), py::arg("tol") = 1.0e-10)
+      .def("in_nullspace",
+           [](const dolfin::la::VectorSpaceBasis& self, Mat A, double tol) {
+             dolfin::la::PETScMatrix _A(A);
+             return self.in_nullspace(_A, tol);
+           },
+           py::arg("A"), py::arg("tol") = 1.0e-10)
       .def("orthogonalize", &dolfin::la::VectorSpaceBasis::orthogonalize)
       .def("orthonormalize", &dolfin::la::VectorSpaceBasis::orthonormalize,
            py::arg("tol") = 1.0e-10)
@@ -115,22 +112,20 @@ void la(py::module& m)
             &dolfin::la::create_petsc_vector),
         py::return_value_policy::take_ownership,
         "Create a ghosted PETSc Vec for index map.");
-  m.def(
-      "create_vector",
-      [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
-         const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
-         int block_size) {
-        return dolfin::la::create_petsc_vector(comm.get(), range, ghost_indices,
-                                               block_size);
-      },
-      py::return_value_policy::take_ownership, "Create a PETSc Vec.");
-  m.def(
-      "create_matrix",
-      [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
-        return dolfin::la::create_petsc_matrix(comm.get(), p);
-      },
-      py::return_value_policy::take_ownership,
-      "Create a PETSc Mat from sparsity pattern.");
+  m.def("create_vector",
+        [](const MPICommWrapper comm, std::array<std::int64_t, 2> range,
+           const Eigen::Array<PetscInt, Eigen::Dynamic, 1>& ghost_indices,
+           int block_size) {
+          return dolfin::la::create_petsc_vector(comm.get(), range,
+                                                 ghost_indices, block_size);
+        },
+        py::return_value_policy::take_ownership, "Create a PETSc Vec.");
+  m.def("create_matrix",
+        [](const MPICommWrapper comm, const dolfin::la::SparsityPattern& p) {
+          return dolfin::la::create_petsc_matrix(comm.get(), p);
+        },
+        py::return_value_policy::take_ownership,
+        "Create a PETSc Mat from sparsity pattern.");
   // NOTE: Enabling the below requires adding a C API for MatNullSpace to
   // petsc4py
   //   m.def("create_nullspace",

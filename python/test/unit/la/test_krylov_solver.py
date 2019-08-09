@@ -36,13 +36,13 @@ def test_krylov_solver_lu():
     norm = 13.0
 
     solver = PETScKrylovSolver(mesh.mpi_comm())
-    solver.ksp().setOptionsPrefix("test_lu_")
+    solver.ksp.setOptionsPrefix("test_lu_")
     opts = PETSc.Options("test_lu_")
     opts["ksp_type"] = "preonly"
     opts["pc_type"] = "lu"
-    solver.ksp().setFromOptions()
+    solver.ksp.setFromOptions()
     x = A.createVecRight()
-    solver.set_operator(A)
+    solver.ksp.setOperators(A)
     solver.solve(x, b)
 
     # *Tight* tolerance for LU solves
@@ -129,7 +129,7 @@ def test_krylov_samg_solver_elasticity():
         solver = PETScKrylovSolver("cg", method)
 
         # Set matrix operator
-        solver.set_operator(A)
+        solver.ksp.setPperators(A)
 
         # Compute solution and return number of iterations
         return solver.solve(u.vector, b)

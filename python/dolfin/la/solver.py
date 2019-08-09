@@ -30,6 +30,6 @@ def solve(A, x, b):
     """
 
     solver = cpp.la.PETScKrylovSolver(cpp.MPI.comm_world)
-    solver.set_operator(A)
+    solver.ksp.setOperators(A)
     solver.solve(x, b)
     return x

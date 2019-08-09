@@ -153,15 +153,15 @@ opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
 
 # Create CG Krylov solver and turn convergence monitoring on
 solver = PETScKrylovSolver(MPI.comm_world)
-solver.ksp().setFromOptions()
+solver.ksp.setFromOptions()
 
 # Set matrix operator
-solver.set_operator(A)
+solver.ksp.setOperator(A)
 
 # Compute solution
-solver.ksp().setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
+solver.ksp.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
 solver.solve(u.vector, b)
-solver.ksp().view()
+solver.ksp.view()
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
