@@ -12,16 +12,16 @@
 import os
 
 import cffi
-import numpy
 import numba
 import numba.cffi_support
+import numpy
 from petsc4py import PETSc
 
 import dolfin
 import dolfin.cpp
 import dolfin.io
+import dolfin.la
 import ufl
-
 
 filedir = os.path.dirname(__file__)
 infile = dolfin.io.XDMFFile(dolfin.MPI.comm_world,

@@ -6,6 +6,8 @@
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 """Simpler interface for solving linear systems"""
 
+from petsc4py import PETSc
+
 from dolfin import cpp
 
 
@@ -29,7 +31,7 @@ def solve(A, x, b):
 
     """
 
-    solver = cpp.la.PETScKrylovSolver(cpp.MPI.comm_world)
-    solver.set_operator(A)
-    solver.solve(x, b)
+    solver = PETSc.KSP().create(cpp.MPI.comm_world)
+    solver.setOperators(A)
+    solver.solve(b, x)
     return x

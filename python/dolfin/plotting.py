@@ -419,17 +419,7 @@ def plot(object, *args, **kwargs):
 
     # Try to project if object is not a standard plottable type
     if not isinstance(object, _all_plottable_types):
-        from fem.projection import project
-        try:
-            cpp.log.info("Object cannot be plotted directly, projecting to "
-                         "piecewise linears.")
-            object = project(object, mesh=mesh)
-            mesh = object.function_space.mesh
-            object = object._cpp_object
-        except Exception as e:
-            msg = "Don't know how to plot given object:\n  %s\n" \
-                "and projection failed:\n  %s" % (str(object), str(e))
-            raise RuntimeError(msg)
+        raise RuntimeError("Cannot plot object.")
 
     # Plot
     if backend == "matplotlib":

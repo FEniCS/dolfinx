@@ -16,7 +16,6 @@ __all__ = [
 
 # Import pybind11 objects into dolfin.la
 from dolfin.cpp.la import VectorSpaceBasis  # noqa
-from dolfin.cpp.la import (PETScKrylovSolver, PETScOptions)  # noqa
 
 
 def la_index_dtype():

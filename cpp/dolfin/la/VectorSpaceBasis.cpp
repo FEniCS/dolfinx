@@ -5,7 +5,6 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "VectorSpaceBasis.h"
-#include "PETScMatrix.h"
 #include "PETScVector.h"
 #include <cmath>
 
@@ -87,18 +86,29 @@ bool VectorSpaceBasis::is_orthogonal(double tol) const
   return true;
 }
 //-----------------------------------------------------------------------------
-bool VectorSpaceBasis::in_nullspace(const PETScMatrix& A, double tol) const
+bool VectorSpaceBasis::in_nullspace(const Mat A, double tol) const
 {
-  PETScVector y = A.create_vector(0);
+  assert(A);
+  Vec y = nullptr;
+  MatCreateVecs(A, nullptr, &y);
+
+  bool in_space = true;
   for (auto x : _basis)
   {
-    MatMult(A.mat(), x->vec(), y.vec());
-    const double norm = y.norm(la::Norm::l2);
+    assert(x);
+    assert(x->vec());
+    MatMult(A, x->vec(), y);
+    PetscReal norm = 0.0;
+    VecNorm(y, NORM_2, &norm);
     if (norm > tol)
-      return false;
+    {
+      in_space = false;
+      break;
+    }
   }
 
-  return true;
+  VecDestroy(&y);
+  return in_space;
 }
 //-----------------------------------------------------------------------------
 void VectorSpaceBasis::orthogonalize(PETScVector& x) const
