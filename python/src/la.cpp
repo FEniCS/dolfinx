@@ -8,7 +8,6 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/la/PETScKrylovSolver.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/la/PETScOptions.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/SparsityPattern.h>
 #include <dolfin/la/VectorSpaceBasis.h>
@@ -59,18 +58,6 @@ void la(py::module& m)
       .def("insert_local", &dolfin::la::SparsityPattern::insert_local)
       .def("insert_global", &dolfin::la::SparsityPattern::insert_global);
 
-  py::class_<dolfin::la::PETScOptions>(m, "PETScOptions")
-      .def_static("set",
-                  (void (*)(std::string)) & dolfin::la::PETScOptions::set)
-      .def_static("set", &dolfin::la::PETScOptions::set<bool>)
-      .def_static("set", &dolfin::la::PETScOptions::set<int>)
-      .def_static("set", &dolfin::la::PETScOptions::set<double>)
-      .def_static("set", &dolfin::la::PETScOptions::set<std::string>)
-      .def_static("clear", py::overload_cast<std::string>(
-                               &dolfin::la::PETScOptions::clear))
-      .def_static("clear",
-                  py::overload_cast<>(&dolfin::la::PETScOptions::clear));
-
   // dolfin::la::PETScKrylovSolver
   py::class_<dolfin::la::PETScKrylovSolver,
              std::shared_ptr<dolfin::la::PETScKrylovSolver>>(
@@ -81,16 +68,11 @@ void la(py::module& m)
            py::arg("comm"))
       .def(py::init<KSP, bool>(), py::arg("comm"),
            py::arg("inc_ref_count") = true)
-      .def("get_options_prefix",
-           &dolfin::la::PETScKrylovSolver::get_options_prefix)
-      .def("set_options_prefix",
-           &dolfin::la::PETScKrylovSolver::set_options_prefix)
       .def("set_operator", &dolfin::la::PETScKrylovSolver::set_operator)
       .def("set_operators", &dolfin::la::PETScKrylovSolver::set_operators)
       .def("solve", &dolfin::la::PETScKrylovSolver::solve,
            "Solve linear system", py::arg("x"), py::arg("b"),
            py::arg("transpose") = false)
-      .def("set_from_options", &dolfin::la::PETScKrylovSolver::set_from_options)
       .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
       .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
       .def("ksp", &dolfin::la::PETScKrylovSolver::ksp);

@@ -18,7 +18,7 @@ from dolfin import (MPI, BoxMesh, DirichletBC, Function,
                     TestFunction, TrialFunction, VectorFunctionSpace, cpp)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.io import XDMFFile
-from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
+from dolfin.la import PETScKrylovSolver, VectorSpaceBasis
 from dolfin.cpp.mesh import CellType
 from ufl import Identity, as_vector, dx, grad, inner, sym, tr
 
@@ -138,31 +138,30 @@ null_space = build_nullspace(V)
 A.setNearNullSpace(null_space)
 
 # Set solver options
-PETScOptions.set("ksp_view")
-PETScOptions.set("ksp_type", "cg")
-PETScOptions.set("ksp_rtol", 1.0e-12)
-PETScOptions.set("pc_type", "gamg")
+opts = PETSc.Options()
+opts["ksp_type"] = "cg"
+opts["ksp_rtol"] = 1.0e-12
+opts["pc_type"] = "gamg"
 
 # Use Chebyshev smoothing for multigrid
-PETScOptions.set("mg_levels_ksp_type", "chebyshev")
-PETScOptions.set("mg_levels_pc_type", "jacobi")
+opts["mg_levels_ksp_type"] = "chebyshev"
+opts["mg_levels_pc_type"] = "jacobi"
 
 # Improve estimate of eigenvalues for Chebyshev smoothing
-PETScOptions.set("mg_levels_esteig_ksp_type", "cg")
-PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 20)
-
-# Monitor solver
-PETScOptions.set("ksp_monitor")
+opts["mg_levels_esteig_ksp_type"] = "cg"
+opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
 
 # Create CG Krylov solver and turn convergence monitoring on
 solver = PETScKrylovSolver(MPI.comm_world)
-solver.set_from_options()
+solver.ksp().setFromOptions()
 
 # Set matrix operator
 solver.set_operator(A)
 
 # Compute solution
+solver.ksp().setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
 solver.solve(u.vector, b)
+solver.ksp().view()
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")

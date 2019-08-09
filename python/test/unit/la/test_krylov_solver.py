@@ -15,7 +15,7 @@ import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
                     TrialFunction, UnitSquareMesh, VectorFunctionSpace)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
-from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
+from dolfin.la import PETScKrylovSolver, VectorSpaceBasis
 from petsc4py import PETSc
 from ufl import Identity, dot, dx, grad, inner, sym, tr
 
@@ -36,16 +36,17 @@ def test_krylov_solver_lu():
     norm = 13.0
 
     solver = PETScKrylovSolver(mesh.mpi_comm())
-    solver.set_options_prefix("test_lu_")
-    PETScOptions.set("test_lu_ksp_type", "preonly")
-    PETScOptions.set("test_lu_pc_type", "lu")
-    solver.set_from_options()
+    solver.ksp().setOptionsPrefix("test_lu_")
+    opts = PETSc.Options("test_lu_")
+    opts["ksp_type"] = "preonly"
+    opts["pc_type"] = "lu"
+    solver.ksp().setFromOptions()
     x = A.createVecRight()
     solver.set_operator(A)
     solver.solve(x, b)
 
     # *Tight* tolerance for LU solves
-    assert round(x.norm(PETSc.NormType.N2) - norm, 12) == 0
+    assert x.norm(PETSc.NormType.N2) == pytest.approx(norm, abs=1.0e-12)
 
 
 @pytest.mark.skip
@@ -133,13 +134,14 @@ def test_krylov_samg_solver_elasticity():
         # Compute solution and return number of iterations
         return solver.solve(u.vector, b)
 
-    # Set some multigrid smoother parameters
-    PETScOptions.set("mg_levels_ksp_type", "chebyshev")
-    PETScOptions.set("mg_levels_pc_type", "jacobi")
+    # Set some multigrid smoother paramete rs
+    opts = PETSc.Options()
+    opts["mg_levels_ksp_type"] = "chebyshev"
+    opts["mg_levels_pc_type"] = "jacobi"
 
     # Improve estimate of eigenvalues for Chebyshev smoothing
-    PETScOptions.set("mg_levels_esteig_ksp_type", "cg")
-    PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 50)
+    opts["mg_levels_esteig_ksp_type"] = "cg"
+    opts["mg_levels_ksp_chebyshev_esteig_steps"] = 50
 
     # Build list of smoothed aggregation preconditioners
     methods = ["petsc_amg"]
