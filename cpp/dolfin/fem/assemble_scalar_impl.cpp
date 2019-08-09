@@ -99,7 +99,7 @@ PetscScalar fem::impl::assemble_cells(
   PetscScalar cell_value, value(0);
   for (const auto& cell_index : active_cells)
   {
-    const mesh::Cell cell(mesh, cell_index);
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
@@ -154,12 +154,12 @@ PetscScalar fem::impl::assemble_exterior_facets(
   PetscScalar cell_value, value(0);
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // TODO: check ghosting sanity?
 
     // Create attached cell
-    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
@@ -219,13 +219,13 @@ PetscScalar fem::impl::assemble_interior_facets(
   PetscScalar cell_value, value(0);
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // TODO: check ghosting sanity?
 
     // Create attached cell
-    const mesh::Cell cell0(mesh, facet.entities(tdim)[0]);
-    const mesh::Cell cell1(mesh, facet.entities(tdim)[1]);
+    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};

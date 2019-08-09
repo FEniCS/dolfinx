@@ -72,7 +72,7 @@ ParallelRefinement::edge_to_new_vertex() const
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(const mesh::MeshEntity& entity)
 {
-  for (const auto& edge : mesh::EntityRange<mesh::Edge>(entity))
+  for (const auto& edge : mesh::EntityRange(entity, 1))
     mark(edge.index());
 }
 //-----------------------------------------------------------------------------
@@ -85,11 +85,11 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
       = refinement_marker.values();
 
   for (const auto& entity :
-       mesh::MeshRange<mesh::MeshEntity>(_mesh, entity_dim))
+       mesh::MeshRange(_mesh, entity_dim))
   {
     if (mf_values[entity.index()] == 1)
     {
-      for (const auto& edge : mesh::EntityRange<mesh::Edge>(entity))
+      for (const auto& edge : mesh::EntityRange(entity, 1))
         mark(edge.index());
     }
   }
@@ -101,7 +101,7 @@ ParallelRefinement::marked_edge_list(const mesh::MeshEntity& cell) const
   std::vector<std::size_t> result;
 
   std::size_t i = 0;
-  for (const auto& edge : mesh::EntityRange<mesh::Edge>(cell))
+  for (const auto& edge : mesh::EntityRange(cell, 1))
   {
     if (_marked_edges[edge.index()])
       result.push_back(i);

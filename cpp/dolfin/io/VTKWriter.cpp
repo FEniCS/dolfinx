@@ -126,7 +126,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   file << "<DataArray  type=\"Float64\"  NumberOfComponents=\"3\"  format=\""
        << "ascii"
        << "\">";
-  for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
+  for (auto& v : mesh::MeshRange(mesh, 0))
   {
     Eigen::Vector3d p = mesh.geometry().x(v.index());
     file << p[0] << " " << p[1] << " " << p[2] << "  ";
@@ -142,7 +142,7 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
   mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
   const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
   const int num_vertices = mesh::cell_num_entities(celltype, 0);
-  for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+  for (auto& c : mesh::MeshRange(mesh, cell_dim))
   {
     for (int i = 0; i < num_vertices; ++i)
       file << c.entities(0)[perm[i]] << " ";
@@ -258,7 +258,7 @@ void VTKWriter::write_cell_data(const function::Function& u,
   std::vector<std::size_t>::iterator cell_offset = offset.begin();
   assert(dofmap.element_dof_layout);
   const int num_dofs_cell = dofmap.element_dof_layout->num_dofs();
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Tabulate dofs
     auto dofs = dofmap.cell_dofs(cell.index());

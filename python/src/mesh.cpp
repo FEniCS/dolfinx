@@ -239,12 +239,12 @@ void mesh(py::module& m)
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
 
   py::class_<
-      dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
-      std::shared_ptr<dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>>>(
+      dolfin::mesh::EntityRange,
+      std::shared_ptr<dolfin::mesh::EntityRange>>(
       m, "EntityRange", "Range for iteration over entities of another entity")
       .def(py::init<const dolfin::mesh::MeshEntity&, int>())
       .def("__iter__",
-           [](const dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>& r) {
+           [](const dolfin::mesh::EntityRange& r) {
              return py::make_iterator(r.begin(), r.end());
            });
 
