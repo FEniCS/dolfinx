@@ -129,7 +129,7 @@ def test_krylov_samg_solver_elasticity():
         solver = PETScKrylovSolver("cg", method)
 
         # Set matrix operator
-        solver.ksp.setPperators(A)
+        solver.ksp.setOperators(A)
 
         # Compute solution and return number of iterations
         return solver.solve(u.vector, b)
