@@ -58,18 +58,6 @@ void la(py::module& m)
       .def("insert_local", &dolfin::la::SparsityPattern::insert_local)
       .def("insert_global", &dolfin::la::SparsityPattern::insert_global);
 
-  // dolfin::la::PETScKrylovSolver
-  py::class_<dolfin::la::PETScKrylovSolver,
-             std::shared_ptr<dolfin::la::PETScKrylovSolver>>(
-      m, "PETScKrylovSolver", "PETScKrylovSolver object")
-      .def(py::init([](const MPICommWrapper comm) {
-             return std::make_unique<dolfin::la::PETScKrylovSolver>(comm.get());
-           }),
-           py::arg("comm"))
-      .def("set_dm", &dolfin::la::PETScKrylovSolver::set_dm)
-      .def("set_dm_active", &dolfin::la::PETScKrylovSolver::set_dm_active)
-      .def_property_readonly("ksp", &dolfin::la::PETScKrylovSolver::ksp);
-
   // dolfin::la::VectorSpaceBasis
   py::class_<dolfin::la::VectorSpaceBasis,
              std::shared_ptr<dolfin::la::VectorSpaceBasis>>(m,

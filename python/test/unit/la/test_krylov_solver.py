@@ -15,7 +15,7 @@ import ufl
 from dolfin import (MPI, DirichletBC, Function, FunctionSpace, TestFunction,
                     TrialFunction, UnitSquareMesh, VectorFunctionSpace)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
-from dolfin.la import PETScKrylovSolver, VectorSpaceBasis
+from dolfin.la import VectorSpaceBasis
 from petsc4py import PETSc
 from ufl import Identity, dot, dx, grad, inner, sym, tr
 
@@ -35,15 +35,15 @@ def test_krylov_solver_lu():
 
     norm = 13.0
 
-    solver = PETScKrylovSolver(mesh.mpi_comm())
-    solver.ksp.setOptionsPrefix("test_lu_")
+    solver = PETSc.KSP().create(mesh.mpi_comm())
+    solver.setOptionsPrefix("test_lu_")
     opts = PETSc.Options("test_lu_")
     opts["ksp_type"] = "preonly"
     opts["pc_type"] = "lu"
-    solver.ksp.setFromOptions()
+    solver.setFromOptions()
     x = A.createVecRight()
-    solver.ksp.setOperators(A)
-    solver.ksp.solve(b, x)
+    solver.setOperators(A)
+    solver.solve(b, x)
 
     # *Tight* tolerance for LU solves
     assert x.norm(PETSc.NormType.N2) == pytest.approx(norm, abs=1.0e-12)

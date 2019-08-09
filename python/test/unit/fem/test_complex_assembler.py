@@ -101,14 +101,14 @@ def test_complex_assembly_solve():
     b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 
     # Create solver
-    solver = dolfin.cpp.la.PETScKrylovSolver(mesh.mpi_comm())
+    solver = PETSc.KSP().create(mesh.mpi_comm())
     opts = PETSc.Options()
     opts["ksp_type"] = "preonly"
     opts["pc_type"] = "lu"
-    solver.ksp.setFromOptions()
+    solver.setFromOptions()
     x = A.createVecRight()
-    solver.ksp.setOperators(A)
-    solver.ksp.solve(b, x)
+    solver.setOperators(A)
+    solver.solve(b, x)
 
     # Reference Solution
     def ref_eval(values, x):

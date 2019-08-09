@@ -18,7 +18,7 @@ from dolfin import (MPI, BoxMesh, DirichletBC, Function,
                     TestFunction, TrialFunction, VectorFunctionSpace, cpp)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.io import XDMFFile
-from dolfin.la import PETScKrylovSolver, VectorSpaceBasis
+from dolfin.la import VectorSpaceBasis
 from dolfin.cpp.mesh import CellType
 from ufl import Identity, as_vector, dx, grad, inner, sym, tr
 
@@ -152,16 +152,16 @@ opts["mg_levels_esteig_ksp_type"] = "cg"
 opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
 
 # Create CG Krylov solver and turn convergence monitoring on
-solver = PETScKrylovSolver(MPI.comm_world)
-solver.ksp.setFromOptions()
+solver = PETSc.KSP().create(MPI.comm_world)
+solver.setFromOptions()
 
 # Set matrix operator
-solver.ksp.setOperators(A)
+solver.setOperators(A)
 
 # Compute solution
-solver.ksp.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
-solver.ksp.solve(b, u.vector)
-solver.ksp.view()
+solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
+solver.solve(b, u.vector)
+solver.view()
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
