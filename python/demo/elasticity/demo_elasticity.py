@@ -156,7 +156,7 @@ solver = PETScKrylovSolver(MPI.comm_world)
 solver.ksp.setFromOptions()
 
 # Set matrix operator
-solver.ksp.setOperator(A)
+solver.ksp.setOperators(A)
 
 # Compute solution
 solver.ksp.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
