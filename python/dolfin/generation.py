@@ -7,7 +7,9 @@
 """Simple mesh generation module"""
 
 import typing
+
 import numpy
+
 from dolfin import cpp, fem
 
 __all__ = ["IntervalMesh", "UnitIntervalMesh",

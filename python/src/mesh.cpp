@@ -4,6 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "caster_mpi.h"
+#include "caster_petsc.h"
 #include <cfloat>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/CoordinateMapping.h>
@@ -28,8 +30,6 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-
-#include "casters.h"
 
 namespace py = pybind11;
 
