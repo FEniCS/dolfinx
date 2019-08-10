@@ -242,7 +242,7 @@ void HDF5Utility::cell_owners_in_range(
   const std::vector<std::int64_t>& global_indices
       = mesh.topology().global_indices(tdim);
   std::vector<std::vector<std::size_t>> send_owned_global(num_processes);
-  for (auto& mesh_cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (auto& mesh_cell : mesh::MeshRange(mesh, tdim))
   {
     const std::size_t global_i = global_indices[mesh_cell.index()];
     const std::size_t local_i = mesh_cell.index();

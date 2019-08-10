@@ -17,7 +17,7 @@ using namespace dolfin;
 using namespace dolfin::mesh;
 
 //-----------------------------------------------------------------------------
-std::array<double, 6> MeshQuality::dihedral_angles(const Cell& cell)
+std::array<double, 6> MeshQuality::dihedral_angles(const MeshEntity& cell)
 {
   if (cell.dim() != 3)
   {
@@ -59,7 +59,8 @@ std::array<double, 2> MeshQuality::dihedral_angles_min_max(const Mesh& mesh)
   double d_ang_min = 3.14 + 1.0;
   double d_ang_max = -1.0;
 
-  for (auto& cell : MeshRange<Cell>(mesh))
+  const int tdim = mesh.topology().dim();
+  for (auto& cell : MeshRange(mesh, tdim))
   {
     // Get the angles from the next cell
     std::array<double, 6> angles = dihedral_angles(cell);
@@ -90,7 +91,8 @@ MeshQuality::dihedral_angle_histogram_data(const Mesh& mesh,
   for (std::size_t i = 0; i < num_bins; ++i)
     bins[i] = static_cast<double>(i) * interval + interval / 2.0;
 
-  for (auto& cell : MeshRange<Cell>(mesh))
+  const int tdim = mesh.topology().dim();
+  for (auto& cell : MeshRange(mesh, tdim))
   {
     // this one should return the value of the angle
     std::array<double, 6> angles = dihedral_angles(cell);

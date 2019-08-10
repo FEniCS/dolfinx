@@ -8,9 +8,8 @@
 
 #include "MPICommWrapper.h"
 #include <dolfin/common/SubSystemsManager.h>
-#include <pybind11/pybind11.h>
-
 #include <mpi4py/mpi4py.h>
+#include <pybind11/pybind11.h>
 
 // Import mpi4py on demand
 #define VERIFY_MPI4PY(func)                                                    \
@@ -39,8 +38,9 @@ public:
   // Python to C++
   bool load(handle src, bool)
   {
-    // Simplified version of isinstance(src, mpi4py.MPI.Comm) - avoids segfault
-    // when pybind11 tries to convert some other random type to MPICommWrapper
+    // Simplified version of isinstance(src, mpi4py.MPI.Comm) - avoids
+    // segfault when pybind11 tries to convert some other random type to
+    // MPICommWrapper
     if (not hasattr(src, "Allgather"))
       return false;
     VERIFY_MPI4PY(PyMPIComm_Get);

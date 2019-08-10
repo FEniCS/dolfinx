@@ -952,7 +952,7 @@ void XDMFFile::write_mesh_value_collection(
   mesh->create_connectivity(tdim, cell_dim);
   for (auto& p : values)
   {
-    mesh::MeshEntity cell = mesh::Cell(*mesh, p.first.first);
+    mesh::MeshEntity cell(*mesh, tdim, p.first.first);
     if (cell_dim != tdim)
     {
       const std::int32_t entity_local_idx
@@ -965,7 +965,7 @@ void XDMFFile::write_mesh_value_collection(
       topology_data.push_back(global_indices[cell.index()]);
     else
     {
-      for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+      for (auto& v : mesh::EntityRange(cell, 0))
         topology_data.push_back(global_indices[v.index()]);
     }
 
@@ -1096,14 +1096,14 @@ XDMFFile::read_mesh_value_collection(std::shared_ptr<const mesh::Mesh> mesh,
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
   std::vector<std::int32_t> v(num_verts_per_entity);
-  for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, dim))
+  for (auto& m : mesh::MeshRange(*mesh, dim))
   {
     if (dim == 0)
       v[0] = global_indices[m.index()];
     else
     {
       v.clear();
-      for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m))
+      for (auto& vtx : mesh::EntityRange(m, 0))
         v.push_back(global_indices[vtx.index()]);
       std::sort(v.begin(), v.end());
     }

@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "casters.h"
+#include "caster_petsc.h"
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>

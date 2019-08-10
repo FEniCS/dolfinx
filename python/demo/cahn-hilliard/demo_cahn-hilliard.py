@@ -119,9 +119,9 @@ from petsc4py import PETSc
 from dolfin import (MPI, Function, FunctionSpace, NewtonSolver,
                     NonlinearProblem, TestFunctions, TrialFunction,
                     UnitSquareMesh, log)
+from dolfin.cpp.mesh import CellType
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
-from dolfin.cpp.mesh import CellType
 from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
                  variable)
 

@@ -7,8 +7,7 @@
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/refinement/refine.h>
-
-#include "casters.h"
+#include <pybind11/pybind11.h>
 
 namespace py = pybind11;
 

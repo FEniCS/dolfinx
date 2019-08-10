@@ -94,8 +94,8 @@ void fem::impl::assemble_cells(
     const std::vector<int>& offsets)
 {
   assert(A);
-
   const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -121,7 +121,7 @@ void fem::impl::assemble_cells(
   const int orientation = 0;
   for (auto& cell_index : active_cells)
   {
-    const mesh::Cell cell(mesh, cell_index);
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
@@ -209,11 +209,11 @@ void fem::impl::assemble_exterior_facets(
   PetscErrorCode ierr;
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
     // assert(facet.num_global_entities(tdim) == 1);
 
     // Create attached cell
-    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
@@ -311,14 +311,14 @@ void fem::impl::assemble_interior_facets(
   PetscErrorCode ierr;
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
     // assert(facet.num_global_entities(tdim) == 2);
 
     // TODO: check ghosting sanity?
 
     // Create attached cells
-    const mesh::Cell cell0(mesh, facet.entities(tdim)[0]);
-    const mesh::Cell cell1(mesh, facet.entities(tdim)[1]);
+    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
