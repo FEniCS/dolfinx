@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "MPICommWrapper.h"
 #include "caster_mpi.h"
 #include <array>
 #include <dolfin/generation/BoxMesh.h>
@@ -16,6 +17,7 @@
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <string>
 
 namespace py = pybind11;
