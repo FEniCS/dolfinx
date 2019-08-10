@@ -4,6 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "caster_mpi.h"
 #include <array>
 #include <dolfin/generation/BoxMesh.h>
 #include <dolfin/generation/IntervalMesh.h>
@@ -16,8 +17,6 @@
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <string>
-
-#include "casters.h"
 
 namespace py = pybind11;
 
@@ -44,8 +43,7 @@ void generation(py::module& m)
       .def_static(
           "create",
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
-             std::array<std::size_t, 2> n,
-             dolfin::mesh::CellType cell_type,
+             std::array<std::size_t, 2> n, dolfin::mesh::CellType cell_type,
              dolfin::mesh::GhostMode ghost_mode, std::string diagonal) {
             return dolfin::generation::RectangleMesh::create(
                 comm.get(), p, n, cell_type, ghost_mode, diagonal);
@@ -71,8 +69,7 @@ void generation(py::module& m)
       .def_static(
           "create",
           [](const MPICommWrapper comm, std::array<Eigen::Vector3d, 2> p,
-             std::array<std::size_t, 3> n,
-             dolfin::mesh::CellType cell_type,
+             std::array<std::size_t, 3> n, dolfin::mesh::CellType cell_type,
              const dolfin::mesh::GhostMode ghost_mode) {
             return dolfin::generation::BoxMesh::create(comm.get(), p, n,
                                                        cell_type, ghost_mode);

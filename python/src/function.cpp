@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "casters.h"
+#include "caster_petsc.h"
 #include <cstdint>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
