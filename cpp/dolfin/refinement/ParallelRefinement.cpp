@@ -72,7 +72,7 @@ ParallelRefinement::edge_to_new_vertex() const
 //-----------------------------------------------------------------------------
 void ParallelRefinement::mark(const mesh::MeshEntity& entity)
 {
-  for (const auto& edge : mesh::EntityRange<mesh::Edge>(entity))
+  for (const auto& edge : mesh::EntityRange(entity, 1))
     mark(edge.index());
 }
 //-----------------------------------------------------------------------------
@@ -85,11 +85,11 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
       = refinement_marker.values();
 
   for (const auto& entity :
-       mesh::MeshRange<mesh::MeshEntity>(_mesh, entity_dim))
+       mesh::MeshRange(_mesh, entity_dim))
   {
     if (mf_values[entity.index()] == 1)
     {
-      for (const auto& edge : mesh::EntityRange<mesh::Edge>(entity))
+      for (const auto& edge : mesh::EntityRange(entity, 1))
         mark(edge.index());
     }
   }
@@ -101,7 +101,7 @@ ParallelRefinement::marked_edge_list(const mesh::MeshEntity& cell) const
   std::vector<std::size_t> result;
 
   std::size_t i = 0;
-  for (const auto& edge : mesh::EntityRange<mesh::Edge>(cell))
+  for (const auto& edge : mesh::EntityRange(cell, 1))
   {
     if (_marked_edges[edge.index()])
       result.push_back(i);
@@ -275,9 +275,19 @@ mesh::Mesh ParallelRefinement::partition(bool redistribute) const
   Eigen::Map<const EigenRowArrayXXd> points(_new_vertex_coordinates.data(),
                                             num_local_vertices, 3);
 
-  return mesh::Partitioning::build_distributed_mesh(
-      _mesh.mpi_comm(), _mesh.cell_type, points, cells, global_cell_indices,
-      _mesh.get_ghost_mode());
+  if (redistribute)
+  {
+    return mesh::Partitioning::build_distributed_mesh(
+        _mesh.mpi_comm(), _mesh.cell_type, points, cells, global_cell_indices,
+        _mesh.get_ghost_mode());
+  }
+
+  mesh::Mesh mesh(_mesh.mpi_comm(), _mesh.cell_type, points, cells,
+                  global_cell_indices, _mesh.get_ghost_mode());
+
+  mesh::DistributedMeshTools::init_facet_cell_connections(mesh);
+
+  return mesh;
 }
 //-----------------------------------------------------------------------------
 void ParallelRefinement::new_cells(const std::vector<std::int64_t>& idx)

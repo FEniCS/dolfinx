@@ -94,7 +94,7 @@ void function(py::module& m)
                                       Eigen::Dynamic, Eigen::RowMajor>>
                   u,
               const Eigen::Ref<const dolfin::EigenRowArrayXXd> x,
-              const dolfin::mesh::Cell& cell) { self.eval(u, x, cell); },
+              const dolfin::mesh::MeshEntity& cell) { self.eval(u, x, cell); },
            "Evaluate Function (cell version)")
       .def("eval",
            py::overload_cast<

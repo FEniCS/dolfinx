@@ -104,7 +104,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   const std::size_t rank = dolfin::MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim,
+  for (auto& cell : mesh::MeshRange(*mesh, cell_dim,
                                                       mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
@@ -112,7 +112,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
       cell_topology.push_back(global_indices[cell.index()]);
     else
     {
-      for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+      for (auto& v : mesh::EntityRange(cell, 0))
         cell_topology.push_back(global_indices[v.index()]);
     }
 
@@ -219,14 +219,14 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     // Simple case when nothing is shared between processes
     if (cell_dim == 0)
     {
-      for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
+      for (auto& v : mesh::MeshRange(mesh, 0))
         topology_data.push_back(global_vertices[v.index()]);
     }
     else
     {
       const int num_vertices = mesh::cell_num_entities(
           mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
-      for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+      for (auto& c : mesh::MeshRange(mesh, cell_dim))
       {
         const std::int32_t* entities = c.entities(0);
         for (int i = 0; i < num_vertices; ++i)
@@ -243,7 +243,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     if (cell_dim == 0)
     {
       // Special case for mesh of points
-      for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
+      for (auto& v : mesh::MeshRange(mesh, 0))
       {
         if (non_local_entities.find(v.index()) == non_local_entities.end())
           topology_data.push_back(global_vertices[v.index()]);
@@ -254,7 +254,7 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
       // Local-to-global map for point indices
       const int num_vertices = mesh::cell_num_entities(
           mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
-      for (auto& e : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+      for (auto& e : mesh::MeshRange(mesh, cell_dim))
       {
         // If not excluded, add to topology
         if (non_local_entities.find(e.index()) == non_local_entities.end())
@@ -462,12 +462,12 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
     const std::vector<std::int32_t>& cell_owners = topology.cell_owner();
     const std::int32_t ghost_offset_c = topology.ghost_offset(tdim);
     const std::int32_t ghost_offset_e = topology.ghost_offset(cell_dim);
-    for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
+    for (auto& c : mesh::MeshRange(
              mesh, tdim, mesh::MeshRangeType::GHOST))
     {
       assert(c.index() >= ghost_offset_c);
       const int cell_owner = cell_owners[c.index() - ghost_offset_c];
-      for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
+      for (auto& e : mesh::EntityRange(c, cell_dim))
       {
         const bool not_ghost = e.index() < ghost_offset_e;
         if (not_ghost and cell_owner < mpi_rank)

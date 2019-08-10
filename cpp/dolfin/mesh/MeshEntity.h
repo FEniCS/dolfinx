@@ -133,13 +133,9 @@ public:
   std::string str(bool verbose) const;
 
 protected:
-  template <typename T>
   friend class MeshRange;
-  template <typename T>
   friend class EntityRange;
-  template <typename T>
   friend class MeshIterator;
-  template <typename T>
   friend class MeshEntityIterator;
 
   // The mesh
@@ -152,61 +148,6 @@ protected:
   std::int32_t _local_index;
 };
 
-/// A Vertex is a MeshEntity of topological dimension 0.
-class Vertex : public MeshEntity
-{
-public:
-  /// Create vertex on given mesh
-  Vertex(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 0, index) {}
-};
-
-/// An Edge is a MeshEntity of topological dimension 1.
-class Edge : public MeshEntity
-{
-public:
-  /// Create edge on given mesh
-  ///
-  /// @param    mesh (_Mesh_)
-  ///         The mesh.
-  /// @param    index (std::size_t)
-  ///         Index of the edge.
-  Edge(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 1, index) {}
-};
-
-/// A Face is a MeshEntity of topological dimension 2.
-class Face : public MeshEntity
-{
-public:
-  /// Create face on given mesh
-  Face(const Mesh& mesh, std::int32_t index) : MeshEntity(mesh, 2, index) {}
-};
-
-/// A Facet is a MeshEntity of topological codimension 1.
-class Facet : public MeshEntity
-{
-public:
-  /// Constructor
-  Facet(const Mesh& mesh, std::int32_t index)
-      : MeshEntity(mesh, mesh.topology().dim() - 1, index)
-  {
-  }
-};
-
-/// A Cell is a MeshEntity of topological codimension 0.
-class Cell : public MeshEntity
-{
-public:
-  /// Create cell on given mesh with given index
-  ///
-  /// @param    mesh
-  ///         The mesh.
-  /// @param    index
-  ///         The index.
-  Cell(const Mesh& mesh, std::int32_t index)
-      : MeshEntity(mesh, mesh.topology().dim(), index)
-  {
-  }
-};
 
 } // namespace mesh
 } // namespace dolfin

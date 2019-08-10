@@ -211,7 +211,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   const std::size_t rank = MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim,
+  for (auto& cell : mesh::MeshRange(*mesh, cell_dim,
                                                       mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
@@ -219,7 +219,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
       cell_topology.push_back(global_indices[cell.index()]);
     else
     {
-      for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
+      for (auto& v : mesh::EntityRange(cell, 0))
         cell_topology.push_back(global_indices[v.index()]);
     }
 

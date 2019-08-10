@@ -197,7 +197,8 @@ void mesh(py::module& m)
            [](const dolfin::mesh::Connectivity& self, std::size_t i) {
              return Eigen::Map<const dolfin::EigenArrayXi32>(
                  self.connections(i), self.size(i));
-           }, "Connections for a single mesh entity",
+           },
+           "Connections for a single mesh entity",
            py::return_value_policy::reference_internal)
       .def("connections",
            py::overload_cast<>(&dolfin::mesh::Connectivity::connections),
@@ -221,9 +222,7 @@ void mesh(py::module& m)
       .def("entities",
            [](dolfin::mesh::MeshEntity& self, std::size_t dim) {
              if (self.dim() == dim)
-             {
                return py::array(1, self.entities(dim));
-             }
              else
              {
                assert(self.mesh.topology().connectivity(self.dim(), dim));
@@ -238,15 +237,13 @@ void mesh(py::module& m)
       .def("__str__",
            [](dolfin::mesh::MeshEntity& self) { return self.str(false); });
 
-  py::class_<
-      dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>,
-      std::shared_ptr<dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>>>(
+  py::class_<dolfin::mesh::EntityRange,
+             std::shared_ptr<dolfin::mesh::EntityRange>>(
       m, "EntityRange", "Range for iteration over entities of another entity")
       .def(py::init<const dolfin::mesh::MeshEntity&, int>())
-      .def("__iter__",
-           [](const dolfin::mesh::EntityRange<dolfin::mesh::MeshEntity>& r) {
-             return py::make_iterator(r.begin(), r.end());
-           });
+      .def("__iter__", [](const dolfin::mesh::EntityRange& r) {
+        return py::make_iterator(r.begin(), r.end());
+      });
 
 // dolfin::mesh::MeshFunction
 #define MESHFUNCTION_MACRO(SCALAR, SCALAR_NAME)                                \

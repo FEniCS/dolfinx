@@ -210,7 +210,7 @@ std::vector<T> compute_value_data(const mesh::MeshFunction<T>& meshfunction)
     Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
         = meshfunction.values();
 
-    for (auto& e : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim))
+    for (auto& e : mesh::MeshRange(*mesh, cell_dim))
     {
       if (non_local_entities.find(e.index()) == non_local_entities.end())
         value_data.push_back(mf_values[e.index()]);
