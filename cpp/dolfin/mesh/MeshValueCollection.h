@@ -213,14 +213,14 @@ MeshValueCollection<T>::MeshValueCollection(
       = _mesh->topology().global_indices(0);
 
   // Loop over all the entities of dimension _dim
-  for (auto& m : mesh::MeshRange<mesh::MeshEntity>(*mesh, _dim))
+  for (auto& m : mesh::MeshRange(*mesh, _dim))
   { 
     if (_dim == 0)
       v[0] = global_indices[m.index()];
     else
     {
       v.clear();
-      for (auto& vtx : mesh::EntityRange<mesh::Vertex>(m)){
+      for (auto& vtx : mesh::EntityRange(m, 0)){
         v.push_back(global_indices[vtx.index()]);
       }
       std::sort(v.begin(), v.end());
@@ -267,7 +267,7 @@ MeshValueCollection<T>::MeshValueCollection(
       for (std::size_t i = 0; i < connectivity.size(entity_index); ++i)
       {
         // Create cell
-        const mesh::Cell cell(*_mesh,
+        const mesh::MeshEntity cell(*_mesh, D,
                               connectivity.connections(entity_index)[i]);
 
         // Find the local entity index
