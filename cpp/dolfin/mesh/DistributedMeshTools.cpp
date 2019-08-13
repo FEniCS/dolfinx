@@ -568,10 +568,10 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
         "Global vertex indices exist at input. Cannot be renumbered");
   }
 
-  // Check that we're not re-numbering cells (these are fixed at mesh
-  // construction)
   if (d == mesh.topology().dim())
   {
+    // Numbering cells.
+    // FIXME: Should be redundant?
     shared_entities.clear();
     global_entity_indices = mesh.topology().global_indices(d);
     return std::make_tuple(std::move(global_entity_indices),
@@ -590,10 +590,11 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   mesh.create_entities(d);
 
   // Build entity global [vertex list]-to-[local entity index] map.
-  // Exclude any slave entities.
   std::map<std::vector<std::size_t>, std::int32_t> entities;
   std::pair<std::vector<std::size_t>, std::int32_t> entity;
-  const auto& global_vertices = mesh.topology().global_indices(0);
+  // Get vertex global indices
+  const std::vector<std::int64_t>& global_vertex_indices
+      = mesh.topology().global_indices(0);
   for (auto& e : mesh::MeshRange(mesh, d, mesh::MeshRangeType::ALL))
   {
     const std::size_t local_index = e.index();
@@ -601,14 +602,10 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
     entity.second = local_index;
     entity.first = std::vector<std::size_t>();
     for (auto& vertex : EntityRange(e, 0))
-      entity.first.push_back(global_vertices[vertex.index()]);
+      entity.first.push_back(global_vertex_indices[vertex.index()]);
     std::sort(entity.first.begin(), entity.first.end());
     entities.insert(entity);
   }
-
-  // Get vertex global indices
-  const std::vector<std::int64_t>& global_vertex_indices
-      = mesh.topology().global_indices(0);
 
   // Get shared vertices (local index, [sharing processes])
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices_local
