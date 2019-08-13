@@ -7,7 +7,7 @@
 import numpy
 import pytest
 
-from dolfin import (MPI, MeshEntity, Mesh, UnitCubeMesh, UnitIntervalMesh,
+from dolfin import (MPI, Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType
 from dolfin_utils.test.skips import skip_in_parallel

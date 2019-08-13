@@ -4,7 +4,8 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "casters.h"
+#include "caster_mpi.h"
+#include "caster_petsc.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/SparsityPattern.h>

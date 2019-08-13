@@ -4,6 +4,9 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
+#include "MPICommWrapper.h"
+#include "caster_mpi.h"
+#include "caster_petsc.h"
 #include <Eigen/Dense>
 #include <complex>
 #include <dolfin/common/IndexMap.h>
@@ -20,9 +23,6 @@
 #include <set>
 #include <string>
 #include <vector>
-
-#include "MPICommWrapper.h"
-#include "casters.h"
 
 namespace py = pybind11;
 
