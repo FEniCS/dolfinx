@@ -346,12 +346,11 @@ void HDF5File::write(const mesh::Mesh& mesh, int cell_dim,
         // which are in lower rank process cells to a set for
         // exclusion from output
         const std::vector<std::int32_t>& cell_owners
-            = mesh.topology().cell_owner();
+            = mesh.topology().owner(tdim);
         const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
         const std::int32_t ghost_offset_e
             = mesh.topology().ghost_offset(cell_dim);
-        for (auto& c : mesh::MeshRange(
-                 mesh, tdim, mesh::MeshRangeType::GHOST))
+        for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
         {
           assert(c.index() >= ghost_offset_c);
           const int cell_owner = cell_owners[c.index() - ghost_offset_c];
@@ -584,8 +583,7 @@ HDF5File::read_mesh_function(std::shared_ptr<const mesh::Mesh> mesh,
   const std::size_t process_number = _mpi_comm.rank();
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
-  for (auto& cell :
-       mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange(*mesh, dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::size_t> cell_topology;
     for (auto& v : mesh::EntityRange(cell, 0))
@@ -726,12 +724,11 @@ void HDF5File::write_mesh_function(const mesh::MeshFunction<T>& meshfunction,
       // shared from lower rank process cells to a set for exclusion
       // from output
       const std::vector<std::int32_t>& cell_owners
-          = mesh.topology().cell_owner();
+          = mesh.topology().owner(tdim);
       const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
       const std::int32_t ghost_offset_e
           = mesh.topology().ghost_offset(cell_dim);
-      for (auto& c : mesh::MeshRange(
-               mesh, tdim, mesh::MeshRangeType::GHOST))
+      for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
       {
         assert(c.index() >= ghost_offset_c);
         const int cell_owner = cell_owners[c.index() - ghost_offset_c];

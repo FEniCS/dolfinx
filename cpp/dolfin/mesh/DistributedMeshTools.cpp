@@ -531,17 +531,10 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
       = _mesh.topology().shared_entities(d);
 
   // Number entities
-  // std::vector<std::int64_t> global_entity_indices;
-  // const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
-  //     slave_entities;
-  // const std::size_t num_global_entities = number_entities(
-  //     mesh, slave_entities, global_entity_indices, shared_entities, d);
   std::vector<std::int64_t> global_entity_indices;
-  const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>
-      slave_entities;
   std::size_t num_global_entities;
   std::tie(global_entity_indices, shared_entities, num_global_entities)
-      = number_entities(mesh, slave_entities, d);
+      = number_entities_computation(mesh, d);
 
   // Set global entity numbers in mesh
   _mesh.topology().set_num_entities_global(d, num_global_entities);
@@ -550,11 +543,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int64_t>,
            std::map<std::int32_t, std::set<std::int32_t>>, std::size_t>
-DistributedMeshTools::number_entities(
-    const Mesh& mesh,
-    const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>&
-        slave_entities,
-    int d)
+DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
 {
   // Developer note: This function should use global_vertex_indices for
   // the global mesh indices and *not* access these through the mesh. In
@@ -600,11 +589,6 @@ DistributedMeshTools::number_entities(
   // Initialize entities of dimension d locally
   mesh.create_entities(d);
 
-  // Build list of slave entities to exclude from ownership computation
-  std::vector<bool> exclude(mesh.num_entities(d), false);
-  for (auto s = slave_entities.cbegin(); s != slave_entities.cend(); ++s)
-    exclude[s->first] = true;
-
   // Build entity global [vertex list]-to-[local entity index] map.
   // Exclude any slave entities.
   std::map<std::vector<std::size_t>, std::int32_t> entities;
@@ -613,15 +597,13 @@ DistributedMeshTools::number_entities(
   for (auto& e : mesh::MeshRange(mesh, d, mesh::MeshRangeType::ALL))
   {
     const std::size_t local_index = e.index();
-    if (!exclude[local_index])
-    {
-      entity.second = local_index;
-      entity.first = std::vector<std::size_t>();
-      for (auto& vertex : EntityRange(e, 0))
-        entity.first.push_back(global_vertices[vertex.index()]);
-      std::sort(entity.first.begin(), entity.first.end());
-      entities.insert(entity);
-    }
+
+    entity.second = local_index;
+    entity.first = std::vector<std::size_t>();
+    for (auto& vertex : EntityRange(e, 0))
+      entity.first.push_back(global_vertices[vertex.index()]);
+    std::sort(entity.first.begin(), entity.first.end());
+    entities.insert(entity);
   }
 
   // Get vertex global indices
@@ -739,46 +721,6 @@ DistributedMeshTools::number_entities(
       const std::size_t local_entity_index = recv_entity->second.local_index;
       assert(global_entity_indices[local_entity_index] == -1);
       global_entity_indices[local_entity_index] = global_index;
-    }
-  }
-
-  // Get slave indices from master
-  {
-    std::vector<std::vector<std::size_t>> slave_send_buffer(
-        MPI::size(mpi_comm));
-    std::vector<std::vector<std::size_t>> local_slave_index(
-        MPI::size(mpi_comm));
-    for (auto s = slave_entities.cbegin(); s != slave_entities.cend(); ++s)
-    {
-      // Local index on remote process
-      slave_send_buffer[s->second.first].push_back(s->second.second);
-
-      // Local index on this
-      local_slave_index[s->second.first].push_back(s->first);
-    }
-    std::vector<std::vector<std::size_t>> slave_receive_buffer;
-    MPI::all_to_all(mpi_comm, slave_send_buffer, slave_receive_buffer);
-
-    // Send back master indices
-    for (std::size_t p = 0; p < slave_receive_buffer.size(); ++p)
-    {
-      slave_send_buffer[p].clear();
-      for (std::size_t i = 0; i < slave_receive_buffer[p].size(); ++i)
-      {
-        const std::size_t local_master = slave_receive_buffer[p][i];
-        slave_send_buffer[p].push_back(global_entity_indices[local_master]);
-      }
-    }
-    MPI::all_to_all(mpi_comm, slave_send_buffer, slave_receive_buffer);
-
-    // Set slave indices to received master indices
-    for (std::size_t p = 0; p < slave_receive_buffer.size(); ++p)
-    {
-      for (std::size_t i = 0; i < slave_receive_buffer[p].size(); ++i)
-      {
-        const std::size_t slave_index = local_slave_index[p][i];
-        global_entity_indices[slave_index] = slave_receive_buffer[p][i];
-      }
     }
   }
 
@@ -1150,7 +1092,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     // Map shared facets
     std::map<std::size_t, std::size_t> global_to_local_facet;
 
-    const std::vector<std::int32_t>& cell_owners = mesh.topology().cell_owner();
+    const std::vector<std::int32_t>& cell_owners = mesh.topology().owner(D);
     const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(D);
     const std::int32_t ghost_offset_f = mesh.topology().ghost_offset(D - 1);
     const std::map<std::int32_t, std::set<std::int32_t>>& sharing_map_f
@@ -1158,8 +1100,7 @@ void DistributedMeshTools::init_facet_cell_connections(Mesh& mesh)
     const auto& global_facets = mesh.topology().global_indices(D - 1);
     assert(mesh.topology().connectivity(D - 1, D));
     auto connectivity = mesh.topology().connectivity(D - 1, D);
-    for (auto& f :
-         mesh::MeshRange(mesh, D - 1, mesh::MeshRangeType::ALL))
+    for (auto& f : mesh::MeshRange(mesh, D - 1, mesh::MeshRangeType::ALL))
     {
       // Insert shared facets into mapping
       if (sharing_map_f.find(f.index()) != sharing_map_f.end())

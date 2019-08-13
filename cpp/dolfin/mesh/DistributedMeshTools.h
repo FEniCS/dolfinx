@@ -38,10 +38,8 @@ public:
   /// shared_entities, and XXXX?
   static std::tuple<std::vector<std::int64_t>,
                     std::map<std::int32_t, std::set<std::int32_t>>, std::size_t>
-  number_entities(
+  number_entities_computation(
       const Mesh& mesh,
-      const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>&
-          slave_entities,
       int d);
 
   /// Compute number of cells connected to each facet (globally). Facets

@@ -161,8 +161,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     assert(mesh.topology().connectivity(tdim - 1, tdim));
     std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
         = mesh.topology().connectivity(tdim - 1, tdim);
-    for (const mesh::MeshEntity& facet : mesh::MeshRange(
-             mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
+    for (const mesh::MeshEntity& facet :
+         mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
     {
       if (connectivity_facet_cell->size_global(facet.index()) == 1)
         exf_integrals[0].active_entities.push_back(facet.index());
@@ -183,13 +183,13 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     {
       // Get owner (MPI ranks) of ghost cells
       const std::vector<std::int32_t>& cell_owners
-          = mesh.topology().cell_owner();
+          = mesh.topology().owner(tdim);
       const std::int32_t ghost_offset = mesh.topology().ghost_offset(tdim);
 
       assert(mesh.topology().connectivity(tdim - 1, tdim));
       auto connectivity = mesh.topology().connectivity(tdim - 1, tdim);
-      for (const mesh::MeshEntity& facet : mesh::MeshRange(
-               mesh, tdim - 1, mesh::MeshRangeType::ALL))
+      for (const mesh::MeshEntity& facet :
+           mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::ALL))
       {
         if (connectivity->size(facet.index()) == 2)
         {
@@ -210,8 +210,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       assert(mesh.topology().connectivity(tdim - 1, tdim));
       std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
           = mesh.topology().connectivity(tdim - 1, tdim);
-      for (const mesh::MeshEntity& facet : mesh::MeshRange(
-               mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
+      for (const mesh::MeshEntity& facet :
+           mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
       {
         if (connectivity_facet_cell->size_global(facet.index()) != 1)
           inf_integrals[0].active_entities.push_back(facet.index());

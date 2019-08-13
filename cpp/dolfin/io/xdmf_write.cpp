@@ -104,8 +104,7 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   const std::size_t rank = dolfin::MPI::rank(comm);
   const std::vector<std::int64_t>& global_indices
       = mesh->topology().global_indices(0);
-  for (auto& cell : mesh::MeshRange(*mesh, cell_dim,
-                                                      mesh::MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange(*mesh, cell_dim, mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
     if (cell_dim == 0)
@@ -459,11 +458,10 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   {
     // Iterate through ghost cells, adding non-ghost entities which are
     // in lower rank process cells
-    const std::vector<std::int32_t>& cell_owners = topology.cell_owner();
+    const std::vector<std::int32_t>& cell_owners = topology.owner(tdim);
     const std::int32_t ghost_offset_c = topology.ghost_offset(tdim);
     const std::int32_t ghost_offset_e = topology.ghost_offset(cell_dim);
-    for (auto& c : mesh::MeshRange(
-             mesh, tdim, mesh::MeshRangeType::GHOST))
+    for (auto& c : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::GHOST))
     {
       assert(c.index() >= ghost_offset_c);
       const int cell_owner = cell_owners[c.index() - ghost_offset_c];
