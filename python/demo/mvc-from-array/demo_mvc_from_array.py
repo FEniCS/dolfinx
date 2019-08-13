@@ -84,7 +84,9 @@ points, cells = msh.points, msh.cells
 cell_data, field_data = msh.cell_data, msh.field_data
 
 # Now we have the data related to the mesh available with us.
-# We can now directly create mesh and mesh value collection using this data. ::
+# We can now directly create mesh and mesh value collection using this data.
+# We create a `Mesh` of CellType triangle using the points and cells array
+# created with the help of pygmsh. ::
 
 
 # -----------------Step - 2 - Construct mesh in dolfin -----------------------
@@ -97,21 +99,25 @@ mesh = cpp.mesh.Mesh(
     cpp.mesh.GhostMode.none,
 )
 
+# The first argument is a reference to the MPI communicator. The second
+# specifies the cell type. The third and fourth arguments should be arrays
+# containing the information about point co-ordinates and cell vertices.
+
+# When creating a MeshValueCollection an argument specifying the type of the
+# MeshValueCollection must be given. Allowed types are ‘int’, ‘size_t’,
+# ‘double’ and ‘bool’. The second argument is the mesh and third is the
+# topological dimension of the MeshValueCollection. The fourth argument 
+# is an array specifying the vertices of the mesh entity to be marked and
+# the fifth argument is an array containing the marker of tagged entities.
+# The length of arrays of argument four and five must be the same.   ::
+
 # ----------------Step - 3 - Construct mesh value collection -----------------
 mvc_boundaries = MeshValueCollection(
-    "size_t",
-    mesh,
-    1,
-    cells["line"].tolist(),
-    cell_data["line"]["gmsh:physical"].tolist(),
+    "size_t", mesh, 1, cells["line"], cell_data["line"]["gmsh:physical"]
 )
 
 mvc_subdomain = MeshValueCollection(
-    "size_t",
-    mesh,
-    2,
-    cells["triangle"].tolist(),
-    cell_data["triangle"]["gmsh:physical"].tolist(),
+    "size_t", mesh, 2, cells["triangle"], cell_data["triangle"]["gmsh:physical"]
 )
 
 tag_info = {key: field_data[key][0] for key in field_data}
