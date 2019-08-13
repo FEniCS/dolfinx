@@ -106,7 +106,7 @@ mesh = cpp.mesh.Mesh(
 # When creating a MeshValueCollection an argument specifying the type of the
 # MeshValueCollection must be given. Allowed types are ‘int’, ‘size_t’,
 # ‘double’ and ‘bool’. The second argument is the mesh and third is the
-# topological dimension of the MeshValueCollection. The fourth argument 
+# topological dimension of the MeshValueCollection. The fourth argument
 # is an array specifying the vertices of the mesh entity to be marked and
 # the fifth argument is an array containing the marker of tagged entities.
 # The length of arrays of argument four and five must be the same.   ::
