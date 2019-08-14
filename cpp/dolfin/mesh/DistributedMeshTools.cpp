@@ -135,371 +135,6 @@ reorder_values_by_global_indices(
   return new_values;
 }
 //-----------------------------------------------------------------------------
-// Compute and return (number of global entities, process offset)
-std::pair<std::size_t, std::size_t>
-compute_num_global_entities(const MPI_Comm mpi_comm,
-                            std::size_t num_local_entities,
-                            std::size_t mpi_size, std::size_t mpi_rank)
-{
-  // Communicate number of local entities
-  std::vector<std::size_t> num_entities_to_number;
-  dolfin::MPI::all_gather(mpi_comm, num_local_entities, num_entities_to_number);
-
-  // Compute offset
-  const std::size_t offset = std::accumulate(
-      num_entities_to_number.begin(), num_entities_to_number.begin() + mpi_rank,
-      (std::size_t)0);
-
-  // Compute number of global entities
-  const std::size_t num_global
-      = std::accumulate(num_entities_to_number.begin(),
-                        num_entities_to_number.end(), (std::size_t)0);
-
-  return {num_global, offset};
-}
-//-----------------------------------------------------------------------------
-// Check if all entity vertices are the shared vertices in overlap
-bool is_shared(
-    const Entity& entity,
-    const std::map<std::size_t, std::set<std::int32_t>>& shared_vertices)
-{
-  // Iterate over entity vertices
-  for (auto e = entity.cbegin(); e != entity.cend(); ++e)
-  {
-    // Return false if an entity vertex is not in the list (map) of
-    // shared entities
-    if (shared_vertices.find(*e) == shared_vertices.end())
-      return false;
-  }
-
-  return true;
-}
-//-----------------------------------------------------------------------------
-// Build preliminary 'guess' of shared entities. This function does not
-// involve any inter-process communication. Returns (owned_entities,
-// entity_ownership).
-std::pair<std::vector<std::size_t>, std::array<std::map<Entity, EntityData>, 2>>
-compute_preliminary_entity_ownership(
-    const MPI_Comm mpi_comm,
-    const std::map<std::size_t, std::set<std::int32_t>>& shared_vertices,
-    const std::map<Entity, std::int32_t>& entities)
-{
-  // Create  maps
-  std::vector<std::size_t> owned_entities;
-  std::array<std::map<Entity, EntityData>, 2> shared_entities;
-
-  // Entities
-  std::map<Entity, EntityData>& owned_shared_entities = shared_entities[0];
-  std::map<Entity, EntityData>& unowned_shared_entities = shared_entities[1];
-
-  // Get my process number
-  const std::int32_t mpi_rank = dolfin::MPI::rank(mpi_comm);
-
-  // Iterate over all local entities
-  for (auto it = entities.cbegin(); it != entities.cend(); ++it)
-  {
-    const Entity& entity = it->first;
-    const std::size_t local_entity_index = it->second;
-
-    // Compute which processes entity is shared with
-    std::vector<std::int32_t> entity_processes;
-    if (is_shared(entity, shared_vertices))
-    {
-      // Processes sharing first vertex of entity
-      std::vector<std::size_t> intersection(
-          shared_vertices.find(entity[0])->second.begin(),
-          shared_vertices.find(entity[0])->second.end());
-      std::vector<std::size_t>::iterator intersection_end = intersection.end();
-
-      // Loop over entity vertices
-      for (std::size_t i = 1; i < entity.size(); ++i)
-      {
-        // Global vertex index
-        const std::size_t v = entity[i];
-
-        // Sharing processes
-        const std::set<std::int32_t>& shared_vertices_v
-            = shared_vertices.find(v)->second;
-
-        intersection_end = std::set_intersection(
-            intersection.begin(), intersection_end, shared_vertices_v.begin(),
-            shared_vertices_v.end(), intersection.begin());
-      }
-      entity_processes
-          = std::vector<std::int32_t>(intersection.begin(), intersection_end);
-    }
-
-    // Check if entity is master, slave or shared but not owned (shared
-    // with lower ranked process)
-    bool shared_but_not_owned = false;
-    for (std::size_t i = 0; i < entity_processes.size(); ++i)
-    {
-      if (entity_processes[i] < mpi_rank)
-      {
-        shared_but_not_owned = true;
-        break;
-      }
-    }
-
-    if (entity_processes.empty())
-    {
-      owned_entities.push_back(local_entity_index);
-    }
-    else if (shared_but_not_owned)
-    {
-      unowned_shared_entities[entity]
-          = EntityData(local_entity_index, entity_processes);
-    }
-    else
-    {
-      owned_shared_entities[entity]
-          = EntityData(local_entity_index, entity_processes);
-    }
-  }
-
-  return {std::move(owned_entities), std::move(shared_entities)};
-}
-//-----------------------------------------------------------------------------
-// Communicate with other processes to finalise entity ownership
-void compute_final_entity_ownership(
-    const MPI_Comm mpi_comm, std::vector<std::size_t>& owned_entities,
-    std::array<std::map<Entity, EntityData>, 2>& shared_entities)
-{
-  // Entities ([entity vertices], index) to be numbered
-  std::map<Entity, EntityData>& owned_shared_entities = shared_entities[0];
-  std::map<Entity, EntityData>& unowned_shared_entities = shared_entities[1];
-
-  // Get MPI number of processes and process number
-  const std::int32_t mpi_size = dolfin::MPI::size(mpi_comm);
-  const std::int32_t mpi_rank = dolfin::MPI::rank(mpi_comm);
-
-  // Communicate common entities, starting with the entities we think
-  // are shared but not owned
-  std::vector<std::vector<std::size_t>> send_common_entity_values(mpi_size);
-  for (auto it = unowned_shared_entities.cbegin();
-       it != unowned_shared_entities.cend(); ++it)
-  {
-    // Get entity vertices (global vertex indices)
-    const Entity& entity = it->first;
-
-    // Get entity processes (processes that might share the entity)
-    const std::vector<std::int32_t>& entity_processes = it->second.processes;
-
-    // Prepare data for sending
-    for (std::size_t j = 0; j < entity_processes.size(); ++j)
-    {
-      const std::size_t p = entity_processes[j];
-      send_common_entity_values[p].push_back(entity.size());
-      send_common_entity_values[p].insert(send_common_entity_values[p].end(),
-                                          entity.begin(), entity.end());
-    }
-  }
-
-  // Communicate common entities, add the entities we think are owned
-  // and shared
-  for (auto it = owned_shared_entities.cbegin();
-       it != owned_shared_entities.cend(); ++it)
-  {
-    // Get entity vertices (global vertex indices)
-    const Entity& entity = it->first;
-
-    // Get entity processes (processes that might share the entity)
-    const std::vector<std::int32_t>& entity_processes = it->second.processes;
-
-    // Prepare data for sending
-    for (std::size_t j = 0; j < entity_processes.size(); ++j)
-    {
-      const std::int32_t p = entity_processes[j];
-      assert(mpi_rank < p);
-      send_common_entity_values[p].push_back(entity.size());
-      send_common_entity_values[p].insert(send_common_entity_values[p].end(),
-                                          entity.begin(), entity.end());
-    }
-  }
-
-  // Communicate common entities
-  std::vector<std::vector<std::size_t>> received_common_entity_values;
-  dolfin::MPI::all_to_all(mpi_comm, send_common_entity_values,
-                          received_common_entity_values);
-
-  // Check if entities received are really entities
-  std::vector<std::vector<std::size_t>> send_is_entity_values(mpi_size);
-  for (std::int32_t p = 0; p < mpi_size; ++p)
-  {
-    for (std::size_t i = 0; i < received_common_entity_values[p].size();)
-    {
-      // Get entity
-      const std::size_t entity_size = received_common_entity_values[p][i++];
-      Entity entity;
-      for (std::size_t j = 0; j < entity_size; ++j)
-        entity.push_back(received_common_entity_values[p][i++]);
-
-      // Check if received really is an entity on this process (in which
-      // case it will be in owned or unowned entities)
-      bool is_entity = false;
-      if (unowned_shared_entities.find(entity) != unowned_shared_entities.end()
-          || owned_shared_entities.find(entity) != owned_shared_entities.end())
-      {
-        is_entity = true;
-      }
-
-      // Add information about entity (whether it's actually an entity)
-      // to send to other processes
-      send_is_entity_values[p].push_back(entity_size);
-      for (std::size_t j = 0; j < entity_size; ++j)
-        send_is_entity_values[p].push_back(entity[j]);
-      send_is_entity_values[p].push_back(is_entity);
-    }
-  }
-
-  // Send data back (list of requested entities that are really
-  // entities)
-  std::vector<std::vector<std::size_t>> received_is_entity_values;
-  dolfin::MPI::all_to_all(mpi_comm, send_is_entity_values,
-                          received_is_entity_values);
-
-  // Create map from entities to processes where it is an entity
-  std::map<Entity, std::vector<std::int32_t>> entity_processes;
-  for (std::int32_t p = 0; p < mpi_size; ++p)
-  {
-    for (std::size_t i = 0; i < received_is_entity_values[p].size();)
-    {
-      const std::size_t entity_size = received_is_entity_values[p][i++];
-      Entity entity;
-      for (std::size_t j = 0; j < entity_size; ++j)
-        entity.push_back(received_is_entity_values[p][i++]);
-      const std::size_t is_entity = received_is_entity_values[p][i++];
-      if (is_entity == 1)
-      {
-        // Add entity since it is actually an entity for process p
-        entity_processes[entity].push_back(p);
-      }
-    }
-  }
-
-  // Fix the list of entities we do not own (numbered by lower ranked
-  // process)
-  std::vector<std::vector<std::size_t>> unignore_entities;
-  std::map<Entity, EntityData>::iterator entity;
-  for (entity = unowned_shared_entities.begin();
-       entity != unowned_shared_entities.end(); ++entity)
-  {
-    const Entity& entity_vertices = entity->first;
-    EntityData& entity_data = entity->second;
-    const std::int32_t local_entity_index = entity_data.local_index;
-    if (entity_processes.find(entity_vertices) != entity_processes.end())
-    {
-      const std::vector<std::int32_t>& common_processes
-          = entity_processes[entity_vertices];
-      assert(!common_processes.empty());
-      const std::int32_t min_proc = *(
-          std::min_element(common_processes.begin(), common_processes.end()));
-
-      if (mpi_rank < min_proc)
-      {
-        // Move from unowned to owned
-        owned_shared_entities[entity_vertices]
-            = EntityData(local_entity_index, common_processes);
-
-        // Add entity to list of entities that should be removed from
-        // the unowned entity list.
-        unignore_entities.push_back(entity_vertices);
-      }
-      else
-        entity_data.processes = common_processes;
-    }
-    else
-    {
-      // Move from unowned to owned exclusively
-      owned_entities.push_back(local_entity_index);
-
-      // Add entity to list of entities that should be removed from the
-      // shared but not owned entity list
-      unignore_entities.push_back(entity_vertices);
-    }
-  }
-
-  // Remove unowned shared entities that should not be shared
-  for (std::size_t i = 0; i < unignore_entities.size(); ++i)
-    unowned_shared_entities.erase(unignore_entities[i]);
-
-  // Fix the list of entities we share
-  std::vector<std::vector<std::size_t>> unshare_entities;
-  for (std::map<Entity, EntityData>::iterator it
-       = owned_shared_entities.begin();
-       it != owned_shared_entities.end(); ++it)
-  {
-    const Entity& e = it->first;
-    const std::int32_t local_entity_index = it->second.local_index;
-    if (entity_processes.find(e) == entity_processes.end())
-    {
-      // Move from shared to owned elusively
-      owned_entities.push_back(local_entity_index);
-      unshare_entities.push_back(e);
-    }
-    else
-    {
-      // Update processor list of shared entities
-      it->second.processes = entity_processes[e];
-    }
-  }
-
-  // Remove shared entities that should not be shared
-  for (std::size_t i = 0; i < unshare_entities.size(); ++i)
-    owned_shared_entities.erase(unshare_entities[i]);
-}
-//-----------------------------------------------------------------------------
-// Compute ownership of entities ([entity vertices], data)
-//  [0]: owned exclusively (will be numbered by this process)
-//  [1]: owned and shared (will be numbered by this process, and number
-//       communicated to other processes)
-//  [2]: not owned but shared (will be numbered by another process,
-//       and number communicated to this processes)
-//  Returns (owned_entities,  shared_entities)
-std::pair<std::vector<std::size_t>, std::array<std::map<Entity, EntityData>, 2>>
-compute_entity_ownership(
-    const MPI_Comm mpi_comm,
-    const std::map<std::vector<std::size_t>, std::int32_t>& entities,
-    const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices_local,
-    const std::vector<std::int64_t>& global_vertex_indices, std::size_t d)
-
-{
-  LOG(INFO) << "Compute ownership for mesh entities of dimension " << d;
-  common::Timer timer("Compute mesh entity ownership");
-
-  // Build global-to-local indices map for shared vertices
-  std::map<std::size_t, std::set<std::int32_t>> shared_vertices;
-  for (auto v = shared_vertices_local.cbegin();
-       v != shared_vertices_local.cend(); ++v)
-  {
-    shared_vertices.insert({global_vertex_indices[v->first], v->second});
-  }
-
-  // Entity ownership list ([entity vertices], data):
-  //  [0]: owned and shared (will be numbered by this process, and number
-  //       communicated to other processes)
-  //  [1]: not owned but shared (will be numbered by another process, and number
-  //       communicated to this processes)
-
-  // Compute preliminary ownership lists (shared_entities) without
-  // communication
-  std::vector<std::size_t> owned_entities;
-  std::array<std::map<Entity, EntityData>, 2> shared_entities;
-  std::tie(owned_entities, shared_entities)
-      = compute_preliminary_entity_ownership(mpi_comm, shared_vertices,
-                                             entities);
-
-  // Qualify boundary entities. We need to find out if the shared
-  // (shared with lower ranked process) entities are entities of a
-  // lower ranked process.  If not, this process becomes the lower
-  // ranked process for the entity in question, and is therefore
-  // responsible for communicating values to the higher ranked
-  // processes (if any).
-  compute_final_entity_ownership(mpi_comm, owned_entities, shared_entities);
-
-  return {std::move(owned_entities), std::move(shared_entities)};
-}
-//-----------------------------------------------------------------------------
 
 } // namespace
 
@@ -545,12 +180,6 @@ std::tuple<std::vector<std::int64_t>,
            std::map<std::int32_t, std::set<std::int32_t>>, std::size_t>
 DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
 {
-  // Developer note: This function should use global_vertex_indices for
-  // the global mesh indices and *not* access these through the mesh. In
-  // some cases special numbering is passed in which differs from mesh
-  // global numbering, e.g. when computing mesh entity numbering for
-  // problems with periodic boundary conditions.
-
   LOG(INFO)
       << "Number mesh entities for distributed mesh (for specified vertex ids)."
       << d;
@@ -763,7 +392,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   // Three categories: owned, owned+shared, remote+shared=ghost
 
   // Start numbering
-  std::vector<std::int64_t> global_indexx(mesh.num_entities(d));
+  global_entity_indices.resize(mesh.num_entities(d), -100000);
   std::int64_t n = 0;
 
   // Owned
@@ -772,7 +401,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
     const auto it = entity_to_processes.find(i);
     if (it == entity_to_processes.end())
     {
-      global_indexx[i] = n;
+      global_entity_indices[i] = n;
       ++n;
     }
   }
@@ -782,17 +411,16 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   {
     if (*q.second.begin() > mpi_rank)
     {
-      global_indexx[q.first] = n;
+      global_entity_indices[q.first] = n;
       ++n;
     }
   }
 
   std::int64_t local_offset = MPI::global_offset(mpi_comm, n, true);
   std::int64_t num_global = MPI::sum(mpi_comm, n);
-  std::cout << "Local offset = " << local_offset << "\n";
 
   // Add local_offset to all global indices
-  for (auto& q : global_indexx)
+  for (auto& q : global_entity_indices)
     q += local_offset;
 
   std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
@@ -801,7 +429,8 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   // Now send/recv global indices to/from remotes
   for (int p = mpi_rank + 1; p < mpi_size; ++p)
   {
-    // Revisit the entities we sent out before
+    // Revisit the entities we sent out before, sending out our
+    // new global indices (only to higher rank processes)
     const std::vector<std::int64_t>& sent_p = send_entities[p];
     for (std::size_t i = 0; i < sent_p.size(); i += num_entity_vertices)
     {
@@ -810,7 +439,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
       const auto map_it = sent_set.find(q);
       assert(map_it != sent_set.end());
       int local_index = map_it->second;
-      send_indices[p].push_back(global_indexx[local_index]);
+      send_indices[p].push_back(global_entity_indices[local_index]);
     }
   }
 
@@ -818,161 +447,28 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
 
   for (int p = 0; p < mpi_size; ++p)
   {
+    // Revisit the entities we received before, now with the global
+    // index from remote
     const std::vector<std::int64_t>& recv_p = recv_entities[p];
     for (std::size_t i = 0; i < recv_indices[p].size(); ++i)
     {
       std::vector<std::int64_t> q(recv_p.begin() + i * num_entity_vertices,
                                   recv_p.begin()
                                       + (i + 1) * num_entity_vertices);
+
       const auto map_it = sent_set.find(q);
-      if (map_it != sent_set.end())
+      // Make sure this is a valid entity, and coming from the owner
+      if (map_it != sent_set.end()
+          and p == *entity_to_processes[map_it->second].begin())
       {
         int local_index = map_it->second;
-        global_indexx[local_index] = recv_indices[p][i];
+        global_entity_indices[local_index] = recv_indices[p][i];
       }
     }
   }
 
-  return std::make_tuple(std::move(global_indexx),
-                         std::move(entity_to_processes), num_global);
-
-  // Compute ownership of entities of dimension d ([entity vertices], data):
-  //  [0]: owned and shared (will be numbered by this process, and number
-  //       communicated to other processes)
-  //  [1]: not owned but shared (will be numbered by another process, and
-  //  number
-  //       communicated to this processes)
-  std::array<std::map<Entity, EntityData>, 2> entity_ownership;
-  std::vector<std::size_t> owned_entities;
-  std::tie(owned_entities, entity_ownership) = compute_entity_ownership(
-      mpi_comm, entities, shared_vertices_local, global_vertex_indices, d);
-
-  // Split shared entities for convenience
-  const std::map<Entity, EntityData>& owned_shared_entities
-      = entity_ownership[0];
-  std::map<Entity, EntityData>& unowned_shared_entities = entity_ownership[1];
-
-  // Number of entities 'owned' by this process
-  const std::size_t num_local_entities
-      = owned_entities.size() + owned_shared_entities.size();
-
-  // Compute global number of entities and local process offset
-  const std::pair<std::size_t, std::size_t> num_global_entities
-      = compute_num_global_entities(mpi_comm, num_local_entities, mpi_size,
-                                    mpi_rank);
-
-  // Extract offset
-  std::size_t offset = num_global_entities.second;
-
-  // Prepare list of global entity numbers. Check later that nothing is
-  // equal to -1
-  global_entity_indices = std::vector<std::int64_t>(mesh.num_entities(d), -1);
-
-  // Number exclusively owned entities
-  for (std::size_t i = 0; i < owned_entities.size(); ++i)
-    global_entity_indices[owned_entities[i]] = offset++;
-
-  // Number shared entities that this process is responsible for
-  // numbering
-  for (auto it1 = owned_shared_entities.cbegin();
-       it1 != owned_shared_entities.cend(); ++it1)
-  {
-    global_entity_indices[it1->second.local_index] = offset++;
-  }
-
-  // Communicate indices for shared entities (owned by this process) and
-  // get indices for shared but not owned entities
-  std::vector<std::vector<std::size_t>> send_values(mpi_size);
-  std::vector<std::size_t> destinations;
-  for (auto it1 = owned_shared_entities.cbegin();
-       it1 != owned_shared_entities.cend(); ++it1)
-  {
-    // Get entity index
-    const std::int32_t local_entity_index = it1->second.local_index;
-    const std::int64_t global_entity_index
-        = global_entity_indices[local_entity_index];
-    assert(global_entity_index != -1);
-
-    // Get entity processes (processes sharing the entity)
-    const std::vector<std::int32_t>& entity_processes = it1->second.processes;
-
-    // Get entity vertices (global vertex indices)
-    const Entity& e = it1->first;
-
-    // Prepare data for sending
-    for (std::size_t j = 0; j < entity_processes.size(); ++j)
-    {
-      // Store interleaved: entity index, number of vertices, global
-      // vertex indices
-      std::size_t p = entity_processes[j];
-      send_values[p].push_back(global_entity_index);
-      send_values[p].push_back(e.size());
-      send_values[p].insert(send_values[p].end(), e.begin(), e.end());
-    }
-  }
-
-  // Send data
-  std::vector<std::vector<std::size_t>> received_values;
-  MPI::all_to_all(mpi_comm, send_values, received_values);
-
-  // Fill in global entity indices received from lower ranked processes
-  for (int p = 0; p < mpi_size; ++p)
-  {
-    for (std::size_t i = 0; i < received_values[p].size();)
-    {
-      const std::size_t global_index = received_values[p][i++];
-      const std::size_t entity_size = received_values[p][i++];
-      Entity e;
-      for (std::size_t j = 0; j < entity_size; ++j)
-        e.push_back(received_values[p][i++]);
-
-      // Access unowned entity data
-      std::map<Entity, EntityData>::const_iterator recv_entity
-          = unowned_shared_entities.find(e);
-
-      // Sanity check, should not receive an entity we don't need
-      if (recv_entity == unowned_shared_entities.end())
-      {
-        std::stringstream msg;
-        msg << "Process " << MPI::rank(mpi_comm)
-            << " received illegal entity given by ";
-        msg << " with global index " << global_index;
-        msg << " from process " << p;
-        throw std::runtime_error(msg.str());
-      }
-
-      const std::size_t local_entity_index = recv_entity->second.local_index;
-      assert(global_entity_indices[local_entity_index] == -1);
-      global_entity_indices[local_entity_index] = global_index;
-    }
-  }
-
-  // Sanity check
-  for (std::size_t i = 0; i < global_entity_indices.size(); ++i)
-  {
-    assert(global_entity_indices[i] != -1);
-  }
-
-  // Build shared_entities (global index, [sharing processes])
-  shared_entities.clear();
-  for (auto e = owned_shared_entities.cbegin();
-       e != owned_shared_entities.cend(); ++e)
-  {
-    const EntityData& ed = e->second;
-    shared_entities[ed.local_index]
-        = std::set<std::int32_t>(ed.processes.begin(), ed.processes.end());
-  }
-  for (auto e = unowned_shared_entities.cbegin();
-       e != unowned_shared_entities.cend(); ++e)
-  {
-    const EntityData& ed = e->second;
-    shared_entities[ed.local_index]
-        = std::set<std::int32_t>(ed.processes.begin(), ed.processes.end());
-  }
-
-  // Return
   return std::make_tuple(std::move(global_entity_indices),
-                         std::move(shared_entities), num_global_entities.first);
+                         std::move(entity_to_processes), num_global);
 }
 //-----------------------------------------------------------------------------
 std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
