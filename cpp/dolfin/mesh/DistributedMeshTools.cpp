@@ -24,43 +24,6 @@ using namespace dolfin::mesh;
 //-----------------------------------------------------------------------------
 namespace
 {
-typedef std::vector<std::size_t> Entity;
-
-// Data structure for mesh entity data
-struct EntityData
-{
-  // Constructor
-  EntityData() : local_index(0) {}
-
-  // Move constructor
-  EntityData(EntityData&&) = default;
-
-  // Move assignment
-  EntityData& operator=(EntityData&&) = default;
-
-  // Constructor  (index is local)
-  explicit EntityData(std::int32_t index) : local_index(index) {}
-
-  // Constructor (index is local)
-  EntityData(std::int32_t index, const std::vector<std::int32_t>& procs)
-      : local_index(index), processes(procs)
-  {
-    // Do nothing
-  }
-
-  // Constructor  (index is local)
-  EntityData(std::int32_t index, std::int32_t process)
-      : local_index(index), processes(1, process)
-  {
-    // Do nothing
-  }
-
-  // Local (this process) entity index
-  std::int32_t local_index;
-
-  // Processes on which entity resides
-  std::vector<std::int32_t> processes;
-};
 //-----------------------------------------------------------------------------
 template <typename T>
 Eigen::Array<T, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
@@ -218,9 +181,6 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   // Initialize entities of dimension d locally
   mesh.create_entities(d);
 
-  // Build entity global [vertex list]-to-[local entity index] map.
-  std::map<std::vector<std::size_t>, std::int32_t> entities;
-  std::pair<std::vector<std::size_t>, std::int32_t> entity;
   // Get vertex global indices
   const std::vector<std::int64_t>& global_vertex_indices
       = mesh.topology().global_indices(0);
@@ -239,7 +199,6 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   std::vector<std::vector<std::int64_t>> send_entities(mpi_size);
   std::vector<std::vector<std::int64_t>> recv_entities(mpi_size);
   std::map<std::vector<std::int64_t>, std::int32_t> sent_set;
-  std::map<std::int32_t, std::set<int>> entity_to_processes;
 
   // Get number of vertices in this entity
   const mesh::CellType& ct = mesh.cell_type;
@@ -261,8 +220,8 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
       // Get first vertex, and sharing processes
       const std::set<std::int32_t>& shared_vertices_v0
           = shared_vertices_local.find(v[0])->second;
-      std::vector<std::int32_t> intersection(shared_vertices_v0.begin(),
-                                             shared_vertices_v0.end());
+      std::vector<std::int32_t> sharing_procs(shared_vertices_v0.begin(),
+                                              shared_vertices_v0.end());
 
       std::vector<std::int64_t> g_index = {global_vertex_indices[v[0]]};
 
@@ -274,41 +233,35 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
         const std::set<std::int32_t>& shared_vertices_v
             = shared_vertices_local.find(v[i])->second;
 
-        std::vector<std::int32_t> v_intersection;
-        std::set_intersection(
-            intersection.begin(), intersection.end(), shared_vertices_v.begin(),
-            shared_vertices_v.end(), std::back_inserter(v_intersection));
-        intersection = v_intersection;
+        std::vector<std::int32_t> v_sharing_procs;
+        std::set_intersection(sharing_procs.begin(), sharing_procs.end(),
+                              shared_vertices_v.begin(),
+                              shared_vertices_v.end(),
+                              std::back_inserter(v_sharing_procs));
+        sharing_procs = v_sharing_procs;
       }
 
-      if (!intersection.empty())
+      if (!sharing_procs.empty())
       {
         // Sort global vertex indices into order
         std::sort(g_index.begin(), g_index.end());
 
         // Record processes this entity belongs to (possibly)
-        entity_to_processes.insert(
+        shared_entities.insert(
             {local_index,
-             std::set<int>(intersection.begin(), intersection.end())});
+             std::set<int>(sharing_procs.begin(), sharing_procs.end())});
 
         // Record mapping from vertex global indices to local entity index
         sent_set.insert({g_index, local_index});
 
         // Send all possible entities to remote processes
-        for (auto p : intersection)
+        for (auto p : sharing_procs)
         {
           send_entities[p].insert(send_entities[p].end(), g_index.begin(),
                                   g_index.end());
         }
       }
     }
-
-    entity.second = local_index;
-    entity.first = std::vector<std::size_t>();
-    for (auto& vertex : EntityRange(e, 0))
-      entity.first.push_back(global_vertex_indices[vertex.index()]);
-    std::sort(entity.first.begin(), entity.first.end());
-    entities.insert(entity);
   }
 
   // Sort sending data into ascending order by row
@@ -376,15 +329,15 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
       const auto map_it = sent_set.find(q);
       assert(map_it != sent_set.end());
       const std::int32_t entity_idx = map_it->second;
-      const auto emap_it = entity_to_processes.find(entity_idx);
-      assert(emap_it != entity_to_processes.end());
+      const auto emap_it = shared_entities.find(entity_idx);
+      assert(emap_it != shared_entities.end());
       int n = emap_it->second.erase(p);
       assert(n == 1);
 
       // If this was the last sharing process, then this is no longer a shared
       // entity
       if (emap_it->second.empty())
-        entity_to_processes.erase(emap_it);
+        shared_entities.erase(emap_it);
     }
   }
 
@@ -398,8 +351,8 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   // Owned
   for (int i = 0; i < mesh.num_entities(d); ++i)
   {
-    const auto it = entity_to_processes.find(i);
-    if (it == entity_to_processes.end())
+    const auto it = shared_entities.find(i);
+    if (it == shared_entities.end())
     {
       global_entity_indices[i] = n;
       ++n;
@@ -407,7 +360,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   }
 
   // Owned and shared
-  for (const auto& q : entity_to_processes)
+  for (const auto& q : shared_entities)
   {
     if (*q.second.begin() > mpi_rank)
     {
@@ -459,7 +412,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
       const auto map_it = sent_set.find(q);
       // Make sure this is a valid entity, and coming from the owner
       if (map_it != sent_set.end()
-          and p == *entity_to_processes[map_it->second].begin())
+          and p == *shared_entities[map_it->second].begin())
       {
         int local_index = map_it->second;
         global_entity_indices[local_index] = recv_indices[p][i];
@@ -468,7 +421,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   }
 
   return std::make_tuple(std::move(global_entity_indices),
-                         std::move(entity_to_processes), num_global);
+                         std::move(shared_entities), num_global);
 }
 //-----------------------------------------------------------------------------
 std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
