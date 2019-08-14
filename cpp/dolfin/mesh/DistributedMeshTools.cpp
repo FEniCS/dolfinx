@@ -583,8 +583,8 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   const MPI_Comm mpi_comm = mesh.mpi_comm();
 
   // Get number of processes and process number
-  const std::size_t mpi_size = MPI::size(mpi_comm);
-  const std::size_t mpi_rank = MPI::rank(mpi_comm);
+  const int mpi_size = MPI::size(mpi_comm);
+  const int mpi_rank = MPI::rank(mpi_comm);
 
   // Initialize entities of dimension d locally
   mesh.create_entities(d);
@@ -620,31 +620,30 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   for (auto& e : mesh::MeshRange(mesh, d, mesh::MeshRangeType::ALL))
   {
     const std::size_t local_index = e.index();
+    const std::int32_t* v = e.entities(0);
 
     // entity can only be shared if all vertices are shared
-    bool poss_shared = true;
-    for (auto& vertex : EntityRange(e, 0))
-      poss_shared &= vertex_shared[vertex.index()];
+    bool may_be_shared = true;
+    for (int i = 0; i < num_entity_vertices; ++i)
+      may_be_shared &= vertex_shared[v[i]];
 
-    if (poss_shared)
+    if (may_be_shared)
     {
       // Get first vertex, and sharing processes
-      int v0 = e.entities(0)[0];
       const std::set<std::int32_t>& shared_vertices_v0
-          = shared_vertices_local.find(v0)->second;
+          = shared_vertices_local.find(v[0])->second;
       std::vector<std::int32_t> intersection(shared_vertices_v0.begin(),
                                              shared_vertices_v0.end());
 
-      std::vector<std::int64_t> g_index;
+      std::vector<std::int64_t> g_index = {global_vertex_indices[v[0]]};
 
       for (int i = 1; i < num_entity_vertices; ++i)
       {
-        int v = e.entities(0)[i];
-        g_index.push_back(global_vertex_indices[v]);
+        g_index.push_back(global_vertex_indices[v[i]]);
 
         // Sharing processes
         const std::set<std::int32_t>& shared_vertices_v
-            = shared_vertices_local.find(v)->second;
+            = shared_vertices_local.find(v[i])->second;
 
         std::vector<std::int32_t> v_intersection;
         std::set_intersection(
@@ -663,6 +662,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
             {local_index,
              std::set<int>(intersection.begin(), intersection.end())});
 
+        // Record mapping from vertex global indices to local entity index
         sent_set.insert({g_index, local_index});
 
         // Send all possible entities to remote processes
@@ -682,14 +682,16 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
     entities.insert(entity);
   }
 
-  // Sort sending data into order
+  // Sort sending data into ascending order by row
   for (int p = 0; p < mpi_size; ++p)
   {
     int num_send = send_entities[p].size() / num_entity_vertices;
+    // Map over data with Eigen Array
     Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
                             Eigen::RowMajor>>
         send_data(send_entities[p].data(), num_send, num_entity_vertices);
 
+    // Find the permutation that sorts the rows into order
     std::vector<int> perm(num_send);
     std::iota(perm.begin(), perm.end(), 0);
     std::sort(perm.begin(), perm.end(), [&](int i, int j) {
@@ -700,12 +702,14 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
           send_data.row(j).data() + num_entity_vertices);
     });
 
+    // Apply the permutation to the array
     Eigen::Map<Eigen::PermutationMatrix<Eigen::Dynamic>> perm_map(perm.data(),
                                                                   num_send);
     send_data = perm_map.inverse() * send_data.matrix();
   }
 
   MPI::all_to_all(mpi_comm, send_entities, recv_entities);
+
   // Check off received entities against sent entities
   // (any which don't match need to be revised).
   // For every shared entity that is sent to another process, the same entity
@@ -717,15 +721,16 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
     const std::vector<std::int64_t>& sent_p = send_entities[p];
     const std::vector<std::int64_t>& recv_p = recv_entities[p];
 
+    // If received and sent are identical, there is nothing to do here.
     if (sent_p == recv_p)
       continue;
 
     std::vector<std::vector<std::int64_t>> sent_as_ent;
     std::vector<std::vector<std::int64_t>> recv_as_ent;
-    for (int i = 0; i < sent_p.size(); i += num_entity_vertices)
+    for (std::size_t i = 0; i < sent_p.size(); i += num_entity_vertices)
       sent_as_ent.push_back(std::vector<std::int64_t>(
           sent_p.begin() + i, sent_p.begin() + i + num_entity_vertices));
-    for (int i = 0; i < recv_p.size(); i += num_entity_vertices)
+    for (std::size_t i = 0; i < recv_p.size(); i += num_entity_vertices)
       recv_as_ent.push_back(std::vector<std::int64_t>(
           recv_p.begin() + i, recv_p.begin() + i + num_entity_vertices));
 
@@ -755,18 +760,81 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   }
 
   // We now know which entities are shared (and with which processes).
-  // Three categories: owned, owned+shared, remote+shared
+  // Three categories: owned, owned+shared, remote+shared=ghost
 
-  int n_owned = mesh.num_entities(d) - entity_to_processes.size();
-  for (const auto& m : entity_to_processes)
+  // Start numbering
+  std::vector<std::int64_t> global_indexx(mesh.num_entities(d));
+  std::int64_t n = 0;
+
+  // Owned
+  for (int i = 0; i < mesh.num_entities(d); ++i)
   {
-    // Check if lowest sharing process is higher rank
-    if (*m.second.begin() > mpi_rank)
-      ++n_owned;
+    const auto it = entity_to_processes.find(i);
+    if (it == entity_to_processes.end())
+    {
+      global_indexx[i] = n;
+      ++n;
+    }
   }
 
-  auto bb = MPI::global_offset(mpi_comm, n_owned, false);
-  std::cout << "Local offset = " << bb << "\n";
+  // Owned and shared
+  for (const auto& q : entity_to_processes)
+  {
+    if (*q.second.begin() > mpi_rank)
+    {
+      global_indexx[q.first] = n;
+      ++n;
+    }
+  }
+
+  std::int64_t local_offset = MPI::global_offset(mpi_comm, n, true);
+  std::int64_t num_global = MPI::sum(mpi_comm, n);
+  std::cout << "Local offset = " << local_offset << "\n";
+
+  // Add local_offset to all global indices
+  for (auto& q : global_indexx)
+    q += local_offset;
+
+  std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
+  std::vector<std::vector<std::int64_t>> recv_indices(mpi_size);
+
+  // Now send/recv global indices to/from remotes
+  for (int p = mpi_rank + 1; p < mpi_size; ++p)
+  {
+    // Revisit the entities we sent out before
+    const std::vector<std::int64_t>& sent_p = send_entities[p];
+    for (std::size_t i = 0; i < sent_p.size(); i += num_entity_vertices)
+    {
+      std::vector<std::int64_t> q(sent_p.begin() + i,
+                                  sent_p.begin() + i + num_entity_vertices);
+      const auto map_it = sent_set.find(q);
+      assert(map_it != sent_set.end());
+      int local_index = map_it->second;
+      send_indices[p].push_back(global_indexx[local_index]);
+    }
+  }
+
+  MPI::all_to_all(mpi_comm, send_indices, recv_indices);
+
+  for (int p = 0; p < mpi_size; ++p)
+  {
+    const std::vector<std::int64_t>& recv_p = recv_entities[p];
+    for (std::size_t i = 0; i < recv_indices[p].size(); ++i)
+    {
+      std::vector<std::int64_t> q(recv_p.begin() + i * num_entity_vertices,
+                                  recv_p.begin()
+                                      + (i + 1) * num_entity_vertices);
+      const auto map_it = sent_set.find(q);
+      if (map_it != sent_set.end())
+      {
+        int local_index = map_it->second;
+        global_indexx[local_index] = recv_indices[p][i];
+      }
+    }
+  }
+
+  return std::make_tuple(std::move(global_indexx),
+                         std::move(entity_to_processes), num_global);
 
   // Compute ownership of entities of dimension d ([entity vertices], data):
   //  [0]: owned and shared (will be numbered by this process, and number
@@ -848,7 +916,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   MPI::all_to_all(mpi_comm, send_values, received_values);
 
   // Fill in global entity indices received from lower ranked processes
-  for (std::size_t p = 0; p < mpi_size; ++p)
+  for (int p = 0; p < mpi_size; ++p)
   {
     for (std::size_t i = 0; i < received_values[p].size();)
     {
