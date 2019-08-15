@@ -98,25 +98,6 @@ reorder_values_by_global_indices(
   return new_values;
 }
 //-----------------------------------------------------------------------------
-void sort_array_by_row(Eigen::Ref<Eigen::Array<std::int64_t, Eigen::Dynamic,
-                                               Eigen::Dynamic, Eigen::RowMajor>>
-                           array)
-{
-  // Find the permutation that sorts the rows into order
-  std::vector<int> perm(array.rows());
-  std::iota(perm.begin(), perm.end(), 0);
-  std::sort(perm.begin(), perm.end(), [&array](int i, int j) {
-    return std::lexicographical_compare(
-        array.row(i).data(), array.row(i).data() + array.cols(),
-        array.row(j).data(), array.row(j).data() + array.cols());
-  });
-
-  // Apply the permutation to the array
-  Eigen::Map<Eigen::PermutationMatrix<Eigen::Dynamic>> perm_map(perm.data(),
-                                                                array.rows());
-  array = perm_map.inverse() * array.matrix();
-}
-
 } // namespace
 
 //-----------------------------------------------------------------------------
@@ -215,7 +196,9 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
 
   // Send and receive shared entities
   std::vector<std::vector<std::int64_t>> send_entities(mpi_size);
+  std::vector<std::vector<std::int32_t>> send_local_entities(mpi_size);
   std::vector<std::vector<std::int64_t>> recv_entities(mpi_size);
+  std::vector<std::vector<std::int32_t>> recv_local_entities(mpi_size);
   std::map<std::vector<std::int64_t>, std::int32_t> entity_to_local_index;
 
   // Get number of vertices in this entity
@@ -244,12 +227,8 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
       std::vector<std::int32_t> sharing_procs(shared_vertices_v0.begin(),
                                               shared_vertices_v0.end());
 
-      std::vector<std::int64_t> g_index = {global_vertex_indices[v[0]]};
-
       for (int i = 1; i < num_entity_vertices; ++i)
       {
-        g_index.push_back(global_vertex_indices[v[i]]);
-
         // Sharing processes for subsequent vertices of this entity
         const std::set<std::int32_t>& shared_vertices_v
             = shared_vertices_local.find(v[i])->second;
@@ -268,6 +247,9 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
         // send the entity to the sharing processes.
 
         // Sort global vertex indices into order
+        std::vector<std::int64_t> g_index;
+        for (int i = 0; i < num_entity_vertices; ++i)
+          g_index.push_back(global_vertex_indices[v[i]]);
         std::sort(g_index.begin(), g_index.end());
 
         // Record processes this entity belongs to (possibly)
@@ -281,24 +263,12 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
         // Send all possible entities to remote processes
         for (auto p : sharing_procs)
         {
+          send_local_entities[p].push_back(local_index);
           send_entities[p].insert(send_entities[p].end(), g_index.begin(),
                                   g_index.end());
         }
       }
     }
-  }
-
-  // Sort sending data into ascending order by row.
-  // Useful later for set_difference, and better to do before sending.
-  for (int p = 0; p < mpi_size; ++p)
-  {
-    int num_send = send_entities[p].size() / num_entity_vertices;
-    // Map over data with Eigen Array
-    Eigen::Map<Eigen::Array<std::int64_t, Eigen::Dynamic, Eigen::Dynamic,
-                            Eigen::RowMajor>>
-        send_data(send_entities[p].data(), num_send, num_entity_vertices);
-
-    sort_array_by_row(send_data);
   }
 
   MPI::all_to_all(mpi_comm, send_entities, recv_entities);
@@ -309,38 +279,44 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   // should be returned. If not, it does not exist on the remote process... If
   // an entity is received which has not been sent, then it can be ignored.
 
+  // Convert received data back to local index (where possible, otherwise put
+  // -1)
   for (int p = 0; p < mpi_size; ++p)
   {
-    const std::vector<std::int64_t>& sent_p = send_entities[p];
     const std::vector<std::int64_t>& recv_p = recv_entities[p];
+    for (int i = 0; i < recv_p.size(); i += num_entity_vertices)
+    {
+      std::vector<std::int64_t> q(recv_p.begin() + i,
+                                  recv_p.begin() + i + num_entity_vertices);
+
+      const auto map_it = entity_to_local_index.find(q);
+      if (map_it != entity_to_local_index.end())
+        recv_local_entities[p].push_back(map_it->second);
+      else
+        recv_local_entities[p].push_back(-1);
+    }
+  }
+
+  for (int p = 0; p < mpi_size; ++p)
+  {
+    std::vector<std::int32_t> send_p = send_local_entities[p];
+    std::vector<std::int32_t> recv_p = recv_local_entities[p];
+    std::sort(send_p.begin(), send_p.end());
+    std::sort(recv_p.begin(), recv_p.end());
 
     // If received and sent are identical, there is nothing to do here.
-    if (sent_p == recv_p)
+    if (send_p == recv_p)
       continue;
 
-    std::vector<std::vector<std::int64_t>> sent_as_ent;
-    std::vector<std::vector<std::int64_t>> recv_as_ent;
-    for (std::size_t i = 0; i < sent_p.size(); i += num_entity_vertices)
-      sent_as_ent.push_back(std::vector<std::int64_t>(
-          sent_p.begin() + i, sent_p.begin() + i + num_entity_vertices));
-    for (std::size_t i = 0; i < recv_p.size(); i += num_entity_vertices)
-      recv_as_ent.push_back(std::vector<std::int64_t>(
-          recv_p.begin() + i, recv_p.begin() + i + num_entity_vertices));
-
-    std::vector<std::vector<std::int64_t>> diff;
-
-    // Get list of items in sent, but not in recv
-    std::set_difference(sent_as_ent.begin(), sent_as_ent.end(),
-                        recv_as_ent.begin(), recv_as_ent.end(),
-                        std::back_inserter(diff));
+    // Get list of items in send_p, but not in recv_p
+    std::vector<std::int32_t> diff;
+    std::set_difference(send_p.begin(), send_p.end(), recv_p.begin(),
+                        recv_p.end(), std::back_inserter(diff));
 
     // any entities listed in diff do not exist on process 'p'
     for (auto& q : diff)
     {
-      const auto map_it = entity_to_local_index.find(q);
-      assert(map_it != entity_to_local_index.end());
-      const std::int32_t entity_idx = map_it->second;
-      const auto emap_it = shared_entities.find(entity_idx);
+      const auto emap_it = shared_entities.find(q);
       assert(emap_it != shared_entities.end());
       int n = emap_it->second.erase(p);
       assert(n == 1);
@@ -358,7 +334,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   // Start numbering
   global_entity_indices.resize(mesh.num_entities(d), -1);
 
-  std::size_t num_local = mesh.num_entities(d) - shared_entities.size();
+  std::int64_t num_local = mesh.num_entities(d) - shared_entities.size();
   for (const auto& q : shared_entities)
   {
     if (*q.second.begin() > mpi_rank)
@@ -391,6 +367,8 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
     }
   }
 
+  assert(n == local_offset + num_local);
+
   // Now send/recv global indices to/from remotes
   std::vector<std::vector<std::int64_t>> send_indices(mpi_size);
   std::vector<std::vector<std::int64_t>> recv_indices(mpi_size);
@@ -399,39 +377,24 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   // new global indices (only to higher rank processes)
   for (int p = mpi_rank + 1; p < mpi_size; ++p)
   {
-    const std::vector<std::int64_t>& sent_p = send_entities[p];
-    for (std::size_t i = 0; i < sent_p.size(); i += num_entity_vertices)
-    {
-      std::vector<std::int64_t> q(sent_p.begin() + i,
-                                  sent_p.begin() + i + num_entity_vertices);
-      const auto map_it = entity_to_local_index.find(q);
-      assert(map_it != entity_to_local_index.end());
-      int local_index = map_it->second;
-      send_indices[p].push_back(global_entity_indices[local_index]);
-    }
+    const std::vector<std::int32_t>& send_p = send_local_entities[p];
+    for (auto q : send_p)
+      send_indices[p].push_back(global_entity_indices[q]);
   }
 
   MPI::all_to_all(mpi_comm, send_indices, recv_indices);
 
   // Revisit the entities we received before, now with the global
   // index from remote
-  for (int p = 0; p < mpi_size; ++p)
+  for (int p = 0; p < mpi_rank; ++p)
   {
-    const std::vector<std::int64_t>& recv_p = recv_entities[p];
-    for (std::size_t i = 0; i < recv_indices[p].size(); ++i)
+    const std::vector<std::int32_t>& recv_p = recv_local_entities[p];
+    for (std::size_t i = 0; i < recv_p.size(); ++i)
     {
-      std::vector<std::int64_t> q(recv_p.begin() + i * num_entity_vertices,
-                                  recv_p.begin()
-                                      + (i + 1) * num_entity_vertices);
-
-      const auto map_it = entity_to_local_index.find(q);
+      const std::int32_t local_index = recv_p[i];
       // Make sure this is a valid entity, and coming from the owner
-      if (map_it != entity_to_local_index.end()
-          and p == *shared_entities[map_it->second].begin())
-      {
-        int local_index = map_it->second;
+      if (local_index != -1 and p == *shared_entities[local_index].begin())
         global_entity_indices[local_index] = recv_indices[p][i];
-      }
     }
   }
 
