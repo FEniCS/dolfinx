@@ -284,7 +284,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   for (int p = 0; p < mpi_size; ++p)
   {
     const std::vector<std::int64_t>& recv_p = recv_entities[p];
-    for (int i = 0; i < recv_p.size(); i += num_entity_vertices)
+    for (std::size_t i = 0; i < recv_p.size(); i += num_entity_vertices)
     {
       std::vector<std::int64_t> q(recv_p.begin() + i,
                                   recv_p.begin() + i + num_entity_vertices);
@@ -297,6 +297,7 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
     }
   }
 
+  // Compare sent and received entities
   for (int p = 0; p < mpi_size; ++p)
   {
     std::vector<std::int32_t> send_p = send_local_entities[p];
