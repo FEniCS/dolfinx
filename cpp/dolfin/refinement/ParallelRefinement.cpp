@@ -84,8 +84,7 @@ void ParallelRefinement::mark(const mesh::MeshFunction<int>& refinement_marker)
   Eigen::Ref<const Eigen::Array<int, Eigen::Dynamic, 1>> mf_values
       = refinement_marker.values();
 
-  for (const auto& entity :
-       mesh::MeshRange(_mesh, entity_dim))
+  for (const auto& entity : mesh::MeshRange(_mesh, entity_dim))
   {
     if (mf_values[entity.index()] == 1)
     {
@@ -200,7 +199,7 @@ void ParallelRefinement::create_new_vertices()
     auto shared_edge_i = _shared_edges.find(local_i);
     if (shared_edge_i != _shared_edges.end())
     {
-      for (auto const& remote_process_edge : _shared_edges[local_i])
+      for (auto const& remote_process_edge : shared_edge_i->second)
       {
         const std::size_t remote_proc_num = remote_process_edge.first;
         // send mapping from remote local edge index to new global vertex index

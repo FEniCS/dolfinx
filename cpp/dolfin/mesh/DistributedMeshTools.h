@@ -46,14 +46,6 @@ public:
   /// cells residing on neighboring processes)
   static void init_facet_cell_connections(Mesh& mesh);
 
-  /// Find processes that own or share mesh entities (using entity
-  /// global indices). Returns (global_dof, set(process_num,
-  /// local_index)). Exclusively local entities will not appear in the
-  /// map. Works only for vertices and cells
-  static std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
-  locate_off_process_entities(const std::vector<std::size_t>& entity_indices,
-                              std::size_t dim, const Mesh& mesh);
-
   /// Compute map from local index of shared entity to list of sharing
   /// process and local index, i.e. (local index, [(sharing process p,
   /// local index on p)])
