@@ -46,13 +46,6 @@ public:
   /// cells residing on neighboring processes)
   static void init_facet_cell_connections(Mesh& mesh);
 
-  /// Compute map from local index of shared entity to list of sharing
-  /// process and local index, i.e. (local index, [(sharing process p,
-  /// local index on p)])
-  static std::unordered_map<std::int32_t,
-                            std::vector<std::pair<std::int32_t, std::int32_t>>>
-  compute_shared_entities(const Mesh& mesh, std::size_t d);
-
   /// Reorder the values according to explicit global indices, distributing
   /// evenly across processes
   /// @param mpi_comm
