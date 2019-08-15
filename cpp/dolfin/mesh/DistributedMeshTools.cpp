@@ -131,7 +131,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
   std::vector<std::int64_t> global_entity_indices;
   std::size_t num_global_entities;
   std::tie(global_entity_indices, shared_entities, num_global_entities)
-      = number_entities_computation(mesh, d);
+      = compute_entity_numbering(mesh, d);
 
   // Set global entity numbers in mesh
   _mesh.topology().set_num_entities_global(d, num_global_entities);
@@ -140,7 +140,7 @@ void DistributedMeshTools::number_entities(const Mesh& mesh, int d)
 //-----------------------------------------------------------------------------
 std::tuple<std::vector<std::int64_t>,
            std::map<std::int32_t, std::set<std::int32_t>>, std::size_t>
-DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
+DistributedMeshTools::compute_entity_numbering(const Mesh& mesh, int d)
 {
   LOG(INFO)
       << "Number mesh entities for distributed mesh (for specified vertex ids)."
@@ -189,112 +189,128 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_vertices_local
       = mesh.topology().shared_entities(0);
 
-  // Make a mask for shared vertices (true if shared)
-  std::vector<bool> vertex_shared(mesh.num_entities(0), false);
-  for (const auto& v : shared_vertices_local)
-    vertex_shared[v.first] = true;
-
-  // Send and receive shared entities
-  std::vector<std::vector<std::int64_t>> send_entities(mpi_size);
+  // Send and receive shared entities.
+  // In order to communicate with remote processes, the entities are sent
+  // and received as blocks of global vertex indices, since these are the same
+  // on all processes. However, is more convenient to use the local index, so
+  // translate before and after sending.
   std::vector<std::vector<std::int32_t>> send_local_entities(mpi_size);
-  std::vector<std::vector<std::int64_t>> recv_entities(mpi_size);
   std::vector<std::vector<std::int32_t>> recv_local_entities(mpi_size);
-  std::map<std::vector<std::int64_t>, std::int32_t> entity_to_local_index;
 
-  // Get number of vertices in this entity
-  const mesh::CellType& ct = mesh.cell_type;
-  const mesh::CellType& et = mesh::cell_entity_type(ct, d);
-  const int num_entity_vertices = mesh::num_cell_vertices(et);
-
-  for (auto& e : mesh::MeshRange(mesh, d, mesh::MeshRangeType::ALL))
   {
-    const std::size_t local_index = e.index();
-    const std::int32_t* v = e.entities(0);
+    // Scoped region
 
-    // Entity can only be shared if all vertices are shared
-    // but this is not a sufficient condition
-    bool may_be_shared = true;
-    for (int i = 0; i < num_entity_vertices; ++i)
-      may_be_shared &= vertex_shared[v[i]];
+    // Entities to send/recv, as blocks of global vertex indices.
+    std::vector<std::vector<std::int64_t>> send_entities(mpi_size);
+    std::vector<std::vector<std::int64_t>> recv_entities(mpi_size);
 
-    if (may_be_shared)
+    // Mapping from the global vertex indices of an entity, back to its local
+    // index. Used after receiving, to translate back to local index.
+    std::map<std::vector<std::int64_t>, std::int32_t> entity_to_local_index;
+
+    // Get number of vertices in this entity type
+    const mesh::CellType& ct = mesh.cell_type;
+    const mesh::CellType& et = mesh::cell_entity_type(ct, d);
+    const int num_entity_vertices = mesh::num_cell_vertices(et);
+
+    // Make a mask listing all shared vertices (true if shared)
+    std::vector<bool> vertex_shared(mesh.num_entities(0), false);
+    for (const auto& v : shared_vertices_local)
+      vertex_shared[v.first] = true;
+
+    for (auto& e : mesh::MeshRange(mesh, d, mesh::MeshRangeType::ALL))
     {
-      // Get the set of processes which share all the vertices of this entity
+      const std::size_t local_index = e.index();
+      const std::int32_t* v = e.entities(0);
 
-      // First vertex, and its sharing processes
-      const std::set<std::int32_t>& shared_vertices_v0
-          = shared_vertices_local.find(v[0])->second;
-      std::vector<std::int32_t> sharing_procs(shared_vertices_v0.begin(),
-                                              shared_vertices_v0.end());
+      // Entity can only be shared if all vertices are shared
+      // but this is not a sufficient condition
+      bool may_be_shared = true;
+      for (int i = 0; i < num_entity_vertices; ++i)
+        may_be_shared &= vertex_shared[v[i]];
 
-      for (int i = 1; i < num_entity_vertices; ++i)
+      if (may_be_shared)
       {
-        // Sharing processes for subsequent vertices of this entity
-        const std::set<std::int32_t>& shared_vertices_v
-            = shared_vertices_local.find(v[i])->second;
+        // Get the set of processes which share all the vertices of this entity
 
-        std::vector<std::int32_t> v_sharing_procs;
-        std::set_intersection(sharing_procs.begin(), sharing_procs.end(),
-                              shared_vertices_v.begin(),
-                              shared_vertices_v.end(),
-                              std::back_inserter(v_sharing_procs));
-        sharing_procs = v_sharing_procs;
-      }
+        // First vertex, and its sharing processes
+        const std::set<std::int32_t>& shared_vertices_v0
+            = shared_vertices_local.find(v[0])->second;
+        std::vector<std::int32_t> sharing_procs(shared_vertices_v0.begin(),
+                                                shared_vertices_v0.end());
 
-      if (!sharing_procs.empty())
-      {
-        // If there are still processes that share all the vertices,
-        // send the entity to the sharing processes.
-
-        // Sort global vertex indices into order
-        std::vector<std::int64_t> g_index;
-        for (int i = 0; i < num_entity_vertices; ++i)
-          g_index.push_back(global_vertex_indices[v[i]]);
-        std::sort(g_index.begin(), g_index.end());
-
-        // Record processes this entity belongs to (possibly)
-        shared_entities.insert(
-            {local_index,
-             std::set<int>(sharing_procs.begin(), sharing_procs.end())});
-
-        // Record mapping from vertex global indices to local entity index
-        entity_to_local_index.insert({g_index, local_index});
-
-        // Send all possible entities to remote processes
-        for (auto p : sharing_procs)
+        for (int i = 1; i < num_entity_vertices; ++i)
         {
-          send_local_entities[p].push_back(local_index);
-          send_entities[p].insert(send_entities[p].end(), g_index.begin(),
-                                  g_index.end());
+          // Sharing processes for subsequent vertices of this entity
+          const std::set<std::int32_t>& shared_vertices_v
+              = shared_vertices_local.find(v[i])->second;
+
+          std::vector<std::int32_t> v_sharing_procs;
+          std::set_intersection(sharing_procs.begin(), sharing_procs.end(),
+                                shared_vertices_v.begin(),
+                                shared_vertices_v.end(),
+                                std::back_inserter(v_sharing_procs));
+          sharing_procs = v_sharing_procs;
+        }
+
+        if (!sharing_procs.empty())
+        {
+          // If there are still processes that share all the vertices,
+          // send the entity to the sharing processes.
+
+          // Sort global vertex indices into order
+          std::vector<std::int64_t> g_index;
+          for (int i = 0; i < num_entity_vertices; ++i)
+            g_index.push_back(global_vertex_indices[v[i]]);
+          std::sort(g_index.begin(), g_index.end());
+
+          // Record processes this entity belongs to (possibly)
+          shared_entities.insert(
+              {local_index,
+               std::set<int>(sharing_procs.begin(), sharing_procs.end())});
+
+          // Record mapping from vertex global indices to local entity index
+          entity_to_local_index.insert({g_index, local_index});
+
+          // Send all possible entities to remote processes
+          for (auto p : sharing_procs)
+          {
+            send_local_entities[p].push_back(local_index);
+            send_entities[p].insert(send_entities[p].end(), g_index.begin(),
+                                    g_index.end());
+          }
         }
       }
     }
-  }
 
-  MPI::all_to_all(mpi_comm, send_entities, recv_entities);
+    MPI::all_to_all(mpi_comm, send_entities, recv_entities);
 
-  // Check off received entities against sent entities
-  // (any which don't match need to be revised).
-  // For every shared entity that is sent to another process, the same entity
-  // should be returned. If not, it does not exist on the remote process... If
-  // an entity is received which has not been sent, then it can be ignored.
+    // Check off received entities against sent entities
+    // (any which don't match need to be revised).
+    // For every shared entity that is sent to another process, the same entity
+    // should be returned. If not, it does not exist on the remote process... On
+    // the other hand, if an entity is received which has not been sent, then it
+    // can be safely ignored.
 
-  // Convert received data back to local index (where possible, otherwise put
-  // -1)
-  for (int p = 0; p < mpi_size; ++p)
-  {
-    const std::vector<std::int64_t>& recv_p = recv_entities[p];
-    for (std::size_t i = 0; i < recv_p.size(); i += num_entity_vertices)
+    // Convert received data back to local index (where possible, otherwise put
+    // -1 to ignore)
+    for (int p = 0; p < mpi_size; ++p)
     {
-      std::vector<std::int64_t> q(recv_p.begin() + i,
-                                  recv_p.begin() + i + num_entity_vertices);
+      const std::vector<std::int64_t>& recv_p = recv_entities[p];
+      for (std::size_t i = 0; i < recv_p.size(); i += num_entity_vertices)
+      {
+        std::vector<std::int64_t> q(recv_p.begin() + i,
+                                    recv_p.begin() + i + num_entity_vertices);
 
-      const auto map_it = entity_to_local_index.find(q);
-      if (map_it != entity_to_local_index.end())
-        recv_local_entities[p].push_back(map_it->second);
-      else
-        recv_local_entities[p].push_back(-1);
+        const auto map_it = entity_to_local_index.find(q);
+        if (map_it != entity_to_local_index.end())
+          recv_local_entities[p].push_back(map_it->second);
+        else
+          recv_local_entities[p].push_back(-1);
+      }
     }
+
+    // End of scoped region
   }
 
   // Compare sent and received entities
@@ -332,9 +348,11 @@ DistributedMeshTools::number_entities_computation(const Mesh& mesh, int d)
   // We now know which entities are shared (and with which processes).
   // Three categories: owned, owned+shared, remote+shared=ghost
 
-  // Start numbering
   global_entity_indices.resize(mesh.num_entities(d), -1);
 
+  // Start numbering
+
+  // Calculate all locally owned entities, and get a local offset
   std::int64_t num_local = mesh.num_entities(d) - shared_entities.size();
   for (const auto& q : shared_entities)
   {

@@ -122,8 +122,8 @@ void mesh(py::module& m)
       .def("hash", &dolfin::mesh::Topology::hash)
       .def("have_global_indices", &dolfin::mesh::Topology::have_global_indices)
       .def("ghost_offset", &dolfin::mesh::Topology::ghost_offset)
-      .def("owner",
-           py::overload_cast<int>(&dolfin::mesh::Topology::owner, py::const_))
+      .def("cell_owner",
+           py::overload_cast<>(&dolfin::mesh::Topology::cell_owner, py::const_))
       .def("global_indices",
            [](const dolfin::mesh::Topology& self, int dim) {
              auto& indices = self.global_indices(dim);

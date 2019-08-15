@@ -18,10 +18,9 @@ Topology::Topology(std::size_t dim, std::int32_t num_vertices,
                    std::int64_t num_vertices_global)
     : _num_vertices(num_vertices), _ghost_offset_index(dim + 1, 0),
       _global_num_entities(dim + 1, -1), _global_indices(dim + 1),
-      _shared_entities(dim + 1), _entity_owner(dim + 1),
+      _shared_entities(dim + 1),
       _connectivity(dim + 1,
                     std::vector<std::shared_ptr<Connectivity>>(dim + 1))
-
 {
   assert(!_global_num_entities.empty());
   _global_num_entities[0] = num_vertices_global;
@@ -129,14 +128,11 @@ Topology::shared_entities(int dim) const
   return _shared_entities[dim];
 }
 //-----------------------------------------------------------------------------
-std::vector<std::int32_t>& Topology::owner(int dim)
-{
-  return _entity_owner[dim];
-}
+std::vector<std::int32_t>& Topology::cell_owner() { return _cell_owner; }
 //-----------------------------------------------------------------------------
-const std::vector<std::int32_t>& Topology::owner(int dim) const
+const std::vector<std::int32_t>& Topology::cell_owner() const
 {
-  return _entity_owner[dim];
+  return _cell_owner;
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<Connectivity> Topology::connectivity(std::size_t d0,
