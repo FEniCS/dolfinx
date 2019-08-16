@@ -90,9 +90,9 @@ import meshio
 import dolfin
 from dolfin.io import XDMFFile
 import numpy as np
-from ufl import SpatialCoordinate, inner, grad, lhs, rhs, exp, dx, ds
+from ufl import SpatialCoordinate, inner, grad, exp, dx, ds
 from dolfin import FunctionSpace, TrialFunction, TestFunction, DirichletBC
-from dolfin import Function, solve, MPI
+from dolfin import Function, MPI
 
 # In this example, different boundary conditions are prescribed on
 # different parts of the boundaries, and different parts of the interior
