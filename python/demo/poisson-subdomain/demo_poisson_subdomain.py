@@ -223,12 +223,14 @@ ds = ds(subdomain_data=mf_line)
 # form. ::
 
 # Define variational form
-F = (inner(a0 * grad(u), grad(v)) * dx(tag_info['DOMAIN'])
-     + inner(a1 * grad(u), grad(v)) * dx(tag_info['OBSTACLE'])
-     - g_L * v * ds(tag_info['LEFT'])
-     - g_R * v * ds(tag_info['RIGHT'])
-     - f * v * dx(tag_info['DOMAIN'])
-     - f * v * dx(tag_info['OBSTACLE']))
+a = inner(a0 * grad(u), grad(v)) * dx(tag_info['DOMAIN']) + \
+    inner(a1 * grad(u), grad(v)) * dx(tag_info['OBSTACLE'])
+
+
+L = g_L * v * ds(tag_info['LEFT']) - \
+    g_R * v * ds(tag_info['RIGHT']) - \
+    f * v * dx(tag_info['DOMAIN']) - \
+    f * v * dx(tag_info['OBSTACLE'])
 
 # For simplicity, we define the full form first,
 # and then extract the left- and right-hand sides using the UFL
@@ -236,11 +238,11 @@ F = (inner(a0 * grad(u), grad(v)) * dx(tag_info['DOMAIN'])
 # :py:func:`solve <dolfin.fem.solving.solve>` as usual: ::
 
 # Separate left and right hand sides of equation
-a, L = lhs(F), rhs(F)
+# a, L = lhs(F), rhs(F)
 
 # Solve problem
 u = Function(V)
-solve(a == L, u, bcs)
+# solve(a == L, u, bcs)
 
 # Now we can save the solution to a XDMF file for visualization. ::
 
