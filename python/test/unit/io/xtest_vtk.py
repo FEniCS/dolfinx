@@ -112,7 +112,7 @@ def test_save_3d_mesh(tempfile, file_options):
 def test_save_1d_scalar(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
-    u.vector()[:] = 1.0
+    u.vector[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd", "ascii")
     f.write(u, 0.)
@@ -124,7 +124,7 @@ def test_save_1d_scalar(tempfile, file_options):
 def test_save_2d_scalar(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
-    u.vector()[:] = 1.0
+    u.vector[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd", "ascii")
     f.write(u, 0.)
@@ -136,7 +136,7 @@ def test_save_2d_scalar(tempfile, file_options):
 def test_save_3d_scalar(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     u = Function(FunctionSpace(mesh, "Lagrange", 2))
-    u.vector()[:] = 1.0
+    u.vector[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd", "ascii")
     f.write(u, 0.)
@@ -150,7 +150,7 @@ def test_save_3d_scalar(tempfile, file_options):
 def test_save_1d_vector(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-    u.vector()[:] = 1.0
+    u.vector[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     for file_option in file_options:
         VTKFile(tempfile + "u.pvd", file_option).write(u)
@@ -159,7 +159,7 @@ def test_save_1d_vector(tempfile, file_options):
 def test_save_2d_vector(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-    u.vector()[:] = 1.0
+    u.vector[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd")
     f.write(u, 0.)
@@ -171,7 +171,7 @@ def test_save_2d_vector(tempfile, file_options):
 def test_save_3d_vector(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     u = Function(VectorFunctionSpace(mesh, "Lagrange", 2))
-    u.vector()[:] = 1.0
+    u.vector[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd")
     f.write(u, 0.)
@@ -185,7 +185,7 @@ def test_save_3d_vector(tempfile, file_options):
 def test_save_1d_tensor(tempfile, file_options):
     mesh = UnitIntervalMesh(MPI.comm_world, 32)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector()[:] = 1.0
+    u.vector[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     for file_option in file_options:
         VTKFile(tempfile + "u.pvd", file_option).write(u)
@@ -194,7 +194,7 @@ def test_save_1d_tensor(tempfile, file_options):
 def test_save_2d_tensor(tempfile, file_options):
     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector()[:] = 1.0
+    u.vector[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd", "ascii")
     f.write(u, 0.)
@@ -206,7 +206,7 @@ def test_save_2d_tensor(tempfile, file_options):
 def test_save_3d_tensor(tempfile, file_options):
     mesh = UnitCubeMesh(MPI.comm_world, 8, 8, 8)
     u = Function(TensorFunctionSpace(mesh, ("Lagrange", 2)))
-    u.vector()[:] = 1.0
+    u.vector[:] = 1.0
     VTKFile(tempfile + "u.pvd", "ascii").write(u)
     f = VTKFile(tempfile + "u.pvd", "ascii")
     f.write(u, 0.)

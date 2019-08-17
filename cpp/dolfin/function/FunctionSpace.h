@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -79,24 +79,6 @@ public:
   /// @param   V (_FunctionSpace_)
   ///         Another function space.
   bool operator!=(const FunctionSpace& V) const;
-
-  /// Return mesh
-  ///
-  /// @returns  _mesh::Mesh_
-  ///         The mesh.
-  std::shared_ptr<const mesh::Mesh> mesh() const;
-
-  /// Return finite element
-  ///
-  /// @returns _FiniteElement_
-  ///         The finite element.
-  std::shared_ptr<const fem::FiniteElement> element() const;
-
-  /// Return dofmap
-  ///
-  /// @returns _DofMap_
-  ///         The dofmap.
-  std::shared_ptr<const fem::DofMap> dofmap() const;
 
   /// Return global dimension of the function space.
   ///
@@ -168,9 +150,9 @@ public:
   ///
   /// @returns    bool
   ///         True if the function space has the given cell.
-  bool has_cell(const mesh::Cell& cell) const
+  bool has_cell(const mesh::MeshEntity& cell) const
   {
-    return &cell.mesh() == &(*_mesh);
+    return &cell.mesh() == mesh.get();
   }
 
   /// Check if function space has given element
@@ -182,7 +164,7 @@ public:
   ///         True if the function space has the given element.
   bool has_element(const fem::FiniteElement& element) const
   {
-    return element.hash() == _element->hash();
+    return element.hash() == this->element->hash();
   }
 
   /// Return component w.r.t. to root superspace, i.e.
@@ -216,6 +198,15 @@ public:
   void set_x(Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> x,
              PetscScalar value, int component) const;
 
+  /// The mesh
+  const std::shared_ptr<const mesh::Mesh> mesh;
+
+  /// The finite element
+  const std::shared_ptr<const fem::FiniteElement> element;
+
+  /// The dofmap
+  const std::shared_ptr<const fem::DofMap> dofmap;
+
   /// Unique identifier
   const std::size_t id;
 
@@ -225,15 +216,6 @@ private:
       Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>>
           expansion_coefficients,
       const Function& v) const;
-
-  // The mesh
-  std::shared_ptr<const mesh::Mesh> _mesh;
-
-  // The finite element
-  std::shared_ptr<const fem::FiniteElement> _element;
-
-  // The dofmap
-  std::shared_ptr<const fem::DofMap> _dofmap;
 
   // The component w.r.t. to root space
   std::vector<int> _component;

@@ -14,7 +14,7 @@ import dolfin
 import ufl
 from dolfin.function.specialfunctions import SpatialCoordinate
 from petsc4py import PETSc
-from ufl import ds, dx, inner
+from ufl import ds, dx, inner, derivative
 
 
 def nest_matrix_norm(A):
@@ -44,13 +44,38 @@ def test_assemble_functional():
     assert value == pytest.approx(0.5, 1e-12)
 
 
+def test_assemble_derivatives():
+    """ This test checks the original_coefficient_positions, which may change
+    under differentiation (some coefficients are eliminated) """
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
+    Q = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    u = dolfin.Function(Q)
+    v = dolfin.TestFunction(Q)
+    du = dolfin.TrialFunction(Q)
+    b = dolfin.Function(Q)
+    with b.vector.localForm() as b_local:
+        b_local.set(2.0)
+
+    # derivative eliminates 'u'
+    L = b * inner(u, v) * dx
+    a = derivative(L, u, du)
+    A1 = dolfin.fem.assemble_matrix(a)
+    A1.assemble()
+
+    a = b * inner(du, v) * dx
+    A2 = dolfin.fem.assemble_matrix(a)
+    A2.assemble()
+
+    assert (A1 - A2).norm() == pytest.approx(0.0, rel=1e-12, abs=1e-12)
+
+
 def test_basic_assembly():
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
     f = dolfin.Function(V)
-    with f.vector().localForm() as f_local:
+    with f.vector.localForm() as f_local:
         f_local.set(10.0)
     a = inner(f * u, v) * dx + inner(u, v) * ds
     L = inner(f, v) * dx + inner(2.0, v) * ds
@@ -102,7 +127,7 @@ def test_assembly_bcs():
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.Function(V)
-    with u_bc.vector().localForm() as u_local:
+    with u_bc.vector.localForm() as u_local:
         u_local.set(1.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V, u_bc, boundary)
 
@@ -146,7 +171,7 @@ def test_matrix_assembly_block():
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc = dolfin.function.Function(V1)
-    with u_bc.vector().localForm() as u_local:
+    with u_bc.vector.localForm() as u_local:
         u_local.set(50.0)
     bc = dolfin.fem.dirichletbc.DirichletBC(V1, u_bc, boundary)
 
@@ -221,12 +246,12 @@ def test_assembly_solve_block():
         return numpy.logical_or(x[:, 0] < 1.0e-6, x[:, 0] > 1.0 - 1.0e-6)
 
     u_bc0 = dolfin.function.Function(V0)
-    u_bc0.vector().set(50.0)
-    u_bc0.vector().ghostUpdate(
+    u_bc0.vector.set(50.0)
+    u_bc0.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     u_bc1 = dolfin.function.Function(V1)
-    u_bc1.vector().set(20.0)
-    u_bc1.vector().ghostUpdate(
+    u_bc1.vector.set(20.0)
+    u_bc1.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bcs = [
         dolfin.fem.dirichletbc.DirichletBC(V0, u_bc0, boundary),
@@ -302,12 +327,12 @@ def test_assembly_solve_block():
     V1 = dolfin.function.functionspace.FunctionSpace(mesh, P1)
 
     u0_bc = dolfin.function.Function(V0)
-    u0_bc.vector().set(50.0)
-    u0_bc.vector().ghostUpdate(
+    u0_bc.vector.set(50.0)
+    u0_bc.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     u1_bc = dolfin.function.Function(V1)
-    u1_bc.vector().set(20.0)
-    u1_bc.vector().ghostUpdate(
+    u1_bc.vector.set(20.0)
+    u1_bc.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
     bcs = [
@@ -358,8 +383,8 @@ def test_assembly_solve_taylor_hood(mesh):
         return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     u0 = dolfin.Function(P2)
-    u0.vector().set(1.0)
-    u0.vector().ghostUpdate(
+    u0.vector.set(1.0)
+    u0.vector.ghostUpdate(
         addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
     bc0 = dolfin.DirichletBC(P2, u0, boundary0)
     bc1 = dolfin.DirichletBC(P2, u0, boundary1)
@@ -503,30 +528,14 @@ def test_assembly_solve_taylor_hood(mesh):
     assert x0.norm() == pytest.approx(x2.norm(), 1e-8)
 
 
-def test_projection():
-    mesh = dolfin.UnitCubeMesh(dolfin.MPI.comm_world, 4, 4, 4)
-    V = dolfin.function.FunctionSpace(mesh, ("CG", 1))
-
-    x = ufl.SpatialCoordinate(mesh)
-    expr = x[0] ** 2
-
-    f = dolfin.project(expr, V)
-    integral = dolfin.fem.assemble_scalar(f * ufl.dx)
-    integral = dolfin.MPI.sum(mesh.mpi_comm(), integral)
-
-    integral_analytic = 1.0 / 3
-    assert integral == pytest.approx(integral_analytic, rel=1.e-6, abs=1.e-12)
-
-
 def test_basic_interior_facet_assembly():
-
     ghost_mode = dolfin.cpp.mesh.GhostMode.none
     if (dolfin.MPI.size(dolfin.MPI.comm_world) > 1):
         ghost_mode = dolfin.cpp.mesh.GhostMode.shared_facet
 
     mesh = dolfin.RectangleMesh(dolfin.MPI.comm_world, [numpy.array([0.0, 0.0, 0.0]),
                                                         numpy.array([1.0, 1.0, 0.0])], [5, 5],
-                                cell_type=dolfin.cpp.mesh.CellType.Type.triangle,
+                                cell_type=dolfin.cpp.mesh.CellType.triangle,
                                 ghost_mode=ghost_mode)
 
     V = dolfin.function.FunctionSpace(mesh, ("DG", 1))

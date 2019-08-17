@@ -24,14 +24,14 @@ def build_elastic_nullspace(V):
     """Function to build nullspace for 2D/3D elasticity"""
 
     # Get geometric dim
-    gdim = V.mesh().geometry.dim
+    gdim = V.mesh.geometry.dim
     assert gdim == 2 or gdim == 3
 
     # Set dimension of nullspace
     dim = 3 if gdim == 2 else 6
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map) for i in range(dim)]
+    nullspace_basis = [cpp.la.create_vector(V.dofmap.index_map) for i in range(dim)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
@@ -39,7 +39,7 @@ def build_elastic_nullspace(V):
 
         # Build translational null space basis
         for i in range(gdim):
-            V.sub(i).dofmap().set(basis[i], 1.0)
+            V.sub(i).dofmap.set(basis[i], 1.0)
 
         # Build rotational null space basis
         if gdim == 2:
@@ -62,15 +62,15 @@ def build_broken_elastic_nullspace(V):
     """Function to build incorrect null space for 2D elasticity"""
 
     # Create list of vectors for null space
-    nullspace_basis = [cpp.la.create_vector(V.dofmap().index_map) for i in range(4)]
+    nullspace_basis = [cpp.la.create_vector(V.dofmap.index_map) for i in range(4)]
 
     with ExitStack() as stack:
         vec_local = [stack.enter_context(x.localForm()) for x in nullspace_basis]
         basis = [np.asarray(x) for x in vec_local]
 
         # Build translational null space basis
-        V.sub(0).dofmap().set(basis[0], 1.0)
-        V.sub(1).dofmap().set(basis[1], 1.0)
+        V.sub(0).dofmap.set(basis[0], 1.0)
+        V.sub(1).dofmap.set(basis[1], 1.0)
 
         # Build rotational null space basis
         V.sub(0).set_x(basis[2], -1.0, 1)
@@ -105,7 +105,7 @@ def test_nullspace_orthogonal(mesh, degree):
         MPI.comm_world,
         [np.array([0.8, -0.2, 1.2]),
          np.array([3.0, 11.0, -5.0])], [12, 18, 25],
-        cell_type=CellType.Type.tetrahedron,
+        cell_type=CellType.tetrahedron,
         ghost_mode=GhostMode.none),
 ])
 @pytest.mark.parametrize("degree", [1, 2])

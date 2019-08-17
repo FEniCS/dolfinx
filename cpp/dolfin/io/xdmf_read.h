@@ -12,9 +12,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 
 namespace dolfin
 {
@@ -209,16 +209,18 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   // directly to the right place
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = MPI::rank(comm);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim,
+  const std::vector<std::int64_t>& global_indices
+      = mesh->topology().global_indices(0);
+  for (auto& cell : mesh::MeshRange(*mesh, cell_dim,
                                                       mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
     if (cell_dim == 0)
-      cell_topology.push_back(cell.global_index());
+      cell_topology.push_back(global_indices[cell.index()]);
     else
     {
-      for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-        cell_topology.push_back(v.global_index());
+      for (auto& v : mesh::EntityRange(cell, 0))
+        cell_topology.push_back(global_indices[v.index()]);
     }
 
     std::sort(cell_topology.begin(), cell_topology.end());
@@ -286,13 +288,17 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   MPI::all_to_all(comm, send_topology, receive_topology);
   MPI::all_to_all(comm, send_values, receive_values);
 
+  // Get reference to mesh function data array
+  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+      = meshfunction.values();
+
   // At this point, receive_topology should only list the local indices
   // and received values should have the appropriate values for each
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
     assert(receive_values[i].size() == receive_topology[i].size());
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-      meshfunction[receive_topology[i][j]] = receive_values[i][j];
+      mf_values[receive_topology[i][j]] = receive_values[i][j];
   }
 }
 //----------------------------------------------------------------------------

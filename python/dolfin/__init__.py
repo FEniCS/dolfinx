@@ -32,9 +32,9 @@ del sys
 from .cpp import __version__
 
 
-from dolfin.common import (has_debug, has_petsc_complex,
-                           has_parmetis, git_commit_hash, TimingType,
-                           timing, timings, list_timings)
+from dolfin.common import (has_debug, has_petsc_complex, has_parmetis,
+                           git_commit_hash, TimingType, timing, timings,
+                           list_timings)
 
 import dolfin.MPI
 import dolfin.log
@@ -42,18 +42,13 @@ import dolfin.log
 from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from .cpp.mesh import (Mesh, Topology, Geometry, CellType, Cell, Facet,
-                       Face, Edge, Vertex, MeshEntity, Cells, Facets, Faces,
-                       Edges, Vertices, MeshEntities, CellRange, FacetRange,
-                       FaceRange, EdgeRange, VertexRange, EntityRange,
-                       MeshQuality)
+from .cpp.mesh import Mesh, Topology, Geometry, MeshEntity, EntityRange, MeshQuality
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC
 from .fem.interpolation import interpolate
-from .fem.projection import project
 from .fem.solving import solve
 
 from .function.functionspace import (FunctionSpace, VectorFunctionSpace,
@@ -61,7 +56,8 @@ from .function.functionspace import (FunctionSpace, VectorFunctionSpace,
 from .function.function import Function
 from .function.argument import (TestFunction, TrialFunction, TestFunctions,
                                 TrialFunctions)
-from .function.specialfunctions import (FacetNormal, CellVolume, CellNormal, CellDiameter, Circumradius)
+from .function.specialfunctions import (FacetNormal, CellVolume, CellNormal,
+                                        CellDiameter, Circumradius)
 
 from .mesh import MeshFunction
 from .mesh import MeshValueCollection

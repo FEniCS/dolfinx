@@ -14,11 +14,12 @@ import numpy as np
 from petsc4py import PETSc
 
 import dolfin
-from dolfin import (MPI, BoxMesh, CellType, DirichletBC, Function,
+from dolfin import (MPI, BoxMesh, DirichletBC, Function,
                     TestFunction, TrialFunction, VectorFunctionSpace, cpp)
 from dolfin.fem import apply_lifting, assemble_matrix, assemble_vector, set_bc
 from dolfin.io import XDMFFile
-from dolfin.la import PETScKrylovSolver, PETScOptions, VectorSpaceBasis
+from dolfin.la import VectorSpaceBasis
+from dolfin.cpp.mesh import CellType
 from ufl import Identity, as_vector, dx, grad, inner, sym, tr
 
 
@@ -26,7 +27,7 @@ def build_nullspace(V):
     """Function to build null space for 3D elasticity"""
 
     # Create list of vectors for null space
-    index_map = V.dofmap().index_map
+    index_map = V.dofmap.index_map
     nullspace_basis = [cpp.la.create_vector(index_map) for i in range(6)]
 
     with ExitStack() as stack:
@@ -34,9 +35,9 @@ def build_nullspace(V):
         basis = [np.asarray(x) for x in vec_local]
 
         # Build translational null space basis
-        V.sub(0).dofmap().set(basis[0], 1.0)
-        V.sub(1).dofmap().set(basis[1], 1.0)
-        V.sub(2).dofmap().set(basis[2], 1.0)
+        V.sub(0).dofmap.set(basis[0], 1.0)
+        V.sub(1).dofmap.set(basis[1], 1.0)
+        V.sub(2).dofmap.set(basis[2], 1.0)
 
         # Build rotational null space basis
         V.sub(0).set_x(basis[3], -1.0, 1)
@@ -64,7 +65,7 @@ def build_nullspace(V):
 mesh = BoxMesh(
     MPI.comm_world, [np.array([0.0, 0.0, 0.0]),
                      np.array([2.0, 1.0, 1.0])], [12, 12, 12],
-    CellType.Type.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
+    CellType.tetrahedron, dolfin.cpp.mesh.GhostMode.none)
 cmap = dolfin.fem.create_coordinate_map(mesh.ufl_domain())
 mesh.geometry.coord_mapping = cmap
 
@@ -112,7 +113,7 @@ a = inner(sigma(u), grad(v)) * dx
 L = inner(f, v) * dx
 
 u0 = Function(V)
-with u0.vector().localForm() as bc_local:
+with u0.vector.localForm() as bc_local:
     bc_local.set(0.0)
 
 # Set up boundary condition on inner surface
@@ -137,37 +138,36 @@ null_space = build_nullspace(V)
 A.setNearNullSpace(null_space)
 
 # Set solver options
-PETScOptions.set("ksp_view")
-PETScOptions.set("ksp_type", "cg")
-PETScOptions.set("ksp_rtol", 1.0e-12)
-PETScOptions.set("pc_type", "gamg")
+opts = PETSc.Options()
+opts["ksp_type"] = "cg"
+opts["ksp_rtol"] = 1.0e-12
+opts["pc_type"] = "gamg"
 
 # Use Chebyshev smoothing for multigrid
-PETScOptions.set("mg_levels_ksp_type", "chebyshev")
-PETScOptions.set("mg_levels_pc_type", "jacobi")
+opts["mg_levels_ksp_type"] = "chebyshev"
+opts["mg_levels_pc_type"] = "jacobi"
 
 # Improve estimate of eigenvalues for Chebyshev smoothing
-PETScOptions.set("mg_levels_esteig_ksp_type", "cg")
-PETScOptions.set("mg_levels_ksp_chebyshev_esteig_steps", 20)
-
-# Monitor solver
-PETScOptions.set("ksp_monitor")
+opts["mg_levels_esteig_ksp_type"] = "cg"
+opts["mg_levels_ksp_chebyshev_esteig_steps"] = 20
 
 # Create CG Krylov solver and turn convergence monitoring on
-solver = PETScKrylovSolver(MPI.comm_world)
-solver.set_from_options()
+solver = PETSc.KSP().create(MPI.comm_world)
+solver.setFromOptions()
 
 # Set matrix operator
-solver.set_operator(A)
+solver.setOperators(A)
 
 # Compute solution
-solver.solve(u.vector(), b)
+solver.setMonitor(lambda ksp, its, rnorm: print("Iteration: {}, rel. residual: {}".format(its, rnorm)))
+solver.solve(b, u.vector)
+solver.view()
 
 # Save solution to XDMF format
 file = XDMFFile(MPI.comm_world, "elasticity.xdmf")
 file.write(u)
 
-unorm = u.vector().norm()
+unorm = u.vector.norm()
 if MPI.rank(mesh.mpi_comm()) == 0:
     print("Solution vector norm:", unorm)
 

@@ -11,14 +11,13 @@ import math
 import cffi
 import numpy as np
 import pytest
-from dolfin_utils.test.fixtures import fixture
-from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 from petsc4py import PETSc
 
 import ufl
 from dolfin import (MPI, Function, FunctionSpace, TensorFunctionSpace,
-                    UnitCubeMesh, VectorFunctionSpace, Vertex, cpp,
-                    interpolate)
+                    UnitCubeMesh, VectorFunctionSpace, cpp, interpolate)
+from dolfin_utils.test.fixtures import fixture
+from dolfin_utils.test.skips import skip_if_complex, skip_in_parallel
 
 
 @fixture
@@ -57,11 +56,11 @@ def test_name_argument(W):
 def test_compute_point_values(V, W, mesh):
     u = Function(V)
     v = Function(W)
-    with u.vector().localForm() as u_local, v.vector().localForm() as v_local:
+    with u.vector.localForm() as u_local, v.vector.localForm() as v_local:
         u_local.set(1.0)
         v_local.set(1.0)
-    u_values = u.compute_point_values(mesh)
-    v_values = v.compute_point_values(mesh)
+    u_values = u.compute_point_values()
+    v_values = v.compute_point_values()
 
     u_ones = np.ones_like(u_values, dtype=np.float64)
     assert np.all(np.isclose(u_values, u_ones))
@@ -80,39 +79,39 @@ def test_assign(V, W):
         u2 = Function(V0)
         u3 = Function(V1)
 
-        u.vector()[:] = 1.0
-        u0.vector()[:] = 2.0
-        u1.vector()[:] = 3.0
-        u2.vector()[:] = 4.0
-        u3.vector()[:] = 5.0
+        u.vector[:] = 1.0
+        u0.vector[:] = 2.0
+        u1.vector[:] = 3.0
+        u2.vector[:] = 4.0
+        u3.vector[:] = 5.0
 
         uu = Function(V0)
         uu.assign(2 * u)
-        assert uu.vector().get_local().sum() == u0.vector().get_local().sum()
+        assert uu.vector.get_local().sum() == u0.vector.get_local().sum()
 
         uu = Function(V1)
         uu.assign(3 * u)
-        assert uu.vector().get_local().sum() == u1.vector().get_local().sum()
+        assert uu.vector.get_local().sum() == u1.vector.get_local().sum()
 
         # Test complex assignment
         expr = 3 * u - 4 * u1 - 0.1 * 4 * u * 4 + u2 + 3 * u0 / 3. / 0.5
         expr_scalar = 3 - 4 * 3 - 0.1 * 4 * 4 + 4. + 3 * 2. / 3. / 0.5
         uu.assign(expr)
         assert (round(
-            uu.vector().get_local().sum() - float(
-                expr_scalar * uu.vector().size()), 7) == 0)
+            uu.vector.get_local().sum() - float(
+                expr_scalar * uu.vector.size()), 7) == 0)
 
         # Test self assignment
         expr = 3 * u - 5.0 * u2 + u1 - 5 * u
         expr_scalar = 3 - 5 * 4. + 3. - 5
         u.assign(expr)
         assert (round(
-            u.vector().get_local().sum() - float(
-                expr_scalar * u.vector().size()), 7) == 0)
+            u.vector.get_local().sum() - float(
+                expr_scalar * u.vector.size()), 7) == 0)
 
         # Test zero assignment
         u.assign(-u2 / 2 + 2 * u1 - u1 / 0.5 + u2 * 0.5)
-        assert round(u.vector().get_local().sum() - 0.0, 7) == 0
+        assert round(u.vector.get_local().sum() - 0.0, 7) == 0
 
         # Test erroneous assignments
         uu = Function(V1)
@@ -159,29 +158,14 @@ def test_call(R, V, W, Q, mesh):
         values[:, 7] = -x[:, 1]
         values[:, 8] = -x[:, 2]
 
-    u0.vector().set(1.0)
+    u0.vector.set(1.0)
     u1.interpolate(e1)
     u2.interpolate(e2)
     u3.interpolate(e3)
 
-    p0 = ((Vertex(mesh, 0).point() + Vertex(mesh, 1).point()) / 2.0)
     x0 = (mesh.geometry.x(0) + mesh.geometry.x(1)) / 2.0
-
     tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
-
-    assert np.allclose(u0(x0, tree), u0(x0, tree))
-    assert np.allclose(u0(x0, tree), u0(p0, tree))
-    assert np.allclose(u1(x0, tree), u1(x0, tree))
-    assert np.allclose(u1(x0, tree), u1(p0, tree))
-    assert np.allclose(u2(x0, tree)[0], u1(p0, tree))
-
-    assert np.allclose(u2(x0, tree), u2(p0, tree))
     assert np.allclose(u3(x0, tree)[:3], u2(x0, tree), rtol=1e-15, atol=1e-15)
-
-    p0_list = [p for p in p0]
-    x0_list = [x for x in x0]
-    assert np.allclose(u0(x0_list, tree), u0(x0_list, tree))
-    assert np.allclose(u0(x0_list, tree), u0(p0_list, tree))
 
     with pytest.raises(ValueError):
         u0([0, 0, 0, 0], tree)
@@ -191,7 +175,7 @@ def test_call(R, V, W, Q, mesh):
 
 def test_scalar_conditions(R):
     c = Function(R)
-    c.vector().set(1.5)
+    c.vector.set(1.5)
 
     # Float conversion does not interfere with boolean ufl expressions
     assert isinstance(ufl.lt(c, 3), ufl.classes.LT)
@@ -244,11 +228,11 @@ def test_interpolation_rank0(V):
     f = MyExpression()
     f.t = 1.0
     w = interpolate(f.eval, V)
-    with w.vector().localForm() as x:
+    with w.vector.localForm() as x:
         assert (x[:] == 1.0).all()
     f.t = 2.0
     w = interpolate(f.eval, V)
-    with w.vector().localForm() as x:
+    with w.vector.localForm() as x:
         assert (x[:] == 2.0).all()
 
 
@@ -257,8 +241,8 @@ def test_near_evaluations(R, mesh):
     # Test that we allow point evaluation that are slightly outside
     bb_tree = cpp.geometry.BoundingBoxTree(mesh, mesh.geometry.dim)
     u0 = Function(R)
-    u0.vector().set(1.0)
-    a = Vertex(mesh, 0).point()
+    u0.vector.set(1.0)
+    a = mesh.geometry.x(0)
     offset = 0.99 * np.finfo(float).eps
 
     a_shift_x = np.array([a[0] - offset, a[1], a[2]])
@@ -277,7 +261,7 @@ def test_interpolation_rank1(W):
         values[:, 2] = 1.0
 
     w = interpolate(f, W)
-    x = w.vector()
+    x = w.vector
     assert x.max()[1] == 1.0
     assert x.min()[1] == 1.0
 
@@ -293,13 +277,13 @@ def test_interpolation_old(V, W, mesh):
     # Scalar interpolation
     f = Function(V)
     f.interpolate(f0)
-    assert round(f.vector().norm(PETSc.NormType.N1) - mesh.num_entities(0),
+    assert round(f.vector.norm(PETSc.NormType.N1) - mesh.num_entities(0),
                  7) == 0
 
     # Vector interpolation
     f = Function(W)
     f.interpolate(f1)
-    assert round(f.vector().norm(PETSc.NormType.N1) - 3 * mesh.num_entities(0),
+    assert round(f.vector.norm(PETSc.NormType.N1) - 3 * mesh.num_entities(0),
                  7) == 0
 
 
@@ -340,4 +324,4 @@ def test_cffi_expression(V):
 
     f2 = Function(V)
     f2.interpolate(expr_eval2)
-    assert (f1.vector() - f2.vector()).norm() < 1.0e-12
+    assert (f1.vector - f2.vector).norm() < 1.0e-12

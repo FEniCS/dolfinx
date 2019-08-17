@@ -7,7 +7,9 @@
 """Simple mesh generation module"""
 
 import typing
+
 import numpy
+
 from dolfin import cpp, fem
 
 __all__ = ["IntervalMesh", "UnitIntervalMesh",
@@ -57,7 +59,7 @@ def UnitIntervalMesh(comm, nx, ghost_mode=cpp.mesh.GhostMode.none):
 def RectangleMesh(comm,
                   points: typing.List[numpy.array],
                   n: list,
-                  cell_type=cpp.mesh.CellType.Type.triangle,
+                  cell_type=cpp.mesh.CellType.triangle,
                   ghost_mode=cpp.mesh.GhostMode.none,
                   diagonal: str = "right"):
     """Create rectangle mesh
@@ -84,7 +86,7 @@ def RectangleMesh(comm,
 def UnitSquareMesh(comm,
                    nx,
                    ny,
-                   cell_type=cpp.mesh.CellType.Type.triangle,
+                   cell_type=cpp.mesh.CellType.triangle,
                    ghost_mode=cpp.mesh.GhostMode.none,
                    diagonal="right"):
     """Create a mesh of a unit square with coordinate mapping attached
@@ -111,7 +113,7 @@ def UnitSquareMesh(comm,
 def BoxMesh(comm,
             points: typing.List[numpy.array],
             n: list,
-            cell_type=cpp.mesh.CellType.Type.tetrahedron,
+            cell_type=cpp.mesh.CellType.tetrahedron,
             ghost_mode=cpp.mesh.GhostMode.none):
     """Create box mesh
 
@@ -135,7 +137,7 @@ def UnitCubeMesh(comm,
                  nx,
                  ny,
                  nz,
-                 cell_type=cpp.mesh.CellType.Type.tetrahedron,
+                 cell_type=cpp.mesh.CellType.tetrahedron,
                  ghost_mode=cpp.mesh.GhostMode.none):
     """Create a mesh of a unit cube with coordinate mapping attached
 

@@ -12,22 +12,22 @@
 import os
 
 import cffi
-import numpy
 import numba
 import numba.cffi_support
+import numpy
 from petsc4py import PETSc
 
 import dolfin
 import dolfin.cpp
 import dolfin.io
+import dolfin.la
 import ufl
-
 
 filedir = os.path.dirname(__file__)
 infile = dolfin.io.XDMFFile(dolfin.MPI.comm_world,
                             os.path.join(filedir, "cooks_tri_mesh.xdmf"),
                             encoding=dolfin.cpp.io.XDMFFile.Encoding.ASCII)
-mesh = infile.read_mesh(dolfin.MPI.comm_world, dolfin.cpp.mesh.GhostMode.none)
+mesh = infile.read_mesh(dolfin.cpp.mesh.GhostMode.none)
 infile.close()
 
 # Stress (Se) and displacement (Ue) elements
@@ -46,7 +46,7 @@ u, v = dolfin.TrialFunction(U), dolfin.TestFunction(U)
 
 # Homogeneous boundary condition in displacement
 u_bc = dolfin.Function(U)
-with u_bc.vector().localForm() as loc:
+with u_bc.vector.localForm() as loc:
     loc.set(0.0)
 
 # Displacement BC is applied to the right side
@@ -137,7 +137,7 @@ b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
 dolfin.fem.set_bc(b, [bc])
 
 uc = dolfin.Function(U)
-dolfin.la.solve(A_cond, uc.vector(), b)
+dolfin.la.solve(A_cond, uc.vector, b)
 
 with dolfin.io.XDMFFile(dolfin.MPI.comm_world, "uc.xdmf") as outfile:
     outfile.write_checkpoint(uc, "uc")

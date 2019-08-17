@@ -57,8 +57,10 @@ public:
 
   /// Mark all edges incident on entities indicated by refinement
   /// marker
-  /// @param refinement_marker (const mesh::MeshFunction<bool>)
-  void mark(const mesh::MeshFunction<bool>& refinement_marker);
+  /// @param refinement_marker (const mesh::MeshFunction<int>)
+  ///   Value 1 means "refine",
+  ///   any other value means "do not refine".
+  void mark(const mesh::MeshFunction<int>& refinement_marker);
 
   /// Mark all incident edges of an entity
   /// @param cell (mesh::MeshEntity)
@@ -98,11 +100,6 @@ private:
   // mesh::Mesh reference
   const mesh::Mesh& _mesh;
 
-  // Shared edges between processes. In R^2, vector size is 1
-  std::unordered_map<std::int32_t,
-                     std::vector<std::pair<std::int32_t, std::int32_t>>>
-      _shared_edges;
-
   // Mapping from old local edge index to new global vertex, needed to
   // create new topology
   std::map<std::size_t, std::size_t> _local_edge_to_new_vertex;
@@ -116,8 +113,12 @@ private:
   // Management of marked edges
   std::vector<bool> _marked_edges;
 
-  // Temporary storage for edges that have been recently marked
-  std::vector<std::vector<std::size_t>> _marked_for_update;
+  // Temporary storage for edges that have been recently marked (global index)
+  std::vector<std::vector<std::int64_t>> _marked_for_update;
+
+  // Mapping from global to local index (only for shared edges)
+  std::map<std::int64_t, std::int32_t> _global_to_local_edge_map;
+
 };
 } // namespace refinement
 } // namespace dolfin

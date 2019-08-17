@@ -34,35 +34,17 @@ public:
   static void number_entities(const Mesh& mesh, int d);
 
   /// Create global entity indices for entities of dimension d for given
-  /// global vertex indices. Returns  global_entity_indices,
-  /// shared_entities, and XXXX?
+  /// global vertex indices.
+  /// Returns (global_entity_indices, shared_entities,
+  /// number_of_global_entities)
   static std::tuple<std::vector<std::int64_t>,
                     std::map<std::int32_t, std::set<std::int32_t>>, std::size_t>
-  number_entities(
-      const Mesh& mesh,
-      const std::map<std::int32_t, std::pair<std::int32_t, std::int32_t>>&
-          slave_entities,
-      int d);
+    compute_entity_numbering(const Mesh& mesh, int d);
 
   /// Compute number of cells connected to each facet (globally). Facets
   /// on internal boundaries will be connected to two cells (with the
   /// cells residing on neighboring processes)
   static void init_facet_cell_connections(Mesh& mesh);
-
-  /// Find processes that own or share mesh entities (using entity
-  /// global indices). Returns (global_dof, set(process_num,
-  /// local_index)). Exclusively local entities will not appear in the
-  /// map. Works only for vertices and cells
-  static std::map<std::size_t, std::set<std::pair<std::size_t, std::size_t>>>
-  locate_off_process_entities(const std::vector<std::size_t>& entity_indices,
-                              std::size_t dim, const Mesh& mesh);
-
-  /// Compute map from local index of shared entity to list of sharing
-  /// process and local index, i.e. (local index, [(sharing process p,
-  /// local index on p)])
-  static std::unordered_map<std::int32_t,
-                            std::vector<std::pair<std::int32_t, std::int32_t>>>
-  compute_shared_entities(const Mesh& mesh, std::size_t d);
 
   /// Reorder the values according to explicit global indices, distributing
   /// evenly across processes
@@ -94,7 +76,6 @@ public:
                                           Eigen::Dynamic, Eigen::RowMajor>>&
           values,
       const std::vector<std::int64_t>& global_indices);
-
 };
 } // namespace mesh
 } // namespace dolfin

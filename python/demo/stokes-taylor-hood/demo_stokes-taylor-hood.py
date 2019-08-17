@@ -95,7 +95,7 @@ from ufl import FiniteElement, VectorElement, div, dx, grad, inner
 
 # Load mesh and subdomains
 xdmf = XDMFFile(MPI.comm_world, "../dolfin_fine.xdmf")
-mesh = xdmf.read_mesh(MPI.comm_world, dolfin.cpp.mesh.GhostMode.none)
+mesh = xdmf.read_mesh(dolfin.cpp.mesh.GhostMode.none)
 
 sub_domains = xdmf.read_mf_size_t(mesh)
 
@@ -130,7 +130,7 @@ class NoSlip:
 
 
 # Extract subdomain facet arrays
-mf = sub_domains.array()
+mf = sub_domains.values
 mf0 = np.where(mf == 0)
 mf1 = np.where(mf == 1)
 
@@ -199,11 +199,11 @@ p = w.sub(1).collapse()
 
 # We can calculate the :math:`L^2` norms of u and p as follows::
 
-print("Norm of velocity coefficient vector: %.15g" % u.vector().norm())
-print("Norm of pressure coefficient vector: %.15g" % p.vector().norm())
+print("Norm of velocity coefficient vector: %.15g" % u.vector.norm())
+print("Norm of pressure coefficient vector: %.15g" % p.vector.norm())
 
 # Check pressure norm
-pnorm = p.vector().norm()
+pnorm = p.vector.norm()
 assert np.isclose(pnorm, 4147.69457577)
 
 # Finally, we can save and plot the solutions::

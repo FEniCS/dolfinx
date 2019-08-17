@@ -14,8 +14,8 @@ from dolfin import cpp, fem, function
 
 __all__ = ["plot"]
 
-_meshfunction_types = (cpp.mesh.MeshFunctionBool, cpp.mesh.MeshFunctionInt,
-                       cpp.mesh.MeshFunctionDouble, cpp.mesh.MeshFunctionSizet)
+_meshfunction_types = (cpp.mesh.MeshFunctionInt, cpp.mesh.MeshFunctionDouble,
+                       cpp.mesh.MeshFunctionSizet)
 _matplotlib_plottable_types = (cpp.function.Function,
                                cpp.mesh.Mesh,
                                cpp.fem.DirichletBC) + _meshfunction_types
@@ -82,21 +82,21 @@ def mplot_expression(ax, f, mesh, **kwargs):
 
 
 def mplot_function(ax, f, **kwargs):
-    mesh = f.function_space().mesh()
+    mesh = f.function_space.mesh
     gdim = mesh.geometry.dim
     tdim = mesh.topology.dim
 
     # Extract the function vector in a way that also works for
     # subfunctions
     try:
-        fvec = f.vector()
+        fvec = f.vector
     except RuntimeError:
-        fspace = f.function_space()
+        fspace = f.function_space
         try:
             fspace = fspace.collapse()
         except RuntimeError:
             return
-        fvec = fem.interpolate(f, fspace).vector()
+        fvec = fem.interpolate(f, fspace).vector
 
     if fvec.getSize() == mesh.num_entities(tdim):
         # DG0 cellwise function
@@ -132,10 +132,10 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank() == 0:
+    elif f.value_rank == 0:
         # Scalar function, interpolated to vertices
         # TODO: Handle DG1?
-        C = f.compute_point_values(mesh)
+        C = f.compute_point_values()
         if (C.dtype.type is np.complex128):
             warnings.warn("Plotting real part of complex data")
             C = np.real(C)
@@ -196,9 +196,9 @@ def mplot_function(ax, f, **kwargs):
                 'Matplotlib plotting backend only supports 2D mesh for scalar functions.'
             )
 
-    elif f.value_rank() == 1:
+    elif f.value_rank == 1:
         # Vector function, interpolated to vertices
-        w0 = f.compute_point_values(mesh)
+        w0 = f.compute_point_values()
         if (w0.dtype.type is np.complex128):
             warnings.warn("Plotting real part of complex data")
             w0 = np.real(w0)
@@ -241,7 +241,7 @@ def mplot_function(ax, f, **kwargs):
 
 
 def mplot_meshfunction(ax, obj, **kwargs):
-    mesh = obj.mesh()
+    mesh = obj.mesh
     tdim = mesh.topology.dim
     d = obj.dim
     if tdim == 2 and d == 2:
@@ -405,9 +405,9 @@ def plot(object, *args, **kwargs):
 
     if mesh is None:
         if isinstance(object, cpp.function.Function):
-            mesh = object.function_space().mesh()
+            mesh = object.function_space.mesh
         elif hasattr(object, "mesh"):
-            mesh = object.mesh()
+            mesh = object.mesh
 
     # Expressions do not carry their own mesh
     # if isinstance(object, cpp.function.Expression) and mesh is None:
@@ -419,17 +419,7 @@ def plot(object, *args, **kwargs):
 
     # Try to project if object is not a standard plottable type
     if not isinstance(object, _all_plottable_types):
-        from fem.projection import project
-        try:
-            cpp.log.info("Object cannot be plotted directly, projecting to "
-                         "piecewise linears.")
-            object = project(object, mesh=mesh)
-            mesh = object.function_space().mesh()
-            object = object._cpp_object
-        except Exception as e:
-            msg = "Don't know how to plot given object:\n  %s\n" \
-                "and projection failed:\n  %s" % (str(object), str(e))
-            raise RuntimeError(msg)
+        raise RuntimeError("Cannot plot object.")
 
     # Plot
     if backend == "matplotlib":

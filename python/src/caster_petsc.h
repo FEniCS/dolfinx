@@ -13,7 +13,6 @@
 #include <petscsnes.h>
 #include <petscvec.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
 
 // pybind11 casters for PETSc/petsc4py objects
 
@@ -22,10 +21,7 @@
   if (!func)                                                                   \
   {                                                                            \
     if (import_petsc4py() != 0)                                                \
-    {                                                                          \
-      std::cout << "ERROR: could not import petsc4py!" << std::endl;           \
       throw std::runtime_error("Error when importing petsc4py");               \
-    }                                                                          \
   }
 
 // Macro for casting between PETSc and petsc4py objects

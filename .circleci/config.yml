@@ -173,6 +173,9 @@ jobs:
           name: Login to quay.io
           command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
       - run:
+          name: Build base Docker image
+          command: docker build --build-arg MAKEFLAGS='-j3' --target base .
+      - run:
           name: Build and push dev-env-real Docker image tag dev-env-real
           command: docker build --build-arg MAKEFLAGS='-j3' --target dev-env-real -t quay.io/fenicsproject/dolfinx:dev-env-real . && docker push quay.io/fenicsproject/dolfinx:dev-env-real
       - run:
@@ -180,22 +183,22 @@ jobs:
           command: docker build --build-arg MAKEFLAGS='-j3' --target dev-env-complex -t quay.io/fenicsproject/dolfinx:dev-env-complex . && docker push quay.io/fenicsproject/dolfinx:dev-env-complex
       - run:
           name: Build and push real Docker image tags latest, real
-          command: docker build --build-arg MAKEFLAGS='-j3' --target real -t quay.io/fenicsproject/dolfinx:latest . && docker tag quay.io/fenicsproject/dolfinx:latest quay.io/fenicsproject/dolfinx:real && docker push quay.io/fenicsproject/dolfinx:latest && docker push quay.io/fenicsproject/dolfinx:real
+          command: docker build --build-arg MAKEFLAGS='-j3' --build-arg PETSC_SLEPC_OPTFLAGS='-O3' --build-arg PETSC_SLEPC_DEBUGGING='0' --target real -t quay.io/fenicsproject/dolfinx:latest . && docker tag quay.io/fenicsproject/dolfinx:latest quay.io/fenicsproject/dolfinx:real && docker push quay.io/fenicsproject/dolfinx:latest && docker push quay.io/fenicsproject/dolfinx:real
       - run:
           name: Build and push complex Docker image tag complex
-          command: docker build --build-arg MAKEFLAGS='-j3' --target complex -t quay.io/fenicsproject/dolfinx:complex . && docker push quay.io/fenicsproject/dolfinx:complex
+          command: docker build --build-arg MAKEFLAGS='-j3' --build-arg PETSC_SLEPC_OPTFLAGS='-O3' --build-arg PETSC_SLEPC_DEBUGGING='0' --target complex -t quay.io/fenicsproject/dolfinx:complex . && docker push quay.io/fenicsproject/dolfinx:complex
       - run:
           name: Build and push real notebook Docker image tag notebook
-          command: docker build --target notebook -t quay.io/fenicsproject/dolfinx:notebook . && docker push quay.io/fenicsproject/dolfinx:notebook
+          command: docker build --build-arg MAKEFLAGS='-j3' --build-arg PETSC_SLEPC_OPTFLAGS='-O3' --build-arg PETSC_SLEPC_DEBUGGING='0' --target notebook -t quay.io/fenicsproject/dolfinx:notebook . && docker push quay.io/fenicsproject/dolfinx:notebook
       - run:
           name: Build and push complex notebook Docker image tag notebook-complex
-          command: docker build --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex . && docker push quay.io/fenicsproject/dolfinx:notebook-complex
+          command: docker build --build-arg MAKEFLAGS='-j3' --build-arg PETSC_SLEPC_OPTFLAGS='-O3' --build-arg PETSC_SLEPC_DEBUGGING='0' --target notebook-complex -t quay.io/fenicsproject/dolfinx:notebook-complex . && docker push quay.io/fenicsproject/dolfinx:notebook-complex
       - run:
           name: Build and push real lab Docker image tag lab
-          command: docker build --target lab -t quay.io/fenicsproject/dolfinx:lab . && docker push quay.io/fenicsproject/dolfinx:lab
+          command: docker build --build-arg MAKEFLAGS='-j3' --build-arg PETSC_SLEPC_OPTFLAGS='-O3' --build-arg PETSC_SLEPC_DEBUGGING='0' --target lab -t quay.io/fenicsproject/dolfinx:lab . && docker push quay.io/fenicsproject/dolfinx:lab
       - run:
           name: Build and push complex lab Docker image tag lab-complex
-          command: docker build --target lab-complex -t quay.io/fenicsproject/dolfinx:lab-complex . && docker push quay.io/fenicsproject/dolfinx:lab-complex
+          command: docker build --build-arg MAKEFLAGS='-j3' --build-arg PETSC_SLEPC_OPTFLAGS='-O3' --build-arg PETSC_SLEPC_DEBUGGING='0' --target lab-complex -t quay.io/fenicsproject/dolfinx:lab-complex . && docker push quay.io/fenicsproject/dolfinx:lab-complex
 workflows:
   version: 2
   build-and-pushdoc:

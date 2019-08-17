@@ -59,15 +59,12 @@ public:
   std::size_t num_points_global() const;
 
   /// Return coordinate array for point with local index n
-  Eigen::Ref<const Eigen::Vector3d>
-  x(std::size_t n) const;
+  Eigen::Ref<const Eigen::Vector3d> x(std::size_t n) const;
 
   // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
-  points();
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>& points();
 
-  // Should this return an Eigen::Ref?
   /// Return array of coordinates for all points (const version)
   const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>&
   points() const;
@@ -90,11 +87,10 @@ public:
 
 private:
   // Coordinates for all points stored as a contiguous array
-  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>
-      _coordinates;
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> _coordinates;
 
   // Geometric dimension
-  int _dim;
+  const int _dim;
 
   // Global indices for points
   std::vector<std::int64_t> _global_indices;

@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "ReferenceCellTopology.h"
 #include <dolfin/common/types.h>
+#include <dolfin/mesh/cell_types.h>
 #include <functional>
 #include <memory>
 #include <petscsys.h>
@@ -29,7 +29,7 @@ public:
   /// Create finite element from UFC finite element
   /// @param element (ufc::finite_element)
   ///  UFC finite element
-  FiniteElement(const ufc_finite_element& element);
+  FiniteElement(const ufc_finite_element& ufc_element);
 
   /// Destructor
   virtual ~FiniteElement() = default;
@@ -40,11 +40,7 @@ public:
 
   /// Return the cell shape
   /// @return CellShape
-  CellType cell_shape() const;
-
-  /// Return the topological dimension of the cell shape
-  /// @return std::size_t
-  std::size_t topological_dimension() const;
+  mesh::CellType cell_shape() const;
 
   /// Return the dimension of the finite element function space
   /// @return std::size_t
@@ -120,13 +116,13 @@ public:
   std::size_t hash() const;
 
   /// Extract sub finite element for component
-  std::shared_ptr<FiniteElement>
+  std::shared_ptr<const FiniteElement>
   extract_sub_element(const std::vector<int>& component) const;
 
 private:
   std::string _signature, _family;
 
-  CellType _cell_shape;
+  mesh::CellType _cell_shape;
 
   int _tdim, _space_dim, _value_size, _reference_value_size, _degree;
 
@@ -134,10 +130,10 @@ private:
   Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> _refX;
 
   // List of sub-elements (if any)
-  std::vector<std::shared_ptr<FiniteElement>> _sub_elements;
+  std::vector<std::shared_ptr<const FiniteElement>> _sub_elements;
 
   // Recursively extract sub finite element
-  static std::shared_ptr<FiniteElement>
+  static std::shared_ptr<const FiniteElement>
   extract_sub_element(const FiniteElement& finite_element,
                       const std::vector<int>& component);
 

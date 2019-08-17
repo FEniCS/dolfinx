@@ -13,9 +13,9 @@
 #include <dolfin/common/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/DofMap.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
+#include <dolfin/mesh/cell_types.h>
 #include <numeric>
 #include <set>
 #include <unordered_set>
@@ -37,15 +37,16 @@ std::tuple<std::vector<std::vector<std::size_t>>,
 compute_local_dual_graph_keyed(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const mesh::CellType cell_type)
 {
   common::Timer timer("Compute local part of mesh dual graph");
 
-  const std::int8_t tdim = cell_type.dim();
+  const std::int8_t tdim = mesh::cell_dim(cell_type);
   const std::int32_t num_local_cells = cell_vertices.rows();
-  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
-  const std::int8_t num_facets_per_cell = cell_type.num_entities(tdim - 1);
-  const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
+  const std::int8_t num_facets_per_cell
+      = mesh::cell_num_entities(cell_type, tdim - 1);
+  const std::int8_t num_vertices_per_facet
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(N == num_vertices_per_facet);
   assert(num_local_cells == (int)cell_vertices.rows());
@@ -62,14 +63,11 @@ compute_local_dual_graph_keyed(
       = dolfin::MPI::global_offset(mpi_comm, num_local_cells, true);
 
   // Create map from cell vertices to entity vertices
-  Eigen::Array<std::int32_t, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-      facet_vertices(num_facets_per_cell, num_vertices_per_facet);
-  std::vector<std::int32_t> v(num_vertices_per_cell);
-  std::iota(v.begin(), v.end(), 0);
-  cell_type.create_entities(facet_vertices, tdim - 1, v.data());
+  const Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      facet_vertices = mesh::get_entity_vertices(cell_type, tdim - 1);
 
   // Vector-of-arrays data structure, which is considerably faster than
-  // vector-of-vectors.
+  // vector-of-vectors
   std::vector<std::pair<std::array<std::int32_t, N>, std::int32_t>> facets(
       num_facets_per_cell * num_local_cells);
 
@@ -156,7 +154,7 @@ compute_local_dual_graph_keyed(
 std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type,
+    const mesh::CellType cell_type,
     const graph::GraphBuilder::FacetCellMap& facet_cell_map,
     std::vector<std::vector<std::size_t>>& local_graph)
 {
@@ -171,12 +169,12 @@ std::pair<std::int32_t, std::int32_t> compute_nonlocal_dual_graph(
   // At this stage facet_cell map only contains facets->cells with
   // edge facets either interprocess or external boundaries
 
-  const int tdim = cell_type.dim();
+  const int tdim = mesh::cell_dim(cell_type);
 
   // List of cell vertices
   const std::int32_t num_local_cells = cell_vertices.rows();
-  //  const std::int8_t num_vertices_per_cell = cell_type.num_entities(0);
-  const std::int8_t num_vertices_per_facet = cell_type.num_vertices(tdim - 1);
+  const std::int8_t num_vertices_per_facet
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
 
   assert(num_local_cells == (int)cell_vertices.rows());
   //  assert(num_vertices_per_cell == (int)cell_vertices.cols());
@@ -305,17 +303,23 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
 {
   common::Timer timer("Build local sparsity graph from dofmaps");
 
-  if (dofmap0.is_view() or dofmap1.is_view())
+  assert(dofmap0.element_dof_layout);
+  assert(dofmap1.element_dof_layout);
+  if (dofmap0.element_dof_layout->is_view()
+      or dofmap1.element_dof_layout->is_view())
+  {
     throw std::runtime_error("Graph building not support for dofmap views.");
+  }
 
   // Create empty graph
-  assert(dofmap0.index_map());
+  assert(dofmap0.index_map);
   const std::int32_t n
-      = dofmap0.index_map()->size_local() + dofmap0.index_map()->num_ghosts();
+      = dofmap0.index_map->size_local() + dofmap0.index_map->num_ghosts();
   Graph graph(n);
 
   // Build graph
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  const int tdim = mesh.topology().dim();
+  for (auto& cell : mesh::MeshRange(mesh, tdim))
   {
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs0
         = dofmap0.cell_dofs(cell.index());
@@ -352,7 +356,7 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
 
   // Build graph
   for (auto& vertex_entity :
-       mesh::MeshRange<mesh::MeshEntity>(mesh, coloring_type[0]))
+       mesh::MeshRange(mesh, coloring_type[0]))
   {
     const std::size_t vertex_entity_index = vertex_entity.index();
 
@@ -369,7 +373,7 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
         const mesh::MeshEntity entity(mesh, coloring_type[level - 1],
                                       *entity_index);
         for (auto& neighbor :
-             mesh::EntityRange<mesh::MeshEntity>(entity, coloring_type[level]))
+             mesh::EntityRange(entity, coloring_type[level]))
         {
           entity_list1.insert(neighbor.index());
         }
@@ -399,13 +403,13 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   Graph graph(num_vertices);
 
   // Build graph
-  for (auto& colored_entity : mesh::MeshRange<mesh::MeshEntity>(mesh, dim0))
+  for (auto& colored_entity : mesh::MeshRange(mesh, dim0))
   {
     const std::int32_t colored_entity_index = colored_entity.index();
     for (auto& entity :
-         mesh::EntityRange<mesh::MeshEntity>(colored_entity, dim1))
+         mesh::EntityRange(colored_entity, dim1))
     {
-      for (auto& neighbor : mesh::EntityRange<mesh::MeshEntity>(entity, dim0))
+      for (auto& neighbor : mesh::EntityRange(entity, dim0))
       {
         if (colored_entity_index != neighbor.index())
           graph[colored_entity_index].insert(neighbor.index());
@@ -421,7 +425,7 @@ std::pair<std::vector<std::vector<std::size_t>>,
 graph::GraphBuilder::compute_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const mesh::CellType cell_type)
 {
   LOG(INFO) << "Build mesh dual graph";
 
@@ -454,12 +458,14 @@ std::tuple<std::vector<std::vector<std::size_t>>,
 dolfin::graph::GraphBuilder::compute_local_dual_graph(
     const MPI_Comm mpi_comm,
     const Eigen::Ref<const EigenRowArrayXXi64>& cell_vertices,
-    const mesh::CellType& cell_type)
+    const mesh::CellType cell_type)
 {
   LOG(INFO) << "Build local part of mesh dual graph";
 
-  const std::int8_t tdim = cell_type.dim();
-  const std::int8_t num_entity_vertices = cell_type.num_vertices(tdim - 1);
+  const std::int8_t tdim = mesh::cell_dim(cell_type);
+  const std::int8_t num_entity_vertices
+      = mesh::num_cell_vertices(mesh::cell_entity_type(cell_type, tdim - 1));
+
   switch (num_entity_vertices)
   {
   case 1:

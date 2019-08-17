@@ -11,17 +11,19 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
+#include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/log.h>
 #include <dolfin/common/utils.h>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
+#include <dolfin/mesh/CoordinateDofs.h>
 #include <dolfin/mesh/DistributedMeshTools.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <dolfin/mesh/Topology.h>
-#include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
 using namespace dolfin::io;
@@ -100,16 +102,18 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   // directly to the right place
   std::vector<std::vector<std::int64_t>> send_requests(num_processes);
   const std::size_t rank = dolfin::MPI::rank(comm);
-  for (auto& cell : mesh::MeshRange<mesh::MeshEntity>(*mesh, cell_dim,
+  const std::vector<std::int64_t>& global_indices
+      = mesh->topology().global_indices(0);
+  for (auto& cell : mesh::MeshRange(*mesh, cell_dim,
                                                       mesh::MeshRangeType::ALL))
   {
     std::vector<std::int64_t> cell_topology;
     if (cell_dim == 0)
-      cell_topology.push_back(cell.global_index());
+      cell_topology.push_back(global_indices[cell.index()]);
     else
     {
-      for (auto& v : mesh::EntityRange<mesh::Vertex>(cell))
-        cell_topology.push_back(v.global_index());
+      for (auto& v : mesh::EntityRange(cell, 0))
+        cell_topology.push_back(global_indices[v.index()]);
     }
 
     std::sort(cell_topology.begin(), cell_topology.end());
@@ -177,13 +181,17 @@ void remap_meshfunction_data(mesh::MeshFunction<T>& meshfunction,
   dolfin::MPI::all_to_all(comm, send_topology, receive_topology);
   dolfin::MPI::all_to_all(comm, send_values, receive_values);
 
+  // Get reference to mesh function data array
+  Eigen::Ref<Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+      = meshfunction.values();
+
   // At this point, receive_topology should only list the local indices
   // and received values should have the appropriate values for each
   for (std::size_t i = 0; i < receive_values.size(); ++i)
   {
     assert(receive_values[i].size() == receive_topology[i].size());
     for (std::size_t j = 0; j < receive_values[i].size(); ++j)
-      meshfunction[receive_topology[i][j]] = receive_values[i][j];
+      mf_values[receive_topology[i][j]] = receive_values[i][j];
   }
 }
 //----------------------------------------------------------------------------
@@ -194,30 +202,34 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
                                                 int cell_dim)
 {
   // Create vector to store topology data
-  const int num_vertices_per_cell = mesh.type().num_vertices(cell_dim);
+  const int num_vertices_per_cell = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.cell_type, cell_dim));
+
   std::vector<std::int64_t> topology_data;
   topology_data.reserve(mesh.num_entities(cell_dim) * (num_vertices_per_cell));
 
   // Get mesh communicator
   MPI_Comm comm = mesh.mpi_comm();
 
-  const std::vector<std::int8_t> perm = mesh.type().vtk_mapping();
+  const std::vector<std::int8_t> perm = mesh::vtk_mapping(mesh.cell_type);
   const int tdim = mesh.topology().dim();
+  const auto& global_vertices = mesh.topology().global_indices(0);
   if (dolfin::MPI::size(comm) == 1 or cell_dim == tdim)
   {
     // Simple case when nothing is shared between processes
     if (cell_dim == 0)
     {
-      for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
-        topology_data.push_back(v.global_index());
+      for (auto& v : mesh::MeshRange(mesh, 0))
+        topology_data.push_back(global_vertices[v.index()]);
     }
     else
     {
-      const auto& global_vertices = mesh.topology().global_indices(0);
-      for (auto& c : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+      const int num_vertices = mesh::cell_num_entities(
+          mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
+      for (auto& c : mesh::MeshRange(mesh, cell_dim))
       {
         const std::int32_t* entities = c.entities(0);
-        for (std::uint32_t i = 0; i != c.num_entities(0); ++i)
+        for (int i = 0; i < num_vertices; ++i)
           topology_data.push_back(global_vertices[entities[perm[i]]]);
       }
     }
@@ -227,25 +239,27 @@ std::vector<std::int64_t> compute_topology_data(const mesh::Mesh& mesh,
     std::set<std::uint32_t> non_local_entities
         = xdmf_write::compute_nonlocal_entities(mesh, cell_dim);
 
+    const auto& global_vertices = mesh.topology().global_indices(0);
     if (cell_dim == 0)
     {
       // Special case for mesh of points
-      for (auto& v : mesh::MeshRange<mesh::Vertex>(mesh))
+      for (auto& v : mesh::MeshRange(mesh, 0))
       {
         if (non_local_entities.find(v.index()) == non_local_entities.end())
-          topology_data.push_back(v.global_index());
+          topology_data.push_back(global_vertices[v.index()]);
       }
     }
     else
     {
       // Local-to-global map for point indices
-      const auto& global_vertices = mesh.topology().global_indices(0);
-      for (auto& e : mesh::MeshRange<mesh::MeshEntity>(mesh, cell_dim))
+      const int num_vertices = mesh::cell_num_entities(
+          mesh::cell_entity_type(mesh.cell_type, cell_dim), 0);
+      for (auto& e : mesh::MeshRange(mesh, cell_dim))
       {
         // If not excluded, add to topology
         if (non_local_entities.find(e.index()) == non_local_entities.end())
         {
-          for (std::uint32_t i = 0; i != e.num_entities(0); ++i)
+          for (int i = 0; i < num_vertices; ++i)
           {
             const std::int32_t local_idx = e.entities(0)[perm[i]];
             topology_data.push_back(global_vertices[local_idx]);
@@ -422,15 +436,14 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   mesh::DistributedMeshTools::number_entities(mesh, cell_dim);
 
   const int mpi_rank = dolfin::MPI::rank(mesh.mpi_comm());
+  const mesh::Topology& topology = mesh.topology();
   const std::map<std::int32_t, std::set<std::int32_t>>& shared_entities
-      = mesh.topology().shared_entities(cell_dim);
+      = topology.shared_entities(cell_dim);
 
   std::set<std::uint32_t> non_local_entities;
 
   const int tdim = mesh.topology().dim();
-  bool ghosted
-      = (mesh.topology().size(tdim) > mesh.topology().ghost_offset(tdim));
-
+  bool ghosted = (topology.size(tdim) > topology.ghost_offset(tdim));
   if (!ghosted)
   {
     // No ghost cells - exclude shared entities which are on lower rank
@@ -446,21 +459,30 @@ xdmf_write::compute_nonlocal_entities(const mesh::Mesh& mesh, int cell_dim)
   {
     // Iterate through ghost cells, adding non-ghost entities which are
     // in lower rank process cells
-    for (auto& c : mesh::MeshRange<mesh::MeshEntity>(
+    const std::vector<std::int32_t>& cell_owners = topology.cell_owner();
+    const std::int32_t ghost_offset_c = topology.ghost_offset(tdim);
+    const std::int32_t ghost_offset_e = topology.ghost_offset(cell_dim);
+    for (auto& c : mesh::MeshRange(
              mesh, tdim, mesh::MeshRangeType::GHOST))
     {
-      const int cell_owner = c.owner();
-      for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, cell_dim))
-        if (!e.is_ghost() && cell_owner < mpi_rank)
+      assert(c.index() >= ghost_offset_c);
+      const int cell_owner = cell_owners[c.index() - ghost_offset_c];
+      for (auto& e : mesh::EntityRange(c, cell_dim))
+      {
+        const bool not_ghost = e.index() < ghost_offset_e;
+        if (not_ghost and cell_owner < mpi_rank)
           non_local_entities.insert(e.index());
+      }
     }
   }
   return non_local_entities;
 }
 //-----------------------------------------------------------------------------
-void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
-                            hid_t h5_id,
-                            const std::vector<Eigen::Vector3d>& points)
+void xdmf_write::add_points(
+    MPI_Comm comm, pugi::xml_node& xdmf_node, hid_t h5_id,
+    const Eigen::Ref<
+        const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+        points)
 {
   xdmf_node.append_attribute("Version") = "3.0";
   xdmf_node.append_attribute("xmlns:xi") = "http://www.w3.org/2001/XInclude";
@@ -475,7 +497,7 @@ void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
 
   pugi::xml_node topology_node = grid_node.append_child("Topology");
   assert(topology_node);
-  const std::size_t n = points.size();
+  const std::size_t n = points.rows();
   const std::int64_t nglobal = dolfin::MPI::sum(comm, n);
   topology_node.append_attribute("NumberOfElements")
       = std::to_string(nglobal).c_str();
@@ -487,10 +509,11 @@ void xdmf_write::add_points(MPI_Comm comm, pugi::xml_node& xdmf_node,
   geometry_node.append_attribute("GeometryType") = "XYZ";
 
   // Pack data
-  std::vector<double> x(3 * n);
-  for (std::size_t i = 0; i < n; ++i)
-    for (std::size_t j = 0; j < 3; ++j)
-      x[3 * i + j] = points[i][j];
+  std::vector<double> x(points.data(), points.data() + points.size());
+  // std::vector<double> x(3 * n);
+  // for (std::size_t i = 0; i < n; ++i)
+  //   for (std::size_t j = 0; j < 3; ++j)
+  //     x[3 * i + j] = points[i][j];
 
   const std::vector<std::int64_t> shape = {nglobal, 3};
   add_data_item(comm, geometry_node, h5_id, "/Points/coordinates", x, shape,
@@ -503,12 +526,13 @@ void xdmf_write::add_topology_data(MPI_Comm comm, pugi::xml_node& xml_node,
 {
   // Get number of cells (global) and vertices per cell from mesh
   const std::int64_t num_cells = mesh.topology().size_global(cell_dim);
-  int num_nodes_per_cell = mesh.type().num_vertices(cell_dim);
+  int num_nodes_per_cell = mesh::num_cell_vertices(
+      mesh::cell_entity_type(mesh.cell_type, cell_dim));
 
   // Get VTK string for cell type and degree (linear or quadratic)
   const std::size_t degree = mesh.degree();
   const std::string vtk_cell_str = xdmf_utils::vtk_cell_type_str(
-      mesh.type().entity_type(cell_dim), degree);
+      mesh::cell_entity_type(mesh.cell_type, cell_dim), degree);
 
   pugi::xml_node topology_node = xml_node.append_child("Topology");
   assert(topology_node);
@@ -635,10 +659,10 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
 {
   LOG(INFO) << "Adding function to node \"" << xml_node.path('/') << "\"";
 
-  std::string element_family = u.function_space()->element()->family();
-  const std::size_t element_degree = u.function_space()->element()->degree();
-  const CellType element_cell_type
-      = u.function_space()->element()->cell_shape();
+  std::string element_family = u.function_space()->element->family();
+  const std::size_t element_degree = u.function_space()->element->degree();
+  const mesh::CellType element_cell_type
+      = u.function_space()->element->cell_shape();
 
   // Map of standard UFL family abbreviations for visualisation
   const std::map<std::string, std::string> family_abbr
@@ -652,12 +676,12 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
          {"Q", "Q"},
          {"DQ", "DQ"}};
 
-  const std::map<CellType, std::string> cell_shape_repr
-      = {{CellType::interval, "interval"},
-         {CellType::triangle, "triangle"},
-         {CellType::tetrahedron, "tetrahedron"},
-         {CellType::quadrilateral, "quadrilateral"},
-         {CellType::hexahedron, "hexahedron"}};
+  const std::map<mesh::CellType, std::string> cell_shape_repr
+      = {{mesh::CellType::interval, "interval"},
+         {mesh::CellType::triangle, "triangle"},
+         {mesh::CellType::tetrahedron, "tetrahedron"},
+         {mesh::CellType::quadrilateral, "quadrilateral"},
+         {mesh::CellType::hexahedron, "hexahedron"}};
 
   // Check that element is supported
   auto const it = family_abbr.find(element_family);
@@ -695,8 +719,8 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   // Prepare and save number of dofs per cell (x_cell_dofs) and cell
   // dofmaps (cell_dofs)
 
-  assert(u.function_space()->dofmap());
-  const fem::DofMap& dofmap = *u.function_space()->dofmap();
+  assert(u.function_space()->dofmap);
+  const fem::DofMap& dofmap = *u.function_space()->dofmap;
 
   const std::size_t tdim = mesh.topology().dim();
   std::vector<PetscInt> cell_dofs;
@@ -704,8 +728,8 @@ void xdmf_write::add_function(MPI_Comm mpi_comm, pugi::xml_node& xml_node,
   const std::size_t n_cells = mesh.topology().ghost_offset(tdim);
   x_cell_dofs.reserve(n_cells);
 
-  Eigen::Array<std::size_t, Eigen::Dynamic, 1> local_to_global_map
-      = dofmap.tabulate_local_to_global_dofs();
+  Eigen::Array<std::int64_t, Eigen::Dynamic, 1> local_to_global_map
+      = dofmap.index_map->indices(true);
 
   // Add number of dofs for each cell
   // Add cell dofmap

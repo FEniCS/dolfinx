@@ -86,10 +86,6 @@ public:
   /// dimension dim
   bool have_global_indices(std::size_t dim) const;
 
-  /// Check whether there are any shared entities calculated of
-  /// dimension dim
-  bool have_shared_entities(int dim) const;
-
   /// Return map from shared entities (local index) to processes
   /// that share the entity
   std::map<std::int32_t, std::set<std::int32_t>>& shared_entities(int dim);
@@ -128,7 +124,7 @@ public:
 
 private:
   // Number of mesh vertices
-  std::int32_t _num_vertices;
+  const std::int32_t _num_vertices;
 
   // Number of ghost indices for each topological dimension (local
   // or global??)
@@ -143,8 +139,7 @@ private:
   // TODO: Could IndexMap be used here in place of std::map?
   // For entities of a given dimension d, maps each shared entity
   // (local index) to a list of the processes sharing the vertex
-  std::map<std::int32_t, std::map<std::int32_t, std::set<std::int32_t>>>
-      _shared_entities;
+  std::vector<std::map<std::int32_t, std::set<std::int32_t>>> _shared_entities;
 
   // TODO: Could IndexMap be used here
   // For cells which are "ghosted", locate the owning process, using a

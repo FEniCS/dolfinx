@@ -8,7 +8,6 @@
 
 #include <cstdint>
 #include <dolfin/common/MPI.h>
-#include <dolfin/mesh/CellType.h>
 #include <hdf5.h>
 #include <memory>
 #include <petscsys.h>
@@ -246,7 +245,9 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const std::vector<Eigen::Vector3d>& points);
+  void write(const
+      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+          points);
 
   /// Save a cloud of points, with scalar values using an associated
   /// HDF5 file, or storing the data inline as XML.
@@ -258,8 +259,10 @@ public:
   /// @param    encoding (_Encoding_)
   ///         Encoding to use: HDF5 or ASCII
   ///
-  void write(const std::vector<Eigen::Vector3d>& points,
-             const std::vector<double>& values);
+  void write(const
+      Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor>>
+          points,
+      const std::vector<double>& values);
 
   /// Read in the first mesh::Mesh in XDMF file
   ///
@@ -269,7 +272,19 @@ public:
   ///        Ghost mode for mesh partition
   /// @returns mesh::Mesh
   ///        Mesh
-  mesh::Mesh read_mesh(MPI_Comm comm, const mesh::GhostMode ghost_mode) const;
+  mesh::Mesh read_mesh(const mesh::GhostMode ghost_mode) const;
+
+  /// Read in the data from the first mesh in XDMF file
+  ///
+  /// @param comm (MPI_Comm)
+  ///        MPI Communicator
+  /// @returns
+  //        Geometric points on each process (EigenRowArrayXXd),  Topological
+  //        cells with global vertex indexing (EigenRowArrayXXi64), and the Cell
+  //        type (mesh::CellType)
+  std::tuple<mesh::CellType, EigenRowArrayXXd, EigenRowArrayXXi64,
+             std::vector<std::int64_t>>
+  read_mesh_data(MPI_Comm comm) const;
 
   /// Read a function from the XDMF file. Supplied function must
   /// come with already initialized and compatible function space.
@@ -283,12 +298,12 @@ public:
   /// @param    V (std::shared_ptr<function::FunctionSpace>)
   ///         FunctionSpace
   /// @param    func_name (_string_)
-  ///         A name of a function to read. Must be the same on all processes
-  ///         in parallel.
+  ///         A name of a function to read. Must be the same on all
+  ///         processes in parallel.
   /// @param    counter (_int64_t_)
   ///         Internal integer counter - used in time-series. Default value
-  ///         is -1 which points to last saved function. Counter works same as
-  ///         python array position key, i.e. counter = -2 points to the
+  ///         is -1 which points to last saved function. Counter works same
+  ///         as python array position key, i.e. counter = -2 points to the
   ///         function before the last one.
   /// @returns function::Function
   ///         Function

@@ -116,9 +116,10 @@ import os
 import numpy as np
 from petsc4py import PETSc
 
-from dolfin import (MPI, CellType, Function, FunctionSpace, NewtonSolver,
+from dolfin import (MPI, Function, FunctionSpace, NewtonSolver,
                     NonlinearProblem, TestFunctions, TrialFunction,
                     UnitSquareMesh, log)
+from dolfin.cpp.mesh import CellType
 from dolfin.fem.assemble import assemble_matrix, assemble_vector
 from dolfin.io import XDMFFile
 from ufl import (FiniteElement, derivative, diff, dx, grad, inner, split,
@@ -189,7 +190,7 @@ theta = 0.5      # time stepping family, e.g. theta=1 -> backward Euler, theta=0
 # ``ME`` is built using a pair of linear Lagrangian elements. ::
 
 # Create mesh and build function space
-mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.Type.triangle)
+mesh = UnitSquareMesh(MPI.comm_world, 96, 96, CellType.triangle)
 P1 = FiniteElement("Lagrange", mesh.ufl_cell(), 1)
 ME = FunctionSpace(mesh, P1 * P1)
 
@@ -321,14 +322,14 @@ if "CI" in os.environ.keys():
 else:
     T = 50 * dt
 
-u.vector().copy(result=u0.vector())
-u0.vector().ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
+u.vector.copy(result=u0.vector)
+u0.vector.ghostUpdate(addv=PETSc.InsertMode.INSERT, mode=PETSc.ScatterMode.FORWARD)
 
 while (t < T):
     t += dt
-    r = solver.solve(problem, u.vector())
+    r = solver.solve(problem, u.vector)
     print("Step, num iterations:", int(t / dt), r[0])
-    u.vector().copy(result=u0.vector())
+    u.vector.copy(result=u0.vector)
     file.write(u.sub(0), t)
 
 # The string ``"compressed"`` indicates that the output data should be
@@ -336,8 +337,8 @@ while (t < T):
 # solution vector associated with ``u`` is copied to ``u0`` at the
 # beginning of each time step, and the nonlinear problem is solved by
 # calling
-# :py:func:`solver.solve(problem,u.vector())<dolfin.cpp.NewtonSolver.solve>`,
+# :py:func:`solver.solve(problem,u.vector)<dolfin.cpp.NewtonSolver.solve>`,
 # with the new solution vector returned in
-# :py:func:`u.vector()<dolfin.cpp.Function.vector>`. The ``c`` component
+# :py:func:`u.vector<dolfin.cpp.Function.vector>`. The ``c`` component
 # of the solution (the first component of ``u``) is then written to file
 # at every time step.

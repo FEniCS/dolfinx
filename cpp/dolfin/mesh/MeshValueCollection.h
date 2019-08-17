@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "Cell.h"
 #include "Mesh.h"
 #include "MeshEntity.h"
 #include "MeshFunction.h"
@@ -192,33 +191,37 @@ MeshValueCollection<T>::MeshValueCollection(
     : _mesh(mesh_function.mesh()), _dim(mesh_function.dim())
 {
   assert(_mesh);
-  const std::size_t D = _mesh->topology().dim();
+  const int D = _mesh->topology().dim();
+
+  // Prefetch values of mesh function
+  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+      = mesh_function.values();
 
   // Handle cells as a special case
-  if ((int)D == _dim)
+  if (D == _dim)
   {
-    for (std::size_t cell_index = 0; cell_index < mesh_function.size();
+    for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-      _values.insert({key, mesh_function[cell_index]});
+      _values.insert({key, mf_values[cell_index]});
     }
   }
   else
   {
     _mesh->create_connectivity(_dim, D);
     const Connectivity& connectivity = _mesh->topology().connectivity(_dim, D);
-    for (std::size_t entity_index = 0; entity_index < mesh_function.size();
+    for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
       // Find the cell
       assert(connectivity.size(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (std::size_t i = 0; i < entity.num_entities(D); ++i)
+      for (int i = 0; i < connectivity.size(entity_index); ++i)
       {
         // Create cell
-        const mesh::Cell cell(*_mesh,
-                              connectivity.connections(entity_index)[i]);
+        const mesh::MeshEntity cell(*_mesh, D,
+                                    connectivity.connections(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -226,7 +229,7 @@ MeshValueCollection<T>::MeshValueCollection(
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        _values.insert({key, mesh_function[entity_index]});
+        _values.insert({key, mf_values[entity_index]});
       }
     }
   }
@@ -240,18 +243,22 @@ operator=(const MeshFunction<T>& mesh_function)
   _dim = mesh_function.dim();
 
   assert(_mesh);
-  const std::size_t D = _mesh->topology().dim();
+  const int D = _mesh->topology().dim();
 
   // FIXME: Use iterators
 
+  // Prefetch values of mesh function
+  Eigen::Ref<const Eigen::Array<T, Eigen::Dynamic, 1>> mf_values
+      = mesh_function.values();
+
   // Handle cells as a special case
-  if ((int)D == _dim)
+  if (D == _dim)
   {
-    for (std::size_t cell_index = 0; cell_index < mesh_function.size();
+    for (Eigen::Index cell_index = 0; cell_index < mf_values.size();
          ++cell_index)
     {
       const std::pair<std::size_t, std::size_t> key(cell_index, 0);
-      _values.insert({key, mesh_function[cell_index]});
+      _values.insert({key, mf_values[cell_index]});
     }
   }
   else
@@ -259,17 +266,17 @@ operator=(const MeshFunction<T>& mesh_function)
     _mesh->create_connectivity(_dim, D);
     assert(_mesh->topology().connectivity(_dim, D));
     const Connectivity& connectivity = *_mesh->topology().connectivity(_dim, D);
-    for (std::size_t entity_index = 0; entity_index < mesh_function.size();
+    for (Eigen::Index entity_index = 0; entity_index < mf_values.size();
          ++entity_index)
     {
       // Find the cell
       assert(connectivity.size(entity_index) > 0);
       const MeshEntity entity(*_mesh, _dim, entity_index);
-      for (std::size_t i = 0; i < entity.num_entities(D); ++i)
+      for (std::size_t i = 0; i < connectivity.size(entity_index); ++i)
       {
         // Create cell
-        const mesh::Cell cell(*_mesh,
-                              connectivity.connections(entity_index)[i]);
+        const mesh::MeshEntity cell(*_mesh, D,
+                                    connectivity.connections(entity_index)[i]);
 
         // Find the local entity index
         const std::size_t local_entity = cell.index(entity);
@@ -277,7 +284,7 @@ operator=(const MeshFunction<T>& mesh_function)
         // Insert into map
         const std::pair<std::size_t, std::size_t> key(cell.index(),
                                                       local_entity);
-        _values.insert({key, mesh_function[entity_index]});
+        _values.insert({key, mf_values[entity_index]});
       }
     }
   }
@@ -374,8 +381,8 @@ bool MeshValueCollection<T>::set_value(std::size_t entity_index, const T& value)
   // Find the cell
   assert(connectivity.size(entity_index) > 0);
   const MeshEntity entity(*_mesh, _dim, entity_index);
-  const mesh::Cell cell(
-      *_mesh, connectivity.connections(entity_index)[0]); // choose first
+  const mesh::MeshEntity cell(
+      *_mesh, D, connectivity.connections(entity_index)[0]); // choose first
 
   // Find the local entity index
   const std::size_t local_entity = cell.index(entity);

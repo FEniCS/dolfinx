@@ -4,7 +4,7 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "casters.h"
+#include "caster_petsc.h"
 #include <Eigen/Dense>
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
@@ -12,6 +12,7 @@
 #include <dolfin/fem/DirichletBC.h>
 #include <dolfin/fem/DiscreteOperators.h>
 #include <dolfin/fem/DofMap.h>
+#include <dolfin/fem/DofMapBuilder.h>
 #include <dolfin/fem/ElementDofLayout.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/Form.h>
@@ -23,6 +24,7 @@
 #include <dolfin/la/PETScMatrix.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshFunction.h>
 #include <memory>
 #include <petsc4py/petsc4py.h>
 #include <pybind11/eigen.h>
@@ -134,6 +136,14 @@ void fem(py::module& m)
   m.def("create_form", &dolfin::fem::create_form,
         "Create DOLFIN form from a ufc form.");
 
+  m.def("build_dofmap",
+        [](const dolfin::mesh::Mesh& mesh,
+           std::shared_ptr<const dolfin::fem::ElementDofLayout>
+               element_dof_layout) {
+          return dolfin::fem::DofMapBuilder::build(mesh, element_dof_layout);
+        },
+        "Build and dofmap on a mesh.");
+
   // dolfin::fem::FiniteElement
   py::class_<dolfin::fem::FiniteElement,
              std::shared_ptr<dolfin::fem::FiniteElement>>(
@@ -143,28 +153,29 @@ void fem(py::module& m)
       .def("dof_reference_coordinates",
            &dolfin::fem::FiniteElement::dof_reference_coordinates)
       .def("space_dimension", &dolfin::fem::FiniteElement::space_dimension)
-      .def("topological_dimension",
-           &dolfin::fem::FiniteElement::topological_dimension)
       .def("value_dimension", &dolfin::fem::FiniteElement::value_dimension)
       .def("signature", &dolfin::fem::FiniteElement::signature);
 
   // dolfin::fem::ElementDofLayout
   py::class_<dolfin::fem::ElementDofLayout,
              std::shared_ptr<dolfin::fem::ElementDofLayout>>(
-      m, "ElementDofLayout", "Object describing the layout of dofs on a cell");
+      m, "ElementDofLayout", "Object describing the layout of dofs on a cell")
+      .def_property_readonly("num_dofs",
+                             &dolfin::fem::ElementDofLayout::num_dofs)
+      .def("num_entity_dofs", &dolfin::fem::ElementDofLayout::num_entity_dofs)
+      .def("num_entity_closure_dofs",
+           &dolfin::fem::ElementDofLayout::num_entity_closure_dofs)
+      .def("entity_dofs", &dolfin::fem::ElementDofLayout::entity_dofs)
+      .def("entity_closure_dofs",
+           &dolfin::fem::ElementDofLayout::entity_closure_dofs);
 
   // dolfin::fem::DofMap
   py::class_<dolfin::fem::DofMap, std::shared_ptr<dolfin::fem::DofMap>>(
       m, "DofMap", "DofMap object")
-      .def(py::init<std::shared_ptr<const dolfin::fem::ElementDofLayout>,
-                    const dolfin::mesh::Mesh&>())
-      .def_property_readonly("index_map", &dolfin::fem::DofMap::index_map)
+      .def_readonly("index_map", &dolfin::fem::DofMap::index_map)
+      .def_readonly("dof_layout", &dolfin::fem::DofMap::element_dof_layout)
       .def("cell_dofs", &dolfin::fem::DofMap::cell_dofs)
       .def("dofs", &dolfin::fem::DofMap::dofs)
-      .def("num_entity_dofs", &dolfin::fem::DofMap::num_entity_dofs)
-      .def("tabulate_local_to_global_dofs",
-           &dolfin::fem::DofMap::tabulate_local_to_global_dofs)
-      .def("tabulate_entity_dofs", &dolfin::fem::DofMap::tabulate_entity_dofs)
       .def("set", &dolfin::fem::DofMap::set)
       .def("dof_array", &dolfin::fem::DofMap::dof_array);
 
@@ -265,14 +276,16 @@ void fem(py::module& m)
       .def(py::init<std::vector<
                std::shared_ptr<const dolfin::function::FunctionSpace>>>())
       .def("num_coefficients",
-           [](const dolfin::fem::Form& self) { return self.coeffs().size(); },
+           [](const dolfin::fem::Form& self) {
+             return self.coefficients().size();
+           },
            "Return number of coefficients in form")
       .def("original_coefficient_position",
            &dolfin::fem::Form::original_coefficient_position)
       .def("set_coefficient",
            [](dolfin::fem::Form& self, std::size_t i,
               std::shared_ptr<const dolfin::function::Function> f) {
-             self.coeffs().set(i, f);
+             self.coefficients().set(i, f);
            })
       .def("set_mesh", &dolfin::fem::Form::set_mesh)
       .def("set_cell_domains", &dolfin::fem::Form::set_cell_domains)

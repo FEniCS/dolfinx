@@ -23,7 +23,7 @@ def test_assembly_dx_domains(mesh):
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
     marker = dolfin.MeshFunction("size_t", mesh, mesh.topology.dim, 0)
-    values = marker.array()
+    values = marker.values
     # Mark first, second and all other
     # Their union is the whole domain
     values[0] = 111
@@ -33,7 +33,7 @@ def test_assembly_dx_domains(mesh):
     dx = ufl.Measure('dx', subdomain_data=marker, domain=mesh)
 
     w = dolfin.Function(V)
-    with w.vector().localForm() as w_local:
+    with w.vector.localForm() as w_local:
         w_local.set(0.5)
 
     #
@@ -109,7 +109,7 @@ def test_assembly_ds_domains(mesh):
     ds = ufl.Measure('ds', subdomain_data=marker, domain=mesh)
 
     w = dolfin.Function(V)
-    with w.vector().localForm() as w_local:
+    with w.vector.localForm() as w_local:
         w_local.set(0.5)
 
     #

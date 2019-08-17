@@ -7,11 +7,9 @@
 #include "refine.h"
 #include "PlazaRefinementND.h"
 #include <dolfin/common/log.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Edge.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
-#include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
 using namespace refinement;
@@ -19,8 +17,8 @@ using namespace refinement;
 //-----------------------------------------------------------------------------
 mesh::Mesh dolfin::refinement::refine(const mesh::Mesh& mesh, bool redistribute)
 {
-  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
-      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
+  if (mesh.cell_type != mesh::CellType::triangle
+      and mesh.cell_type != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Refinement only defined for simplices");
   }
@@ -40,11 +38,11 @@ mesh::Mesh dolfin::refinement::refine(const mesh::Mesh& mesh, bool redistribute)
 //-----------------------------------------------------------------------------
 mesh::Mesh
 dolfin::refinement::refine(const mesh::Mesh& mesh,
-                           const mesh::MeshFunction<bool>& cell_markers,
+                           const mesh::MeshFunction<int>& cell_markers,
                            bool redistribute)
 {
-  if (mesh.type().cell_type() != mesh::CellType::Type::triangle
-      and mesh.type().cell_type() != mesh::CellType::Type::tetrahedron)
+  if (mesh.cell_type != mesh::CellType::triangle
+      and mesh.cell_type != mesh::CellType::tetrahedron)
   {
     throw std::runtime_error("Refinement only defined for simplices");
   }

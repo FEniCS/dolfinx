@@ -12,9 +12,10 @@
 #include <dolfin/common/types.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/CoordinateDofs.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscsys.h>
 
@@ -40,15 +41,15 @@ void _lift_bc_cells(
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap());
+  assert(a.function_space(0)->dofmap);
   assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap());
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
+  assert(a.function_space(1)->dofmap);
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap;
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap;
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const FormCoefficients& coefficients = a.coeffs();
+  const FormCoefficients& coefficients = a.coefficients();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
@@ -56,7 +57,7 @@ void _lift_bc_cells(
     coefficients_ptr[i] = coefficients.get(i).get();
     n.push_back(
         n.back()
-        + coefficients_ptr[i]->function_space()->element()->space_dimension());
+        + coefficients_ptr[i]->function_space()->element->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -86,14 +87,12 @@ void _lift_bc_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
+  const int tdim = mesh.geometry().dim();
   const int orient = 0;
-  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
   {
-    // Check that cell is not a ghost
-    assert(!cell.is_ghost());
-
     // Get dof maps for cell
-    const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
+    const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dmap1
         = dofmap1.cell_dofs(cell.index());
 
     // Check if bc is applied to cell
@@ -173,15 +172,15 @@ void _lift_bc_exterior_facets(
 
   // Get dofmap for columns and rows of a
   assert(a.function_space(0));
-  assert(a.function_space(0)->dofmap());
+  assert(a.function_space(0)->dofmap);
   assert(a.function_space(1));
-  assert(a.function_space(1)->dofmap());
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
+  assert(a.function_space(1)->dofmap);
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap;
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap;
 
   // TODO: simplify and move elsewhere
   // Manage coefficients
-  const FormCoefficients& coefficients = a.coeffs();
+  const FormCoefficients& coefficients = a.coefficients();
   std::vector<std::uint32_t> n = {0};
   std::vector<const function::Function*> coefficients_ptr(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
@@ -189,7 +188,7 @@ void _lift_bc_exterior_facets(
     coefficients_ptr[i] = coefficients.get(i).get();
     n.push_back(
         n.back()
-        + coefficients_ptr[i]->function_space()->element()->space_dimension());
+        + coefficients_ptr[i]->function_space()->element->space_dimension());
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
@@ -218,15 +217,20 @@ void _lift_bc_exterior_facets(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
   // Iterate over all cells
-  for (const mesh::Facet& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  assert(mesh.topology().connectivity(tdim - 1, tdim));
+  std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
+      = mesh.topology().connectivity(tdim - 1, tdim);
+  for (const mesh::MeshEntity& facet :
+       mesh::MeshRange(mesh, tdim - 1))
   {
-    if (facet.num_global_entities(tdim) != 1)
+    // Move to next facet if this one is an interior facet
+    if (connectivity_facet_cell->size_global(facet.index()) != 1)
       continue;
 
     // FIXME: sort out ghosts
 
     // Create attached cell
-    mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
@@ -302,14 +306,15 @@ void fem::impl::assemble_vector(
   const mesh::Mesh& mesh = *L.mesh();
 
   // Get dofmap data
-  const fem::DofMap& dofmap = *L.function_space(0)->dofmap();
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
+  const fem::DofMap& dofmap = *L.function_space(0)->dofmap;
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array
       = dofmap.dof_array();
-  // FIXME: do this right
-  const int num_dofs_per_cell = dofmap.num_element_dofs(0);
+
+  assert(dofmap.element_dof_layout);
+  const int num_dofs_per_cell = dofmap.element_dof_layout->num_dofs();
 
   // Prepare coefficients
-  const FormCoefficients& coefficients = L.coeffs();
+  const FormCoefficients& coefficients = L.coefficients();
   std::vector<const function::Function*> coeff_fn(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
     coeff_fn[i] = coefficients.get(i).get();
@@ -359,6 +364,7 @@ void fem::impl::assemble_cells(
     const std::vector<int>& offsets)
 {
   const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -382,8 +388,7 @@ void fem::impl::assemble_cells(
   const int orientation = 0;
   for (std::int32_t cell_index : active_cells)
   {
-    const mesh::Cell cell(mesh, cell_index);
-    assert(!cell.is_ghost());
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
@@ -442,14 +447,10 @@ void fem::impl::assemble_exterior_facets(
 
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
-
-    assert(facet.num_global_entities(tdim) == 1);
-
-    // TODO: check ghosting sanity?
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // Create attached cell
-    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
@@ -519,15 +520,15 @@ void fem::impl::assemble_interior_facets(
 
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
-    assert(facet.num_global_entities(tdim) == 2);
+    // assert(facet.num_global_entities(tdim) == 2);
 
     // TODO: check ghosting sanity?
 
     // Create attached cells
-    const mesh::Cell cell0(mesh, facet.entities(tdim)[0]);
-    const mesh::Cell cell1(mesh, facet.entities(tdim)[1]);
+    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
@@ -609,7 +610,7 @@ void fem::impl::apply_lifting(
     {
       auto V1 = a[j]->function_space(1);
       assert(V1);
-      auto map1 = V1->dofmap()->index_map();
+      auto map1 = V1->dofmap->index_map;
       assert(map1);
       const int crange
           = map1->block_size * (map1->size_local() + map1->num_ghosts());

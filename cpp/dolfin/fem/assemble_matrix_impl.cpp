@@ -10,9 +10,10 @@
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/utils.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/CoordinateDofs.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscsys.h>
 
@@ -27,18 +28,20 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   const mesh::Mesh& mesh = *a.mesh();
 
   // Get dofmap data
-  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap();
-  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap();
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array0
+  const fem::DofMap& dofmap0 = *a.function_space(0)->dofmap;
+  const fem::DofMap& dofmap1 = *a.function_space(1)->dofmap;
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array0
       = dofmap0.dof_array();
-  Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array1
+  Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dof_array1
       = dofmap1.dof_array();
-  // FIXME: do this right
-  const int num_dofs_per_cell0 = dofmap0.num_element_dofs(0);
-  const int num_dofs_per_cell1 = dofmap1.num_element_dofs(0);
+
+  assert(dofmap0.element_dof_layout);
+  assert(dofmap1.element_dof_layout);
+  const int num_dofs_per_cell0 = dofmap0.element_dof_layout->num_dofs();
+  const int num_dofs_per_cell1 = dofmap1.element_dof_layout->num_dofs();
 
   // Prepare coefficients
-  const FormCoefficients& coefficients = a.coeffs();
+  const FormCoefficients& coefficients = a.coefficients();
   std::vector<const function::Function*> coeff_fn(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
     coeff_fn[i] = coefficients.get(i).get();
@@ -91,8 +94,8 @@ void fem::impl::assemble_cells(
     const std::vector<int>& offsets)
 {
   assert(A);
-
   const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
 
   // Prepare cell geometry
   const mesh::Connectivity& connectivity_g
@@ -118,10 +121,7 @@ void fem::impl::assemble_cells(
   const int orientation = 0;
   for (auto& cell_index : active_cells)
   {
-    const mesh::Cell cell(mesh, cell_index);
-
-    // Check that cell is not a ghost
-    assert(!cell.is_ghost());
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
@@ -209,13 +209,11 @@ void fem::impl::assemble_exterior_facets(
   PetscErrorCode ierr;
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
-    assert(facet.num_global_entities(tdim) == 1);
-
-    // TODO: check ghosting sanity?
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
+    // assert(facet.num_global_entities(tdim) == 1);
 
     // Create attached cell
-    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
@@ -313,14 +311,14 @@ void fem::impl::assemble_interior_facets(
   PetscErrorCode ierr;
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
-    assert(facet.num_global_entities(tdim) == 2);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
+    // assert(facet.num_global_entities(tdim) == 2);
 
     // TODO: check ghosting sanity?
 
     // Create attached cells
-    const mesh::Cell cell0(mesh, facet.entities(tdim)[0]);
-    const mesh::Cell cell1(mesh, facet.entities(tdim)[1]);
+    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};

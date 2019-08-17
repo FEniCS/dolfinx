@@ -8,7 +8,8 @@
 import numpy as np
 import pytest
 
-from dolfin import MPI, CellType, FunctionSpace, UnitSquareMesh, cpp
+from dolfin import MPI, FunctionSpace, UnitSquareMesh, cpp
+from dolfin.cpp.mesh import CellType
 from dolfin_utils.test.fixtures import fixture
 
 
@@ -22,7 +23,7 @@ def count_on_and_off_diagonal_nnz(primary_codim_entries, local_range):
 
 @fixture
 def mesh():
-    return UnitSquareMesh(MPI.comm_world, 4, 4, CellType.Type.triangle)
+    return UnitSquareMesh(MPI.comm_world, 4, 4, CellType.triangle)
 
 
 @fixture
@@ -31,7 +32,7 @@ def V(mesh):
 
 
 def xtest_str(mesh, V):
-    dm = V.dofmap()
+    dm = V.dofmap
     index_map = dm.index_map
     assert index_map
 
@@ -47,7 +48,7 @@ def xtest_str(mesh, V):
 
 @pytest.mark.xfail
 def test_insert_local(mesh, V):
-    dm = V.dofmap()
+    dm = V.dofmap
     index_map = dm.index_map
     assert index_map
 
@@ -73,7 +74,7 @@ def test_insert_local(mesh, V):
 
 
 def xtest_insert_global(mesh, V):
-    dm = V.dofmap()
+    dm = V.dofmap
     index_map = dm.index_map
     local_range = index_map.local_range()
 
@@ -121,7 +122,7 @@ def xtest_insert_global(mesh, V):
 
 
 def xtest_insert_local_global(mesh, V):
-    dm = V.dofmap()
+    dm = V.dofmap
     index_map = dm.index_map
     local_range = index_map.local_range()
 
