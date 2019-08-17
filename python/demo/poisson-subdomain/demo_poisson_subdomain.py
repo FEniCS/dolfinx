@@ -90,9 +90,9 @@ import meshio
 import dolfin
 from dolfin.io import XDMFFile
 import numpy as np
-from ufl import SpatialCoordinate, inner, grad, exp, dx, ds
+from ufl import SpatialCoordinate, inner, grad, exp, dx, ds, lhs, rhs
 from dolfin import FunctionSpace, TrialFunction, TestFunction, DirichletBC
-from dolfin import Function, MPI
+from dolfin import Function, MPI, solve
 
 # In this example, different boundary conditions are prescribed on
 # different parts of the boundaries, and different parts of the interior
@@ -223,14 +223,12 @@ ds = ds(subdomain_data=mf_line)
 # form. ::
 
 # Define variational form
-a = inner(a0 * grad(u), grad(v)) * dx(tag_info['DOMAIN']) + \
-    inner(a1 * grad(u), grad(v)) * dx(tag_info['OBSTACLE'])
-
-
-L = g_L * v * ds(tag_info['LEFT']) - \
-    g_R * v * ds(tag_info['RIGHT']) - \
-    f * v * dx(tag_info['DOMAIN']) - \
-    f * v * dx(tag_info['OBSTACLE'])
+F = inner(a0 * grad(u), grad(v)) * dx(tag_info['DOMAIN']) + \
+    inner(a1 * grad(u), grad(v)) * dx(tag_info['OBSTACLE']) + \
+    inner(g_L, v) * ds(tag_info['LEFT']) - \
+    inner(g_R, v) * ds(tag_info['RIGHT']) - \
+    inner(f, v) * dx(tag_info['DOMAIN']) - \
+    inner(f, v) * dx(tag_info['OBSTACLE'])
 
 # For simplicity, we define the full form first,
 # and then extract the left- and right-hand sides using the UFL
@@ -238,11 +236,11 @@ L = g_L * v * ds(tag_info['LEFT']) - \
 # :py:func:`solve <dolfin.fem.solving.solve>` as usual: ::
 
 # Separate left and right hand sides of equation
-# a, L = lhs(F), rhs(F)
+a, L = lhs(F), rhs(F)
 
 # Solve problem
 u = Function(V)
-# solve(a == L, u, bcs)
+solve(a == L, u, bcs)
 
 # Now we can save the solution to a XDMF file for visualization. ::
 
