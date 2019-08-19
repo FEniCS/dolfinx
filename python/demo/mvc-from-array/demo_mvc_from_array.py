@@ -135,8 +135,6 @@ tag_info = {key: field_data[key][0] for key in field_data}
 mf_triangle = cpp.mesh.MeshFunctionSizet(mesh, mvc_subdomain, 0)
 mf_line = cpp.mesh.MeshFunctionSizet(mesh, mvc_boundaries, 0)
 
-print(mf_line.values)
-
 # This way we can directly construct mesh and mesh value collection from
 # pygmsh variables. The tag_info read by this demo program is the one used
 # for the Poisson Subdomain demo program.

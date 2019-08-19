@@ -52,10 +52,24 @@ public:
   ///         The mesh entity dimension for the mesh value collection.
   MeshValueCollection(std::shared_ptr<const Mesh> mesh, std::size_t dim);
 
+  /// Create a mesh value collection of entities of given dimension
+  /// on a given mesh from topological data (cells) speifying entities
+  /// to be marked and values_data specifying the marker.
+  ///
+  /// @param    mesh (_Mesh_)
+  ///         The mesh associated with the collection.
+  /// @param    dim (std::size_t)
+  ///         The mesh entity dimension for the mesh value collection.
+  /// @param    cells (std::vector<std::vector<T>>)
+  ///         Array of cells to be marked (containing the global point
+  ///         indices for each cell)
+  /// @param    values_data (std::vector<T>)
+  ///         Array of marker corresponding to each cell. This must be
+  ///         same size as the number of rows in cells.
   MeshValueCollection(std::shared_ptr<const Mesh> mesh,
                     std::size_t dim,
-                    std::vector<std::vector<T>>& cells,//Cells
-                    std::vector<T>& values_data); //Cell_data
+                    std::vector<std::vector<T>>& cells,
+                    std::vector<T>& values_data);
 
   /// Destructor
   ~MeshValueCollection() = default;
@@ -203,32 +217,6 @@ MeshValueCollection<T>::MeshValueCollection(
   // of all dimesions are not initialized.
   _mesh->create_entities(dim);
 
-  // The number of vertices per entity is _dim+1
-  std::vector<std::int32_t> v(_dim+1);
-
-  // Map from {entity vertex indices} to entity index
-  std::map<std::vector<int>, size_t> entity_map;
-
-  const std::vector<std::int64_t>& global_indices
-      = _mesh->topology().global_indices(0);
-
-  // Loop over all the entities of dimension _dim
-  for (auto& m : mesh::MeshRange(*mesh, _dim))
-  { 
-    if (_dim == 0)
-      v[0] = global_indices[m.index()];
-    else
-    {
-      v.clear();
-      for (auto& vtx : mesh::EntityRange(m, 0)){
-        v.push_back(global_indices[vtx.index()]);
-      }
-      std::sort(v.begin(), v.end());
-    }
-    // The vector of vertex number is key and entity index is value
-    entity_map[v]=m.index();
-  }
-
   const std::size_t D = _mesh->topology().dim();
 
   // Handle cells as a special case
@@ -243,6 +231,32 @@ MeshValueCollection<T>::MeshValueCollection(
   }
   else
   {
+    dolfin::mesh::CellType type = _mesh->cell_type;
+    const std::int32_t num_vertices_per_cell = mesh::num_cell_vertices(type);
+    std::vector<std::int32_t> v(num_vertices_per_cell);
+
+    // Map from {entity vertex indices} to entity index
+    std::map<std::vector<int>, size_t> entity_map;
+
+    const std::vector<std::int64_t>& global_indices
+        = _mesh->topology().global_indices(0);
+
+    // Loop over all the entities of dimension _dim
+    for (auto& m : mesh::MeshRange(*mesh, _dim))
+    { 
+      if (_dim == 0)
+        v[0] = global_indices[m.index()];
+      else
+      {
+        v.clear();
+        for (auto& vtx : mesh::EntityRange(m, 0)){
+          v.push_back(global_indices[vtx.index()]);
+        }
+        std::sort(v.begin(), v.end());
+      }
+      // The vector of vertex number is key and entity index is value
+      entity_map[v] = m.index();
+    }
     _mesh->create_connectivity(_dim, D);
 
     assert(_mesh->topology().connectivity(_dim, D));
@@ -253,8 +267,8 @@ MeshValueCollection<T>::MeshValueCollection(
     {
       // Find the cell
       v.clear();
-      // cells[j] is a vector of length _dim+1
-      for (std::size_t i = 0; i < _dim+1; ++i){
+      // cells[j] is a vector of length num_vertices_per_cell
+      for (std::size_t i = 0; i < num_vertices_per_cell; ++i){
         v.push_back(cells[j][i]);
       }
       std::sort(v.begin(), v.end());
