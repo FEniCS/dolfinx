@@ -219,8 +219,8 @@ MeshValueCollection<T>::MeshValueCollection(
 
   const std::size_t D = _mesh->topology().dim();
 
-  // Handle cells as a special case
-  if ((int)D == _dim)
+  // Handle cells and vertex as a special case
+  if (((int)D == _dim) || (_dim == 0))
   {
     for (std::size_t cell_index = 0; cell_index < values_data.size();
          ++cell_index)

@@ -188,7 +188,10 @@ def test_mvc_construction_array():
     ps = geom.add_plane_surface(ll)
 
     # Tag line and surface
-    geom.add_physical(l3, label="LINE")
+    geom.add_physical([p0, p3], label="POINT_LEFT")
+    geom.add_physical([p1, p2], label="POINT_RIGHT")
+    geom.add_physical([l0, l2], label="LINE_X")
+    geom.add_physical([l1, l3], label="LINE_Y")
     geom.add_physical(ps, label="SURFACE")
 
     pygmsh_mesh = pygmsh.generate_mesh(geom)
@@ -201,5 +204,12 @@ def test_mvc_construction_array():
     assert mesh.geometry.dim == 3
     assert mesh.topology.dim == 2
 
-    f = MeshValueCollection("size_t", mesh, 1, cells["line"], cell_data["line"]['gmsh:physical'])
-    assert f.get_value(1, 1) == 1
+    mvc_vertex = MeshValueCollection("size_t", mesh, 0, cells["vertex"], cell_data["vertex"]['gmsh:physical'])
+    assert mvc_vertex.get_value(1, 0) == 2
+
+    mvc_line = MeshValueCollection("size_t", mesh, 1, cells["line"], cell_data["line"]['gmsh:physical'])
+    mvc_line.values()
+    assert mvc_line.get_value(1, 1) == 4
+
+    mvc_triangle = MeshValueCollection("size_t", mesh, 2, cells["triangle"], cell_data["triangle"]['gmsh:physical'])
+    assert mvc_triangle.get_value(1, 0) == 5
