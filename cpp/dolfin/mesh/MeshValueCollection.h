@@ -231,8 +231,10 @@ MeshValueCollection<T>::MeshValueCollection(
   }
   else
   {
-    dolfin::mesh::CellType type = _mesh->cell_type;
-    const std::int32_t num_vertices_per_cell = mesh::num_cell_vertices(type);
+    // Number of vertices per cell is equal to the size of first
+    // array of connectivity.
+    const std::int32_t num_vertices_per_cell 
+          = _mesh->topology().connectivity(_dim, 0)->size(0);
     std::vector<std::int32_t> v(num_vertices_per_cell);
 
     // Map from {entity vertex indices} to entity index
