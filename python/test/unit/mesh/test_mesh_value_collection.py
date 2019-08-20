@@ -168,7 +168,7 @@ def test_mesh_function_assign_2D_vertices():
             assert f2.values[vertices[i]] == g.get_value(c, i)
 
 
-def test_mvc_construction_array():
+def test_mvc_construction_array_tet_tri():
     import pygmsh
 
     geom = pygmsh.opencascade.Geometry()
@@ -187,12 +187,16 @@ def test_mvc_construction_array():
     ll = geom.add_line_loop(lines=[l0, l1, l2, l3])
     ps = geom.add_plane_surface(ll)
 
+    geom.set_transfinite_surface(ps, size=[4, 4])
+    box = geom.extrude(ps, [0, 0, 1], num_layers=4)
+
     # Tag line and surface
     geom.add_physical([p0, p3], label="POINT_LEFT")
     geom.add_physical([p1, p2], label="POINT_RIGHT")
     geom.add_physical([l0, l2], label="LINE_X")
     geom.add_physical([l1, l3], label="LINE_Y")
     geom.add_physical(ps, label="SURFACE")
+    geom.add_physical(box[1], label="BOX")
 
     pygmsh_mesh = pygmsh.generate_mesh(geom)
     points, cells, cell_data = (
@@ -203,31 +207,37 @@ def test_mvc_construction_array():
 
     mesh = cpp.mesh.Mesh(
         MPI.comm_world,
-        cpp.mesh.CellType.triangle,
+        cpp.mesh.CellType.tetrahedron,
         points,
-        cells["triangle"],
+        cells["tetra"],
         [],
         cpp.mesh.GhostMode.none,
     )
     assert mesh.degree() == 1
     assert mesh.geometry.dim == 3
-    assert mesh.topology.dim == 2
+    assert mesh.topology.dim == 3
 
     mvc_vertex = MeshValueCollection(
-        "size_t", mesh, 0, cells["vertex"], cell_data["vertex"]["gmsh:physical"]
+        "size_t", mesh, 0, cells["vertex"],
+        cell_data["vertex"]["gmsh:physical"]
     )
-    assert mvc_vertex.get_value(1, 0) == 2
+    assert mvc_vertex.get_value(0, 0) == 1
 
     mvc_line = MeshValueCollection(
         "size_t", mesh, 1, cells["line"], cell_data["line"]["gmsh:physical"]
     )
-    mvc_line.values()
-    assert mvc_line.get_value(1, 1) == 4
+    assert mvc_line.get_value(0, 4) == 4
 
     mvc_triangle = MeshValueCollection(
-        "size_t", mesh, 2, cells["triangle"], cell_data["triangle"]["gmsh:physical"]
+        "size_t", mesh, 2, cells["triangle"],
+        cell_data["triangle"]["gmsh:physical"]
     )
-    assert mvc_triangle.get_value(1, 0) == 5
+    assert mvc_triangle.get_value(0, 3) == 5
+
+    mvc_tetra = MeshValueCollection(
+        "size_t", mesh, 3, cells["tetra"], cell_data["tetra"]["gmsh:physical"]
+    )
+    assert mvc_tetra.get_value(0, 0) == 6
 
 
 def test_mvc_construction_array_hex_quad():
@@ -282,7 +292,8 @@ def test_mvc_construction_array_hex_quad():
     assert mesh.topology.dim == 3
 
     mvc_vertex = MeshValueCollection(
-        "size_t", mesh, 0, cells["vertex"], cell_data["vertex"]["gmsh:physical"]
+        "size_t", mesh, 0, cells["vertex"],
+        cell_data["vertex"]["gmsh:physical"]
     )
     assert mvc_vertex.get_value(0, 0) == 1
 
@@ -298,6 +309,7 @@ def test_mvc_construction_array_hex_quad():
     assert mvc_quad.get_value(0, 0) == 5
 
     mvc_hexa = MeshValueCollection(
-        "size_t", mesh, 2, cells["hexahedron"], cell_data["hexahedron"]["gmsh:physical"]
+        "size_t", mesh, 3, cells["hexahedron"],
+        cell_data["hexahedron"]["gmsh:physical"]
     )
     assert mvc_hexa.get_value(0, 0) == 6
