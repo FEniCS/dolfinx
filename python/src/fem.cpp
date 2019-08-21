@@ -297,7 +297,7 @@ void fem(py::module& m)
       .def("set_tabulate_cell",
            [](dolfin::fem::Form& self, int i, std::intptr_t addr) {
              auto tabulate_tensor_ptr
-                 = (void (*)(PetscScalar*, const PetscScalar*, const double*,
+                 = (void (*)(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*))addr;
              self.register_tabulate_tensor_cell(i, tabulate_tensor_ptr);
            })
