@@ -97,6 +97,7 @@ def ffc_jit(ufl_object, form_compiler_parameters=None):
     # Prepare form compiler parameters with overrides from dolfin
     p = ffc.default_jit_parameters()
     p["scalar_type"] = "double complex" if common.has_petsc_complex else "double"
+    p["tensor_init_mode"] = "add"
     p.update(form_compiler_parameters or {})
 
     # Switch on type and compile, returning cffi object
