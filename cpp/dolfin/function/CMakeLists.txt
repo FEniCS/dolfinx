@@ -1,5 +1,6 @@
 set(HEADERS
   dolfin_function.h
+  Constant.h
   Function.h
   FunctionSpace.h
   PARENT_SCOPE)

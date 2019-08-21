@@ -33,6 +33,7 @@ class PETScVector;
 } // namespace la
 namespace function
 {
+class Constant;
 class Function;
 class FunctionSpace;
 } // namespace function
@@ -100,6 +101,10 @@ Form create_form(
 /// Extract coefficients from UFC form
 std::vector<std::tuple<int, std::string, std::shared_ptr<function::Function>>>
 get_coeffs_from_ufc_form(const ufc_form& ufc_form);
+
+/// Extract coefficients from UFC form
+std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>
+get_constants_from_ufc_form(const ufc_form& ufc_form);
 
 /// Get dolfin::fem::CoordinateMapping from ufc
 std::shared_ptr<const fem::CoordinateMapping>

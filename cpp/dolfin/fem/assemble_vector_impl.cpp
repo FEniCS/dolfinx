@@ -10,6 +10,7 @@
 #include "Form.h"
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/types.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/CoordinateDofs.h>
@@ -61,7 +62,7 @@ void _lift_bc_cells(
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
-  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+  const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                            const int*, const int*)>& fn
       = a.integrals().get_tabulate_tensor_function(FormIntegrals::Type::cell,
                                                    0);
@@ -85,6 +86,21 @@ void _lift_bc_cells(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
+
+  const std::vector<
+      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+      constants = a.constants();
+
+  std::vector<PetscScalar> constant_values;
+  for (auto const& constant: constants){
+      // Get underlying data array of this Constant
+      Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> array = std::get<1>(constant)->value;
+
+      // Compute the size of flattened data array
+      int array_size = array.rows() * array.cols();
+
+      constant_values.insert(constant_values.end(), array.data(), array.data() + array_size);
+  }
 
   // Iterate over all cells
   const int tdim = mesh.geometry().dim();
@@ -129,7 +145,7 @@ void _lift_bc_cells(
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), nullptr, &orient);
+    fn(Ae.data(), coeff_array.data(), constant_values.data(), coordinate_dofs.data(), nullptr, &orient);
 
     // Size data structure for assembly
     be.setZero(dmap0.size());
@@ -192,7 +208,7 @@ void _lift_bc_exterior_facets(
   }
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(n.back());
 
-  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+  const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                            const int*, const int*)>& fn
       = a.integrals().get_tabulate_tensor_function(
           FormIntegrals::Type::exterior_facet, 0);
@@ -215,6 +231,21 @@ void _lift_bc_exterior_facets(
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
+
+  const std::vector<
+      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+      constants = a.constants();
+
+  std::vector<PetscScalar> constant_values;
+  for (auto const& constant: constants){
+      // Get underlying data array of this Constant
+      Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> array = std::get<1>(constant)->value;
+
+      // Compute the size of flattened data array
+      int array_size = array.rows() * array.cols();
+
+      constant_values.insert(constant_values.end(), array.data(), array.data() + array_size);
+  }
 
   // Iterate over all cells
   assert(mesh.topology().connectivity(tdim - 1, tdim));
@@ -274,7 +305,7 @@ void _lift_bc_exterior_facets(
     }
 
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), &local_facet,
+    fn(Ae.data(), coeff_array.data(), constant_values.data(), coordinate_dofs.data(), &local_facet,
        &orient);
 
     // Size data structure for assembly
@@ -320,6 +351,21 @@ void fem::impl::assemble_vector(
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
+  const std::vector<
+      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+      constants = L.constants();
+
+  std::vector<PetscScalar> constant_values;
+  for (auto const& constant: constants){
+      // Get underlying data array of this Constant
+      Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> array = std::get<1>(constant)->value;
+
+      // Compute the size of flattened data array
+      int array_size = array.rows() * array.cols();
+
+      constant_values.insert(constant_values.end(), array.data(), array.data() + array_size);
+  }
+
   const FormIntegrals& integrals = L.integrals();
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
@@ -329,7 +375,7 @@ void fem::impl::assemble_vector(
     const std::vector<std::int32_t>& active_cells
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(b, mesh, active_cells, dof_array,
-                              num_dofs_per_cell, fn, coeff_fn, c_offsets);
+                              num_dofs_per_cell, fn, coeff_fn, c_offsets, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -339,7 +385,7 @@ void fem::impl::assemble_vector(
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(b, mesh, active_facets, dofmap, fn,
-                                        coeff_fn, c_offsets);
+                                        coeff_fn, c_offsets, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
@@ -349,7 +395,7 @@ void fem::impl::assemble_vector(
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(b, mesh, active_facets, dofmap, fn,
-                                        coeff_fn, c_offsets);
+                                        coeff_fn, c_offsets, constant_values);
   }
 }
 //-----------------------------------------------------------------------------
@@ -358,10 +404,11 @@ void fem::impl::assemble_cells(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap,
     int num_dofs_per_cell,
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+    const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& kernel,
     const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets)
+    const std::vector<int>& offsets,
+    const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -404,7 +451,7 @@ void fem::impl::assemble_cells(
     }
 
     // Tabulate vector for cell
-    kernel(be.data(), coeff_array.data(), coordinate_dofs.data(), nullptr,
+    kernel(be.data(), coeff_array.data(), constant_values.data(), coordinate_dofs.data(), nullptr,
            &orientation);
 
     // Add local cell vector to global vector
@@ -417,10 +464,11 @@ void fem::impl::assemble_exterior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+    const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets)
+    const std::vector<int>& offsets,
+    const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -477,7 +525,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Tabulate element vector
     be.setZero(dmap.size());
-    fn(be.data(), coeff_array.data(), coordinate_dofs.data(), &local_facet,
+    fn(be.data(), coeff_array.data(), constant_values.data(), coordinate_dofs.data(), &local_facet,
        &orient);
 
     // Add element vector to global vector
@@ -490,10 +538,11 @@ void fem::impl::assemble_interior_facets(
     Eigen::Ref<Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1>> b,
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
     const fem::DofMap& dofmap,
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+    const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets)
+    const std::vector<int>& offsets,
+    const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -573,7 +622,7 @@ void fem::impl::assemble_interior_facets(
 
     // Tabulate element vector
     be.setZero(dmap0.size() + dmap1.size());
-    fn(be.data(), coeff_array.data(), coordinate_dofs.data(), local_facet,
+    fn(be.data(), coeff_array.data(), constant_values.data(), coordinate_dofs.data(), local_facet,
        orient);
 
     // Add element vector to global vector

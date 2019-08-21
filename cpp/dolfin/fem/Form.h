@@ -28,6 +28,7 @@ class CoordinateMapping;
 
 namespace function
 {
+class Constant;
 class FunctionSpace;
 }
 
@@ -72,6 +73,9 @@ public:
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals& integrals, const FormCoefficients& coefficients,
+       const std::vector<
+           std::tuple<std::string, std::shared_ptr<function::Constant>>>
+           constants,
        std::shared_ptr<const CoordinateMapping> coord_mapping);
 
   /// Create form (no UFC integrals). Integrals can be attached later
@@ -148,6 +152,7 @@ public:
   /// Register the function for 'tabulate_tensor' for cell integral i
   void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
                                                        const PetscScalar*,
+                                                       const PetscScalar*,
                                                        const double*,
                                                        const int*, const int*));
 
@@ -187,6 +192,16 @@ public:
   /// Access form integrals (const)
   const FormIntegrals& integrals() const;
 
+  // Access constants (non-const)
+  std::vector<
+      std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+  constants();
+
+  // Access constants (const)
+  const std::vector<
+      std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+  constants() const;
+
   /// Get coordinate_mapping (experimental)
   std::shared_ptr<const fem::CoordinateMapping> coordinate_mapping() const;
 
@@ -196,6 +211,11 @@ private:
 
   // Coefficients associated with the Form
   FormCoefficients _coefficients;
+
+  // Constants associated with the Form
+  std::vector<
+      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+      _constants;
 
   // Function spaces (one for each argument)
   std::vector<std::shared_ptr<const function::FunctionSpace>> _function_spaces;

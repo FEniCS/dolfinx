@@ -23,11 +23,15 @@ using namespace dolfin;
 using namespace dolfin::fem;
 
 //-----------------------------------------------------------------------------
-Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
-               function_spaces,
-           const FormIntegrals& integrals, const FormCoefficients& coefficients,
-           std::shared_ptr<const CoordinateMapping> coord_mapping)
-    : _integrals(integrals), _coefficients(coefficients),
+Form::Form(
+    const std::vector<std::shared_ptr<const function::FunctionSpace>>&
+        function_spaces,
+    const FormIntegrals& integrals, const FormCoefficients& coefficients,
+    const std::vector<
+        std::tuple<std::string, std::shared_ptr<function::Constant>>>
+        constants,
+    std::shared_ptr<const CoordinateMapping> coord_mapping)
+    : _integrals(integrals), _coefficients(coefficients), _constants(constants),
       _function_spaces(function_spaces), _coord_mapping(coord_mapping)
 {
   // Set _mesh from function::FunctionSpace, and check they are the same
@@ -46,7 +50,8 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
-    : Form(function_spaces, FormIntegrals(), FormCoefficients({}), nullptr)
+    : Form(function_spaces, FormIntegrals(), FormCoefficients({}), std::vector<
+        std::tuple<std::string, std::shared_ptr<function::Constant>>>() , nullptr)
 {
   // Do nothing
 }
@@ -94,7 +99,7 @@ std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 }
 //-----------------------------------------------------------------------------
 void Form::register_tabulate_tensor_cell(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*,
+    int i, void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                       const int*, const int*))
 {
   _integrals.register_tabulate_tensor(FormIntegrals::Type::cell, i, fn);
@@ -132,6 +137,19 @@ fem::FormCoefficients& Form::coefficients() { return _coefficients; }
 const fem::FormCoefficients& Form::coefficients() const
 {
   return _coefficients;
+}
+//-----------------------------------------------------------------------------
+std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+Form::constants()
+{
+  return _constants;
+}
+//-----------------------------------------------------------------------------
+const std::vector<
+    std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+Form::constants() const
+{
+  return _constants;
 }
 //-----------------------------------------------------------------------------
 const fem::FormIntegrals& Form::integrals() const { return _integrals; }

@@ -7,6 +7,7 @@
 #include "assemble_matrix_impl.h"
 #include "DofMap.h"
 #include "Form.h"
+#include <dolfin/function/Constant.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/utils.h>
@@ -47,6 +48,22 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
+  // Prepare constants
+  const std::vector<
+      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+      constants = a.constants();
+
+  std::vector<PetscScalar> constant_values;
+  for (auto const& constant: constants){
+      // Get underlying data array of this Constant
+      Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> array = std::get<1>(constant)->value;
+
+      // Compute the size of flattened data array
+      int array_size = array.rows() * array.cols();
+
+      constant_values.insert(constant_values.end(), array.data(), array.data() + array_size);
+  }
+
   const FormIntegrals& integrals = a.integrals();
   using type = fem::FormIntegrals::Type;
   for (int i = 0; i < integrals.num_integrals(type::cell); ++i)
@@ -56,7 +73,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
         = integrals.integral_domains(type::cell, i);
     fem::impl::assemble_cells(
         A, mesh, active_cells, dof_array0, num_dofs_per_cell0, dof_array1,
-        num_dofs_per_cell1, bc0, bc1, fn, coeff_fn, c_offsets);
+        num_dofs_per_cell1, bc0, bc1, fn, coeff_fn, c_offsets, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::exterior_facet); ++i)
@@ -66,7 +83,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
         = integrals.integral_domains(type::exterior_facet, i);
     fem::impl::assemble_exterior_facets(A, mesh, active_facets, dofmap0,
                                         dofmap1, bc0, bc1, fn, coeff_fn,
-                                        c_offsets);
+                                        c_offsets, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
@@ -76,7 +93,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
         = integrals.integral_domains(type::interior_facet, i);
     fem::impl::assemble_interior_facets(A, mesh, active_facets, dofmap0,
                                         dofmap1, bc0, bc1, fn, coeff_fn,
-                                        c_offsets);
+                                        c_offsets, constant_values);
   }
 }
 //-----------------------------------------------------------------------------
@@ -88,10 +105,11 @@ void fem::impl::assemble_cells(
     const Eigen::Ref<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofmap1,
     int num_dofs_per_cell1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+    const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& kernel,
     const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets)
+    const std::vector<int>& offsets,
+    const std::vector<PetscScalar> constant_values)
 {
   assert(A);
   const int gdim = mesh.geometry().dim();
@@ -137,7 +155,7 @@ void fem::impl::assemble_cells(
 
     // Tabulate tensor
     Ae.setZero(num_dofs_per_cell0, num_dofs_per_cell1);
-    kernel(Ae.data(), coeff_array.data(), coordinate_dofs.data(), nullptr,
+    kernel(Ae.data(), coeff_array.data(), constant_values.data(), coordinate_dofs.data(), nullptr,
            &orientation);
 
     // Zero rows/columns for essential bcs
@@ -176,10 +194,11 @@ void fem::impl::assemble_exterior_facets(
     const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
     const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+    const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets)
+    const std::vector<int>& offsets,
+    const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -240,7 +259,7 @@ void fem::impl::assemble_exterior_facets(
 
     // Tabulate tensor
     Ae.setZero(dmap0.size(), dmap1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), &local_facet,
+    fn(Ae.data(), coeff_array.data(), constant_values.data(), coordinate_dofs.data(), &local_facet,
        &orient);
 
     // Zero rows/columns for essential bcs
@@ -275,10 +294,11 @@ void fem::impl::assemble_interior_facets(
     const std::vector<std::int32_t>& active_facets, const DofMap& dofmap0,
     const DofMap& dofmap1, const std::vector<bool>& bc0,
     const std::vector<bool>& bc1,
-    const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+    const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                              const int*, const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
-    const std::vector<int>& offsets)
+    const std::vector<int>& offsets,
+    const std::vector<PetscScalar> constant_values)
 {
   const int gdim = mesh.geometry().dim();
   const int tdim = mesh.topology().dim();
@@ -377,7 +397,7 @@ void fem::impl::assemble_interior_facets(
 
     // Tabulate tensor
     Ae.setZero(dmapjoint0.size(), dmapjoint1.size());
-    fn(Ae.data(), coeff_array.data(), coordinate_dofs.data(), local_facet,
+    fn(Ae.data(), coeff_array.data(), constant_values.data(), coordinate_dofs.data(), local_facet,
        orient);
 
     // Zero rows/columns for essential bcs

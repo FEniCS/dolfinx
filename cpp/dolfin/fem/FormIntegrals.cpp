@@ -20,7 +20,7 @@ FormIntegrals::FormIntegrals()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                          const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
                                             unsigned int i) const
@@ -37,6 +37,7 @@ FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
 //-----------------------------------------------------------------------------
 void FormIntegrals::register_tabulate_tensor(FormIntegrals::Type type, int i,
                                              void (*fn)(PetscScalar*,
+                                                        const PetscScalar*,
                                                         const PetscScalar*,
                                                         const double*,
                                                         const int*, const int*))
