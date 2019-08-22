@@ -95,8 +95,7 @@ void _lift_bc_cells(
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
-        array = std::get<1>(constant)->value;
+    const std::vector<PetscScalar>& array = std::get<1>(constant)->value;
 
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
@@ -241,8 +240,7 @@ void _lift_bc_exterior_facets(
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
-        array = std::get<1>(constant)->value;
+    const std::vector<PetscScalar>& array = std::get<1>(constant)->value;
 
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
@@ -359,8 +357,7 @@ void fem::impl::assemble_vector(
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
-        array = std::get<1>(constant)->value;
+    const std::vector<PetscScalar>& array = std::get<1>(constant)->value;
 
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());

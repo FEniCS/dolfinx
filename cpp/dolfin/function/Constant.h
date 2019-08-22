@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include <Eigen/Dense>
 #include <vector>
 
 namespace dolfin
@@ -18,14 +17,11 @@ namespace function
 class Constant
 {
 public:
-  Constant(
-      Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
-          value)
-      : value(value){};
+  // Initialise as a vector
+  explicit Constant(std::vector<PetscScalar> value) : value(value){};
 
   /// Value
-  Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
-      value;
+  std::vector<PetscScalar> value;
 };
-} // namespace fem
+} // namespace function
 } // namespace dolfin

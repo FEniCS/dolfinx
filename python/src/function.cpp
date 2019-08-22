@@ -146,7 +146,8 @@ void function(py::module& m)
   py::class_<dolfin::function::Constant,
              std::shared_ptr<dolfin::function::Constant>>(
       m, "Constant", "A value constant wrt. integration domain")
-      .def(py::init<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(),
-           "Create a constant from a 1d value array");
+      .def(py::init<std::vector<PetscScalar>>(),
+           "Create a constant from a scalar value array")
+      .def_readwrite("value", &dolfin::function::Constant::value);
 }
 } // namespace dolfin_wrappers

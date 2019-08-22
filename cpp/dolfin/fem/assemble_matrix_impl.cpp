@@ -57,9 +57,7 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
-        array = std::get<1>(constant)->value;
-
+    const std::vector<PetscScalar>& array = std::get<1>(constant)->value;
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
   }
