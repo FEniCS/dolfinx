@@ -19,12 +19,12 @@ class Constant
 {
 public:
   Constant(
-      Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+      Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
           value)
       : value(value){};
 
   /// Value
-  Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+  Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
       value;
 };
 } // namespace fem

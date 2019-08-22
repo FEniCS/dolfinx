@@ -127,6 +127,10 @@ public:
   ///         coefficients.
   int original_coefficient_position(int i) const;
 
+  void set_constants(
+      std::map<std::string, std::shared_ptr<function::Constant>>
+          constants);
+
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
   ///

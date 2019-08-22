@@ -95,14 +95,11 @@ void _lift_bc_cells(
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
         array = std::get<1>(constant)->value;
 
-    // Compute the size of flattened data array
-    int array_size = array.rows() * array.cols();
-
     constant_values.insert(constant_values.end(), array.data(),
-                           array.data() + array_size);
+                           array.data() + array.size());
   }
 
   // Iterate over all cells
@@ -244,14 +241,11 @@ void _lift_bc_exterior_facets(
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
         array = std::get<1>(constant)->value;
 
-    // Compute the size of flattened data array
-    int array_size = array.rows() * array.cols();
-
     constant_values.insert(constant_values.end(), array.data(),
-                           array.data() + array_size);
+                           array.data() + array.size());
   }
 
   // Iterate over all cells
@@ -365,14 +359,11 @@ void fem::impl::assemble_vector(
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
         array = std::get<1>(constant)->value;
 
-    // Compute the size of flattened data array
-    int array_size = array.rows() * array.cols();
-
     constant_values.insert(constant_values.end(), array.data(),
-                           array.data() + array_size);
+                           array.data() + array.size());
   }
 
   const FormIntegrals& integrals = L.integrals();

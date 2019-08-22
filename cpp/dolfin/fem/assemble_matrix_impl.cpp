@@ -57,14 +57,11 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+    Eigen::Array<PetscScalar, Eigen::Dynamic, 1>
         array = std::get<1>(constant)->value;
 
-    // Compute the size of flattened data array
-    int array_size = array.rows() * array.cols();
-
     constant_values.insert(constant_values.end(), array.data(),
-                           array.data() + array_size);
+                           array.data() + array.size());
   }
 
   const FormIntegrals& integrals = a.integrals();
