@@ -150,11 +150,9 @@ public:
   std::shared_ptr<const function::FunctionSpace> function_space(int i) const;
 
   /// Register the function for 'tabulate_tensor' for cell integral i
-  void register_tabulate_tensor_cell(int i, void (*fn)(PetscScalar*,
-                                                       const PetscScalar*,
-                                                       const PetscScalar*,
-                                                       const double*,
-                                                       const int*, const int*));
+  void register_tabulate_tensor_cell(
+      int i, void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                        const double*, const int*, const int*));
 
   /// Set cell domains
   ///
@@ -193,8 +191,7 @@ public:
   const FormIntegrals& integrals() const;
 
   // Access constants (non-const)
-  std::vector<
-      std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+  std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>&
   constants();
 
   // Access constants (const)
@@ -213,8 +210,7 @@ private:
   FormCoefficients _coefficients;
 
   // Constants associated with the Form
-  std::vector<
-      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+  std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>
       _constants;
 
   // Function spaces (one for each argument)

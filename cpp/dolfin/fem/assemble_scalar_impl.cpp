@@ -40,14 +40,17 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
       constants = M.constants();
 
   std::vector<PetscScalar> constant_values;
-  for (auto const& constant: constants){
-      // Get underlying data array of this Constant
-      Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> array = std::get<1>(constant)->value;
+  for (auto const& constant : constants)
+  {
+    // Get underlying data array of this Constant
+    Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
+        array = std::get<1>(constant)->value;
 
-      // Compute the size of flattened data array
-      int array_size = array.rows() * array.cols();
+    // Compute the size of flattened data array
+    int array_size = array.rows() * array.cols();
 
-      constant_values.insert(constant_values.end(), array.data(), array.data() + array_size);
+    constant_values.insert(constant_values.end(), array.data(),
+                           array.data() + array_size);
   }
 
   const FormIntegrals& integrals = M.integrals();
@@ -67,8 +70,8 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
     auto& fn = integrals.get_tabulate_tensor_function(type::exterior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::exterior_facet, i);
-    value += fem::impl::assemble_exterior_facets(mesh, active_facets, fn,
-                                                 coeff_fn, c_offsets, constant_values);
+    value += fem::impl::assemble_exterior_facets(
+        mesh, active_facets, fn, coeff_fn, c_offsets, constant_values);
   }
 
   for (int i = 0; i < integrals.num_integrals(type::interior_facet); ++i)
@@ -76,8 +79,8 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
     auto& fn = integrals.get_tabulate_tensor_function(type::interior_facet, i);
     const std::vector<std::int32_t>& active_facets
         = integrals.integral_domains(type::interior_facet, i);
-    value += fem::impl::assemble_interior_facets(mesh, active_facets, fn,
-                                                 coeff_fn, c_offsets, constant_values);
+    value += fem::impl::assemble_interior_facets(
+        mesh, active_facets, fn, coeff_fn, c_offsets, constant_values);
   }
 
   return value;
@@ -85,8 +88,9 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_cells(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_cells,
-    const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-                             const int*, const int*)>& fn,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -131,8 +135,8 @@ PetscScalar fem::impl::assemble_cells(
                                 coordinate_dofs);
     }
 
-    fn(&cell_value, coeff_array.data(), constant_values.data(), coordinate_dofs.data(), nullptr,
-       &orientation);
+    fn(&cell_value, coeff_array.data(), constant_values.data(),
+       coordinate_dofs.data(), nullptr, &orientation);
     value += cell_value;
   }
 
@@ -141,8 +145,9 @@ PetscScalar fem::impl::assemble_cells(
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_exterior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-                             const int*, const int*)>& fn,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -197,8 +202,8 @@ PetscScalar fem::impl::assemble_exterior_facets(
                                 coordinate_dofs);
     }
 
-    fn(&cell_value, coeff_array.data(), constant_values.data(), coordinate_dofs.data(), &local_facet,
-       &orient);
+    fn(&cell_value, coeff_array.data(), constant_values.data(),
+       coordinate_dofs.data(), &local_facet, &orient);
     value += cell_value;
   }
 
@@ -207,8 +212,9 @@ PetscScalar fem::impl::assemble_exterior_facets(
 //-----------------------------------------------------------------------------
 PetscScalar fem::impl::assemble_interior_facets(
     const mesh::Mesh& mesh, const std::vector<std::int32_t>& active_facets,
-    const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
-                             const int*, const int*)>& fn,
+    const std::function<void(PetscScalar*, const PetscScalar*,
+                             const PetscScalar*, const double*, const int*,
+                             const int*)>& fn,
     const std::vector<const function::Function*>& coefficients,
     const std::vector<int>& offsets,
     const std::vector<PetscScalar> constant_values)
@@ -280,8 +286,8 @@ PetscScalar fem::impl::assemble_interior_facets(
                                 cell1, coordinate_dofs1);
     }
 
-    fn(&cell_value, coeff_array.data(), constant_values.data(), coordinate_dofs.data(), local_facet,
-       orient);
+    fn(&cell_value, coeff_array.data(), constant_values.data(),
+       coordinate_dofs.data(), local_facet, orient);
     value += cell_value;
   }
 
