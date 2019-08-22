@@ -3,7 +3,7 @@ install-python-components: &install-python-components
   command: |
             pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
             pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
-            pip3 install git+https://github.com/FEniCS/ffcx.git@chris/remove-init-modes --upgrade
+            pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
             rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
 flake8-python-code: &flake8-python-code
