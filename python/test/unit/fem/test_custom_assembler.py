@@ -179,6 +179,8 @@ def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
     orientation = np.array([0], dtype=np.int32)
     geometry = np.zeros((3, 2))
     coeffs = np.zeros(1, dtype=PETSc.ScalarType)
+    constants = np.zeros(1, dtype=PETSc.ScalarType)
+
     b_local = np.zeros(3, dtype=PETSc.ScalarType)
     for i, cell in enumerate(pos[:-1]):
         num_vertices = pos[i + 1] - pos[i]
@@ -187,6 +189,7 @@ def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
             for k in range(2):
                 geometry[j, k] = x[c[j], k]
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
+               ffi.from_buffer(constants),
                ffi.from_buffer(geometry), ffi.from_buffer(orientation),
                ffi.from_buffer(orientation))
         for j in range(3):
