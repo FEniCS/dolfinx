@@ -46,7 +46,7 @@ for subdir in subdirs:
         os.chdir(root)
         print("Compiling %d forms in %s..." % (len(formfiles), root))
         for f in set(formfiles) - skip:
-            args = ["-u", "tensor_init_mode", "add"]
+            args = []
             if complex_mode:
                 args += ["-f", "scalar_type", "double complex"]
             args.append(f)
