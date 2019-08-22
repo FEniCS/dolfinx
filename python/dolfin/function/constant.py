@@ -10,6 +10,7 @@ import numpy
 import ufl
 import dolfin.cpp
 
+
 class Constant(ufl.Constant):
     def __init__(self, domain, value):
 
