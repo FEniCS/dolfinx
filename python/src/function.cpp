@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <dolfin/fem/DofMap.h>
 #include <dolfin/fem/FiniteElement.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
@@ -140,5 +141,12 @@ void function(py::module& m)
       .def("sub", &dolfin::function::FunctionSpace::sub)
       .def("tabulate_dof_coordinates",
            &dolfin::function::FunctionSpace::tabulate_dof_coordinates);
+
+  // dolfin::function::Constant
+  py::class_<dolfin::function::Constant,
+             std::shared_ptr<dolfin::function::Constant>>(
+      m, "Constant", "A value constant wrt. integration domain")
+      .def(py::init<Eigen::Array<PetscScalar, Eigen::Dynamic, 1>>(),
+           "Create a constant from a 1d value array");
 }
 } // namespace dolfin_wrappers
