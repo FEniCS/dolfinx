@@ -104,6 +104,20 @@ void Form::set_constants(
   }
 }
 //-----------------------------------------------------------------------------
+void Form::set_constants(
+    std::vector<std::shared_ptr<function::Constant>> constants)
+{
+  if (constants.size() != _constants.size())
+    throw std::runtime_error("Incorrect number of constants.");
+
+  // Loop every constant that user wants to attach
+  for (std::size_t i = 0; i < constants.size(); ++i)
+  {
+    // In this case the constants doesn't have a name
+    _constants[i] = std::make_tuple("", constants[i]);
+  }
+}
+//-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
 {
   _mesh = mesh;

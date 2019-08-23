@@ -127,9 +127,25 @@ public:
   ///         coefficients.
   int original_coefficient_position(int i) const;
 
+  /// Set constants based on their names
+  ///
+  /// This method is used in command-line workflow, when users sets
+  /// constants to the form in cpp file.
+  ///
+  /// Names of the constants must agree with their names in UFL file.
   void set_constants(
       std::map<std::string, std::shared_ptr<function::Constant>>
           constants);
+
+  /// Set constants based on their order (without names)
+  ///
+  /// This method is used in python workflow, when constants
+  /// are automatically attached to the form based on their order.
+  ///
+  /// The order of constants must match their order in
+  /// original ufl Form.
+  void set_constants(
+      std::vector<std::shared_ptr<function::Constant>> constants);
 
   /// Set mesh, necessary for functionals when there are no function
   /// spaces

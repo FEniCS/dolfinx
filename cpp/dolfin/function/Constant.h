@@ -17,7 +17,9 @@ namespace function
 class Constant
 {
 public:
-  // Initialise as a vector
+  /// Initialise as a vector
+  ///
+  /// The vector is a row-major (C style) flattened value of the constant
   explicit Constant(std::vector<PetscScalar> value) : value(value){};
 
   /// Value

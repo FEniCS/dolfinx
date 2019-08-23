@@ -555,19 +555,35 @@ def test_basic_interior_facet_assembly():
 
 
 def test_basic_assembly_constant():
-    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
+    """Tests assembly with Constant
+
+    The following test should be sensitive to order of flattening the
+    matrix-valued constant.
+
+    """
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 5, 5)
     V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
 
-    c = dolfin.function.Constant(mesh, 10.0)
+    c = dolfin.function.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
 
-    a = inner(c * u, v) * dx + inner(u, v) * ds
-    L = inner(c, v) * dx + inner(2.0, v) * ds
+    a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
+    L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds
 
     # Initial assembly
-    A = dolfin.fem.assemble_matrix(a)
-    A.assemble()
-    assert isinstance(A, PETSc.Mat)
-    b = dolfin.fem.assemble_vector(L)
-    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert isinstance(b, PETSc.Vec)
+    A1 = dolfin.fem.assemble_matrix(a)
+    A1.assemble()
+
+    b1 = dolfin.fem.assemble_vector(L)
+    b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    c.value = [[1.0, 2.0], [3.0, 4.0]]
+
+    A2 = dolfin.fem.assemble_matrix(a)
+    A2.assemble()
+
+    b2 = dolfin.fem.assemble_vector(L)
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0)
+    assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0)

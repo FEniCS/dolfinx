@@ -288,11 +288,10 @@ void fem(py::module& m)
               std::shared_ptr<const dolfin::function::Function> f) {
              self.coefficients().set(i, f);
            })
-      .def("set_constant",
-           [](dolfin::fem::Form& self, std::string name,
-              std::shared_ptr<dolfin::function::Constant> c) {
-             self.set_constants({{name, c}});
-           })
+      .def("set_constants",
+           py::overload_cast<
+               std::vector<std::shared_ptr<dolfin::function::Constant>>>(
+               &dolfin::fem::Form::set_constants))
       .def("set_mesh", &dolfin::fem::Form::set_mesh)
       .def("set_cell_domains", &dolfin::fem::Form::set_cell_domains)
       .def("set_exterior_facet_domains",
