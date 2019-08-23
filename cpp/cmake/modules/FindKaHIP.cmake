@@ -38,103 +38,105 @@ set(KAHIP_FOUND FALSE)
 
 message(STATUS "Checking for package 'KaHIP'")
 
+if (MPI_CXX_FOUND)
+  # Check for header file
+  find_path(KAHIP_INCLUDE_DIRS parhip_interface.h
+    HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy/ /usr/local/KaHIP/deploy
+    PATH_SUFFIXES kahip
+    DOC "Directory where the KaHIP header files are located"
+    )
 
-# Check for header file
-find_path(KAHIP_INCLUDE_DIRS parhip_interface.h
-  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy/ /usr/local/KaHIP/deploy
-  PATH_SUFFIXES kahip
-  DOC "Directory where the KaHIP header files are located"
+  find_library(KAHIP_LIBRARY kahip
+    HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
+    NO_DEFAULT_PATH
+    DOC "Directory where the KaHIP library is located"
   )
 
-find_library(KAHIP_LIBRARY kahip
-  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
-  NO_DEFAULT_PATH
-  DOC "Directory where the KaHIP library is located"
-)
+  find_library(KAHIP_LIBRARY kahip
+    DOC "Directory where the KaHIP library is located"
+  )
 
-find_library(KAHIP_LIBRARY kahip
-  DOC "Directory where the KaHIP library is located"
-)
+  find_library(MKAHIP_LIBRARY kahip
+    HINTS ${KAHIP_ROOT}/deploy/parallel $ENV{KAHIP_ROOT}/deploy/parallel /usr/local/KaHIP/deploy/parallel
+    NO_DEFAULT_PATH
+    DOC "Directory where the parallel KaHIP library is located"
+  )
 
-find_library(MKAHIP_LIBRARY kahip
-  HINTS ${KAHIP_ROOT}/deploy/parallel $ENV{KAHIP_ROOT}/deploy/parallel /usr/local/KaHIP/deploy/parallel
-  NO_DEFAULT_PATH
-  DOC "Directory where the parallel KaHIP library is located"
-)
+  find_library(MKAHIP_LIBRARY kahip
+    DOC "Directory where the parallel KaHIP library is located"
+  )
 
-find_library(MKAHIP_LIBRARY kahip
-  DOC "Directory where the parallel KaHIP library is located"
-)
+  find_library(PARHIP_LIBRARY parhip
+    HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
+    NO_DEFAULT_PATH
+    DOC "Directory where the ParHIP interface is located"
+  )
 
-find_library(PARHIP_LIBRARY parhip
-  HINTS ${KAHIP_ROOT}/deploy $ENV{KAHIP_ROOT}/deploy /usr/local/KaHIP/deploy
-  NO_DEFAULT_PATH
-  DOC "Directory where the ParHIP library is located"
-)
-
-find_library(PARHIP_LIBRARY parhip
-  DOC "Directory where the ParHIP library is located"
-)
+  find_library(PARHIP_LIBRARY parhip
+    DOC "Directory where the ParHIP interface is located"
+  )
 
 
-set(KAHIP_LIBRARIES ${KAHIP_LIBRARY} ${PARHIP_LIBRARY} ${MKAHIP_LIBRARY})
+  set(KAHIP_LIBRARIES ${KAHIP_LIBRARY} ${PARHIP_LIBRARY} ${MKAHIP_LIBRARY})
 
-# Set flags for building test program
-set(CMAKE_REQUIRED_INCLUDES  ${KAHIP_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
-set(CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARIES}    ${MPI_CXX_LIBRARIES})
-set(CMAKE_REQUIRED_FLAGS     ${CMAKE_REQUIRED_FLAGS}  ${MPI_CXX_COMPILE_FLAGS})
+  if (KAHIP_LIBRARIES)
 
-# Build and run test program
-include(CheckCXXSourceRuns)
+    # Set flags for building test program
+    set(CMAKE_REQUIRED_INCLUDES  ${KAHIP_INCLUDE_DIRS} ${MPI_CXX_INCLUDE_PATH})
+    set(CMAKE_REQUIRED_LIBRARIES ${KAHIP_LIBRARIES}    ${MPI_CXX_LIBRARIES})
+    set(CMAKE_REQUIRED_FLAGS     ${CMAKE_REQUIRED_FLAGS}  ${MPI_CXX_COMPILE_FLAGS})
 
-check_cxx_source_runs("
-#define MPICH_IGNORE_CXX_SEEK 1
-#include <mpi.h>
+    # Build and run test program
+    include(CheckCXXSourceRuns)
 
-#include <kaHIP_interface.h>
+      check_cxx_source_runs("
+      #define MPICH_IGNORE_CXX_SEEK 1
+      #include <mpi.h>
 
-int main()
-{
+      #include <kaHIP_interface.h>
 
-int n = 5;
-int *xadj = new int[6];
-xadj[0] = 0;
-xadj[1] = 2;
-xadj[2] = 5;
-xadj[3] = 7;
-xadj[4] = 9;
-xadj[5] = 12;
+      int main()
+      {
 
-int *adjncy = new int[12];
-adjncy[0] = 1;
-adjncy[1] = 4;
-adjncy[2] = 0;
-adjncy[3] = 2;
-adjncy[4] = 4;
-adjncy[5] = 1;
-adjncy[6] = 3;
-adjncy[7] = 2;
-adjncy[8] = 4;
-adjncy[9] = 0;
-adjncy[10] = 1;
-adjncy[11] = 3;
+      int n = 5;
+      int *xadj = new int[6];
+      xadj[0] = 0;
+      xadj[1] = 2;
+      xadj[2] = 5;
+      xadj[3] = 7;
+      xadj[4] = 9;
+      xadj[5] = 12;
 
-double imbalance = 0.03;
-int *part = new int[n];
-int edge_cut = 0;
-int nparts = 2;
-int *vwgt = nullptr;;
-int *adjcwgt = nullptr;;
+      int *adjncy = new int[12];
+      adjncy[0] = 1;
+      adjncy[1] = 4;
+      adjncy[2] = 0;
+      adjncy[3] = 2;
+      adjncy[4] = 4;
+      adjncy[5] = 1;
+      adjncy[6] = 3;
+      adjncy[7] = 2;
+      adjncy[8] = 4;
+      adjncy[9] = 0;
+      adjncy[10] = 1;
+      adjncy[11] = 3;
 
-kaffpa(&n, vwgt, xadj, adjcwgt, adjncy, &nparts, &imbalance, false, 0, ECO,
-       &edge_cut, part);
+      double imbalance = 0.03;
+      int *part = new int[n];
+      int edge_cut = 0;
+      int nparts = 2;
+      int *vwgt = nullptr;;
+      int *adjcwgt = nullptr;;
 
-return 0;
-}
-" KAHIP_TEST_RUNS)
+      kaffpa(&n, vwgt, xadj, adjcwgt, adjncy, &nparts, &imbalance, false, 0, ECO,
+             &edge_cut, part);
 
+      return 0;
+      }
+      " KAHIP_TEST_RUNS)
+  endif()
+endif()
 
-include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(KaHIP
                                   "KaHIP could not be found/configured."
                                   KAHIP_LIBRARIES

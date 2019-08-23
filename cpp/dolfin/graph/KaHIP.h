@@ -7,7 +7,6 @@
 #pragma once
 
 #include "Graph.h"
-#include <cstddef>
 #include <cstdint>
 #include <dolfin/common/MPI.h>
 #include <map>
@@ -28,7 +27,8 @@ class KaHIP
 public:
   // Standard KaHIP partition
   static std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-  partition(MPI_Comm mpi_comm, const CSRGraph<unsigned long long>& csr_graph);
+  partition(MPI_Comm mpi_comm, int nparts,
+            const CSRGraph<unsigned long long>& csr_graph);
 
 #endif
 };

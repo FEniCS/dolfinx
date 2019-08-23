@@ -20,15 +20,12 @@ using namespace dolfin;
 #ifdef HAS_KAHIP
 
 std::pair<std::vector<int>, std::map<std::int64_t, std::vector<int>>>
-dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
+dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm, int nparts,
                                 const CSRGraph<unsigned long long>& csr_graph)
 {
   std::map<std::int64_t, std::vector<int>> ghost_procs;
   common::Timer timer("Compute graph partition (KaHIP)");
 
-  // Number of partitions (one for each process)
-  // TODO: Allow partition on a subset of processes
-  int nparts = dolfin::MPI::size(mpi_comm);
   const std::int32_t num_processes = dolfin::MPI::size(mpi_comm);
   const std::int32_t process_number = dolfin::MPI::rank(mpi_comm);
 
@@ -40,8 +37,10 @@ dolfin::graph::KaHIP::partition(MPI_Comm mpi_comm,
   // TODO: Allow the user to set the parameters
   int mode = 0;
   int seed = 0;
+
   // The amount of imbalance that is allowed. (3%)
-  double imbalance = 0.06;
+  double imbalance = 0.03;
+
   // Suppress output from the partitioning library.
   bool suppress_output = true;
 

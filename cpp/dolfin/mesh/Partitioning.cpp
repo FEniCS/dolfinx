@@ -557,7 +557,8 @@ PartitionData Partitioning::partition_cells(
     {
 #ifdef HAS_KAHIP
       graph::CSRGraph<unsigned long long> csr_graph(mpi_comm, local_graph);
-      return PartitionData(graph::KaHIP::partition(mpi_comm, csr_graph));
+      return PartitionData(
+          graph::KaHIP::partition(mpi_comm, nparts, csr_graph));
 #else
       throw std::runtime_error("KaHIP not available");
 #endif
