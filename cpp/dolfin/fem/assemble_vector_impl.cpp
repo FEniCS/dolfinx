@@ -447,6 +447,7 @@ void fem::impl::assemble_cells(
     }
 
     // Tabulate vector for cell
+    be.setZero();
     kernel(be.data(), coeff_array.data(), constant_values.data(),
            coordinate_dofs.data(), nullptr, &orientation);
 
