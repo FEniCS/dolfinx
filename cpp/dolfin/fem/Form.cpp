@@ -82,18 +82,20 @@ int Form::original_coefficient_position(int i) const
 }
 //-----------------------------------------------------------------------------
 void Form::set_constants(
-    std::map<std::string, std::shared_ptr<function::Constant>>
-        constants)
+    std::map<std::string, std::shared_ptr<function::Constant>> constants)
 {
   // Loop every constant that user wants to attach
-  for (auto const& constant_in : constants){
+  for (auto const& constant_in : constants)
+  {
 
     std::string name_in = constant_in.first;
 
     // Loop every constant already attached to this form
-    for (std::size_t i = 0; i < _constants.size(); ++i){
+    for (std::size_t i = 0; i < _constants.size(); ++i)
+    {
       std::string name = std::get<0>(_constants[i]);
-      if (name == name_in){
+      if (name == name_in)
+      {
         // If user is setting a constant with existing name
         // Just reset this constants with possibly different values
         _constants[i] = std::make_tuple(name, constant_in.second);

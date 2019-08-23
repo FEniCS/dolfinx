@@ -552,3 +552,22 @@ def test_basic_interior_facet_assembly():
     b = dolfin.fem.assemble_vector(L)
     b.assemble()
     assert isinstance(b, PETSc.Vec)
+
+
+def test_basic_assembly_constant():
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
+    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+
+    c = dolfin.function.Constant(mesh, 10.0)
+
+    a = inner(c * u, v) * dx + inner(u, v) * ds
+    L = inner(c, v) * dx + inner(2.0, v) * ds
+
+    # Initial assembly
+    A = dolfin.fem.assemble_matrix(a)
+    A.assemble()
+    assert isinstance(A, PETSc.Mat)
+    b = dolfin.fem.assemble_vector(L)
+    b.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    assert isinstance(b, PETSc.Vec)

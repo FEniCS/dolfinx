@@ -62,6 +62,9 @@ class Form(ufl.Form):
             self._cpp_object.set_coefficient(
                 i, original_coefficients[j]._cpp_object)
 
+        for i, c in enumerate(form.constants()):
+            self._cpp_object.set_constant("w%d" % i, c._cpp_object)
+
         if mesh is None:
             raise RuntimeError("Expecting to find a Mesh in the form.")
 
