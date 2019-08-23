@@ -30,7 +30,7 @@ namespace function
 {
 class Constant;
 class FunctionSpace;
-}
+} // namespace function
 
 namespace mesh
 {
@@ -74,7 +74,7 @@ public:
            function_spaces,
        const FormIntegrals& integrals, const FormCoefficients& coefficients,
        const std::vector<
-           std::tuple<std::string, std::shared_ptr<function::Constant>>>
+           std::pair<std::string, std::shared_ptr<function::Constant>>>
            constants,
        std::shared_ptr<const CoordinateMapping> coord_mapping);
 
@@ -134,8 +134,7 @@ public:
   ///
   /// Names of the constants must agree with their names in UFL file.
   void set_constants(
-      std::map<std::string, std::shared_ptr<function::Constant>>
-          constants);
+      std::map<std::string, std::shared_ptr<function::Constant>> constants);
 
   /// Set constants based on their order (without names)
   ///
@@ -144,8 +143,8 @@ public:
   ///
   /// The order of constants must match their order in
   /// original ufl Form.
-  void set_constants(
-      std::vector<std::shared_ptr<function::Constant>> constants);
+  void
+  set_constants(std::vector<std::shared_ptr<function::Constant>> constants);
 
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
@@ -211,12 +210,12 @@ public:
   const FormIntegrals& integrals() const;
 
   // Access constants (non-const)
-  std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+  std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>&
   constants();
 
   // Access constants (const)
   const std::vector<
-      std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+      std::pair<std::string, std::shared_ptr<function::Constant>>>&
   constants() const;
 
   /// Get coordinate_mapping (experimental)
@@ -230,7 +229,7 @@ private:
   FormCoefficients _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>
+  std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
       _constants;
 
   // Function spaces (one for each argument)

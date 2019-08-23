@@ -28,7 +28,7 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces,
            const FormIntegrals& integrals, const FormCoefficients& coefficients,
            const std::vector<
-               std::tuple<std::string, std::shared_ptr<function::Constant>>>
+               std::pair<std::string, std::shared_ptr<function::Constant>>>
                constants,
            std::shared_ptr<const CoordinateMapping> coord_mapping)
     : _integrals(integrals), _coefficients(coefficients), _constants(constants),
@@ -52,7 +52,7 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
     : Form(function_spaces, FormIntegrals(), FormCoefficients({}),
            std::vector<
-               std::tuple<std::string, std::shared_ptr<function::Constant>>>(),
+               std::pair<std::string, std::shared_ptr<function::Constant>>>(),
            nullptr)
 {
   // Do nothing
@@ -91,13 +91,13 @@ void Form::set_constants(
 
     const auto it = std::find_if(
         _constants.begin(), _constants.end(),
-        [&](const std::tuple<std::string, std::shared_ptr<function::Constant>>&
-                q) { return (std::get<0>(q) == name_in); });
+        [&](const std::pair<std::string, std::shared_ptr<function::Constant>>&
+                q) { return (q.first == name_in); });
 
     if (it == _constants.end())
       throw std::runtime_error("Constant '" + name_in + "' not found in form");
 
-    std::get<1>(*it) = constant_in.second;
+    it->second = constant_in.second;
   }
 }
 //-----------------------------------------------------------------------------
@@ -175,13 +175,13 @@ const fem::FormCoefficients& Form::coefficients() const
   return _coefficients;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>&
 Form::constants()
 {
   return _constants;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>&
 Form::constants() const
 {
   return _constants;

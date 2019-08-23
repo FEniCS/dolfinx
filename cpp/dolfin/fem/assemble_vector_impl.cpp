@@ -87,15 +87,14 @@ void _lift_bc_cells(
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  const std::vector<
-      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+  const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
       constants = a.constants();
 
   std::vector<PetscScalar> constant_values;
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    const std::vector<PetscScalar>& array = std::get<1>(constant)->value;
+    const std::vector<PetscScalar>& array = constant.second->value;
 
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
@@ -232,15 +231,14 @@ void _lift_bc_exterior_facets(
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  const std::vector<
-      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+  const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
       constants = a.constants();
 
   std::vector<PetscScalar> constant_values;
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    const std::vector<PetscScalar>& array = std::get<1>(constant)->value;
+    const std::vector<PetscScalar>& array = constant.second->value;
 
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
@@ -349,15 +347,14 @@ void fem::impl::assemble_vector(
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  const std::vector<
-      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+  const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
       constants = L.constants();
 
   std::vector<PetscScalar> constant_values;
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    const std::vector<PetscScalar>& array = std::get<1>(constant)->value;
+    const std::vector<PetscScalar>& array = constant.second->value;
 
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
