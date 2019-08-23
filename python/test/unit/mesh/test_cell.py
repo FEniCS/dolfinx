@@ -7,7 +7,7 @@
 import numpy
 import pytest
 
-from dolfin import (MPI, Cell, Mesh, UnitCubeMesh, UnitIntervalMesh,
+from dolfin import (MPI, Mesh, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
                     UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType
 from dolfin_utils.test.skips import skip_in_parallel
@@ -16,7 +16,7 @@ from dolfin_utils.test.skips import skip_in_parallel
 @skip_in_parallel
 def test_distance_interval():
     mesh = UnitIntervalMesh(MPI.comm_self, 1)
-    cell = Cell(mesh, 0)
+    cell = MeshEntity(mesh, mesh.topology.dim, 0)
     assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, 0, 0])) == pytest.approx(1.0)
     assert cpp.geometry.squared_distance(cell, numpy.array([0.5, 0, 0])) == pytest.approx(0.0)
 
@@ -24,7 +24,7 @@ def test_distance_interval():
 @skip_in_parallel
 def test_distance_triangle():
     mesh = UnitSquareMesh(MPI.comm_self, 1, 1)
-    cell = Cell(mesh, 1)
+    cell = MeshEntity(mesh, mesh.topology.dim, 1)
     assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, -1.0, 0.0])) == pytest.approx(2.0)
     assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, 0.5, 0.0])) == pytest.approx(1.0)
     assert cpp.geometry.squared_distance(cell, numpy.array([0.5, 0.5, 0.0])) == pytest.approx(0.0)
@@ -33,7 +33,7 @@ def test_distance_triangle():
 @skip_in_parallel
 def test_distance_tetrahedron():
     mesh = UnitCubeMesh(MPI.comm_self, 1, 1, 1)
-    cell = Cell(mesh, 5)
+    cell = MeshEntity(mesh, mesh.topology.dim, 5)
     assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, -1.0, -1.0])) == pytest.approx(3.0)
     assert cpp.geometry.squared_distance(cell, numpy.array([-1.0, 0.5, 0.5])) == pytest.approx(1.0)
     assert cpp.geometry.squared_distance(cell, numpy.array([0.5, 0.5, 0.5])) == pytest.approx(0.0)

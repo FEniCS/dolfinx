@@ -5,9 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "TopologyComputation.h"
-#include "Cell.h"
 #include "Connectivity.h"
 #include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshIterator.h"
 #include "Topology.h"
 #include "cell_types.h"
@@ -95,7 +95,7 @@ compute_entities_by_key_matching(const Mesh& mesh, int dim)
   // Loop over cells to build list of keyed (by vertices) entities
   int entity_counter = 0;
   const std::int32_t ghost_offset_c = mesh.topology().ghost_offset(tdim);
-  for (auto& c : MeshRange<Cell>(mesh, MeshRangeType::ALL))
+  for (auto& c : MeshRange(mesh, tdim, MeshRangeType::ALL))
   {
     // Get vertices from cell
     const std::int32_t* vertices = c.entities(0);
@@ -237,8 +237,8 @@ Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
 
   // Compute number of connections for each e0
   std::vector<std::int32_t> num_connections(topology.size(d0), 0);
-  for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
-    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
+  for (auto& e1 : MeshRange(mesh, d1, MeshRangeType::ALL))
+    for (auto& e0 : EntityRange(e1, d0))
       num_connections[e0.index()]++;
 
   // Compute offsets
@@ -248,8 +248,8 @@ Connectivity compute_from_transpose(const Mesh& mesh, int d0, int d1)
 
   std::vector<std::int32_t> counter(num_connections.size(), 0);
   std::vector<std::int32_t> connections(offsets.back());
-  for (auto& e1 : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
-    for (auto& e0 : EntityRange<MeshEntity>(e1, d0))
+  for (auto& e1 : MeshRange(mesh, d1, MeshRangeType::ALL))
+    for (auto& e0 : EntityRange(e1, d0))
       connections[offsets[e0.index()] + counter[e0.index()]++] = e1.index();
 
   return Connectivity(connections, offsets);
@@ -272,7 +272,7 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
       = mesh::num_cell_vertices(mesh::cell_entity_type(mesh.cell_type, d1));
 
   std::vector<std::int32_t> key(num_verts_d1);
-  for (auto& e : MeshRange<MeshEntity>(mesh, d1, MeshRangeType::ALL))
+  for (auto& e : MeshRange(mesh, d1, MeshRangeType::ALL))
   {
     std::partial_sort_copy(e.entities(0), e.entities(0) + num_verts_d1,
                            key.begin(), key.end());
@@ -289,7 +289,7 @@ Connectivity compute_from_map(const Mesh& mesh, int d0, int d1)
       e_vertices_ref = mesh::get_entity_vertices(cell_type, d1);
   Eigen::Array<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> keys
       = e_vertices_ref;
-  for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
+  for (auto& e : MeshRange(mesh, d0, MeshRangeType::ALL))
   {
     entities.clear();
     const std::int32_t* e0 = e.entities(0);
@@ -419,7 +419,7 @@ void TopologyComputation::compute_connectivity(Mesh& mesh, int d0, int d1)
     // For d0-d1, use indentity connecticity
     std::vector<std::vector<std::size_t>> connectivity_dd(
         topology.size(d0), std::vector<std::size_t>(1));
-    for (auto& e : MeshRange<MeshEntity>(mesh, d0, MeshRangeType::ALL))
+    for (auto& e : MeshRange(mesh, d0, MeshRangeType::ALL))
       connectivity_dd[e.index()][0] = e.index();
     auto connectivity = std::make_shared<Connectivity>(connectivity_dd);
     topology.set_connectivity(connectivity, d0, d1);

@@ -14,7 +14,9 @@
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScMatrix.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/CoordinateDofs.h>
+#include <dolfin/mesh/Geometry.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscdmshell.h>
 #include <petscmat.h>
@@ -72,6 +74,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
 
   // Geometric dimension
   const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
 
   // Get dof coordinates on reference element
   const EigenRowArrayXXd& X = element.dof_reference_coordinates();
@@ -106,7 +109,7 @@ tabulate_coordinates_to_dofs(const function::FunctionSpace& V)
       = dofmap.index_map->size_local() * dofmap.index_map->block_size;
   std::vector<bool> already_visited(local_size, false);
 
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (auto& cell : mesh::MeshRange(mesh, tdim))
   {
     // Get cell coordinates
     const int cell_index = cell.index();
@@ -546,7 +549,7 @@ la::PETScMatrix PETScDMCollection::create_transfer_matrix(
     unsigned int id = found_ids[i];
 
     // Create coarse cell
-    mesh::Cell coarse_cell(meshc, static_cast<std::size_t>(id));
+    mesh::MeshEntity coarse_cell(meshc, tdim, static_cast<std::size_t>(id));
 
     // Get dofs coordinates of the coarse cell
     const int cell_index = coarse_cell.index();

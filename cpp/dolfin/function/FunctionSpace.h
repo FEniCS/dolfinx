@@ -9,7 +9,7 @@
 #include <Eigen/Dense>
 #include <cstddef>
 #include <dolfin/fem/FiniteElement.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <functional>
 #include <map>
 #include <memory>
@@ -150,9 +150,9 @@ public:
   ///
   /// @returns    bool
   ///         True if the function space has the given cell.
-  bool has_cell(const mesh::Cell& cell) const
+  bool has_cell(const mesh::MeshEntity& cell) const
   {
-    return &cell.mesh() == &(*mesh);
+    return &cell.mesh() == mesh.get();
   }
 
   /// Check if function space has given element

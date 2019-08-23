@@ -12,12 +12,10 @@
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshFunction.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
 #include <map>
 #include <utility>
@@ -143,12 +141,14 @@ std::vector<std::int32_t> marked_facets(
   assert(mesh.topology().connectivity(dim, tdim));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(dim, tdim);
-  for (const auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  const int num_facet_vertices = mesh::cell_num_entities(
+      mesh::cell_entity_type(mesh.cell_type, tdim - 1), 0);
+  for (const auto& facet : mesh::MeshRange(mesh, tdim - 1))
   {
     if (connectivity_facet_cell->size_global(facet.index()) == 1)
     {
       const std::int32_t* v = facet.entities(0);
-      for (int i = 0; i != facet.num_entities(0); ++i)
+      for (int i = 0; i < num_facet_vertices; ++i)
       {
         if (boundary_vertex[v[i]] == -1)
         {
@@ -180,13 +180,12 @@ std::vector<std::int32_t> marked_facets(
   EigenArrayXb boundary_marked = mark(x_boundary, true);
   assert(boundary_marked.rows() == x_boundary.rows());
 
-  for (auto& facet : mesh::MeshRange<mesh::Facet>(mesh))
+  for (auto& facet : mesh::MeshRange(mesh, tdim - 1))
   {
-
     // By default, all vertices on this facet are marked
     bool all_vertices_marked = true;
 
-    for (const auto& v : mesh::EntityRange<mesh::Vertex>(facet))
+    for (const auto& v : mesh::EntityRange(facet, 0))
     {
       const std::int32_t idx = v.index();
 
@@ -326,10 +325,9 @@ compute_bc_dofs_topological(const function::FunctionSpace& V,
   for (std::size_t f = 0; f < facets.size(); ++f)
   {
     // Create facet and attached cell
-    const mesh::Facet facet(mesh, facets[f]);
-    assert(facet.num_entities(tdim) > 0);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facets[f]);
     const std::size_t cell_index = facet.entities(tdim)[0];
-    const mesh::Cell cell(mesh, cell_index);
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell dofmap
     const Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dofs

@@ -186,6 +186,7 @@ def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
         for j in range(3):
             for k in range(2):
                 geometry[j, k] = x[c[j], k]
+        b_local.fill(0.0)
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
                ffi.from_buffer(geometry), ffi.from_buffer(orientation),
                ffi.from_buffer(orientation))
@@ -268,15 +269,15 @@ def test_custom_mesh_loop_rank1():
     # Assemble with pure Numba function (two passes, first will include JIT overhead)
     b0 = dolfin.Function(V)
     for i in range(2):
-        with b0.vector().localForm() as b:
+        with b0.vector.localForm() as b:
             b.set(0.0)
             start = time.time()
             assemble_vector(np.asarray(b), (c, pos), geom, dofs)
             end = time.time()
             print("Time (numba, pass {}): {}".format(i, end - start))
 
-    b0.vector().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert(b0.vector().sum() == pytest.approx(1.0))
+    b0.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    assert(b0.vector.sum() == pytest.approx(1.0))
 
     # Test against generated code and general assembler
     v = dolfin.TestFunction(V)
@@ -292,25 +293,25 @@ def test_custom_mesh_loop_rank1():
     start = time.time()
     dolfin.fem.assemble_vector(b1, L)
     end = time.time()
-    print("Time (C++, passs 2):", end - start)
+    print("Time (C++, pass 2):", end - start)
 
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert((b1 - b0.vector()).norm() == pytest.approx(0.0))
+    assert((b1 - b0.vector).norm() == pytest.approx(0.0))
 
     # Assemble using generated tabulate_tensor kernel and Numba assembler
     b3 = dolfin.Function(V)
     ufc_form = dolfin.jit.ffc_jit(L)
     kernel = ufc_form.create_cell_integral(-1).tabulate_tensor
     for i in range(2):
-        with b3.vector().localForm() as b:
+        with b3.vector.localForm() as b:
             b.set(0.0)
             start = time.time()
             assemble_vector_ufc(np.asarray(b), kernel, (c, pos), geom, dofs)
             end = time.time()
             print("Time (numba/cffi, pass {}): {}".format(i, end - start))
 
-    b3.vector().ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
-    assert((b3.vector() - b0.vector()).norm() == pytest.approx(0.0))
+    b3.vector.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+    assert((b3.vector - b0.vector).norm() == pytest.approx(0.0))
 
 
 def test_custom_mesh_loop_ctypes_rank2():

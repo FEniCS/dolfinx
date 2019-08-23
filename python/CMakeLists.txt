@@ -27,7 +27,6 @@ pybind11_add_module(cpp SHARED
   src/io.cpp
   src/la.cpp
   src/log.cpp
-  src/math.cpp
   src/mesh.cpp
   src/nls.cpp
   src/refinement.cpp

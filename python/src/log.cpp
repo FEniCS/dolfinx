@@ -4,7 +4,6 @@
 //
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
-#include "casters.h"
 #include <dolfin/common/log.h>
 #include <dolfin/mesh/Mesh.h>
 #include <memory>

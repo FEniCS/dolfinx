@@ -13,9 +13,8 @@
 #include <dolfin/common/log.h>
 #include <dolfin/common/types.h>
 #include <dolfin/fem/DofMap.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <dolfin/mesh/cell_types.h>
 #include <numeric>
 #include <set>
@@ -319,7 +318,8 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   Graph graph(n);
 
   // Build graph
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  const int tdim = mesh.topology().dim();
+  for (auto& cell : mesh::MeshRange(mesh, tdim))
   {
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> dofs0
         = dofmap0.cell_dofs(cell.index());
@@ -356,7 +356,7 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
 
   // Build graph
   for (auto& vertex_entity :
-       mesh::MeshRange<mesh::MeshEntity>(mesh, coloring_type[0]))
+       mesh::MeshRange(mesh, coloring_type[0]))
   {
     const std::size_t vertex_entity_index = vertex_entity.index();
 
@@ -373,7 +373,7 @@ dolfin::graph::Graph dolfin::graph::GraphBuilder::local_graph(
         const mesh::MeshEntity entity(mesh, coloring_type[level - 1],
                                       *entity_index);
         for (auto& neighbor :
-             mesh::EntityRange<mesh::MeshEntity>(entity, coloring_type[level]))
+             mesh::EntityRange(entity, coloring_type[level]))
         {
           entity_list1.insert(neighbor.index());
         }
@@ -403,13 +403,13 @@ dolfin::graph::GraphBuilder::local_graph(const mesh::Mesh& mesh,
   Graph graph(num_vertices);
 
   // Build graph
-  for (auto& colored_entity : mesh::MeshRange<mesh::MeshEntity>(mesh, dim0))
+  for (auto& colored_entity : mesh::MeshRange(mesh, dim0))
   {
     const std::int32_t colored_entity_index = colored_entity.index();
     for (auto& entity :
-         mesh::EntityRange<mesh::MeshEntity>(colored_entity, dim1))
+         mesh::EntityRange(colored_entity, dim1))
     {
-      for (auto& neighbor : mesh::EntityRange<mesh::MeshEntity>(entity, dim0))
+      for (auto& neighbor : mesh::EntityRange(entity, dim0))
       {
         if (colored_entity_index != neighbor.index())
           graph[colored_entity_index].insert(neighbor.index());

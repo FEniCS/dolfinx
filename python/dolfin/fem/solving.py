@@ -135,15 +135,19 @@ def _solve_varproblem(*args, **kwargs):
         A.assemble()
 
         comm = L._cpp_object.mesh().mpi_comm()
-        solver = cpp.la.PETScKrylovSolver(comm)
+        ksp = PETSc.KSP().create(comm)
+        ksp.setOperators(A)
 
-        solver.set_options_prefix("dolfin_solve_")
+        ksp.setOptionsPrefix("dolfin_solve_")
+        opts = PETSc.Options()
+        opts.prefixPush("dolfin_solve_")
         for k, v in petsc_options.items():
-            cpp.la.PETScOptions.set("dolfin_solve_" + k, v)
-        solver.set_from_options()
+            opts[k] = v
+        opts.prefixPop()
 
-        solver.set_operator(A)
-        solver.solve(u.vector(), b)
+        ksp.setFromOptions()
+        ksp.solve(b, u.vector)
+        ksp.view()
 
     # Solve nonlinear variational problem
     else:

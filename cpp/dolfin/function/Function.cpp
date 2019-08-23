@@ -18,9 +18,11 @@
 #include <dolfin/geometry/BoundingBoxTree.h>
 #include <dolfin/la/PETScVector.h>
 #include <dolfin/la/utils.h>
+#include <dolfin/mesh/CoordinateDofs.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 #include <utility>
 #include <vector>
@@ -156,6 +158,7 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
   assert(_function_space);
   assert(_function_space->mesh);
   const mesh::Mesh& mesh = *_function_space->mesh;
+  const int tdim = mesh.topology().dim();
 
   // Find the cell that contains x
   const int gdim = x.cols();
@@ -185,7 +188,7 @@ void Function::eval(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
     }
 
     // Create cell that contains point
-    const mesh::Cell cell(mesh, id);
+    const mesh::MeshEntity cell(mesh, tdim, id);
 
     // Call evaluate function
     eval(values.row(i), x.row(i), cell);
@@ -199,7 +202,7 @@ void Function::eval(
     const Eigen::Ref<const Eigen::Array<double, Eigen::Dynamic, Eigen::Dynamic,
                                         Eigen::RowMajor>>
         x,
-    const mesh::Cell& cell) const
+    const mesh::MeshEntity& cell) const
 {
   // FIXME: This function needs to be changed to handle an arbitrary
   // number of points for efficiency
@@ -213,6 +216,10 @@ void Function::eval(
         "Cell passed to Function::eval is from a different mesh.");
   }
 
+  const int gdim = mesh.geometry().dim();
+  const int tdim = mesh.topology().dim();
+  assert(cell.dim() == tdim);
+
   assert(x.rows() == values.rows());
   assert(_function_space->element);
   const fem::FiniteElement& element = *_function_space->element;
@@ -220,9 +227,6 @@ void Function::eval(
   // Create work vector for expansion coefficients
   Eigen::Matrix<PetscScalar, 1, Eigen::Dynamic> coefficients(
       element.space_dimension());
-
-  const int gdim = mesh.geometry().dim();
-  const int tdim = mesh.topology().dim();
 
   // Cell coordinates (re-allocated inside function for thread safety)
   // Prepare cell geometry
@@ -321,6 +325,14 @@ int Function::value_rank() const
   return _function_space->element->value_rank();
 }
 //-----------------------------------------------------------------------------
+int Function::value_size() const
+{
+  int size = 1;
+  for (int i = 0; i < value_rank(); ++i)
+    size *= value_dimension(i);
+  return size;
+}
+//-----------------------------------------------------------------------------
 int Function::value_dimension(int i) const
 {
   assert(_function_space);
@@ -328,27 +340,29 @@ int Function::value_dimension(int i) const
   return _function_space->element->value_dimension(i);
 }
 //-----------------------------------------------------------------------------
-std::vector<std::size_t> Function::value_shape() const
+std::vector<int> Function::value_shape() const
 {
   assert(_function_space);
   assert(_function_space->element);
-  std::vector<std::size_t> _shape(this->value_rank(), 1);
+  std::vector<int> _shape(this->value_rank(), 1);
   for (std::size_t i = 0; i < _shape.size(); ++i)
     _shape[i] = this->value_dimension(i);
   return _shape;
 }
 //-----------------------------------------------------------------------------
 void Function::restrict(
-    PetscScalar* w, const mesh::Cell& dolfin_cell,
+    PetscScalar* w, const mesh::MeshEntity& cell,
     const Eigen::Ref<const EigenRowArrayXXd>& coordinate_dofs) const
 {
   assert(w);
   assert(_function_space);
   assert(_function_space->dofmap);
+  assert(_function_space->mesh);
+  assert(_function_space->mesh->topology().dim() == cell.dim());
 
   // Get dofmap for cell
   const fem::DofMap& dofmap = *_function_space->dofmap;
-  auto dofs = dofmap.cell_dofs(dolfin_cell.index());
+  auto dofs = dofmap.cell_dofs(cell.index());
 
   // Pick values from vector(s)
   la::VecReadWrapper v(_vector.vec());
@@ -358,19 +372,13 @@ void Function::restrict(
 }
 //-----------------------------------------------------------------------------
 Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-Function::compute_point_values(const mesh::Mesh& mesh) const
+Function::compute_point_values() const
 {
   assert(_function_space);
   assert(_function_space->mesh);
+  const mesh::Mesh& mesh = *_function_space->mesh;
 
-  // Check that the mesh matches. Notice that the hash is only compared
-  // if the pointers are not matching.
-  if (&mesh != _function_space->mesh.get()
-      and mesh.hash() != _function_space->mesh->hash())
-  {
-    throw std::runtime_error(
-        "Cannot interpolate function values at points. Non-matching mesh");
-  }
+  const int tdim = mesh.topology().dim();
 
   // Compute in tensor (one for scalar function, . . .)
   const std::size_t value_size_loc = value_size();
@@ -399,7 +407,7 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   EigenRowArrayXXd x(num_dofs_g, mesh.geometry().dim());
   Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
       values(num_dofs_g, value_size_loc);
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh, mesh::MeshRangeType::ALL))
+  for (auto& cell : mesh::MeshRange(mesh, tdim, mesh::MeshRangeType::ALL))
   {
     // Get coordinates for all points in cell
     const int cell_index = cell.index();
@@ -419,21 +427,6 @@ Function::compute_point_values(const mesh::Mesh& mesh) const
   }
 
   return point_values;
-}
-//-----------------------------------------------------------------------------
-Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>
-Function::compute_point_values() const
-{
-  assert(_function_space);
-  assert(_function_space->mesh);
-  return compute_point_values(*_function_space->mesh);
-}
-//-----------------------------------------------------------------------------
-std::size_t Function::value_size() const
-{
-  std::size_t size = 1;
-  for (int i = 0; i < value_rank(); ++i)
-    size *= value_dimension(i);
-  return size;
+
 }
 //-----------------------------------------------------------------------------

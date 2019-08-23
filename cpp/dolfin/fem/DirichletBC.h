@@ -184,12 +184,6 @@ public:
   void mark_dofs(std::vector<bool>& markers) const;
 
 private:
-  // // Compute boundary values dofs (geometrical approach)
-  // static std::set<PetscInt>
-  // compute_bc_dofs_geometric(const function::FunctionSpace& V,
-  //                           const function::FunctionSpace* Vg,
-  //                           const std::vector<std::int32_t>& facets);
-
   // The function space (possibly a sub function space)
   std::shared_ptr<const function::FunctionSpace> _function_space;
 

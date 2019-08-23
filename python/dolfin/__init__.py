@@ -42,16 +42,13 @@ import dolfin.log
 from dolfin.generation import (IntervalMesh, BoxMesh, RectangleMesh,
                                UnitIntervalMesh, UnitSquareMesh, UnitCubeMesh)
 
-from .cpp.mesh import (Mesh, Topology, Geometry, Cell, Facet, Face, Edge,
-                       Vertex, MeshEntity, MeshEntities,
-                       EntityRange, MeshQuality)
+from .cpp.mesh import Mesh, Topology, Geometry, MeshEntity, EntityRange, MeshQuality
 
 from .cpp.nls import (NonlinearProblem, NewtonSolver)
 
 from .fem.form import Form
 from .fem.dirichletbc import DirichletBC
 from .fem.interpolation import interpolate
-from .fem.projection import project
 from .fem.solving import solve
 
 from .function.functionspace import (FunctionSpace, VectorFunctionSpace,

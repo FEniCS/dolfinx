@@ -14,10 +14,11 @@
 #include "utils.h"
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/log.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
 #include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
+#include <dolfin/mesh/utils.h>
 
 using namespace dolfin;
 using namespace dolfin::geometry;
@@ -63,7 +64,7 @@ BoundingBoxTree::BoundingBoxTree(const mesh::Mesh& mesh, int tdim)
   // Create bounding boxes for all entities (leaves)
   const unsigned int num_leaves = mesh.num_entities(tdim);
   std::vector<double> leaf_bboxes(2 * _gdim * num_leaves);
-  for (auto& it : mesh::MeshRange<mesh::MeshEntity>(mesh, tdim))
+  for (auto& it : mesh::MeshRange(mesh, tdim))
   {
     compute_bbox_of_entity(leaf_bboxes.data() + 2 * _gdim * it.index(), it,
                            _gdim);
@@ -378,7 +379,7 @@ void BoundingBoxTree::_compute_collisions_point(
     if (mesh)
     {
       // Get cell
-      mesh::Cell cell(*mesh, entity_index);
+      mesh::MeshEntity cell(*mesh, mesh->topology().dim(), entity_index);
       if (CollisionPredicates::collides(cell, point))
         entities.push_back(entity_index);
     }
@@ -425,8 +426,8 @@ void BoundingBoxTree::_compute_collisions_tree(
     if (mesh_A)
     {
       assert(mesh_B);
-      mesh::Cell cell_A(*mesh_A, entity_index_A);
-      mesh::Cell cell_B(*mesh_B, entity_index_B);
+      mesh::MeshEntity cell_A(*mesh_A, mesh_A->topology().dim(), entity_index_A);
+      mesh::MeshEntity cell_B(*mesh_B, mesh_B->topology().dim(), entity_index_B);
       if (CollisionPredicates::collides(cell_A, cell_B))
       {
         entities_A.push_back(entity_index_A);
@@ -539,7 +540,7 @@ unsigned int BoundingBoxTree::_compute_first_entity_collision(
     // Get entity (child_1 denotes entity index for leaves)
     assert(tree._tdim == mesh.topology().dim());
     const unsigned int entity_index = bbox[1];
-    mesh::Cell cell(mesh, entity_index);
+    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
     // Check entity
 
@@ -586,7 +587,7 @@ void BoundingBoxTree::_compute_closest_entity(const BoundingBoxTree& tree,
     // Get entity (child_1 denotes entity index for leaves)
     assert(tree._tdim == mesh.topology().dim());
     const unsigned int entity_index = bbox[1];
-    mesh::Cell cell(mesh, entity_index);
+    mesh::MeshEntity cell(mesh, mesh.topology().dim(), entity_index);
 
     // If entity is closer than best result so far, then return it
     const double r2 = squared_distance(cell, point);
@@ -646,9 +647,15 @@ void BoundingBoxTree::build_point_search_tree(const mesh::Mesh& mesh) const
   LOG(INFO) << "Building point search tree to accelerate distance queries.";
 
   // Create list of midpoints for all cells
-  std::vector<Eigen::Vector3d> points;
-  for (auto& cell : mesh::MeshRange<mesh::Cell>(mesh))
-    points.push_back(mesh::midpoint(cell));
+  const int dim = mesh.topology().dim();
+  Eigen::Array<int, Eigen::Dynamic, 1> entities(mesh.num_entities(dim));
+  std::iota(entities.data(), entities.data() + entities.rows(), 0);
+  Eigen::Array<double, Eigen::Dynamic, 3, Eigen::RowMajor> midpoints
+      = mesh::midpoints(mesh, dim, entities);
+
+  std::vector<Eigen::Vector3d> points(entities.rows());
+  for (std::size_t i = 0; i < points.size(); ++i)
+    points[i] = midpoints.row(i);
 
   // Build tree
   _point_search_tree
@@ -665,7 +672,9 @@ void BoundingBoxTree::compute_bbox_of_entity(double* b,
 
   // Get mesh entity data
   const mesh::Geometry& geometry = entity.mesh().geometry();
-  const int num_vertices = entity.num_entities(0);
+  const mesh::CellType entity_type
+      = mesh::cell_entity_type(entity.mesh().cell_type, entity.dim());
+  const int num_vertices = mesh::cell_num_entities(entity_type, 0);
   const std::int32_t* vertices = entity.entities(0);
   assert(num_vertices >= 2);
 

@@ -12,9 +12,8 @@
 #include <dolfin/common/IndexMap.h>
 #include <dolfin/common/MPI.h>
 #include <dolfin/common/types.h>
-#include <dolfin/mesh/Cell.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
-#include <dolfin/mesh/Vertex.h>
 
 using namespace dolfin;
 using namespace dolfin::fem;
@@ -280,7 +279,8 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
     entity_dofs_local.push_back(element_dof_layout->entity_dofs(dim, i));
 
   // Iterate over cells
-  for (auto& c : mesh::MeshRange<mesh::Cell>(mesh))
+  const int tdim = mesh.topology().dim();
+  for (auto& c : mesh::MeshRange(mesh, tdim))
   {
     // Get local-to-global dofmap for cell
     Eigen::Map<const Eigen::Array<PetscInt, Eigen::Dynamic, 1>> cell_dof_list
@@ -288,7 +288,7 @@ Eigen::Array<PetscInt, Eigen::Dynamic, 1> DofMap::dofs(const mesh::Mesh& mesh,
 
     // Loop over all entities of dimension dim
     unsigned int local_index = 0;
-    for (auto& e : mesh::EntityRange<mesh::MeshEntity>(c, dim))
+    for (auto& e : mesh::EntityRange(c, dim))
     {
       // Get dof index and add to list
       for (Eigen::Index i = 0; i < entity_dofs_local[local_index].size(); ++i)

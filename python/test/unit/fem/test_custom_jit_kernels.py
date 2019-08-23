@@ -98,7 +98,7 @@ def test_coefficient():
     V = FunctionSpace(mesh, ("Lagrange", 1))
     DG0 = FunctionSpace(mesh, ("DG", 0))
     vals = Function(DG0)
-    vals.vector().set(2.0)
+    vals.vector.set(2.0)
 
     L = cpp.fem.Form([V._cpp_object])
     L.set_tabulate_cell(-1, tabulate_tensor_b_coeff.address)

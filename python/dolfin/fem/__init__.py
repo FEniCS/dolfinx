@@ -17,7 +17,6 @@ from dolfin.fem.form import Form
 from dolfin.fem.formmanipulations import (derivative, adjoint, increase_order,
                                           tear)
 from dolfin.fem.interpolation import interpolate
-from dolfin.fem.projection import project
 from dolfin.fem.solving import solve
 
 

@@ -10,9 +10,10 @@
 #include <dolfin/common/types.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
-#include <dolfin/mesh/Cell.h>
-#include <dolfin/mesh/Facet.h>
+#include <dolfin/mesh/CoordinateDofs.h>
+#include <dolfin/mesh/Geometry.h>
 #include <dolfin/mesh/Mesh.h>
+#include <dolfin/mesh/MeshEntity.h>
 #include <dolfin/mesh/MeshIterator.h>
 #include <petscsys.h>
 
@@ -26,7 +27,7 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   const mesh::Mesh& mesh = *M.mesh();
 
   // Prepare coefficients
-  const FormCoefficients& coefficients = M.coeffs();
+  const FormCoefficients& coefficients = M.coefficients();
   std::vector<const function::Function*> coeff_fn(coefficients.size());
   for (int i = 0; i < coefficients.size(); ++i)
     coeff_fn[i] = coefficients.get(i).get();
@@ -95,10 +96,10 @@ PetscScalar fem::impl::assemble_cells(
 
   // Iterate over all cells
   const int orientation = 0;
-  PetscScalar cell_value, value(0);
+  PetscScalar value(0);
   for (const auto& cell_index : active_cells)
   {
-    const mesh::Cell cell(mesh, cell_index);
+    const mesh::MeshEntity cell(mesh, tdim, cell_index);
 
     // Get cell coordinates/geometry
     for (int i = 0; i < num_dofs_g; ++i)
@@ -112,9 +113,8 @@ PetscScalar fem::impl::assemble_cells(
                                 coordinate_dofs);
     }
 
-    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), nullptr,
+    fn(&value, coeff_array.data(), coordinate_dofs.data(), nullptr,
        &orientation);
-    value += cell_value;
   }
 
   return value;
@@ -150,15 +150,15 @@ PetscScalar fem::impl::assemble_exterior_facets(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(offsets.back());
 
   // Iterate over all facets
-  PetscScalar cell_value, value(0);
+  PetscScalar value(0);
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // TODO: check ghosting sanity?
 
     // Create attached cell
-    const mesh::Cell cell(mesh, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell(mesh, tdim, facet.entities(tdim)[0]);
 
     // Get local index of facet with respect to the cell
     const int local_facet = cell.index(facet);
@@ -177,9 +177,8 @@ PetscScalar fem::impl::assemble_exterior_facets(
                                 coordinate_dofs);
     }
 
-    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), &local_facet,
+    fn(&value, coeff_array.data(), coordinate_dofs.data(), &local_facet,
        &orient);
-    value += cell_value;
   }
 
   return value;
@@ -215,16 +214,16 @@ PetscScalar fem::impl::assemble_interior_facets(
   Eigen::Array<PetscScalar, Eigen::Dynamic, 1> coeff_array(2 * offsets.back());
 
   // Iterate over all facets
-  PetscScalar cell_value, value(0);
+  PetscScalar value(0);
   for (const auto& facet_index : active_facets)
   {
-    const mesh::Facet facet(mesh, facet_index);
+    const mesh::MeshEntity facet(mesh, tdim - 1, facet_index);
 
     // TODO: check ghosting sanity?
 
     // Create attached cell
-    const mesh::Cell cell0(mesh, facet.entities(tdim)[0]);
-    const mesh::Cell cell1(mesh, facet.entities(tdim)[1]);
+    const mesh::MeshEntity cell0(mesh, tdim, facet.entities(tdim)[0]);
+    const mesh::MeshEntity cell1(mesh, tdim, facet.entities(tdim)[1]);
 
     // Get local index of facet with respect to the cell
     const int local_facet[2] = {cell0.index(facet), cell1.index(facet)};
@@ -259,9 +258,7 @@ PetscScalar fem::impl::assemble_interior_facets(
                                 cell1, coordinate_dofs1);
     }
 
-    fn(&cell_value, coeff_array.data(), coordinate_dofs.data(), local_facet,
-       orient);
-    value += cell_value;
+    fn(&value, coeff_array.data(), coordinate_dofs.data(), local_facet, orient);
   }
 
   return value;

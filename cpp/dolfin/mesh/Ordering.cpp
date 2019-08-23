@@ -5,8 +5,9 @@
 // SPDX-License-Identifier:    LGPL-3.0-or-later
 
 #include "Ordering.h"
-#include "Cell.h"
+#include "CoordinateDofs.h"
 #include "Mesh.h"
+#include "MeshEntity.h"
 #include "MeshIterator.h"
 #include "cell_types.h"
 #include <array>
@@ -54,7 +55,7 @@ bool increasing(const int n, const std::int32_t* v0, const std::int32_t* v1,
   return w0 < w1;
 }
 //-----------------------------------------------------------------------------
-void sort_1_0(mesh::Connectivity& connect_1_0, const mesh::Cell& cell,
+void sort_1_0(mesh::Connectivity& connect_1_0, const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_edges)
 {
@@ -71,7 +72,7 @@ void sort_1_0(mesh::Connectivity& connect_1_0, const mesh::Cell& cell,
   }
 }
 //-----------------------------------------------------------------------------
-void sort_2_0(mesh::Connectivity& connect_2_0, const mesh::Cell& cell,
+void sort_2_0(mesh::Connectivity& connect_2_0, const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_faces)
 {
@@ -90,7 +91,7 @@ void sort_2_0(mesh::Connectivity& connect_2_0, const mesh::Cell& cell,
 //-----------------------------------------------------------------------------
 void sort_2_1(mesh::Connectivity& connect_2_1,
               const mesh::Connectivity& connect_2_0,
-              const mesh::Connectivity& connect_1_0, const mesh::Cell& cell,
+              const mesh::Connectivity& connect_1_0, const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices,
               const int num_faces)
 {
@@ -132,7 +133,7 @@ void sort_2_1(mesh::Connectivity& connect_2_1,
   }
 }
 //-----------------------------------------------------------------------------
-void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::Cell& cell,
+void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
   std::int32_t* cell_vertices = connect_3_0.connections(cell.index());
@@ -143,7 +144,7 @@ void sort_3_0(mesh::Connectivity& connect_3_0, const mesh::Cell& cell,
 }
 //-----------------------------------------------------------------------------
 void sort_3_1(mesh::Connectivity& connect_3_1,
-              const mesh::Connectivity& connect_1_0, const mesh::Cell& cell,
+              const mesh::Connectivity& connect_1_0, const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
   // Get cell vertices and edge numbers
@@ -183,7 +184,7 @@ void sort_3_1(mesh::Connectivity& connect_3_1,
 }
 //-----------------------------------------------------------------------------
 void sort_3_2(mesh::Connectivity& connect_3_2,
-              const mesh::Connectivity& connect_2_0, const mesh::Cell& cell,
+              const mesh::Connectivity& connect_2_0, const mesh::MeshEntity& cell,
               const std::vector<std::int64_t>& global_vertex_indices)
 {
   // Get cell vertices and facet numbers
@@ -215,7 +216,7 @@ void sort_3_2(mesh::Connectivity& connect_3_2,
 //-----------------------------------------------------------------------------
 bool ordered_cell_simplex(
     const std::vector<std::int64_t>& global_vertex_indices,
-    const mesh::Cell& cell)
+    const mesh::MeshEntity& cell)
 {
   // Get mesh topology
   const mesh::Topology& topology = cell.mesh().topology();
@@ -334,7 +335,7 @@ void mesh::Ordering::order_simplex(mesh::Mesh& mesh)
   }
 
   // Iterate over all cells
-  for (mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
   {
     // Sort i - j for i > j: 1 - 0, 2 - 0, 2 - 1, 3 - 0, 3 - 1, 3 - 2
 
@@ -397,7 +398,7 @@ bool mesh::Ordering::is_ordered_simplex(const mesh::Mesh& mesh)
       = mesh.topology().global_indices(0);
 
   // Check if all cells are ordered
-  for (const mesh::Cell& cell : mesh::MeshRange<mesh::Cell>(mesh))
+  for (const mesh::MeshEntity& cell : mesh::MeshRange(mesh, tdim))
   {
     if (!ordered_cell_simplex(global_vertex_indices, cell))
       return false;

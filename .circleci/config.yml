@@ -183,6 +183,9 @@ jobs:
           name: Login to quay.io
           command: echo ${QUAYIO_TOKEN} | docker login -u ${QUAYIO_USERNAME} --password-stdin quay.io
       - run:
+          name: Build base Docker image
+          command: docker build --build-arg MAKEFLAGS='-j3' --target base .
+      - run:
           name: Build and push dev-env-real Docker image tag dev-env-real
           command: docker build --build-arg MAKEFLAGS='-j3' --target dev-env-real -t quay.io/fenicsproject/dolfinx:dev-env-real . && docker push quay.io/fenicsproject/dolfinx:dev-env-real
       - run:

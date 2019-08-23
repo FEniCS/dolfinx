@@ -7,8 +7,7 @@
 
 import numpy
 
-from dolfin import (MPI, MeshEntity, UnitCubeMesh, UnitIntervalMesh,
-                    UnitSquareMesh, cpp)
+from dolfin import MPI, UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh
 from dolfin.geometry import BoundingBoxTree
 from dolfin_utils.test.skips import skip_in_parallel
 
@@ -28,22 +27,17 @@ def test_compute_collisions_point_1d():
         assert set(entities) == reference[dim]
 
 
-@skip_in_parallel
-def test_compute_collisions_point_2d():
-
-    #    reference = {1: set([226]),
-    #                 2: set([136, 137])}
-
-    p = numpy.array([0.3, 0.3, 0.0])
-    mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
-    for dim in range(1, 3):
-        tree = BoundingBoxTree(mesh, mesh.topology.dim)
-        entities = tree.compute_collisions_point(p)
-        for e in entities:
-            mp = cpp.mesh.midpoint(MeshEntity(mesh, dim, e))
-            x = (mp[0], mp[1])
-            print("test: {}".format(x))
-        # assert set(entities) == reference[dim]
+# @skip_in_parallel
+# def test_compute_collisions_point_2d():
+#     reference = {1: set([226]),
+#                  2: set([136, 137])}
+#     p = numpy.array([0.3, 0.3, 0.0])
+#     mesh = UnitSquareMesh(MPI.comm_world, 16, 16)
+#     for dim in range(1, 3):
+#         tree = BoundingBoxTree(mesh, mesh.topology.dim)
+#         entities = tree.compute_collisions_point(p)
+#         mp = cpp.mesh.midpoints(mesh, dim, entities)
+#         assert set(entities) == reference[dim]
 
 
 @skip_in_parallel
