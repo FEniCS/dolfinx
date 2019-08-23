@@ -46,23 +46,26 @@ def test_assemble_functional():
 
 def test_assemble_derivatives():
     """ This test checks the original_coefficient_positions, which may change
-    under differentiation (some coefficients are eliminated) """
+    under differentiation (some coefficients and constants are eliminated) """
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     Q = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.Function(Q)
     v = dolfin.TestFunction(Q)
     du = dolfin.TrialFunction(Q)
     b = dolfin.Function(Q)
+    c1 = dolfin.function.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
+    c2 = dolfin.function.Constant(mesh, 2.0)
+
     with b.vector.localForm() as b_local:
         b_local.set(2.0)
 
-    # derivative eliminates 'u'
-    L = b * inner(u, v) * dx
+    # derivative eliminates 'u' and 'c1'
+    L = ufl.inner(c1, c1) * v * dx + c2 * b * inner(u, v) * dx
     a = derivative(L, u, du)
     A1 = dolfin.fem.assemble_matrix(a)
     A1.assemble()
 
-    a = b * inner(du, v) * dx
+    a = c2 * b * inner(du, v) * dx
     A2 = dolfin.fem.assemble_matrix(a)
     A2.assemble()
 
