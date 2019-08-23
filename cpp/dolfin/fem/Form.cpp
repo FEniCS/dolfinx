@@ -87,20 +87,17 @@ void Form::set_constants(
   // Loop every constant that user wants to attach
   for (auto const& constant_in : constants)
   {
-
     std::string name_in = constant_in.first;
 
-    // Loop every constant already attached to this form
-    for (std::size_t i = 0; i < _constants.size(); ++i)
-    {
-      std::string name = std::get<0>(_constants[i]);
-      if (name == name_in)
-      {
-        // If user is setting a constant with existing name
-        // Just reset this constants with possibly different values
-        _constants[i] = std::make_tuple(name, constant_in.second);
-      }
-    }
+    const auto it = std::find_if(
+        _constants.begin(), _constants.end(),
+        [&](const std::tuple<std::string, std::shared_ptr<function::Constant>>&
+                q) { return (std::get<0>(q) == name_in); });
+
+    if (it == _constants.end())
+      throw std::runtime_error("Constant '" + name_in + "' not found in form");
+
+    std::get<1>(*it) = constant_in.second;
   }
 }
 //-----------------------------------------------------------------------------
