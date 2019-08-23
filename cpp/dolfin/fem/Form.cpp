@@ -84,11 +84,11 @@ int Form::original_coefficient_position(int i) const
 void Form::set_constants(
     std::map<std::string, std::shared_ptr<function::Constant>> constants)
 {
-  // Loop every constant that user wants to attach
   for (auto const& constant_in : constants)
   {
     std::string name_in = constant_in.first;
 
+    // Find matching string in existing constants
     const auto it = std::find_if(
         _constants.begin(), _constants.end(),
         [&](const std::pair<std::string, std::shared_ptr<function::Constant>>&
@@ -110,7 +110,7 @@ void Form::set_constants(
   // Loop every constant that user wants to attach
   for (std::size_t i = 0; i < constants.size(); ++i)
   {
-    // In this case the constants doesn't have a name
+    // In this case, the constants don't have names
     _constants[i] = std::make_tuple("", constants[i]);
   }
 }
