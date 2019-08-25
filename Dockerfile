@@ -150,7 +150,7 @@ WORKDIR /tmp
 # Install PETSc and SLEPc with real types.
 RUN apt-get -qq update && \
     apt-get -y install bison flex python && \
-    wget -nc --quiet https://bitbucket.org/petsc/petsc/get/v${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
+    wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
     ./configure \
@@ -213,7 +213,7 @@ WORKDIR /tmp
 # Install PETSc and SLEPc with complex scalar types
 RUN apt-get -qq update && \
     apt-get -y install bison flex python && \
-    wget -nc --quiet https://bitbucket.org/petsc/petsc/get/v${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
+    wget -nc --quiet http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz -O petsc-${PETSC_VERSION}.tar.gz && \
     mkdir -p petsc-src && tar -xf petsc-${PETSC_VERSION}.tar.gz -C petsc-src --strip-components 1 && \
     cd petsc-src && \
     ./configure \
