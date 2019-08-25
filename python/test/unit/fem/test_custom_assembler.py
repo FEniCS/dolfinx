@@ -186,7 +186,6 @@ def assemble_vector_ufc(b, kernel, mesh, x, dofmap):
         for j in range(3):
             for k in range(2):
                 geometry[j, k] = x[c[j], k]
-        b_local.fill(0.0)
         kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
                ffi.from_buffer(geometry), ffi.from_buffer(orientation),
                ffi.from_buffer(orientation))
@@ -293,7 +292,7 @@ def test_custom_mesh_loop_rank1():
     start = time.time()
     dolfin.fem.assemble_vector(b1, L)
     end = time.time()
-    print("Time (C++, pass 2):", end - start)
+    print("Time (C++, passs 2):", end - start)
 
     b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
     assert((b1 - b0.vector).norm() == pytest.approx(0.0))
