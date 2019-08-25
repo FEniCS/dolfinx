@@ -129,7 +129,7 @@ public:
 
   /// Set constants based on their names
   ///
-  /// This method is used in command-line workflow, when users sets
+  /// This method is used in command-line workflow, when users set
   /// constants to the form in cpp file.
   ///
   /// Names of the constants must agree with their names in UFL file.
@@ -140,7 +140,8 @@ public:
   /// Set constants based on their order (without names)
   ///
   /// This method is used in python workflow, when constants
-  /// are automatically attached to the form based on their order.
+  /// are automatically attached to the form based on their order
+  /// in the original form.
   ///
   /// The order of constants must match their order in
   /// original ufl Form.

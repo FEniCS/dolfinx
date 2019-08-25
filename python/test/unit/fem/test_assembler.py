@@ -46,7 +46,7 @@ def test_assemble_functional():
 
 def test_assemble_derivatives():
     """ This test checks the original_coefficient_positions, which may change
-    under differentiation (some coefficients and constants are eliminated) """
+    under differentiation (some coefficients and constants are eliminated)"""
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     Q = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.Function(Q)
