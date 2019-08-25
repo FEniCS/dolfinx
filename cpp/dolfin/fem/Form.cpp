@@ -28,7 +28,7 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces,
            const FormIntegrals& integrals, const FormCoefficients& coefficients,
            const std::vector<
-               std::tuple<std::string, std::shared_ptr<function::Constant>>>
+               std::pair<std::string, std::shared_ptr<function::Constant>>>
                constants,
            std::shared_ptr<const CoordinateMapping> coord_mapping)
     : _integrals(integrals), _coefficients(coefficients), _constants(constants),
@@ -52,7 +52,7 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
     : Form(function_spaces, FormIntegrals(), FormCoefficients({}),
            std::vector<
-               std::tuple<std::string, std::shared_ptr<function::Constant>>>(),
+               std::pair<std::string, std::shared_ptr<function::Constant>>>(),
            nullptr)
 {
   // Do nothing
@@ -84,23 +84,20 @@ int Form::original_coefficient_position(int i) const
 void Form::set_constants(
     std::map<std::string, std::shared_ptr<function::Constant>> constants)
 {
-  // Loop every constant that user wants to attach
   for (auto const& constant_in : constants)
   {
-
     std::string name_in = constant_in.first;
 
-    // Loop every constant already attached to this form
-    for (std::size_t i = 0; i < _constants.size(); ++i)
-    {
-      std::string name = std::get<0>(_constants[i]);
-      if (name == name_in)
-      {
-        // If user is setting a constant with existing name
-        // Just reset this constants with possibly different values
-        _constants[i] = std::make_tuple(name, constant_in.second);
-      }
-    }
+    // Find matching string in existing constants
+    const auto it = std::find_if(
+        _constants.begin(), _constants.end(),
+        [&](const std::pair<std::string, std::shared_ptr<function::Constant>>&
+                q) { return (q.first == name_in); });
+
+    if (it == _constants.end())
+      throw std::runtime_error("Constant '" + name_in + "' not found in form");
+
+    it->second = constant_in.second;
   }
 }
 //-----------------------------------------------------------------------------
@@ -113,8 +110,8 @@ void Form::set_constants(
   // Loop every constant that user wants to attach
   for (std::size_t i = 0; i < constants.size(); ++i)
   {
-    // In this case the constants doesn't have a name
-    _constants[i] = std::make_tuple("", constants[i]);
+    // In this case, the constants don't have names
+    _constants[i] = std::make_pair("", constants[i]);
   }
 }
 //-----------------------------------------------------------------------------
@@ -178,13 +175,13 @@ const fem::FormCoefficients& Form::coefficients() const
   return _coefficients;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>&
 Form::constants()
 {
   return _constants;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>&
+const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>&
 Form::constants() const
 {
   return _constants;

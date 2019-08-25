@@ -49,15 +49,14 @@ void fem::impl::assemble_matrix(Mat A, const Form& a,
   std::vector<int> c_offsets = coefficients.offsets();
 
   // Prepare constants
-  const std::vector<
-      std::tuple<std::string, std::shared_ptr<function::Constant>>>
+  const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
       constants = a.constants();
 
   std::vector<PetscScalar> constant_values;
   for (auto const& constant : constants)
   {
     // Get underlying data array of this Constant
-    const std::vector<PetscScalar>& array = std::get<1>(constant)->value;
+    const std::vector<PetscScalar>& array = constant.second->value;
     constant_values.insert(constant_values.end(), array.data(),
                            array.data() + array.size());
   }

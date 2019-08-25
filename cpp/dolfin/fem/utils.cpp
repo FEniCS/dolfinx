@@ -547,16 +547,16 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   return coeffs;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>
+std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
 fem::get_constants_from_ufc_form(const ufc_form& ufc_form)
 {
-  std::vector<std::tuple<std::string, std::shared_ptr<function::Constant>>>
+  std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
       constants;
   const char** names = ufc_form.constant_name_map();
   for (int i = 0; i < ufc_form.num_constants; ++i)
   {
     constants.push_back(
-        std::make_tuple<std::string, std::shared_ptr<function::Constant>>(
+        std::make_pair<std::string, std::shared_ptr<function::Constant>>(
             names[i], nullptr));
   }
   return constants;
