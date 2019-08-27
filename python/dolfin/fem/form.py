@@ -63,9 +63,7 @@ class Form(ufl.Form):
                 i, original_coefficients[j]._cpp_object)
 
         # Constants are set based on their position in original form
-        original_constants = []
-        for c in form.constants():
-            original_constants.append(c._cpp_object)
+        original_constants = [c._cpp_object for c in form.constants()]
 
         self._cpp_object.set_constants(original_constants)
 
