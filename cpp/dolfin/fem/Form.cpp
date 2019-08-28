@@ -28,7 +28,7 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces,
            const FormIntegrals& integrals, const FormCoefficients& coefficients,
            const std::vector<
-               std::pair<std::string, std::shared_ptr<function::Constant>>>
+               std::pair<std::string, std::shared_ptr<const function::Constant>>>
                constants,
            std::shared_ptr<const CoordinateMapping> coord_mapping)
     : _integrals(integrals), _coefficients(coefficients), _constants(constants),
@@ -51,8 +51,8 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
     : Form(function_spaces, FormIntegrals(), FormCoefficients({}),
-           std::vector<
-               std::pair<std::string, std::shared_ptr<function::Constant>>>(),
+           std::vector<std::pair<std::string,
+                                 std::shared_ptr<const function::Constant>>>(),
            nullptr)
 {
   // Do nothing
@@ -91,8 +91,10 @@ void Form::set_constants(
     // Find matching string in existing constants
     const auto it = std::find_if(
         _constants.begin(), _constants.end(),
-        [&](const std::pair<std::string, std::shared_ptr<function::Constant>>&
-                q) { return (q.first == name); });
+        [&](const std::pair<std::string,
+                            std::shared_ptr<const function::Constant>>& q) {
+          return (q.first == name);
+        });
 
     if (it == _constants.end())
       throw std::runtime_error("Constant '" + name + "' not found in form");
@@ -175,13 +177,14 @@ const fem::FormCoefficients& Form::coefficients() const
   return _coefficients;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>&
+std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>&
 Form::constants()
 {
   return _constants;
 }
 //-----------------------------------------------------------------------------
-const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>&
+const std::vector<
+    std::pair<std::string, std::shared_ptr<const function::Constant>>>&
 Form::constants() const
 {
   return _constants;

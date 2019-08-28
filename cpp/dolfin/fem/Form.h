@@ -82,7 +82,7 @@ public:
            function_spaces,
        const FormIntegrals& integrals, const FormCoefficients& coefficients,
        const std::vector<
-           std::pair<std::string, std::shared_ptr<function::Constant>>>
+           std::pair<std::string, std::shared_ptr<const function::Constant>>>
            constants,
        std::shared_ptr<const CoordinateMapping> coord_mapping);
 
@@ -224,14 +224,15 @@ public:
   ///         Names are used to set constants in user's c++ code.
   ///         Index in the vector is the position of the constant in the
   ///         original (nonsimplified) form.
-  std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>&
+  std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>&
   constants();
 
   /// Access constants (const)
   ///
   /// @see constants() const
   const std::vector<
-      std::pair<std::string, std::shared_ptr<function::Constant>>>&
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>&
   constants() const;
 
   /// Get coordinate_mapping (experimental)
@@ -245,7 +246,7 @@ private:
   FormCoefficients _coefficients;
 
   // Constants associated with the Form
-  std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
+  std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
       _constants;
 
   // Function spaces (one for each argument)

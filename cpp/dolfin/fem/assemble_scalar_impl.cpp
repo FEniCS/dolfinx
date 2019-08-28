@@ -35,7 +35,8 @@ PetscScalar dolfin::fem::impl::assemble_scalar(const dolfin::fem::Form& M)
   std::vector<int> c_offsets = coefficients.offsets();
 
   // Prepare constants
-  const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
+  const std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = M.constants();
 
   std::vector<PetscScalar> constant_values;

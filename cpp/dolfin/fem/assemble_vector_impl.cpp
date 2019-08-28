@@ -87,7 +87,8 @@ void _lift_bc_cells(
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
+  const std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = a.constants();
 
   std::vector<PetscScalar> constant_values;
@@ -231,7 +232,8 @@ void _lift_bc_exterior_facets(
       Ae;
   Eigen::Matrix<PetscScalar, Eigen::Dynamic, 1> be;
 
-  const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
+  const std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = a.constants();
 
   std::vector<PetscScalar> constant_values;
@@ -347,7 +349,8 @@ void fem::impl::assemble_vector(
     coeff_fn[i] = coefficients.get(i).get();
   std::vector<int> c_offsets = coefficients.offsets();
 
-  const std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>
+  const std::vector<
+      std::pair<std::string, std::shared_ptr<const function::Constant>>>
       constants = L.constants();
 
   std::vector<PetscScalar> constant_values;
