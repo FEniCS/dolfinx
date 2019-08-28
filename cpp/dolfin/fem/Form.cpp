@@ -82,27 +82,27 @@ int Form::original_coefficient_position(int i) const
 }
 //-----------------------------------------------------------------------------
 void Form::set_constants(
-    std::map<std::string, std::shared_ptr<function::Constant>> constants)
+    std::map<std::string, std::shared_ptr<const function::Constant>> constants)
 {
-  for (auto const& constant_in : constants)
+  for (auto const& constant : constants)
   {
-    std::string name_in = constant_in.first;
+    std::string name = constant.first;
 
     // Find matching string in existing constants
     const auto it = std::find_if(
         _constants.begin(), _constants.end(),
         [&](const std::pair<std::string, std::shared_ptr<function::Constant>>&
-                q) { return (q.first == name_in); });
+                q) { return (q.first == name); });
 
     if (it == _constants.end())
-      throw std::runtime_error("Constant '" + name_in + "' not found in form");
+      throw std::runtime_error("Constant '" + name + "' not found in form");
 
-    it->second = constant_in.second;
+    it->second = constant.second;
   }
 }
 //-----------------------------------------------------------------------------
 void Form::set_constants(
-    std::vector<std::shared_ptr<function::Constant>> constants)
+    std::vector<std::shared_ptr<const function::Constant>> constants)
 {
   if (constants.size() != _constants.size())
     throw std::runtime_error("Incorrect number of constants.");

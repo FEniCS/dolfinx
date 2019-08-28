@@ -70,6 +70,14 @@ class Form
 {
 public:
   /// Create form
+  ///
+  /// @param[in] function_spaces
+  /// @param[in] integrals
+  /// @param[in] coefficients
+  /// @param[in] constants
+  ///            Vector of pairs (name, constant). The index in the vector
+  ///            is the position of the constant in the original
+  ///            (nonsimplified) form.
   Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
            function_spaces,
        const FormIntegrals& integrals, const FormCoefficients& coefficients,
@@ -134,7 +142,7 @@ public:
   ///
   /// Names of the constants must agree with their names in UFL file.
   void set_constants(
-      std::map<std::string, std::shared_ptr<function::Constant>> constants);
+      std::map<std::string, std::shared_ptr<const function::Constant>> constants);
 
   /// Set constants based on their order (without names)
   ///
@@ -145,7 +153,7 @@ public:
   /// The order of constants must match their order in
   /// original ufl Form.
   void
-  set_constants(std::vector<std::shared_ptr<function::Constant>> constants);
+  set_constants(std::vector<std::shared_ptr<const function::Constant>> constants);
 
   /// Set mesh, necessary for functionals when there are no function
   /// spaces
@@ -210,11 +218,18 @@ public:
   /// Access form integrals (const)
   const FormIntegrals& integrals() const;
 
-  // Access constants (non-const)
+  /// Access constants (non-const)
+  ///
+  /// @return Vector of attached constants with their names.
+  ///         Names are used to set constants in user's c++ code.
+  ///         Index in the vector is the position of the constant in the
+  ///         original (nonsimplified) form.
   std::vector<std::pair<std::string, std::shared_ptr<function::Constant>>>&
   constants();
 
-  // Access constants (const)
+  /// Access constants (const)
+  ///
+  /// @see constants() const
   const std::vector<
       std::pair<std::string, std::shared_ptr<function::Constant>>>&
   constants() const;
