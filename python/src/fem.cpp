@@ -290,7 +290,7 @@ void fem(py::module& m)
            })
       .def("set_constants",
            py::overload_cast<
-               std::vector<std::shared_ptr<dolfin::function::Constant>>>(
+               std::vector<std::shared_ptr<const dolfin::function::Constant>>>(
                &dolfin::fem::Form::set_constants))
       .def("set_mesh", &dolfin::fem::Form::set_mesh)
       .def("set_cell_domains", &dolfin::fem::Form::set_cell_domains)
