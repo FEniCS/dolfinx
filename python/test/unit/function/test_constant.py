@@ -6,6 +6,7 @@
 """Unit tests for the Constant class"""
 
 import numpy as np
+import pytest
 from dolfin import MPI, UnitCubeMesh
 from dolfin.function import Constant
 
@@ -21,6 +22,14 @@ def test_scalar_constant():
 
     c.value = 3.0
     assert (c.value == 3.0)
+
+
+def test_wrong_dim():
+    mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
+    c = Constant(mesh, [1.0, 2.0])
+
+    with pytest.raises(ValueError):
+        c.value = [1.0, 2.0, 3.0]
 
 
 def test_vector_constant():

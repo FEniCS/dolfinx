@@ -29,6 +29,4 @@ class Constant(ufl.Constant):
     @value.setter
     def value(self, val):
         np_value = numpy.asarray(val)
-        if (np_value.shape != self.ufl_shape):
-            raise RuntimeError("Shape of the value must agree with shape of the Constant ({}).".format(self.ufl_shape))
         numpy.copyto(self._cpp_object.value(), np_value)
