@@ -22,8 +22,6 @@ def test_scalar_constant():
     c.value = 3.0
     assert (c.value == 3.0)
 
-    assert(np.array(c._cpp_object) == 3.0)
-
 
 def test_vector_constant():
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
