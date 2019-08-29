@@ -159,7 +159,7 @@ void function(py::module& m)
            [](dolfin::function::Constant& self) {
              return py::array(self.shape, self.value.data());
            },
-           py::return_value_policy::reference)
+           py::return_value_policy::automatic_reference)
       .def_readwrite("value", &dolfin::function::Constant::value);
 }
 } // namespace dolfin_wrappers

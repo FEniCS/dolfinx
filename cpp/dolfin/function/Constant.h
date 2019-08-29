@@ -20,7 +20,7 @@ public:
   /// Initialise as a vector
   ///
   /// The vector is a row-major (C style) flattened value of the constant
-  Constant(const std::vector<PetscScalar>& value, const std::vector<int>& shape)
+  Constant(std::vector<PetscScalar> value, std::vector<int> shape)
       : value(value), shape(shape){};
 
   /// Initialise with a scalar
