@@ -16,18 +16,4 @@ class Constant(ufl.Constant):
         np_value = numpy.asarray(value)
         super().__init__(domain, np_value.shape)
         self._cpp_object = dolfin.cpp.function.Constant(np_value.flatten(), np_value.shape)
-
-    @property
-    def value(self):
-        val = self._cpp_object.value
-        if (len(val) == 1):
-            return val[0]
-        else:
-            return numpy.asarray(val).reshape(self.ufl_shape)
-
-    @value.setter
-    def value(self, val):
-        np_value = numpy.asarray(val)
-        if (np_value.shape != self.ufl_shape):
-            raise RuntimeError("Shape of the value must agree with shape of the Constant ({}).".format(self.ufl_shape))
-        self._cpp_object.value = np_value.flatten()
+        self.value = numpy.array(self._cpp_object, copy=False)

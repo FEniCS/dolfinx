@@ -149,25 +149,19 @@ void function(py::module& m)
       py::buffer_protocol())
       .def(py::init<std::vector<PetscScalar>, std::vector<int>>(),
            "Create a constant from a scalar value array")
-      .def("eigen_array",
-           [](dolfin::function::Constant& self) {
-             Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic,
-                                     Eigen::Dynamic, Eigen::RowMajor>>
-                 pq(self.value.data(), self.shape[0], self.shape[1]);
-             return pq;
-           })
       .def_buffer([](dolfin::function::Constant& self) -> py::buffer_info {
-        std::vector<int> strides = {sizeof(PetscScalar)};
-
-        // Not sure if this is right...
-        for (int i = 1; i < self.shape.size(); ++i)
-          strides.push_back(strides.back() * self.shape[i]);
-        std::reverse(strides.begin(), strides.end());
+        std::vector<int> strides;
+        if (self.shape.size() > 0)
+        {
+          strides.push_back(sizeof(PetscScalar));
+          for (int i = 1; i < self.shape.size(); ++i)
+            strides.push_back(strides.back() * self.shape[i]);
+          std::reverse(strides.begin(), strides.end());
+        }
 
         return py::buffer_info(self.value.data(), sizeof(PetscScalar),
                                py::format_descriptor<PetscScalar>::format(),
                                self.shape.size(), self.shape, strides);
-      })
-      .def_readwrite("value", &dolfin::function::Constant::value);
+      });
 }
 } // namespace dolfin_wrappers
