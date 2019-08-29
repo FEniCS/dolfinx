@@ -19,9 +19,10 @@ class Constant(ufl.Constant):
 
     @property
     def value(self):
-        val = self._cpp_object.array()
-        if (len(val) == 1):
-            return val[0]
+        val = self._cpp_object.value()
+        # Return scalar as a scalar
+        if val.shape == ():
+            return val.item()
         else:
             return val
 
@@ -30,4 +31,4 @@ class Constant(ufl.Constant):
         np_value = numpy.asarray(val)
         if (np_value.shape != self.ufl_shape):
             raise RuntimeError("Shape of the value must agree with shape of the Constant ({}).".format(self.ufl_shape))
-        self._cpp_object.value = np_value.flatten()
+        numpy.copyto(self._cpp_object.value(), np_value)
