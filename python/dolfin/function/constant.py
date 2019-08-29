@@ -19,11 +19,11 @@ class Constant(ufl.Constant):
 
     @property
     def value(self):
-        val = self._cpp_object.array()
+        val = self._cpp_object.value
         if (len(val) == 1):
             return val[0]
         else:
-            return val
+            return numpy.asarray(val).reshape(self.ufl_shape)
 
     @value.setter
     def value(self, val):

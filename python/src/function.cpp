@@ -145,7 +145,8 @@ void function(py::module& m)
   // dolfin::function::Constant
   py::class_<dolfin::function::Constant,
              std::shared_ptr<dolfin::function::Constant>>(
-      m, "Constant", "A value constant wrt. integration domain")
+      m, "Constant", "A value constant wrt. integration domain",
+      py::buffer_protocol())
       .def(py::init<std::vector<PetscScalar>, std::vector<int>>(),
            "Create a constant from a scalar value array")
       .def("eigen_array",
@@ -155,11 +156,18 @@ void function(py::module& m)
                  pq(self.value.data(), self.shape[0], self.shape[1]);
              return pq;
            })
-      .def("array",
-           [](dolfin::function::Constant& self) {
-             return py::array(self.shape, self.value.data());
-           },
-           py::return_value_policy::automatic_reference)
+      .def_buffer([](dolfin::function::Constant& self) -> py::buffer_info {
+        std::vector<int> strides = {sizeof(PetscScalar)};
+
+        // Not sure if this is right...
+        for (int i = 1; i < self.shape.size(); ++i)
+          strides.push_back(strides.back() * self.shape[i]);
+        std::reverse(strides.begin(), strides.end());
+
+        return py::buffer_info(self.value.data(), sizeof(PetscScalar),
+                               py::format_descriptor<PetscScalar>::format(),
+                               self.shape.size(), self.shape, strides);
+      })
       .def_readwrite("value", &dolfin::function::Constant::value);
 }
 } // namespace dolfin_wrappers
