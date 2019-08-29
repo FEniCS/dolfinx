@@ -145,7 +145,8 @@ void function(py::module& m)
   // dolfin::function::Constant
   py::class_<dolfin::function::Constant,
              std::shared_ptr<dolfin::function::Constant>>(
-      m, "Constant", "A value constant wrt. integration domain")
+      m, "Constant", "A value constant wrt. integration domain",
+      py::buffer_protocol())
       .def(py::init<std::vector<PetscScalar>, std::vector<int>>(),
            "Create a constant from a scalar value array")
       .def("value",

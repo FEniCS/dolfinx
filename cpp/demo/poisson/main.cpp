@@ -191,7 +191,7 @@ int main(int argc, char* argv[])
   L->set_coefficients({{"f", f}, {"g", g}});
 
   // Prepare and set Constants for the bilinear form
-  std::shared_ptr<function::Constant> kappa(new function::Constant({2.0}));
+  auto kappa = std::make_shared<function::Constant>(2.0);
   a->set_constants({{"kappa", kappa}});
 
   // Now, we have specified the variational forms and can consider the
