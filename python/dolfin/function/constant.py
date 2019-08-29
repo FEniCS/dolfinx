@@ -16,4 +16,12 @@ class Constant(ufl.Constant):
         np_value = numpy.asarray(value)
         super().__init__(domain, np_value.shape)
         self._cpp_object = dolfin.cpp.function.Constant(np_value.flatten(), np_value.shape)
-        self.value = numpy.array(self._cpp_object, copy=False)
+
+    @property
+    def value(self):
+        return numpy.array(self._cpp_object, copy=False)
+
+    @value.setter
+    def value(self, val):
+        value_ref = numpy.array(self._cpp_object, copy=False)
+        numpy.copyto(value_ref, val)
