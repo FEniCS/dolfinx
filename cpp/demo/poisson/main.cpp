@@ -90,6 +90,7 @@
 #include "poisson.h"
 #include <cfloat>
 #include <dolfin.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/mesh/Ordering.h>
 
 using namespace dolfin;
@@ -188,6 +189,10 @@ int main(int argc, char* argv[])
   g->interpolate(
       [](auto values, auto x) { values = Eigen::sin(5 * x.col(0)); });
   L->set_coefficients({{"f", f}, {"g", g}});
+
+  // Prepare and set Constants for the bilinear form
+  auto kappa = std::make_shared<function::Constant>(2.0);
+  a->set_constants({{"kappa", kappa}});
 
   // Now, we have specified the variational forms and can consider the
   // solution of the variational problem. First, we need to define a

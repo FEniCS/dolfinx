@@ -10,6 +10,7 @@
 #include <dolfin/fem/CoordinateMapping.h>
 #include <dolfin/fem/FiniteElement.h>
 #include <dolfin/fem/utils.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/mesh/Mesh.h>
@@ -26,8 +27,11 @@ using namespace dolfin::fem;
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces,
            const FormIntegrals& integrals, const FormCoefficients& coefficients,
+           const std::vector<
+               std::pair<std::string, std::shared_ptr<const function::Constant>>>
+               constants,
            std::shared_ptr<const CoordinateMapping> coord_mapping)
-    : _integrals(integrals), _coefficients(coefficients),
+    : _integrals(integrals), _coefficients(coefficients), _constants(constants),
       _function_spaces(function_spaces), _coord_mapping(coord_mapping)
 {
   // Set _mesh from function::FunctionSpace, and check they are the same
@@ -46,7 +50,10 @@ Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
 //-----------------------------------------------------------------------------
 Form::Form(const std::vector<std::shared_ptr<const function::FunctionSpace>>&
                function_spaces)
-    : Form(function_spaces, FormIntegrals(), FormCoefficients({}), nullptr)
+    : Form(function_spaces, FormIntegrals(), FormCoefficients({}),
+           std::vector<std::pair<std::string,
+                                 std::shared_ptr<const function::Constant>>>(),
+           nullptr)
 {
   // Do nothing
 }
@@ -74,6 +81,42 @@ int Form::original_coefficient_position(int i) const
   return _coefficients.original_position(i);
 }
 //-----------------------------------------------------------------------------
+void Form::set_constants(
+    std::map<std::string, std::shared_ptr<const function::Constant>> constants)
+{
+  for (auto const& constant : constants)
+  {
+    std::string name = constant.first;
+
+    // Find matching string in existing constants
+    const auto it = std::find_if(
+        _constants.begin(), _constants.end(),
+        [&](const std::pair<std::string,
+                            std::shared_ptr<const function::Constant>>& q) {
+          return (q.first == name);
+        });
+
+    if (it == _constants.end())
+      throw std::runtime_error("Constant '" + name + "' not found in form");
+
+    it->second = constant.second;
+  }
+}
+//-----------------------------------------------------------------------------
+void Form::set_constants(
+    std::vector<std::shared_ptr<const function::Constant>> constants)
+{
+  if (constants.size() != _constants.size())
+    throw std::runtime_error("Incorrect number of constants.");
+
+  // Loop every constant that user wants to attach
+  for (std::size_t i = 0; i < constants.size(); ++i)
+  {
+    // In this case, the constants don't have names
+    _constants[i] = std::make_pair("", constants[i]);
+  }
+}
+//-----------------------------------------------------------------------------
 void Form::set_mesh(std::shared_ptr<const mesh::Mesh> mesh)
 {
   _mesh = mesh;
@@ -94,8 +137,8 @@ std::shared_ptr<const function::FunctionSpace> Form::function_space(int i) const
 }
 //-----------------------------------------------------------------------------
 void Form::register_tabulate_tensor_cell(
-    int i, void (*fn)(PetscScalar*, const PetscScalar*, const double*,
-                      const int*, const int*))
+    int i, void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                      const double*, const int*, const int*))
 {
   _integrals.register_tabulate_tensor(FormIntegrals::Type::cell, i, fn);
   if (i == -1 and _mesh)
@@ -132,6 +175,13 @@ fem::FormCoefficients& Form::coefficients() { return _coefficients; }
 const fem::FormCoefficients& Form::coefficients() const
 {
   return _coefficients;
+}
+//-----------------------------------------------------------------------------
+const std::vector<
+    std::pair<std::string, std::shared_ptr<const function::Constant>>>&
+Form::constants() const
+{
+  return _constants;
 }
 //-----------------------------------------------------------------------------
 const fem::FormIntegrals& Form::integrals() const { return _integrals; }

@@ -20,8 +20,8 @@ FormIntegrals::FormIntegrals()
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-const std::function<void(PetscScalar*, const PetscScalar*, const double*,
-                         const int*, const int*)>&
+const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*,
+                         const double*, const int*, const int*)>&
 FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
                                             unsigned int i) const
 {
@@ -35,11 +35,10 @@ FormIntegrals::get_tabulate_tensor_function(FormIntegrals::Type type,
   return integrals[i].tabulate;
 }
 //-----------------------------------------------------------------------------
-void FormIntegrals::register_tabulate_tensor(FormIntegrals::Type type, int i,
-                                             void (*fn)(PetscScalar*,
-                                                        const PetscScalar*,
-                                                        const double*,
-                                                        const int*, const int*))
+void FormIntegrals::register_tabulate_tensor(
+    FormIntegrals::Type type, int i,
+    void (*fn)(PetscScalar*, const PetscScalar*, const PetscScalar*,
+               const double*, const int*, const int*))
 {
   const int type_index = static_cast<int>(type);
   std::vector<struct FormIntegrals::Integral>& integrals
@@ -161,8 +160,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
     assert(mesh.topology().connectivity(tdim - 1, tdim));
     std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
         = mesh.topology().connectivity(tdim - 1, tdim);
-    for (const mesh::MeshEntity& facet : mesh::MeshRange(
-             mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
+    for (const mesh::MeshEntity& facet :
+         mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
     {
       if (connectivity_facet_cell->size_global(facet.index()) == 1)
         exf_integrals[0].active_entities.push_back(facet.index());
@@ -188,8 +187,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
 
       assert(mesh.topology().connectivity(tdim - 1, tdim));
       auto connectivity = mesh.topology().connectivity(tdim - 1, tdim);
-      for (const mesh::MeshEntity& facet : mesh::MeshRange(
-               mesh, tdim - 1, mesh::MeshRangeType::ALL))
+      for (const mesh::MeshEntity& facet :
+           mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::ALL))
       {
         if (connectivity->size(facet.index()) == 2)
         {
@@ -210,8 +209,8 @@ void FormIntegrals::set_default_domains(const mesh::Mesh& mesh)
       assert(mesh.topology().connectivity(tdim - 1, tdim));
       std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
           = mesh.topology().connectivity(tdim - 1, tdim);
-      for (const mesh::MeshEntity& facet : mesh::MeshRange(
-               mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
+      for (const mesh::MeshEntity& facet :
+           mesh::MeshRange(mesh, tdim - 1, mesh::MeshRangeType::REGULAR))
       {
         if (connectivity_facet_cell->size_global(facet.index()) != 1)
           inf_integrals[0].active_entities.push_back(facet.index());

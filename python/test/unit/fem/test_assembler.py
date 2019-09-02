@@ -46,23 +46,26 @@ def test_assemble_functional():
 
 def test_assemble_derivatives():
     """ This test checks the original_coefficient_positions, which may change
-    under differentiation (some coefficients are eliminated) """
+    under differentiation (some coefficients and constants are eliminated)"""
     mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 12, 12)
     Q = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
     u = dolfin.Function(Q)
     v = dolfin.TestFunction(Q)
     du = dolfin.TrialFunction(Q)
     b = dolfin.Function(Q)
+    c1 = dolfin.function.Constant(mesh, [[1.0, 0.0], [3.0, 4.0]])
+    c2 = dolfin.function.Constant(mesh, 2.0)
+
     with b.vector.localForm() as b_local:
         b_local.set(2.0)
 
-    # derivative eliminates 'u'
-    L = b * inner(u, v) * dx
+    # derivative eliminates 'u' and 'c1'
+    L = ufl.inner(c1, c1) * v * dx + c2 * b * inner(u, v) * dx
     a = derivative(L, u, du)
     A1 = dolfin.fem.assemble_matrix(a)
     A1.assemble()
 
-    a = b * inner(du, v) * dx
+    a = c2 * b * inner(du, v) * dx
     A2 = dolfin.fem.assemble_matrix(a)
     A2.assemble()
 
@@ -552,3 +555,38 @@ def test_basic_interior_facet_assembly():
     b = dolfin.fem.assemble_vector(L)
     b.assemble()
     assert isinstance(b, PETSc.Vec)
+
+
+def test_basic_assembly_constant():
+    """Tests assembly with Constant
+
+    The following test should be sensitive to order of flattening the
+    matrix-valued constant.
+
+    """
+    mesh = dolfin.generation.UnitSquareMesh(dolfin.MPI.comm_world, 5, 5)
+    V = dolfin.FunctionSpace(mesh, ("Lagrange", 1))
+    u, v = dolfin.TrialFunction(V), dolfin.TestFunction(V)
+
+    c = dolfin.function.Constant(mesh, [[1.0, 2.0], [5.0, 3.0]])
+
+    a = inner(c[1, 0] * u, v) * dx + inner(c[1, 0] * u, v) * ds
+    L = inner(c[1, 0], v) * dx + inner(c[1, 0], v) * ds
+
+    # Initial assembly
+    A1 = dolfin.fem.assemble_matrix(a)
+    A1.assemble()
+
+    b1 = dolfin.fem.assemble_vector(L)
+    b1.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    c.value = [[1.0, 2.0], [3.0, 4.0]]
+
+    A2 = dolfin.fem.assemble_matrix(a)
+    A2.assemble()
+
+    b2 = dolfin.fem.assemble_vector(L)
+    b2.ghostUpdate(addv=PETSc.InsertMode.ADD, mode=PETSc.ScatterMode.REVERSE)
+
+    assert (A1 * 3.0 - A2 * 5.0).norm() == pytest.approx(0.0)
+    assert (b1 * 3.0 - b2 * 5.0).norm() == pytest.approx(0.0)

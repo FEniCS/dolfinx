@@ -19,6 +19,7 @@
 #include <dolfin/fem/PETScDMCollection.h>
 #include <dolfin/fem/assembler.h>
 #include <dolfin/fem/utils.h>
+#include <dolfin/function/Constant.h>
 #include <dolfin/function/Function.h>
 #include <dolfin/function/FunctionSpace.h>
 #include <dolfin/la/PETScMatrix.h>
@@ -287,6 +288,10 @@ void fem(py::module& m)
               std::shared_ptr<const dolfin::function::Function> f) {
              self.coefficients().set(i, f);
            })
+      .def("set_constants",
+           py::overload_cast<
+               std::vector<std::shared_ptr<const dolfin::function::Constant>>>(
+               &dolfin::fem::Form::set_constants))
       .def("set_mesh", &dolfin::fem::Form::set_mesh)
       .def("set_cell_domains", &dolfin::fem::Form::set_cell_domains)
       .def("set_exterior_facet_domains",
@@ -296,9 +301,9 @@ void fem(py::module& m)
       .def("set_vertex_domains", &dolfin::fem::Form::set_vertex_domains)
       .def("set_tabulate_cell",
            [](dolfin::fem::Form& self, int i, std::intptr_t addr) {
-             auto tabulate_tensor_ptr
-                 = (void (*)(PetscScalar*, const PetscScalar*, const double*,
-                             const int*, const int*))addr;
+             auto tabulate_tensor_ptr = (void (*)(
+                 PetscScalar*, const PetscScalar*, const PetscScalar*,
+                 const double*, const int*, const int*))addr;
              self.register_tabulate_tensor_cell(i, tabulate_tensor_ptr);
            })
       .def_property_readonly("rank", &dolfin::fem::Form::rank)

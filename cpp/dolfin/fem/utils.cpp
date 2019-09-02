@@ -547,6 +547,21 @@ fem::get_coeffs_from_ufc_form(const ufc_form& ufc_form)
   return coeffs;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
+fem::get_constants_from_ufc_form(const ufc_form& ufc_form)
+{
+  std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>
+      constants;
+  const char** names = ufc_form.constant_name_map();
+  for (int i = 0; i < ufc_form.num_constants; ++i)
+  {
+    constants.push_back(
+        std::make_pair<std::string, std::shared_ptr<const function::Constant>>(
+            names[i], nullptr));
+  }
+  return constants;
+}
+//-----------------------------------------------------------------------------
 fem::Form fem::create_form(
     const ufc_form& ufc_form,
     const std::vector<std::shared_ptr<const function::FunctionSpace>>& spaces)
@@ -626,7 +641,7 @@ fem::Form fem::create_form(
 
   return fem::Form(spaces, integrals,
                    FormCoefficients(fem::get_coeffs_from_ufc_form(ufc_form)),
-                   coord_mapping);
+                   fem::get_constants_from_ufc_form(ufc_form), coord_mapping);
 }
 //-----------------------------------------------------------------------------
 std::shared_ptr<const fem::CoordinateMapping>

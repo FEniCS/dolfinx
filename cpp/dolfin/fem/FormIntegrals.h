@@ -47,7 +47,7 @@ public:
   ///    Integral number
   /// @returns std::function
   ///    Function to call for tabulate_tensor
-  const std::function<void(PetscScalar*, const PetscScalar*, const double*,
+  const std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                            const int*, const int*)>&
   get_tabulate_tensor_function(FormIntegrals::Type type, unsigned int i) const;
 
@@ -55,6 +55,7 @@ public:
   /// given type
   void register_tabulate_tensor(FormIntegrals::Type type, int i,
                                 void (*fn)(PetscScalar*, const PetscScalar*,
+                                           const PetscScalar*,
                                            const double*, const int*,
                                            const int*));
 
@@ -93,7 +94,7 @@ private:
   // integrate on
   struct Integral
   {
-    std::function<void(PetscScalar*, const PetscScalar*, const double*,
+    std::function<void(PetscScalar*, const PetscScalar*, const PetscScalar*, const double*,
                        const int*, const int*)>
         tabulate;
     int id;
