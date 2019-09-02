@@ -7,6 +7,8 @@
 #pragma once
 
 #include <vector>
+#include <dolfin/common/types.h>
+
 
 namespace dolfin
 {
@@ -20,31 +22,15 @@ public:
   /// Initialise as a vector
   ///
   /// The vector is a row-major (C style) flattened value of the constant
-  Constant(std::vector<PetscScalar> value, std::vector<int> shape)
-      : value(value), shape(shape){};
+  Constant(std::vector<PetscScalar> value, std::vector<int> shape);
 
   /// Initialise with a scalar value
-  Constant(PetscScalar value) : value({value}), shape({1}){};
+  Constant(PetscScalar value);
 
   /// Initialise with a 1D or 2D Array
   Constant(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
                                    Eigen::RowMajor>>
-               array)
-      : shape({(int)array.rows(), (int)array.cols()})
-  {
-    value.resize(array.rows() * array.cols());
-
-    // Remove trailing 1 in shape for Eigen::Vector (1D array)
-    if (array.cols() == 1)
-      shape.pop_back();
-
-    // Copy data from Eigen::Array to flattened vector
-    Eigen::Map<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                            Eigen::RowMajor>>
-        v(value.data(), array.rows(), array.cols());
-    v = array;
-  }
-
+               array);
   /// Value
   std::vector<PetscScalar> value;
 

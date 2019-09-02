@@ -177,12 +177,6 @@ const fem::FormCoefficients& Form::coefficients() const
   return _coefficients;
 }
 //-----------------------------------------------------------------------------
-std::vector<std::pair<std::string, std::shared_ptr<const function::Constant>>>&
-Form::constants()
-{
-  return _constants;
-}
-//-----------------------------------------------------------------------------
 const std::vector<
     std::pair<std::string, std::shared_ptr<const function::Constant>>>&
 Form::constants() const

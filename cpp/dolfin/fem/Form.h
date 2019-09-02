@@ -218,19 +218,12 @@ public:
   /// Access form integrals (const)
   const FormIntegrals& integrals() const;
 
-  /// Access constants (non-const)
+  /// Access constants (const)
   ///
   /// @return Vector of attached constants with their names.
   ///         Names are used to set constants in user's c++ code.
   ///         Index in the vector is the position of the constant in the
   ///         original (nonsimplified) form.
-  std::vector<
-      std::pair<std::string, std::shared_ptr<const function::Constant>>>&
-  constants();
-
-  /// Access constants (const)
-  ///
-  /// @see constants() const
   const std::vector<
       std::pair<std::string, std::shared_ptr<const function::Constant>>>&
   constants() const;

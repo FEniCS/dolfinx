@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-import typing
+from typing import Union, Sequence
 
 import numpy
 
@@ -14,7 +14,7 @@ import dolfin.cpp
 
 
 class Constant(ufl.Constant):
-    def __init__(self, domain, value: typing.Union[numpy.ndarray, list, int, float]):
+    def __init__(self, domain, value: Union[numpy.ndarray, Sequence, float]):
         """A constant wrt. domain
 
         Parameters
