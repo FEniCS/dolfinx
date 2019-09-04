@@ -63,7 +63,9 @@ void common(py::module& m)
                              "Return owning process for each ghost index")
       .def_property_readonly("ghosts", &dolfin::common::IndexMap::ghosts,
                              py::return_value_policy::reference_internal,
-                             "Return list of ghost indices");
+                             "Return list of ghost indices")
+      .def("indices", &dolfin::common::IndexMap::indices,
+           "Return array of global indices for all indices on this process");
 
   // dolfin::Table
   py::class_<dolfin::Table, std::shared_ptr<dolfin::Table>>(m, "Table")
