@@ -206,6 +206,13 @@ class XDMFFile:
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
+    def read_mesh_data(self, mpi_comm):
+        """
+        Read in mesh data:
+        Cell type, geometric points, topological cells and global cell indices.
+        """
+        return self._cpp_object.read_mesh_data(mpi_comm)
+
     def read_checkpoint(self, V, name: str,
                         counter: int = -1) -> function.Function:
         """Read finite element Function from checkpointing format

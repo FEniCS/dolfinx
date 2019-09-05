@@ -9,7 +9,7 @@ import os
 import numpy
 import pytest
 
-from dolfin import (MPI, Function, FunctionSpace, MeshFunction,
+from dolfin import (MPI, Function, FunctionSpace, Mesh, MeshFunction,
                     MeshValueCollection, TensorFunctionSpace, UnitCubeMesh,
                     UnitIntervalMesh, UnitSquareMesh, VectorFunctionSpace, cpp,
                     has_petsc_complex, interpolate)
@@ -127,6 +127,29 @@ def test_save_and_load_3d_mesh(tempdir, encoding):
         file.write(mesh)
     with XDMFFile(MPI.comm_world, filename) as file:
         mesh2 = file.read_mesh(cpp.mesh.GhostMode.none)
+    assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
+    dim = mesh.topology.dim
+    assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
+
+
+@pytest.mark.parametrize("mesh_tdim", mesh_tdims)
+@pytest.mark.parametrize("mesh_n", mesh_ns)
+def test_read_mesh_data(tempdir, mesh_tdim, mesh_n):
+    filename = os.path.join(tempdir, "mesh.xdmf")
+    mesh = mesh_factory(mesh_tdim, mesh_n)
+
+    encoding = XDMFFile.Encoding.HDF5
+    ghost_mode = cpp.mesh.GhostMode.none
+
+    with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
+        file.write(mesh)
+
+    with XDMFFile(MPI.comm_world, filename) as file:
+        cell_type, points, cells, indices = file.read_mesh_data(MPI.comm_world)
+
+    mesh2 = Mesh(MPI.comm_world, cell_type, points, cells, indices, ghost_mode)
+
+    assert(mesh.cell_type == mesh2.cell_type)
     assert mesh.num_entities_global(0) == mesh2.num_entities_global(0)
     dim = mesh.topology.dim
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
