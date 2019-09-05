@@ -23,7 +23,6 @@ def test_scalar_constant():
 
 def test_reshape():
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
-
     c = Constant(mesh, 1.0)
     with pytest.raises(ValueError):
         c.value.resize(100)
@@ -38,7 +37,6 @@ def test_wrong_dim():
 
 def test_vector_constant():
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
-
     c0 = Constant(mesh, [1.0, 2.0])
     c1 = Constant(mesh, np.array([1.0, 2.0]))
     assert (c0.value.all() == c1.value.all())
@@ -50,9 +48,8 @@ def test_vector_constant():
 
 def test_tensor_constant():
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
-
     data = [[1.0, 2.0, 1.0], [1.0, 2.0, 1.0], [1.0, 2.0, 1.0]]
     c0 = Constant(mesh, data)
     assert c0.value.all() == np.asarray(data).all()
     c0.value *= 2.0
-    assert c0.value.all() == (2.0*np.asarray(data)).all()
+    assert c0.value.all() == (2.0 * np.asarray(data)).all()
