@@ -30,13 +30,13 @@ public:
   /// Initialise as a vector
   ///
   /// The vector is a row-major (C style) flattened value of the constant
-  Constant(std::vector<PetscScalar> value, std::vector<int> shape);
-
-  /// Value
-  std::vector<PetscScalar> value;
+  Constant(std::vector<int> shape, std::vector<PetscScalar> value);
 
   /// Shape
   std::vector<int> shape;
+
+  /// Values
+  std::vector<PetscScalar> value;
 };
 } // namespace function
 } // namespace dolfin
