@@ -19,17 +19,18 @@ namespace function
 class Constant
 {
 public:
-  /// Initialise with a scalar value
-  Constant(PetscScalar value);
+  /// Create a rank-0 (scalar-valued) constant
+  Constant(PetscScalar c);
 
-  /// Initialise with a 1D or 2D Array
+  /// Create a rank-1 (vector-valued) constant
+  Constant(std::vector<PetscScalar> c);
+
+  /// Create a rank-2 constant
   Constant(const Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
                                          Eigen::Dynamic, Eigen::RowMajor>>
                c);
 
-  /// Initialise as a vector
-  ///
-  /// The vector is a row-major (C style) flattened value of the constant
+  /// The arbitrary rank constant. Data layout is row-major (C style).
   Constant(std::vector<int> shape, std::vector<PetscScalar> value);
 
   /// Shape

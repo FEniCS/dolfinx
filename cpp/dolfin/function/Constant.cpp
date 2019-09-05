@@ -12,13 +12,12 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-Constant::Constant(PetscScalar value) : value({value})
+Constant::Constant(PetscScalar c) : value({c})
 {
   // Do nothing
 }
 //-----------------------------------------------------------------------------
-Constant::Constant(std::vector<int> shape, std::vector<PetscScalar> value)
-    : shape(shape), value(value)
+Constant::Constant(std::vector<PetscScalar> c) : shape(1, c.size()), value({c})
 {
   // Do nothing
 }
@@ -33,5 +32,11 @@ Constant::Constant(
   for (int i = 0; i < c.rows(); ++i)
     for (int j = 0; j < c.cols(); ++j)
       value[i * c.cols() + j] = c(i, j);
+}
+//-----------------------------------------------------------------------------
+Constant::Constant(std::vector<int> shape, std::vector<PetscScalar> c)
+    : shape(shape), value(c)
+{
+  // Do nothing
 }
 //-----------------------------------------------------------------------------
