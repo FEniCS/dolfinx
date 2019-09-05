@@ -12,7 +12,7 @@ using namespace dolfin;
 using namespace dolfin::function;
 
 //-----------------------------------------------------------------------------
-Constant::Constant(PetscScalar value) : value({value}), shape({1})
+Constant::Constant(PetscScalar value) : value({value})
 {
   // Do nothing
 }
@@ -29,10 +29,6 @@ Constant::Constant(
         c)
     : value(c.rows() * c.cols()), shape({(int)c.rows(), (int)c.cols()})
 {
-  // Remove trailing 1 in shape for Eigen::Vector (1D array)
-  if (c.cols() == 1)
-    shape.pop_back();
-
   // Copy data from Eigen::Array to flattened vector
   for (int i = 0; i < c.rows(); ++i)
     for (int j = 0; j < c.cols(); ++j)
