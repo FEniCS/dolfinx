@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Chris Richardson abd Michal Habera
+// Copyright (C) 2019 Chris Richardson and Michal Habera
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
