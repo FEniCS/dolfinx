@@ -7,6 +7,7 @@
 
 import numpy as np
 import pytest
+
 from dolfin import MPI, UnitCubeMesh
 from dolfin.function import Constant
 
@@ -14,6 +15,7 @@ from dolfin.function import Constant
 def test_scalar_constant():
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     c = Constant(mesh, 1.0)
+    assert c.value.shape == ()
     assert c.value == 1.0
     c.value += 1.0
     assert c.value == 2.0
@@ -31,6 +33,7 @@ def test_reshape():
 def test_wrong_dim():
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     c = Constant(mesh, [1.0, 2.0])
+    assert c.value.shape == (2,)
     with pytest.raises(ValueError):
         c.value = [1.0, 2.0, 3.0]
 
@@ -50,6 +53,7 @@ def test_tensor_constant():
     mesh = UnitCubeMesh(MPI.comm_world, 2, 2, 2)
     data = [[1.0, 2.0, 1.0], [1.0, 2.0, 1.0], [1.0, 2.0, 1.0]]
     c0 = Constant(mesh, data)
+    assert c0.value.shape == (3, 3)
     assert c0.value.all() == np.asarray(data).all()
     c0.value *= 2.0
     assert c0.value.all() == (2.0 * np.asarray(data)).all()
