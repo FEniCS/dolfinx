@@ -1,25 +1,25 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) 2019 Michal Habera, Chris Richardson
+# Copyright (C) 2019 Michal Habera and Chris Richardson
 #
 # This file is part of DOLFIN (https://www.fenicsproject.org)
 #
 # SPDX-License-Identifier:    LGPL-3.0-or-later
 
-from typing import Union, Sequence
+from typing import Sequence, Union
 
 import numpy
 
-import ufl
 import dolfin.cpp
+import ufl
 
 
 class Constant(ufl.Constant):
     def __init__(self, domain, value: Union[numpy.ndarray, Sequence, float]):
-        """A constant wrt. domain
+        """A constant with respect to a domain.
 
         Parameters
         ----------
-        domain : dolfin or UFL mesh
+        domain : DOLFIN or UFL mesh
         value
             Value of the constant.
         """
@@ -29,19 +29,9 @@ class Constant(ufl.Constant):
 
     @property
     def value(self):
-        """Returns value of the constant.
-
-        If the value is a scalar, returns immutable scalar.
-        If the value is an array, returns ``numpy.ndarray`` by reference.
-        """
-        val = self._cpp_object.value()
-        # Return scalar as a scalar
-        if val.shape == ():
-            return val.item()
-        else:
-            return val
+        """Returns value of the constant."""
+        return self._cpp_object.value()
 
     @value.setter
     def value(self, val):
-        np_value = numpy.asarray(val)
-        numpy.copyto(self._cpp_object.value(), np_value)
+        numpy.copyto(self._cpp_object.value(), numpy.asarray(val))

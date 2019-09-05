@@ -151,10 +151,7 @@ void function(py::module& m)
            "Create a constant from a scalar value array")
       .def("value",
            [](dolfin::function::Constant& self) {
-             if (self.shape.empty())
-               return py::array(1, self.value.data(), py::none());
-             else
-               return py::array(self.shape, self.value.data(), py::none());
+             return py::array(self.shape, self.value.data(), py::none());
            },
            py::return_value_policy::reference_internal);
 }
