@@ -14,18 +14,18 @@ import ufl
 
 
 class Constant(ufl.Constant):
-    def __init__(self, domain, value: Union[numpy.ndarray, Sequence, float]):
+    def __init__(self, domain, c: Union[numpy.ndarray, Sequence, float]):
         """A constant with respect to a domain.
 
         Parameters
         ----------
         domain : DOLFIN or UFL mesh
-        value
+        c
             Value of the constant.
         """
-        np_value = numpy.asarray(value)
-        super().__init__(domain, np_value.shape)
-        self._cpp_object = dolfin.cpp.function.Constant(np_value.shape, np_value.flatten())
+        c_np = numpy.asarray(c)
+        super().__init__(domain, c_np.shape)
+        self._cpp_object = dolfin.cpp.function.Constant(c_np.shape, c_np.flatten())
 
     @property
     def value(self):
