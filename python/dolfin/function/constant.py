@@ -33,5 +33,5 @@ class Constant(ufl.Constant):
         return self._cpp_object.value()
 
     @value.setter
-    def value(self, val):
-        numpy.copyto(self._cpp_object.value(), numpy.asarray(val))
+    def value(self, v):
+        numpy.copyto(self._cpp_object.value(), numpy.asarray(v))
