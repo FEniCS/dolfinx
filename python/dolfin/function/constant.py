@@ -25,7 +25,7 @@ class Constant(ufl.Constant):
         """
         np_value = numpy.asarray(value)
         super().__init__(domain, np_value.shape)
-        self._cpp_object = dolfin.cpp.function.Constant(np_value.flatten(), np_value.shape)
+        self._cpp_object = dolfin.cpp.function.Constant(np_value.shape, np_value.flatten())
 
     @property
     def value(self):
