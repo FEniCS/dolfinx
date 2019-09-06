@@ -1,4 +1,4 @@
-// Copyright (C) 2019 Chris Richardson, Michal Habera
+// Copyright (C) 2019 Chris Richardson and Michal Habera
 //
 // This file is part of DOLFIN (https://www.fenicsproject.org)
 //
@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <vector>
+#include <Eigen/Dense>
 #include <dolfin/common/types.h>
-
+#include <vector>
 
 namespace dolfin
 {
@@ -19,23 +19,25 @@ namespace function
 class Constant
 {
 public:
-  /// Initialise as a vector
-  ///
-  /// The vector is a row-major (C style) flattened value of the constant
-  Constant(std::vector<PetscScalar> value, std::vector<int> shape);
+  /// Create a rank-0 (scalar-valued) constant
+  Constant(PetscScalar c);
 
-  /// Initialise with a scalar value
-  Constant(PetscScalar value);
+  /// Create a rank-1 (vector-valued) constant
+  Constant(std::vector<PetscScalar> c);
 
-  /// Initialise with a 1D or 2D Array
-  Constant(Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic, Eigen::Dynamic,
-                                   Eigen::RowMajor>>
-               array);
-  /// Value
-  std::vector<PetscScalar> value;
+  /// Create a rank-2 constant
+  Constant(const Eigen::Ref<Eigen::Array<PetscScalar, Eigen::Dynamic,
+                                         Eigen::Dynamic, Eigen::RowMajor>>
+               c);
+
+  /// The arbitrary rank constant. Data layout is row-major (C style).
+  Constant(std::vector<int> shape, std::vector<PetscScalar> value);
 
   /// Shape
   std::vector<int> shape;
+
+  /// Values
+  std::vector<PetscScalar> value;
 };
 } // namespace function
 } // namespace dolfin
