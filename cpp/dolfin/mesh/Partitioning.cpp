@@ -155,13 +155,13 @@ std::tuple<EigenRowArrayXXi64, std::vector<std::int64_t>, std::vector<int>,
 distribute_cells(const MPI_Comm mpi_comm,
                  const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                  const std::vector<std::int64_t>& global_cell_indices,
-                 const PartitionData& mp)
+                 const PartitionData& cell_partition)
 {
   // This function takes the partition computed by the partitioner
-  // stored in PartitionData mp. Some cells go to multiple destinations.
-  // Each cell is transmitted to its final destination(s) including its
-  // global index, and the cell owner (for ghost cells this will be
-  // different from the destination)
+  // stored in PartitionData cell_partition. Some cells go to multiple
+  // destinations. Each cell is transmitted to its final destination(s)
+  // including its global index, and the cell owner (for ghost cells this will
+  // be different from the destination)
 
   LOG(INFO) << "Distribute cells during distributed mesh construction";
 
@@ -178,7 +178,7 @@ distribute_cells(const MPI_Comm mpi_comm,
   // Get dimensions
   const std::int32_t num_local_cells = cell_vertices.rows();
   const std::int32_t num_cell_vertices = cell_vertices.cols();
-  assert(mp.size() == num_local_cells);
+  assert(cell_partition.size() == num_local_cells);
 
   // Send all cells to their destinations including their global
   // indices.  First element of vector is cell count of un-ghosted
@@ -186,10 +186,10 @@ distribute_cells(const MPI_Comm mpi_comm,
   std::vector<std::vector<std::size_t>> send_cell_vertices(
       mpi_size, std::vector<std::size_t>(2, 0));
 
-  for (std::int32_t i = 0; i < mp.size(); ++i)
+  for (std::int32_t i = 0; i < cell_partition.size(); ++i)
   {
-    std::int32_t num_procs = mp.num_procs(i);
-    const std::int32_t* sharing_procs = mp.procs(i);
+    std::int32_t num_procs = cell_partition.num_procs(i);
+    const std::int32_t* sharing_procs = cell_partition.procs(i);
     for (std::int32_t j = 0; j < num_procs; ++j)
     {
       // Create reference to destination vector

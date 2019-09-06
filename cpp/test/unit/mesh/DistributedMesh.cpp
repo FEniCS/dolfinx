@@ -48,7 +48,7 @@ void test_distributed_mesh()
   EigenRowArrayXXi64 cells;
   std::vector<std::int64_t> global_cell_indices;
 
-  // Save mesh in XDMF format
+  // Read in mesh in mesh data from XDMF file
   io::XDMFFile infile(MPI_COMM_WORLD, "mesh.xdmf");
   std::tie(cell_type, points, cells, global_cell_indices)
       = infile.read_mesh_data(subset_comm);
