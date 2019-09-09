@@ -138,8 +138,27 @@ const std::vector<std::int32_t>& Topology::cell_owner() const
 std::vector<std::int32_t> Topology::surface_entities(int dim) const
 {
   const int tdim = this->dim();
+
+  if (dim >= tdim or dim < 0)
+  {
+    throw std::runtime_error("Invalid entity dimension: "
+                             + std::to_string(dim));
+  }
+
   std::shared_ptr<const Connectivity> connectivity_facet_cell
       = connectivity(tdim - 1, tdim);
+
+  // Special case for facets
+  if (dim == tdim - 1)
+  {
+    std::vector<std::int32_t> surface_facet_indices;
+    for (int i = 0; i < size(tdim - 1); ++i)
+    {
+      if (connectivity_facet_cell->size_global(i) == 1)
+        surface_facet_indices.push_back(i);
+    }
+    return surface_facet_indices;
+  }
 
   // Get connectivity from facet to entities of interest (vertices or edges)
   std::shared_ptr<const Connectivity> connectivity_facet_entity
@@ -153,15 +172,16 @@ std::vector<std::int32_t> Topology::surface_entities(int dim) const
   // Collect up set of surface entities
   std::set<std::int32_t> surface_entity_indices;
 
-  // Iterate over all facets, selecting only those with one cell attached
   for (int i = 0; i < size(tdim - 1); ++i)
-  {
-    if (connectivity_facet_cell->size_global(i) == 1)
+    // Iterate over all facets, selecting only those with one cell attached
+    for (int i = 0; i < size(tdim - 1); ++i)
     {
-      for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
-        surface_entity_indices.insert(fe_indices[j]);
+      if (connectivity_facet_cell->size_global(i) == 1)
+      {
+        for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
+          surface_entity_indices.insert(fe_indices[j]);
+      }
     }
-  }
   return std::vector<std::int32_t>(surface_entity_indices.begin(),
                                    surface_entity_indices.end());
 }
