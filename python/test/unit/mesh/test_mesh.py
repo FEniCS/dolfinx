@@ -424,3 +424,10 @@ def test_small_mesh(interval):
     mesh1d = UnitIntervalMesh(MPI.comm_world, 2)
     gdim = mesh1d.geometry.dim
     assert mesh1d.num_entities_global(gdim) == 2
+
+
+def test_coords():
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 5)
+    d = mesh.coordinate_dofs().entity_points()
+    d += 2
+    assert numpy.array_equal(d, mesh.coordinate_dofs().entity_points())
