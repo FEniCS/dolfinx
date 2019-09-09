@@ -19,6 +19,7 @@ from dolfin import function
 import ffc
 import ufl
 
+
 def interpolate(v, V):
     """Return interpolation of a given function into a given finite
     element space.
@@ -52,7 +53,6 @@ def interpolate(v, V):
     Pv.interpolate(v)
 
     return Pv
-
 
 
 def compiled_interpolation(expr, V, target):
@@ -126,7 +126,6 @@ def compiled_interpolation(expr, V, target):
     local_b_size = V.element.space_dimension()
     num_coeffs = len(coeffs_vectors)
 
-
     @numba.njit
     def assemble_vector_ufc(b, kernel, topology, geometry, dofmap, coeffs_vectors, coeffs_dofmaps, const_vector):
         connections, pos = topology
@@ -150,12 +149,12 @@ def compiled_interpolation(expr, V, target):
                 offset += local_dofsize
 
             kernel(ffi.from_buffer(b_local), ffi.from_buffer(coeffs),
-                ffi.from_buffer(const_vector),
-                ffi.from_buffer(coordinate_dofs))
+                   ffi.from_buffer(const_vector), ffi.from_buffer(coordinate_dofs))
 
             for j in range(local_b_size):
                 b[dofmap[i * local_b_size + j]] = b_local[j]
 
     with target.vector.localForm() as b:
         b.set(0.0)
-        assemble_vector_ufc(np.asarray(b), kernel, (c, pos), geom, dofmap, coeffs_vectors, coeffs_dofmaps, constants_vector)
+        assemble_vector_ufc(np.asarray(b), kernel, (c, pos), geom,
+                            dofmap, coeffs_vectors, coeffs_dofmaps, constants_vector)
