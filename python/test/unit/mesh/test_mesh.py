@@ -424,3 +424,26 @@ def test_small_mesh(interval):
     mesh1d = UnitIntervalMesh(MPI.comm_world, 2)
     gdim = mesh1d.geometry.dim
     assert mesh1d.num_entities_global(gdim) == 2
+
+
+def test_topology_surface(cube):
+    rank = MPI.rank(cube.mpi_comm())
+    shared_vertices = cube.topology.shared_entities(0)
+    # Get list of vertices on lower rank processes (i.e. owned elsewhere)
+    v_remote = [v[0] for v in shared_vertices.items() if list(v[1])[0] < rank]
+
+    surface_vertices = cube.topology.surface_entities(0)
+    sv = [v for v in surface_vertices if v not in v_remote]
+    len_sv = MPI.sum(cube.mpi_comm(), len(sv))
+
+    n = 3
+    assert len_sv == 2 * (n + 1) * (n + 1) + 4 * (n - 1) * n
+
+    cube.create_entities(1)
+    cube.create_connectivity(2, 1)
+    surface_edges = cube.topology.surface_entities(1)
+
+    assert (len(surface_edges) > 0)
+
+    surface_facets = cube.topology.surface_entities(2)
+    assert MPI.sum(cube.mpi_comm(), len(surface_facets)) == n * n * 12
