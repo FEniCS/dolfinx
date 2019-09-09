@@ -93,9 +93,9 @@ def compiled_interpolation(expr, V, target):
     ffi = cffi.FFI()
     # Register complex types
     numba.cffi_support.register_type(ffi.typeof('double _Complex'),
-                                    numba.types.complex128)
+                                     numba.types.complex128)
     numba.cffi_support.register_type(ffi.typeof('float _Complex'),
-                                    numba.types.complex64)
+                                     numba.types.complex64)
 
     reference_geometry = np.asarray(fiat_element.ref_el.get_vertices())
 
