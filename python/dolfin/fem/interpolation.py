@@ -12,10 +12,11 @@ finite element space.
 import cffi
 import numpy as np
 import numba
+import numba.cffi_support
 from numba.typed import List
 from petsc4py import PETSc
 
-from dolfin import function
+from dolfin import function, jit
 import ffc
 import ufl
 
@@ -86,10 +87,15 @@ def compiled_interpolation(expr, V, target):
 
     nodes = np.asarray(nodes)
 
-    obj, module = ffc.codegeneration.jit.compile_expressions([(expr, nodes)])
-    kernel = obj[0][0].tabulate_expression
+    module = jit.ffc_jit((expr, nodes))
+    kernel = module.tabulate_expression
 
     ffi = cffi.FFI()
+    # Register complex types
+    numba.cffi_support.register_type(ffi.typeof('double _Complex'),
+                                    numba.types.complex128)
+    numba.cffi_support.register_type(ffi.typeof('float _Complex'),
+                                    numba.types.complex64)
 
     reference_geometry = np.asarray(fiat_element.ref_el.get_vertices())
 
