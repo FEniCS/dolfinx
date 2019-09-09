@@ -135,6 +135,37 @@ const std::vector<std::int32_t>& Topology::cell_owner() const
   return _cell_owner;
 }
 //-----------------------------------------------------------------------------
+std::vector<std::int32_t> Topology::surface_entities(int dim) const
+{
+  const int tdim = this->dim();
+  std::shared_ptr<const Connectivity> connectivity_facet_cell
+      = connectivity(tdim - 1, tdim);
+
+  // Get connectivity from facet to entities of interest (vertices or edges)
+  std::shared_ptr<const Connectivity> connectivity_facet_entity
+      = connectivity(tdim - 1, dim);
+  assert(connectivity_facet_entity);
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_offsets
+      = connectivity_facet_entity->entity_positions();
+  const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_indices
+      = connectivity_facet_entity->connections();
+
+  // Collect up set of surface entities
+  std::set<std::int32_t> surface_entity_indices;
+
+  // Iterate over all facets, selecting only those with one cell attached
+  for (int i = 0; i < size(tdim - 1); ++i)
+  {
+    if (connectivity_facet_cell->size_global(i) == 1)
+    {
+      for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
+        surface_entity_indices.insert(fe_indices[j]);
+    }
+  }
+  return std::vector<std::int32_t>(surface_entity_indices.begin(),
+                                   surface_entity_indices.end());
+}
+//-----------------------------------------------------------------------------
 std::shared_ptr<Connectivity> Topology::connectivity(std::size_t d0,
                                                      std::size_t d1)
 {

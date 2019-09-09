@@ -105,6 +105,10 @@ public:
   /// this is just a vector over those cells
   const std::vector<std::int32_t>& cell_owner() const;
 
+  /// List of surface entity indices of dimension dim. An entity is considered a
+  /// surface entity, if it is connected to a surface Facet of a Mesh.
+  std::vector<std::int32_t> surface_entities(int dim) const;
+
   /// Return connectivity for given pair of topological dimensions
   std::shared_ptr<Connectivity> connectivity(std::size_t d0, std::size_t d1);
 
