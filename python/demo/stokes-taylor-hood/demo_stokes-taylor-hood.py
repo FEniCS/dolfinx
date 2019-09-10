@@ -203,8 +203,7 @@ print("Norm of velocity coefficient vector: %.15g" % u.vector.norm())
 print("Norm of pressure coefficient vector: %.15g" % p.vector.norm())
 
 # Check pressure norm
-pnorm = p.vector.norm()
-assert np.isclose(pnorm, 4147.69457577)
+assert np.isclose(p.vector.norm(), 4147.69457577)
 
 # Finally, we can save and plot the solutions::
 

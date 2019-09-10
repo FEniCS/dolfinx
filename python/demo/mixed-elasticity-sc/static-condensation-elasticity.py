@@ -153,7 +153,7 @@ bb_tree = dolfin.cpp.geometry.BoundingBoxTree(mesh, 2)
 
 # Check against standard table value
 if bb_tree.collides([48.0, 52.0, 0.0]):
-    value = uc([48.0, 52.0], bb_tree)
+    value = uc.eval([48.0, 52.0], bb_tree)
     assert(numpy.isclose(value[1], 23.95, rtol=1.e-2))
 
 # Check the equality of displacement based and mixed condensed

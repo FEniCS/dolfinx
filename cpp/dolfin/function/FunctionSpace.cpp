@@ -111,7 +111,7 @@ void FunctionSpace::interpolate_from_any(
         coordinate_dofs(i, j) = x_g(cell_g[pos_g[cell_index] + i], j);
 
     // Restrict function to cell
-    v.restrict(cell_coefficients.data(), cell, coordinate_dofs);
+    v.restrict(cell, coordinate_dofs, cell_coefficients.data());
 
     // Tabulate dofs
     auto cell_dofs = dofmap->cell_dofs(cell.index());
