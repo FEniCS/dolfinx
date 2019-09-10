@@ -427,26 +427,18 @@ def test_small_mesh(interval):
 
 
 def test_topology_surface(cube):
-    rank = MPI.rank(cube.mpi_comm())
-    shared_vertices = cube.topology.shared_entities(0)
-    # Get list of vertices on lower rank processes (i.e. owned elsewhere)
-    v_remote = [v[0] for v in shared_vertices.items() if list(v[1])[0] < rank]
 
-    surface_vertices = cube.topology.surface_entities(0)
-    sv = [v for v in surface_vertices if v not in v_remote]
-    len_sv = MPI.sum(cube.mpi_comm(), len(sv))
+    surface_vertices_markers = cube.topology.surface_entity_marker(0)
 
     n = 3
-    assert len_sv == 2 * (n + 1) * (n + 1) + 4 * (n - 1) * n
-
     cube.create_entities(1)
     cube.create_connectivity(2, 1)
-    surface_edges = cube.topology.surface_entities(1)
+    surface_edges = cube.topology.surface_entity_marker(1)
 
-    assert (len(surface_edges) > 0)
+    surface_facets = cube.topology.surface_entity_marker(2)
+    sf_count = numpy.count_nonzero(numpy.array(surface_facets))
 
-    surface_facets = cube.topology.surface_entities(2)
-    assert MPI.sum(cube.mpi_comm(), len(surface_facets)) == n * n * 12
+    assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
 
 
 def test_coords():
