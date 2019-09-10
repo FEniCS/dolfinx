@@ -451,10 +451,9 @@ def test_distribute_mesh(tempdir, mesh_factory):
     with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
         file.write(mesh)
 
-    with XDMFFile(MPI.comm_world, filename) as file:
-        cell_type, points, cells, indices = file.read_mesh_data(MPI.comm_self)
-
     # Use all available processes for partitioning
+    with XDMFFile(MPI.comm_world, filename) as file:
+        cell_type, points, cells, indices = file.read_mesh_data(MPI.comm_world)
     partition_data1 = cpp.mesh.partition_cells(MPI.comm_world, parts, cell_type,
                                                cells, partitioner)
     dist_mesh1 = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, cells,
@@ -468,6 +467,10 @@ def test_distribute_mesh(tempdir, mesh_factory):
     # Use only one process for partitioning
     newGroup = comm.group.Incl([0])
     newComm = comm.Create_group(newGroup)
+
+    with XDMFFile(newComm, filename) as file:
+        cell_type, points, cells, indices = file.read_mesh_data(newComm)
+
     partition_data2 = cpp.mesh.partition_cells(newComm, parts, cell_type,
                                                cells, partitioner)
     dist_mesh2 = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, cells,
