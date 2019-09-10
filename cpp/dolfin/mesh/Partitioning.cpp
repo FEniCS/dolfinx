@@ -507,7 +507,7 @@ void distribute_cell_layer(
 PartitionData Partitioning::partition_cells(
     const MPI_Comm& mpi_comm, int nparts, const mesh::CellType cell_type,
     const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
-    const std::string partitioner)
+    const mesh::Partitioner graph_partitioner)
 {
   LOG(INFO) << "Compute partition of cells across processes";
 
@@ -535,7 +535,7 @@ PartitionData Partitioning::partition_cells(
     }
 
     // Compute cell partition using partitioner from parameter system
-    if (partitioner == "SCOTCH")
+    if (graph_partitioner == mesh::Partitioner::scotch)
     {
       graph::CSRGraph<SCOTCH_Num> csr_graph(mpi_comm, local_graph);
       std::vector<std::size_t> weights;
@@ -543,7 +543,7 @@ PartitionData Partitioning::partition_cells(
       return PartitionData(graph::SCOTCH::partition(
           mpi_comm, (SCOTCH_Num)nparts, csr_graph, weights, num_ghost_nodes));
     }
-    else if (partitioner == "ParMETIS")
+    else if (graph_partitioner == mesh::Partitioner::parmetis)
     {
 #ifdef HAS_PARMETIS
       graph::CSRGraph<idx_t> csr_graph(mpi_comm, local_graph);
@@ -661,7 +661,7 @@ mesh::Mesh Partitioning::build_distributed_mesh(
     const Eigen::Ref<const EigenRowArrayXXd> points,
     const Eigen::Ref<const EigenRowArrayXXi64> cells,
     const std::vector<std::int64_t>& global_cell_indices,
-    const mesh::GhostMode ghost_mode, std::string graph_partitioner)
+    const mesh::GhostMode ghost_mode, const mesh::Partitioner graph_partitioner)
 {
 
   // By default all processes are used to partition the mesh

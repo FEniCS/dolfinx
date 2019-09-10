@@ -56,9 +56,8 @@ void test_distributed_mesh()
   // Partition mesh into nparts using local mesh data and subset of
   // communicators
   int nparts = mpi_size;
-  std::string partitioner = "SCOTCH";
   mesh::PartitionData cell_partition = mesh::Partitioning::partition_cells(
-      subset_comm, nparts, cell_type, cells, partitioner);
+      subset_comm, nparts, cell_type, cells, mesh::Partitioner::scotch);
 
   // Build mesh from local mesh data, ghost mode, and provided cell partition
   auto ghost_mode = mesh::GhostMode::none;

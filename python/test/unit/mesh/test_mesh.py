@@ -453,7 +453,7 @@ def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
     filename = os.path.join(tempdir, "mesh.xdmf")
     comm = mesh.mpi_comm()
     parts = comm.size
-    partitioner = "SCOTCH"
+    partitioner = cpp.mesh.Partitioner.scotch
 
     with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
         file.write(mesh)
