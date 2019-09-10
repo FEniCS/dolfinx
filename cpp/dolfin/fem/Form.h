@@ -141,8 +141,9 @@ public:
   /// constants to the form in cpp file.
   ///
   /// Names of the constants must agree with their names in UFL file.
-  void set_constants(
-      std::map<std::string, std::shared_ptr<const function::Constant>> constants);
+  void
+  set_constants(std::map<std::string, std::shared_ptr<const function::Constant>>
+                    constants);
 
   /// Set constants based on their order (without names)
   ///
@@ -152,8 +153,8 @@ public:
   ///
   /// The order of constants must match their order in
   /// original ufl Form.
-  void
-  set_constants(std::vector<std::shared_ptr<const function::Constant>> constants);
+  void set_constants(
+      std::vector<std::shared_ptr<const function::Constant>> constants);
 
   /// Set mesh, necessary for functionals when there are no function
   /// spaces

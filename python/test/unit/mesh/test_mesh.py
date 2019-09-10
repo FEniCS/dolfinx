@@ -447,3 +447,10 @@ def test_topology_surface(cube):
 
     surface_facets = cube.topology.surface_entities(2)
     assert MPI.sum(cube.mpi_comm(), len(surface_facets)) == n * n * 12
+
+
+def test_coords():
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 5)
+    d = mesh.coordinate_dofs().entity_points()
+    d += 2
+    assert numpy.array_equal(d, mesh.coordinate_dofs().entity_points())

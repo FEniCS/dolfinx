@@ -1,8 +1,8 @@
 install-python-components: &install-python-components
   name: Install FEniCS Python components
   command: |
-            pip3 install git+https://bitbucket.org/fenics-project/fiat.git --upgrade
-            pip3 install git+https://bitbucket.org/fenics-project/ufl.git --upgrade
+            pip3 install git+https://github.com/FEniCS/fiat.git --upgrade
+            pip3 install git+https://github.com/FEniCS/ufl.git --upgrade
             pip3 install git+https://github.com/FEniCS/ffcx.git --upgrade
             rm -rf /usr/local/include/dolfin /usr/local/include/dolfin.h
 
