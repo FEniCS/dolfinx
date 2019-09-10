@@ -428,15 +428,17 @@ def test_small_mesh(interval):
 
 def test_topology_surface(cube):
 
-    surface_vertices_markers = cube.topology.surface_entity_marker(0)
+    surface_vertex_markers = cube.topology.surface_entity_marker(0)
+    assert surface_vertex_markers
 
     n = 3
     cube.create_entities(1)
     cube.create_connectivity(2, 1)
-    surface_edges = cube.topology.surface_entity_marker(1)
+    surface_edge_markers = cube.topology.surface_entity_marker(1)
+    assert surface_edge_markers
 
-    surface_facets = cube.topology.surface_entity_marker(2)
-    sf_count = numpy.count_nonzero(numpy.array(surface_facets))
+    surface_facet_markers = cube.topology.surface_entity_marker(2)
+    sf_count = numpy.count_nonzero(numpy.array(surface_facet_markers))
 
     assert MPI.sum(cube.mpi_comm(), sf_count) == n * n * 12
 
