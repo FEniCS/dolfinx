@@ -83,17 +83,21 @@ class Function(ufl.Coefficient):
             # Scalar evaluation
             return self(*x)
 
-    def eval_cell(self, x, cell, u):
+    def eval_cell(self, x: np.ndarray, cell, u):
         return self._cpp_object.eval(u, x, cell)
 
     def eval(self, x: np.ndarray, bb_tree: cpp.geometry.BoundingBoxTree, u=None) -> np.ndarray:
         """Evaluate Function at points x, where x has shape (num_points, gdim)"""
-        _x = np.asarray(x, dtype=np.float)
-        num_points = _x.shape[0] if len(_x.shape) > 1 else 1
-        _x = np.reshape(_x, (num_points, -1))
-        if _x.shape[1] != self.geometric_dimension():
+
+        # Make sure input coordinate are a NumPy array
+        x = np.asarray(x, dtype=np.float)
+        assert x.ndim < 2
+        num_points = x.shape[0] if x.ndim > 1 else 1
+        x = np.reshape(x, (num_points, -1))
+        if x.shape[1] != self.geometric_dimension():
             raise ValueError("Wrong geometric dimension for coordinate(s).")
 
+        # Allocate memory for return value is not provided
         if u is None:
             value_size = ufl.product(self.ufl_element().value_shape())
             if common.has_petsc_complex:
@@ -101,7 +105,7 @@ class Function(ufl.Coefficient):
             else:
                 u = np.empty((num_points, value_size))
 
-        self._cpp_object.eval(u, _x, bb_tree)
+        self._cpp_object.eval(u, x, bb_tree)
         if num_points == 1:
             u = np.reshape(u, (-1, ))
         return u
