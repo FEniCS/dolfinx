@@ -6,6 +6,7 @@
 
 import math
 import sys
+import os
 
 import numpy
 import pytest
@@ -15,8 +16,11 @@ import FIAT
 from dolfin import (MPI, BoxMesh, MeshEntity, MeshFunction, RectangleMesh,
                     UnitCubeMesh, UnitIntervalMesh, UnitSquareMesh, cpp)
 from dolfin.cpp.mesh import CellType, is_simplex
-from dolfin_utils.test.fixtures import fixture
+from dolfin.io import XDMFFile
+from dolfin_utils.test.fixtures import fixture, tempdir
 from dolfin_utils.test.skips import skip_in_parallel
+
+assert (tempdir)
 
 
 @fixture
@@ -412,7 +416,7 @@ def test_mesh_topology_lifetime():
 
 @pytest.mark.xfail(condition=MPI.size(MPI.comm_world) > 1,
                    reason="Small meshes fail in parallel")
-def test_small_mesh(interval):
+def test_small_mesh():
     mesh3d = UnitCubeMesh(MPI.comm_world, 1, 1, 1)
     gdim = mesh3d.geometry.dim
     assert mesh3d.num_entities_global(gdim) == 6
@@ -424,3 +428,49 @@ def test_small_mesh(interval):
     mesh1d = UnitIntervalMesh(MPI.comm_world, 2)
     gdim = mesh1d.geometry.dim
     assert mesh1d.num_entities_global(gdim) == 2
+
+
+@pytest.mark.parametrize("mesh_factory", mesh_factories)
+def test_distribute_mesh(mesh_factory):
+    func, args = mesh_factory
+    mesh = func(*args)
+
+    # Order mesh
+    cpp.mesh.Ordering.order_simplex(mesh)
+
+    encoding = XDMFFile.Encoding.HDF5
+    ghost_mode = cpp.mesh.GhostMode.none
+    filename = os.path.join(tempdir, "mesh.xdmf")
+    comm = mesh.mpi_comm()
+    parts = comm.size
+    partitioner = "SCOTCH"
+
+    with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
+        file.write(mesh)
+
+    with XDMFFile(MPI.comm_world, filename) as file:
+        cell_type, points, cells, indices = file.read_mesh_data(MPI.comm_self)
+
+    # Use all available processes for partitioning
+    partition_data1 = cpp.mesh.partition_cells(MPI.comm_world, parts, cell_type,
+                                               cells, partitioner)
+    dist_mesh1 = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, cells,
+                                               points, indices, ghost_mode,
+                                               partition_data1)
+    assert(mesh.cell_type == dist_mesh1.cell_type)
+    assert mesh.num_entities_global(0) == dist_mesh1.num_entities_global(0)
+    dim = dist_mesh1.topology.dim
+    assert mesh.num_entities_global(dim) == dist_mesh1.num_entities_global(dim)
+
+    # Use only one process for partitioning
+    newGroup = comm.group.Incl([0])
+    newComm = comm.Create_group(newGroup)
+    partition_data2 = cpp.mesh.partition_cells(newComm, parts, cell_type,
+                                               cells, partitioner)
+    dist_mesh2 = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, cells,
+                                               points, indices, ghost_mode,
+                                               partition_data2)
+    assert(mesh.cell_type == dist_mesh2.cell_type)
+    assert mesh.num_entities_global(0) == dist_mesh2.num_entities_global(0)
+    dim = dist_mesh2.topology.dim
+    assert mesh.num_entities_global(dim) == dist_mesh2.num_entities_global(dim)
