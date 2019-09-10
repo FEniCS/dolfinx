@@ -477,3 +477,9 @@ def test_distribute_mesh(tempdir, mesh_factory):
     assert mesh.num_entities_global(0) == dist_mesh2.num_entities_global(0)
     dim = dist_mesh2.topology.dim
     assert mesh.num_entities_global(dim) == dist_mesh2.num_entities_global(dim)
+
+def test_coords():
+    mesh = UnitCubeMesh(MPI.comm_world, 4, 4, 5)
+    d = mesh.coordinate_dofs().entity_points()
+    d += 2
+    assert numpy.array_equal(d, mesh.coordinate_dofs().entity_points())

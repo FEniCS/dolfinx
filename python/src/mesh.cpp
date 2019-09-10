@@ -75,22 +75,27 @@ void mesh(py::module& m)
   py::class_<dolfin::mesh::CoordinateDofs,
              std::shared_ptr<dolfin::mesh::CoordinateDofs>>(
       m, "CoordinateDofs", "CoordinateDofs object")
-      .def("entity_points", [](const dolfin::mesh::CoordinateDofs& self) {
-        const dolfin::mesh::Connectivity& connectivity = self.entity_points();
-        Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
-            connections = connectivity.connections();
-        const int num_entities = connectivity.entity_positions().size() - 1;
+      .def("entity_points",
+           [](const dolfin::mesh::CoordinateDofs& self) {
+             const dolfin::mesh::Connectivity& connectivity
+                 = self.entity_points();
+             Eigen::Ref<const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>>
+                 connections = connectivity.connections();
+             const int num_entities
+                 = connectivity.entity_positions().size() - 1;
 
-        // FIXME: mesh::CoordinateDofs should know its dimension
-        // (entity_size) to handle empty case on a process.
-        int entity_size = 0;
-        if (num_entities > 0)
-        {
-          assert(connections.size() % num_entities == 0);
-          entity_size = connections.size() / num_entities;
-        }
-        return py::array({num_entities, entity_size}, connections.data());
-      });
+             // FIXME: mesh::CoordinateDofs should know its dimension
+             // (entity_size) to handle empty case on a process.
+             int entity_size = 0;
+             if (num_entities > 0)
+             {
+               assert(connections.size() % num_entities == 0);
+               entity_size = connections.size() / num_entities;
+             }
+             return py::array({num_entities, entity_size}, connections.data(),
+                              py::none());
+           },
+           py::return_value_policy::reference_internal);
 
   // dolfin::mesh::Geometry class
   py::class_<dolfin::mesh::Geometry, std::shared_ptr<dolfin::mesh::Geometry>>(
@@ -103,12 +108,16 @@ void mesh(py::module& m)
       .def("x", &dolfin::mesh::Geometry::x,
            py::return_value_policy::reference_internal,
            "Return coordinates of a point")
-      .def_property(
-          "points", py::overload_cast<>(&dolfin::mesh::Geometry::points),
-          [](dolfin::mesh::Geometry& self, dolfin::EigenRowArrayXXd values) {
-            self.points() = values;
-          },
-          "Return coordinates of all points")
+      .def_property("points",
+                    // Get
+                    py::overload_cast<>(&dolfin::mesh::Geometry::points),
+                    // Set
+                    [](dolfin::mesh::Geometry& self,
+                       const dolfin::EigenRowArrayXXd& values) {
+                      self.points() = values;
+                    },
+                    py::return_value_policy::reference_internal,
+                    "Return coordinates of all points")
       .def_readwrite("coord_mapping", &dolfin::mesh::Geometry::coord_mapping);
 
   // dolfin::mesh::Topology class
@@ -128,8 +137,10 @@ void mesh(py::module& m)
       .def("global_indices",
            [](const dolfin::mesh::Topology& self, int dim) {
              auto& indices = self.global_indices(dim);
-             return py::array_t<std::int64_t>(indices.size(), indices.data());
-           })
+             return py::array_t<std::int64_t>(indices.size(), indices.data(),
+                                              py::none());
+           },
+           py::return_value_policy::reference_internal)
       .def("shared_entities",
            py::overload_cast<int>(&dolfin::mesh::Topology::shared_entities))
       .def("str", &dolfin::mesh::Topology::str);
@@ -154,8 +165,10 @@ void mesh(py::module& m)
             return py::array(
                 {(std::int32_t)self.topology().size(tdim),
                  (std::int32_t)dolfin::mesh::num_cell_vertices(self.cell_type)},
-                self.topology().connectivity(tdim, 0)->connections().data());
-          })
+                self.topology().connectivity(tdim, 0)->connections().data(),
+                py::none());
+          },
+          py::return_value_policy::reference_internal)
       .def_property_readonly("geometry",
                              py::overload_cast<>(&dolfin::mesh::Mesh::geometry),
                              "Mesh geometry")

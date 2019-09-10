@@ -267,8 +267,8 @@ WORKDIR /tmp
 # Install ipython (optional), FIAT, UFL and ffcX (development
 # versions, master branch)
 RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
-    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
     pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
 
 # Install dolfinx
@@ -296,8 +296,8 @@ WORKDIR /tmp
 # Install ipython (optional), FIAT, UFL and ffcX (development versions,
 # master branch)
 RUN pip3 install --no-cache-dir ipython && \
-    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/fiat.git && \
-    pip3 install --no-cache-dir git+https://bitbucket.org/fenics-project/ufl.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/fiat.git && \
+    pip3 install --no-cache-dir git+https://github.com/FEniCS/ufl.git && \
     pip3 install --no-cache-dir git+https://github.com/fenics/ffcX
 
 # Install dolfinx
