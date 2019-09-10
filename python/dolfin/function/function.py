@@ -84,12 +84,13 @@ class Function(ufl.Coefficient):
             return self(*x)
 
     def eval_cell(self, x: np.ndarray, cell, u):
-        return self._cpp_object.eval(u, x, cell)
+        u = self._cpp_object.eval_cell(x, cell, u)
+        return u
 
     def eval(self, x: np.ndarray, bb_tree: cpp.geometry.BoundingBoxTree, u=None) -> np.ndarray:
         """Evaluate Function at points x, where x has shape (num_points, gdim)"""
 
-        # Make sure input coordinate are a NumPy array
+        # Make sure input coordinates are a NumPy array
         x = np.asarray(x, dtype=np.float)
         assert x.ndim < 2
         num_points = x.shape[0] if x.ndim > 1 else 1
@@ -105,7 +106,7 @@ class Function(ufl.Coefficient):
             else:
                 u = np.empty((num_points, value_size))
 
-        self._cpp_object.eval(u, x, bb_tree)
+        self._cpp_object.eval(x, bb_tree, u)
         if num_points == 1:
             u = np.reshape(u, (-1, ))
         return u
