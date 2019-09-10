@@ -111,13 +111,19 @@ def compiled_interpolation(expr, V, target):
     # fetched inside hot cell-loop
     #
     # FIXME: Is np.asarray on petsc4py vector safe?
+
+    # Number of coefficients in ffc-processed ufl form
+    num_coeffs = module.num_coefficients
+    # Positions of ffc-preprocessed coefficients in original form
+    cpos = module.original_coefficient_positions
+
     coeffs = ufl.algorithms.analysis.extract_coefficients(expr)
     coeffs_dofmaps = List.empty_list(numba.types.Array(numba.typeof(dofmap[0]), 1, "C", readonly=True))
     coeffs_vectors = List.empty_list(numba.types.Array(numba.typeof(PETSc.ScalarType()), 1, "C"))
 
-    for coeff in coeffs:
-        coeffs_dofmaps.append(coeff.function_space.dofmap.dof_array)
-        coeffs_vectors.append(np.asarray(coeff.vector))
+    for i in range(num_coeffs):
+        coeffs_dofmaps.append(coeffs[cpos[i]].function_space.dofmap.dof_array)
+        coeffs_vectors.append(np.asarray(coeffs[cpos[i]].vector))
 
     local_coeffs_sizes = np.asarray([coeff.function_space.element.space_dimension() for coeff in coeffs], dtype=np.int)
     local_coeffs_size = np.sum(local_coeffs_sizes, dtype=np.int)

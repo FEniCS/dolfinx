@@ -10,9 +10,11 @@ def test_interpolation():
     u1 = dolfin.Function(vP1)
     u1.vector.set(1.0)
 
+    u2 = dolfin.Function(vP1)
+
     k1 = dolfin.Constant(mesh, [[1.0, 2.0], [3.0, 4.0]])
     x = ufl.SpatialCoordinate(mesh)
-    expr = ufl.inner(x, u1) * ufl.dot(k1, u1)
+    expr = u2 * ufl.zero(()) + ufl.inner(x, u1) * ufl.dot(k1, u1)
 
     f = dolfin.Function(vP1)
     dolfin.fem.interpolation.compiled_interpolation(expr, vP1, f)
