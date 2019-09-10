@@ -431,9 +431,12 @@ def test_small_mesh():
 
 
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
-def test_distribute_mesh(mesh_factory):
+def test_distribute_mesh(tempdir, mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
+
+    if not is_simplex(mesh.cell_type):
+        return
 
     # Order mesh
     cpp.mesh.Ordering.order_simplex(mesh)
