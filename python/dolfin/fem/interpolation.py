@@ -119,7 +119,7 @@ def compiled_interpolation(expr, V, target):
 
     coeffs = ufl.algorithms.analysis.extract_coefficients(expr)
     coeffs_dofmaps = List.empty_list(numba.types.Array(numba.typeof(dofmap[0]), 1, "C", readonly=True))
-    coeffs_vectors = List.empty_list(numba.types.Array(numba.typeof(PETSc.ScalarType()), 1, "C"))
+    coeffs_vectors = List.empty_list(numba.types.Array(numba.typeof(PETSc.ScalarType()), 1, "C", readonly=True))
 
     for i in range(num_coeffs):
         coeffs_dofmaps.append(coeffs[cpos[i]].function_space.dofmap.dof_array)
