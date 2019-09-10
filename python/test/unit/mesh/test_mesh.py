@@ -109,6 +109,12 @@ def f(mesh):
     return MeshFunction('int', mesh, 0, 0)
 
 
+def new_comm(comm):
+    new_group = comm.group.Incl([0])
+    new_comm = comm.Create_group(new_group)
+    return new_comm
+
+
 def test_UFLCell(interval, square, rectangle, cube, box):
     import ufl
     assert ufl.interval == interval.ufl_cell()
@@ -431,7 +437,8 @@ def test_small_mesh():
 
 
 @pytest.mark.parametrize("mesh_factory", mesh_factories)
-def test_distribute_mesh(tempdir, mesh_factory):
+@pytest.mark.parametrize("subset_comm", [MPI.comm_world, new_comm(MPI.comm_world)])
+def test_distribute_mesh(subset_comm, tempdir, mesh_factory):
     func, args = mesh_factory
     mesh = func(*args)
 
@@ -451,35 +458,20 @@ def test_distribute_mesh(tempdir, mesh_factory):
     with XDMFFile(mesh.mpi_comm(), filename, encoding) as file:
         file.write(mesh)
 
-    # Use all available processes for partitioning
-    with XDMFFile(MPI.comm_world, filename) as file:
-        cell_type, points, cells, indices = file.read_mesh_data(MPI.comm_world)
-    partition_data1 = cpp.mesh.partition_cells(MPI.comm_world, parts, cell_type,
-                                               cells, partitioner)
-    dist_mesh1 = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, cells,
-                                               points, indices, ghost_mode,
-                                               partition_data1)
-    assert(mesh.cell_type == dist_mesh1.cell_type)
-    assert mesh.num_entities_global(0) == dist_mesh1.num_entities_global(0)
-    dim = dist_mesh1.topology.dim
-    assert mesh.num_entities_global(dim) == dist_mesh1.num_entities_global(dim)
+    # Use the subset_comm to read and partition mesh, then distribute to all
+    # available processes
+    with XDMFFile(subset_comm, filename) as file:
+        cell_type, points, cells, indices = file.read_mesh_data(subset_comm)
+    partition_data = cpp.mesh.partition_cells(subset_comm, parts, cell_type,
+                                              cells, partitioner)
+    dist_mesh = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, cells,
+                                              points, indices, ghost_mode,
+                                              partition_data)
 
-    # Use only one process for partitioning
-    newGroup = comm.group.Incl([0])
-    newComm = comm.Create_group(newGroup)
-
-    with XDMFFile(newComm, filename) as file:
-        cell_type, points, cells, indices = file.read_mesh_data(newComm)
-
-    partition_data2 = cpp.mesh.partition_cells(newComm, parts, cell_type,
-                                               cells, partitioner)
-    dist_mesh2 = cpp.mesh.build_from_partition(MPI.comm_world, cell_type, cells,
-                                               points, indices, ghost_mode,
-                                               partition_data2)
-    assert(mesh.cell_type == dist_mesh2.cell_type)
-    assert mesh.num_entities_global(0) == dist_mesh2.num_entities_global(0)
-    dim = dist_mesh2.topology.dim
-    assert mesh.num_entities_global(dim) == dist_mesh2.num_entities_global(dim)
+    assert(mesh.cell_type == dist_mesh.cell_type)
+    assert mesh.num_entities_global(0) == dist_mesh.num_entities_global(0)
+    dim = dist_mesh.topology.dim
+    assert mesh.num_entities_global(dim) == dist_mesh.num_entities_global(dim)
 
 
 def test_coords():
