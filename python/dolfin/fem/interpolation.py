@@ -101,8 +101,8 @@ def compiled_interpolation(expr, V, target):
 
     # Unpack mesh and dofmap data
     mesh = V.mesh
-    c = mesh.topology.connectivity(2, 0).connections()
-    pos = mesh.topology.connectivity(2, 0).pos()
+    c = mesh.topology.connectivity(V.mesh.topology.dim, 0).connections()
+    pos = mesh.topology.connectivity(V.mesh.topology.dim, 0).pos()
     geom = mesh.geometry.points
     dofmap = V.dofmap.dof_array
 
@@ -125,7 +125,8 @@ def compiled_interpolation(expr, V, target):
         coeffs_dofmaps.append(coeffs[cpos[i]].function_space.dofmap.dof_array)
         coeffs_vectors.append(np.asarray(coeffs[cpos[i]].vector))
 
-    local_coeffs_sizes = np.asarray([coeff.function_space.element.space_dimension() for coeff in coeffs], dtype=np.int)
+    local_coeffs_sizes = np.asarray([coeff.function_space.element.space_dimension()
+                                     for coeff in coeffs], dtype=np.int)
     local_coeffs_size = np.sum(local_coeffs_sizes, dtype=np.int)
 
     # Prepare and pack constants
