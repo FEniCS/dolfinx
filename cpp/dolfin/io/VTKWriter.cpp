@@ -112,8 +112,6 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
                       std::string filename)
 {
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
-  // const std::size_t num_cell_vertices = mesh::num_cell_vertices(
-  //     mesh::cell_entity_type(mesh.cell_type, cell_dim));
   const int element_degree = mesh.degree();
 
   // Get VTK cell type
@@ -200,7 +198,6 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
   for (std::size_t offsets = 1; offsets <= num_cells; offsets++)
-    // file << offsets * num_cell_vertices << " ";
     file << offsets * num_nodes << " ";
 
   file << "</DataArray>" << std::endl;

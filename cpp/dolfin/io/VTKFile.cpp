@@ -165,9 +165,9 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
 
   // Write headers
   //
+  const int element_degree = mesh.degree();
   const int num_nodes = mesh.geometry().points().rows();
   vtk_header_open(num_nodes, num_cells, vtu_filename);
-  // vtk_header_open(num_vertices, num_cells, vtu_filename);
 
   return vtu_filename;
 }
