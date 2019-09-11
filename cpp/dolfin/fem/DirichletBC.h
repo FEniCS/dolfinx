@@ -90,7 +90,7 @@ public:
   /// @param[in] g (Function)
   ///         The value
   /// @param[in] mark (std::function)
-  ///         The marking method
+  ///         The marking method (applied to all boundary vertices)
   /// @param[in] method (std::string)
   ///         Optional argument: A string specifying
   ///         the method to identify dofs

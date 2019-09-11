@@ -137,8 +137,8 @@ std::vector<std::int32_t> marked_facets(
   // Find all vertices on boundary. Set all to -1 (interior) to start
   // with. If a vertex is on the boundary, give it an index from [0,
   // count)
-  std::vector<std::int32_t> is_boundary_vertex(mesh.num_entities(0), -1);
-  std::size_t count = 0;
+  std::vector<std::int32_t> boundary_vertex(mesh.num_entities(0), -1);
+  int pos = 0;
   assert(mesh.topology().connectivity(dim, tdim));
   std::shared_ptr<const mesh::Connectivity> connectivity_facet_cell
       = mesh.topology().connectivity(dim, tdim);
@@ -151,10 +151,10 @@ std::vector<std::int32_t> marked_facets(
       const std::int32_t* v = facet.entities(0);
       for (int i = 0; i < num_facet_vertices; ++i)
       {
-        if (is_boundary_vertex[v[i]] == -1)
+        if (boundary_vertex[v[i]] == -1)
         {
-          is_boundary_vertex[v[i]] = count;
-          ++count;
+          boundary_vertex[v[i]] = pos;
+          ++pos;
         }
       }
     }
@@ -166,11 +166,11 @@ std::vector<std::int32_t> marked_facets(
       = mesh.geometry().points();
 
   // Pack coordinates of all boundary vertices
-  EigenRowArrayXXd x_boundary(count, 3);
+  EigenRowArrayXXd x_boundary(pos, 3);
   for (std::int32_t i = 0; i < mesh.num_entities(0); ++i)
   {
-    if (is_boundary_vertex[i] != -1)
-      x_boundary.row(is_boundary_vertex[i]) = x_all.row(i);
+    if (boundary_vertex[i] != -1)
+      x_boundary.row(boundary_vertex[i]) = x_all.row(i);
   }
 
   // Run marker function on boundary vertices
@@ -190,7 +190,8 @@ std::vector<std::int32_t> marked_facets(
       for (const auto& v : mesh::EntityRange(facet, 0))
       {
         const std::int32_t idx = v.index();
-        if (is_boundary_vertex[idx] == -1)
+        assert(boundary_vertex[idx] < boundary_marked.size());
+        if (!boundary_marked[boundary_vertex[idx]])
         {
           all_vertices_marked = false;
           break;
