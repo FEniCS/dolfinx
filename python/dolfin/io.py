@@ -211,8 +211,8 @@ class XDMFFile:
         mesh.geometry.coord_mapping = fem.create_coordinate_map(mesh)
         return mesh
 
-    def read_mesh_data(self, mpi_comm)-> typing.Tuple[cpp.mesh.CellType, numpy.ndarray,
-                                                      numpy.ndarray, typing.List[int]]:
+    def read_mesh_data(self, mpi_comm) -> typing.Tuple[cpp.mesh.CellType, numpy.ndarray,
+                                                       numpy.ndarray, typing.List[int]]:
         """Read in mesh data
 
         Parameters
