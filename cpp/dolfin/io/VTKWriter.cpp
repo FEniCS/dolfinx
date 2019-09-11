@@ -49,6 +49,10 @@ std::uint8_t vtk_cell_type(const mesh::Mesh& mesh, std::size_t cell_dim, std::si
 	  vtk_cell_type = 5;
 	else if (cell_order == 2)
 	  vtk_cell_type = 22;
+	else
+	  {
+		throw std::runtime_error("Meshes higher order than 2 not implemented");
+	  }
   else if (cell_type == mesh::CellType::interval)
     vtk_cell_type = 3;
   else if (cell_type == mesh::CellType::point)
@@ -110,8 +114,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
                       std::string filename)
 {
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
-  const std::size_t num_cell_vertices = mesh::num_cell_vertices(
-      mesh::cell_entity_type(mesh.cell_type, cell_dim));
+  // const std::size_t num_cell_vertices = mesh::num_cell_vertices(
+  //     mesh::cell_entity_type(mesh.cell_type, cell_dim));
   const int element_degree = mesh.degree();
 
   // Get VTK cell type
@@ -151,7 +155,8 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
 
   mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
   const std::vector<std::uint8_t> perm = mesh.cell_permutation();
-  const int num_vertices = mesh::cell_num_entities(celltype, 0);
+  // const int num_vertices = mesh::cell_num_entities(celltype, 0);
+
   // Only correct for triangles
   const int num_nodes = (element_degree+1)*(element_degree+2)/2;
   for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)

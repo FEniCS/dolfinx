@@ -161,11 +161,10 @@ std::string init(const mesh::Mesh& mesh, const std::string filename,
 
   // Number of cells and vertices
   const std::size_t num_cells = mesh.topology().ghost_offset(cell_dim);
-  const std::size_t num_vertices = mesh.topology().ghost_offset(0);
+  // const std::size_t num_vertices = mesh.topology().ghost_offset(0);
 
   // Write headers
   //
-  const int element_degree = mesh.degree();
   const int num_nodes = mesh.geometry().points().rows();
   vtk_header_open(num_nodes, num_cells, vtu_filename);
   // vtk_header_open(num_vertices, num_cells, vtu_filename);
