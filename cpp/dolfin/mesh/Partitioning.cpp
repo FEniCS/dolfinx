@@ -564,8 +564,8 @@ PartitionData Partitioning::partition_cells(
 // partition
 mesh::Mesh Partitioning::build_from_partition(
     const MPI_Comm& comm, mesh::CellType cell_type,
-    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const Eigen::Ref<const EigenRowArrayXXd> points,
+    const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
     const std::vector<std::int64_t>& global_cell_indices,
     const mesh::GhostMode ghost_mode, const PartitionData& cell_partition)
 {
@@ -674,7 +674,7 @@ mesh::Mesh Partitioning::build_distributed_mesh(
 
   // Build mesh from local mesh data and provided cell partition
   mesh::Mesh mesh = Partitioning::build_from_partition(
-      comm, cell_type, cells, points, global_cell_indices, ghost_mode,
+      comm, cell_type, points, cells, global_cell_indices, ghost_mode,
       cell_partition);
 
   // Initialise number of globally connected cells to each facet. This

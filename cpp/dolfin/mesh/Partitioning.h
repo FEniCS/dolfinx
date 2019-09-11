@@ -103,8 +103,8 @@ public:
   ///     Cell partition data (PartitionData object)
   static mesh::Mesh
   build_from_partition(const MPI_Comm& comm, mesh::CellType type,
-                       const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                        const Eigen::Ref<const EigenRowArrayXXd> points,
+                       const Eigen::Ref<const EigenRowArrayXXi64> cell_vertices,
                        const std::vector<std::int64_t>& global_cell_indices,
                        const mesh::GhostMode ghost_mode,
                        const PartitionData& cell_partition);

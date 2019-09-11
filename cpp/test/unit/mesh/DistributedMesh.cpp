@@ -63,7 +63,7 @@ void test_distributed_mesh()
   auto ghost_mode = mesh::GhostMode::none;
   auto new_mesh
       = std::make_shared<mesh::Mesh>(mesh::Partitioning::build_from_partition(
-          mpi_comm.comm(), cell_type, cells, points, global_cell_indices,
+          mpi_comm.comm(), cell_type, points, cells, global_cell_indices,
           ghost_mode, cell_partition));
 
   // Check mesh features

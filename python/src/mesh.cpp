@@ -363,13 +363,13 @@ void mesh(py::module& m)
 
   m.def("build_from_partition",
         [](const MPICommWrapper comm, dolfin::mesh::CellType cell_type,
-           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells,
            const Eigen::Ref<const dolfin::EigenRowArrayXXd> points,
+           const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells,
            const std::vector<std::int64_t>& global_cell_indices,
            const dolfin::mesh::GhostMode ghost_mode,
            const dolfin::mesh::PartitionData& cell_partition) {
           return dolfin::mesh::Partitioning::build_from_partition(
-              comm.get(), cell_type, cells, points, global_cell_indices,
+              comm.get(), cell_type, points, cells, global_cell_indices,
               ghost_mode, cell_partition);
         });
 

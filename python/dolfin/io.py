@@ -217,10 +217,10 @@ class XDMFFile:
         -------
         cell_type: cpp.mesh.Celltype
             Cell type
-        cells: numpy.ndarray[int]
-            Topological cells with global vertex indexing
         points: numpy.ndarray[float]
             Geometric points on each process
+        cells: numpy.ndarray[int]
+            Topological cells with global vertex indexing
         global_cell_indices: List[int]
             List of global cell indices
         """
