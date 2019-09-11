@@ -150,10 +150,11 @@ std::vector<bool> Topology::surface_entity_marker(int dim) const
 
   std::vector<bool> marker(size(dim), false);
 
+  const int num_facets = size(tdim - 1);
   // Special case for facets
   if (dim == tdim - 1)
   {
-    for (int i = 0; i < size(tdim - 1); ++i)
+    for (int i = 0; i < num_facets; ++i)
     {
       if (connectivity_facet_cell->size_global(i) == 1)
         marker[i] = true;
@@ -170,16 +171,15 @@ std::vector<bool> Topology::surface_entity_marker(int dim) const
   const Eigen::Array<std::int32_t, Eigen::Dynamic, 1>& fe_indices
       = connectivity_facet_entity->connections();
 
-  for (int i = 0; i < size(tdim - 1); ++i)
-    // Iterate over all facets, selecting only those with one cell attached
-    for (int i = 0; i < size(tdim - 1); ++i)
+  // Iterate over all facets, selecting only those with one cell attached
+  for (int i = 0; i < num_facets; ++i)
+  {
+    if (connectivity_facet_cell->size_global(i) == 1)
     {
-      if (connectivity_facet_cell->size_global(i) == 1)
-      {
-        for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
-          marker[fe_indices[j]] = true;
-      }
+      for (int j = fe_offsets[i]; j < fe_offsets[i + 1]; ++j)
+        marker[fe_indices[j]] = true;
     }
+  }
   return marker;
 }
 //-----------------------------------------------------------------------------
