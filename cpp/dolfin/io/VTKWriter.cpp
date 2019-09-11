@@ -153,28 +153,47 @@ void write_ascii_mesh(const mesh::Mesh& mesh, std::size_t cell_dim,
        << "ascii"
        << "\">";
 
-  // mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
-  const std::vector<std::uint8_t> perm = mesh.cell_permutation();
-  // const int num_vertices = mesh::cell_num_entities(celltype, 0);
 
-  // Only correct for triangles
-  const int num_nodes = (element_degree+1)*(element_degree+2)/2;
-  for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
+  mesh::CellType celltype = mesh::cell_entity_type(mesh.cell_type, cell_dim);
+  const int num_vertices = mesh::cell_num_entities(celltype, 0);
+  int num_nodes = 0;
+  if (celltype == mesh::CellType::triangle)
 	{
-	  for (int i = 0; i < num_nodes; ++i)
-		{
-		  file << mesh.coordinate_nodes(j,perm[i]) << " ";
-		  std::cout  << mesh.coordinate_nodes(j,perm[i]) << " ";
-		}
-	  std::cout << std::endl;
-	  file << " ";
+	 num_nodes = (element_degree+1)*(element_degree+2)/2;
 	}
-  // for (auto& c : mesh::MeshRange(mesh, cell_dim))
-  // {
-  //   for (int i = 0; i < num_vertices; ++i)
-  //     file << c.entities(0)[perm[i]] << " ";
-  //   file << " ";
-  // }
+  else if (celltype == mesh::CellType::quadrilateral)
+	{
+	 num_nodes = (element_degree+1)*(element_degree+1);
+	}
+  else if (celltype == mesh::CellType::tetrahedron)
+	{
+	  // Assume element order 1
+	  num_nodes = 4;
+	}
+  else
+	{
+	  num_nodes = 0;
+	}
+  if (num_nodes == num_vertices)
+	{
+	  const std::vector<std::int8_t> perm = mesh::vtk_mapping(celltype);
+	  for (auto& c : mesh::MeshRange(mesh, cell_dim))
+		{
+		  for (int i = 0; i < num_vertices; ++i)
+			file << c.entities(0)[perm[i]] << " ";
+		  file << " ";
+		}
+	}
+  else
+	{
+	  const std::vector<std::uint8_t> perm = mesh.cell_permutation();
+	  for (int j=0; j < mesh.num_entities(mesh.topology().dim()); ++j)
+		{
+		  for (int i = 0; i < num_nodes; ++i)
+			file << mesh.coordinate_nodes(j,perm[i]) << " ";
+		  file << " ";
+		}
+	}
   file << "</DataArray>" << std::endl;
 
   // Write offset into connectivity array for the end of each cell
