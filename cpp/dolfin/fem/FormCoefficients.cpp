@@ -62,14 +62,12 @@ void FormCoefficients::set(
 //-----------------------------------------------------------------------------
 std::shared_ptr<const function::Function> FormCoefficients::get(int i) const
 {
-  assert(i < (int)_coefficients.size());
-  return _coefficients[i];
+  return _coefficients.at(i);
 }
 //-----------------------------------------------------------------------------
 int FormCoefficients::original_position(int i) const
 {
-  assert(i < (int)_original_pos.size());
-  return _original_pos[i];
+  return _original_pos.at(i);
 }
 //-----------------------------------------------------------------------------
 int FormCoefficients::get_index(std::string name) const
