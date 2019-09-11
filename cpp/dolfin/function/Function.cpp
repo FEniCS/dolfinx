@@ -127,7 +127,6 @@ Function Function::collapse() const
 //-----------------------------------------------------------------------------
 std::shared_ptr<const FunctionSpace> Function::function_space() const
 {
-  assert(_function_space);
   return _function_space;
 }
 //-----------------------------------------------------------------------------
