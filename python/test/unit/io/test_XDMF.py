@@ -35,8 +35,8 @@ fe_2d_shapes = ["triangle"]
 fe_3d_shapes = ["tetrahedron"]
 fe_families = ["CG", "DG"]
 fe_degrees = [0, 1, 3]
-mesh_tdims = [1, 2, 3]
-mesh_ns = [6, 10]
+topological_dim = [1, 2, 3]
+number_cells = [6, 10]
 
 
 def mesh_factory(tdim, n):
@@ -132,11 +132,11 @@ def test_save_and_load_3d_mesh(tempdir, encoding):
     assert mesh.num_entities_global(dim) == mesh2.num_entities_global(dim)
 
 
-@pytest.mark.parametrize("mesh_tdim", mesh_tdims)
-@pytest.mark.parametrize("mesh_n", mesh_ns)
-def test_read_mesh_data(tempdir, mesh_tdim, mesh_n):
+@pytest.mark.parametrize("tdim", topological_dim)
+@pytest.mark.parametrize("n", number_cells)
+def test_read_mesh_data(tempdir, tdim, n):
     filename = os.path.join(tempdir, "mesh.xdmf")
-    mesh = mesh_factory(mesh_tdim, mesh_n)
+    mesh = mesh_factory(tdim, n)
 
     encoding = XDMFFile.Encoding.HDF5
     ghost_mode = cpp.mesh.GhostMode.none
@@ -170,15 +170,15 @@ def test_save_1d_scalar(tempdir, encoding):
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("fe_degree", fe_degrees)
 @pytest.mark.parametrize("fe_family", fe_families)
-@pytest.mark.parametrize("mesh_tdim", mesh_tdims)
-@pytest.mark.parametrize("mesh_n", mesh_ns)
+@pytest.mark.parametrize("tdim", topological_dim)
+@pytest.mark.parametrize("n", number_cells)
 def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
-                                    mesh_tdim, mesh_n):
+                                    tdim, n):
     if invalid_fe(fe_family, fe_degree):
         pytest.skip("Trivial finite element")
 
     filename = os.path.join(tempdir, "u1_checkpoint.xdmf")
-    mesh = mesh_factory(mesh_tdim, mesh_n)
+    mesh = mesh_factory(tdim, n)
     FE = FiniteElement(fe_family, mesh.ufl_cell(), fe_degree)
     V = FunctionSpace(mesh, FE)
     u_in = Function(V)
@@ -206,15 +206,15 @@ def test_save_and_checkpoint_scalar(tempdir, encoding, fe_degree, fe_family,
 @pytest.mark.parametrize("encoding", encodings)
 @pytest.mark.parametrize("fe_degree", fe_degrees)
 @pytest.mark.parametrize("fe_family", fe_families)
-@pytest.mark.parametrize("mesh_tdim", mesh_tdims)
-@pytest.mark.parametrize("mesh_n", mesh_ns)
+@pytest.mark.parametrize("tdim", topological_dim)
+@pytest.mark.parametrize("n", number_cells)
 def test_save_and_checkpoint_vector(tempdir, encoding, fe_degree, fe_family,
-                                    mesh_tdim, mesh_n):
+                                    tdim, n):
     if invalid_fe(fe_family, fe_degree):
         pytest.skip("Trivial finite element")
 
     filename = os.path.join(tempdir, "u2_checkpoint.xdmf")
-    mesh = mesh_factory(mesh_tdim, mesh_n)
+    mesh = mesh_factory(tdim, n)
     FE = VectorElement(fe_family, mesh.ufl_cell(), fe_degree)
     V = FunctionSpace(mesh, FE)
     u_in = Function(V)

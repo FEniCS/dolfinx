@@ -207,9 +207,22 @@ class XDMFFile:
         return mesh
 
     def read_mesh_data(self, mpi_comm):
-        """
-        Read in mesh data:
-        Cell type, geometric points, topological cells and global cell indices.
+        """Read in mesh data
+
+        Parameters
+        ----------
+        mpi_comm:
+            MPI communicator
+        Returns
+        -------
+        cell_type: cpp.mesh.Celltype
+            Cell type
+        cells: numpy.ndarray[int]
+            Topological cells with global vertex indexing
+        points: numpy.ndarray[float]
+            Geometric points on each process
+        global_cell_indices: List[int]
+            List of global cell indices
         """
         return self._cpp_object.read_mesh_data(mpi_comm)
 

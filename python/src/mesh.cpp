@@ -366,8 +366,8 @@ void mesh(py::module& m)
            const Eigen::Ref<const dolfin::EigenRowArrayXXi64> cells,
            const Eigen::Ref<const dolfin::EigenRowArrayXXd> points,
            const std::vector<std::int64_t>& global_cell_indices,
-           dolfin::mesh::GhostMode ghost_mode,
-           dolfin::mesh::PartitionData& cell_partition) {
+           const dolfin::mesh::GhostMode ghost_mode,
+           const dolfin::mesh::PartitionData& cell_partition) {
           return dolfin::mesh::Partitioning::build_from_partition(
               comm.get(), cell_type, cells, points, global_cell_indices,
               ghost_mode, cell_partition);
