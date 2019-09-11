@@ -379,12 +379,10 @@ def test_assembly_solve_taylor_hood(mesh):
 
     def boundary0(x):
         """Define boundary x = 0"""
-        print(x[:, 0] < 10 * numpy.finfo(float).eps)
         return x[:, 0] < 10 * numpy.finfo(float).eps
 
     def boundary1(x):
         """Define boundary x = 1"""
-        # print(x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps))
         return x[:, 0] > (1.0 - 10 * numpy.finfo(float).eps)
 
     u0 = dolfin.Function(P2)
